@@ -1,8 +1,8 @@
 #summary CORE wiki home
 
-= CORE =
+= CORE Wiki =
 
 This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://pf.itd.nrl.navy.mil/core/core_manual.pdf CORE manual](pdf) yet.
 
- * Quickstart
- * Screenshots
+ * [Quickstart]
+ * [Screenshots]
