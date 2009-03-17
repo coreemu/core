@@ -1,0 +1,5 @@
+#summary CORE wiki home
+
+= CORE =
+
+Testing out this wiki
