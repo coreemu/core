@@ -1,0 +1,6 @@
+#summary Screenshots of CORE
+
+Here are some screenshots of CORE.
+
+[http://cs.itd.nrl.navy.mil/images/core-screenshot-sm.png http://cs.itd.nrl.navy.mil/images/core-screenshot.png]
+A sample CORE scenario with wired and wireless routers, and a switch with some wired PCs.
