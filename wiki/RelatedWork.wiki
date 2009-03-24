@@ -9,10 +9,12 @@
 = Related Work =
 
 ==Network Emulators==
-||OPNeT SITL || || || ||
-||NCTUNs || || || ||
-||QualNet CES || || || ||
-||VNUML || || || ||
+||[http://www.opnet.com/news/press_releases/pr_2005/SITL_pr.html OPNET SITL] || OPNET System in the Loop || Emulation using the commercial OPNET simulator. || N/A ||
+||[http://nsl.csie.nctu.edu.tw/nctuns.html NCTUNs] || NCTUNs Network Simulator and Emulator || A network simulator and emulator developed by National Chiao Tung University (NCTU) Taiwan and SimReal Inc., part open source? and partially commercially licensed|| ||
+||[http://www-ivs.cs.uni-magdeburg.de/EuK/forschung/projekte/nse/ ns-2 emulation] || Network Simulator ns-2 Emulation Extensions|| Patch for ns-2 for running the simulation in real time and binding to TUN/TAP devices. || 11-15-2005 ||
+||[www.scalable-networks.com/pdf/WSC-2006-08-02.pdf QualNet CES] || QualNet Communication Effects Server || Emulation using the commercial QualNet simulator.  || N/A ||
+||[http://www.dit.upm.es/vnumlwiki/index.php/Main_Page VNUML] || Virtual Network User Mode Linux || VNUML is an open-source general purpose virtualization tool designed to quickly define and test complex network simulation scenarios based on the User Mode Linux (UML) virtualization software. || 3-11-2009 ||
+||[http://wanem.sourceforge.net/ WANEM] || Wide-Area Network Emulator ||WANEM is an open source emulator meant to provide a real experience of a Wide Area Network/Internet, during application development / testing over a LAN environment. ||11-12-2008 ||
 ||WISER || || || ||
 
 ==Virtualization==
