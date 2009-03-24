@@ -4,18 +4,22 @@
 || *URL* || *Name* || *Description* || *Latest release* ||
 ||[http://www.tel.fer.hr/imunes/ IMUNES]<br>[http://imunes.net IMUNES 2nd page] || Integrated MUltiprotocol Emulator/Simulator || Tcl/Tk GUI drives FreeBSD virtual network stacks. CORE is based on this open source project from the University of Zagreb. || 10-07-2007 ||
 || [http://www.openvz.org OpenVZ] || OpenVZ (Virtuozzo) || Container-based virtualization for Linux. This is the open source offering of Parallels Virtuozzo Containers. CORE uses this software for networking emulation under Linux. || 2-10-2009 ||
-|| VirtNet || VirtNet (aka Vimage) || Project to virtualize FreeBSD 4.11/7.x/8.x network stacks. || 3-18-2009 ||
+|| [http://imunes.tel.fer.hr/virtnet/ VirtNet] || VirtNet (aka Vimage) || Project to virtualize FreeBSD 4.11/7.x/8.x network stacks. || 3-18-2009 ||
 
 = Related Work =
 
 ==Network Emulators==
 ||[http://www.opnet.com/news/press_releases/pr_2005/SITL_pr.html OPNET SITL] || OPNET System in the Loop || Emulation using the commercial OPNET simulator. || N/A ||
+||[http://cs.itd.nrl.navy.mil/work/mane/ MANE]|| Mobile Ad-hoc Network Emulator||NRL MANE is a mobile ad hoc network emulator that provides the ability to emulate dynamic link connectivity between emulated mobile nodes in a laboratory testbed. MANE runs on a network of servers, each of which hosts a number of client test nodes (TNs). The servers LAN approach support emulation scalability. ||1-30-2006 ||
+||[http://cs.itd.nrl.navy.mil/work/proteantools/mne.php MNE]||Mobile Network Emulator || The Mobile Network Emulator (MNE) is a simple, light-weight mobile network emulator that runs under Linux. The MNE works in a distributed manner, with each node controlling its own virtual position and blocking packets from other nodes as necessary.||9-12-2008 ||
 ||[http://nsl.csie.nctu.edu.tw/nctuns.html NCTUNs] || NCTUNs Network Simulator and Emulator || A network simulator and emulator developed by National Chiao Tung University (NCTU) Taiwan and SimReal Inc., part open source? and partially commercially licensed|| ||
 ||[http://www-ivs.cs.uni-magdeburg.de/EuK/forschung/projekte/nse/ ns-2 emulation] || Network Simulator ns-2 Emulation Extensions|| Patch for ns-2 for running the simulation in real time and binding to TUN/TAP devices. || 11-15-2005 ||
-||[www.scalable-networks.com/pdf/WSC-2006-08-02.pdf QualNet CES] || QualNet Communication Effects Server || Emulation using the commercial QualNet simulator.  || N/A ||
+||[http://irg.cs.ohiou.edu/one/ ONE]||Ohio Network Emulator|| Solaris-based application that emulates a network cloud between a pair of network interfaces. Various effects simulating those found in the real world can be applied to traffic flowing between the two interfaces.|| ||
+||[http://www.scalable-networks.com/pdf/WSC-2006-08-02.pdf QualNet CES] || QualNet Communication Effects Server || Emulation using the commercial QualNet simulator.  || N/A ||
 ||[http://www.dit.upm.es/vnumlwiki/index.php/Main_Page VNUML] || Virtual Network User Mode Linux || VNUML is an open-source general purpose virtualization tool designed to quickly define and test complex network simulation scenarios based on the User Mode Linux (UML) virtualization software. || 3-11-2009 ||
 ||[http://wanem.sourceforge.net/ WANEM] || Wide-Area Network Emulator ||WANEM is an open source emulator meant to provide a real experience of a Wide Area Network/Internet, during application development / testing over a LAN environment. ||11-12-2008 ||
 ||WISER || || || ||
 
 ==Virtualization==
+||multi-IPv4/v6 jails project|| || || ||
 ||libvirt|| || || ||
