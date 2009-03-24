@@ -1,0 +1,19 @@
+#summary Brief summary of related tools and links to those projects.
+
+= Related Work used in CORE =
+|| *URL* || *Name* || *Description* || *Latest release* ||
+||[http://www.tel.fer.hr/imunes/ IMUNES]<br>[http://imunes.net IMUNES 2nd page] || Integrated MUltiprotocol Emulator/Simulator || Tcl/Tk GUI drives FreeBSD virtual network stacks. CORE is based on this open source project from the University of Zagreb. || 10-07-2007 ||
+|| [http://www.openvz.org OpenVZ] || OpenVZ (Virtuozzo) || Container-based virtualization for Linux. This is the open source offering of Parallels Virtuozzo Containers. CORE uses this software for networking emulation under Linux. || 2-10-2009 ||
+|| VirtNet || VirtNet (aka Vimage) || Project to virtualize FreeBSD 4.11/7.x/8.x network stacks. || 3-18-2009 ||
+
+= Related Work =
+
+==Network Emulators==
+||OPNeT SITL || || || ||
+||NCTUNs || || || ||
+||QualNet CES || || || ||
+||VNUML || || || ||
+||WISER || || || ||
+
+==Virtualization==
+||libvirt|| || || ||
