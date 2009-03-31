@@ -4,6 +4,7 @@ Here are some screenshots of CORE.
 
 || [http://cs.itd.nrl.navy.mil/images/core-screenshot.png http://cs.itd.nrl.navy.mil/images/core-screenshot-sm.png] || [http://hipserver.mct.phantomworks.org/core/images/CORE%2030%20nodes%20wireless%20screenshot.png http://hipserver.mct.phantomworks.org/core/images/CORE%2030%20nodes%20wireless%20screenshot%20sm.png] ||
 || A sample CORE scenario with wired and wireless routers, and a switch with some wired PCs. || A 30-node wireless network using the simple WLAN model and the OSPFv3 Adjacency Widget ||
+|| || ||
 || [http://hipserver.mct.phantomworks.org/core/images/CORE%20wired%20test%20tunnels.png http://hipserver.mct.phantomworks.org/core/images/CORE%20wired%20test%20tunnels%20sm.png] || [http://hipserver.mct.phantomworks.org/core/images/CORE%20ssh%20example.png http://hipserver.mct.phantomworks.org/core/images/CORE%20ssh%20example%20sm.png] ||
-
 || Two networks of wired hosts and routers connecting via tunnels through another system. || SSH client connecting to server. ||
+|| || ||
