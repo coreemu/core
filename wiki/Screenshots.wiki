@@ -8,3 +8,5 @@ Here are some screenshots of CORE.
 || A 30-node wireless network using the simple WLAN model and the OSPFv3 Adjacency Widget ||
 || [http://hipserver.mct.phantomworks.org/core/images/CORE%20wired%20test%20tunnels.png http://hipserver.mct.phantomworks.org/core/images/CORE%20wired%20test%20tunnels%20sm.png] ||
 || Two networks of wired hosts and routers connecting via tunnels through another system. ||
+|| [http://hipserver.mct.phantomworks.org/core/images/CORE%20ssh%20example.png http://hipserver.mct.phantomworks.org/core/images/CORE%20ssh%20example%20sm.png] ||
+|| SSH client connecting to server. ||
