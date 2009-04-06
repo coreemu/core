@@ -1,0 +1,10 @@
+#summary OpenVZ container NAT networking
+
+These instructions come from [http://wiki.openvz.org/Using_NAT_for_VE_with_private_IPs]
+
+= NAT networking for a node =
+Follow these instructions to get a node communicating with the outside world.
+
+ # Place a hub or switch node in CORE and link it to the router/PC/host node that you want to connect to the external network
+ # Run the emulation. CORE will create a Linux bridge on the host having a name such as 'vzbrn7' if the hub is node 7.
+ # 
