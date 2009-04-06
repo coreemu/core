@@ -9,4 +9,4 @@ Note that a majority of the useful documentation will be available from the [htt
  * Instructions for installing CORE on Linux OpenVZ
  * Instructions for creating a template cache
  * Save disk space via hard-linking binaries
- * Container access to the external network
+ * [LinuxOpenVZNetworkAccess Container access to the external network]
