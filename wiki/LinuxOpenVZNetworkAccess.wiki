@@ -5,6 +5,16 @@ These instructions come from [http://wiki.openvz.org/Using_NAT_for_VE_with_priva
 = NAT networking for a node =
 Follow these instructions to get a node communicating with the outside world.
 
- # Place a hub or switch node in CORE and link it to the router/PC/host node that you want to connect to the external network
+Example:
+{{{
+   n3(router)---------------------n7(hub)
+   eth0: 10.0.0.3/24              vzbrn7: 10.0.0.1/24
+
+   host's external IP address: 123.4.50.6
+   host's nameserver: 123.4.50.1
+}}}
+
+
+ # Place a hub or switch node in CORE and link it to the router/PC/host node that you want to connect to the external network. In the example shown here, node n3 is linked to hub n7, and n3 has the IP address 10.0.0.3/24.
  # Run the emulation. CORE will create a Linux bridge on the host having a name such as 'vzbrn7' if the hub is node 7.
- # 
+ # Assign an IP address to the bridge. This address should belong to the same IP subnet as the node. In this example, 10.0.0.1/24 is used for the bridge vzbrn7 on the host.
