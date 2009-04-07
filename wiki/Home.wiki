@@ -4,5 +4,12 @@
 
 This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://pf.itd.nrl.navy.mil/core/core_manual.pdf CORE manual](pdf) yet.
 
- * [Quickstart]
+ * [Quickstart]: quickly get up-and-running with CORE
  * [Screenshots]
+ * [FAQ]: Frequently Asked Questions
+ * [RelatedWork Related Work]: table of emulation tools
+
+Other guides and tips
+
+ * [Linux]: Linux virtualization and CORE
+ * [Mac]: Running CORE on Apple Max OS X
