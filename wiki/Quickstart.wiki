@@ -5,7 +5,7 @@
 CORE is a network emulation system, and version 3.3 requires the FreeBSD operating system. The best way to run CORE is to install FreeBSD 7.1 on a machine, and then use the binary installer which will automatically set up a pre-compiled CORE kernel, GUI, and utilities. 
 
 || Step 1. Install FreeBSD || http://hipserver.mct.phantomworks.org/core/images/box_download_48.png *7.1-RELEASE-i386-dvd1.iso* (2.1 gb)<br>[ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/7.1/]<br>(you will also need discs 2-3 depending on the packages you select)<br>Burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. ||
-|| Step 2. Download and run the CORE installer || http://hipserver.mct.phantomworks.org/core/images/box_download_48.png *core-freebsd7-3.2.sh* (62 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]<br>This is a shell script that you copy to your FreeBSD 7.1 machine and run. It will unpack itself and guide you through the CORE installation process.  ||
+|| Step 2. Download and run the CORE installer || http://hipserver.mct.phantomworks.org/core/images/box_download_48.png *core-freebsd7-3.3.sh* (67 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]<br>This is a shell script that you copy to your FreeBSD 7.1 machine and run. It will unpack itself and guide you through the CORE installation process.  ||
 
 <br>
 
@@ -13,12 +13,12 @@ CORE is a network emulation system, and version 3.3 requires the FreeBSD operati
  * CORE requires the Tcl/Tk packages, you can install with:
    {{{pkg_add -r tk84}}}
  * You can run the GUI from Windows, Linux, or OS X (with Tcl/Tk) and draw network topologies, but you will not be able to instantiate (execute) topologies on those systems.
- * For system requirements and tips on the FreeBSD install process, visit the Prerequisites page of the CORE manual or see [http://www.freebsd.org]
+ * For system requirements and tips on the FreeBSD install process, visit the [http://hipserver.mct.phantomworks.org/core/manual/Prerequisites.html Prerequisites] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual] or see [http://www.freebsd.org]
 
 
 = Other Options =
  * FreeBSD 4.11 (for lighter-weight virtual machines)
    # first install *4.11-RELEASE-i386-disc1-gnome.iso* (563 mb)<br>[ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/i386/ISO-IMAGES/4.11/]
-   # then install *core-freebsd411-3.3.sh* (23 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]
- * pre-built VMware image (for quick evaluation)<br>*vcore-3.2.zip* (833 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information.<br>_(However, you may experience decreased performance, timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest running the CORE GUI via SSH with X11 forwarding, to mitigate the decreased performance of the VMware virtual display.)_
+   # then install *core-freebsd411-3.3.sh* (19 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]
+ * pre-built VMware image (for quick evaluation)<br>*vcore-3.3.zip* (1.0 gb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information.<br>_(However, you may experience decreased performance, timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest running the CORE GUI via SSH with X11 forwarding, to mitigate the decreased performance of the VMware virtual display.)_
  * To build a CORE machine from scratch, including patching and compiling your own CORE kernel, see the _Installing from Source_ page of the CORE manual.
