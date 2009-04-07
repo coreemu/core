@@ -1,0 +1,14 @@
+#summary Frequently Asked Questions
+
+== 1. Who produced CORE? ==
+
+The Common Open Research Emulator (CORE) is derived from the [http://www.tel.fer.hr/imunes/ Integrated Multiprotocol Network Emulator/Simulator] (IMUNES) emulator. CORE was developed primarily by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz] from Boeing Research & Technology. Boeing Research & Technology has contributed CORE as an open source project, and the [http://cs.itd.nrl.navy.mil/products/ Naval Research Laboratory] (NRL) has graciously agreed to host CORE source code and mailing lists as part of a broader Mobile Network Modeling effort.
+
+See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html#Prior-Work Prior Work] and [http://hipserver.mct.phantomworks.org/core/manual/Acknowledgements.html#Acknowledgements Acknowledgements] section in the CORE manual for more details.
+
+== 2. Who maintains CORE? ==
+== 3. How does CORE differ from IMUNES? ==
+== 4. How is CORE licensed? ==
+== 5. Are there any technical publications about CORE? ==
+== 6. How many nodes can CORE emulate? ==
+== 7. How can I contribute? ==
