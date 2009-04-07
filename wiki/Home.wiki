@@ -2,7 +2,7 @@
 
 = CORE Wiki =
 
-This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://pf.itd.nrl.navy.mil/core/core_manual.pdf CORE manual](pdf) yet.
+This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual] ([http://pf.itd.nrl.navy.mil/core/core_manual.pdf PDF]) yet.
 
  * [Quickstart]: quickly get up-and-running with CORE
  * [Screenshots]
