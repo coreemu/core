@@ -7,8 +7,26 @@ The Common Open Research Emulator (CORE) is derived from the [http://www.tel.fer
 See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html#Prior-Work Prior Work] and [http://hipserver.mct.phantomworks.org/core/manual/Acknowledgements.html#Acknowledgements Acknowledgements] section in the CORE manual for more details.
 
 == 2. Who maintains CORE? ==
+
+CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2009 through a project led by Jeff.  
+
 == 3. How does CORE differ from IMUNES? ==
+
+At a high level, the main differences betwen CORE and IMUNES are with GUI enhancements, kernel enhancements, support for wireless networking, Linux support, distributed emulation, and packaging.
+
+*GUI:* OSPF-MANET integration, GUI-base on/off wireless, Remote control Linux routers, tunnel node, ktunnel node, widget framework: CPU, adjacency, throughput widgets; observer widgets: (various); mobility tool, two-node tool, run tool, marker tool, distributed wired networks, distributed wireless networks, MRU file list, preferences dialog, node renumbering, random topology generator, annotations, debugger
+
+*Utilities:* wireless daemon framework: simple wireless model, scripted mobility model, GPS utility model; Span Tool for CORE-CORE tunnels; Span Tool for BSD/Linux/Win XP virtual interface; OpenVZ + NetEm support
+
+*Kernel:* 
+FreeBSD 4.11 IPsec virtualization, FreeBSD 7.1 multicast routing virtualization, divert socket virtualization, ng_pipe module supporting ng_wlan and new effects, ng_wlan module
+
+*Packaging:* binary installers, user manual, API manual, flash demos
+
 == 4. How is CORE licensed? ==
+
+CORE is open source software, licensed under the [http://en.wikipedia.org/wiki/BSD_license 3-clause BSD license].
+
 == 5. Are there any technical publications about CORE? ==
 == 6. How many nodes can CORE emulate? ==
 == 7. How can I contribute? ==
