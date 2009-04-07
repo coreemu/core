@@ -4,7 +4,7 @@
 
 The Common Open Research Emulator (CORE) is derived from the [http://www.tel.fer.hr/imunes/ Integrated Multiprotocol Network Emulator/Simulator] (IMUNES) emulator. CORE was developed primarily by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz] from Boeing Research & Technology. Boeing Research & Technology has contributed CORE as an open source project, and the [http://cs.itd.nrl.navy.mil/products/ Naval Research Laboratory] (NRL) has graciously agreed to host CORE source code and mailing lists as part of a broader Mobile Network Modeling effort.
 
-See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html#Prior-Work Prior Work] and [http://hipserver.mct.phantomworks.org/core/manual/Acknowledgements.html#Acknowledgements Acknowledgements] section in the CORE manual for more details.
+See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html Prior Work] and [http://hipserver.mct.phantomworks.org/core/manual/Acknowledgements.html Acknowledgements] section in the CORE manual for more details.
 
 == 2. Who maintains CORE? ==
 
@@ -28,5 +28,17 @@ FreeBSD 4.11 IPsec virtualization, FreeBSD 7.1 multicast routing virtualization,
 CORE is open source software, licensed under the [http://en.wikipedia.org/wiki/BSD_license 3-clause BSD license].
 
 == 5. Are there any technical publications about CORE? ==
+
+An overview of CORE was published in the IEEE MILCOM 2008 Conference:
+
+CORE: A real-time network emulator<br>
+by: Jeff Ahrenholz, Claudiu Danilov, Thomas R Henderson, Jae H Kim<br>
+Military Communications Conference, 2008. MILCOM 2008. IEEE (2008), pp. 1-7
+
 == 6. How many nodes can CORE emulate? ==
+
+This is a popular question for which there is no easy answer. It depends on what the nodes are doing, what the host system resources are, etc. CORE is primarily focused on efficient, scalable network emulation for tens of nodes on standard laptops to hundreds of nodes on larger servers. It is a research question as to how to support larger topologies, portions of which are distributed on different hosts. CORE already allows these large topologies to be constructed and centrally managed; see the [http://hipserver.mct.phantomworks.org/core/manual/Span-Tool.html CORE Span tool] and the [http://hipserver.mct.phantomworks.org/core/manual/Distributed-Emulation.html Distributed Emulation] sections of the CORE manual.
+
 == 7. How can I contribute? ==
+
+CORE is open source; if you find CORE useful for your work, please contribute back to the project. Contributions can be as simple as reporting a bug, dropping a line of encouragement or technical suggestions to the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users mailing] [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev lists], or can also include submitting patches or maintaining aspects of the tool. Patches must conform to the [Hacking code standards guide]. Please contact [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz] if you would like to get involved in some way.
