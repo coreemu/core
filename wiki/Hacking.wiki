@@ -1,0 +1,7 @@
+#summary Coding standards and guide to CORE source code
+
+= Introduction =
+
+We'll probably link to a HACKING file here, containing the coding standards used by CORE...
+
+Also refer to this [http://hipserver.mct.phantomworks.org/core/manual/Developer_0027s-Guide.html Developer's Guide] section in the CORE manual.
