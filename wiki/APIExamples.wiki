@@ -1,12 +1,12 @@
 #summary example usage of the CORE API
 
 = How to get and read API traces =
-This page is provided to help you understand how the CORE API is used amongst various CORE components called plugins. To start with, the interaction between the GUI and CORE daemon (cored) are explored.
+This page is provided to help you understand how the CORE API is used among the various CORE components called plugins. To start with, the interaction between the GUI and CORE daemon (cored) is explored.
 
 From the CORE GUI, choose _View_ -> _Show_ -> _API Messages_. Once this option is turned on, you will see trace output such as the lines listed below. This option will be saved to the .imn configuration file.
 
 == Output ==
-Each line of console output starting with a *>* character indicate an outgoing CORE API message that has been sent:
+Each line of console output starting with a *>* character indicates an outgoing CORE API message that has been sent by the GUI:
 {{{
 >NODE(n0,type=0x0,n0,m=1,x=115,y=169)
 }}}
@@ -21,9 +21,11 @@ NODE(num=0,emuid=1000,)
 
 = Two-node example =
 
+The API is used here to create two router nodes that are linked together with a wired Ethernet link.
+
 http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_two_node.png
 
-Here is the API trace output from the CORE GUI for a two-node wired scenario.
+Here is the API trace output from the CORE GUI for this two-node wired scenario, when the user presses the *Start* button to instantiate the emulation.
 
 {{{
 >NODE(n0,type=0x0,n0,m=1,x=115,y=169)
@@ -62,9 +64,11 @@ NODE(num=1,)
 
 = Three wireless nodes example =
 
+Here the API is used to create three wireless router nodes joined to the same wireless network. One of the nodes is then moved out of range of another.
+
 http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_three_wireless.png
 
-Three nodes connected to a wireless LAN (WLAN), and the built-in on/off model is being used. (This is the simplest wireless model where the GUI calculates the range between nodes and tells cored to link or unlink nodes as needed.)
+Three nodes connected to a wireless LAN (WLAN), and the built-in on/off model is being used. (This is the simplest wireless model where the GUI calculates the range between nodes and tells cored to link or unlink nodes as needed.) This is the API trace once the user presses the *Start* button.
 
 {{{
 >NODE(n0,type=0x0,n0,m=0,x=181,y=82)
@@ -105,14 +109,27 @@ The LINK message with the delete flag "unlinks" nodes 1 and 2.
 
 = Model configuration example =
 
+The API is used here to configure the "simple" wireless model from the GUI. The GUI has no knowledge of available capabilities from the cored plugin, and queries cored for the capability list. The GUI does not know what configuration parameters are available for each capabilitiy, these are communicated from cored to the GUI using the CONFIG message.
+
 http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_config.png
+
+The screenshot above shows the configuration dialog that the GUI dynamically builds based on the CONFIG message it receives from cored. This trace comes from the GUI in edit mode, when clicking on a WLAN node wlan0, and configuring the "simple" wireless model.
 
 {{{
 >CONF(simple,0)
 read 244 bytes (type=5, flags=0, len=244)...
 CONF(node=0/simple,types=3/3/3/4/4/2/2/2/2/3/2/2/,vals=200|350|5|50000|500000|0|15|0|0|0|0|0,capt=min range|max range|motion threshhold|min delay|max delay|min loss|max loss|burst|duplicates|jitter|multicast loss|multicast burst,bitmap,) 
-
 >CONF(simple,0, <config data>)
+}}}
+
+ # the first CONFIG message is sent from the GUI to cored requesting the configuration parameters for node n0 for the capability named "simple". It may be that n0 has never been configured, then cored responds with the default values.
+ # each CONFIG message has a "types=" section listing the data types to be configured; these are numbers that determine the type, see the API document for details; for example, the type number 3 indicates a 32-bit unsigned value
+ # the CONFIG message has a "vals=" section listing the value displayed for that type, and a "capt=" section listing the captions for each value
+ # when the user presses OK, the values entered by the user are sent to cored in another CONFIG message; these values are represented with the <config data> block
+
+Once the user presses the *Start* button, the following trace is printed. Here wlan0 is linked with three router nodes.
+
+{{{
 >CONF(simple,0, <config data>)
 >CONF(simple,0)
 >NODE(1,x=82,y=219,emuid=12853,netid=12837)
@@ -122,5 +139,8 @@ read 64 bytes (type=2, flags=1, len=64)...
 LINK(node1num=2,node2num=1,delay=50000,bw=0,per=0,dup=0,jitter=0,netid=12837,) 
 read 64 bytes (type=2, flags=1, len=64)...
 LINK(node1num=3,node2num=2,delay=50000,bw=0,per=0,dup=0,jitter=0,netid=12837,) 
-
 }}}
+
+ # the first CONFIG message sends the configuration for wlan0 to cored. This is required because the user may have just opened a scenario file and clicked Start, and cored would have no knowledge of wlan0 or its configuration
+ # the second CONFIG message is sent from the GUI on FreeBSD. The GUI has instantiated the wlan0 node and sends its emulation ID to cored. (In FreeBSD the emuid corresponds to the Netgraph ID.) cored will copy the config from wlan0 to an instance of n0.
+ # the other NODE and LINK messages are similar to the wireless scenario described previously. Note that now the simple model is calculating the range between nodes and the GUI only draws green link lines as it receives LINK messages from cored
