@@ -17,6 +17,7 @@ Messaging is asynchronous. Responses generally may be requested through message 
 || Config || Exchange configuration information for a capability of a plugin. ||
 || File || Transfer a file or file location. ||
 
+<br>
 
 = Details =
 
