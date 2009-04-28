@@ -1,5 +1,22 @@
 #summary example usage of the CORE API
 
+= How to get and read API traces =
+From the CORE GUI, choose _View_ -> _Show_ -> _API Messages_. Once this option is turned on, you will see trace output such as the below.
+
+== Output ==
+Each line of console output starting with a *>* character indicate an outgoing CORE API message that has been sent:
+{{{
+>NODE(n0,type=0x0,n0,m=1,x=115,y=169)
+}}}
+
+== Input ==
+When an API message has been received, the GUI prints the following lines to the console, indicating the number of bytes read, and the type/flags/length parsed from the API message header.
+{{{
+read 16 bytes (type=1, flags=9, len=16)...
+NODE(num=0,emuid=1000,) 
+}}}
+
+
 = Two-node example =
 
 http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_two_node.png
@@ -31,4 +48,10 @@ Some time later, the user presses the *Stop* button on the CORE GUI. Here is the
 >LINK(flags=2,0-1,type=1,if1n=0,10.0.0.1/24,a:0::1/64,if2n=0,10.0.0.2/24,a:0::2/64,)
 >NODE(flags=del/str,0)
 >NODE(flags=del/str,1)
+read 8 bytes (type=1, flags=10, len=8)...
+NODE(num=0,) 
+read 8 bytes (type=1, flags=10, len=8)...
+NODE(num=1,) 
 }}}
+
+ # as part of the shutdown sequence, the CORE GUI kills running processes on each node; this is performed by sending cored the first two EXEC messages containing the _killall_ command. Each EXEC message is given a number (101, 102, etc...) 
