@@ -7,3 +7,4 @@ The CORE API is a sockets-based messaging system used by different CORE componen
 = Details =
 
  * the current CORE API spec can be found in PDF format here: http://pf.itd.nrl.navy.mil/core/core_api.pdf
+ * [APIExamples API Examples] shows samples of how the API is used
