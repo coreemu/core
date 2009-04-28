@@ -1,7 +1,9 @@
 #summary example usage of the CORE API
 
 = How to get and read API traces =
-From the CORE GUI, choose _View_ -> _Show_ -> _API Messages_. Once this option is turned on, you will see trace output such as the lines listed below.
+This page is provided to help you understand how the CORE API is used amongst various CORE components called plugins. To start with, the interaction between the GUI and CORE daemon (cored) are explored.
+
+From the CORE GUI, choose _View_ -> _Show_ -> _API Messages_. Once this option is turned on, you will see trace output such as the lines listed below. This option will be saved to the .imn configuration file.
 
 == Output ==
 Each line of console output starting with a *>* character indicate an outgoing CORE API message that has been sent:
@@ -84,4 +86,17 @@ read 16 bytes (type=1, flags=9, len=16)...
 NODE(num=1,emuid=1001,) 
 read 16 bytes (type=1, flags=9, len=16)...
 NODE(num=2,emuid=1002,) 
+}}}
+
+ # the WLAN cloud is treated as node n3, and created along with the other nodes using the NODE messages
+ # the first three LINK messages join each router node to the WLAN node; they assign an interface eth0 with IPv4 and IPv6 addresses
+ # the FILE messages are used to configure each router node as before
+ # the last three LINK messages 
+
+Some time later, the user clicks and drags node n2 to the right. This breaks the link between node n1 and n2.
+
+http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_three_wireless2.png
+
+{{{
+>LINK(flags=2,1-2,type=0,)
 }}}
