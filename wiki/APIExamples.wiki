@@ -1,0 +1,5 @@
+#summary example usage of the CORE API
+
+= Two-node example =
+
+insert example trace here
