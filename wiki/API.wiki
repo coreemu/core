@@ -1,0 +1,9 @@
+#summary CORE Application Programming Interface
+
+= Introduction =
+
+The CORE API is a sockets-based messaging system used by different CORE components to communicate. Other external programs can use the CORE API to interact with the emulation.
+
+= Details =
+
+ * the current CORE API spec can be found in PDF format here: http://pf.itd.nrl.navy.mil/core/core_api.pdf
