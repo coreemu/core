@@ -91,7 +91,7 @@ NODE(num=2,emuid=1002,)
  # the WLAN cloud is treated as node n3, and created along with the other nodes using the NODE messages
  # the first three LINK messages join each router node to the WLAN node; they assign an interface eth0 with IPv4 and IPv6 addresses
  # the FILE messages are used to configure each router node as before
- # the last three LINK messages 
+ # the last three LINK messages are the result of the GUI's range calculation; they tell cored how the nodes are wirelessly linked together; because the GUI calculated the links, it knows where to draw the green lines without receiving any message about the links
 
 Some time later, the user clicks and drags node n2 to the right. This breaks the link between node n1 and n2.
 
@@ -99,4 +99,28 @@ http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_three_wireles
 
 {{{
 >LINK(flags=2,1-2,type=0,)
+}}}
+
+The LINK message with the delete flag "unlinks" nodes 1 and 2.
+
+= Model configuration example =
+
+http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_config.png
+
+{{{
+>CONF(simple,0)
+read 244 bytes (type=5, flags=0, len=244)...
+CONF(node=0/simple,types=3/3/3/4/4/2/2/2/2/3/2/2/,vals=200|350|5|50000|500000|0|15|0|0|0|0|0,capt=min range|max range|motion threshhold|min delay|max delay|min loss|max loss|burst|duplicates|jitter|multicast loss|multicast burst,bitmap,) 
+
+>CONF(simple,0, <config data>)
+>CONF(simple,0, <config data>)
+>CONF(simple,0)
+>NODE(1,x=82,y=219,emuid=12853,netid=12837)
+>NODE(2,x=224,y=136,emuid=12866,netid=12837)
+>NODE(3,x=411,y=89,emuid=12879,netid=12837)
+read 64 bytes (type=2, flags=1, len=64)...
+LINK(node1num=2,node2num=1,delay=50000,bw=0,per=0,dup=0,jitter=0,netid=12837,) 
+read 64 bytes (type=2, flags=1, len=64)...
+LINK(node1num=3,node2num=2,delay=50000,bw=0,per=0,dup=0,jitter=0,netid=12837,) 
+
 }}}
