@@ -4,6 +4,20 @@
 
 The CORE API is a sockets-based messaging system used by different CORE components to communicate. Other external programs can use the CORE API to interact with the emulation.
 
+Messaging is asynchronous. Responses generally may be requested through message flags. Each message consists of a header and one or more TLV (Type, Length, Value) tuples. Currently each message defines its own TLV types. Messages are sent over a connected TCP socket. Sockets are used for their portability across platforms, and so individual  components can communicate across IP networks.
+
+
+= Quick Reference =
+
+|| *Message Type* || *Uses* ||
+|| Node || Create, modify, and delete emulated nodes. Can move nodes around by including coordinates. ||
+|| Link || Link nodes together, unlink them, or modify link parameters. ||
+|| Execute || Run a command on a node, may request the response from the command output. ||
+|| Register || Register a plugin with another plugin, and communicate capabilities (or models) between plugins. ||
+|| Config || Exchange configuration information for a capability of a plugin. ||
+|| File || Transfer a file or file location. ||
+
+
 = Details =
 
  * the current CORE API spec can be found in PDF format here: http://pf.itd.nrl.navy.mil/core/core_api.pdf
