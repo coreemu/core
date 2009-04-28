@@ -2,4 +2,33 @@
 
 = Two-node example =
 
-insert example trace here
+http://hipserver.mct.phantomworks.org/core/images/wiki/api_example_two_node.png
+
+
+Here is the API trace output from the CORE GUI for a two-node wired scenario.
+
+{{{
+>NODE(n0,type=0x0,n0,m=1,x=115,y=169)
+>NODE(n1,type=0x0,n1,m=1,x=374,y=162)
+>LINK(flags=1,0-1,type=1,if1n=0,10.0.0.1/24,a:0::1/64,if2n=0,10.0.0.2/24,a:0::2/64,)
+>FILE(flag=1,n0,f=/etc/quagga/Quagga.conf,src=/tmp/core_n0.conf)
+>FILE(flag=1,n1,f=/etc/quagga/Quagga.conf,src=/tmp/core_n1.conf)
+read 16 bytes (type=1, flags=9, len=16)...
+NODE(num=1,emuid=1001,) 
+read 16 bytes (type=1, flags=9, len=16)...
+NODE(num=0,emuid=1000,) 
+}}}
+
+ # the first two NODE messages have the ADD flag set, instructing cored to create nodes n0 and n1
+ # the LINK message has the ADD flag set, and instructs cored to link together nodes n0 and n1; it creates interfaces eth0 on both nodes and assigns IPv4 and IPv6 addresses
+ # the two FILE messages tell cored to copy the _/tmp/core_n0.conf_ file to _/etc/quagga/Quagga.conf_ for node n0 and then for n1
+ # when the CORE GUI sends the first two NODE messages, it draws a red square around nodes n0 and n1 indicating to the user that the node startup is pending; when cored decides that the nodes have started, it replies back to the CORE GUI with a NODE message containing the emulation ID of the running node; the red square then turns green and disappears. These last two NODE messages perform that function.
+
+Some time later, the user presses the *Stop* button on the CORE GUI. Here is the output from that event:
+{{{
+>EXEC(flag=0,n0,n=101,cmd='killall -q ospf6d ospfd bgdpd ripd ripngd zebra vtysh xorp_rtrmgr racoon tcpdump ping traceroute')
+>EXEC(flag=0,n1,n=102,cmd='killall -q ospf6d ospfd bgdpd ripd ripngd zebra vtysh xorp_rtrmgr racoon tcpdump ping traceroute')
+>LINK(flags=2,0-1,type=1,if1n=0,10.0.0.1/24,a:0::1/64,if2n=0,10.0.0.2/24,a:0::2/64,)
+>NODE(flags=del/str,0)
+>NODE(flags=del/str,1)
+}}}
