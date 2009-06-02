@@ -20,7 +20,10 @@
 You should follow the other instructions from the [http://wiki.openvz.org/Quick_installation#yum_pre-setup OpenVZ wiki Quick Installation], with the sections *Configuring the bootloader*, *sysctl*, and *SELinux*.
 
 = Installing from RPMs =
-CORE releases for Linux consist of two RPM files. The `core-n.n...rpm` package contains the CORE GUI, API library, a daemons necessary for running on Linux. The `core-root-n.n....rpm` package is quite a bit larger, as it contains a default [http://wiki.openvz.org/OS_template OS template cache] for CORE that is installed to `/vz/private/core-root`. Individual CORE nodes will symlink to share this root filesystem.
+Download the CORE RPM packages from here: 
+http://downloads.pf.itd.nrl.navy.mil/core/installer-packages/
+
+CORE releases for Linux consist of two RPM files. The `core-n.n...rpm` package contains the CORE GUI, API library, and daemons necessary for running on Linux. The `core-root-n.n....rpm` package is quite a bit larger, as it contains a default [http://wiki.openvz.org/OS_template OS template cache] for CORE that is installed to `/vz/private/core-root`. Individual CORE nodes will symlink to share this root filesystem.
 {{{
   rpm -ivh core-3.4-1.i386.rpm 
   rpm -ivh core-root-3.4-1.i386.rpm
@@ -28,3 +31,15 @@ CORE releases for Linux consist of two RPM files. The `core-n.n...rpm` package c
 
 
 = Installing from source =
+Download the source tarball from here:
+http://downloads.pf.itd.nrl.navy.mil/core/source/
+
+To build and configure it, you should have the autotools suite installed (aclocal, autoconf, automake), an easy way to get these is using `yum groupinstall "Development Tools"`.
+{{{
+  tar xzf core-3.4.tar.gz
+  cd core-3.4
+  ./bootstrap.sh
+  ./configure
+  make
+  sudo make install
+}}}
