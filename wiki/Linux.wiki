@@ -6,7 +6,6 @@ In addition to lightweight FreeBSD vimages, your CORE emulation can run in a Lin
 
 Note that a majority of the useful documentation will be available from the [http://www.openvz.org OpenVZ] website.
 
- * Instructions for installing CORE on Linux OpenVZ
- * Instructions for creating a template cache
- * Save disk space via hard-linking binaries
+ * [LinuxInstall Instructions for installing CORE on Linux OpenVZ]
+ * Instructions for creating your own template cache
  * [LinuxOpenVZNetworkAccess Container access to the external network]
