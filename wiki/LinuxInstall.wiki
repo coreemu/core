@@ -1,0 +1,23 @@
+#summary How to install CORE for Linux
+
+= Prerequisites =
+  # First install [http://www.centos.org CentOS] 5.3.
+  # Install the [http://www.openvz.org OpenVZ] kernel and utilities
+{{{
+  # these instructions are from the OpenVZ wiki quick install
+  cd /etc/yum.repos.d
+  wget http://download.openvz.org/openvz.repo
+  wget http://download.openvz.org/RPM-GPG-Key-OpenVZ
+  rpm --import RPM-GPG-Key-OpenVZ
+  yum install ovzkernel vzctl
+}}}
+  # Install other prerequisite packages. Enable the [http://fedoraproject.org/wiki/EPEL EPEL repo] in order to get `ebtables`.
+{{{
+  yum install bridge-utils iproute
+  su -c 'rpm -Uvh http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-3.noarch.rpm'
+  yum install ebtables
+}}}
+
+= Installing from RPMs =
+
+= Installing from source =
