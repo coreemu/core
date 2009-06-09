@@ -5,6 +5,23 @@ These instructions come from [http://wiki.openvz.org/Using_NAT_for_VE_with_priva
 = NAT networking for a node =
 Follow these instructions to get a node communicating with the outside world.
 
+== vznat.sh script == 
+You can run the `vznat.sh` script included with CORE to automatically give a container NAT access, so you can run `yum` for example.
+
+{{{
+vznat.sh 1000
+...
+vzctl enter 1000
+PING www.yahoo.com (209.131.36.158) 56(84) bytes of data.
+64 bytes from www.yahoo.com (209.131.36.158): icmp_seq=1 ttl=250 time=0.960 ms
+64 bytes from www.yahoo.com (209.131.36.158): icmp_seq=2 ttl=250 time=1.09 ms
+}}}
+
+The script defaults to using the host interface eth0, and container interface of eth0 (with corresponding vethNNNN.0 on the host). The script uses the private subnet 192.168.9.0/24. You can change any of these parameters by editing the top of the script.
+
+== manual ==
+Here is another way to manually setup NAT networking, using a hub within CORE.
+
 Example:
 {{{
    n3(router)---------------------n7(hub)
