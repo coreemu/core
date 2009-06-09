@@ -32,7 +32,7 @@ lrwxrwxrwx  1 root root 15 Jun  2 13:27 etc/quagga/Quagga.conf -> /root/boot.con
 This is how the `core-root` template was made.
 
  # start with the precreated template *`centos-5-x86-devel.tar.gz`* available [http://download.openvz.org/template/precreated/centos-5-x86-devel.tar.gz here] (download this to your `/vz/template/cache` directory, *do not unpack it!*)
- # create a container the normal OpenVZ way; this properly sets up devices nodes, etc.
+ # create a staging container the normal OpenVZ way; this properly sets up devices nodes, etc.
 {{{
 vzctl create 101 --ostemplate centos-5-x86-devel --config core
 }}}
@@ -50,8 +50,23 @@ vznat.sh 101
 vzctl enter 101
 yum install autoconf automake libtool texinfo readline-devel
 }}}
-   * cleanup after you are finished with yum with `yum clean all`
+   * cleanup after you are finished with yum with 
+{{{
+# within container
+yum clean all
+# from host
+rm /vz/private/101/etc/resolv.conf
+echo 127.0.0.1 localhost localhost.localdomain > /vz/private/101/etc/hosts
+}}}
    * CORE may be particular about which version of Quagga you use. The Quagga included with the CORE release is from [http://www.quagga.net Quagga.net] with the [http://hipserver.mct.phantomworks.org/ietf/ospf/ OSPFv3 MANET patch]. CORE uses the OSPFv3 MANET feature for wireless networks. If you only want wired networks or use custom configurations, you can use another version of Quagga. An RPM package for Quagga-manetmdr is installed in the `core-root` by default.
-   * NRL's protolib, nrlsmf, and mgen are installed in `core-root` by default
-
+   * [http://cs.itd.nrl.navy.mil/products/ NRL]'s protolib, nrlsmf, and mgen are installed in `core-root` by default
+ # move the staging area to core-root and create symlinks
+{{{
+cd /vz/private
+mv 101 core-root
+cd core-root/var
+rm -rf log run
+ln -s /root/var/run run
+ln -s /root/var/log log
+}}}
 = How to make the core-root RPM =
