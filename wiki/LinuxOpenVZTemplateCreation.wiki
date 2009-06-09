@@ -31,7 +31,7 @@ lrwxrwxrwx  1 root root 15 Jun  2 13:27 etc/quagga/Quagga.conf -> /root/boot.con
 = How to make a core-root template =
 This is how the `core-root` template was made.
 
- # start with the precreated template *`centos-5-x86-devel.tar.gz`* available [http://download.openvz.org/template/precreated/centos-5-x86-devel.tar.gz here] (download this to your `/vz/template/cache` directory`, *don't unpack it!*)
+ # start with the precreated template *`centos-5-x86-devel.tar.gz`* available [http://download.openvz.org/template/precreated/centos-5-x86-devel.tar.gz here] (download this to your `/vz/template/cache` directory, *do not unpack it!*)
  # create a container the normal OpenVZ way; this properly sets up devices nodes, etc.
 {{{
 vzctl create 101 --ostemplate centos-5-x86-devel --config core
@@ -43,6 +43,13 @@ vzctl enter 101
 chkconfig --list | grep 5:on
 for i in iptables lm_sensors mcstrans netfs portmap restorecond sendmail sshd; do chkconfig $i off; done
 }}}
- # more steps here...
+ # install the software you need on the virtual nodes
+   * you can make a NAT connection (see also LinuxOpenVZNetworkAccess) in order to use `yum` from within the container. 
+{{{
+vznat.sh 101
+vzctl enter 101
+yum install autoconf automake libtool texinfo
+}}}
+  
 
 = How to make the core-root RPM =
