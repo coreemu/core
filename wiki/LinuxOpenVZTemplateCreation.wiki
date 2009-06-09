@@ -4,9 +4,45 @@
 
 OpenVZ uses [http://wiki.openvz.org/OS_template operating system templates] to supply the virtual containers with a root filesystem. "An OS template is basically a set of packages from some Linux distribution used to populate a container." (OpenVZ wiki) 
 
-By default, CORE uses a single OS template cache for all of its nodes, located in `/vz/private/core-root`. This is a convenience so you can install a binary in one place and 
+By default, CORE uses a single OS template cache for all of its nodes, located in `/vz/private/core-root`. This is a convenience so you can install a binary in one place and then use it on all nodes, and it saves a lot of disk space.
+
+ * CORE nodes share the `/vz/private/core-root` filesystem through a symlink
+{{{
+# ls -al /vz/private
+total 12
+drwx------  3 root root 4096 Jun  9 11:03 .
+drwxr-xr-x  8 root root 4096 Feb 18 14:39 ..
+lrwxrwxrwx  1 root root   21 Jun  9 11:01 1000 -> /vz/private/core-root
+lrwxrwxrwx  1 root root   21 Jun  9 11:01 1001 -> /vz/private/core-root
+lrwxrwxrwx  1 root root   21 Jun  9 11:01 1002 -> /vz/private/core-root
+drwxr-xr-x 20 root root 4096 Jun  1 09:33 core-root
+}}}
+ * each CORE node has its `/root` directory bind mounted to `/tmp/n0` (where `n0` corresponds to the node number)
+ * some state directories are symlinked to this `/root` directory, allowing for per-node state
+{{{
+lrwxrwxrwx  1 root root    13 Jun  2 13:27 var/log -> /root/var/log
+lrwxrwxrwx  1 root root    13 Jun  2 13:27 var/run -> /root/var/run
+lrwxrwxrwx  1 root root 15 Jun  2 13:27 etc/quagga/Quagga.conf -> /root/boot.conf
+}}}
+ * you can create and destroy these symlinked containers with the `vzcreate.sh` and `vzdestroy.sh` scripts
+ * you can create your own containers based off of other templates (e.g. one debian-5.0 and one suse-11.1) and CORE will try to use them as-is (container 1001 corresponds to n1, etc.)
 
 
 = How to make a core-root template =
+This is how the `core-root` template was made.
+
+ # start with the precreated template *`centos-5-x86-devel.tar.gz`* available [http://download.openvz.org/template/precreated/centos-5-x86-devel.tar.gz here] (download this to your `/vz/template/cache` directory`, *don't unpack it!*)
+ # create a container the normal OpenVZ way; this properly sets up devices nodes, etc.
+{{{
+vzctl create 101 --ostemplate centos-5-x86-devel --config core
+}}}
+ # start and enter the container, turn off unnecessary services
+{{{
+vzctl start 101
+vzctl enter 101
+chkconfig --list | grep 5:on
+for i in iptables lm_sensors mcstrans netfs portmap restorecond sendmail sshd; do chkconfig $i off; done
+}}}
+ # more steps here...
 
 = How to make the core-root RPM =
