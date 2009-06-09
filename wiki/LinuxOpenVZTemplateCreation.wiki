@@ -44,12 +44,14 @@ chkconfig --list | grep 5:on
 for i in iptables lm_sensors mcstrans netfs portmap restorecond sendmail sshd; do chkconfig $i off; done
 }}}
  # install the software you need on the virtual nodes
-   * you can make a NAT connection (see also LinuxOpenVZNetworkAccess) in order to use `yum` from within the container. 
+   * you can make a NAT connection (see also [LinuxOpenVZNetworkAccess]) in order to use `yum` from within the container. 
 {{{
 vznat.sh 101
 vzctl enter 101
-yum install autoconf automake libtool texinfo
+yum install autoconf automake libtool texinfo readline-devel
 }}}
-  
+   * cleanup after you are finished with yum with `yum clean all`
+   * CORE may be particular about which version of Quagga you use. The Quagga included with the CORE release is from [http://www.quagga.net Quagga.net] with the [http://hipserver.mct.phantomworks.org/ietf/ospf/ OSPFv3 MANET patch]. CORE uses the OSPFv3 MANET feature for wireless networks. If you only want wired networks or use custom configurations, you can use another version of Quagga. An RPM package for Quagga-manetmdr is installed in the `core-root` by default.
+   * NRL's protolib, nrlsmf, and mgen are installed in `core-root` by default
 
 = How to make the core-root RPM =
