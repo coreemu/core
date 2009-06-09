@@ -1,0 +1,12 @@
+#summary How to build a core-root filesystem template for use with CORE
+
+= About OpenVZ and CORE OS templates =
+
+OpenVZ uses [http://wiki.openvz.org/OS_template operating system templates] to supply the virtual containers with a root filesystem. "An OS template is basically a set of packages from some Linux distribution used to populate a container." (OpenVZ wiki) 
+
+By default, CORE uses a single OS template cache for all of its nodes, located in `/vz/private/core-root`. This is a convenience so you can install a binary in one place and 
+
+
+= How to make a core-root template =
+
+= How to make the core-root RPM =
