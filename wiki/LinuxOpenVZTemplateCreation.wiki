@@ -64,9 +64,27 @@ echo 127.0.0.1 localhost localhost.localdomain > /vz/private/101/etc/hosts
 {{{
 cd /vz/private
 mv 101 core-root
-cd core-root/var
+cd /vz/private/core-root/var
 rm -rf log run
 ln -s /root/var/run run
 ln -s /root/var/log log
+cd /vz/private/core-root/etc/quagga
+ln -s /root/boot.conf Quagga.conf
 }}}
+   * note that the symbolic link targets `/root/var/run` etc. do not exist on the host, the links will appear broken; that is normal. Once the container is started by CORE, the `/root` directory will be mounted from `/tmp/n0` as described above
+   * if you have other applications that require per-node state or configuration, modify the `core-root` with the appropriate symbolic links. You can update the `vzprep.sh` script to build the appropriate directories in `/tmp/n0` as needed.
+ # Now that you are done building the core-root, you may want to tar up your work to have a snapshot to fall back to, or to copy to other CORE machines. Read the next section about building an RPM for these reasons.
+ 
 = How to make the core-root RPM =
+The core-root RPM is maintained separately from the CORE program RPM, due to its large size and to allow experimenting with different core-root environments. Once you have created a `/vz/private/core-root` directory tree using the steps above, follow these steps for making an RPM:
+ # first follow steps above for making a `/vz/private/core-root`; once that is ready and tested you can build this RPM
+ # the CORE source has the Makefile needed to easily build an RPM, along with the spec file; prepare the source first with
+{{{
+./bootstrap.sh
+./configure
+}}}
+ # as root, from the CORE source directory, issue the command:
+{{{
+make core-root-rpm
+}}}
+ # the successful rpmbuild should result in `/usr/src/redhat/RPMS/core-root-n.n-1.i386.rpm`
