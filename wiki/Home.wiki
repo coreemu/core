@@ -14,3 +14,4 @@ Other guides and tips
 
  * [Linux]: Linux virtualization and CORE
  * [Mac]: Running CORE on Apple Max OS X
+ * [Hacking]: coding standards for this project
