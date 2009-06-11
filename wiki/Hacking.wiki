@@ -15,18 +15,35 @@ Any contributions to the CORE project must adhere to these standards.
  * Tcl/Tk: 
    * function names are CamelCase with a lowercase first letter, example: `proc findFreeIPv6Net { mask } {`
    * variable names are lowercase words, can have underscores; global variables that are not lists or arrays have a `g_` prefix, example: `set node_types "remote"; global g_prefs`
+   * constants are defined in all uppercase, with underscores separating words; defined constants should be used instead of magic numbers, example: `set DEFAULT_RANGE 275`
  * C: 
    * function names are lowercase words separated by underscores, example: `int receive_file_msg(int, uin8_t *, uint16_t);`
    * variable names are lowercase letters or words with words separated by underscores, example: `int max, err, do_flush;`
+   * constants are defined in all uppercase, with underscores separating words; defined constants should be used instead of magic numbers, example: `#define MAX_NODES 32`
    * global variables are used sparingly, named in all lowercase as above, should have a `g_` prefix, example: `struct core_wlan_model *g_models`
    * macros are defined in all caps with words combined together, example: `#define MAC2STR(addr) ...\`
 
+*indentation*
+ * Tcl/Tk: proc declarations are not indented; *four-space indenting* is used, with tabs used to represent each indentation of *eight spaces*; example
+{{{
+proc myProc { node } {
+....foreach ifc [ifcList $node] {
+>-------set peer [peerByIfc $ifc]
+}}}
+
+ * C: lines start with an *eight-space tab indenting* (a tab character, not eight space characters) and each level is indented with a tab character, example:
+{{{
+>-------if (do_daemon) {
+>------->-------/* do something */
+>------->-------if (error_condition)
+>------->------->-------exit(1);
+}}}
+
+
 
 defined types
-macros
-constants
 
-indentation
+
 comments
 expressions
 globals
