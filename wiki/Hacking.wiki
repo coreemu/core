@@ -4,9 +4,9 @@
 
 Also refer to this [http://hipserver.mct.phantomworks.org/core/manual/Developer_0027s-Guide.html Developer's Guide] section in the CORE manual.
 
-Where possible, the coding style used in existing code should be followed. For example, CORE consists of Tcl/Tk scripts from the IMUNES project, C kernel code for FreeBSD, and C userspace code. Please refer to the appropriate style guidelines for the kernel code, for example.
+Where possible, _follow the coding style used in existing code_. For example, CORE consists of Tcl/Tk scripts from the IMUNES project, C kernel code for FreeBSD, and C userspace code. Please refer to the appropriate style guidelines for the kernel code, for example.
 
-Any contributions to the CORE project must adhere to these standards.
+All contributions to the CORE project must adhere to these standards.
 
 = Standards =
 *licensing* - CORE is BSD licensed. Only free software having the same or compatible licensing is accepted.
@@ -43,6 +43,13 @@ proc myProc { node } {
 
 All lines of code must not exceed the standard *80-column width*.
 
+Lengthy string constants can be wrapped in the middle:
+{{{
+        wl_log("This is my really long and important message... 79 80"
+               "which has been wrapped to fit %d bytes\n",
+               len);
+}}}
+
 *comments*
 
 Code should be commented to document its function. Tcl comments may appear at the end of lines where needed or on separate lines:
@@ -59,6 +66,19 @@ C comments use the slash/asterisk form `/* good */`, not the C++ double slash `/
 }}}
 
 *expressions*
+
+ * C if statements look like this example. Variables are declared at the start of functions. A space follows the token `if` and braces appear on the same line. Braces are not required if the statement has only one line. Braces and indentation must be consistent within the same if block.
+{{{
+        fp = fopen("/dev/urandom", "r");
+        if (!fp) {
+                seed_with_time = 1;
+        } else {
+                fgets((char *) &seed, sizeof(seed), fp);
+                if (fread(&seed, sizeof(seed), 1, fp) != 1)
+                        seed_with_time = 1;
+                fclose(fp);
+        }
+}}}
 
 *file headers*
  * every source code file needs a block of comments at the top indicating copyright, and usually a short description of the contents of the source file
@@ -78,6 +98,6 @@ C comments use the slash/asterisk form `/* good */`, not the C++ double slash `/
 #endif /* _WIDGET_H_ */
 }}}
 
-*cross-platform*
+*portability*
 
 Consideration should be given for the code working on different platforms. FreeBSD and Linux are certainly required. Some code, such as the Span daemon, also need to compile and run on Windows.
