@@ -39,15 +39,45 @@ proc myProc { node } {
 >------->------->-------exit(1);
 }}}
 
+*column width*
 
+All lines of code must not exceed the standard *80-column width*.
 
-defined types
+*comments*
 
+Code should be commented to document its function. Tcl comments may appear at the end of lines where needed or on separate lines:
+{{{
+    # search all nodes for the value
+    foreach node $node_list {
+        set sum 0; # initialize counter
+}}}
 
-comments
-expressions
-globals
-functions
-include files ifdef, headers
-80 column
-cross-platform
+C comments use the slash/asterisk form `/* good */`, not the C++ double slash `// bad`. Comments that are wrapped should repeat the asterisk character on each new line
+{{{
+/* here my essay on why this is the fastest
+ * algorithm possible. */
+}}}
+
+*expressions*
+
+*file headers*
+ * every source code file needs a block of comments at the top indicating copyright, and usually a short description of the contents of the source file
+ * C header files need to contain ifdef protection:
+{{{
+/*
+ * CORE
+ * (c)2009 the Boeing Company
+ *
+ * widget.h
+ *
+ * Defines how CORE Widgets are used.
+ */
+#ifndef _WIDGET_H_
+#define _WIDGET_H_
+...
+#endif /* _WIDGET_H_ */
+}}}
+
+*cross-platform*
+
+Consideration should be given for the code working on different platforms. FreeBSD and Linux are certainly required. Some code, such as the Span daemon, also need to compile and run on Windows.
