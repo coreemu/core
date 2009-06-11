@@ -2,6 +2,35 @@
 
 = Introduction =
 
-We'll probably link to a HACKING file here, containing the coding standards used by CORE...
-
 Also refer to this [http://hipserver.mct.phantomworks.org/core/manual/Developer_0027s-Guide.html Developer's Guide] section in the CORE manual.
+
+Where possible, the coding style used in existing code should be followed. For example, CORE consists of Tcl/Tk scripts from the IMUNES project, C kernel code for FreeBSD, and C userspace code. Please refer to the appropriate style guidelines for the kernel code, for example.
+
+Any contributions to the CORE project must adhere to these standards.
+
+= Standards =
+*licensing* - CORE is BSD licensed. Only free software having the same or compatible licensing is accepted.
+
+*identifier naming conventions*
+ * Tcl/Tk: 
+   * function names are CamelCase with a lowercase first letter, example: `proc findFreeIPv6Net { mask } {`
+   * variable names are lowercase words, can have underscores; global variables that are not lists or arrays have a `g_` prefix, example: `set node_types "remote"; global g_prefs`
+ * C: 
+   * function names are lowercase words separated by underscores, example: `int receive_file_msg(int, uin8_t *, uint16_t);`
+   * variable names are lowercase letters or words with words separated by underscores, example: `int max, err, do_flush;`
+   * global variables are used sparingly, named in all lowercase as above, should have a `g_` prefix, example: `struct core_wlan_model *g_models`
+   * macros are defined in all caps with words combined together, example: `#define MAC2STR(addr) ...\`
+
+
+defined types
+macros
+constants
+
+indentation
+comments
+expressions
+globals
+functions
+include files ifdef, headers
+80 column
+cross-platform
