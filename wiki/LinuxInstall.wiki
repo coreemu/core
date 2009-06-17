@@ -34,7 +34,7 @@ CORE releases for Linux consist of two RPM files. The `core-n.n...rpm` package c
 Download the source tarball from here:
 http://downloads.pf.itd.nrl.navy.mil/core/source/
 
-To build and configure it, you should have the autotools suite installed (aclocal, autoconf, automake), an easy way to get these is using `yum groupinstall "Development Tools"`.
+To build and configure it, you should have the autotools suite installed (autoconf, automake, libtool), an easy way to get these is using `yum groupinstall "Development Tools"`.
 {{{
   tar xzf core-3.4.tar.gz
   cd core-3.4
