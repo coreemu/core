@@ -2,7 +2,7 @@
 
 = Quickstart =
 
-CORE is a network emulation system, and version 3.3 requires the FreeBSD operating system. The best way to run CORE is to install FreeBSD 7.1 on a machine, and then use the binary installer which will automatically set up a pre-compiled CORE kernel, GUI, and utilities. 
+CORE is a network emulation system, and version 3.4 requires the FreeBSD or Linux operating systems. It is recommended that you use *CORE on FreeBSD 7.2* for the best experience, and the Linux version only when you really need it (see the [http://hipserver.mct.phantomworks.org/core/manual/ manual for more help on choosing which version to install).
 
 || Step 1. Install FreeBSD || http://hipserver.mct.phantomworks.org/core/images/box_download_48.png *7.1-RELEASE-i386-dvd1.iso* (2.1 gb)<br>[ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/7.1/]<br>(you will also need discs 2-3 depending on the packages you select)<br>Burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. ||
 || Step 2. Download and run the CORE installer || http://hipserver.mct.phantomworks.org/core/images/box_download_48.png *core-freebsd7-3.3.sh* (67 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]<br>This is a shell script that you copy to your FreeBSD 7.1 machine and run. It will unpack itself and guide you through the CORE installation process.  ||
