@@ -31,6 +31,12 @@ pkg_delete core-kernel-7.0-20081015a
 pkg_add core-7.x-3.4.tbz
 pkg_add core-kernel-7.x-20090505.tbz
 }}}
+  # Update the quagga-manetmdr package if it has changed:
+{{{
+pkg_info -Ex quagga
+pkg_delete quagga-manetmdr-0.99.9_1
+pkg_add quagga-manetmdr-0.99.9_5.tbz
+}}}
   # Reboot to the new kernel, and you are ready to start using the new version of CORE.
 
 = Linux upgrade =
