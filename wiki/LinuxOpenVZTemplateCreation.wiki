@@ -78,7 +78,13 @@ ln -s /root/boot.conf Quagga.conf
 = How to setup a per-node directory =
 The `core-root` filesystem is shared, but some directories unique to each node, as described above. Suppose you want to add a new directory that is different on each node, for storing configuration files for example:
 {{{
+# EXAMPLE: /usr/local/etc
+# host symbolic link
 /vz/private/core-root/usr/local/etc -> /root/usr/local/etc
+# view from inside container 
+/usr/local/etc -> /root/usr/local/etc
+# mounted view for container 1001
+/root -> /tmp/n1
 }}}
 
 *Note:* all of these commands are performed on the host node, *not* from within the virtual container.
@@ -102,7 +108,7 @@ mkdir -p /tmp/n$1/usr/local/etc # <== added this line
 }}}
  # Now you need to add the new directory to existing nodes, or destroy them and allow CORE to recreate them.
 {{{
-for i in 0 1 2 3 4 5 6 7 8 9; do mkdir -p /tmp/n$1/usr/local/etc; done
+for i in 0 1 2 3 4 5 6 7 8 9; do mkdir -p /tmp/n$i/usr/local/etc; done
 }}}
  
 = How to make the core-root RPM =
