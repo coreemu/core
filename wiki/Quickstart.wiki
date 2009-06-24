@@ -2,7 +2,7 @@
 
 = Quickstart =
 
-CORE is a network emulation system, and version 3.4 requires the FreeBSD or Linux operating systems. It is recommended that you use *CORE on FreeBSD 7.2* for the best experience, and the Linux version only when you really need it (see the [http://hipserver.mct.phantomworks.org/core/manual/ manual for more help on choosing which version to install).
+CORE is a network emulation system, and version 3.4 requires the FreeBSD or Linux operating systems. It is recommended that you use *CORE on FreeBSD 7.2* for the best experience, and the Linux version only when you really need it (see the [http://hipserver.mct.phantomworks.org/core/manual/ manual] for more help on choosing which version to install).
 
 || *FreeBSD* (recommended) || *Linux* ||
 || Step 1. Install FreeBSD 7.2<br>http://hipserver.mct.phantomworks.org/core/images/box_download_48.png  *7.2-RELEASE-i386-dvd1.iso* (2.1 gb)<br>[ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/7.2/]<br>Burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. || Step 1. Install CentOS Linux 5.3<br>http://hipserver.mct.phantomworks.org/core/images/box_download_48.png *CentOS-5.3-i386-bin-DVD.iso* (3.7 gb)<br> [http://isoredirect.centos.org/centos/5/isos/i386/]<br>Burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. ||
