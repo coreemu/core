@@ -74,6 +74,36 @@ ln -s /root/boot.conf Quagga.conf
    * note that the symbolic link targets `/root/var/run` etc. do not exist on the host, the links will appear broken; that is normal. Once the container is started by CORE, the `/root` directory will be mounted from `/tmp/n0` as described above
    * if you have other applications that require per-node state or configuration, modify the `core-root` with the appropriate symbolic links. You can update the `vzprep.sh` script to build the appropriate directories in `/tmp/n0` as needed.
  # Now that you are done building the core-root, you may want to tar up your work to have a snapshot to fall back to, or to copy to other CORE machines. Read the next section about building an RPM for these reasons.
+
+= How to setup a per-node directory =
+The `core-root` filesystem is shared, but some directories unique to each node, as described above. Suppose you want to add a new directory that is different on each node, for storing configuration files for example:
+{{{
+/vz/private/core-root/usr/local/etc -> /root/usr/local/etc
+}}}
+
+*Note:* all of these commands are performed on the host node, *not* from within the virtual container.
+
+ # Remove the real directory from `core-root` if it already exists
+{{{
+# rm -rf /vz/private/core-root/usr/local/etc
+}}}
+ # Create a symbolic link for the directory in the `core-root`. Note that it does not really exist on the host node so the link appears broken.
+{{{
+# ln -s /root/usr/local/etc /vz/private/core-root/usr/local/etc
+}}}
+ # Add the new per-node directory to the `vzprep.sh` script (which is executed by CORE upon node creation)
+{{{
+...
+# create a new, empty temporary area
+mkdir -p /tmp/n$1
+mkdir -p /tmp/n$1/var/run/quagga
+mkdir -p /tmp/n$1/var/log
+mkdir -p /tmp/n$1/usr/local/etc # <== added this line
+}}}
+ # Now you need to add the new directory to existing nodes, or destroy them and allow CORE to recreate them.
+{{{
+for i in 0 1 2 3 4 5 6 7 8 9; do mkdir -p /tmp/n$1/usr/local/etc; done
+}}}
  
 = How to make the core-root RPM =
 The core-root RPM is maintained separately from the CORE program RPM, due to its large size and to allow experimenting with different core-root environments. Once you have created a `/vz/private/core-root` directory tree using the steps above, follow these steps for making an RPM:
