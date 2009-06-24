@@ -13,6 +13,7 @@ CORE is a network emulation system, and version 3.4 requires the FreeBSD or Linu
 <br>
 
 = Tips =
+ * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
  * CORE requires the Tcl/Tk packages, you can install with:
    {{{pkg_add -r tk84}}}
  * You can run the GUI from Windows, Linux, or OS X (with Tcl/Tk) and draw network topologies, but you will not be able to instantiate (execute) topologies on those systems.
