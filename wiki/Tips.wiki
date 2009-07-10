@@ -1,0 +1,19 @@
+#summary Random tips and tricks relating to CORE, FreeBSD, and OpenVZ
+
+Here we're collecting tips for CORE, FreeBSD, and OpenVZ. Please add your tips here.
+
+= CORE tips =
+tips for CORE that are not OS-specific
+
+
+= FreeBSD tips =
+tips for FreeBSD
+
+ # on FreeBSD 7.2 for the amd64 platform, running `pkg_add -r` causes the following error:
+{{{
+Error: FTP Unable to get ftp://ftp.freebsd.org/pub/FreeBSD/ports/amd64/packages-7-stable/Latest/*.tbz: Not Found
+}}}
+ a workaround is to use `sysinstall` and choose `Configure` and `Packages` and choose your appropriate FTP/HTTP option, and select and install packages there
+
+= OpenVZ tips =
+tips for Linux
