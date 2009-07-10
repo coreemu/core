@@ -17,3 +17,7 @@ Error: FTP Unable to get ftp://ftp.freebsd.org/pub/FreeBSD/ports/amd64/packages-
 
 = OpenVZ tips =
 tips for Linux
+
+ # modify the standard OpenVZ config in `/etc/vz/vz.conf` (reboot to enable these changes):
+  * DISK_QUOTA=no
+  * IPV6="yes"
