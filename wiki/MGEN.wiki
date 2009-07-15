@@ -6,8 +6,28 @@
    http://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/mgen-svnsnap.tgz
  # Download Protolib source from here:
    http://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/protolib-svnsnap.tgz
- #
-
+ # Unpack the tarballs; this will create `mgen` and `protolib` directories:
+{{{
+> cd ~
+> tar xzf mgen-svnsnap.tgz
+> tar xzf protolib-svnsnap.tgz
+}}}
+ # Create a symbolic link to protolib from mgen for building properly (see README.TXT for more information on why you need to do this)
+{{{
+> cd mgen
+> ln -s ../protolib
+}}}
+ # fix the MGEN makefile; edit the file `~/mgen/makefiles/Makefile.freebsd` and change the line `SYSTEM_LIBS = -lc_r` to `SYSTEM_LIBS = -lpthread`
+ # Build MGEN
+{{{
+> cd ~/mgen/makefiles
+> make -f Makefile.freebsd
+}}}
+ # Install it
+{{{
+> sudo install -g wheel -o root -m 555 mgen /usr/bin
+> sudo install -g wheel -o root -m 555 mpmgr /usr/bin
+}}}
 
 = Linux =
 
