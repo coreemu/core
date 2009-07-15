@@ -1,0 +1,14 @@
+#summary how to get MGEN running in CORE
+
+= FreeBSD =
+
+ # Download MGEN source from here:
+   http://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/mgen-svnsnap.tgz
+ # Download Protolib source from here:
+   http://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/protolib-svnsnap.tgz
+ #
+
+
+= Linux =
+
+MGEN is included in the core-root RPM. 
