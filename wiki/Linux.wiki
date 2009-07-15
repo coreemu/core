@@ -2,7 +2,7 @@
 
 = CORE for Linux =
 
-In addition to lightweight FreeBSD vimages, your CORE emulation can run in a Linux environment using OpenVZ containers. This feature has not been released yet. This page is for documenting tips and tricks before text is written for the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
+In addition to lightweight FreeBSD vimages, your CORE emulation can run in a Linux environment using OpenVZ containers. This page is for documenting tips and tricks before text is written for the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
 
 Note that a majority of the useful documentation will be available from the [http://www.openvz.org OpenVZ] website.
 
