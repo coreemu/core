@@ -33,4 +33,8 @@ MGEN is an open source traffic generator developed by NRL, available here: [http
 
 = Linux =
 
-MGEN is included in the core-root RPM. 
+MGEN is included in the core-root RPM. You can build it in your own core-root 
+
+= Sample Scenario =
+
+There is a `sample5-mgen.imn` scenario file included with CORE that demonstrates how to start a traffic flow from one node to another upon startup. You can find this file in the directory `core/gui/configs/sample5-mgen.imn` from the latest SVN snapshot tarball [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/core-svnsnap.tgz here].
