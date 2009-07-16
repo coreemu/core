@@ -8,4 +8,5 @@ Note that a majority of the useful documentation will be available from the [htt
 
  * [LinuxInstall Instructions for installing CORE on Linux OpenVZ]
  * [LinuxOpenVZTemplateCreation Instructions for creating your own template cache]
+ * [AddingApplicationsToOpenVz Adding applications to OpenVZ containers]
  * [LinuxOpenVZNetworkAccess Container access to the external network]
