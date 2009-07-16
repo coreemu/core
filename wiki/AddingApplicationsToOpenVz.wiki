@@ -1,14 +1,14 @@
-#summary Adding applications to OpenVz containers
+#summary Adding applications to OpenVZ containers
 
-= Adding applications to OpenVz containers =
+= Adding applications to OpenVZ containers =
 
-To do research, you will want to populate your nodes (OpenVz containers) with new applications.  It is important to understand what is going on with the file systems and per-node requirements for your application to run correctly in this environment.
+To do research, you will want to populate your nodes (OpenVZ containers) with new applications.  It is important to understand what is going on with the file systems and per-node requirements for your application to run correctly in this environment.
 
-If you do not use the core-root template for OpenVz, and instead just create OpenVz containers the typical way, you will have a separate file system for each OpenVz container.  What this means is that if you want to install some application on each container (e.g. BitTorrent, iperf, etc.), you will need to install it on each instance of the container, after it is created.  Or, you can get by with putting it in the template, and then later entering each container and editing the per-node configuration files.
+If you do not use the core-root template for OpenVZ, and instead just create OpenVZ containers the typical way, you will have a separate file system for each OpenVZ container.  What this means is that if you want to install some application on each container (e.g. BitTorrent, iperf, etc.), you will need to install it on each instance of the container, after it is created.  Or, you can get by with putting it in the template, and then later entering each container and editing the per-node configuration files.
 
-If you use the core-root template for creating OpenVz containers, following these instructions:  [LinuxOpenVZTemplateCreation Instructions for creating your own template cache], you can avoid having independent file systems at each node.  This is often more convenient to manage for large topologies, and is more space efficient.  However, you need to be aware of how to manage the per-node information that is unique to each node.  This varies on an application by application basis.
+If you use the core-root template for creating OpenVZ containers, following these instructions:  [LinuxOpenVZTemplateCreation Instructions for creating your own template cache], you can avoid having independent file systems at each node.  This is often more convenient to manage for large topologies, and is more space efficient.  However, you need to be aware of how to manage the per-node information that is unique to each node.  This varies on an application by application basis.
 
-For instance, consider quagga routing.  It suffices to have each OpenVz container use the same binary, so if quagga binaries are installed in /openvz/private/core-root/usr/sbin, each container can use it.
+For instance, consider quagga routing.  It suffices to have each OpenVZ container use the same binary, so if quagga binaries are installed in /openvz/private/core-root/usr/sbin, each container can use it.
 
 However, consider that quagga needs to be able to store these files that must be unique from node to node:
  * configuration file (e.g Quagga.conf or zebra.conf)
