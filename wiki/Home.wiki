@@ -13,5 +13,6 @@ This is the CORE wiki. It features tips and tricks and other bits of information
 Other guides and tips
 
  * [Linux]: Linux virtualization and CORE
+ * [Tips]: a collection of tips
  * [Mac]: Running CORE on Apple Max OS X
  * [Hacking]: coding standards for this project
