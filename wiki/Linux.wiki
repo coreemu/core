@@ -10,3 +10,4 @@ Note that a majority of the useful documentation will be available from the [htt
  * [LinuxOpenVZTemplateCreation Instructions for creating your own template cache]
  * [AddingApplicationsToOpenVz Adding applications to OpenVZ containers]
  * [LinuxOpenVZNetworkAccess Container access to the external network]
+ * [Fedora] installation tips
