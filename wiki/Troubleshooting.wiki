@@ -1,0 +1,15 @@
+#summary Troubleshooting
+
+== General ==
+
+ * *Issue:*  when starting CORE GUI, you get a console message such as
+{{{
+Connecting to 127.0.0.1:4038...
+Failed to open API channel to 127.0.0.1:4038: couldn't open socket: connection refused
+}}}
+ * *Resolution:*  This suggests that cored was not running or is hung.  Try "sudo killall cored", and if no process was killed, check also that there is not a /var/run/cored.pid file lying around.  Try restarting cored in verbose mode: "sudo /usr/local/sbin cored -v" and if that works, restart it in daemon mode such as: "sudo /usr/local/sbin/cored -d".  Check the log file in /var/log/cored.log if all else fails. 
+
+== Linux OpenVz version ==
+
+== FreeBSD version == 
+Add your content here.
