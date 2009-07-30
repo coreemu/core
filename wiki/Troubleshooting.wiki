@@ -1,10 +1,15 @@
 #summary Troubleshooting
 
 == General ==
+ * *debugging commands:*
+   * `/var/log/cored.log` - CORE daemon log file may contain error messages
+   * `/var/log/coreexecd.log` - CORE execution daemon log file may indicate failed jobs, those commands exiting with a non-zero status
 
-
-== Linux OpenVz version ==
-
+== Linux OpenVZ version ==
+ * *debugging commands:*
+   * `vzlist` - lists all running containers
+   * `brctl show` - lists all bridge devices, see if container veth devices have joined the correct bridges
+   * `ebtables -L` - for troubleshooting wireless connectivity, there should be two entries per wireless link
  * *Issue:* I start Core and place a host into the GUI and press Start. I get the following error for just doing that
 {{{
 can not find channel named "-1"
@@ -18,4 +23,7 @@ Failed to open API channel to 127.0.0.1:4038: couldn't open socket: connection r
  * *Resolution:*  This suggests that cored was not running or is hung.  Try "sudo killall cored", and if no process was killed, check also that there is not a /var/run/cored.pid file lying around.  Try restarting cored in verbose mode: "sudo /usr/local/sbin cored -v" and if that works, restart it in daemon mode such as: "sudo /usr/local/sbin/cored -d".  Check the log file in /var/log/cored.log if all else fails. 
 
 == FreeBSD version == 
-Add your content here.
+ * *debugging commands:*
+   * `vimage -l` - lists all running vimages
+   * `ngctl list` - list all Netgraph nodes
+   * `ngctl show ...` - detailed information about a Netgraph node
