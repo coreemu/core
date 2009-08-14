@@ -36,8 +36,7 @@ vtysh -b
 
   * *Tested OpenVZ kernel versions:*
     * 2.6.18-128.1.1.el5.028stab062.3 - sometimes IPv6 addresses are not set properly; during shutdown some containers cause this message `unregister_netdevice: waiting for lo=e319a800 to become free. Usage count = 8 ve=1000 unregister_netdevice: device e319a800 marked to leak free_netdev: device lo=e319a800 leaked`
-    * 2.6.18-128.2.1.el5.028stab064.4 -
-
+    * 2.6.18-128.2.1.el5.028stab064.4 - appears to be a bad kernel: testing 5 random wireless nodes and pressing start causes system to hang
 
 
 == FreeBSD version == 
