@@ -27,6 +27,11 @@ pkg_add -r portupgrade
 # use -ai to request confirmations
 portupgrade -a
 }}}
+ * 4. Installing X11 Xorg after a fresh install; reboot following these steps or follow instructions [http://www.freebsd.org/gnome/docs/faq2.html#q1 here]:
+{{{
+pkg_add -r gnome2
+# now add gnome_enable="YES" to /etc/rc.conf
+}}}
 
 = OpenVZ tips =
 tips for Linux
