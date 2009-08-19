@@ -21,6 +21,12 @@ pkg_add: warning: package 'core-7.x-3.4' requires 'tcl-8.4.16,1', but 'tcl-8.4.1
 pkg_add: warning: package 'core-7.x-3.4' requires 'tk-8.4.16,2', but 'tk-8.4.19_2,2' is installed
 }}}
  This is OK, the warnings may be safely ignored. CORE is not particular about which version of bash, Tcl, or Tk are used. An earlier version number is used in the package file so that CORE will install on older FreeBSD 7.0 systems.
+ * 3. Keep your FreeBSD packages up-to-date:
+{{{
+pkg_add -r portupgrade
+# use -ai to request confirmations
+portupgrade -a
+}}}
 
 = OpenVZ tips =
 tips for Linux
