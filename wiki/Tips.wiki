@@ -24,8 +24,10 @@ pkg_add: warning: package 'core-7.x-3.4' requires 'tk-8.4.16,2', but 'tk-8.4.19_
  * 3. Keep your FreeBSD packages up-to-date:
 {{{
 pkg_add -r portupgrade
+# add 'core-kernel-7.x-*', 'core-7.x-*', 'quagga-*' to the HOLD_PKGS array
+# in /usr/local/etc/pkgtools.conf
 # use -ai to request confirmations
-portupgrade -a
+portupgrade -a -PP
 }}}
  * 4. Installing X11 Xorg after a fresh install; reboot following these steps or follow instructions [http://www.freebsd.org/gnome/docs/faq2.html#q1 here]:
 {{{
