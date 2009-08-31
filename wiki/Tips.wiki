@@ -42,3 +42,4 @@ tips for Linux
   * DISK_QUOTA=no
   * IPV6="yes"
  # tips for installing OpenVZ on [Fedora]
+ # radvd (IPv6 router advertisement daemon) in OpenVZ - before starting a scenario, on the host node run `sysctl -w net.ipv6.conf.default.forwarding=0`; this should turn off IPv6 forwarding for the new veth interfaces that are created inside the container. If you try to set IPv6 forwarding within the container, you receive an "Operation not permitted" error. Linux hosts will ignore router advertisements when forwarding is turned on.
