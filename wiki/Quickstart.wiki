@@ -16,10 +16,8 @@ CORE is a network emulation system, and version 3.5 requires the FreeBSD or Linu
 
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
- * CORE requires the Tcl/Tk packages, you can install with:
-   {{{pkg_add -r tk84}}}
- * You can run the GUI from Windows, Linux, or OS X (with Tcl/Tk) and draw network topologies, but you will not be able to instantiate (execute) topologies on those systems.
- * For system requirements and tips on the FreeBSD install process, visit the [http://hipserver.mct.phantomworks.org/core/manual/Prerequisites.html Prerequisites] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual] or see [http://www.freebsd.org]
+ * CORE requires the Tcl/Tk packages, either version 8.4 or 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
+ * For system requirements and tips on the install process, visit the [http://hipserver.mct.phantomworks.org/core/manual/Prerequisites.html Prerequisites] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual]; also refer to [http://www.freebsd.org], [http://www.centos.org], [http://www.openvz.org]
 
 
 = Other Options =
