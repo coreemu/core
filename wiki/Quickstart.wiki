@@ -21,8 +21,10 @@ CORE is a network emulation system, and version 3.5 requires the FreeBSD or Linu
 
 
 = Other Options =
- * FreeBSD 4.11 (for lighter-weight virtual machines)
+ * *VMware image*<br>*Pros:* everything is already set up for you; one file to download.  *Cons:* poor performance; for quick evaluation only.<br>*vcore-3.5.zip* (1.3 gb) or *vcore-3.5-linux.zip* (850 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information. _Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the VMware virtual display._
+
+ * *FreeBSD 4.11* <br>lighter-weight virtual machines, but packages no longer provided
    # first install *4.11-RELEASE-i386-disc1-gnome.iso* (563 mb)<br>[ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/i386/ISO-IMAGES/4.11/]
-   # then install *core-freebsd411-3.3.sh* (19 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]
- * pre-built VMware image (for quick evaluation)<br>*vcore-3.5.zip* (1.1 gb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information.<br>_(However, you may experience decreased performance, timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest running the CORE GUI via SSH with X11 forwarding, to mitigate the decreased performance of the VMware virtual display.)_
- * To build a CORE machine from scratch, including patching and compiling your own CORE kernel, see the [http://hipserver.mct.phantomworks.org/core/manual/Installing-from-Source.html Installing from Source] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
+   # then install from source or use the older *core-freebsd411-3.3.sh* (19 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]
+
+ * *Build from source* <br>To build a CORE machine *from scratch*, including patching and compiling your own CORE kernel, see the [http://hipserver.mct.phantomworks.org/core/manual/Installing-from-Source.html Installing from Source] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
