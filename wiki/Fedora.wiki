@@ -2,6 +2,8 @@
 
 = Installing OpenVZ on Fedora 11 =
 
+_*EXT4 WARNING*: the 2.6.27 OpenVZ kernel does not have support for ext4 compiled in; your life will be easier if you install Fedora 11 onto an ext3 partition._
+
 The command `yum install vzkernel` will fail because the stable 2.6.18 OpenVZ kernel is too old. You can run with the experimental kernel instead.
 
  # Setup the openvz.repo as normal (see [Quickstart])
