@@ -1,7 +1,7 @@
 #summary How to install CORE for Linux
 
 = Prerequisites =
-  # First install [http://www.centos.org CentOS] 5.3.
+  # First install [http://www.centos.org CentOS] 5.4.
   # Install the [http://www.openvz.org OpenVZ] kernel and utilities (these instructions are straight from the [http://wiki.openvz.org/Quick_installation#yum_pre-setup OpenVZ wiki]
 {{{
   cd /etc/yum.repos.d
@@ -25,8 +25,8 @@ http://downloads.pf.itd.nrl.navy.mil/core/installer-packages/
 
 CORE releases for Linux consist of two RPM files. The `core-n.n...rpm` package contains the CORE GUI, API library, and daemons necessary for running on Linux. The `core-root-n.n....rpm` package is quite a bit larger, as it contains a default [http://wiki.openvz.org/OS_template OS template cache] for CORE that is installed to `/vz/private/core-root`. Individual CORE nodes will symlink to share this root filesystem.
 {{{
-  rpm -ivh core-3.4-1.i386.rpm 
-  rpm -ivh core-root-3.4-1.i386.rpm
+  rpm -ivh core-3.5-1.i386.rpm 
+  rpm -ivh core-root-3.5-1.i386.rpm
 }}}
 
 
@@ -36,8 +36,8 @@ http://downloads.pf.itd.nrl.navy.mil/core/source/
 
 To build and configure it, you should have the autotools suite installed (autoconf, automake, libtool), an easy way to get these is using `yum groupinstall "Development Tools"`.
 {{{
-  tar xzf core-3.4.tar.gz
-  cd core-3.4
+  tar xzf core-3.5.tar.gz
+  cd core-3.5
   ./bootstrap.sh
   ./configure
   make
