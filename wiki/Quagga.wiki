@@ -185,7 +185,7 @@ The shared filesystem of the containers is found in `/vz/private/core-root`.  He
   # Start CORE (note, you can also `sudo vzctl start 1000` and `sudo vzctl enter 1000` to enter a running container without starting CORE), and enter the container.  The rest of these commands are executed from within the container.
   # `cd /usr/local/src/quagga`
   # `update-autotools`
-  # `./configure --prefix=/usr --enable-user=root --enable-group=wheel --enable-vtysh --disable-capabilities`
+  # `./configure --prefix=/usr --enable-user=root --enable-group=wheel --enable-vtysh --sysconfdir=/etc/quagga --localstatedir=/var/run/quagga --with-cflags=-ggdb --disable-capabilities`
   # `make`
   # `make install`
   # At this point, you should have new binaries/libraries installed in /usr/lib and /usr/sbin.  You can stop and restart your emulation, or manually restart the routing daemons.
