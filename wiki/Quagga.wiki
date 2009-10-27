@@ -178,11 +178,13 @@ The shared filesystem of the containers is found in `/vz/private/core-root`.  He
   # `cd /usr/local/src/quagga`
   # `update-autotools`
   # `./configure --prefix=/usr --enable-user=root --enable-group=wheel --enable-vtysh --disable-capabilities`
-  # `gmake`
-  # `gmake install`
+  # `make`
+  # `make install`
   # At this point, you should have new binaries/libraries installed in /usr/lib and /usr/sbin.  You can stop and restart your emulation, or manually restart the routing daemons.
  
 See also the manual section entitled *Compiling Quagga for CORE*
+
+You can install multiple quaggas (for testing purposes) into `/usr/local/src/`.  Then, you can switch between them by just cding into the directory and running `make install` and restarting the emulation.  To keep track of which quagga is which, I often edit the `AC_INIT` string in `configure.ac` prior to running `update-autotools` and configure, so that this string shows up in the vtysh output.
 
 = Troubleshooting =
 
