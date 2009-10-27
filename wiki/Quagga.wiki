@@ -184,7 +184,7 @@ The shared filesystem of the containers is found in `/vz/private/core-root`.  He
   # `sudo cp /home/core/quagga /vz/private/core-root/usr/local/src/`
   # Start CORE (note, you can also `sudo vzctl start 1000` and `sudo vzctl enter 1000` to enter a running container without starting CORE), and enter the container.  The rest of these commands are executed from within the container.
   # `cd /usr/local/src/quagga`
-  # `update-autotools`
+  # `./update-autotools`
   # `./configure --prefix=/usr --enable-user=root --enable-group=wheel --enable-vtysh --sysconfdir=/etc/quagga --localstatedir=/var/run/quagga --with-cflags=-ggdb --disable-capabilities`
   # `make`
   # `make install`
@@ -192,7 +192,7 @@ The shared filesystem of the containers is found in `/vz/private/core-root`.  He
  
 See also the manual section entitled *Compiling Quagga for CORE*
 
-You can install multiple quaggas (for testing purposes) into `/usr/local/src/`.  Then, you can switch between them by just cding into the directory and running `make install` and restarting the emulation.  To keep track of which quagga is which, I often edit the `AC_INIT` string in `configure.ac` prior to running `update-autotools` and configure, so that this string shows up in the vtysh output.
+You can install multiple quagga source trees (for testing purposes) into `/usr/local/src/`.  Then, you can switch between them by just cding into the directory and running `make install` (to overwrite the binaries in /usr/lib and /usr/sbin) and restarting the emulation.  To keep track of which quagga is which, I often edit the `AC_INIT` string in `configure.ac` prior to running `update-autotools` and configure, so that this string shows up in the vtysh output.
 
 = Troubleshooting =
 
