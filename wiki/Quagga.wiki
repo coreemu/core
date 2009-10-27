@@ -1,0 +1,22 @@
+#summary Overview of quagga routing
+
+= Introduction =
+
+This guide is for users who want to play with possibly multiple or non-default versions of [http://www.quagga.net quagga routing] using CORE.
+
+This page is specific to OpenVZ version of CORE.
+
+= Default settings =
+
+quagga binaries and libraries come with the default templated OpenVZ container.  They are installed in `/usr/sbin/` and `/usr/bin/` directories.  rip, ripng, ospf6, ospf, and bgp are installed in `/usr/sbin/` and vtysh is in `/usr/bin/`.
+
+All containers use the same binaries.  What differs from node to node is the configuration.  Here, CORE uses the unified quagga configuration file `/etc/quagga/Quagga.conf`.  
+
+
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
