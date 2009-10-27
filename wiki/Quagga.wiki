@@ -88,7 +88,7 @@ sysctl -w net.ipv4.ip_forward=1
 
 }}}
 
-At this point, the default quagga (0.99.9 version with OSPF MANET extensions shipped with CORE-3.5) is running in each node.
+At this point, the default quagga (0.99.9 version with [http://hipserver.mct.phantomworks.org/ietf/ospf RFC 5614 OSPF MANET extensions] shipped with CORE-3.5) is running in each node.
 
 = Saving existing configuration =
 
