@@ -167,6 +167,10 @@ Note that the whole Quagga.conf file is replicated, and it essentially overwrite
 
 By default, CORE does not enable these protocols.  To enable these... *`[`TO BE COMPLETED]*
 
+= Automatically adding default configuration = 
+
+*`[`TO BE COMPLETED]*
+
 = Building a new quagga =
 
 You may want to replace altogether the quagga implementation.  Here is one way to do it.
