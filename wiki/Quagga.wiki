@@ -165,7 +165,7 @@ Note that the whole Quagga.conf file is replicated, and it essentially overwrite
 
 = Where are the ripd, ripngd, bgpd configurations? =
 
-By default, CORE does not enable these protocols.  To enable these... *[TO BE COMPLETED]*
+By default, CORE does not enable these protocols.  To enable these... *`[`TO BE COMPLETED]*
 
 = Building a new quagga =
 
