@@ -7,7 +7,7 @@ _*EXT4 WARNING*: the 2.6.27 OpenVZ kernel does not have support for ext4 compile
 The command `yum install vzkernel` will fail because the stable 2.6.18 OpenVZ kernel is too old. You can run with the experimental kernel instead.
 
  # Setup the openvz.repo as normal (see [Quickstart])
- # edit the `/etc/yum/repos.d/openvz.repo` file and add these lines: 
+ # edit the `/etc/yum.repos.d/openvz.repo` file and add these lines: 
    {{{
 [openvz-kernel-2.6.27]
 name=OpenVZ 2.6.18 kernel
