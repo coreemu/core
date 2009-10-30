@@ -97,18 +97,12 @@ The `core-root` filesystem is shared, but some directories unique to each node, 
 {{{
 # ln -s /root/usr/local/etc /vz/private/core-root/usr/local/etc
 }}}
- # Add the new per-node directory to the `vzprep.sh` script (which is executed by CORE upon node creation)
+ # Add the new per-node directory to the `vzprep.sh` script (which is executed by CORE upon node creation), located in `/etc/core/vzprep.sh` or `cored/linux/scripts/vzprep.sh` if installing from source.
 {{{
 ...
-# create a new, empty temporary area
-mkdir -p /tmp/n$1
-mkdir -p /tmp/n$1/var/run/quagga
-mkdir -p /tmp/n$1/var/log
-mkdir -p /tmp/n$1/usr/local/etc # <== added this line
-}}}
- # Now you need to add the new directory to existing nodes, or destroy them and allow CORE to recreate them.
-{{{
-for i in 0 1 2 3 4 5 6 7 8 9; do mkdir -p /tmp/n$i/usr/local/etc; done
+# edit the below line to include your own per-node directory
+DIRS="/var/run/quagga /var/run/dbus /var/log /usr/local/etc /usr/local/var/log \
+      /usr/local/var/run /etc/avahi/services /etc/avahi/etc"
 }}}
  
 = How to make the core-root RPM =
