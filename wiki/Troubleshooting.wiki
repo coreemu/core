@@ -39,7 +39,7 @@ vtysh -b
     * 2.6.18-128.2.1.el5.028stab064.4 - appears to be a bad kernel: testing 5 random wireless nodes and pressing start causes system to hang
     * 2.6.18-128.2.1.el5.028stab064.7 - good kernel, fixes previous issues
 
-== VMware version of OpenVz CORE ==
+== OpenVZ CORE as a VMware guest ==
 
 CentOS has a known clock skew issue when running as a Linux guest on VMware server.  The symptoms are that the guest clock can run erratically compared to the outside world wall clock.  To remedy this, pass the following command-line parameters to the OpenVz kernel configuration at boot time (i.e., within /boot/grub/menu.lst):
   `divider=10 clock_source=acpi_pm`
