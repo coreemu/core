@@ -1,0 +1,85 @@
+#summary How to build and run IMUNES on FreeBSD 8.x.
+
+CORE was originally based on [http://old.tel.fer.hr/imunes/ IMUNES]. That project has not been updated in a while so here are some instructions for running it on a more modern FreeBSD 8.0-RELEASE.
+
+The FreeBSD 8.0 kernel now has [http://imunes.net/virtnet/ network stack virtualization] aka vimage support built-in, but you need to recompile your kernel with this option turned on.
+
+= Recompile the 8.0-RELEASE kernel =
+
+Here we make a new kernel config in `/usr/src/sys/i386/conf/VIMAGE` based on the GENERIC config.
+
+{{{
+  # replace i386 with amd64 if you're running 64-bit BSD
+  cd /usr/src/sys/i386/conf
+  echo include GENERIC > VIMAGE
+  echo options VIMAGE >> VIMAGE
+  echo nooptions SCTP >> VIMAGE
+  config VIMAGE
+  cd ../compile/VIMAGE
+  make cleandepend && make depend
+}}}
+
+Now before you compile your 8.0-RELEASE kernel, there is a patch required to run IMUNES that adds support for the per-node symlinked filesystem hack (this allows a /usr/local/etc/quagga/Quagga.conf to point to /tmp/e0_n0/boot.conf using an '@' symbol in the symlink) and for running wireshark/pcap on vimage interfaces.
+
+{{{
+  cd ~
+  fetch http://imunes.net/imunes-8.0-RC3.diff
+  cd /usr/src/sys
+  patch -p2 < ~/imunes-8.0-RC3.diff
+}}}
+
+Now you can build and install the kernel:
+
+{{{
+  cd /usr/src/sys/i386/compile/VIMAGE
+  # for two processor cores, use -j4
+  make -j4
+  make install
+}}}
+
+You need to reboot to enable the new vimage kernel.
+
+= Install the vimage utility =
+
+You may need to checkout the source from FreeBSD's anonymous CVS to get the vimage
+
+{{{
+  cd /tmp
+  # this checks out /usr/src/tools/tools if you don't have it already
+  cvs -d anoncvs@anoncvs1.FreeBSD.org:/home/ncvs co -rRELENG_8 src/tools/tools
+  # this is so /usr/src doesn't get muddied up w/CVS dirs
+  mv /tmp/src/tools /usr/src/
+  cd /usr/src/tools/tools/vimage
+  make
+  make install
+}}}
+
+If you've rebooted to the kernel that supports virtualization, you can now test this command:
+
+{{{
+  vimage -c test1 ;# create jails
+  vimage -c test2
+  vimage -l    ;# list jails
+  vimage test1 ;# enter into jail
+  ifconfig     ;# look at lo0
+  exit         ;# exit the jail
+  vimage -d test1 ;# cleanup
+  vimage -d test2
+}}}
+
+== Install the IMUNES GUI =
+
+You don't need to install the GUI, you can also just run it directly from the `imunes/` directory with `sudo ./imunes`.
+
+{{{
+  cvs -d :pserver:anonymous@cvs.imunes.net:/usr/local/src/cvsroot co imunes
+  cd imunes
+  ./install.sh
+}}}
+
+You need to have Tcl/Tk installed for the GUI to work. Change `wish84` to `wish85` in the `imunes/imunes` script in order to run with Tcl/Tk 8.5
+
+{{{
+  pkg_add -r tk85     ;# these are useful packages to install with IMUNES
+  pkg_add -r quagga
+}}}
