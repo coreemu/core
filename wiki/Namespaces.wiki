@@ -1,0 +1,28 @@
+#summary References for Linux network namespaces
+
+= Introduction =
+
+Linux network namespaces is a lightweight container-based virtualization that is part of the mainline 2.6.27+ Linux kernel. A virtual network stack can be associated with a process group. 
+
+= References =
+
+Linux Containers SourceForge project page:
+
+ * http://lxc.sourceforge.net
+
+IBM Linux container tools tutorial: 
+
+ * http://www.ibm.com/developerworks/linux/library/l-lxc-containers/
+
+
+Other helpful sites:
+
+ * http://wiki.archlinux.org/index.php/Linux_Containers
+ * http://nigel.mcnie.name/blog/a-five-minute-guide-to-linux-containers-for-debian
+ * http://sunoano.name/ws/public_xhtml/linux_containers.html
+ * http://sysadmin-cookbook.rot13.org/#lxc
+ 
+Mailing lists:
+ * Introduction Jan 2007: http://lwn.net/Articles/219597/
+ * this message discusses frustrations OpenVZ users might have with non-Redhat host distros: http://openvz.org/pipermail/users/2010-January/003190.html
+ * discussion of LXC differences vs OpenVZ and Linux-VServer: http://openvz.org/pipermail/users/2010-January/003192.html
