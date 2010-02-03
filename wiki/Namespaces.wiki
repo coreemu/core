@@ -17,6 +17,7 @@ IBM Linux container tools tutorial:
 
 Other helpful sites:
 
+ * http://en.opensuse.org/LXC
  * http://wiki.archlinux.org/index.php/Linux_Containers
  * http://nigel.mcnie.name/blog/a-five-minute-guide-to-linux-containers-for-debian
  * http://sunoano.name/ws/public_xhtml/linux_containers.html
