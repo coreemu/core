@@ -2,7 +2,9 @@
 
 = Introduction =
 
-Linux network namespaces is a lightweight container-based virtualization that is part of the mainline 2.6.27+ Linux kernel. A virtual network stack can be associated with a process group. 
+Linux network namespaces is a lightweight container-based virtualization that is part of the mainline 2.6.27+ Linux kernel. A virtual network stack can be associated with a process group. This is similar to the FreeBSD jail mechanism.
+
+Each namespace has its own loopback device and process space. Virtual or real devices can be added to each network namespace, and you can assign IP addresses to these devices and use them as a network node. 
 
 = CORE Namespaces HOWTO =
 
