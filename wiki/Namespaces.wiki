@@ -16,6 +16,12 @@ The development snapshot of CORE supports network namespaces for virtualization 
  # freshen your kernel version using {{{ yum update }}}
  # install the packages required to compile CORE:
    {{{ yum install autoconf automake bash bridge-utils ebtables gcc libev-devel libtool make pkgconfig python-devel sudo tcl tk urw-fonts xauth xorg-x11-server-utils xterm }}}
+ # install Quagga; if you are building it from source, you should configure it to use state directories with CORE:
+{{{
+./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
+     	    --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
+     	    --localstatedir=/var/run/quagga 
+}}}
  # grab the development snapshot from [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/core-svnsnap.tgz core-svnsnap.tgz]
  # unpack and build:
 {{{
