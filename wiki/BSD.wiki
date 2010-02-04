@@ -1,0 +1,14 @@
+#summary Running CORE on FreeBSD
+
+FreeBSD 8.x has support for network stack virtualization built-in. FreeBSD 4.11 and 7.x support are being deprecated.
+
+See the [IMUNES] page for preparing your FreeBSD 8.0 kernel.
+
+= Prerequisite packages =
+Install these ports using pkg_add -r:
+
+bash vim tk85 libev xauth xterm xorg-fonts python26 sudo
+
+If you are compiling CORE from source (not installing as a package):
+
+autotools gmake
