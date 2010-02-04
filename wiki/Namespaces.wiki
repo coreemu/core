@@ -1,10 +1,12 @@
-#summary References for Linux network namespaces
+#summary CORE HOWTO and references for Linux network namespaces
 
 = Introduction =
 
-Linux network namespaces is a lightweight container-based virtualization that is part of the mainline 2.6.27+ Linux kernel. A virtual network stack can be associated with a process group. This is similar to the FreeBSD jail mechanism.
+Linux network namespaces (netns) is a lightweight container-based virtualization that is part of the mainline 2.6.27+ Linux kernel. A virtual network stack can be associated with a process group. This is similar to the FreeBSD jail mechanism.
 
-Each namespace has its own loopback device and process space. Virtual or real devices can be added to each network namespace, and you can assign IP addresses to these devices and use them as a network node. 
+Each namespace has its own loopback device and process space. Virtual or real devices can be added to each network namespace, and you can assign IP addresses to these devices and use them as a network node. By default these network namespaces share the same filesystem, just like CORE nodes in FreeBSD. Netns does not have the same security and resource restrictions as OpenVZ containers, and do not require a separate OS template.
+
+You do not need to patch your kernel in order to use network namespaces. Modern distros such as Fedora 12 and Ubuntu 9.10 have netns support turned on in their default kernels.
 
 = CORE Namespaces HOWTO =
 
