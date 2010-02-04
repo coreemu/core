@@ -4,6 +4,29 @@
 
 Linux network namespaces is a lightweight container-based virtualization that is part of the mainline 2.6.27+ Linux kernel. A virtual network stack can be associated with a process group. 
 
+= CORE Namespaces HOWTO =
+
+The development snapshot of CORE supports network namespaces for virtualization and does not require OpenVZ. The next 4.0 release of CORE will feature this support. Until that release is completed you can try the development snapshot:
+
+ # install Fedora 12 or Ubuntu 9.10 (namespace support is built-in!)
+ # freshen your kernel version using {{{ yum update }}}
+ # install the packages required to compile CORE:
+   {{{ yum install autoconf automake bash bridge-utils ebtables gcc libev-devel libtool make pkgconfig python-devel sudo tcl tk urw-fonts xauth xorg-x11-server-utils xterm }}}
+ # grab the development snapshot from [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/core-svnsnap.tgz core-svnsnap.tgz]
+ # unpack and build:
+{{{
+   tar xzf core-svnsnap.tgz
+   cd core
+   ./bootstrap.sh
+   ./configure   ;# this command should report "Linux Namespaces emulation: yes"
+   make
+   sudo make install
+}}}
+ # after installing, start the CORE services: `sudo /etc/init.d/core start`
+ # run the CORE GUI: `sudo core`
+
+Note that all features may not be available in this network namespaces version of CORE. We are working to make the system more modular and preserve functionality across versions.
+
 = References =
 
 Linux Containers SourceForge project page:
