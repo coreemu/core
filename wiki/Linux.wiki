@@ -11,3 +11,4 @@ Note that a majority of the useful documentation will be available from the [htt
  * [AddingApplicationsToOpenVz Adding applications to OpenVZ containers]
  * [LinuxOpenVZNetworkAccess Container access to the external network]
  * [Fedora] installation tips
+ * Linux Network [Namespaces]  and CORE
