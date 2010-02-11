@@ -12,10 +12,11 @@ You do not need to patch your kernel in order to use network namespaces. Modern 
 
 The development snapshot of CORE supports network namespaces for virtualization and does not require OpenVZ. The next 4.0 release of CORE will feature this support. Until that release is completed you can try the development snapshot:
 
- # install Fedora 12 or Ubuntu 9.10 (namespace support is built-in!)
+ # install Fedora 12 or Ubuntu 9.10 (namespace support is built-in!)<br>note that for simplicity, the Fedora 12 instructions (package names, etc.) are shown below
  # freshen your kernel version using {{{ yum update }}}
  # install the packages required to compile CORE:
    {{{ yum install autoconf automake bash bridge-utils ebtables gcc libev-devel libtool make pkgconfig python-devel readline-devel sudo tcl tk urw-fonts xauth xorg-x11-server-utils xterm }}}
+ # turn off SELINUX by setting `SELINUX=disabled` in `/etc/sysconfig/selinux`; turn off iptables and ip6tables firewalls (`chkconfig iptables off`) or you will need to configure permissive rules for CORE; turn on IP forwarding in `/etc/sysctl.conf`
  # install Quagga; if you are building it from source, you should configure it to use state directories with CORE:
 {{{
 ./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
