@@ -35,6 +35,14 @@ The development snapshot of CORE supports network namespaces for virtualization 
  # after installing, start the CORE services: `sudo /etc/init.d/core start`
  # run the CORE GUI: `sudo core`
 
+The containers created will access the common host filesystem, except that some directories are private on a per-container basis; these typically contain per-node configuration files, pids, etc.  Notice in the quagga configuration above that the directories /usr/local/etc/quagga and /var/run/quagga hold the private state information for quagga.  Other applications may need their own private directories, so you will need to manually edit some configuration scripts to enable this.  The below tips were suggested on the mailing list:
+
+For the Linux netns version you can use the privatedir() method of LxcNode (see vnode.py).  The default per-node private directories are self.confdir (/usr/local/etc/quagga) and /var/run, and also /tmp.
+
+There is not a simple way to add other directories from the CORE GUI or with API messages.  One approach is to create a subclass of LxcNode that CoreNode inherits from that calls privatedir() during startup() or boot().  See CtrlIfLxcNode in pycore_nodes.py for a similar example that adds a control network interface to nodes and runs sshd (useful for X11 forwarding).
+
+Another option is to specify a custom startup script that runs a daemon using a conf, log, pid files that are specified via command-line parameters (e.g. 'sshd -f /tmp/n3_sshd_config')
+
 Note that all features may not be available in this network namespaces version of CORE. We are working to make the system more modular and preserve functionality across versions.
 
 = References =
