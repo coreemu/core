@@ -17,3 +17,8 @@ Other guides and tips
  * [Troubleshooting]
  * [Mac]: Running CORE on Apple Max OS X
  * [Hacking]: coding standards for this project
+
+Citations
+
+Academic publications that use CORE are requested to cite the following publication:
+ * J. Ahrenholz, C. Danilov, T. Henderson, and J.H. Kim, CORE: A real-time network emulator, Proceedings of IEEE MILCOM Conference, 2008.
