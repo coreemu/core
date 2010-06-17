@@ -6,13 +6,13 @@ Linux network namespaces (netns) is a lightweight container-based virtualization
 
 Each namespace has its own loopback device and process space. Virtual or real devices can be added to each network namespace, and you can assign IP addresses to these devices and use them as a network node. By default these network namespaces share the same filesystem, just like CORE nodes in FreeBSD. Netns does not have the same security and resource restrictions as OpenVZ containers, and do not require a separate OS template.
 
-You do not need to patch your kernel in order to use network namespaces. Modern distros such as Fedora 12 and Ubuntu 9.10 have netns support turned on in their default kernels.
+You do not need to patch your kernel in order to use network namespaces. Modern distros such as Ubuntu 10.04 and Fedora 13 have netns support turned on in their default kernels.
 
 = CORE Namespaces HOWTO =
 
-The development snapshot of CORE supports network namespaces for virtualization and does not require OpenVZ. The next 4.0 release of CORE will feature this support. Until that release is completed you can try the development snapshot:
+The development snapshot of CORE supports network namespaces for virtualization and does not require OpenVZ. The next 4.0 release of CORE (July 2010) will feature this support. Until that release is completed you can try the development snapshot:
 
- # install Fedora 12 or Ubuntu 9.10 (namespace support is built-in!)<br>note that for simplicity, the Fedora 12 instructions (package names, etc.) are shown below
+ # install Ubuntu 10.04 or 9.10, or Fedora 13 or 12 (namespace support is built-in!)<br>note that for simplicity, the Fedora 12 instructions (package names, etc.) are shown below
  # freshen your kernel version using {{{ yum update }}}
  # install the packages required to compile CORE:
    {{{ yum install autoconf automake bash bridge-utils ebtables gcc libev-devel libtool make pkgconfig python-devel readline-devel sudo tcl tk urw-fonts xauth xorg-x11-server-utils xterm }}}
