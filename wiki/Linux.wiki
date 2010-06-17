@@ -2,13 +2,13 @@
 
 = CORE for Linux =
 
-In addition to lightweight FreeBSD vimages, your CORE emulation can run in a Linux environment using OpenVZ containers. This page is for documenting tips and tricks before text is written for the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
+In addition to lightweight FreeBSD jails, your CORE emulation can run in a Linux environment using Linux network namespace or OpenVZ containers. This page is for documenting tips and tricks before text is written for the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
 
-Note that a majority of the useful documentation will be available from the [http://www.openvz.org OpenVZ] website.
+Note that a majority of the useful OpenVZ documentation will be available from the [http://www.openvz.org OpenVZ] website.
 
+ * Linux Network [Namespaces] and CORE
  * [LinuxInstall Instructions for installing CORE on Linux OpenVZ]
  * [LinuxOpenVZTemplateCreation Instructions for creating your own template cache]
  * [AddingApplicationsToOpenVz Adding applications to OpenVZ containers]
- * [LinuxOpenVZNetworkAccess Container access to the external network]
- * [Fedora] installation tips
- * Linux Network [Namespaces]  and CORE
+ * [LinuxOpenVZNetworkAccess OpenVZ container access to the external network]
+ * [Fedora] OpenVZ installation tips
