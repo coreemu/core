@@ -1,0 +1,27 @@
+#summary All about installing custom kernels.
+
+= FreeBSD =
+
+A small patch is required to the standard FreeBSD 8.x kernel for running CORE. See the FreeBSD installation instructions for recompiling the kernel.
+
+= Linux OpenVZ =
+
+OpenVZ is available only as a non-standard (not the mainline) kernel; see the OpenVZ installation instructions for installing these kernels.
+
+= Linux Network Namespaces =
+
+== Running a custom kernel on Ubuntu ==
+
+The example here is installing the 2.6.35-rc4 kernel on Ubuntu 10.04. Normally 10.04 (Lucid) gives you a 2.6.32 kernel, but the 2.6.35 kernel features improved namespace support for netlink and iptables (thanks to patches submitted by Tom Goff.) This will allow us to run SMF for example, using netlink queueing to capture packets, and allows using the `tc` command for applying QoS rules.
+
+ # add the [https://launchpad.net/~kernel-ppa/+archive/ppa PPA for Ubuntu Kernel] to your system. Follow the link for more instructions.
+{{{
+sudo add-apt-repository ppa:kernel-ppa/ppa
+}}}
+   If you are behind a firewall/proxy, the above command will likely fail to import the key from the keyserver. Solution can be found here [http://www.linuxquestions.org/questions/linux-software-2/adding-ppa-key-to-apt-748592/]
+ # install the new kernel
+{{{
+# on 2010-07-07 this installed linux-image-2.6.35-7-generic
+sudo apt-get install linux-image-generic-lts-backport-maverick
+}}}
+ # reboot to enable the new kernel; with the new GRUB 2, you need to hold down SHIFT if you want to interrupt startup and select a kernel.
