@@ -10,7 +10,9 @@ OpenVZ is available only as a non-standard (not the mainline) kernel; see the Op
 
 = Linux Network Namespaces =
 
-== Running a custom kernel on Ubuntu ==
+== Running a custom kernel PPA on Ubuntu ==
+
+PPA = Personal Package Archive, an unsupported/bleeding-edge repository of deb packages.
 
 The example here is installing the 2.6.35-rc4 kernel on Ubuntu 10.04. Normally 10.04 (Lucid) gives you a 2.6.32 kernel, but the 2.6.35 kernel features improved namespace support for netlink and iptables (thanks to patches submitted by Tom Goff.) This will allow us to run SMF for example, using netlink queueing to capture packets, and allows using the `tc` command for applying QoS rules.
 
@@ -25,3 +27,8 @@ sudo add-apt-repository ppa:kernel-ppa/ppa
 sudo apt-get install linux-image-generic-lts-backport-maverick
 }}}
  # reboot to enable the new kernel; with the new GRUB 2, you need to hold down SHIFT if you want to interrupt startup and select a kernel.
+
+== Building a custom Ubuntu kernel ==
+Follow the directions here:
+ * https://wiki.ubuntu.com/KernelTeam/GitKernelBuild
+ * when running `make oldconfig` watch out for "CONFIG_X86_MRST=y" on 2.6.35 and set it to "n", or keyboard/mouse may be disabled ([http://ubuntuforums.org/showthread.php?p=9562261 thread])
