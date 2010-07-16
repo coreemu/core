@@ -6,7 +6,7 @@ Here are easy EMANE instructions for Fedora 12 i386. Replace with "x86_64" if ne
 
 {{{
 # install dependencies
-yum -y install perl-XML-Simple perl-XML-LibXML
+yum -y install openssl-devel perl-XML-Simple perl-XML-LibXML
 # download and install EMANE 0.6.3
 wget http://labs.cengen.com/emane/download/RPMS/F12/0.6.3/i386/emane-bundle-0.6.3.fc12.i386.tgz
 mkdir emane-0.6.3
