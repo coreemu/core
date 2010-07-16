@@ -1,0 +1,30 @@
+#summary CORE and the EMANE emulator
+
+= Easy EMANE Install =
+
+Here are easy EMANE instructions for Fedora 12 i386. Replace with "x86_64" if needed.
+
+{{{
+# install dependencies
+yum -y install perl-XML-Simple perl-XML-LibXML
+# download and install EMANE 0.6.3
+wget http://labs.cengen.com/emane/download/RPMS/F12/0.6.3/i386/emane-bundle-0.6.3.fc12.i386.tgz
+mkdir emane-0.6.3
+cd emane-0.6.3
+tar xzf ../emane-bundle-0.6.3.fc12.i386.tgz
+# ACE libs must be installed first
+rpm -ivh ace*
+rm ace*
+rpm -ivh *
+}}} 
+
+
+= Easy EMANE Uninstall =
+
+Remove everything with one command:
+
+{{{
+rpm -e `rpm -qa | grep -i emane | xargs`
+}}}
+
+Don't forget about the ACE libraries.
