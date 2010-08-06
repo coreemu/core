@@ -2,17 +2,69 @@
 
 = Quickstart =
 
-CORE version 3.5 requires the FreeBSD or Linux operating systems. Version 4.0 is coming soon (July 2010), uses Linux network namespace containers that doesn't require a kernel patch -- follow this [http://code.google.com/p/coreemu/wiki/Namespaces Namespaces link] to compile and install CORE for Linux namespaces from a development snapshot.
+Under construction.
 
-|| *FreeBSD* || *Linux* ||
-|| Step 1. Install FreeBSD 7.x or 8.x<br> http://hipserver.mct.phantomworks.org/core/images/cd_48.png  *7.2-RELEASE-i386-dvd1.iso* (2.1 gb)<br>[ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/7.2/]<br>Burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. || Step 1. Install CentOS Linux 5.4<br> http://hipserver.mct.phantomworks.org/core/images/cd_48.png  *CentOS-5.4-i386-bin-DVD.iso* (4.4 gb)<br> [http://isoredirect.centos.org/centos/5/isos/i386/]<br>Burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. ||
-|| Step 2. Install prerequisite packages<br>`# pkg_add -r tk85 sudo bash` <br> <br>Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-FreeBSD.html manual] for more details. <br><br><br><br><br><br><br><br><br><br><br> || Step 2. Install prerequisite packages, [http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-3.noarch.rpm EPEL repo] and [http://wiki.openvz.org/Quick_installation#yum_pre-setup OpenVZ]<br> `# yum install bridge-utils iproute tcl.i386 tk.i386`<br> `# rpm -Uvh epel-release-5-3.noarch.rpm`<br> `# yum install ebtables`<br> `# cd /etc/yum.repos.d` <br> `# wget http://download.openvz.org/openvz.repo` <br>`# wget http://download.openvz.org/RPM-GPG-Key-OpenVZ` <br>`# rpm --import RPM-GPG-Key-OpenVZ` <br>`# yum install ovzkernel vzctl`<br><br>edit `/etc/grub.conf` to give your new OpenVZ kernel a name other than CentOS<br>edit the `/etc/sysctl.conf` and `/etc/sysconfig/selinux` files as described on [http://wiki.openvz.org/Quick_installation this page] <br>edit `/etc/vz/vz.conf` and change `DISK_QUOTA=no` and `IPV6="yes"`<br>disable host firewalls with `chkconfig ip[6]tables off`<br><br> Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-Linux.html manual] for more details. ||
-|| Step 3. Download and install the CORE packages<br> http://hipserver.mct.phantomworks.org/core/images/box_download_48.png [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-kernel-7.x-20090505.tbz core-kernel-7.x-20090505.tbz] (47 MB) <br>  [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-7.x-3.5.tbz core-7.x-3.5.tbz] (600 KB)<br> [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>`# pkg_add core-kernel-7.x-20090505.tbz`<br>`# pkg_add core-7.x-3.5.tbz`<br>`# pkg_add quagga-manetmdr-0.99.9_5.tbz`|| Step 3. Download and install the CORE packages<br> http://hipserver.mct.phantomworks.org/core/images/box_download_48.png [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/linux/core-3.5-1.i386.rpm core-3.5-1.i386.rpm] (697 KB)<br>[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/linux/core-root-3.5-1.i386.rpm core-root-3.5-1.i386.rpm] (208 MB)<br>`# rpm -ivh core-3.5-1.i386.rpm` <br>`# rpm -ivh core-root-3.5-1.i386.rpm` <br><br><br> ||
-|| Step 4. Reboot and start the CORE daemons<br>`sudo /usr/local/etc/rc.d/core onestart` || Step 4. Reboot and start the CORE daemons<br>`sudo /etc/init.d/core start` ||
-|| Step 5. Run the CORE GUI from X11<br>`sudo core &` || Step 5. Run the CORE GUI from X11<br>`sudo core &` ||
+= FreeBSD Quickstart =
+ 
+== Step 1. Install FreeBSD 8.x ==
+[ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/8.1/]<br>
+[ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/ISO-IMAGES/8.1/]<br>
+Download and burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. 
 
+== Step 2. Install prerequisite packages ==
+`# pkg_add -r tk85 sudo bash` <br>
+Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-FreeBSD.html manual] for more details. <br>
+ 
+== Step 3. Download and install the CORE packages ==
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-kernel-7.x-20090505.tbz core-kernel-7.x-20090505.tbz] (47 MB) <br>
+  [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-7.x-3.5.tbz core-7.x-3.5.tbz] (600 KB)<br>
+ [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>
+`# pkg_add core-kernel-7.x-20090505.tbz`<br>
+`# pkg_add core-7.x-3.5.tbz`<br>
+`# pkg_add quagga-manetmdr-0.99.9_5.tbz`
 
+== Step 4. Reboot and start the CORE daemons ==
+`sudo /usr/local/etc/rc.d/core onestart` 
+
+== Step 5. Run the CORE GUI from X11 ==
+`sudo core &` 
+
+= OpenVZ Quickstart =
+
+== Step 1. Install CentOS Linux 5.5 ==
+[http://isoredirect.centos.org/centos/5/isos/i386/]<br>
+[http://isoredirect.centos.org/centos/5/isos/x86_64/]<br>
+Download and burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. 
+
+== Step 2. Install prerequisite packages ==
+[http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-3.noarch.rpm EPEL repo] and [http://wiki.openvz.org/Quick_installation#yum_pre-setup OpenVZ]<br>
+ `# yum install bridge-utils iproute tcl.i386 tk.i386`<br>
+ `# rpm -Uvh epel-release-5-3.noarch.rpm`<br>
+ `# yum install ebtables`<br>
+ `# cd /etc/yum.repos.d` <br>
+ `# wget http://download.openvz.org/openvz.repo` <br>
+`# wget http://download.openvz.org/RPM-GPG-Key-OpenVZ` <br>
+`# rpm --import RPM-GPG-Key-OpenVZ` <br>
+`# yum install ovzkernel vzctl`<br>
 <br>
+edit `/etc/grub.conf` to give your new OpenVZ kernel a name other than CentOS<br>
+edit the `/etc/sysctl.conf` and `/etc/sysconfig/selinux` files as described on [http://wiki.openvz.org/Quick_installation this page] <br>
+edit `/etc/vz/vz.conf` and change `DISK_QUOTA=no` and `IPV6="yes"`<br>
+disable host firewalls with `chkconfig ip[6]tables off`<br>
+<br>
+Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-Linux.html manual] for more details. 
+
+== Step 3. Download and install the CORE packages ==
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/linux/core-openvz-4.0-1.i386.rpm core-openvz-4.0-1.i386.rpm] (697 KB)<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/linux/core-root-3.5-1.i386.rpm core-root-3.5-1.i386.rpm] (208 MB)<br>
+`# rpm -ivh core-openvz-4.0-1.i386.rpm` <br>
+`# rpm -ivh core-root-3.5-1.i386.rpm` <br>
+ 
+== Step 4. Reboot and start the CORE daemons ==
+`sudo /etc/init.d/core start` 
+
+== Step 5. Run the CORE GUI from X11 ==
+`sudo core &` 
 
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
