@@ -4,7 +4,7 @@
 
 CORE 4.0 packages are available for Ubuntu 10.04 and Fedora 12/13. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces.
 
-== Step 1. Install CORE packages ==
+== Step 1. Install CORE package ==
 
 Get the Ubuntu (deb) or Fedora (rpm) package for your architecture from here:<br>
 [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/linux/]
@@ -33,8 +33,18 @@ Virtual networks usually require routing software. CORE automatically builds con
 }}}
 
 == Step 2. Start the CORE services ==
+{{{
+  sudo /etc/init.d/core start
+}}}
+
+To view the CORE services log file, look at `/var/log/coredpy.log`.
 
 == Step 3. Run CORE ==
+{{{
+  core
+}}}
+
+You may be prompted for write permissions for the `/etc/core` directory. You'll also see warnings about missing conf files the first time you run the CORE GUI.
 
 
 = FreeBSD Quickstart =
