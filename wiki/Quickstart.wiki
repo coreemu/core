@@ -46,6 +46,8 @@ To view the CORE services log file, look at `/var/log/coredpy.log`.
 
 You may be prompted for write permissions for the `/etc/core` directory. You'll also see warnings about missing conf files the first time you run the CORE GUI.
 
+The sample topology `/etc/core/configs/sample1.imn` will test that CORE and OSPF MDR Quagga are correctly installed.
+
 
 = FreeBSD Quickstart =
 
