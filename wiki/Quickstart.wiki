@@ -10,12 +10,27 @@ Get the Ubuntu (deb) or Fedora (rpm) package for your architecture from here:<br
 [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/linux/]
 
 Use your package manager to automatically install dependencies:<br>
-`gdebi-gtk core_4.0-0ubuntu1_i386.deb` <br>
-`su; yum localinstall core-4.0rc2-1.i686.rpm --nogpgcheck`<br>
+{{{
+  # Ubuntu users
+  gdebi-gtk core_4.0-0ubuntu1_i386.deb
+  # Fedora users
+  su
+  yum localinstall core-4.0rc2-1.i686.rpm --nogpgcheck
+}}}
 
-Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MANET MDR configs, available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
-`sudo apt-get install quagga` or `gdebi-gtk quagga-mr_0.99.16mr1.0_i386.deb`<br>
-'su; yum install quagga` or `su; yum localinstall quagga-0.99.16mr1.0-01.i386.rpm --nogpgcheck`<br>
+Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, a modified version of Quagga available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
+{{{
+  # Ubuntu - vanilla Quagga
+  sudo apt-get install quagga
+  # Ubuntu - OSPF MDR Quagga
+  gdebi-gtk quagga-mr_0.99.16mr1.0_i386.deb
+  # Fedora - vanilla Quagga
+  su
+  yum install quagga
+  # Fedora - OSPF MDR Quagga
+  su
+  yum localinstall quagga-0.99.16mr1.0-01.i386.rpm --nogpgcheck
+}}}
 
 == Step 2. Start the CORE services ==
 
