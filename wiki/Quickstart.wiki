@@ -2,27 +2,47 @@
 
 = Quickstart =
 
-Under construction.
-Test
+CORE 4.0 packages are available for Ubuntu 10.04 and Fedora 12/13. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces.
+
+== Step 1. Install CORE packages ==
+
+Get the Ubuntu (deb) or Fedora (rpm) package for your architecture from here:<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/linux/]
+
+Use your package manager to automatically install dependencies:<br>
+`gdebi-gtk core_4.0-0ubuntu1_i386.deb` <br>
+`su; yum localinstall core-4.0rc2-1.i686.rpm --nogpgcheck`<br>
+
+Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MANET MDR configs, available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
+`sudo apt-get install quagga` or `gdebi-gtk quagga-mr_0.99.16mr1.0_i386.deb`<br>
+'su; yum install quagga` or `su; yum localinstall quagga-0.99.16mr1.0-01.i386.rpm --nogpgcheck`<br>
+
+== Step 2. Start the CORE services ==
+
+== Step 3. Run CORE ==
+
 
 = FreeBSD Quickstart =
+
+Follow these quickstart instructions only if you want to use the FreeBSD version of CORE. The Linux version is now recommended and much easier to install.
  
-== Step 1. Install FreeBSD 8.x ==
+== Step 1. Install FreeBSD 8.1 ==
 [ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/8.1/]<br>
 [ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/ISO-IMAGES/8.1/]<br>
 Download and burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. 
 
 == Step 2. Install prerequisite packages ==
 `# pkg_add -r tk85 sudo bash` <br>
+
 Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-FreeBSD.html manual] for more details. <br>
  
 == Step 3. Download and install the CORE packages ==
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-kernel-7.x-20090505.tbz core-kernel-7.x-20090505.tbz] (47 MB) <br>
-  [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-7.x-3.5.tbz core-7.x-3.5.tbz] (600 KB)<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-8.x-amd64-4.0.tbz core-8.x-amd64-4.0.tbz]<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-kernel-7.x-20090505.tbz core-kernel-7.x-20090505.tbz] (47 MB)<br>
+(Note that a newer FreeBSD 8.1 CORE kernel is not yet available; follow the instructions in the [http://hipserver.mct.phantomworks.org/core/manual/Installing-from-Source.html manual] to compile your own custom kernel.)
  [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>
-`# pkg_add core-kernel-7.x-20090505.tbz`<br>
-`# pkg_add core-7.x-3.5.tbz`<br>
-`# pkg_add quagga-manetmdr-0.99.9_5.tbz`
+(Note that a newer Quagga MANET MDR 0.99.16 package is not yet available; follow the instructions in the manual to compile Quagga from source.)
+`# pkg_add core-8.x-amd64-4.0.tbz`<br>
 
 == Step 4. Reboot and start the CORE daemons ==
 `sudo /usr/local/etc/rc.d/core onestart` 
@@ -31,6 +51,8 @@ Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software
 `sudo core &` 
 
 = OpenVZ Quickstart =
+
+Follow these quickstart instructions only if you want to use the OpenVZ version of CORE. The Linux version is now recommended and much easier to install.
 
 == Step 1. Install CentOS Linux 5.5 ==
 [http://isoredirect.centos.org/centos/5/isos/i386/]<br>
