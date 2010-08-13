@@ -4,7 +4,7 @@
 
 CORE is a great tool for building large network emulation topologies to experiment with quagga routing.  This guide is for users who want to play with possibly multiple or non-default versions of [http://www.quagga.net quagga routing] using CORE.
 
-This page is specific to OpenVZ version of CORE.
+_*This page is specific to the OpenVZ version of CORE.*_
 
 = Default settings =
 
