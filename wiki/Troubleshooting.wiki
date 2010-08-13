@@ -1,11 +1,18 @@
 #summary Troubleshooting
 
 == General ==
- * *debugging commands:*
+ * general troubleshooting tips will go here
+
+== Linux version ==
+ * *log files:*
+   * `/var/log/coredpy.log` - CORE Python daemon log file
+   * `/tmp/pycore.nnnnn/nX.log` - each node has a log file (where `nnnnn` is session number and `X` is the node number)
+
+== Linux OpenVZ version ==
+ * *log files:*
    * `/var/log/cored.log` - CORE daemon log file may contain error messages
    * `/var/log/coreexecd.log` - CORE execution daemon log file may indicate failed jobs, those commands exiting with a non-zero status
 
-== Linux OpenVZ version ==
 
  * *debugging commands:*
    * `vzlist` - lists all running containers
