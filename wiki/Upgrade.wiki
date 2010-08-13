@@ -7,6 +7,10 @@ Other CORE settings are saved in `/etc/core/plugins.conf` and `/etc/core/servers
 
 Be sure to save any configuration files you may have saved from the system-wide directory `/usr/local/lib/core/configs`. Starting with version 3.4, CORE uses a default configuration file path of `/etc/core/configs` (`/usr/local/etc/core/configs` on FreeBSD).
 
+= Linux upgrade =
+Use the Synaptic/dpkg (Ubuntu) or yum/rpm (Fedora) package managers to uninstall the old packages and install the new ones.
+
+
 = FreeBSD upgrade =
 Use the `pkg_add` and `pkg_remove` FreeBSD utilities to remove the old CORE packages and install the new ones.
 
@@ -39,8 +43,8 @@ pkg_add quagga-manetmdr-0.99.9_5.tbz
 }}}
   # Reboot to the new kernel, and you are ready to start using the new version of CORE.
 
-= Linux upgrade =
-Use the RPM package manager to uninstall the old packages and install the ones.
+= OpenVZ upgrade =
+Use the RPM package manager to uninstall the old packages and install the new ones.
   # Save any configuration files you may have. Note that installing a new core-root package will cause any changes to your old core-root to be lost (for example, if you installed new programs in the root image).
   # List which CORE packages you have installed:
 {{{
