@@ -1,6 +1,6 @@
 #summary Page about VCORE, the CORE virtual machine
 
-This page is dedicated to tips for VCORE, the CORE virtual machine. Currently VCORE is provided using a VMware vmx and vmdk format because it seems to have the best support from virtualization tools (VMware Server, VMware Player, VirtualBox, Parallels, etc.) USing the OVF format would be nice but experience has shown limited and broken support from these tools.
+This page is dedicated to tips for VCORE, the CORE virtual machine. Currently VCORE is provided using a VMware vmx and vmdk format because it seems to have the best support from virtualization tools (VMware Server, VMware Player, VirtualBox, Parallels, etc.). Using the OVF format would be nice but experience has shown limited and broken support from these tools.
 
 We recommend using [http://www.virtualbox.org VirtualBox] for running VCORE.
 
@@ -15,10 +15,12 @@ Unzip vcore-4.0.zip and put the vmdk disk file into your HardDisks directory (or
 {{{
 unzip vcore-4.0.zip
 mv vcore-4.0/vcore.vmdk ~/.VirtualBox/HardDisks
+less vcore-4.0/vcore-4.0-README.txt
+rm -rf vcore-4.0/
 }}}
 
 Create a new machine in VirtualBox. Use the name "VCORE 4.0" or another name of your choosing. Select Ubuntu Linux as the operating system type. Configure the base memory size as at least 1GB RAM (2GB if you can spare it). For Virtual Hard Disk, choose "Use existing hard disk" and add the vcore.vmdk file to your Virtual Media Manager.
 
 Under settings you may want to configure  at least 2 processors if you have a multi-processor machine.
 
-The machine should boot to the Ubuntu desktop.
+The machine should boot to the Ubuntu desktop when powered on.
