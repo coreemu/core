@@ -1,0 +1,24 @@
+#summary Page about VCORE, the CORE virtual machine
+
+This page is dedicated to tips for VCORE, the CORE virtual machine. Currently VCORE is provided using a VMware vmx and vmdk format because it seems to have the best support from virtualization tools (VMware Server, VMware Player, VirtualBox, Parallels, etc.) USing the OVF format would be nice but experience has shown limited and broken support from these tools.
+
+We recommend using [http://www.virtualbox.org VirtualBox] for running VCORE.
+
+= Disclaimer =
+Please heed the disclaimer posted on the [Quickstart] page and in the [http://hipserver.mct.phantomworks.org/core/manual/VMware.html CORE manual]. The virtual machine is really for evaluation purposes and not for serious work. You should really set up a Ubuntu or Fedora Linux machine. It's not too difficult.
+
+_Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the VMware virtual display._
+
+= Importing VCORE into VirtualBox =
+
+Unzip vcore-4.0.zip and put the vmdk disk file into your HardDisks directory (or wherever you please):
+{{{
+unzip vcore-4.0.zip
+mv vcore-4.0/vcore.vmdk ~/.VirtualBox/HardDisks
+}}}
+
+Create a new machine in VirtualBox. Use the name "VCORE 4.0" or another name of your choosing. Select Ubuntu Linux as the operating system type. Configure the base memory size as at least 1GB RAM (2GB if you can spare it). For Virtual Hard Disk, choose "Use existing hard disk" and add the vcore.vmdk file to your Virtual Media Manager.
+
+Under settings you may want to configure  at least 2 processors if you have a multi-processor machine.
+
+The machine should boot to the Ubuntu desktop.
