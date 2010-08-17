@@ -59,17 +59,17 @@ Follow these quickstart instructions only if you want to use the FreeBSD version
 Download and burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. 
 
 == Step 2. Install prerequisite packages ==
-`# pkg_add -r tk85 sudo bash` <br>
+`# pkg_add -r tk85 libimg sudo bash` <br>
 
 Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-FreeBSD.html manual] for more details. <br>
  
 == Step 3. Download and install the CORE packages ==
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-8.x-amd64-4.0.tbz core-8.x-amd64-4.0.tbz]<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/core-kernel-7.x-20090505.tbz core-kernel-7.x-20090505.tbz] (47 MB)<br>
-(Note that a newer FreeBSD 8.1 CORE kernel is not yet available; follow the instructions in the [http://hipserver.mct.phantomworks.org/core/manual/Installing-from-Source.html manual] to compile your own custom kernel.)
- [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>
-(Note that a newer Quagga MANET MDR 0.99.16 package is not yet available; follow the instructions in the manual to compile Quagga from source.)
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-8.x-amd64-4.0.tbz core-8.x-amd64-4.0.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-8.x-i386-4.0.tbz i386])<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-kernel-8.x-amd64.tbz core-kernel-8.x-amd64.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-kernel-8.x-i386.tbz i386])<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>
+(Note that a newer Quagga MANET MDR 0.99.16 package is not yet available; follow the instructions in the manual to compile Quagga 0.99.16 from [http://cs.itd.nrl.navy.mil/work/ospf-manet/index.php source].)<br>
 `# pkg_add core-8.x-amd64-4.0.tbz`<br>
+`# pkg_add core-kernel-8.x-amd64.tbz`<br>
 
 == Step 4. Reboot and start the CORE daemons ==
 `sudo /usr/local/etc/rc.d/core onestart` 
