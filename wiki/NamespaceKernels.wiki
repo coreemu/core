@@ -1,0 +1,12 @@
+#summary List of known good/bad kernels.
+
+This page lists known good/bad kernels for the [Namespaces] version of CORE.
+
+= Known good kernels =
+ 
+  * 2.6.32
+  * 2.6.33
+
+= Known bad kernels =
+
+  * 2.6.34 and 2.6.35 seem to have problems ([http://www.spinics.net/lists/netdev/msg137122.html possibly related problem]) as reported by users [http://pf.itd.nrl.navy.mil/pipermail/core-users/2010-September/000269.html here].
