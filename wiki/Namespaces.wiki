@@ -11,7 +11,7 @@ You do not need to patch your kernel in order to use network namespaces. Modern 
 = CORE Namespaces HOWTO =
 CORE 4.0 supports network namespaces now. You can now follow the instructions in the manual or the [Quickstart] page. *Below are old instructions for using the development snapshot:*
 
- # install Ubuntu 10.04 or 9.10, or Fedora 13 or 12 (namespace support is built-in!) If you already have Linux installed you can check your kernel version to see if it supports network namespace virtualization:
+ # install Ubuntu 10.04 or 9.10, or Fedora 13 or 12 (namespace support is built-in!) If you already have Linux installed you can check [NamespaceKernels your kernel version] to see if it supports network namespace virtualization:
 {{{
 # Linux kernel version: is this number >= 2.6.27?
 $ uname -r
