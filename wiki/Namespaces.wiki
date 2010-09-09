@@ -40,7 +40,7 @@ yum install autoconf automake bash bridge-utils ebtables \
      xorg-x11-server-utils xterm
 }}}
  # Fedora only: turn off SELINUX by setting `SELINUX=disabled` in `/etc/sysconfig/selinux`; turn off iptables and ip6tables firewalls (`chkconfig iptables off`,`chkconfig ip6tables off`) or you will need to configure permissive rules for CORE; turn on IP forwarding in `/etc/sysctl.conf` (`net.ipv4.ip_forward = 1`, `net.ipv6.conf.all.forwarding = 1`)
- # install Quagga; if you are building it from source, we recommend [http://downloads.pf.itd.nrl.navy.mil/ospf-manet/ quagga-0.99.16-mr1.0], you should configure it to use state directories with CORE:
+ # install Quagga; we recommend [http://downloads.pf.itd.nrl.navy.mil/ospf-manet/ quagga-0.99.16-mr1.0] for the OSPF MANET models.  If building from source on your host system, you should configure it to use state directories with CORE:
 {{{
 ./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
      	    --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
