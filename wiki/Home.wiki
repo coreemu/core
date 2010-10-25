@@ -20,5 +20,6 @@ Other guides and tips
 
 Citations
 
-Academic publications that use CORE are requested to cite the following publication:
+Academic publications that use CORE are requested to cite one of the following publications:
+ * J. Ahrenholz, Comparison of CORE Network Emulation Platforms, Proceedings of IEEE MILCOM Conference, 2010.
  * J. Ahrenholz, C. Danilov, T. Henderson, and J.H. Kim, CORE: A real-time network emulator, Proceedings of IEEE MILCOM Conference, 2008.
