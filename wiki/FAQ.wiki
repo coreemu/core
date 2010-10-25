@@ -16,6 +16,12 @@ CORE is open source software, licensed under the [http://en.wikipedia.org/wiki/B
 
 == 4. Are there any technical publications about CORE? ==
 
+A comparison of the CORE FreeBSD, OpenVZ, and netns platforms was published in the IEEE MILCOM 2010 Conference:
+
+Comparison of CORE Network Emulation Platforms<br>
+by: Jeff Ahrenholz<br>
+Military Communications Conference, 2010. MILCOM 2010. IEEE (2010), pp. 1-6
+
 An overview of CORE was published in the IEEE MILCOM 2008 Conference:
 
 CORE: A real-time network emulator<br>
