@@ -8,7 +8,7 @@ See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html Prior
 
 == 2. Who maintains CORE? ==
 
-CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2009 through a project led by Jeff.  
+CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2010 through a project led by Jeff.  
 
 == 3. How does CORE differ from IMUNES? ==
 
