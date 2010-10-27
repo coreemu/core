@@ -6,6 +6,7 @@ This page lists known good/bad kernels for the [Namespaces] version of CORE.
  
   * 2.6.32
   * 2.6.33
+  * 2.6.35.7 (Arch Linux)
 
 = Known bad kernels =
 
