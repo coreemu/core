@@ -1,8 +1,12 @@
 #summary this page collects references on scaling time for network emulation
 
-This page collects references on scaling time for network emulation.
-
 = References =
+
+ * VAN Testbed - Telcordia/CERDEC
+   Modified Xen hypervisor monitors Discrete Event Simulator (DES) clock to provide VMs with a _slowdown factor_. <br>
+   http://portal.acm.org/citation.cfm?id=1831353 <br>
+   http://portal.acm.org/citation.cfm?id=1857024 <br>
+   http://www.computer.org/portal/web/csdl/doi/10.1109/TRIDENTCOM.2009.4976204
 
  * DieCast - _time dilation_
    Modified Xen hypervisor to make time appear slower to guest OS.<br>
