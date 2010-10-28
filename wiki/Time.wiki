@@ -1,0 +1,14 @@
+#summary this page collects references on scaling time for network emulation
+
+This page collects references on scaling time for network emulation.
+
+= References =
+
+ * DieCast - _time dilation_
+   Modified Xen hypervisor to make time appear slower to guest OS.<br>
+   http://www.usenix.org/event/nsdi08/tech/gupta.html <br>
+   http://cseweb.ucsd.edu/~kyocum/pubs/P2P-2009.pdf
+
+ * Linux Time namespace
+   Add a time namespace to the Linux kernel, allowing for gettimeofday() offsets.<br>
+   http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
