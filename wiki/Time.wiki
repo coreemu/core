@@ -8,11 +8,12 @@
    http://portal.acm.org/citation.cfm?id=1857024 <br>
    http://www.computer.org/portal/web/csdl/doi/10.1109/TRIDENTCOM.2009.4976204
 
- * DieCast - _time dilation_
+ * DieCast - UCSD
+   _time dilation_ <br>
    Modified Xen hypervisor to make time appear slower to guest OS.<br>
    http://www.usenix.org/event/nsdi08/tech/gupta.html <br>
    http://cseweb.ucsd.edu/~kyocum/pubs/P2P-2009.pdf
 
- * Linux Time namespace
+ * Linux Time namespace - Jeff Dike (UML creator)
    Add a time namespace to the Linux kernel, allowing for gettimeofday() offsets.<br>
    http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
