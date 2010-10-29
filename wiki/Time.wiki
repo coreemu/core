@@ -17,3 +17,6 @@
  * Linux Time namespace - Jeff Dike (UML creator)
    Add a time namespace to the Linux kernel, allowing for gettimeofday() offsets.<br>
    http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
+
+ * Synchronized Network Emulation - RWTH Aachen University
+   http://portal.acm.org/citation.cfm?id=1453185
