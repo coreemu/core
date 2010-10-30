@@ -20,7 +20,7 @@ A comparison of the CORE FreeBSD, OpenVZ, and netns platforms was published in t
 
 Comparison of CORE Network Emulation Platforms<br>
 by: Jeff Ahrenholz<br>
-Military Communications Conference, 2010. MILCOM 2010. IEEE (2010), pp. 1-6
+Military Communications Conference, 2010. MILCOM 2010. IEEE (2010), pp. 864-869.
 
 An overview of CORE was published in the IEEE MILCOM 2008 Conference:
 
