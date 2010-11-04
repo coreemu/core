@@ -9,6 +9,8 @@ Messaging is asynchronous. Responses generally may be requested through message 
 
 = Quick Reference =
 
+*Note: this table has not been updated recently for API ver 1.16/1.17 *
+
 || *Message Type* || *Uses* ||
 || Node || Create, modify, and delete emulated nodes. Can move nodes around by including coordinates. ||
 || Link || Link nodes together, unlink them, or modify link parameters. ||
@@ -23,3 +25,8 @@ Messaging is asynchronous. Responses generally may be requested through message 
 
  * the current CORE API spec can be found in PDF format here: http://pf.itd.nrl.navy.mil/core/core_api.pdf
  * [APIExamples API Examples] shows samples of how the API is used
+
+= Archived API Spec =
+ * [http://hipserver.mct.phantomworks.org/core/files/CORE_API_1_14.pdf CORE_API_1_14.pdf]
+ * [http://hipserver.mct.phantomworks.org/core/files/CORE_API_1_15.pdf CORE_API_1_15.pdf]
+ * [http://hipserver.mct.phantomworks.org/core/files/CORE_API_1_16.pdf CORE_API_1_16.pdf]
