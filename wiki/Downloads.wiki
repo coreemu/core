@@ -1,0 +1,9 @@
+#summary link to NRL Downloads
+
+The primary CORE page with downloads is hosted by NRL.
+
+Source and package downloads:
+http://downloads.pf.itd.nrl.navy.mil/core/
+
+Website:
+http://cs.itd.nrl.navy.mil/work/core/
