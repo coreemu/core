@@ -1,4 +1,4 @@
-#summary link to NRL Downloads
+#summary link to downloads at NRL
 
 <table border="0">
 <tr><td>http://hipserver.mct.phantomworks.org/core/images/box_download_48.png</td>
