@@ -2,7 +2,8 @@
 
 <table border="0">
 <tr><td>http://hipserver.mct.phantomworks.org/core/images/box_download_48.png</td>
-<td>The primary CORE page with source is hosted by NRL.</td></tr>
+<td>The primary CORE page with source is hosted at NRL:</td></tr>
+<tr><td></td>
+<td>http://downloads.pf.itd.nrl.navy.mil/core/source/
+</td></tr>
 </table>
-
-http://downloads.pf.itd.nrl.navy.mil/core/source/
