@@ -10,6 +10,7 @@ This page lists known good/bad kernels for the [Namespaces] version of CORE.
 
 = Known bad kernels =
 
-  * 2.6.34 and 2.6.35 seem to have problems ([http://www.spinics.net/lists/netdev/msg137122.html possibly related problem]) as reported by users [http://pf.itd.nrl.navy.mil/pipermail/core-users/2010-September/000269.html here].
-  * 2.6.35.6-45.fc14.i686 (stock Fedora 14 kernel) does not work properly
-  * 2.6.35-22-generic (stock Ubuntu 10.10 kernel)
+  * Problem with IPv6 addressing in namespaces (CORE SVN snapshot has workaround):
+    * 2.6.34 and 2.6.35 seem to have problems ([http://www.spinics.net/lists/netdev/msg137122.html possibly related problem]) as reported by users [http://pf.itd.nrl.navy.mil/pipermail/core-users/2010-September/000269.html here].
+    * 2.6.35.6-45.fc14.i686 (stock Fedora 14 kernel) does not work properly
+    * 2.6.35-22-generic (stock Ubuntu 10.10 kernel)
