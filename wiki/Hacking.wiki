@@ -12,6 +12,12 @@ All contributions to the CORE project must adhere to these standards.
 *licensing* - CORE is BSD licensed. Only free software having the same or compatible licensing is accepted.
 
 *identifier naming conventions*
+ * Python:
+   * for the most part, follows the [http://www.python.org/dev/peps/pep-0008/ Python Style Guide]
+   * classes are CamelCase with uppercase first letter, example: `class CoreNode():`
+   * functions and class methods are all lowercase, words concatenated together, example: `def setposition(self, ...):`
+   * variable names are lowercase words, can have underscores; 
+   * constants are defined in all uppercase, with underscores separating words; defined constants should be used instead of magic numbers, example: `CORE_API_PORT = 4038`
  * Tcl/Tk: 
    * function names are CamelCase with a lowercase first letter, example: `proc findFreeIPv6Net { mask } {`
    * variable names are lowercase words, can have underscores; global variables that are not lists or arrays have a `g_` prefix, example: `set node_types "remote"; global g_prefs`
@@ -24,6 +30,7 @@ All contributions to the CORE project must adhere to these standards.
    * macros are defined in all caps with words combined together, example: `#define MAC2STR(addr) ...\`
 
 *indentation*
+ * Python: *four-space indenting* is used, using spaces and *not tabs*
  * Tcl/Tk: proc declarations are not indented; *four-space indenting* is used, with tabs used to represent each indentation of *eight spaces*; example
 {{{
 proc myProc { node } {
