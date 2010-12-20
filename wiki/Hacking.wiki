@@ -59,7 +59,16 @@ Lengthy string constants can be wrapped in the middle:
 
 *comments*
 
-Code should be commented to document its function. Tcl comments may appear at the end of lines where needed or on separate lines:
+Code should be commented to document its function.
+
+Python comments for the most part, follows the [http://www.python.org/dev/peps/pep-0008/ Python Style Guide]. Classes and methods are commented as follows:
+{{{
+    def setup(self):
+        ''' Client has connected, set up a new connection.
+        '''
+}}}
+
+Tcl comments may appear at the end of lines where needed or on separate lines:
 {{{
     # search all nodes for the value
     foreach node $node_list {
