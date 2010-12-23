@@ -1,7 +1,8 @@
 #summary Troubleshooting
 
 == General ==
- * general troubleshooting tips will go here
+ * first check the known issues under [ReleaseNotes] for the version of CORE you are using!
+ * also be sure to check out the [http://code.google.com/p/coreemu/issues/list bug tracker]
 
 == Linux version ==
  * *log files:*
