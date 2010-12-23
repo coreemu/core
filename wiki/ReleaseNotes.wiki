@@ -15,6 +15,17 @@ The high-level changes since version 4.0 are:
  * EMANE 0.6.4 support
  * numerous bugfixes
 
+Known issues with 4.1:
+ * kernel hanging under Ubuntu 10.10 [http://code.google.com/p/coreemu/issues/detail?id=38 issue 38]
+ * Tunnel node not implemented under FreeBSD [http://code.google.com/p/coreemu/issues/detail?id=37 issue 37]
+ * OSPF hellos become synchronized after running emulation for about one hour [http://code.google.com/p/coreemu/issues/detail?id=39 issue 39]
+ * CPU widget has been removed
+ * Mobility tool has been removed
+ * FreeBSD 8.1-RELEASE kernel warns "freed uma keg was not empty" and eventually crashes [issue 40]
+ * "no common network" error when reconnecting to a session having point-to-point links and trying to modify/delete these links
+ * imn files made from older CORE versions not working in 4.1; see the [http://coreemu.blogspot.com/2010/11/node-types-and-services.html announcement about new CORE services]
+
+
 
 = 4.0 =
 CORE 4.0 was released on 8/17/10.
