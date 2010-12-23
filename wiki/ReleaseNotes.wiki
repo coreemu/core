@@ -36,3 +36,6 @@ CORE 3.5 was released on 9/15/09.
 Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-September/000062.html 3.5 release announcement].
 
 = 3.4 =
+CORE 3.4 was released on 6/23/09.
+
+Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-June/000019.html 3.4 release announcement].
