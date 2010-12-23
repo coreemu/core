@@ -39,3 +39,8 @@ Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-September/0000
 CORE 3.4 was released on 6/23/09.
 
 Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-June/000019.html 3.4 release announcement].
+
+= 3.3 =
+CORE 3.3 was released on 3/11/09.
+
+Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-March/000010.html 3.3 release announcement].
