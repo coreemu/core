@@ -21,9 +21,10 @@ Known issues with 4.1:
  * OSPF hellos become synchronized after running emulation for about one hour [http://code.google.com/p/coreemu/issues/detail?id=39 issue 39]
  * CPU widget has been removed
  * Mobility tool has been removed
- * FreeBSD 8.1-RELEASE kernel warns "freed uma keg was not empty" and eventually crashes [issue 40]
+ * FreeBSD 8.1-RELEASE kernel warns "freed uma keg was not empty" and eventually crashes [http://code.google.com/p/coreemu/issues/detail?id=40 issue 40]
  * "no common network" error when reconnecting to a session having point-to-point links and trying to modify/delete these links
  * imn files made from older CORE versions not working in 4.1; see the [http://coreemu.blogspot.com/2010/11/node-types-and-services.html announcement about new CORE services]
+ * `sample1.imn` hanging under FreeBSD 8.1 with Quagga MDR 1.0. On node7, the `vtysh -b` command is blocking waiting for ospf6d, which seems to be waiting for a lock
 
 
 
