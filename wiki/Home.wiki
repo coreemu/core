@@ -7,7 +7,7 @@ This is the CORE wiki. It features tips and tricks and other bits of information
  * [Quickstart]: quickly get up-and-running with CORE
  * [Screenshots]
  * [FAQ]: Frequently Asked Questions
- * [RelatedWork Related Work]: table of emulation tools
+ * [ReleaseNotes] release notes and known issues
  * [API]: CORE Application Programming Interface
 
 Other guides and tips
