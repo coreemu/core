@@ -119,7 +119,7 @@ Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
  * CORE requires the Tcl/Tk packages, either version 8.4 or 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
- * For system requirements and tips on the install process, visit the [http://hipserver.mct.phantomworks.org/core/manual/Prerequisites.html Prerequisites] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual]; also refer to [http://www.freebsd.org], [http://www.centos.org], [http://www.openvz.org]
+ * For system requirements and tips on the install process, visit the [http://pf.itd.nrl.navy.mil/core/core-html/Prerequisites.html Prerequisites] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]; also refer to [http://www.freebsd.org], [http://www.centos.org], [http://www.openvz.org]
 
 
 = Other Options =
@@ -129,4 +129,4 @@ Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software
    # first install *4.11-RELEASE-i386-disc1-gnome.iso* (563 mb)<br>[ftp://ftp-archive.freebsd.org/pub/FreeBSD-Archive/old-releases/i386/ISO-IMAGES/4.11/]
    # then install from source or use the older *core-freebsd411-3.3.sh* (19 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/installer-complete/]
 
- * *Build from source* <br>To build a CORE machine *from scratch*, including patching and compiling your own CORE kernel, see the [http://hipserver.mct.phantomworks.org/core/manual/Installing-from-Source.html Installing from Source] page of the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual].
+ * *Build from source* <br>To build a CORE machine *from scratch*, including patching and compiling your own CORE kernel, see the [http://pf.itd.nrl.navy.mil/core/core-html/Installing-from-Source.html Installing from Source] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual].
