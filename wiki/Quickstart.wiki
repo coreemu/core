@@ -2,20 +2,20 @@
 
 = Quickstart =
 
-CORE 4.0 packages are available for Ubuntu 10.04 and Fedora 12/13. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces.
+CORE 4.1 packages are available for Ubuntu 10.10/10.04 and Fedora 12/13/14. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces.
 
 == Step 1. Install CORE package ==
 
 Get the Ubuntu (deb) or Fedora (rpm) package for your architecture from here:<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/linux/]
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.1/linux/]
 
 Use your package manager to automatically install dependencies:<br>
 {{{
   # Ubuntu users
-  gdebi-gtk core_4.0-0ubuntu1_i386.deb
+  gdebi-gtk core_4.1-0ubuntu1_i386.deb
   # Fedora users
   su
-  yum localinstall core-4.0-1.i686.rpm --nogpgcheck
+  yum localinstall core-4.1-1.fc14.i686.rpm --nogpgcheck
 }}}
 
 Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, a modified version of Quagga available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
@@ -64,11 +64,11 @@ Download and burn the ISO image to a blank DVDR using your CD writing software. 
 Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-FreeBSD.html manual] for more details. <br>
  
 == Step 3. Download and install the CORE packages ==
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-8.x-amd64-4.0.tbz core-8.x-amd64-4.0.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-8.x-i386-4.0.tbz i386])<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.1/freebsd/core-8.x-amd64-4.1.tbz core-8.x-amd64-4.1.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.1/freebsd/core-8.x-i386-4.1.tbz i386])<br>
 [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-kernel-8.x-amd64.tbz core-kernel-8.x-amd64.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-kernel-8.x-i386.tbz i386])<br>
 [http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>
 (Note that a newer Quagga MANET MDR 0.99.16 package is not yet available; follow the instructions in the manual to compile Quagga 0.99.16 from [http://cs.itd.nrl.navy.mil/work/ospf-manet/index.php source].)<br>
-`# pkg_add core-8.x-amd64-4.0.tbz`<br>
+`# pkg_add core-8.x-amd64-4.1.tbz`<br>
 `# pkg_add core-kernel-8.x-amd64.tbz`<br>
 
 == Step 4. Reboot and start the CORE daemons ==
