@@ -1,7 +1,7 @@
 #summary Changelog and notes about CORE releases.
 
 = 4.1 =
-CORE 4.1 was released on 1/??/11.
+CORE 4.1 was released on 1/5/11.
 
 The high-level changes since version 4.0 are:
  * new icons for toolbars and nodes
