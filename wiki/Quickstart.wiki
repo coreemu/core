@@ -11,8 +11,10 @@ Get the Ubuntu (deb) or Fedora (rpm) package for your architecture from here:<br
 
 Use your package manager to automatically install dependencies:<br>
 {{{
-  # Ubuntu users
+  # Ubuntu users (prior to 10.10)
   gdebi-gtk core_4.1-0ubuntu1_i386.deb
+  # Ubuntu 10.10 users (specify entire path)
+  software-center /home/user/Downloads/core_4.1-0ubuntu1_i386.deb
   # Fedora users
   su
   yum localinstall core-4.1-1.fc14.i686.rpm --nogpgcheck
