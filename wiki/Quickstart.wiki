@@ -50,79 +50,52 @@ You may be prompted for write permissions for the `/etc/core` directory. You'll 
 
 The sample topology `/etc/core/configs/sample1.imn` will test that CORE and OSPF MDR Quagga are correctly installed.
 
+= Source Quickstart =
+Follow these instructions to build CORE from source. Dependencies are automatically resolved when you use your package manager with the CORE packages shown above, but not when compiling from source.
 
-= FreeBSD Quickstart =
+== Step 1. Install prerequisite packages ==
+Ubuntu:
 
-Follow these quickstart instructions only if you want to use the FreeBSD version of CORE. The Linux version is now recommended and much easier to install.
- 
-== Step 1. Install FreeBSD 8.1 ==
-[ftp://ftp.freebsd.org/pub/FreeBSD/releases/i386/ISO-IMAGES/8.1/]<br>
-[ftp://ftp.freebsd.org/pub/FreeBSD/releases/amd64/ISO-IMAGES/8.1/]<br>
-Download and burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. 
+`sudo apt-get install bash bridge-utils ebtables iproute libev3 libtk-img python tcl8.5 tk8.5 xterm autoconf automake gcc libev-dev libtool make pkg-config python2.6-dev libreadline-dev`
 
-== Step 2. Install prerequisite packages ==
-`# pkg_add -r tk85 libimg sudo bash` <br>
+Fedora:
 
-Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-FreeBSD.html manual] for more details. <br>
- 
-== Step 3. Download and install the CORE packages ==
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.1/freebsd/core-8.x-amd64-4.1.tbz core-8.x-amd64-4.1.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.1/freebsd/core-8.x-i386-4.1.tbz i386])<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-kernel-8.x-amd64.tbz core-kernel-8.x-amd64.tbz] (or [http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/freebsd/core-kernel-8.x-i386.tbz i386])<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/freebsd/quagga-manetmdr-0.99.9_5.tbz quagga-manetmdr-0.99.9_5.tbz] (3 MB)<br>
-(Note that a newer Quagga MANET MDR 0.99.16 package is not yet available; follow the instructions in the manual to compile Quagga 0.99.16 from [http://cs.itd.nrl.navy.mil/work/ospf-manet/index.php source].)<br>
-`# pkg_add core-8.x-amd64-4.1.tbz`<br>
-`# pkg_add core-kernel-8.x-amd64.tbz`<br>
+`yum install bash bridge-utils ebtables libev python tcl tk tkimg urw-fonts xauth xorg-x11-server-utils xterm autoconf automake gcc libev-devel libtool make pkgconfig python-devel readline-devel`
 
-== Step 4. Reboot and start the CORE daemons ==
-`sudo /usr/local/etc/rc.d/core onestart` 
+This package list comes from 
+[http://pf.itd.nrl.navy.mil/core/core-html/Required-Software-for-Linux.html#Required-Software-for-Linux here].
 
-== Step 5. Run the CORE GUI from X11 ==
-`sudo core &` 
+== Step 2. Get and build the source ==
+You can get the latest SVN snapshot or a release version at the
+[http://downloads.pf.itd.nrl.navy.mil/core/source/ downloads page].
 
-= OpenVZ Quickstart =
+In this example, we download the SVN source snapshot [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/core-svnsnap.tgz core-svnsnap.tgz]
 
-Follow these quickstart instructions only if you want to use the OpenVZ version of CORE. The Linux version is now recommended and much easier to install.
+{{{
+  tar xzf core-svnsnap.tgz
+  cd core
+  ./bootstrap.sh
+  ./configure
+  make
+  sudo make install
+}}}
 
-== Step 1. Install CentOS Linux 5.5 ==
-[http://isoredirect.centos.org/centos/5/isos/i386/]<br>
-[http://isoredirect.centos.org/centos/5/isos/x86_64/]<br>
-Download and burn the ISO image to a blank DVDR using your CD writing software. Boot the DVD-ROM on your target system and follow the on-screen instructions. 
+== Step 3. Start the CORE daemon  ==
+`sudo cored.py`
 
-== Step 2. Install prerequisite packages ==
-[http://download.fedora.redhat.com/pub/epel/5/i386/epel-release-5-3.noarch.rpm EPEL repo] and [http://wiki.openvz.org/Quick_installation#yum_pre-setup OpenVZ]<br>
- `# yum install bridge-utils iproute tcl.i386 tk.i386`<br>
- `# rpm -Uvh epel-release-5-3.noarch.rpm`<br>
- `# yum install ebtables`<br>
- `# cd /etc/yum.repos.d` <br>
- `# wget http://download.openvz.org/openvz.repo` <br>
-`# wget http://download.openvz.org/RPM-GPG-Key-OpenVZ` <br>
-`# rpm --import RPM-GPG-Key-OpenVZ` <br>
-`# yum install ovzkernel vzctl`<br>
-<br>
-edit `/etc/grub.conf` to give your new OpenVZ kernel a name other than CentOS<br>
-edit the `/etc/sysctl.conf` and `/etc/sysconfig/selinux` files as described on [http://wiki.openvz.org/Quick_installation this page] <br>
-edit `/etc/vz/vz.conf` and change `DISK_QUOTA=no` and `IPV6="yes"`<br>
-disable host firewalls with `chkconfig ip[6]tables off`<br>
-<br>
-Consult the [http://hipserver.mct.phantomworks.org/core/manual/Required-Software-for-Linux.html manual] for more details. 
+For verbose debugging:
+`sudo cored.py -v`
 
-== Step 3. Download and install the CORE packages ==
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.0/linux/core-openvz-4.0-1.i386.rpm core-openvz-4.0-1.i386.rpm] (697 KB)<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/3.5/linux/core-root-3.5-1.i386.rpm core-root-3.5-1.i386.rpm] (208 MB)<br>
-`# rpm -ivh core-openvz-4.0-1.i386.rpm` <br>
-`# rpm -ivh core-root-3.5-1.i386.rpm` <br>
- 
-== Step 4. Reboot and start the CORE daemons ==
-`sudo /etc/init.d/core start` 
+Using the init script (messages go to `/var/log/coredpy.log`):
+`sudo /etc/init.d/core start`
 
-== Step 5. Run the CORE GUI from X11 ==
-`sudo core &` 
+== Step 4. Run the CORE GUI ==
+`core &` 
 
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
  * CORE requires the Tcl/Tk packages, either version 8.4 or 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
  * For system requirements and tips on the install process, visit the [http://pf.itd.nrl.navy.mil/core/core-html/Prerequisites.html Prerequisites] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]; also refer to [http://www.freebsd.org], [http://www.centos.org], [http://www.openvz.org]
-
 
 = Other Options =
  * *VMware image*<br>*Pros:* everything is already set up for you; one file to download.  *Cons:* poor performance; for quick evaluation only.<br>*vcore-3.5.zip* (1.3 gb) or *vcore-3.5-linux.zip* (850 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information.  See also the [http://code.google.com/p/coreemu/wiki/Troubleshooting troubleshooting page] for tips on configuring your kernel to avoid clock skew problems in the CentOs guest. _Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the VMware virtual display._
