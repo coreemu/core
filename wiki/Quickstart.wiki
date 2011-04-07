@@ -65,6 +65,9 @@ Fedora:
 This package list comes from 
 [http://pf.itd.nrl.navy.mil/core/core-html/Required-Software-for-Linux.html#Required-Software-for-Linux here].
 
+You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://cs.itd.nrl.navy.mil/work/ospf-manet/ OSPF MDR].
+
+
 == Step 2. Get and build the source ==
 You can get the latest SVN snapshot or a release version at the
 [http://downloads.pf.itd.nrl.navy.mil/core/source/ downloads page].
