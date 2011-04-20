@@ -1,7 +1,10 @@
 #summary Brief summary of related tools and links to those projects.
 
+_*Note:* this page is somewhat outdated, especially the latest release column!_
+
 = Related Work used in CORE =
 || *URL* || *Name* || *Description* || *Latest release* ||
+|| [http://labs.cengen.com/emane/ EMANE]<br> [http://cs.itd.nrl.navy.mil/work/emane/index.php EMANE at NRL] || EMANE || Extendable Mobile Ad-hoc Network Emulator can be used with CORE to provide higher-fidelity radio models ||   2011 ||
 ||[http://www.tel.fer.hr/imunes/ IMUNES]<br>[http://imunes.net IMUNES 2nd page] || Integrated MUltiprotocol Emulator/Simulator || Tcl/Tk GUI drives FreeBSD virtual network stacks. CORE is based on this open source project from the University of Zagreb. || 10-07-2007 ||
 || [http://www.openvz.org OpenVZ] || OpenVZ (Virtuozzo) || Container-based virtualization for Linux. This is the open source offering of Parallels Virtuozzo Containers. CORE uses this software for networking emulation under Linux. || 2-10-2009 ||
 || [http://imunes.tel.fer.hr/virtnet/ VirtNet] || VirtNet (aka Vimage) || Project to virtualize FreeBSD 4.11/7.x/8.x network stacks. || 3-18-2009 ||
@@ -10,8 +13,7 @@
 
 = Related Work =
 
-==Network Emulators==
-||[http://www.open-mesh.net/ B.A.T.M.A.N.] ||Better Approach To Mobile Ad-hoc Networking|| BATMAN is a routing protocol for multi-hop ad-hoc mesh networks. ||1-25-2009 ||
+==Network Emulators ==
 ||[http://www.opnet.com/news/press_releases/pr_2005/SITL_pr.html OPNET SITL] || OPNET System in the Loop || Emulation using the commercial OPNET simulator. || N/A ||
 ||[http://cs.itd.nrl.navy.mil/work/mane/ MANE]|| Mobile Ad-hoc Network Emulator||NRL MANE is a mobile ad hoc network emulator that provides the ability to emulate dynamic link connectivity between emulated mobile nodes in a laboratory testbed. MANE runs on a network of servers, each of which hosts a number of client test nodes (TNs). The servers LAN approach support emulation scalability. ||1-30-2006 ||
 ||[http://cs.itd.nrl.navy.mil/work/proteantools/mne.php MNE]||Mobile Network Emulator || The Mobile Network Emulator (MNE) is a simple, light-weight mobile network emulator that runs under Linux. The MNE works in a distributed manner, with each node controlling its own virtual position and blocking packets from other nodes as necessary.||9-12-2008 ||
@@ -24,7 +26,6 @@
 ||[http://www.scalable-networks.com/pdf/WSC-2006-08-02.pdf QualNet CES] || QualNet Communication Effects Server || Emulation using the commercial QualNet simulator.  || N/A ||
 ||[http://www.dit.upm.es/vnumlwiki/index.php/Main_Page VNUML] || Virtual Network User Mode Linux || VNUML is an open-source general purpose virtualization tool designed to quickly define and test complex network simulation scenarios based on the User Mode Linux (UML) virtualization software. || 3-11-2009 ||
 ||[http://wanem.sourceforge.net/ WANEM] || Wide-Area Network Emulator ||WANEM is an open source emulator meant to provide a real experience of a Wide Area Network/Internet, during application development / testing over a LAN environment. ||11-12-2008 ||
-||WISER || || || ||
 ||[http://wnte.sourceforge.net/ WNTE]||Wireless Network Topology Emulator ||WNTE is a software tool that helps testing or demonstrating wireless multi-hop networks that consist of Linux-based nodes. WNTE emulates a multi-hop topology by configuring the nodes that are in fact in transmission range of each other with IPtables MAC-filter rules. ||11-9-2003 ||
 
 ==Virtualization==
