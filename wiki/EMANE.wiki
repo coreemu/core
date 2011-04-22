@@ -19,6 +19,19 @@ rpm -ivh *
 }}} 
 
 
+Here are instructions for Ubuntu 10.10.
+
+{{{
+# install dependencies
+sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
+# download and install EMANE 0.6.4
+wget http://labs.cengen.com/emane/download/deb/ubuntu-10_04/0.6.4/amd64/emane-bundle-0.6.4.amd64.tgz
+mkdir emane-0.6.4
+cd emane-0.6.4
+tar xzf ../emane-bundle-0.6.4.amd64.tgz
+sudo dpkg -i *.deb
+}}}
+
 = Easy EMANE Uninstall =
 
 Remove everything with one command:
