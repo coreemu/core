@@ -1,5 +1,14 @@
 #summary CORE and the EMANE emulator
 
+= General Info =
+
+EMANE is a mobile ad-hoc network emulation system that can be used in conjunction with CORE to provide more complex wireless radio models.
+
+EMANE downloads, documentation, and other information:
+
+  * http://labs.cengen.com/emane/
+  * http://cs.itd.nrl.navy.mil/work/emane/index.php
+
 = Easy EMANE Install =
 
 Here are easy EMANE instructions for Fedora 12 i386. Replace with "x86_64" if needed. Run these as root.
