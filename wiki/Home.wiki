@@ -2,23 +2,31 @@
 
 = CORE Wiki =
 
-This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://hipserver.mct.phantomworks.org/core/manual/index.html CORE manual] ([http://pf.itd.nrl.navy.mil/core/core_manual.pdf PDF]) yet.
+This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] ([http://pf.itd.nrl.navy.mil/core/core_manual.pdf PDF]) yet.
 
- * [Quickstart]: quickly get up-and-running with CORE
+== Background Info ==
  * [Screenshots]
  * [FAQ]: Frequently Asked Questions
- * [ReleaseNotes] release notes and known issues
- * [API]: CORE Application Programming Interface
-
-Other guides and tips
-
- * [Linux]: Linux virtualization and CORE
- * [Tips]: a collection of tips
- * [Troubleshooting]
- * [Mac]: Running CORE on Apple Max OS X
+ * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] 
+ * [API]: CORE messaging RPC 
  * [Hacking]: coding standards for this project
 
-Citations
+== Installation == 
+ * [Quickstart]: quickly get up-and-running with CORE
+ * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] 
+ * [Linux]: Linux virtualization and CORE
+ * [Mac]: Running CORE on Apple Max OS X
+
+== Help and Support ==
+ * [FAQ]: Frequently Asked Questions
+ * [Tips]: a collection of tips
+ * [Troubleshooting]
+ * [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users mailing list]
+ * [http://code.google.com/p/coreemu/issues/list bug tracker]
+ * [ReleaseNotes] release notes and known issues
+
+
+== Citations ==
 
 Academic publications that use CORE are requested to cite one of the following publications:
  * J. Ahrenholz, Comparison of CORE Network Emulation Platforms, Proceedings of IEEE MILCOM Conference, 2010.
