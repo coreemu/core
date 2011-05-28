@@ -1,0 +1,14 @@
+#summary how to contribute to the CORE project
+
+= Contributing to CORE =
+
+*Project homepage*: [http://cs.itd.nrl.navy.mil/work/core/index.php]
+
+*Coding Style*: see the [Hacking] wiki page for coding standards.
+
+*Source Control Repo*: SVN repo at NRL with nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
+
+*Bug Tracker*: [http://code.google.com/p/coreemu/issues/list]
+
+*How to submit patches*: enter a new issue on the [http://code.google.com/p/coreemu/issues/list bug tracker] and attach a patch, or email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list]
+
