@@ -4,12 +4,14 @@
 
 *Project homepage*: [http://cs.itd.nrl.navy.mil/work/core/index.php]
 
-*Coding Style*: see the [Hacking] wiki page for coding standards.
+*Mailing list*: [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users] You can contribute by participating in discussions on the mailing list. Do you know the answer to a question someone posted there? Feel free to jump in with the answer.
 
-*Source Control Repo*: private SVN repo at NRL with nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
+*Coding style*: see the [Hacking] wiki page for coding standards. All patches and code contributions must adhere to these guidelines.
+
+*Source control repo*: private SVN repo at NRL with public nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
 
 *How to report bugs*: email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list] or enter the bug yourself in the bug tracker: [http://code.google.com/p/coreemu/issues/list]
 
-*How to submit patches*: enter a new issue on the [http://code.google.com/p/coreemu/issues/list bug tracker] and attach a patch, or email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list]. All submissions must use the same license as the rest of the project, the [http://www.opensource.org/licenses/bsd-license.php New BSD License].
+*How to submit patches*: enter a new issue on the [http://code.google.com/p/coreemu/issues/list bug tracker] and attach a patch, or email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list]. All submissions must use the same license as the rest of the project, the [http://www.opensource.org/licenses/bsd-license.php New BSD License]. Also see the below attribution guidelines.
 
-*Attribution*: for larger patches or rewrites, add your name to the `authors:` list at the top of the source file.
+*Attribution*: for larger patches or rewrites, add your name to the `authors:` list at the top of the source file. Also include the license statement `See the LICENSE file included in this distribution.` and a Copyright (c) statement. Do not use `All rights reserved.` Do not add to the authors list for small modifications.
