@@ -6,9 +6,10 @@
 
 *Coding Style*: see the [Hacking] wiki page for coding standards.
 
-*Source Control Repo*: SVN repo at NRL with nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
+*Source Control Repo*: private SVN repo at NRL with nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
 
-*Bug Tracker*: [http://code.google.com/p/coreemu/issues/list]
+*How to report bugs*: email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list] or enter the bug yourself in the bug tracker: [http://code.google.com/p/coreemu/issues/list]
 
-*How to submit patches*: enter a new issue on the [http://code.google.com/p/coreemu/issues/list bug tracker] and attach a patch, or email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list]
+*How to submit patches*: enter a new issue on the [http://code.google.com/p/coreemu/issues/list bug tracker] and attach a patch, or email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list]. All submissions must use the same license as the rest of the project, the [http://www.opensource.org/licenses/bsd-license.php New BSD License].
 
+*Attribution*: for larger patches or rewrites, add your name to the `authors:` list at the top of the source file.
