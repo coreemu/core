@@ -50,68 +50,6 @@ brctl show
 vcmd -c /tmp/n1.ctl -- ping 10.0.0.2
 }}}
 
-
-= Old Instructions for Building from Source =
-CORE 4.0 supports network namespaces now. You can now follow the instructions in the manual or the [Quickstart] page. *Below are old instructions for using the development snapshot:*
-
- # install Ubuntu 10.04 or 9.10, or Fedora 13 or 12 (namespace support is built-in!) If you already have Linux installed you can check [NamespaceKernels your kernel version] to see if it supports network namespace virtualization:
-{{{
-# Linux kernel version: is this number >= 2.6.27?
-$ uname -r
-2.6.32-22-generic
-}}}
- # make sure your system is up to date (fresher kernels are generally better):
-{{{
-# for Ubuntu: you can also use synaptic or
-# update-manager instead of apt-get update/dist-upgrade
-sudo apt-get update
-sudo apt-get dist-upgrade
-# for Fedora:
-yum update
-}}}
- # install the packages required to compile CORE:
-{{{
-# for Ubuntu:
-sudo apt-get install bash bridge-utils ebtables iproute \
-     libev3 libtk-img python tcl tk xterm autoconf \
-     automake gcc libev-dev libtool make pkg-config \
-     python2.6-dev libreadline-dev
-# for Fedora:
-yum install autoconf automake bash bridge-utils ebtables \
-     gcc libev-devel libtool make pkgconfig python-devel \
-     readline-devel sudo tcl tk tkimg urw-fonts xauth \
-     xorg-x11-server-utils xterm
-}}}
- # Fedora only: turn off SELINUX by setting `SELINUX=disabled` in `/etc/sysconfig/selinux`; turn off iptables and ip6tables firewalls (`chkconfig iptables off`,`chkconfig ip6tables off`) or you will need to configure permissive rules for CORE; turn on IP forwarding in `/etc/sysctl.conf` (`net.ipv4.ip_forward = 1`, `net.ipv6.conf.all.forwarding = 1`)
- # install Quagga; we recommend [http://downloads.pf.itd.nrl.navy.mil/ospf-manet/ quagga-0.99.16-mr1.0] for the OSPF MANET models.  If building from source on your host system, you should configure it to use state directories with CORE:
-{{{
-./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
-     	    --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
-     	    --localstatedir=/var/run/quagga 
-}}}
- # grab the development snapshot from [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/core-svnsnap.tgz core-svnsnap.tgz]
- # unpack and build:
-{{{
-   tar xzf core-svnsnap.tgz
-   cd core
-   ./bootstrap.sh
-   ./configure   ;# this command should report "Linux Namespaces emulation: yes"
-   make
-   sudo make install
-}}}
- # after installing, start the CORE services: `sudo /etc/init.d/core start`
- # run the CORE GUI: `core`
-
-The containers created will access the common host filesystem, except that some directories are private on a per-container basis; these typically contain per-node configuration files, pids, etc.  Notice in the quagga configuration above that the directories /usr/local/etc/quagga and /var/run/quagga hold the private state information for quagga.  Other applications may need their own private directories, so you will need to manually edit some configuration scripts to enable this.  The below tips were suggested on the mailing list:
-
-For the Linux netns version you can use the privatedir() method of LxcNode (see vnode.py).  The default per-node private directories are self.confdir (/usr/local/etc/quagga) and /var/run, and also /tmp.
-
-There is not a simple way to add other directories from the CORE GUI or with API messages.  One approach is to create a subclass of LxcNode that CoreNode inherits from that calls privatedir() during startup() or boot().  See CtrlIfLxcNode in pycore_nodes.py for a similar example that adds a control network interface to nodes and runs sshd (useful for X11 forwarding).
-
-Another option is to specify a custom startup script that runs a daemon using a conf, log, pid files that are specified via command-line parameters (e.g. 'sshd -f /tmp/n3_sshd_config')
-
-Note that all features may not be available in this network namespaces version of CORE. We are working to make the system more modular and preserve functionality across versions.
-
 = References =
 
 Linux Containers SourceForge project page:
