@@ -8,7 +8,7 @@ See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html Prior
 
 == 2. Who maintains CORE? ==
 
-CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2010 through a project led by Jeff.  
+CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2011 through a project led by Jeff.  
 
 == 3. How is CORE licensed? ==
 
@@ -30,22 +30,8 @@ Military Communications Conference, 2008. MILCOM 2008. IEEE (2008), pp. 1-7
 
 == 5. How many nodes can CORE emulate? ==
 
-This is a popular question for which there is no easy answer. It depends on what the nodes are doing, what the host system resources are, etc. CORE is primarily focused on efficient, scalable network emulation for tens of nodes on standard laptops to hundreds of nodes on larger servers. It is a research question as to how to support larger topologies, portions of which are distributed on different hosts. CORE already allows these large topologies to be constructed and centrally managed; see the [http://hipserver.mct.phantomworks.org/core/manual/Span-Tool.html CORE Span tool] and the [http://hipserver.mct.phantomworks.org/core/manual/Distributed-Emulation.html Distributed Emulation] sections of the CORE manual.
+This is a popular question for which there is no easy answer. It depends on what the nodes are doing, what the host system resources are, etc. CORE is primarily focused on efficient, scalable network emulation for tens of nodes on standard laptops to hundreds of nodes on larger servers. It is a research question as to how to support larger topologies, portions of which are distributed on different hosts. CORE already allows these large topologies to be constructed and centrally managed; see the [http://pf.itd.nrl.navy.mil/core/core-html/Distributed-Emulation.html Distributed Emulation] section of the CORE manual.
 
-
-== 6. How does CORE differ from IMUNES? ==
-
-At a high level, the main differences betwen CORE and IMUNES are with GUI enhancements, kernel enhancements, support for wireless networking, Linux support, distributed emulation, and packaging.
-
-*GUI:* OSPF-MANET integration, GUI-base on/off wireless, Remote control Linux routers, tunnel node, ktunnel node, widget framework: CPU, adjacency, throughput widgets; observer widgets: (various); mobility tool, two-node tool, run tool, marker tool, distributed wired networks, distributed wireless networks, MRU file list, preferences dialog, node renumbering, random topology generator, annotations, debugger
-
-*Utilities:* wireless daemon framework: simple wireless model, scripted mobility model, GPS utility model; Span Tool for CORE-CORE tunnels; Span Tool for BSD/Linux/Win XP virtual interface; OpenVZ + NetEm support
-
-*Kernel:* 
-FreeBSD 4.11 IPsec virtualization, FreeBSD 7.1 multicast routing virtualization, divert socket virtualization, ng_pipe module supporting ng_wlan and new effects, ng_wlan module
-
-*Packaging:* binary installers, user manual, API manual, flash demos
-
-== 7. How can I contribute? ==
+== 6. How can I contribute? ==
 
 CORE is open source; if you find CORE useful for your work, please contribute back to the project. Contributions can be as simple as reporting a bug, dropping a line of encouragement or technical suggestions to the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users mailing] [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev lists], or can also include submitting patches or maintaining aspects of the tool. Patches must conform to the [Hacking code standards guide]. Please contact [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz] if you would like to get involved in some way.
