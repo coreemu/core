@@ -8,8 +8,8 @@ This is the CORE wiki. It features tips and tricks and other bits of information
  * [Screenshots]
  * [FAQ]: Frequently Asked Questions
  * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] 
- * [API]: CORE messaging RPC 
- * [Hacking]: coding standards for this project
+ * [API]: CORE messaging RPC
+ * [Contributing]: contributing to this project
 
 == Installation == 
  * [Quickstart]: quickly get up-and-running with CORE
