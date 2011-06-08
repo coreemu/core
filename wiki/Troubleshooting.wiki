@@ -9,6 +9,12 @@
    * `/var/log/coredpy.log` - CORE Python daemon log file
    * `/tmp/pycore.nnnnn/nX.log` - each node has a log file (where `nnnnn` is session number and `X` is the node number)
 
+ * *Issue:* quagga does not start successfully.  When I enter into a namespace context and type "zebra -d", the following error occurs:
+{{{
+zebra: error while loading shared libraries: libzebra.so.0: cannot open shared object file: No such file or directory
+}}}
+ * *Resolution:*  If you have installed quagga without running ldconfig afterwards, the path may have not been picked up.  Try running "ldconfig".  Then, run "ldconfig -p | grep libzebra" to make sure it took effect, and restart core.
+
 == Linux OpenVZ version ==
  * *log files:*
    * `/var/log/cored.log` - CORE daemon log file may contain error messages
