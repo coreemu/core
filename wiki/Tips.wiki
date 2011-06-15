@@ -9,6 +9,14 @@ tips for CORE that are not OS-specific
 
  * the periodic Widgets may consume a lot of CPU cycles, pay attention to the CPU usage in the bottom right of the GUI, especially when running on VMware
 
+== Python tips ==
+
+To run CORE from your home directory:
+ # mkdir ~/mycore
+ # when building CORE, use `DESTDIR=~/mycore make install`
+ # run cored.py or your Python script with: `PATH=~/mycore/usr/local/sbin:$PATH PYTHONPATH=~/mycore/usr/local/lib/python2.6/dist-packages/  python ~/mycore/usr/local/sbin/cored.py`
+
+
 = FreeBSD tips =
 tips for FreeBSD
 
