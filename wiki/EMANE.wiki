@@ -54,3 +54,10 @@ Don't forget about the ACE libraries.
 {{{
 rpm -e ace-devel ace-gperf ace
 }}}
+
+= Misc Info =
+
+Setting the delay in the RF-PIPE MAC adds a transmission delay, not a propagation delay (as one might consider CORE link delays.) The tx delay is affected by the packet size and transmit rate:
+
+ * *delay*: Defines the delay (usec) that is to be included in the transmission delay. The delay is added to the delay introduced by the bitrate defined above. (from http://labs.cengen.com/emane/doc/0.7.1/html/rfpipe.0.7.1.html)
+
