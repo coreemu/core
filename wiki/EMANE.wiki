@@ -61,3 +61,6 @@ Setting the delay in the RF-PIPE MAC adds a transmission delay, not a propagatio
 
  * *delay*: Defines the delay (usec) that is to be included in the transmission delay. The delay is added to the delay introduced by the bitrate defined above. (from http://labs.cengen.com/emane/doc/0.7.1/html/rfpipe.0.7.1.html)
 
+
+*Event generator*: produces events and is launched by the Event Service XML.<br>
+*Event Daemon* / *Event Agent*: transport event data from emulation to other app domains; e.g. gpsdlocationagent
