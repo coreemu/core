@@ -35,3 +35,7 @@ This is a popular question for which there is no easy answer. It depends on what
 == 6. How can I contribute? ==
 
 CORE is open source; if you find CORE useful for your work, please contribute back to the project. Contributions can be as simple as reporting a bug, dropping a line of encouragement or technical suggestions to the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users mailing] [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev lists], or can also include submitting patches or maintaining aspects of the tool. Patches must conform to the [Hacking code standards guide]. Please contact [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz] if you would like to get involved in some way.
+
+== 7. Why doesn't ping work? ==
+
+There are a variety of reasons why one node in CORE cannot ping another. First start with the sample imn configs if you have a new CORE installation. Make sure that you have installed Quagga for routing as mentioned in the [Quickstart]. For new installations, check that iptables is not blocking traffic on the host bridges (`iptables -L`). For MDR wireless routers, you'll need to install OSPF MDR as described in the manual. It may be helpful to `tcpdump` along the expected path to determine connectivity and routing information.
