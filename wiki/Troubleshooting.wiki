@@ -9,6 +9,9 @@
    * `/var/log/coredpy.log` - CORE Python daemon log file
    * `/tmp/pycore.nnnnn/nX.log` - each node has a log file (where `nnnnn` is session number and `X` is the node number)
 
+ * *Issue:* per-node directories not working; all nodes see the same thing in `/var/log` for example, pointing to the last bind mount. This occurs in Fedora 15. 
+ * *Resolution:* turn off sandbox using `chkconfig sandbox off` and reboot
+
  * *Issue:* quagga does not start successfully.  When I enter into a namespace context and type "zebra -d", the following error occurs:
 {{{
 zebra: error while loading shared libraries: libzebra.so.0: cannot open shared object file: No such file or directory
