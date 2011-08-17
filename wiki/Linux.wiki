@@ -1,6 +1,22 @@
 #summary running CORE on Linux
 
-= CORE for Linux =
+= Distribution Notes =
+
+== Debian-based ==
+=== Ubuntu 10.04 ===
+=== Ubuntu 10.10 ===
+=== Ubuntu 11.04 ===
+=== Ubuntu 11.10 ===
+
+== Redhat-based ==
+=== Fedora 13 ===
+=== Fedora 14 ===
+=== Fedora 15 ===
+=== Fedora 16 ===
+=== OpenSUSE 11.3 ===
+=== OpenSUSE 11.4 ===
+
+= Other Wiki Links =
 
 == Linux Network Namespaces ==
  * Linux Network [Namespaces] and CORE
