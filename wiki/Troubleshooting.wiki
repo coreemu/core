@@ -18,53 +18,6 @@ zebra: error while loading shared libraries: libzebra.so.0: cannot open shared o
 }}}
  * *Resolution:*  If you have installed quagga without running ldconfig afterwards, the path may have not been picked up.  Try running "ldconfig".  Then, run "ldconfig -p | grep libzebra" to make sure it took effect, and restart core.
 
-== Linux OpenVZ version ==
- * *log files:*
-   * `/var/log/cored.log` - CORE daemon log file may contain error messages
-   * `/var/log/coreexecd.log` - CORE execution daemon log file may indicate failed jobs, those commands exiting with a non-zero status
-
-
- * *debugging commands:*
-   * `vzlist` - lists all running containers
-   * `brctl show` - lists all bridge devices, see if container veth devices have joined the correct bridges
-   * `ebtables -L` - for troubleshooting wireless connectivity, there should be two entries per wireless link
- * *Issue:* I start Core and place a host into the GUI and press Start. I get the following error for just doing that
-{{{
-can not find channel named "-1"
-can not find channel named "-1"
-}}}
- also, my console may display this error:
-{{{
-Connecting to 127.0.0.1:4038...
-Failed to open API channel to 127.0.0.1:4038: couldn't open socket: connection refused
-}}}
- * *Resolution:*  This suggests that cored was not running or is hung.  Try "sudo killall cored", and if no process was killed, check also that there is not a /var/run/cored.pid file lying around.  Try restarting cored in verbose mode: "sudo /usr/local/sbin cored -v" and if that works, restart it in daemon mode such as: "sudo /usr/local/sbin/cored -d".  Check the log file in /var/log/cored.log if all else fails. 
-
-  * *Issue:*  when starting multiple quagga routers, only some come up into operational state.
-  * *Resolution:*  This is flakiness with the OpenVZ version of CORE.  I have noticed that sometimes the containers start without interface lo in an "UP" state, and that zebra sometimes does not start successfully.  If you find a node in this state, here are some suggested resolution steps:
-{{{
-killall zebra ospfd ospf6d
-ifconfig lo up
-zebra -d
-ospf -d
-ospf6d -d
-vtysh -b
-}}}
-
-  * *Tested OpenVZ kernel versions:*
-    * 2.6.18-128.1.1.el5.028stab062.3 - sometimes IPv6 addresses are not set properly; during shutdown some containers cause this message `unregister_netdevice: waiting for lo=e319a800 to become free. Usage count = 8 ve=1000 unregister_netdevice: device e319a800 marked to leak free_netdev: device lo=e319a800 leaked`
-    * 2.6.18-128.2.1.el5.028stab064.4 - appears to be a bad kernel: testing 5 random wireless nodes and pressing start causes system to hang
-    * 2.6.18-128.2.1.el5.028stab064.7 - good kernel, fixes previous issues
-    * 2.6.18-128.2.1.el5.028stab064.8 -
-    * 2.6.18-164.2.1.el5.028stab066.7 -
-    * 2.6.18-164.2.1.el5.028stab066.10 -
-    
-
-== OpenVZ CORE as a VMware guest ==
-
-CentOS has a known clock skew issue when running as a Linux guest on VMware server.  The symptoms are that the guest clock can run erratically compared to the outside world wall clock.  To remedy this, pass the following command-line parameters to the OpenVz kernel configuration at boot time (i.e., within /boot/grub/menu.lst):
-  `divider=10 clock_source=acpi_pm`
-
 == FreeBSD version == 
  * *debugging commands:*
    * `vimage -l` - lists all running vimages
