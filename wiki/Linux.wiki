@@ -4,6 +4,7 @@
 
 == Debian-based ==
 === Ubuntu 10.04 ===
+ * Some kernel versions do not have namespace support turned on. With 2.6.32-32 kernel, you may get the vnoded error: `nsfork() failed: Invalid argument`
 === Ubuntu 10.10 ===
 === Ubuntu 11.04 ===
 === Ubuntu 11.10 ===
