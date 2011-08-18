@@ -12,6 +12,9 @@
 === Fedora 13 ===
 === Fedora 14 ===
 === Fedora 15 ===
+ * Set `SELINUX=permissive` in `/etc/sysconfig/selinux`. If you set `SELINUX=disabled` you'll also want to add `selinux=0` to your kernel line in `/etc/grub.conf`.
+ * Turn off SELinux sandbox using `chkconfig sandbox off` and rebooting. Sandbox interferes with CORE's bind mounts, and all nodes will appear to have the same mounts (regardless of namespace). The output of "mount" will be lengthy and confusing.
+ * Update to the 2.6.40.3-0.fc15.x86_64 (or newer) kernel using yum: "yum update kernel". The 2.6.38.6-26.rc1.fc15.x86_64 appears to have an IPv6 multicast checksum bug (see [NamespaceKernels]
 === Fedora 16 ===
 === OpenSUSE 11.3 ===
 === OpenSUSE 11.4 ===
@@ -20,6 +23,7 @@
 
 == Linux Network Namespaces ==
  * Linux Network [Namespaces] and CORE
+ * See known good/bad kernels in [NamespaceKernels]
 
 == Linux OpenVZ ==
  * [LinuxOpenVZTemplateCreation Instructions for creating your own template cache]
