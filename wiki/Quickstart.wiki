@@ -97,12 +97,11 @@ Using the init script (messages go to `/var/log/coredpy.log`):
 
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
- * CORE requires the Tcl/Tk packages, either version 8.4 or 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
+ * Check for notes on your Linux distribution on the [Linux] page.
+ * CORE requires the Tcl/Tk packages, version 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
  * For system requirements and tips on the install process, visit the [http://pf.itd.nrl.navy.mil/core/core-html/Prerequisites.html Prerequisites] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]; also refer to [http://www.freebsd.org], [http://www.centos.org], [http://www.openvz.org]
 
 = Other Options =
- * *Arch Linux* <br>Users have provided these tips:<br>Here are the packages required for Arch Linux: `sudo pacman -S bridge-utils ebtables, iproute, libev, tcl, tk, tkimg, python, xterm, lxc, autoconf, automake, make, libtool, readline, xauth`<br> ebtables, lxc, and tkimg are only available through aur.archlinux.org.<br>A user-made AUR package for CORE: https://aur.archlinux.org/packages.php?ID=42250
-
  * *VMware image*<br>*Pros:* everything is already set up for you; one file to download.  *Cons:* poor performance; for quick evaluation only.<br>*vcore-3.5.zip* (1.3 gb) or *vcore-3.5-linux.zip* (850 mb)<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information.  See also the [http://code.google.com/p/coreemu/wiki/Troubleshooting troubleshooting page] for tips on configuring your kernel to avoid clock skew problems in the CentOs guest. _Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the VMware virtual display._
 
  * *FreeBSD 4.11* <br>lighter-weight virtual machines, but packages no longer provided
