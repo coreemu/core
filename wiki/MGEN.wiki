@@ -31,9 +31,6 @@ MGEN is an open source traffic generator developed by NRL, available here: [http
 > sudo install -g wheel -o root -m 555 mpmgr /usr/bin
 }}}
 
-= Linux OpenVZ =
-
-With CORE under OpenVZ, MGEN is included in the core-root RPM. You can build it in your own core-root 
 
 = Sample Scenario =
 
