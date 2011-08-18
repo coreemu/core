@@ -7,11 +7,12 @@ This page lists known good/bad kernels for the [Namespaces] version of CORE.
   * 2.6.32
   * 2.6.33
   * 2.6.35.7 (Arch Linux)
+  * 2.6.40.3-0.fc15.x86_64
 
 = Known bad kernels =
   * IPv6 snooping bug - OSPFv3 hellos jump off the bridge
     * Look at output of `netstat -s | grep invalid` to see "invalid headers"
-    * 2.6.38.6-26.rc1.fc15.x86_64
+    * 2.6.38.6-26.rc1.fc15.x86_64 (update to 2.6.40.3-0.fc15.x86_64 to fix)
 
   * Problem with IPv6 addressing in namespaces (CORE SVN snapshot has workaround):
     * 2.6.34 and 2.6.35 seem to have problems ([http://www.spinics.net/lists/netdev/msg137122.html possibly related problem]) as reported by users [http://pf.itd.nrl.navy.mil/pipermail/core-users/2010-September/000269.html here].
