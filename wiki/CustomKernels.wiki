@@ -4,10 +4,6 @@
 
 A small patch is required to the standard FreeBSD 8.x kernel for running CORE. See the FreeBSD installation instructions for recompiling the kernel.
 
-= Linux OpenVZ =
-
-OpenVZ is available only as a non-standard (not the mainline) kernel; see the OpenVZ installation instructions for installing these kernels.
-
 = Linux Network Namespaces =
 
 == Running a custom kernel PPA on Ubuntu ==
