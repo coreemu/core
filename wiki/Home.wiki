@@ -15,7 +15,6 @@ This is the CORE wiki. It features tips and tricks and other bits of information
  * [Quickstart]: quickly get up-and-running with CORE
  * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] 
  * [Linux]: Linux virtualization and CORE
- * [Mac]: Running CORE on Apple Max OS X
 
 == Help and Support ==
  * [FAQ]: Frequently Asked Questions
