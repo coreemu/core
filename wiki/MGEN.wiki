@@ -2,7 +2,7 @@
 
 MGEN is an open source traffic generator developed by NRL, available here: [http://cs.itd.nrl.navy.mil/work/mgen/ MGEN page at NRL]. You can use MGEN to easily create many different types of unicast or multicast IPv4/IPv6 traffic flows. Here is the [http://pf.itd.nrl.navy.mil/mgen/mgen.html MGEN Manual] for usage details.
 
-= FreeBSD =
+= Installation =
 
  # Download MGEN source from here:
    http://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/mgen-svnsnap.tgz
@@ -19,8 +19,8 @@ MGEN is an open source traffic generator developed by NRL, available here: [http
 > cd mgen
 > ln -s ../protolib
 }}}
- # fix the MGEN makefile; edit the file `~/mgen/makefiles/Makefile.freebsd` and change the line `SYSTEM_LIBS = -lc_r` to `SYSTEM_LIBS = -lpthread`
- # Build MGEN
+ # if using FreeBSD, fix the MGEN makefile; edit the file `~/mgen/makefiles/Makefile.freebsd` and change the line `SYSTEM_LIBS = -lc_r` to `SYSTEM_LIBS = -lpthread`
+ # Build MGEN; use the Makefile for your OS (FreeBSD shown below)
 {{{
 > cd ~/mgen/makefiles
 > make -f Makefile.freebsd
