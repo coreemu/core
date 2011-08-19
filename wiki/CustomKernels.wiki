@@ -1,9 +1,5 @@
 #summary All about installing custom kernels.
 
-= FreeBSD =
-
-A small patch is required to the standard FreeBSD 8.x kernel for running CORE. See the FreeBSD installation instructions for recompiling the kernel.
-
 = Linux Network Namespaces =
 
 == Running a custom kernel PPA on Ubuntu ==
@@ -28,3 +24,7 @@ sudo apt-get install linux-image-generic-lts-backport-maverick
 Follow the directions here:
  * https://wiki.ubuntu.com/KernelTeam/GitKernelBuild
  * when running `make oldconfig` watch out for "CONFIG_X86_MRST=y" on 2.6.35 and set it to "n", or keyboard/mouse may be disabled ([http://ubuntuforums.org/showthread.php?p=9562261 thread])
+
+= FreeBSD =
+
+A small patch is required to the standard FreeBSD 8.x kernel for running CORE. That patch is included in the CORE source under the `kernel/` directory. See the FreeBSD installation instructions for recompiling the kernel.
