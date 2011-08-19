@@ -2,6 +2,8 @@
 
 This page lists known good/bad kernels for the [Namespaces] version of CORE.
 
+Some part of the kernel not working well within namespaces? See the [CustomKernels] page also.
+
 = Known good kernels =
  
   * 2.6.32
