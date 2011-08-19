@@ -102,7 +102,7 @@ Using the init script (messages go to `/var/log/coredpy.log`):
  * For system requirements and tips on the install process, visit the [http://pf.itd.nrl.navy.mil/core/core-html/Prerequisites.html Prerequisites] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]; also refer to [http://www.freebsd.org], [http://www.centos.org], [http://www.openvz.org]
 
 = Other Options =
- * *Do I need a custom kernel?* Not usually. Some disro's stock kernels may have issues, see [NamespaceKernels]. Some specific networking stack features may no support network namespaces, see [CustomKernels].
+ * *Do I need a custom kernel?* Not usually. Some disro's stock kernels may have issues, see [Linux] and [NamespaceKernels]. Some specific networking stack features may no support network namespaces, see [CustomKernels].
 
  * *VMware image*<br>*Pros:* everything is already set up for you; one file to download.  *Cons:* poor performance; for quick evaluation only.<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore.txt in the zipfile for login information.  _Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the virtual display._
 
