@@ -2,6 +2,8 @@
 
 == General ==
  * first check the known issues under [ReleaseNotes] for the version of CORE you are using!
+ * [http://www.google.com/search?q=site:http://pf.itd.nrl.navy.mil/pipermail/core-users/
+ search the mailing list]
  * also be sure to check out the [http://code.google.com/p/coreemu/issues/list bug tracker]
 
 == Linux version ==
