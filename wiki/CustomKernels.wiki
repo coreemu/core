@@ -2,6 +2,18 @@
 
 = Linux Network Namespaces =
 
+== CORE kernel patch ==
+
+Even with the latest Linux kernels, not all networking features may be ready for use with network namespaces. Some kernel patches are available from the CORE team, check a source tarball under the `kernels/` directory.
+
+For example, CORE 4.2 includes a 2.6.38 kernel patch that addresses the following:
+ * virtualize the netfilter queue mechanism (allows iptables NFQUEUE targets)
+ * disable the flow cache (allows using IPsec between namespaces)
+ * virtualize network interface index numbers
+
+See the `README.txt` file that comes with the kernel patches. A `Makefile` may be included for easily building a deb kernel package.
+
+
 == Running a custom kernel PPA on Ubuntu ==
 
 PPA = Personal Package Archive, an unsupported/bleeding-edge repository of deb packages.
