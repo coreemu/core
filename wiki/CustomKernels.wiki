@@ -2,7 +2,7 @@
 
 = Linux Network Namespaces =
 
-== CORE kernel patch ==
+== CORE kernel patches ==
 
 Even with the latest Linux kernels, not all networking features may be ready for use with network namespaces. Some kernel patches are available from the CORE team, check a source tarball under the `kernels/` directory.
 
