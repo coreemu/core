@@ -2,9 +2,7 @@
 
 == General ==
  * first check the known issues under [ReleaseNotes] for the version of CORE you are using!
- * [http://www.google.com/search?q=site
-%3Ahttp%3A%2F%2Fpf.itd.nrl.navy.mil%2Fpipermail%2Fcore-users%2F&oq=site%3Ahttp%3A%2F%2Fpf.itd.nrl.navy.mil%2Fpipermail%2Fcore-users%2F
- search the mailing list]
+ * [http://www.google.com/search?q=site%3Ahttp%3A%2F%2Fpf.itd.nrl.navy.mil%2Fpipermail%2Fcore-users%2F&oq=site%3Ahttp%3A%2F%2Fpf.itd.nrl.navy.mil%2Fpipermail%2Fcore-users%2F search the mailing list]
  * also be sure to check out the [http://code.google.com/p/coreemu/issues/list bug tracker]
 
 == Linux version ==
