@@ -17,6 +17,8 @@ The high-level changes since version 4.1 are:
  * fixed the following bugs:<br>18, 32, 34, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49,<br>52, 53, 55, 57, 58, 60, 62, 64, 65, 66, 68, 71, 72, 74
 
 Known issues with 4.2:
+ * the CORE 4.2 source tarball fails to build on Fedora. <br>Fix this by changing this line in configure.ac: `AC_SUBST(libev_CFLAGS,)` to `AC_SUBST(libev_CFLAGS, [-I/usr/include/libev])`<br>This was due to an attempt to remove pkg-config as a dependency, but has been fixed in SVN and newer.
+
  * [http://code.google.com/p/coreemu/issues/detail?id=39 issue 39] OSPF hellos become synchronized after 1 hr of running
  * [http://code.google.com/p/coreemu/issues/detail?id=56 issue 56] wait for services shutdown
  * [http://code.google.com/p/coreemu/issues/detail?id=63 issue 63] EMANE events not restricted to localhost lo device
