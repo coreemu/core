@@ -50,7 +50,7 @@ sudo apt-get install libace libace-dev dh-make doxygen
 tar xzf emane-0.7.1.tgz
 cd emane-0.7.1
 autoconf && automake
-./configure
+./configure --prefix=/usr
 make deb
 }}}
 
