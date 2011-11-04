@@ -41,6 +41,20 @@ tar xzf ../emane-bundle-0.6.4.amd64.tgz
 sudo dpkg -i *.deb
 }}}
 
+
+Instructions for building a deb from source on Ubuntu 11.10 Oneiric. (As of this writing, pre-built debs were not available.) Note that the deb build dependencies (e.g. dh-make, etc) are slightly different than the run-time dependencies.
+
+{{{
+sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
+sudo apt-get install libace libace-dev dh-make doxygen
+tar xzf emane-0.7.1.tgz
+cd emane-0.7.1
+autoconf && automake
+./configure
+make deb
+}}}
+
+
 = Easy EMANE Uninstall =
 
 Remove everything with one command:
