@@ -51,6 +51,8 @@ tar xzf emane-0.7.1.tgz
 cd emane-0.7.1
 autoconf && automake
 ./configure --prefix=/usr
+# to use Ubuntu's libace package, edit the debian/control file
+# search and replace "ace" with "libace"
 make deb
 }}}
 
