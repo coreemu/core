@@ -20,17 +20,9 @@ CORE is open source software, licensed under the [http://en.wikipedia.org/wiki/B
 
 == 5. Are there any technical publications about CORE? ==
 
-A comparison of the CORE FreeBSD, OpenVZ, and netns platforms was published in the IEEE MILCOM 2010 Conference:
-
-Comparison of CORE Network Emulation Platforms<br>
-by: Jeff Ahrenholz<br>
-Military Communications Conference, 2010. MILCOM 2010. IEEE (2010), pp. 864-869.
-
-An overview of CORE was published in the IEEE MILCOM 2008 Conference:
-
-CORE: A real-time network emulator<br>
-by: Jeff Ahrenholz, Claudiu Danilov, Thomas R Henderson, Jae H Kim<br>
-Military Communications Conference, 2008. MILCOM 2008. IEEE (2008), pp. 1-7
+ * J. Ahrenholz, T. Goff, and B. Adamson, Integration of the CORE and EMANE Network Emulators, Proceedings of IEEE Military Communications Conference 2011 (MILCOM), pp. 1870-1875, November 2011.
+ * J. Ahrenholz, Comparison of CORE Network Emulation Platforms, Proceedings of IEEE Military Communications Conference Conference 2010 (MILCOM), pp. 864-869, November 2010.
+ * J. Ahrenholz, C. Danilov, T. Henderson, and J.H. Kim, CORE: A real-time network emulator, Proceedings of IEEE Military Communications Conference 2008 (MILCOM), pp. 221-227, November 2008.
 
 == 6. How many nodes can CORE emulate? ==
 
