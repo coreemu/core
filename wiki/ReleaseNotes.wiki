@@ -20,6 +20,10 @@ The high-level changes since version 4.2 are:
  * added PhysicalNode class for joining real nodes with emulated networks
  * fixed the following bugs:<br>75, 79, 82, 83, 85, 86, 92
 
+Known issues with 4.3
+ * known issues will appear here
+
+
 = 4.2 =
 CORE 4.2 was released on 8/19/11.
 
