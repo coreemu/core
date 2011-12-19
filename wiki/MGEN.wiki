@@ -20,15 +20,16 @@ MGEN is an open source traffic generator developed by NRL, available here: [http
 > ln -s ../protolib
 }}}
  # if using FreeBSD, fix the MGEN makefile; edit the file `~/mgen/makefiles/Makefile.freebsd` and change the line `SYSTEM_LIBS = -lc_r` to `SYSTEM_LIBS = -lpthread`
- # Build MGEN; use the Makefile for your OS (FreeBSD shown below)
+ # Build MGEN; use the Makefile for your OS
 {{{
 > cd ~/mgen/makefiles
-> make -f Makefile.freebsd
+> make -f Makefile.linux
+> # or, if FreeBSD use this:  make -f Makefile.freebsd
 }}}
  # Install it
 {{{
-> sudo install -g wheel -o root -m 555 mgen /usr/bin
-> sudo install -g wheel -o root -m 555 mpmgr /usr/bin
+> sudo install -g root -o root -m 555 mgen /usr/local/bin
+> sudo install -g root -o root -m 555 mpmgr /usr/local/bin
 }}}
 
 
