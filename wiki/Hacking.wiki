@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Also refer to this [http://hipserver.mct.phantomworks.org/core/manual/Developer_0027s-Guide.html Developer's Guide] section in the CORE manual.
+Also refer to this [http://hipserver.mct.phantomworks.org/core/manual/Developer_0027s-Guide.html Developer's Guide] section in the CORE manual. The TclTkOverview page was created to collect notes on the GUI code.
 
 Where possible, _follow the coding style used in existing code_. For example, CORE consists of Tcl/Tk scripts from the IMUNES project, C kernel code for FreeBSD, and C userspace code. Please refer to the appropriate style guidelines for the kernel code, for example.
 
