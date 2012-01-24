@@ -16,3 +16,17 @@ The CORE GUI uses Tcl/Tk 8.5. This page has a brief guide to the source files. T
 *`api.tcl`*: the Tcl/Tk implementation of the CORE API, for communicating with the Python CORE daemon back-end.
 
 *`cfgparse.tcl`*: imn file loading and saving.
+
+*`nodecfg.tcl`*: procs for manipulating the Tcl representation of node and link objects.
+
+= Debugger =
+Choose _Debugger..._ from the _Tools_ menu for a text entry for executing arbitrary Tcl code. This is a great tool for testing changes you may be making to certain procedures.
+
+Here are some code snippets you might try in the debugger (cut and paste one at a time):
+{{{
+puts $node_list
+puts $link_list
+getNodeCoords n3
+hideNode n4
+setGuiTitle "hello world"
+}}}
