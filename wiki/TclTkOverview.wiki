@@ -1,0 +1,12 @@
+#summary brief guide to the Tcl/Tk GUI code
+
+= GUI =
+The CORE GUI uses Tcl/Tk 8.5. This page has a brief guide to the source files. The GUI can be found in the source tarball under the `core/gui/` directory.
+
+= Tcl/Tk files =
+
+*`core`*: this is a shell script that launches the GUI. First it sets some environment variables relating to the CORE directories and then launches `wish8.5 core.tcl`.
+
+*`core.tcl`*: main entry point for Tcl/Tk code. This file uses `source` to include all of the other tcl source files. Some important global variables are set here. Preferences and config files are loaded (some procs from filemgmt.tcl). The file `initgui.tcl` is sourced, and initializes more global variables, builds the menus, and sets up the main canvas window. Control is passed to `proc setOperMode` from `exec.tcl` to build the GUI toolbar and menus.
+
+*`initgui.tcl`*: see `core.tcl` above; this initializes the main GUI window.
