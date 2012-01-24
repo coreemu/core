@@ -10,3 +10,9 @@ The CORE GUI uses Tcl/Tk 8.5. This page has a brief guide to the source files. T
 *`core.tcl`*: main entry point for Tcl/Tk code. This file uses `source` to include all of the other tcl source files. Some important global variables are set here. Preferences and config files are loaded (some procs from filemgmt.tcl). The file `initgui.tcl` is sourced, and initializes more global variables, builds the menus, and sets up the main canvas window. Control is passed to `proc setOperMode` from `exec.tcl` to build the GUI toolbar and menus.
 
 *`initgui.tcl`*: see `core.tcl` above; this initializes the main GUI window.
+
+*`editor.tcl`*: this is the largest Tcl source file. It has procs for building various configuration dialogs for editing typologies.
+
+*`api.tcl`*: the Tcl/Tk implementation of the CORE API, for communicating with the Python CORE daemon back-end.
+
+*`cfgparse.tcl`*: imn file loading and saving.
