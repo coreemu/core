@@ -19,6 +19,20 @@ The CORE GUI uses Tcl/Tk 8.5. This page has a brief guide to the source files. T
 
 *`nodecfg.tcl`*: procs for manipulating the Tcl representation of node and link objects.
 
+*`exec.tcl`*: historically this contained shell commands to instantiate virtual machines on the host. Now the Python back-end does all of the node and link creation on the host. There are some procs for switching between edit/execute toolbars and `monitor_loop` is a thread that runs during execute mode to update the CPU/memory usage display.
+
+*`wlan.tcl`*: procs devoted to wireless networks. When the WLAN configuration dialog is invoked, `editor.tcl` will call procs here. Historically, the range calculation and mobility scripting was supported here.
+
+*`widget.tcl`*: run-time widget support, for interacting with a running emulation.
+
+*`mobility.tcl`*: run-time tools, such as the Two Node and Run Tools.
+
+*`traffic.tcl`*: for configuring MGEN-based traffic flows for nodes.
+
+*`wlanscript.tcl`*: for parsing and running a ns-2 scengen format mobility script.
+
+*`util.tcl`*: miscellaneous utility functions.
+
 = Debugger =
 Choose _Debugger..._ from the _Tools_ menu for a text entry for executing arbitrary Tcl code. This is a great tool for testing changes you may be making to certain procedures.
 
