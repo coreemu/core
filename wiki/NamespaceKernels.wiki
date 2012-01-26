@@ -4,19 +4,25 @@ This page lists known good/bad kernels for the [Namespaces] version of CORE.
 
 Some part of the kernel not working well within namespaces? See the [CustomKernels] page also.
 
+_*Note: these are incomplete lists!*_
+
 = Known good kernels =
  
   * 2.6.32
   * 2.6.33
   * 2.6.35.7 (Arch Linux) certain versions
   * 2.6.40.3-0.fc15.x86_64
+  * 3.0.0-15-generic (Ubuntu 11.10)
 
 = Known bad kernels =
   * IPv6 snooping bug - OSPFv3 hellos jump off the bridge
     * Look at output of `netstat -s | grep invalid` to see "invalid headers"
     * 2.6.38.6-26.rc1.fc15.x86_64 (update to 2.6.40.3-0.fc15.x86_64 to fix)
+  * 2.6.35-22 (stock Ubuntu 10.10); use rc6 from http://kernel.ubuntu.com/~kernel-ppa/mainline/ as workaround
 
   * Problem with IPv6 addressing in namespaces (CORE SVN snapshot has workaround):
     * 2.6.34 and 2.6.35 seem to have problems ([http://www.spinics.net/lists/netdev/msg137122.html possibly related problem]) as reported by users [http://pf.itd.nrl.navy.mil/pipermail/core-users/2010-September/000269.html here].
     * 2.6.35.6-45.fc14.i686 (stock Fedora 14 kernel) does not work properly
     * 2.6.35-22-generic (stock Ubuntu 10.10 kernel)
+
+  * 2.6.32-32 (64-bit Ubuntu 10.04) namespace support not enabled
