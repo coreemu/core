@@ -8,7 +8,7 @@ Some part of the kernel not working well within namespaces? See the [CustomKerne
  
   * 2.6.32
   * 2.6.33
-  * 2.6.35.7 (Arch Linux)
+  * 2.6.35.7 (Arch Linux) certain versions
   * 2.6.40.3-0.fc15.x86_64
 
 = Known bad kernels =
