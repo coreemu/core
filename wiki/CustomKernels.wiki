@@ -40,3 +40,5 @@ Follow the directions here:
 = FreeBSD =
 
 A small patch is required to the standard FreeBSD 8.x kernel for running CORE. That patch is included in the CORE source under the `kernel/` directory. See the FreeBSD installation instructions for recompiling the kernel.
+
+This patch applies cleanly to the FreeBSD 9.0-RELEASE generic kernel.
