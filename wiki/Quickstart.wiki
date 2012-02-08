@@ -56,7 +56,7 @@ Follow these instructions to build CORE from source. Dependencies are automatica
 == Step 1. Install prerequisite packages ==
 Ubuntu:
 
-`sudo apt-get install bash bridge-utils ebtables iproute libev3 libtk-img python tcl8.5 tk8.5 xterm autoconf automake gcc libev-dev make pkg-config python-dev libreadline-dev`
+`sudo apt-get install bash bridge-utils ebtables iproute libev3 libtk-img python tcl8.5 tk8.5 xterm autoconf automake gcc libev-dev make pkg-config python-dev libreadline-dev imagemagick texinfo help2man`
 
 Fedora:
 
