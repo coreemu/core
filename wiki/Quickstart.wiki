@@ -2,6 +2,8 @@
 
 = Quickstart: Installation using pre-built packages =
 
+This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/Installation.html CORE manual].
+
 CORE 4.2 packages are available for Ubuntu 11.04/10.10/10.04 and Fedora 14/15. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces. Released packages are generally more stable and tested to work properly on the given platform.
 
 == Step 1. Install CORE package ==
@@ -33,6 +35,8 @@ Virtual networks usually require routing software. CORE automatically builds con
   su
   yum localinstall quagga-0.99.17mr2.0-2011050501.f14.i386.rpm --nogpgcheck
 }}}
+
+*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/Installing-from-Packages-on-Fedora.html installation instructions], you need to also disable SELINUX, sandbox, and iptables.
 
 == Step 2. Start the CORE services ==
 {{{
@@ -66,6 +70,8 @@ This package list comes from
 [http://pf.itd.nrl.navy.mil/core/core-html/Installation.html here].
 
 You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://cs.itd.nrl.navy.mil/work/ospf-manet/ OSPF MDR].
+
+*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/Installing-from-Packages-on-Fedora.html installation instructions], you need to also disable SELINUX, sandbox, and iptables.
 
 
 == Step 2. Get and build the source ==
