@@ -16,6 +16,7 @@ _*Note: these are incomplete lists!*_
 || Fedora 15 ||  2.6.40.3-0.fc15.x86_64, 2.6.41.10-3.fc15.i686 || yum update from stock kernel ||
 || Ubuntu 11.04 || 2.6.38-core || CORE patched kernel enables netfilter queuing, IPsec ||
 || Ubuntu 11.10 || 3.0.0-15-generic || ||
+|| Fedora 16 || 3.1.0-7.fc16.x86_64 || stock kernel ||
 
 = Known bad kernels =
 || distro || kernel versions || problem || workaround/notes ||
