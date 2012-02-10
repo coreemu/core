@@ -11,13 +11,13 @@ _*Note: these are incomplete lists!*_
   * 2.6.32
   * 2.6.33
   * 2.6.35.7 (Arch Linux) certain versions
-  * 2.6.40.3-0.fc15.x86_64
+  * 2.6.40.3-0.fc15.x86_64, 2.6.41.10-3.fc15.i686 (Fedora 15)
   * 3.0.0-15-generic (Ubuntu 11.10)
 
 = Known bad kernels =
   * IPv6 snooping bug - OSPFv3 hellos jump off the bridge
     * Look at output of `netstat -s | grep invalid` to see "invalid headers"
-    * 2.6.38.6-26.rc1.fc15.x86_64 (update to 2.6.40.3-0.fc15.x86_64 to fix)
+    * 2.6.38.6-26.rc1.fc15.x86_64, 2.6.38.6-26.rc1.fc15.i686 (Fedora 15 stock kernels -- yum update to fix)
   * 2.6.35-22 (stock Ubuntu 10.10); use rc6 from http://kernel.ubuntu.com/~kernel-ppa/mainline/ as workaround
 
   * Problem with IPv6 addressing in namespaces (CORE SVN snapshot has workaround):
