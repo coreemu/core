@@ -24,6 +24,7 @@ _*Note: these are incomplete lists!*_
 || Ubuntu 10.10 || 2.6.35-22 || crashes || use rc6 or newer from http://kernel.ubuntu.com/~kernel-ppa/mainline/ as workaround ||
 || Fedora 14, Ubuntu 10.10  || 2.6.34, 2.6.35, 2.6.35.6-45.fc14.i686, 2.6.35-22-generic  || (2) IPv6 in namespaces || CORE has workaround ||
 || Ubuntu 10.04 || 2.6.32-32 || namespace support not enabled || ||
+|| [http://www.4tiitoo.com/ WeTab Linux] || 2.6.42-66672.1.28-wetab || namespace support not enabled || ||
 
   # IPv6 snooping bug - OSPFv3 hellos jump off the bridge
     * Look at output of `netstat -s | grep invalid` to see "invalid headers"
