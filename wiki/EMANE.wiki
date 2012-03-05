@@ -27,35 +27,18 @@ rm -f ace*
 rpm -ivh *
 }}} 
 
-
-Here are instructions for Ubuntu 10.10.
+Here are instructions for Ubuntu 11.10. Note that Ubuntu 11.10 has libace-dev (6.0.1-3) and libace-6.0.1 (6.0.1-3) libraries, but here we will install ACE (6.0.8-1) included with the EMANE bundle.
 
 {{{
 # install dependencies
 sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
-# download and install EMANE 0.6.4
-wget http://labs.cengen.com/emane/download/deb/ubuntu-10_04/0.6.4/amd64/emane-bundle-0.6.4.amd64.tgz
-mkdir emane-0.6.4
-cd emane-0.6.4
-tar xzf ../emane-bundle-0.6.4.amd64.tgz
+# download and install EMANE 0.7.3
+wget http://labs.cengen.com/emane/download/deb/ubuntu-11_10/0.7.3/amd64/emane-bundle-0.7.3.amd64.tgz
+mkdir emane-bundle-0.7.3
+cd emane-bundle-0.7.3
+tar xzf ../emane-bundle-0.7.3.amd64.tgz
 sudo dpkg -i *.deb
 }}}
-
-
-Instructions for building a deb from source on Ubuntu 11.10 Oneiric. (As of this writing, pre-built debs were not available.) Note that the deb build dependencies (e.g. dh-make, etc) are slightly different than the run-time dependencies.
-
-{{{
-sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
-sudo apt-get install libace libace-dev dh-make doxygen
-tar xzf emane-0.7.1.tgz
-cd emane-0.7.1
-autoconf && automake
-./configure --prefix=/usr
-# to use Ubuntu's libace package, edit the debian/control file
-# search and replace "ace" with "libace-dev"
-make deb
-}}}
-
 
 = Easy EMANE Uninstall =
 
@@ -71,6 +54,8 @@ Don't forget about the ACE libraries.
 rpm -e ace-devel ace-gperf ace
 }}}
 
+For Ubuntu, open the Synaptic package manager and choose the "Installed (local or obsolete)" section. Select the various EMANE packages using shift+click, right-click and choose remove.
+
 = Misc Info =
 
 Setting the delay in the RF-PIPE MAC adds a transmission delay, not a propagation delay (as one might consider CORE link delays.) The tx delay is affected by the packet size and transmit rate:
@@ -80,3 +65,22 @@ Setting the delay in the RF-PIPE MAC adds a transmission delay, not a propagatio
 
 *Event generator*: produces events and is launched by the Event Service XML.<br>
 *Event Daemon* / *Event Agent*: transport event data from emulation to other app domains; e.g. gpsdlocationagent
+
+
+= Old Notes =
+
+Here are Ubuntu 11.10 build notes for EMANE 0.7.2. EMANE 0.7.3 now has 11.10 debs, so these instructions are obsolete.
+
+Instructions for building a deb from source on Ubuntu 11.10 Oneiric. (As of this writing, pre-built debs were not available.) Note that the deb build dependencies (e.g. dh-make, etc) are slightly different than the run-time dependencies.
+
+{{{
+sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
+sudo apt-get install libace libace-dev dh-make doxygen
+tar xzf emane-0.7.1.tgz
+cd emane-0.7.1
+autoconf && automake
+./configure --prefix=/usr
+# to use Ubuntu's libace package, edit the debian/control file
+# search and replace "ace" with "libace-dev"
+make deb
+}}}
