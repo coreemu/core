@@ -9,7 +9,7 @@ _*Note: these are incomplete lists!*_
 = Known good kernels =
 
 || distro || kernel versions || notes ||
-|| Ubuntu 10.04 || 2.6.32-21-generic || stock kernel || 
+|| Ubuntu 10.04 || 2.6.32-21-generic i686,<br>2.6.32-39-generic i686 || stock kernel, updated kernel || 
 ||  || 2.6.33 || ||
 || Arch Linux || 2.6.35.7 || certain versions ||
 || Fedora 14 || || yum update from stock kernel ||
