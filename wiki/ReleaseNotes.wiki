@@ -1,7 +1,7 @@
 #summary Changelog and notes about CORE releases.
 
 = 4.3 =
-CORE 4.3 has not been released yet (estimated February 2012).
+CORE 4.3 was released on 3/7/12.
 
 The high-level changes since version 4.2 are:
  * EMANE 0.7.2 and 0.7.3 support
@@ -18,7 +18,7 @@ The high-level changes since version 4.2 are:
  * basic range model moved from GUI to Python, supports 3D coordinates
  * improved WLAN dialog with tabs
  * added PhysicalNode class for joining real nodes with emulated networks
- * fixed the following bugs:<br>50, 75, 76, 79, 82, 83, 85, 86, 89, 90, 92, 94, 96, 98, 100, 112, 113, 116, 119, 120
+ * fixed the following bugs:<br>50, 75, 76, 79, 82, 83, 85, 86, 89, 90, 92, 94, 96, 98,<br>100, 112, 113, 116, 119, 120
 
 Known issues with 4.3
  * CORE will segfault under Ubuntu 11.10 with Tcl/Tk 8.5.10. There is a known bug in the tk-8.5.10 package, the workaround is to uninstall it and install tk-8.5.11 from [http://www.ubuntuupdates.org/tk8.5 here]; see [http://code.google.com/p/coreemu/issues/detail?id=90 bug #90]
