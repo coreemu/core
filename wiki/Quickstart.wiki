@@ -4,22 +4,22 @@
 
 This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/Installation.html CORE manual].
 
-CORE 4.2 packages are available for Ubuntu 11.04/10.10/10.04 and Fedora 14/15. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces. Released packages are generally more stable and tested to work properly on the given platform.
+CORE 4.3 packages are available for Ubuntu 11.10/11.04/10.10/10.04 and Fedora 14/15/16. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces. Released packages are generally more stable and tested to work properly on the given platform.
 
 == Step 1. Install CORE package ==
 
-Get the Ubuntu (deb) or Fedora (rpm) package for your architecture from here:<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.2/linux/]
+Get the Ubuntu (deb) or Fedora (rpm) package for your architecture (64-bit or 32-bit) from here:<br>
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.3/linux/]
 
 Use your package manager to automatically install dependencies:<br>
 {{{
   # Ubuntu users (prior to 10.10)
-  gdebi-gtk core_4.2-0ubuntu1_lucid_i386.deb
-  # Ubuntu 10.10 (maverick)/ 11.04 (natty) users (specify entire path)
-  software-center /home/user/Downloads/core_4.2-0ubuntu1_maverick_i386.deb
+  gdebi-gtk core_4.3-0ubuntu1_lucid_amd64.deb
+  # Ubuntu 10.10 (maverick)/ 11.04 (natty)/ 11.10 (oneiric) users (specify entire path)
+  software-center /home/user/Downloads/core_4.3-0ubuntu1_oneiric_amd64.deb
   # Fedora users
   su
-  yum localinstall core-4.2-1.fc15.i686.rpm --nogpgcheck
+  yum localinstall core-4.3-1.fc16.x86_64.rpm --nogpgcheck
 }}}
 
 Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, a modified version of Quagga available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
@@ -33,7 +33,7 @@ Virtual networks usually require routing software. CORE automatically builds con
   yum install quagga
   # Fedora - OSPF MDR Quagga
   su
-  yum localinstall quagga-0.99.17mr2.0-2011050501.f14.i386.rpm --nogpgcheck
+  yum localinstall quagga-0.99.20mr2.1.fc15.x86_64.rpm --nogpgcheck
 }}}
 
 *Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/Installing-from-Packages-on-Fedora.html installation instructions], you need to also disable SELINUX, sandbox, and iptables.
