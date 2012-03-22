@@ -9,6 +9,7 @@ Each namespace has its own loopback device and process space. Virtual or real de
 You do not need to patch your kernel in order to use network namespaces. Modern distros such as Ubuntu 10.04 and Fedora 13 have netns support turned on in their default kernels.
 
 NamespaceKernels has a list of known good and bad kernels.
+CustomKernels has notes on Network Namespace Supported Features.
 
 = Command-line Example =
 
