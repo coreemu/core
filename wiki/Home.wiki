@@ -13,7 +13,8 @@ This is the CORE wiki. It features tips and tricks and other bits of information
 
 == Installation == 
  * [Quickstart]: quickly get up-and-running with CORE
- * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] 
+ * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]
+ * [NamespaceKernels]: notes on good/bad Linux kernels 
  * [Linux]: Linux virtualization and CORE
 
 == Help and Support ==
