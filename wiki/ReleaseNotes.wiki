@@ -1,5 +1,7 @@
 #summary Changelog and notes about CORE releases.
 
+Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
+
 = 4.3 =
 CORE 4.3 was released on 3/7/12.
 
