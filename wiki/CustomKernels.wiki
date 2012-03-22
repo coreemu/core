@@ -2,11 +2,24 @@
 
 = Linux Network Namespaces =
 
+== Network Namespace Supported Features ==
+
+Even with the latest Linux kernels, not all networking features may be ready for use with network namespaces.  Generally, the newer the kernel, the better the support for netns. Here are notes organized by feature.
+
+* IPsec - patch available, see below.
+* netfilter queuing - patch available, see below.
+* interface index - patch available, see below.
+* Linux bridging - works on Linux 3.0.0, but not on some earlier kernels
+* multicast routing - TBD
+* QoS with tc queuing - TBD
+* GRE tunneling - TBD
+
+
 == CORE kernel patches ==
 
-Even with the latest Linux kernels, not all networking features may be ready for use with network namespaces. Some kernel patches are available from the CORE team, check a source tarball under the `kernels/` directory.
+Some kernel patches are available from the CORE team, check a source tarball under the `kernels/` directory.
 
-For example, CORE 4.2 includes a 2.6.38 kernel patch that addresses the following:
+For example, CORE 4.3 includes a 2.6.38 kernel patch that addresses the following:
  * virtualize the netfilter queue mechanism (allows iptables NFQUEUE targets)
  * disable the flow cache (allows using IPsec between namespaces)
  * virtualize network interface index numbers
