@@ -6,13 +6,13 @@
 
 Even with the latest Linux kernels, not all networking features may be ready for use with network namespaces.  Generally, the newer the kernel, the better the support for netns. Here are notes organized by feature.
 
-* IPsec - patch available, see below.
-* netfilter queuing - patch available, see below.
-* interface index - patch available, see below.
-* Linux bridging - works on Linux 3.0.0, but not on some earlier kernels
-* multicast routing - TBD
-* QoS with tc queuing - TBD
-* GRE tunneling - TBD
+ * IPsec - patch available, see below.
+ * netfilter queuing - patch available, see below.
+ * interface index - patch available, see below.
+ * Linux bridging - works on Linux 3.0.0, but not on some earlier  kernels
+ * multicast routing - TBD
+ * QoS with tc queuing - TBD
+ * GRE tunneling - TBD
 
 
 == CORE kernel patches ==
