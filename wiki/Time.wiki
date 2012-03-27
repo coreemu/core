@@ -12,14 +12,15 @@
    _time dilation_ <br>
    Modified Xen hypervisor to make time appear slower to guest OS.<br>
    http://www.usenix.org/event/nsdi08/tech/gupta.html <br>
-   http://cseweb.ucsd.edu/~kyocum/pubs/P2P-2009.pdf
+   http://cseweb.ucsd.edu/~kyocum/pubs/P2P-2009.pdf <br>
+   http://sysnet.ucsd.edu/projects/time-dilation/
 
  * Linux Time namespace - Jeff Dike (UML creator)
    Add a time namespace to the Linux kernel, allowing for gettimeofday() offsets.<br>
    http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
 
  * SliceTime/Synchronized Network Emulation - RWTH Aachen University
-   http://portal.acm.org/citation.cfm?id=1453185
+   http://portal.acm.org/citation.cfm?id=1453185 <br>
    http://www.comsys.rwth-aachen.de/research/projects/slicetime/
 
  * Virtual Time for OpenVZ
