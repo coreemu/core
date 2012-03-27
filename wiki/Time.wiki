@@ -20,3 +20,7 @@
 
  * Synchronized Network Emulation - RWTH Aachen University
    http://portal.acm.org/citation.cfm?id=1453185
+
+ * Virtual Time for OpenVZ
+    Yuhao Zheng David M. Nicol, Dong Jin. A virtual time system for OpenVZ-based network emulations. In Proceedings of the 2011 Symposium on Principles of Advanced and Distributed Simulation, pages 1–10, Nice,
+France, June 2011.
