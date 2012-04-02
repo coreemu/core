@@ -25,7 +25,7 @@ The high-level changes since version 4.2 are:
 Known issues with 4.3
  * CORE will segfault under Ubuntu 11.10 with Tcl/Tk 8.5.10. There is a known bug in the tk-8.5.10 package, the workaround is to uninstall it and install tk-8.5.11 from [http://www.ubuntuupdates.org/tk8.5 here]; see [http://code.google.com/p/coreemu/issues/detail?id=90 bug #90]
  * the libimg-1.2.4_8 port under FreeBSD 9.0 causes icons in the CORE GUI to appear in black; there is an error showing gif files; see [http://code.google.com/p/coreemu/issues/detail?id=108 bug #108]
- * the vcore-4.3.zip (md5sum: b10758ede92db7fa8cf1fa6537d88fbb) had a problem where the UUID listed in the VirtualBox XML did not match the vmdk disk file. This was corrected on 3/26/12 (md5sum: 2282036b2cd6416159c70165e824c36d).
+ * the vcore-4.3.zip (md5sum: b10758ede92db7fa8cf1fa6537d88fbb) had a problem where the UUID listed in the VirtualBox XML did not match the vmdk disk file. This was corrected on 3/26/12 (md5sum: 2282036b2cd6416159c70165e824c36d). An old vmdk disk file was used having CORE 4.2 instead of 4.3; this was corrected on 4/2/12 (md5sum: 5d85dc5da5f12f98206905ff772c48f3)
 
 = 4.2 =
 CORE 4.2 was released on 8/19/11.
