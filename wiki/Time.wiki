@@ -15,13 +15,17 @@
    http://cseweb.ucsd.edu/~kyocum/pubs/P2P-2009.pdf <br>
    http://sysnet.ucsd.edu/projects/time-dilation/
 
- * Linux Time namespace - Jeff Dike (UML creator)
-   Add a time namespace to the Linux kernel, allowing for gettimeofday() offsets.<br>
-   http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
-
  * SliceTime/Synchronized Network Emulation - RWTH Aachen University
    http://portal.acm.org/citation.cfm?id=1453185 <br>
    http://www.comsys.rwth-aachen.de/research/projects/slicetime/
+
+ * Emulab Checkpoints
+   Modified Xen hypervisor with time virtualization to support checkpointing (pausing) a distributed emulation.<br>
+   Transparent Checkpoints of Closed Distributed Systems in Emulab. Anton Burtsev, Prashanth Radhakrishnan, Mike Hibler, and Jay Lepreau. In Proc. of the Fourth ACM European Conference on Computer Systems, pages 173–186, Nuremberg, Germany, April 2009.
+
+ * Linux Time namespace - Jeff Dike (UML creator)
+   Add a time namespace to the Linux kernel, allowing for gettimeofday() offsets.<br>
+   http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
 
  * Virtual Time for OpenVZ
     Yuhao Zheng David M. Nicol, Dong Jin. A virtual time system for OpenVZ-based network emulations. In Proceedings of the [https://sites.google.com/site/pads2011/ 2011 Symposium on Principles of Advanced and Distributed Simulation], pages 1–10, Nice, France, June 2011.
