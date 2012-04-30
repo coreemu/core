@@ -4,7 +4,7 @@ This page lists planned development milestones.
 
 = Plans for 2012 =
 
-Robustness and Usability Enhancements
+== Robustness and Usability Enhancements == 
  * Testing framework and exception system
   * improved support for raising CEL exceptions
   * kernel/system tests
@@ -17,7 +17,7 @@ Robustness and Usability Enhancements
   * install physical interface into namespace
   * expose tc queuing disciplines for power users
 
-NRL Network Modeling Framework (NMF) Integration
+== NRL Network Modeling Framework (NMF) Integration ==
  * Goal is to support a well-defined experiment workflow
  * Read and write XML file formats
  * Re-use of NMF tools/scripts where applicable
@@ -30,7 +30,7 @@ NRL Network Modeling Framework (NMF) Integration
   * EMANE support for physical nodes
   * physical interfaces
 
-Co-Emulation/Simulation Integration
+== Co-Emulation/Simulation Integration ==
  * Xen
   * generalize and merge xen branch into trunk
    * support non-ISO-based filesystems
@@ -47,3 +47,5 @@ Co-Emulation/Simulation Integration
 
 = 4.4 =
 We plan to organize the milestones listed above into specific future release versions, along with planned release dates. 
+
+= 4.5 =
