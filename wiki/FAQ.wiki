@@ -12,7 +12,7 @@ See the [http://hipserver.mct.phantomworks.org/core/manual/Prior-Work.html Prior
 
 == 3. Who maintains CORE? ==
 
-CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2011 through a project led by Jeff.  
+CORE is an open source project led by [mailto:jeffrey.m.ahrenholz@boeing.com Jeff Ahrenholz].  Boeing Research & Technology is supporting CORE in 2012 through a project led by Jeff.  
 
 == 4. How is CORE licensed? ==
 
