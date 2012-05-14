@@ -4,7 +4,7 @@
 
 This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/Installation.html CORE manual].
 
-CORE 4.3 packages are available for Ubuntu 11.10/11.04/10.10/10.04 and Fedora 14/15/16. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support network namespaces. Released packages are generally more stable and tested to work properly on the given platform.
+CORE 4.3 packages are available for Ubuntu 11.10/11.04/10.10/10.04 and Fedora 14/15/16. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform.
 
 == Step 1. Install CORE package ==
 
