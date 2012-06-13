@@ -11,16 +11,18 @@ _Note that you may experience decreased performance and timer issues, and there 
 
 = Importing VCORE into VirtualBox =
 
-Unzip vcore-4.0.zip and put the vmdk disk file into your HardDisks directory (or wherever you please):
-{{{
-unzip vcore-4.0.zip
-mv vcore-4.0/vcore.vmdk ~/.VirtualBox/HardDisks
-less vcore-4.0/vcore-4.0-README.txt
-rm -rf vcore-4.0/
-}}}
+Unzip `vcore-4.3.zip` to your virtual machines directory; a `vcore-4.3` folder will be created.
 
-Create a new machine in VirtualBox. Use the name "VCORE 4.0" or another name of your choosing. Select Ubuntu Linux as the operating system type. Configure the base memory size as at least 1GB RAM (2GB if you can spare it). For Virtual Hard Disk, choose "Use existing hard disk" and add the vcore.vmdk file to your Virtual Media Manager.
+Start the VirtualBox GUI, and from the _Machine_ menu, choose _Add_. Browse to the folder where you unzipped VCORE, and choose the `vcore-4.3.vbox` file.
 
-Under settings you may want to configure  at least 2 processors if you have a multi-processor machine.
+= Importing VCORE into VMware =
 
-The machine should boot to the Ubuntu desktop when powered on.
+Unzip `vcore-4.3.zip` to your virtual machines directory; a `vcore-4.3` folder will be created. On Windows this may be under your Documents folder under `My Virtual Machines`.
+
+If you already have VMware installed, double-click on the vmx file to open the VCORE virtual machine with VMware.
+
+= VCORE usage notes =
+
+Note the RAM and number of processors. If you have a quad-core system with hyperthreading (8 threads), then you may want to assign up to 4 processors to VCORE. 2GB is a good amount of RAM for VCORE; unless your machine only has 2 or 3GB of physical RAM, then you may try 1GB for VCORE.
+
+The machine should boot to the Ubuntu desktop when powered on. The username and password can be found in the included README file. Ubuntu does not have a root password, but instead uses `sudo`.
