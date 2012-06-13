@@ -1,0 +1,47 @@
+#summary Instructions for switching between versions.
+
+= Release or Development Version? =
+
+CORE releases are numbered such as CORE 4.2, CORE 4.3, etc. They can be found as [http://downloads.pf.itd.nrl.navy.mil/core/packages/ packages] or [http://downloads.pf.itd.nrl.navy.mil/core/source/ source]. [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ Development snapshots] are created nightly as source tarballs.
+
+Choose the latest CORE release if:
+ * you want a more stable, tested CORE
+ * you would like to use pre-built binary packages
+ * you want documentation
+
+Choose the development snapshot if:
+ * you want bleeding edge features
+ * you desire some functionality or bugfix described on the CORE mailing list, blog, or wiki
+ * you're running with the latest Linux distro that is not supported by the latest release
+ * you're comfortable compiling and installing the CORE source
+
+= Switching Versions =
+
+First, uninstall the previously installed version.
+
+To uninstall the CORE package, use a command such as:
+{{{
+  # Ubuntu package uninstall
+  dpkg -r core-4.3
+}}}
+{{{
+  # Fedora package uninstall
+  rpm -e core-4.3
+}}}
+
+To uninstall from the CORE source, change to your CORE source build directory and use `sudo make uninstall`:
+{{{
+  # source uninstall
+  cd core-4.3
+  sudo make uninstall
+}}}
+
+Uninstalling should not remove your user settings or `imn` scenario files. See the notes in the section below.
+
+Next, follow the installation instructions in the Quickstart or CORE manual to install from packages or source.
+
+= Compatibility Notes =
+
+Notes on `imn` file compatibility will be listed here.
+
+When upgrading, you may want to back up your `.core` user directory or temporarily move it out of the way. This allows the GUI to re-create default settings
