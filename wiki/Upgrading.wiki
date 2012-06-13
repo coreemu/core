@@ -38,7 +38,7 @@ To uninstall from the CORE source, change to your CORE source build directory an
 
 Uninstalling should not remove your user settings or `imn` scenario files. See the notes in the section below.
 
-Next, follow the installation instructions in the Quickstart or CORE manual to install from packages or source.
+Next, follow the installation instructions in the [Quickstart] or CORE manual to install from packages or source.
 
 = Compatibility Notes =
 
