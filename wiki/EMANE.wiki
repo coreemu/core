@@ -11,6 +11,8 @@ EMANE downloads, documentation, and other information:
 
 = Easy EMANE Install =
 
+== Fedora ==
+
 Here are easy EMANE instructions for Fedora 12 i386. Replace with "x86_64" if needed. Run these as root.
 
 {{{
@@ -27,6 +29,8 @@ rm -f ace*
 rpm -ivh *
 }}} 
 
+== Ubuntu ==
+
 Here are instructions for Ubuntu 11.10. Note that Ubuntu 11.10 has libace-dev (6.0.1-3) and libace-6.0.1 (6.0.1-3) libraries, but here we will install ACE (6.0.8-1) included with the EMANE bundle.
 
 {{{
@@ -42,6 +46,8 @@ sudo dpkg -i *.deb
 
 = Easy EMANE Uninstall =
 
+== Fedora ==
+
 Remove everything with one command:
 
 {{{
@@ -54,7 +60,14 @@ Don't forget about the ACE libraries.
 rpm -e ace-devel ace-gperf ace
 }}}
 
-For Ubuntu, open the Synaptic package manager and choose the "Installed (local or obsolete)" section. Select the various EMANE packages using shift+click, right-click and choose remove.
+== Ubuntu ==
+
+{{{
+sudo dpkg -r emane\* python-emane\* libemane\* ace\*
+}}}
+
+
+Or for Ubuntu you can open the Synaptic package manager and choose the "Installed (local or obsolete)" section. Select the various EMANE packages using shift+click, right-click and choose remove.
 
 = Misc Info =
 
