@@ -85,7 +85,8 @@ In this example, we download the SVN source snapshot [http://downloads.pf.itd.nr
   cd core
   ./bootstrap.sh
   ./configure
-  make
+  # -j8 is for 8 concurrent jobs on a multi-core system
+  make -j8
   sudo make install
 }}}
 
