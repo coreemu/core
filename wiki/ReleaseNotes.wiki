@@ -3,7 +3,7 @@
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
 = 4.3 =
-CORE 4.3 was released on 3/7/12.
+CORE 4.3 was released on 3/7/12. Packages are available for Ubuntu 11.10/11.04/10.10/10.04 and Fedora 14/15/16. 
 
 The high-level changes since version 4.2 are:
  * EMANE 0.7.2 and 0.7.3 support
