@@ -49,7 +49,7 @@ The high-level changes since version 4.3 are:
  * added Ns2ScriptedMobility model to Python, removed from the GUI
  * namespace nodes mount a private /sys
 
- * fixed the following bugs:<br>80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 144, 146, 147, 151, 154, 155,
+ * fixed the following bugs:<br>80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 143, 144, 146, 147, 151, 154, 155
 
 Known issues with 4.4:
  * GUI segfault under Ubuntu 11.10 with Tcl/Tk 8.5.10 (see 4.3 release notes).
