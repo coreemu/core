@@ -20,6 +20,7 @@ _*Note: these are incomplete lists!*_
 
 = Known bad kernels =
 || distro || kernel versions || problem || workaround/notes ||
+|| Fedora 17 || 3.3.4-5.fc17.x86_64 (stock) || missing sch_tbf module || yum update to fix
 || Fedora 15 || 2.6.38.6-26.rc1.fc15.x86_64, 2.6.38.6-26.rc1.fc15.i686 || (1) IPv6 snooping bug || yum update to fix ||
 || Ubuntu 10.10 || 2.6.35-22 || crashes || use rc6 or newer from http://kernel.ubuntu.com/~kernel-ppa/mainline/ as workaround ||
 || Fedora 14, Ubuntu 10.10  || 2.6.34, 2.6.35, 2.6.35.6-45.fc14.i686, 2.6.35-22-generic  || (2) IPv6 in namespaces || CORE has workaround ||
