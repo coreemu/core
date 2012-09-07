@@ -53,6 +53,7 @@ The high-level changes since version 4.3 are:
 
 Known issues with 4.4:
  * GUI segfault under Ubuntu 11.10 with Tcl/Tk 8.5.10 (see 4.3 release notes).
+ * Fedora 17 stock kernel 3.3.4-6.fc17 is missing the sch_tbf module, needed to properly set up the tc qdiscs; fix by updating to 3.5.3-1.fc17 or newer
 
 = 4.3 =
 CORE 4.3 was released on 3/7/12. Packages are available for Ubuntu 11.10/11.04/10.10/10.04 and Fedora 14/15/16. 
