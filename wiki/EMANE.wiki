@@ -12,22 +12,21 @@ EMANE downloads, documentation, and other information:
 = Easy EMANE Install =
 
 == Fedora ==
+These dependencies are automatically resolved if you use `yum localinstall`, so you don't need to do this:
+{{{
+# optional!
+yum -y install openssl-devel perl-XML-Simple perl-XML-LibXML
+}}}
 
-Here are easy EMANE instructions for Fedora 12 i386. Replace with "x86_64" if needed. Run these as root.
+Here are easy EMANE instructions for Fedora 17 x86_64. Replace with "i386" if needed. Run these as root.
 
 {{{
-# install dependencies
-yum -y install openssl-devel perl-XML-Simple perl-XML-LibXML
-# download and install EMANE 0.6.3
-wget http://labs.cengen.com/emane/download/RPMS/F12/0.6.3/i386/emane-bundle-0.6.3.fc12.i386.tgz
-mkdir emane-0.6.3
-cd emane-0.6.3
-tar xzf ../emane-bundle-0.6.3.fc12.i386.tgz
-# ACE libs must be installed first
-rpm -ivh ace*
-rm -f ace*
-rpm -ivh *
-}}} 
+wget http://labs.cengen.com/emane/download/RPMS/F17/0.7.4/x86_64/emane-bundle-0.7.4.fc17.x86_64.tgz
+mkdir emane-0.7.4
+cd emane-0.7.4
+tar xzf ../emane-bundle-0.7.4.fc17.x86_64.tgz
+yum localinstall *.rpm
+}}}
 
 == Ubuntu ==
 
