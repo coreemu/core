@@ -68,11 +68,11 @@ Fedora:
 `yum install bash bridge-utils ebtables libev python tcl tk tkimg urw-fonts xauth xorg-x11-server-utils xterm autoconf automake gcc libev-devel  make pkgconfig python-devel readline-devel texinfo ImageMagick help2man`
 
 This package list comes from 
-[http://pf.itd.nrl.navy.mil/core/core-html/Installation.html here].
+[http://pf.itd.nrl.navy.mil/core/core-html/install.html here].
 
 You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://cs.itd.nrl.navy.mil/work/ospf-manet/ OSPF MDR].
 
-*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/Installing-from-Packages-on-Fedora.html installation instructions], you need to also disable SELINUX, sandbox, and iptables.
+*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable SELINUX, sandbox, and iptables.
 
 
 == Step 2. Get and build the source ==
