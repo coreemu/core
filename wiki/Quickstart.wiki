@@ -38,7 +38,10 @@ Virtual networks usually require routing software. CORE automatically builds con
 
 == Step 2. Start the CORE daemon ==
 {{{
+  # for Ubuntu/CentOS
   sudo /etc/init.d/core start
+  # for Fedora
+  systemctl start core-emulator.service
 }}}
 
 To view the CORE daemon log file, look at `/var/log/coredpy.log`.
