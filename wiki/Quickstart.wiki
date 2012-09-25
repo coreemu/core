@@ -2,7 +2,7 @@
 
 = Quickstart: Installation using pre-built packages =
 
-This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/Installation.html CORE manual].
+This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/install.html CORE manual].
 
 CORE 4.4 packages are available for Ubuntu 12.04 (precise) or 11.10 (oneiric), Fedora 17 or 16, and rhel6. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform. See the [Upgrading upgrading] page for help choosing a release or for upgrade instructions.
 
