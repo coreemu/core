@@ -34,7 +34,7 @@ Virtual networks usually require routing software. CORE automatically builds con
   yum localinstall quagga-0.99.21mr2.2-1.fc16.x86_64.rpm --nogpgcheck
 }}}
 
-*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/Installing-from-Packages-on-Fedora.html installation instructions], you need to also disable SELINUX, sandbox, and iptables.
+*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable SELINUX, sandbox, and iptables.
 
 == Step 2. Start the CORE daemon ==
 {{{
