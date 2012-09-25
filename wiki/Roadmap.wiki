@@ -46,6 +46,18 @@ This page lists planned development milestones.
   * update CORE to have channel reference devices
 
 = 4.4 =
-We plan to organize the milestones listed above into specific future release versions, along with planned release dates. 
+Released on 9/25/12. CORE 4.4 addresses these items from the above list:
+ * Service configuration
+  * improved node service customization
+  * storing/applying frequently-used configurations
+ * Further develop Python scripting examples and documentation
+  * clearer tutorial on writing CORE Python scripts
+ * Goal is to support a well-defined experiment workflow
+ * generalize and merge xen branch into trunk
+ * interoperability with new models/versions
+ * improve health monitoring and control mechanisms
+
 
 = 4.5 =
+
+We plan to organize the milestones listed above into specific future release versions, along with planned release dates. 
