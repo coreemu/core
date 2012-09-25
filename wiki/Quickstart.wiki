@@ -9,7 +9,7 @@ CORE 4.4 packages are available for Ubuntu 12.04 (precise) or 11.10 (oneiric), F
 == Step 1. Install CORE package ==
 
 Get the Ubuntu (deb) or Fedora (rpm) package for your architecture (64-bit or 32-bit) from here:<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.4/linux/]
+[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.4/]
 
 Use your package manager to automatically install dependencies:<br>
 {{{
