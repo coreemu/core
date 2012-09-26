@@ -18,6 +18,7 @@ _*Note: these are incomplete lists!*_
 || Ubuntu 11.10 || 3.0.0-15-generic || ||
 || Fedora 16 || 3.1.0-7.fc16.x86_64 || stock kernel ||
 || Ubuntu 12.04 || 3.2.0-30-generic || ||
+|| Fedora 17 || 3.5.3-1.fc17.x86_64 || ||
 
 = Known bad kernels =
 || distro || kernel versions || problem || workaround/notes ||
@@ -27,7 +28,6 @@ _*Note: these are incomplete lists!*_
 || Ubuntu 10.04 || 2.6.32-32 || namespace support not enabled || ||
 || [http://www.4tiitoo.com/ WeTab Linux] || 2.6.42-66672.1.28-wetab || namespace support not enabled || ||
 || || 3.3 || unable to rename interface installed into namespace || see patch in CORE source ||
-|| Fedora 17 || 3.3.4-5.fc17.x86_64 (stock) || missing sch_tbf module || yum update to fix
 
 
   # IPv6 snooping bug - OSPFv3 hellos jump off the bridge
