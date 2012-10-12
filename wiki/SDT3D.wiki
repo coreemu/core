@@ -7,3 +7,17 @@ Info on using the SDT3D 3D GUI with CORE will be listed here.
 = SDT3D Ubuntu 12.04 install =
 
 Notes on installing SDT3D under Ubuntu 12.04 amd64.
+
+Successful build/run environment:
+ # Ubuntu 12.04 x86_64 updated 2012-10-12
+ # OpenJDK 1.7 (tested 7u7-2.3.2a) *Note:* Oracle Java 1.6/1.7 and OpenJDK 1.6 will not work when behind a proxy, but segfault
+ # sdt-svnsnap.tgz (dated 2012-03-29) from http://downloads.pf.itd.nrl.navy.mil/sdt/nightly_snapshots/sdt-svnsnap.tgz
+ # protolib-svnsnap.tgz (dated 2012-10-03) from http://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/protolib-svnsnap.tgz
+ # worldwind.zip and joglutils.zip from PROTEAN Forge website (login required)
+
+
+Install steps:
+ * Install some pre-requisites:
+{{{
+sudo apt-get install openjdk-7-jdk g++
+}}}
