@@ -21,3 +21,17 @@ Install steps:
 {{{
 sudo apt-get install openjdk-7-jdk g++
 }}}
+ * unpack SDT snapshot tarball; make a build/downloads directory
+{{{
+tar xzf sdt-svnsnap.tgz
+cd sdt/makefiles
+mkdir -p build/download
+}}}
+ * put a protolib.tgz, worldwind.zip, and joglutils.zip in this build/downloads directory; symlink works
+{{{
+cd build/download
+# this assumes files are downloaded to ~
+ln -s ~/worldwind.zip .
+ln -s ~/joglutils.zip .
+ln -s ~/protolib-svnsnap.tgz ./protolib.tgz
+}}}
