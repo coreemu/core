@@ -16,7 +16,8 @@ Successful build/run environment:
  # worldwind.zip and joglutils.zip from PROTEAN Forge website (login required)
 
 
-Install steps:
+Steps for build and run:
+
  * Install some pre-requisites:
 {{{
 sudo apt-get install openjdk-7-jdk g++
@@ -34,4 +35,47 @@ cd build/download
 ln -s ~/worldwind.zip .
 ln -s ~/joglutils.zip .
 ln -s ~/protolib-svnsnap.tgz ./protolib.tgz
+}}}
+ * set JAVA_HOME environment variable; also ensure that javac, java, and jar point to the OpenJDK 1.7 install
+{{{
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+# this should point to the above JAVA_HOME version
+update-alternatives --display java
+update-alternatives --display javac
+update-alternatives --display jar
+# if you need to change the above, use the following for each:
+# sudo update-alternatives --config java
+}}}
+ * build SDT3D
+{{{
+make -f Makefile.linux sdt3d
+}}}
+ * if something goes wrong with the above build step, you'll need to recover like this:
+{{{
+# assume we're in sdt/makefiles/
+rm -rf build/bin build/build build/sdt3d
+}}}
+ * a successful build results in a file *sdt3d.zip*; unzip this somewhere to continue
+{{{
+cd ~
+unzip sdt/makefiles/sdt3d.zip
+}}}
+ * the shared object libraries found in the sdt3d/lib/ directory need to be updated to their 64-bit counterparts.
+{{{
+cd ~/sdt3d/lib
+jar xvf ~/sw/jogl-natives-linux-amd64.jar 
+jar xvf ~/sw/gluegen-rt-natives-linux-amd64.jar 
+}}}
+ * fix the sdt3d.sh script to work properly, using the following:
+{{{
+#!/bin/sh
+export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
+THISDIR=`dirname $0`
+export LD_LIBRARY_PATH=${THISDIR}/lib
+java -jar -Dsun.java2d.noddraw=true -Xmx512m ${THISDIR}/jars/sdt3d.jar
+}}}
+ * now you should be ready to run SDT3D. It helps to first have an Internet connection (no proxy) to populate the map cache. Also helpful if you use the proprietary NVIDIA drivers (`sudo apt-get install nvidia-current`) or ATI drivers
+{{{
+cd ~/sdt3d
+./sdt3d.sh
 }}}
