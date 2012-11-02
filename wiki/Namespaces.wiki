@@ -51,6 +51,20 @@ brctl show
 vcmd -c /tmp/n1.ctl -- ping 10.0.0.2
 }}}
 
+= Kernel Development Guidelines =
+
+Here are some general rules for making things namespace-aware:
+
+ * move static variables to a per-namespace structure as needed
+ * pass a per-namespace context argument to functions as needed; e.g., struct net or the per-namespace structure from above
+ * remove references to init_net and find the namespace dynamically when needed (use dev_net(), sock_net(), etc.)
+ * create and register per-namespace initializer/cleanup functions (see struct pernet_operations and net_generic()); do namespace-specific operations here instead of in the module init/exit functions
+ * create per-namespace procfs/sysfs files
+
+Exactly what data becomes per-namespace and what is shared has to be considered on a case-by-case basis.  Also, some of the specifics depend on the kernel version.
+
+The GRE kernel module (ip_gre.c) might be useful as an introductory example.
+
 = References =
 
 Linux Containers SourceForge project page:
