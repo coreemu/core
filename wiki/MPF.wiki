@@ -1,0 +1,21 @@
+#summary Info on using CORE and NRL's Motion Planning Framework
+
+= Run MPF2 under Ubuntu 12.04 x86_64 =
+
+The Motion Planning Framework 2 (MPF2) supersedes the original MPF. This brief guide explains how to run MPF2 under Ubuntu 12.04 x86_64 Linux. MPF uses the .NET framework, so the Mono development tools are required under Linux:
+
+{{{
+sudo apt-get install mono mono-complete monodevelop
+}}}
+
+Open the solution with the MonoDevelop GUI:
+ # run monodevelop GUI
+ # open `nmf/planning/motion/MPF2/MPF_Shell/MPF_GUI/MPF_GUI.csproj`
+ # click *OK* for *"Reference to unknown project 'MPF_Engine' ignored"*
+ # right-click *"Solution MPF_GUI"*, choose *"Add Existing Project..."*, select `MPF2/MPF_Shell/MPF_Engine/MPF_Engine.csproj`
+ # right-click `MPF_GUI`, select *"Options"*
+ # click *"General"* under *"Build"* in the left pane
+ # change *"Target framework"* to *"Mono/.NET 4.0"*
+ # click *OK*
+ # click *"Build"*, *"Build All"*
+ # run it from the *Run* menu! a GUI should window should appear.
