@@ -2,11 +2,24 @@
 
 <table border="0">
 <tr><td>http://hipserver.mct.phantomworks.org/core/images/box_download_48.png</td>
-<td>The primary CORE page with downloads is hosted by NRL:</td></tr>
+<td>
+= Primary Downloads =
+The primary CORE page with downloads is hosted by NRL:</td></tr>
 <tr><td></td>
 <td>Downloads:  http://downloads.pf.itd.nrl.navy.mil/core/</td></tr>
 <tr><td></td>
 <td>
 Website:  http://cs.itd.nrl.navy.mil/work/core/
 </td></tr>
+
+<tr><td>http://hipserver.mct.phantomworks.org/core/images/box_download_48.png</td>
+<td>
+= Supplemental Downloads =
+
+Here are supplemental files that may require the use of the CORE software (found at the primary downloads link above.)
+
+ * [http://code.google.com/p/coreemu/downloads/detail?name=RNP-tutorials-20121108.zip&can=2 routing tutorials from RNP] (2012-11-08)
+
+</td></tr>
+
 </table>
