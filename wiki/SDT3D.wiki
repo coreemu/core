@@ -75,8 +75,19 @@ THISDIR=`dirname $0`
 export LD_LIBRARY_PATH=${THISDIR}/lib
 java -jar -Dsun.java2d.noddraw=true -Xmx512m ${THISDIR}/jars/sdt3d.jar
 }}}
+ * create a `~/sdtConfigFile.txt` for SDT3D to automatically listen on port 5000 for messages from CORE:
+{{{
+echo listen 5000 > ~/sdtConfigFile.txt
+}}}
  * now you should be ready to run SDT3D. It helps to first have an Internet connection (no proxy) to populate the map cache. Also helpful if you use the proprietary NVIDIA drivers (`sudo apt-get install nvidia-current`) or ATI drivers
 {{{
 cd ~/sdt3d
 ./sdt3d.sh
 }}}
+ * you can launch SDT3D from within CORE by choosing _View_ > _3D GUI..._. By default, CORE looks for a SDT3D launch script in `/usr/local/bin/sdt3d.sh`, which may look like the following. In this case, the home directory is used in order to use the `sdtConfigFile.txt` and `~/var/cache/WorldWindData` directories. Here the SDT3D folder has been moved to `/opt/sdt`.
+{{{
+#!/bin/sh
+cd /home/$USER
+/opt/sdt/sdt3d.sh
+}}}
+ * you can copy the WorldWind map cache between systems (helpful if you do not always have an Internet connection), look in `~/var/cache/WorldWindData`
