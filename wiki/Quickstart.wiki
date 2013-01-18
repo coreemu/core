@@ -105,11 +105,15 @@ Using the init script (messages go to `/var/log/coredpy.log`):
 
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
- * Check for notes on your Linux distribution on the [Linux] page.
+ * Check for notes on your Linux distribution on the [Linux] and [ReleaseNotes] pages.
  * CORE requires the Tcl/Tk packages, version 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
  * For system requirements and tips on the install process, visit the [http://pf.itd.nrl.navy.mil/core/core-html/install.html#prerequisites Prerequisites] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]
 
 = Other Options =
+ * *[EMANE] install*
+
+ * *[SDT3D] install*
+
  * *Do I need a custom kernel?* Not usually. Some disro's stock kernels may have issues, see [Linux] and [NamespaceKernels]. Some specific networking stack features may not support network namespaces, see [CustomKernels].
 
  * *VMware image*<br>*Pros:* everything is already set up for you; one file to download.  *Cons:* poor performance; for quick evaluation only.<br>[http://downloads.pf.itd.nrl.navy.mil/core/vmware-image/]<br>You can run CORE from within this pre-built VMware virtual machine with minimal setup. See the included vcore-`*`-README.txt in the zipfile for login information.  _Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the virtual display._
