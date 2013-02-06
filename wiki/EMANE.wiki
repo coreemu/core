@@ -68,6 +68,17 @@ sudo dpkg -r emane\* python-emane\* libemane\* ace\*
 
 Or for Ubuntu you can open the Synaptic package manager and choose the "Installed (local or obsolete)" section. Select the various EMANE packages using shift+click, right-click and choose remove.
 
+= Building EMANE from Source =
+
+== Ubuntu ==
+
+Here are additional dependencies if you plan on building EMANE from source:
+
+{{{
+sudo apt-get install autoconf automake libtool libxml2-dev
+}}}
+
+
 = Misc Info =
 
 Setting the delay in the RF-PIPE MAC adds a transmission delay, not a propagation delay (as one might consider CORE link delays.) The tx delay is affected by the packet size and transmit rate:
