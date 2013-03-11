@@ -1,0 +1,17 @@
+#summary Helper page for compiling NRL SMF
+
+= Introduction =
+
+NRL SMF provides Simplified Multicast Forwarding (RFC 6621).
+
+
+= Installation =
+You need to compile NRLSMF from source in order to install it.
+
+ # Download the NRLSMF nightly snapshot from: http://downloads.pf.itd.nrl.navy.mil/smf/nightly_snapshots/
+ # Download the protolib nightly snapshot to go with it: http://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/
+ # Unpack NRLSMF: `tar xvf ~/Downloads/nrlsmf-svnsnap.tgz`
+ # Unpack protolib: `tar xvf ~/Downloads/protolib-svnsnap.tgz`
+ # Create symlink: `cd nrlsmf; ln -s ../protolib`
+ # Build it: `cd unix; make -f Makefile.linux`
+ # Install it: `sudo cp nrlsmf /usr/local/sbin`
