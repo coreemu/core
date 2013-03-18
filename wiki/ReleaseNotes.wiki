@@ -2,6 +2,8 @@
 
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
+= 4.5 =
+
 = 4.4 =
 CORE 4.4 was released on 9/25/12. Packages are available for Ubuntu 12.04/11.10 and Fedora 17/16.
 
