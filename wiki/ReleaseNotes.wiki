@@ -3,6 +3,58 @@
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
 = 4.5 =
+CORE 4.5 is planned to be released around 4/5/13. Currently a 4.5rc1 release candidate is being prepared and tested.
+
+The high-level changes since version 4.4 are:
+
+*GUI*
+ * improved behavior when starting GUI without daemon, or using File New after connection with daemon is lost
+ * fix various GUI issues when reconnecting to a session
+ * support 3D GUI via output to SDT3D
+ * added "Execute Python script..." entry to the File Menu
+ * support user-defined terminal program instead of hard-coded xterm
+ * added session options for "enable RJ45s", "preserve session dir"
+ * added buttons to the IP Addresses dialog for removing all/selected IPv4/IPv6
+ * allow sessions with multiple canvases to enter RUNTIME state
+ * added "--addons" startup mode to pass control to code included from addons dir
+ * added "Locked" entry to View menu to prevent moving items
+ * use currently selected node type when invoking a topology generator
+ * updated throughput plots with resizing, color picker, plot labels, locked scales, and save/load plot configuration with imn file
+ * improved session dialog
+
+*EMANE*
+ * EMANE 0.8.1 support with backwards-compatibility for 0.7.4
+ * extend CommEffect model to generate CommEffect events upon receipt of Link Messages having link effects
+
+*Services*
+ * updated FTP service with root directory for anonymous users
+ * added HTTP, PCAP, BIRD, RADVD, and Babel services
+ * support copying existing files instead of always generating them
+ * added "Services..." entry to node right-click menu
+ * added "View" button for side-by-side comparison when copying customized config files
+ * updated Quagga daemons to wait for zebra.vty VTY file before starting
+
+*General*
+ * XML import and export
+ * renamed "cored.py" to "cored", "coresendmsg.py" to "coresendmsg"
+ * code reorganization and clean-up
+ * updated XML export to write NetworkPlan, MotionPlan, and ServicePlan within a Scenario tag, added new "Save As XML..." File menu entry
+ * added script_start/pause/stop options to Ns2ScriptedMobility
+ * "python" source sub-directory renamed to "daemon"
+ * added "cored -e" option to execute a Python script, adding its session to the active sessions list, allowing for GUI connection
+ * support comma-separated list for custom_services_dir in core.conf file
+ * updated kernel patches for Linux kernel 3.5
+ * support RFC 6164-style IPv6 /127 addressing
+
+*ns-3*
+ * integrate ns-3 node location between CORE and ns-3 simulation
+ * added ns-3 random walk mobility example
+ * updated ns-3 Wifi example to allow GUI connection and moving of nodes
+
+ * fixed the following bugs:<br>54, 136, 153, 157, 161, 162, 165, 168, 170, 171, 173, 174, 176, 190
+
+Known issues with 4.5:
+ * known issues will be listed here
 
 = 4.4 =
 CORE 4.4 was released on 9/25/12. Packages are available for Ubuntu 12.04/11.10 and Fedora 17/16.
