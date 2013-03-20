@@ -17,6 +17,8 @@ Click [http://code.google.com/p/coreemu/w/list here] or the [http://code.google.
  * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]
  * [NamespaceKernels]: notes on good/bad Linux kernels 
  * [Linux]: Linux virtualization and CORE
+ * [EMANE]
+ * [SDT3D]
 
 == Help and Support ==
  * [FAQ]: Frequently Asked Questions
