@@ -51,7 +51,7 @@ The high-level changes since version 4.4 are:
  * added ns-3 random walk mobility example
  * updated ns-3 Wifi example to allow GUI connection and moving of nodes
 
- * fixed the following bugs:<br>54, 103, 111, 136, 145, 153, 157, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176, 184, 190, 193
+ * fixed the following bugs:<br>54, 103, 111, 136, 145, 153, 157, 160, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176, 184, 190, 193
 
 Known issues with 4.5:
  * known issues will be listed here
