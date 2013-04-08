@@ -50,6 +50,8 @@ Virtual networks usually require routing software. CORE automatically builds con
 To view the CORE daemon log file, look at `/var/log/cored.log`.
 
 == Step 3. Run CORE ==
+
+This is typically run as a normal (non-root) user.
 {{{
   core
 }}}
@@ -68,14 +70,14 @@ Ubuntu:
 
 Fedora:
 
-`yum install bash bridge-utils ebtables libev python tcl tk tkimg autoconf automake gcc libev-devel make pkgconfig python-devel ImageMagick help2man`
+`yum install bash bridge-utils ebtables iproute libev python tcl tk tkimg autoconf automake gcc libev-devel make pkgconfig python-devel ImageMagick help2man`
 
 This package list comes from 
 [http://pf.itd.nrl.navy.mil/core/core-html/install.html here].
 
 You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://cs.itd.nrl.navy.mil/work/ospf-manet/ OSPF MDR].
 
-*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable SELINUX, sandbox, and iptables.
+*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
 
 
 == Step 2. Get and build the source ==
@@ -88,6 +90,7 @@ In this example, we download the SVN source snapshot [http://downloads.pf.itd.nr
   tar xzf core-svnsnap.tgz
   cd core
   ./bootstrap.sh
+  # on Fedora use ./configure --with-startup=systemd
   ./configure
   # -j8 is for 8 concurrent jobs on a multi-core system
   make -j8
@@ -95,16 +98,25 @@ In this example, we download the SVN source snapshot [http://downloads.pf.itd.nr
 }}}
 
 == Step 3. Start the CORE daemon  ==
-`sudo cored.py`
+{{{
+sudo cored
+}}}
 
 For verbose debugging:
-`sudo cored.py -v`
+{{{
+sudo cored -v
+}}}
 
-Using the init script (messages go to `/var/log/coredpy.log`):
-`sudo /etc/init.d/core start`
+Using the init script (messages go to `/var/log/cored.log`):
+{{{
+sudo /etc/init.d/core start
+}}}
 
 == Step 4. Run the CORE GUI ==
-`core &` 
+This is typically run as a normal (non-root) user.
+{{{
+core
+}}}
 
 = Tips =
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
