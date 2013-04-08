@@ -38,6 +38,8 @@ Virtual networks usually require routing software. CORE automatically builds con
 
 *Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
 
+To check the RPM signing key, the core-dev public key can be found here: [https://coreemu.googlecode.com/files/RPM-GPG-KEY-core-dev RPM-GPG-KEY-core-dev]
+
 == Step 2. Start the CORE daemon ==
 {{{
   # for Ubuntu/CentOS
