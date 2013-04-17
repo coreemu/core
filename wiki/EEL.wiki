@@ -22,5 +22,18 @@ The fields for GPS location events are: _time, NEM ID, "location", "gps", latitu
 == Cartesian coordinates ==
 
 = EEL pathloss events =
-A pathloss event specifies the pathloss in decibels.
-When used with EMANE's Universal PHY, you would set the _pathloss mode_ to _*pathloss*_.
+A pathloss event specifies the pathloss in decibels (dB).
+When used with EMANE's Universal PHY, you would set the _pathloss mode_ to _*pathloss*_. When pathloss mode is used, the location of a node no longer determines connectivity.
+
+A packet received in EMANE has the following received power calculation, that determines whether or not the packet will be dropped:
+_Rx Power (dBm) = Tx Power (dBm) + Tx Antenna Gain (dBi) + Rx Antenna Gain (dBi) - *Pathloss (dB)*_
+
+The fields for pathloss events are: _time, source NEM ID, "pathloss", destination NEM ID,pathloss-value_.
+
+Multiple destination NEM IDs may be specified. The example below shows three NEMs, with each line specifying two destination NEMs. Note that loss can be asymmetrical.
+
+{{{
+0.0 nem:1 pathloss nem:2,96.3 nem:3,95.0
+0.0 nem:2 pathloss nem:1,94.2 nem:3,96.1
+0.0 nem:3 pathloss nem:2,94.9 nem:3,96.3
+}}}
