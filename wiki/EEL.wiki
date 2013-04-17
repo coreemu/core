@@ -1,0 +1,17 @@
+#summary Emulation Event Log format quick reference page
+
+= EEL =
+
+EEL is the Emulation Event Log, a text file format for scripting emulation events or logging them. A more verbose description can be found on the [http://pf.itd.nrl.navy.mil/mnmtools/ mnmtools] (Mobile Network Modeling Tools) page.
+
+
+= EEL location events =
+A location event determines the absolute position of a node at the given time. This is in contrast to a waypoint destination and velocity vector. When used with EMANE's Universal PHY, you would set the _pathloss mode_ to _*freespace*_ or _*2ray*_.
+
+== GPS coordinates ==
+
+== Cartesian coordinates ==
+
+= EEL pathloss events =
+A pathloss event specifies the pathloss in decibels.
+When used with EMANE's Universal PHY, you would set the _pathloss mode_ to _*pathloss*_.
