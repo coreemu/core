@@ -48,3 +48,53 @@ Multiple destination NEM IDs may be specified. The example below shows three NEM
 0.0 nem:2 pathLoss nem:1,94.2 nem:3,96.1
 0.0 nem:3 pathLoss nem:2,94.9 nem:3,96.3
 }}}
+
+= Example XML configs =
+You can start playback of an EEL file using the following:
+{{{
+emaneeventservice eventservice.xml
+}}}
+
+Here is a sample `eventservice.xml` file:
+{{{
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE eventservice SYSTEM "file:///usr/share/emane/dtd/eventservice.dtd">
+<eventservice name="eeltest" deployment="deployment.xml">
+  <param name="eventservicegroup" value="224.1.2.8:45703"/>
+  <param name="eventservicedevice" value="lo"/>
+  <generator name="Emulation Event Log Generator" definition="eelgenerator.xml"/>
+</eventservice>
+}}}
+
+And the sample `eelgenerator.xml` file:
+{{{
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE eventgenerator SYSTEM "file:///usr/share/emane/dtd/eventgenerator.dtd">
+<eventgenerator name="emanegeneel" library="eelgenerator">
+  <param name="inputfile" value="myscript.eel"/>
+  <param name="loader" value="location:eelloaderlocation:full"/>
+  <param name="loader" value="pathLoss:eelloaderpathloss:full"/>
+</eventgenerator>
+}}}
+
+And a sample `deployment.xml` file:
+{{{
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE deployment SYSTEM "file:///usr/share/emane/dtd/deployment.dtd">
+<deployment>
+  <platform id="1">
+    <nem id="1"/>
+    <nem id="2"/>
+    <nem id="3"/>
+  </platform>
+</deployment>
+}}}
+
+Finally, for the above config files you would write a `myscript.eel` file that contains the line-by-line events; you can use the above examples for this.
+
+For more information about what's going on, try log level 4:
+{{{
+emaneeventservice -l4 eventservice.xml
+}}}
+
+Time zero starts when you start the `emaneeventservice` program.
