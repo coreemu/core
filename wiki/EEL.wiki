@@ -21,6 +21,17 @@ The fields for GPS location events are: _time, NEM ID, "location", "gps", latitu
 
 == Cartesian coordinates ==
 
+The fields for Cartesian coordinate location events are: _time, NEM ID, "location", "cart", x, y, z_
+
+{{{
+0.0 nem:1 location cart 100.00,250.00,50.00
+0.0 nem:2 location cart 230.00,261.00,51.00
+0.0 nem:3 location cart 497.00,101.00,50.00
+0.0 nem:4 location cart 230.00,101.00,45.00
+}}}
+
+
+
 = EEL pathloss events =
 A pathloss event specifies the pathloss in decibels (dB).
 When used with EMANE's Universal PHY, you would set the _pathloss mode_ to _*pathloss*_. When pathloss mode is used, the location of a node no longer determines connectivity.
@@ -28,7 +39,7 @@ When used with EMANE's Universal PHY, you would set the _pathloss mode_ to _*pat
 A packet received in EMANE has the following received power calculation, that determines whether or not the packet will be dropped:
 _Rx Power (dBm) = Tx Power (dBm) + Tx Antenna Gain (dBi) + Rx Antenna Gain (dBi) - *Pathloss (dB)*_
 
-The fields for pathloss events are: _time, source NEM ID, "pathloss", destination NEM ID,pathloss-value_.
+The fields for pathloss events are: _time, source NEM ID, "pathloss", destination NEM ID,pathloss-value_
 
 Multiple destination NEM IDs may be specified. The example below shows three NEMs, with each line specifying two destination NEMs. Note that loss can be asymmetrical.
 
