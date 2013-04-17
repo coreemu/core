@@ -10,6 +10,15 @@ A location event determines the absolute position of a node at the given time. T
 
 == GPS coordinates ==
 
+The fields for GPS location events are: _time, NEM ID, "location", "gps", latitude, longitude, altitude_
+
+{{{
+0.0 nem:1 location gps 40.031075,-74.523518,3.000000
+0.0 nem:2 location gps 40.031165,-74.523412,3.000000
+0.0 nem:3 location gps 40.031227,-74.523247,3.000000
+0.0 nem:4 location gps 40.031290,-74.523095,3.000000
+}}}
+
 == Cartesian coordinates ==
 
 = EEL pathloss events =
