@@ -44,7 +44,7 @@ The fields for pathloss events are: _time, source NEM ID, "pathloss", destinatio
 Multiple destination NEM IDs may be specified. The example below shows three NEMs, with each line specifying two destination NEMs. Note that loss can be asymmetrical.
 
 {{{
-0.0 nem:1 pathloss nem:2,96.3 nem:3,95.0
-0.0 nem:2 pathloss nem:1,94.2 nem:3,96.1
-0.0 nem:3 pathloss nem:2,94.9 nem:3,96.3
+0.0 nem:1 pathLoss nem:2,96.3 nem:3,95.0
+0.0 nem:2 pathLoss nem:1,94.2 nem:3,96.1
+0.0 nem:3 pathLoss nem:2,94.9 nem:3,96.3
 }}}
