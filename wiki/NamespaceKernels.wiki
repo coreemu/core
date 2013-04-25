@@ -29,7 +29,8 @@ _*Note: these are incomplete lists!*_
 || Fedora 15 || 2.6.38.6-26.rc1.fc15.x86_64, 2.6.38.6-26.rc1.fc15.i686 || (1) IPv6 snooping bug || yum update to fix ||
 || [http://www.4tiitoo.com/ WeTab Linux] || 2.6.42-66672.1.28-wetab || namespace support not enabled || ||
 || || 3.3 || unable to rename interface installed into namespace || see patch in CORE source ||
-
+|| Fedora 17 || 3.3.4-5.fc17.i686.PAE || sample1 fails to start || yum update ||
+|| Fedora 18 || 3.6.10-4.fc18.i686.PAE  || sample1 fails to start || yum update ||
 
   # IPv6 snooping bug - OSPFv3 hellos jump off the bridge
     * Look at output of `netstat -s | grep invalid` to see "invalid headers"
