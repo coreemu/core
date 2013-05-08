@@ -9,6 +9,9 @@ EMANE downloads, documentation, and other information:
   * http://labs.cengen.com/emane/
   * http://cs.itd.nrl.navy.mil/work/emane/index.php
 
+= Scripting =
+See the [EEL] page for a description of the main scripting format used by EMANE for generating mobility and pathloss events.
+
 = Easy EMANE Install =
 
 == Fedora ==
