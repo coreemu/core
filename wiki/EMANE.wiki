@@ -81,6 +81,10 @@ Here are additional dependencies if you plan on building EMANE from source:
 sudo apt-get install autoconf automake libtool libxml2-dev
 }}}
 
+When EMANE is installed from source, XML files may still reference DTDs found in `/usr/share/emane/dtds`. An easy fix for this is to create a symlink:
+{{{
+sudo ln -s /usr/local/share/emane /usr/share/emane
+}}}
 
 = Misc Info =
 
