@@ -28,4 +28,5 @@
    http://lkml.indiana.edu/hypermail/linux/kernel/0604.1/1225.html
 
  * Virtual Time for OpenVZ
-    Yuhao Zheng David M. Nicol, Dong Jin. A virtual time system for OpenVZ-based network emulations. In Proceedings of the [https://sites.google.com/site/pads2011/ 2011 Symposium on Principles of Advanced and Distributed Simulation], pages 1–10, Nice, France, June 2011.
+    Yuhao Zheng David M. Nicol, Dong Jin. A virtual time system for OpenVZ-based network emulations. In Proceedings of the [https://sites.google.com/site/pads2011/ 2011 Symposium on Principles of Advanced and Distributed Simulation], pages 1–10, Nice, France, June 2011.<br>
+    Dong Jin, Yuhao Zheng, Huaiyu Zhu, David M. Nicol and Lenhard Winterrowd. Virtual Time Integration of Emulation and Parallel Simulation, In Proceedings of the 26th Conference on Principles of Advanced and Distributed Simulation (PADS), Zhangjiajie, China, 2012.
