@@ -2,7 +2,7 @@
 
 == 1. What is CORE? ==
 
-The Common Open Research Emulator (CORE) is a tool for emulating networks. You can turn one or more physical machines into networks of virtual nodes and connect these emulated networks to live networks. CORE consists of a GUI for drawing topologies of lightweight virtual machines, and Python modules for scripting network emulation.
+The Common Open Research Emulator (CORE) is a tool for emulating networks. You can turn one or more physical machines into networks of virtual nodes and connect these emulated networks to live networks. CORE consists of a GUI for drawing topologies of lightweight virtual machines, and Python modules for scripting network emulation. CORE uses Linux LXC virtualization (Linux containers, aka network namespaces) together with Linux bridging, EMANE, or ns-3 for networking.
 
 == 2. Who produced CORE? ==
 
