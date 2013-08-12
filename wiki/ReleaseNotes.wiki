@@ -2,6 +2,56 @@
 
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
+= 4.6 =
+CORE 4.6 will be released on 8/XX/13. Packages are available for the following Linux distributions:
+ * list will go here
+
+The high-level changes since version 4.5 are:
+
+*NOTE:* /etc/init.d/core is now /etc/init.d/cored (for insserv compatibility)
+
+*EMANE*
+ * don't start EMANE locally if no local NEMs
+ * EMANE poststartup() to re-transmit location events during initialization
+ * added debug port to EMANE options
+ * added a basic EMANE 802.11 CORE Python script example
+ * expose transport XML block generation to EmaneModels
+ * expose NEM entry to the EmaneModel so it can be overridden by a model
+ * add the control interface bridge prior to starting EMANE, as some models may
+ * depend on the controlnet functionality
+ * added EMANE model to CORE converter
+ * parse lat/long/alt from node messages, for moving nodes using command-line
+ * fix bug #196 incorrect distance when traversing UTM zones 
+ 
+*GUI*
+ * added Cut, Copy, and Paste options to the Edit menu
+ * paste will copy selected services and take care of node and interface
+ *  renumbering
+ * implement Edit > Find dialog for searching nodes and links
+ * when copying existing file for a service, perform string replacement of:
+ *  "~", "%SESSION%", "%SESSION_DIR%", "%SESSION_USER%", "%NODE%", "%NODENAME%"
+ * use CORE_DATA_DIR insteadof LIBDIR
+ * fix Adjacency Widget to work with OSPFv2 only networks
+ 
+*BUILD*
+ * build/packaging improvements for inclusion on Debian
+ * fix error when running scenario with a mobility script in batch mode
+ * include Linux kernel patches for 3.8
+ * renamed core-cleanup.sh to core-cleanup for Debian conformance
+ * don't always generate man pages from Makefile; new manpages for coresendmsg and cored
+ 
+*BUGFIXES*
+ * don't auto-assign IPv4/IPv6 addresses when none received in Link Messages (session reconnect)
+ * fixed lock view
+ * fix GUI spinbox errors for Tk 8.5.8 (RHEL/CentOS 6.2)
+ * fix broker node count for distributed session entering the RUNTIME state when (non-EMANE) WLANs or GreTapBridges are involved
+ * fix "file exists" error message when distributed session number is re-used
+ *  and servers file is written
+ * fix bug #194 configuration dialog too long, make dialog scrollable/resizable
+ * allow float values for loss and duplicates percent
+ * fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 206, 210, 212, 213, 214, 221
+
+
 = 4.5 =
 CORE 4.5 was released on 4/11/13. Packages are available for the following Linux distributions:
  * debs for Ubuntu 12.10 (quantal), 12.04 (precise)
