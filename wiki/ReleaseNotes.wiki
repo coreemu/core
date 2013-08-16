@@ -4,7 +4,8 @@ Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kerne
 
 = 4.6 =
 CORE 4.6 will be released on 8/XX/13. Packages are available for the following Linux distributions:
- * list will go here
+ * Ubuntu 12.04 (precise), 12.10 (quantal), 13.04 (raring)
+ * list will continue here
 
 The high-level changes since version 4.5 are:
 
