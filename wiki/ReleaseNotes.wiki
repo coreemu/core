@@ -10,7 +10,9 @@ CORE 4.6 will be released on 8/XX/13 (TBD). Packages are available for the follo
 
 The high-level changes since version 4.5 are:
 
-*NOTE:* /etc/init.d/core is now /etc/init.d/cored (for insserv compatibility)
+*NOTE:* `cored` is now `core-daemon` and `core` is now `core-gui` (for Debian acceptance)
+
+*NOTE:* /etc/init.d/core is now /etc/init.d/core-daemon (for insserv compatibility)
 
 *EMANE*
  * don't start EMANE locally if no local NEMs
