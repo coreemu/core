@@ -49,6 +49,11 @@ Multiple destination NEM IDs may be specified. The example below shows three NEM
 0.0 nem:3 pathLoss nem:2,94.9 nem:3,96.3
 }}}
 
+= EEL Comm Effect Events =
+
+= EEL Antenna Profile Events =
+
+
 = Example XML configs =
 You can start playback of an EEL file using the following:
 {{{
