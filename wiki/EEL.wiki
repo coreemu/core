@@ -53,6 +53,13 @@ Multiple destination NEM IDs may be specified. The example below shows three NEM
 
 = EEL Antenna Profile Events =
 
+The fields for the antenna profile events are: _time, NEM ID, "antennaprofile", profile ID, elevation (degrees), azimuth (degrees).
+
+{{{
+30.0 nem:1 antennaprofile 1,60.0,0.0
+60.0 nem:1 antennaprofile 1,105.0,0.0
+60.0 nem:4 antennaprofile 2,45.0,0.0
+}}}
 
 = Example XML configs =
 You can start playback of an EEL file using the following:
