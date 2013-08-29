@@ -40,9 +40,13 @@ class CtrlNet(LxBrNet):
             addr = self.prefix.addr(self.hostid)
         else:
             addr = self.prefix.maxaddr()
+        msg = "Added control network bridge: %s %s" % \
+                (self.brname, self.prefix)
         addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
         if self.assign_address:
             self.addrconfig(addrlist = addrlist)
+            msg += " address %s" % addr
+        self.session.info(msg)
         if self.updown_script is not None:
             self.info("interface %s updown script '%s startup' called" % \
                       (self.brname, self.updown_script))
