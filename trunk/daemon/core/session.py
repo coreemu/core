@@ -727,11 +727,10 @@ class Session(object):
                     continue
                 n.validate()
                 
-    def addremovectrlif(self, node, remove=False):
-        ''' Add a control interface to a node when a 'controlnet' prefix is
-            listed in the config file. Create a control interface bridge as
-            necessary. When the remove flag is True, remove the bridge that
-            connects control interfaces.
+    def addremovectrlnet(self, remove=False):
+        ''' Create a control network bridge as necessary. 
+        When the remove flag is True, remove the bridge that connects control
+        interfaces.
         '''
         prefix = None
         try:
@@ -742,31 +741,73 @@ class Session(object):
         if hasattr(self.options, 'controlnet'):
             prefix = self.options.controlnet
         if not prefix:
-            return
+            return None # no controlnet needed
+            
+        # return any existing controlnet bridge
+        id = "ctrlnet"
+        try:
+            ctrlnet = self.obj(id)
+            if remove:
+                self.delobj(ctrlnet.objid)
+                return None
+            return ctrlnet
+        except KeyError:
+            if remove:
+                return None
 
+        # build a new controlnet bridge
         updown_script = None
         try:
             if self.cfg['controlnet_updown_script']:
                 updown_script = self.cfg['controlnet_updown_script']
         except KeyError:
             pass
+            
+        prefixes = prefix.split()
+        if len(prefixes) > 1:
+            assign_address = True
+            if self.master:
+                try:
+                    prefix = prefixes[0].split(':', 1)[1]
+                except IndexError:
+                    prefix = prefixes[0] # possibly only one server
+            else:
+                # slave servers have their name and localhost in the serverlist
+                servers = self.broker.getserverlist()
+                servers.remove('localhost')
+                prefix = None
+                for server_prefix in prefixes:
+                    server, p = server_prefix.split(':')
+                    if server == servers[0]:
+                        prefix = p
+                        break
+                if not prefix:
+                    msg = "Control network prefix not found for server '%s'" % \
+                            servers[0]
+                    self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                                   "Session.addremovectrlnet()", None, msg)
+                    prefix = prefixes[0].split(':', 1)[1]
+                    assign_address = False
+        else:
+            # with one prefix, only master gets a ctrlnet address
+            assign_address = self.master
+        ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=id, prefix=prefix,
+                              assign_address=assign_address,
+                              updown_script=updown_script)
+        # tunnels between controlnets will be built with Broker.addnettunnels()
+        self.broker.addnet(id)
+        for server in self.broker.getserverlist():
+            self.broker.addnodemap(server, id)
+        return ctrlnet
 
-        id = "ctrlnet"
-        try:
-            ctrlnet = self.obj(id)
-            if remove:
-                self.delobj(ctrlnet.objid)
-                return
-        except KeyError:
-            if remove:
-                return
-            ctrlnet = self.addobj(cls = nodes.CtrlNet, objid=id, 
-                                  prefix=prefix,
-                                  assign_address = self.master,
-                                  updown_script=updown_script)
-            self.broker.addnet(id) # to build tunnels during addnettunnels()
-            for server in self.broker.getserverlist():
-                self.broker.addnodemap(server, id)
+    def addremovectrlif(self, node, remove=False):
+        ''' Add a control interface to a node when a 'controlnet' prefix is
+            listed in the config file or session options. Uses
+            addremovectrlnet() to build or remove the control bridge.
+        '''
+        ctrlnet = self.addremovectrlnet(remove)
+        if ctrlnet is None:
+            return
         if node is None:
             return
         ctrlip = node.objid
@@ -951,6 +992,7 @@ class SessionConfig(ConfigurableManager, Configurable):
     
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
+        session.broker.handlers += (self.handledistributed, )
         self.reset()
     
     def reset(self):
@@ -976,6 +1018,52 @@ class SessionConfig(ConfigurableManager, Configurable):
                 v = ""
             values.append("%s" % v)
         return self.toconfmsg(0, nodenum, typeflags, values)
+        
+    def handledistributed(self, msg):
+        ''' Handle the session options config message as it has reached the
+        broker. Options requiring modification for distributed operation should
+        be handled here.
+        '''
+        if not self.session.master:
+            return
+        if msg.msgtype != coreapi.CORE_API_CONF_MSG or \
+           msg.gettlv(coreapi.CORE_TLV_CONF_OBJ) != "session":
+            return
+        values_str = msg.gettlv(coreapi.CORE_TLV_CONF_VALUES)
+        if values_str is None:
+            return
+        values = values_str.split('|')
+        if not self.haskeyvalues(values):
+            return
+        for v in values:
+            key, value = v.split('=', 1)
+            if key == "controlnet":
+                self.handledistributedcontrolnet(msg, values, values.index(v))
+                
+    def handledistributedcontrolnet(self, msg, values, idx):
+        ''' Modify Config Message if multiple control network prefixes are
+        defined. Map server names to prefixes and repack the message before
+        it is forwarded to slave servers.
+        '''
+        kv = values[idx]
+        key, value = kv.split('=', 1)
+        controlnets = value.split()
+        if len(controlnets) < 2:
+            return # multiple controlnet prefixes do not exist
+            
+        servers = self.session.broker.getserverlist()
+        if len(servers) < 2:
+            return # not distributed
+        servers.remove("localhost")
+        servers.insert(0, "localhost") # master always gets first prefix
+        # create list of "server1:ctrlnet1 server2:ctrlnet2 ..."
+        controlnets = map(lambda(x): "%s:%s" % (x[0],x[1]),
+                          zip(servers, controlnets))
+        values[idx] = "controlnet=%s" % (' '.join(controlnets))
+        values_str = '|'.join(values)
+        msg.tlvdata[coreapi.CORE_TLV_CONF_VALUES] = values_str
+        msg.repack()
+
 
 class SessionMetaData(ConfigurableManager):
     ''' Metadata is simply stored in a configs[] dict. Key=value pairs are
