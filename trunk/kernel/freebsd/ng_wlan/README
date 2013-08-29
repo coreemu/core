@@ -1,0 +1,50 @@
+
+ng_wlan FreeBSD kernel module
+
+(c) 2006-2011 the Boeing Company
+author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
+
+
+  The ng_wlan modules implements a netgraph node that models wireless 
+LAN connectivity. ng_wlan extends the ng_hub node, only instead of sending 
+packets to each connected peer, maintains a hash table of node connectivity,
+and sends packets between two nodes only when they are linked. By default all
+nodes are unlinked. Nodes can be linked and unlinked using "link" and
+"unlink" messages:
+    ngctl msg e0_n2: link { node1=0x23 node2=0x0c }
+    
+The node IDs of the two nodes are the parameters, as depicted above.
+
+  Link effects between can also be specified for each node pair. If two nodes
+are linked and parameters are specified, an mbuf tag will be added to each data
+packet mbuf that specifies the effects. For FreeBSD 4.11, the metadata parameter
+is used instead of mbuf tags. Delay (microseconds), bandwidth 
+(bits per second), PER (% packet errors), duplicates (%), jitter 
+(microseconds), and burst (% burst errors) are supported. This tag is then
+removed by the ng_pipe node and the appropriate effects are applied. Link
+effects are specified with "set" and "unset" messages:
+    ngctl msg e0_n2: set { node1=0x23 node2=0x0c delay=50000 bandwidth=54000000 per=0 duplicate=0 jitter=5000 burst=30 }
+    ngctl msg e0_n2: unset { node1=0x23 node2=0x0c }
+
+Note that a special ng_pipe module is needed (the default one does not support
+the mbuf tags and some effects.)
+
+A separate error rate and burst rate affecting all multicast packets may be
+defined. Use the "mer" message:
+    ngctl msg e0_n2: mer { mer=20 mburst=35 }
+The above example sets the multicast error rate to drop 20% of all multicast
+packets, with 35% burst errors.
+
+When MULTICAST_LOOKUPS is defined, a second lookup table is defined for each
+WLAN where multicast group, source, and node pair tuples can be linked or 
+unlinked. This causes different forwarding behavior for multicast packets,
+where non-local groups are only forwarded if the node pair has been linked
+together for that group (and the normal node pair has been linked).
+Usage:
+    ngctl msg e0_n2: mcastset { node1=0x23 node2=0x0c group=0xEF020364 source=0x0a000002 }
+    ngctl msg e0_n2: mcastset { node1=0x23 node2=0x0c group=0xEF020364 source=0}
+    ngctl msg e0_n2: mcastunset { node1=0x23 node2=0x0c group=0xEF020364 source=0 }
+Once the first mcastset/mcastunset message is received, that ng_wlan will drop
+all non-local multicast packets that do not have a matching source, group,
+node pair entry. The source address of zero matches any IP source.
+

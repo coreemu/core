@@ -1,0 +1,22 @@
+#! /usr/bin/dh-exec
+@SBINDIR@
+@CORE_CONF_DIR@
+# configure prints a warning if CORE_DATA_DIR is used here
+# ATdatarootdirAT is expanding to ${datarootdir}/man/man1/
+/usr/share/core/examples/corens3
+/usr/share/core/examples/*.py
+/usr/share/core/examples/hooks
+/usr/share/core/examples/myservices
+/usr/share/core/examples/netns
+/usr/share/core/examples/services
+# ATmandirAT is expanding to ${datarootdir}/man/man1/core-daemon.1
+/usr/share/man/man1/vnoded.1
+/usr/share/man/man1/vcmd.1
+/usr/share/man/man1/netns.1
+/usr/share/man/man1/core-daemon.1
+/usr/share/man/man1/coresendmsg.1
+/usr/share/man/man1/core-cleanup.1
+/usr/share/man/man1/core-xen-cleanup.1
+# ATpythondirAT is expanding to ${prefix}/lib/python2.7/dist-packages
+/usr/lib/python2.7/dist-packages
+/etc/init.d

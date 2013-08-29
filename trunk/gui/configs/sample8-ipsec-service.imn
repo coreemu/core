@@ -1,0 +1,967 @@
+comments {
+Sample scenario showing IPsec service configuration.
+
+There are three red routers having the IPsec service enabled. The IPsec service
+must be customized with the tunnel hosts (peers) and their keys, and the subnet
+addresses that should be tunneled.
+
+For simplicity, the same keys and certificates are used in each of the three
+IPsec gateways. These are written to node n1's configuration directory. Keys
+can be generated using the openssl utility.
+
+Note that this scenario may require at patched kernel in order to work; see the
+kernels subdirectory of the CORE source for kernel patches.
+
+The racoon keying daemon and setkey from the ipsec-tools package should also be
+installed.
+}
+
+node n1 {
+    type router
+    model router
+    network-config {
+	hostname n1
+	!
+	interface eth3
+	 ip address 192.168.6.1/24
+	 ipv6 address 2001:6::1/64
+	!
+	interface eth2
+	 ip address 192.168.5.1/24
+	 ipv6 address 2001:5::1/64
+	!
+	interface eth1
+	 ip address 192.168.1.1/24
+	 ipv6 address 2001:1::1/64
+	!
+	interface eth0
+	 ip address 192.168.0.1/24
+	 ipv6 address 2001:0::1/64
+	!
+    }
+    canvas c1
+    iconcoords {210.0 172.0}
+    labelcoords {210.0 200.0}
+    interface-peer {eth0 n2}
+    interface-peer {eth1 n3}
+    interface-peer {eth2 n7}
+    interface-peer {eth3 n8}
+    custom-config {
+	custom-config-id service:IPsec:copycerts.sh
+	custom-command copycerts.sh
+	config {
+	#!/bin/sh
+	
+	FILES="test1.pem test1.key ca-cert.pem"
+	
+	mkdir -p /tmp/certs
+	
+	for f in $FILES; do
+	  cp $f /tmp/certs
+	done
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec:ca-cert.pem
+	custom-command ca-cert.pem
+	config {
+	Certificate:
+	    Data:
+	        Version: 3 (0x2)
+	        Serial Number:
+	            df:69:1f:ef:e5:af:bf:0f
+	        Signature Algorithm: sha1WithRSAEncryption
+	        Issuer: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Validity
+	            Not Before: Mar 20 16:16:08 2012 GMT
+	            Not After : Mar 20 16:16:08 2015 GMT
+	        Subject: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Subject Public Key Info:
+	            Public Key Algorithm: rsaEncryption
+	                Public-Key: (1024 bit)
+	                Modulus:
+	                    00:c4:d7:fc:c3:bc:a0:ee:76:7b:58:5c:96:6d:1f:
+	                    74:26:c2:93:c1:a4:94:95:13:5e:4f:8b:3f:00:27:
+	                    e5:1b:b1:3b:70:3e:72:71:4d:c9:67:54:33:29:49:
+	                    1e:de:a6:91:d9:00:ec:84:b8:64:f8:06:51:82:f4:
+	                    84:9b:a2:fe:16:34:5c:e1:2f:3d:ad:34:b9:8e:ad:
+	                    8e:ea:8a:e9:40:56:5b:f5:09:2c:bf:a0:08:db:81:
+	                    7f:fb:d8:b9:6c:a6:be:4c:1f:b1:4e:b3:b0:8d:8d:
+	                    e4:04:8e:f8:8e:e9:c7:aa:e7:4a:b4:87:89:a7:25:
+	                    72:38:74:bb:e5:b6:7f:86:7b
+	                Exponent: 65537 (0x10001)
+	        X509v3 extensions:
+	            X509v3 Subject Key Identifier: 
+	                98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	            X509v3 Authority Key Identifier: 
+	                keyid:98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	
+	            X509v3 Basic Constraints: 
+	                CA:TRUE
+	    Signature Algorithm: sha1WithRSAEncryption
+	        39:7e:99:fd:40:44:0a:20:4c:3c:9a:bf:01:aa:94:c8:76:bb:
+	        80:53:4f:cd:28:2f:5b:7f:0b:52:09:14:cb:ac:ee:74:7f:17:
+	        4b:79:21:db:e1:a3:9b:e5:b1:72:83:f7:88:02:20:d6:23:33:
+	        e4:ff:50:58:c6:88:e0:22:d7:2b:96:b3:dd:31:1a:80:52:0d:
+	        61:4f:47:72:63:39:1e:7f:a1:ad:f0:2b:82:53:05:ca:3d:0a:
+	        8f:3c:72:58:74:57:ae:8b:66:16:d9:a4:50:99:bc:d3:a7:c5:
+	        54:63:f0:87:cd:06:1a:d4:61:ed:d3:b8:33:5d:5a:d6:a4:f0:
+	        a4:96
+	-----BEGIN CERTIFICATE-----
+	MIICijCCAfOgAwIBAgIJAN9pH+/lr78PMA0GCSqGSIb3DQEBBQUAMF4xCzAJBgNV
+	BAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UECgwIY29yZS1kZXYxEDAOBgNVBAMM
+	B0NPUkUgQ0ExHTAbBgkqhkiG9w0BCQEWDnJvb3RAbG9jYWxob3N0MB4XDTEyMDMy
+	MDE2MTYwOFoXDTE1MDMyMDE2MTYwOFowXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgM
+	AldBMREwDwYDVQQKDAhjb3JlLWRldjEQMA4GA1UEAwwHQ09SRSBDQTEdMBsGCSqG
+	SIb3DQEJARYOcm9vdEBsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJ
+	AoGBAMTX/MO8oO52e1hclm0fdCbCk8GklJUTXk+LPwAn5RuxO3A+cnFNyWdUMylJ
+	Ht6mkdkA7IS4ZPgGUYL0hJui/hY0XOEvPa00uY6tjuqK6UBWW/UJLL+gCNuBf/vY
+	uWymvkwfsU6zsI2N5ASO+I7px6rnSrSHiaclcjh0u+W2f4Z7AgMBAAGjUDBOMB0G
+	A1UdDgQWBBSYDscKdF37Vlu3kYAqOtSJrWy5UTAfBgNVHSMEGDAWgBSYDscKdF37
+	Vlu3kYAqOtSJrWy5UTAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4GBADl+
+	mf1ARAogTDyavwGqlMh2u4BTT80oL1t/C1IJFMus7nR/F0t5Idvho5vlsXKD94gC
+	INYjM+T/UFjGiOAi1yuWs90xGoBSDWFPR3JjOR5/oa3wK4JTBco9Co88clh0V66L
+	ZhbZpFCZvNOnxVRj8IfNBhrUYe3TuDNdWtak8KSW
+	-----END CERTIFICATE-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec:test1.pem
+	custom-command test1.pem
+	config {
+	Certificate:
+	    Data:
+	        Version: 3 (0x2)
+	        Serial Number:
+	            df:69:1f:ef:e5:af:bf:10
+	        Signature Algorithm: sha1WithRSAEncryption
+	        Issuer: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Validity
+	            Not Before: Mar 20 16:18:45 2012 GMT
+	            Not After : Mar 20 16:18:45 2013 GMT
+	        Subject: C=US, ST=WA, L=Bellevue, O=core-dev, CN=test1
+	        Subject Public Key Info:
+	            Public Key Algorithm: rsaEncryption
+	                Public-Key: (1024 bit)
+	                Modulus:
+	                    00:ab:08:f3:3e:47:ce:95:9f:a2:ec:75:14:6e:7d:
+	                    bc:33:a5:4c:60:f0:bb:1f:a1:17:17:70:84:43:3c:
+	                    43:f7:37:9e:b1:ed:ff:0f:e3:70:e6:22:21:18:ec:
+	                    9c:af:30:a8:cb:70:83:e7:7e:f5:85:77:15:69:2a:
+	                    db:d1:13:e9:8b:fb:5e:85:a8:a3:fa:95:f2:37:c8:
+	                    91:5a:e5:c9:a8:56:a6:56:6a:14:34:ce:61:ad:90:
+	                    63:d7:45:e2:4a:b8:7a:2c:38:17:ad:bd:6d:1d:80:
+	                    16:4b:2f:2d:25:6a:2c:c9:d6:d4:7a:66:6f:57:c8:
+	                    07:fd:7d:ac:41:f0:11:05:33
+	                Exponent: 65537 (0x10001)
+	        X509v3 extensions:
+	            X509v3 Basic Constraints: 
+	                CA:FALSE
+	            Netscape Comment: 
+	                OpenSSL Generated Certificate
+	            X509v3 Subject Key Identifier: 
+	                71:90:B8:F7:1C:CA:93:7A:F4:11:E5:70:E2:F5:A0:2C:A6:71:E8:36
+	            X509v3 Authority Key Identifier: 
+	                keyid:98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	
+	    Signature Algorithm: sha1WithRSAEncryption
+	        06:67:4a:ed:5a:e9:a6:c7:16:32:3d:e8:2a:22:fb:06:4b:c9:
+	        a3:8b:c5:2d:13:4d:d7:80:d3:df:3f:27:5b:cc:93:43:96:48:
+	        2a:64:19:7b:ce:c4:ec:f1:88:ee:47:3c:9e:85:40:2f:5a:19:
+	        ea:e6:75:cc:8d:0b:70:41:5e:e8:76:98:49:27:fe:19:21:f1:
+	        64:70:f6:b0:26:91:94:fe:dc:2c:56:86:8a:ac:d0:52:d5:1e:
+	        30:42:68:aa:43:37:17:3b:a0:97:e4:7d:68:05:09:b2:fd:b3:
+	        2c:a0:f1:6f:07:0b:e2:5f:e8:a1:a3:39:6b:ba:83:ca:fa:ca:
+	        30:1e
+	-----BEGIN CERTIFICATE-----
+	MIICpzCCAhCgAwIBAgIJAN9pH+/lr78QMA0GCSqGSIb3DQEBBQUAMF4xCzAJBgNV
+	BAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UECgwIY29yZS1kZXYxEDAOBgNVBAMM
+	B0NPUkUgQ0ExHTAbBgkqhkiG9w0BCQEWDnJvb3RAbG9jYWxob3N0MB4XDTEyMDMy
+	MDE2MTg0NVoXDTEzMDMyMDE2MTg0NVowUDELMAkGA1UEBhMCVVMxCzAJBgNVBAgM
+	AldBMREwDwYDVQQHDAhCZWxsZXZ1ZTERMA8GA1UECgwIY29yZS1kZXYxDjAMBgNV
+	BAMMBXRlc3QxMIGfMA0GCSqGSIb3DQEBAQUAA4GNADCBiQKBgQCrCPM+R86Vn6Ls
+	dRRufbwzpUxg8LsfoRcXcIRDPEP3N56x7f8P43DmIiEY7JyvMKjLcIPnfvWFdxVp
+	KtvRE+mL+16FqKP6lfI3yJFa5cmoVqZWahQ0zmGtkGPXReJKuHosOBetvW0dgBZL
+	Ly0laizJ1tR6Zm9XyAf9faxB8BEFMwIDAQABo3sweTAJBgNVHRMEAjAAMCwGCWCG
+	SAGG+EIBDQQfFh1PcGVuU1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4E
+	FgQUcZC49xzKk3r0EeVw4vWgLKZx6DYwHwYDVR0jBBgwFoAUmA7HCnRd+1Zbt5GA
+	KjrUia1suVEwDQYJKoZIhvcNAQEFBQADgYEABmdK7VrppscWMj3oKiL7BkvJo4vF
+	LRNN14DT3z8nW8yTQ5ZIKmQZe87E7PGI7kc8noVAL1oZ6uZ1zI0LcEFe6HaYSSf+
+	GSHxZHD2sCaRlP7cLFaGiqzQUtUeMEJoqkM3Fzugl+R9aAUJsv2zLKDxbwcL4l/o
+	oaM5a7qDyvrKMB4=
+	-----END CERTIFICATE-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec:test1.key
+	custom-command test1.key
+	config {
+	-----BEGIN PRIVATE KEY-----
+	MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAKsI8z5HzpWfoux1
+	FG59vDOlTGDwux+hFxdwhEM8Q/c3nrHt/w/jcOYiIRjsnK8wqMtwg+d+9YV3FWkq
+	29ET6Yv7XoWoo/qV8jfIkVrlyahWplZqFDTOYa2QY9dF4kq4eiw4F629bR2AFksv
+	LSVqLMnW1Hpmb1fIB/19rEHwEQUzAgMBAAECgYEAnGREt5BFcD9WZMzx7859BuSB
+	IKs/D77nNIGoDyrOIwHy1FQBRG/+ThCrHvVMmEzwK4Yotsc6jd3D8DRGZ7nDdMMJ
+	bvDiyOsyFhnNYnpGQbMJnVuFiYCqyp97lkKkhKw8ZoU2o2ATss1MBPuKXfDk0qH5
+	TFHopVOJRtSl23EAHUECQQDdnVkhckDK+OwBKwLGKwuMpwKknHVJviQbtgGnrqdB
+	7lOwZMdq7G0c8rVM9xh8zAcOOauLC7ZVPSpH2HGF+ArxAkEAxZKM1U/gvpS2R1rg
+	jbIXtEXy/XXhlOez9dpZXz0VGhR1hn07rlg/QxzyGXnFfI+6gn53faIW8WSNp6m6
+	BG1qYwJATuCYPr1JrnSWm3vRivL7M16mJCzD2jFg7LQFNseFJIRNKTVVfQsVcv43
+	5WL1RkXgJQIFuoG6rfANQnEZRtOYIQJACPQdQcV+7+QZZp5tsr4xaNAKtQXUlUTy
+	2N9uUWyZOjdXJCMkwz/ojggPyKvGEWEKGMPWcnEYDRR7fu+oKG809QJAA8QbP3Vl
+	crpixSGR5nkRlOcM84igHasqOYIKz4V8m/HCaHTMcpfdBjEHk4v9grSoTESw7xZW
+	JIssE0c6pf/S6A==
+	-----END PRIVATE KEY-----
+	-----BEGIN CERTIFICATE REQUEST-----
+	MIIBjzCB+QIBADBQMQswCQYDVQQGEwJVUzELMAkGA1UECAwCV0ExETAPBgNVBAcM
+	CEJlbGxldnVlMREwDwYDVQQKDAhjb3JlLWRldjEOMAwGA1UEAwwFdGVzdDEwgZ8w
+	DQYJKoZIhvcNAQEBBQADgY0AMIGJAoGBAKsI8z5HzpWfoux1FG59vDOlTGDwux+h
+	FxdwhEM8Q/c3nrHt/w/jcOYiIRjsnK8wqMtwg+d+9YV3FWkq29ET6Yv7XoWoo/qV
+	8jfIkVrlyahWplZqFDTOYa2QY9dF4kq4eiw4F629bR2AFksvLSVqLMnW1Hpmb1fI
+	B/19rEHwEQUzAgMBAAGgADANBgkqhkiG9w0BAQUFAAOBgQAkIofXRWqtHX7XAa6E
+	6p7X67MRC+Qg0ZX5orITdHhSNNIKgg8BEBxpEiUKIwDrexXp/zOccdbTkbYCKeNm
+	s8mpVRuHfKsp1Q6+6sKtcfEHWJSalckvPQO96SPhVD03b+jg1rW3ecwxXFKuM9nC
+	z5NxVmroFYDvhaRsaToLfEkXPw==
+	-----END CERTIFICATE REQUEST-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec:ipsec.sh
+	custom-command ipsec.sh
+	config {
+	#!/bin/sh
+	# set up static tunnel mode security assocation for service (security.py)
+	# -------- CUSTOMIZATION REQUIRED --------
+	#
+	# The IPsec service builds ESP tunnels between the specified peers using the
+	# racoon IKEv2 keying daemon. You need to provide keys and the addresses of
+	# peers, along with subnets to tunnel.
+	
+	# directory containing the certificate and key described below
+	keydir=/tmp/certs
+	
+	# the name used for the "$certname.pem" x509 certificate and 
+	# "$certname.key" RSA private key, which can be generated using openssl
+	certname=test1
+	
+	# list the public-facing IP addresses, starting with the localhost and followed
+	# by each tunnel peer, separated with a single space
+	tunnelhosts="192.168.0.1AND192.168.0.2 192.168.1.1AND192.168.1.2"
+	
+	# Define T<i> where i is the index for each tunnel peer host from
+	# the tunnel_hosts list above (0 is localhost).
+	# T<i> is a list of IPsec tunnels with peer i, with a local subnet address
+	# followed by the remote subnet address:
+	#   T<i>="<local>AND<remote> <local>AND<remote>"
+	# For example, 192.168.0.0/24 is a local network (behind this node) to be
+	# tunneled and 192.168.2.0/24 is a remote network (behind peer 1)
+	T1="192.168.5.0/24AND192.168.8.0/24"
+	T2="192.168.5.0/24AND192.168.4.0/24 192.168.6.0/24AND192.168.4.0/24"
+	
+	# -------- END CUSTOMIZATION --------
+	
+	echo "building config $PWD/ipsec.conf..." 
+	echo "building config $PWD/ipsec.conf..." > $PWD/ipsec.log
+	
+	checkip=0
+	if [ "$(dpkg -l | grep " sipcalc ")" = "" ]; then
+	   echo "WARNING: ip validation disabled because package sipcalc not installed
+	        " >> $PWD/ipsec.log
+	   checkip=1
+	fi
+	
+	echo "#!/usr/sbin/setkey -f
+	    # Flush the SAD and SPD
+	    flush;
+	    spdflush;
+	
+	    # Security policies  \
+	     " > $PWD/ipsec.conf
+	i=0
+	for hostpair in $tunnelhosts; do 
+	    i=`expr $i + 1`
+	    # parse tunnel host IP
+	    thishost=${hostpair%%AND*}
+	    peerhost=${hostpair##*AND} 
+	    if [ $checkip = "0" ] &&
+	       [ "$(sipcalc "$thishost" "$peerhost" | grep ERR)" != "" ]; then
+		  echo "ERROR: invalid host address $thishost or $peerhost \
+	             " >> $PWD/ipsec.log
+	    fi
+	    # parse each tunnel addresses 
+	    tunnel_list_var_name=T$i
+	    eval tunnels="$"$tunnel_list_var_name""
+	    for ttunnel in $tunnels; do
+	        lclnet=${ttunnel%%AND*}
+	        rmtnet=${ttunnel##*AND} 
+	    	if [ $checkip = "0" ] && 
+	           [ "$(sipcalc "$lclnet" "$rmtnet"| grep ERR)" != "" ]; then
+	    	    echo "ERROR: invalid tunnel address $lclnet and $rmtnet \
+	                 " >> $PWD/ipsec.log
+		fi
+	    	# add tunnel policies
+		echo "
+	    spdadd $lclnet $rmtnet any -P out ipsec
+		esp/tunnel/$thishost-$peerhost/require;
+	    spdadd $rmtnet $lclnet any -P in ipsec
+		esp/tunnel/$peerhost-$thishost/require; \
+	    	    " >> $PWD/ipsec.conf
+	    done
+	done
+	
+	echo "building config $PWD/racoon.conf..."
+	if [ ! -e $keydir\/$certname.key ] || [ ! -e $keydir\/$certname.pem ]; then
+	     echo "ERROR: missing certification files under $keydir \
+	$certname.key or $certname.pem " >> $PWD/ipsec.log
+	fi
+	echo "
+		 path certificate \"$keydir\";
+		 listen {
+			 adminsock disabled;
+		 }
+		 remote anonymous
+		 {
+			 exchange_mode main;
+	 		 certificate_type x509 \"$certname.pem\" \"$certname.key\";
+			 ca_type x509 \"ca-cert.pem\";
+			 my_identifier asn1dn;
+			 peers_identifier asn1dn;
+	
+			 proposal {
+				 encryption_algorithm 3des ;
+				 hash_algorithm sha1;
+				 authentication_method rsasig ;
+				 dh_group modp768;
+			 }
+		 }
+		 sainfo anonymous
+		 {
+			 pfs_group modp768;
+			 lifetime time 1 hour ;
+			 encryption_algorithm 3des, blowfish 448, rijndael ;
+			 authentication_algorithm hmac_sha1, hmac_md5 ;
+			 compression_algorithm deflate ;
+		 }
+		" > $PWD/racoon.conf
+	
+	# the setkey program is required from the ipsec-tools package
+	echo "running setkey -f $PWD/ipsec.conf..."
+	setkey -f $PWD/ipsec.conf
+	
+	echo "running racoon -d -f $PWD/racoon.conf..."
+	racoon -d -f $PWD/racoon.conf -l racoon.log
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec
+	custom-command IPsec
+	config {
+	
+	('ipsec.sh', 'test1.key', 'test1.pem', 'ca-cert.pem', 'copycerts.sh', )
+	60
+	('sh copycerts.sh', 'sh ipsec.sh', )
+	('killall racoon', )
+	
+	
+	}
+    }
+    services {zebra OSPFv2 OSPFv3 vtysh IPForward IPsec}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+}
+
+node n2 {
+    type router
+    model router
+    network-config {
+	hostname n2
+	!
+	interface eth3
+	 ip address 192.168.8.1/24
+	 ipv6 address 2001:8::1/64
+	!
+	interface eth2
+	 ip address 192.168.7.1/24
+	 ipv6 address 2001:7::1/64
+	!
+	interface eth1
+	 ip address 192.168.2.1/24
+	 ipv6 address 2001:2::1/64
+	!
+	interface eth0
+	 ip address 192.168.0.2/24
+	 ipv6 address 2001:0::2/64
+	!
+    }
+    canvas c1
+    iconcoords {455.0 173.0}
+    labelcoords {455.0 201.0}
+    interface-peer {eth0 n1}
+    interface-peer {eth1 n4}
+    interface-peer {eth2 n9}
+    interface-peer {eth3 n10}
+    custom-config {
+	custom-config-id service:IPsec:ipsec.sh
+	custom-command ipsec.sh
+	config {
+	#!/bin/sh
+	# set up static tunnel mode security assocation for service (security.py)
+	# -------- CUSTOMIZATION REQUIRED --------
+	#
+	# The IPsec service builds ESP tunnels between the specified peers using the
+	# racoon IKEv2 keying daemon. You need to provide keys and the addresses of
+	# peers, along with subnets to tunnel.
+	
+	# directory containing the certificate and key described below
+	keydir=/tmp/certs
+	
+	# the name used for the "$certname.pem" x509 certificate and 
+	# "$certname.key" RSA private key, which can be generated using openssl
+	certname=test1
+	
+	# list the public-facing IP addresses, starting with the localhost and followed
+	# by each tunnel peer, separated with a single space
+	tunnelhosts="192.168.0.2AND192.168.0.1"
+	
+	# Define T<i> where i is the index for each tunnel peer host from
+	# the tunnel_hosts list above (0 is localhost).
+	# T<i> is a list of IPsec tunnels with peer i, with a local subnet address
+	# followed by the remote subnet address:
+	#   T<i>="<local>AND<remote> <local>AND<remote>"
+	# For example, 192.168.0.0/24 is a local network (behind this node) to be
+	# tunneled and 192.168.2.0/24 is a remote network (behind peer 1)
+	T1="192.168.8.0/24AND192.168.5.0/24"
+	
+	# -------- END CUSTOMIZATION --------
+	
+	echo "building config $PWD/ipsec.conf..." 
+	echo "building config $PWD/ipsec.conf..." > $PWD/ipsec.log
+	
+	checkip=0
+	if [ "$(dpkg -l | grep " sipcalc ")" = "" ]; then
+	   echo "WARNING: ip validation disabled because package sipcalc not installed
+	        " >> $PWD/ipsec.log
+	   checkip=1
+	fi
+	
+	echo "#!/usr/sbin/setkey -f
+	    # Flush the SAD and SPD
+	    flush;
+	    spdflush;
+	
+	    # Security policies  \
+	     " > $PWD/ipsec.conf
+	i=0
+	for hostpair in $tunnelhosts; do 
+	    i=`expr $i + 1`
+	    # parse tunnel host IP
+	    thishost=${hostpair%%AND*}
+	    peerhost=${hostpair##*AND} 
+	    if [ $checkip = "0" ] &&
+	       [ "$(sipcalc "$thishost" "$peerhost" | grep ERR)" != "" ]; then
+		  echo "ERROR: invalid host address $thishost or $peerhost \
+	             " >> $PWD/ipsec.log
+	    fi
+	    # parse each tunnel addresses 
+	    tunnel_list_var_name=T$i
+	    eval tunnels="$"$tunnel_list_var_name""
+	    for ttunnel in $tunnels; do
+	        lclnet=${ttunnel%%AND*}
+	        rmtnet=${ttunnel##*AND} 
+	    	if [ $checkip = "0" ] && 
+	           [ "$(sipcalc "$lclnet" "$rmtnet"| grep ERR)" != "" ]; then
+	    	    echo "ERROR: invalid tunnel address $lclnet and $rmtnet \
+	                 " >> $PWD/ipsec.log
+		fi
+	    	# add tunnel policies
+		echo "
+	    spdadd $lclnet $rmtnet any -P out ipsec
+		esp/tunnel/$thishost-$peerhost/require;
+	    spdadd $rmtnet $lclnet any -P in ipsec
+		esp/tunnel/$peerhost-$thishost/require; \
+	    	    " >> $PWD/ipsec.conf
+	    done
+	done
+	
+	echo "building config $PWD/racoon.conf..."
+	if [ ! -e $keydir\/$certname.key ] || [ ! -e $keydir\/$certname.pem ]; then
+	     echo "ERROR: missing certification files under $keydir \
+	$certname.key or $certname.pem " >> $PWD/ipsec.log
+	fi
+	echo "
+		 path certificate \"$keydir\";
+		 listen {
+			 adminsock disabled;
+		 }
+		 remote anonymous
+		 {
+			 exchange_mode main;
+	 		 certificate_type x509 \"$certname.pem\" \"$certname.key\";
+			 ca_type x509 \"ca-cert.pem\";
+			 my_identifier asn1dn;
+			 peers_identifier asn1dn;
+	
+			 proposal {
+				 encryption_algorithm 3des ;
+				 hash_algorithm sha1;
+				 authentication_method rsasig ;
+				 dh_group modp768;
+			 }
+		 }
+		 sainfo anonymous
+		 {
+			 pfs_group modp768;
+			 lifetime time 1 hour ;
+			 encryption_algorithm 3des, blowfish 448, rijndael ;
+			 authentication_algorithm hmac_sha1, hmac_md5 ;
+			 compression_algorithm deflate ;
+		 }
+		" > $PWD/racoon.conf
+	
+	# the setkey program is required from the ipsec-tools package
+	echo "running setkey -f $PWD/ipsec.conf..."
+	setkey -f $PWD/ipsec.conf
+	
+	echo "running racoon -d -f $PWD/racoon.conf..."
+	racoon -d -f $PWD/racoon.conf -l racoon.log
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec
+	custom-command IPsec
+	config {
+	
+	('ipsec.sh', )
+	60
+	('sh ipsec.sh', )
+	('killall racoon', )
+	
+	
+	}
+    }
+    services {zebra OSPFv2 OSPFv3 vtysh IPForward IPsec}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+}
+
+node n3 {
+    type router
+    model router
+    network-config {
+	hostname n3
+	!
+	interface eth2
+	 ip address 192.168.4.1/24
+	 ipv6 address 2001:4::1/64
+	!
+	interface eth1
+	 ip address 192.168.3.1/24
+	 ipv6 address 2001:3::1/64
+	!
+	interface eth0
+	 ip address 192.168.1.2/24
+	 ipv6 address 2001:1::2/64
+	!
+    }
+    canvas c1
+    iconcoords {211.0 375.0}
+    labelcoords {211.0 403.0}
+    interface-peer {eth0 n1}
+    interface-peer {eth1 n5}
+    interface-peer {eth2 n6}
+    custom-config {
+	custom-config-id service:IPsec:ipsec.sh
+	custom-command ipsec.sh
+	config {
+	#!/bin/sh
+	# set up static tunnel mode security assocation for service (security.py)
+	# -------- CUSTOMIZATION REQUIRED --------
+	#
+	# The IPsec service builds ESP tunnels between the specified peers using the
+	# racoon IKEv2 keying daemon. You need to provide keys and the addresses of
+	# peers, along with subnets to tunnel.
+	
+	# directory containing the certificate and key described below
+	keydir=/tmp/certs
+	
+	# the name used for the "$certname.pem" x509 certificate and 
+	# "$certname.key" RSA private key, which can be generated using openssl
+	certname=test1
+	
+	# list the public-facing IP addresses, starting with the localhost and followed
+	# by each tunnel peer, separated with a single space
+	tunnelhosts="192.168.1.2AND192.168.1.1"
+	
+	# Define T<i> where i is the index for each tunnel peer host from
+	# the tunnel_hosts list above (0 is localhost).
+	# T<i> is a list of IPsec tunnels with peer i, with a local subnet address
+	# followed by the remote subnet address:
+	#   T<i>="<local>AND<remote> <local>AND<remote>"
+	# For example, 192.168.0.0/24 is a local network (behind this node) to be
+	# tunneled and 192.168.2.0/24 is a remote network (behind peer 1)
+	T1="192.168.4.0/24AND192.168.5.0/24 192.168.4.0/24AND192.168.6.0/24"
+	
+	# -------- END CUSTOMIZATION --------
+	
+	echo "building config $PWD/ipsec.conf..." 
+	echo "building config $PWD/ipsec.conf..." > $PWD/ipsec.log
+	
+	checkip=0
+	if [ "$(dpkg -l | grep " sipcalc ")" = "" ]; then
+	   echo "WARNING: ip validation disabled because package sipcalc not installed
+	        " >> $PWD/ipsec.log
+	   checkip=1
+	fi
+	
+	echo "#!/usr/sbin/setkey -f
+	    # Flush the SAD and SPD
+	    flush;
+	    spdflush;
+	
+	    # Security policies  \
+	     " > $PWD/ipsec.conf
+	i=0
+	for hostpair in $tunnelhosts; do 
+	    i=`expr $i + 1`
+	    # parse tunnel host IP
+	    thishost=${hostpair%%AND*}
+	    peerhost=${hostpair##*AND} 
+	    if [ $checkip = "0" ] &&
+	       [ "$(sipcalc "$thishost" "$peerhost" | grep ERR)" != "" ]; then
+		  echo "ERROR: invalid host address $thishost or $peerhost \
+	             " >> $PWD/ipsec.log
+	    fi
+	    # parse each tunnel addresses 
+	    tunnel_list_var_name=T$i
+	    eval tunnels="$"$tunnel_list_var_name""
+	    for ttunnel in $tunnels; do
+	        lclnet=${ttunnel%%AND*}
+	        rmtnet=${ttunnel##*AND} 
+	    	if [ $checkip = "0" ] && 
+	           [ "$(sipcalc "$lclnet" "$rmtnet"| grep ERR)" != "" ]; then
+	    	    echo "ERROR: invalid tunnel address $lclnet and $rmtnet \
+	                 " >> $PWD/ipsec.log
+		fi
+	    	# add tunnel policies
+		echo "
+	    spdadd $lclnet $rmtnet any -P out ipsec
+		esp/tunnel/$thishost-$peerhost/require;
+	    spdadd $rmtnet $lclnet any -P in ipsec
+		esp/tunnel/$peerhost-$thishost/require; \
+	    	    " >> $PWD/ipsec.conf
+	    done
+	done
+	
+	echo "building config $PWD/racoon.conf..."
+	if [ ! -e $keydir\/$certname.key ] || [ ! -e $keydir\/$certname.pem ]; then
+	     echo "ERROR: missing certification files under $keydir \
+	$certname.key or $certname.pem " >> $PWD/ipsec.log
+	fi
+	echo "
+		 path certificate \"$keydir\";
+		 listen {
+			 adminsock disabled;
+		 }
+		 remote anonymous
+		 {
+			 exchange_mode main;
+	 		 certificate_type x509 \"$certname.pem\" \"$certname.key\";
+			 ca_type x509 \"ca-cert.pem\";
+			 my_identifier asn1dn;
+			 peers_identifier asn1dn;
+	
+			 proposal {
+				 encryption_algorithm 3des ;
+				 hash_algorithm sha1;
+				 authentication_method rsasig ;
+				 dh_group modp768;
+			 }
+		 }
+		 sainfo anonymous
+		 {
+			 pfs_group modp768;
+			 lifetime time 1 hour ;
+			 encryption_algorithm 3des, blowfish 448, rijndael ;
+			 authentication_algorithm hmac_sha1, hmac_md5 ;
+			 compression_algorithm deflate ;
+		 }
+		" > $PWD/racoon.conf
+	
+	# the setkey program is required from the ipsec-tools package
+	echo "running setkey -f $PWD/ipsec.conf..."
+	setkey -f $PWD/ipsec.conf
+	
+	echo "running racoon -d -f $PWD/racoon.conf..."
+	racoon -d -f $PWD/racoon.conf -l racoon.log
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:IPsec
+	custom-command IPsec
+	config {
+	
+	('ipsec.sh', )
+	60
+	('sh ipsec.sh', )
+	('killall racoon', )
+	
+	
+	}
+    }
+    services {zebra OSPFv2 OSPFv3 vtysh IPForward IPsec}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+}
+
+node n4 {
+    type router
+    model router
+    network-config {
+	hostname n4
+	!
+	interface eth1
+	 ip address 192.168.9.1/24
+	 ipv6 address 2001:9::1/64
+	!
+	interface eth0
+	 ip address 192.168.2.2/24
+	 ipv6 address 2001:2::2/64
+	!
+    }
+    canvas c1
+    iconcoords {456.0 376.0}
+    labelcoords {456.0 404.0}
+    interface-peer {eth0 n2}
+    interface-peer {eth1 n11}
+}
+
+node n5 {
+    type router
+    model host
+    network-config {
+	hostname n5
+	!
+	interface eth0
+	 ip address 192.168.3.10/24
+	 ipv6 address 2001:3::10/64
+	!
+    }
+    canvas c1
+    iconcoords {50.0 472.0}
+    labelcoords {50.0 504.0}
+    interface-peer {eth0 n3}
+}
+
+node n6 {
+    type router
+    model host
+    network-config {
+	hostname n6
+	!
+	interface eth0
+	 ip address 192.168.4.10/24
+	 ipv6 address 2001:4::10/64
+	!
+    }
+    canvas c1
+    iconcoords {44.0 292.0}
+    labelcoords {44.0 324.0}
+    interface-peer {eth0 n3}
+}
+
+node n7 {
+    type router
+    model host
+    network-config {
+	hostname n7
+	!
+	interface eth0
+	 ip address 192.168.5.10/24
+	 ipv6 address 2001:5::10/64
+	!
+    }
+    canvas c1
+    iconcoords {41.0 62.0}
+    labelcoords {41.0 94.0}
+    interface-peer {eth0 n1}
+}
+
+node n8 {
+    type router
+    model host
+    network-config {
+	hostname n8
+	!
+	interface eth0
+	 ip address 192.168.6.10/24
+	 ipv6 address 2001:6::10/64
+	!
+    }
+    canvas c1
+    iconcoords {39.0 121.0}
+    labelcoords {39.0 153.0}
+    interface-peer {eth0 n1}
+}
+
+node n9 {
+    type router
+    model host
+    network-config {
+	hostname n9
+	!
+	interface eth0
+	 ip address 192.168.7.10/24
+	 ipv6 address 2001:7::10/64
+	!
+    }
+    canvas c1
+    iconcoords {653.0 69.0}
+    labelcoords {653.0 101.0}
+    interface-peer {eth0 n2}
+}
+
+node n10 {
+    type router
+    model host
+    network-config {
+	hostname n10
+	!
+	interface eth0
+	 ip address 192.168.8.10/24
+	 ipv6 address 2001:8::10/64
+	!
+    }
+    canvas c1
+    iconcoords {454.0 48.0}
+    labelcoords {484.0 59.0}
+    interface-peer {eth0 n2}
+}
+
+node n11 {
+    type router
+    model host
+    network-config {
+	hostname n11
+	!
+	interface eth0
+	 ip address 192.168.9.10/24
+	 ipv6 address 2001:9::10/64
+	!
+    }
+    canvas c1
+    iconcoords {654.0 460.0}
+    labelcoords {654.0 492.0}
+    interface-peer {eth0 n4}
+}
+
+link l1 {
+    nodes {n1 n2}
+    bandwidth 0
+}
+
+link l2 {
+    nodes {n1 n3}
+    bandwidth 0
+}
+
+link l3 {
+    nodes {n2 n4}
+    bandwidth 0
+}
+
+link l4 {
+    nodes {n3 n5}
+    bandwidth 0
+}
+
+link l5 {
+    nodes {n3 n6}
+    bandwidth 0
+}
+
+link l6 {
+    nodes {n1 n7}
+    bandwidth 0
+}
+
+link l7 {
+    nodes {n1 n8}
+    bandwidth 0
+}
+
+link l8 {
+    nodes {n2 n9}
+    bandwidth 0
+}
+
+link l9 {
+    nodes {n2 n10}
+    bandwidth 0
+}
+
+link l10 {
+    nodes {n4 n11}
+    bandwidth 0
+}
+
+annotation a1 {
+    iconcoords {8.0 6.0 514.0 99.0}
+    type rectangle
+    label {Tunnel 1}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize {12}
+    color #ffd0d0
+    width 0
+    border #00ff00
+    rad 22
+    canvas c1
+}
+
+annotation a2 {
+    iconcoords {8.0 6.0 137.0 334.0}
+    type rectangle
+    label {Tunnel 2}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize {12}
+    color #ffe1e1
+    width 0
+    border black
+    rad 23
+    canvas c1
+}
+
+annotation a5 {
+    iconcoords {263.0 127.0}
+    type text
+    label {}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize {12}
+    effects {underline}
+    canvas c1
+}
+
+canvas c1 {
+    name {Canvas1}
+}
+
+option global {
+    interface_names yes
+    ip_addresses yes
+    ipv6_addresses no
+    node_labels yes
+    link_labels yes
+    ipsec_configs yes
+    exec_errors yes
+    show_api no
+    background_images no
+    annotations yes
+    grid yes
+    traffic_start 0
+}
+

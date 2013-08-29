@@ -1,0 +1,20 @@
+#
+# VIMAGE - sample kernel configuration file with a virtualized network stack
+# configure.
+#
+# $FreeBSD$
+#
+include 	GENERIC
+ident		CORE
+
+options		IPSEC
+device		crypto
+options 	VIMAGE
+options		IPFIREWALL
+options 	IPFIREWALL_DEFAULT_TO_ACCEPT	#allow everything by default
+
+#
+# Some kernel subsystems and functions don't yet compile with VIMAGE.  Remove
+# from the configuration for now.
+#
+nooptions	SCTP

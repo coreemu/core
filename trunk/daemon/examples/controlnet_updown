@@ -1,0 +1,53 @@
+#!/bin/bash
+# Sample controlnet up/down script that will be executed when the control
+# network is brought up or down. This script either adds an interface to the
+# controlnet bridge or adds a permissive iptables firewall rule.
+
+controlnet_intf=$1
+action=$2
+
+config_type=iptables # iptables or brctl
+
+iptables_address=10.205.15.132
+brctl_intf=eth2
+
+BRCTL=/sbin/brctl
+IPTABLES=/usr/sbin/iptables
+
+case "$action" in
+    startup)
+	case "$config_type" in
+	    iptables)
+		$IPTABLES -I FORWARD -i $controlnet_intf -d $iptables_address -j ACCEPT
+		$IPTABLES -I FORWARD -o $controlnet_intf -s $iptables_address -j ACCEPT
+		;;
+	    brctl)
+		$BRCTL addif $controlnet_intf $brctl_intf
+		;;
+	    *)
+		echo "Invalid config_type $config_type"
+		;;
+	esac
+	;;
+
+    shutdown)
+	case "$config_type" in
+	    iptables)
+		$IPTABLES -D FORWARD -i $controlnet_intf -d $iptables_address -j ACCEPT
+		$IPTABLES -D FORWARD -o $controlnet_intf -s $iptables_address -j ACCEPT
+		;;
+	    brctl)
+		$BRCTL delif $controlnet_intf $brctl_intf
+		;;
+	    *)
+		echo "Invalid config_type $config_type"
+		;;
+	esac
+	;;
+
+    *)
+	echo "Invalid action $action"
+	exit 1
+	;;
+esac
+exit 0

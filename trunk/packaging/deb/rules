@@ -1,0 +1,18 @@
+#!/usr/bin/make -f
+
+include /usr/share/cdbs/1/rules/debhelper.mk
+include /usr/share/cdbs/1/class/autotools.mk
+
+# this causes autoconf to regenerate ./configure, otherwise make distclean
+# has blown it away
+DEB_AUTO_UPDATE_ACLOCAL = 1.11
+DEB_AUTO_UPDATE_AUTOHEADER = 2.65
+DEB_AUTO_UPDATE_AUTOMAKE = 1.11 --add-missing --copy --foreign
+DEB_AUTO_UPDATE_AUTOCONF = 2.65
+
+# this prevents 'make install' from invoking install-info that generates a 
+#   $(DEB_DESTDIR)usr/share/info/dir.gz file that causes a lintian error
+# the following rule was not enough
+# binary-post-install/core::
+#	rm -f $(DEB_DESTDIR)usr/share/info/dir.gz
+#DEB_CONFIGURE_EXTRA_FLAGS := --disable-install-info

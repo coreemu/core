@@ -1,0 +1,12 @@
+#!/bin/sh
+
+if [ "$1" = "remove" ]; then
+    PYTHONS="python2.6 python2.7"
+    for P in $PYTHONS
+    do
+	DIR="usr/lib/$P/dist-packages/core"
+	if [ -d $DIR ]; then
+	    find $DIR -name '*.pyc' -exec rm -f '{}' ';' 2> /dev/null
+	fi
+    done
+fi

@@ -1,0 +1,537 @@
+comments {
+Joe Macker NRL
+Last updated: Sept 2010
+Nov 2010  Jeff Ahrenholz - updated for new services model and renamed
+ (was 2groups_10nodes_smf.imn)
+
+This scenario is a simple SMF example for testing multicast within CORE.
+
+There are several dependencies for these scenarios to work;
+
+nrlsmf must be installed and the binary must be within the path when executing.
+This should also be built along with protolib from the NRL pf.itd.nrl.navy.mil
+repository or from nightly snapshots by using the Makefile.core build file.
+This avoids some of the potential problems that arise with protolib call and
+proper netns support in various kernel releases.  For now the Makefile.core
+approach patches around the problem.
+
+This scenario will launch 10 quagga manet-ospf and smf classical flooding
+router nodes. A mobility pattern can be used to cause periodic fragmentation
+and coalescing among 5 groups that move together as a somewhat randomized
+cluster.
+
+Within netns and core the following must be used as nrlsmf params.  hash mode
+and instance ids.
+This script uses nodenames as instance ids and MD5 as the hash mode.
+Distributed optimized relay selection is not provided in this example but works
+in nrlsmf with both quagga manetospf-mdr and with nrlolsr or newer nhdp code
+being developed.  Relays can also be manually configured if that is of some use
+in a scneario.  Classical flodding still provides duplication detection in this
+mode but of course has additional overhead.
+
+-----
+Traffic testing etc.  You can try sending your own multicast apps or use a
+testtool.
+
+mgen is recommended as a test tool, but ping -t 5 224.225.226.227 type testing
+can also be used.
+
+an example mgen script to source multicast from a terminal window is as follows:
+
+mgen event "on 1 udp dst 224.225.226.227/5000 periodic [1 500]"
+
+this sends 500 bytes packets every second. See mgen users guide for the myriad
+of choices/options.
+
+on a receive node terminal the follow can work.
+
+mgen event "join 224.225.226.227" event "listen udp 5000" output <file>
+without output it will stream to stdout.
+}
+
+node n1 {
+    type router
+    model mdr
+    network-config {
+	hostname n1
+	!
+	interface eth0
+	 ip address 10.0.0.1/32
+	 ipv6 address a:0::1/128
+	!
+    }
+    iconcoords {186.2364578872143 137.89039496012572}
+    labelcoords {186.2364578872143 161.89039496012572}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n2 {
+    type router
+    model mdr
+    network-config {
+	hostname n2
+	!
+	interface eth0
+	 ip address 10.0.0.2/32
+	 ipv6 address a:0::2/128
+	!
+    }
+    iconcoords {49.97421009111123 297.31725181124926}
+    labelcoords {49.97421009111123 321.31725181124926}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n3 {
+    type router
+    model mdr
+    network-config {
+	hostname n3
+	!
+	interface eth0
+	 ip address 10.0.0.3/32
+	 ipv6 address a:0::3/128
+	!
+    }
+    iconcoords {176.46110847174833 328.14864514530865}
+    labelcoords {176.46110847174833 352.14864514530865}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n4 {
+    type router
+    model mdr
+    network-config {
+	hostname n4
+	!
+	interface eth0
+	 ip address 10.0.0.4/32
+	 ipv6 address a:0::4/128
+	!
+    }
+    iconcoords {145.04062040794378 195.27962082775758}
+    labelcoords {145.04062040794378 219.27962082775758}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n5 {
+    type router
+    model mdr
+    network-config {
+	hostname n5
+	!
+	interface eth0
+	 ip address 10.0.0.5/32
+	 ipv6 address a:0::5/128
+	!
+    }
+    iconcoords {137.9101266949479 257.51849231830334}
+    labelcoords {137.9101266949479 281.51849231830334}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n6 {
+    type router
+    model mdr
+    network-config {
+	hostname n6
+	!
+	interface eth0
+	 ip address 10.0.0.6/32
+	 ipv6 address a:0::6/128
+	!
+    }
+    iconcoords {119.15850324229558 93.2505296351548}
+    labelcoords {119.15850324229558 117.2505296351548}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n7 {
+    type router
+    model mdr
+    network-config {
+	hostname n7
+	!
+	interface eth0
+	 ip address 10.0.0.7/32
+	 ipv6 address a:0::7/128
+	!
+    }
+    iconcoords {79.1102256826161 50.123535235375556}
+    labelcoords {79.1102256826161 74.12353523537556}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n8 {
+    type router
+    model mdr
+    network-config {
+	hostname n8
+	!
+	interface eth0
+	 ip address 10.0.0.8/32
+	 ipv6 address a:0::8/128
+	!
+    }
+    iconcoords {159.90259315202974 8.220638318379141}
+    labelcoords {159.90259315202974 32.220638318379144}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n9 {
+    type router
+    model mdr
+    network-config {
+	hostname n9
+	!
+	interface eth0
+	 ip address 10.0.0.9/32
+	 ipv6 address a:0::9/128
+	!
+    }
+    iconcoords {150.43010603614704 165.70781621981482}
+    labelcoords {150.43010603614704 189.70781621981482}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n10 {
+    type router
+    model mdr
+    network-config {
+	hostname n10
+	!
+	interface eth0
+	 ip address 10.0.0.10/32
+	 ipv6 address a:0::10/128
+	!
+    }
+    iconcoords {64.19289632467826 42.49909518554088}
+    labelcoords {64.19289632467826 66.49909518554088}
+    canvas c1
+    interface-peer {eth0 n11}
+    custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
+    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    custom-config {
+	custom-config-id service:UserDefined:custom-post-config-commands.sh
+	custom-command custom-post-config-commands.sh
+	config {
+	route add default dev eth0
+	route add -net 224.0.0.0 netmask 224.0.0.0 dev eth0
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('custom-post-config-commands.sh', )
+	startidx=35
+	cmdup=('sh custom-post-config-commands.sh', )
+	}
+    }
+}
+
+node n11 {
+    type wlan
+    network-config {
+	hostname wlan11
+	!
+	interface wireless
+	 ip address 10.0.0.0/32
+	 ipv6 address a:0::0/128
+	!
+	scriptfile
+	sample4.scen
+	!
+	mobmodel
+	coreapi
+	basic_range
+	!
+    }
+    iconcoords {0 0}
+    labelcoords {0 0}
+    canvas c1
+    interface-peer {e0 n1}
+    interface-peer {e1 n2}
+    interface-peer {e2 n3}
+    interface-peer {e3 n4}
+    interface-peer {e4 n5}
+    interface-peer {e5 n6}
+    interface-peer {e6 n7}
+    interface-peer {e7 n8}
+    interface-peer {e8 n9}
+    interface-peer {e9 n10}
+    custom-config {
+	custom-config-id basic_range
+	custom-command {3 3 9 9 9}
+	config {
+	range=200
+	bandwidth=54000000
+	jitter=0
+	delay=50000
+	error=0
+	}
+    }
+}
+
+link l1 {
+    nodes {n11 n1}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l2 {
+    nodes {n11 n2}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l3 {
+    nodes {n11 n3}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l4 {
+    nodes {n11 n4}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l5 {
+    nodes {n11 n5}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l6 {
+    nodes {n11 n6}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l7 {
+    nodes {n11 n7}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l8 {
+    nodes {n11 n8}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l9 {
+    nodes {n11 n9}
+    bandwidth 54000000
+    delay 50000
+}
+
+link l10 {
+    nodes {n11 n10}
+    bandwidth 54000000
+    delay 50000
+}
+
+canvas c1 {
+    name {Canvas1}
+    wallpaper-style {upperleft}
+    wallpaper {sample4-bg.jpg}
+    size {1000 750}
+}
+
+option global {
+    interface_names no
+    ip_addresses yes
+    ipv6_addresses yes
+    node_labels yes
+    link_labels yes
+    show_api no
+    background_images no
+    annotations yes
+    grid no
+    traffic_start 0
+}
+
+option session {
+}
+

@@ -1,0 +1,307 @@
+From 433bc9e01b6a50db276c0b0d9dcd8bfcc2bc42f8 Mon Sep 17 00:00:00 2001
+From: Tom Goff <thomas.goff@boeing.com>
+Date: Mon, 3 Jun 2013 18:30:31 -0700
+Subject: [PATCH 2/3] netfilter: Make the /proc/net/netfilter directory per
+ netns.
+
+This allows subsystems to create per-netns entries.
+
+Signed-off-by: Tom Goff <thomas.goff@boeing.com>
+---
+ include/linux/netfilter.h            |  5 ----
+ include/net/net_namespace.h          |  3 +++
+ net/netfilter/core.c                 | 35 ++++++++++++++++++++-------
+ net/netfilter/nf_log.c               | 33 ++++++++++++++++++++++----
+ net/netfilter/nfnetlink_log.c        | 46 ++++++++++++++++++++++++------------
+ net/netfilter/nfnetlink_queue_core.c | 45 ++++++++++++++++++++++++-----------
+ 6 files changed, 121 insertions(+), 46 deletions(-)
+
+diff --git a/include/linux/netfilter.h b/include/linux/netfilter.h
+index ee14284..0060fde 100644
+--- a/include/linux/netfilter.h
++++ b/include/linux/netfilter.h
+@@ -289,11 +289,6 @@ nf_nat_decode_session(struct sk_buff *skb, struct flowi *fl, u_int8_t family)
+ #endif
+ }
+ 
+-#ifdef CONFIG_PROC_FS
+-#include <linux/proc_fs.h>
+-extern struct proc_dir_entry *proc_net_netfilter;
+-#endif
+-
+ #else /* !CONFIG_NETFILTER */
+ #define NF_HOOK(pf, hook, skb, indev, outdev, okfn) (okfn)(skb)
+ #define NF_HOOK_COND(pf, hook, skb, indev, outdev, okfn, cond) (okfn)(skb)
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index de644bc..96b2242 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -94,6 +94,9 @@ struct net {
+ 	struct netns_dccp	dccp;
+ #endif
+ #ifdef CONFIG_NETFILTER
++#ifdef CONFIG_PROC_FS
++	struct proc_dir_entry	*proc_net_netfilter;
++#endif
+ 	struct netns_xt		xt;
+ #if defined(CONFIG_NF_CONNTRACK) || defined(CONFIG_NF_CONNTRACK_MODULE)
+ 	struct netns_ct		ct;
+diff --git a/net/netfilter/core.c b/net/netfilter/core.c
+index a9c488b..00e356d 100644
+--- a/net/netfilter/core.c
++++ b/net/netfilter/core.c
+@@ -276,25 +276,44 @@ void (*nf_nat_decode_session_hook)(struct sk_buff *, struct flowi *);
+ EXPORT_SYMBOL(nf_nat_decode_session_hook);
+ #endif
+ 
++static int __net_init netfilter_net_init(struct net *net)
++{
++#ifdef CONFIG_PROC_FS
++	net->proc_net_netfilter = proc_net_mkdir(net, "netfilter",
++						 net->proc_net);
++	if (!net->proc_net_netfilter) {
++		pr_err("%s: cannot create netfilter proc entry\n", __func__);
++		return -ENOMEM;
++	}
++#endif
++
++	return 0;
++}
++
++static void __net_exit netfilter_net_exit(struct net *net)
++{
+ #ifdef CONFIG_PROC_FS
+-struct proc_dir_entry *proc_net_netfilter;
+-EXPORT_SYMBOL(proc_net_netfilter);
++	proc_net_remove(net, "netfilter");
+ #endif
++}
++
++static struct pernet_operations netfilter_net_ops = {
++	.init = netfilter_net_init,
++	.exit = netfilter_net_exit,
++};
+ 
+ void __init netfilter_init(void)
+ {
+ 	int i, h;
++
++	if (register_pernet_subsys(&netfilter_net_ops))
++		panic("%s: failed to register per netns operations", __func__);
++
+ 	for (i = 0; i < ARRAY_SIZE(nf_hooks); i++) {
+ 		for (h = 0; h < NF_MAX_HOOKS; h++)
+ 			INIT_LIST_HEAD(&nf_hooks[i][h]);
+ 	}
+ 
+-#ifdef CONFIG_PROC_FS
+-	proc_net_netfilter = proc_mkdir("netfilter", init_net.proc_net);
+-	if (!proc_net_netfilter)
+-		panic("cannot create netfilter proc entry");
+-#endif
+-
+ 	if (netfilter_log_init() < 0)
+ 		panic("cannot initialize nf_log");
+ }
+diff --git a/net/netfilter/nf_log.c b/net/netfilter/nf_log.c
+index 9e31269..5f33072 100644
+--- a/net/netfilter/nf_log.c
++++ b/net/netfilter/nf_log.c
+@@ -290,14 +290,39 @@ static __init int netfilter_log_sysctl_init(void)
+ }
+ #endif /* CONFIG_SYSCTL */
+ 
+-int __init netfilter_log_init(void)
++static int __net_init netfilter_log_net_init(struct net *net)
+ {
+-	int i, r;
+ #ifdef CONFIG_PROC_FS
+ 	if (!proc_create("nf_log", S_IRUGO,
+-			 proc_net_netfilter, &nflog_file_ops))
+-		return -1;
++			 net->proc_net_netfilter, &nflog_file_ops))
++		return -ENOMEM;
++#endif
++
++	return 0;
++}
++
++static void __net_exit netfilter_log_net_exit(struct net *net)
++{
++#ifdef CONFIG_PROC_FS
++	remove_proc_entry("nf_log", net->proc_net_netfilter);
+ #endif
++}
++
++static struct pernet_operations netfilter_log_net_ops = {
++	.init = netfilter_log_net_init,
++	.exit = netfilter_log_net_exit,
++};
++
++int __init netfilter_log_init(void)
++{
++	int i, r;
++
++	r = register_pernet_subsys(&netfilter_log_net_ops);
++	if (r) {
++		pr_err("%s: failed to register per netns operations\n",
++		       __func__);
++		return r;
++	}
+ 
+ 	/* Errors will trigger panic, unroll on error is unnecessary. */
+ 	r = netfilter_log_sysctl_init();
+diff --git a/net/netfilter/nfnetlink_log.c b/net/netfilter/nfnetlink_log.c
+index 92fd8ec..9571c43 100644
+--- a/net/netfilter/nfnetlink_log.c
++++ b/net/netfilter/nfnetlink_log.c
+@@ -986,9 +986,39 @@ static const struct file_operations nful_file_ops = {
+ 
+ #endif /* PROC_FS */
+ 
++static int __net_init nfnetlink_log_net_init(struct net *net)
++{
++#ifdef CONFIG_PROC_FS
++	if (!proc_create("nfnetlink_log", 0440,
++			 net->proc_net_netfilter, &nful_file_ops))
++		return -ENOMEM;
++#endif
++
++	return 0;
++}
++
++static void __net_exit nfnetlink_log_net_exit(struct net *net)
++{
++#ifdef CONFIG_PROC_FS
++	remove_proc_entry("nfnetlink_log", net->proc_net_netfilter);
++#endif
++}
++
++static struct pernet_operations nfnetlink_log_net_ops = {
++	.init = nfnetlink_log_net_init,
++	.exit = nfnetlink_log_net_exit,
++};
++
+ static int __init nfnetlink_log_init(void)
+ {
+-	int i, status = -ENOMEM;
++	int i, status;
++
++	status = register_pernet_subsys(&nfnetlink_log_net_ops);
++	if (status) {
++		pr_err("%s: failed to register per netns operations\n",
++		       __func__);
++		return status;
++	}
+ 
+ 	for (i = 0; i < INSTANCE_BUCKETS; i++)
+ 		INIT_HLIST_HEAD(&instance_table[i]);
+@@ -1011,19 +1041,8 @@ static int __init nfnetlink_log_init(void)
+ 		goto cleanup_subsys;
+ 	}
+ 
+-#ifdef CONFIG_PROC_FS
+-	if (!proc_create("nfnetlink_log", 0440,
+-			 proc_net_netfilter, &nful_file_ops)) {
+-		status = -ENOMEM;
+-		goto cleanup_logger;
+-	}
+-#endif
+ 	return status;
+ 
+-#ifdef CONFIG_PROC_FS
+-cleanup_logger:
+-	nf_log_unregister(&nfulnl_logger);
+-#endif
+ cleanup_subsys:
+ 	nfnetlink_subsys_unregister(&nfulnl_subsys);
+ cleanup_netlink_notifier:
+@@ -1034,9 +1053,6 @@ cleanup_netlink_notifier:
+ static void __exit nfnetlink_log_fini(void)
+ {
+ 	nf_log_unregister(&nfulnl_logger);
+-#ifdef CONFIG_PROC_FS
+-	remove_proc_entry("nfnetlink_log", proc_net_netfilter);
+-#endif
+ 	nfnetlink_subsys_unregister(&nfulnl_subsys);
+ 	netlink_unregister_notifier(&nfulnl_rtnl_notifier);
+ }
+diff --git a/net/netfilter/nfnetlink_queue_core.c b/net/netfilter/nfnetlink_queue_core.c
+index 3158d87..8f2d9bb 100644
+--- a/net/netfilter/nfnetlink_queue_core.c
++++ b/net/netfilter/nfnetlink_queue_core.c
+@@ -1048,9 +1048,39 @@ static const struct file_operations nfqnl_file_ops = {
+ 
+ #endif /* PROC_FS */
+ 
++static int __net_init nfnetlink_queue_net_init(struct net *net)
++{
++#ifdef CONFIG_PROC_FS
++	if (!proc_create("nfnetlink_queue", 0440,
++			 net->proc_net_netfilter, &nfqnl_file_ops))
++		return -ENOMEM;
++#endif
++
++	return 0;
++}
++
++static void __net_exit nfnetlink_queue_net_exit(struct net *net)
++{
++#ifdef CONFIG_PROC_FS
++	remove_proc_entry("nfnetlink_queue", net->proc_net_netfilter);
++#endif
++}
++
++static struct pernet_operations nfnetlink_queue_net_ops = {
++	.init = nfnetlink_queue_net_init,
++	.exit = nfnetlink_queue_net_exit,
++};
++
+ static int __init nfnetlink_queue_init(void)
+ {
+-	int i, status = -ENOMEM;
++	int i, status;
++
++	status = register_pernet_subsys(&nfnetlink_queue_net_ops);
++	if (status) {
++		pr_err("%s: failed to register per netns operations\n",
++		       __func__);
++		return status;
++	}
+ 
+ 	for (i = 0; i < INSTANCE_BUCKETS; i++)
+ 		INIT_HLIST_HEAD(&instance_table[i]);
+@@ -1062,20 +1092,10 @@ static int __init nfnetlink_queue_init(void)
+ 		goto cleanup_netlink_notifier;
+ 	}
+ 
+-#ifdef CONFIG_PROC_FS
+-	if (!proc_create("nfnetlink_queue", 0440,
+-			 proc_net_netfilter, &nfqnl_file_ops))
+-		goto cleanup_subsys;
+-#endif
+-
+ 	register_netdevice_notifier(&nfqnl_dev_notifier);
+ 	nf_register_queue_handler(&nfqh);
+ 	return status;
+ 
+-#ifdef CONFIG_PROC_FS
+-cleanup_subsys:
+-	nfnetlink_subsys_unregister(&nfqnl_subsys);
+-#endif
+ cleanup_netlink_notifier:
+ 	netlink_unregister_notifier(&nfqnl_rtnl_notifier);
+ 	return status;
+@@ -1085,9 +1105,6 @@ static void __exit nfnetlink_queue_fini(void)
+ {
+ 	nf_unregister_queue_handler();
+ 	unregister_netdevice_notifier(&nfqnl_dev_notifier);
+-#ifdef CONFIG_PROC_FS
+-	remove_proc_entry("nfnetlink_queue", proc_net_netfilter);
+-#endif
+ 	nfnetlink_subsys_unregister(&nfqnl_subsys);
+ 	netlink_unregister_notifier(&nfqnl_rtnl_notifier);
+ 
+-- 
+1.8.1.2
+

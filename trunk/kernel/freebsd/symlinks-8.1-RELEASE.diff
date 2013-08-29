@@ -1,0 +1,78 @@
+Index: sys/kern/vfs_lookup.c
+===========================================================================
+--- sys/kern/vfs_lookup.c	2010/06/17 19:18:00	#3
++++ sys/kern/vfs_lookup.c	2010/06/17 19:18:00
+@@ -59,6 +59,8 @@
+ #include <sys/ktrace.h>
+ #endif
+ 
++#include <net/vnet.h>
++
+ #include <security/audit/audit.h>
+ #include <security/mac/mac_framework.h>
+ 
+@@ -72,6 +74,19 @@
+     "unsigned long");
+ SDT_PROBE_DEFINE2(vfs, namei, lookup, return, "int", "struct vnode *");
+ 
++#ifdef VIMAGE
++#define IMUNES_SYMLINK_HACK
++#endif
++
++#ifdef IMUNES_SYMLINK_HACK
++static VNET_DEFINE(int, morphing_symlinks);
++#define	V_morphing_symlinks	VNET(morphing_symlinks)
++
++SYSCTL_VNET_INT(_vfs, OID_AUTO, morphing_symlinks, CTLFLAG_RW,
++    &VNET_NAME(morphing_symlinks), 0,
++    "Resolve @ to vimage name in symlinks");
++#endif
++
+ /*
+  * Allocation zone for namei
+  */
+@@ -333,6 +348,44 @@
+ 			error = ENOENT;
+ 			break;
+ 		}
++#ifdef IMUNES_SYMLINK_HACK
++		/*
++		 * If the symbolic link includes a special character '@',
++		 * and V_morphing_symlinks is set, substitute the first
++		 * occurence of '@' with full path to jail / vimage name.
++		 * If the full path includes subhierarchies, s/./\// when
++		 * expanding '@' to jail / vimage name.
++		 *
++		 * XXX revisit buffer length checking.
++		 */
++		CURVNET_SET_QUIET(TD_TO_VNET(curthread));
++		if (V_morphing_symlinks) {
++			char *sp = strchr(cp, '@');
++
++			if (sp) {
++				char *vname = td->td_ucred->cr_prison->pr_name;
++				int vnamelen = strlen(vname);
++				int i;
++
++				if (vnamelen >= auio.uio_resid) {
++					if (ndp->ni_pathlen > 1)
++						uma_zfree(namei_zone, cp);
++					error = ENAMETOOLONG;
++					CURVNET_RESTORE();
++					break;
++				}
++				bcopy(sp + 1, sp + vnamelen,
++				    linklen - (sp - cp));
++				bcopy(td->td_ucred->cr_prison->pr_name,
++				    sp, vnamelen);
++				linklen += (vnamelen - 1);
++				for (i = 0; i < vnamelen; i++)
++					if (sp[i] == '.')
++						sp[i] = '/';
++			}
++		}
++		CURVNET_RESTORE();
++#endif
+ 		if (linklen + ndp->ni_pathlen >= MAXPATHLEN) {
+ 			if (ndp->ni_pathlen > 1)
+ 				uma_zfree(namei_zone, cp);

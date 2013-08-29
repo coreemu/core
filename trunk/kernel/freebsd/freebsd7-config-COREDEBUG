@@ -1,0 +1,22 @@
+#
+# VIMAGE - sample kernel configuration file with a virtualized network stack
+# configure.
+#
+# $FreeBSD$
+#
+include 	GENERIC
+ident		COREDEBUG
+
+device		crypto
+options		IPSEC
+options 	VIMAGE
+options		DDB
+options		GDB
+options		KDB
+options		KDB_TRACE
+
+#
+# Some kernel subsystems and functions don't yet compile with VIMAGE.  Remove
+# from the configuration for now.
+#
+nooptions	SCTP
