@@ -1471,12 +1471,12 @@ proc resetSessionOptions {} {
 proc setSessionOptions { types vals } {
     global g_session_options
     foreach kv $vals {
-	set kvs [split $kv =]
+	set kvs [splitKeyValue $kv]
 	if {[llength $kvs] < 2} {
 	    puts "error with session option: $kv"
 	    continue
 	}
-	set key [lindex $kvs 0]
+	set key [string trim [lindex $kvs 0]]
 	set value [lindex $kvs 1]
         array set g_session_options [list $key $value]
     }

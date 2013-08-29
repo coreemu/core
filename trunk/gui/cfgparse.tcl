@@ -464,7 +464,7 @@ proc loadCfg { cfg } {
 	    # uses 'key=value' instead of 'key value'
 	    if  { $object == "session" } {
 		# 'key=value', values with space needs quoting 'key={space val}'
-		setSessionOptions "" $line
+		setSessionOptions "" [split $line "\n"]
 		set class ""
 		set object ""
 		continue
