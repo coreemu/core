@@ -352,6 +352,8 @@ class Emane(ConfigurableManager):
             
     def setnodemodel(self, n):
         emanenode = self._objs[n]
+        if n not in self.configs:
+            return False
         for (t, v) in self.configs[n]:
             if t is None:
                 continue
