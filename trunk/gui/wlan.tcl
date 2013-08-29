@@ -254,10 +254,19 @@ proc moveNode { c node img xpos ypos dx dy } {
 # called from cfgparse when loading imn file
 proc upgradeWlanConfigs {} {
     global node_list
+    set model_list [getPluginsCapList]
     foreach node $node_list {
 	if { [nodeType $node] != "wlan" } { continue }
 	set modcfg [netconfFetchSection $node "mobmodel"]
-	if { [lindex $modcfg 0] == "range" } { upgradeWlanRangeConfig $node }
+	if { [lindex $modcfg 0] == "range" } {
+	    upgradeWlanRangeConfig $node
+	    set modcfg [netconfFetchSection $node "mobmodel"]
+	}
+	foreach model [lrange $modcfg 1 end] {
+	    if { [lsearch $model_list "*=$model"] == -1 } {
+		puts "***Warning: missing model '$model'!"
+	    }
+	}
     }
 }
 
