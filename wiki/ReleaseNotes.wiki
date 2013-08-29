@@ -48,7 +48,7 @@ The high-level changes since version 4.5 are:
  * fix "file exists" error message when distributed session number is re-used and servers file is written
  * fix bug #194 configuration dialog too long, make dialog scrollable/resizable
  * allow float values for loss and duplicates percent
- * fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 206, 210, 212, 213, 214, 221
+ * fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 202, 206, 210, 212, 213, 214, 221
 
 
 = 4.5 =
