@@ -1,0 +1,131 @@
+node n1 {
+    type router
+    model router
+    network-config {
+	hostname n1
+	!
+	interface eth0
+	 ip address 10.0.0.2/24
+	 ipv6 address a:0::2/64
+	!
+	router ospf
+	 router-id 10.0.0.2
+	 network 10.0.0.0/24 area 0
+	!
+	router ospf6
+	 router-id 10.0.0.2
+	 interface eth0 area 0.0.0.0
+	!
+    }
+    canvas c1
+    iconcoords {312.0 120.0}
+    labelcoords {312.0 148.0}
+    interface-peer {eth0 n2}
+    custom-config {
+	custom-config-id service:UserDefined:mgen.sh
+	custom-command mgen.sh
+	config {
+	#!/bin/sh
+	SCRIPTDIR=$SESSION_DIR
+	LOGDIR=/var/log
+	if [ `uname` = "Linux" ]; then
+	  cd $SCRIPTDIR
+	else
+	  cd /tmp/e0_`hostname`
+	fi
+	(
+	cat << 'EOF'
+	# mgen receiver script
+	15.0 LISTEN UDP 5001
+	EOF
+	) > recv.mgn
+	mgen input recv.mgn output $LOGDIR/mgen.log > /dev/null 2> /dev/null < /dev/null &
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('mgen.sh', )
+	startidx=35
+	cmdup=('sh mgen.sh', )
+	}
+    }
+    services {zebra OSPFv2 OSPFv3 vtysh IPForward UserDefined}
+}
+
+node n2 {
+    type router
+    model router
+    network-config {
+	hostname n2
+	!
+	interface eth0
+	 ip address 10.0.0.1/24
+	 ipv6 address a:0::1/64
+	!
+    }
+    canvas c1
+    iconcoords {72.0 48.0}
+    labelcoords {72.0 76.0}
+    interface-peer {eth0 n1}
+    custom-config {
+	custom-config-id service:UserDefined
+	custom-command UserDefined
+	config {
+	files=('mgen.sh', )
+	startidx=35
+	cmdup=('sh mgen.sh', )
+	}
+    }
+    custom-config {
+	custom-config-id service:UserDefined:mgen.sh
+	custom-command mgen.sh
+	config {
+	#!/bin/sh
+	HN=`hostname`
+	SCRIPTDIR=$SESSION_DIR
+	LOGDIR=/var/log
+	
+	if [ `uname` = "FreeBSD" ]; then
+	  SCRIPTDIR=/tmp/e0_$HN
+	  LOGDIR=$SCRIPTDIR
+	fi
+	cd $SCRIPTDIR
+	(
+	cat << 'EOF'
+	# mgen sender script: send UDP traffic to UDP port 5001 after 15 seconds
+	15.0 ON 1 UDP SRC 5000 DST 10.0.0.2/5001 PERIODIC [1 4096]
+	EOF
+	) > send_$HN.mgn
+	mgen input send_$HN.mgn output $LOGDIR/mgen_$HN.log > /dev/null 2> /dev/null < /dev/null &
+	}
+    }
+    services {zebra OSPFv2 OSPFv3 vtysh IPForward UserDefined}
+}
+
+link l1 {
+    nodes {n2 n1}
+    bandwidth 0
+}
+
+canvas c1 {
+    name {Canvas1}
+}
+
+option global {
+    interface_names no
+    ip_addresses yes
+    ipv6_addresses yes
+    node_labels yes
+    link_labels yes
+    show_api no
+    background_images no
+    annotations yes
+    grid yes
+    traffic_start 0
+}
+
+option session {
+}
+

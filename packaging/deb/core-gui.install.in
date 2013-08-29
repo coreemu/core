@@ -1,0 +1,11 @@
+#! /usr/bin/dh-exec
+@BINDIR@/core-gui
+@CORE_LIB_DIR@
+# configure prints a warning if CORE_DATA_DIR is used here
+# ATdatarootdirAT is expanding to ${datarootdir}/man/man1/
+/usr/share/core/icons
+/usr/share/core/examples/configs
+/usr/share/pixmaps
+/usr/share/applications
+# ATmandirAT is expanding to ${datarootdir}/man/man1/core-gui.1
+/usr/share/man/man1/core-gui.1

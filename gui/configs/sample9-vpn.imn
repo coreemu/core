@@ -1,0 +1,850 @@
+comments {
+Sample scenario showing VPNClient and VPNServer service configuration.
+
+This topology features an OpenVPN client and server for virtual private
+networking. The client can access the private 10.0.6.0/24 network via the VPN
+server. First wait until routing converges in the center routers (try using the
+Adjacency Widget and wait for blue lines, meaning full adjacencies), then open
+a shell on the vpnclient and try pinging the private address of the vpnserver:
+
+  vpnclient> ping 10.0.6.1
+
+You can also access the other 10.0.6.* hosts behind the server. Try running
+tcpudmp on one of the center routers, e.g. the n2 eth1/10.0.5.2 interface, and
+you'll see UDP packets with TLS encrypted data instead of ICMP packets.
+
+Keys are included as extra files in the VPNClient and VPNServer service
+configuration.
+}
+
+node n1 {
+    type router
+    model router
+    network-config {
+	hostname n1
+	!
+	interface eth2
+	 ip address 10.0.4.2/24
+	 ipv6 address 2001:4::2/64
+	!
+	interface eth1
+	 ip address 10.0.2.1/24
+	 ipv6 address 2001:2::1/64
+	!
+	interface eth0
+	 ip address 10.0.0.1/24
+	 ipv6 address 2001:0::1/64
+	!
+    }
+    canvas c1
+    iconcoords {297.0 236.0}
+    labelcoords {297.0 264.0}
+    interface-peer {eth0 n6}
+    interface-peer {eth1 n2}
+    interface-peer {eth2 n3}
+}
+
+node n2 {
+    type router
+    model router
+    network-config {
+	hostname n2
+	!
+	interface eth1
+	 ip address 10.0.5.2/24
+	 ipv6 address 2001:5::2/64
+	!
+	interface eth0
+	 ip address 10.0.2.2/24
+	 ipv6 address 2001:2::2/64
+	!
+    }
+    canvas c1
+    iconcoords {298.0 432.0}
+    labelcoords {298.0 460.0}
+    interface-peer {eth0 n1}
+    interface-peer {eth1 n4}
+}
+
+node n3 {
+    type router
+    model router
+    network-config {
+	hostname n3
+	!
+	interface eth1
+	 ip address 10.0.4.1/24
+	 ipv6 address 2001:4::1/64
+	!
+	interface eth0
+	 ip address 10.0.3.1/24
+	 ipv6 address 2001:3::1/64
+	!
+    }
+    canvas c1
+    iconcoords {573.0 233.0}
+    labelcoords {573.0 261.0}
+    interface-peer {eth0 n4}
+    interface-peer {eth1 n1}
+}
+
+node n4 {
+    type router
+    model router
+    network-config {
+	hostname n4
+	!
+	interface eth2
+	 ip address 10.0.5.1/24
+	 ipv6 address 2001:5::1/64
+	!
+	interface eth1
+	 ip address 10.0.3.2/24
+	 ipv6 address 2001:3::2/64
+	!
+	interface eth0
+	 ip address 10.0.1.1/24
+	 ipv6 address 2001:1::1/64
+	!
+    }
+    canvas c1
+    iconcoords {574.0 429.0}
+    labelcoords {574.0 457.0}
+    interface-peer {eth0 n5}
+    interface-peer {eth1 n3}
+    interface-peer {eth2 n2}
+}
+
+node n5 {
+    type router
+    model host
+    network-config {
+	hostname vpnserver
+	!
+	interface eth1
+	 ipv6 address 2001:6::10/64
+	 ip address 10.0.6.1/24
+	!
+	interface eth0
+	 ip address 10.0.1.10/24
+	 ipv6 address 2001:1::10/64
+	!
+    }
+    canvas c1
+    iconcoords {726.0 511.0}
+    labelcoords {726.0 543.0}
+    interface-peer {eth0 n4}
+    interface-peer {eth1 n7}
+    custom-config {
+	custom-config-id service:VPNServer:copycerts.sh
+	custom-command copycerts.sh
+	config {
+	#!/bin/sh
+	
+	FILES="vpnserver.pem vpnserver.key ca-cert.pem dh1024.pem"
+	
+	mkdir -p /tmp/certs
+	
+	for f in $FILES; do
+	  cp $f /tmp/certs
+	done
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNServer:dh1024.pem
+	custom-command dh1024.pem
+	config {
+	-----BEGIN DH PARAMETERS-----
+	MIGHAoGBAIYQUzZ+2aYWFfdRWRL/Tc8bFqK8ve/0ihW1BPhe0z3b5D5+2/r9HAsG
+	u7oMkyM2oWp5N1DlzKgTizCRPRno5vgTz01kw4h6Y9ux496+huOHJGZXiCZlkZvM
+	daP8CC8z1naCC9MZLImQTkb1d1sH9BDRZAyfQYiXVYrHdqtNtqQjAgEC
+	-----END DH PARAMETERS-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNServer:ca-cert.pem
+	custom-command ca-cert.pem
+	config {
+	Certificate:
+	    Data:
+	        Version: 3 (0x2)
+	        Serial Number:
+	            df:69:1f:ef:e5:af:bf:0f
+	        Signature Algorithm: sha1WithRSAEncryption
+	        Issuer: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Validity
+	            Not Before: Mar 20 16:16:08 2012 GMT
+	            Not After : Mar 20 16:16:08 2015 GMT
+	        Subject: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Subject Public Key Info:
+	            Public Key Algorithm: rsaEncryption
+	                Public-Key: (1024 bit)
+	                Modulus:
+	                    00:c4:d7:fc:c3:bc:a0:ee:76:7b:58:5c:96:6d:1f:
+	                    74:26:c2:93:c1:a4:94:95:13:5e:4f:8b:3f:00:27:
+	                    e5:1b:b1:3b:70:3e:72:71:4d:c9:67:54:33:29:49:
+	                    1e:de:a6:91:d9:00:ec:84:b8:64:f8:06:51:82:f4:
+	                    84:9b:a2:fe:16:34:5c:e1:2f:3d:ad:34:b9:8e:ad:
+	                    8e:ea:8a:e9:40:56:5b:f5:09:2c:bf:a0:08:db:81:
+	                    7f:fb:d8:b9:6c:a6:be:4c:1f:b1:4e:b3:b0:8d:8d:
+	                    e4:04:8e:f8:8e:e9:c7:aa:e7:4a:b4:87:89:a7:25:
+	                    72:38:74:bb:e5:b6:7f:86:7b
+	                Exponent: 65537 (0x10001)
+	        X509v3 extensions:
+	            X509v3 Subject Key Identifier: 
+	                98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	            X509v3 Authority Key Identifier: 
+	                keyid:98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	
+	            X509v3 Basic Constraints: 
+	                CA:TRUE
+	    Signature Algorithm: sha1WithRSAEncryption
+	        39:7e:99:fd:40:44:0a:20:4c:3c:9a:bf:01:aa:94:c8:76:bb:
+	        80:53:4f:cd:28:2f:5b:7f:0b:52:09:14:cb:ac:ee:74:7f:17:
+	        4b:79:21:db:e1:a3:9b:e5:b1:72:83:f7:88:02:20:d6:23:33:
+	        e4:ff:50:58:c6:88:e0:22:d7:2b:96:b3:dd:31:1a:80:52:0d:
+	        61:4f:47:72:63:39:1e:7f:a1:ad:f0:2b:82:53:05:ca:3d:0a:
+	        8f:3c:72:58:74:57:ae:8b:66:16:d9:a4:50:99:bc:d3:a7:c5:
+	        54:63:f0:87:cd:06:1a:d4:61:ed:d3:b8:33:5d:5a:d6:a4:f0:
+	        a4:96
+	-----BEGIN CERTIFICATE-----
+	MIICijCCAfOgAwIBAgIJAN9pH+/lr78PMA0GCSqGSIb3DQEBBQUAMF4xCzAJBgNV
+	BAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UECgwIY29yZS1kZXYxEDAOBgNVBAMM
+	B0NPUkUgQ0ExHTAbBgkqhkiG9w0BCQEWDnJvb3RAbG9jYWxob3N0MB4XDTEyMDMy
+	MDE2MTYwOFoXDTE1MDMyMDE2MTYwOFowXjELMAkGA1UEBhMCVVMxCzAJBgNVBAgM
+	AldBMREwDwYDVQQKDAhjb3JlLWRldjEQMA4GA1UEAwwHQ09SRSBDQTEdMBsGCSqG
+	SIb3DQEJARYOcm9vdEBsb2NhbGhvc3QwgZ8wDQYJKoZIhvcNAQEBBQADgY0AMIGJ
+	AoGBAMTX/MO8oO52e1hclm0fdCbCk8GklJUTXk+LPwAn5RuxO3A+cnFNyWdUMylJ
+	Ht6mkdkA7IS4ZPgGUYL0hJui/hY0XOEvPa00uY6tjuqK6UBWW/UJLL+gCNuBf/vY
+	uWymvkwfsU6zsI2N5ASO+I7px6rnSrSHiaclcjh0u+W2f4Z7AgMBAAGjUDBOMB0G
+	A1UdDgQWBBSYDscKdF37Vlu3kYAqOtSJrWy5UTAfBgNVHSMEGDAWgBSYDscKdF37
+	Vlu3kYAqOtSJrWy5UTAMBgNVHRMEBTADAQH/MA0GCSqGSIb3DQEBBQUAA4GBADl+
+	mf1ARAogTDyavwGqlMh2u4BTT80oL1t/C1IJFMus7nR/F0t5Idvho5vlsXKD94gC
+	INYjM+T/UFjGiOAi1yuWs90xGoBSDWFPR3JjOR5/oa3wK4JTBco9Co88clh0V66L
+	ZhbZpFCZvNOnxVRj8IfNBhrUYe3TuDNdWtak8KSW
+	-----END CERTIFICATE-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNServer:vpnserver.pem
+	custom-command vpnserver.pem
+	config {
+	Certificate:
+	    Data:
+	        Version: 3 (0x2)
+	        Serial Number:
+	            df:69:1f:ef:e5:af:bf:14
+	        Signature Algorithm: sha1WithRSAEncryption
+	        Issuer: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Validity
+	            Not Before: Apr 12 15:09:45 2012 GMT
+	            Not After : Apr 10 15:09:45 2022 GMT
+	        Subject: C=US, ST=WA, O=core-dev, CN=vpnserver
+	        Subject Public Key Info:
+	            Public Key Algorithm: rsaEncryption
+	                Public-Key: (1024 bit)
+	                Modulus:
+	                    00:af:da:e2:fb:f7:e1:ca:97:bb:94:1b:8f:f7:70:
+	                    2f:c5:dc:71:22:b6:d2:f3:8b:fc:3a:d1:ef:65:60:
+	                    21:0f:e5:49:ed:71:45:1c:e9:f7:b9:f7:00:74:05:
+	                    a3:ab:63:05:5c:be:23:fd:18:c6:b7:17:52:21:3a:
+	                    86:5f:68:07:a6:1b:2f:fc:df:ce:ac:45:55:cd:2a:
+	                    d4:8a:66:d1:46:99:e4:b2:57:49:53:df:d0:c0:1e:
+	                    0f:84:6f:52:8d:2c:6e:4b:cb:f7:7e:c4:27:51:72:
+	                    cd:db:68:54:fd:4d:c4:42:1a:27:be:9f:03:03:d8:
+	                    ff:11:58:46:2f:58:13:2c:37
+	                Exponent: 65537 (0x10001)
+	        X509v3 extensions:
+	            X509v3 Basic Constraints: 
+	                CA:FALSE
+	            Netscape Comment: 
+	                OpenSSL Generated Certificate
+	            X509v3 Subject Key Identifier: 
+	                56:F2:E8:73:73:76:FD:14:13:1C:1A:AB:F2:8F:30:D4:91:7D:83:62
+	            X509v3 Authority Key Identifier: 
+	                keyid:98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	
+	    Signature Algorithm: sha1WithRSAEncryption
+	        29:62:f5:4a:40:ce:65:e0:73:ff:d1:80:ca:89:a3:29:4e:d8:
+	        63:52:f0:76:21:b7:83:49:a4:fa:54:f7:0d:58:eb:af:fb:59:
+	        61:63:02:57:de:4d:c1:8d:f1:de:d6:00:40:53:12:25:3c:9b:
+	        48:9a:a7:3b:95:5d:67:83:11:b2:b2:ef:c2:71:95:23:e5:42:
+	        88:09:ac:95:c9:cf:e8:5c:d8:14:9e:d8:4f:6f:af:10:4f:f5:
+	        19:a2:71:f3:96:5f:1b:19:53:e9:16:4d:4e:be:e5:8a:83:57:
+	        0a:93:7a:a4:53:05:1a:64:bf:25:69:fc:3c:3b:9b:aa:43:f4:
+	        1d:fc
+	-----BEGIN CERTIFICATE-----
+	MIICmDCCAgGgAwIBAgIJAN9pH+/lr78UMA0GCSqGSIb3DQEBBQUAMF4xCzAJBgNV
+	BAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UECgwIY29yZS1kZXYxEDAOBgNVBAMM
+	B0NPUkUgQ0ExHTAbBgkqhkiG9w0BCQEWDnJvb3RAbG9jYWxob3N0MB4XDTEyMDQx
+	MjE1MDk0NVoXDTIyMDQxMDE1MDk0NVowQTELMAkGA1UEBhMCVVMxCzAJBgNVBAgM
+	AldBMREwDwYDVQQKDAhjb3JlLWRldjESMBAGA1UEAwwJdnBuc2VydmVyMIGfMA0G
+	CSqGSIb3DQEBAQUAA4GNADCBiQKBgQCv2uL79+HKl7uUG4/3cC/F3HEittLzi/w6
+	0e9lYCEP5UntcUUc6fe59wB0BaOrYwVcviP9GMa3F1IhOoZfaAemGy/8386sRVXN
+	KtSKZtFGmeSyV0lT39DAHg+Eb1KNLG5Ly/d+xCdRcs3baFT9TcRCGie+nwMD2P8R
+	WEYvWBMsNwIDAQABo3sweTAJBgNVHRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVu
+	U1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQUVvLoc3N2/RQTHBqr
+	8o8w1JF9g2IwHwYDVR0jBBgwFoAUmA7HCnRd+1Zbt5GAKjrUia1suVEwDQYJKoZI
+	hvcNAQEFBQADgYEAKWL1SkDOZeBz/9GAyomjKU7YY1LwdiG3g0mk+lT3DVjrr/tZ
+	YWMCV95NwY3x3tYAQFMSJTybSJqnO5VdZ4MRsrLvwnGVI+VCiAmslcnP6FzYFJ7Y
+	T2+vEE/1GaJx85ZfGxlT6RZNTr7lioNXCpN6pFMFGmS/JWn8PDubqkP0Hfw=
+	-----END CERTIFICATE-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNServer:vpnserver.key
+	custom-command vpnserver.key
+	config {
+	-----BEGIN PRIVATE KEY-----
+	MIICdwIBADANBgkqhkiG9w0BAQEFAASCAmEwggJdAgEAAoGBAK/a4vv34cqXu5Qb
+	j/dwL8XccSK20vOL/DrR72VgIQ/lSe1xRRzp97n3AHQFo6tjBVy+I/0YxrcXUiE6
+	hl9oB6YbL/zfzqxFVc0q1Ipm0UaZ5LJXSVPf0MAeD4RvUo0sbkvL937EJ1Fyzdto
+	VP1NxEIaJ76fAwPY/xFYRi9YEyw3AgMBAAECgYBcUveOP5KsUULqvBm2V5DNOTGw
+	fvl7Ycf3fZZIy9IvzTolzazyRCeJ25LCVt+ZsC/1g+HTE/nnz/ePeHFpj21LuVWJ
+	uWsV9qmdO0K5WxfXM4M08df+EVRrOh4rmgnHZp7jBW6srwGSSJxsvRAe0cRlZcCW
+	JsgJcyLJfZk0ypsSgQJBAOTtkUfJvqdU0CslBSmDY6skxjneS6kLQGvrELHRTZgd
+	K31E5WDYJgkpVGhWur19kUYIj7Fs3/Z1Q0KC0bRWokECQQDEpp52u4ilaP9nJsMm
+	5l/JVEO5gIzbqStVTmU64wLgx3mapL6P8Sa1gbJMlc5NMyayjRP0PoN0cvz+V9t4
+	3cB3AkEAxhLHINXtn9pCQxJE5SZJlkq7OFaeICUcGEPKrg/qkzKp7jkuPhzGzCZ2
+	YdCowkti5rWBnoIVRakwCNwnlWFgAQJAEhyWc7EKANIO091KFAcbw1szcZ5ZWtHV
+	3+F8iVPnK/SzSn7p3jADtKvhVBRoD8wqQD+mGtS3Hr6IdpR47kTeOQJBAJhd4vi6
+	LxbQZlS009DamuSrqgwsmTcfylu58bhFN4YkWCw8CPk3iKJXH6beomDvYEIQl8C5
+	jWe+PqSX6XcwnTk=
+	-----END PRIVATE KEY-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNServer:vpnserver.sh
+	custom-command vpnserver.sh
+	config {
+	#!/bin/sh
+	# custom VPN Server Configuration for service (security.py)
+	# -------- CUSTOMIZATION REQUIRED --------
+	#
+	# The VPNServer service sets up the OpenVPN server for building VPN tunnels
+	# that allow access via TUN/TAP device to private networks.
+	#
+	# note that the IPForward and DefaultRoute services should be enabled
+	
+	# directory containing the certificate and key described below, in addition to
+	# a CA certificate and DH key
+	keydir=/tmp/certs
+	
+	# the name used for a "$keyname.pem" certificate and "$keyname.key" private key.
+	keyname=vpnserver
+	
+	# the VPN subnet address from which the client VPN IP (for the TUN/TAP) 
+	# will be allocated
+	vpnsubnet=10.0.200.0
+	
+	# public IP address of this vpn server (same as VPNClient vpnserver= setting)
+	vpnserver=10.0.1.10
+	
+	# optional list of private subnets reachable behind this VPN server
+	# each subnet and next hop is separated by a space
+	# "<subnet1>,<nexthop1> <subnet2>,<nexthop2> ..."
+	privatenets="10.0.6.0,10.0.1.10"
+	
+	# optional list of VPN clients, for statically assigning IP addresses to
+	# clients; also, an optional client subnet can be specified for adding static
+	# routes via the client
+	# Note: VPN addresses x.x.x.0-3 are reserved
+	# "<keyname>,<vpnIP>,<subnetIP> <keyname>,<vpnIP>,<subnetIP> ..."
+	#vpnclients="client1KeyFilename,10.0.200.5,10.0.0.0 client2KeyFilename,,"
+	vpnclients=""
+	
+	# NOTE: you may need to enable the StaticRoutes service on nodes within the
+	# private subnet, in order to have routes back to the client.
+	# /sbin/ip ro add <vpnsubnet>/24 via <vpnServerRemoteInterface> 
+	# /sbin/ip ro add <vpnClientSubnet>/24 via <vpnServerRemoteInterface>
+	
+	# -------- END CUSTOMIZATION --------
+	
+	echo > $PWD/vpnserver.log
+	rm -f -r $PWD/ccd
+	
+	# validate key and certification files
+	if [ ! -e $keydir\/$keyname.key ] || [ ! -e $keydir\/$keyname.pem ] \
+	   || [ ! -e $keydir\/ca-cert.pem ] || [ ! -e $keydir\/dh1024.pem ]; then
+	     echo "ERROR: missing certification or key files under $keydir \
+	$keyname.key or $keyname.pem or ca-cert.pem or dh1024.pem" >> $PWD/vpnserver.log
+	fi
+	
+	# validate configuration IP addresses
+	checkip=0
+	if [ "$(dpkg -l | grep " sipcalc ")" = "" ]; then
+	   echo "WARNING: ip validation disabled because package sipcalc not installed\
+	        " >> $PWD/vpnserver.log
+	   checkip=1
+	else
+	    if [ "$(sipcalc "$vpnsubnet" "$vpnserver" | grep ERR)" != "" ]; then
+	     echo "ERROR: invalid vpn subnet or server address \
+	$vpnsubnet or $vpnserver " >> $PWD/vpnserver.log
+	    fi
+	fi
+	 
+	# create client vpn ip pool file
+	(
+	cat << EOF
+	EOF
+	)> $PWD/ippool.txt
+	
+	# create server.conf file
+	(
+	cat << EOF
+	# openvpn server config
+	local $vpnserver
+	server $vpnsubnet 255.255.255.0
+	push redirect-gateway def1
+	EOF
+	)> $PWD/server.conf
+	
+	# add routes to VPN server private subnets, and push these routes to clients
+	for privatenet in $privatenets; do
+	    if [ $privatenet != "" ]; then
+	        net=${privatenet%%,*}
+	        nexthop=${privatenet##*,}
+	        if [ $checkip = "0" ] &&
+	           [ "$(sipcalc "$net" "$nexthop" | grep ERR)" != "" ]; then
+	            echo "ERROR: invalid vpn server private net address \
+	$net or $nexthop " >> $PWD/vpnserver.log
+		fi
+	        echo push route $net 255.255.255.0 >> $PWD/server.conf
+	        /sbin/ip ro add $net/24 via $nexthop
+	        /sbin/ip ro add $vpnsubnet/24 via $nexthop
+	    fi
+	done
+	
+	# allow subnet through this VPN, one route for each client subnet
+	for client in $vpnclients; do
+	    if [ $client != "" ]; then
+	        cSubnetIP=${client##*,}
+	        cVpnIP=${client#*,}
+	        cVpnIP=${cVpnIP%%,*}
+	        cKeyFilename=${client%%,*}
+	        if [ "$cSubnetIP" != "" ]; then
+	            if [ $checkip = "0" ] &&
+	               [ "$(sipcalc "$cSubnetIP" "$cVpnIP" | grep ERR)" != "" ]; then
+	                echo "ERROR: invalid vpn client and subnet address \
+	$cSubnetIP or $cVpnIP " >> $PWD/vpnserver.log
+		    fi
+	            echo route $cSubnetIP 255.255.255.0  >> $PWD/server.conf
+	            if ! test -d $PWD/ccd; then
+	                mkdir -p $PWD/ccd
+	                echo  client-config-dir $PWD/ccd >> $PWD/server.conf
+	            fi
+	            if test -e $PWD/ccd/$cKeyFilename; then
+	              echo iroute $cSubnetIP 255.255.255.0 >> $PWD/ccd/$cKeyFilename
+	            else
+	              echo iroute $cSubnetIP 255.255.255.0 > $PWD/ccd/$cKeyFilename
+	            fi
+	        fi
+	        if [ "$cVpnIP" != "" ]; then
+	            echo $cKeyFilename,$cVpnIP >> $PWD/ippool.txt
+	        fi
+	    fi
+	done
+	
+	(
+	cat << EOF
+	keepalive 10 120
+	ca $keydir/ca-cert.pem
+	cert $keydir/$keyname.pem
+	key $keydir/$keyname.key
+	dh $keydir/dh1024.pem
+	cipher AES-256-CBC
+	status /var/log/openvpn-status.log
+	log /var/log/openvpn-server.log
+	ifconfig-pool-linear
+	ifconfig-pool-persist $PWD/ippool.txt
+	port 1194
+	proto udp
+	dev tun
+	verb 4
+	daemon
+	EOF
+	)>> $PWD/server.conf
+	
+	# start vpn server
+	openvpn --config server.conf
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNServer
+	custom-command VPNServer
+	config {
+	
+	('vpnserver.sh', 'vpnserver.key', 'vpnserver.pem', 'ca-cert.pem', 'dh1024.pem', 'copycerts.sh', )
+	50
+	('sh copycerts.sh', 'sh vpnserver.sh', )
+	('killall openvpn', )
+	('pidof openvpn', )
+	
+	}
+    }
+    services {IPForward DefaultRoute SSH VPNServer}
+}
+
+node n6 {
+    type router
+    model PC
+    network-config {
+	hostname vpnclient
+	!
+	interface eth0
+	 ip address 10.0.0.20/24
+	 ipv6 address 2001:0::20/64
+	!
+    }
+    canvas c1
+    iconcoords {120.0 133.0}
+    labelcoords {120.0 165.0}
+    interface-peer {eth0 n1}
+    custom-config {
+	custom-config-id service:VPNClient:vpnclient.key
+	custom-command vpnclient.key
+	config {
+	-----BEGIN PRIVATE KEY-----
+	MIICdgIBADANBgkqhkiG9w0BAQEFAASCAmAwggJcAgEAAoGBAM49tCuXw4Wjt8iY
+	84nU+fdOCw5M9RXXDfwHOxd1ILSP4KDLB7FfqVo9/DZOMlqNHYBeeF0WXLnr+zda
+	kKQUWpWHJQGQ4qHIJ+xCsBRCVbTPsRngeQMCCQw5ekW7NZKpKj6ANWkIm4dhiuTr
+	ZshR5Q6idNFG/b/ksNQsARK8vlJlAgMBAAECgYEAoKeKMKcAxJpasGUM2OJRcWaW
+	0CX8iG3EU/2h90zjFCQ7m6VsMaxN9KDyVa8mJElmoLd2VTT1OFLtlxnyMA423Hro
+	0tlKGErCH2yWMnrcjO30w7pmWSONn0yU/iAbzYAsmLNwYKCPAX2tJ9FZKsfVhctd
+	MEDMf/skhYL6CFe4XwECQQD1pV7C9lj0vsno22WoVg8n6/7OZu/ZBtCXoAQKAo14
+	bUqknK+SDMgqnexDQjarkQFrq4yxrPmp3Mv4a6M9vKglAkEA1u8i+1m4VMAARe9N
+	3qiFA0hk9v3Nm7f/ZVrkddoZNChV8CQW9y3Caltrlrjj0ugTAaWKdOhOcWeRcDo9
+	EMrNQQJAbXwpgkf+Wgd3QrwW0TKaSrbauPAUUuzAp/QAGN4OY/CCZmAXuMbNqID+
+	vvOSHmHg+jZZ3Q81r8njd3OyLGAbqQJAURqn3qT6c7CH6dvlTHHWz2hQAQvAvFPw
+	IbTspLQJ8q6NzzIvIFK6HBwnOxbFkV5VXbezyW2nvA9SyECRrnZ4gQJAfV2In/xB
+	qxyrHHInJPtwzsKjfgw9787ulXeDa+gYQrmwfrqYvPo6NtfJ9i2ahl8tr3LIFWIH
+	NavHWA5NKc4GVw==
+	-----END PRIVATE KEY-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNClient:vpnclient.pem
+	custom-command vpnclient.pem
+	config {
+	Certificate:
+	    Data:
+	        Version: 3 (0x2)
+	        Serial Number:
+	            df:69:1f:ef:e5:af:bf:13
+	        Signature Algorithm: sha1WithRSAEncryption
+	        Issuer: C=US, ST=WA, O=core-dev, CN=CORE CA/emailAddress=root@localhost
+	        Validity
+	            Not Before: Apr 12 15:09:01 2012 GMT
+	            Not After : Apr 10 15:09:01 2022 GMT
+	        Subject: C=US, ST=WA, O=core-dev, CN=vpnclient
+	        Subject Public Key Info:
+	            Public Key Algorithm: rsaEncryption
+	                Public-Key: (1024 bit)
+	                Modulus:
+	                    00:ce:3d:b4:2b:97:c3:85:a3:b7:c8:98:f3:89:d4:
+	                    f9:f7:4e:0b:0e:4c:f5:15:d7:0d:fc:07:3b:17:75:
+	                    20:b4:8f:e0:a0:cb:07:b1:5f:a9:5a:3d:fc:36:4e:
+	                    32:5a:8d:1d:80:5e:78:5d:16:5c:b9:eb:fb:37:5a:
+	                    90:a4:14:5a:95:87:25:01:90:e2:a1:c8:27:ec:42:
+	                    b0:14:42:55:b4:cf:b1:19:e0:79:03:02:09:0c:39:
+	                    7a:45:bb:35:92:a9:2a:3e:80:35:69:08:9b:87:61:
+	                    8a:e4:eb:66:c8:51:e5:0e:a2:74:d1:46:fd:bf:e4:
+	                    b0:d4:2c:01:12:bc:be:52:65
+	                Exponent: 65537 (0x10001)
+	        X509v3 extensions:
+	            X509v3 Basic Constraints: 
+	                CA:FALSE
+	            Netscape Comment: 
+	                OpenSSL Generated Certificate
+	            X509v3 Subject Key Identifier: 
+	                A0:59:F2:02:46:86:A3:2A:BD:C0:33:DA:31:71:1F:78:88:16:43:CE
+	            X509v3 Authority Key Identifier: 
+	                keyid:98:0E:C7:0A:74:5D:FB:56:5B:B7:91:80:2A:3A:D4:89:AD:6C:B9:51
+	
+	    Signature Algorithm: sha1WithRSAEncryption
+	        0a:39:71:f3:9f:50:68:f9:de:3e:47:eb:73:6b:4e:d8:6c:ff:
+	        d5:38:0a:a0:8f:52:8f:cb:7e:6f:95:62:b6:04:2f:1d:3f:42:
+	        32:26:38:c5:89:ea:ef:fc:27:ab:f0:81:39:e2:58:d6:fd:f8:
+	        3e:f8:db:22:ce:39:dd:13:49:6a:7b:eb:90:8a:cc:bc:7d:87:
+	        c5:d4:25:5f:f5:9a:0a:8f:1e:28:86:50:46:e2:fd:4e:ff:5d:
+	        b8:0e:48:2d:bd:0f:38:b4:85:0f:4e:05:c6:60:cf:5a:d9:d0:
+	        5c:32:ed:70:3c:72:28:fd:75:c5:38:d5:52:cb:57:f9:4b:86:
+	        0a:74
+	-----BEGIN CERTIFICATE-----
+	MIICmDCCAgGgAwIBAgIJAN9pH+/lr78TMA0GCSqGSIb3DQEBBQUAMF4xCzAJBgNV
+	BAYTAlVTMQswCQYDVQQIDAJXQTERMA8GA1UECgwIY29yZS1kZXYxEDAOBgNVBAMM
+	B0NPUkUgQ0ExHTAbBgkqhkiG9w0BCQEWDnJvb3RAbG9jYWxob3N0MB4XDTEyMDQx
+	MjE1MDkwMVoXDTIyMDQxMDE1MDkwMVowQTELMAkGA1UEBhMCVVMxCzAJBgNVBAgM
+	AldBMREwDwYDVQQKDAhjb3JlLWRldjESMBAGA1UEAwwJdnBuY2xpZW50MIGfMA0G
+	CSqGSIb3DQEBAQUAA4GNADCBiQKBgQDOPbQrl8OFo7fImPOJ1Pn3TgsOTPUV1w38
+	BzsXdSC0j+CgywexX6laPfw2TjJajR2AXnhdFly56/s3WpCkFFqVhyUBkOKhyCfs
+	QrAUQlW0z7EZ4HkDAgkMOXpFuzWSqSo+gDVpCJuHYYrk62bIUeUOonTRRv2/5LDU
+	LAESvL5SZQIDAQABo3sweTAJBgNVHRMEAjAAMCwGCWCGSAGG+EIBDQQfFh1PcGVu
+	U1NMIEdlbmVyYXRlZCBDZXJ0aWZpY2F0ZTAdBgNVHQ4EFgQUoFnyAkaGoyq9wDPa
+	MXEfeIgWQ84wHwYDVR0jBBgwFoAUmA7HCnRd+1Zbt5GAKjrUia1suVEwDQYJKoZI
+	hvcNAQEFBQADgYEACjlx859QaPnePkfrc2tO2Gz/1TgKoI9Sj8t+b5VitgQvHT9C
+	MiY4xYnq7/wnq/CBOeJY1v34PvjbIs453RNJanvrkIrMvH2HxdQlX/WaCo8eKIZQ
+	RuL9Tv9duA5ILb0POLSFD04FxmDPWtnQXDLtcDxyKP11xTjVUstX+UuGCnQ=
+	-----END CERTIFICATE-----
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNClient:copycerts.sh
+	custom-command copycerts.sh
+	config {
+	#!/bin/sh
+	
+	FILES="vpnclient.pem vpnclient.key"
+	
+	mkdir -p /tmp/certs
+	
+	for f in $FILES; do
+	  cp $f /tmp/certs
+	done
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNClient:vpnclient.sh
+	custom-command vpnclient.sh
+	config {
+	#!/bin/sh
+	# custom VPN Client configuration for service (security.py)
+	# -------- CUSTOMIZATION REQUIRED --------
+	#
+	# The VPNClient service builds a VPN tunnel to the specified VPN server using
+	# OpenVPN software and a virtual TUN/TAP device.
+	
+	# directory containing the certificate and key described below
+	keydir=/tmp/certs
+	
+	# the name used for a "$keyname.pem" certificate and "$keyname.key" private key.
+	keyname=vpnclient
+	
+	# the public IP address of the VPN server this client should connect with
+	vpnserver="10.0.1.10"
+	
+	# optional next hop for adding a static route to reach the VPN server
+	nexthop=""
+	
+	# --------- END CUSTOMIZATION --------
+	
+	# validate addresses
+	if [ "$(dpkg -l | grep " sipcalc ")" = "" ]; then
+	    echo "WARNING: ip validation disabled because package sipcalc not installed 
+	         " > $PWD/vpnclient.log
+	else
+	    if [ "$(sipcalc "$vpnserver" "$nexthop" | grep ERR)" != "" ]; then
+	        echo "ERROR: invalide address $vpnserver or $nexthop \
+	             " > $PWD/vpnclient.log
+	    fi
+	fi
+	
+	# validate key and certification files
+	if [ ! -e $keydir\/$keyname.key ] || [ ! -e $keydir\/$keyname.pem ] \
+	   || [ ! -e $keydir\/ca-cert.pem ] || [ ! -e $keydir\/dh1024.pem ]; then
+	     echo "ERROR: missing certification or key files under $keydir \
+	$keyname.key or $keyname.pem or ca-cert.pem or dh1024.pem" >> $PWD/vpnclient.log
+	fi
+	
+	# if necessary, add a static route for reaching the VPN server IP via the IF
+	vpnservernet=${vpnserver%.*}.0/24
+	if [ "$nexthop" != "" ]; then
+	    /sbin/ip route add $vpnservernet via $nexthop
+	fi
+	
+	# create openvpn client.conf
+	(
+	cat << EOF
+	client
+	dev tun
+	proto udp
+	remote $vpnserver 1194
+	nobind
+	ca $keydir/ca-cert.pem
+	cert $keydir/$keyname.pem
+	key $keydir/$keyname.key
+	dh $keydir/dh1024.pem
+	cipher AES-256-CBC
+	log /var/log/openvpn-client.log
+	verb 4
+	daemon
+	EOF
+	) > client.conf
+	    
+	openvpn --config client.conf
+	
+	}
+    }
+    custom-config {
+	custom-config-id service:VPNClient
+	custom-command VPNClient
+	config {
+	
+	('vpnclient.sh', 'copycerts.sh', 'vpnclient.pem', 'vpnclient.key', )
+	60
+	('sh copycerts.sh', 'sh vpnclient.sh', )
+	('killall openvpn', )
+	('pidof openvpn', )
+	
+	}
+    }
+    services {DefaultRoute VPNClient}
+}
+
+node n7 {
+    type lanswitch
+    network-config {
+	hostname n7
+	!
+    }
+    canvas c1
+    iconcoords {824.0 458.0}
+    labelcoords {824.0 482.0}
+    interface-peer {e0 n5}
+    interface-peer {e1 n8}
+    interface-peer {e2 n9}
+    interface-peer {e3 n10}
+}
+
+node n8 {
+    type router
+    model PC
+    network-config {
+	hostname n8
+	!
+	interface eth0
+	 ip address 10.0.6.20/24
+	 ipv6 address 2001:6::20/64
+	!
+    }
+    canvas c1
+    iconcoords {801.0 264.0}
+    labelcoords {801.0 296.0}
+    interface-peer {eth0 n7}
+}
+
+node n9 {
+    type router
+    model PC
+    network-config {
+	hostname n9
+	!
+	interface eth0
+	 ip address 10.0.6.21/24
+	 ipv6 address 2001:6::21/64
+	!
+    }
+    canvas c1
+    iconcoords {885.0 305.0}
+    labelcoords {885.0 337.0}
+    interface-peer {eth0 n7}
+}
+
+node n10 {
+    type router
+    model PC
+    network-config {
+	hostname n10
+	!
+	interface eth0
+	 ip address 10.0.6.22/24
+	 ipv6 address 2001:6::22/64
+	!
+    }
+    canvas c1
+    iconcoords {954.0 353.0}
+    labelcoords {954.0 385.0}
+    interface-peer {eth0 n7}
+}
+
+link l1 {
+    nodes {n6 n1}
+    bandwidth 0
+}
+
+link l2 {
+    nodes {n4 n5}
+    bandwidth 0
+}
+
+link l3 {
+    nodes {n1 n2}
+    bandwidth 0
+}
+
+link l4 {
+    nodes {n3 n4}
+    bandwidth 0
+}
+
+link l5 {
+    nodes {n3 n1}
+    bandwidth 0
+}
+
+link l6 {
+    nodes {n4 n2}
+    bandwidth 0
+}
+
+link l7 {
+    nodes {n5 n7}
+    bandwidth 0
+}
+
+link l8 {
+    nodes {n8 n7}
+    bandwidth 0
+}
+
+link l9 {
+    nodes {n9 n7}
+    bandwidth 0
+}
+
+link l10 {
+    nodes {n10 n7}
+    bandwidth 0
+}
+
+annotation a1 {
+    iconcoords {661.0 187.0 997.0 579.0}
+    type rectangle
+    label {private network}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize 12
+    color #e9e9fe
+    width 0
+    border black
+    rad 25
+    effects {bold}
+    canvas c1
+}
+
+canvas c1 {
+    name {Canvas1}
+}
+
+option global {
+    interface_names no
+    ip_addresses yes
+    ipv6_addresses no
+    node_labels yes
+    link_labels yes
+    ipsec_configs yes
+    exec_errors yes
+    show_api no
+    background_images no
+    annotations yes
+    grid yes
+    traffic_start 0
+}
+
