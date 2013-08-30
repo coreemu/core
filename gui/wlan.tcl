@@ -454,7 +454,7 @@ proc wlanConfigDialogHelper { wi target apply } {
 
     $spinbox $de.value3 -justify right -width 5 -validate focus
     if { [lindex $systype 0] == "Linux" } {
-	ttk::label $de.label3 -anchor w -text "Packet Error Rate (%):"
+	ttk::label $de.label3 -anchor w -text "Loss (%):"
 	$de.value3 configure -from 0 -to 100.0 -increment 0.1
     } else { ;# netgraph
 	ttk::label $de.label3 -anchor w -text "Bit Error (1/N):"
