@@ -573,8 +573,10 @@ class Session(object):
             for transition to the runtime state.
         '''
         self.writeobjs()
+        # controlnet may be needed by some EMANE models
         self.addremovectrlif(node=None, remove=False)
-        self.emane.startup()
+        if self.emane.startup() == self.emane.NOT_READY:
+            return # instantiate() will be invoked again upon Emane.configure()
         self.broker.startup()
         self.mobility.startup()
         # boot the services on each node
