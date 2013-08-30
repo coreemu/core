@@ -948,6 +948,7 @@ configuring the peer side of the tunnel, ensure that the matching keys are
 used.
 
 .. index:: gretap
+
 .. index:: ip link command
 
 Here are example commands for building the other end of a tunnel on a Linux
@@ -996,10 +997,18 @@ firewall is not blocking the GRE traffic.
 Communicating with the Host Machine
 -----------------------------------
 
+
+Control Network
+^^^^^^^^^^^^^^^
+
 .. index:: controlnet
+
 .. index:: control network
+
 .. index:: X11 applications
+
 .. index:: node access to the host
+
 .. index:: host access to a node
 
 The host machine that runs the CORE GUI and/or daemon is not necessarily
@@ -1007,16 +1016,20 @@ accessible from a node. Running an X11 application on a node, for example,
 requires some channel of communication for the application to connect with
 the X server for graphical display. There are several different ways to
 connect from the node to the host and vice versa.
-
 Under the :ref:`Session_Menu`, the *Options...* dialog has an option to set
-a control network prefix. A default value for the control network may also
-be specified by setting the ``controlnet =`` line in the
-:file:`/etc/core/core.conf` configuration file which new
-sessions will use by default. This can be set to a network prefix such as
+a *control network prefix*. 
+
+This can be set to a network prefix such as
 ``172.16.0.0/24``. A bridge will be created on the host machine having the last
 address in the prefix range (e.g. ``172.16.0.254``), and each node will have
 an extra ``ctrl0`` control interface configured with an address corresponding
 to its node number (e.g. ``172.16.0.3`` for ``n3``.)
+
+A default value for the control network may also
+be specified by setting the ``controlnet`` line in the
+:file:`/etc/core/core.conf` configuration file which new
+sessions will use by default. For multiple sessions at once, the session
+option should be used instead of the :file:`core.conf` default.
 
 .. NOTE::
    If you have a large scenario with more than 253 nodes, use a control
@@ -1025,6 +1038,7 @@ to its node number (e.g. ``172.16.0.3`` for ``n3``.)
 
 
 .. index:: X11 forwarding
+
 .. index:: SSH X11 forwarding
 
 To run an X11 application on the node, the ``SSH`` service can be enabled on
@@ -1035,7 +1049,59 @@ the node, and SSH with X11 forwarding can be used from the host to the node:
     # SSH from host to node n5 to run an X11 app
     ssh -X 172.16.0.5 xclock
 
+Note that the :file:`coresendmsg` utility can be used for a node to send
+messages to the CORE daemon running on the host (if the ``listenaddr = 0.0.0.0`` is set in the :file:`/etc/core/core.conf` file) to interact with the running
+emulation. For example, a node may move itself or other nodes, or change
+its icon based on some node state.
+
+
+Control Networks with Distributed
+^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+.. index:: distributed control network
+
+.. index:: control network distributed
+
+When a control network is defined for a distributed session, a control network
+bridge will be created on each of the slave servers, with GRE tunnels back
+to the master server's bridge. The slave control bridges are not assigned an
+address. From the host, any of the nodes (local or remote) can be accessed,
+just like the single server case.
+
+In some situations, remote emulated nodes need to communicate with the 
+host on which they are running and not the master server.
+Multiple control network prefixes can be specified in the session option,
+separated by spaces. In this case, control network addresses are allocated
+from the first prefix on the master server. The remaining network prefixes
+are used for subsequent servers sorted by alphabetic host name. For example,
+if the control network option is set to 
+"``172.16.1.0/24 172.16.2.0/24 192.168.0.0/16``" and the servers *core1*,
+*core2*, and *server1* are involved, the control network bridges will be
+assigned as follows: *core1* = ``172.16.1.254`` (assuming it is the master
+server), *core2* = ``172.16.2.254``, and *server1* = ``192.168.255.254``.
+Tunnels back to the master server will still be built, but it is up to the
+user to add appropriate routes if networking between control network
+prefixes is desired. The control network script may help with this.
+
+Control Network Script
+^^^^^^^^^^^^^^^^^^^^^^
+
+.. index:: control network scripts
+
+.. index:: controlnet_updown_script
+
+A control network script may be specified using the ``controlnet_updown_script``
+option in the :file:`/etc/core/core.conf` file. This script will be run after
+the bridge has been built (and address assigned) with the first argument
+the name of the bridge, and the second argument the keyword "``startup``".
+The script will again be invoked prior to bridge removal with the second
+argument being the keyword "``shutdown``".
+
+Other Methods
+^^^^^^^^^^^^^
+
 .. index:: dummy interface
+
 .. index:: dummy0
 
 There are still other ways to connect a host with a node. The :ref:`RJ45_Tool`
@@ -1058,11 +1124,6 @@ session, configure an address on the host.
 
 In the example shown above, the host will have the address ``10.0.1.2`` and
 the node linked to the RJ45 may have the address ``10.0.1.1``.
-
-Note that the :file:`coresendmsg` utility can be used for the node to send
-messages to the CORE daemon running on the host (if the ``listenaddr = 0.0.0.0`` is set in the :file:`/etc/core/core.conf` file) to interact with the running
-emulation. For example, a node may move itself or other nodes, or change
-its icon based on some node state.
 
 
 .. _Building_Sample_Networks:
@@ -1089,7 +1150,7 @@ creates new interfaces on network-layer nodes.
 .. index:: link configuration
 
 Double-click on the link to invoke the *link configuration* dialog box. Here
-you can change the Bandwidth, Delay, PER (Packet Error Rate), and Duplicate
+you can change the Bandwidth, Delay, Loss, and Duplicate
 rate parameters for that link. You can also modify the color and width of the
 link, affecting its display.
 
