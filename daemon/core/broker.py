@@ -529,7 +529,7 @@ class CoreBroker(ConfigurableManager):
             # broadcast location and services configuration everywhere
             confobj = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
             if confobj == "location" or confobj == "services" or \
-               confobj == "session":
+               confobj == "session" or confobj == "all":
                 serverlist = self.getserverlist()
         elif msg.msgtype == coreapi.CORE_API_FILE_MSG:
             # broadcast hook scripts and custom service files everywhere
