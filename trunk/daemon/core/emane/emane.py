@@ -32,6 +32,7 @@ class Emane(ConfigurableManager):
     _name = "emane"
     _type = coreapi.CORE_TLV_REG_EMULSRV
     _hwaddr_prefix = "02:02"
+    (SUCCESS, NOT_NEEDED, NOT_READY) = (0, 1, 2)
     
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
@@ -141,37 +142,43 @@ class Emane(ConfigurableManager):
 
     def setup(self):
         ''' Populate self._objs with EmaneNodes; perform distributed setup;
-        associate models with EmaneNodes from self.config.
+        associate models with EmaneNodes from self.config. Returns
+        Emane.(SUCCESS, NOT_NEEDED, NOT_READY) in order to delay session
+        instantiation.
         '''
         with self.session._objslock:
             for obj in self.session.objs():
                 if isinstance(obj, EmaneNode):
                     self.addobj(obj)
             if len(self._objs) == 0:
-                return False
+                return Emane.NOT_NEEDED
         if self.checkdistributed():
             # we are slave, but haven't received a platformid yet
             cfgval = self.getconfig(None, self.emane_config._name,
                                     self.emane_config.getdefaultvalues())[1]
             i = self.emane_config.getnames().index('platform_id_start')
             if cfgval[i] == self.emane_config.getdefaultvalues()[i]:
-                return False
+                return Emane.NOT_READY
         self.setnodemodels()
-        return True
+        return Emane.SUCCESS
 
     def startup(self):
-        ''' after all the EmaneNode objects have been added, build XML files
-            and start the daemons
+        ''' After all the EmaneNode objects have been added, build XML files
+            and start the daemons. Returns Emane.(SUCCESS, NOT_NEEDED, or
+            NOT_READY) which is used to delay session instantiation.
         '''
         self.reset()
-        if not self.setup():
-            return
+        r = self.setup()
+        if r != Emane.SUCCESS:
+            return r  # NOT_NEEDED or NOT_READY
         with self._objslock:
             self.buildxml()
             self.starteventmonitor()
             if self.numnems() > 0:
+                # TODO: check and return failure for these methods
                 self.startdaemons()
                 self.installnetifs()
+        return Emane.SUCCESS
 
     def poststartup(self):
         ''' Retransmit location events now that all NEMs are active.
@@ -544,7 +551,13 @@ class Emane(ConfigurableManager):
         conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
         if conftype == coreapi.CONF_TYPE_FLAGS_UPDATE and \
            self.session.master == False:
-            self.startup()
+            # instantiation was previously delayed by self.setup()
+            # returning Emane.NOT_READY
+            h = None
+            with session._handlerslock:
+                for h in self.session._handlers:
+                    break
+            self.session.instantiate(handler=h)
 
         return r
 
