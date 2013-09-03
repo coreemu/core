@@ -1004,6 +1004,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             if self.session.master:
                 self.warn("Unexpected event message: RUNTIME state received " \
                           "at session master")
+            else:
+                # master event queue is started in session.checkruntime()
+                self.session.evq.run()
         elif eventtype == coreapi.CORE_EVENT_DATACOLLECT_STATE:
             self.session.datacollect()
         elif eventtype == coreapi.CORE_EVENT_SHUTDOWN_STATE:
