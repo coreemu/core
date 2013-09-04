@@ -246,10 +246,7 @@ class Session(object):
             except Exception, e:
                 self.warn("Error sending Event Message: %s" % e)
             # also inform slave servers
-            coremsg = coreapi.CoreEventMessage(0,
-                                               msg[:coreapi.CoreMessage.hdrsiz],
-                                               msg[coreapi.CoreMessage.hdrsiz:])
-            tmp = self.broker.handlemsg(coremsg)
+            tmp = self.broker.handlerawmsg(msg)
         return replies
 
 

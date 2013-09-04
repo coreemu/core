@@ -779,6 +779,14 @@ class CoreBroker(ConfigurableManager):
             self.session._handlerslock.release()
         return host
 
+    def handlerawmsg(self, msg):
+        ''' Helper to invoke handlemsg() using raw (packed) message bytes.
+        '''
+        hdr = msg[:coreapi.CoreMessage.hdrsiz]
+        msgtype, flags, msglen = coreapi.CoreMessage.unpackhdr(hdr)
+        msgcls = coreapi.msg_class(msgtype)
+        return self.handlemsg(msgcls(flags, hdr, msg[coreapi.CoreMessage.hdrsiz:]))
+        
     def forwardmsg(self, msg, serverlist, handle_locally):
         ''' Forward API message to all servers in serverlist; if an empty 
             host/port is encountered, set the handle_locally flag. Returns the
