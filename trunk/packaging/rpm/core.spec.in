@@ -249,6 +249,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/examples/myservices/README.txt
 %{_datadir}/%{name}/examples/myservices/sample.py*
 %{_datadir}/%{name}/examples/netns/basicrange.py*
+%{_datadir}/%{name}/examples/netns/distributed.py*
 %{_datadir}/%{name}/examples/netns/emane80211.py*
 %{_datadir}/%{name}/examples/netns/howmanynodes.py*
 %{_datadir}/%{name}/examples/netns/iperf-performance-chain.py*
