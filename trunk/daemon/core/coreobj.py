@@ -128,6 +128,10 @@ class PyCoreObj(object):
         if hasattr(self, "type") and self.type is not None:
             tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_MODEL,
                                                 self.type)
+        if hasattr(self, "server") and self.server is not None:
+            tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_EMUSRV,
+                                                self.server)
+
 
         if x is not None:
             tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_XPOS, x)
