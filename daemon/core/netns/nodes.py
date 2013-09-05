@@ -232,6 +232,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         network.
     '''
     apitype = coreapi.CORE_NODE_RJ45
+    type = "rj45"
     
     def __init__(self, session, objid = None, name = None, mtu = 1500,
                  verbose = False, start = True):
@@ -245,7 +246,6 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         # the following are PyCoreNetIf attributes
         self.transport_type = "raw"
         self.localname = name
-        self.type = "rj45"
         if start:
             self.startup()
 

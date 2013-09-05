@@ -670,7 +670,7 @@ class Emane(ConfigurableManager):
             node.position.set(x,y,z)
             msg = node.tonodemsg(flags=0)
             self.session.broadcastraw(None, msg)
-            self.session.sdt.updatenodegeo(node, lat, long, alt)
+            self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
 
 
 class EmaneModel(WirelessModel):

@@ -184,6 +184,10 @@ class CoreBroker(ConfigurableManager):
                 (coreapi.CORE_API_ADD_FLAG | coreapi.CORE_API_LOC_FLAG):
                 self.incrbootcount()
                 self.session.checkruntime()
+        elif msgtype == coreapi.CORE_API_LINK_MSG:
+            # this allows green link lines for remote WLANs
+            msg = coreapi.CoreLinkMessage(msgflags, msghdr, msgdata)
+            self.session.sdt.handledistributed(msg)
 
         self.session.broadcastraw(None, data)
         if count is not None and count < 1:

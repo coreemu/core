@@ -434,7 +434,7 @@ class Ns3Session(Session):
                 node.position.set(x, y, z)
                 msg = node.tonodemsg(flags=0)
                 self.broadcastraw(None, msg)
-                self.sdt.updatenode(node, flags=0, x=x, y=y, z=z)
+                self.sdt.updatenode(node.objid, flags=0, x=x, y=y, z=z)
             time.sleep(0.001 * refresh_ms)
 
     def setupmobilitytracing(self, net, filename, nodes, verbose=False):

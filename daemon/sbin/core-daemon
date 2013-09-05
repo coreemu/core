@@ -432,7 +432,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 services_str = msg.gettlv(coreapi.CORE_TLV_NODE_SERVICES)
                 self.session.services.addservicestonode(n, model, services_str,
                                                         self.verbose)
-            self.session.sdt.updatenode(n, msg.flags, nodexpos, nodeypos, None)
             # boot nodes if they are added after runtime (like session.bootnodes())
             if self.session.getstate() == coreapi.CORE_EVENT_RUNTIME_STATE:
                 if isinstance(n, pycore.nodes.PyCoreNode) and \
@@ -452,7 +451,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 n = self.session.obj(nodenum)
             except KeyError:
                 pass
-            self.session.sdt.updatenode(n, msg.flags, None, None, None)
             self.session.delobj(nodenum)
             
             if msg.flags & coreapi.CORE_API_STR_FLAG:
@@ -479,7 +477,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             else:
                 if n:
                     n.setposition(nodexpos, nodeypos, None)
-                    self.session.sdt.updatenode(n, msg.flags, nodexpos, nodeypos, None)
             if n:
                 if canvas is not None:
                     n.canvas = canvas
@@ -779,12 +776,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 node1.lock.release()
             if node2:
                 node2.lock.release()
-        if not isinstance(net, pycore.nodes.WlanNode) and \
-           not isinstance(net, pycore.nodes.EmaneNode):
-            # show links in SDT display except for links to WLAN clouds
-            wl = (link_msg_type == coreapi.CORE_LINK_WIRELESS)
-            self.session.sdt.updatelink(nodenum1, nodenum2, msg.flags,
-                                        wireless=wl)
         return ()
 
     def handleexecmsg(self, msg):
