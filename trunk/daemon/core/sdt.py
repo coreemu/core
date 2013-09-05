@@ -33,6 +33,12 @@ class Sdt(object):
                        ('tunnel','tunnel.gif'),
                        ]
     
+    class Bunch:
+        ''' Helper class for recording a collection of attributes.
+        '''
+        def __init__(self, **kwds):
+            self.__dict__.update(kwds)
+    
     def __init__(self, session):
         self.session = session
         self.sock = None
@@ -40,6 +46,10 @@ class Sdt(object):
         self.showerror = True
         self.verbose = self.session.getcfgitembool('verbose', False)
         self.address = ("127.0.0.1", self.DEFAULT_SDT_PORT)
+        # node information for remote nodes not in session._objs
+        # local nodes also appear here since their obj may not exist yet
+        self.remotes = {}
+        session.broker.handlers += (self.handledistributed, )
         
     def is_enabled(self):
         if not hasattr(self.session.options, 'enablesdt'):
@@ -49,10 +59,14 @@ class Sdt(object):
         return False
 
     def connect(self, flags=0):
+        ''' Connect to the SDT UDP port if enabled.
+        '''
         if not self.is_enabled():
             return False
         if self.connected:
             return True
+        if self.session.getstate() == coreapi.CORE_EVENT_SHUTDOWN_STATE:
+            return False
         if self.showerror:
             self.session.info("connecting to SDT at %s:%s" % self.address)
         if self.sock is None:
@@ -73,7 +87,7 @@ class Sdt(object):
     
     def initialize(self):
         ''' Load icon sprites, and fly to the reference point location on
-        the virtual globe.
+            the virtual globe.
         '''
         if not self.cmd('path "%s/icons/normal"' % CORE_DATA_DIR):
             return False
@@ -95,14 +109,14 @@ class Sdt(object):
     def shutdown(self):
         ''' Invoked from Session.shutdown() and Session.checkshutdown().
         '''
-        # TODO: clear SDT display here?
+        self.cmd('clear all')
         self.disconnect()
         self.showerror = True
         
     def cmd(self, cmdstr):
         ''' Send an SDT command over a UDP socket. socket.sendall() is used
-        as opposed to socket.sendto() because an exception is raised when there
-        is no socket listener.
+            as opposed to socket.sendto() because an exception is raised when
+            there is no socket listener.
         '''
         if self.sock is None:
             return False
@@ -118,37 +132,38 @@ class Sdt(object):
             self.connected = False
             return False
         
-    def updatenode(self, node, flags, x, y, z):
+    def updatenode(self, nodenum, flags, x, y, z,
+                         name=None, type=None, icon=None):
         ''' Node is updated from a Node Message or mobility script.
         '''
-        if node is None:
-            return
         if not self.connect():
             return
         if flags & coreapi.CORE_API_DEL_FLAG:
-            self.cmd('delete node,%d' % node.objid)
+            self.cmd('delete node,%d' % nodenum)
+            return
+        if x is None or y is None:
             return
         (lat, long, alt) = self.session.location.getgeo(x, y, z)
         pos = "pos %.6f,%.6f,%.6f" % (long, lat, alt)
         if flags & coreapi.CORE_API_ADD_FLAG:
-            type = node.type
-            if node.icon is not None:
-                type = node.name
-                self.cmd('sprite %s image %s' % (type, node.icon))
+            if icon is not None:
+                type = name
+                icon = icon.replace("$CORE_DATA_DIR", CORE_DATA_DIR)
+                icon = icon.replace("$CORE_CONF_DIR", CORE_CONF_DIR)
+                self.cmd('sprite %s image %s' % (type, icon))
             self.cmd('node %d type %s label on,"%s" %s' % \
-                     (node.objid, type, node.name, pos))
+                     (nodenum, type, name, pos))
         else:
-            self.cmd('node %d %s' % (node.objid, pos))
-            
-    def updatenodegeo(self, node, lat, long, alt):
+            self.cmd('node %d %s' % (nodenum, pos))
+
+    def updatenodegeo(self, nodenum, lat, long, alt):
         ''' Node is updated upon receiving an EMANE Location Event.
+            TODO: received Node Message with lat/long/alt.
         '''
-        if node is None:
-            return
         if not self.connect():
             return
         pos = "pos %.6f,%.6f,%.6f" % (long, lat, alt)
-        self.cmd('node %d %s' % (node.objid, pos))
+        self.cmd('node %d %s' % (nodenum, pos))
         
     def updatelink(self, node1num, node2num, flags, wireless=False):
         ''' Link is updated from a Link Message or by a wireless model.
@@ -162,13 +177,15 @@ class Sdt(object):
         elif flags & coreapi.CORE_API_ADD_FLAG:
             attr = ""
             if wireless:
-                attr = " line green"
+                attr = " line green,2"
+            else:
+                attr = " line red,2"
             self.cmd('link %s,%s%s' % (node1num, node2num, attr))
     
     def sendobjs(self):
         ''' Session has already started, and the SDT3D GUI later connects.
-        Send all node and link objects for display. Otherwise, nodes and links
-        will only be drawn when they have been updated.
+            Send all node and link objects for display. Otherwise, nodes and
+            links will only be drawn when they have been updated (e.g. moved).
         '''
         nets = []
         with self.session._objslock:
@@ -180,7 +197,14 @@ class Sdt(object):
                 (x, y, z) = obj.getposition()
                 if x is None or y is None:
                     continue
-                self.updatenode(obj, coreapi.CORE_API_ADD_FLAG, x, y, z)
+                self.updatenode(obj.objid, coreapi.CORE_API_ADD_FLAG, x, y, z,
+                                obj.name, obj.type, obj.icon)
+            for nodenum in sorted(self.remotes.keys()):
+                r = self.remotes[nodenum]
+                (x, y, z) = r.pos
+                self.updatenode(nodenum, coreapi.CORE_API_ADD_FLAG, x, y, z,
+                                r.name, r.type, r.icon)
+
             for net in nets:
                 # use tolinkmsgs() to handle various types of links
                 msgs = net.tolinkmsgs(flags = coreapi.CORE_API_ADD_FLAG)
@@ -198,5 +222,115 @@ class Sdt(object):
                             continue
                     wl = (link_msg_type == coreapi.CORE_LINK_WIRELESS)   
                     self.updatelink(n1num, n2num, coreapi.CORE_API_ADD_FLAG, wl)
-                    
+            for n1num in sorted(self.remotes.keys()):
+                r = self.remotes[n1num]
+                for (n2num, wl) in r.links:
+                    self.updatelink(n1num, n2num, coreapi.CORE_API_ADD_FLAG, wl)
+    
+    def handledistributed(self, msg):
+        ''' Broker handler for processing CORE API messages as they are 
+            received. This is used to snoop the Node messages and update
+            node positions.
+        '''
+        if msg.msgtype == coreapi.CORE_API_LINK_MSG:
+            return self.handlelinkmsg(msg)
+        elif msg.msgtype == coreapi.CORE_API_NODE_MSG:
+            return self.handlenodemsg(msg)
+            
+    def handlenodemsg(self, msg):
+        ''' Process a Node Message to add/delete or move a node on
+            the SDT display. Node properties are found in session._objs or
+            self.remotes for remote nodes (or those not yet instantiated).
+        '''
+        # for distributed sessions to work properly, the SDT option should be
+        # enabled prior to starting the session
+        if not self.is_enabled():
+            return False
+        # node.(objid, type, icon, name) are used.
+        nodenum = msg.gettlv(coreapi.CORE_TLV_NODE_NUMBER)
+        if not nodenum:
+            return
+        x = msg.gettlv(coreapi.CORE_TLV_NODE_XPOS)
+        y = msg.gettlv(coreapi.CORE_TLV_NODE_YPOS)
+        z = None
+        name = msg.gettlv(coreapi.CORE_TLV_NODE_NAME)
+        
+        nodetype = msg.gettlv(coreapi.CORE_TLV_NODE_TYPE)
+        model = msg.gettlv(coreapi.CORE_TLV_NODE_MODEL)
+        icon = msg.gettlv(coreapi.CORE_TLV_NODE_ICON)
 
+        net = False
+        if nodetype == coreapi.CORE_NODE_DEF or \
+           nodetype == coreapi.CORE_NODE_PHYS or \
+           nodetype == coreapi.CORE_NODE_XEN:
+            if model is None:
+                model = "router"
+            type = model
+        elif nodetype != None:
+            type = coreapi.node_class(nodetype).type
+            net = True
+        else:
+            type = None
+            
+        try:
+            node = self.session.obj(nodenum)
+        except KeyError:
+            node = None
+        if node:
+            self.updatenode(node.objid, msg.flags, x, y, z,
+                            node.name, node.type, node.icon)
+        else:
+            if nodenum in self.remotes:
+                remote = self.remotes[nodenum]
+                if name is None:
+                    name = remote.name
+                if type is None:
+                    type = remote.type
+                if icon is None:
+                    icon = remote.icon
+            else:
+                remote = self.Bunch(objid=nodenum, type=type, icon=icon,
+                                    name=name, net=net, links=set())
+                self.remotes[nodenum] = remote
+            remote.pos = (x, y, z)
+            self.updatenode(nodenum, msg.flags, x, y, z, name, type, icon)
+        
+    def handlelinkmsg(self, msg):
+        ''' Process a Link Message to add/remove links on the SDT display.
+            Links are recorded in the remotes[nodenum1].links set for updating
+            the SDT display at a later time.
+        '''
+        if not self.is_enabled():
+            return False
+        nodenum1 = msg.gettlv(coreapi.CORE_TLV_LINK_N1NUMBER)
+        nodenum2 = msg.gettlv(coreapi.CORE_TLV_LINK_N2NUMBER)
+        link_msg_type = msg.gettlv(coreapi.CORE_TLV_LINK_TYPE)
+        # this filters out links to WLAN and EMANE nodes which are not drawn
+        if self.wlancheck(nodenum1):
+            return
+        wl = (link_msg_type == coreapi.CORE_LINK_WIRELESS)
+        if nodenum1 in self.remotes:
+            r = self.remotes[nodenum1]
+            if msg.flags & coreapi.CORE_API_DEL_FLAG:
+                if (nodenum2, wl) in r.links:
+                    r.links.remove((nodenum2, wl))
+            else:
+                r.links.add((nodenum2, wl))
+        self.updatelink(nodenum1, nodenum2, msg.flags, wireless=wl)
+
+    def wlancheck(self, nodenum):
+        ''' Helper returns True if a node number corresponds to a WlanNode
+            or EmaneNode.
+        '''
+        if nodenum in self.remotes:
+            type = self.remotes[nodenum].type
+            if type in ("wlan", "emane"):
+                return True
+        else:
+            try:
+                n = self.session.obj(nodenum)
+            except KeyError:
+                return False
+            if isinstance(n, (pycore.nodes.WlanNode, pycore.nodes.EmaneNode)):
+                return True
+        return False

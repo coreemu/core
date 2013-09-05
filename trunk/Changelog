@@ -1,4 +1,4 @@
-2013-08-12 CORE 4.6
+2013-09-05 CORE 4.6
 
   * NOTE: cored is now core-daemon, and core is now core-gui (for Debian
     acceptance)
@@ -45,7 +45,8 @@
     -  and servers file is written
     - fix bug #194 configuration dialog too long, make dialog scrollable/resizable
     - allow float values for loss and duplicates percent
-    - fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 206, 210, 212, 213, 214, 221
+    - fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 202,
+    205, 206, 210, 212, 213, 214, 221
 
 2013-04-13 CORE 4.5
 
