@@ -610,7 +610,8 @@ class Session(object):
                 # on Linux, GreTapBridges are auto-created, not part of GUI's
                 # node count
                 if 'GreTapBridge' in globals():
-                    if isinstance(obj, GreTapBridge):
+                    if isinstance(obj, GreTapBridge) and \
+                       not isinstance(obj, nodes.TunnelNode):
                         continue
                 nc += 1
         # count booted nodes not emulated on this server
