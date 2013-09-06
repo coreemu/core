@@ -246,8 +246,8 @@ class CoreServices(ConfigurableManager):
             try:
                 # NOTE: this wait=False can be problematic!
                 node.cmd(shlex.split(cmd),  wait = False)
-            except:
-                node.warn("error starting command %s" % cmd)
+            except Exception, e:
+                node.warn("error starting command %s: %s" % (cmd, e))
 
     def bootnodecustomservice(self, node, s, services):
         ''' Start a custom service on a node. Create private dirs, use supplied
