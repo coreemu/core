@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c)2011-2012 the Boeing Company.
+# Copyright (c)2011-2013 the Boeing Company.
 # See the LICENSE file included in this distribution.
 
 # create a random topology running OSPFv3 MDR, wait and then check
@@ -55,6 +55,8 @@ router ospf6
 ip forwarding
 """)
 
+    confdir = "/usr/local/etc/quagga"
+
     def __init__(self, core, ipaddr, routerid = None,
                  objid = None, name = None, nodedir = None):
         if routerid is None:
@@ -74,7 +76,13 @@ ip forwarding
         f = self.opennodefile(filename, "w")
         f.write(self.qconf())
         f.close()
-        pycore.nodes.LxcNode.config(self)
+        tmp = self.bootscript()
+        if tmp:
+            self.nodefile(self.bootsh, tmp, mode = 0755)
+
+    def boot(self):
+        self.config()
+        self.session.services.bootnodeservices(self)
 
     def bootscript(self):
         return """\
@@ -454,8 +462,10 @@ class ZebraRoutes(VtyshCmd):
         prefix = None
         for line in self.out:
             field = line.split()
+            if len(field) < 1:
+                continue
             # only use OSPFv3 selected FIB routes
-            if field[0][:2] == "o>":
+            elif field[0][:2] == "o>":
                 prefix = field[1]
                 metric = field[2].split("/")[1][:-1]
                 if field[0][2:] != "*":
