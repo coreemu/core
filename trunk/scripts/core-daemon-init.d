@@ -75,7 +75,7 @@ if [ $DEB = yes ]; then
     log_daemon_msg "$@"
   }
   endmsg () {
-    echo -n ""
+    echo ""
   }
 else
   daemon="daemon /usr/bin/python"
