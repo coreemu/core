@@ -1,5 +1,5 @@
 # CORE
-# (c)2010-2012 the Boeing Company.
+# (c)2010-2013 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # author: Jeff Ahrenholz  <jeffrey.m.ahrenholz@boeing.com>
@@ -32,7 +32,7 @@ netns_SOURCES	= ${SRC_NETNS}
 noinst_LIBRARIES = libnetns.a
 libnetns_a_SOURCES = netnsmodule.c vcmdmodule.c
 libnetns.a:
-	SBINDIR=@SBINDIR@ LDFLAGS="@libev_LIBS@" CFLAGS=@libev_CFLAGS@ $(PYTHON) setup.py build
+	SBINDIR=@SBINDIR@ LDFLAGS="$(LDFLAGS) @libev_LIBS@" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build
 
 install:	install-exec-hook
 
@@ -57,7 +57,7 @@ clean-local-check:
 	-rm -rf build
 
 rpmbuild.sh:
-	echo SBINDIR=@SBINDIR@ CFLAGS=@libev_CFLAGS@ $(PYTHON) setup.py build > rpmbuild.sh
+	echo SBINDIR=@SBINDIR@ LDFLAGS="$(LDFLAGS)" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build > rpmbuild.sh
 	chmod a+x rpmbuild.sh
 
 rpm:	rpmbuild.sh
