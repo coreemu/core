@@ -39,7 +39,7 @@ EXTRA_DIST		= bootstrap.sh LICENSE README-Xen Changelog kernel \
 DISTCLEAN_TARGETS	= aclocal.m4 config.h.in
 
 # extra cruft to remove
-DISTCLEANFILES	= aclocal.m4 config.h.in configure Makefile.in
+DISTCLEANFILES	= aclocal.m4 config.h.in configure Makefile.in config/compile
 
 # don't include svn dirs in source tarball
 dist-hook:
