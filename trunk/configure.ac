@@ -12,10 +12,10 @@
 #
 # this defines the CORE version number, must be static for AC_INIT
 #
-AC_INIT(core, 4.5svn5, core-dev@pf.itd.nrl.navy.mil)
+AC_INIT(core, 4.6, core-dev@pf.itd.nrl.navy.mil)
 VERSION=$PACKAGE_VERSION
 CORE_VERSION=$PACKAGE_VERSION
-CORE_VERSION_DATE=20130816
+CORE_VERSION_DATE=20130925
 COREDPY_VERSION=$PACKAGE_VERSION
 
 #
