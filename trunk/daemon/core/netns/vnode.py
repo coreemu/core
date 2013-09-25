@@ -166,6 +166,9 @@ class SimpleLxcNode(PyCoreNode):
             sessionid = self.session.shortsessionid()
             name = "n%s.%s.%s" % (self.objid, ifindex, sessionid)
             localname = "n%s.%s.%s" % (self.objid, ifname, sessionid)
+            if len(ifname) > 16:
+                raise ValueError, "interface local name '%s' to long" % \
+                        localname
             ifclass = VEth
             veth = ifclass(node = self, name = name, localname = localname,
                            mtu = 1500, net = net, start = self.up)
