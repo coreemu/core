@@ -1,4 +1,4 @@
-2013-09-05 CORE 4.6
+2013-09-25 CORE 4.6
 
   * NOTE: cored is now core-daemon, and core is now core-gui (for Debian
     acceptance)

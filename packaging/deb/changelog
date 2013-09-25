@@ -2,7 +2,7 @@ core (4.6-0ubuntu2) precise; urgency=low
 
   * Edit Copy and Paste, Edit Find, bugfixes, Debian compliance
 
- --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Mon, 12 Aug 2013 12:36:54 -0700
+ --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Wed, 25 Sep 2013 12:36:54 -0700
 
 core (4.5-0ubuntu1) precise; urgency=low
 
