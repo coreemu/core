@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2010-2012 the Boeing Company.
+# Copyright (c)2010-2013 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # authors: Tom Goff <thomas.goff@boeing.com>

@@ -7,7 +7,7 @@
 #
 
 # version of the API document that is used
-set CORE_API_VERSION 1.21
+set CORE_API_VERSION 1.22
 
 set DEFAULT_API_PORT 4038
 set g_api_exec_num 100; # starting execution number

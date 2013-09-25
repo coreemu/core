@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2010-2012 the Boeing Company.
+# Copyright (c)2010-2013 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # author: Tom Goff <thomas.goff@boeing.com>
@@ -16,7 +16,7 @@ def enumdict(d):
 
 # Constants
 
-CORE_API_VER		=	"1.21"
+CORE_API_VER		=	"1.22"
 CORE_API_PORT		=	4038
 
 # Message types
