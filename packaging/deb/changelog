@@ -1,4 +1,4 @@
-core (4.6-0ubuntu2) precise; urgency=low
+core (4.6-0ubuntu1) precise; urgency=low
 
   * Edit Copy and Paste, Edit Find, bugfixes, Debian compliance
 
