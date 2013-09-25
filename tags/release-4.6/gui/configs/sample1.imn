@@ -1,0 +1,510 @@
+node n1 {
+    type router
+    model router
+    network-config {
+	hostname n1
+	!
+	interface eth1
+	 ip address 10.0.5.1/24
+	 ipv6 address a:5::1/64
+	!
+	interface eth0
+	 ip address 10.0.3.2/24
+	 ipv6 address a:3::2/64
+	!
+    }
+    canvas c1
+    iconcoords {384.0 456.0}
+    labelcoords {384.0 484.0}
+    interface-peer {eth0 n2}
+    interface-peer {eth1 n15}
+}
+
+node n2 {
+    type router
+    model router
+    network-config {
+	hostname n2
+	!
+	interface eth2
+	 ip address 10.0.4.1/24
+	 ipv6 address a:4::1/64
+	!
+	interface eth1
+	 ip address 10.0.3.1/24
+	 ipv6 address a:3::1/64
+	!
+	interface eth0
+	 ip address 10.0.2.2/24
+	 ipv6 address a:2::2/64
+	!
+    }
+    canvas c1
+    iconcoords {264.0 432.0}
+    labelcoords {264.0 460.0}
+    interface-peer {eth0 n3}
+    interface-peer {eth1 n1}
+    interface-peer {eth2 n15}
+}
+
+node n3 {
+    type router
+    model router
+    network-config {
+	hostname n3
+	!
+	interface eth1
+	 ip address 10.0.2.1/24
+	 ipv6 address a:2::1/64
+	!
+	interface eth0
+	 ip address 10.0.1.1/24
+	 ipv6 address a:1::1/64
+	!
+    }
+    canvas c1
+    iconcoords {120.0 360.0}
+    labelcoords {120.0 388.0}
+    interface-peer {eth0 n4}
+    interface-peer {eth1 n2}
+}
+
+node n4 {
+    type lanswitch
+    network-config {
+	hostname n4
+	!
+    }
+    canvas c1
+    iconcoords {192.0 252.0}
+    labelcoords {192.0 280.0}
+    interface-peer {e0 n3}
+    interface-peer {e1 n11}
+    interface-peer {e2 n12}
+    interface-peer {e3 n13}
+    interface-peer {e4 n14}
+}
+
+node n5 {
+    type router
+    model mdr
+    network-config {
+	hostname n5
+	!
+	interface eth0
+	 ipv6 address a:0::3/128
+	 ip address 10.0.0.5/32
+	!
+	interface eth1
+	 ip address 10.0.6.2/24
+	 ipv6 address a:6::2/64
+	!
+    }
+    canvas c1
+    iconcoords {540.0 348.0}
+    labelcoords {540.0 376.0}
+    interface-peer {eth0 n10}
+    interface-peer {eth1 n15}
+    services {zebra OSPFv2 OSPFv3MDR vtysh IPForward}
+    custom-config {
+	custom-config-id service:zebra
+	custom-command zebra
+	config {
+	files=('/usr/local/etc/quagga/Quagga.conf', 'quaggaboot.sh', )
+	}
+    }
+    custom-config {
+	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
+	custom-command /usr/local/etc/quagga/Quagga.conf
+	config {
+	interface eth0
+	  ip address 10.0.0.5/32
+	  ipv6 address a::3/128
+	  ipv6 ospf6 instance-id 65
+	  ipv6 ospf6 hello-interval 2
+	  ipv6 ospf6 dead-interval 6
+	  ipv6 ospf6 retransmit-interval 5
+	  ipv6 ospf6 network manet-designated-router
+	  ipv6 ospf6 diffhellos
+	  ipv6 ospf6 adjacencyconnectivity uniconnected
+	  ipv6 ospf6 lsafullness mincostlsa
+	!
+	interface eth1
+	  ip address 10.0.6.2/24
+	  !ip ospf hello-interval 2
+	  !ip ospf dead-interval 6
+	  !ip ospf retransmit-interval 5
+	  !ip ospf network point-to-point
+	  ipv6 address a:6::2/64
+	!
+	router ospf
+	  router-id 10.0.0.5
+	  network 10.0.0.5/32 area 0
+	  network 10.0.6.0/24 area 0
+	  redistribute connected metric-type 1
+	  redistribute ospf6 metric-type 1
+	!
+	router ospf6
+	  router-id 10.0.0.5
+	  interface eth0 area 0.0.0.0
+	  redistribute connected
+	  redistribute ospf
+	!
+	
+	
+	}
+    }
+}
+
+node n6 {
+    type router
+    model mdr
+    network-config {
+	hostname n6
+	!
+	interface eth0
+	 ip address 10.0.0.6/32
+	 ipv6 address a:0::6/128
+	!
+    }
+    canvas c1
+    iconcoords {780.0 228.0}
+    labelcoords {780.0 252.0}
+    interface-peer {eth0 n10}
+}
+
+node n7 {
+    type router
+    model mdr
+    network-config {
+	hostname n7
+	!
+	interface eth0
+	 ip address 10.0.0.7/32
+	 ipv6 address a:0::7/128
+	!
+    }
+    canvas c1
+    iconcoords {816.0 348.0}
+    labelcoords {816.0 372.0}
+    interface-peer {eth0 n10}
+}
+
+node n8 {
+    type router
+    model mdr
+    network-config {
+	hostname n8
+	!
+	interface eth0
+	 ip address 10.0.0.8/32
+	 ipv6 address a:0::8/128
+	!
+    }
+    canvas c1
+    iconcoords {672.0 420.0}
+    labelcoords {672.0 444.0}
+    interface-peer {eth0 n10}
+}
+
+node n9 {
+    type router
+    model mdr
+    network-config {
+	hostname n9
+	!
+	interface eth0
+	 ip address 10.0.0.9/32
+	 ipv6 address a:0::9/128
+	!
+    }
+    canvas c1
+    iconcoords {672.0 96.0}
+    labelcoords {672.0 120.0}
+    interface-peer {eth0 n10}
+}
+
+node n10 {
+    type wlan
+    network-config {
+	hostname wlan10
+	!
+	interface wireless
+	 ip address 10.0.0.0/32
+	 ipv6 address a:0::0/128
+	!
+	mobmodel
+	coreapi
+	basic_range
+	ns2script
+	!
+    }
+    canvas c1
+    iconcoords {852.0 564.0}
+    labelcoords {852.0 596.0}
+    interface-peer {e0 n8}
+    interface-peer {e1 n7}
+    interface-peer {e2 n5}
+    interface-peer {e3 n6}
+    interface-peer {e4 n9}
+    custom-config {
+	custom-config-id basic_range
+	custom-command {3 3 9 9 9}
+	config {
+	range=240
+	bandwidth=54000000
+	jitter=0
+	delay=50000
+	error=0
+	}
+    }
+    custom-config {
+	custom-config-id ns2script
+	custom-command {10 3 11 10 10}
+	config {
+	file=sample1.scen
+	refresh_ms=50
+	loop=1
+	autostart=5
+	map=
+	}
+    }
+}
+
+node n11 {
+    type router
+    model PC
+    network-config {
+	hostname n11
+	!
+	interface eth0
+	 ip address 10.0.1.20/24
+	 ipv6 address a:1::20/64
+	!
+    }
+    canvas c1
+    iconcoords {192.0 156.0}
+    labelcoords {192.0 188.0}
+    interface-peer {eth0 n4}
+}
+
+node n12 {
+    type router
+    model PC
+    network-config {
+	hostname n12
+	!
+	interface eth0
+	 ip address 10.0.1.21/24
+	 ipv6 address a:1::21/64
+	!
+    }
+    canvas c1
+    iconcoords {264.0 156.0}
+    labelcoords {264.0 188.0}
+    interface-peer {eth0 n4}
+}
+
+node n13 {
+    type router
+    model PC
+    network-config {
+	hostname n13
+	!
+	interface eth0
+	 ip address 10.0.1.22/24
+	 ipv6 address a:1::22/64
+	!
+    }
+    canvas c1
+    iconcoords {336.0 156.0}
+    labelcoords {336.0 188.0}
+    interface-peer {eth0 n4}
+}
+
+node n14 {
+    type router
+    model host
+    network-config {
+	hostname n14
+	!
+	interface eth0
+	 ip address 10.0.1.10/24
+	 ipv6 address a:1::10/64
+	!
+    }
+    canvas c1
+    iconcoords {348.0 228.0}
+    labelcoords {348.0 260.0}
+    interface-peer {eth0 n4}
+}
+
+node n15 {
+    type router
+    model router
+    network-config {
+	hostname n15
+	!
+	interface eth2
+	 ip address 10.0.6.1/24
+	 ipv6 address a:6::1/64
+	!
+	interface eth1
+	 ip address 10.0.5.2/24
+	 ipv6 address a:5::2/64
+	!
+	interface eth0
+	 ip address 10.0.4.2/24
+	 ipv6 address a:4::2/64
+	!
+    }
+    canvas c1
+    iconcoords {384.0 312.0}
+    labelcoords {384.0 340.0}
+    interface-peer {eth0 n2}
+    interface-peer {eth1 n1}
+    interface-peer {eth2 n5}
+}
+
+link l1 {
+    nodes {n10 n8}
+    bandwidth 11000000
+    delay 25000
+}
+
+link l0 {
+    nodes {n10 n7}
+    bandwidth 11000000
+    delay 25000
+}
+
+link l2 {
+    nodes {n10 n5}
+    bandwidth 11000000
+    delay 25000
+}
+
+link l3 {
+    nodes {n10 n6}
+    bandwidth 11000000
+    delay 25000
+}
+
+link l4 {
+    nodes {n10 n9}
+    bandwidth 11000000
+    delay 25000
+}
+
+link l5 {
+    nodes {n3 n4}
+    bandwidth 100000000
+}
+
+link l6 {
+    delay 25000
+    nodes {n3 n2}
+    bandwidth 100000000
+}
+
+link l7 {
+    nodes {n2 n1}
+    bandwidth 100000000
+}
+
+link l8 {
+    delay 50000
+    nodes {n2 n15}
+    bandwidth 100000000
+}
+
+link l9 {
+    nodes {n1 n15}
+    bandwidth 100000000
+}
+
+link l10 {
+    nodes {n15 n5}
+    bandwidth 100000000
+}
+
+link l11 {
+    nodes {n4 n11}
+    bandwidth 100000000
+}
+
+link l12 {
+    nodes {n4 n12}
+    bandwidth 100000000
+}
+
+link l13 {
+    nodes {n4 n13}
+    bandwidth 100000000
+}
+
+link l14 {
+    nodes {n4 n14}
+    bandwidth 100000000
+}
+
+annotation a0 {
+    iconcoords {612.0 492.0}
+    type text
+    label {wireless network}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize {12}
+    effects {bold}
+    canvas c1
+}
+
+annotation a1 {
+    iconcoords {142.0 112.0 393.0 291.0}
+    type rectangle
+    label {}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize {12}
+    color #ebebde
+    width 1
+    border #ffffff
+    rad 25
+    canvas c1
+}
+
+annotation a2 {
+    iconcoords {492.0 384.0}
+    type text
+    label {gateway}
+    labelcolor black
+    fontfamily {Arial}
+    fontsize {12}
+    effects {bold}
+    canvas c1
+}
+
+canvas c1 {
+    name {Canvas1}
+    wallpaper-style {upperleft}
+    wallpaper {sample1-bg.gif}
+}
+
+option global {
+    interface_names no
+    ip_addresses yes
+    ipv6_addresses no
+    node_labels yes
+    link_labels yes
+    ipsec_configs yes
+    exec_errors no
+    show_api no
+    background_images no
+    annotations yes
+    grid no
+    traffic_start 0
+}
+
+option session {
+}
+

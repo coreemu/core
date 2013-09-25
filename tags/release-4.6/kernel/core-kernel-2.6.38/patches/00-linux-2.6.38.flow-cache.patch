@@ -1,0 +1,31 @@
+Only use the flow cache for the initial network namespace.
+
+The flow cache is not per netns and its entries do not include what
+namespace they are valid for.  This causes problems when transformed
+traffic is sent between namespaces.
+---
+ net/core/flow.c |    4 ++++
+ 1 files changed, 4 insertions(+), 0 deletions(-)
+
+diff --git a/net/core/flow.c b/net/core/flow.c
+index 127c8a7..890510f 100644
+--- a/net/core/flow.c
++++ b/net/core/flow.c
+@@ -24,6 +24,7 @@
+ #include <net/flow.h>
+ #include <asm/atomic.h>
+ #include <linux/security.h>
++#include <net/net_namespace.h>
+ 
+ struct flow_cache_entry {
+ 	union {
+@@ -227,6 +228,9 @@ flow_cache_lookup(struct net *net, struct flowi *key, u16 family, u8 dir,
+ 	if (!fcp->hash_table)
+ 		goto nocache;
+ 
++	if (!net_eq(net, &init_net))
++		goto nocache;
++
+ 	if (fcp->hash_rnd_recalc)
+ 		flow_new_hash_rnd(fc, fcp);
+ 

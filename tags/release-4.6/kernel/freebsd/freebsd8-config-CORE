@@ -1,0 +1,11 @@
+# this is the FreeBSD 8.x kernel configuration file for CORE
+include 	GENERIC
+ident		CORE
+
+options 	VIMAGE
+nooptions	SCTP
+options		IPSEC
+device		crypto
+
+options		IPFIREWALL
+options 	IPFIREWALL_DEFAULT_TO_ACCEPT

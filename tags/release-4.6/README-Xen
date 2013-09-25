@@ -1,0 +1,87 @@
+CORE Xen README
+
+This file describes the xen branch of the CORE development tree which enables
+machines based on Xen domUs. When you edit node types, you are given the option
+of changing the machine type (netns, physical, or xen) and the profile for
+each node type.
+
+CORE will create each domU machine on the fly, having a bootable ISO image that 
+contains the root filesystem, and a special persitent area (/rtr/persistent)
+using a LVM volume where configuration is stored. See the /etc/core/xen.conf
+file for related settings here.
+
+INSTALLATION
+
+1. Tested under OpenSUSE 11.3 which allows installing a Xen dom0 during the
+   install process.
+
+2. Create an LVM volume group having enough free space available for CORE to
+   build logical volumes for domU nodes. The name of this group is set with the
+   'vg_name=' option in /etc/core/xen.conf. (With 256M per persistent area,
+   10GB would allow for 40 nodes.)
+
+3. To get libev-devel in OpenSUSE, use:
+   zypper ar http://download.opensuse.org/repositories/X11:/windowmanagers/openSUSE_11.3 WindowManagers
+   zypper install libev-devel
+
+4. In addition to the normal CORE dependencies 
+   (see http://code.google.com/p/coreemu/wiki/Quickstart), pyparted-3.2 is used
+   when creating LVM partitions and decorator-3.3.0 is a dependency for
+   pyparted. The 'python setup.py install' and 'make install' need to be
+   performed on these source tarballs as no packages are available. 
+
+   tar xzf decorator-3.3.0.tar.gz
+   cd decorator-3.3.0
+   python setup.py build
+   python setup.py install
+
+   tar xzf pyparted-3.2.tar.gz
+   cd pyparted-3.2
+   ./configure
+   make
+   make install
+
+5. These Xen parameters were used for dom0, by editing /boot/grub/menu.lst:
+   a) Add options to "kernel /xen.gz" line: 
+      gnttab_max_nr_frames=128 dom0_mem=1G dom0_max_vcpus=2 dom0_vcpus_pin
+   b) Make Xen default boot by editing the "default" line with the
+      index for the Xen boot option.  e.g. change "default 0" to "default 2"
+   Reboot to enable the Xen kernel.
+   
+5. Run CORE's ./configure script as root to properly discover sbin binaries.
+
+   tar xzf core-xen.tgz
+   cd core-xen
+   ./bootstrap.sh
+   ./configure
+   make
+   make install
+
+6. Put your ISO images in /opt/core-xen/iso-files and set the "iso_file="
+   xen.conf option appropriately.
+
+7. Uncomment the controlnet entry in  /etc/core/core.conf:
+   # establish a control backchannel for accessing nodes
+   controlnet = 172.16.0.0/24
+
+   This setting governs what IP addresses will be used for a control channel.
+   Given this default setting the host dom0 will have the address 172.16.0.254
+   assigned to a bridge device; domU VMs will get interfaces joined to this
+   bridge, having addresses such as 172.16.0.1 for node n1, 172.16.0.2 for n2,
+   etc.
+
+   When 'controlnet =' is unspecified in the core.conf file, double-clicking on
+   a node results in the 'xm console' method. A key mapping is set up so you
+   can press 'F1' then 'F2' to login as root. The key ctrl+']' detaches from the
+   console. Only one console is available per domU VM.
+
+8. When 'controlnet =' is specified, double-clicking on a node results in an
+   attempt to ssh to that node's control IP address.
+   Put a host RSA key for use on the domUs in /opt/core-xen/ssh:
+
+   mkdir -p /opt/core-xen/ssh
+   ssh-keygen -t rsa -f /opt/core-xen/ssh/ssh_host_rsa_key
+   cp ~/.ssh/id_rsa.pub /opt/core-xen/ssh/authorized_keys
+   chmod 600 /opt/core-xen/ssh/authorized_keys
+
+

@@ -1,0 +1,11 @@
+[Unit]
+Description=Common Open Research Emulator Service
+After=network.target
+
+[Service]
+Type=forking
+PIDFile=/var/run/core-daemon.pid
+ExecStart=/usr/bin/python /usr/sbin/core-daemon -d
+
+[Install]
+WantedBy=multi-user.target

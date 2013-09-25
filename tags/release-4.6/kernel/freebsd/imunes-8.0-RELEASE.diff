@@ -1,0 +1,372 @@
+# This patch is from http://imunes.net/imunes-8.0-RC3.diff
+#
+# This patch enables per-node directories, persistent hub/switch nodes, traffic 
+# snooping for wireshark, and disallows vlan interfaces within a jail.
+diff -drup src-org/sys/kern/vfs_lookup.c src/sys/kern/vfs_lookup.c
+--- src-org/sys/kern/vfs_lookup.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/kern/vfs_lookup.c	2009-11-11 12:46:02.000000000 +0000
+@@ -59,6 +59,8 @@ __FBSDID("$FreeBSD: src/sys/kern/vfs_loo
+ #include <sys/ktrace.h>
+ #endif
+ 
++#include <net/vnet.h>
++
+ #include <security/audit/audit.h>
+ #include <security/mac/mac_framework.h>
+ 
+@@ -72,6 +74,19 @@ SDT_PROBE_DEFINE3(vfs, namei, lookup, en
+     "unsigned long");
+ SDT_PROBE_DEFINE2(vfs, namei, lookup, return, "int", "struct vnode *");
+ 
++#ifdef VIMAGE
++#define IMUNES_SYMLINK_HACK
++#endif
++
++#ifdef IMUNES_SYMLINK_HACK
++static VNET_DEFINE(int, morphing_symlinks);
++#define	V_morphing_symlinks	VNET(morphing_symlinks)
++
++SYSCTL_VNET_INT(_vfs, OID_AUTO, morphing_symlinks, CTLFLAG_RW,
++    &VNET_NAME(morphing_symlinks), 0,
++    "Resolve @ to vimage name in symlinks");
++#endif
++
+ /*
+  * Allocation zone for namei
+  */
+@@ -333,6 +348,44 @@ namei(struct nameidata *ndp)
+ 			error = ENOENT;
+ 			break;
+ 		}
++#ifdef IMUNES_SYMLINK_HACK
++		/*
++		 * If the symbolic link includes a special character '@',
++		 * and V_morphing_symlinks is set, substitute the first
++		 * occurence of '@' with full path to jail / vimage name.
++		 * If the full path includes subhierarchies, s/./\// when
++		 * expanding '@' to jail / vimage name.
++		 *
++		 * XXX revisit buffer length checking.
++		 */
++		CURVNET_SET_QUIET(TD_TO_VNET(curthread));
++		if (V_morphing_symlinks) {
++			char *sp = strchr(cp, '@');
++
++			if (sp) {
++				char *vname = td->td_ucred->cr_prison->pr_name;
++				int vnamelen = strlen(vname);
++				int i;
++
++				if (vnamelen >= auio.uio_resid) {
++					if (ndp->ni_pathlen > 1)
++						uma_zfree(namei_zone, cp);
++					error = ENAMETOOLONG;
++					CURVNET_RESTORE();
++					break;
++				}
++				bcopy(sp + 1, sp + vnamelen,
++				    linklen - (sp - cp));
++				bcopy(td->td_ucred->cr_prison->pr_name,
++				    sp, vnamelen);
++				linklen += (vnamelen - 1);
++				for (i = 0; i < vnamelen; i++)
++					if (sp[i] == '.')
++						sp[i] = '/';
++			}
++		}
++		CURVNET_RESTORE();
++#endif
+ 		if (linklen + ndp->ni_pathlen >= MAXPATHLEN) {
+ 			if (ndp->ni_pathlen > 1)
+ 				uma_zfree(namei_zone, cp);
+diff -drup src-org/sys/net/bpf.c src/sys/net/bpf.c
+--- src-org/sys/net/bpf.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/net/bpf.c	2009-11-11 12:46:02.000000000 +0000
+@@ -44,6 +44,7 @@ __FBSDID("$FreeBSD: src/sys/net/bpf.c,v 
+ #include <sys/param.h>
+ #include <sys/systm.h>
+ #include <sys/conf.h>
++#include <sys/ctype.h>
+ #include <sys/fcntl.h>
+ #include <sys/jail.h>
+ #include <sys/malloc.h>
+@@ -1435,9 +1436,34 @@ bpf_setif(struct bpf_d *d, struct ifreq 
+ 	struct bpf_if *bp;
+ 	struct ifnet *theywant;
+ 
++#define XVNET_BPF_SNOOPING
++#if defined(VIMAGE) && defined(XVNET_BPF_SNOOPING)
++	struct vnet *target_vnet = curvnet;
++	char *c;
++
++	/* Attempt to attach to an ifnet in a foreign vnet, specified as @ */
++	c = rindex(ifr->ifr_name, '@');
++	if ( c != NULL ) {
++		struct prison *target_pr;
++
++		*c++ = 0;
++		if (!isascii(*c) && !isdigit(*c))
++			return ENXIO;
++		target_pr = prison_find_name(curthread->td_ucred->cr_prison, c);
++		if (target_pr == NULL)
++			return ENXIO;
++		target_vnet = target_pr->pr_vnet;
++	}
++	CURVNET_SET_QUIET(target_vnet);
++#endif
++
+ 	theywant = ifunit(ifr->ifr_name);
+-	if (theywant == NULL || theywant->if_bpf == NULL)
++	if (theywant == NULL || theywant->if_bpf == NULL) {
++#if defined(VIMAGE) && defined(XVNET_BPF_SNOOPING)
++		CURVNET_RESTORE();
++#endif
+ 		return (ENXIO);
++	}
+ 
+ 	bp = theywant->if_bpf;
+ 
+@@ -1477,6 +1503,9 @@ bpf_setif(struct bpf_d *d, struct ifreq 
+ 	BPFD_LOCK(d);
+ 	reset_d(d);
+ 	BPFD_UNLOCK(d);
++#if defined(VIMAGE) && defined(XVNET_BPF_SNOOPING)
++	CURVNET_RESTORE();
++#endif
+ 	return (0);
+ }
+ 
+diff -drup src-org/sys/net/if.c src/sys/net/if.c
+--- src-org/sys/net/if.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/net/if.c	2009-11-11 12:46:02.000000000 +0000
+@@ -813,6 +813,14 @@ if_detach_internal(struct ifnet *ifp, in
+  	struct ifnet *iter;
+  	int found = 0;
+ 
++	/*
++	 * Detach from any vlan, bridge or lagg ifnets linked to us.
++	 * A small though unlikely window for a race from here to ifp
++	 * unlinking from ifnet list is possible, hence we repeat the
++	 * procedure once again further bellow.  XXX.
++	 */
++	EVENTHANDLER_INVOKE(ifnet_departure_event, ifp);
++
+ 	IFNET_WLOCK();
+ 	TAILQ_FOREACH(iter, &V_ifnet, if_link)
+ 		if (iter == ifp) {
+diff -drup src-org/sys/net/if_llatbl.c src/sys/net/if_llatbl.c
+--- src-org/sys/net/if_llatbl.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/net/if_llatbl.c	2009-11-11 12:53:49.000000000 +0000
+@@ -57,11 +57,14 @@ __FBSDID("$FreeBSD: src/sys/net/if_llatb
+ 
+ MALLOC_DEFINE(M_LLTABLE, "lltable", "link level address tables");
+ 
+-static	SLIST_HEAD(, lltable) lltables = SLIST_HEAD_INITIALIZER(lltables);
++static VNET_DEFINE(SLIST_HEAD(, lltable), lltables);
++#define	V_lltables	VNET(lltables)
+ 
+ extern void arprequest(struct ifnet *, struct in_addr *, struct in_addr *,
+ 	u_char *);
+ 
++static void vnet_lltable_init(void);
++
+ struct rwlock lltable_rwlock;
+ RW_SYSINIT(lltable_rwlock, &lltable_rwlock, "lltable_rwlock");
+ 
+@@ -75,7 +78,7 @@ lltable_sysctl_dumparp(int af, struct sy
+ 	int error = 0;
+ 
+ 	LLTABLE_RLOCK();
+-	SLIST_FOREACH(llt, &lltables, llt_link) {
++	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+ 		if (llt->llt_af == af) {
+ 			error = llt->llt_dump(llt, wr);
+ 			if (error != 0)
+@@ -157,7 +160,7 @@ lltable_free(struct lltable *llt)
+ 	KASSERT(llt != NULL, ("%s: llt is NULL", __func__));
+ 
+ 	LLTABLE_WLOCK();
+-	SLIST_REMOVE(&lltables, llt, lltable, llt_link);
++	SLIST_REMOVE(&V_lltables, llt, lltable, llt_link);
+ 	LLTABLE_WUNLOCK();
+ 
+ 	for (i=0; i < LLTBL_HASHTBL_SIZE; i++) {
+@@ -180,7 +183,7 @@ lltable_drain(int af)
+ 	register int i;
+ 
+ 	LLTABLE_RLOCK();
+-	SLIST_FOREACH(llt, &lltables, llt_link) {
++	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+ 		if (llt->llt_af != af)
+ 			continue;
+ 
+@@ -202,7 +205,7 @@ lltable_prefix_free(int af, struct socka
+ 	struct lltable *llt;
+ 
+ 	LLTABLE_RLOCK();
+-	SLIST_FOREACH(llt, &lltables, llt_link) {
++	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+ 		if (llt->llt_af != af)
+ 			continue;
+ 
+@@ -232,7 +235,7 @@ lltable_init(struct ifnet *ifp, int af)
+ 		LIST_INIT(&llt->lle_head[i]);
+ 
+ 	LLTABLE_WLOCK();
+-	SLIST_INSERT_HEAD(&lltables, llt, llt_link);
++	SLIST_INSERT_HEAD(&V_lltables, llt, llt_link);
+ 	LLTABLE_WUNLOCK();
+ 
+ 	return (llt);
+@@ -302,7 +305,7 @@ lla_rt_output(struct rt_msghdr *rtm, str
+ 
+ 	/* XXX linked list may be too expensive */
+ 	LLTABLE_RLOCK();
+-	SLIST_FOREACH(llt, &lltables, llt_link) {
++	SLIST_FOREACH(llt, &V_lltables, llt_link) {
+ 		if (llt->llt_af == dst->sa_family &&
+ 		    llt->llt_ifp == ifp)
+ 			break;
+@@ -367,3 +370,12 @@ lla_rt_output(struct rt_msghdr *rtm, str
+ 
+ 	return (error);
+ }
++
++static void
++vnet_lltable_init()
++{
++
++	SLIST_INIT(&V_lltables);
++}
++VNET_SYSINIT(vnet_lltable_init, SI_SUB_PSEUDO, SI_ORDER_FIRST, vnet_lltable_init, NULL);
++
+diff -drup src-org/sys/net/if_vlan.c src/sys/net/if_vlan.c
+--- src-org/sys/net/if_vlan.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/net/if_vlan.c	2009-11-11 12:46:02.000000000 +0000
+@@ -1359,6 +1359,12 @@ vlan_ioctl(struct ifnet *ifp, u_long cmd
+ 		error = copyin(ifr->ifr_data, &vlr, sizeof(vlr));
+ 		if (error)
+ 			break;
++#ifdef VIMAGE
++		if (ifp->if_home_vnet != ifp->if_vnet) {
++			error = EPERM;
++			break;
++		}
++#endif
+ 		if (vlr.vlr_parent[0] == '\0') {
+ 			vlan_unconfig(ifp);
+ 			break;
+@@ -1386,6 +1392,12 @@ vlan_ioctl(struct ifnet *ifp, u_long cmd
+ 
+ 	case SIOCGETVLAN:
+ 		bzero(&vlr, sizeof(vlr));
++#ifdef VIMAGE
++		if (ifp->if_home_vnet != ifp->if_vnet) {
++			error = EPERM;
++			break;
++		}
++#endif
+ 		VLAN_LOCK();
+ 		if (TRUNK(ifv) != NULL) {
+ 			strlcpy(vlr.vlr_parent, PARENT(ifv)->if_xname,
+diff -drup src-org/sys/netgraph/ng_bridge.c src/sys/netgraph/ng_bridge.c
+--- src-org/sys/netgraph/ng_bridge.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/netgraph/ng_bridge.c	2009-11-11 12:46:02.000000000 +0000
+@@ -105,6 +105,7 @@ struct ng_bridge_private {
+ 	u_int			numBuckets;	/* num buckets in table */
+ 	u_int			hashMask;	/* numBuckets - 1 */
+ 	int			numLinks;	/* num connected links */
++	int			persistent;	/* can exist w/o any hooks */
+ 	struct callout		timer;		/* one second periodic timer */
+ };
+ typedef struct ng_bridge_private *priv_p;
+@@ -345,13 +346,13 @@ static	int
+ ng_bridge_newhook(node_p node, hook_p hook, const char *name)
+ {
+ 	const priv_p priv = NG_NODE_PRIVATE(node);
++	int linkNum = -1;
+ 
+ 	/* Check for a link hook */
+ 	if (strncmp(name, NG_BRIDGE_HOOK_LINK_PREFIX,
+ 	    strlen(NG_BRIDGE_HOOK_LINK_PREFIX)) == 0) {
+ 		const char *cp;
+ 		char *eptr;
+-		u_long linkNum;
+ 
+ 		cp = name + strlen(NG_BRIDGE_HOOK_LINK_PREFIX);
+ 		if (!isdigit(*cp) || (cp[0] == '0' && cp[1] != '\0'))
+@@ -359,6 +360,12 @@ ng_bridge_newhook(node_p node, hook_p ho
+ 		linkNum = strtoul(cp, &eptr, 10);
+ 		if (*eptr != '\0' || linkNum >= NG_BRIDGE_MAX_LINKS)
+ 			return (EINVAL);
++	} else if (strcmp(name, "anchor") == 0) {
++		linkNum = 0;
++		priv->persistent = 1;
++	}
++
++	if (linkNum >= 0 ) {
+ 		if (priv->links[linkNum] != NULL)
+ 			return (EISCONN);
+ 		priv->links[linkNum] = malloc(sizeof(*priv->links[linkNum]),
+@@ -366,7 +373,7 @@ ng_bridge_newhook(node_p node, hook_p ho
+ 		if (priv->links[linkNum] == NULL)
+ 			return (ENOMEM);
+ 		priv->links[linkNum]->hook = hook;
+-		NG_HOOK_SET_PRIVATE(hook, (void *)linkNum);
++		NG_HOOK_SET_PRIVATE(hook, (void *)(intptr_t)linkNum);
+ 		priv->numLinks++;
+ 		return (0);
+ 	}
+@@ -799,7 +806,8 @@ ng_bridge_disconnect(hook_p hook)
+ 
+ 	/* If no more hooks, go away */
+ 	if ((NG_NODE_NUMHOOKS(NG_HOOK_NODE(hook)) == 0)
+-	&& (NG_NODE_IS_VALID(NG_HOOK_NODE(hook)))) {
++	    && (NG_NODE_IS_VALID(NG_HOOK_NODE(hook)))
++	    && !priv->persistent) {
+ 		ng_rmnode_self(NG_HOOK_NODE(hook));
+ 	}
+ 	return (0);
+diff -drup src-org/sys/netgraph/ng_hub.c src/sys/netgraph/ng_hub.c
+--- src-org/sys/netgraph/ng_hub.c	2009-10-25 01:10:29.000000000 +0000
++++ src/sys/netgraph/ng_hub.c	2009-11-11 12:46:02.000000000 +0000
+@@ -37,6 +37,7 @@
+ #include <netgraph/netgraph.h>
+ 
+ static ng_constructor_t	ng_hub_constructor;
++static ng_newhook_t	ng_hub_newhook;
+ static ng_rcvdata_t	ng_hub_rcvdata;
+ static ng_disconnect_t	ng_hub_disconnect;
+ 
+@@ -44,6 +45,7 @@ static struct ng_type ng_hub_typestruct 
+ 	.version =	NG_ABI_VERSION,
+ 	.name =		NG_HUB_NODE_TYPE,
+ 	.constructor =	ng_hub_constructor,
++	.newhook =	ng_hub_newhook,
+ 	.rcvdata =	ng_hub_rcvdata,
+ 	.disconnect =	ng_hub_disconnect,
+ };
+@@ -57,6 +59,14 @@ ng_hub_constructor(node_p node)
+ 	return (0);
+ }
+ 
++static  int
++ng_hub_newhook(node_p node, hook_p hook, const char *name)
++{
++	if (strcmp(name, "anchor") == 0)
++		node->nd_private = (void *) 1;
++	return (0);
++}
++
+ static int
+ ng_hub_rcvdata(hook_p hook, item_p item)
+ {
+@@ -94,7 +104,7 @@ ng_hub_disconnect(hook_p hook)
+ {
+ 
+ 	if (NG_NODE_NUMHOOKS(NG_HOOK_NODE(hook)) == 0 &&
+-	    NG_NODE_IS_VALID(NG_HOOK_NODE(hook)))
++	    NG_NODE_IS_VALID(NG_HOOK_NODE(hook)) && !hook->hk_node->nd_private)
+ 		ng_rmnode_self(NG_HOOK_NODE(hook));
+ 	return (0);
+ }

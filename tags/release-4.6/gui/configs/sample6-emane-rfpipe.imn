@@ -1,0 +1,271 @@
+node n1 {
+    type router
+    model mdr
+    network-config {
+	hostname n1
+	!
+	interface eth0
+	 ip address 10.0.0.1/32
+	 ipv6 address a:0::1/128
+	!
+    }
+    iconcoords {263.148836492 76.94184084899999}
+    labelcoords {263.148836492 100.94184084899999}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n2 {
+    type router
+    model mdr
+    network-config {
+	hostname n2
+	!
+	interface eth0
+	 ip address 10.0.0.2/32
+	 ipv6 address a:0::2/128
+	!
+    }
+    iconcoords {184.35166313500002 532.524009667}
+    labelcoords {184.35166313500002 556.524009667}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n3 {
+    type router
+    model mdr
+    network-config {
+	hostname n3
+	!
+	interface eth0
+	 ip address 10.0.0.3/32
+	 ipv6 address a:0::3/128
+	!
+    }
+    iconcoords {121.17243156500001 313.104176223}
+    labelcoords {121.17243156500001 337.104176223}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n4 {
+    type router
+    model mdr
+    network-config {
+	hostname n4
+	!
+	interface eth0
+	 ip address 10.0.0.4/32
+	 ipv6 address a:0::4/128
+	!
+    }
+    iconcoords {443.031505695 586.805480735}
+    labelcoords {443.031505695 610.805480735}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n5 {
+    type router
+    model mdr
+    network-config {
+	hostname n5
+	!
+	interface eth0
+	 ip address 10.0.0.5/32
+	 ipv6 address a:0::5/128
+	!
+    }
+    iconcoords {548.817758443 209.207353139}
+    labelcoords {548.817758443 233.207353139}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n6 {
+    type router
+    model mdr
+    network-config {
+	hostname n6
+	!
+	interface eth0
+	 ip address 10.0.0.6/32
+	 ipv6 address a:0::6/128
+	!
+    }
+    iconcoords {757.062318769 61.533941783}
+    labelcoords {757.062318769 85.533941783}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n7 {
+    type router
+    model mdr
+    network-config {
+	hostname n7
+	!
+	interface eth0
+	 ip address 10.0.0.7/32
+	 ipv6 address a:0::7/128
+	!
+    }
+    iconcoords {778.142667152 489.227596061}
+    labelcoords {778.142667152 513.227596061}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n8 {
+    type router
+    model mdr
+    network-config {
+	hostname n8
+	!
+	interface eth0
+	 ip address 10.0.0.8/32
+	 ipv6 address a:0::8/128
+	!
+    }
+    iconcoords {93.895107521 135.228007484}
+    labelcoords {93.895107521 159.228007484}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n9 {
+    type router
+    model mdr
+    network-config {
+	hostname n9
+	!
+	interface eth0
+	 ip address 10.0.0.9/32
+	 ipv6 address a:0::9/128
+	!
+    }
+    iconcoords {528.693178831 84.9814304098}
+    labelcoords {528.693178831 108.9814304098}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n10 {
+    type router
+    model mdr
+    network-config {
+	hostname n10
+	!
+	interface eth0
+	 ip address 10.0.0.10/32
+	 ipv6 address a:0::10/128
+	!
+    }
+    iconcoords {569.534639911 475.46828902}
+    labelcoords {569.534639911 499.46828902}
+    canvas c1
+    interface-peer {eth0 n11}
+}
+
+node n11 {
+    bandwidth 54000000
+    type wlan
+    range 275
+    network-config {
+	hostname wlan11
+	!
+	interface wireless
+	 ip address 10.0.0.0/32
+	 ipv6 address a:0::0/128
+	!
+	mobmodel
+	coreapi
+	emane_rfpipe
+	!
+    }
+    canvas c1
+    iconcoords {65.0 558.0}
+    labelcoords {65.0 582.0}
+    interface-peer {e0 n1}
+    interface-peer {e1 n2}
+    interface-peer {e2 n3}
+    interface-peer {e3 n4}
+    interface-peer {e4 n5}
+    interface-peer {e5 n6}
+    interface-peer {e6 n7}
+    interface-peer {e7 n8}
+    interface-peer {e8 n9}
+    interface-peer {e9 n10}
+}
+
+link l1 {
+    nodes {n11 n1}
+    bandwidth 54000000
+}
+
+link l2 {
+    nodes {n11 n2}
+    bandwidth 54000000
+}
+
+link l3 {
+    nodes {n11 n3}
+    bandwidth 54000000
+}
+
+link l4 {
+    nodes {n11 n4}
+    bandwidth 54000000
+}
+
+link l5 {
+    nodes {n11 n5}
+    bandwidth 54000000
+}
+
+link l6 {
+    nodes {n11 n6}
+    bandwidth 54000000
+}
+
+link l7 {
+    nodes {n11 n7}
+    bandwidth 54000000
+}
+
+link l8 {
+    nodes {n11 n8}
+    bandwidth 54000000
+}
+
+link l9 {
+    nodes {n11 n9}
+    bandwidth 54000000
+}
+
+link l10 {
+    nodes {n11 n10}
+    bandwidth 54000000
+}
+
+canvas c1 {
+    name {Canvas1}
+}
+
+option global {
+    interface_names no
+    ip_addresses yes
+    ipv6_addresses yes
+    node_labels yes
+    link_labels yes
+    ipsec_configs yes
+    remote_exec no
+    exec_errors yes
+    show_api no
+    background_images no
+    annotations yes
+    grid yes
+    traffic_start 0
+}
+

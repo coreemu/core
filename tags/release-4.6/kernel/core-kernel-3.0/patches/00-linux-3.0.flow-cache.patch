@@ -1,0 +1,49 @@
+commit 0542b69e2c57fc9668ce6a03155bea6e1f557901
+Author: dpward <david.ward@ll.mit.edu>
+Date:   Wed Aug 31 06:05:27 2011 +0000
+
+    net: Make flow cache namespace-aware
+    
+    flow_cache_lookup will return a cached object (or null pointer) that the
+    resolver (i.e. xfrm_policy_lookup) previously found for another namespace
+    using the same key/family/dir.  Instead, make the namespace part of what
+    identifies entries in the cache.
+    
+    As before, flow_entry_valid will return 0 for entries where the namespace
+    has been deleted, and they will be removed from the cache the next time
+    flow_cache_gc_task is run.
+    
+    Reported-by: Andrew Dickinson <whydna@whydna.net>
+    Signed-off-by: David Ward <david.ward@ll.mit.edu>
+    Signed-off-by: David S. Miller <davem@davemloft.net>
+
+diff --git a/net/core/flow.c b/net/core/flow.c
+index bf32c33..47b6d26 100644
+--- a/net/core/flow.c
++++ b/net/core/flow.c
+@@ -30,6 +30,7 @@ struct flow_cache_entry {
+ 		struct hlist_node	hlist;
+ 		struct list_head	gc_list;
+ 	} u;
++	struct net			*net;
+ 	u16				family;
+ 	u8				dir;
+ 	u32				genid;
+@@ -232,7 +233,8 @@ flow_cache_lookup(struct net *net, const struct flowi *key, u16 family, u8 dir,
+ 
+ 	hash = flow_hash_code(fc, fcp, key);
+ 	hlist_for_each_entry(tfle, entry, &fcp->hash_table[hash], u.hlist) {
+-		if (tfle->family == family &&
++		if (tfle->net == net &&
++		    tfle->family == family &&
+ 		    tfle->dir == dir &&
+ 		    flow_key_compare(key, &tfle->key) == 0) {
+ 			fle = tfle;
+@@ -246,6 +248,7 @@ flow_cache_lookup(struct net *net, const struct flowi *key, u16 family, u8 dir,
+ 
+ 		fle = kmem_cache_alloc(flow_cachep, GFP_ATOMIC);
+ 		if (fle) {
++			fle->net = net;
+ 			fle->family = family;
+ 			fle->dir = dir;
+ 			memcpy(&fle->key, key, sizeof(*key));
