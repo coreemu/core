@@ -3,7 +3,7 @@
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
 = 4.6 =
-CORE 4.6 will be released on 9/XX/13 (TBD). Packages are available for the following Linux distributions:
+CORE 4.6 was released on 9/25/13. Packages are available for the following Linux distributions:
  * debs for Ubuntu 13.04 (raring), 12.10 (quantal), *12.04 (precise)*
  * RPMs for Fedora 19 (fc19), 18 (fc18), 17 (fc17)
  * RPMs for CentOS/RHEL/Scientific Linux 6.x (el6)
