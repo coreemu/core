@@ -4,22 +4,22 @@
 
 This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/install.html CORE manual].
 
-CORE 4.5 packages are available for Ubuntu 12.04 (precise) or 12.10 (quantal), Fedora 17 or 18, and rhel6. If you want to run a different Linux distribution, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform. See the [Upgrading upgrading] page for help choosing a release or for upgrade instructions.
+CORE 4.6 packages are available for Ubuntu 12.04 (precise), 12.10 (quantal), or 13.04 (raring), Fedora 17, 18, 19, and rhel6. Debian users can install CORE directly using `sudo apt-get install core-network`. For different Linux distributions, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform. See the [Upgrading upgrading] page for help choosing a release or for upgrade instructions.
 
 == Step 1. Install CORE package ==
 
 Get the Ubuntu (deb) or Fedora (rpm) package for your architecture (64-bit or 32-bit) from here:<br>
-[http://downloads.pf.itd.nrl.navy.mil/core/packages/4.5/]
+[https://code.google.com/p/coreemu/downloads/list]
 
 Use your package manager to automatically install dependencies:<br>
 {{{
   # Ubuntu users (specify entire path)
-  software-center /home/user/Downloads/core-daemon_4.5-0ubuntu1_precise_amd64.deb
-  software-center /home/user/Downloads/core-gui_4.5-0ubuntu1_precise_all.deb
+  software-center core-daemon_4.6-0ubuntu1_precise_amd64.deb
+  software-center core-gui_4.6-0ubuntu1_precise_all.deb
   # Fedora users
   su
-  yum localinstall core-daemon-4.5-1.fc18.x86_64.rpm --nogpgcheck
-  yum localinstall core-gui-4.5-1.fc18.noarch.rpm --nogpgcheck
+  yum localinstall core-daemon-4.6-1.fc19.x86_64.rpm
+  yum localinstall core-gui-4.6-1.fc19.noarch.rpm
 }}}
 
 Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, for a modified version of Quagga available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
@@ -43,19 +43,19 @@ To check the RPM signing key, the core-dev public key can be found here: [https:
 == Step 2. Start the CORE daemon ==
 {{{
   # for Ubuntu/CentOS
-  sudo /etc/init.d/core start
+  sudo /etc/init.d/core-daemon start
   # for Fedora
   su
-  systemctl start core-emulator.service
+  systemctl start core-daemon.service
 }}}
 
-To view the CORE daemon log file, look at `/var/log/cored.log`.
+To view the CORE daemon log file, look at `/var/log/core-daemon.log`.
 
 == Step 3. Run CORE ==
 
 This is typically run as a normal (non-root) user.
 {{{
-  core
+  core-gui
 }}}
 
 You'll see warnings about missing conf files the first time you run the CORE GUI.
@@ -63,7 +63,7 @@ You'll see warnings about missing conf files the first time you run the CORE GUI
 The sample topology `~/.core/configs/sample1.imn` will test that CORE and OSPF MDR Quagga are correctly installed.
 
 = Quickstart: Installation from source =
-Follow these instructions to build CORE from source. Dependencies are automatically resolved when you use your package manager with the CORE packages shown above, but not when compiling from source. The source used could be a released version (see above) or the bleeding-edge [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ nightly SVN snapshot].
+Follow these instructions to build CORE from source. Dependencies are automatically resolved when you use your package manager with the CORE packages shown above, but not when compiling from source. The source used could be a released version (see above) or the bleeding-edge [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ nightly SVN snapshot] or [https://code.google.com/p/coreemu/source/checkout subversion]
 
 == Step 1. Install prerequisite packages ==
 Ubuntu:
@@ -101,23 +101,23 @@ In this example, we download the SVN source snapshot [http://downloads.pf.itd.nr
 
 == Step 3. Start the CORE daemon  ==
 {{{
-sudo cored
+sudo core-daemon
 }}}
 
 For verbose debugging:
 {{{
-sudo cored -v
+sudo core-daemon -v
 }}}
 
-Using the init script (messages go to `/var/log/cored.log`):
+Using the init script (messages go to `/var/log/core-daemon.log`):
 {{{
-sudo /etc/init.d/core start
+sudo /etc/init.d/core-daemon start
 }}}
 
 == Step 4. Run the CORE GUI ==
 This is typically run as a normal (non-root) user.
 {{{
-core
+core-gui
 }}}
 
 = Tips =
