@@ -50,7 +50,7 @@ The high-level changes since version 4.5 are:
  * allow float values for loss and duplicates percent
  * fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 202, 205, 206, 210, 212, 213, 214, 221
 
-
+----
 = 4.5 =
 CORE 4.5 was released on 4/11/13. Packages are available for the following Linux distributions:
  * debs for Ubuntu 12.10 (quantal), 12.04 (precise)
@@ -108,6 +108,7 @@ The high-level changes since version 4.4 are:
 Known issues with 4.5:
  * known issues will be listed here
 
+----
 = 4.4 =
 CORE 4.4 was released on 9/25/12. Packages are available for Ubuntu 12.04/11.10 and Fedora 17/16.
 
@@ -161,6 +162,7 @@ Known issues with 4.4:
  * GUI segfault under Ubuntu 11.10 with Tcl/Tk 8.5.10 (see 4.3 release notes).
  * Fedora 17 stock kernel 3.3.4-6.fc17 is missing the sch_tbf module, needed to properly set up the tc qdiscs; fix by updating to 3.5.3-1.fc17 or newer
 
+----
 = 4.3 =
 CORE 4.3 was released on 3/7/12. Packages are available for Ubuntu 11.10/11.04/10.10/10.04 and Fedora 14/15/16. 
 
@@ -187,6 +189,7 @@ Known issues with 4.3
  * the vcore-4.3.zip (md5sum: b10758ede92db7fa8cf1fa6537d88fbb) had a problem where the UUID listed in the VirtualBox XML did not match the vmdk disk file. This was corrected on 3/26/12 (md5sum: 2282036b2cd6416159c70165e824c36d). An old vmdk disk file was used having CORE 4.2 instead of 4.3; this was corrected on 4/2/12 (md5sum: 5d85dc5da5f12f98206905ff772c48f3)
  * CORE 4.3 fails to build under Ubuntu 12.04 due to changes in the Linux 3.2.x include files; this was fixed in r429, so you can use the development snapshot when using a newer distro.
 
+----
 = 4.2 =
 CORE 4.2 was released on 8/19/11.
 
@@ -210,7 +213,7 @@ Known issues with 4.2:
  * [http://code.google.com/p/coreemu/issues/detail?id=56 issue 56] wait for services shutdown
  * [http://code.google.com/p/coreemu/issues/detail?id=63 issue 63] EMANE events not restricted to localhost lo device
 
-
+----
 = 4.1 =
 CORE 4.1 was released on 1/5/11.
 
@@ -237,8 +240,7 @@ Known issues with 4.1:
  * imn files made from older CORE versions not working in 4.1; see the [http://coreemu.blogspot.com/2010/11/node-types-and-services.html announcement about new CORE services]
  * `sample1.imn` hanging under FreeBSD 8.1 with Quagga MDR 1.0. On node7, the `vtysh -b` command is blocking waiting for ospf6d, which seems to be waiting for a lock
 
-
-
+----
 = 4.0 =
 CORE 4.0 was released on 8/17/10.
 
@@ -253,16 +255,19 @@ Here are some of the high-level changes since version 3.5:
 
 Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2010-August/000209.html 4.0 release announcement].
 
+----
 = 3.5 =
 CORE 3.5 was released on 9/15/09.
 
 Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-September/000062.html 3.5 release announcement].
 
+----
 = 3.4 =
 CORE 3.4 was released on 6/23/09.
 
 Link to the [http://pf.itd.nrl.navy.mil/pipermail/core-users/2009-June/000019.html 3.4 release announcement].
 
+----
 = 3.3 =
 CORE 3.3 was released on 3/11/09.
 
