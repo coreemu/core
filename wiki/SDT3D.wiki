@@ -16,7 +16,7 @@ Successful build/run environment:
  # OpenJDK 1.7 (tested 7u7-2.3.2a) *Note:* Oracle Java 1.6/1.7 and OpenJDK 1.6 will not work when behind a proxy, but segfault
  # sdt-svnsnap.tgz (dated 2012-03-29) from http://downloads.pf.itd.nrl.navy.mil/sdt/nightly_snapshots/sdt-svnsnap.tgz
  # protolib-svnsnap.tgz (dated 2012-10-03) from http://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/protolib-svnsnap.tgz
- # worldwind.zip and joglutils.zip from PROTEAN Forge website (login required); go to [https://pf.itd.nrl.navy.mil/sf/frs/do/listReleases/projects.proteantools/frs.sdt_3d PROTEAN Forge], click the _Protean Tools_ project, then _File Releases_, then _sdt3d_, and the _1.2_ release directory. If you do not have a PROTEAN Forge login, you can also find these files on the [http://worldwind.arc.nasa.gov/java/ World Wind Java SDK] site. 
+ # [https://coreemu.googlecode.com/files/worldwind-sdt3d1.2.zip worldwind.zip] (58 MB) and [https://coreemu.googlecode.com/files/joglutils-sdt3d1.2.zip joglutils.zip] (45 MB) (these are from the PROTEAN Forge website (login required); go to [https://pf.itd.nrl.navy.mil/sf/frs/do/listReleases/projects.proteantools/frs.sdt_3d PROTEAN Forge], click the _Protean Tools_ project, then _File Releases_, then _sdt3d_, and the _1.2_ release directory. If you do not have a PROTEAN Forge login, you can also find these files on the [http://worldwind.arc.nasa.gov/java/ World Wind Java SDK] site.)
  # 64-bit jar files from the NASA World Wind site as shown in their README.txt: [http://worldwind.arc.nasa.gov/java/jogl/webstart/jogl-natives-linux-amd64.jar jogl-natives-linux-amd64.jar] and [http://worldwind.arc.nasa.gov/java/jogl/webstart/gluegen-rt-natives-linux-amd64.jar gluegen-rt-natives-linux-amd64.jar]
 
 
