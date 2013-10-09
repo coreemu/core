@@ -92,7 +92,7 @@ cd $LIBDIR
 core=$LIBDIR/core.tcl
 
 # locate wish8.5 binaries
-WISHLIST="/usr/local/bin/wish8.5 /usr/bin/wish8.5"
+WISHLIST="/usr/bin/wish8.6 /usr/local/bin/wish8.5 /usr/bin/wish8.5"
 for wishbin in $WISHLIST
 do
     if [ -x $wishbin ]

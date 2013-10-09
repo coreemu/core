@@ -75,7 +75,11 @@ proc receiveMessage { channel } {
     # read first four bytes of message header
     set more_data 1
     while { $more_data == 1 } {
-	set bytes [read $channel 4]
+        if { [catch { set bytes [read $channel 4] } e] } {
+            # in tcl8.6 this occurs during shutdown
+            #puts "channel closed: $e"
+            break;
+        }
 	if { [fblocked $channel]  == 1} {
 	    # 4 bytes not available yet
 	    break;
