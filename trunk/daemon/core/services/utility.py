@@ -390,8 +390,8 @@ class HttpService(UtilService):
     _configs = ("/etc/apache2/apache2.conf", "/etc/apache2/envvars",
                 "/var/www/index.html",)
     _dirs = ("/etc/apache2", "/var/run/apache2", "/var/log/apache2",
-             "/var/lock/apache2", "/var/www", )
-    _startup = ("apache2ctl start",)
+             "/run/lock", "/var/lock/apache2", "/var/www", )
+    _startup = ("chown www-data /var/lock/apache2", "apache2ctl start",)
     _shutdown = ("apache2ctl stop",)
     _validate = ("pidof apache2",)
         
