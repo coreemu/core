@@ -34,7 +34,7 @@ except ImportError:
 from core.constants import *
 from core.api import coreapi
 from core.coreobj import PyCoreNet
-from core.misc.utils import hexdump, daemonize
+from core.misc.utils import hexdump, daemonize, cmdresult, mutedetach
 from core.misc.xmlutils import opensessionxml, savesessionxml
 
 DEFAULT_MAXFD = 1024
@@ -786,7 +786,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         exectime = msg.gettlv(coreapi.CORE_TLV_EXEC_TIME)
         cmd = msg.gettlv(coreapi.CORE_TLV_EXEC_CMD)
         
-        if nodenum is None:
+        # local flag indicates command executed locally, not on a node
+        if nodenum is None and not msg.flags & coreapi.CORE_API_LOC_FLAG:
             raise ValueError, "Execute Message is missing node number."
         if execnum is None:
             raise ValueError, "Execute Message is missing execution number."
@@ -799,16 +800,23 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         except KeyError:
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
-            time.sleep(0.125)
-            self.queuemsg(msg)
-            return ()
+            if not msg.flags & coreapi.CORE_API_LOC_FLAG:
+                time.sleep(0.125)
+                self.queuemsg(msg)
+                return ()
+            else:
+                pass
         # build common TLV items for reply
         tlvdata = ""
-        tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NODE, nodenum)
+        if nodenum is not None:
+            tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NODE,
+                                                nodenum)
         tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NUM, execnum)
         tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_CMD, cmd)
         
         if msg.flags & coreapi.CORE_API_TTY_FLAG:
+            if nodenum is None:
+                raise NotImplementedError
             # echo back exec message with cmd for spawning interactive terminal
             if cmd == "bash":
                 cmd = "/bin/bash"
@@ -825,7 +833,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             if msg.flags & coreapi.CORE_API_STR_FLAG or \
                msg.flags & coreapi.CORE_API_TXT_FLAG:
                 # shlex.split() handles quotes within the string
-                status, res = n.cmdresult(shlex.split(cmd))
+                if msg.flags & coreapi.CORE_API_LOC_FLAG:
+                    status, res = cmdresult(shlex.split(cmd))
+                else:
+                    status, res = n.cmdresult(shlex.split(cmd))
                 if self.verbose:
                     self.info("done exec cmd='%s' with status=%d res=(%d bytes)"
                               % (cmd, status, len(res)))
@@ -839,7 +850,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 return (reply, )
             # execute the command with no response
             else:
-                n.cmd(shlex.split(cmd), wait=False)
+                if msg.flags & coreapi.CORE_API_LOC_FLAG:
+                    mutedetach(shlex.split(cmd))
+                else:
+                    n.cmd(shlex.split(cmd), wait=False)
         return ()
 
 
