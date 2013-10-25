@@ -45,7 +45,7 @@ class Session(object):
     ''' CORE session manager.
     '''
     def __init__(self, sessionid = None, cfg = {}, server = None,
-                 persistent = False):
+                 persistent = False, mkdir = True):
         if sessionid is None:
             # try to keep this short since it's used to construct
             # network interface names
@@ -57,7 +57,8 @@ class Session(object):
         self.sessionid = sessionid
         self.sessiondir = os.path.join(tempfile.gettempdir(),
                                        "pycore.%s" % self.sessionid)
-        os.mkdir(self.sessiondir)
+        if mkdir:
+            os.mkdir(self.sessiondir)
         self.name = None
         self.filename = None
         self.thumbnail = None
