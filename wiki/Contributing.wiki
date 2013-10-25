@@ -8,7 +8,10 @@
 
 *Coding style*: see the [Hacking] wiki page for coding standards. All patches and code contributions must adhere to these guidelines.
 
-*Source control repo*: private SVN repo at NRL with public nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
+*Source control repo*: public SVN repo at Google code site here:
+https://code.google.com/p/coreemu/source/checkout
+
+This is manually synced with a private SVN repo at NRL with public nightly snapshots here: [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/]
 
 *How to report bugs*: email the [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev development mailing list] or enter the bug yourself in the bug tracker: [http://code.google.com/p/coreemu/issues/list]
 
