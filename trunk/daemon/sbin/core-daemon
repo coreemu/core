@@ -876,6 +876,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     old_session_ids = set(server.getsessionids())
                 sys.argv = shlex.split(ex)
                 scriptname = sys.argv[0]
+                # TODO: Script may not return; run in separate thread here.
+                #       Wait for some configurable timeout period, then check
+                #       for new session below. Wait for session to enter
+                #       the runtime state, then send back the register message.
                 execfile(scriptname, {'server': server})
                 if msg.flags & coreapi.CORE_API_STR_FLAG:
                     new_session_ids = set(server.getsessionids())
