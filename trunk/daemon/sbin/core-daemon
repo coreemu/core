@@ -893,7 +893,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     msg = coreapi.CoreRegMessage.pack(0, tlvdata)
                     replies.append(msg)
             except Exception, e:
-                self.warn("error executing '%s': %s" % (ex, e))
+                self.warn("error executing '%s': %s" % \
+                          (ex, traceback.format_exc()))
             return replies
             
         gui = msg.gettlv(coreapi.CORE_TLV_REG_GUI)
