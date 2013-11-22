@@ -2,19 +2,19 @@
 
 = CORE Wiki =
 
-This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] ([http://pf.itd.nrl.navy.mil/core/core_manual.pdf PDF]) yet.
+This is the CORE wiki. It features tips and tricks and other bits of information that haven't made it into the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/ CORE manual] ([http://downloads.pf.itd.nrl.navy.mil/docs/core/core_manual.pdf PDF]) yet.
 
 Click [http://code.google.com/p/coreemu/w/list here] or the [http://code.google.com/p/coreemu/w/list Wiki] tab at the top of each page for a list of all wiki pages.
 
 == Background Info ==
  * [Screenshots]
  * [FAQ]: Frequently Asked Questions
- * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual] 
+ * [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/ CORE manual] 
  * [Contributing]: contributing to this project
 
 == Installation == 
  * [Quickstart]: quickly get up-and-running with CORE
- * [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]
+ * [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/ CORE manual]
  * [NamespaceKernels]: notes on good/bad Linux kernels 
  * [Linux]: Linux virtualization and CORE
  * [EMANE]
