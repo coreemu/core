@@ -5,7 +5,7 @@ This page is dedicated to tips for VCORE, the CORE virtual machine. Currently VC
 We recommend using [http://www.virtualbox.org VirtualBox] for running VCORE.
 
 = Disclaimer =
-Please heed the disclaimer posted on the [Quickstart] page and in the [http://hipserver.mct.phantomworks.org/core/manual/VMware.html CORE manual]. The virtual machine is really for evaluation purposes and not for serious work. You should really set up a Ubuntu or Fedora Linux machine. It's not too difficult.
+Please heed the disclaimer posted on the [Quickstart] page and in the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#vcore CORE manual]. The virtual machine is really for evaluation purposes and not for serious work. You should really set up a Ubuntu or Fedora Linux machine. It's not too difficult.
 
 _Note that you may experience decreased performance and timer issues, and there is the added confusion of virtualization within virtualization. If you decide to run in this mode, we suggest using SSH with X11 forwarding into the VCORE virtual machine, to mitigate the decreased performance of the VMware virtual display._
 
