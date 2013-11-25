@@ -227,6 +227,11 @@ proc saveFile { selectedFile } {
     set fileName [file tail $currentFile]
     if { [file extension $selectedFile] == ".xml" } {
 	xmlFileLoadSave save $selectedFile
+    } elseif { [file extension $selectedFile] == ".py" } {
+	set msg "Python script files cannot be saved by the GUI."
+	set msg "$msg\nUse File > Export Python script... for export."
+	tk_messageBox -type ok -icon warning -message $msg -title "Error"
+
     } else {
 	set fileId [open $currentFile w]
 	dumpCfg file $fileId
