@@ -998,6 +998,7 @@ proc parseRegMessage { data len flags channel } {
     set current 0
     set str 0
     set session ""
+    set fnhint ""
 
     set plugin_cap_list {} ;# plugin capabilities list
 
@@ -1034,6 +1035,7 @@ proc parseRegMessage { data len flags channel } {
 			set session $str
 		    } else {
 		        lappend plugin_cap_list "$plugin_type=$str"
+			if { $plugin_type == "exec" } { set fnhint $str }
 		    }
 		} else {
 		    if { $prmsg == 1} { puts -nonewline "unknown($type)," }
@@ -1047,10 +1049,10 @@ proc parseRegMessage { data len flags channel } {
     if { $prmsg == 1 } { puts ") "}
 
     # reg message with session number indicates the sid of a session that
-    # was just started from a Python script (via reg exec=scriptfile.py)
+    # was just started from XML or Python script (via reg exec=scriptfile.py)
     if { $session != "" } {
 	# assume session string only contains one session number
-	connectShutdownSession connect $channel $session
+	connectShutdownSession connect $channel $session $fnhint
 	return
     }
 

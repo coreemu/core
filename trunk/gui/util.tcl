@@ -982,7 +982,16 @@ proc exportPython { } {
 
 # ask the daemon to execute the selected file
 proc execPython { } {
-    set fn [tk_getOpenFile -filetypes {{ "CORE Python scripts" {.py} }} ]
+    global fileDialogBox_initial g_prefs
+    set ft {{ "CORE XML or Python scripts" {.py .xml} } { "All files" {*}}}
+
+    if { $fileDialogBox_initial == 0 } {
+	set fileDialogBox_initial 1
+	set dir $g_prefs(default_conf_path)
+        set fn [tk_getOpenFile -filetypes $ft -initialdir $dir]
+    } else {
+        set fn [tk_getOpenFile -filetypes $ft]
+    }
     if { $fn == "" } { return }
     set flags 0x10 ;# status request flag
     sendRegMessage -1 $flags [list "exec" $fn]
