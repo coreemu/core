@@ -989,9 +989,11 @@ proc sessionConfig { cmd wi channel } {
 
     # sid = 0 is new session, or the session number of an existing session
     set sid 0
+    set fn ""
     foreach item [$wi.tree selection] {
 	array set vals [$wi.tree set $item]
 	set sid $vals(sid)
+	set fn $vals(fn)
 	break; # TODO: loop on multiple selection for shutdown
     }
     if { $sid == $g_current_session } {
@@ -1001,14 +1003,14 @@ proc sessionConfig { cmd wi channel } {
 	set cmd "connect"
 	set sid 0
     }
-    connectShutdownSession $cmd $channel $sid
+    connectShutdownSession $cmd $channel $sid $fn
 }
 
 # switch sessions or shutdown the specified session
 # sid=0 indicates switching to a new session (disconnect from old and start a
 # new file)
-proc connectShutdownSession { cmd channel sid } {
-    global g_current_session CORE_USER
+proc connectShutdownSession { cmd channel sid fn } {
+    global g_current_session CORE_USER currentFile
 
     switch -exact -- $cmd {
 	connect {
@@ -1020,6 +1022,7 @@ proc connectShutdownSession { cmd channel sid } {
 		set g_current_session $sid
 	    }
 	    # connect to an existing session
+	    set currentFile $fn
 	    setOperMode exec
 	    set flags 0x11 ;# add flag, status req flag
 	}

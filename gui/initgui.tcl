@@ -240,7 +240,8 @@ bind . <Control-s> "fileSaveDialogBox {}"
 
 .menubar.file add separator
 .menubar.file add command -label "Export Python script..." -command exportPython
-.menubar.file add command -label "Execute Python script..." -command execPython
+.menubar.file add command -label "Execute XML or Python script..." \
+	-command execPython
 
 .menubar.file add separator
 .menubar.file add command -label "Open current file in editor..." \
