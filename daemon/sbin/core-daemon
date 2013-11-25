@@ -861,11 +861,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         ''' Register Message Handler
         '''
         replies = []
-        
-        # execute a Python script
+        # execute a Python script or XML file
         ex = msg.gettlv(coreapi.CORE_TLV_REG_EXECSRV)
         if ex:
-            # TODO: load and execute XML files here
             try:
                 self.info("executing '%s'" % ex)
                 if isinstance(self.server, CoreUdpServer):
@@ -875,12 +873,16 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 if msg.flags & coreapi.CORE_API_STR_FLAG:
                     old_session_ids = set(server.getsessionids())
                 sys.argv = shlex.split(ex)
-                scriptname = sys.argv[0]
+                filename = sys.argv[0]
+                if os.path.splitext(filename)[1].lower() == '.xml':
+                    session = server.getsession(useexisting=False)
+                    opensessionxml(session, filename, start=True)
                 # TODO: Script may not return; run in separate thread here.
                 #       Wait for some configurable timeout period, then check
                 #       for new session below. Wait for session to enter
                 #       the runtime state, then send back the register message.
-                execfile(scriptname, {'server': server})
+                else:
+                    execfile(filename, {'server': server})
                 if msg.flags & coreapi.CORE_API_STR_FLAG:
                     new_session_ids = set(server.getsessionids())
                     new_sid = new_session_ids.difference(old_session_ids)

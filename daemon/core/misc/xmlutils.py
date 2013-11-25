@@ -121,11 +121,12 @@ def xmltypetonodeclass(session, type):
         return None
 
 class CoreDocumentParser(object):
-    def __init__(self, session, filename):
+    def __init__(self, session, filename, start=False):
         self.session = session
         self.verbose = self.session.getcfgitembool('verbose', False)
         self.filename = filename
         self.dom = parse(filename)
+        self.start = start
         
         #self.scenario = getoneelement(self.dom, "Scenario")
         self.np = getoneelement(self.dom, "NetworkPlan")
@@ -197,7 +198,7 @@ class CoreDocumentParser(object):
                           (name, type))
                 continue
             n = self.session.addobj(cls = nodecls, objid = id, name = name,
-                                    start = False)
+                                    start = self.start)
             if name in self.coords:
                 x, y, z = self.coords[name]
                 n.setposition(x, y, z)
@@ -227,7 +228,7 @@ class CoreDocumentParser(object):
             else:
                 nodecls = pycore.nodes.CoreNode
             n = self.session.addobj(cls = nodecls, objid = id, name = name,
-                                    start = False)
+                                    start = self.start)
             if name in self.coords:
                 x, y, z = self.coords[name]
                 n.setposition(x, y, z)
@@ -763,10 +764,15 @@ class CoreDocumentWriter(Document):
             addtextparamtoparent(self, meta, k, v)
             #addparamtoparent(self, meta, k, v)
 
-def opensessionxml(session, filename):
+def opensessionxml(session, filename, start=False):
     ''' Import a session from the EmulationScript XML format.
     '''
-    doc = CoreDocumentParser(session, filename)
+    doc = CoreDocumentParser(session, filename, start)
+    if start:
+        session.name = os.path.basename(filename)
+        session.filename = filename
+        session.node_count = str(session.getnodecount())
+        session.checkruntime()
 
 def savesessionxml(session, filename):
     ''' Export a session to the EmulationScript XML format.
