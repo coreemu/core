@@ -96,27 +96,14 @@ class PtpNet(LxBrNet):
                                             if1.node.objid)
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N2NUMBER,
                                             if2.node.objid)
-        delay = if1.getparam('delay')
-        bw = if1.getparam('bw')
-        loss = if1.getparam('loss')
-        duplicate = if1.getparam('duplicate')
-        jitter = if1.getparam('jitter')
-        if delay is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DELAY,
-                                                delay)
-        if bw is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_BW, bw)
-        if loss is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_PER,
-                                                str(loss))
-        if duplicate is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DUP,
-                                                str(duplicate))
-        if jitter is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_JITTER,
-                                                jitter)
+        uni = False
+        if if1.getparams() != if2.getparams():
+            uni = True
+        tlvdata += self.netifparamstolink(if1)
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_TYPE,
                                             self.linktype)
+        if uni:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI, 1)
 
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM, \
                                             if1.node.getifindex(if1))
@@ -154,7 +141,23 @@ class PtpNet(LxBrNet):
                                                 IPAddr(af=family, addr=ipl))
             tlvdata += coreapi.CoreLinkTlv.pack(tlvtypemask, mask)
         msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
-        return [msg,]
+        if not uni:
+            return [msg,]
+        # build a 2nd link message for the upstream link parameters
+        # (swap if1 and if2)
+        tlvdata = ""
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N1NUMBER,
+                                            if2.node.objid)
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N2NUMBER,
+                                            if1.node.objid)
+        tlvdata += self.netifparamstolink(if2)
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI, 1)
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM, \
+                                            if2.node.getifindex(if2))
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM, \
+                                            if1.node.getifindex(if1))
+        msg2 = coreapi.CoreLinkMessage.pack(0, tlvdata)
+        return [msg, msg2]
 
 class SwitchNode(LxBrNet):
     apitype = coreapi.CORE_NODE_SWITCH
