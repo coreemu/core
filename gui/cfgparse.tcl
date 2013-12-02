@@ -704,21 +704,16 @@ proc loadCfg { cfg } {
 			mirror {
 			    lappend $object "mirror $value"
 			}
-			bandwidth {
-			    lappend $object "bandwidth $value"
-			}
-			delay {
-			    lappend $object "delay $value"
-			}
-			ber {
-			    lappend $object "ber $value"
-			}
-			duplicate {
-			    lappend $object "duplicate $value"
-			}
+			bandwidth -
+			delay -
+			ber -
+			duplicate -
 			jitter {
-			    # Boeing - jitter
-			    lappend $object "jitter $value"
+			    if { [llength $value] > 1 } { ;# down/up-stream
+				lappend $object "$field {$value}"
+			    } else {
+				lappend $object "$field $value"
+			    }
 			}
 			color {
 			    lappend $object "color $value"
