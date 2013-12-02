@@ -723,20 +723,21 @@ proc updateIfcLabel { lnode1 lnode2 } {
 proc updateLinkLabel { link } {
     global showLinkLabels
 
-    set labelstr ""
+    set bwstr  [getLinkBandwidthString $link]
     set delstr [getLinkDelayString $link]
-    set ber [getLinkBER $link]
-    set dup [getLinkDup $link]
-    set labelstr "$labelstr[getLinkBandwidthString $link]"
+    set berstr [getLinkBERString $link]
+    set dupstr [getLinkDupString $link]
+    set labelstr ""
+    if { "$bwstr" != "" } {
+	set labelstr "$labelstr$bwstr"
+    }
     if { "$delstr" != "" } {
 	set labelstr "$labelstr$delstr"
     }
-    if { "$ber" != "" } {
-	set berstr "loss=$ber%" 
+    if { "$berstr" != "" } {
 	set labelstr "$labelstr$berstr"
     }
-    if { "$dup" != "" } {
-	set dupstr "dup=$dup%"
+    if { "$dupstr" != "" } {
 	set labelstr "$labelstr$dupstr"
     }
     set labelstr \
@@ -2758,22 +2759,34 @@ proc popupConfigDialog { c } {
 	pack $wi.ftop -side top
 
 	set spinbox [getspinbox]
-	ttk::frame $wi.bandwidth -borderwidth 4
+        global g_link_config_uni_state
+        set g_link_config_uni_state "bid"
+
+	ttk::frame $wi.preset -borderwidth 4
 	global link_preset_val
 	set link_preset_val unlimited
-	set linkpreMenu [tk_optionMenu $wi.bandwidth.linkpre link_preset_val a]
-	pack $wi.bandwidth.linkpre -side top
+	set linkpreMenu [tk_optionMenu $wi.preset.linkpre link_preset_val a]
+	# unidirectional links not always supported
+        if { [isUniSupported $n0 $n1] } {
+	    set unistate normal
+	} else {
+	    set unistate disabled
+	}
+	ttk::button $wi.preset.uni -text "Unidir. >>" -state $unistate \
+	    -command "linkConfigUni $wi"
+	pack $wi.preset.uni $wi.preset.linkpre -side right
 	linkPresets $wi $linkpreMenu init
-	ttk::label $wi.bandwidth.label -anchor e \
-	-text "Bandwidth (bps):"
+	pack $wi.preset -side top -anchor e
+
+	ttk::frame $wi.bandwidth -borderwidth 4
+	ttk::label $wi.bandwidth.label -anchor e -text "Bandwidth (bps):"
 	$spinbox $wi.bandwidth.value -justify right -width 10 \
 	    -validate focus -invalidcommand "focusAndFlash %W"
 	$wi.bandwidth.value insert 0 [getLinkBandwidth $target]
 	$wi.bandwidth.value configure \
 	    -validatecommand {checkIntRange %P 0 1000000000} \
 	    -from 0 -to 1000000000 -increment 1000000
-	pack $wi.bandwidth.value $wi.bandwidth.label \
-	-side right
+	pack $wi.bandwidth.value $wi.bandwidth.label -side right
 	pack $wi.bandwidth -side top -anchor e
 
 	ttk::frame $wi.delay -borderwidth 4
@@ -2787,11 +2800,22 @@ proc popupConfigDialog { c } {
 	pack $wi.delay.value $wi.delay.label -side right
 	pack $wi.delay -side top -anchor e
 
+	ttk::frame $wi.jitter -borderwidth 4
+	ttk::label $wi.jitter.label -anchor e -text "Jitter (us):"
+	$spinbox $wi.jitter.value -justify right -width 10 \
+	    -validate focus -invalidcommand "focusAndFlash %W"
+	$wi.jitter.value insert 0 [getLinkJitter $target]
+	$wi.jitter.value configure \
+	    -validatecommand {checkIntRange %P 0 10000000} \
+	    -from 0 -to 10000000 -increment 5
+	pack $wi.jitter.value $wi.jitter.label -side right
+	pack $wi.jitter -side top -anchor e
+
 	ttk::frame $wi.ber -borderwidth 4
 	if { [lindex $systype 0] == "Linux" } {
 	    set bertext "Loss (%):"
-	    set berinc 1
-	    set bermax 100
+	    set berinc 0.1
+	    set bermax 100.0
 	} else { ;# netgraph uses BER
 	    set bertext "BER (1/N):"
 	    set berinc 1000
@@ -2802,8 +2826,8 @@ proc popupConfigDialog { c } {
 	    -validate focus -invalidcommand "focusAndFlash %W"
 	$wi.ber.value insert 0 [getLinkBER $target]
 	$wi.ber.value configure \
-	    -validatecommand "checkFloatRange %P 0 $bermax" \
-	    -from 0 -to $bermax -increment $berinc
+	    -validatecommand "checkFloatRange %P 0.0 $bermax" \
+	    -from 0.0 -to $bermax -increment $berinc
 	pack $wi.ber.value $wi.ber.label -side right
 	pack $wi.ber -side top -anchor e
 
@@ -2836,6 +2860,7 @@ proc popupConfigDialog { c } {
 	set link_color [getLinkColor $target]
 	tk_optionMenu $wi.color.value link_color \
 	    Red Green Blue Yellow Magenta Cyan Black
+	$wi.color.value configure -width 8
 	pack $wi.color.value $wi.color.label -side right
 	pack $wi.color -side top -anchor e
 
@@ -2849,6 +2874,26 @@ proc popupConfigDialog { c } {
 	    -from 1 -to 8 -increment 1
 	pack $wi.width.value $wi.width.label -side right
 	pack $wi.width -side top -anchor e
+
+	# auto-expand upstream if values exist
+	set bw [getLinkBandwidth $target up]
+	set dl [getLinkDelay $target up]
+	set jt [getLinkJitter $target up]
+	set ber [getLinkBER $target up]
+	set dup [getLinkDup $target up]
+	if { $bw > 0 || $dl > 0 || $jt > 0 || $ber > 0 || $dup > 0 } {
+            linkConfigUni $wi
+	    $wi.bandwidth.value2 delete 0 end
+	    $wi.bandwidth.value2 insert 0 $bw
+	    $wi.delay.value2 delete 0 end
+	    $wi.delay.value2 insert 0 $dl
+	    $wi.jitter.value2 delete 0 end
+	    $wi.jitter.value2 insert 0 $jt
+	    $wi.ber.value2 delete 0 end
+	    $wi.ber.value2 insert 0 $ber
+	    $wi.dup.value2 delete 0 end
+	    $wi.dup.value2 insert 0 $dup
+	}
     }
     } ;# end switch
 
@@ -2870,6 +2915,121 @@ proc popupConfigDialog { c } {
     pack $wi.butt -side bottom
     bind $wi <Key-Escape> $cancelcmd
 #    bind $wi <Key-Return> "popupConfigApply $wi $object_type $target 0"
+}
+
+
+proc linkConfigUni { wi } {
+    global g_link_config_uni_state
+
+    set capt [lindex [$wi.preset.uni configure -text] 4]
+
+    if { $capt == "Unidir. >>" } {
+	set g_link_config_uni_state "uni"
+	$wi.preset.uni configure -text "<< Bidir."
+	set spinbox [getspinbox]
+
+	if { ![winfo exists $wi.bandwidth.value2] } {
+	    $spinbox $wi.bandwidth.value2 -justify right \
+	    	-width 10 -validate focus -invalidcommand "focusAndFlash %W"
+	    $wi.bandwidth.value2 configure \
+		-validatecommand {checkIntRange %P 0 1000000000} \
+		-from 0 -to 1000000000 -increment 1000000
+	}
+	$wi.bandwidth.value2 delete 0 end
+	$wi.bandwidth.value2 insert 0 [$wi.bandwidth.value get]
+	pack $wi.bandwidth.value2 -side right
+	pack $wi.bandwidth.value2 -before $wi.bandwidth.value
+
+	if { ![winfo exists $wi.delay.value2] } {
+	    $spinbox $wi.delay.value2 -justify right -width 10 \
+		-validate focus -invalidcommand "focusAndFlash %W"
+	    $wi.delay.value2 configure \
+		-validatecommand {checkIntRange %P 0 10000000} \
+		-from 0 -to 10000000 -increment 5
+	}
+	$wi.delay.value2 delete 0 end
+	$wi.delay.value2 insert 0 [$wi.delay.value get]
+	pack $wi.delay.value2 -side right
+	pack $wi.delay.value2 -before $wi.delay.value
+
+	if { ![winfo exists $wi.jitter.value2] } {
+	    $spinbox $wi.jitter.value2 -justify right -width 10 \
+		-validate focus -invalidcommand "focusAndFlash %W"
+	    $wi.jitter.value2 configure \
+		-validatecommand {checkIntRange %P 0 10000000} \
+		-from 0 -to 10000000 -increment 5
+	}
+	$wi.jitter.value2 delete 0 end
+	$wi.jitter.value2 insert 0 [$wi.jitter.value get]
+	pack $wi.jitter.value2 -side right
+	pack $wi.jitter.value2 -before $wi.jitter.value
+
+	if { ![winfo exists $wi.ber.value2] } {
+	    $spinbox $wi.ber.value2 -justify right -width 10 \
+		-validate focus -invalidcommand "focusAndFlash %W"
+	    $wi.ber.value2 configure \
+		-validatecommand "checkFloatRange %P 0.0 100.0" \
+		-from 0.0 -to 100.0 -increment 0.1
+	}
+	$wi.ber.value2 delete 0 end
+	$wi.ber.value2 insert 0 [$wi.ber.value get]
+	pack $wi.ber.value2 -side right
+	pack $wi.ber.value2 -before $wi.ber.value
+
+	if { ![winfo exists $wi.dup.value2] } {
+	    $spinbox $wi.dup.value2 -justify right -width 10 \
+		-validate focus -invalidcommand "focusAndFlash %W"
+	    $wi.dup.value2 configure \
+		-validatecommand {checkFloatRange %P 0 50} \
+		-from 0 -to 50 -increment 1
+	}
+	$wi.dup.value2 delete 0 end
+	$wi.dup.value2 insert 0 [$wi.dup.value get]
+	pack $wi.dup.value2 -side right
+	pack $wi.dup.value2 -before $wi.dup.value
+
+	if { ![winfo exists $wi.unilabel] } {
+	    ttk::frame $wi.unilabel
+	    set txt "                downstream    /    upstream  "
+	    ttk::label $wi.unilabel.updown -text $txt
+	}
+	pack $wi.unilabel.updown -side right -anchor e
+	pack $wi.unilabel -after $wi.preset
+
+    } else {
+	set g_link_config_uni_state "bid"
+	$wi.preset.uni configure -text "Unidir. >>"
+	pack forget $wi.bandwidth.value2
+	pack forget $wi.delay.value2
+	pack forget $wi.jitter.value2
+	pack forget $wi.ber.value2
+	pack forget $wi.dup.value2
+	pack forget $wi.unilabel.updown $wi.unilabel
+    }
+}
+
+# unidirectional links are not always supported
+proc isUniSupported { n1 n2 } {
+    set blacklist [list "hub" "lanswitch"]
+    set type1 [nodeType $n1]
+    set type2 [nodeType $n2]
+    # not yet supported for GRE tap device
+    if { $type1 == "tunnel" || $type2 == "tunnel" } {
+	return false
+    }
+    # unidirectional links are supported between two switches/hubs
+    if { [lsearch $blacklist $type1] != -1 && \
+	 [lsearch $blacklist $type2] != -1 } {
+	return true
+    }
+    # unidirectional links not supported between hub/switch and something else
+    if { [lsearch $blacklist $type1] != -1 || \
+	 [lsearch $blacklist $type2] != -1 } {
+	return false
+    }
+    # unidirectional links are supported between routers, rj45s, etc.
+    # WLANs not included here because they have no link dialog
+    return true
 }
 
 # toggle the state of the mac address entry, and insert MAC address template
@@ -3056,39 +3216,25 @@ proc popupConfigApply { wi object_type target phase } {
     }
 
     link {
+	global g_link_config_uni_state
 	set mirror [getLinkMirror $target]
-	set bw [$wi.bandwidth.value get]
-	if { $bw != [getLinkBandwidth $target] } {
-	    setLinkBandwidth $target [$wi.bandwidth.value get]
-	    if { $mirror != "" } {
-		setLinkBandwidth $mirror [$wi.bandwidth.value get]
-	    }
+        
+        if { [setIfChanged $target $mirror $wi "bandwidth" "LinkBandwidth"] } {
 	    set changed 1
 	}
-	set dly [$wi.delay.value get]
-	if { $dly != [getLinkDelay $target] } {
-	    setLinkDelay $target [$wi.delay.value get]
-	    if { $mirror != "" } {
-		setLinkDelay $mirror [$wi.delay.value get]
-	    }
+        if { [setIfChanged $target $mirror $wi "delay" "LinkDelay"] } {
 	    set changed 1
 	}
-	set ber [$wi.ber.value get]
-	if { $ber != [getLinkBER $target] } {
-	    setLinkBER $target [$wi.ber.value get]
-	    if { $mirror != "" } {
-		setLinkBER $mirror [$wi.ber.value get]
-	    }
+        if { [setIfChanged $target $mirror $wi "ber" "LinkBER"] } {
 	    set changed 1
 	}
-	set dup [$wi.dup.value get]
-	if { $dup != [getLinkDup $target] } {
-	    setLinkDup $target [$wi.dup.value get]
-	    if { $mirror != "" } {
-		setLinkDup $mirror [$wi.dup.value get]
-	    }
+        if { [setIfChanged $target $mirror $wi "dup" "LinkDup"] } {
 	    set changed 1
 	}
+        if { [setIfChanged $target $mirror $wi "jitter" "LinkJitter"] } {
+	    set changed 1
+	}
+
 	if { $link_color != [getLinkColor $target] } {
 	    setLinkColor $target $link_color
 	    if { $mirror != "" } {
@@ -3098,9 +3244,9 @@ proc popupConfigApply { wi object_type target phase } {
 	}
 	set width [$wi.width.value get]
 	if { $width != [getLinkWidth $target] } {
-	    setLinkWidth $target [$wi.width.value get]
+	    setLinkWidth $target $width
 	    if { $mirror != "" } {
-		setLinkWidth $mirror [$wi.width.value get]
+		setLinkWidth $mirror $width
 	    }
 	    set changed 1
 	}
@@ -3114,6 +3260,30 @@ proc popupConfigApply { wi object_type target phase } {
     popdownConfig $wi
 }
 
+# helper for Link Config dialog
+# ctl must exist as $wi.$ctl.value{2}, and {get,set}$procname must be valid
+# returns true when value has changed, false otherwise
+proc setIfChanged { target mirror wi ctl procname } {
+    global g_link_config_uni_state
+
+    set val [$wi.$ctl.value get]
+    if { $g_link_config_uni_state == "uni" } {
+	set val [list $val [$wi.$ctl.value2 get]]
+    }
+    set oldval [get$procname $target]
+    set oldval2 [get$procname $target "up"]
+    if { $oldval2 != "" } {
+	set oldval [list $oldval $oldval2]
+    }
+    if { $val != $oldval } {
+	set$procname $target $val
+	if { $mirror != "" } {
+	    set$procname $mirror $val
+	}
+	return true
+    }
+    return false
+}
 
 #****f* editor.tcl/printCanvas
 # NAME
@@ -4400,8 +4570,8 @@ proc drawWallpaper { c f style } {
 	set cy [expr [lindex [getCanvasSize $curcanvas] 1]-2]
     }
     set f [absPathname $f]
-    if { [ catch { set img [image create photo -file $f] } ] } {
-	puts "Error: couldn't open wallpaper file $f"
+    if { [ catch { set img [image create photo -file $f] } e ] } {
+	puts "Error: couldn't open wallpaper file $f: $e"
 	return
     }
     set imgx [image width $img]
@@ -4511,18 +4681,19 @@ proc rj45ifclist { wi node wasclicked } {
 
 # link preset values - bandwidth delay ber duplicate
 array set link_presets {
-	"unlimited" { 0 0 0 0 }
-	"1000M" { 1000000000 100 0 0}
-	"100M"  { 100000000 110 0 0}
-	"10M"   { 10000000 160 0 0}
-	"512kbps" { 512000 50000 0 0}
-	"256kbps" { 256000 75000 0 0}
-	"64kbps"  { 64000 80000 0 0}
+	"unlimited" { 0 0 0 0 0 }
+	"1000M" { 1000000000 100 0 0.0 0.0}
+	"100M"  {  100000000 110 0 0.0 0.0}
+	"10M"   {   10000000 160 0 0.0 0.0}
+	"512kbps" { 512000 50000 0 0.0 0.0}
+	"256kbps" { 256000 75000 0 0.0 0.0}
+	"64kbps"  {  64000 80000 0 0.0 0.0}
 }
 
 # link presets
 proc linkPresets { wi linkpreMenu cmd } {
     global link_presets link_preset_val
+    global g_link_config_uni_state
 
     if { $cmd == "init" } { ;# populate the list with presets and exit
     	$linkpreMenu delete 0
@@ -4538,12 +4709,26 @@ proc linkPresets { wi linkpreMenu cmd } {
     set params $link_presets($link_preset_val)
     $wi.bandwidth.value delete 0 end
     $wi.delay.value delete 0 end
+    $wi.jitter.value delete 0 end
     $wi.ber.value delete 0 end
     $wi.dup.value delete 0 end
     $wi.bandwidth.value insert 0 [lindex $params 0]
     $wi.delay.value insert 0 [lindex $params 1]
-    $wi.ber.value insert 0 [lindex $params 2]
-    $wi.dup.value insert 0 [lindex $params 3]
+    $wi.jitter.value insert 0 [lindex $params 2]
+    $wi.ber.value insert 0 [lindex $params 3]
+    $wi.dup.value insert 0 [lindex $params 4]
+    if { $g_link_config_uni_state == "uni" } {
+	$wi.bandwidth.value2 delete 0 end
+	$wi.delay.value2 delete 0 end
+	$wi.jitter.value2 delete 0 end
+	$wi.ber.value2 delete 0 end
+	$wi.dup.value2 delete 0 end
+	$wi.bandwidth.value2 insert 0 [lindex $params 0]
+	$wi.delay.value2 insert 0 [lindex $params 1]
+	$wi.jitter.value2 insert 0 [lindex $params 2]
+	$wi.ber.value2 insert 0 [lindex $params 3]
+	$wi.dup.value2 insert 0 [lindex $params 4]
+    }
 }
 
 set last_nodeHighlights [clock clicks -milliseconds]
