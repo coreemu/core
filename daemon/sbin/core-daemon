@@ -510,6 +510,13 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         node2 = None
         net = None
         net2 = None
+        
+        uni = msg.gettlv(coreapi.CORE_TLV_LINK_UNI)
+        if uni is not None and uni == 1:
+            unidirectional = True
+        else:
+            unidirectional = False
+        
 
         # one of the nodes may exist on a remote server
         if nodenum1 is not None and nodenum2 is not None:
@@ -657,7 +664,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         netaddrlist.append("%s/%s" % (ipv61, ipv6mask1))
                     ifindex2 = node2.newnetif(net, addrlist = addrlist,
                                    hwaddr = mac2, ifindex = ifindex2)
-                    net.linkconfig(node2.netif(ifindex2, net), bw = bw,
+                    if not unidirectional:
+                        net.linkconfig(node2.netif(ifindex2, net), bw = bw,
                                    delay = delay, loss = loss,
                                    duplicate = duplicate, jitter = jitter)
                 if node2 is None and net2:
@@ -679,9 +687,19 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 if net and net2:
                     # two layer-2 networks linked together
                     if isinstance(net2, pycore.nodes.RJ45Node):
-                        net2.linknet(net) # RJ45 nodes have different linknet()
+                        netif = net2.linknet(net) # RJ45 nodes have different linknet()
                     else:
-                        net.linknet(net2)
+                        netif = net.linknet(net2)
+                    net.linkconfig(netif, bw = bw, delay = delay, loss = loss,
+                                   duplicate = duplicate, jitter = jitter)
+                    if not unidirectional:
+                        netif.swapparams('_params_up')
+                        net2.linkconfig(netif, bw = bw, delay = delay, loss = loss,
+                                   duplicate = duplicate, jitter = jitter,
+                                   devname = netif.name)
+                        netif.swapparams('_params_up')
+
+                    
                 elif net is None and net2 is None and \
                   (node1 is None or node2 is None):
                     # apply address/parameters to PhysicalNodes
@@ -742,8 +760,44 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 duplicate = msg.gettlv(coreapi.CORE_TLV_LINK_DUP)
                 jitter = msg.gettlv(coreapi.CORE_TLV_LINK_JITTER)
                 numnet = 0
+                # TODO: clean up all this logic. Having the add flag or not
+                #       should use the same code block.
                 if node1 is None and node2 is None:
-                    raise ValueError, "modify link for unknown nodes"
+                    if net and net2:
+                        # modify link between nets
+                        netif = net.getlinknetif(net2)
+                        upstream = False
+                        if netif is None:
+                            upstream = True
+                            netif = net2.getlinknetif(net)
+                        if netif is None:
+                            raise ValueError, "modify unknown link between nets"
+                        if upstream:
+                            netif.swapparams('_params_up')
+                            net.linkconfig(netif, bw = bw, delay = delay,
+                                       loss = loss, duplicate = duplicate,
+                                       jitter = jitter, devname = netif.name)
+                            netif.swapparams('_params_up')
+                        else:
+                            net.linkconfig(netif, bw = bw, delay = delay,
+                                           loss = loss, duplicate = duplicate,
+                                           jitter = jitter)
+                        if not unidirectional:
+                            if upstream:
+                                net2.linkconfig(netif, bw = bw, delay = delay,
+                                                loss = loss, 
+                                                duplicate = duplicate,
+                                                jitter = jitter)
+                            else:
+                                netif.swapparams('_params_up')
+                                net2.linkconfig(netif, bw = bw, delay = delay,
+                                                loss = loss,
+                                                duplicate = duplicate,
+                                                jitter = jitter,
+                                                devname = netif.name)
+                                netif.swapparams('_params_up')
+                    else:
+                        raise ValueError, "modify link for unknown nodes"
                 elif node1 is None:
                     # node1 = layer 2node, node2 = layer3 node
                     net.linkconfig(node2.netif(ifindex2, net), bw = bw,
@@ -763,7 +817,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         net.linkconfig(netif1, bw = bw, delay = delay,
                                        loss = loss, duplicate = duplicate,
                                        jitter = jitter, netif2 = netif2)
-                        net.linkconfig(netif2, bw = bw, delay = delay,
+                        if not unidirectional:
+                            net.linkconfig(netif2, bw = bw, delay = delay,
                                        loss = loss, duplicate = duplicate,
                                        jitter = jitter, netif2 = netif1)
                         numnet += 1

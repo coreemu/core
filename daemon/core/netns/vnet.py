@@ -328,11 +328,14 @@ class LxBrNet(PyCoreNet):
         ebq.ebchange(self)
 
     def linkconfig(self, netif, bw = None, delay = None,
-                   loss = None, duplicate = None, jitter = None, netif2 = None):
+                   loss = None, duplicate = None, jitter = None, netif2 = None,
+                   devname = None):
         ''' Configure link parameters by applying tc queuing disciplines on the
             interface.
         '''
-        tc = [TC_BIN, "qdisc", "replace", "dev", netif.localname]
+        if devname is None:
+            devname = netif.localname
+        tc = [TC_BIN, "qdisc", "replace", "dev", devname]
         parent = ["root"]
         changed = False
         if netif.setparam('bw', bw):
@@ -344,6 +347,9 @@ class LxBrNet(PyCoreNet):
                        "burst", str(burst), "limit", str(limit)]
             if bw > 0:
                 if self.up:
+                    if (self.verbose):
+                        self.info("linkconfig: %s" % \
+                                  ([tc + parent + ["handle", "1:"] + tbf],))
                     check_call(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam('has_tbf', True)
                 changed = True
@@ -382,16 +388,22 @@ class LxBrNet(PyCoreNet):
             netem += ["loss", "%s%%" % min(loss, 100)]
         if duplicate is not None:
             netem += ["duplicate", "%s%%" % min(duplicate, 100)]
-        if delay <= 0 and loss <= 0 and duplicate <= 0:
+        if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
             # possibly remove netem if it exists and parent queue wasn't removed
             if not netif.getparam('has_netem'):
                 return
             tc[2] = "delete"
             if self.up:
+                if self.verbose:
+                    self.info("linkconfig: %s" % \
+                              ([tc + parent + ["handle", "10:"]],))
                 check_call(tc + parent + ["handle", "10:"])
             netif.setparam('has_netem', False)
         elif len(netem) > 1:
             if self.up:
+                if self.verbose:
+                    self.info("linkconfig: %s" % \
+                              ([tc + parent + ["handle", "10:"] + netem],))
                 check_call(tc + parent + ["handle", "10:"] + netem)
             netif.setparam('has_netem', True)
 
@@ -416,6 +428,16 @@ class LxBrNet(PyCoreNet):
             net._linked[netif] = {}
         netif.net = self
         netif.othernet = net
+        return netif
+        
+    def getlinknetif(self, net):
+        ''' Return the interface of that links this net with another net
+        (that were linked using linknet()).
+        '''
+        for netif in self.netifs():
+            if hasattr(netif, 'othernet') and netif.othernet == net:
+                return netif
+        return None
 
     def addrconfig(self, addrlist):
         ''' Set addresses on the bridge.

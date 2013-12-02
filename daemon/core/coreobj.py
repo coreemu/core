@@ -299,6 +299,33 @@ class PyCoreNet(PyCoreObj):
         with self._linked_lock:
             del self._linked[netif]
 
+    def netifparamstolink(self, netif):
+        ''' Helper for tolinkmsgs() to build TLVs having link parameters
+            from interface parameters.
+        '''
+        tlvdata = ""
+        delay = netif.getparam('delay')
+        bw = netif.getparam('bw')
+        loss = netif.getparam('loss')
+        duplicate = netif.getparam('duplicate')
+        jitter = netif.getparam('jitter')
+        if delay is not None:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DELAY,
+                                                delay)
+        if bw is not None:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_BW, bw)
+        if loss is not None:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_PER, 
+                                                str(loss))
+        if duplicate is not None:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DUP,
+                                                str(duplicate))
+        if jitter is not None:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_JITTER,
+                                                jitter)
+        return tlvdata
+
+        
     def tolinkmsgs(self, flags):
         ''' Build CORE API Link Messages for this network. Each link message
             describes a link between this network and a node.
@@ -323,26 +350,7 @@ class PyCoreNet(PyCoreObj):
                                                 self.objid)
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N2NUMBER,
                                                 otherobj.objid)
-            delay = netif.getparam('delay')
-            bw = netif.getparam('bw')
-            loss = netif.getparam('loss')
-            duplicate = netif.getparam('duplicate')
-            jitter = netif.getparam('jitter')
-            if delay is not None:
-                tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DELAY,
-                                                    delay)
-            if bw is not None:
-                tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_BW,
-                                                    bw)
-            if loss is not None:
-                tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_PER, 
-                                                    str(loss))
-            if duplicate is not None:
-                tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DUP,
-                                                    str(duplicate))
-            if jitter is not None:
-                tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_JITTER,
-                                                    jitter)
+            tlvdata += self.netifparamstolink(netif)
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_TYPE,
                                                 self.linktype)
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM,
@@ -440,6 +448,17 @@ class PyCoreNetIf(object):
                 return False
         self._params[key] = value
         return True
+        
+    def swapparams(self, name):
+        ''' Swap out the _params dict for name. If name does not exist,
+        intialize it. This is for supporting separate upstream/downstream
+        parameters when two layer-2 nodes are linked together.
+        '''
+        tmp = self._params
+        if not hasattr(self, name):
+            setattr(self, name, {})
+        self._params = getattr(self, name)
+        setattr(self, name, tmp)
 
     def setposition(self, x, y, z):
         ''' Dispatch to any position hook (self.poshook) handler.
