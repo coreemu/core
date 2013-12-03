@@ -166,9 +166,22 @@ class EmaneNode(EmaneNet):
         trans.setAttribute("name", "%s Transport" % type.capitalize())
         trans.setAttribute("library", "trans%s" % type.lower())
         trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
+        
+        flowcontrol = False
+        names = self.model.getnames()
+        values = emane.getconfig(self.objid, self.model._name,
+                                 self.model.getdefaultvalues())[1]
+        if "flowcontrolenable" in names and values:
+            i = names.index("flowcontrolenable")
+            if self.model.booltooffon(values[i]) == "on":
+                flowcontrol = True
+        
         if "virtual" in type.lower():
             trans.appendChild(emane.xmlparam(transdoc, "devicepath",
                               "/dev/net/tun"))
+            if flowcontrol:
+                trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable",
+                                                 "on"))
         emane.xmlwrite(transdoc, self.transportxmlname(type.lower()))
         
     def transportxmlname(self, type):
