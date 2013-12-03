@@ -208,17 +208,30 @@ class CoreDocumentParser(object):
             # links between two nets (e.g. switch-switch)
             for ifc in net.getElementsByTagName("interface"):
                 netid = str(ifc.getAttribute("net"))
-                linkednets.append((n, netid))
+                ifcname = str(ifc.getAttribute("name"))
+                linkednets.append((n, netid, ifcname))
             self.parsemodels(net, n)
         # link networks together now that they all have been parsed
-        for (n, netid) in linkednets:
+        for (n, netid, ifcname) in linkednets:
             try:
                 n2 = n.session.objbyname(netid)
             except KeyError:
                 n.warn("skipping net %s interface: unknown net %s" % \
                           (n.name, netid))
                 continue
-            n.linknet(n2)
+            upstream = False
+            netif = n.getlinknetif(n2)
+            if netif is None:
+                netif = n2.linknet(n)
+            else:
+                netif.swapparams('_params_up')
+                upstream = True
+            key = (n2.name,  ifcname)
+            if key in self.linkparams:
+                for (k, v) in self.linkparams[key]:
+                    netif.setparam(k, v)
+            if upstream:
+                netif.swapparams('_params_up')
     
     def parsenodes(self):
         for node in self.np.getElementsByTagName("Node"):
@@ -534,15 +547,27 @@ class CoreDocumentWriter(Document):
         parameters. TODO: Interface parameters should be moved to the model
         construct, then this separate method shouldn't be required.
         '''
-        if not hasattr(netif, "node") or netif.node is None:
-            return
         params = netif.getparams()
         if len(params) == 0:
             return
         model = self.createElement("model")
         model.setAttribute("name", "netem")
         model.setAttribute("netif", netif.name)
-        model.setAttribute("peer", netif.node.name)
+        if hasattr(netif, "node") and netif.node is not None:
+            model.setAttribute("peer", netif.node.name)
+        # link between switches uses one veth interface
+        elif hasattr(netif, "othernet") and netif.othernet is not None:
+            if netif.othernet.name == n.getAttribute("name"):
+                model.setAttribute("peer", netif.net.name)
+            else:
+                model.setAttribute("peer", netif.othernet.name)
+                model.setAttribute("netif", netif.localname)
+            # hack used for upstream parameters for link between switches
+            # (see LxBrNet.linknet())
+            if netif.othernet.objid == int(n.getAttribute("id")):
+                netif.swapparams('_params_up')
+                params = netif.getparams()
+                netif.swapparams('_params_up')
         has_params = False
         for k, v in params:
             # default netem parameters are 0 or None
@@ -632,12 +657,13 @@ class CoreDocumentWriter(Document):
         for ifc in net.netifs(sort=True):
             if not hasattr(ifc, "othernet") or not ifc.othernet:
                 continue
-            if net.objid == ifc.net.objid:
-                continue
             i = self.createElement("interface")
             n.appendChild(i)
-            i.setAttribute("name", ifc.name)
-            if ifc.net:
+            if net.objid == ifc.net.objid:
+                i.setAttribute("name", ifc.localname)
+                i.setAttribute("net", ifc.othernet.name)
+            else:
+                i.setAttribute("name", ifc.name)
                 i.setAttribute("net", ifc.net.name)
 
     def addposition(self, node):

@@ -195,7 +195,8 @@ class PyCoreNode(PyCoreObj):
         PyCoreObj.__init__(self,  session,  objid,  name, verbose=verbose,
                            start=start)
         self.services = []
-        self.type = None
+        if not hasattr(self, "type"):
+            self.type = None
         self.nodedir = None
 
     def nodeid(self):
@@ -337,6 +338,7 @@ class PyCoreNet(PyCoreObj):
             if not hasattr(netif, "node"):
                 continue
             otherobj = netif.node
+            uni = False
             if otherobj is None:
                 # two layer-2 switches/hubs linked together via linknet()
                 if not hasattr(netif, "othernet"):
@@ -344,6 +346,11 @@ class PyCoreNet(PyCoreObj):
                 otherobj = netif.othernet
                 if otherobj.objid == self.objid:
                     continue
+                netif.swapparams('_params_up')
+                upstream_params = netif.getparams()
+                netif.swapparams('_params_up')
+                if netif.getparams() != upstream_params:
+                    uni = True
                 
             tlvdata = ""
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N1NUMBER,
@@ -353,6 +360,9 @@ class PyCoreNet(PyCoreObj):
             tlvdata += self.netifparamstolink(netif)
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_TYPE,
                                                 self.linktype)
+            if uni:
+                tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI,
+                                                    1)
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM,
                                                 otherobj.getifindex(netif))
             for addr in netif.addrlist:
@@ -372,6 +382,20 @@ class PyCoreNet(PyCoreObj):
                 tlvdata += coreapi.CoreLinkTlv.pack(tlvtypemask, mask)
 
             msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
+            msgs.append(msg)
+            if not uni:
+                continue
+            # build a 2nd link message for any upstream link parameters
+            tlvdata = ""
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N1NUMBER,
+                                                otherobj.objid)
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N2NUMBER,
+                                                self.objid)
+            netif.swapparams('_params_up')
+            tlvdata += self.netifparamstolink(netif)
+            netif.swapparams('_params_up')
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI, 1)
+            msg = coreapi.CoreLinkMessage.pack(0, tlvdata)
             msgs.append(msg)
         return msgs 
 
