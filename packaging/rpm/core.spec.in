@@ -13,7 +13,7 @@ License:	BSD
 Prefix:		/usr
 Release:	1
 Source:		core-%{version}.tar.gz
-URL:		http://cs.itd.nrl.navy.mil/work/core/
+URL:		http://www.nrl.navy.mil/itd/ncs/products/core
 Version:	%{version}
 %description 
 The Common Open Research Emulator provides Python modules and a GUI for
