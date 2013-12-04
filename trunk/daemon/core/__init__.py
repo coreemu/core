@@ -5,7 +5,7 @@
 
 Top-level Python package containing CORE components.
 
-See http://cs.itd.nrl.navy.mil/work/core/ and
+See http://www.nrl.navy.mil/itd/ncs/products/core and
 http://code.google.com/p/coreemu/ for more information on CORE.
 
 Pieces can be imported individually, for example

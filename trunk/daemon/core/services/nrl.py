@@ -7,7 +7,7 @@
 #
 '''
 nrl.py: defines services provided by NRL protolib tools hosted here:
-http://cs.itd.nrl.navy.mil/products/
+    http://www.nrl.navy.mil/itd/ncs/products
 '''
 
 from core.service import CoreService, addservice
