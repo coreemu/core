@@ -224,7 +224,7 @@ contributing to CORE, please visit the
 
 Besides this manual, there are other additional resources available online:
 
-* `CORE website <http://cs.itd.nrl.navy.mil/work/core/>`_ - main project page containing demos, downloads, and mailing list information.
+* `CORE website <http://www.nrl.navy.mil/itd/ncs/products/core>`_ - main project page containing demos, downloads, and mailing list information.
 * `CORE supplemental website <http://code.google.com/p/coreemu/>`_ - supplemental Google Code page with a quickstart guide, wiki, bug tracker, and screenshots.
 
 .. index::

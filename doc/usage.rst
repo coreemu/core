@@ -1686,7 +1686,7 @@ file, you will need to stop the emulation if it were running and reload the
 file.
 
 The :file:`.xml` file schema
-is `specified by NRL <http://cs.itd.nrl.navy.mil/work/mnmtools/index.php>`_.
+is `specified by NRL <http://www.nrl.navy.mil/itd/ncs/products/mnmtools>`_.
 Planning documents are specified in NRL's Network Modeling Framework (NMF).
 Here the individual planning documents are several tags
 encased in one `<Scenario>` tag:
