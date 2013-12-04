@@ -151,7 +151,7 @@ First install the Ubuntu |UBUNTUVERSION| operating system.
 * Install Quagga for routing. If you plan on working with wireless
   networks, we recommend 
   installing
-  `OSPF MDR <http://cs.itd.nrl.navy.mil/work/ospf-manet/index.php>`__
+  `OSPF MDR <http://www.nrl.navy.mil/itd/ncs/products/ospf-manet>`__
   (replace `amd64` below with `i386` if needed 
   to match your architecture):
 
@@ -241,7 +241,7 @@ Fedora release number.
 
 * Install Quagga for routing. If you plan on working with wireless networks,
   we recommend installing
-  `OSPF MDR <http://cs.itd.nrl.navy.mil/work/ospf-manet/>`_:
+  `OSPF MDR <http://www.nrl.navy.mil/itd/ncs/products/ospf-manet>`_:
 
   .. parsed-literal::
 
@@ -621,7 +621,7 @@ there are two different Quagga packages that you may use:
   .. index:: MANET Designated Routers (MDR)
 
 * 
-  `OSPF MANET Designated Routers <http://cs.itd.nrl.navy.mil/work/ospf-manet/index.php>`_ (MDR) - the Quagga routing suite with a modified version of OSPFv3,
+  `OSPF MANET Designated Routers <http://www.nrl.navy.mil/itd/ncs/products/ospf-manet>`_ (MDR) - the Quagga routing suite with a modified version of OSPFv3,
   optimized for use with mobile wireless networks. The *mdr* node type (and the MDR service) requires this variant of Quagga.
 
 If you plan on working with wireless networks, we recommend installing OSPF MDR;
