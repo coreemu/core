@@ -345,7 +345,7 @@ proc startStopButton { mode } {
 # INPUTS
 #   * mode -- the new operating mode. Can be edit or exec.
 #****
-proc setOperMode { mode } {
+proc setOperMode { mode { type "" } } {
     global oper_mode activetool
     global undolevel redolevel
     global g_prefs
@@ -399,7 +399,9 @@ proc setOperMode { mode } {
 	monitor_loop
         set plugin [lindex [getEmulPlugin "*"] 0]
         set emul_sock [pluginConnect $plugin connect false]
-	deployCfgAPI $emul_sock
+	if {$type != "connect"} {
+	    deployCfgAPI $emul_sock
+	}
 	widget_loop
 	mobility_script_loop
     ### stop button is pressed

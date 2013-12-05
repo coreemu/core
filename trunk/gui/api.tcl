@@ -2358,8 +2358,9 @@ proc sendConfReplyMessage { channel node model types values opaque } {
     }
 
     if { $prmsg == 1 } {
-	puts -nonewline ">CONF(flags=0x0,mod=$model,"
+	puts -nonewline ">CONF(flags=0,"
 	if {$node > -1 } { puts -nonewline "node=$node," }
+	puts -nonewline "obj=$model,cflags=0"
 	if {$session != "" } { puts -nonewline "session=$session," }
 	if {$opaque != "" } { puts -nonewline "opaque=$opaque," }
 	puts "types=<$types>,values=<$values>) reply"
@@ -2492,13 +2493,6 @@ proc deployCfgAPI { sock } {
     if { ![info exists deployCfgAPI_lock] } { set deployCfgAPI_lock 0 }
     if { $deployCfgAPI_lock } {
     	puts "***error: deployCfgAPI called while deploying config"
-	return
-    }
-
-    set nodecount [getNodeCount]
-    if { $nodecount == 0 } {
-	# This allows switching to exec mode without extra API messages,
-	# such as when connecting to a running session.
 	return
     }
 
