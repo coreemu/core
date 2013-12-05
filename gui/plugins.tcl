@@ -1023,7 +1023,7 @@ proc connectShutdownSession { cmd channel sid fn } {
 	    }
 	    # connect to an existing session
 	    set currentFile $fn
-	    setOperMode exec
+	    setOperMode exec connect
 	    set flags 0x11 ;# add flag, status req flag
 	}
 	shutdown {
