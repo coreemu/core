@@ -626,6 +626,18 @@ class CoreServices(ConfigurableManager):
                         node.warn("error starting command %s" % cmd)
             if eventtype == coreapi.CORE_EVENT_PAUSE:
                 self.validatenodeservice(node, s, services)
+            if eventtype == coreapi.CORE_EVENT_RECONFIGURE:
+                if s._custom:
+                    cfgfiles = s._configs
+                else:
+                    cfgfiles = s.getconfigfilenames(node.objid,  services)
+                for filename in cfgfiles:
+                    if filename[:7] == "file:///":
+                        raise NotImplementedError  # TODO
+                    cfg = self.getservicefiledata(s, filename)
+                    if cfg is None:
+                        cfg = s.generateconfig(node, filename, services)
+                    node.nodefile(filename, cfg)
     
 
 class CoreService(object):
