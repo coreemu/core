@@ -2772,11 +2772,16 @@ proc popupConfigDialog { c } {
 	} else {
 	    set unistate disabled
 	}
-	ttk::button $wi.preset.uni -text "Unidir. >>" -state $unistate \
+	ttk::button $wi.preset.uni -text "  >>  " -state $unistate \
 	    -command "linkConfigUni $wi"
 	pack $wi.preset.uni $wi.preset.linkpre -side right
 	linkPresets $wi $linkpreMenu init
 	pack $wi.preset -side top -anchor e
+
+	ttk::frame $wi.unilabel -borderwidth 4
+	ttk::label $wi.unilabel.updown -text "Symmetric link effects:"
+	pack $wi.unilabel.updown -side left -anchor w
+	pack $wi.unilabel -side top -anchor w 
 
 	ttk::frame $wi.bandwidth -borderwidth 4
 	ttk::label $wi.bandwidth.label -anchor e -text "Bandwidth (bps):"
@@ -2923,11 +2928,13 @@ proc linkConfigUni { wi } {
 
     set capt [lindex [$wi.preset.uni configure -text] 4]
 
-    if { $capt == "Unidir. >>" } {
+    if { $capt == "  >>  " } {
 	set g_link_config_uni_state "uni"
-	$wi.preset.uni configure -text "<< Bidir."
-	set spinbox [getspinbox]
+	$wi.preset.uni configure -text "  <<  "
+	set txt "Asymmetric effects: downstream  /  upstream"
+	$wi.unilabel.updown configure -text $txt
 
+	set spinbox [getspinbox]
 	if { ![winfo exists $wi.bandwidth.value2] } {
 	    $spinbox $wi.bandwidth.value2 -justify right \
 	    	-width 10 -validate focus -invalidcommand "focusAndFlash %W"
@@ -2987,24 +2994,15 @@ proc linkConfigUni { wi } {
 	$wi.dup.value2 insert 0 [$wi.dup.value get]
 	pack $wi.dup.value2 -side right
 	pack $wi.dup.value2 -before $wi.dup.value
-
-	if { ![winfo exists $wi.unilabel] } {
-	    ttk::frame $wi.unilabel
-	    set txt "                downstream    /    upstream  "
-	    ttk::label $wi.unilabel.updown -text $txt
-	}
-	pack $wi.unilabel.updown -side right -anchor e
-	pack $wi.unilabel -after $wi.preset
-
     } else {
 	set g_link_config_uni_state "bid"
-	$wi.preset.uni configure -text "Unidir. >>"
+	$wi.preset.uni configure -text "  >>  "
+	$wi.unilabel.updown configure -text "Symmetric link effects:"
 	pack forget $wi.bandwidth.value2
 	pack forget $wi.delay.value2
 	pack forget $wi.jitter.value2
 	pack forget $wi.ber.value2
 	pack forget $wi.dup.value2
-	pack forget $wi.unilabel.updown $wi.unilabel
     }
 }
 
