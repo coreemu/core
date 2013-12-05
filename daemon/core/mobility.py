@@ -36,18 +36,25 @@ class MobilityManager(ConfigurableManager):
         self.session.broker.handlers += (self.physnodehandlelink, )
         self.register()
 
-    def startup(self):
+    def startup(self, nodenums=None):
         ''' Session is transitioning from instantiation to runtime state.
         Instantiate any mobility models that have been configured for a WLAN.
         '''
-        for nodenum in self.configs:
-            v = self.configs[nodenum]
+        if nodenums is None:
+            nodenums = self.configs.keys()
+            
+        for nodenum in nodenums:
             try:
                 n = self.session.obj(nodenum)
             except KeyError:
                 self.session.warn("Skipping mobility configuration for unknown"
                                 "node %d." % nodenum)
                 continue
+            if nodenum not in self.configs:
+                self.session.warn("Missing mobility configuration for node "
+                                  "%d." % nodenum)
+                continue
+            v = self.configs[nodenum]
             for model in v:
                 try:
                     cls = self._modelclsmap[model[0]]
@@ -60,6 +67,7 @@ class MobilityManager(ConfigurableManager):
                 self.installphysnodes(n)
             if n.mobility:
                 self.session.evq.add_event(0.0, n.mobility.startup)
+        return ()
 
 
     def reset(self):

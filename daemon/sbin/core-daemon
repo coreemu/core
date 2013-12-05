@@ -1047,11 +1047,26 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handleeventmsg(self, msg):
         ''' Event Message handler
         '''
-        eventtype = msg.tlvdata[coreapi.CORE_TLV_EVENT_TYPE]
+        eventtype = msg.gettlv(coreapi.CORE_TLV_EVENT_TYPE)
+        if eventtype is None:
+            raise NotImplementedError, "Event message missing event type"
+        node = msg.gettlv(coreapi.CORE_TLV_EVENT_NODE)
+
         if self.verbose:
             self.info("EVENT %d: %s at %s" % \
                 (eventtype, coreapi.event_types[eventtype], time.ctime()))
         if eventtype <= coreapi.CORE_EVENT_SHUTDOWN_STATE:
+            if node is not None:
+                try:
+                    n = self.session.obj(node)
+                except KeyError:
+                    raise KeyError, "Event message for unknown node %d" % node
+                if eventtype == coreapi.CORE_EVENT_INSTANTIATION_STATE:
+                    # configure mobility models for WLAN added during runtime
+                    if isinstance(n, pycore.nodes.WlanNode):
+                        return (self.session.mobility.startup(nodenums=(n.objid,)))
+                self.warn("dropping unhandled Event message with node number")
+                return ()
             self.session.setstate(state=eventtype, info=True, sendevent=False)
             
         if eventtype == coreapi.CORE_EVENT_DEFINITION_STATE:
@@ -1080,8 +1095,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             if self.session.master:
                 self.warn("Unexpected event message: SHUTDOWN state received " \
                           "at session master")
-        elif eventtype >= coreapi.CORE_EVENT_START and \
-             eventtype <= coreapi.CORE_EVENT_RESTART:
+        elif eventtype in (coreapi.CORE_EVENT_START, coreapi.CORE_EVENT_RESTART, \
+                           coreapi.CORE_EVENT_RECONFIGURE):
             name = msg.gettlv(coreapi.CORE_TLV_EVENT_NAME)
             # TODO: register system for event message handlers, like confobjs
             if name[:8] == "service:":
