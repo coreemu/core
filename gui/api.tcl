@@ -263,17 +263,18 @@ proc parseNodeMessage { data len flags } {
     array set typenames { 1 num 2 type 3 name 4 ipv4_addr 5 mac_addr \
 			6 ipv6_addr 7 model 8 emulsrv 10 session \
 			32 xpos 33 ypos 34 canv \
-			35 emuid 36 netid 48 lat 49 long 50 alt \
+			35 emuid 36 netid 37 services \
+			48 lat 49 long 50 alt \
 			66 icon 80 opaque }
     array set typesizes { num 4 type 4 name -1 ipv4_addr 4 ipv6_addr 16 \
 			mac_addr 8 model -1 emulsrv -1 session -1 \
 			xpos 2 ypos 2 canv 2 emuid 4 \
-			netid 4 lat 4 long 4 alt 4 \
+			netid 4 services -1 lat 4 long 4 alt 4 \
 			icon -1 opaque -1 }
     array set vals { 	num 0 type 0 name "" ipv4_addr -1 ipv6_addr -1 \
 			mac_addr -1 model "" emulsrv "" session "" \
 			xpos 0 ypos 0 canv "" \
-			emuid -1 netid -1 \
+			emuid -1 netid -1 services "" \
 			lat 0 long 0 alt 0 \
 			icon "" opaque "" }
 
@@ -447,6 +448,10 @@ proc apiNodeModify { node vals_ref } {
     if { $vals(name) != "" } {
 	setNodeName $node $vals(name)
     }
+    if { $vals(services) != "" } {
+	set services [split $vals(services) |]
+	setNodeServices $node $services
+    }
     # TODO: handle other optional on-screen data
     # lat, long, alt, heading, platform type, platform id
 }
@@ -506,6 +511,10 @@ proc apiNodeCreate { node vals_ref } {
 	if { [lsearch -exact [getNodeTypeNames] $model] == -1 } {
 	    puts "warning: unknown node type '$model' in Node message!"
 	}
+    }
+    if { $vals(services) != "" } {
+	set services [split $vals(services) |]
+	setNodeServices $node $services
     }
 
     if { $vals(type) == 7 } { ;# RJ45 node - used later to control linking
