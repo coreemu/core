@@ -222,6 +222,25 @@ class WlanNode(LxBrNet):
         elif model._type == coreapi.CORE_TLV_REG_MOBILITY:
             self.mobility = model(session=self.session, objid=self.objid,
                                verbose=self.verbose, values=config)
+                               
+    def updatemodel(self, model_name, values):
+        ''' Allow for model updates during runtime (similar to setmodel().)
+        '''
+        if (self.verbose):
+            self.info("updating model %s" % model_name)
+        if self.model is None or self.model._name != model_name:
+            raise ValueError, "model %s not configured" % model_name
+        model = self.model
+        if model._type == coreapi.CORE_TLV_REG_WIRELESS:
+            if not model.updateconfig(values):
+                return
+            if self.model._positioncallback:
+                for netif in self.netifs():
+                    netif.poshook = self.model._positioncallback
+                    if netif.node is not None:
+                        (x,y,z) = netif.node.position.get()
+                        netif.poshook(netif, x, y, z)
+            self.model.setlinkparams()
         
     def tolinkmsgs(self, flags):
         msgs = LxBrNet.tolinkmsgs(self, flags)

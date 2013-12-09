@@ -74,6 +74,20 @@ class MobilityManager(ConfigurableManager):
         ''' Reset all configs.
         '''
         self.clearconfig(nodenum=None)
+        
+    def setconfig(self, nodenum, conftype, values):
+        ''' Normal setconfig() with check for run-time updates for WLANs.
+        '''
+        super(MobilityManager, self).setconfig(nodenum, conftype, values)
+        if self.session is None:
+            return
+        if self.session.getstate() == coreapi.CORE_EVENT_RUNTIME_STATE:
+            try:
+                n = self.session.obj(nodenum)
+            except KeyError:
+                self.session.warn("Skipping mobility configuration for unknown"
+                                "node %d." % nodenum)
+            n.updatemodel(conftype, values)
 
     def register(self):
         ''' Register models as configurable object(s) with the Session object.
@@ -254,6 +268,13 @@ class WirelessModel(Configurable):
         
     def update(self, moved, moved_netifs):
         raise NotImplementedError
+        
+    def updateconfig(self, values):
+        ''' For run-time updates of model config.
+        Returns True when self._positioncallback() and self.setlinkparams()
+        should be invoked.
+        '''
+        return False
 
 
 class BasicRangeModel(WirelessModel):
@@ -296,6 +317,9 @@ class BasicRangeModel(WirelessModel):
         if self.verbose:
             self.session.info("Basic range model configured for WLAN %d using" \
                 " range %d" % (objid, self.range))
+        self.valuestolinkparams(values)
+
+    def valuestolinkparams(self, values):
         self.bw = int(self.valueof("bandwidth", values))
         if self.bw == 0.0:
             self.bw = None
@@ -407,6 +431,15 @@ class BasicRangeModel(WirelessModel):
         if p1[2] is not None and p2[2] is not None:
             c = p1[2] - p2[2]
         return math.hypot(math.hypot(a, b), c)
+        
+    def updateconfig(self, values):
+        ''' Configuration has changed during runtime.
+        MobilityManager.setconfig() -> WlanNode.updatemodel() -> 
+        WirelessModel.updateconfig()
+        '''
+        self.valuestolinkparams(values)
+        self.range = float(self.valueof("range",  values))        
+        return True
         
     def linkmsg(self, netif, netif2, flags):
         ''' Create a wireless link/unlink API message.

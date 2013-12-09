@@ -304,6 +304,7 @@ proc wlanConfigDialogHelper { wi target apply } {
     global systype
     global plugin_img_edit
     global g_selected_model
+    global oper_mode
 
     set wlan $target
     set emulation_type [lindex [getEmulPlugin $target] 1]
@@ -378,6 +379,10 @@ proc wlanConfigDialogHelper { wi target apply } {
 	# remove any range circles
 	updateRangeCircles $target 0
 
+	if { $oper_mode == "exec" } {
+	    # this generates Config Messages for updating the model parameters
+	    pluginCapsInitialize $target "mobmodel"
+	}
 	return
     }
 
