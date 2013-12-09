@@ -229,7 +229,7 @@ class WlanNode(LxBrNet):
         if (self.verbose):
             self.info("updating model %s" % model_name)
         if self.model is None or self.model._name != model_name:
-            raise ValueError, "model %s not configured" % model_name
+            return
         model = self.model
         if model._type == coreapi.CORE_TLV_REG_WIRELESS:
             if not model.updateconfig(values):
