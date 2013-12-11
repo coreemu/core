@@ -1097,6 +1097,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                           "at session master")
         elif eventtype in (coreapi.CORE_EVENT_START,  coreapi.CORE_EVENT_STOP, \
                            coreapi.CORE_EVENT_RESTART, \
+                           coreapi.CORE_EVENT_PAUSE, \
                            coreapi.CORE_EVENT_RECONFIGURE):
             name = msg.gettlv(coreapi.CORE_TLV_EVENT_NAME)
             # TODO: register system for event message handlers, like confobjs
