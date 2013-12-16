@@ -121,12 +121,14 @@ def xmltypetonodeclass(session, type):
         return None
 
 class CoreDocumentParser(object):
-    def __init__(self, session, filename, start=False):
+    def __init__(self, session, filename, start=False,
+                 nodecls=pycore.nodes.CoreNode):
         self.session = session
         self.verbose = self.session.getcfgitembool('verbose', False)
         self.filename = filename
         self.dom = parse(filename)
         self.start = start
+        self.nodecls = nodecls
         
         #self.scenario = getoneelement(self.dom, "Scenario")
         self.np = getoneelement(self.dom, "NetworkPlan")
@@ -140,6 +142,7 @@ class CoreDocumentParser(object):
         # link parameters parsed in parsenets(), applied in parsenodes()
         self.linkparams = {}
         
+        self.parsedefaultservices()
         self.parsenets()
         self.parsenodes()
         self.parseservices()
@@ -239,7 +242,7 @@ class CoreDocumentParser(object):
             if type == "rj45":
                 nodecls = pycore.nodes.RJ45Node
             else:
-                nodecls = pycore.nodes.CoreNode
+                nodecls = self.nodecls
             n = self.session.addobj(cls = nodecls, objid = id, name = name,
                                     start = self.start)
             if name in self.coords:
@@ -349,6 +352,21 @@ class CoreDocumentParser(object):
             value = int(value)
         return (key, value)
     
+    def parsedefaultservices(self):
+        ''' Prior to parsing nodes, use session.services manager to store
+        default services for node types
+        '''
+        for node in self.sp.getElementsByTagName("Node"):
+            type = node.getAttribute("type")
+            if type == '':
+                continue # node-specific service config
+            services = []
+            for service in node.getElementsByTagName("Service"):
+                services.append(str(service.getAttribute("name")))
+            self.session.services.defaultservices[type] = services
+            self.session.info("default services for type %s set to %s" % \
+                              (type, services))
+        
     def parseservices(self):
         ''' After node objects exist, parse service customizations and add them
         to the nodes.
@@ -357,6 +375,8 @@ class CoreDocumentParser(object):
         # parse services and store configs into session.services.configs
         for node in self.sp.getElementsByTagName("Node"):
             name = node.getAttribute("name")
+            if name == '':
+                continue # node type without name
             n = self.session.objbyname(name)
             if n is None:
                 self.warn("skipping service config for unknown node '%s'" % \
@@ -369,6 +389,15 @@ class CoreDocumentParser(object):
                         svclists[n.objid] += "|" + svcname
                     else:
                         svclists[n.objid] = svcname
+        # nodes in NetworkPlan but not in ServicePlan use the 
+        # default services for their type
+        for node in self.np.getElementsByTagName("Node"):
+            id, name, type = self.getcommonattributes(node)
+            if id in svclists:
+                continue # custom config exists
+            else:
+                svclists[int(id)] = None # use defaults
+
         # associate nodes with services
         for objid in sorted(svclists.keys()):
             n = self.session.obj(objid)
@@ -496,6 +525,7 @@ class CoreDocumentWriter(Document):
 
     def populatefromsession(self):
         self.session.emane.setup() # not during runtime?
+        self.adddefaultservices()
         self.addnets()
         self.addnodes()
         self.addmetadata()
@@ -691,6 +721,19 @@ class CoreDocumentWriter(Document):
         coords = self.createTextNode(coordstxt)
         pt.appendChild(coords)
 
+    def adddefaultservices(self):
+        ''' Add default services and node types to the ServicePlan.
+        '''
+        for type in self.session.services.defaultservices:
+            defaults = self.session.services.getdefaultservices(type)
+            spn = self.createElement("Node")
+            spn.setAttribute("type", type)
+            self.sp.appendChild(spn)
+            for svc in defaults:
+                s = self.createElement("Service")
+                spn.appendChild(s)
+                s.setAttribute("name", str(svc._name))
+        
     def addservices(self, node):
         ''' Add services and their customizations to the ServicePlan.
         '''
@@ -790,15 +833,15 @@ class CoreDocumentWriter(Document):
             addtextparamtoparent(self, meta, k, v)
             #addparamtoparent(self, meta, k, v)
 
-def opensessionxml(session, filename, start=False):
+def opensessionxml(session, filename, start=False, nodecls=pycore.nodes.CoreNode):
     ''' Import a session from the EmulationScript XML format.
     '''
-    doc = CoreDocumentParser(session, filename, start)
+    doc = CoreDocumentParser(session, filename, start, nodecls)
     if start:
         session.name = os.path.basename(filename)
         session.filename = filename
         session.node_count = str(session.getnodecount())
-        session.checkruntime()
+        session.instantiate()
 
 def savesessionxml(session, filename):
     ''' Export a session to the EmulationScript XML format.
