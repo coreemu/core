@@ -452,9 +452,10 @@ class Ospfv3mdr(Ospfv3):
     @classmethod
     def generatequaggaifcconfig(cls,  node,  ifc):
         cfg = cls.mtucheck(ifc)
-
-        return cfg + """\
-  ipv6 ospf6 instance-id 65
+        cfg += "  ipv6 ospf6 instance-id 65\n"
+        if ifc.net is not None and \
+           isinstance(ifc.net, (nodes.WlanNode, nodes.EmaneNode)):
+            return cfg + """\
   ipv6 ospf6 hello-interval 2
   ipv6 ospf6 dead-interval 6
   ipv6 ospf6 retransmit-interval 5
@@ -463,6 +464,8 @@ class Ospfv3mdr(Ospfv3):
   ipv6 ospf6 adjacencyconnectivity uniconnected
   ipv6 ospf6 lsafullness mincostlsa
 """
+        else:
+            return cfg
 
 addservice(Ospfv3mdr)
 
