@@ -689,7 +689,7 @@ class WayPointMobility(WirelessModel):
         node.position.set(x, y, z)
         msg = node.tonodemsg(flags=0)
         self.session.broadcastraw(None, msg)
-        self.session.sdt.updatenode(node, flags=0, x=x, y=y, z=z)
+        self.session.sdt.updatenode(node.objid, flags=0, x=x, y=y, z=z)
         
     def setendtime(self):
         ''' Set self.endtime to the time of the last waypoint in the queue of

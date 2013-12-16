@@ -331,6 +331,6 @@ class Sdt(object):
                 n = self.session.obj(nodenum)
             except KeyError:
                 return False
-            if isinstance(n, (pycore.nodes.WlanNode, pycore.nodes.EmaneNode)):
+            if isinstance(n, (nodes.WlanNode, nodes.EmaneNode)):
                 return True
         return False
