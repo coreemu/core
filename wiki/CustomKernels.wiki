@@ -10,7 +10,7 @@ Even with the latest Linux kernels, not all networking features may be ready for
  * netfilter queuing - patch available, see below.
  * interface index - patch available, see below.
  * Linux bridging - works on Linux 3.0.0, but not on some earlier  kernels<br>e.g.: 2.6.32-220.4.1.el6.x86_64 kernel panics with bridging<br>for 3.0.0, note that *brctl show* only shows bridges on the host, not within a netns<br>for 3.2.0-26-generic, brctl works fine on Ubuntu 12.04
- * multicast routing - TBD
+ * multicast routing - XORP PIM will run under Ubuntu 12.04 3.2.0-57-generic x86_64 kernel
  * QoS with tc queuing - TBD
  * GRE tunneling - TBD
 
