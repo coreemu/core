@@ -120,8 +120,9 @@ proc popupPluginsConfig {} {
 
     # close button 
     frame $wi.b -borderwidth 0
-    button $wi.b.cancel -text "Close" -command "writePluginsConf; destroy $wi"
-    pack $wi.b.cancel -side right
+    button $wi.b.save -text "Save" -command "writePluginsConf; destroy $wi"
+    button $wi.b.cancel -text "Cancel" -command "destroy $wi"
+    pack $wi.b.cancel $wi.b.save -side right
     pack $wi.b -side bottom
 
     # uncomment to make modal
@@ -1230,6 +1231,7 @@ proc pluginConnect { name cmd retry } {
 	# connect, disconnect, or do nothing
 	if { $cmd == "connect" && $snum != 1} {
 	    puts -nonewline "Connecting to $name ($ip:$port)..."
+	    flush stdout
 	    set sock [openAPIChannel $ip $port $retry]
 	    if { "$sock" <= -1 } { return -1 };# user pressed cancel
 	    set snum 1 ;# status connected
@@ -1561,3 +1563,37 @@ proc listToKeyValues { keyvalues } {
     return $r
 }
 
+# parse command-line parameters for address/port to connect with
+proc checkCommandLineAddressPort {} {
+    global argv g_plugins
+    set addr ""; set port ""
+    set addri [lsearch -regexp $argv "(^\[-\]\[-\]address$|^\[-\]a$)"]
+    #set addri [lsearch -exact $argv "--address"]
+    if { $addri > -1 } {
+	set argv [lreplace $argv $addri $addri]
+	set addr [lindex $argv $addri]
+	if { ![checkIPv4Addr $addr] } {
+	    puts "error: invalid address '$addr'"; exit;
+	}
+	set argv [lreplace $argv $addri $addri]
+    }
+
+    #set porti [lsearch -exact $argv "--port"]
+    set porti [lsearch -regexp $argv "(^\[-\]\[-\]port$|^\[-\]p$)"]
+    if { $porti > -1 } {
+	set argv [lreplace $argv $porti $porti]
+	set port [lindex $argv $porti]
+	if { $port == "" || ![string is integer $port] || $port > 65535 } {
+	    puts "error: invalid port '$port'"; exit;
+	}
+	set argv [lreplace $argv $porti $porti]
+    }
+    # update the auto-connect plugin (core-daemon entry)
+    if { $addri > -1 || $porti > -1 } {
+	set key [lindex [getEmulPlugin "*"] 0]
+	set plugin_data $g_plugins($key)
+	if { $addri > -1 } { set plugin_data [lreplace $plugin_data 0 0 $addr] }
+	if { $porti > -1 } { set plugin_data [lreplace $plugin_data 1 1 $port] }
+        array set g_plugins [list $key $plugin_data]
+    }
+}

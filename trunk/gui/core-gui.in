@@ -34,16 +34,19 @@
 case $1 in 
 -h | --help) 
     echo ""
-    echo "Usage: `basename $0` [-h|-v] [-b|-c <sessionid>] [-s] [<configfile.imn>]"
+    echo "Usage: `basename $0` [-h|-v] [-b|-c <sessionid>] [-s] [-a address] [-p port]"
+    echo "                [<configfile.imn>]"
     echo ""
     echo "Launches the CORE Tcl/Tk X11 GUI or starts an imn-based emulation."
     echo ""
-    echo "  -(-h)elp  show help message and exit"
+    echo "  -(-h)elp     show help message and exit"
     echo "  -(-v)ersion  show version number and exit"
-    echo "  -(-b)atch  batch mode (no X11 GUI)"
+    echo "  -(-b)atch    batch mode (no X11 GUI)"
     echo -n "  -(-c)losebatch <sessionid>  stop and clean up a batch mode "
     echo "session <sessionid>"
-    echo "  -(-s)tart  start in execute mode, not edit mode"
+    echo "  -(-s)tart    start in execute mode, not edit mode"
+    echo "  -(-a)ddress  connect to the specified IP address (default 127.0.0.1)"
+    echo "  -(-p)port    connect to the specified TCP port (default 4038)"
     echo "  <configfile.imn>  (optional) load the specified imn scenario file"
     echo ""
     echo "With no parameters, starts the GUI in edit mode with a blank canvas."
@@ -154,10 +157,19 @@ case $1 in
     exec ${TCLBIN} $core "$@" 
     ;; 
 -s)
-    exec ${WISH} $core "--start $@"
+    shift
+    exec ${WISH} $core -- "--start" "$@"
+    ;;
+-a)
+    shift
+    exec ${WISH} $core -- "--address" "$@"
+    ;;
+-p)
+    shift
+    exec ${WISH} $core -- "--port" "$@"
     ;;
 *)
-    exec ${WISH} $core $@
+    exec ${WISH} $core -- $@
     ;; 
 esac 
 

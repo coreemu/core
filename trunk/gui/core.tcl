@@ -31,48 +31,18 @@
 # and Technology through the research contract #IP-2003-143.
 #
 
-#****h* imunes/imunes.tcl
-# NAME
-#    imunes.tcl
-# FUNCTION
-#    Starts imunes in batch or interactive mode. Include procedures from
-#    external files and initializes global variables.
-#
-#	imunes [-b|--batch] [filename]
-#    
-#    When starting the program in batch mode the option -b or --batch must 
-#    be specified. 
-#    
-#    When starting the program with defined filename, configuration for 
-#    file "filename" is loaded to imunes.
-#****
-
 if {[lindex $argv 0] == "-b" || [lindex $argv 0] == "--batch"} {
     set argv [lrange $argv 1 end]
     set execMode batch
 } elseif {[lindex $argv 0] == "-c" || [lindex $argv 0] == "--closebatch"} {
     set argv [lrange $argv 1 end]
     set execMode closebatch
-} elseif {[lindex $argv 0] == "-a" || [lindex $argv 0] == "--addons"} {
+} elseif {[lindex $argv 0] == "--addons"} {
     set argv [lrange $argv 1 end]
     set execMode addons
 } else {
     set execMode interactive
 }
-
-# 
-# Include procedure definitions from external files. There must be
-# some better way to accomplish the same goal, but that's how we do it
-# for the moment.
-#
-
-#****v* imunes.tcl/LIBDIR
-# NAME
-#    LIBDIR
-# FUNCTION
-#    The location of imunes library files. The LIBDIR variable
-#    will be automatically set to the proper value by the installation script.
-#*****
 
 set LIBDIR ""
 set SBINDIR "/usr/local/sbin"
@@ -136,61 +106,12 @@ source "$LIBDIR/exceptions.tcl"
 #
 # Global variables are initialized here
 #
-
-#****v* imunes.tcl/node_list
-# NAME
-#    node_list
-# FUNCTION
-#    Represents the list of all the nodes in the simulation. When starting 
-#    the program this list is empty.
-#*****
-
-#****v* imunes.tcl/link_list
-# NAME
-#    link_list
-# FUNCTION
-#    Represents the list of all the links in the simulation. When starting 
-#    the program this list is empty.
-#*****
-
-#****v* imunes.tcl/canvas_list
-# NAME
-#    canvas_list
-# FUNCTION
-#    Contains the list of all the canvases in the simulation. When starting 
-#    the program this list is empty.
-#*****
-
-#****v* imunes.tcl/prefs
-# NAME
-#    prefs
-# FUNCTION
-#    Contains the list of preferences. When starting a program 
-#    this list is empty.
-#*****
-
-#****v* imunes.tcl/eid
-# NAME
-#    eid -- experiment id.
-# FUNCTION
-#    The id of the current experiment. When starting a program this variable 
-#    is set to e0.
-#*****
-
 set node_list {}
 set link_list {}
 set annotation_list {}
 set canvas_list {}
 set eid e0
 set plot_list {}
-
-#****v* core.tcl/exec_servers
-# NAME
-#    exec_servers -- array of CORE remote execution servers
-# FUNCTION
-#*****
-
-#	 IP	    port  monitor_port active ssh username
 array set exec_servers {}
 loadServersConf ;# populate exec_servers
 
@@ -202,6 +123,7 @@ set g_mrulist {}
 initDefaultPrefs
 loadDotFile
 loadPluginsConf
+checkCommandLineAddressPort
 autoConnectPlugins
 
 
@@ -225,12 +147,10 @@ if {$execMode == "interactive"} {
 	    puts "    $e"
 	}
     }
-    # end Boeing
     setOperMode edit
     fileOpenStartUp 
-    # Boeing --start option
     foreach arg $argv {
-        if { $arg == "--start -s" || $arg == "--start" } {
+        if { $arg == "--start" } {
 	    global currentFile
 	    if { [file extension $currentFile] == ".xml" } {
 		after 100; update; # yield to other events so XML file

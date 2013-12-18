@@ -88,6 +88,13 @@ The session number is printed in the terminal when batch mode is started. This s
 The GUI can be run as a normal user on Linux. For FreeBSD, the GUI should be run
 as root in order to start an emulation.
 
+.. index:: port number
+
+The GUI can be connected to a different address or TCP port using
+the ``--address`` and/or ``--port`` options. The defaults are shown below.
+::
+           core-gui --address 127.0.0.1 --port 4038
+
 .. _Toolbar:
 
 Toolbar
