@@ -261,8 +261,7 @@ proc fileOpenStartUp {} {
 
     # Boeing
     foreach arg $argv {
-	if { $arg != "" && $arg != "--start -s" && $arg != "--start" && \
-    		$arg != "--batch -b" && $arg != "--batch" } {
+	if { $arg != "" && $arg != "--start" && $arg != "--batch" } {
 	    set currentFile [argAbsPathname $arg]
 	    openFile
 	    break

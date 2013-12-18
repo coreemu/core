@@ -4,7 +4,7 @@
 core-gui \- Common Open Research Emulator (CORE) graphical user interface
 .SH SYNOPSIS
 .B core-gui
-[\fI-h|-v\fR] [\fI-b|-c <sessionid>\fR] [\fI-s\fR] [\fI<configfile.imn>\fR]
+[\fI-h|-v\fR] [\fI-b|-c <sessionid>\fR] [\fI-s\fR] [\fI-a address\fR] [\fI-p port\fR] [\fI<configfile.imn>\fR]
 .SH DESCRIPTION
 Launches the CORE Tcl/Tk X11 GUI or starts an imn\-based emulation.
 .TP
@@ -22,6 +22,12 @@ stop and clean up a batch mode session <sessionid>
 .TP
 \-(\fB\-s\fR)tart
 start in execute mode, not edit mode
+.TP
+\-(\fB\-a\fR)ddress
+connect to the specified IP address (default 127.0.0.1)
+.TP
+\-(\fB\-p\fR)ort
+connect to the specified TCP port (default 4038)
 .TP
 <configfile.imn>
 (optional) load the specified imn scenario file
