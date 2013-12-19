@@ -15,6 +15,7 @@ from xml.dom.minidom import parseString, Document
 from core.constants import *
 from core.api import coreapi
 from core.misc.ipaddr import MacAddr
+from core.misc.xmlutils import addtextelementsfromtuples
 from core.conf import ConfigurableManager, Configurable
 from core.mobility import WirelessModel
 from core.emane.nodes import EmaneNode
@@ -33,6 +34,7 @@ class Emane(ConfigurableManager):
     _type = coreapi.CORE_TLV_REG_EMULSRV
     _hwaddr_prefix = "02:02"
     (SUCCESS, NOT_NEEDED, NOT_READY) = (0, 1, 2)
+    EVENTCFGVAR = 'LIBEMANEEVENTSERVICECONFIG'
     
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
@@ -51,11 +53,7 @@ class Emane(ConfigurableManager):
         self.emane_config = EmaneGlobalModel(session, None, self.verbose)
         session.broker.handlers += (self.handledistributed, )
         self.loadmodels()
-        # this allows the event service Python bindings to be absent
-        try:
-            self.service = emaneeventservice.EventService()
-        except:
-            self.service = None
+        self.initeventservice()
         self.doeventloop = False
         self.eventmonthread = None
         # EMANE 0.7.4 support -- to be removed when 0.7.4 support is deprecated
@@ -69,7 +67,29 @@ class Emane(ConfigurableManager):
             self.emane074 = True
         except Exception:
             pass
-        
+
+    def initeventservice(self, filename=None):
+        ''' (Re-)initialize the EMANE Event service. The multicast group and/or
+        port may be configured, and can be changed via XML config file and an
+        environment variable pointing to that file.
+        '''
+        if hasattr(self, 'service'):
+            del self.service
+        self.service = None
+        if filename is not None:
+            tmp = os.getenv(self.EVENTCFGVAR)
+            os.environ.update( {self.EVENTCFGVAR: filename} )
+        rc = True
+        try:
+            self.service = emaneeventservice.EventService()
+        except:
+            self.service = None
+            rc = False
+        if filename is not None:
+            os.environ.pop(self.EVENTCFGVAR)
+            if tmp is not None:
+                os.environ.update( {self.EVENTCFGVAR: tmp} )
+        return rc
 
     def loadmodels(self):
         ''' dynamically load EMANE models that were specified in the config file
@@ -310,6 +330,7 @@ class Emane(ConfigurableManager):
         self.buildplatformxml()
         self.buildnemxml()
         self.buildtransportxml()
+        self.buildeventservicexml()
 
     def xmldoc(self, doctype):
         ''' Returns an XML xml.minidom.Document with a DOCTYPE tag set to the
@@ -468,6 +489,44 @@ class Emane(ConfigurableManager):
                               cwd=self.session.sessiondir)
         except Exception, e:
             self.info("error running emanegentransportxml: %s" % e)
+    
+    def buildeventservicexml(self):
+        ''' Build the libemaneeventservice.xml file if event service options
+            were changed in the global config.
+        '''
+        defaults = self.emane_config.getdefaultvalues()
+        values = self.getconfig(None, "emane",
+                                self.emane_config.getdefaultvalues())[1]
+        need_xml = False
+        keys = ('eventservicegroup', 'eventservicedevice')
+        for k in keys:
+            a = self.emane_config.valueof(k, defaults)
+            b = self.emane_config.valueof(k, values) 
+            if a != b:
+                need_xml = True
+
+        if not need_xml:
+            # reset to using default config
+            self.initeventservice()
+            return
+
+        try:
+            group, port = self.emane_config.valueof('eventservicegroup',
+                                                        values).split(':')
+        except ValueError:
+            self.warn("invalid eventservicegroup in EMANE config")
+            return
+        dev = self.emane_config.valueof('eventservicedevice', values)
+
+        doc = self.xmldoc("emaneeventmsgsvc")
+        es = doc.getElementsByTagName("emaneeventmsgsvc").pop()
+        kvs = ( ('group', group), ('port', port), ('device', dev),
+                ('mcloop', '1'),  ('ttl', '32') )
+        addtextelementsfromtuples(doc, es, kvs)
+        filename = 'libemaneeventservice.xml'
+        self.xmlwrite(doc, filename)
+        pathname = os.path.join(self.session.sessiondir, filename)
+        self.initeventservice(filename=pathname)
 
     def startdaemons(self):
         ''' Start the appropriate EMANE daemons. The transport daemon will
@@ -598,8 +657,7 @@ class Emane(ConfigurableManager):
         if self.service is not None:
             self.service.breakloop()
             # reset the service, otherwise nextEvent won't work
-            del self.service
-            self.service = emaneeventservice.EventService()
+            self.initeventservice()
         if self.eventmonthread is not None:
             self.eventmonthread.join()
             self.eventmonthread = None
