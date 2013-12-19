@@ -11,7 +11,7 @@ the main public interface here.
 '''
 import os, pwd
 from xml.dom.minidom import parse, Document, Node
-from core import pycore
+from core.netns import nodes
 from core.api import coreapi
 
 def addelementsfromlist(dom, parent, iterable, name, attr_name):
@@ -33,6 +33,13 @@ def addtextelementsfromlist(dom, parent, iterable, name, attrs):
     ''' XML helper to iterate through a list and add items to parent using tags
     of the given name, attributes specified in the attrs tuple, and having the 
     text of the item within the tags.
+    Example: addtextelementsfromlist(dom, parent, ('a','b','c'), "letter",
+                                     (('show','True'),))
+    <parent>
+      <letter show="True">a</letter>
+      <letter show="True">b</letter>
+      <letter show="True">c</letter>
+    </parent>
     '''
     for item in iterable:
         element = dom.createElement(name)
@@ -40,6 +47,28 @@ def addtextelementsfromlist(dom, parent, iterable, name, attrs):
             element.setAttribute(k, v)
         parent.appendChild(element)
         txt = dom.createTextNode(item)
+        element.appendChild(txt)
+
+def addtextelementsfromtuples(dom, parent, iterable, attrs=()):
+    ''' XML helper to iterate through a list of tuples and add items to
+    parent using tags named for the first tuple element,
+    attributes specified in the attrs tuple, and having the 
+    text of second tuple element.
+    Example: addtextelementsfromtuples(dom, parent,
+                 (('first','a'),('second','b'),('third','c')),
+                 (('show','True'),))
+    <parent>
+      <first show="True">a</first>
+      <second show="True">b</second>
+      <third show="True">c</third>
+    </parent>
+    '''
+    for name, value in iterable:
+        element = dom.createElement(name)
+        for k,v in attrs:
+            element.setAttribute(k, v)
+        parent.appendChild(element)
+        txt = dom.createTextNode(value)
         element.appendChild(txt)
 
 def gettextelementstolist(parent):
@@ -113,16 +142,16 @@ def getparamssetattrs(dom, param_names, target):
             setattr(target, param_name, str(value))
 
 def xmltypetonodeclass(session, type):
-    ''' Helper to convert from a type string to a class name in pycore.nodes.*.
+    ''' Helper to convert from a type string to a class name in nodes.*.
     '''
-    if hasattr(pycore.nodes, type):
-        return eval("pycore.nodes.%s" % type)
+    if hasattr(nodes, type):
+        return eval("nodes.%s" % type)
     else:
         return None
 
 class CoreDocumentParser(object):
     def __init__(self, session, filename, start=False,
-                 nodecls=pycore.nodes.CoreNode):
+                 nodecls=nodes.CoreNode):
         self.session = session
         self.verbose = self.session.getcfgitembool('verbose', False)
         self.filename = filename
@@ -240,7 +269,7 @@ class CoreDocumentParser(object):
         for node in self.np.getElementsByTagName("Node"):
             id, name, type = self.getcommonattributes(node)
             if type == "rj45":
-                nodecls = pycore.nodes.RJ45Node
+                nodecls = nodes.RJ45Node
             else:
                 nodecls = self.nodecls
             n = self.session.addobj(cls = nodecls, objid = id, name = name,
@@ -546,7 +575,7 @@ class CoreDocumentWriter(Document):
         '''
         with self.session._objslock:
             for net in self.session.objs():
-                if not isinstance(net, pycore.nodes.PyCoreNet):
+                if not isinstance(net, nodes.PyCoreNet):
                     continue
                 self.addnet(net)
 
@@ -636,7 +665,7 @@ class CoreDocumentWriter(Document):
         '''
         with self.session._objslock:
             for node in self.session.objs():
-                if not isinstance(node, pycore.nodes.PyCoreNode):
+                if not isinstance(node, nodes.PyCoreNode):
                     continue
                 self.addnode(node)
 
@@ -833,7 +862,7 @@ class CoreDocumentWriter(Document):
             addtextparamtoparent(self, meta, k, v)
             #addparamtoparent(self, meta, k, v)
 
-def opensessionxml(session, filename, start=False, nodecls=pycore.nodes.CoreNode):
+def opensessionxml(session, filename, start=False, nodecls=nodes.CoreNode):
     ''' Import a session from the EmulationScript XML format.
     '''
     doc = CoreDocumentParser(session, filename, start, nodecls)
