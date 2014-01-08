@@ -50,6 +50,10 @@ The high-level changes since version 4.5 are:
  * allow float values for loss and duplicates percent
  * fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 202, 205, 206, 210, 212, 213, 214, 221
 
+Known issues with 4.6:
+ * bug #237 build error "dereferencing type-punned pointer will break strict-aliasing rule" under GCC 4.7.x (Fedora, OpenSUSE, etc.) -- see bug #238 for workaround
+ * HTTP apache2 service fails to start - fixed in r452 2013-10-22
+
 ----
 = 4.5 =
 CORE 4.5 was released on 4/11/13. Packages are available for the following Linux distributions:
