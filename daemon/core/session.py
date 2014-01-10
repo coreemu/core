@@ -532,6 +532,7 @@ class Session(object):
                 tlvdata += coreapi.CoreExceptionTlv.pack(
                                     eval("coreapi.CORE_TLV_EXCP_%s" % t), v)
         msg = coreapi.CoreExceptionMessage.pack(0, tlvdata)
+        self.warn("exception: %s (%s) %s" % (source, objid, text))
         # send Exception Message to connected handlers (e.g. GUI)
         self.broadcastraw(None, msg)
 
