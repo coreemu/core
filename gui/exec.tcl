@@ -499,7 +499,9 @@ proc monitor_loop {} {
 		set cpuusageforserver [lindex $cpuusage 0]
 	    } else {
 		set server [lindex $assigned_servers $i]
-		set ip [lindex $exec_servers($server) 0]
+                set srv [array get exec_servers $server]
+                if { $srv == "" } { continue }
+                set ip [lindex $srv 0]
 		# TODO: receive CPU usage from other servers
 		set cpuusageforserver 0
 	    }
@@ -765,7 +767,9 @@ proc manageCPUwindow {xpos ypos start} {
 		    set ip [getMyIP]
 		} else {
 		    set server [lindex $assigned_servers $i]
-		    set ip [lindex $exec_servers($server) 0]
+		    set srv [array get exec_servers $server]
+		    if { $srv == "" } { continue }
+		    set ip [lindex $srv 0]
 		}	
 		set server_cpuusage($ip) [lreplace $server_cpuusage($ip) 0 end]
 	    }
@@ -811,7 +815,9 @@ proc plotCPUusage { } {
 	    set ip [getMyIP]
 	} else {
 	    set server [lindex $assigned_servers $i]
-	    set ip [lindex $exec_servers($server) 0]
+            set srv [array get exec_servers $server]
+            if { $srv == "" } { continue }
+            set ip [lindex $srv 0]
 	}
 		
 	#need to add multiple cpuusgaehistory (array)

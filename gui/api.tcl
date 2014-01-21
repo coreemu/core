@@ -1274,6 +1274,13 @@ proc parseConfMessage { data len flags channel } {
 
     # update the configuration for a node without displaying dialog box
     if { $tflags & 0x2 } {
+	if { $obj == "emane" && $node == "" } {
+	    set node [lindex [findWlanNodes ""] 0]
+        }
+	if { $node == "" } {
+	    puts "ignoring Configure message for $obj with no node"
+	    return
+        }
 	# this is similar to popupCapabilityConfigApply
 	setCustomConfig $node $obj $types $values 0
 	if { $obj != "emane" && [nodeType $node] == "wlan"} {
