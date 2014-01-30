@@ -2,7 +2,7 @@
 
 = Release or Development Version? =
 
-CORE releases are numbered such as CORE 4.5, CORE 4.6, etc. They can be found as [http://downloads.pf.itd.nrl.navy.mil/core/packages/ packages] or [http://downloads.pf.itd.nrl.navy.mil/core/source/ source]. [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ Development snapshots] are created nightly as source tarballs.
+CORE releases are numbered such as CORE 4.5, CORE 4.6, etc. They can be found as [http://downloads.pf.itd.nrl.navy.mil/core/packages/ packages] or [http://downloads.pf.itd.nrl.navy.mil/core/source/ source]. [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ Development snapshots] are created nightly as source tarballs. In addition to this development snapshot, the latest code (or specific SVN revision numbers) can be obtained by clicking the [https://code.google.com/p/coreemu/source/checkout source] tab above.
 
 Choose the latest CORE release if:
  * you want a more stable, tested CORE
