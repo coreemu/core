@@ -2,7 +2,7 @@
 
 = Release or Development Version? =
 
-CORE releases are numbered such as CORE 4.2, CORE 4.3, etc. They can be found as [http://downloads.pf.itd.nrl.navy.mil/core/packages/ packages] or [http://downloads.pf.itd.nrl.navy.mil/core/source/ source]. [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ Development snapshots] are created nightly as source tarballs.
+CORE releases are numbered such as CORE 4.5, CORE 4.6, etc. They can be found as [http://downloads.pf.itd.nrl.navy.mil/core/packages/ packages] or [http://downloads.pf.itd.nrl.navy.mil/core/source/ source]. [http://downloads.pf.itd.nrl.navy.mil/core/source/nightly_snapshots/ Development snapshots] are created nightly as source tarballs.
 
 Choose the latest CORE release if:
  * you want a more stable, tested CORE
@@ -22,17 +22,17 @@ First, uninstall the previously installed version.
 To uninstall the CORE package, use a command such as:
 {{{
   # Ubuntu package uninstall
-  dpkg -r core-4.3
+  dpkg -r core-daemon-4.6 core-gui-4.6
 }}}
 {{{
   # Fedora package uninstall
-  rpm -e core-4.3
+  rpm -e core-daemon-4.6 core-gui-4.6
 }}}
 
 To uninstall from the CORE source, change to your CORE source build directory and use `sudo make uninstall`:
 {{{
   # source uninstall
-  cd core-4.3
+  cd core-4.6
   sudo make uninstall
 }}}
 
