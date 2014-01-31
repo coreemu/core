@@ -6,7 +6,6 @@ EMANE is a mobile ad-hoc network emulation system that can be used in conjunctio
 
 EMANE downloads, documentation, and other information:
 
-  * http://labs.cengen.com/emane/
   * http://cs.itd.nrl.navy.mil/work/emane/index.php
 
 = Scripting =
@@ -21,29 +20,26 @@ These dependencies are automatically resolved if you use `yum localinstall`, so 
 yum -y install openssl-devel perl-XML-Simple perl-XML-LibXML
 }}}
 
-Here are easy EMANE instructions for Fedora 17 x86_64. Replace with "i386" if needed. Run these as root.
+Here are easy EMANE instructions for Fedora 19 x86_64. Replace with "i386" if needed. Run these as root.
 
 {{{
-wget http://labs.cengen.com/emane/download/RPMS/F17/0.7.4/x86_64/emane-bundle-0.7.4.fc17.x86_64.tgz
-mkdir emane-0.7.4
-cd emane-0.7.4
-tar xzf ../emane-bundle-0.7.4.fc17.x86_64.tgz
-yum localinstall *.rpm
+wget http://downloads.pf.itd.nrl.navy.mil/emane/0.8.1-r2/emane-0.8.1-release-2.f19.x86_64.tgz
+tar xzf emane-0.8.1-release-2.f19.x86_64.tgz
+yum localinstall emane-0.8.1-release-2/RPMS/F19/x86_64/*.rpm
 }}}
 
 == Ubuntu ==
 
-Here are instructions for Ubuntu 11.10. Note that Ubuntu 11.10 has libace-dev (6.0.1-3) and libace-6.0.1 (6.0.1-3) libraries, but here we will install ACE (6.0.8-1) included with the EMANE bundle.
+Here are instructions for Ubuntu 12.04. Here we will install ACE (6.1.7) included with the EMANE bundle.
 
 {{{
 # install dependencies
 sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
-# download and install EMANE 0.7.3
-wget http://labs.cengen.com/emane/download/deb/ubuntu-11_10/0.7.3/amd64/emane-bundle-0.7.3.amd64.tgz
-mkdir emane-bundle-0.7.3
-cd emane-bundle-0.7.3
-tar xzf ../emane-bundle-0.7.3.amd64.tgz
-sudo dpkg -i *.deb
+# download and install EMANE 0.8.1
+wget http://downloads.pf.itd.nrl.navy.mil/emane/0.8.1-r2/emane-0.8.1-release-2.ubuntu-12_04.amd64.tgz
+tar xzf emane-0.8.1-release-2.ubuntu-12_04.amd64.tgz
+sudo dpkg -i emane-0.8.1-release-2/deb/ubuntu-12_04/amd64/*.deb
+
 }}}
 
 = Easy EMANE Uninstall =
