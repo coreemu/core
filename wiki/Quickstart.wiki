@@ -22,7 +22,7 @@ Use your package manager to automatically install dependencies:<br>
   yum localinstall core-gui-4.6-1.fc19.noarch.rpm
 }}}
 
-Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, for a modified version of Quagga available from [http://cs.itd.nrl.navy.mil/work/ospf-manet/ here].
+Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, for a modified version of Quagga available from [http://www.nrl.navy.mil/itd/ncs/products/ospf-manet here].
 {{{
   # Ubuntu - vanilla Quagga
   sudo apt-get install quagga
@@ -77,7 +77,7 @@ Fedora:
 This package list comes from 
 [http://pf.itd.nrl.navy.mil/core/core-html/install.html here].
 
-You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://cs.itd.nrl.navy.mil/work/ospf-manet/ OSPF MDR].
+You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://www.nrl.navy.mil/itd/ncs/products/ospf-manet OSPF MDR].
 
 *Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
 

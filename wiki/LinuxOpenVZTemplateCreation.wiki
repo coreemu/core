@@ -59,7 +59,7 @@ rm /vz/private/101/etc/resolv.conf
 echo 127.0.0.1 localhost localhost.localdomain > /vz/private/101/etc/hosts
 }}}
    * CORE may be particular about which version of Quagga you use. The Quagga included with the CORE release is from [http://www.quagga.net Quagga.net] with the [http://hipserver.mct.phantomworks.org/ietf/ospf/ OSPFv3 MANET patch]. CORE uses the OSPFv3 MANET feature for wireless networks. If you only want wired networks or use custom configurations, you can use another version of Quagga. An RPM package for Quagga-manetmdr is installed in the `core-root` by default.
-   * [http://cs.itd.nrl.navy.mil/products/ NRL]'s protolib, nrlsmf, and mgen are installed in `core-root` by default
+   * NRL's protolib, nrlsmf, and mgen are installed in `core-root` by default
  # move the staging area to core-root and create symlinks
 {{{
 cd /vz/private

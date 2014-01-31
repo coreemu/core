@@ -3,7 +3,7 @@
 = CORE and SDT3D =
 
 SDT3D is a three-dimensional virtual globe GUI developed by NRL, based on NASA's [http://worldwind.arc.nasa.gov/java/ WorldWind Java SDK]. The primary SDT3D website is:
- * http://cs.itd.nrl.navy.mil/work/sdt/index.php
+ * http://www.nrl.navy.mil/itd/ncs/products/sdt
 
 CORE can export its nodes and links so they appear in the 3D space. The Canvas Size and Scale dialog governs the origin latitude/longitude/altitude for the 2D canvas. Although the 2D canvas has a fixed altitude, EMANE-based mobility script could be used to move nodes around in three dimensions.
 

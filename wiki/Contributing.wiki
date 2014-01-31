@@ -2,7 +2,7 @@
 
 = Contributing to CORE =
 
-*Project homepage*: [http://cs.itd.nrl.navy.mil/work/core/index.php]
+*Project homepage*: [http://www.nrl.navy.mil/itd/ncs/products/core]
 
 *Mailing list*: [http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users] You can contribute by participating in discussions on the mailing list. Do you know the answer to a question someone posted there? Feel free to jump in with the answer.
 

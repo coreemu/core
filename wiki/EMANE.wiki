@@ -6,7 +6,7 @@ EMANE is a mobile ad-hoc network emulation system that can be used in conjunctio
 
 EMANE downloads, documentation, and other information:
 
-  * http://cs.itd.nrl.navy.mil/work/emane/index.php
+  * http://www.nrl.navy.mil/itd/ncs/products/emane
 
 = Scripting =
 See the [EEL] page for a description of the main scripting format used by EMANE for generating mobility and pathloss events.
@@ -86,7 +86,7 @@ sudo ln -s /usr/local/share/emane /usr/share/emane
 
 Setting the delay in the RF-PIPE MAC adds a transmission delay, not a propagation delay (as one might consider CORE link delays.) The tx delay is affected by the packet size and transmit rate:
 
- * *delay*: Defines the delay (usec) that is to be included in the transmission delay. The delay is added to the delay introduced by the bitrate defined above. (from http://labs.cengen.com/emane/doc/0.7.1/html/rfpipe.0.7.1.html)
+ * *delay*: Defines the delay (usec) that is to be included in the transmission delay. The delay is added to the delay introduced by the bitrate defined above. (from http://downloads.pf.itd.nrl.navy.mil/docs/emane/emane.pdf)
 
 
 *Event generator*: produces events and is launched by the Event Service XML.<br>
