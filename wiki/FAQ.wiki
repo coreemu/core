@@ -26,7 +26,7 @@ CORE is open source software, licensed under the [http://en.wikipedia.org/wiki/B
 
 == 6. How many nodes can CORE emulate? ==
 
-This is a popular question for which there is no easy answer. It depends on what the nodes are doing, what the host system resources are, etc. CORE is primarily focused on efficient, scalable network emulation for tens of nodes on standard laptops to hundreds of nodes on larger servers. It is a research question as to how to support larger topologies, portions of which are distributed on different hosts. CORE already allows these large topologies to be constructed and centrally managed; see the [http://pf.itd.nrl.navy.mil/core/core-html/Distributed-Emulation.html Distributed Emulation] section of the CORE manual.
+This is a popular question for which there is no easy answer. It depends on what the nodes are doing, what the host system resources are, etc. CORE is primarily focused on efficient, scalable network emulation for tens of nodes on standard laptops to hundreds of nodes on larger servers. It is a research question as to how to support larger topologies, portions of which are distributed on different hosts. CORE already allows these large topologies to be constructed and centrally managed; see the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/usage.html#distributed-emulation Distributed Emulation] section of the CORE manual.
 
 == 7. How can I contribute? ==
 

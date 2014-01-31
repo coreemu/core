@@ -2,7 +2,7 @@
 
 = Introduction =
 
-Also refer to this [http://pf.itd.nrl.navy.mil/core/core-html/devguide.html Developer's Guide] section in the CORE manual. The TclTkOverview page was created to collect notes on the GUI code.
+Also refer to this [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/devguide.html Developer's Guide] section in the CORE manual. The TclTkOverview page was created to collect notes on the GUI code.
 
 Where possible, _follow the coding style used in existing code_. For example, CORE consists of Tcl/Tk scripts from the IMUNES project, C kernel code for FreeBSD, and C userspace code. Please refer to the appropriate style guidelines for the kernel code, for example.
 

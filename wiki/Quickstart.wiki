@@ -2,7 +2,7 @@
 
 = Quickstart: Installation using pre-built packages =
 
-This is the quickstart guide; for full installation instructions, refer to the [http://pf.itd.nrl.navy.mil/core/core-html/install.html CORE manual].
+This is the quickstart guide; for full installation instructions, refer to the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html CORE manual].
 
 CORE 4.6 packages are available for Ubuntu 12.04 (precise), 12.10 (quantal), or 13.04 (raring), Fedora 17, 18, 19, and rhel6. Debian users can install CORE directly using `sudo apt-get install core-network`. For different Linux distributions, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform. See the [Upgrading upgrading] page for help choosing a release or for upgrade instructions.
 
@@ -36,7 +36,7 @@ Virtual networks usually require routing software. CORE automatically builds con
   yum localinstall quagga-0.99.21mr2.2-1.fc16.x86_64.rpm --nogpgcheck
 }}}
 
-*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
+*Fedora users:* check the full [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
 
 To check the RPM signing key, the core-dev public key can be found here: [https://coreemu.googlecode.com/files/RPM-GPG-KEY-core-dev RPM-GPG-KEY-core-dev]
 
@@ -75,11 +75,11 @@ Fedora:
 `yum install bash bridge-utils ebtables iproute libev python tcl tk tkimg autoconf automake gcc libev-devel make pkgconfig python-devel ImageMagick help2man`
 
 This package list comes from 
-[http://pf.itd.nrl.navy.mil/core/core-html/install.html here].
+[http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html here].
 
 You should also install Quagga for routing (`sudo apt-get install quagga`  or `yum install quagga`), or some other routing package. For wireless MANET networks, CORE can build configs for [http://www.nrl.navy.mil/itd/ncs/products/ospf-manet OSPF MDR].
 
-*Fedora users:* check the full [http://pf.itd.nrl.navy.mil/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
+*Fedora users:* check the full [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
 
 
 == Step 2. Get and build the source ==
@@ -124,7 +124,7 @@ core-gui
  * Once you see the CORE GUI, you can try loading one of the sample configuration such as `sample1.imn`
  * Check for notes on your Linux distribution on the [Linux] and [ReleaseNotes] pages.
  * CORE requires the Tcl/Tk packages, version 8.5. You may see warnings about specific package versions on FreeBSD, these may be safely ignored.
- * For system requirements and tips on the install process, visit the [http://pf.itd.nrl.navy.mil/core/core-html/install.html#prerequisites Prerequisites] page of the [http://pf.itd.nrl.navy.mil/core/core-html/ CORE manual]
+ * For system requirements and tips on the install process, visit the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#prerequisites Prerequisites] page of the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/ CORE manual]
 
 = Other Options =
  * *[EMANE] install*
