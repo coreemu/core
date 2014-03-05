@@ -214,14 +214,15 @@ class CoreServices(ConfigurableManager):
         services = sorted(node.services,
                           key=lambda service: service._startindex)
         for s in services:
-            try:
-                t = float(s._starttime)
-                if t > 0.0:
-                    fn = self.bootnodeservice                    
-                    self.session.evq.add_event(t, fn, node, s, services)
-                    continue
-            except ValueError:
-                pass
+            if len(s._starttime) > 0:
+                try:
+                    t = float(s._starttime)
+                    if t > 0.0:
+                        fn = self.bootnodeservice                    
+                        self.session.evq.add_event(t, fn, node, s, services)
+                        continue
+                except ValueError:
+                    pass
             self.bootnodeservice(node, s, services)
     
     def bootnodeservice(self, node, s, services):
@@ -283,8 +284,8 @@ class CoreServices(ConfigurableManager):
             try:
                 # NOTE: this wait=False can be problematic!
                 node.cmd(shlex.split(cmd),  wait = False)
-            except:
-                node.warn("error starting command %s" % cmd)
+            except Exception, e:
+                node.warn("error starting command %s: %s" % (cmd, e))
                 
     def copyservicefile(self, node, filename, cfg):
         ''' Given a configured service filename and config, determine if the
@@ -318,18 +319,24 @@ class CoreServices(ConfigurableManager):
             validate_cmds = s._validate
         else:
             validate_cmds = s.getvalidate(node, services)
-        for cmd in validate_cmds:
-            if node.verbose:
-                node.info("validating service %s using: %s" % (s._name, cmd))
-            try:
-                (status, result) = node.cmdresult(shlex.split(cmd))
-                if status != 0:
-                    raise ValueError, "non-zero exit status"
-            except:
-                node.warn("validation command '%s' failed" % cmd)
-                node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
-                    "service:%s" % s._name, 
-                    "validate command failed: %s" % cmd)
+        if len(validate_cmds) == 0:
+            # doesn't have a validate command
+            status = 0
+        else:
+            for cmd in validate_cmds:
+                if node.verbose:
+                    node.info("validating service %s using: %s" % (s._name, cmd))
+                try:
+                    (status, result) = node.cmdresult(shlex.split(cmd))
+                    if status != 0:
+                        raise ValueError, "non-zero exit status"
+                except:
+                    node.warn("validation command '%s' failed" % cmd)
+                    node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                        "service:%s" % s._name, 
+                        "validate command failed: %s" % cmd)
+                    status = -1
+        return status
         
     def stopnodeservices(self, node):
         ''' Stop all services on a node.
@@ -342,12 +349,19 @@ class CoreServices(ConfigurableManager):
     def stopnodeservice(self, node, s):
         ''' Stop a service on a node.
         '''
-        for cmd in s._shutdown:
-            try:
-                # NOTE: this wait=False can be problematic!
-                node.cmd(shlex.split(cmd),  wait = False)
-            except:
-                node.warn("error running stop command %s" % cmd)
+        status = ""
+        if len(s._shutdown) == 0:
+            # doesn't have a shutdown command
+            status += "0"
+        else:
+            for cmd in s._shutdown:
+                try:
+                    tmp = node.cmd(shlex.split(cmd),  wait = True)
+                    status += "%s" % (tmp)
+                except:
+                    node.warn("error running stop command %s" % cmd)
+                    status += "-1"
+        return status
 
 
     def configure_request(self, msg):
@@ -387,7 +401,10 @@ class CoreServices(ConfigurableManager):
                     "unknown node %s" % (svc._name,  nodenum))
                 return None
             servicesstring = opaque.split(':')
-            services = self.servicesfromopaque(opaque, n.objid)
+            services,unknown = self.servicesfromopaque(opaque, n.objid)
+            for u in unknown:
+                self.session.warn("Request for unknown service '%s'" % u)
+
             if len(services) < 1:
                 return None
             if len(servicesstring) == 3:
@@ -466,7 +483,10 @@ class CoreServices(ConfigurableManager):
             # store service customized config in self.customservices[]
             if nodenum is None:
                 return None
-            services = self.servicesfromopaque(opaque, nodenum)
+            services,unknown = self.servicesfromopaque(opaque, nodenum)
+            for u in unknown:
+                self.session.warn("Request for unknown service '%s'" % u)
+
             if len(services) < 1:
                 return None
             svc = services[0]
@@ -477,6 +497,7 @@ class CoreServices(ConfigurableManager):
         ''' Build a list of services from an opaque data string.
         '''
         services = []
+        unknown = []
         servicesstring = opaque.split(':')
         if servicesstring[0] != "service":
             return []
@@ -485,10 +506,10 @@ class CoreServices(ConfigurableManager):
             s = self.getservicebyname(name)
             s = self.getcustomservice(objid, s)
             if s is None:
-                self.session.warn("Request for unknown service '%s'" % name)
-                return []
-            services.append(s)
-        return services
+                unknown.append(name)
+            else:
+                services.append(s)
+        return services,unknown
 
     def buildgroups(self,  servicelist):
         ''' Build a string of groups for use in a configuration message given
@@ -608,36 +629,80 @@ class CoreServices(ConfigurableManager):
                               "'%s'" % (name, nodenum))
             return
             
-        services = self.servicesfromopaque(name, nodenum)
+        fail = ""
+        services,unknown = self.servicesfromopaque(name, nodenum)
         for s in services:
             if eventtype == coreapi.CORE_EVENT_STOP or \
                 eventtype == coreapi.CORE_EVENT_RESTART:
-                self.stopnodeservice(node, s)
+                status = self.stopnodeservice(node, s)
+                if status != "0":
+                    fail += "Stop %s," % (s._name)
             if eventtype == coreapi.CORE_EVENT_START or \
                 eventtype == coreapi.CORE_EVENT_RESTART:
                 if s._custom:
                     cmds = s._startup
                 else:
                     cmds = s.getstartup(node, services)
-                for cmd in cmds:
-                    try:
-                        node.cmd(shlex.split(cmd),  wait = False)
-                    except:
-                        node.warn("error starting command %s" % cmd)
+                if len(cmds) > 0:
+                    for cmd in cmds:
+                        try:
+                            #node.cmd(shlex.split(cmd),  wait = False)
+                            status = node.cmd(shlex.split(cmd), wait = True)
+                            if status != 0:
+                                fail += "Start %s(%s)," % (s._name, cmd)
+                        except:
+                            node.warn("error starting command %s" % cmd)
+                            fail += "Start %s," % (s._name)
             if eventtype == coreapi.CORE_EVENT_PAUSE:
-                self.validatenodeservice(node, s, services)
+                status = self.validatenodeservice(node, s, services)
+                if status != 0:
+                    fail += "%s," % (s._name)
             if eventtype == coreapi.CORE_EVENT_RECONFIGURE:
                 if s._custom:
                     cfgfiles = s._configs
                 else:
                     cfgfiles = s.getconfigfilenames(node.objid,  services)
-                for filename in cfgfiles:
-                    if filename[:7] == "file:///":
-                        raise NotImplementedError  # TODO
-                    cfg = self.getservicefiledata(s, filename)
-                    if cfg is None:
-                        cfg = s.generateconfig(node, filename, services)
-                    node.nodefile(filename, cfg)
+                if len(cfgfiles) > 0:
+                    for filename in cfgfiles:
+                        if filename[:7] == "file:///":
+                            raise NotImplementedError  # TODO
+                        cfg = self.getservicefiledata(s, filename)
+                        if cfg is None:
+                            cfg = s.generateconfig(node, filename, services)
+                        try:
+                            node.nodefile(filename, cfg)
+                        except:
+                            self.warn("error in configure file: %s" % filename)
+                            fail += "%s," % (s._name)
+
+        fdata = ""
+        if len(fail) > 0:
+            fdata += "Fail:" + fail
+        udata = ""
+        num  = len(unknown)
+        if num > 0:
+            for u in unknown:
+                udata += u
+                if num > 1:
+                    udata += ", "
+                num -= 1
+            self.session.warn("Event requested for unknown service(s): %s" % udata);
+            udata = "Unknown:" + udata
+
+        tlvdata = ""
+        tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_NODE,
+                                             nodenum)
+        tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
+                                             eventtype)
+        tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_NAME,
+                                             name)
+        tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_DATA,
+                                             fdata + ";" + udata)
+        msg = coreapi.CoreEventMessage.pack(0, tlvdata)
+        try:
+            self.session.broadcastraw(None, msg)
+        except Exception, e:
+            self.warn("Error sending Event Message: %s" % e)
     
 
 class CoreService(object):

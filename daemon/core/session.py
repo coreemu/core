@@ -685,40 +685,41 @@ class Session(object):
         '''
         return (self.sessionid >> 8) ^ (self.sessionid & ((1 << 8) - 1))
         
+    def sendnodeemuid(self, handler, nodenum):
+        ''' Send back node messages to the GUI for node messages that had
+            the status request flag.
+        '''
+        if handler is None:
+            return
+        if nodenum in handler.nodestatusreq:
+            tlvdata = ""
+            tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_NUMBER,
+                                                nodenum)
+            tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_EMUID,
+                                                nodenum)
+            reply = coreapi.CoreNodeMessage.pack(coreapi.CORE_API_ADD_FLAG \
+                                               | coreapi.CORE_API_LOC_FLAG,
+                                                 tlvdata)
+            try:
+                handler.request.sendall(reply)
+            except Exception, e:
+                self.warn("sendall() for node: %d error: %s" % (nodenum, e))
+            del handler.nodestatusreq[nodenum]
+
     def bootnodes(self, handler):
         ''' Invoke the boot() procedure for all nodes and send back node 
             messages to the GUI for node messages that had the status
             request flag.
         '''
-        #self.addremovectrlif(node=None, remove=False)
         with self._objslock:
             for n in self.objs():
-                if not isinstance(n, nodes.PyCoreNode):
-                    continue
-                if isinstance(n, nodes.RJ45Node):
-                    continue
-                # add a control interface if configured
-                self.addremovectrlif(node=n, remove=False)
-                n.boot()
-                nodenum = n.objid
-                if handler is None:
-                    continue
-                if nodenum in handler.nodestatusreq:
-                    tlvdata = ""
-                    tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_NUMBER,
-                                                        nodenum)
-                    tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_EMUID,
-                                                        n.objid)
-                    reply = coreapi.CoreNodeMessage.pack(coreapi.CORE_API_ADD_FLAG \
-                                                       | coreapi.CORE_API_LOC_FLAG,
-                                                         tlvdata)
-                    try:
-                        handler.request.sendall(reply)
-                    except Exception, e:
-                        self.warn("sendall() error: %s" % e)
-                    del handler.nodestatusreq[nodenum]
+                if isinstance(n, nodes.PyCoreNode) and \
+                  not isinstance(n, nodes.RJ45Node):
+                    # add a control interface if configured
+                    self.addremovectrlif(node=n, remove=False)
+                    n.boot()
+                self.sendnodeemuid(handler, n.objid)
         self.updatectrlifhosts()
-    
     
     def validatenodes(self):
         with self._objslock:
@@ -766,6 +767,11 @@ class Session(object):
                 updown_script = self.cfg['controlnet_updown_script']
         except KeyError:
             pass
+        # Check if session option set, overwrite if so
+        if hasattr(self.options, 'controlnet_updown_script'):
+            new_uds = self.options.controlnet_updown_script
+        if new_uds:
+            updown_script = new_uds
             
         prefixes = prefix.split()
         if len(prefixes) > 1:
@@ -985,6 +991,8 @@ class SessionConfig(ConfigurableManager, Configurable):
     _confmatrix = [
         ("controlnet", coreapi.CONF_DATA_TYPE_STRING, '', '',
          'Control network'), 
+        ("controlnet_updown_script", coreapi.CONF_DATA_TYPE_STRING, '', '',
+         'Control network script'), 
         ("enablerj45", coreapi.CONF_DATA_TYPE_BOOL, '1', 'On,Off', 
          'Enable RJ45s'),
         ("preservedir", coreapi.CONF_DATA_TYPE_BOOL, '0', 'On,Off',

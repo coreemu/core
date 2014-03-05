@@ -131,6 +131,12 @@ class PyCoreObj(object):
         if hasattr(self, "server") and self.server is not None:
             tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_EMUSRV,
                                                 self.server)
+        if hasattr(self, "services") and len(self.services) != 0:
+            nodeservices = []
+            for s in self.services:
+                 nodeservices.append(s._name)
+            tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_SERVICES,
+                                                "|".join(nodeservices))
 
 
         if x is not None:
