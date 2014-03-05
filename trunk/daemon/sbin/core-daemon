@@ -432,7 +432,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 services_str = msg.gettlv(coreapi.CORE_TLV_NODE_SERVICES)
                 self.session.services.addservicestonode(n, model, services_str,
                                                         self.verbose)
-            # boot nodes if they are added after runtime (like session.bootnodes())
+            # boot nodes if they are added after runtime (like 
+            # session.bootnodes())
             if self.session.getstate() == coreapi.CORE_EVENT_RUNTIME_STATE:
                 if isinstance(n, pycore.nodes.PyCoreNode) and \
                    not isinstance(n, pycore.nodes.RJ45Node):
@@ -441,8 +442,11 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     n.boot()
                     # self.session.updatectrlifhosts()
                     # n.validate()
+                if msg.flags & coreapi.CORE_API_STR_FLAG:
+                    self.nodestatusreq[nodenum] = True
+                    self.session.sendnodeemuid(self, nodenum)
 
-            if msg.flags & coreapi.CORE_API_STR_FLAG:
+            elif msg.flags & coreapi.CORE_API_STR_FLAG:
                 self.nodestatusreq[nodenum] = True
 
         elif msg.flags & coreapi.CORE_API_DEL_FLAG:
