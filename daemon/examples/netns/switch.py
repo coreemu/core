@@ -14,17 +14,6 @@ from core.constants import *
 # node list (count from 1)
 n = [None]
 
-def add_to_server(session):
-    ''' Add this session to the server's list if this script is executed from
-    the core-daemon server.
-    '''
-    global server
-    try:
-        server.addsession(session)
-        return True
-    except NameError:
-        return False
-
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
     parser = optparse.OptionParser(usage = usagestr)
@@ -54,7 +43,8 @@ def main():
     # IP subnet
     prefix = ipaddr.IPv4Prefix("10.83.0.0/16")
     session = pycore.Session(persistent=True)
-    add_to_server(session)
+    if 'server' in globals():
+        server.addsession(session)
     # emulated Ethernet switch
     switch = session.addobj(cls = pycore.nodes.SwitchNode, name = "switch")
     switch.setposition(x=80,y=50)
