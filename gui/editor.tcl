@@ -2799,8 +2799,9 @@ proc popupConfigDialog { c } {
 	$spinbox $wi.delay.value -justify right -width 10 \
 	    -validate focus -invalidcommand "focusAndFlash %W"
 	$wi.delay.value insert 0 [getLinkDelay $target]
+	# 274 seconds is maximum netem delay for Linux 3.2.0-60-generic kernel
 	$wi.delay.value configure \
-	    -validatecommand {checkIntRange %P 0 10000000} \
+	    -validatecommand {checkIntRange %P 0 274000000} \
 	    -from 0 -to 10000000 -increment 5
 	pack $wi.delay.value $wi.delay.label -side right
 	pack $wi.delay -side top -anchor e
