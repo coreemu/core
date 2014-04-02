@@ -286,7 +286,7 @@ class CoreBroker(ConfigurableManager):
             # this is the master session
             sid = self.session.sessionid
             
-        key = (sid  << 16) | hash(n1num)  | (hash(n2num) << 8)
+        key = (sid  << 16) ^ hash(n1num)  ^ (hash(n2num) << 8)
         return key & 0xFFFFFFFF
     
     def addtunnel(self, remoteip, n1num, n2num, localnum):
