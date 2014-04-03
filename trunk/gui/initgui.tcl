@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2013 the Boeing Company.
+# Copyright 2005-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 
@@ -241,7 +241,9 @@ bind . <Control-s> "fileSaveDialogBox {}"
 .menubar.file add separator
 .menubar.file add command -label "Export Python script..." -command exportPython
 .menubar.file add command -label "Execute XML or Python script..." \
-	-command execPython
+	-command { execPython false }
+.menubar.file add command -label "Execute Python script with options..." \
+	-command { execPython true }
 
 .menubar.file add separator
 .menubar.file add command -label "Open current file in editor..." \
@@ -294,7 +296,7 @@ bind . <Control-s> "fileSaveDialogBox {}"
     }
 .menubar.file add separator
 foreach f $g_mrulist {
-    .menubar.file add command -label "$f" -command "mrufile \"$f\""
+    .menubar.file add command -label "$f" -command "mrufile {$f}"
 }
 # end Boeing changes 
 .menubar.file add separator

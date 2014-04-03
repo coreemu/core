@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2013 the Boeing Company.
+# Copyright 2005-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 
@@ -981,7 +981,7 @@ proc exportPython { } {
 }
 
 # ask the daemon to execute the selected file
-proc execPython { } {
+proc execPython { with_options } {
     global fileDialogBox_initial g_prefs
     set ft {{ "CORE XML or Python scripts" {.py .xml} } { "All files" {*}}}
 
@@ -993,9 +993,56 @@ proc execPython { } {
         set fn [tk_getOpenFile -filetypes $ft]
     }
     if { $fn == "" } { return }
+    if { $with_options } {
+	set prompt "Append any command-line options for running the Python"
+	set prompt "$prompt script:"
+	set fn [tk_inputBox "Python Script Options" $prompt $fn . 50]
+	if { $fn == "" } { return }
+    }
     set flags 0x10 ;# status request flag
     sendRegMessage -1 $flags [list "exec" $fn]
     addFileToMrulist $fn
+}
+
+# open a dialog that prompts the user with a text entry
+# this is a blocking dialog that returns "" for cancel, or the entry text for OK
+proc tk_inputBox { title prompt default_text parent width} {
+    set w .input_box
+    catch {destroy $w}
+    toplevel $w
+
+    global g_input_box_btn_state
+    set g_input_box_btn_state 0
+    global g_input_box_text
+    set g_input_box_text $default_text
+
+    wm title $w $title
+    wm transient $w $parent
+    wm attributes $w -type dialog
+
+    ttk::frame $w.f
+    ttk::label $w.f.top -text $prompt
+    ttk::entry $w.f.ent -width $width -textvariable g_input_box_text
+    pack $w.f.top $w.f.ent -side top -padx 4 -pady 4
+    pack $w.f -side top
+
+    ttk::frame $w.btn
+    ttk::button $w.btn.ok -text "OK" -command {
+        global g_input_box_btn_state
+        set g_input_box_btn_state 1
+    }
+    ttk::button $w.btn.cancel -text "Cancel" -command {
+	global g_input_box_text
+        global g_input_box_btn_state
+	set g_input_box_text ""
+        set g_input_box_btn_state 2
+    }
+    pack $w.btn.ok $w.btn.cancel -side left -padx 4 -pady 4
+    pack $w.btn -side top
+
+    vwait g_input_box_btn_state
+    destroy $w
+    return $g_input_box_text
 }
 
 # from Practical Programming in Tcl and Tk, page 190

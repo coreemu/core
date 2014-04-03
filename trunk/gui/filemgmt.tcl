@@ -1,5 +1,5 @@
 #
-# Copyright 2005-2013 the Boeing Company.
+# Copyright 2005-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 
@@ -148,7 +148,7 @@ proc openFile {} {
     global canvas_list curcanvas systype
     global changed
     
-    if { [file extension $currentFile] == ".py" } {
+    if { [lindex [file extension $currentFile] 0] == ".py" } {
 	set flags 0x10 ;# status request flag
 	sendRegMessage -1 $flags [list "exec" $currentFile]
 	addFileToMrulist $currentFile
@@ -465,9 +465,9 @@ proc savePrefsFile { } {
 }
 
 # helper for most-recently-used file list menu items
-proc mrufile { f } {
+proc mrufile { f args } {
     global currentFile
-    set currentFile $f
+    set currentFile "$f $args"
     openFile
 }
 
@@ -476,7 +476,7 @@ proc mrufile { f } {
 # the length of this list; if no file specified, erase the list
 proc addFileToMrulist { f } {
     global g_mrulist g_prefs
-    set MRUI 13 ;# index of MRU list -- update when adding to File menu!
+    set MRUI 14 ;# index of MRU list -- update when adding to File menu!
 
     set oldlength [llength $g_mrulist]
     set maxlength $g_prefs(num_recent)
