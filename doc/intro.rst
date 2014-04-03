@@ -239,7 +239,7 @@ These are the Goals of the CORE project; they are similar to what we consider to
 
 #. Ease of use - In a few clicks the user should have a running network.
 #. Efficiency and scalability - A node is more lightweight than a full virtual machine. Tens of nodes should be possible on a standard laptop computer.
-#. Real software - Run real implementation code, protocols, networking stacks.
+#. Software re-use - Re-use real implementation code, protocols, networking stacks.
 #. Networking - CORE is focused on emulating networks and offers various ways to connect the running emulation with real or simulated networks.
 #. Hackable - The source code is available and easy to understand and modify.
 
