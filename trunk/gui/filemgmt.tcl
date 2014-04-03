@@ -467,7 +467,7 @@ proc savePrefsFile { } {
 # helper for most-recently-used file list menu items
 proc mrufile { f args } {
     global currentFile
-    set currentFile "$f $args"
+    set currentFile [string trim "$f $args"]
     openFile
 }
 
