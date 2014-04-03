@@ -11,7 +11,9 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
 '''
 
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
+from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+from core.misc.utils import *
+from core.constants import *
 
 class NrlService(CoreService):
     ''' Parent class for NRL services. Defines properties and methods
@@ -46,6 +48,30 @@ class NrlService(CoreService):
                     return str(pre)
         #raise ValueError,  "no IPv4 address found"
         return "0.0.0.0/%s" % prefixlen
+
+class MgenSinkService(NrlService):
+    _name = "MGEN_Sink"
+    _configs = ("sink.mgen", )
+    _startindex = 5
+    _startup = ("mgen input sink.mgen", )
+    _validate = ("pidof mgen", )
+    _shutdown = ("killall mgen", )
+
+    @classmethod
+    def generateconfig(cls, node, filename, services):
+        cfg = "0.0 LISTEN UDP 5000\n"
+        for ifc in node.netifs():
+            name = sysctldevname(ifc.name)
+            cfg += "0.0 Join 224.225.1.2 INTERFACE %s\n" % name
+        return cfg
+
+    @classmethod
+    def getstartup(cls,  node, services):
+        cmd =cls._startup[0]
+        cmd += " output /tmp/mgen_%s.log" % node.name
+        return (cmd, )
+
+addservice(MgenSinkService)
 
 class NrlNhdp(NrlService):
     ''' NeighborHood Discovery Protocol for MANET networks.
@@ -161,6 +187,40 @@ class NrlOlsr(NrlService):
         return (cmd, )
         
 addservice(NrlOlsr)
+
+class NrlOlsrv2(NrlService):
+    ''' Optimized Link State Routing protocol version 2 for MANET networks.
+    '''
+    _name = "OLSRv2"
+    _startup = ("nrlolsrv2", )
+    _shutdown = ("killall nrlolsrv2", )
+    _validate = ("pidof nrlolsrv2", )
+
+    @classmethod
+    def getstartup(cls,  node,  services):
+        ''' Generate the appropriate command-line based on node interfaces.
+        '''
+        cmd = cls._startup[0]
+        cmd += " -l /var/log/nrlolsrv2.log"
+        cmd += " -rpipe %s_nrlolsrv2" % node.name
+        
+        servicenames = map(lambda x: x._name,  services)
+        if "SMF" in servicenames:
+            cmd += " -flooding ecds"
+            cmd += " -smfClient %s_smf" % node.name
+
+        cmd += " -p olsr"
+
+        netifs = filter(lambda x: not getattr(x, 'control', False), \
+                        node.netifs())
+        if len(netifs) > 0:
+            interfacenames = map(lambda x: x.name, netifs)
+            cmd += " -i "
+            cmd += " -i ".join(interfacenames)
+        
+        return (cmd, )
+    
+addservice(NrlOlsrv2)
 
 class Arouted(NrlService):
     ''' Adaptive Routing
