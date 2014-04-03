@@ -936,12 +936,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 if os.path.splitext(filename)[1].lower() == '.xml':
                     session = server.getsession(useexisting=False)
                     opensessionxml(session, filename, start=True)
-                # TODO: Script may not return; run in separate thread here.
-                #       Wait for some configurable timeout period, then check
-                #       for new session below. Wait for session to enter
-                #       the runtime state, then send back the register message.
                 else:
-                    execfile(filename, {'server': server})
+                    t = threading.Thread(target = execfile,
+                                         args=(filename, {'server': server}))
+                    t.daemon = True
+                    t.start()
+                    time.sleep(0.25) # allow time for session creation
                 if msg.flags & coreapi.CORE_API_STR_FLAG:
                     new_session_ids = set(server.getsessionids())
                     new_sid = new_session_ids.difference(old_session_ids)
@@ -951,6 +951,18 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     except KeyError:
                         self.info("executed '%s' with unknown session ID" % ex)
                         return replies
+                    self.info("checking session %d for RUNTIME state" % sid)
+                    session = self.server.getsession(sessionid=sid, useexisting=True)
+                    retries = 10
+                    # wait for session to enter RUNTIME state, to prevent GUI from
+                    # connecting while nodes are still being instantiated
+                    while session.getstate() != coreapi.CORE_EVENT_RUNTIME_STATE:
+                        self.info("waiting for session %d to enter RUNTIME state" % sid)
+                        time.sleep(1)
+                        retries -= 1
+                        if retries <= 0:
+                            self.info("session %d did not enter RUNTIME state" % sid)
+                            return replies
                     tlvdata = coreapi.CoreRegTlv.pack( \
                                             coreapi.CORE_TLV_REG_EXECSRV, ex)
                     tlvdata += coreapi.CoreRegTlv.pack( \
