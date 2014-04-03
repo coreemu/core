@@ -77,6 +77,7 @@ def main():
         n.append(tmp)
 
     # this starts EMANE, etc.
+    session.node_count = str(options.numnodes + 1)
     session.instantiate()
 
     # start a shell on node 1
