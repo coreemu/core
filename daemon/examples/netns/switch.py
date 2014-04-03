@@ -58,6 +58,8 @@ def main():
         tmp.setposition(x=150*i,y=150)
         n.append(tmp)
 
+    session.node_count = str(options.numnodes + 1)
+    session.instantiate()
     # start a shell on node 1
     n[1].term("bash")
 
