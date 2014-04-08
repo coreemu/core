@@ -172,6 +172,7 @@ class CoreDocumentParser(object):
         self.linkparams = {}
         
         self.parsedefaultservices()
+        self.parseorigin()
         self.parsenets()
         self.parsenodes()
         self.parseservices()
@@ -380,7 +381,35 @@ class CoreDocumentParser(object):
         else:
             value = int(value)
         return (key, value)
-    
+
+    def parseorigin(self):
+        ''' Parse any origin tag from the Mobility Plan and set the CoreLocation
+            reference point appropriately.
+        '''
+        origin = getoneelement(self.mp, "origin")
+        if not origin:
+            return
+        location = self.session.location
+        geo = []
+        attrs = ("lat","lon","alt")
+        for i in xrange(3):
+            a = origin.getAttribute(attrs[i])
+            if a is not None:
+                a = float(a)
+            geo.append(a)
+        location.setrefgeo(geo[0], geo[1], geo[2])
+        scale = origin.getAttribute("scale100")
+        if scale is not None:
+            location.refscale = float(scale)
+        point = getoneelement(origin, "point")
+        if point is not None and point.firstChild is not None:
+            xyz = point.firstChild.nodeValue.split(',')
+            if len(xyz) == 2:
+                xyz.append('0.0')
+            if len(xyz) == 3:
+                xyz = map(lambda(x): float(x), xyz)
+                location.refxyz = (xyz[0], xyz[1], xyz[2])
+            
     def parsedefaultservices(self):
         ''' Prior to parsing nodes, use session.services manager to store
         default services for node types
@@ -554,6 +583,7 @@ class CoreDocumentWriter(Document):
 
     def populatefromsession(self):
         self.session.emane.setup() # not during runtime?
+        self.addorigin()
         self.adddefaultservices()
         self.addnets()
         self.addnodes()
@@ -750,6 +780,34 @@ class CoreDocumentWriter(Document):
         coords = self.createTextNode(coordstxt)
         pt.appendChild(coords)
 
+    def addorigin(self):
+        ''' Add origin to Motion Plan using canvas reference point.
+            The CoreLocation class maintains this reference point.
+        '''
+        refgeo = self.session.location.refgeo
+        origin = self.createElement("origin")
+        attrs = ("lat","lon","alt")
+        have_origin = False
+        for i in xrange(3):
+            if refgeo[i] is not None:
+                origin.setAttribute(attrs[i], str(refgeo[i]))
+                have_origin = True
+        if not have_origin:
+            return
+        if self.session.location.refscale != 1.0: # 100 pixels = refscale m
+            origin.setAttribute("scale100", str(self.session.location.refscale))
+        if self.session.location.refxyz != (0.0, 0.0, 0.0):
+            pt = self.createElement("point")
+            origin.appendChild(pt)
+            x,y,z = self.session.location.refxyz
+            coordstxt = "%s,%s" % (x,y)
+            if z:
+                coordstxt += ",%s" % z
+            coords = self.createTextNode(coordstxt)
+            pt.appendChild(coords)
+
+        self.mp.appendChild(origin)
+        
     def adddefaultservices(self):
         ''' Add default services and node types to the ServicePlan.
         '''
