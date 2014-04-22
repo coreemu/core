@@ -999,6 +999,8 @@ class SessionConfig(ConfigurableManager, Configurable):
          'Preserve session dir'),
         ("enablesdt", coreapi.CONF_DATA_TYPE_BOOL, '0', 'On,Off', 
          'Enable SDT3D output'),
+        ("sdturl", coreapi.CONF_DATA_TYPE_STRING, '', '',
+         'SDT3D URL'),
         ]
     _confgroups = "Options:1-%d" % len(_confmatrix)
     
