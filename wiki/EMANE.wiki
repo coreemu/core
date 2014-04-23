@@ -7,11 +7,18 @@ EMANE is a mobile ad-hoc network emulation system that can be used in conjunctio
 EMANE downloads, documentation, and other information:
 
   * http://www.nrl.navy.mil/itd/ncs/products/emane
+  * https://github.com/adjacentlink/emane/wiki
 
 = Scripting =
 See the [EEL] page for a description of the main scripting format used by EMANE for generating mobility and pathloss events.
 
 = Easy EMANE Install =
+Refer to the install steps here:
+
+  * https://github.com/adjacentlink/emane/wiki/Install
+
+*NOTE: below are old instructions for EMANE 0.8.1*
+
 
 == Fedora ==
 These dependencies are automatically resolved if you use `yum localinstall`, so you don't need to do this:
