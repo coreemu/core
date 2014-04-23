@@ -9,6 +9,9 @@ EMANE downloads, documentation, and other information:
   * http://www.nrl.navy.mil/itd/ncs/products/emane
   * https://github.com/adjacentlink/emane/wiki
 
+Tutorial:
+  * https://github.com/adjacentlink/emane-tutorial/wiki
+
 = Scripting =
 See the [EEL] page for a description of the main scripting format used by EMANE for generating mobility and pathloss events.
 
