@@ -1640,6 +1640,12 @@ defines the service; then the `custom_services_dir` entry must be set
 in the :file:`/etc/core/core.conf` configuration file. A sample is provided in
 the :file:`myservices/` directory.
 
+.. NOTE::
+   The directory name used in `custom_services_dir` should be unique and 
+   should not correspond to
+   any existing Python module name. For example, don't use the name `subprocess`
+   or `services`.
+
 If you have created a new service type that may be useful to others, please
 consider contributing it to the CORE project.
 

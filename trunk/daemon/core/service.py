@@ -46,6 +46,9 @@ class CoreServices(ConfigurableManager):
     '''
     _name = "services"
     _type = coreapi.CORE_TLV_REG_UTILITY
+
+    _invalid_custom_names = ('core', 'addons', 'api', 'bsd', 'emane', 'misc',
+                             'netns', 'phys', 'services', 'xen')
     
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
@@ -72,10 +75,11 @@ class CoreServices(ConfigurableManager):
             return
         try:
             parentdir, childdir = os.path.split(path)
-            if childdir == "services":
+            if childdir in self._invalid_custom_names:
                 raise ValueError, "use a unique custom services dir name, " \
-                        "not 'services'"
-            sys.path.append(parentdir)
+                        "not '%s'" % childdir
+            if not parentdir in sys.path:
+                sys.path.append(parentdir)
             exec("from %s import *" % childdir)
         except Exception, e:
             self.session.warn("error importing custom services from " \
