@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2010-2013 the Boeing Company.
+# Copyright (c)2010-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
@@ -11,8 +11,11 @@ ieee80211abg.py: EMANE IEEE 802.11abg model for CORE
 
 import sys
 import string
+try:
+    from emanesh.events import EventService
+except:
+    pass
 from core.api import coreapi
-
 from core.constants import *
 from emane import EmaneModel
 from universal import EmaneUniversalModel
@@ -26,8 +29,13 @@ class EmaneIeee80211abgModel(EmaneModel):
     _80211rates = '1 1 Mbps,2 2 Mbps,3 5.5 Mbps,4 11 Mbps,5 6 Mbps,' + \
          '6 9 Mbps,7 12 Mbps,8 18 Mbps,9 24 Mbps,10 36 Mbps,11 48 Mbps,' + \
          '12 54 Mbps'
+    if 'EventService' in globals():
+        xml_path = '/usr/share/emane/xml/models/mac/ieee80211abg'
+    else:
+        xml_path = "/usr/share/emane/models/ieee80211abg/xml"
+
     # MAC parameters
-    _confmatrix_mac = [
+    _confmatrix_mac_base = [
         ("mode", coreapi.CONF_DATA_TYPE_UINT8, '0',
          '0 802.11b (DSSS only),1 802.11b (DSSS only),' + \
          '2 802.11a or g (OFDM),3 802.11b/g (DSSS and OFDM)', 'mode'),
@@ -41,15 +49,17 @@ class EmaneIeee80211abgModel(EmaneModel):
          'multicast rate (Mbps)'),
         ("rtsthreshold", coreapi.CONF_DATA_TYPE_UINT16, '0',
          '', 'RTS threshold (bytes)'),
-        ("wmmenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'On,Off', 'WiFi Multimedia (WMM)'),
         ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING,
-         '/usr/share/emane/models/ieee80211abg/xml/ieee80211pcr.xml',
+         '%s/ieee80211pcr.xml' % xml_path,
          '', 'SINR/PCR curve file'),
         ("flowcontrolenable", coreapi.CONF_DATA_TYPE_BOOL, '0', 
          'On,Off', 'enable traffic flow control'),
         ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10', 
          '', 'number of flow control tokens'),
+    ]
+    _confmatrix_mac_081 = [
+        ("wmmenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
+         'On,Off', 'WiFi Multimedia (WMM)'),
         ("queuesize", coreapi.CONF_DATA_TYPE_STRING, '0:255 1:255 2:255 3:255',
          '', 'queue size (0-4:size)'),
         ("cwmin", coreapi.CONF_DATA_TYPE_STRING, '0:32 1:32 2:16 3:8',
@@ -63,6 +73,11 @@ class EmaneIeee80211abgModel(EmaneModel):
         ("retrylimit", coreapi.CONF_DATA_TYPE_STRING, '0:3 1:3 2:3 3:3',
          '', 'retry limit (0-4:numretries)'),
     ]
+    _confmatrix_mac_091 = []
+    if 'EventService' in globals():
+        _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
+    else:
+        _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_081
     # PHY parameters from Universal PHY
     _confmatrix_phy = EmaneUniversalModel._confmatrix 
 

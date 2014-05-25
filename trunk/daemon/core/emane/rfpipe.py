@@ -1,10 +1,10 @@
 #
 # CORE
-# Copyright (c)2010-2013 the Boeing Company.
+# Copyright (c)2010-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-# author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-# author: Harry Bullen <hbullen@i-a-i.com>
+# authors: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
+#          Harry Bullen <hbullen@i-a-i.com>
 #
 '''
 rfpipe.py: EMANE RF-PIPE model for CORE
@@ -12,8 +12,11 @@ rfpipe.py: EMANE RF-PIPE model for CORE
 
 import sys
 import string
+try:
+    from emanesh.events import EventService
+except:
+    pass
 from core.api import coreapi
-
 from core.constants import *
 from emane import EmaneModel
 from universal import EmaneUniversalModel
@@ -24,11 +27,15 @@ class EmaneRfPipeModel(EmaneModel):
 
     # model name
     _name = "emane_rfpipe"
+    if 'EventService' in globals():
+        xml_path = '/usr/share/emane/xml/models/mac/rfpipe'
+    else:
+        xml_path = "/usr/share/emane/models/rfpipe/xml"
 
     # configuration parameters are
     #  ( 'name', 'type', 'default', 'possible-value-list', 'caption')
     # MAC parameters
-    _confmatrix_mac = [
+    _confmatrix_mac_base = [
         ("enablepromiscuousmode", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'True,False', 'enable promiscuous mode'),
         ("datarate", coreapi.CONF_DATA_TYPE_UINT32, '1M', 
@@ -41,14 +48,21 @@ class EmaneRfPipeModel(EmaneModel):
          'On,Off', 'enable traffic flow control'),
         ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10', 
          '', 'number of flow control tokens'),
-        ("enabletighttiming", coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'On,Off', 'enable tight timing for pkt delay'),
         ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING,
-         '/usr/share/emane/models/rfpipe/xml/rfpipepcr.xml',
+         '%s/rfpipepcr.xml' % xml_path,
          '', 'SINR/PCR curve file'),
+    ]
+    _confmatrix_mac_081 = [
         ("transmissioncontrolmap", coreapi.CONF_DATA_TYPE_STRING, '',
          '', 'tx control map (nem:rate:freq:tx_dBm)'),
+        ("enabletighttiming", coreapi.CONF_DATA_TYPE_BOOL, '0',
+         'On,Off', 'enable tight timing for pkt delay'),
     ]
+    _confmatrix_mac_091 = []
+    if 'EventService' in globals():
+        _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
+    else:
+        _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_081
     
     # PHY parameters from Universal PHY
     _confmatrix_phy = EmaneUniversalModel._confmatrix 
@@ -88,10 +102,11 @@ class EmaneRfPipeModel(EmaneModel):
         mac = macdoc.getElementsByTagName("mac").pop()
         mac.setAttribute("name", "RF-PIPE MAC")
         mac.setAttribute("library", "rfpipemaclayer")
-        if self.valueof("transmissioncontrolmap", values) is "":
+        if e.version != e.EMANE091 and \
+           self.valueof("transmissioncontrolmap", values) is "":
             macnames.remove("transmissioncontrolmap")
         # EMANE 0.7.4 support
-        if e.emane074:
+        if e.version == e.EMANE074:
             # convert datarate from bps to kbps
             i = names.index('datarate')
             values = list(values)

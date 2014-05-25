@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2010-2013 the Boeing Company.
+# Copyright (c)2010-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
@@ -15,6 +15,12 @@ import sys
 
 from core.api import coreapi
 from core.coreobj import PyCoreNet
+try:
+    from emanesh.events import EventService
+    from emanesh.events import LocationEvent
+except Exception, e:
+    pass
+
 try:
     import emaneeventservice
     import emaneeventlocation
@@ -243,12 +249,19 @@ class EmaneNode(EmaneNet):
             self.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)"
                       "(%.6f,%.6f,%.6f)" % \
                       (ifname, nemid, x, y, z, lat, long, alt))
-        event = emaneeventlocation.EventLocation(1)
+        if self.session.emane.version == self.session.emane.EMANE091:
+            event = LocationEvent()
+        else:
+            event = emaneeventlocation.EventLocation(1)
         # altitude must be an integer or warning is printed
         # unused: yaw, pitch, roll, azimuth, elevation, velocity
         alt = int(round(alt))
-        event.set(0, nemid, lat, long, alt)
-        self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
+        if self.session.emane.version == self.session.emane.EMANE091:
+            event.append(nemid, latitude=lat, longitude=long, altitude=alt)
+            self.session.emane.service.publish(0, event)
+        else:
+            event.set(0, nemid, lat, long, alt)
+            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
                                            emaneeventservice.PLATFORMID_ANY,
                                            emaneeventservice.NEMID_ANY,
                                            emaneeventservice.COMPONENTID_ANY,
@@ -266,7 +279,10 @@ class EmaneNode(EmaneNet):
                 self.info("position service not available")
             return
         
-        event = emaneeventlocation.EventLocation(len(moved_netifs))
+        if self.session.emane.version == self.session.emane.EMANE091:
+            event = LocationEvent()
+        else:
+            event = emaneeventlocation.EventLocation(len(moved_netifs))
         i = 0
         for netif in moved_netifs:
             nemid =  self.getnemid(netif)
@@ -282,10 +298,16 @@ class EmaneNode(EmaneNet):
                           (i, ifname, nemid, x, y, z, lat, long, alt))
             # altitude must be an integer or warning is printed
             alt = int(round(alt))
-            event.set(i, nemid, lat, long, alt)
+            if self.session.emane.version == self.session.emane.EMANE091:
+                event.append(nemid, latitude=lat, longitude=long, altitude=alt)
+            else:
+                event.set(i, nemid, lat, long, alt)
             i += 1
             
-        self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
+        if self.session.emane.version == self.session.emane.EMANE091:
+            self.session.emane.service.publish(0, event)
+        else:
+            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
                                            emaneeventservice.PLATFORMID_ANY,
                                            emaneeventservice.NEMID_ANY,
                                            emaneeventservice.COMPONENTID_ANY,

@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2010-2013 the Boeing Company.
+# Copyright (c)2010-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
@@ -19,11 +19,19 @@ from core.misc.xmlutils import addtextelementsfromtuples
 from core.conf import ConfigurableManager, Configurable
 from core.mobility import WirelessModel
 from core.emane.nodes import EmaneNode
+# EMANE 0.7.4/0.8.1
 try:
     import emaneeventservice
     import emaneeventlocation
 except Exception, e:
     pass
+# EMANE 0.9.1+
+try:
+    from emanesh.events import EventService
+    from emanesh.events import LocationEvent
+except Exception, e:
+    pass
+
 
 class Emane(ConfigurableManager):
     ''' EMANE controller object. Lives in a Session instance and is used for
@@ -35,6 +43,8 @@ class Emane(ConfigurableManager):
     _hwaddr_prefix = "02:02"
     (SUCCESS, NOT_NEEDED, NOT_READY) = (0, 1, 2)
     EVENTCFGVAR = 'LIBEMANEEVENTSERVICECONFIG'
+    # possible self.version values
+    (EMANE074, EMANE081, EMANE091) = (7, 8, 9)
     
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
@@ -49,24 +59,28 @@ class Emane(ConfigurableManager):
                                                        8100)
         self.transformport = self.session.getcfgitemint('emane_transform_port',
                                                         8200)
+        self.doeventloop = False
+        self.eventmonthread = None
+        # detect between EMANE versions 0.7.4, 0.8.1, and 0.9.1+
+        # to be removed as support for older EMANEs is deprecated
+        self.version = self.EMANE081
+        try:
+            tmp = emaneeventlocation.EventLocation(1)
+            # check if yaw parameter is supported by Location Events
+            # if so, we have EMANE 0.8.1; if not, we have EMANE 0.7.4/earlier
+            tmp.set(0, 1, 2, 2, 2, 3)
+        except TypeError:
+            self.version = self.EMANE074
+        except Exception:
+            # e.g. no Python bindings installed
+            pass
+        if 'EventService' in globals():
+            self.version = self.EMANE091
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None, self.verbose)
         session.broker.handlers += (self.handledistributed, )
         self.loadmodels()
         self.initeventservice()
-        self.doeventloop = False
-        self.eventmonthread = None
-        # EMANE 0.7.4 support -- to be removed when 0.7.4 support is deprecated
-        self.emane074 = False
-        try:
-            tmp = emaneeventlocation.EventLocation(1)
-            # check if yaw parameter is supported by Location Events
-            # if so, we have EMANE 0.8.1+; if not, we have EMANE 0.7.4/earlier
-            tmp.set(0, 1, 2, 2, 2, 3)
-        except TypeError:
-            self.emane074 = True
-        except Exception:
-            pass
 
     def initeventservice(self, filename=None):
         ''' (Re-)initialize the EMANE Event service. The multicast group and/or
@@ -76,6 +90,24 @@ class Emane(ConfigurableManager):
         if hasattr(self, 'service'):
             del self.service
         self.service = None
+        # EMANE 0.9.1+ does not require event service XML config
+        if self.version == self.EMANE091:
+            values = self.getconfig(None, "emane",
+                                    self.emane_config.getdefaultvalues())[1]
+            group, port = self.emane_config.valueof('eventservicegroup',
+                                                        values).split(':')
+            dev = self.emane_config.valueof('eventservicedevice', values)
+            otachannel = None
+            ota_enable = self.emane_config.valueof('otamanagerchannelenable',
+                                                   values)
+            if self.emane_config.offontobool(ota_enable):
+                ogroup, oport = self.emane_config.valueof('otamanagergroup',
+                                                          values).split(':')
+                odev = self.emane_config.valueof('otamanagerdevice', values)
+                otachannel = (ogroup, int(oport), odev)
+            self.service = EventService(eventchannel=(group, int(port), dev),
+                                        otachannel=otachannel)
+            return True
         if filename is not None:
             tmp = os.getenv(self.EVENTCFGVAR)
             os.environ.update( {self.EVENTCFGVAR: filename} )
@@ -427,8 +459,9 @@ class Emane(ConfigurableManager):
         doc = self.xmldoc("platform")
         plat = doc.getElementsByTagName("platform").pop()
         platformid = self.emane_config.valueof("platform_id_start",  values)
-        plat.setAttribute("name", "Platform %s" % platformid)
-        plat.setAttribute("id", platformid)
+        if self.version != self.EMANE091:
+            plat.setAttribute("name", "Platform %s" % platformid)
+            plat.setAttribute("id", platformid)
 
         names = list(self.emane_config.getnames())
         platform_names = names[:len(self.emane_config._confmatrix_platform)]
@@ -667,6 +700,9 @@ class Emane(ConfigurableManager):
         '''
         if self.service is None:
             return
+        if self.version == self.EMANE091:
+            raise NotImplementedError, \
+                  "EMANE eventmonitorloop() not implemented for EMANE 0.9"
         self.info("subscribing to EMANE location events")
         #self.service.subscribe(emaneeventlocation.EVENT_ID,
         #                       self.handlelocationevent)
@@ -884,7 +920,7 @@ class EmaneGlobalModel(EmaneModel):
         EmaneModel.__init__(self, session, objid, verbose)
 
     _name = "emane"
-    _confmatrix_platform = [
+    _confmatrix_platform_base = [
         ("otamanagerchannelenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'on,off', 'enable OTA Manager channel'), 
         ("otamanagergroup", coreapi.CONF_DATA_TYPE_STRING, '224.1.2.8:45702',
@@ -897,10 +933,16 @@ class EmaneGlobalModel(EmaneModel):
          '', 'Event Service device'), 
         ("platform_id_start", coreapi.CONF_DATA_TYPE_INT32, '1',
          '', 'starting Platform ID'),
+    ]
+    _confmatrix_platform_081 = [
         ("debugportenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'on,off', 'enable debug port'), 
         ("debugport", coreapi.CONF_DATA_TYPE_UINT16, '47000',
-         '', 'debug port number'), 
+         '', 'debug port number'),
+    ] 
+    _confmatrix_platform_091 = [
+        ("controlportendpoint", coreapi.CONF_DATA_TYPE_STRING, '0.0.0.0:47000',
+         '', 'Control port address'),
     ]
     _confmatrix_nem = [
         ("transportendpoint", coreapi.CONF_DATA_TYPE_STRING, 'localhost',
@@ -910,6 +952,12 @@ class EmaneGlobalModel(EmaneModel):
         ("nem_id_start", coreapi.CONF_DATA_TYPE_INT32, '1',
          '', 'starting NEM ID'), 
         ]
+    if 'EventService' in globals():
+        _confmatrix_platform = _confmatrix_platform_base + \
+                               _confmatrix_platform_091
+    else:
+        _confmatrix_platform = _confmatrix_platform_base + \
+                               _confmatrix_platform_081
     _confmatrix = _confmatrix_platform + _confmatrix_nem
     _confgroups = "Platform Attributes:1-%d|NEM Parameters:%d-%d" % \
                     (len(_confmatrix_platform), len(_confmatrix_platform) + 1,
