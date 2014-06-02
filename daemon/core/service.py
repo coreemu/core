@@ -218,7 +218,7 @@ class CoreServices(ConfigurableManager):
         services = sorted(node.services,
                           key=lambda service: service._startindex)
         for s in services:
-            if len(s._starttime) > 0:
+            if len(str(s._starttime)) > 0:
                 try:
                     t = float(s._starttime)
                     if t > 0.0:
