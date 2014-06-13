@@ -45,19 +45,37 @@ class Sdt(object):
         self.sock = None
         self.connected = False
         self.showerror = True
-        self.verbose = self.session.getcfgitembool('verbose', False)
         self.url = self.DEFAULT_SDT_URL
+        self.verbose = self.session.getcfgitembool('verbose', False)
         # node information for remote nodes not in session._objs
         # local nodes also appear here since their obj may not exist yet
         self.remotes = {}
         session.broker.handlers += (self.handledistributed, )
         
     def is_enabled(self):
+        ''' Check for 'enablesdt' session option. Return False by default if
+            the option is missing.
+        '''
         if not hasattr(self.session.options, 'enablesdt'):
             return False
-        if self.session.options.enablesdt == '1':
+        enabled = self.session.options.enablesdt
+        if enabled in ('1', 'true', 1, True):
             return True
         return False
+
+    def seturl(self):
+        ''' Read 'sdturl' from session options, or use the default value.
+            Set self.url, self.address, self.protocol
+        '''
+        url = None
+        if hasattr(self.session.options,'sdturl'):
+            if self.session.options.sdturl != "":
+                url = self.session.options.sdturl
+        if url is None or url == "":
+            url = self.DEFAULT_SDT_URL
+        self.url = urlparse(url)
+        self.address = (self.url.hostname, self.url.port)
+        self.protocol = self.url.scheme
 
     def connect(self, flags=0):
         ''' Connect to the SDT address/port if enabled.
@@ -69,17 +87,7 @@ class Sdt(object):
         if self.session.getstate() == coreapi.CORE_EVENT_SHUTDOWN_STATE:
             return False
 
-        if hasattr(self.session.options,'sdturl'):
-            self.url = urlparse(self.session.options.sdturl)
-            if self.session.options.sdturl == "":
-                self.url = urlparse(self.DEFAULT_SDT_URL)
-                if self.showerror:
-                    self.session.info("sdturl: %s invalid. Using default sdturl %s" % \
-                                          (self.session.options.sdturl, \
-                                               self.DEFAULT_SDT_URL))
-    
-        self.address = (self.url.hostname,self.url.port)
-        self.protocol = self.url.scheme
+        self.seturl()
         if self.showerror:
             self.session.info("connecting to SDT at %s://%s" \
                                   % (self.protocol, self.address))
@@ -90,9 +98,11 @@ class Sdt(object):
                     self.sock.connect(self.address)
                 else:
                     # Default to tcp
-                    self.sock = socket.create_connection(self.address,5)
+                    self.sock = socket.create_connection(self.address, 5)
             except Exception, e:
-                self.session.warn("SDT socket connect error: %s" % e)
+                if self.showerror:
+                    self.session.warn("SDT socket connect error: %s" % e)
+                self.showerror = False
                 return False
         if not self.initialize():
             return False
