@@ -9,7 +9,7 @@ Homepage: http://www.nrl.navy.mil/itd/ncs/products/core
 
 Package: core-daemon
 Architecture: any 
-Depends: bash (>=3.0), bridge-utils, ebtables, iproute, libev4, python (>=2.6), dpkg (>=1.15.4), ${shlibs:Depends}
+Depends: bash (>=3.0), bridge-utils, ebtables, iproute, libev4, python (>=2.6), dpkg (>=1.15.4), procps, ${shlibs:Depends}
 Recommends: quagga
 Description: Emulate virtual networks in a box.
  The Common Open Research Emulator provides Python modules for building virtual
