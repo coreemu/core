@@ -692,6 +692,8 @@ class Emane(ConfigurableManager):
             # reset the service, otherwise nextEvent won't work
             self.initeventservice()
         if self.eventmonthread is not None:
+            if self.version == self.EMANE091:
+                self.eventmonthread._Thread__stop()
             self.eventmonthread.join()
             self.eventmonthread = None
 
@@ -700,71 +702,98 @@ class Emane(ConfigurableManager):
         '''
         if self.service is None:
             return
-        if self.version == self.EMANE091:
-            raise NotImplementedError, \
-                  "EMANE eventmonitorloop() not implemented for EMANE 0.9"
-        self.info("subscribing to EMANE location events")
-        #self.service.subscribe(emaneeventlocation.EVENT_ID,
-        #                       self.handlelocationevent)
-        #self.service.loop()
-        #self.service.subscribe(emaneeventlocation.EVENT_ID, None)
+        self.info("Subscribing to EMANE location events (not generating them). " \
+                  "(%s) " % threading.currentThread().getName())
         while self.doeventloop is True:
-            (event, platform, nem, component, data) = self.service.nextEvent()
-            if event == emaneeventlocation.EVENT_ID:
-                self.handlelocationevent(event, platform, nem, component, data)
-
-        self.info("unsubscribing from EMANE location events")
-        #self.service.unsubscribe(emaneeventlocation.EVENT_ID)
+            if self.version == self.EMANE091:
+                (uuid, seq, events) = self.service.nextEvent()
+                if not self.doeventloop:
+                    break # this occurs with 0.9.1 event service
+                for event in events:
+                    (nem, eid, data) = event
+                    if eid == LocationEvent.IDENTIFIER:
+                        self.handlelocationevent2(nem, eid, data)
+            else:
+                (event, platform, nem, cmp, data) = self.service.nextEvent()
+                if event == emaneeventlocation.EVENT_ID:
+                    self.handlelocationevent(event, platform, nem, cmp, data)
+        self.info("Unsubscribing from EMANE location events. (%s) " % \
+                  threading.currentThread().getName())
 
     def handlelocationevent(self, event, platform, nem, component, data):
-        ''' Handle an EMANE location event.
+        ''' Handle an EMANE location event (EMANE 0.8.1 and earlier).
         '''
         event = emaneeventlocation.EventLocation(data)
         entries = event.entries()
         for e in entries.values():
             # yaw,pitch,roll,azimuth,elevation,velocity are unhandled
             (nemid, lat, long, alt) = e[:4]
-            # convert nemid to node number
-            (emanenode, netif) = self.nemlookup(nemid)
-            if netif is None:
-                if self.verbose:
-                    self.info("location event for unknown NEM %s" % nemid)
-                continue
-            n = netif.node.objid
-            # convert from lat/long/alt to x,y,z coordinates
-            (x, y, z) = self.session.location.getxyz(lat, long, alt)
-            x = int(x)
-            y = int(y)
-            z = int(z)
-            if self.verbose:
-                self.info("location event NEM %s (%s, %s, %s) -> (%s, %s, %s)" \
-                          % (nemid, lat, long, alt, x, y, z))
-            try:
-                if (x.bit_length() > 16) or (y.bit_length() > 16) or \
-                   (z.bit_length() > 16) or (x < 0) or (y < 0) or (z < 0):
-                    warntxt = "Unable to build node location message since " \
-                              "received lat/long/alt exceeds coordinate " \
-                              "space: NEM %s (%d, %d, %d)" % (nemid, x, y, z)
-                    self.info(warntxt)
-                    self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
-                                           "emane", None, warntxt)
-                    continue
-            except AttributeError:
-                # int.bit_length() not present on Python 2.6
-                pass
+            self.handlelocationeventtoxyz(nemid, lat, long, alt)
 
-            # generate a node message for this location update
-            try:
-                node = self.session.obj(n)
-            except KeyError:
-                self.warn("location event NEM %s has no corresponding node %s" \
-                         % (nemid, n))
+    def handlelocationevent2(self, rxnemid, eid, data):
+        ''' Handle an EMANE location event (EMANE 0.9.1+).
+        '''
+        events = LocationEvent()
+        events.restore(data)
+        for event in events:
+            (txnemid, attrs) = event
+            if 'latitude' not in attrs or 'longitude' not in attrs or \
+              'altitude' not in attrs:
+                self.warn("dropped invalid location event")
                 continue
-            # don't use node.setposition(x,y,z) which generates an event
-            node.position.set(x,y,z)
-            msg = node.tonodemsg(flags=0)
-            self.session.broadcastraw(None, msg)
-            self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
+            # yaw,pitch,roll,azimuth,elevation,velocity are unhandled
+            lat = attrs['latitude']
+            long = attrs['longitude']
+            alt = attrs['altitude']
+            self.handlelocationeventtoxyz(txnemid, lat, long, alt)
+
+    def handlelocationeventtoxyz(self, nemid, lat, long, alt):
+        ''' Convert the (NEM ID, lat, long, alt) from a received location event
+        into a node and x,y,z coordinate values, sending a Node Message.
+        Returns True if successfully parsed and a Node Message was sent.
+        '''
+        # convert nemid to node number
+        (emanenode, netif) = self.nemlookup(nemid)
+        if netif is None:
+            if self.verbose:
+                self.info("location event for unknown NEM %s" % nemid)
+            return False
+        n = netif.node.objid
+        # convert from lat/long/alt to x,y,z coordinates
+        (x, y, z) = self.session.location.getxyz(lat, long, alt)
+        x = int(x)
+        y = int(y)
+        z = int(z)
+        if self.verbose:
+            self.info("location event NEM %s (%s, %s, %s) -> (%s, %s, %s)" \
+                      % (nemid, lat, long, alt, x, y, z))
+        try:
+            if (x.bit_length() > 16) or (y.bit_length() > 16) or \
+               (z.bit_length() > 16) or (x < 0) or (y < 0) or (z < 0):
+                warntxt = "Unable to build node location message since " \
+                          "received lat/long/alt exceeds coordinate " \
+                          "space: NEM %s (%d, %d, %d)" % (nemid, x, y, z)
+                self.info(warntxt)
+                self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                                       "emane", None, warntxt)
+                return False
+        except AttributeError:
+            # int.bit_length() not present on Python 2.6
+            pass
+
+        # generate a node message for this location update
+        try:
+            node = self.session.obj(n)
+        except KeyError:
+            self.warn("location event NEM %s has no corresponding node %s" \
+                     % (nemid, n))
+            return False
+        # don't use node.setposition(x,y,z) which generates an event
+        node.position.set(x,y,z)
+        msg = node.tonodemsg(flags=0)
+        self.session.broadcastraw(None, msg)
+        self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
+        return True
 
 
 class EmaneModel(WirelessModel):
