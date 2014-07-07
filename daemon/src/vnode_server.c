@@ -280,7 +280,8 @@ vnode_server_t *vnoded(int newnetns, const char *ctrlchnlname,
 		       const char *chdirname)
 {
   int ctrlfd;
-  unsigned int i, openmax;
+  unsigned int i;
+  long openmax;
   vnode_server_t *server;
   pid_t pid;
 
