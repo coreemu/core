@@ -972,6 +972,8 @@ class EmaneGlobalModel(EmaneModel):
     _confmatrix_platform_091 = [
         ("controlportendpoint", coreapi.CONF_DATA_TYPE_STRING, '0.0.0.0:47000',
          '', 'Control port address'),
+        ("antennaprofilemanifesturi", coreapi.CONF_DATA_TYPE_STRING, '',
+         '','antenna profile manifest URI'),
     ]
     _confmatrix_nem = [
         ("transportendpoint", coreapi.CONF_DATA_TYPE_STRING, 'localhost',
