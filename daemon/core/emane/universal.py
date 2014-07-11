@@ -126,10 +126,21 @@ class EmaneUniversalModel(EmaneModel):
             # insert old options with their default values
             for old in cls._confmatrix_ver074:
                 phy.appendChild(e.xmlparam(phydoc, old[0], old[2]))
+
+        frequencies = None
+        if e.version == e.EMANE091:
+            name = "frequencyofinterest"
+            value = mac.valueof(name, values)
+            frequencies = cls.valuestrtoparamlist(phydoc, name, value)
+            if frequencies:
+                phynames = list(phynames)
+                phynames.remove("frequencyofinterest")
             
         # append all PHY options to phydoc
         map( lambda n: phy.appendChild(e.xmlparam(phydoc, n, \
                                        mac.valueof(n, values))), phynames)
+        if frequencies:
+            phy.appendChild(frequencies)
         return phydoc
 
 

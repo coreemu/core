@@ -15,7 +15,8 @@ from xml.dom.minidom import parseString, Document
 from core.constants import *
 from core.api import coreapi
 from core.misc.ipaddr import MacAddr
-from core.misc.xmlutils import addtextelementsfromtuples
+from core.misc.utils import maketuplefromstr
+from core.misc.xmlutils import addtextelementsfromtuples, addparamlisttoparent
 from core.conf import ConfigurableManager, Configurable
 from core.mobility import WirelessModel
 from core.emane.nodes import EmaneNode
@@ -940,6 +941,20 @@ class EmaneModel(WirelessModel):
         warntxt = "EMANE model %s does not support link " % self._name
         warntxt += "configuration, dropping Link Message"
         self.session.warn(warntxt)
+    
+    @staticmethod
+    def valuestrtoparamlist(dom, name, value):
+        ''' Helper to convert a parameter to a paramlist.
+        Returns a an XML paramlist, or None if the value does not expand to
+        multiple values.
+        '''
+        try:
+            values = maketuplefromstr(value, str)
+        except SyntaxError:
+            return None
+        if len(values) < 2:
+            return None
+        return addparamlisttoparent(dom, parent=None, name=name, values=values)
 
 
 class EmaneGlobalModel(EmaneModel):
