@@ -113,6 +113,26 @@ def addtextparamtoparent(dom, parent, name, value):
     txt = dom.createTextNode(value)
     p.appendChild(txt)
     return p
+    
+def addparamlisttoparent(dom, parent, name, values):
+    ''' XML helper to return a parameter list and optionally add it to the
+    parent element:
+    <paramlist name="name">
+       <item value="123">
+       <item value="456">
+    </paramlist>
+    '''
+    if values is None:
+        return None
+    p = dom.createElement("paramlist")
+    if parent:
+        parent.appendChild(p)
+    p.setAttribute("name", name)
+    for v in values:
+        item = dom.createElement("item")
+        item.setAttribute("value", str(v))
+        p.appendChild(item)
+    return p
  
 def getoneelement(dom, name):
     e = dom.getElementsByTagName(name)
