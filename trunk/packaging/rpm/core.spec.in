@@ -338,6 +338,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{python_sitelib}/core/xen/xen.py*
 %{_sbindir}/core-cleanup
 %{_sbindir}/core-daemon
+%{_sbindir}/core-manage
 %{_sbindir}/coresendmsg
 %{_sbindir}/core-xen-cleanup
 %{_sbindir}/netns

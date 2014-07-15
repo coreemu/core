@@ -12,7 +12,7 @@ if WANT_GUI
 endif
 if WANT_DAEMON
   DAEMON_MANS	= vnoded.1 vcmd.1 netns.1 core-daemon.1 coresendmsg.1 \
-		  core-cleanup.1 core-xen-cleanup.1
+		  core-cleanup.1 core-xen-cleanup.1 core-manage.1
 endif
 man_MANS	= $(GUI_MANS) $(DAEMON_MANS)
 
@@ -26,6 +26,7 @@ generate-mans:
 	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/coresendmsg -o coresendmsg.1.new
 	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-cleanup -o core-cleanup.1.new
 	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-xen-cleanup -o core-xen-cleanup.1.new
+	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-manage -o core-manage.1.new
 
 .PHONY: diff
 diff:
