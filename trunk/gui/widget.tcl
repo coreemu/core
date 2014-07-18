@@ -454,7 +454,7 @@ proc writeWidgetsConf { } {
     set header "# widgets.conf: CORE Observer Widgets customization file."
     puts $f $header
     foreach w [lsort -integer [array names widgets_obs]] {
-	puts $f "$w { $widgets_obs($w) }"
+	puts $f "$w { [string trim $widgets_obs($w)] }"
     }
     close $f
 }

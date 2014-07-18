@@ -111,7 +111,7 @@ proc writeNodesConf { } {
     set header "$header type metadata}"
     puts $f $header
     foreach i [lsort -integer [array names g_node_types]] {
-	puts $f "$i { $g_node_types($i) }"
+	puts $f "$i { [string trim $g_node_types($i)] }"
     }
     close $f
 }
