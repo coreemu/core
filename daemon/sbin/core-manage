@@ -7,34 +7,33 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-core-manage: Helper tool to add, remove, or check for services and models in 
-a CORE installation.
+core-manage: Helper tool to add, remove, or check for services, models, and
+node types in a CORE installation.
 '''
 
 import os
 import sys
 import ast
 import optparse
+import re
 
 from core import pycore
 from core.constants import CORE_CONF_DIR
-
-# core-manage add emane_model RfPipeNew
-# core-manage add service MyService
 
 class FileUpdater(object):
     ''' Helper class for changing configuration files.
     '''
     actions = ("add", "remove", "check")
-    targets = ("service", "model")
+    targets = ("service", "model", "nodetype")
 
-    def __init__(self, action, target, data, verbose=False):
+    def __init__(self, action, target, data, options):
         '''
         '''
         self.action = action
         self.target = target
         self.data = data
-        self.verbose = verbose
+        self.options = options
+        self.verbose = options.verbose
         self.search, self.filename = self.get_filename(target)
 
     def process(self):
@@ -50,6 +49,8 @@ class FileUpdater(object):
             r = self.update_file(fn=self.update_services)
         elif self.target == "model":
             r = self.update_file(fn=self.update_emane_models)
+        elif self.target == "nodetype":
+            r = self.update_nodes_conf()
 
         if self.verbose:
             txt = ""
@@ -113,8 +114,7 @@ class FileUpdater(object):
                 pass
         return vals
 
-    @staticmethod
-    def get_filename(target):
+    def get_filename(self, target):
         ''' Return search string and filename based on target.
         '''
         if target == "service":
@@ -124,6 +124,11 @@ class FileUpdater(object):
         elif target == "model":
             filename = os.path.join(CORE_CONF_DIR, "core.conf")
             search = "emane_models ="
+        elif target == "nodetype":
+            if self.options.userpath is None:
+                raise ValueError, "missing user path"
+            filename = os.path.join(self.options.userpath, "nodes.conf")
+            search = self.data
         else:
             raise ValueError, "unknown target"
         if not os.path.exists(filename):
@@ -155,13 +160,45 @@ class FileUpdater(object):
                 
         return changed
 
+    def update_nodes_conf(self):
+        ''' Add/remove/check entries from nodes.conf. This file
+        contains a Tcl-formatted array of node types. The array index must be
+        properly set for new entries. Uses self.{action, filename, search,
+        data} variables as input and returns the same value as update_file().
+        '''
+        changed = False
+        output = "" # this accumulates output, assumes input is small
+        with open(self.filename, "r") as f:
+            for line in f:
+                # make sure data is not added twice
+                if line.find(self.search) >= 0:
+                    if self.action == "check":
+                        return True
+                    elif self.action == "add":
+                        return False
+                    elif self.action == "remove":
+                        changed = True
+                        continue
+                else:
+                    output += line
+        if self.action == "add":
+            index = int(re.match('^\d+', line).group(0))
+            output += str(index + 1) + ' ' + self.data + '\n'
+            changed = True
+        if changed:
+            with open(self.filename, "w") as f:
+                f.write(output)
+                
+        return changed
+
 
 def main():
     usagestr = "usage: %prog [-h] [options] <action> <target> <string>\n"
     usagestr += "\nHelper tool to add, remove, or check for "
-    usagestr += "services and models in a CORE\ninstallation.\n"
+    usagestr += "services, models, and node types\nin a CORE installation.\n"
     usagestr += "\nExamples:\n  %prog add service newrouting"
-    usagestr += "\n  %prog -v check model RfPipe\n"
+    usagestr += "\n  %prog -v check model RfPipe"
+    usagestr += "\n  %prog --userpath=\"$HOME/.core\" add nodetype \"{ftp ftp.gif ftp.gif {DefaultRoute FTP} netns {FTP server} }\" \n"
     usagestr += "\nArguments:\n  <action> should be one of: %s" % \
                 ', '.join(FileUpdater.actions)
     usagestr += "\n  <target> should be one of: %s" % \
@@ -169,8 +206,11 @@ def main():
     usagestr += "\n  <string> is the text to %s" % \
                 ', '.join(FileUpdater.actions)
     parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(verbose = False,)
+    parser.set_defaults(userpath = None, verbose = False,)
 
+    parser.add_option("--userpath", dest = "userpath", type = "string",
+                      help = "use the specified user path (e.g. \"$HOME/.core" \
+                             "\") to access nodes.conf")
     parser.add_option("-v", "--verbose", dest = "verbose", action="store_true",
                       help = "be verbose when performing action")
 
@@ -194,10 +234,13 @@ def main():
     if target not in FileUpdater.targets:
         usage("invalid target '%s'" % target, 1)
 
+    if target == "nodetype" and not options.userpath:
+        usage("user path option required for this target (%s)" % target)
+
     data = args[2]
 
     try:
-        up = FileUpdater(action, target, data, verbose=options.verbose)
+        up = FileUpdater(action, target, data, options)
         r = up.process()
     except Exception, e:
         sys.stderr.write("Exception: %s\n" % e)
