@@ -120,9 +120,12 @@ class Session(object):
     def shutdown(self):
         ''' Shut down all emulation objects and remove the session directory.
         '''
-        self.emane.shutdown()
-        self.broker.shutdown()
-        self.sdt.shutdown()
+        if hasattr(self, 'emane'):
+            self.emane.shutdown()
+        if hasattr(self, 'broker'):
+            self.broker.shutdown()
+        if hasattr(self, 'sdt'):
+            self.sdt.shutdown()
         self.delobjs()
         preserve = False
         if hasattr(self.options, 'preservedir'):
