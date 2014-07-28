@@ -832,7 +832,11 @@ class CoreBroker(ConfigurableManager):
                 if name == "localhost":
                     continue
                 (host, port, sock) = self.servers[name]
-                f.write("%s %s %s\n" % (name, host, port))
+                try:
+                    (lhost, lport) = sock.getsockname()
+                except:
+                    lhost, lport = None, None
+                f.write("%s %s %s %s %s\n" % (name, host, port, lhost, lport))
             f.close()
         except Exception, e:
             self.session.warn("Error writing server list to the file: %s\n%s" \
