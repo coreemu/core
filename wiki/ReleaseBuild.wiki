@@ -50,7 +50,60 @@ make install
 make uninstall
 }}}
 
+= Build Documentation =
+
+This results in core-html-4.7.tgz, core-python-html-4.7.tgz, and core_manual_4_7.pdf files.
+
+{{{
+cd core-4.7/doc
+make html
+mv _build/html core-html-4.7
+tar czf ../../core-html-4.7.tgz core-html-4.7
+make latexpdf
+mv _build/latex/CORE.pdf ../../core_manual_4_7.pdf
+
+cd core-4.7/daemon/doc
+make
+make html
+mv _build/html core-python-html-4.7
+tar czf ../../../core-python-html-4.7.tgz core-python-html-4.7
+}}}
+
 = Build Ubuntu/Debian Packages =
 
- # unpack distribution tarball
- # 
+0. One time machine prep
+
+{{{
+sudo apt-get install ubuntu-dev-tools devscripts debhelper pbuilder
+# add "export http_proxy=http://proxy.server.com:8080" to /etc/pbuilderrc
+# add export PATH="/usr/sbin:/sbin/:$PATH"
+# add COMPONENTS="main restricted universe multiverse" to pbuilderrc
+sudo pbuilder update --override-config
+pbuilder-dist precise amd64 create
+}}}
+
+1. Build a debian source package.
+
+{{{
+tar xzf core-4.7.tar.gz
+cd core-4.7
+./bootstrap.sh
+./configure --prefix=/usr
+# this puts Debian control files in a debian subdir
+make deb
+cd ..
+# NOTE: deb file (+ other files) will appear in .
+dpkg-source -b core-4.7
+debsign core_4.7-0ubuntu1.dsc
+}}}
+
+2. Use pbuilder-dist for cross-compiling various distributions/architectures.
+
+Resulting dsc, changes, and tar.gz files can be copied to pbuilder machine(s). Distro names include: precise quantal raring saucy trusty
+
+{{{
+pbuilder-dist precise amd64 build core_4.7-0ubuntu1.dsc
+pbuilder-dist precise i386 build core_4.7-0ubuntu1.dsc
+}}}
+
+rename result from ~/pbuilder/precise-amd64_result/core-daemon_4.7-0ubuntu1_amd64.deb core-daemon_4.7-0ubuntu1_precise_amd64.deb
