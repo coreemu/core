@@ -24,4 +24,33 @@ Update these for a new release:
  # announcement email
  # update Quickstart wiki instructions
  # tag all SVN repos
- 
+
+= Source Code Sanity Checks =
+
+{{{
+svn export . ../core-4.7.export
+./bootstrap.sh && ./configure && make -j8 && make dist
+make distclean
+./bootstrap.sh clean
+cd ..
+tar xzf core/core-4.7.tar.gz
+# does this show any missing files?
+# generated files (such as ./configure) exist in the tarball
+diff -qr core-4.7.export core-4.7
+
+# check for files not checked in to a subversion tree
+cd core
+make
+make distclean
+./bootstrap.sh clean
+svn status
+
+# on a fresh system, check for changed files:
+make install
+make uninstall
+}}}
+
+= Build Ubuntu/Debian Packages =
+
+ # unpack distribution tarball
+ # 
