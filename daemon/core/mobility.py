@@ -396,8 +396,11 @@ class BasicRangeModel(WirelessModel):
         '''
         if netif == netif2:
             return
-        (x, y, z) = self._netifs[netif]    
-        (x2, y2, z2) = self._netifs[netif2]
+        try:
+            (x, y, z) = self._netifs[netif]    
+            (x2, y2, z2) = self._netifs[netif2]
+        except KeyError:
+            return
         if x2 is None or y2 is None:
             return
         
