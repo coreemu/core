@@ -106,4 +106,59 @@ pbuilder-dist precise amd64 build core_4.7-0ubuntu1.dsc
 pbuilder-dist precise i386 build core_4.7-0ubuntu1.dsc
 }}}
 
-rename result from ~/pbuilder/precise-amd64_result/core-daemon_4.7-0ubuntu1_amd64.deb core-daemon_4.7-0ubuntu1_precise_amd64.deb
+rename result from ~/pbuilder/precise-amd64_result/core-daemon_4.7-0ubuntu1_amd64.deb core-daemon_4.7-0ubuntu1_precise_amd64.deb.
+
+= Build RPM Packages =
+
+0. One time machine prep.
+
+{{{
+yum install rpmdevtools mock
+}}}
+
+1. Build a source RPM.
+
+}}}
+tar xzf core-4.7.tar.gz
+cd core-4.7
+./bootstrap.sh
+./configure --prefix=/usr --with-startup=systemd
+#make dist  # re-use original dist tarball here
+cp ../core-4.7.tar.gz .
+make rpm
+# source RPM is in ~/rpmbuild/SRPMS/core-4.7-1.src.rpm
+{{{
+
+2. Use mock for cross-compiling various distributions/architectures.
+
+{{{
+mock -r fedora-20-x86_64 rebuild core-4.7-1.src.rpm
+cp /var/lib/mock/fedora-20-x86_64/result/core-daemon-4.7-1.amd64.rpm   ~/core-daemon-4.7-1.fc20.amd64.rpm
+
+mock -r fedora-20-i386 rebuild core-4.7-1.src.rpm
+cp /var/lib/mock/fedora-20-i386/result/core-daemon-4.7-1.i686.rpm
+  ~/core-daemon-4.7-1.fc20.i686.rpm
+}}}
+
+3. Use mock to build el6/el7 RPMs.
+
+ * edit spec file, remove './configure --with-startup=systemd' option
+ * replace '/etc/systemd/system/core-daemon.service' with 'etc/init.d/core-daemon'
+ * replace 2.7 with 2.6 as Python version
+ * rebuild source RPM using 'make rpm'
+
+{{{
+make rpm
+cp ~/rpmbuild/SRPMS/core-4.7-1.src.rpm ./core-4.7-1.rhel.src.rpm
+mock -r epel-6-x86_64 core-4.7-1.rhel.src.rpm
+cp /var/lib/mock/epel-6-x86_64/result/core-daemon-4.7-1.x86_64.rpm core-daemon-4.7-1.el6.x86_64.rpm
+}}}
+
+Distros are epel-7-x86_64 epel-7-i386 epel-6-x86_64 epel-6-i386.
+
+
+4. Sign the RPMs.
+
+{{{
+rpm --addsign *.rpm
+}}}
