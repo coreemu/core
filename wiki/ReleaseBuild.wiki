@@ -118,7 +118,7 @@ yum install rpmdevtools mock
 
 1. Build a source RPM.
 
-}}}
+{{{
 tar xzf core-4.7.tar.gz
 cd core-4.7
 ./bootstrap.sh
@@ -127,7 +127,7 @@ cd core-4.7
 cp ../core-4.7.tar.gz .
 make rpm
 # source RPM is in ~/rpmbuild/SRPMS/core-4.7-1.src.rpm
-{{{
+}}}
 
 2. Use mock for cross-compiling various distributions/architectures.
 
