@@ -4656,7 +4656,7 @@ proc rj45ifclist { wi node wasclicked } {
 		set ifip ""
 	    }
 	    if { [string match "*Link encap:*" $line] } {
-	        set ifname [string trim [string range $line 0 9]]
+	        set ifname [lindex [split $line " "] 0]
 	    } else {
 		set ifname [lindex [split $line :] 0]
 	    }
