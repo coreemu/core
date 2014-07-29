@@ -1,0 +1,27 @@
+#summary Step-by-step release build instructions
+
+= Files to Update =
+
+Update these for a new release:
+ * update ChangeLog file, ReleaseNotes wiki based on major-changes list and SVN log
+ * release date in man pages and changelogs below
+ * Debian changelog in packaging/deb/changelog (e.g. `debchange -i`)
+ * RPM file list, changelog in packaging/rpm/core.spec.in
+ * CORE API version number in gui/api.tcl and daemon/core/api/`*`.py
+ * tag release 4.7rc1
+
+
+= Release Steps =
+
+ # sync all SVN repos
+ # run source code sanity checks
+ # build distribution tarball
+ # generate PDF and HTML documentation, tgzs
+ # build Linux debs and test
+ # build Linux RPMs and test
+ # make CORE API PDF
+ # update VCORE virtual machine, zip
+ # announcement email
+ # update Quickstart wiki instructions
+ # tag all SVN repos
+ 
