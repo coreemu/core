@@ -116,6 +116,8 @@ rename result from ~/pbuilder/precise-amd64_result/core-daemon_4.7-0ubuntu1_amd6
 yum install rpmdevtools mock
 }}}
 
+Add `proxy=http://proxy.company.com:1080/` lines as necessary to `/etc/mock/*.cfg` files.
+
 1. Build a source RPM.
 
 {{{
@@ -138,9 +140,13 @@ cp /var/lib/mock/fedora-20-x86_64/result/core-daemon-4.7-1.amd64.rpm   ~/core-da
 mock -r fedora-20-i386 rebuild core-4.7-1.src.rpm
 cp /var/lib/mock/fedora-20-i386/result/core-daemon-4.7-1.i686.rpm
   ~/core-daemon-4.7-1.fc20.i686.rpm
+
+mock -r epel-7-x86_64 rebuild core-4.7-1.src.rpm
+cp /var/lib/mock/epel-7-x86_64/result/core-daemon-4.7-1.amd64.rpm   ~/core-daemon-4.7-1.el7.amd64.rpm
+
 }}}
 
-3. Use mock to build el6/el7 RPMs.
+3. Use mock to build el6 RPMs.
 
  * edit spec file, remove './configure --with-startup=systemd' option
  * replace '/etc/systemd/system/core-daemon.service' with 'etc/init.d/core-daemon'
