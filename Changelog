@@ -17,7 +17,8 @@
     - support link delays up to 274 seconds (netem maximum)
     - allow runtime changes of WLAN link effects
   * DAEMON:
-    - set NODE_NAME and NODE_NUMBER in default vnoded environment
+    - set NODE_NAME, NODE_NUMBER, SESSION_SHORT in default vnoded environment
+    - changed host device naming to use veth, tap prefixes; b.n.SS for bridges
     - allow parsing XML files into live running session
     - enable link effects between hub/switch and hub/switch connections
     - update MDR service to use broadcast interfaces for non-WLAN links

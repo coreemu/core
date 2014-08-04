@@ -321,6 +321,7 @@ class Session(object):
         '''
         env = os.environ.copy()
         env['SESSION'] = "%s" % self.sessionid
+        env['SESSION_SHORT'] = "%s" % self.shortsessionid()
         env['SESSION_DIR'] = "%s" % self.sessiondir
         env['SESSION_NAME'] = "%s" % self.name
         env['SESSION_FILENAME'] = "%s" % self.filename
