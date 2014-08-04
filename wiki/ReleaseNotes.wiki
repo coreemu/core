@@ -3,7 +3,7 @@
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
 = 4.7 =
-CORE 4.7 is planned for release on 8/DD/14 (TBD). Packages will be available for the following Linux distributions:
+CORE 4.7 is planned for release on 8/6/14. Packages will be available for the following Linux distributions:
  * debs for Ubuntu 14.04 (trusty), 12.04 (precise)
  * RPMs for Fedora 20 (fc20)
  * RPMs for CentOS/RHEL/Scientific Linux 7.x (el7), 6.x (el6)
