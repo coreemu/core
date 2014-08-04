@@ -211,7 +211,8 @@ class LxBrNet(PyCoreNet):
         if policy is not None:
             self.policy = policy
         self.name = name
-        self.brname = "b.%s.%s" % (str(self.objid), self.session.sessionid)
+        sessionid = self.session.shortsessionid()
+        self.brname = "b.%s.%s" % (str(self.objid), sessionid)
         self.up = False
         if start:
             self.startup()

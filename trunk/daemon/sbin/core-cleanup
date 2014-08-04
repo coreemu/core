@@ -45,7 +45,7 @@ killall -q emanetransportd
 killall -q emaneeventservice
 
 ifconfig -a | awk '
-    /^n[0-9]+/ {print "removing interface " $1; system("ip link del " $1);}
+    /^veth[0-9]+\./ {print "removing interface " $1; system("ip link del " $1);}
     /tmp\./    {print "removing interface " $1; system("ip link del " $1);}
     /gt\./     {print "removing interface " $1; system("ip link del " $1);}
     /b\./ {print "removing bridge " $1; system("ip link set " $1 " down; brctl delbr " $1);}
