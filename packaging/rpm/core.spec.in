@@ -22,11 +22,11 @@ building virtual networks using Linux network namespace containers and bridging.
 %package daemon
 Summary:	Common Open Research Emulator daemon back-end
 Group:		System Tools
-Requires:	bash bridge-utils ebtables iproute libev python
+Requires:	bash bridge-utils ebtables iproute libev python procps-ng net-tools
 %if %{with_kernel_modules_extra}
 Requires: kernel-modules-extra
 %endif
-BuildRequires:  make automake autoconf libev-devel python-devel bridge-utils ebtables iproute ImageMagick help2man 
+BuildRequires:  make automake autoconf libev-devel python-devel bridge-utils ebtables iproute procps-ng net-tools ImageMagick help2man 
 Provides:	core-daemon
 # python-sphinx
 %description daemon

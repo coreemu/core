@@ -1,13 +1,13 @@
-.. |UBUNTUVERSION| replace:: 12.04, 12.10, or 13.04
+.. |UBUNTUVERSION| replace:: 12.04 or 14.04
 
-.. |FEDORAVERSION| replace:: 17, 18, or 19
+.. |FEDORAVERSION| replace:: 19 or 20
 
-.. |CENTOSVERSION| replace:: 6.x
+.. |CENTOSVERSION| replace:: 6.x or 7.x
 
 .. |BSDVERSION| replace:: 9.0
 
-.. |CORERPM| replace:: 1.fc19.x86_64.rpm
-.. |CORERPM2| replace:: 1.fc19.noarch.rpm
+.. |CORERPM| replace:: 1.fc20.x86_64.rpm
+.. |CORERPM2| replace:: 1.fc20.noarch.rpm
 .. |COREDEB| replace:: 0ubuntu1_precise_amd64.deb
 .. |COREDEB2| replace:: 0ubuntu1_precise_all.deb
 
@@ -19,7 +19,7 @@
 .. |APTDEPS2| replace:: tcl8.5 tk8.5 libtk-img
 .. |APTDEPS3| replace:: autoconf automake gcc libev-dev make python-dev libreadline-dev pkg-config imagemagick help2man
 
-.. |YUMDEPS| replace:: bash bridge-utils ebtables iproute libev python
+.. |YUMDEPS| replace:: bash bridge-utils ebtables iproute libev python procps-ng net-tools
 .. |YUMDEPS2| replace:: tcl tk tkimg 
 .. |YUMDEPS3| replace:: autoconf automake make libev-devel python-devel ImageMagick help2man
 
