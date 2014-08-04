@@ -210,7 +210,8 @@ examples below, replace with `i686` is using a 32-bit architecture. Also,
 `fc15` is shown below for Fedora 15 packages, replace with the appropriate
 Fedora release number.
 
-* **CentOS only:** in order to install the `libev` prerequisite package, you 
+* **CentOS only:** in order to install the `libev` and `tkimg` prerequisite
+  packages, you 
   first need to install  the `EPEL <http://fedoraproject.org/wiki/EPEL>`_ repo
   (Extra Packages for Enterprise Linux):
 
@@ -218,6 +219,18 @@ Fedora release number.
 
     wget http://dl.fedoraproject.org/pub/epel/6/i386/epel-release-6-8.noarch.rpm
     yum localinstall epel-release-6-8.noarch.rpm
+
+
+* **CentOS 7.x only:** as of this writing, the `tkimg` prerequisite package
+  is missing from EPEL 7.x, but the EPEL 6.x package can be manually installed
+  from 
+  `here <http://dl.fedoraproject.org/pub/epel/6/x86_64/repoview/tkimg.html>`_
+
+  ::
+
+    wget http://dl.fedoraproject.org/pub/epel/6/x86_64/tkimg-1.4-1.el6.x86_64.rpm
+    yum localinstall tkimg-1.4-1.el6.x86_64.rpm
+
 
 * **Optional:** install the prerequisite packages (otherwise skip this
   step and have the package manager install them for you.)
