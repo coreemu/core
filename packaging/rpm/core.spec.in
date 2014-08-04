@@ -26,7 +26,7 @@ Requires:	bash bridge-utils ebtables iproute libev python
 %if %{with_kernel_modules_extra}
 Requires: kernel-modules-extra
 %endif
-BuildRequires:  make automake autoconf libev-devel python-devel bridge-utils ebtables ImageMagick help2man 
+BuildRequires:  make automake autoconf libev-devel python-devel bridge-utils ebtables iproute ImageMagick help2man 
 Provides:	core-daemon
 # python-sphinx
 %description daemon
@@ -267,6 +267,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/examples/stopsession.py*
 %doc  %{_mandir}/man1/core-cleanup.1.gz
 %doc  %{_mandir}/man1/core-daemon.1.gz
+%doc  %{_mandir}/man1/core-manage.1.gz
 %doc  %{_mandir}/man1/coresendmsg.1.gz
 %doc  %{_mandir}/man1/core-xen-cleanup.1.gz
 %doc  %{_mandir}/man1/netns.1.gz
@@ -346,6 +347,8 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_sbindir}/vnoded
 
 %changelog
+* Wed Aug 6 2014 Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil> - 4.7
+- EMANE 0.9.1, asymmetric links, bugfixes
 * Thu Aug 22 2013 Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com> - 4.6
 - cored now core-daemon, core now core-gui for CORE 4.6 release
 * Wed Apr 3 2013 Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com> - 4.5

@@ -1,3 +1,9 @@
+core (4.7-0ubuntu1) precise; urgency=low
+
+  * EMANE 0.9.1, asymmetric links, bugfixes
+
+ --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Wed, 08 Aug 2014 08:27:18 -0700
+
 core (4.6-0ubuntu1) precise; urgency=low
 
   * Edit Copy and Paste, Edit Find, bugfixes, Debian compliance
