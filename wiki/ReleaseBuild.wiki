@@ -116,7 +116,7 @@ rename result from ~/pbuilder/precise-amd64_result/core-daemon_4.7-0ubuntu1_amd6
 yum install rpmdevtools mock
 }}}
 
-Add `proxy=http://proxy.company.com:1080/` lines as necessary to `/etc/mock/*.cfg` files.
+Add `proxy=http://proxy.company.com:1080/` and `timeout=300` lines as necessary to `/etc/mock/*.cfg` files.
 
 1. Build a source RPM.
 
