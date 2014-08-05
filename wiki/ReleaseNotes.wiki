@@ -54,7 +54,7 @@ The high-level changes since version 4.6 are:
  * fixed the following bugs: bug #150, bug #169, bug #188, bug #220, bug #225, bug #230, bug #231, bug #242, bug #244, bug #247, bug #248, bug #250, bug #251
 
 *Known Issues with 4.7*
- * Under Fedora or CentOS Linux, the repository version of Quagga (`yum install quagga`) does not work with CORE. See bug #255. You need to build Quagga or Quagga MDR from source using the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#compiling-quagga-for-core manual instructions].
+ * Under Fedora or CentOS Linux, the repository version of Quagga (`yum install quagga`) does not work with CORE. See bug #255. You need to build Quagga or Quagga MDR from source using the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#compiling-quagga-for-core manual instructions] or use the [http://downloads.pf.itd.nrl.navy.mil/ospf-manet/ fc16 Quagga MDR package] (works with fc20).
  * Under Fedora or CentOS Linux, NetworkManager will automatically invoke DHCP clients on CORE-generated interfaces. See bug #253. Recommended workaround is to turn off NetworkManager using `systemctl stop NetworkManager` and `systemctl disable NetworkManager`. Ubuntu ignores interfaces having the "veth" prefix.
 
 
