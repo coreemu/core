@@ -1,0 +1,18 @@
+# Constants created by autoconf ./configure script
+COREDPY_VERSION		= "@COREDPY_VERSION@"
+CORE_STATE_DIR		= "@CORE_STATE_DIR@"
+CORE_CONF_DIR		= "@CORE_CONF_DIR@"
+CORE_DATA_DIR		= "@CORE_DATA_DIR@"
+CORE_LIB_DIR		= "@CORE_LIB_DIR@"
+CORE_SBIN_DIR		= "@SBINDIR@"
+
+BRCTL_BIN               = "@brctl_path@/brctl"
+IP_BIN                  = "@ip_path@/ip"
+TC_BIN                  = "@tc_path@/tc"
+EBTABLES_BIN            = "@ebtables_path@/ebtables"
+IFCONFIG_BIN            = "@ifconfig_path@/ifconfig"
+NGCTL_BIN               = "@ngctl_path@/ngctl"
+VIMAGE_BIN              = "@vimage_path@/vimage"
+QUAGGA_STATE_DIR        = "@CORE_STATE_DIR@/run/quagga"
+MOUNT_BIN               = "@mount_path@/mount"
+UMOUNT_BIN              = "@umount_path@/umount"

@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!-- Created with Inkscape (http://www.inkscape.org/) -->
+
+<svg
+   xmlns:dc="http://purl.org/dc/elements/1.1/"
+   xmlns:cc="http://creativecommons.org/ns#"
+   xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#"
+   xmlns:svg="http://www.w3.org/2000/svg"
+   xmlns="http://www.w3.org/2000/svg"
+   xmlns:sodipodi="http://sodipodi.sourceforge.net/DTD/sodipodi-0.dtd"
+   xmlns:inkscape="http://www.inkscape.org/namespaces/inkscape"
+   width="64px"
+   height="64px"
+   id="svg2985"
+   version="1.1"
+   inkscape:version="0.48.0 r9654"
+   sodipodi:docname="cel2.svg"
+   inkscape:export-filename="cel.png"
+   inkscape:export-xdpi="49.651821"
+   inkscape:export-ydpi="49.651821">
+  <defs
+     id="defs2987" />
+  <sodipodi:namedview
+     id="base"
+     pagecolor="#ffffff"
+     bordercolor="#666666"
+     borderopacity="1.0"
+     inkscape:pageopacity="0.0"
+     inkscape:pageshadow="2"
+     inkscape:zoom="11.313708"
+     inkscape:cx="36.811127"
+     inkscape:cy="34.352921"
+     inkscape:current-layer="layer1"
+     showgrid="true"
+     inkscape:document-units="px"
+     inkscape:grid-bbox="true"
+     inkscape:window-width="1154"
+     inkscape:window-height="770"
+     inkscape:window-x="206"
+     inkscape:window-y="56"
+     inkscape:window-maximized="0"
+     inkscape:snap-global="true">
+    <inkscape:grid
+       type="xygrid"
+       id="grid3020" />
+  </sodipodi:namedview>
+  <metadata
+     id="metadata2990">
+    <rdf:RDF>
+      <cc:Work
+         rdf:about="">
+        <dc:format>image/svg+xml</dc:format>
+        <dc:type
+           rdf:resource="http://purl.org/dc/dcmitype/StillImage" />
+        <dc:title></dc:title>
+      </cc:Work>
+    </rdf:RDF>
+  </metadata>
+  <g
+     id="layer1"
+     inkscape:label="Layer 1"
+     inkscape:groupmode="layer">
+    <path
+       style="fill:#ffff00;stroke:#aa8800;stroke-width:2.27776383999999998;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="M 54,44 25.714286,44 21.52381,37.809525 10,37.809525 10,20 l 8.296388,-2 23.132183,0 3.142858,4.95238 9.428571,0 z"
+       id="path2995"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="cccccccccc" />
+    <path
+       style="fill:#aa8800;stroke:#aa8800;stroke-width:1.83941792999999998;stroke-linecap:butt;stroke-linejoin:round;stroke-miterlimit:4;stroke-opacity:1;stroke-dasharray:none"
+       d="m 9,26.75 -1.4285714,0 0,-6.75 L 4,20 l 0,7.875 1.4285714,3.375 0,6.75 2.1428572,0 0,-7.875 L 9,30.125 z"
+       id="path3016"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccccccc" />
+    <path
+       style="fill:#aa8800;stroke:#aa8800;stroke-width:1px;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1"
+       d="M 28.090909,17 28,15 l 7,0 0,-2 -16,0 0,2 6,0 0,2 z"
+       id="path3018"
+       inkscape:connector-curvature="0"
+       sodipodi:nodetypes="ccccccccc" />
+    <path
+       style="fill:#ffff00;stroke:#aa8800;stroke-width:2;stroke-linecap:butt;stroke-linejoin:round;stroke-opacity:1;stroke-miterlimit:4;stroke-dasharray:none"
+       d="m 55,35 2,0 0,6 2,0 2,-2 0,-11 -2,-2 -2,0 0,6 -2,0 z"
+       id="path3022"
+       inkscape:connector-curvature="0" />
+    <text
+       xml:space="preserve"
+       style="font-size:37.54441451999999657px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:30.00000118999999899%;letter-spacing:0px;word-spacing:0px;fill:#aa8800;fill-opacity:1;stroke:none;font-family:UnDotum;-inkscape-font-specification:UnDotum"
+       x="16.785086"
+       y="29.288048"
+       id="text3810"
+       sodipodi:linespacing="30.000001%"
+       transform="scale(0.83407376,1.1989347)"><tspan
+         sodipodi:role="line"
+         id="tspan3812"
+         x="16.785086"
+         y="29.288048"
+         style="font-size:11.26332378000000034px;font-style:normal;font-variant:normal;font-weight:bold;font-stretch:normal;fill:#aa8800;font-family:FreeSans;-inkscape-font-specification:FreeSans Bold">CHECK</tspan></text>
+    <text
+       xml:space="preserve"
+       style="font-size:40px;font-style:normal;font-variant:normal;font-weight:normal;font-stretch:normal;line-height:30.00000119%;letter-spacing:0px;word-spacing:0px;fill:#000000;fill-opacity:1;stroke:none;font-family:UnDotum;-inkscape-font-specification:UnDotum"
+       x="128.71466"
+       y="-25.45788"
+       id="text3814"
+       sodipodi:linespacing="30.000001%"><tspan
+         sodipodi:role="line"
+         id="tspan3816"></tspan></text>
+  </g>
+</svg>

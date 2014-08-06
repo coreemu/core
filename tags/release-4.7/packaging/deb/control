@@ -1,0 +1,27 @@
+Source: core
+Section: net
+Priority: optional
+Maintainer: Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>
+Standards-Version: 3.8.4
+Build-Depends: debhelper (>= 9), cdbs, autoconf, automake, gcc, libev-dev, make, python-dev, libreadline-dev, bridge-utils, ebtables, iproute, imagemagick, pkg-config, help2man
+# python-sphinx
+Homepage: http://www.nrl.navy.mil/itd/ncs/products/core
+
+Package: core-daemon
+Architecture: any 
+Depends: bash (>=3.0), bridge-utils, ebtables, iproute, libev4, python (>=2.6), dpkg (>=1.15.4), procps, ${shlibs:Depends}
+Recommends: quagga
+Description: Emulate virtual networks in a box.
+ The Common Open Research Emulator provides Python modules for building virtual
+ networks using Linux network namespace containers and bridging. This is the
+ daemon package containing the backend Python modules and core-daemon.
+
+Package: core-gui
+Architecture: all
+Depends: bash (>=3.0), tcl8.5, tk8.5, libtk-img
+Description: Emulate virtual networks in a box.
+ The Common Open Research Emulator provides Python modules for building virtual
+ networks using Linux network namespace containers and bridging. This is the
+ GUI package containing a canvas-based Tcl/Tk GUI for easily drawing virtual
+ network topologies.
+

@@ -1,0 +1,21 @@
+
+ng_pipe FreeBSD kernel module
+
+See the copyright statement at the top of the source file.
+Copyright (c) 2004, 2005, 2007 University of Zagreb
+Copyright (c) 2007 FreeBSD Foundation
+(c) 2008 the Boeing Company
+modifications: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
+
+More complete documentation is available in the ng_pipe(4) man page.
+
+This version of ng_pipe has been modified as follows:
+- added burst rate (or burstiness) which is the probability that the next packet
+  will be dropped given an error with the current packet, 0 to 100
+- added jitter effect, which randomizes the delay an additional amount from
+  0 to jitter microseconds
+- ng_wlan support added, to remove and read mbuf tags containing wlan link
+  effect information
+- bugfix: random number generation improved from defective modulo algorithm
+- bugfix: fixed mbuf dangling pointer reference when ng_pipe has both duplicates
+  and errors configured

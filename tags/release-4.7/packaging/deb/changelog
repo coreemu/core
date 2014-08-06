@@ -1,0 +1,53 @@
+core (4.7-0ubuntu1) precise; urgency=low
+
+  * EMANE 0.9.1, asymmetric links, bugfixes
+
+ --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Wed, 08 Aug 2014 08:27:18 -0700
+
+core (4.6-0ubuntu1) precise; urgency=low
+
+  * Edit Copy and Paste, Edit Find, bugfixes, Debian compliance
+
+ --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Wed, 25 Sep 2013 12:36:54 -0700
+
+core (4.5-0ubuntu1) precise; urgency=low
+
+  * XML support, SDT3D support, EMANE 0.8.1, ns-3 locations, code cleanup, 
+    bugfixes, and more.
+
+ --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Thu, 11 Apr 2013 14:19:05 -0700
+
+core (4.4-0ubuntu1) precise; urgency=low
+
+  * Bandwidth plots, event scheduling, EMANE 0.7.4, improved services support,
+    code cleanup, bugfixes, and more.
+
+ --  Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>  Tue, 04 Sep 2012 11:53:23 -0700
+
+core (4.3-0ubuntu1) oneiric; urgency=low
+
+  * Hook scripts, CEL, EMANE 0.7.3, physical nodes, improved WLAN and service
+    dialogs, code cleanup, bugfixes, and more.
+
+ -- Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>  Thu, 09 Feb 2012 08:00:52 -0800
+
+core (4.2-0ubuntu1) maverick; urgency=low
+
+  * bugfixes, EMANE 0.7.1 support.
+
+ -- Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>  Mon, 15 Aug 2011 13:19:16 -0800
+
+core (4.1-0ubuntu1) lucid; urgency=low
+
+  * Node services, customizable nodes, traffic flows, IP address allocator,
+    distributed emulation using GRE tunnels, EMANE 0.6.4 support, and more.
+
+ -- Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>  Thu, 09 Dec 2010 07:02:16 -0800
+
+core (4.0-0ubuntu1) lucid; urgency=low
+
+   * New CORE deb packaging. Extra magic added to omit the horrible
+     /usr/share/info/dir.gz file from being generated.
+
+ -- Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>  Wed, 29 Jul 2010 16:07:26 -0700
+

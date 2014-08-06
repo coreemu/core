@@ -1,0 +1,10 @@
+#
+# Copyright 2005-2013 the Boeing Company.
+# See the LICENSE file included in this distribution.
+#
+
+#
+# define the version number and release date here
+#
+set CORE_VERSION @CORE_VERSION@
+set CORE_VERSION_DATE @CORE_VERSION_DATE@

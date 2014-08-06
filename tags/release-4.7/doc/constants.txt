@@ -1,0 +1,25 @@
+.. |UBUNTUVERSION| replace:: 12.04 or 14.04
+
+.. |FEDORAVERSION| replace:: 19 or 20
+
+.. |CENTOSVERSION| replace:: 6.x or 7.x
+
+.. |BSDVERSION| replace:: 9.0
+
+.. |CORERPM| replace:: 1.fc20.x86_64.rpm
+.. |CORERPM2| replace:: 1.fc20.noarch.rpm
+.. |COREDEB| replace:: 0ubuntu1_precise_amd64.deb
+.. |COREDEB2| replace:: 0ubuntu1_precise_all.deb
+
+.. |QVER| replace:: quagga-0.99.21mr2.2
+.. |QVERDEB| replace:: quagga-mr_0.99.21mr2.2_amd64.deb 
+.. |QVERRPM| replace:: quagga-0.99.21mr2.2-1.fc16.x86_64.rpm
+
+.. |APTDEPS| replace:: bash bridge-utils ebtables iproute libev-dev python
+.. |APTDEPS2| replace:: tcl8.5 tk8.5 libtk-img
+.. |APTDEPS3| replace:: autoconf automake gcc libev-dev make python-dev libreadline-dev pkg-config imagemagick help2man
+
+.. |YUMDEPS| replace:: bash bridge-utils ebtables iproute libev python procps-ng net-tools
+.. |YUMDEPS2| replace:: tcl tk tkimg 
+.. |YUMDEPS3| replace:: autoconf automake make libev-devel python-devel ImageMagick help2man
+

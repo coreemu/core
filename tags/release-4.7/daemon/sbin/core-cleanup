@@ -1,0 +1,58 @@
+#!/bin/sh
+
+if [ "z$1" = "z-h" -o "z$1" = "z--help" ]; then
+    echo "usage: $0 [-d [-l]]"
+    echo -n "    Clean up all CORE namespaces processes, bridges, interfaces, "
+    echo "and session\n    directories. Options:"
+    echo "        -h    show this help message and exit"
+    echo "        -d    also kill the Python daemon"
+    echo "        -l    remove the core-daemon.log file"
+    exit 0
+fi
+
+if [ `id -u` != 0 ]; then
+    echo "Permission denied. Re-run this script as root."
+    exit 1
+fi
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+export PATH
+
+if [ "z$1" = "z-d" ]; then
+    pypids=`pidof python python2`
+    for p in $pypids; do
+	grep -q core-daemon /proc/$p/cmdline
+	if [ $? = 0 ]; then
+            echo "cleaning up core-daemon process: $p"
+	    kill -9 $p
+	fi
+    done
+fi
+
+if [ "z$2" = "z-l" ]; then
+    rm -f /var/log/core-daemon.log
+fi
+
+vnodedpids=`pidof vnoded`
+if [ "z$vnodedpids" != "z" ]; then
+    echo "cleaning up old vnoded processes: $vnodedpids"
+    killall -v -KILL vnoded
+    # pause for 1 second for interfaces to disappear
+    sleep 1
+fi
+killall -q emane
+killall -q emanetransportd
+killall -q emaneeventservice
+
+ifconfig -a | awk '
+    /^veth[0-9]+\./ {print "removing interface " $1; system("ip link del " $1);}
+    /tmp\./    {print "removing interface " $1; system("ip link del " $1);}
+    /gt\./     {print "removing interface " $1; system("ip link del " $1);}
+    /b\./ {print "removing bridge " $1; system("ip link set " $1 " down; brctl delbr " $1);}
+'
+
+ebtables -L FORWARD | awk '
+    /^-.*b\./ {print "removing ebtables " $0; system("ebtables -D FORWARD " $0); print "removing ebtables chain " $4; system("ebtables -X " $4);}
+'
+
+rm -rf /tmp/pycore*

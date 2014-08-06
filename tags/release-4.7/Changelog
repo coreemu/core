@@ -1,0 +1,239 @@
+2014-08-06 CORE 4.7
+
+  * EMANE:
+    - support for EMANE 0.9.1
+    - fix error when using Comm Effect model with loss/duplicate string values
+    - enable flow control in virtual transport if enabled in the MAC model
+    - fix bug #150 where EMANE event service/address port were not used
+  * GUI:
+    - support Tcl/Tk 8.6 when available
+    - added --(a)ddress and --(p)ort arguments to core-gui command-line
+    - added File > Execute XML or Python script... option
+    - added File > Execute Python script with options... menu item
+    - when executing Python script from GUI, run in background thread, wait for
+      RUNTIME state
+    - enter RUNTIME state when start button pressed with empty canvas
+    - added support for asymmetric link effects
+    - support link delays up to 274 seconds (netem maximum)
+    - allow runtime changes of WLAN link effects
+  * DAEMON:
+    - set NODE_NAME, NODE_NUMBER, SESSION_SHORT in default vnoded environment
+    - changed host device naming to use veth, tap prefixes; b.n.SS for bridges
+    - allow parsing XML files into live running session
+    - enable link effects between hub/switch and hub/switch connections
+    - update MDR service to use broadcast interfaces for non-WLAN links
+    - allow node class to be specified when initializing XML parser
+    - save and parse canvas origin (reference point) and scale in MP XML
+    - up/down control script session option
+    - fix hash calculation used to determine GRE tunnel keys
+    - use shell script to detach SMF on startup
+    - added NRL services for mgen sink and nrlolsrv2
+    - use SDT URL session option
+    - added core-manage tool for addons to add/remove/check services, models,
+      and custom node types
+  * API:
+    - implement local flag in Execute Message for running host commands
+    - jitter changed to 64-bit value to align with delay in Link Message
+    - added unidirectional link flag TLV to Link Message
+    - added reconfigure event type for re-generating service config files
+    - return errors in API with failed services
+  * BUGFIXES:
+    - fix HTTP service running under Ubuntu
+    - fixed the following bugs: #150, 169, 188, 220, 225, 230, 231, 242, 244,
+      247, 248, 250, 251
+
+2013-09-25 CORE 4.6
+
+  * NOTE: cored is now core-daemon, and core is now core-gui (for Debian
+    acceptance)
+  * NOTE: /etc/init.d/core is now /etc/init.d/core-daemon (for insserv
+    compatibility)
+  * EMANE:
+    - don't start EMANE locally if no local NEMs
+    - EMANE poststartup() to re-transmit location events during initialization
+    - added debug port to EMANE options
+    - added a basic EMANE 802.11 CORE Python script example
+    - expose transport XML block generation to EmaneModels 
+    - expose NEM entry to the EmaneModel so it can be overridden by a model
+    - add the control interface bridge prior to starting EMANE, as some models may
+    - depend on the controlnet functionality
+    - added EMANE model to CORE converter
+    - parse lat/long/alt from node messages, for moving nodes using command-line
+    - fix bug #196 incorrect distance when traversing UTM zones
+ 
+  * GUI:
+    - added Cut, Copy, and Paste options to the Edit menu
+    - paste will copy selected services and take care of node and interface 
+    -  renumbering
+    - implement Edit > Find dialog for searching nodes and links
+    - when copying existing file for a service, perform string replacement of:
+    -  "~", "%SESSION%", "%SESSION_DIR%", "%SESSION_USER%", "%NODE%", "%NODENAME%"
+    - use CORE_DATA_DIR insteadof LIBDIR
+    - fix Adjacency Widget to work with OSPFv2 only networks
+ 
+  * BUILD:
+    - build/packaging improvements for inclusion on Debian
+    - fix error when running scenario with a mobility script in batch mode
+    - include Linux kernel patches for 3.8
+    - renamed core-cleanup.sh to core-cleanup for Debian conformance
+    - don't always generate man pages from Makefile; new manpages for
+    coresendmsg and core-daemon
+
+  * BUGFIXES:
+    - don't auto-assign IPv4/IPv6 addresses when none received in Link Messages (session reconnect)
+    - fixed lock view
+    - fix GUI spinbox errors for Tk 8.5.8 (RHEL/CentOS 6.2)
+    - fix broker node count for distributed session entering the RUNTIME state when
+    -  (non-EMANE) WLANs or GreTapBridges are involved;
+    - fix "file exists" error message when distributed session number is re-used
+    -  and servers file is written
+    - fix bug #194 configuration dialog too long, make dialog scrollable/resizable
+    - allow float values for loss and duplicates percent
+    - fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 202,
+    205, 206, 210, 212, 213, 214, 221
+
+2013-04-13 CORE 4.5
+
+  * GUI:
+    - improved behavior when starting GUI without daemon, or using File New after connection with daemon is lost
+    - fix various GUI issues when reconnecting to a session
+    - support 3D GUI via output to SDT3D
+    - added "Execute Python script..." entry to the File Menu
+    - support user-defined terminal program instead of hard-coded xterm
+    - added session options for "enable RJ45s", "preserve session dir"
+    - added buttons to the IP Addresses dialog for removing all/selected IPv4/IPv6
+    - allow sessions with multiple canvases to enter RUNTIME state
+    - added "--addons" startup mode to pass control to code included from addons dir
+    - added "Locked" entry to View menu to prevent moving items
+    - use currently selected node type when invoking a topology generator
+    - updated throughput plots with resizing, color picker, plot labels, locked scales, and save/load plot configuration with imn file
+    - improved session dialog
+  * EMANE:
+    - EMANE 0.8.1 support with backwards-compatibility for 0.7.4
+    - extend CommEffect model to generate CommEffect events upon receipt of Link Messages having link effects
+  * Services:
+    - updated FTP service with root directory for anonymous users
+    - added HTTP, PCAP, BIRD, RADVD, and Babel services
+    - support copying existing files instead of always generating them
+    - added "Services..." entry to node right-click menu
+    - added "View" button for side-by-side comparison when copying customized config files
+    - updated Quagga daemons to wait for zebra.vty VTY file before starting
+  * General:
+    - XML import and export
+    - renamed "cored.py" to "cored", "coresendmsg.py" to "coresendmsg"
+    - code reorganization and clean-up
+    - updated XML export to write NetworkPlan, MotionPlan, and ServicePlan within a Scenario tag, added new "Save As XML..." File menu entry
+    - added script_start/pause/stop options to Ns2ScriptedMobility
+    - "python" source sub-directory renamed to "daemon"
+    - added "cored -e" option to execute a Python script, adding its session to the active sessions list, allowing for GUI connection
+    - support comma-separated list for custom_services_dir in core.conf file
+    - updated kernel patches for Linux kernel 3.5
+    - support RFC 6164-style IPv6 /127 addressing
+  * ns-3:
+    - integrate ns-3 node location between CORE and ns-3 simulation
+    - added ns-3 random walk mobility example
+    - updated ns-3 Wifi example to allow GUI connection and moving of nodes
+  * fixed the following bugs: 54, 103, 111, 136, 145, 153, 157, 160, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176, 184, 190, 193
+
+2012-09-25 CORE 4.4
+
+  * GUI:
+    - real-time bandwidth plotting tool
+    - added Wireshark and tshark right-click menu items
+    - X,Y coordinates shown in the status bar
+    - updated GUI attribute option to link messages for changing color/width/dash
+    - added sample IPsec and VPN scenarios, how many nodes script
+    - added jitter parameter to WLANs
+    - renamed Experiment menu to Session menu, added session options
+    - use 'key=value' configuration for services, EMANE models, WLAN models, etc.
+    - save only service values that have been customized
+    - copy service parameters from one customized service to another
+    - right-click menu to start/stop/restart each service
+  * EMANE:
+    - EMANE 0.7.4 support
+    - added support for EMANE CommEffect model and Comm Effect controller GUI
+    - added support for EMANE Raw Transport when using RJ45 devices
+  * Services:
+    - improved service customization; allow a service to define custom Tcl tab
+    - added vtysh.conf for Quagga service to support 'write mem'
+    - support scheduled events and services that start N seconds after runtime
+    - added UCARP service
+  * Documentation:
+    - converted the CORE manual to reStructuredText using Sphinx; added Python docs
+  * General:
+    - Python code reorganization
+    - improved cored.py thread locking
+    - merged xen branch into trunk
+    - added an event queue to a session with notion of time zero
+    - added UDP support to cored.py
+    - use UDP by default in coresendmsg.py; added '-H' option to print examples
+    - enter a bash shell by default when running vcmd with no arguments 
+    - fixes to distributed emulation entering runtime state
+    - write 'nodes' file upon session startup
+    - make session number and other attributes available in environment
+    - support /etc/core/environment and ~/.core/environment files
+    - added Ns2ScriptedMobility model to Python, removed from the GUI
+    - namespace nodes mount a private /sys
+
+    - fixed the following bugs: 80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 143, 144, 146, 147, 151, 154, 155
+
+2012-03-07 CORE 4.3
+
+  * EMANE 0.7.2 and 0.7.3 support
+  * hook scripts: customize actions at any of six different session states
+  * Check Emulation Light (CEL) exception feedback system
+  * added FTP and XORP services, and service validate commands
+  * services can flag when customization is required
+  * Python classes to support ns-3 simulation experiments
+  * write state, node X,Y position, and servers to pycore session dir
+  * removed over 9,000 lines of unused GUI code
+  * performance monitoring script
+  * batch mode improvements and --closebatch option
+  * export session to EmulationScript XML files
+  * basic range model moved from GUI to Python, supports 3D coordinates
+  * improved WLAN dialog with tabs
+  * added PhysicalNode class for joining real nodes with emulated networks
+  * fixed the following bugs: 50, 75, 76, 79, 82, 83, 85, 86, 89, 90, 92, 94, 96, 98, 100, 112, 113, 116, 119, 120
+
+2011-08-19 CORE 4.2
+
+  * EMANE 0.7.1 support
+    - support for Bypass model, Universal PHY, logging, realtime
+  * configurable MAC addresses
+  * control interfaces (backchannel between node and host)
+  * service customization dialog improved (tabbed)
+  * new testing scripts for MDR and EMANE performance testing
+  * improved upgrading of old imn files
+  * new coresendmsg.py utility (deprecates libcoreapi and coreapisend)
+  * new security services, custom service becomes UserDefined
+  * new services and Python scripting chapters in manual
+  * fixes to distributed emulation, linking tunnels/RJ45s with WLANs/hubs/switches
+  * fixed the following bugs: 18, 32, 34, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 52, 53, 55, 57, 58, 60, 62, 64, 65, 66, 68, 71, 72, 74
+
+2011-01-05 CORE 4.1
+  * new icons for toolbars and nodes
+  * node services introduced, node models deprecated
+  * customizable node types
+  * traffic flow editor with MGEN support
+  * user configs moved from /etc/core/`*` to ~/.core/
+  * allocate addresses from custom IPv4/IPv6 prefixes
+  * distributed emulation using GRE tunnels
+  * FreeBSD 8.1 now uses cored.py
+  * EMANE 0.6.4 support
+  * numerous bugfixes
+
+2010-08-17 CORE 4.0
+  * Python framework with Linux network namespace (netns) support (Linux netns is now the primary supported platform)
+  * ability to close the GUI and later reconnect to a running session (netns only)
+  * EMANE integration (netns only)
+  * new topology generators, host file generator
+  * user-editable Observer Widgets
+  * use of /etc/core instead of /usr/local/etc/core
+  * various bugfixes
+
+2009-09-15 CORE 3.5
+
+2009-06-23 CORE 3.4
+
+2009-03-11 CORE 3.3
+

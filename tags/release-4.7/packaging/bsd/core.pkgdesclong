@@ -1,0 +1,3 @@
+The Common Open Research Emulator (CORE) is a tool that allows you to emulate entire networks on a FreeBSD or Linux machine. You can connect these emulated networks to live networks (or to additional emulated networks) via the machine's physical interfaces. This package contains CORE userspace components for easily drawing topologies that drive lightweight virutalized network stacks.
+
+WWW:  http://www.nrl.navy.mil/itd/ncs/products/core

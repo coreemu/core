@@ -1,0 +1,73 @@
+#!/bin/sh
+
+if [ "z$1" = "z-h" -o "z$1" = "z--help" ]; then
+    echo "usage: $0 [-d]"
+    echo -n "    Clean up all CORE Xen domUs, bridges, interfaces, "
+    echo "and session\n    directories. Options:"
+    echo "        -h    show this help message and exit"
+    echo "        -d    also kill the Python daemon"
+    exit 0
+fi
+
+if [ `id -u` != 0 ]; then
+    echo "Permission denied. Re-run this script as root."
+    exit 1
+fi
+
+PATH="/sbin:/bin:/usr/sbin:/usr/bin"
+export PATH
+
+if [ "z$1" = "z-d" ]; then
+    pypids=`pidof python python2`
+    for p in $pypids; do
+	grep -q core-daemon /proc/$p/cmdline
+	if [ $? = 0 ]; then
+            echo "cleaning up core-daemon process: $p"
+	    kill -9 $p
+	fi
+    done
+fi
+
+mount | awk '
+    /\/tmp\/pycore\./ { print "umount " $3; system("umount " $3); }
+'
+
+domus=`xm list | awk '
+    /^c.*-n.*/ { print $1; }'`
+for domu in $domus
+do
+    echo "destroy $domu" 
+    xm destroy $domu
+done
+
+vgs=`vgs | awk '{ print $1; }'`
+for vg in $vgs
+do
+    if [ ! -x /dev/$vg ]; then
+	continue
+    fi
+    echo "searching volume group: $vg"
+    lvs=`ls /dev/$vg/c*-n*- 2> /dev/null`
+    for lv in $lvs
+    do
+	echo "removing volume $lv"
+	kpartx -d $lv
+	lvchange -an $lv
+	lvremove $lv
+    done
+done
+
+/sbin/ip link show | awk '
+    /b\.ctrlnet\.[0-9]+/ {print "removing interface " $2; system("ip link set " $2 " down; brctl delbr " $2); }
+'
+
+ls /sys/class/net | awk '
+    /^b\.[0-9]+\.[0-9]+$/ {print "removing interface " $1; system("ip link set " $1 " down; brctl delbr " $1); }
+'
+
+
+ebtables -L FORWARD | awk '
+    /^-.*b\./ {print "removing ebtables " $0; system("ebtables -D FORWARD " $0); print "removing ebtables chain " $4; system("ebtables -X " $4);}
+'
+
+rm -rf /tmp/pycore*
