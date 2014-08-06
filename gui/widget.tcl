@@ -908,7 +908,7 @@ proc getstats_link_ifname { link } {
     # TODO: need to determine session number used by daemon
     #       instead this uses a '*' character for a regexp match against
     #       the interfaces in /proc/net/dev
-    set ifname "n$node_num\\.$ifname\\.*"
+    set ifname "veth$node_num\\.[string range $ifname 3 end]\\.*"
     return $ifname
 }
 
