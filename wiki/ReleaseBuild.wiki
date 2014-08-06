@@ -135,14 +135,14 @@ make rpm
 
 {{{
 mock -r fedora-20-x86_64 rebuild core-4.7-1.src.rpm
-cp /var/lib/mock/fedora-20-x86_64/result/core-daemon-4.7-1.amd64.rpm   ~/core-daemon-4.7-1.fc20.amd64.rpm
+cp /var/lib/mock/fedora-20-x86_64/result/core-daemon-4.7-1.x86_64.rpm   ~/core-daemon-4.7-1.fc20.x86_64.rpm
 
 mock -r fedora-20-i386 rebuild core-4.7-1.src.rpm
 cp /var/lib/mock/fedora-20-i386/result/core-daemon-4.7-1.i686.rpm
   ~/core-daemon-4.7-1.fc20.i686.rpm
 
 mock -r epel-7-x86_64 rebuild core-4.7-1.src.rpm
-cp /var/lib/mock/epel-7-x86_64/result/core-daemon-4.7-1.amd64.rpm   ~/core-daemon-4.7-1.el7.amd64.rpm
+cp /var/lib/mock/epel-7-x86_64/result/core-daemon-4.7-1.x86_64.rpm   ~/core-daemon-4.7-1.el7.x86_64.rpm
 
 }}}
 
