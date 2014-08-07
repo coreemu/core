@@ -4,7 +4,7 @@
 
 This is the quickstart guide; for full installation instructions, refer to the [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html CORE manual].
 
-CORE 4.6 packages are available for Ubuntu 12.04 (precise), 12.10 (quantal), or 13.04 (raring), Fedora 17, 18, 19, and rhel6. Debian users can install CORE directly using `sudo apt-get install core-network`. For different Linux distributions, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform. See the [Upgrading upgrading] page for help choosing a release or for upgrade instructions.
+CORE 4.7 packages are available for Ubuntu 12.04 (precise) or 14.04 (trusty), Fedora 19 or 20, and rhel7 or rhel6. Ubuntu (14.04) and Debian users can install CORE directly using `sudo apt-get install core-network`. For different Linux distributions, make sure the kernel is at least 2.6.27 to support [Namespaces network namespaces]. Released packages are generally more stable and tested to work properly on the given platform. See the [Upgrading upgrading] page for help choosing a release or for upgrade instructions.
 
 == Step 1. Install CORE package ==
 
