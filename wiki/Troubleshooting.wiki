@@ -7,11 +7,8 @@
 
 == Linux version ==
  * *log files:*
-   * `/var/log/coredpy.log` - CORE Python daemon log file
+   * `/var/log/core-daemon.log` - CORE Python daemon log file
    * `/tmp/pycore.nnnnn/nX.log` - each node has a log file (where `nnnnn` is session number and `X` is the node number)
-
- * *Issue:* per-node directories not working; all nodes see the same thing in `/var/log` for example, pointing to the last bind mount. This occurs in Fedora 15. 
- * *Resolution:* turn off sandbox using `chkconfig sandbox off` and reboot
 
  * *Issue:* quagga does not start successfully.  When I enter into a namespace context and type "zebra -d", the following error occurs:
 {{{
