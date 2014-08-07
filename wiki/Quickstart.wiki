@@ -13,13 +13,15 @@ Get the Ubuntu (deb) or Fedora (rpm) package for your architecture (64-bit or 32
 
 Use your package manager to automatically install dependencies:<br>
 {{{
-  # Ubuntu users (specify entire path)
-  software-center core-daemon_4.6-0ubuntu1_precise_amd64.deb
-  software-center core-gui_4.6-0ubuntu1_precise_all.deb
-  # Fedora users
+  # Ubuntu 14.04 users - from repo
+  sudo apt-get install core-network
+  # Ubuntu users - from deb files
+  software-center core-daemon_4.7-0ubuntu1_precise_amd64.deb
+  software-center core-gui_4.7-0ubuntu1_precise_all.deb
+  # Fedora users - from RPM files
   su
-  yum localinstall core-daemon-4.6-1.fc19.x86_64.rpm
-  yum localinstall core-gui-4.6-1.fc19.noarch.rpm
+  yum localinstall core-daemon-4.7-1.fc20.x86_64.rpm
+  yum localinstall core-gui-4.7-1.fc20.noarch.rpm
 }}}
 
 Virtual networks usually require routing software. CORE automatically builds configs for the [http://www.quagga.net Quagga] routing suite. For wireless networks, CORE will generate OSPF MDR configs, for a modified version of Quagga available from [http://www.nrl.navy.mil/itd/ncs/products/ospf-manet here].
@@ -28,13 +30,15 @@ Virtual networks usually require routing software. CORE automatically builds con
   sudo apt-get install quagga
   # Ubuntu - OSPF MDR Quagga
   software-center /home/user/Downloads/quagga-mr_0.99.21mr2.2_amd64.deb
-  # Fedora - vanilla Quagga
-  su
-  yum install quagga
+  # Fedora - vanilla Quagga currently unsupported (see ReleaseNotes)
+  #su
+  #yum install quagga
   # Fedora - OSPF MDR Quagga
   su
   yum localinstall quagga-0.99.21mr2.2-1.fc16.x86_64.rpm --nogpgcheck
 }}}
+
+Check the *Known Issues* section in the ReleaseNotes.
 
 *Fedora users:* check the full [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/install.html#installing-from-packages-on-fedora-centos installation instructions], you need to also disable (or configure) SELINUX, sandbox, and iptables.
 
