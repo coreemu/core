@@ -1475,7 +1475,9 @@ proc addInterfaceCommand { node parentmenu txt cmd state isnodecmd } {
 	if { $isnodecmd } { ;# run command in a node
 	    set icmd "spawnShell $node \"$cmd $ifc\""
 	} else { ;# exec a command directly
-	    set localifc $node.$ifc.$ssid
+	    set nodenum [string range $node 1 end]
+	    set ifnum [string range $ifc 3 end]
+	    set localifc veth$nodenum.$ifnum.$ssid
 	    set icmd "exec $cmd $localifc &"
 	}
         $childmenu add command -label "$ifc$addr" -state $state -command $icmd
