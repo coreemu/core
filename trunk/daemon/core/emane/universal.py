@@ -94,7 +94,7 @@ class EmaneUniversalModel(EmaneModel):
         ("antennatype", coreapi.CONF_DATA_TYPE_STRING, 'omnidirectional',
          'omnidirectional,unidirectional','antenna type'),
         ]
-        
+
     # parameters that require unit conversion for 0.7.4
     _update_ver074 = ("bandwidth", "frequency", "frequencyofinterest")
     # parameters that should be removed for 0.7.4

@@ -24,7 +24,7 @@ try:
     import emaneeventservice
     import emaneeventcommeffect
 except Exception, e:
-    pass 
+    pass
 
 class EmaneCommEffectModel(EmaneModel):
     def __init__(self, session, objid = None, verbose = False):
@@ -88,7 +88,7 @@ class EmaneCommEffectModel(EmaneModel):
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
         if ff.strip() != '':
-            shim.appendChild(e.xmlparam(shimdoc, "filterfile", ff))        
+            shim.appendChild(e.xmlparam(shimdoc, "filterfile", ff))
         e.xmlwrite(shimdoc, self.shimxmlname(ifc))
 
         nemdoc = e.xmldoc("nem")
@@ -114,7 +114,7 @@ class EmaneCommEffectModel(EmaneModel):
                 return 0
             else:
                 return int(x)
-        
+
         service = self.session.emane.service
         if service is None:
             self.session.warn("%s: EMANE event service unavailable" % \

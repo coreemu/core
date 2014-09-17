@@ -166,7 +166,7 @@ class Emane(ConfigurableManager):
                 (obj.objid, obj)
         self._objs[obj.objid] = obj
         self._objslock.release()
-        
+
     def getmodels(self, n):
         ''' Used with XML export; see ConfigurableManager.getmodels()
         '''
@@ -274,7 +274,7 @@ class Emane(ConfigurableManager):
         self._objslock.release()
 
     def handledistributed(self, msg):
-        ''' Broker handler for processing CORE API messages as they are 
+        ''' Broker handler for processing CORE API messages as they are
             received. This is used to snoop the Link add messages to get NEM
             counts of NEMs that exist on other servers.
         '''
@@ -410,7 +410,7 @@ class Emane(ConfigurableManager):
         '''
         for n in self._objs:
             self.setnodemodel(n)
-            
+
     def setnodemodel(self, n):
         emanenode = self._objs[n]
         if n not in self.configs:
@@ -443,7 +443,7 @@ class Emane(ConfigurableManager):
             else:
                 emanenode = None
         return (emanenode, netif)
-    
+
     def numnems(self):
         ''' Return the number of NEMs emulated locally.
         '''
@@ -523,7 +523,7 @@ class Emane(ConfigurableManager):
                               cwd=self.session.sessiondir)
         except Exception, e:
             self.info("error running emanegentransportxml: %s" % e)
-    
+
     def buildeventservicexml(self):
         ''' Build the libemaneeventservice.xml file if event service options
             were changed in the global config.
@@ -535,7 +535,7 @@ class Emane(ConfigurableManager):
         keys = ('eventservicegroup', 'eventservicedevice')
         for k in keys:
             a = self.emane_config.valueof(k, defaults)
-            b = self.emane_config.valueof(k, values) 
+            b = self.emane_config.valueof(k, values)
             if a != b:
                 need_xml = True
 
@@ -594,7 +594,7 @@ class Emane(ConfigurableManager):
         transcmd = ["emanetransportd", "-d", "--logl", loglevel, "-f", \
                     os.path.join(path, "emanetransportd.log")]
         if realtime:
-            transcmd += "-r", 
+            transcmd += "-r",
         files = os.listdir(path)
         for file in files:
             if file[-3:] == "xml" and file[:15] == "transportdaemon":
@@ -626,7 +626,7 @@ class Emane(ConfigurableManager):
            if self.verbose:
                self.info("Emane.installnetifs() for node %d" % n)
            emanenode.installnetifs()
-    
+
     def deinstallnetifs(self):
         ''' Uninstall TUN/TAP virtual interfaces.
         '''
@@ -639,7 +639,7 @@ class Emane(ConfigurableManager):
         '''
         r = self.emane_config.configure_emane(session, msg)
 
-        # extra logic to start slave Emane object after nemid has been 
+        # extra logic to start slave Emane object after nemid has been
         # configured from the master
         conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
         if conftype == coreapi.CONF_TYPE_FLAGS_UPDATE and \
@@ -660,7 +660,7 @@ class Emane(ConfigurableManager):
         # this support must be explicitly turned on; by default, CORE will
         # generate the EMANE events when nodes are moved
         return self.session.getcfgitembool('emane_event_monitor', False)
-        
+
     def starteventmonitor(self):
         ''' Start monitoring EMANE location events if configured to do so.
         '''
@@ -831,8 +831,8 @@ class EmaneModel(WirelessModel):
 
     @classmethod
     def emane074_fixup(cls, value, div=1.0):
-        ''' Helper for converting 0.8.1 and newer values to EMANE 0.7.4 
-        compatible values. 
+        ''' Helper for converting 0.8.1 and newer values to EMANE 0.7.4
+        compatible values.
         NOTE: This should be removed when support for 0.7.4 has been
         deprecated.
         '''
@@ -849,7 +849,7 @@ class EmaneModel(WirelessModel):
         ''' Build the necessary nem, mac, and phy XMLs in the given path.
         '''
         raise NotImplementedError
-        
+
     def buildplatformxmlnementry(self, doc, n, ifc):
         ''' Build the NEM definition that goes into the platform.xml file.
         This returns an XML element that will be added to the <platform/> element.
@@ -922,10 +922,10 @@ class EmaneModel(WirelessModel):
         ''' Return the string name for the PHY XML file, e.g. 'n3rfpipephy.xml'
         '''
         return "%sphy.xml" % self.basename(ifc)
-    
+
     def update(self, moved, moved_netifs):
         ''' invoked from MobilityModel when nodes are moved; this causes
-            EMANE location events to be generated for the nodes in the moved 
+            EMANE location events to be generated for the nodes in the moved
             list, making EmaneModels compatible with Ns2ScriptedMobility
         '''
         try:
@@ -933,7 +933,7 @@ class EmaneModel(WirelessModel):
         except KeyError:
             return
         wlan.setnempositions(moved_netifs)
-        
+
     def linkconfig(self, netif, bw = None, delay = None,
                 loss = None, duplicate = None, jitter = None, netif2 = None):
         ''' Invoked when a Link Message is received. Default is unimplemented.
@@ -941,7 +941,7 @@ class EmaneModel(WirelessModel):
         warntxt = "EMANE model %s does not support link " % self._name
         warntxt += "configuration, dropping Link Message"
         self.session.warn(warntxt)
-    
+
     @staticmethod
     def valuestrtoparamlist(dom, name, value):
         ''' Helper to convert a parameter to a paramlist.
@@ -966,24 +966,24 @@ class EmaneGlobalModel(EmaneModel):
     _name = "emane"
     _confmatrix_platform_base = [
         ("otamanagerchannelenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'on,off', 'enable OTA Manager channel'), 
+         'on,off', 'enable OTA Manager channel'),
         ("otamanagergroup", coreapi.CONF_DATA_TYPE_STRING, '224.1.2.8:45702',
-         '', 'OTA Manager group'), 
+         '', 'OTA Manager group'),
         ("otamanagerdevice", coreapi.CONF_DATA_TYPE_STRING, 'lo',
-         '', 'OTA Manager device'), 
+         '', 'OTA Manager device'),
         ("eventservicegroup", coreapi.CONF_DATA_TYPE_STRING, '224.1.2.8:45703',
-         '', 'Event Service group'), 
+         '', 'Event Service group'),
         ("eventservicedevice", coreapi.CONF_DATA_TYPE_STRING, 'lo',
-         '', 'Event Service device'), 
+         '', 'Event Service device'),
         ("platform_id_start", coreapi.CONF_DATA_TYPE_INT32, '1',
          '', 'starting Platform ID'),
     ]
     _confmatrix_platform_081 = [
         ("debugportenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'on,off', 'enable debug port'), 
+         'on,off', 'enable debug port'),
         ("debugport", coreapi.CONF_DATA_TYPE_UINT16, '47000',
          '', 'debug port number'),
-    ] 
+    ]
     _confmatrix_platform_091 = [
         ("controlportendpoint", coreapi.CONF_DATA_TYPE_STRING, '0.0.0.0:47000',
          '', 'Control port address'),
@@ -992,11 +992,11 @@ class EmaneGlobalModel(EmaneModel):
     ]
     _confmatrix_nem = [
         ("transportendpoint", coreapi.CONF_DATA_TYPE_STRING, 'localhost',
-         '', 'Transport endpoint address (port is automatic)'), 
+         '', 'Transport endpoint address (port is automatic)'),
         ("platformendpoint", coreapi.CONF_DATA_TYPE_STRING, 'localhost',
-         '', 'Platform endpoint address (port is automatic)'), 
+         '', 'Platform endpoint address (port is automatic)'),
         ("nem_id_start", coreapi.CONF_DATA_TYPE_INT32, '1',
-         '', 'starting NEM ID'), 
+         '', 'starting NEM ID'),
         ]
     if 'EventService' in globals():
         _confmatrix_platform = _confmatrix_platform_base + \
