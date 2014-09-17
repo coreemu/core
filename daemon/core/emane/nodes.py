@@ -6,7 +6,7 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-nodes.py: definition of an EmaneNode class for implementing configuration 
+nodes.py: definition of an EmaneNode class for implementing configuration
 control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 '''
@@ -27,7 +27,7 @@ try:
 except Exception, e:
     ''' Don't require all CORE users to have EMANE libeventservice and its
         Python bindings installed.
-    ''' 
+    '''
     pass
 
 class EmaneNet(PyCoreNet):
@@ -89,7 +89,7 @@ class EmaneNode(EmaneNet):
                                verbose=self.verbose, values=config)
 
     def setnemid(self, netif, nemid):
-        ''' Record an interface to numerical ID mapping. The Emane controller 
+        ''' Record an interface to numerical ID mapping. The Emane controller
             object manages and assigns these IDs for all NEMs.
         '''
         self.nemidmap[netif] = nemid
@@ -110,7 +110,7 @@ class EmaneNode(EmaneNet):
             if self.nemidmap[netif] == nemid:
                 return netif
         return None
-        
+
     def netifs(self, sort=True):
         ''' Retrieve list of linked interfaces sorted by node number.
         '''
@@ -163,7 +163,7 @@ class EmaneNode(EmaneNet):
             self.buildtransportxml(emane, vtype)
         if need_raw:
             self.buildtransportxml(emane, rtype)
-            
+
     def buildtransportxml(self, emane, type):
         ''' Write a transport XML file for the Virtual or Raw Transport.
         '''
@@ -172,7 +172,7 @@ class EmaneNode(EmaneNet):
         trans.setAttribute("name", "%s Transport" % type.capitalize())
         trans.setAttribute("library", "trans%s" % type.lower())
         trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
-        
+
         flowcontrol = False
         names = self.model.getnames()
         values = emane.getconfig(self.objid, self.model._name,
@@ -181,7 +181,7 @@ class EmaneNode(EmaneNet):
             i = names.index("flowcontrolenable")
             if self.model.booltooffon(values[i]) == "on":
                 flowcontrol = True
-        
+
         if "virtual" in type.lower():
             trans.appendChild(emane.xmlparam(transdoc, "devicepath",
                               "/dev/net/tun"))
@@ -189,9 +189,9 @@ class EmaneNode(EmaneNet):
                 trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable",
                                                  "on"))
         emane.xmlwrite(transdoc, self.transportxmlname(type.lower()))
-        
+
     def transportxmlname(self, type):
-        ''' Return the string name for the Transport XML file, 
+        ''' Return the string name for the Transport XML file,
             e.g. 'n3transvirtual.xml'
         '''
         return "n%strans%s.xml" % (self.objid, type)
@@ -221,9 +221,9 @@ class EmaneNode(EmaneNet):
             netif.poshook = self.setnemposition
             (x,y,z) = netif.node.position.get()
             self.setnemposition(netif, x, y, z)
-    
+
     def deinstallnetifs(self):
-        ''' Uninstall TAP devices. This invokes their shutdown method for 
+        ''' Uninstall TAP devices. This invokes their shutdown method for
             any required cleanup; the device may be actually removed when
             emanetransportd terminates.
         '''
@@ -266,7 +266,7 @@ class EmaneNode(EmaneNet):
                                            emaneeventservice.NEMID_ANY,
                                            emaneeventservice.COMPONENTID_ANY,
                                            event.export())
-    
+
     def setnempositions(self, moved_netifs):
         ''' Several NEMs have moved, from e.g. a WaypointMobilityModel
             calculation. Generate an EMANE Location Event having several
@@ -312,5 +312,5 @@ class EmaneNode(EmaneNet):
                                            emaneeventservice.NEMID_ANY,
                                            emaneeventservice.COMPONENTID_ANY,
                                            event.export())
-        
+
 
