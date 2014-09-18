@@ -103,7 +103,7 @@ class EmaneCommEffectModel(EmaneModel):
         ''' Generate CommEffect events when a Link Message is received having
         link parameters.
         '''
-        if self.session.emane.version == self.session.emane.EMANE091:
+        if self.session.emane.version >= self.session.emane.EMANE091:
             raise NotImplementedError, \
                   "CommEffect linkconfig() not implemented for EMANE 0.9.1+"
         def z(x):

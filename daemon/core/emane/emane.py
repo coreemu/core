@@ -15,7 +15,7 @@ from xml.dom.minidom import parseString, Document
 from core.constants import *
 from core.api import coreapi
 from core.misc.ipaddr import MacAddr
-from core.misc.utils import maketuplefromstr
+from core.misc.utils import maketuplefromstr, cmdresult
 from core.misc.xmlutils import addtextelementsfromtuples, addparamlisttoparent
 from core.conf import ConfigurableManager, Configurable
 from core.mobility import WirelessModel
@@ -45,8 +45,8 @@ class Emane(ConfigurableManager):
     (SUCCESS, NOT_NEEDED, NOT_READY) = (0, 1, 2)
     EVENTCFGVAR = 'LIBEMANEEVENTSERVICECONFIG'
     # possible self.version values
-    (EMANE074, EMANE081, EMANE091) = (7, 8, 9)
-    
+    (EMANEUNK, EMANE074, EMANE081, EMANE091, EMANE092) = (0, 7, 8, 91, 92)
+
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
         self.verbose = self.session.getcfgitembool('verbose', False)
@@ -62,26 +62,40 @@ class Emane(ConfigurableManager):
                                                         8200)
         self.doeventloop = False
         self.eventmonthread = None
-        # detect between EMANE versions 0.7.4, 0.8.1, and 0.9.1+
-        # to be removed as support for older EMANEs is deprecated
-        self.version = self.EMANE081
-        try:
-            tmp = emaneeventlocation.EventLocation(1)
-            # check if yaw parameter is supported by Location Events
-            # if so, we have EMANE 0.8.1; if not, we have EMANE 0.7.4/earlier
-            tmp.set(0, 1, 2, 2, 2, 3)
-        except TypeError:
-            self.version = self.EMANE074
-        except Exception:
-            # e.g. no Python bindings installed
-            pass
-        if 'EventService' in globals():
-            self.version = self.EMANE091
+        self.detectversion()
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None, self.verbose)
         session.broker.handlers += (self.handledistributed, )
         self.loadmodels()
         self.initeventservice()
+
+    def detectversion(self):
+        ''' Detects the installed EMANE version and sets self.version.
+        '''
+        self.version, self.versionstr = self.detectversionfromcmd()
+        if self.verbose:
+            self.info("detected EMANE version: %s" % self.versionstr)
+
+    def detectversionfromcmd(self):
+        ''' Runs 'emane --version' locally to determine version number.
+        '''
+        # for further study: different EMANE versions on distributed machines
+        try:
+            status, result = cmdresult(['emane', '--version'])
+        except OSError:
+            status = -1
+            result = ""
+        v = self.EMANEUNK
+        if status == 0:
+            if result[:5] == "0.7.4":
+                v = self.EMANE074
+            elif result[:5] == "0.8.1":
+                v = self.EMANE081
+            elif result[:5] == "0.9.1":
+                v = self.EMANE091
+            elif result[:5] == "0.9.2":
+                v = self.EMANE092
+        return v, result.strip()
 
     def initeventservice(self, filename=None):
         ''' (Re-)initialize the EMANE Event service. The multicast group and/or
@@ -92,7 +106,7 @@ class Emane(ConfigurableManager):
             del self.service
         self.service = None
         # EMANE 0.9.1+ does not require event service XML config
-        if self.version == self.EMANE091:
+        if self.version >= self.EMANE091:
             values = self.getconfig(None, "emane",
                                     self.emane_config.getdefaultvalues())[1]
             group, port = self.emane_config.valueof('eventservicegroup',
@@ -460,7 +474,7 @@ class Emane(ConfigurableManager):
         doc = self.xmldoc("platform")
         plat = doc.getElementsByTagName("platform").pop()
         platformid = self.emane_config.valueof("platform_id_start",  values)
-        if self.version != self.EMANE091:
+        if self.version < self.EMANE091:
             plat.setAttribute("name", "Platform %s" % platformid)
             plat.setAttribute("id", platformid)
 
@@ -477,21 +491,22 @@ class Emane(ConfigurableManager):
         for n in sorted(self._objs.keys()):
             emanenode = self._objs[n]
             nems = emanenode.buildplatformxmlentry(doc)
-            for netif in sorted(nems, key=lambda n: n.node.objid):            
+            for netif in sorted(nems, key=lambda n: n.node.objid):
                 # set ID, endpoints here
                 nementry = nems[netif]
                 nementry.setAttribute("id", "%d" % nemid)
-                # insert nem options (except nem id) to doc
-                trans_addr = self.emane_config.valueof("transportendpoint", \
-                                                       values)
-                nementry.insertBefore(self.xmlparam(doc, "transportendpoint", \
-                                 "%s:%d" % (trans_addr, self.transformport)),
-                                 nementry.firstChild)
-                platform_addr = self.emane_config.valueof("platformendpoint", \
-                                                          values)
-                nementry.insertBefore(self.xmlparam(doc, "platformendpoint", \
-                                 "%s:%d" % (platform_addr, self.platformport)),
-                                 nementry.firstChild)
+                if self.version < self.EMANE092:
+                    # insert nem options (except nem id) to doc
+                    trans_addr = self.emane_config.valueof("transportendpoint", \
+                                                           values)
+                    nementry.insertBefore(self.xmlparam(doc, "transportendpoint", \
+                                     "%s:%d" % (trans_addr, self.transformport)),
+                                     nementry.firstChild)
+                    platform_addr = self.emane_config.valueof("platformendpoint", \
+                                                              values)
+                    nementry.insertBefore(self.xmlparam(doc, "platformendpoint", \
+                                     "%s:%d" % (platform_addr, self.platformport)),
+                                     nementry.firstChild)
                 plat.appendChild(nementry)
                 emanenode.setnemid(netif, nemid)
                 # NOTE: MAC address set before here is incorrect, including the one
@@ -693,7 +708,7 @@ class Emane(ConfigurableManager):
             # reset the service, otherwise nextEvent won't work
             self.initeventservice()
         if self.eventmonthread is not None:
-            if self.version == self.EMANE091:
+            if self.version >= self.EMANE091:
                 self.eventmonthread._Thread__stop()
             self.eventmonthread.join()
             self.eventmonthread = None
@@ -706,7 +721,7 @@ class Emane(ConfigurableManager):
         self.info("Subscribing to EMANE location events (not generating them). " \
                   "(%s) " % threading.currentThread().getName())
         while self.doeventloop is True:
-            if self.version == self.EMANE091:
+            if self.version >= self.EMANE091:
                 (uuid, seq, events) = self.service.nextEvent()
                 if not self.doeventloop:
                     break # this occurs with 0.9.1 event service

@@ -102,7 +102,7 @@ class EmaneRfPipeModel(EmaneModel):
         mac = macdoc.getElementsByTagName("mac").pop()
         mac.setAttribute("name", "RF-PIPE MAC")
         mac.setAttribute("library", "rfpipemaclayer")
-        if e.version != e.EMANE091 and \
+        if e.version < e.EMANE091 and \
            self.valueof("transmissioncontrolmap", values) is "":
             macnames.remove("transmissioncontrolmap")
         # EMANE 0.7.4 support
