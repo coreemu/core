@@ -249,14 +249,14 @@ class EmaneNode(EmaneNet):
             self.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)"
                       "(%.6f,%.6f,%.6f)" % \
                       (ifname, nemid, x, y, z, lat, long, alt))
-        if self.session.emane.version == self.session.emane.EMANE091:
+        if self.session.emane.version >= self.session.emane.EMANE091:
             event = LocationEvent()
         else:
             event = emaneeventlocation.EventLocation(1)
         # altitude must be an integer or warning is printed
         # unused: yaw, pitch, roll, azimuth, elevation, velocity
         alt = int(round(alt))
-        if self.session.emane.version == self.session.emane.EMANE091:
+        if self.session.emane.version >= self.session.emane.EMANE091:
             event.append(nemid, latitude=lat, longitude=long, altitude=alt)
             self.session.emane.service.publish(0, event)
         else:
@@ -278,8 +278,8 @@ class EmaneNode(EmaneNet):
             if self.verbose:
                 self.info("position service not available")
             return
-        
-        if self.session.emane.version == self.session.emane.EMANE091:
+
+        if self.session.emane.version >= self.session.emane.EMANE091:
             event = LocationEvent()
         else:
             event = emaneeventlocation.EventLocation(len(moved_netifs))
@@ -298,13 +298,13 @@ class EmaneNode(EmaneNet):
                           (i, ifname, nemid, x, y, z, lat, long, alt))
             # altitude must be an integer or warning is printed
             alt = int(round(alt))
-            if self.session.emane.version == self.session.emane.EMANE091:
+            if self.session.emane.version >= self.session.emane.EMANE091:
                 event.append(nemid, latitude=lat, longitude=long, altitude=alt)
             else:
                 event.set(i, nemid, lat, long, alt)
             i += 1
-            
-        if self.session.emane.version == self.session.emane.EMANE091:
+
+        if self.session.emane.version >= self.session.emane.EMANE091:
             self.session.emane.service.publish(0, event)
         else:
             self.session.emane.service.publish(emaneeventlocation.EVENT_ID,

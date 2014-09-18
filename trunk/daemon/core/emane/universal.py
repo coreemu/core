@@ -102,13 +102,13 @@ class EmaneUniversalModel(EmaneModel):
                       "antennaprofilemanifesturi",
                       "frequencyofinterestfilterenable")
 
-    
+
     @classmethod
     def getphydoc(cls, e, mac, values, phynames):
         phydoc = e.xmldoc("phy")
         phy = phydoc.getElementsByTagName("phy").pop()
         phy.setAttribute("name", cls._xmlname)
-        if e.version != e.EMANE091:
+        if e.version < e.EMANE091:
             phy.setAttribute("library", cls._xmllibrary)
         # EMANE 0.7.4 suppport - to be removed when 0.7.4 support is deprecated
         if e.version == e.EMANE074:
@@ -128,14 +128,14 @@ class EmaneUniversalModel(EmaneModel):
                 phy.appendChild(e.xmlparam(phydoc, old[0], old[2]))
 
         frequencies = None
-        if e.version == e.EMANE091:
+        if e.version >= e.EMANE091:
             name = "frequencyofinterest"
             value = mac.valueof(name, values)
             frequencies = cls.valuestrtoparamlist(phydoc, name, value)
             if frequencies:
                 phynames = list(phynames)
                 phynames.remove("frequencyofinterest")
-            
+
         # append all PHY options to phydoc
         map( lambda n: phy.appendChild(e.xmlparam(phydoc, n, \
                                        mac.valueof(n, values))), phynames)
