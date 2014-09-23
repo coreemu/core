@@ -224,7 +224,14 @@ class Emane(ConfigurableManager):
             # don't use default values when interface config is the same as net
             # note here that using ifc.node.objid as key allows for only one type
             # of each model per node; TODO: use both node and interface as key
-            return self.getconfig(ifc.node.objid, conftype, None)[1]
+            values = self.getconfig(ifc.node.objid, conftype, None)[1]
+            if not values and self.version > self.EMANE091:
+                # with EMANE 0.9.2+, we need an extra NEM XML from
+                # model.buildnemxmlfiles(), so defaults are returned here
+                if ifc.transport_type == "raw":
+                    values = self.getconfig(nodenum, conftype, defaultvalues)[1]
+            return values
+
 
     def setup(self):
         ''' Populate self._objs with EmaneNodes; perform distributed setup;
@@ -416,12 +423,12 @@ class Emane(ConfigurableManager):
             NEMs run inside containers using the control network for passing
             events and data.
         '''
-        # control network bridge needs to exist when eventservice binds to it
-        self.session.addremovectrlif(node=None, remove=False, conf_reqd=False)
         # assume self._objslock is already held here
         if self.verbose:
             self.info("Emane.buildxml2()")
-        self.buildplatformxml2()
+        # control network bridge needs to exist when eventservice binds to it
+        ctrlnet = self.session.addremovectrlnet(remove=False, conf_reqd=False)
+        self.buildplatformxml2(ctrlnet)
         self.buildnemxml()
         self.buildeventservicexml()
 
@@ -567,18 +574,30 @@ class Emane(ConfigurableManager):
                 self.transformport += 1
         self.xmlwrite(doc, "platform.xml")
 
-    def newplatformxmldoc(self, values):
+    def newplatformxmldoc(self, values, otadev=None, eventdev=None):
+        ''' Start a new platform XML file. Use global EMANE config values
+            as keys. Override OTA manager and event service devices if
+            specified (in order to support Raw Transport).
+        '''
         doc = self.xmldoc("platform")
         plat = doc.getElementsByTagName("platform").pop()
         names = list(self.emane_config.getnames())
         platform_names = names[:len(self.emane_config._confmatrix_platform)]
         platform_names.remove('platform_id_start')
+        platform_values = list(values)
+        if otadev:
+            i = platform_names.index('otamanagerdevice')
+            platform_values[i] = otadev
+        if eventdev:
+            i = platform_names.index('eventservicedevice')
+            platform_values[i] = eventdev
         # append all platform options (except starting id) to doc
         map( lambda n: plat.appendChild(self.xmlparam(doc, n, \
-                        self.emane_config.valueof(n, values))), platform_names)
+                        self.emane_config.valueof(n, platform_values))), \
+                        platform_names)
         return doc
 
-    def buildplatformxml2(self):
+    def buildplatformxml2(self, ctrlnet):
         ''' Build a platform.xml file now that all nodes are configured.
         '''
         values = self.getconfig(None, "emane",
@@ -591,13 +610,20 @@ class Emane(ConfigurableManager):
             emanenode = self._objs[n]
             nems = emanenode.buildplatformxmlentry(self.xmldoc("platform"))
             for netif in sorted(nems, key=lambda n: n.node.objid):
-                # set ID, endpoints here
                 nementry = nems[netif]
                 nementry.setAttribute("id", "%d" % nemid)
-                nodenum = netif.node.objid
-                if nodenum not in platformxmls:
-                    platformxmls[nodenum] = self.newplatformxmldoc(values)
-                doc = platformxmls[nodenum]
+                k = netif.node.objid
+                if netif.transport_type == "raw":
+                    k = 'host'
+                    otadev = ctrlnet.brname
+                    eventdev = ctrlnet.brname
+                else:
+                    otadev = None
+                    eventdev = None
+                if k not in platformxmls:
+                    platformxmls[k] = self.newplatformxmldoc(values, otadev,
+                                                             eventdev)
+                doc = platformxmls[k]
                 plat = doc.getElementsByTagName("platform").pop()
                 plat.appendChild(nementry)
                 emanenode.setnemid(netif, nemid)
@@ -605,8 +631,11 @@ class Emane(ConfigurableManager):
                 macstr += "%02X:%02X" % ((nemid >> 8) & 0xFF, nemid & 0xFF)
                 netif.sethwaddr(MacAddr.fromstring(macstr))
                 nemid += 1
-        for nodenum in sorted(platformxmls.keys()):
-            self.xmlwrite(platformxmls[nodenum], "platform%d.xml" % nodenum)
+        for k in sorted(platformxmls.keys()):
+            if k == 'host':
+                self.xmlwrite(platformxmls['host'], "platform.xml")
+                continue
+            self.xmlwrite(platformxmls[k], "platform%d.xml" % k)
 
     def buildnemxml(self):
         ''' Builds the xxxnem.xml, xxxmac.xml, and xxxphy.xml files which
@@ -616,7 +645,7 @@ class Emane(ConfigurableManager):
            emanenode = self._objs[n]
            nems = emanenode.buildnemxmlfiles(self)
 
-    def appendtransporttonem(self, doc, nem, nodenum):
+    def appendtransporttonem(self, doc, nem, nodenum, ifc=None):
         ''' Given a nem XML node and EMANE WLAN node number, append
             a <transport/> tag to the NEM definition, required for using
             EMANE's internal transport.
@@ -625,8 +654,11 @@ class Emane(ConfigurableManager):
             return
         emanenode = self._objs[nodenum]
         transtag = doc.createElement("transport")
+        transtypestr = "virtual"
+        if ifc and ifc.transport_type == "raw":
+            transtypestr = "raw"
         transtag.setAttribute("definition",
-                              emanenode.transportxmlname("virtual"))
+                              emanenode.transportxmlname(transtypestr))
         nem.appendChild(transtag)
 
     def buildtransportxml(self):
@@ -746,7 +778,12 @@ class Emane(ConfigurableManager):
                                                       values).split(':')
         otadev = self.emane_config.valueof('otamanagerdevice', values)
 
+        run_emane_on_host = False
         for node in self.getnodes():
+            if hasattr(node, 'transport_type') and \
+              node.transport_type == "raw":
+                run_emane_on_host = True
+                continue
             path = self.session.sessiondir
             n = node.objid
             # control network not yet started here
@@ -760,7 +797,7 @@ class Emane(ConfigurableManager):
                 cmd = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n),
                                   os.path.join(path, "platform%d.xml" % n)]
                 if self.verbose:
-                    self.info("Emane.startdaemons() running %s" % str(cmd))
+                    self.info("Emane.startdaemons2() running %s" % str(cmd))
                 #node.cmd(cmd, cwd=path, wait=True)
                 #status, result = node.cmdresult(cmd, cwd=path, wait=True)
                 status = node.cmd(cmd, wait=True)
@@ -771,6 +808,20 @@ class Emane(ConfigurableManager):
                 self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
                                        n, errmsg)
                 self.info(errmsg)
+        if not run_emane_on_host:
+            return
+        path = self.session.sessiondir
+        try:
+            emanecmd += ["-f", os.path.join(path, "emane.log")]
+            cmd = emanecmd + [os.path.join(path, "platform.xml")]
+            if self.verbose:
+                self.info("Emane.startdaemons2() running %s" % str(cmd))
+            subprocess.check_call(cmd, cwd=path)
+        except Exception, e:
+            errmsg = "error starting emane: %s" % e
+            self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
+                                   None, errmsg)
+            self.info(errmsg)
 
     def stopdaemons(self):
         ''' Kill the appropriate EMANE daemons.
@@ -778,12 +829,19 @@ class Emane(ConfigurableManager):
         # TODO: we may want to improve this if we had the PIDs from the
         #       specific EMANE daemons that we've started
         cmd = ["killall", "-q", "emane"]
+        stop_emane_on_host = False
         if self.version > self.EMANE091:
             for node in self.getnodes():
+                if hasattr(node, 'transport_type') and \
+                  node.transport_type == "raw":
+                    stop_emane_on_host = True
+                    continue
                 if node.up:
                     node.cmd(cmd, wait=False)
                 # TODO: RJ45 node
         else:
+            stop_emane_on_host = True
+        if stop_emane_on_host:
             subprocess.call(cmd)
             subprocess.call(["killall", "-q", "emanetransportd"])
 
@@ -792,10 +850,10 @@ class Emane(ConfigurableManager):
             now that the EMANE daemons are running.
         '''
         for n in sorted(self._objs.keys()):
-           emanenode = self._objs[n]
-           if self.verbose:
-               self.info("Emane.installnetifs() for node %d" % n)
-           emanenode.installnetifs(do_netns)
+            emanenode = self._objs[n]
+            if self.verbose:
+                self.info("Emane.installnetifs() for node %d" % n)
+            emanenode.installnetifs(do_netns)
 
     def deinstallnetifs(self):
         ''' Uninstall TUN/TAP virtual interfaces.
@@ -1042,17 +1100,17 @@ class EmaneModel(WirelessModel):
         overriden by a model to support the e.g. pluggable virtual transport.
         n is the EmaneNode.
         '''
-        type = ifc.transport_type
-        if not type:
-            e.info("warning: %s interface type unsupported!" % ifc.name)
-            type = "raw"
+        ttype = ifc.transport_type
+        if not ttype:
+            self.session.info("warning: %s interface type unsupported!" % ifc.name)
+            ttype = "raw"
         trans = doc.createElement("transport")
-        trans.setAttribute("definition", n.transportxmlname(type))
+        trans.setAttribute("definition", n.transportxmlname(ttype))
         if self.session.emane.version < self.session.emane.EMANE092:
             trans.setAttribute("group", "1")
         param = doc.createElement("param")
         param.setAttribute("name", "device")
-        if type == "raw":
+        if ttype == "raw":
             # raw RJ45 name e.g. 'eth0'
             param.setAttribute("value", ifc.name)
         else:
@@ -1080,7 +1138,11 @@ class EmaneModel(WirelessModel):
     def nemxmlname(self, ifc = None):
         ''' Return the string name for the NEM XML file, e.g. 'n3rfpipenem.xml'
         '''
-        return "%snem.xml" % self.basename(ifc)
+        append = ""
+        if self.session.emane.version > self.session.emane.EMANE091:
+            if ifc and ifc.transport_type == "raw":
+                append = "_raw"
+        return "%snem%s.xml" % (self.basename(ifc), append)
 
     def shimxmlname(self, ifc = None):
         ''' Return the string name for the SHIM XML file, e.g. 'commeffectshim.xml'

@@ -739,7 +739,8 @@ class Session(object):
     def addremovectrlnet(self, remove=False, conf_reqd=True):
         ''' Create a control network bridge as necessary.
         When the remove flag is True, remove the bridge that connects control
-        interfaces.
+        interfaces. The conf_reqd flag, when False, causes a control network
+        bridge to be added even if one has not been configured.
         '''
         prefix = self.cfg.get('controlnet')
         if hasattr(self.options, 'controlnet'):
