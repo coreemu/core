@@ -42,7 +42,7 @@ class EmaneBypassModel(EmaneModel):
         nemdoc = e.xmldoc("nem")
         nem = nemdoc.getElementsByTagName("nem").pop()
         nem.setAttribute("name", "BYPASS NEM")
-        e.appendtransporttonem(nemdoc, nem, self.objid)
+        e.appendtransporttonem(nemdoc, nem, self.objid, ifc)
         mactag = nemdoc.createElement("mac")
         mactag.setAttribute("definition", self.macxmlname(ifc))
         nem.appendChild(mactag)

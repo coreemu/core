@@ -95,7 +95,7 @@ class EmaneCommEffectModel(EmaneModel):
         nem = nemdoc.getElementsByTagName("nem").pop()
         nem.setAttribute("name", "commeffect NEM")
         nem.setAttribute("type", "unstructured")
-        e.appendtransporttonem(nemdoc, nem, self.objid)
+        e.appendtransporttonem(nemdoc, nem, self.objid, ifc)
         nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
         e.xmlwrite(nemdoc, self.nemxmlname(ifc))
 
