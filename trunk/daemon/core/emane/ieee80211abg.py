@@ -52,9 +52,9 @@ class EmaneIeee80211abgModel(EmaneModel):
         ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING,
          '%s/ieee80211pcr.xml' % xml_path,
          '', 'SINR/PCR curve file'),
-        ("flowcontrolenable", coreapi.CONF_DATA_TYPE_BOOL, '0', 
+        ("flowcontrolenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'On,Off', 'enable traffic flow control'),
-        ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10', 
+        ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10',
          '', 'number of flow control tokens'),
     ]
     _confmatrix_mac_081 = [
@@ -79,7 +79,7 @@ class EmaneIeee80211abgModel(EmaneModel):
     else:
         _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_081
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel._confmatrix 
+    _confmatrix_phy = EmaneUniversalModel._confmatrix
 
     _confmatrix = _confmatrix_mac + _confmatrix_phy
     # value groupings
@@ -93,20 +93,14 @@ class EmaneIeee80211abgModel(EmaneModel):
             nXXemane_ieee80211abgnem.xml, nXXemane_ieee80211abgemac.xml,
             nXXemane_ieee80211abgphy.xml are used.
         '''
-        # use the network-wide config values or interface(NEM)-specific values?
-        if ifc is None:
-            values = e.getconfig(self.objid, self._name,
-                                 self.getdefaultvalues())[1]
-        else:
-            nodenum = ifc.node.objid
-            values = e.getconfig(nodenum, self._name, None)[1]
-            if values is None:
-                # do not build specific files for this NEM when config is same
-                # as the network
-                return
+        values = e.getifcconfig(self.objid, self._name,
+                                self.getdefaultvalues(), ifc)
+        if values is None:
+            return
         nemdoc = e.xmldoc("nem")
         nem = nemdoc.getElementsByTagName("nem").pop()
         nem.setAttribute("name", "ieee80211abg NEM")
+        e.appendtransporttonem(nemdoc, nem, self.objid)
         mactag = nemdoc.createElement("mac")
         mactag.setAttribute("definition", self.macxmlname(ifc))
         nem.appendChild(mactag)

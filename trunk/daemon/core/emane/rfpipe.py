@@ -86,6 +86,7 @@ class EmaneRfPipeModel(EmaneModel):
         nemdoc = e.xmldoc("nem")
         nem = nemdoc.getElementsByTagName("nem").pop()
         nem.setAttribute("name", "RF-PIPE NEM")
+        e.appendtransporttonem(nemdoc, nem, self.objid)
         mactag = nemdoc.createElement("mac")
         mactag.setAttribute("definition", self.macxmlname(ifc))
         nem.appendChild(mactag)
