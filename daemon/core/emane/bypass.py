@@ -27,7 +27,7 @@ class EmaneBypassModel(EmaneModel):
     ]
 
     # value groupings
-    _confgroups = "Bypass Parameters:1-1" 
+    _confgroups = "Bypass Parameters:1-1"
 
     def buildnemxmlfiles(self, e, ifc):
         ''' Build the necessary nem, mac, and phy XMLs in the given path.
@@ -42,6 +42,7 @@ class EmaneBypassModel(EmaneModel):
         nemdoc = e.xmldoc("nem")
         nem = nemdoc.getElementsByTagName("nem").pop()
         nem.setAttribute("name", "BYPASS NEM")
+        e.appendtransporttonem(nemdoc, nem, self.objid)
         mactag = nemdoc.createElement("mac")
         mactag.setAttribute("definition", self.macxmlname(ifc))
         nem.appendChild(mactag)

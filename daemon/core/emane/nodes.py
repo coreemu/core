@@ -197,7 +197,7 @@ class EmaneNode(EmaneNet):
         return "n%strans%s.xml" % (self.objid, type)
 
 
-    def installnetifs(self):
+    def installnetifs(self, do_netns=True):
         ''' Install TAP devices into their namespaces. This is done after
             EMANE daemons have been started, because that is their only chance
             to bind to the TAPs.
@@ -210,7 +210,7 @@ class EmaneNode(EmaneNet):
                                     self.objid, warntxt)
 
         for netif in self.netifs():
-            if "virtual" in netif.transport_type.lower():
+            if do_netns and "virtual" in netif.transport_type.lower():
                 netif.install()
             # if we are listening for EMANE events, don't generate them
             if self.session.emane.doeventmonitor():
