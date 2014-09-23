@@ -54,6 +54,7 @@ class Emane(ConfigurableManager):
     EVENTCFGVAR = 'LIBEMANEEVENTSERVICECONFIG'
     # possible self.version values
     (EMANEUNK, EMANE074, EMANE081, EMANE091, EMANE092) = (0, 7, 8, 91, 92)
+    DEFAULT_LOG_LEVEL = 3
 
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
@@ -716,7 +717,7 @@ class Emane(ConfigurableManager):
         if self.verbose:
             self.info("Emane.startdaemons()")
         path = self.session.sessiondir
-        loglevel = "2"
+        loglevel = str(self.DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.getcfgitemint("emane_log_level")
         realtime = self.session.getcfgitembool("emane_realtime", True)
         if cfgloglevel:
@@ -762,7 +763,7 @@ class Emane(ConfigurableManager):
         '''
         if self.verbose:
             self.info("Emane.startdaemons()")
-        loglevel = "2"
+        loglevel = str(self.DEFAULT_LOG_LEVEL)
         cfgloglevel = self.session.getcfgitemint("emane_log_level")
         realtime = self.session.getcfgitembool("emane_realtime", True)
         if cfgloglevel:
