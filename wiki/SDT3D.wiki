@@ -14,32 +14,23 @@ Notes on installing SDT3D under Ubuntu 12.04 amd64.
 Successful build/run environment:
  # Ubuntu 12.04 x86_64 updated 2012-10-12
  # OpenJDK 1.7 (tested 7u7-2.3.2a) *Note:* Oracle Java 1.6/1.7 and OpenJDK 1.6 will not work when behind a proxy, but segfault
- # sdt-svnsnap.tgz (dated 2012-03-29) from http://downloads.pf.itd.nrl.navy.mil/sdt/nightly_snapshots/sdt-svnsnap.tgz
- # protolib-svnsnap.tgz (dated 2012-10-03) from http://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/protolib-svnsnap.tgz
- # [https://coreemu.googlecode.com/files/worldwind-sdt3d1.2.zip worldwind.zip] (58 MB) and [https://coreemu.googlecode.com/files/joglutils-sdt3d1.2.zip joglutils.zip] (45 MB) (these are from the PROTEAN Forge website (login required); go to [https://pf.itd.nrl.navy.mil/sf/frs/do/listReleases/projects.proteantools/frs.sdt_3d PROTEAN Forge], click the _Protean Tools_ project, then _File Releases_, then _sdt3d_, and the _1.2_ release directory. If you do not have a PROTEAN Forge login, you can also find these files on the [http://worldwind.arc.nasa.gov/java/ World Wind Java SDK] site.)
- # 64-bit jar files from the NASA World Wind site as shown in their README.txt: [http://worldwind.arc.nasa.gov/java/jogl/webstart/jogl-natives-linux-amd64.jar jogl-natives-linux-amd64.jar] and [http://worldwind.arc.nasa.gov/java/jogl/webstart/gluegen-rt-natives-linux-amd64.jar gluegen-rt-natives-linux-amd64.jar]
-
-
+ # sdt-svnsnap.tgz (dated after 2014-09-24) from http://downloads.pf.itd.nrl.navy.mil/sdt/nightly_snapshots/sdt-svnsnap.tgz
+ 
 Steps for build and run:
 
- * Install some pre-requisites:
+ * Install some pre-requisites.  (A helper script prep-dependencies-linux is also available):
 {{{
 sudo apt-get install openjdk-7-jdk g++
+# The following packages are required unless you are using WorldWind and joglutils dependencies provided by NRL.
+sudo apt-get install git
+sudo apt-get install ant
+sudo apt-get install g++
+sudo apt-get install wget
+sudo apt-get install libvecmath-java
+sudo apt-get install libpcap-dev
+sudo apt-get install libnetfilter-queue-dev
 }}}
- * unpack SDT snapshot tarball; make a build/downloads directory
-{{{
-tar xzf sdt-svnsnap.tgz
-cd sdt/makefiles
-mkdir -p build/download
-}}}
- * put a protolib.tgz, worldwind.zip, and joglutils.zip in this build/downloads directory; symlink works
-{{{
-cd build/download
-# this assumes files are downloaded to ~
-ln -s ~/worldwind.zip .
-ln -s ~/joglutils.zip .
-ln -s ~/protolib-svnsnap.tgz ./protolib.tgz
-}}}
+
  * set JAVA_HOME environment variable; also ensure that javac, java, and jar point to the OpenJDK 1.7 install
 {{{
 export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
@@ -50,47 +41,61 @@ update-alternatives --display jar
 # if you need to change the above, use the following for each:
 # sudo update-alternatives --config java
 }}}
+
+ * unpack SDT snapshot tarball
+{{{
+tar xzf sdt-svnsnap.tgz
+}}}
+
  * build SDT3D
 {{{
-make -f Makefile.linux sdt3d
+# By default sdt3d will download (and patch where applicable) joglutils, WorldWind, and 
+# protolib from publicly available sites. If you prefer to use dependencies provided by NRL 
+# get protolib.tgz, worldwind.zip, and joglutils.zip from the sdt file release section (login 
+# required) and put them in the sdt3d/makefiles directory.
+cd sdt/makefiles
+make -f Makefile.linux_<amd64|i586> sdt3d
 }}}
- * if something goes wrong with the above build step, you'll need to recover like this:
+ * if something goes wrong with the above build step, you may need to recover like this:
 {{{
-# assume we're in sdt/makefiles/
-rm -rf build/bin build/build build/sdt3d
+# Assume we are in sdt/makefiles
+make -f Makefile.linux distclean
 }}}
+
  * a successful build results in a file *sdt3d.zip*; unzip this somewhere to continue
 {{{
 cd ~
 unzip sdt/makefiles/sdt3d.zip
 }}}
- * the shared object libraries found in the sdt3d/lib/ directory need to be updated to their 64-bit counterparts.
-{{{
-cd ~/sdt3d/lib
-jar xvf ~/sw/jogl-natives-linux-amd64.jar 
-jar xvf ~/sw/gluegen-rt-natives-linux-amd64.jar 
-}}}
- * fix the sdt3d.sh script to work properly, using the following:
-{{{
-#!/bin/sh
-export JAVA_HOME=/usr/lib/jvm/java-7-openjdk-amd64/
-THISDIR=`dirname $0`
-export LD_LIBRARY_PATH=${THISDIR}/lib
-java -jar -Dsun.java2d.noddraw=true -Xmx512m ${THISDIR}/jars/sdt3d.jar
-}}}
- * create a `~/sdtConfigFile.txt` for SDT3D to automatically listen on port 5000 for messages from CORE:
-{{{
-echo listen 5000 > ~/sdtConfigFile.txt
-}}}
- * now you should be ready to run SDT3D. It helps to first have an Internet connection (no proxy) to populate the map cache. Also helpful if you use the proprietary NVIDIA drivers (`sudo apt-get install nvidia-current`) or ATI drivers
+
+ * now you should be ready to run SDT3D. It helps to first have an Internet connection (no proxy) to populate the map cache. Also helpful if you use the proprietary NVIDIA drivers (`sudo apt-get install nvidia-current`) or ATI drivers.  
 {{{
 cd ~/sdt3d
 ./sdt3d.sh
 }}}
- * you can launch SDT3D from within CORE by choosing _View_ > _3D GUI..._. By default, CORE looks for a SDT3D launch script in `/usr/local/bin/sdt3d.sh`, which may look like the following. In this case, the home directory is used in order to use the `sdtConfigFile.txt` and `~/var/cache/WorldWindData` directories. Here the SDT3D folder has been moved to `/opt/sdt`.
+
+ * you can launch SDT3D from within CORE by choosing _View_ > _3D GUI..._. By default, CORE looks for a SDT3D launch script in `/usr/local/bin/sdt3d.sh`.  You will need to put it there manually:
 {{{
+# Copy ~/sdt3d/sdt3d-core.sh to `/usr/local/bin/sdt3d.sh`
+cp ~/sdt3d-core.sh /usr/local/bin/sdt3d.sh
+
+# By default this script looks for the sdt3d directory in /home/$USER and listens to 
+# tcp port 50000.  Modify as appropriate for your system configuration.  The default 
+# core port may need to be changed to 5000 in earlier core releases, e.g.
+
 #!/bin/sh
-cd /home/$USER
-/opt/sdt/sdt3d.sh
+THISDIR=/home/$USER
+java -jar -Dsun.java2d.noddraw=true -Djava.library.path=${THISDIR}/lib 
+-Xmx512m ${THISDIR}/jars/sdt3d.jar LISTEN TCP,5000 $@
+
+# set executable bit on /usr/local/bin/sdt3d.sh
+sudo chmod a+x /usr/local/bin/sdt3d.sh
 }}}
- * you can copy the WorldWind map cache between systems (helpful if you do not always have an Internet connection), look in `~/var/cache/WorldWindData`
+
+ * Alternatively, rather than passing the listen command to sdt3d.sh as a command line argument in the script, you may create a ~/.config/sdt3d/sdt.settings file to listen to tcp and set up any other default sdt configuration commands.  (The .config directory is created automatically when sdt3d is first launched if it does not already exist).
+{{{
+# Any valid sdt commands may be placed in the sdt.settings file
+echo listen tcp,50000 > ~/.config/sdt3d/sdt.settings
+}}}
+
+ * you can copy the WorldWind map cache between systems (helpful if you do not always have an Internet connection), look in `~/var/cache/WorldWindData`.  sdt3d provides an "off line mode" to disable queries to the world wind servers.
