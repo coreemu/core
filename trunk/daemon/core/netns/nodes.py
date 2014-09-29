@@ -20,7 +20,7 @@ from core.coreobj import PyCoreNode
 class CtrlNet(LxBrNet):
     policy = "ACCEPT"
     CTRLIF_IDX_BASE = 99  # base control interface index
-    DEFAULT_PREFIX = "172.16.0.0/24"
+    DEFAULT_PREFIX = "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24"
 
     def __init__(self, session, objid = "ctrlnet", name = None,
                  verbose = False, netid = 1, prefix = None,

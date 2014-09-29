@@ -658,12 +658,14 @@ class Session(object):
         ''' Check if we have entered the shutdown state, when no running nodes
             and links remain.
         '''
-        with self._objslock:
-            nc = len(self._objs)
+        nc = self.getnodecount()
         # TODO: this doesn't consider slave server node counts
         # wait for slave servers to enter SHUTDOWN state, then master session
         # can enter SHUTDOWN
         replies = ()
+        if self.getcfgitembool('verbose', False):
+            self.info("Session %d shutdown: %d nodes remaining" % \
+                      (self.sessionid, nc))
         if nc == 0:
             replies = self.setstate(state=coreapi.CORE_EVENT_SHUTDOWN_STATE,
                                     info=True, sendevent=True, returnevent=True)
@@ -743,8 +745,7 @@ class Session(object):
         bridge to be added even if one has not been configured.
         '''
         prefix = self.cfg.get('controlnet')
-        if hasattr(self.options, 'controlnet'):
-            prefix = self.options.controlnet
+        prefix = getattr(self.options, 'controlnet', prefix)
         if not prefix:
             if conf_reqd:
                 return None  # no controlnet needed
@@ -790,7 +791,11 @@ class Session(object):
                 servers.remove('localhost')
                 prefix = None
                 for server_prefix in prefixes:
-                    server, p = server_prefix.split(':')
+                    try:
+                        server, p = server_prefix.split(':')
+                    except ValueError:
+                        server = ""
+                        p = None
                     if server == servers[0]:
                         prefix = p
                         break
@@ -799,8 +804,11 @@ class Session(object):
                             servers[0]
                     self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                    "Session.addremovectrlnet()", None, msg)
-                    prefix = prefixes[0].split(':', 1)[1]
                     assign_address = False
+                    try:
+                        prefix = prefixes[0].split(':', 1)[1]
+                    except IndexError:
+                        prefix = prefixes[0]
         else:
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
@@ -1071,7 +1079,6 @@ class SessionConfig(ConfigurableManager, Configurable):
         controlnets = value.split()
         if len(controlnets) < 2:
             return # multiple controlnet prefixes do not exist
-
         servers = self.session.broker.getserverlist()
         if len(servers) < 2:
             return # not distributed

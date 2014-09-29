@@ -107,16 +107,21 @@ class Emane(ConfigurableManager):
                 v = self.EMANE092
         return v, result.strip()
 
-    def initeventservice(self, filename=None):
-        ''' (Re-)initialize the EMANE Event service. The multicast group and/or
-        port may be configured, and can be changed via XML config file and an
-        environment variable pointing to that file.
+    def initeventservice(self, filename=None, shutdown=False):
+        ''' (Re-)initialize the EMANE Event service.
+            The multicast group and/or port may be configured.
+            - For versions < 0.9.1 this can be changed via XML config file
+              and an environment variable pointing to that file.
+            - For version >= 0.9.1 this is passed into the EventService
+              constructor.
         '''
         if hasattr(self, 'service'):
             del self.service
         self.service = None
         # EMANE 0.9.1+ does not require event service XML config
         if self.version >= self.EMANE091:
+            if shutdown:
+                return
             values = self.getconfig(None, "emane",
                                     self.emane_config.getdefaultvalues())[1]
             group, port = self.emane_config.valueof('eventservicegroup',
@@ -129,8 +134,13 @@ class Emane(ConfigurableManager):
                 dev = self.emane_config.valueof('eventservicedevice', values)
             # disabled otachannel for event service
             #  only needed for e.g. antennaprofile events xmit by models
-            self.service = EventService(eventchannel=(group, int(port), dev),
+            try:
+                self.service = EventService(eventchannel=(group, int(port), dev),
                                         otachannel=None)
+            except Exception, e:
+                msg = "Error instantiating EMANE event service: %s" % e
+                self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                               "Emane.initeventservice()", None, msg)
             return True
         if filename is not None:
             tmp = os.getenv(self.EVENTCFGVAR)
@@ -246,6 +256,13 @@ class Emane(ConfigurableManager):
                     self.addobj(obj)
             if len(self._objs) == 0:
                 return Emane.NOT_NEEDED
+        # control network bridge required for EMANE 0.9.2
+        # - needs to be configured before checkdistributed() for distributed
+        # - needs to exist when eventservice binds to it (initeventservice)
+        if self.version > self.EMANE091 and self.session.master:
+            ctrlnet = self.session.addremovectrlnet(remove=False,
+                                                    conf_reqd=False)
+            self.distributedctrlnet(ctrlnet)
         if self.checkdistributed():
             # we are slave, but haven't received a platformid yet
             cfgval = self.getconfig(None, self.emane_config._name,
@@ -427,11 +444,43 @@ class Emane(ConfigurableManager):
         # assume self._objslock is already held here
         if self.verbose:
             self.info("Emane.buildxml2()")
-        # control network bridge needs to exist when eventservice binds to it
+        # on master, control network bridge added earlier in startup()
         ctrlnet = self.session.addremovectrlnet(remove=False, conf_reqd=False)
         self.buildplatformxml2(ctrlnet)
         self.buildnemxml()
         self.buildeventservicexml()
+
+    def distributedctrlnet(self,  ctrlnet):
+        ''' Distributed EMANE requires multiple control network prefixes to
+            be configured. This generates configuration for slave control nets
+            using the default list of prefixes.
+        '''
+        session = self.session
+        if not session.master:
+            return  # slave server
+        servers = session.broker.getserverlist()
+        if len(servers) < 2:
+            return  # not distributed
+        prefix = session.cfg.get('controlnet')
+        prefix = getattr(session.options, 'controlnet', prefix)
+        prefixes = prefix.split()
+        if len(prefixes) >= len(servers):
+            return  # normal Config messaging will distribute controlnets
+        # this generates a config message having controlnet prefix assignments
+        self.info("Setting up default controlnet prefixes for distributed " \
+                  "(%d configured)" % len(prefixes))
+        prefixes = ctrlnet.DEFAULT_PREFIX
+        vals = "controlnet='%s'" % prefixes
+        tlvdata = ""
+        tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_OBJ,
+                                            "session")
+        tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_TYPE, 0)
+        tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_VALUES, vals)
+        rawmsg = coreapi.CoreConfMessage.pack(0, tlvdata)
+        msghdr = rawmsg[:coreapi.CoreMessage.hdrsiz]
+        msg = coreapi.CoreConfMessage(flags=0, hdr=msghdr,
+                                      data=rawmsg[coreapi.CoreMessage.hdrsiz:])
+        self.session.broker.handlemsg(msg)
 
     def xmldoc(self, doctype):
         ''' Returns an XML xml.minidom.Document with a DOCTYPE tag set to the
@@ -876,7 +925,7 @@ class Emane(ConfigurableManager):
             # instantiation was previously delayed by self.setup()
             # returning Emane.NOT_READY
             h = None
-            with session._handlerslock:
+            with self.session._handlerslock:
                 for h in self.session._handlers:
                     break
             self.session.instantiate(handler=h)
@@ -920,7 +969,7 @@ class Emane(ConfigurableManager):
         if self.service is not None:
             self.service.breakloop()
             # reset the service, otherwise nextEvent won't work
-            self.initeventservice()
+            self.initeventservice(shutdown=True)
         if self.eventmonthread is not None:
             if self.version >= self.EMANE091:
                 self.eventmonthread._Thread__stop()
