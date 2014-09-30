@@ -256,6 +256,8 @@ class Emane(ConfigurableManager):
                     self.addobj(obj)
             if len(self._objs) == 0:
                 return Emane.NOT_NEEDED
+        if self.versionstr == "":
+            self.detectversion()
         # control network bridge required for EMANE 0.9.2
         # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
