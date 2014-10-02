@@ -40,10 +40,6 @@ class EmaneRfPipeModel(EmaneModel):
          'True,False', 'enable promiscuous mode'),
         ("datarate", coreapi.CONF_DATA_TYPE_UINT32, '1M',
          '', 'data rate (bps)'),
-        ("jitter", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '', 'transmission jitter (usec)'),
-        ("delay", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '', 'transmission delay (usec)'),
         ("flowcontrolenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'On,Off', 'enable traffic flow control'),
         ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10',
@@ -53,12 +49,21 @@ class EmaneRfPipeModel(EmaneModel):
          '', 'SINR/PCR curve file'),
     ]
     _confmatrix_mac_081 = [
+        ("jitter", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
+         '', 'transmission jitter (usec)'),
+        ("delay", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
+         '', 'transmission delay (usec)'),
         ("transmissioncontrolmap", coreapi.CONF_DATA_TYPE_STRING, '',
          '', 'tx control map (nem:rate:freq:tx_dBm)'),
         ("enabletighttiming", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'On,Off', 'enable tight timing for pkt delay'),
     ]
-    _confmatrix_mac_091 = []
+    _confmatrix_mac_091 = [
+        ("jitter", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
+         '', 'transmission jitter (sec)'),
+        ("delay", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
+         '', 'transmission delay (sec)'),
+    ]
     if 'EventService' in globals():
         _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
     else:
