@@ -15,6 +15,7 @@ Click [http://code.google.com/p/coreemu/w/list here] or the [http://code.google.
 == Installation == 
  * [Quickstart]: quickly get up-and-running with CORE
  * [http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/ CORE manual]
+ * [Upgrading]: upgrade from one version to another
  * [NamespaceKernels]: notes on good/bad Linux kernels 
  * [Linux]: Linux virtualization and CORE
  * [EMANE]
