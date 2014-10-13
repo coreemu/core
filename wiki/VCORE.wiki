@@ -21,6 +21,12 @@ Unzip `vcore-4.3.zip` to your virtual machines directory; a `vcore-4.3` folder w
 
 If you already have VMware installed, double-click on the vmx file to open the VCORE virtual machine with VMware.
 
+Ubuntu has an `open-vm-tools` package to provide VMware Player compatibility. You can install it with:
+{{{
+sudo apt-get install open-vm-tools open-vm-toolbox
+}}}
+
+
 = VCORE usage notes =
 
 Note the RAM and number of processors. If you have a quad-core system with hyperthreading (8 threads), then you may want to assign up to 4 processors to VCORE. 2GB is a good amount of RAM for VCORE; unless your machine only has 2 or 3GB of physical RAM, then you may try 1GB for VCORE.
