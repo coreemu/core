@@ -74,22 +74,20 @@ cd ~/sdt3d
 ./sdt3d.sh
 }}}
 
- * you can launch SDT3D from within CORE by choosing _View_ > _3D GUI..._. By default, CORE looks for a SDT3D launch script in `/usr/local/bin/sdt3d.sh`.  You will need to put it there manually:
+ * you can launch SDT3D from within CORE by choosing _View_ > _3D GUI..._. By default, CORE looks for a SDT3D launch script in `/usr/local/bin/sdt3d.sh`.  Use the sdt3d makefile to install the script:
 {{{
-# Copy ~/sdt3d/sdt3d-core.sh to `/usr/local/bin/sdt3d.sh`
-cp ~/sdt3d-core.sh /usr/local/bin/sdt3d.sh
+# Install sdt3d.sh in /usr/local/bin/sdt3d.sh
+# The sdtcmd utility will also be installed if it has been built
+sudo make -f Makefile.linux_<amd64|i586> install
+}}}
 
-# By default this script looks for the sdt3d directory in /home/$USER and listens to 
-# tcp port 50000.  Modify as appropriate for your system configuration.  The default 
-# core port may need to be changed to 5000 in earlier core releases, e.g.
-
+ * By default the sdt3d.sh script looks for the sdt3d directory in /home/$USER and listens to tcp port 50000.  Modify as appropriate for your system configuration.  The default core port may need to be changed to 5000 in earlier core releases, e.g.
+{{{
 #!/bin/sh
 THISDIR=/home/$USER
 java -jar -Dsun.java2d.noddraw=true -Djava.library.path=${THISDIR}/lib 
 -Xmx512m ${THISDIR}/jars/sdt3d.jar LISTEN TCP,5000 $@
 
-# set executable bit on /usr/local/bin/sdt3d.sh
-sudo chmod a+x /usr/local/bin/sdt3d.sh
 }}}
 
  * Alternatively, rather than passing the listen command to sdt3d.sh as a command line argument in the script, you may create a ~/.config/sdt3d/sdt.settings file to listen to tcp and set up any other default sdt configuration commands.  (The .config directory is created automatically when sdt3d is first launched if it does not already exist).
@@ -98,4 +96,4 @@ sudo chmod a+x /usr/local/bin/sdt3d.sh
 echo listen tcp,50000 > ~/.config/sdt3d/sdt.settings
 }}}
 
- * you can copy the WorldWind map cache between systems (helpful if you do not always have an Internet connection), look in `~/var/cache/WorldWindData`.  sdt3d provides an "off line mode" to disable queries to the world wind servers.
+ * you can copy the WorldWind map cache between systems (helpful if you do not always have an Internet connection), look in `~/var/cache/WorldWindData`.  sdt3d provides an "off line mode" to disable queries to the world wind servers.  There is a tile bulk download utility available in the sdt3d makefiles directory to build up an offline cache.
