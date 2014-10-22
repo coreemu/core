@@ -228,6 +228,9 @@ bind . <Control-n> "fileNewDialogBox"
   -accelerator "Ctrl+O" -command { fileOpenDialogBox }
 bind . <Control-o> "fileOpenDialogBox"
 
+.menubar.file add command -label "Reload" -underline 0 \
+  -command { openFile } 
+
 .menubar.file add command -label Save -underline 0 \
   -accelerator "Ctrl+S" -command { fileSaveDialogBox "" }
 bind . <Control-s> "fileSaveDialogBox {}"
@@ -277,7 +280,6 @@ bind . <Control-s> "fileSaveDialogBox {}"
     $w.e1 insert 0 "lpr"
     pack $w.e1 -side top -pady 5 -padx 10 -fill x
 }
-# Boeing: added "Save Screenshot" function and most-recently-used file list
 .menubar.file add command -label "Save screenshot..." -command {
         global currentFile
 	set initialfile [file tail $currentFile]
@@ -295,10 +297,10 @@ bind . <Control-s> "fileSaveDialogBox {}"
 	}
     }
 .menubar.file add separator
+set g_mru_index 15 ;# index of first MRU list item
 foreach f $g_mrulist {
     .menubar.file add command -label "$f" -command "mrufile {$f}"
 }
-# end Boeing changes 
 .menubar.file add separator
 .menubar.file add command -label Quit -underline 0 -command { exit }
 
