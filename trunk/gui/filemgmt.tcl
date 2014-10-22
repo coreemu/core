@@ -475,8 +475,7 @@ proc mrufile { f args } {
 # if it exists already, remove it from the list, add to the front; also limit
 # the length of this list; if no file specified, erase the list
 proc addFileToMrulist { f } {
-    global g_mrulist g_prefs
-    set MRUI 14 ;# index of MRU list -- update when adding to File menu!
+    global g_mrulist g_prefs g_mru_index
 
     set oldlength [llength $g_mrulist]
     set maxlength $g_prefs(num_recent)
@@ -489,7 +488,7 @@ proc addFileToMrulist { f } {
     # clear the MRU list menu
     if { $oldlength > 0 } {
 	set end_of_menu [.menubar.file index end]
-	.menubar.file delete $MRUI [expr {$end_of_menu - 2}]
+	.menubar.file delete $g_mru_index [expr {$end_of_menu - 2}]
     }
     if { $f == "" } { ;# used to reset MRU list
 	set g_mrulist {}
@@ -499,7 +498,7 @@ proc addFileToMrulist { f } {
     set g_mrulist [linsert $g_mrulist 0 "$f"]
     set g_mrulist [lrange $g_mrulist 0 [expr {$maxlength - 1}]]
 
-    set i $MRUI
+    set i $g_mru_index
     foreach f $g_mrulist {
     	.menubar.file insert $i command -label "$f" -command "mrufile $f"
 	incr i 1
