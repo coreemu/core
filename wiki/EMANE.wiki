@@ -72,6 +72,9 @@ rpm -e ace-devel ace-gperf ace
 
 {{{
 sudo dpkg -r emane\* python-emane\* libemane\* ace\*
+# for Ubuntu 14.04+, dpkg doesn't support wildcards, so use this
+# this will prompt to confirm
+sudo apt-get purge ^emane\*
 }}}
 
 
