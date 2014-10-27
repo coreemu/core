@@ -32,15 +32,6 @@ try:
     from emanesh.events import LocationEvent
 except Exception, e:
     pass
-# EMANE 0.9.2
-try:
-    from emanesh import remotecontrolportapi_pb2
-    HAVE092 = ('TYPE_COMPONENT_TRANSPORT' in
-      dir(remotecontrolportapi_pb2.Response.Query.Manifest.NEM.Component))
-    del remotecontrolportapi_pb2
-except Exception, e:
-    HAVE092 = False
-
 
 class Emane(ConfigurableManager):
     ''' EMANE controller object. Lives in a Session instance and is used for
@@ -85,7 +76,8 @@ class Emane(ConfigurableManager):
         if self.verbose:
             self.info("detected EMANE version: %s" % self.versionstr)
 
-    def detectversionfromcmd(self):
+    @classmethod
+    def detectversionfromcmd(cls):
         ''' Runs 'emane --version' locally to determine version number.
         '''
         # for further study: different EMANE versions on distributed machines
@@ -95,16 +87,16 @@ class Emane(ConfigurableManager):
         except OSError:
             status = -1
             result = ""
-        v = self.EMANEUNK
+        v = cls.EMANEUNK
         if status == 0:
             if result[:5] == "0.7.4":
-                v = self.EMANE074
+                v = cls.EMANE074
             elif result[:5] == "0.8.1":
-                v = self.EMANE081
+                v = cls.EMANE081
             elif result[:5] == "0.9.1":
-                v = self.EMANE091
+                v = cls.EMANE091
             elif result[:5] == "0.9.2":
-                v = self.EMANE092
+                v = cls.EMANE092
         return v, result.strip()
 
     def initeventservice(self, filename=None, shutdown=False):
@@ -1246,6 +1238,11 @@ class EmaneModel(WirelessModel):
             return None
         return addparamlisttoparent(dom, parent=None, name=name, values=values)
 
+# EMANE 0.9.2 detected upon module load to support class vars
+try:
+    HAVE092 = (Emane.detectversionfromcmd()[0] >= Emane.EMANE092)
+except Exception, e:
+    HAVE092 = False
 
 class EmaneGlobalModel(EmaneModel):
     ''' Global EMANE configuration options.
