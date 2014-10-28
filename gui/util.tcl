@@ -1160,7 +1160,8 @@ proc get_term_prog { want_default } {
 
 # short session ID used by Python daemon for interface names
 proc shortSessionID { sid } {
-    return [ expr { ($sid >> 8) ^ ($sid & ((1<<8) - 1)) } ]
+    set ssid [ expr { ($sid >> 8) ^ ($sid & ((1<<8) - 1)) } ]
+    return [format "%x" $ssid]
 }
 
 
