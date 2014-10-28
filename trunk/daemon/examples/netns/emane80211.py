@@ -1,6 +1,6 @@
 #!/usr/bin/python -i
 
-# Copyright (c)2010-2013 the Boeing Company.
+# Copyright (c)2010-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 
 # Example CORE Python script that attaches N nodes to an EMANE 802.11abg
@@ -61,7 +61,11 @@ def main():
     names = EmaneIeee80211abgModel.getnames()
     values = list(EmaneIeee80211abgModel.getdefaultvalues())
     # TODO: change any of the EMANE 802.11 parameter values here
-    values[ names.index('pathlossmode') ] = 'pathloss'
+    try:
+        values[ names.index('pathlossmode') ] = 'pathloss'
+    except ValueError:
+        values[ names.index('propagationmodel') ] = 'precomputed'
+
     session.emane.setconfig(wlan.objid, EmaneIeee80211abgModel._name, values)
     services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
 

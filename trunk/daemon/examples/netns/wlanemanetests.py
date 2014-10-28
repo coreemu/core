@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c)2011-2012 the Boeing Company.
+# Copyright (c)2011-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
@@ -48,11 +48,23 @@ except ImportError:
 from core.misc import ipaddr
 from core.misc.utils import mutecall
 from core.constants import QUAGGA_STATE_DIR
+from core.emane.emane import Emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.rfpipe import EmaneRfPipeModel
-import emaneeventservice
-import emaneeventpathloss
 
+try:
+    import emaneeventservice
+    import emaneeventpathloss
+except Exception, e:
+    try:
+        from emanesh.events import EventService
+        from emanesh.events import PathlossEvent
+    except Exception, e2:
+        raise ImportError, "failed to import EMANE Python bindings:\n%s\n%s" % \
+                           (e, e2)
+
+# global Experiment object (for interaction with 'python -i')
+exp = None
 
 # move these to core.misc.utils
 def readstat():
@@ -423,6 +435,7 @@ class Experiment(object):
         '''
         prefix = ipaddr.IPv4Prefix("10.0.0.0/16")
         self.session = pycore.Session()
+        self.session.node_count = str(numnodes + 1)
         self.session.master = True
         self.session.location.setrefgeo(47.57917,-122.13232,2.00000)
         self.session.location.refscale = 150.0
@@ -446,7 +459,7 @@ class Experiment(object):
         if values is None:
             values = cls.getdefaultvalues()
         self.session.emane.setconfig(self.net.objid, cls._name, values)
-        self.session.emane.startup()
+        self.session.instantiate()
 
         self.info("waiting %s sec (TAP bring-up)" % 2)
         time.sleep(2)
@@ -504,24 +517,46 @@ class Experiment(object):
     def setpathloss(self, numnodes):
         ''' Send EMANE pathloss events to connect all NEMs in a chain.
         '''
-        service = emaneeventservice.EventService()
-        e = emaneeventpathloss.EventPathloss(1)
+        if self.session.emane.version < self.session.emane.EMANE091:
+            service = emaneeventservice.EventService()
+            e = emaneeventpathloss.EventPathloss(1)
+            old = True
+        else:
+            if self.session.emane.version == self.session.emane.EMANE091:
+                dev = 'lo'
+            else:
+                dev = self.session.obj('ctrlnet').brname
+            service = EventService(eventchannel=("224.1.2.8", 45703, dev),
+                                   otachannel=None)
+            old = False
+
         for i in xrange(1, numnodes + 1):
             rxnem = i
             # inform rxnem that it can hear node to the left with 10dB noise
             txnem = rxnem - 1
-            e.set(0, txnem, 10.0, 10.0)
             if txnem > 0:
-                service.publish(emaneeventpathloss.EVENT_ID,
+                if old:
+                    e.set(0, txnem, 10.0, 10.0)
+                    service.publish(emaneeventpathloss.EVENT_ID,
                                 emaneeventservice.PLATFORMID_ANY, rxnem,
                                 emaneeventservice.COMPONENTID_ANY, e.export())
+                else:
+                    e = PathlossEvent()
+                    e.append(txnem, forward=10.0, reverse=10.0)
+                    service.publish(rxnem, e)
             # inform rxnem that it can hear node to the right with 10dB noise
             txnem = rxnem + 1
-            e.set(0, txnem, 10.0, 10.0)
-            if txnem <= numnodes:
+            if txnem > numnodes:
+                continue
+            if old:
+                e.set(0, txnem, 10.0, 10.0)
                 service.publish(emaneeventpathloss.EVENT_ID,
                                 emaneeventservice.PLATFORMID_ANY, rxnem,
                                 emaneeventservice.COMPONENTID_ANY, e.export())
+            else:
+                e = PathlossEvent()
+                e.append(txnem, forward=10.0, reverse=10.0)
+                service.publish(rxnem, e)
 
     def setneteffects(self, bw = None, delay = None):
         ''' Set link effects for all interfaces attached to the network node.
@@ -668,7 +703,14 @@ def main():
         sys.stderr.write("ignoring command line argument: '%s'\n" % a)
 
     results = {}
-    exp = Experiment(opt = opt, start=datetime.datetime.now())
+    starttime = datetime.datetime.now()
+    exp = Experiment(opt = opt, start=starttime)
+    exp.info("Starting wlanemanetests.py tests %s" % starttime.ctime())
+
+    # system sanity checks here
+    emanever, emaneverstr = Emane.detectversionfromcmd()
+    if opt.verbose:
+        exp.info("Detected EMANE version %s" % (emaneverstr,))
 
     # bridged
     exp.info("setting up bridged tests 1/2 no link effects")
@@ -708,8 +750,11 @@ def main():
     rfpipevals = list(EmaneRfPipeModel.getdefaultvalues())
     rfpnames = EmaneRfPipeModel.getnames()
     rfpipevals[ rfpnames.index('datarate') ] = '4294967295' # max value
-    rfpipevals[ rfpnames.index('pathlossmode') ] = '2ray'
-    rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '1'
+    if emanever < Emane.EMANE091:
+        rfpipevals[ rfpnames.index('pathlossmode') ] = '2ray'
+        rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '1'
+    else:
+        rfpipevals[ rfpnames.index('propagationmodel') ] = '2ray'
     exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
                           cls=EmaneRfPipeModel, values=rfpipevals)
     exp.setnodes()
@@ -726,8 +771,11 @@ def main():
     rfpipevals[ rfpnames.index('datarate') ] = '54000'
     # TX delay != propagation delay
     #rfpipevals[ rfpnames.index('delay') ] = '5000'
-    rfpipevals[ rfpnames.index('pathlossmode') ] = '2ray'
-    rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '1'
+    if emanever < Emane.EMANE091:
+        rfpipevals[ rfpnames.index('pathlossmode') ] = '2ray'
+        rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '1'
+    else:
+        rfpipevals[ rfpnames.index('propagationmodel') ] = '2ray'
     exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
                           cls=EmaneRfPipeModel, values=rfpipevals)
     exp.setnodes()
@@ -742,8 +790,11 @@ def main():
     rfpipevals = list(EmaneRfPipeModel.getdefaultvalues())
     rfpnames = EmaneRfPipeModel.getnames()
     rfpipevals[ rfpnames.index('datarate') ] = '54000'
-    rfpipevals[ rfpnames.index('pathlossmode') ] = 'pathloss'
-    rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '0'
+    if emanever < Emane.EMANE091:
+        rfpipevals[ rfpnames.index('pathlossmode') ] = 'pathloss'
+        rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '0'
+    else:
+        rfpipevals[ rfpnames.index('propagationmodel') ] = 'precomputed'
     exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
                           cls=EmaneRfPipeModel, values=rfpipevals)
     exp.setnodes()
