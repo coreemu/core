@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2011-2012 the Boeing Company.
+# Copyright (c)2011-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # authors: Tom Goff <thomas.goff@boeing.com>
@@ -111,10 +111,14 @@ class TunTap(PyCoreNetIf):
             return
         self.node.cmd([IP_BIN, "link", "set", self.localname,
                        "name", self.name])
+        self.node.cmd([IP_BIN, "link", "set", self.name,  "up"])
+        
+    def setaddrs(self):
+        ''' Set interface addresses based on self.addrlist.
+        '''
         for addr in self.addrlist:
             self.node.cmd([IP_BIN, "addr", "add", str(addr),
                   "dev", self.name])
-        self.node.cmd([IP_BIN, "link", "set", self.name,  "up"])
 
 class GreTap(PyCoreNetIf):
     ''' GRE TAP device for tunneling between emulation servers.
