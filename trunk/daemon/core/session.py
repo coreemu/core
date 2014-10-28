@@ -689,7 +689,8 @@ class Session(object):
         ''' Return a shorter version of the session ID, appropriate for
             interface names, where length may be limited.
         '''
-        return (self.sessionid >> 8) ^ (self.sessionid & ((1 << 8) - 1))
+        ssid = (self.sessionid >> 8) ^ (self.sessionid & ((1 << 8) - 1))
+        return "%x" % ssid
 
     def sendnodeemuid(self, handler, nodenum):
         ''' Send back node messages to the GUI for node messages that had
