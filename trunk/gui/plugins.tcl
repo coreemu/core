@@ -948,7 +948,7 @@ proc popupSessionConfig { channel sessionids sessionnames sessionfiles nodecount
 
     # buttons - new connect shutdown cancel
     set close_cmd "destroy $wi"
-    set conn_cmd "sessionConfig connect $wi $channel; $close_cmd"
+    set conn_cmd "sessionConfig connect $wi -1; $close_cmd"
     set shut_cmd "sessionConfig shutdown $wi $channel; $close_cmd"
     set new_cmd  "sessionConfig new $wi $channel; $close_cmd"
 
