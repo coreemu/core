@@ -425,7 +425,8 @@ class BasicRangeModel(WirelessModel):
                 self.sendlinkmsg(a, b)
 
 
-    def calcdistance(self, p1, p2):
+    @staticmethod
+    def calcdistance(p1, p2):
         ''' Calculate the distance between two three-dimensional points.
         '''
         a = p1[0] - p2[0]
