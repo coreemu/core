@@ -26,10 +26,10 @@ set widgets_obs_quagga {
     6
     {{OSPFv3 neighbors} {vtysh -c {show ipv6 ospf6 neighbor}}}
 
-    12
+    13
     {{OSPFv3 MDR level} {vtysh -c {show ipv6 ospf6 mdrlevel}}}
 
-    13
+    14
     {{PIM neighbors} {vtysh -c {show ip pim neighbor}}}
 }
 
@@ -79,6 +79,8 @@ array set widgets_obs_linux {
 	{ "firewall rules" "/sbin/iptables -L" }
 	11
 	{ "IPSec policies" "setkey -DP" }
+	12
+        { "docker logs" "bash -c 'docker logs $(docker ps -q) | tail -20'"}
 }
 
 set widget_loop_ID -1
@@ -2048,7 +2050,7 @@ proc exec_adjacency_callback { node execnum cmd result status } {
 		set a [$c create line $x $y [expr {$o + $x + (($x2 - $x)/2) }] \
 				     [expr {$o + $y + (($y2 - $y)/2) }] \
 			 -fill $color -width 3 \
-			 -tags "adjline $node $peer"]
+			 -tags "adjline $node $peer peer_$node2"]
 		$c lower $a "node && $node"
 	    } else {; 			# update existing half line
 		$c itemconfigure $line -fill $color ;# update the color
@@ -2127,18 +2129,13 @@ proc widget_adjacency_move { c node done } {
 			     [expr {$o + $y + (($y2 - $y)/2) }]
 	$c lower $line "node && $n1"
 	# move any half line coming from peer to this moved node
-	foreach peerline [$c find withtag "adjline && $n2"] {
-	    set peer2 [lindex [$c gettags $peerline] 2]
-	    if { ![info exists adjacency_cache($peer2)] } { continue }
-	    if { $adjacency_cache($peer2) == $node } {
-		$c coords $peerline $x2 $y2 \
-			[expr {$o + $x2 + (($x - $x2)/2) }] \
-			[expr {$o + $y2 + (($y - $y2)/2) }]
-		$c lower $peerline "node && $n2"
-		break
-	    }
-
-	} ;# end foreach peerline
+	foreach peerline [$c find withtag "adjline && $n2 && peer_$n1"] {
+	    set peer2 [lindex [$c gettags $peerline] 1]
+	    $c coords $peerline $x2 $y2 \
+		[expr {$o + $x2 + (($x - $x2)/2) }] \
+		[expr {$o + $y2 + (($y - $y2)/2) }]
+	    $c lower $peerline "node && $n2"
+        }
     } ;# end foreach line
 
     if { $done } { set adjacency_lock 0 }
