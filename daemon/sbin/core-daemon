@@ -1471,7 +1471,7 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                 nc = session.node_count
                 if nc is None:
                     nc = ""
-                nclist.append(nc)
+                nclist.append(str(nc))
                 datelist.append(time.ctime(session._time))
                 thumb = session.thumbnail
                 if thumb is None:
