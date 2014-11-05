@@ -1,6 +1,6 @@
 #!/usr/bin/python
 
-# Copyright (c)2011-2013 the Boeing Company.
+# Copyright (c)2011-2014 the Boeing Company.
 # See the LICENSE file included in this distribution.
 
 # create a random topology running OSPFv3 MDR, wait and then check
@@ -26,9 +26,18 @@ from core.misc import ipaddr
 from core.misc.utils import mutecall
 from core.constants import QUAGGA_STATE_DIR
 
+# this is the /etc/core/core.conf default
+quagga_sbin_search = ("/usr/local/sbin", "/usr/sbin", "/usr/lib/quagga")
+quagga_path = "zebra"
+
 # sanity check that zebra is installed
 try:
-    mutecall(["zebra", "-u", "root", "-g", "root", "-v"])
+    for p in quagga_sbin_search:
+        if os.path.exists(os.path.join(p, "zebra")):
+            quagga_path = p
+            break
+    mutecall([os.path.join(quagga_path, "zebra"),
+             "-u", "root", "-g", "root", "-v"])
 except OSError:
     sys.stderr.write("ERROR: running zebra failed\n")
     sys.exit(1)
@@ -107,14 +116,14 @@ waitfile()
 
 mkdir -p $STATEDIR
 
-zebra -d -u root -g root
+%s/zebra -d -u root -g root
 waitfile $STATEDIR/zebra.vty
 
-ospf6d -d -u root -g root
+%s/ospf6d -d -u root -g root
 waitfile $STATEDIR/ospf6d.vty
 
 vtysh -b
-""" % QUAGGA_STATE_DIR
+""" % (QUAGGA_STATE_DIR, quagga_path, quagga_path)
 
 class Route(object):
     """ Helper class for organzing routing table entries. """
