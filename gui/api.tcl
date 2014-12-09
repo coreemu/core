@@ -431,14 +431,13 @@ proc parseNodeMessage { data len flags } {
 # modify a node
 #
 proc apiNodeModify { node vals_ref } {
-    global c eid zoom
+    global c eid zoom curcanvas
     upvar $vals_ref vals
     if { ![info exists c] } { return } ;# batch mode
+    set draw 0
     if { $vals(icon) != "" } {
 	setCustomImage $node $vals(icon)
-	.c delete withtag "node && $node"
-	.c delete withtag "nodelabel && $node"
-	drawNode .c $node
+	set draw 1
     }
     # move the node and its links
     if {$vals(xpos) != 0 && $vals(ypos) != 0} {
@@ -447,6 +446,7 @@ proc apiNodeModify { node vals_ref } {
     }
     if { $vals(name) != "" } {
 	setNodeName $node $vals(name)
+	set draw 1
     }
     if { $vals(services) != "" } {
 	set services [split $vals(services) |]
@@ -454,6 +454,11 @@ proc apiNodeModify { node vals_ref } {
     }
     # TODO: handle other optional on-screen data
     # lat, long, alt, heading, platform type, platform id
+    if { $draw && [getNodeCanvas $node] == $curcanvas }  {
+	.c delete withtag "node && $node"
+	.c delete withtag "nodelabel && $node"
+	drawNode .c $node
+    }
 }
 
 #
