@@ -76,15 +76,11 @@ class TunTap(PyCoreNetIf):
         #    mutedetach(["tunctl", "-d", self.localname])
         self.up = False
 
-    def install(self):
-        ''' Install this TAP into its namespace. This is not done from the
-            startup() method but called at a later time when a userspace
-            program (running on the host) has had a chance to open the socket
-            end of the TAP.
+    def waitfordevice(self):
+        '''\
+        Check for presence of device - tap device may not appear right
+        away waits ~= stime * ( 2 ** attempts) seconds
         '''
-        netns = str(self.node.pid)
-        # check for presence of device - tap device may not appear right away
-        # waits ~= stime * ( 2 ** attempts) seconds 
         attempts = 9
         stime = 0.01
         while attempts > 0:
@@ -100,7 +96,15 @@ class TunTap(PyCoreNetIf):
             time.sleep(stime)
             stime *= 2
             attempts -= 1
-        # install tap device into namespace
+
+    def install(self):
+        ''' Install this TAP into its namespace. This is not done from the
+            startup() method but called at a later time when a userspace
+            program (running on the host) has had a chance to open the socket
+            end of the TAP.
+        '''
+        self.waitfordevice()
+        netns = str(self.node.pid)
         try:
             check_call([IP_BIN, "link", "set", self.localname, "netns", netns])
         except Exception, e:
@@ -116,6 +120,7 @@ class TunTap(PyCoreNetIf):
     def setaddrs(self):
         ''' Set interface addresses based on self.addrlist.
         '''
+        self.waitfordevice()
         for addr in self.addrlist:
             self.node.cmd([IP_BIN, "addr", "add", str(addr),
                   "dev", self.name])
