@@ -52,8 +52,8 @@
 # newFile 
 #   - creates an empty project
 #
-# openFile
-#   - loads configuration from currentFile   
+# openFile {filename}
+#   - loads configuration from filename
 #
 # saveFile {selectedFile} 
 #   - saves current configuration to a file named selectedFile 
@@ -138,11 +138,11 @@ proc newFile {} {
 # NAME
 #   openFile -- open file
 # SYNOPSIS
-#   openFile
+#   openFile $filename
 # FUNCTION
-#   Loads the configuration from the file named currentFile.
+#   Loads the configuration from the file named $filename.
 #****
-proc openFile {} {
+proc openFile { filename } {
     global currentFile 
     global undolog activetool
     global canvas_list curcanvas systype
@@ -151,6 +151,8 @@ proc openFile {} {
     if { [popupStopSessionPrompt] == "cancel" } {
 	return
     }
+
+    set currentFile $filename
 
     if { [lindex [file extension $currentFile] 0] == ".py" } {
 	set flags 0x10 ;# status request flag
@@ -261,13 +263,11 @@ proc saveFile { selectedFile } {
 #****
 proc fileOpenStartUp {} {
     global argv
-    global currentFile
 
     # Boeing
     foreach arg $argv {
 	if { $arg != "" && $arg != "--start" && $arg != "--batch" } {
-	    set currentFile [argAbsPathname $arg]
-	    openFile
+	    openFile [argAbsPathname $arg]
 	    break
 	}
     }
@@ -310,7 +310,7 @@ proc fileNewDialogBox {} {
 #****
 set fileDialogBox_initial 0; # static flag
 proc fileOpenDialogBox {} {
-    global currentFile fileTypes g_prefs fileDialogBox_initial
+    global fileTypes g_prefs fileDialogBox_initial
 
     # use default conf file path upon first run
     if { $fileDialogBox_initial == 0} {
@@ -322,8 +322,7 @@ proc fileOpenDialogBox {} {
         set selectedFile [tk_getOpenFile -filetypes $fileTypes]
     }
     if { $selectedFile != ""} {
-	set currentFile $selectedFile
-	openFile
+	openFile $selectedFile
     }
 }
 
@@ -470,9 +469,7 @@ proc savePrefsFile { } {
 
 # helper for most-recently-used file list menu items
 proc mrufile { f args } {
-    global currentFile
-    set currentFile [string trim "$f $args"]
-    openFile
+    openFile [string trim "$f $args"]
 }
 
 # add filename to the most-recently-used file list
