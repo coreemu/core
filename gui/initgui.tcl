@@ -229,7 +229,7 @@ bind . <Control-n> "fileNewDialogBox"
 bind . <Control-o> "fileOpenDialogBox"
 
 .menubar.file add command -label "Reload" -underline 0 \
-  -command { openFile } 
+  -command { openFile $currentFile } 
 
 .menubar.file add command -label Save -underline 0 \
   -accelerator "Ctrl+S" -command { fileSaveDialogBox "" }
