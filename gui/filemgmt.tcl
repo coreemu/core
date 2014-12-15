@@ -147,28 +147,48 @@ proc openFile { filename } {
     global undolog activetool
     global canvas_list curcanvas systype
     global changed
+    global oper_mode
 
+    if { [lindex [file extension $filename] 0] == ".py" } {
+	execPythonFile $filename
+    	return
+    }
+
+    set prev_oper_mode $oper_mode
     if { [popupStopSessionPrompt] == "cancel" } {
 	return
     }
 
     set currentFile $filename
 
-    if { [lindex [file extension $currentFile] 0] == ".py" } {
-	set flags 0x10 ;# status request flag
-	sendRegMessage -1 $flags [list "exec" $currentFile]
-	addFileToMrulist $currentFile
-	return
+    setGuiTitle ""
+    cleanupGUIState
+    resetGlobalVars openfile
+    if { $canvas_list == "" } {
+	set curcanvas [newCanvas ""]
     }
+
+    if { $prev_oper_mode == "exec" } {
+	if { $oper_mode == "exec" } {
+	    global g_current_session
+	    setOperMode edit
+	    set g_current_session 0
+	}
+
+	# disconnect and get a new session number
+	set name [lindex [getEmulPlugin "*"] 0]
+	if { $name != "" } {
+	    pluginConnect $name disconnect 1
+	    pluginConnect $name connect 1
+	}
+    }
+
     if { [file extension $currentFile] == ".xml" } {
-	setGuiTitle ""
-	cleanupGUIState
-	resetGlobalVars openfile
 	xmlFileLoadSave "open" $currentFile
 	addFileToMrulist $currentFile
 	return
     }
-    set fileName [file tail $currentFile]
+
     # flush daemon configuration
     if { [llength [findWlanNodes ""]] > 0 } {
 	if { [lindex $systype 0] == "FreeBSD" } {
@@ -186,12 +206,8 @@ proc openFile { filename } {
 	return
     }
     close $fileId
-    setGuiTitle ""
+
     loadCfg $cfg
-    set curcanvas [lindex $canvas_list 0]
-    switchCanvas none
-    # already called from switchCanvas: redrawAll
-    resetGlobalVars openfile
     set undolog(0) $cfg 
     set activetool select
 
