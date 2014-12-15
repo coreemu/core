@@ -938,7 +938,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     opensessionxml(session, filename, start=True)
                 else:
                     t = threading.Thread(target = execfile,
-                                         args=(filename, {'server': server}))
+                                         args=(filename, {'__file__': filename,
+                                                          'server': server}))
                     t.daemon = True
                     t.start()
                     time.sleep(0.25) # allow time for session creation
