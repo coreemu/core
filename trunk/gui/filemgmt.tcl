@@ -147,7 +147,11 @@ proc openFile {} {
     global undolog activetool
     global canvas_list curcanvas systype
     global changed
-    
+
+    if { [popupStopSessionPrompt] == "cancel" } {
+	return
+    }
+
     if { [lindex [file extension $currentFile] 0] == ".py" } {
 	set flags 0x10 ;# status request flag
 	sendRegMessage -1 $flags [list "exec" $currentFile]
