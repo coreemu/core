@@ -980,6 +980,14 @@ proc exportPython { } {
     }
 }
 
+proc execPythonFile { filename } {
+    set flags 0x10 ;# status request flag
+    sendRegMessage -1 $flags [list "exec" $filename]
+    addFileToMrulist $filename
+
+    tk_messageBox -type ok -message "Executed Python script '$filename'"
+}
+
 # ask the daemon to execute the selected file
 proc execPython { with_options } {
     global fileDialogBox_initial g_prefs
@@ -999,9 +1007,8 @@ proc execPython { with_options } {
 	set fn [tk_inputBox "Python Script Options" $prompt $fn . 50]
 	if { $fn == "" } { return }
     }
-    set flags 0x10 ;# status request flag
-    sendRegMessage -1 $flags [list "exec" $fn]
-    addFileToMrulist $fn
+
+    execPythonFile $fn
 }
 
 # open a dialog that prompts the user with a text entry
