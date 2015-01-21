@@ -222,6 +222,31 @@ class NrlOlsrv2(NrlService):
     
 addservice(NrlOlsrv2)
 
+class OlsrOrg(NrlService):
+    ''' Optimized Link State Routing protocol from olsr.org for MANET networks.
+    '''
+    _name = "OLSRORG"
+    _startup = ("olsrd", )
+    _shutdown = ("killall olsrd", )
+    _validate = ("pidof olsrd", )
+
+    @classmethod
+    def getstartup(cls,  node,  services):
+        ''' Generate the appropriate command-line based on node interfaces.
+        '''
+        cmd = cls._startup[0]
+        netifs = filter(lambda x: not getattr(x, 'control', False), \
+                        node.netifs())
+        if len(netifs) > 0:
+            interfacenames = map(lambda x: x.name, netifs)
+            cmd += " -i "
+            cmd += " -i ".join(interfacenames)
+
+        return (cmd, )
+
+addservice(OlsrOrg)
+
+
 class Arouted(NrlService):
     ''' Adaptive Routing
     '''
