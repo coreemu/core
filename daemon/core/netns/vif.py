@@ -76,26 +76,47 @@ class TunTap(PyCoreNetIf):
         #    mutedetach(["tunctl", "-d", self.localname])
         self.up = False
 
-    def waitfordevice(self):
+    def waitfor(self, func, attempts = 10, maxretrydelay = 0.25):
         '''\
-        Check for presence of device - tap device may not appear right
-        away waits ~= stime * ( 2 ** attempts) seconds
+        Wait for func() to return zero with exponential backoff
         '''
-        attempts = 9
-        stime = 0.01
-        while attempts > 0:
-            try:
-                mutecheck_call([IP_BIN, "link", "show", self.localname])
-                break
-            except Exception, e:
-                msg = "ip link show %s error (%d): %s" % \
-                        (self.localname, attempts, e)
-                if attempts > 1:
-                    msg += ", retrying..."
+        delay = 0.01
+        for i in xrange(1, attempts + 1):
+            r = func()
+            if r == 0:
+                return
+            msg = 'attempt %s failed with nonzero exit status %s' % (i, r)
+            if i < attempts + 1:
+                msg += ', retrying...'
                 self.node.info(msg)
-            time.sleep(stime)
-            stime *= 2
-            attempts -= 1
+                time.sleep(delay)
+                delay = delay + delay
+                if delay > maxretrydelay:
+                    delay = maxretrydelay
+            else:
+                msg += ', giving up'
+                self.node.info(msg)
+        raise RuntimeError, 'command failed after %s attempts' % attempts
+
+    def waitfordevicelocal(self):
+        '''\
+        Check for presence of a local device - tap device may not
+        appear right away waits
+        '''
+        def localdevexists():
+            cmd = (IP_BIN, 'link', 'show', self.localname)
+            return mutecall(cmd)
+        self.waitfor(localdevexists)
+
+    def waitfordevicenode(self):
+        '''\
+        Check for presence of a node device - tap device may not
+        appear right away waits
+        '''
+        def nodedevexists():
+            cmd = (IP_BIN, 'link', 'show', self.name)
+            return self.node.cmd(cmd)
+        self.waitfor(nodedevexists)
 
     def install(self):
         ''' Install this TAP into its namespace. This is not done from the
@@ -103,7 +124,7 @@ class TunTap(PyCoreNetIf):
             program (running on the host) has had a chance to open the socket
             end of the TAP.
         '''
-        self.waitfordevice()
+        self.waitfordevicelocal()
         netns = str(self.node.pid)
         try:
             check_call([IP_BIN, "link", "set", self.localname, "netns", netns])
@@ -120,7 +141,7 @@ class TunTap(PyCoreNetIf):
     def setaddrs(self):
         ''' Set interface addresses based on self.addrlist.
         '''
-        self.waitfordevice()
+        self.waitfordevicenode()
         for addr in self.addrlist:
             self.node.cmd([IP_BIN, "addr", "add", str(addr),
                   "dev", self.name])
