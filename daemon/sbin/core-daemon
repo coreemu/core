@@ -203,7 +203,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         '''
         try:
             msghdr = self.request.recv(coreapi.CoreMessage.hdrsiz)
-            if self.debug:
+            if self.debug and len(msghdr) > 0:
                 self.info("received message header:\n%s" % hexdump(msghdr))
         except Exception, e:
             raise IOError, "error receiving header (%s)" % e
