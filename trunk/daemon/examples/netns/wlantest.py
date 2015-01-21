@@ -29,7 +29,7 @@ def test(numnodes, testsec):
     # emulated network
     net = session.addobj(cls = pycore.nodes.WlanNode)
     for i in xrange(1, numnodes + 1):
-        tmp = session.addobj(cls = pycore.nodes.LxcNode, name = "n%d" % i)
+        tmp = session.addobj(cls = pycore.nodes.LxcNode, objid= "%d" % i, name = "n%d" % i)
         tmp.newnetif(net, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         n.append(tmp)
     net.link(n[0].netif(0), n[-1].netif(0))
