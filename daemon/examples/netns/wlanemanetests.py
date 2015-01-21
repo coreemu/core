@@ -727,7 +727,21 @@ def main():
     exp.info("setting up bridged tests 2/2 with netem")
     exp.setneteffects(bw=54000000, delay=0)
     exp.info("waiting %s sec (queue bring-up)" % opt.delay)
-    results['1 netem'] = exp.runalltests("netem")
+    results['1.0 netem'] = exp.runalltests("netem")
+    exp.info("shutting down bridged session")
+
+    # bridged with netem (1 Mbps,200ms)
+    exp.info("setting up bridged tests 3/2 with netem")
+    exp.setneteffects(bw=1000000, delay=20000)
+    exp.info("waiting %s sec (queue bring-up)" % opt.delay)
+    results['1.2 netem_1M'] = exp.runalltests("netem_1M")
+    exp.info("shutting down bridged session")
+
+    # bridged with netem (54 kbps,500ms)
+    exp.info("setting up bridged tests 3/2 with netem")
+    exp.setneteffects(bw=54000, delay=100000)
+    exp.info("waiting %s sec (queue bring-up)" % opt.delay)
+    results['1.4 netem_54K'] = exp.runalltests("netem_54K")
     exp.info("shutting down bridged session")
     exp.reset()
 
@@ -738,7 +752,7 @@ def main():
     exp.setnodes()
     exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
     time.sleep(opt.delay)
-    results['2 bypass'] = exp.runalltests("bypass")
+    results['2.0 bypass'] = exp.runalltests("bypass")
     exp.info("shutting down bypass session")
     exp.reset()
     
@@ -760,7 +774,7 @@ def main():
     exp.setnodes()
     exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
     time.sleep(opt.delay)
-    results['3 rfpipe'] = exp.runalltests("rfpipe")
+    results['3.0 rfpipe'] = exp.runalltests("rfpipe")
     exp.info("shutting down RF-PIPE session")
     exp.reset()
 
@@ -768,7 +782,7 @@ def main():
     exp.info("setting up EMANE tests 3/4 with RF-PIPE model 54M")
     rfpipevals = list(EmaneRfPipeModel.getdefaultvalues())
     rfpnames = EmaneRfPipeModel.getnames()
-    rfpipevals[ rfpnames.index('datarate') ] = '54000'
+    rfpipevals[ rfpnames.index('datarate') ] = '54000000'
     # TX delay != propagation delay
     #rfpipevals[ rfpnames.index('delay') ] = '5000'
     if emanever < Emane.EMANE091:
@@ -781,11 +795,11 @@ def main():
     exp.setnodes()
     exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
     time.sleep(opt.delay)
-    results['4 rfpipe54m'] = exp.runalltests("rfpipe54m")
+    results['4.0 rfpipe54m'] = exp.runalltests("rfpipe54m")
     exp.info("shutting down RF-PIPE session")
     exp.reset()
 
-    # EMANE RF-PIPE model
+    # EMANE RF-PIPE model:  54K datarate
     exp.info("setting up EMANE tests 4/4 with RF-PIPE model pathloss")
     rfpipevals = list(EmaneRfPipeModel.getdefaultvalues())
     rfpnames = EmaneRfPipeModel.getnames()
@@ -802,7 +816,26 @@ def main():
     time.sleep(opt.delay)
     exp.info("sending pathloss events to govern connectivity")
     exp.setpathloss(opt.numnodes)
-    results['5 pathloss'] = exp.runalltests("pathloss")
+    results['5.0 pathloss'] = exp.runalltests("pathloss")
+    exp.info("shutting down RF-PIPE session")
+    exp.reset()
+
+    # EMANE RF-PIPE model (512K, 200ms)
+    exp.info("setting up EMANE tests 4/4 with RF-PIPE model pathloss")
+    rfpipevals = list(EmaneRfPipeModel.getdefaultvalues())
+    rfpnames = EmaneRfPipeModel.getnames()
+    rfpipevals[ rfpnames.index('datarate') ] = '512000'
+    rfpipevals[ rfpnames.index('delay') ] = '200'
+    rfpipevals[ rfpnames.index('pathlossmode') ] = 'pathloss'
+    rfpipevals[ rfpnames.index('defaultconnectivitymode') ] = '0'
+    exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
+                          cls=EmaneRfPipeModel, values=rfpipevals)
+    exp.setnodes()
+    exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
+    time.sleep(opt.delay)
+    exp.info("sending pathloss events to govern connectivity")
+    exp.setpathloss(opt.numnodes)
+    results['5.1 pathloss'] = exp.runalltests("pathloss")
     exp.info("shutting down RF-PIPE session")
     exp.reset()
   

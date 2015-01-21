@@ -246,7 +246,7 @@ class ManetExperiment(object):
         self.net = self.session.addobj(cls = pycore.nodes.WlanNode)
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.addobj(cls = ManetNode, ipaddr = addr, name = "n%d" % i)
+            tmp = self.session.addobj(cls = ManetNode, ipaddr = addr, objid= "%d" % i, name = "n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
         # connect nodes with probability linkprob
