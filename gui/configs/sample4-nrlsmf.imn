@@ -424,6 +424,7 @@ node n11 {
 	mobmodel
 	coreapi
 	basic_range
+    ns2script
 	!
     }
     iconcoords {0 0}
@@ -439,6 +440,17 @@ node n11 {
     interface-peer {e7 n8}
     interface-peer {e8 n9}
     interface-peer {e9 n10}
+    custom-config {
+	custom-config-id ns2script
+	custom-command {10 3 11 10 10}
+	config {
+	file=sample4.scen
+	refresh_ms=50
+	loop=1
+	autostart=5
+	map=
+	}
+    }
     custom-config {
 	custom-config-id basic_range
 	custom-command {3 3 9 9 9}
