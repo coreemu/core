@@ -978,6 +978,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             except Exception, e:
                 self.warn("error executing '%s': %s" % \
                           (ex, traceback.format_exc()))
+                tlvdata = coreapi.CoreExceptionTlv.pack( \
+                    coreapi.CORE_TLV_EXCP_LEVEL, 2)
+                tlvdata += coreapi.CoreExceptionTlv.pack( \
+                    coreapi.CORE_TLV_EXCP_TEXT, str(e))
+                msg = coreapi.CoreExceptionMessage.pack(0, tlvdata)
+                replies.append(msg)
             return replies
             
         gui = msg.gettlv(coreapi.CORE_TLV_REG_GUI)
