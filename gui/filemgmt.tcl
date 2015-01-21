@@ -208,7 +208,7 @@ proc openFile { filename } {
     close $fileId
 
     loadCfg $cfg
-    switchCanvas none;
+    switchCanvas none
     set undolog(0) $cfg 
     set activetool select
 
