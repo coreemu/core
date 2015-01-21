@@ -44,7 +44,13 @@ killall -q emane
 killall -q emanetransportd
 killall -q emaneeventservice
 
-ifconfig -a | awk '
+if [ -d /sys/class/net ]; then
+    ifcommand="ls -1 /sys/class/net"
+else
+    ifcommand="ifconfig -a"
+fi
+
+eval "$ifcommand" | awk '
     /^veth[0-9]+\./ {print "removing interface " $1; system("ip link del " $1);}
     /tmp\./    {print "removing interface " $1; system("ip link del " $1);}
     /gt\./     {print "removing interface " $1; system("ip link del " $1);}
