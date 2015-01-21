@@ -935,7 +935,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 filename = sys.argv[0]
                 if os.path.splitext(filename)[1].lower() == '.xml':
                     session = server.getsession(useexisting=False)
-                    opensessionxml(session, filename, start=True)
+                    try:
+                        opensessionxml(session, filename, start=True)
+                    except:
+                        session.shutdown()
+                        server.delsession(session)
+                        raise
                 else:
                     t = threading.Thread(target = execfile,
                                          args=(filename, {'__file__': filename,
