@@ -1,6 +1,6 @@
 comments {
 Joe Macker NRL
-Last updated: Sept 2010
+Last updated: Sept 2010,2015(to fix mobility script)
 Nov 2010  Jeff Ahrenholz - updated for new services model and renamed
  (was 2groups_10nodes_smf.imn)
 
@@ -417,9 +417,6 @@ node n11 {
 	interface wireless
 	 ip address 10.0.0.0/32
 	 ipv6 address a:0::0/128
-	!
-	scriptfile
-	sample4.scen
 	!
 	mobmodel
 	coreapi
