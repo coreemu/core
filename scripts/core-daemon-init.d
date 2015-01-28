@@ -70,6 +70,7 @@ PIDFILE=/var/run/core-daemon.pid
 if [ $DEB = yes ]; then
   daemon="start-stop-daemon --start -p ${PIDFILE} --exec /usr/bin/python --"
   #daemon=start_daemon
+  killproc="start-stop-daemon --stop --quiet --oknodo --retry 10"
   status=status_of_proc
   msg () {
     log_daemon_msg "$@"
@@ -79,6 +80,7 @@ if [ $DEB = yes ]; then
   }
 else
   daemon="daemon /usr/bin/python"
+  killproc="killproc -d 10"
   status=status
   msg () {
     echo -n $"$@"
@@ -99,7 +101,7 @@ start() {
 
 stop() {
 	msg "Shutting down core-daemon"
-	killproc -p ${PIDFILE} $cored
+	$killproc -p ${PIDFILE} $cored
 	RETVAL=$?
 	rm -f ${PIDFILE}
 	endmsg
