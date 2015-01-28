@@ -1,0 +1,8 @@
+*.o
+Makefile
+Makefile.in
+build
+netns
+vcmd
+version.h
+vnoded
