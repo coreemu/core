@@ -9,4 +9,5 @@ config.h.in
 config.log
 config.status
 configure
+debian
 stamp-h1
