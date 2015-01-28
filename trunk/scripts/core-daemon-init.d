@@ -76,7 +76,7 @@ if [ $DEB = yes ]; then
     log_daemon_msg "$@"
   }
   endmsg () {
-    echo ""
+    log_end_msg "$@"
   }
 else
   daemon="daemon /usr/bin/python"
@@ -95,7 +95,7 @@ start() {
 	msg "Starting core-daemon"
 	$daemon $cored -d
 	RETVAL=$?
-	endmsg
+	endmsg $RETVAL
 	return $RETVAL
 }	
 
@@ -104,7 +104,7 @@ stop() {
 	$killproc -p ${PIDFILE} $cored
 	RETVAL=$?
 	rm -f ${PIDFILE}
-	endmsg
+	endmsg $RETVAL
 	return $RETVAL
 }	
 
