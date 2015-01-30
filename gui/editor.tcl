@@ -495,7 +495,7 @@ proc drawLink { link } {
 # draw a green link between wireless nodes (or other color if multiple WLANs)
 # WLAN links appear on the canvas but not in the global link_list
 proc drawWlanLink { node1 node2 wlan } {
-    global zoom defLinkWidth
+    global zoom defLinkWidth curcanvas
     set c .c
 
     set wlanlink [$c find withtag "wlanlink && $node1 && $node2 && $wlan"]
@@ -514,7 +514,15 @@ proc drawWlanLink { node1 node2 wlan } {
 				 [expr {$px*$zoom}] [expr {$py*$zoom}] \
 				 -fill $color -width $defLinkWidth \
 				 -tags "wlanlink $node1 $node2 $wlan"]
-    $c raise $wlanlink "background || grid || oval || rectangle"
+
+    if { [getNodeCanvas $node1] == $curcanvas &&
+    	 [getNodeCanvas $node2] == $curcanvas} {
+	$c itemconfigure $wlanlink -state normal
+	$c raise $wlanlink "background || grid || oval || rectangle"
+    } else {
+	$c itemconfigure $wlanlink -state hidden
+    }
+
     return $wlanlink
 }
 
