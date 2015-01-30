@@ -142,6 +142,8 @@ proc linkSelectedNodes { wlan nodes } {
 proc linkAllNodes { wlan } {
     global node_list
 
+    set canvas [getNodeCanvas $wlan]
+
     # vars related to the status bar graph
     set num 0
     set num_nodes [llength $node_list]
@@ -157,6 +159,7 @@ proc linkAllNodes { wlan } {
 	     [expr { ($num % $update_interval) }] == 0 } { update }
         if { [nodeType $node] != "router" } { continue }
 	if { [ifcByPeer $wlan $node] != "" } { continue } ;# already linked
+	if { [getNodeCanvas $node] != $canvas } { continue }; # on a different canvas
         newGUILink $wlan $node
     }
     .c config -cursor left_ptr; update
