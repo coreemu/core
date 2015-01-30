@@ -132,9 +132,12 @@ proc updateRangeCircles { wlan range } {
 }
 
 proc linkSelectedNodes { wlan nodes } {
+    set canvas [getNodeCanvas $wlan]
+
     foreach node $nodes {
 	if { $wlan == $node } { continue } ;# don't link to self
 	if { [ifcByPeer $wlan $node] != "" } { continue } ;# already linked
+	if { [getNodeCanvas $node] != $canvas } { continue }; # on a different canvas
         newGUILink $wlan $node
     }
 }
