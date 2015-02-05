@@ -74,6 +74,7 @@ class Session(object):
         self._confobjslock = threading.Lock()
         self._handlers = set()
         self._handlerslock = threading.Lock()
+        self._state = None
         self._hooks = {}
         self.setstate(state=coreapi.CORE_EVENT_DEFINITION_STATE,
                       info=False, sendevent=False)
@@ -221,6 +222,8 @@ class Session(object):
             true, generate a CORE API Event Message and send to the connected
             entity.
         '''
+        if state == self._state:
+            return []
         self._time = time.time()
         self._state = state
         replies = []
