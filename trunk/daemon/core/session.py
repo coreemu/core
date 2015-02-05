@@ -77,6 +77,8 @@ class Session(object):
         self._state = None
         self._hooks = {}
         self._state_hooks = {}
+        self.add_state_hook(coreapi.CORE_EVENT_RUNTIME_STATE,
+                            self.runtime_state_hook)
         self.setstate(state=coreapi.CORE_EVENT_DEFINITION_STATE,
                       info=False, sendevent=False)
         # dict of configuration items from /etc/core/core.conf config file
@@ -343,6 +345,10 @@ class Session(object):
             self._state_hooks[state] = filter(lambda x: x != hook, hooks)
         except KeyError:
             pass
+
+    def runtime_state_hook(self, state):
+        if state == coreapi.CORE_EVENT_RUNTIME_STATE:
+            self.emane.poststartup()
 
     def getenviron(self, state=True):
         ''' Get an environment suitable for a subprocess.Popen call.
@@ -614,7 +620,6 @@ class Session(object):
         # allow time for processes to start
         time.sleep(0.125)
         self.validatenodes()
-        self.emane.poststartup()
         # assume either all nodes have booted already, or there are some
         # nodes on slave servers that will be booted and those servers will
         # send a node status response message
