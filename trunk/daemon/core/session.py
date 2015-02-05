@@ -76,6 +76,7 @@ class Session(object):
         self._handlerslock = threading.Lock()
         self._state = None
         self._hooks = {}
+        self._state_hooks = {}
         self.setstate(state=coreapi.CORE_EVENT_DEFINITION_STATE,
                       info=False, sendevent=False)
         # dict of configuration items from /etc/core/core.conf config file
@@ -226,6 +227,7 @@ class Session(object):
             return []
         self._time = time.time()
         self._state = state
+        self.run_state_hooks(state)
         replies = []
         if self.isconnected() and info:
             statename = coreapi.state_name(state)
@@ -316,6 +318,31 @@ class Session(object):
         ''' Clear the hook scripts dict.
         '''
         self._hooks = {}
+
+    def run_state_hooks(self, state):
+        try:
+            hooks = self._state_hooks[state]
+            for hook in hooks:
+                hook(state)
+        except KeyError:
+            pass
+
+    def add_state_hook(self, state, hook):
+        try:
+            hooks = self._state_hooks[state]
+            assert hook not in hooks
+            hooks.append(hook)
+        except KeyError:
+            self._state_hooks[state] = [hook]
+        if self._state == state:
+            hook(state)
+
+    def del_state_hook(self, state, hook):
+        try:
+            hooks = self._state_hooks[state]
+            self._state_hooks[state] = filter(lambda x: x != hook, hooks)
+        except KeyError:
+            pass
 
     def getenviron(self, state=True):
         ''' Get an environment suitable for a subprocess.Popen call.
