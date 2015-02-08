@@ -9,6 +9,7 @@ An incomplete list of related work:
   * [http://imunes.tel.fer.hr/ IMUNES]
   * [http://mininet.org/ Mininet]
   * [http://www.dit.upm.es/~vnx/ Virtual Networks over linuX (VNX)]
+  * [http://www.gns3.com/ GNS3]
 
 == Network Simulators ==
 
