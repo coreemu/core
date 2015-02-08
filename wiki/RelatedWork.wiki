@@ -1,0 +1,20 @@
+#summary Related work and other references.
+
+= Related Work =
+
+An incomplete list of related work:
+
+== Virtual Networking Systems and Network Emulators ==
+
+  * [http://mininet.org/ Mininet]
+  * [http://www.dit.upm.es/~vnx/ Virtual Networks over linuX (VNX)]
+
+== Network Simulators ==
+
+  * [http://www.isi.edu/nsnam/ns/ ns-2]
+  * [http://www.nsnam.org/ ns-3]
+
+= Other References =
+
+Some other references:
+  * [http://nil.uniza.sk/network-simulation-and-modelling/network-simulators-list Network simulators - the list]
