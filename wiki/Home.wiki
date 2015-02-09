@@ -44,3 +44,7 @@ Academic publications that use CORE are requested to cite one of the following p
  * J. Ahrenholz, T. Goff, and B. Adamson, Integration of the CORE and EMANE Network Emulators, Proceedings of IEEE Military Communications Conference 2011 (MILCOM), pp. 1870-1875, November 2011.
  * J. Ahrenholz, Comparison of CORE Network Emulation Platforms, Proceedings of IEEE Military Communications Conference Conference 2010 (MILCOM), pp. 864-869, November 2010.
  * J. Ahrenholz, C. Danilov, T. Henderson, and J.H. Kim, CORE: A real-time network emulator, Proceedings of IEEE Military Communications Conference 2008 (MILCOM), pp. 221-227, November 2008.
+
+== Related Work ==
+
+Some related work is listed [RelatedWork here].
