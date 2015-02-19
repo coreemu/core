@@ -24,7 +24,7 @@ def main():
     prefix = None
     for p in sys.path:
         if p.startswith(path):
-            prefix = path
+            prefix = python_prefix
             break
     if not prefix:
         prefix = site.PREFIXES[-1]
