@@ -18,7 +18,7 @@ build:
 
 # Python package install
 install-exec-hook:
-	CORE_CONF_DIR=${DESTDIR}/${CORE_CONF_DIR} $(PYTHON) setup.py install --prefix=${DESTDIR}/${prefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
+	CORE_CONF_DIR=${DESTDIR}/${CORE_CONF_DIR} $(PYTHON) setup.py install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
 
 # Python package uninstall
 uninstall-hook:
