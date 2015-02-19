@@ -310,7 +310,13 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{python_sitelib}/core/misc/quagga.py*
 %{python_sitelib}/core/misc/utils.py*
 %{python_sitelib}/core/misc/utm.py*
+%{python_sitelib}/core/misc/xmlparser.py*
+%{python_sitelib}/core/misc/xmlparser0.py*
+%{python_sitelib}/core/misc/xmlsession.py*
 %{python_sitelib}/core/misc/xmlutils.py*
+%{python_sitelib}/core/misc/xmlwriter.py*
+%{python_sitelib}/core/misc/xmlwriter0.py*
+%{python_sitelib}/core/misc/xmlwriter1.py*
 %{python_sitelib}/core/mobility.py*
 %{python_sitelib}/core/netns/__init__.py*
 %{python_sitelib}/core/netns/nodes.py*
@@ -330,6 +336,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{python_sitelib}/core/service.py*
 %{python_sitelib}/core/services/bird.py*
 %{python_sitelib}/core/services/__init__.py*
+%{python_sitelib}/core/services/dockersvc.py*
 %{python_sitelib}/core/services/nrl.py*
 %{python_sitelib}/core/services/quagga.py*
 %{python_sitelib}/core/services/security.py*
