@@ -20,7 +20,6 @@ setup(name = "core-python-netns",
       version = "1.0",
       description = "Extension modules to support virtual nodes using " \
           "Linux network namespaces",
-      data_files = [("sbin", ('vcmd', 'vnoded', 'netns')), ],
       ext_modules = [netns, vcmd],
       url = "http://www.nrl.navy.mil/itd/ncs/products/core",
       author = "Boeing Research & Technology",

@@ -34,18 +34,13 @@ libnetns_a_SOURCES = netnsmodule.c vcmdmodule.c
 libnetns.a:
 	SBINDIR=@SBINDIR@ LDFLAGS="$(LDFLAGS) @libev_LIBS@" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build
 
-install:	install-exec-hook
-
 # Python libraries install
-install-exec-hook:
+install-exec-local:
 	SBINDIR=${DESTDIR}/@SBINDIR@ $(PYTHON) setup.py install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
 #python setup.py install --prefix=${DESTDIR}${PYTHON_PREFIX}
 
 # Python libraries uninstall
 uninstall-hook:
-	rm -f ${sbindir}/vnoded
-	rm -f ${sbindir}/vcmd
-	rm -f ${sbindir}/netns
 	rm -f ${pyexecdir}/core_python_netns-1.0-py${PYTHON_VERSION}.egg-info
 	rm -f ${pyexecdir}/netns.so
 	rm -f ${pyexecdir}/vcmd.so
