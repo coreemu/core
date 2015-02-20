@@ -41,8 +41,17 @@ AC_SUBST(COREDPY_VERSION)
 if test "x$prefix" = "xNONE" ; then
   prefix="/usr/local"
 fi
+if test "x$exec_prefix" = "xNONE" ; then
+  exec_prefix="$prefix"
+fi
 if test "$libdir" = "\${exec_prefix}/lib" ; then
-  libdir="${prefix}/lib"
+  libdir="${exec_prefix}/lib"
+fi
+if test "$sbindir" = "\${exec_prefix}/sbin" ; then
+  sbindir="${exec_prefix}/sbin"
+fi
+if test "$bindir" = "\${exec_prefix}/bin" ; then
+  bindir="${exec_prefix}/bin"
 fi
 # this can be /usr/lib or /usr/lib64
 LIB_DIR="${libdir}"
@@ -50,9 +59,9 @@ LIB_DIR="${libdir}"
 CORE_LIB_DIR="${prefix}/lib/core"
 AC_SUBST(LIB_DIR)
 AC_SUBST(CORE_LIB_DIR)
-SBINDIR="${prefix}/sbin"
+SBINDIR="${sbindir}"
 AC_SUBST(SBINDIR)
-BINDIR="${prefix}/bin"
+BINDIR="${bindir}"
 AC_SUBST(BINDIR)
 
 # CORE daemon configuration file (core.conf) in CORE_CONF_DIR
