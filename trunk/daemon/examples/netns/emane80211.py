@@ -45,7 +45,8 @@ def main():
     # IP subnet
     prefix = ipaddr.IPv4Prefix("10.83.0.0/16")
     # session with some EMANE initialization
-    session = pycore.Session(persistent=True)
+    cfg = {'verbose': 'false'}
+    session = pycore.Session(cfg = cfg, persistent = False)
     session.master = True
     session.location.setrefgeo(47.57917,-122.13232,2.00000)
     session.location.refscale = 150.0
@@ -62,9 +63,9 @@ def main():
     values = list(EmaneIeee80211abgModel.getdefaultvalues())
     # TODO: change any of the EMANE 802.11 parameter values here
     try:
-        values[ names.index('pathlossmode') ] = 'pathloss'
+        values[ names.index('pathlossmode') ] = '2ray'
     except ValueError:
-        values[ names.index('propagationmodel') ] = 'precomputed'
+        values[ names.index('propagationmodel') ] = '2ray'
 
     session.emane.setconfig(wlan.objid, EmaneIeee80211abgModel._name, values)
     services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
