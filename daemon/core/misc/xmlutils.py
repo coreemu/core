@@ -134,14 +134,23 @@ def getoneelement(dom, name):
     if len(e) == 0:
         return None
     return e[0]
-    
+
+def iterChildren(dom, nodeType):
+    '''\
+    Iterate over all child elements of the given type.
+    '''
+    for child in dom.childNodes:
+        if child.nodeType == nodeType:
+            yield child
+
 def gettextchild(dom):
-    # this could be improved to skip XML comments
-    child = dom.firstChild
-    if child is not None and child.nodeType == Node.TEXT_NODE:
+    '''\
+    Return the text node of the given element.
+    '''
+    for child in iterChildren(dom, Node.TEXT_NODE):
         return str(child.nodeValue)
     return None
-    
+
 def getparamssetattrs(dom, param_names, target):
     ''' XML helper to get <param name="name" value="value"/> tags and set
     the attribute in the target object. String type is used. Target object 
