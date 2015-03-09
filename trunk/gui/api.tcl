@@ -697,6 +697,9 @@ proc parseLinkMessage { data len flags } {
 			$vals(if${i}ipv${j})/$vals(if${i}ipv${j}mask)
 	    }
 	}
+	if { $vals(if${i}mac) != -1 } {
+	    setIfcMacaddr [set node${i}] $ifname $vals(if${i}mac)
+	}
     }
     # adopt network address for WLAN (WLAN must be node 1)
     if { [nodeType $node1] == "wlan" } {
