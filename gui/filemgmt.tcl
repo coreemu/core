@@ -149,14 +149,21 @@ proc openFile { filename } {
     global changed
     global oper_mode
 
+    set prev_oper_mode $oper_mode
+    if { [popupStopSessionPrompt] == "cancel" } {
+	return
+    }
+
     if { [lindex [file extension $filename] 0] == ".py" } {
 	execPythonFile $filename
     	return
     }
 
-    set prev_oper_mode $oper_mode
-    if { [popupStopSessionPrompt] == "cancel" } {
-	return
+    # disconnect and get a new session number
+    set name [lindex [getEmulPlugin "*"] 0]
+    if { $name != "" } {
+	pluginConnect $name disconnect 1
+	pluginConnect $name connect 1
     }
 
     set currentFile $filename
@@ -169,18 +176,11 @@ proc openFile { filename } {
     }
 
     if { $prev_oper_mode == "exec" } {
-	if { $oper_mode == "exec" } {
-	    global g_current_session
-	    setOperMode edit
-	    set g_current_session 0
-	}
-
-	# disconnect and get a new session number
-	set name [lindex [getEmulPlugin "*"] 0]
-	if { $name != "" } {
-	    pluginConnect $name disconnect 1
-	    pluginConnect $name connect 1
-	}
+     	if { $oper_mode == "exec" } {
+     	    global g_current_session
+     	    setOperMode edit
+     	    set g_current_session 0
+     	}
     }
 
     if { [file extension $currentFile] == ".xml" } {
