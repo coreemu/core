@@ -371,6 +371,10 @@ class PyCoreNet(PyCoreObj):
                                                     1)
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM,
                                                 otherobj.getifindex(netif))
+            if netif.hwaddr:
+                tlvdata += \
+                    coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2MAC,
+                                             netif.hwaddr)
             for addr in netif.addrlist:
                 (ip, sep, mask)  = addr.partition('/')
                 mask = int(mask)

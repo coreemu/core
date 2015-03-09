@@ -68,6 +68,9 @@ class PtpNet(NetgraphPipeNet):
 
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM, \
                                             if1.node.getifindex(if1))
+        if if1.hwaddr:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1MAC,
+                                                if1.hwaddr)
         for addr in if1.addrlist:
             (ip, sep, mask)  = addr.partition('/')
             mask = int(mask)
@@ -86,6 +89,9 @@ class PtpNet(NetgraphPipeNet):
 
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM, \
                                             if2.node.getifindex(if2))
+        if if2.hwaddr:
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2MAC,
+                                                if2.hwaddr)
         for addr in if2.addrlist:
             (ip, sep, mask)  = addr.partition('/')
             mask = int(mask)
