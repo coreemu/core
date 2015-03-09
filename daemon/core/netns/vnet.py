@@ -412,9 +412,22 @@ class LxBrNet(PyCoreNet):
         ''' Link this bridge with another by creating a veth pair and installing
             each device into each bridge.
         '''
-        sessionid = self.session.sessionid
-        localname = "n%s.%s.%s" % (self.objid, net.objid, sessionid)
-        name = "n%s.%s.%s" % (net.objid, self.objid, sessionid)
+        sessionid = self.session.shortsessionid()
+        try:
+            self_objid = '%x' % self.objid
+        except TypeError:
+            self_objid = '%s' % self.objid
+        try:
+            net_objid = '%x' % net.objid
+        except TypeError:
+            net_objid = '%s' % net.objid
+        localname = 'veth%s.%s.%s' % (self_objid, net_objid, sessionid)
+        if len(localname) >= 16:
+            raise ValueError, "interface local name '%s' too long" % \
+                localname
+        name = 'veth%s.%s.%s' % (net_objid, self_objid, sessionid)
+        if len(name) >= 16:
+            raise ValueError, "interface name '%s' too long" % name
         netif = VEth(node = None, name = name, localname = localname,
                      mtu = 1500, net = self, start = self.up)        
         self.attach(netif)
