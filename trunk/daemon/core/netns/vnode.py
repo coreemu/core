@@ -167,11 +167,17 @@ class SimpleLxcNode(PyCoreNode):
             if ifname is None:
                 ifname = "eth%d" % ifindex
             sessionid = self.session.shortsessionid()
-            name = "veth%s.%sp%s" % (self.objid, ifindex, sessionid)
-            localname = "veth%s.%s.%s" % (self.objid, ifindex, sessionid)
+            try:
+                suffix = '%x.%s.%s' % (self.objid, ifindex, sessionid)
+            except TypeError:
+                suffix = '%s.%s.%s' % (self.objid, ifindex, sessionid)
+            localname = 'veth' + suffix
             if len(localname) >= 16:
-                raise ValueError, "interface local name '%s' to long" % \
+                raise ValueError, "interface local name '%s' too long" % \
                         localname
+            name = localname + 'p'
+            if len(name) >= 16:
+                raise ValueError, "interface name '%s' too long" % name
             ifclass = VEth
             veth = ifclass(node = self, name = name, localname = localname,
                            mtu = 1500, net = net, start = self.up)
