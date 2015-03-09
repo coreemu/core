@@ -149,7 +149,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
 
     @staticmethod
     def getvalue(obj):
-        return obj.addr
+        return '\0\0' + obj.addr # extend to 64 bits
 
     @staticmethod
     def newobj(value):
