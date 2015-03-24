@@ -77,12 +77,12 @@ class Session(object):
         self._state = None
         self._hooks = {}
         self._state_hooks = {}
+        # dict of configuration items from /etc/core/core.conf config file
+        self.cfg = cfg
         self.add_state_hook(coreapi.CORE_EVENT_RUNTIME_STATE,
                             self.runtime_state_hook)
         self.setstate(state=coreapi.CORE_EVENT_DEFINITION_STATE,
                       info=False, sendevent=False)
-        # dict of configuration items from /etc/core/core.conf config file
-        self.cfg = cfg
         self.server = server
         if not persistent:
             self.addsession(self)
