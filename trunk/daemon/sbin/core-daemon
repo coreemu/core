@@ -1127,14 +1127,22 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                            coreapi.CORE_EVENT_RESTART, \
                            coreapi.CORE_EVENT_PAUSE, \
                            coreapi.CORE_EVENT_RECONFIGURE):
+            handled = False
             name = msg.gettlv(coreapi.CORE_TLV_EVENT_NAME)
-            # TODO: register system for event message handlers, like confobjs
-            if name[:8] == "service:":
-                self.session.services.handleevent(msg)
-            elif name[:9] == "mobility:":
-                self.session.mobility.handleevent(msg)
-            else:
-                self.warn("Unhandled event message: event type %d" % eventtype)
+            if name:
+                # TODO: register system for event message handlers,
+                # like confobjs
+                if name.startswith("service:"):
+                    self.session.services.handleevent(msg)
+                    handled = True
+                elif name.startswith("mobility:"):
+                    self.session.mobility.handleevent(msg)
+                    handled = True
+                else:
+                    pass
+            if not handled:
+                self.warn("Unhandled event message: event type %s (%s)" % \
+                              (eventtype, coreapi.state_name(eventtype)))
         elif eventtype == coreapi.CORE_EVENT_FILE_OPEN:
             self.session.delobjs()
             self.session.delhooks()
