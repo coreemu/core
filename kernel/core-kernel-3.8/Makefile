@@ -1,5 +1,5 @@
 VERSION		:= $(shell dpkg -l linux-source 2> /dev/null | \
-	awk '/^i/ {print gensub("([0-9]+[.][0-9]+[.][0-9]+)[.0-9]*", "\\1", "1", $$3)}')
+	awk '/^i/ {match($$3, "[0-9]+[.][0-9]+[.][0-9]+"); if (RSTART) print substr($$3, RSTART, RLENGTH)}')
 TARBALL		:= /usr/src/linux-source-$(VERSION).tar.bz2
 
 SUBVERSION	:= -core
