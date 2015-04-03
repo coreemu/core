@@ -1076,6 +1076,13 @@ proc parseRegMessage { data len flags channel } {
     # reg message with session number indicates the sid of a session that
     # was just started from XML or Python script (via reg exec=scriptfile.py)
     if { $session != "" } {
+	# The channel passed to here is soon after discarded for
+	# sessions that are started from XML or Python scripts. This causes
+	# an exception in the GUI when responding back to daemon if the 
+	# response is sent after the channel has been destroyed. Setting 
+	# the channel to -1 basically disables the GUI response to the daemon, 
+	# but it turns out the daemon does not need the response anyway.
+	set channel -1
 	# assume session string only contains one session number
 	connectShutdownSession connect $channel $session $fnhint
 	return
