@@ -587,8 +587,11 @@ class MgenActor(NrlService):
     _startindex = 50
     # list of startup commands, also may be generated during startup
     _startup = ("sh start_mgen_actor.sh", )
+    # list of validation commands
+    _validate = ("pidof mgen", )
     # list of shutdown commands
-    _shutdown = ("killall mgen")
+    _shutdown = ("killall mgen", )
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         ''' Generate a startup script for MgenActor. Because mgenActor does not
