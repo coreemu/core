@@ -7,6 +7,8 @@
 # Makefile for building netns components.
 #
 
+PYSBINDIR	= ${PYTHON_EXEC_PREFIX}/sbin
+
 if WANT_NETNS
   SUBDIRS 	= src ns3
 endif
@@ -22,10 +24,11 @@ install-exec-hook:
 
 # Python package uninstall
 uninstall-hook:
-	rm -f ${SBINDIR}/core-daemon
-	rm -f ${SBINDIR}/coresendmsg
-	rm -f ${SBINDIR}/core-cleanup
-	rm -f ${SBINDIR}/core-xen-cleanup
+	rm -f ${PYSBINDIR}/core-daemon
+	rm -f ${PYSBINDIR}/coresendmsg
+	rm -f ${PYSBINDIR}/core-cleanup
+	rm -f ${PYSBINDIR}/core-xen-cleanup
+	rm -f ${PYSBINDIR}/core-manage
 	rm -f ${pythondir}/core_python-${COREDPY_VERSION}-py${PYTHON_VERSION}.egg-info
 	rm -f ${pythondir}/core_python_netns-1.0-py${PYTHON_VERSION}.egg-info
 	rm -rf ${pythondir}/core

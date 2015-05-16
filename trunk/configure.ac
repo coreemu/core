@@ -250,6 +250,7 @@ if test "x$want_python" = "xyes"; then
 	pythondir=`echo ${pythondir} | sed -e 's,[$][{]prefix[}],${pyprefix},g'`
 	pyexecdir=`echo ${pyexecdir} | sed -e 's,[$][{]exec_prefix[}],${pyprefix},g'`
     fi
+    PYTHON_EXEC_PREFIX=$($PYTHON -c 'import sys; print sys.exec_prefix')
 else
     # Namespace support requires Python support
     want_linux_netns=no
