@@ -78,6 +78,7 @@ sudo apt-get install ubuntu-dev-tools devscripts debhelper pbuilder
 # add "export http_proxy=http://proxy.server.com:8080" to /etc/pbuilderrc
 # add export PATH="/usr/sbin:/sbin/:$PATH"
 # add COMPONENTS="main restricted universe multiverse" to pbuilderrc
+sudo pbuilder create
 sudo pbuilder update --override-config
 pbuilder-dist precise amd64 create
 }}}
