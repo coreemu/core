@@ -47,7 +47,7 @@ killall -q emaneeventservice
 if [ -d /sys/class/net ]; then
     ifcommand="ls -1 /sys/class/net"
 else
-    ifcommand="ifconfig -a"
+    ifcommand="ip -o link show | sed -r -e 's/[0-9]+: ([^[:space:]]+): .*/\1/'"
 fi
 
 eval "$ifcommand" | awk '

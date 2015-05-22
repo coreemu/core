@@ -1127,7 +1127,7 @@ session, configure an address on the host.
     sudo brctl show
     # determine bridge name from the above command
     # assign an IP address on the same network as the linked node
-    sudo ifconfig b.48304.34658 10.0.1.2/24
+    sudo ip addr add 10.0.1.2/24 dev b.48304.34658
 
 In the example shown above, the host will have the address ``10.0.1.2`` and
 the node linked to the RJ45 may have the address ``10.0.1.1``.

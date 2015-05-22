@@ -153,16 +153,18 @@ Below is a transcript of creating two emulated nodes and connecting them togethe
   # create a virtual Ethernet (veth) pair, installing one end into node 1
   ip link add name n1.0.1 type veth peer name n1.0
   ip link set n1.0 netns `cat /tmp/n1.pid`
-  vcmd -c /tmp/n1.ctl -- ip link set n1.0 name eth0
-  vcmd -c /tmp/n1.ctl -- ifconfig eth0 10.0.0.1/24 
+  vcmd -c /tmp/n1.ctl -- ip link set lo up
+  vcmd -c /tmp/n1.ctl -- ip link set n1.0 name eth0 up
+  vcmd -c /tmp/n1.ctl -- ip addr add 10.0.0.1/24 dev eth0
 
   # create node 2 namespace container
   vnoded -c /tmp/n2.ctl -l /tmp/n2.log -p /tmp/n2.pid
   # create a virtual Ethernet (veth) pair, installing one end into node 2
   ip link add name n2.0.1 type veth peer name n2.0
   ip link set n2.0 netns `cat /tmp/n2.pid`
-  vcmd -c /tmp/n2.ctl -- ip link set n2.0 name eth0
-  vcmd -c /tmp/n2.ctl -- ifconfig eth0 10.0.0.2/24 
+  vcmd -c /tmp/n2.ctl -- ip link set lo up
+  vcmd -c /tmp/n2.ctl -- ip link set n2.0 name eth0 up
+  vcmd -c /tmp/n2.ctl -- ip addr add 10.0.0.2/24 eth0
 
   # bridge together nodes 1 and 2 using the other end of each veth pair
   brctl addbr b.1.1
