@@ -76,7 +76,7 @@ class ConfigurableManager(object):
             try:
                 # key=value
                 (key, value) = kv.split('=', 1)
-                if value is not None and value.is_empty():
+                if value is not None and not value.strip():
                     value = None
             except ValueError:
                 # value only
@@ -84,7 +84,8 @@ class ConfigurableManager(object):
                 value = kv
             if key not in keys:
                 raise ValueError, "invalid key: %s" % key
-            setattr(target, key, value)
+            if value is not None:
+                setattr(target, key, value)
         return None
 
     def reset(self):
