@@ -803,6 +803,8 @@ class Session(object):
     def getctrlnetidx(self, dev):
         if dev[0:4] == 'ctrl' and int(dev[4]) in [0,1,2,3]:
             idx = int(dev[4])
+            if idx == 0:
+                return idx
             if idx < 4 and self.getctrlnetprefixes()[idx] is not None:
                 return idx
         else:
