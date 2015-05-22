@@ -1916,14 +1916,14 @@ proc get_router_id {node} {
 	    return [string range $line 11 end]
 	}
     }
-    if {[lsearch [getNodeServices $node true] "OLSR"] == 0 } {
+    if {[lsearch [getNodeServices $node true] "OLSR"] != -1 } {
         
         set sock [lindex [getEmulPlugin $node] 2]
         set exec_num [newExecCallbackRequest adjacencyrouterid]
         set cmd "nrlConsole.py ${node}_olsr i"
         sendExecMessage $sock $node $cmd $exec_num 0x30
         return ""
-    } elseif {[lsearch [getNodeServices $node true] "OLSRv2"] == 0 } {
+    } elseif {[lsearch [getNodeServices $node true] "OLSRv2"] != -1 } {
         set sock [lindex [getEmulPlugin $node] 2]
         set exec_num [newExecCallbackRequest adjacencyrouterid]
         set cmd "nrlConsole.py ${node}_olsrv2 i"
@@ -2021,7 +2021,6 @@ proc widget_adjacency_periodic { now } {
     set changed 0
 
     set proto $adjacency_config(proto)
-
     if { $proto == "OLSR_proto" } {
         foreach node $node_list {
 	    if { [nodeType $node] != "router" } { continue }
@@ -2130,12 +2129,13 @@ proc exec_adjacencyrouterid_callback { node execnum cmd result status } {
     global adjacency_cache
 
     #check if olsr or olsrv2 are running
-    if {[lsearch [getNodeServices $node true] "OLSR"] == 0 ||
-        [lsearch [getNodeServices $node true] "OLSRv2"] == 0 } {
+    if {[lsearch [getNodeServices $node true] "OLSR"] != -1 ||
+        [lsearch [getNodeServices $node true] "OLSRv2"] != -1 } {
         set lines [split $result "\n"]
         set rtrid [lindex $lines 1]
         array set adjacency_cache [list $rtrid $node]
     } else {
+        puts "matches OSPFv2"
         # match both OSPFv2 and OSPFv3 responses
         set rid [regexp -inline {Router[- ]ID[:]? [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} \
     			$result]
