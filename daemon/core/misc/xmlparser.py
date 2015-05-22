@@ -3,10 +3,13 @@
 # See the LICENSE file included in this distribution.
 
 from xml.dom.minidom import parse
-from xmlutils import getoneelement
+from xmlutils import getFirstChildByTagName
 from xmlparser0 import CoreDocumentParser0
+from xmlparser1 import CoreDocumentParser1
 
 class CoreVersionParser(object):
+    DEFAULT_SCENARIO_VERSION = '1.0'
+
     '''\
     Helper class to check the version of Network Plan document.  This
     simply looks for a "Scenario" element; when present, this
@@ -19,9 +22,14 @@ class CoreVersionParser(object):
             self.dom = options['dom']
         else:
             self.dom = parse(filename)
-        self.scenario = getoneelement(self.dom, 'Scenario')
-        if self.scenario is not None:
-            self.version = 0.0
+        scenario = getFirstChildByTagName(self.dom, 'scenario')
+        if scenario:
+            version = scenario.getAttribute('version')
+            if not version:
+                version = self.DEFAULT_SCENARIO_VERSION
+            self.version = version
+        elif getFirstChildByTagName(self.dom, 'Scenario'):
+            self.version = '0.0'
         else:
             self.version = 'unknown'
 
@@ -29,8 +37,10 @@ def core_document_parser(session, filename, options):
     vp = CoreVersionParser(filename, options)
     if 'dom' not in options:
         options['dom'] = vp.dom
-    if vp.version == 0.0:
+    if vp.version == '0.0':
         doc = CoreDocumentParser0(session, filename, options)
+    elif vp.version == '1.0':
+        doc = CoreDocumentParser1(session, filename, options)
     else:
         raise ValueError, 'unsupported document version: %s' % vp.version
     return doc
