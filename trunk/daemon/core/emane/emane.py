@@ -20,6 +20,7 @@ from core.misc.xmlutils import addtextelementsfromtuples, addparamlisttoparent
 from core.conf import ConfigurableManager, Configurable
 from core.mobility import WirelessModel
 from core.emane.nodes import EmaneNode
+
 # EMANE 0.7.4/0.8.1
 try:
     import emaneeventservice
@@ -99,6 +100,7 @@ class Emane(ConfigurableManager):
                 v = cls.EMANE092
         return v, result.strip()
 
+        
     def initeventservice(self, filename=None, shutdown=False):
         ''' (Re-)initialize the EMANE Event service.
             The multicast group and/or port may be configured.
@@ -110,25 +112,41 @@ class Emane(ConfigurableManager):
         if hasattr(self, 'service'):
             del self.service
         self.service = None
+
         # EMANE 0.9.1+ does not require event service XML config
         if self.version >= self.EMANE091:
             if shutdown:
                 return
+            #Get the control network to be used for events
             values = self.getconfig(None, "emane",
                                     self.emane_config.getdefaultvalues())[1]
-            group, port = self.emane_config.valueof('eventservicegroup',
-                                                        values).split(':')
-            if self.version > self.EMANE091 and \
-              'ctrlnet' in self.session._objs:
+            group, port = self.emane_config.valueof('eventservicegroup', values).split(':')
+            eventdev = self.emane_config.valueof('eventservicedevice', values)
+            eventnetidx = self.session.getctrlnetidx(eventdev)
+            if eventnetidx < 0:
+                msg = "Invalid Event Service device provided: %s" % eventdev
+                self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                               "Emane.initeventservice()", None, msg)
+                self.info(msg)
+                return False
+            
+            # Make sure the event control network is in place
+            eventnet = self.session.addremovectrlnet(netidx=eventnetidx,
+                                                     remove=False,
+                                                     conf_reqd=False)
+
+            if self.version > self.EMANE091 and eventnet is not None:
                 # direct EMANE events towards control net bridge
-                dev = self.session.obj('ctrlnet').brname
-            else:
-                dev = self.emane_config.valueof('eventservicedevice', values)
+                eventdev = eventnet.brname
+            eventchannel = (group, int(port), eventdev) 
+
+
             # disabled otachannel for event service
-            #  only needed for e.g. antennaprofile events xmit by models
+            # only needed for e.g. antennaprofile events xmit by models
+            self.info("Using %s for event service traffic" % eventdev)
             try:
-                self.service = EventService(eventchannel=(group, int(port), dev),
-                                        otachannel=None)
+                self.service = EventService(eventchannel=eventchannel,
+                                            otachannel=None)
             except Exception, e:
                 msg = "Error instantiating EMANE event service: %s" % e
                 self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
@@ -254,9 +272,39 @@ class Emane(ConfigurableManager):
         # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
         if self.version > self.EMANE091 and self.session.master:
-            ctrlnet = self.session.addremovectrlnet(remove=False,
+            values = self.getconfig(None, "emane",
+                                    self.emane_config.getdefaultvalues())[1]
+            otadev = self.emane_config.valueof('otamanagerdevice', values)
+            netidx = self.session.getctrlnetidx(otadev)
+            if netidx < 0:
+                msg = "EMANE cannot be started. "\
+                "Invalid OTA device provided: %s. Check core.conf." % otadev
+                self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                                       "Emane.setup()", None, msg)
+                self.info(msg)
+                return Emane.NOT_READY
+                
+            ctrlnet = self.session.addremovectrlnet(netidx=netidx,
+                                                    remove=False,
                                                     conf_reqd=False)
             self.distributedctrlnet(ctrlnet)
+            eventdev = self.emane_config.valueof('eventservicedevice', values)
+            if eventdev != otadev:
+                netidx = self.session.getctrlnetidx(eventdev)
+                if netidx < 0:
+                    msg = "EMANE cannot be started."\
+                    "Invalid Event Service device provided: %s. Check core.conf." % eventdev
+                    self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                                           "Emane.setup()", None, msg)
+                    self.info(msg)
+                    return Emane.NOT_READY
+
+                    
+                ctrlnet = self.session.addremovectrlnet(netidx=netidx,
+                                                    remove=False,
+                                                    conf_reqd=False)
+                self.distributedctrlnet(ctrlnet)
+
         if self.checkdistributed():
             # we are slave, but haven't received a platformid yet
             cfgval = self.getconfig(None, self.emane_config._name,
@@ -439,7 +487,7 @@ class Emane(ConfigurableManager):
         if self.verbose:
             self.info("Emane.buildxml2()")
         # on master, control network bridge added earlier in startup()
-        ctrlnet = self.session.addremovectrlnet(remove=False, conf_reqd=False)
+        ctrlnet = self.session.addremovectrlnet(netidx=0, remove=False, conf_reqd=False)
         self.buildplatformxml2(ctrlnet)
         self.buildnemxml()
         self.buildeventservicexml()
@@ -463,7 +511,7 @@ class Emane(ConfigurableManager):
         # this generates a config message having controlnet prefix assignments
         self.info("Setting up default controlnet prefixes for distributed " \
                   "(%d configured)" % len(prefixes))
-        prefixes = ctrlnet.DEFAULT_PREFIX
+        prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]
         vals = "controlnet='%s'" % prefixes
         tlvdata = ""
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_OBJ,
@@ -821,6 +869,22 @@ class Emane(ConfigurableManager):
         otagroup, otaport = self.emane_config.valueof('otamanagergroup',
                                                       values).split(':')
         otadev = self.emane_config.valueof('otamanagerdevice', values)
+        otanetidx = self.session.getctrlnetidx(otadev)
+        if otanetidx < 0:
+            errmsg = "Invalid OTA device provided: %s" % otadev
+            self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
+                                   None, errmsg)
+            self.info(errmsg)
+
+        eventgroup, eventport = self.emane_config.valueof('eventservicegroup',
+                                                      values).split(':')
+        eventdev = self.emane_config.valueof('eventservicedevice', values)
+        eventservicenetidx = self.session.getctrlnetidx(eventdev)
+        if eventservicenetidx < 0:
+            errmsg = "Invalid Event Service device provided: %s" % eventservicenetidx
+            self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
+                                   None, errmsg)
+            self.info(errmsg)
 
         run_emane_on_host = False
         for node in self.getnodes():
@@ -830,20 +894,27 @@ class Emane(ConfigurableManager):
                 continue
             path = self.session.sessiondir
             n = node.objid
+            
             # control network not yet started here
-            self.session.addremovectrlif(node, remove=False, conf_reqd=False)
+            self.info("adding ota device ctrl%d" % otanetidx)
+            self.session.addremovectrlif(node, otanetidx, remove=False, conf_reqd=False)
+            
+            self.info("adding event service device ctrl%d" % eventservicenetidx)
+            self.session.addremovectrlif(node, eventservicenetidx, remove=False, conf_reqd=False)
+            
             # multicast route is needed for OTA data on ctrl0
             cmd = [IP_BIN, "route", "add", otagroup, "dev", otadev]
             #rc = node.cmd(cmd, wait=True)
             node.cmd(cmd, wait=True)
+            if eventgroup != otagroup:
+                cmd = [IP_BIN, "route", "add", eventgroup, "dev", eventdev]
+                node.cmd(cmd, wait=True)
 
             try:
                 cmd = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n),
                                   os.path.join(path, "platform%d.xml" % n)]
                 if self.verbose:
                     self.info("Emane.startdaemons2() running %s" % str(cmd))
-                #node.cmd(cmd, cwd=path, wait=True)
-                #status, result = node.cmdresult(cmd, cwd=path, wait=True)
                 status = node.cmd(cmd, wait=True)
                 if self.verbose:
                     self.info("Emane.startdaemons2() return code %d" % status)
