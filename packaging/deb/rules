@@ -2,13 +2,9 @@
 
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
+include /usr/share/cdbs/1/rules/autoreconf.mk
 
-# this causes autoconf to regenerate ./configure, otherwise make distclean
-# has blown it away
-DEB_AUTO_UPDATE_ACLOCAL = 1.11
-DEB_AUTO_UPDATE_AUTOHEADER = 2.65
-DEB_AUTO_UPDATE_AUTOMAKE = 1.11 --add-missing --copy --foreign
-DEB_AUTO_UPDATE_AUTOCONF = 2.65
+DEB_DH_AUTORECONF_ARGS += ./bootstrap.sh
 
 # this prevents 'make install' from invoking install-info that generates a 
 #   $(DEB_DESTDIR)usr/share/info/dir.gz file that causes a lintian error
