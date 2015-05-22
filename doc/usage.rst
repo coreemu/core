@@ -1,5 +1,5 @@
 .. This file is part of the CORE Manual
-   (c)2012 the Boeing Company
+   (c)2012-2015 the Boeing Company
 
 .. _Using_the_CORE_GUI:
 
@@ -53,9 +53,10 @@ CORE can be started directly in Execute mode by specifying ``--start`` and a top
 
 Once the emulation is running, the GUI can be closed, and a prompt will appear asking if the emulation should be terminated. The emulation may be left running and the GUI can reconnect to an existing session at a later time.
 
-.. index:: Batch mode
+.. index:: batch mode
 
 .. index:: batch
+
 
 There is also a **Batch** mode where CORE runs without the GUI and will instantiate a topology from a given file. This is similar to the ``--start`` option, except that the GUI is not used:
 ::
@@ -71,6 +72,12 @@ The session number is printed in the terminal when batch mode is started. This s
 
           core-gui --closebatch 12345
 
+.. TIP::
+   If you forget the session number, you can always start the CORE GUI and use :ref:`Session_Menu` CORE sessions dialog box.
+
+.. NOTE::
+   It is quite easy to have overlapping sessions when running in batch mode. This may become a problem when control networks are employed in these sessions as there could be addressing conflicts. See :ref:`Control_Network` for remedies. 
+ 
 
 .. NOTE::
    If you like to use batch mode, consider writing a
@@ -92,8 +99,10 @@ as root in order to start an emulation.
 
 The GUI can be connected to a different address or TCP port using
 the ``--address`` and/or ``--port`` options. The defaults are shown below.
+
 ::
-           core-gui --address 127.0.0.1 --port 4038
+
+   core-gui --address 127.0.0.1 --port 4038
 
 .. _Toolbar:
 
@@ -330,7 +339,7 @@ Execute mode (:ref:`Modes_of_Operation`.)
 .. index:: Open
 
 * *Open* - invokes the File Open dialog box for selecting a new :file:`.imn`
-  topology file to open. You can change the default path used for this dialog
+  or XML file to open. You can change the default path used for this dialog
   in the :ref:`Preferences` Dialog. 
 
 .. index:: Save
@@ -341,16 +350,15 @@ Execute mode (:ref:`Modes_of_Operation`.)
 .. index:: Save As XML
 
 * *Save As XML* - invokes the Save As dialog box for selecting a new 
-  :file:`.xml` scenario file for saving the current configuration.
-  This format includes a Network Plan, Motion Plan, Services Plan, and more
-  within a `Scenario` XML tag, described in :ref:`Configuration_Files`.
+  :file:`.xml` file for saving the current configuration in the XML file.
+  See :ref:`Configuration_Files`. 
 
 .. index:: Save As imn
 
 * *Save As imn* - invokes the Save As dialog box for selecting a new
   :file:`.imn`
   topology file for saving the current configuration. Files are saved in the
-  *IMUNES network configuration* file format described in
+  *IMUNES network configuration* file format described in 
   :ref:`Configuration_Files`.
 
 .. index:: Export Python script
@@ -358,11 +366,19 @@ Execute mode (:ref:`Modes_of_Operation`.)
 * *Export Python script* - prints Python snippets to the console, for inclusion
   in a CORE Python script.
 
-.. index:: Execute Python script
+.. index:: Execute XML or Python script
 
-* *Execute Python script* - invokes a File Open dialog fox for selecting a
-  Python script to run and automatically connect to. The script must create
+* *Execute XML or Python script* - invokes a File Open dialog box for selecting an XML file to run or a
+  Python script to run and automatically connect to. If a Python script, the script must create
   a new CORE Session and add this session to the daemon's list of sessions
+  in order for this to work; see :ref:`Python_Scripting`.
+
+.. index:: Execute Python script with options
+
+* *Execute Python script with options* - invokes a File Open dialog box for selecting a
+  Python script to run and automatically connect to. After a selection is made, 
+  a Python Script Options dialog box is invoked to allow for command-line options to be added.
+  The Python script must create a new CORE Session and add this session to the daemon's list of sessions
   in order for this to work; see :ref:`Python_Scripting`.
 
 .. index:: Open current file in editor
@@ -759,6 +775,8 @@ and options.
 
 .. index:: CORE Sessions Dialog
 
+.. _CORE_Sessions_Dialog:
+
 * *Change sessions...* - invokes the CORE Sessions dialog box containing a list
   of active CORE sessions in the daemon. Basic session information such as
   name, node count, start time, and a thumbnail are displayed. This dialog
@@ -1004,6 +1022,12 @@ firewall is not blocking the GRE traffic.
 Communicating with the Host Machine
 -----------------------------------
 
+The host machine that runs the CORE GUI and/or daemon is not necessarily
+accessible from a node. Running an X11 application on a node, for example,
+requires some channel of communication for the application to connect with
+the X server for graphical display. There are several different ways to
+connect from the node to the host and vice versa.
+
 
 Control Network
 ^^^^^^^^^^^^^^^
@@ -1012,42 +1036,14 @@ Control Network
 
 .. index:: control network
 
-.. index:: X11 applications
-
-.. index:: node access to the host
-
-.. index:: host access to a node
-
-The host machine that runs the CORE GUI and/or daemon is not necessarily
-accessible from a node. Running an X11 application on a node, for example,
-requires some channel of communication for the application to connect with
-the X server for graphical display. There are several different ways to
-connect from the node to the host and vice versa.
-Under the :ref:`Session_Menu`, the *Options...* dialog has an option to set
-a *control network prefix*. 
-
-This can be set to a network prefix such as
-``172.16.0.0/24``. A bridge will be created on the host machine having the last
-address in the prefix range (e.g. ``172.16.0.254``), and each node will have
-an extra ``ctrl0`` control interface configured with an address corresponding
-to its node number (e.g. ``172.16.0.3`` for ``n3``.)
-
-A default value for the control network may also
-be specified by setting the ``controlnet`` line in the
-:file:`/etc/core/core.conf` configuration file which new
-sessions will use by default. For multiple sessions at once, the session
-option should be used instead of the :file:`core.conf` default.
-
-.. NOTE::
-   If you have a large scenario with more than 253 nodes, use a control
-   network prefix that allows more than the suggested ``/24``, such as ``/23``
-   or greater.
+The quickest way to connect with the host machine through the primary control network. See :ref:`Activating_the_Primary_Control_Network`.
 
 
 .. index:: X11 forwarding
 
 .. index:: SSH X11 forwarding
 
+With a control network, the host can launch an X11 application on a node.
 To run an X11 application on the node, the ``SSH`` service can be enabled on
 the node, and SSH with X11 forwarding can be used from the host to the node:
 
@@ -1057,52 +1053,12 @@ the node, and SSH with X11 forwarding can be used from the host to the node:
     ssh -X 172.16.0.5 xclock
 
 Note that the :file:`coresendmsg` utility can be used for a node to send
-messages to the CORE daemon running on the host (if the ``listenaddr = 0.0.0.0`` is set in the :file:`/etc/core/core.conf` file) to interact with the running
+messages to the CORE daemon running on the host (if the ``listenaddr = 0.0.0.0`` 
+is set in the :file:`/etc/core/core.conf` file) to interact with the running
 emulation. For example, a node may move itself or other nodes, or change
 its icon based on some node state.
 
 
-Control Networks with Distributed
-^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
-
-.. index:: distributed control network
-
-.. index:: control network distributed
-
-When a control network is defined for a distributed session, a control network
-bridge will be created on each of the slave servers, with GRE tunnels back
-to the master server's bridge. The slave control bridges are not assigned an
-address. From the host, any of the nodes (local or remote) can be accessed,
-just like the single server case.
-
-In some situations, remote emulated nodes need to communicate with the 
-host on which they are running and not the master server.
-Multiple control network prefixes can be specified in the session option,
-separated by spaces. In this case, control network addresses are allocated
-from the first prefix on the master server. The remaining network prefixes
-are used for subsequent servers sorted by alphabetic host name. For example,
-if the control network option is set to 
-"``172.16.1.0/24 172.16.2.0/24 192.168.0.0/16``" and the servers *core1*,
-*core2*, and *server1* are involved, the control network bridges will be
-assigned as follows: *core1* = ``172.16.1.254`` (assuming it is the master
-server), *core2* = ``172.16.2.254``, and *server1* = ``192.168.255.254``.
-Tunnels back to the master server will still be built, but it is up to the
-user to add appropriate routes if networking between control network
-prefixes is desired. The control network script may help with this.
-
-Control Network Script
-^^^^^^^^^^^^^^^^^^^^^^
-
-.. index:: control network scripts
-
-.. index:: controlnet_updown_script
-
-A control network script may be specified using the ``controlnet_updown_script``
-option in the :file:`/etc/core/core.conf` file. This script will be run after
-the bridge has been built (and address assigned) with the first argument
-the name of the bridge, and the second argument the keyword "``startup``".
-The script will again be invoked prior to bridge removal with the second
-argument being the keyword "``shutdown``".
 
 Other Methods
 ^^^^^^^^^^^^^
@@ -1402,13 +1358,18 @@ menu. Servers parameters are configured in the list below and stored in a
 the server must be specified. The name of each server will be saved in the
 topology file as each node's location. 
 
+.. NOTE::
+   The server that the GUI connects with
+   is referred to as the master server. 
+
+
 The user needs to assign nodes to emulation servers in the scenario. Making no
-assignment means the node will be emulated locally, on the same machine that
-the GUI is running. In the configuration window of every node, a drop-down box
-located between the *Node name* and the *Image* button will select the name of
-the emulation server. By default, this menu shows *(none)*, indicating that the
-node will be emulated locally. When entering Execute mode, the CORE GUI will
-deploy the node on its assigned emulation server.
+assignment means the node will be emulated on the master  server 
+In the configuration window of every node, a drop-down box located between 
+the *Node name* and the *Image* button will select the name of the emulation 
+server. By default, this menu shows *(none)*, indicating that the node will 
+be emulated locally on the master. When entering Execute mode, the CORE GUI 
+will deploy the node on its assigned emulation server.
 
 Another way to assign emulation servers is to select one or more nodes using
 the select tool (shift-click to select multiple), and right-click one of the
@@ -1420,6 +1381,10 @@ To assign all nodes to one of the servers, click on the server name and then
 the *all nodes* button. Servers that have assigned nodes are shown in blue in
 the server list. Another option is to first select a subset of nodes, then open
 the *CORE emulation servers* box and use the *selected nodes* button.
+
+.. IMPORTANT::
+   Leave the nodes unassigned if they are to be run on the master server.
+   Do not explicitly assign the nodes to the master server.
 
 The emulation server machines should be reachable on the specified port and via
 SSH. SSH is used when double-clicking a node to open a shell, the GUI will open
@@ -1658,7 +1623,9 @@ Check Emulation Light
 
 .. index:: CEL
 
-The Check Emulation Light, or CEL, is located in the bottom right-hand corner
+.. |cel| image:: figures/cel.*
+
+The |cel| Check Emulation Light, or CEL, is located in the bottom right-hand corner
 of the status bar in the CORE GUI. This is a yellow icon that indicates one or
 more problems with the running emulation. Clicking on the CEL will invoke the
 CEL dialog.
@@ -1682,6 +1649,14 @@ would appear for a failed validation command with the UserDefined service.
 Buttons are available at the bottom of the dialog for clearing the exception
 list and for viewing the CORE daemon and node log files.
 
+.. index:: batch mode, CEL
+
+.. index:: CEL batch mode
+
+.. NOTE::
+   In batch mode, exceptions received from the CORE daemon are displayed on 
+   the console.
+
 .. _Configuration_Files:
 
 Configuration Files
@@ -1698,24 +1673,31 @@ Any time you edit the topology
 file, you will need to stop the emulation if it were running and reload the
 file.
 
-The :file:`.xml` file schema
-is `specified by NRL <http://www.nrl.navy.mil/itd/ncs/products/mnmtools>`_.
-Planning documents are specified in NRL's Network Modeling Framework (NMF).
-Here the individual planning documents are several tags
-encased in one `<Scenario>` tag:
+The :file:`.xml` `file schema is specified by NRL <http://www.nrl.navy.mil/itd/ncs/products/mnmtools>`_ and there are two versions to date: 
+version 0.0  and version 1.0, 
+with 1.0 as the current default. CORE can open either XML version. However, the 
+xmlfilever line in :file:`/etc/core/core.conf` controls the version of the XML file 
+that CORE will create.  
 
-* `<NetworkPlan>` - describes nodes, hosts, interfaces, and the networks to 
+.. index:: Scenario Plan XML
+
+In version 1.0, the XML file is also referred to as the Scenario Plan. The Scenario Plan will be logically
+made up of the following:
+
+
+* `Network Plan` - describes nodes, hosts, interfaces, and the networks to 
   which they belong.
-* `<MotionPlan>` - describes position and motion patterns for nodes in an
+* `Motion Plan` - describes position and motion patterns for nodes in an
   emulation.
-* `<ServicePlan>` - describes services (protocols, applications) and traffic
+* `Services Plan` - describes services (protocols, applications) and traffic
   flows that are associated with certain nodes.
-* `<CoreMetaData>` - meta-data that is not part of the NRL XML schema but
+* `Visualization Plan` - meta-data that is not part of the NRL XML schema but
   used only by CORE. For example, GUI options, canvas and annotation info, etc.
   are contained here.
+* `Test Bed Mappings` - describes mappings of nodes, interfaces and EMANE modules in the scenario to 
+  test bed hardware.
+  CORE includes Test Bed Mappings in XML files that are saved while the scenario is running.
 
-
-.. index:: indentation
 
 The :file:`.imn` file format comes from :ref:`IMUNES <Prior_Work>`, and is
 basically Tcl lists of nodes, links, etc.
@@ -1800,4 +1782,6 @@ Preferences
 The *Preferences* Dialog can be accessed from the :ref:`Edit_Menu`. There are
 numerous defaults that can be set with this dialog, which are stored in the
 :file:`~/.core/prefs.conf` preferences file.
+
+
 
