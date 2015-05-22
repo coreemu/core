@@ -1152,7 +1152,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             return self.session.sendobjs()
         elif eventtype == coreapi.CORE_EVENT_FILE_SAVE:
             filename = msg.tlvdata[coreapi.CORE_TLV_EVENT_NAME]
-            savesessionxml(self.session, filename)
+            savesessionxml(self.session, filename, self.session.cfg['xmlfilever'])
         elif eventtype == coreapi.CORE_EVENT_SCHEDULED:
             etime = msg.gettlv(coreapi.CORE_TLV_EVENT_TIME)
             node = msg.gettlv(coreapi.CORE_TLV_EVENT_NODE)
@@ -1639,6 +1639,7 @@ def getMergedConfig(filename):
                  'listenaddr' : 'localhost',
                  'pidfile' : '%s/run/core-daemon.pid' % CORE_STATE_DIR,
                  'logfile' : '%s/log/core-daemon.log' % CORE_STATE_DIR,
+                 'xmlfilever' : '1.0',
                  'numthreads' : '1',
                  'verbose' : 'False',
                  'daemonize' : 'False',

@@ -27,7 +27,7 @@ def opensessionxml(session, filename, start=False, nodecls=nodes.CoreNode):
         session.node_count = str(session.getnodecount())
         session.instantiate()
 
-def savesessionxml(session, filename, version = 0.0):
+def savesessionxml(session, filename, version):
     ''' Export a session to the EmulationScript XML format.
     '''
     doc = core_document_writer(session, version)
