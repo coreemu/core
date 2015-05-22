@@ -608,6 +608,7 @@ class Session(object):
             of various managers and boot the nodes. Validate nodes and check
             for transition to the runtime state.
         '''
+        
         self.writeobjs()
         # controlnet may be needed by some EMANE models
         self.addremovectrlif(node=None, remove=False)
@@ -686,7 +687,12 @@ class Session(object):
                     self.services.stopnodeservices(obj)
         self.emane.shutdown()
         self.updatectrlifhosts(remove=True)
+        # Remove all four possible control networks. Does nothing if ctrlnet is not installed.
         self.addremovectrlif(node=None, remove=True)
+        self.addremovectrlif(node=None, netidx=1, remove=True)
+        self.addremovectrlif(node=None, netidx=2, remove=True)
+        self.addremovectrlif(node=None, netidx=3, remove=True)
+
         # self.checkshutdown() is currently invoked from node delete handler
 
     def checkshutdown(self):
@@ -774,24 +780,59 @@ class Session(object):
                     continue
                 n.validate()
 
-    def addremovectrlnet(self, remove=False, conf_reqd=True):
+    def getctrlnetprefixes(self):
+        p = getattr(self.options, 'controlnet', self.cfg.get('controlnet'))
+        p0 = getattr(self.options, 'controlnet0', self.cfg.get('controlnet0'))
+        p1 = getattr(self.options, 'controlnet1', self.cfg.get('controlnet1'))
+        p2 = getattr(self.options, 'controlnet2', self.cfg.get('controlnet2'))
+        p3 = getattr(self.options, 'controlnet3', self.cfg.get('controlnet3'))
+        if not p0 and p:
+            p0 = p
+        return [p0,p1,p2,p3]
+        
+
+    def getctrlnetserverintf(self):
+        d0 = self.cfg.get('controlnetif0')
+        if d0:
+            self.warn("controlnet0 cannot be assigned with a host interface")
+        d1 = self.cfg.get('controlnetif1')
+        d2 = self.cfg.get('controlnetif2')
+        d3 = self.cfg.get('controlnetif3')
+        return [None,d1,d2,d3]
+    
+    def getctrlnetidx(self, dev):
+        if dev[0:4] == 'ctrl' and int(dev[4]) in [0,1,2,3]:
+            idx = int(dev[4])
+            if idx < 4 and self.getctrlnetprefixes()[idx] is not None:
+                return idx
+        else:
+            return -1
+        
+
+    def getctrlnetobj(self, netidx):
+        oid = "ctrl%dnet" % netidx
+        return self.obj(oid)
+    
+
+    def addremovectrlnet(self, netidx, remove=False, conf_reqd=True):
         ''' Create a control network bridge as necessary.
         When the remove flag is True, remove the bridge that connects control
         interfaces. The conf_reqd flag, when False, causes a control network
         bridge to be added even if one has not been configured.
         '''
-        prefix = self.cfg.get('controlnet')
-        prefix = getattr(self.options, 'controlnet', prefix)
-        if not prefix:
+        prefixspeclist = self.getctrlnetprefixes()
+        prefixspec = prefixspeclist[netidx]
+        if not prefixspec:
             if conf_reqd:
                 return None  # no controlnet needed
             else:
-                prefix = nodes.CtrlNet.DEFAULT_PREFIX
+                prefixspec = nodes.CtrlNet.DEFAULT_PREFIX_LIST[netidx]
+                
+        serverintf = self.getctrlnetserverintf()[netidx]
 
         # return any existing controlnet bridge
-        id = "ctrlnet"
         try:
-            ctrlnet = self.obj(id)
+            ctrlnet = self.getctrlnetobj(netidx)
             if remove:
                 self.delobj(ctrlnet.objid)
                 return None
@@ -801,26 +842,34 @@ class Session(object):
                 return None
 
         # build a new controlnet bridge
-        updown_script = None
-        try:
-            if self.cfg['controlnet_updown_script']:
-                updown_script = self.cfg['controlnet_updown_script']
-        except KeyError:
-            pass
-        # Check if session option set, overwrite if so
-        if hasattr(self.options, 'controlnet_updown_script'):
-            new_uds = self.options.controlnet_updown_script
-        if new_uds:
-            updown_script = new_uds
+        oid = "ctrl%dnet" % netidx
 
-        prefixes = prefix.split()
-        if len(prefixes) > 1:
+        # use the updown script for control net 0 only.
+        updown_script = None
+        if netidx == 0:
+            try:
+                if self.cfg['controlnet_updown_script']:
+                    updown_script = self.cfg['controlnet_updown_script']
+            except KeyError:
+                pass
+            # Check if session option set, overwrite if so
+            if hasattr(self.options, 'controlnet_updown_script'):
+                new_uds = self.options.controlnet_updown_script
+            if new_uds:
+                updown_script = new_uds
+                
+
+        prefixes = prefixspec.split()
+        if len(prefixes) > 1: 
+            # A list of per-host prefixes is provided
             assign_address = True
             if self.master:
                 try:
+                    # split first (master) entry into server and prefix
                     prefix = prefixes[0].split(':', 1)[1]
                 except IndexError:
-                    prefix = prefixes[0] # possibly only one server
+                    # no server name. possibly only one server
+                    prefix = prefixes[0] 
             else:
                 # slave servers have their name and localhost in the serverlist
                 servers = self.broker.getserverlist()
@@ -828,11 +877,14 @@ class Session(object):
                 prefix = None
                 for server_prefix in prefixes:
                     try:
+                        # split each entry into server and prefix
                         server, p = server_prefix.split(':')
                     except ValueError:
                         server = ""
                         p = None
+                        
                     if server == servers[0]:
+                        # the server name in the list matches this server
                         prefix = p
                         break
                 if not prefix:
@@ -845,32 +897,37 @@ class Session(object):
                         prefix = prefixes[0].split(':', 1)[1]
                     except IndexError:
                         prefix = prefixes[0]
-        else:
+        else: # len(prefixes) == 1 
+            # TODO: can we get the server name from the servers.conf or from the node assignments?
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
-        ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=id, prefix=prefix,
+            prefix = prefixes[0]
+
+        ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=oid, prefix=prefix, 
                               assign_address=assign_address,
-                              updown_script=updown_script)
+                              updown_script=updown_script, serverintf=serverintf)
+
         # tunnels between controlnets will be built with Broker.addnettunnels()
-        self.broker.addnet(id)
+        self.broker.addnet(oid)
         for server in self.broker.getserverlist():
-            self.broker.addnodemap(server, id)
+            self.broker.addnodemap(server, oid)
+        
         return ctrlnet
 
-    def addremovectrlif(self, node, remove=False, conf_reqd=True):
+    def addremovectrlif(self, node, netidx=0,  remove=False, conf_reqd=True):
         ''' Add a control interface to a node when a 'controlnet' prefix is
             listed in the config file or session options. Uses
             addremovectrlnet() to build or remove the control bridge.
             If conf_reqd is False, the control network may be built even
             when the user has not configured one (e.g. for EMANE.)
         '''
-        ctrlnet = self.addremovectrlnet(remove, conf_reqd)
+        ctrlnet = self.addremovectrlnet(netidx, remove, conf_reqd)
         if ctrlnet is None:
             return
         if node is None:
             return
-        if node.netif(ctrlnet.CTRLIF_IDX_BASE):
-            return  # ctrl0 already exists
+        if node.netif(ctrlnet.CTRLIF_IDX_BASE + netidx):
+            return  # ctrl# already exists
         ctrlip = node.objid
         try:
             addrlist = ["%s/%s" % (ctrlnet.prefix.addr(ctrlip),
@@ -882,19 +939,19 @@ class Session(object):
             node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                            "Session.addremovectrlif()", msg)
             return
-        ifi = node.newnetif(net = ctrlnet, ifindex = ctrlnet.CTRLIF_IDX_BASE,
-                            ifname = "ctrl0", hwaddr = MacAddr.random(),
+        ifi = node.newnetif(net = ctrlnet, ifindex = ctrlnet.CTRLIF_IDX_BASE + netidx,
+                            ifname = "ctrl%d" % netidx, hwaddr = MacAddr.random(),
                             addrlist = addrlist)
         node.netif(ifi).control = True
 
-    def updatectrlifhosts(self, remove=False):
+    def updatectrlifhosts(self, netidx=0, remove=False):
         ''' Add the IP addresses of control interfaces to the /etc/hosts file.
         '''
         if not self.getcfgitembool('update_etc_hosts', False):
             return
-        id = "ctrlnet"
+        
         try:
-            ctrlnet = self.obj(id)
+            ctrlnet = self.getctrlnetobj(netidx)
         except KeyError:
             return
         header = "CORE session %s host entries" % self.sessionid
