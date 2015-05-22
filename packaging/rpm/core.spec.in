@@ -310,8 +310,10 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{python_sitelib}/core/misc/quagga.py*
 %{python_sitelib}/core/misc/utils.py*
 %{python_sitelib}/core/misc/utm.py*
+%{python_sitelib}/core/misc/xmldeployment.py*
 %{python_sitelib}/core/misc/xmlparser.py*
 %{python_sitelib}/core/misc/xmlparser0.py*
+%{python_sitelib}/core/misc/xmlparser1.py*
 %{python_sitelib}/core/misc/xmlsession.py*
 %{python_sitelib}/core/misc/xmlutils.py*
 %{python_sitelib}/core/misc/xmlwriter.py*
