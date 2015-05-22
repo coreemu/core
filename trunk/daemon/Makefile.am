@@ -7,7 +7,7 @@
 # Makefile for building netns components.
 #
 
-PYSBINDIR	= ${PYTHON_PREFIX}/sbin
+PYSBINDIR	= ${DESTDIR}/${pyprefix}/sbin
 
 if WANT_NETNS
   SUBDIRS 	= src ns3
