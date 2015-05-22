@@ -1,5 +1,5 @@
 .. This file is part of the CORE Manual
-   (c)2012 the Boeing Company
+   (c)2012,2015 the Boeing Company
 
 .. only:: html or latex
 
@@ -16,6 +16,7 @@ CORE Manual
    usage
    scripting
    machine
+   ctrlnet
    emane
    ns3
    performance

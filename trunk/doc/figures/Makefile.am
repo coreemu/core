@@ -36,7 +36,7 @@ figures_jpg	= $(figures:%=%.jpg)
 
 # icons from the GUI source
 icons		= select start router host pc mdr router_green \
-		  lanswitch hub wlan \
+		  lanswitch hub wlan cel \
 		  link rj45 tunnel marker oval rectangle text \
 		  stop observe plot twonode run document-properties
 # list of icons + .gif.jpg suffix
