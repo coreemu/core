@@ -241,19 +241,20 @@ class Session(object):
                                  time.ctime()))
         self.writestate(state)
         self.runhook(state)
-        if self.isconnected() and sendevent:
+        if sendevent:
             tlvdata = ""
             tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
                                                  state)
             msg = coreapi.CoreEventMessage.pack(0, tlvdata)
             # send Event Message to connected handlers (e.g. GUI)
-            try:
-                if returnevent:
-                    replies.append(msg)
-                else:
-                    self.broadcastraw(None, msg)
-            except Exception, e:
-                self.warn("Error sending Event Message: %s" % e)
+            if self.isconnected():
+                try:
+                    if returnevent:
+                        replies.append(msg)
+                    else:
+                        self.broadcastraw(None, msg)
+                except Exception, e:
+                    self.warn("Error sending Event Message: %s" % e)
             # also inform slave servers
             tmp = self.broker.handlerawmsg(msg)
         return replies
