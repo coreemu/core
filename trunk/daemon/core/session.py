@@ -807,8 +807,7 @@ class Session(object):
                 return idx
             if idx < 4 and self.getctrlnetprefixes()[idx] is not None:
                 return idx
-        else:
-            return -1
+        return -1
         
 
     def getctrlnetobj(self, netidx):
