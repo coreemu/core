@@ -351,8 +351,11 @@ class Session(object):
     def runtime_state_hook(self, state):
         if state == coreapi.CORE_EVENT_RUNTIME_STATE:
             self.emane.poststartup()
-            xmlfilename = os.path.join(self.sessiondir, 'session-deployed.xml')
-            savesessionxml(self, xmlfilename, self.cfg['xmlfilever'])
+            xmlfilever = self.cfg['xmlfilever']
+            if xmlfilever in ('1.0',):
+                xmlfilename = os.path.join(self.sessiondir,
+                                           'session-deployed.xml')
+                savesessionxml(self, xmlfilename, xmlfilever)
 
     def getenviron(self, state=True):
         ''' Get an environment suitable for a subprocess.Popen call.
