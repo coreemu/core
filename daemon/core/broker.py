@@ -17,6 +17,7 @@ import os, socket, select, threading, sys
 from core.api import coreapi
 from core.coreobj import PyCoreNode, PyCoreNet
 from core.emane.nodes import EmaneNet
+from core.netns.nodes import CtrlNet
 from core.phys.pnodes import PhysicalNode
 from core.misc.ipaddr import IPAddr
 from core.conf import ConfigurableManager
@@ -330,6 +331,10 @@ class CoreBroker(ConfigurableManager):
         # add other nets here that do not require tunnels
         if isinstance(net, EmaneNet):
             return None
+        if isinstance(net, CtrlNet):
+            if hasattr(net, 'serverintf'):
+                if net.serverintf is not None:
+                    return None
             
         servers = self.getserversbynode(n)
         if len(servers) < 2:
