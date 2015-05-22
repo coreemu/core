@@ -61,7 +61,7 @@ deb:
 	rm -rf debian
 	mkdir -p debian
 	cp -vf packaging/deb/* debian/
-	@echo "First create source archive with:  dpkg-source -b core-4.5"
+	@echo "First create source archive with:  dpkg-source -b core-@CORE_VERSION@"
 	@echo "Then build with:  pbuilder-dist precise i386 build core*.dsc"
 
 .PHONY: core-restart
