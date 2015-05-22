@@ -46,7 +46,7 @@ def main():
     prefix = ipaddr.IPv4Prefix("10.83.0.0/16")
     # session with some EMANE initialization
     cfg = {'verbose': 'false'}
-    session = pycore.Session(cfg = cfg, persistent = False)
+    session = pycore.Session(cfg = cfg, persistent = True)
     session.master = True
     session.location.setrefgeo(47.57917,-122.13232,2.00000)
     session.location.refscale = 150.0
