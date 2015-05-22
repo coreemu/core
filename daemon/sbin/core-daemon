@@ -1245,6 +1245,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     self.info("request to terminate session %s" % sid)
                     session.setstate(state=coreapi.CORE_EVENT_DATACOLLECT_STATE,
                                     info=True, sendevent=True)
+                    session.setstate(state=coreapi.CORE_EVENT_SHUTDOWN_STATE,
+                                    info=True, sendevent=True)
                     session.shutdown()
                 else:
                     self.warn("unhandled session flags for session %s" % sid)
