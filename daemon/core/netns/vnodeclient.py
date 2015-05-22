@@ -115,9 +115,13 @@ class VnodeClient(object):
         return tmp
 
     def term(self, sh = "/bin/sh"):
-        return os.spawnlp(os.P_NOWAIT, "xterm", "xterm", "-ut",
-                          "-title", self.name, "-e",
-                          VCMD, "-c", self.ctrlchnlname, "--", sh)
+        cmd = ("xterm", "-ut", "-title", self.name, "-e",
+               VCMD, "-c", self.ctrlchnlname, "--", sh)
+        if "SUDO_USER" in os.environ:
+            cmd = ("su", "-s", "/bin/sh", "-c",
+                   "exec " + " ".join(map(lambda x: "'%s'" % x, cmd)),
+                   os.environ["SUDO_USER"])
+        return os.spawnvp(os.P_NOWAIT, cmd[0], cmd)
 
     def termcmdstring(self, sh = "/bin/sh"):
         return "%s -c %s -- %s" % (VCMD, self.ctrlchnlname, sh)
