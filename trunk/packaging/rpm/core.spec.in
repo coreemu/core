@@ -39,7 +39,7 @@ networks using Linux network namespace containers and bridging.
 %package gui
 Summary:	Common Open Research Emulator GUI front-end
 Group:		System Tools
-Requires:	tcl tk tkimg
+Requires:	tcl tk
 BuildArch:	noarch
 BuildRequires:  make automake autoconf
 Provides:	core-gui
