@@ -26,7 +26,7 @@ Requires:	bash bridge-utils ebtables iproute libev python net-tools procps-ng
 %if %{with_kernel_modules_extra}
 Requires: kernel-modules-extra
 %endif
-BuildRequires:  make automake autoconf libev-devel python-devel bridge-utils ebtables iproute net-tools ImageMagick help2man procps-ng
+BuildRequires:	make automake autoconf libev-devel python-devel bridge-utils ebtables iproute net-tools ImageMagick help2man procps-ng
 Provides:	core-daemon
 # python-sphinx
 %description daemon
@@ -79,6 +79,8 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 
 %files gui
 %{_bindir}/core-gui
+%dir @CORE_LIB_DIR@
+%dir @CORE_LIB_DIR@/addons
 @CORE_LIB_DIR@/addons/ipsecservice.tcl
 @CORE_LIB_DIR@/annotations.tcl
 @CORE_LIB_DIR@/api.tcl
@@ -96,6 +98,9 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 @CORE_LIB_DIR@/help.tcl
 %{_datadir}/applications/core-gui.desktop
 %{_datadir}/pixmaps/core-gui.xpm
+%dir %{_datadir}/%{name}
+%dir %{_datadir}/%{name}/icons
+%dir %{_datadir}/%{name}/icons/normal
 %{_datadir}/%{name}/icons/normal/antenna.gif
 %{_datadir}/%{name}/icons/normal/ap.gif
 %{_datadir}/%{name}/icons/normal/core-icon.png
@@ -122,6 +127,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/icons/normal/tunnel.gif
 %{_datadir}/%{name}/icons/normal/wlan.gif
 %{_datadir}/%{name}/icons/normal/xen.gif
+%dir %{_datadir}/%{name}/icons/svg
 %{_datadir}/%{name}/icons/svg/ap.svg
 %{_datadir}/%{name}/icons/svg/cel.svg
 %{_datadir}/%{name}/icons/svg/hub.svg
@@ -139,6 +145,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/icons/svg/tunnel.svg
 %{_datadir}/%{name}/icons/svg/vlan.svg
 %{_datadir}/%{name}/icons/svg/xen.svg
+%dir %{_datadir}/%{name}/icons/tiny
 %{_datadir}/%{name}/icons/tiny/ap.gif
 %{_datadir}/%{name}/icons/tiny/arrow.down.gif
 %{_datadir}/%{name}/icons/tiny/arrow.gif
@@ -210,6 +217,8 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 @CORE_LIB_DIR@/widget.tcl
 @CORE_LIB_DIR@/wlanscript.tcl
 @CORE_LIB_DIR@/wlan.tcl
+%dir %{_datadir}/%{name}/examples
+%dir %{_datadir}/%{name}/examples/configs
 %{_datadir}/%{name}/examples/configs/sample10-kitchen-sink.imn
 %{_datadir}/%{name}/examples/configs/sample1-bg.gif
 %{_datadir}/%{name}/examples/configs/sample1.imn
@@ -230,13 +239,17 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %config @CORE_CONF_DIR@/core.conf
 %config @CORE_CONF_DIR@/perflogserver.conf
 %config @CORE_CONF_DIR@/xen.conf
+%dir %{_datadir}/%{name}
+%dir %{_datadir}/%{name}/examples
 %{_datadir}/%{name}/examples/controlnet_updown
+%dir %{_datadir}/%{name}/examples/corens3
 %{_datadir}/%{name}/examples/corens3/ns3lte.py*
 %{_datadir}/%{name}/examples/corens3/ns3wifi.py*
 %{_datadir}/%{name}/examples/corens3/ns3wifirandomwalk.py*
 %{_datadir}/%{name}/examples/corens3/ns3wimax.py*
 %{_datadir}/%{name}/examples/emanemodel2core.py*
 %{_datadir}/%{name}/examples/findcore.py*
+%dir %{_datadir}/%{name}/examples/hooks
 %{_datadir}/%{name}/examples/hooks/configuration_hook.sh
 %{_datadir}/%{name}/examples/hooks/datacollect_hook.sh
 %{_datadir}/%{name}/examples/hooks/perflogserver.py*
@@ -245,9 +258,11 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/examples/hooks/sessiondatacollect.sh
 %{_datadir}/%{name}/examples/hooks/timesyncstart.sh
 %{_datadir}/%{name}/examples/hooks/timesyncstop.sh
+%dir %{_datadir}/%{name}/examples/myservices
 %{_datadir}/%{name}/examples/myservices/__init__.py*
 %{_datadir}/%{name}/examples/myservices/README.txt
 %{_datadir}/%{name}/examples/myservices/sample.py*
+%dir %{_datadir}/%{name}/examples/netns
 %{_datadir}/%{name}/examples/netns/basicrange.py*
 %{_datadir}/%{name}/examples/netns/distributed.py*
 %{_datadir}/%{name}/examples/netns/emane80211.py*
@@ -260,6 +275,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/examples/netns/twonodes.sh
 %{_datadir}/%{name}/examples/netns/wlanemanetests.py*
 %{_datadir}/%{name}/examples/netns/wlantest.py*
+%dir %{_datadir}/%{name}/examples/services
 %{_datadir}/%{name}/examples/services/sampleFirewall
 %{_datadir}/%{name}/examples/services/sampleIPsec
 %{_datadir}/%{name}/examples/services/sampleVPNClient
