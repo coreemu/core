@@ -126,6 +126,7 @@ loadPluginsConf
 checkCommandLineAddressPort
 autoConnectPlugins
 
+set g_abort_session 0
 
 #
 # Initialization should be complete now, so let's start doing something...
@@ -176,7 +177,7 @@ if {$execMode == "interactive"} {
 	after 100 {
 	    loadCfg $cfg
 	    deployCfgAPI $sock
-	    puts "waiting to enter RUNTIME state..."
+	    puts "Waiting to enter RUNTIME state..."
 	}
 	global vwaitdummy
 	vwait vwaitdummy
