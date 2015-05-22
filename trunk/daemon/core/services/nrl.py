@@ -202,7 +202,7 @@ class NrlOlsrv2(NrlService):
         '''
         cmd = cls._startup[0]
         cmd += " -l /var/log/nrlolsrv2.log"
-        cmd += " -rpipe %s_nrlolsrv2" % node.name
+        cmd += " -rpipe %s_olsrv2" % node.name
         
         servicenames = map(lambda x: x._name,  services)
         if "SMF" in servicenames:
