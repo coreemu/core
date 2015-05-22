@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/sh -e
 #
 # iperf-performance.sh
 #
@@ -20,7 +20,7 @@ STAMP=`date +%Y%m%d%H%M%S`
 #  client---(loopback)---server
 #
 loopbacktest () {
-  killall iperf 2> /dev/null
+  killall iperf 2> /dev/null || true
 
   echo ">> loopback iperf test"
   echo "loopback" > ${LOG}
@@ -61,14 +61,16 @@ lxcvethtest () {
   echo "starting lxc iperf server"
   vnoded -l $SERVER.log -p $SERVER.pid -c $SERVER
   ip link add name veth0.1 type veth peer name veth0
-  ip link set veth0 netns `cat $SERVER.pid`
-  vcmd -c $SERVER -- ifconfig veth0 $SERVERIP/24
+  ip link set veth0 netns `cat $SERVER.pid` up
+  vcmd -c $SERVER -- ip link set lo up
+  vcmd -c $SERVER -- ip addr add $SERVERIP/24 dev veth0
   vcmd -c $SERVER -- iperf -s -y c >> ${LOG} &
 
   echo "starting lxc iperf client"
   vnoded -l $CLIENT.log -p $CLIENT.pid -c $CLIENT
-  ip link set veth0.1 netns `cat $CLIENT.pid`
-  vcmd -c $CLIENT -- ifconfig veth0.1 $CLIENTIP/24
+  ip link set veth0.1 netns `cat $CLIENT.pid` up
+  vcmd -c $CLIENT -- ip link set lo up
+  vcmd -c $CLIENT -- ip addr add $CLIENTIP/24 dev veth0.1
 
   i=1
   while [ $i -le $NUMRUNS ]; do
@@ -112,8 +114,9 @@ lxcbrtest () {
   echo "starting lxc iperf server"
   vnoded -l $SERVER.log -p $SERVER.pid -c $SERVER
   ip link add name veth0.1 type veth peer name veth0
-  ip link set veth0 netns `cat $SERVER.pid`
-  vcmd -c $SERVER -- ifconfig veth0 $SERVERIP/24
+  ip link set veth0 netns `cat $SERVER.pid` up
+  vcmd -c $SERVER -- ip link set lo up
+  vcmd -c $SERVER -- ip addr add $SERVERIP/24 dev veth0
   brctl addif $BRIDGE veth0.1
   ip link set veth0.1 up
   vcmd -c $SERVER -- iperf -s -y c >> ${LOG} &
@@ -121,8 +124,9 @@ lxcbrtest () {
   echo "starting lxc iperf client"
   vnoded -l $CLIENT.log -p $CLIENT.pid -c $CLIENT
   ip link add name veth1.1 type veth peer name veth1
-  ip link set veth1 netns `cat $CLIENT.pid`
-  vcmd -c $CLIENT -- ifconfig veth1 $CLIENTIP/24
+  ip link set veth1 netns `cat $CLIENT.pid` up
+  vcmd -c $CLIENT -- ip link set lo up
+  vcmd -c $CLIENT -- ip addr add $CLIENTIP/24 dev veth1
   brctl addif $BRIDGE veth1.1
   ip link set veth1.1 up
 
@@ -216,8 +220,9 @@ clientstest () {
   echo "starting lxc iperf server"
   vnoded -l $SERVER.log -p $SERVER.pid -c $SERVER
   ip link add name veth0.1 type veth peer name veth0
-  ip link set veth0 netns `cat $SERVER.pid`
-  vcmd -c $SERVER -- ifconfig veth0 $SERVERIP/24
+  ip link set veth0 netns `cat $SERVER.pid` up
+  vcmd -c $SERVER -- ip link set lo up
+  vcmd -c $SERVER -- ip addr add $SERVERIP/24 dev veth0
   brctl addif $BRIDGE veth0.1
   ip link set veth0.1 up
   vcmd -c $SERVER -- iperf -s -y c >> ${LOG} &
@@ -230,8 +235,9 @@ clientstest () {
       CLIENTIP=10.0.0.1$i
       vnoded -l $CLIENT.log -p $CLIENT.pid -c $CLIENT
       ip link add name veth1.$i type veth peer name veth1
-      ip link set veth1 netns `cat $CLIENT.pid`
-      vcmd -c $CLIENT -- ifconfig veth1 $CLIENTIP/24
+      ip link set veth1 netns `cat $CLIENT.pid` up
+      vcmd -c $CLIENT -- ip link set lo up
+      vcmd -c $CLIENT -- ip addr add $CLIENTIP/24 dev veth1
       brctl addif $BRIDGE veth1.$i
       ip link set veth1.$i up
       i=$((i+1))
