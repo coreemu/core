@@ -3,6 +3,17 @@
 # See the LICENSE file included in this distribution.
 #
 
+set vtysh [auto_execok vtysh]
+if {$vtysh == ""} {
+    set vtysh_search_path {/usr/bin /usr/local/bin /usr/lib/quagga}
+    foreach p $vtysh_search_path {
+	if {[file executable $p/vtysh]} {
+	    set vtysh $p/vtysh
+	    break
+	}
+    }
+}
+
 #
 # Widgets are defined in this array.
 # widget array: name, {config, init, periodic, move}
@@ -19,19 +30,19 @@ array set widgets {
 #	{ widget_cpu_config widget_cpu_init widget_cpu_periodic widget_cpu_move }
 
 # Common Observer Widget definitions
-set widgets_obs_quagga {
+set widgets_obs_quagga [subst {
     5 
-    {{OSPFv2 neighbors} {vtysh -c {show ip ospf neighbor}}}
+    {{OSPFv2 neighbors} {$vtysh -c {show ip ospf neighbor}}}
 
     6
-    {{OSPFv3 neighbors} {vtysh -c {show ipv6 ospf6 neighbor}}}
+    {{OSPFv3 neighbors} {$vtysh -c {show ipv6 ospf6 neighbor}}}
 
     13
-    {{OSPFv3 MDR level} {vtysh -c {show ipv6 ospf6 mdrlevel}}}
+    {{OSPFv3 MDR level} {$vtysh -c {show ipv6 ospf6 mdrlevel}}}
 
     14
-    {{PIM neighbors} {vtysh -c {show ip pim neighbor}}}
-}
+    {{PIM neighbors} {$vtysh -c {show ip pim neighbor}}}
+}]
 
 # Observer Widget definitions for FreeBSD
 array set widgets_obs_bsd $widgets_obs_quagga
@@ -1891,7 +1902,7 @@ proc widget_adjacency_config_apply { wi } {
 }
 
 proc get_router_id {node} {
-    global oper_mode
+    global oper_mode vtysh
 
     # search custom-config
     if { [getCustomEnabled $node] == true } {
@@ -1934,10 +1945,10 @@ proc get_router_id {node} {
     # use exec message here for retrieving router ID
     set sock [lindex [getEmulPlugin $node] 2]
     set exec_num [newExecCallbackRequest adjacencyrouterid]
-    set cmd "vtysh -c 'show ipv6 ospf6'"
+    set cmd "$vtysh -c 'show ipv6 ospf6'"
     sendExecMessage $sock $node $cmd $exec_num 0x30
     set exec_num [newExecCallbackRequest adjacencyrouterid]
-    set cmd "vtysh -c 'show ip ospf'"
+    set cmd "$vtysh -c 'show ip ospf'"
     sendExecMessage $sock $node $cmd $exec_num 0x30
     return ""
 }
@@ -2017,7 +2028,7 @@ proc widget_adjacency_init {command} {
 #
 proc widget_adjacency_periodic { now } {
     global node_list adjacency_config adjacency_cache adjacency_lock
-    global enable_Adjacency curcanvas
+    global enable_Adjacency curcanvas vtysh
     set changed 0
 
     set proto $adjacency_config(proto)
@@ -2064,7 +2075,7 @@ proc widget_adjacency_periodic { now } {
             # widget_adjacency_callback after the response has been received
             set sock [lindex [getEmulPlugin $node] 2]
             set exec_num [newExecCallbackRequest adjacency]
-            set cmd "vtysh -c 'show $proto neighbor'"
+            set cmd "$vtysh -c 'show $proto neighbor'"
             sendExecMessage $sock $node $cmd $exec_num 0x30
         }
     }
