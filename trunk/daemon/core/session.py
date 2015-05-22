@@ -33,6 +33,7 @@ from core.sdt import Sdt
 from core.misc.ipaddr import MacAddr
 from core.misc.event import EventLoop
 from core.constants import *
+from core.misc.xmlsession import savesessionxml
 
 from core.xen import xenconfig
 
@@ -349,6 +350,8 @@ class Session(object):
     def runtime_state_hook(self, state):
         if state == coreapi.CORE_EVENT_RUNTIME_STATE:
             self.emane.poststartup()
+            xmlfilename = os.path.join(self.sessiondir, 'session-deployed.xml')
+            savesessionxml(self, xmlfilename, self.cfg['xmlfilever'])
 
     def getenviron(self, state=True):
         ''' Get an environment suitable for a subprocess.Popen call.
