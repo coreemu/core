@@ -12,11 +12,21 @@ set g_cel_blink_state "off"
 
 # receive an exception into the g_exceptions array from an Exception Message
 proc receiveException { valuelist } {
-    global g_exceptions EXCEPTION_LEVELS
+    global g_exceptions EXCEPTION_LEVELS execMode
     set idx [expr {1 + [array size g_exceptions]}]
     array set g_exceptions [list $idx $valuelist]
-    # exceptions with level ERROR or FATAL will throw the CEL
     array set vals $valuelist
+    # print exception message on stdout if in batch mode
+    if { $execMode == "batch" } { 
+	puts "\nFrom $vals(src): $vals(txt)"
+
+	# Abort the session if a fatal exception is reported
+	if { $vals(level) <= [lsearch -exact $EXCEPTION_LEVELS "FATAL" ] } {
+	    global g_current_session g_abort_session
+	    set g_abort_session 1
+	}
+    }
+    # exceptions with level ERROR or FATAL will throw the CEL
     if { $vals(level) <= [lsearch -exact $EXCEPTION_LEVELS "ERROR"] } {
 	throwCEL false
 	if { $vals(level) <= [lsearch -exact $EXCEPTION_LEVELS "FATAL" ] } {

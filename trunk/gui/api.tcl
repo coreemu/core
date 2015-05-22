@@ -1480,8 +1480,13 @@ proc parseEventMessage { data len flags channel } {
     if { $eventtype == 4 } { ;# entered the runtime state
 	if { $g_traffic_start_opt == 1 } { startTrafficScripts }
 	if { $execMode == "batch" } {
-	    global g_current_session
-	    puts "disconnecting.  Session id is $g_current_session"
+	    global g_current_session g_abort_session
+	    if {$g_abort_session} {
+		puts "Current session ($g_current_session) aborted. Disconnecting."
+		shutdownSession
+	    } else {
+		puts "Session running. Session id is $g_current_session. Disconnecting."
+	    }
 	    exit.real
 	}
     } elseif { $eventtype == 6 } { ;# shutdown state
