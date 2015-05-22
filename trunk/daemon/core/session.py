@@ -324,12 +324,15 @@ class Session(object):
         self._hooks = {}
 
     def run_state_hooks(self, state):
-        try:
-            hooks = self._state_hooks[state]
-            for hook in hooks:
+        if state not in self._state_hooks:
+            return
+        for hook in self._state_hooks[state]:
+            try:
                 hook(state)
-        except KeyError:
-            pass
+            except Exception, e:
+                self.warn("ERROR: exception occured when running %s state "
+                          "hook: %s: %s" % (coreapi.state_name(state),
+                                            hook, e))
 
     def add_state_hook(self, state, hook):
         try:
