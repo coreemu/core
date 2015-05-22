@@ -76,6 +76,8 @@ class ConfigurableManager(object):
             try:
                 # key=value
                 (key, value) = kv.split('=', 1)
+                if value is not None and value.is_empty():
+                    value = None
             except ValueError:
                 # value only
                 key = keys[kvs.index(kv)]
