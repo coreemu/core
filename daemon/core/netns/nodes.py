@@ -38,6 +38,9 @@ class CtrlNet(LxBrNet):
                          verbose = verbose, start = start)
 
     def startup(self):
+        if self.detectoldbridge():
+            return
+        
         LxBrNet.startup(self)
         if self.hostid:
             addr = self.prefix.addr(self.hostid)
@@ -59,18 +62,51 @@ class CtrlNet(LxBrNet):
                 check_call([BRCTL_BIN, "addif", self.brname, self.serverintf])
                 check_call([IP_BIN, "link", "set", self.serverintf, "up"])
             except Exception, e:
-                self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
+                self.exception(coreapi.CORE_EXCP_LEVEL_FATAL, self.brname,
                                "Error joining server interface %s to controlnet bridge %s: %s" % \
                                (self.serverintf, self.brname, e))
                 
 
+    def detectoldbridge(self):
+        ''' Occassionally, control net bridges from previously closed sessions are not cleaned up.
+        Check if there are old control net bridges and delete them
+        ''' 
+        retstat, retstr = cmdresult([BRCTL_BIN,'show'])
+        if retstat != 0:
+            self.exception(coreapi.CORE_EXCP_LEVEL_FATAL, None,
+                           "Unable to retrieve list of installed bridges")
+        lines = retstr.split('\n')
+        for line in lines[1:]:
+            cols = line.split('\t')
+            oldbr = cols[0]
+            flds = cols[0].split('.')
+            if len(flds) == 3:
+                if flds[0] == 'b' and flds[1] == self.objid:
+                    self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "CtrlNet.startup()", None,
+                                           "Error: An active control net bridge (%s) found. "\
+                                           "An older session might still be running. " \
+                                           "Stop all sessions and, if needed, delete %s to continue." % \
+                                           (oldbr, oldbr))
+                    return True
+                    '''
+                    # Do this if we want to delete the old bridge
+                    self.warn("Warning: Old %s bridge found: %s" % (self.objid, oldbr))
+                    try:
+                        check_call([BRCTL_BIN, 'delbr', oldbr])
+                    except Exception, e:
+                        self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, oldbr,
+                                       "Error deleting old bridge %s" % oldbr)
+                    self.info("Deleted %s" % oldbr)
+                    '''
+        return False
+        
     def shutdown(self):
         if self.serverintf is not None:
             try:
                 check_call([BRCTL_BIN, "delif", self.brname, self.serverintf])
             except Exception, e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
-                               "Error joining server interface %s to controlnet bridge %s: %s" % \
+                               "Error deleting server interface %s to controlnet bridge %s: %s" % \
                                (self.serverintf, self.brname, e))
             
         if self.updown_script is not None:
