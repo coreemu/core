@@ -2135,7 +2135,6 @@ proc exec_adjacencyrouterid_callback { node execnum cmd result status } {
         set rtrid [lindex $lines 1]
         array set adjacency_cache [list $rtrid $node]
     } else {
-        puts "matches OSPFv2"
         # match both OSPFv2 and OSPFv3 responses
         set rid [regexp -inline {Router[- ]ID[:]? [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} \
     			$result]
