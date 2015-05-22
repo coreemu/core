@@ -372,6 +372,8 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_sbindir}/vnoded
 
 %changelog
+* Thur May 21 2015 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 4.8rc1
+- Support for NRL Network Modeling Framework (NMF) XML representation, bugfixes
 * Wed Aug 6 2014 Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil> - 4.7
 - EMANE 0.9.1, asymmetric links, bugfixes
 * Thu Aug 22 2013 Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com> - 4.6
