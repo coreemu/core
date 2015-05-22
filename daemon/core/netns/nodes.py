@@ -20,18 +20,20 @@ from core.coreobj import PyCoreNode
 class CtrlNet(LxBrNet):
     policy = "ACCEPT"
     CTRLIF_IDX_BASE = 99  # base control interface index
-    DEFAULT_PREFIX = "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24"
-
+    DEFAULT_PREFIX_LIST = ["172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
+                           "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
+                           "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
+                           "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"]
+    
     def __init__(self, session, objid = "ctrlnet", name = None,
-                 verbose = False, netid = 1, prefix = None,
+                 verbose = False, prefix = None,  
                  hostid = None, start = True, assign_address = True,
-                 updown_script = None):
-        if not prefix:
-            prefix = "172.16.%d.0/24" % netid
+                 updown_script = None, serverintf = None):
         self.prefix = IPv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
         self.updown_script = updown_script
+        self.serverintf = serverintf
         LxBrNet.__init__(self, session, objid = objid, name = name,
                          verbose = verbose, start = start)
 
@@ -52,8 +54,25 @@ class CtrlNet(LxBrNet):
             self.info("interface %s updown script '%s startup' called" % \
                       (self.brname, self.updown_script))
             check_call([self.updown_script, self.brname, "startup"])
+        if self.serverintf is not None:
+            try:
+                check_call([BRCTL_BIN, "addif", self.brname, self.serverintf])
+                check_call([IP_BIN, "link", "set", self.serverintf, "up"])
+            except Exception, e:
+                self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
+                               "Error joining server interface %s to controlnet bridge %s: %s" % \
+                               (self.serverintf, self.brname, e))
+                
 
     def shutdown(self):
+        if self.serverintf is not None:
+            try:
+                check_call([BRCTL_BIN, "delif", self.brname, self.serverintf])
+            except Exception, e:
+                self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
+                               "Error joining server interface %s to controlnet bridge %s: %s" % \
+                               (self.serverintf, self.brname, e))
+            
         if self.updown_script is not None:
             self.info("interface %s updown script '%s shutdown' called" % \
                       (self.brname, self.updown_script))
