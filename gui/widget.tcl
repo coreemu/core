@@ -1916,9 +1916,21 @@ proc get_router_id {node} {
 	    return [string range $line 11 end]
 	}
     }
-
+    if {[lsearch [getNodeServices $node true] "OLSR"] == 0 } {
+        
+        set sock [lindex [getEmulPlugin $node] 2]
+        set exec_num [newExecCallbackRequest adjacencyrouterid]
+        set cmd "nrlConsole.py ${node}_olsr i"
+        sendExecMessage $sock $node $cmd $exec_num 0x30
+        return ""
+    } elseif {[lsearch [getNodeServices $node true] "OLSRv2"] == 0 } {
+        set sock [lindex [getEmulPlugin $node] 2]
+        set exec_num [newExecCallbackRequest adjacencyrouterid]
+        set cmd "nrlConsole.py ${node}_olsrv2 i"
+        sendExecMessage $sock $node $cmd $exec_num 0x30
+        return ""
+    }
     if { $oper_mode != "exec" }  { return }
-
     # use exec message here for retrieving router ID
     set sock [lindex [getEmulPlugin $node] 2]
     set exec_num [newExecCallbackRequest adjacencyrouterid]
@@ -1934,7 +1946,7 @@ proc get_router_id {node} {
 # Adjacency widget de/initialization
 #
 proc widget_adjacency_init {command} {
-    global enable_Adjacency enable_Adjacency_v2 enable_Adjacency_v3
+    global enable_Adjacency enable_Adjacency_OSPFv2 enable_Adjacency_OSPFv3 enable_Adjacency_OLSR enable_Adjacency_OLSRv2
     global node_list adjacency_cache adjacency_config adjacency_lock
     global g_execRequests
     set c .c
@@ -1943,26 +1955,42 @@ proc widget_adjacency_init {command} {
     array set g_execRequests [list adjacency ""]
 
     # Menu item selected on/off
-    if { $command == "menu2" || $command == "menu3" } {
+    if { $command == "menu2" || $command == "menu3" || $command == "menu4" || $command == "menu5" } {
 	# set global enable flag for v2/v3 adjacency display
 	set enable_Adjacency \
-	    [expr {$enable_Adjacency_v2 | $enable_Adjacency_v3}]
+	    [expr {$enable_Adjacency_OSPFv2 | $enable_Adjacency_OSPFv3 | $enable_Adjacency_OLSR | $enable_Adjacency_OLSRv2}]
 	# toggle other OSPFv2/v3 menu items off
-	if { $command == "menu2" && $enable_Adjacency_v2 } {
-	    set enable_Adjacency_v3 0
+	if { $command == "menu2" && $enable_Adjacency_OSPFv2 } {
+	    set enable_Adjacency_OSPFv3 0
+            set enable_Adjacency_OLSR 0
+            set enable_Adjacency_OLSRv2 0
 	    set adjacency_config(proto) "ip ospf"
-	} elseif { $command == "menu3" && $enable_Adjacency_v3 } {
-	    set enable_Adjacency_v2 0
+	} elseif { $command == "menu3" && $enable_Adjacency_OSPFv3 } {
+	    set enable_Adjacency_OSPFv2 0
+            set enable_Adjacency_OLSR 0
+            set enable_Adjacency_OLSRv2 0
 	    set adjacency_config(proto) "ipv6 ospf6"
-	}
+	} elseif { $command == "menu4" && $enable_Adjacency_OLSR } {
+            set enable_Adjacency_OSPFv2 0
+            set enable_Adjacency_OSPFv3 0
+            set enable_Adjacency_OLSRv2 0
+            set adjacency_config(proto) "OLSR_proto"
+	} elseif { $command == "menu5" && $enable_Adjacency_OLSRv2 } {
+            set enable_Adjacency_OSPFv2 0
+            set enable_Adjacency_OSPFv3 0
+            set enable_Adjacency_OLSR 0
+            set adjacency_config(proto) "OLSRv2_proto"
+        } 
     }
 
     # Initialize
     if { $enable_Adjacency && $command != "stop" } {
 	array unset adjacency_cache *
 	foreach node $node_list { ;# save router-id node pairs for later lookup
-	    if { [nodeType $node] != "router" } { continue }
-	    if {[lsearch [getNodeServices $node true] "zebra"] < 0} {
+            if { [nodeType $node] != "router" } { continue }
+	    if {[lsearch [getNodeServices $node true] "zebra"] < 0 &&
+                [lsearch [getNodeServices $node true] "OLSR"] < 0 && 
+                [lsearch [getNodeServices $node true] "OLSRv2"] < 0} {
 		continue
 	    }
 	    set rtrid [get_router_id $node]
@@ -1975,8 +2003,10 @@ proc widget_adjacency_init {command} {
     # De-initialize
     if { !$enable_Adjacency || $command == "stop" } {
 	set enable_Adjacency 0
-	set enable_Adjacency_v2 0
-	set enable_Adjacency_v3 0
+	set enable_Adjacency_OSPFv2 0
+	set enable_Adjacency_OSPFv3 0
+	set enable_Adjacency_OLSR 0
+	set enable_Adjacency_OLSRv2 0
 	$c delete -withtags "adjline"
 	after 200 { .c delete -withtags "adjline" }
     }
@@ -1992,20 +2022,52 @@ proc widget_adjacency_periodic { now } {
 
     set proto $adjacency_config(proto)
 
-    foreach node $node_list {
-	if { [nodeType $node] != "router" } { continue }
-	if { [getNodeCanvas $node] != $curcanvas } { continue }
-	if {[lsearch [getNodeServices $node true] "zebra"] < 0} {
-	    continue
-	}
+    if { $proto == "OLSR_proto" } {
+        foreach node $node_list {
+	    if { [nodeType $node] != "router" } { continue }
+            if { [getNodeCanvas $node] != $curcanvas } { continue }
+            if {[lsearch [getNodeServices $node true] "OLSR"] < 0} {
+	        continue
+	    }
+            if { $adjacency_lock == $node } { continue }
+            # when using daemon, send Execute Message and draw line using
+            # widget_adjacency_callback after the response has been received
+            set sock [lindex [getEmulPlugin $node] 2]
+            set exec_num [newExecCallbackRequest adjacency]
+            set cmd "nrlConsole.py ${node}_olsr n"
+            sendExecMessage $sock $node $cmd $exec_num 0x30
+        }
+    } elseif { $proto == "OLSRv2_proto" } {
+        foreach node $node_list {
+	    if { [nodeType $node] != "router" } { continue }
+            if { [getNodeCanvas $node] != $curcanvas } { continue }
+            if {[lsearch [getNodeServices $node true] "OLSRv2"] < 0} {
+	        continue
+	    }
+            if { $adjacency_lock == $node } { continue }
+            # when using daemon, send Execute Message and draw line using
+            # widget_adjacency_callback after the response has been received
+            set sock [lindex [getEmulPlugin $node] 2]
+            set exec_num [newExecCallbackRequest adjacency]
+            set cmd "nrlConsole.py ${node}_olsrv2 n"
+            sendExecMessage $sock $node $cmd $exec_num 0x30
+        }
+    } else {
+        foreach node $node_list {
+	    if { [nodeType $node] != "router" } { continue }
+            if { [getNodeCanvas $node] != $curcanvas } { continue }
+            if {[lsearch [getNodeServices $node true] "zebra"] < 0} {
+	        continue
+	    }
 
-	if { $adjacency_lock == $node } { continue }
-	# when using daemon, send Execute Message and draw line using
-	# widget_adjacency_callback after the response has been received
-	set sock [lindex [getEmulPlugin $node] 2]
-	set exec_num [newExecCallbackRequest adjacency]
-	set cmd "vtysh -c 'show $proto neighbor'"
-	sendExecMessage $sock $node $cmd $exec_num 0x30
+            if { $adjacency_lock == $node } { continue }
+            # when using daemon, send Execute Message and draw line using
+            # widget_adjacency_callback after the response has been received
+            set sock [lindex [getEmulPlugin $node] 2]
+            set exec_num [newExecCallbackRequest adjacency]
+            set cmd "vtysh -c 'show $proto neighbor'"
+            sendExecMessage $sock $node $cmd $exec_num 0x30
+        }
     }
 }
 
@@ -2016,14 +2078,16 @@ proc exec_adjacency_callback { node execnum cmd result status } {
     global g_api_exec_num
     set changed 0
     set c .c
-
+    
     set proto $adjacency_config(proto)
     array set colors $adjacency_config(colors)
     if { $adjacency_config(offset) } { set o 5 } else { set o 0 }
 
     $c addtag adjdelete withtag "adjline && $node" ;# flag del all adjlines 
     set adjs [getadj_from_neighbors $result $proto]
+     
     foreach adj $adjs {
+            
 	    set peer [lindex $adj 0]
 	    set line [$c find withtag "adjline && $node && $peer"]
 
@@ -2065,23 +2129,54 @@ proc exec_adjacency_callback { node execnum cmd result status } {
 proc exec_adjacencyrouterid_callback { node execnum cmd result status } {
     global adjacency_cache
 
-    # match both OSPFv2 and OSPFv3 responses
-    set rid [regexp -inline {Router[- ]ID[:]? [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} \
-    		$result]
-    if {$rid != ""} {
-	set rtrid [eval lindex $rid end]
-	array set adjacency_cache [list $rtrid $node]
+    #check if olsr or olsrv2 are running
+    if {[lsearch [getNodeServices $node true] "OLSR"] == 0 ||
+        [lsearch [getNodeServices $node true] "OLSRv2"] == 0 } {
+        set lines [split $result "\n"]
+        set rtrid [lindex $lines 1]
+        array set adjacency_cache [list $rtrid $node]
+    } else {
+        # match both OSPFv2 and OSPFv3 responses
+        set rid [regexp -inline {Router[- ]ID[:]? [0-9]+\.[0-9]+\.[0-9]+\.[0-9]+} \
+    			$result]
+        if {$rid != ""} {
+		set rtrid [eval lindex $rid end]
+		array set adjacency_cache [list $rtrid $node]
+        }
     }
 }
 
 # helper to convert neighbor list into adjacencies list
 proc getadj_from_neighbors { raw_input proto } {
     set ret { }
+#OLSR conversions
+    if { $proto == "OLSRv2_proto" || $proto == "OLSR_proto"} {
+        foreach line [split $raw_input "\n"] {
+            if { $line == "neighbors" } { continue }
+            if { $line == "end-neighbors" } { continue }
+            if { $line == "" } { continue }
+            set fields [split $line " "]
+            lassign $fields rtrid state metric mpr
+            # convert to OSPFv3 to simplify coloring
+            switch -exact -- "$state" {
+            "SYM"     { set state "Full" }
+            "ASYM"    { set state "Init" }
+            "LOST"    { set state "Down" }
+            "MPR"     { set state "Full" }
+            "PENDING" { set state "Init" }
+            "INVALID" { set state "Down" } 
+            }
+            lappend ret [list $rtrid $state]
+        }
+        return $ret
+    }
+#OSPF converstion
+
 #Neighbor ID     Pri    DeadTime  State/IfState         Duration I/F[State]
 #10.0.0.2          1    00:00:06   Init/PointToPoint    00:00:00 eth0[PointToP
 #10.0.0.2          1    00:00:06 Twoway/PointToPoint    00:00:00 eth0[PointToP
 #10.0.0.2          1    00:00:06   Full/PointToPoint    00:00:38 eth0[PointToP
-#10.0.7.2          1 Full/Backup       37.240s 10.0.0.2        eth0:10.0.0.1
+#10.0.7.2          1 Full/Backup       37.240s 10.0.0.2        eth0:10.0.0.1    
     foreach line [split $raw_input "\n"] {
 	set rtrid [string trim [string range $line 0 14]]
 	if { $rtrid == "Neighbor ID" } { continue }
@@ -2150,12 +2245,31 @@ proc widget_adjacency_init_submenu { m } {
     $m add cascade -label "Adjacency" -menu $m.adj
     set w "Adjacency"
 
-    foreach v [list 2 3] {
-	global enable_${w}_v${v}
-	set enable_${w}_v${v} 0
-	$m.adj add checkbutton -label "OSPFv$v" -variable enable_${w}_v${v} \
-		-command "[lindex $widgets($w) 1] menu$v"
-    }
+#    foreach v [list 2 3] {
+#	global enable_${w}_v${v}
+#	set enable_${w}_v${v} 0
+#	$m.adj add checkbutton -label "OSPFv$v" -variable enable_${w}_v${v} \
+#		-command "[lindex $widgets($w) 1] menu$v"
+#    }
+    global enable_Adjacency_OSPFv2
+    set enable_Adjacency_OSPFv2 0
+    $m.adj add checkbutton -label "OSPFv2" -variable enable_Adjacency_OSPFv2 \
+        -command "[lindex $widgets(Adjacency) 1] menu2"
+    
+    global enable_Adjacency_OSPFv3
+    set enable_Adjacency_OSPFv3 0
+    $m.adj add checkbutton -label "OSPFv3" -variable enable_Adjacency_OSPFv3 \
+        -command "[lindex $widgets(Adjacency) 1] menu3"
+    
+    global enable_Adjacency_OLSR
+    set enable_Adjacency_OLSR 0
+    $m.adj add checkbutton -label "OLSR" -variable enable_Adjacency_OLSR \
+        -command "[lindex $widgets(Adjacency) 1] menu4"
+    
+    global enable_Adjacency_OLSRv2
+    set enable_Adjacency_OLSRv2 0
+    $m.adj add checkbutton -label "OLSRv2" -variable enable_Adjacency_OLSRv2 \
+        -command "[lindex $widgets(Adjacency) 1] menu5"
 }
 
 # load the widgets.conf file when this file is loaded
