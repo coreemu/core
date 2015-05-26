@@ -16,7 +16,7 @@ EXAMPLE_FILES	=				\
 	examples/ns3wifirandomwalk.py		\
 	examples/ns3wimax.py
 
-coreexampledir		= $(datadir)/core/examples
+coreexampledir		= $(datadir)/core/examples/corens3
 dist_coreexample_DATA	= $(EXAMPLE_FILES)
 
 # Python package build
