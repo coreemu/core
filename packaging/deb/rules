@@ -1,5 +1,9 @@
 #!/usr/bin/make -f
 
+# See debhelper(7) (uncomment to enable)
+# output every command that modifies files on the build system.
+# DH_VERBOSE = 1
+
 include /usr/share/cdbs/1/rules/debhelper.mk
 include /usr/share/cdbs/1/class/autotools.mk
 include /usr/share/cdbs/1/rules/autoreconf.mk
