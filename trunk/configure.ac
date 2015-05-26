@@ -224,27 +224,29 @@ if test "x$want_python" = "xno"; then
 fi
 
 if test "x$want_python" = "xyes"; then
-    CFLAGS_save=$CFLAGS
-    CPPFLAGS_save=$CPPFLAGS
-    if test "x$PYTHON_INCLUDE_DIR" = "x"; then
-	PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_python_inc()"`
+    if test "x$want_linux_netns" = "xyes"; then
+	CFLAGS_save=$CFLAGS
+	CPPFLAGS_save=$CPPFLAGS
+	if test "x$PYTHON_INCLUDE_DIR" = "x"; then
+	    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_python_inc()"`
+	fi
+	CFLAGS="-I$PYTHON_INCLUDE_DIR"
+	CPPFLAGS="-I$PYTHON_INCLUDE_DIR"
+	AC_CHECK_HEADERS([Python.h], [],
+	    AC_MSG_ERROR([Python bindings require Python development headers (try installing your 'python-devel' or 'python-dev' package)]))
+	CFLAGS=$CFLAGS_save
+	CPPFLAGS=$CPPFLAGS_save
+	PKG_CHECK_MODULES(libev, libev,
+	    AC_MSG_RESULT([found libev using pkgconfig OK])
+	    AC_SUBST(libev_CFLAGS)
+	    AC_SUBST(libev_LIBS),
+	    AC_MSG_RESULT([did not find libev using pkconfig...])
+	    AC_CHECK_LIB([ev], ev_set_allocator,
+		 AC_MSG_RESULT([found libev OK])
+		 AC_SUBST(libev_CFLAGS)
+		 AC_SUBST(libev_LIBS, [-lev]),
+		 AC_MSG_ERROR([Python bindings require libev (try installing your 'libev-devel' or 'libev-dev' package)])))
     fi
-    CFLAGS="-I$PYTHON_INCLUDE_DIR"
-    CPPFLAGS="-I$PYTHON_INCLUDE_DIR"
-    AC_CHECK_HEADERS([Python.h], [],
-	AC_MSG_ERROR([Python bindings require Python development headers (try installing your 'python-devel' or 'python-dev' package)]))
-    CFLAGS=$CFLAGS_save
-    CPPFLAGS=$CPPFLAGS_save
-    PKG_CHECK_MODULES(libev, libev,
-        AC_MSG_RESULT([found libev using pkgconfig OK])
-        AC_SUBST(libev_CFLAGS)
-        AC_SUBST(libev_LIBS),
-	AC_MSG_RESULT([did not find libev using pkconfig...])
-	AC_CHECK_LIB([ev], ev_set_allocator,
-	     AC_MSG_RESULT([found libev OK])
-             AC_SUBST(libev_CFLAGS)
-             AC_SUBST(libev_LIBS, [-lev]),
-	     AC_MSG_ERROR([Python bindings require libev (try installing your 'libev-devel' or 'libev-dev' package)])))
     AC_SUBST(pyprefix, `eval ${PYTHON} ./python-prefix.py ${PYTHON_PREFIX} ${PYTHON_VERSION}`)
     if test "${pyprefix}" != "${PYTHON_PREFIX}"; then
 	pythondir=`echo ${pythondir} | sed -e 's,[$][{]prefix[}],${pyprefix},g'`
