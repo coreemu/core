@@ -3,12 +3,15 @@
 # See the LICENSE file included in this distribution.
 #
 
-set vtysh [auto_execok vtysh]
+set vtysh_cmd vtysh
+set vtysh_search_path {/usr/bin /usr/local/bin /usr/lib/quagga}
+
+set vtysh [auto_execok $vtysh_cmd]
 if {$vtysh == ""} {
-    set vtysh_search_path {/usr/bin /usr/local/bin /usr/lib/quagga}
+    set vtysh $vtysh_cmd
     foreach p $vtysh_search_path {
-	if {[file executable $p/vtysh]} {
-	    set vtysh $p/vtysh
+	if {[file executable $p/$vtysh_cmd]} {
+	    set vtysh $p/$vtysh_cmd
 	    break
 	}
     }
