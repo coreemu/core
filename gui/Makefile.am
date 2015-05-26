@@ -63,6 +63,11 @@ dist_coreconfigs_DATA	= $(CONFIG_FILES)
 dist-hook:
 	rm -rf $(distdir)/addons/.svn
 
+uninstall-hook:
+	rmdir -p $(coreconfigsdir) || true
+	rmdir -p $(coreaddonsdir) || true
+	rmdir -p $(coredir) || true
+
 # extra cruft to remove
 DISTCLEANFILES	= Makefile.in
 
