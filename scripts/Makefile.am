@@ -7,6 +7,8 @@
 # Makefile for installing scripts.
 #
 
+CLEANFILES	= core-daemon
+
 DISTCLEANFILES	= Makefile.in xen/Makefile xen/Makefile.in
 
 EXTRA_DIST	= core-daemon-init.d \
@@ -21,41 +23,37 @@ SUBDIRS		= perf
 dist-hook:
 	rm -rf $(distdir)/xen/.svn
 
-
 # install startup scripts based on --with-startup=option configure option
 # FreeBSD, init.d (default), systemd, SUSE
 if WANT_BSD
-install-exec-hook:
-	test -d "$(DESTDIR)/usr/local/etc/rc.d" || \
-		mkdir -p $(DESTDIR)/usr/local/etc/rc.d
-	test -d "$(DESTDIR)/usr/local/etc/rc.d" && \
-		cp -f core-daemon-rc.d $(DESTDIR)/usr/local/etc/rc.d/core-daemon
+startupdir	= $(DESTDIR)/usr/local/etc/rc.d
+startup_SCRIPTS	= core-daemon
+
+core-daemon: core-daemon-rc.d
+	cp $< $@
 else
 
 if WANT_INITD
-install-exec-hook:
-	test -d "$(DESTDIR)/etc/init.d" || \
-		mkdir -p $(DESTDIR)/etc/init.d
-	test -d "$(DESTDIR)/etc/init.d" && \
-		cp -f core-daemon-init.d $(DESTDIR)/etc/init.d/core-daemon
+startupdir	= $(DESTDIR)/etc/init.d
+startup_SCRIPTS	= core-daemon
+
+core-daemon: core-daemon-init.d
+	cp $< $@
 endif
 if WANT_SYSTEMD
-install-exec-hook:
-	test -d "$(DESTDIR)/etc/systemd/system" || \
-		mkdir -p $(DESTDIR)/etc/systemd/system
-	test -d "$(DESTDIR)/etc/systemd/system" && \
-		cp -f core-daemon.service $(DESTDIR)/etc/systemd/system/
+startupdir	= $(DESTDIR)/etc/systemd/system
+startup_SCRIPTS	= core-daemon.service
 endif
 if WANT_SUSE
-install-exec-hook:
-	test -d "$(DESTDIR)/etc/init.d" || \
-		mkdir -p $(DESTDIR)/etc/init.d
-	test -d "$(DESTDIR)/etc/init.d" && \
-		cp -f core-daemon-init.d-SUSE $(DESTDIR)/etc/init.d/core-daemon
+startupdir	= $(DESTDIR)/etc/init.d
+startup_SCRIPTS	= core-daemon
+
+core-daemon: core-daemon-init.d-SUSE
+	cp $< $@
 endif
 # endif FreeBSD
 endif
 
 # remove extra scripts and their directories if they are empty
 uninstall-hook:
-	rm -f /etc/init.d/core-daemon /usr/local/etc/rc.d/core-daemon
+	rmdir -p $(startupdir) || true
