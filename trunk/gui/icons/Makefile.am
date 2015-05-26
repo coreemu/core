@@ -84,28 +84,18 @@ dist_coreicontiny_DATA	= $(TINY_ICONS)
 coreiconsvgdir		= $(CORE_DATA_DIR)/icons/svg
 dist_coreiconsvg_DATA	= $(SVG_ICONS)
 
-iconpixmapdir = $(datarootdir)/pixmaps
-icondesktopdir = $(datarootdir)/applications
+iconpixmapdir		= $(datarootdir)/pixmaps
+dist_iconpixmap_DATA	= core-gui.xpm
 
-install-exec-hook: install-gui-icon
+icondesktopdir		= $(datarootdir)/applications
+dist_icondesktop_DATA	= core-gui.desktop
 
-uninstall-hook: uninstall-gui-icon
-
-.PHONY: install-gui-icon
-install-gui-icon:
-	test -d $(DESTDIR)/$(iconpixmapdir) || \
-	    mkdir -p $(DESTDIR)/$(iconpixmapdir)
-	cp -f core-gui.xpm $(DESTDIR)/$(iconpixmapdir)
-	test -d $(DESTDIR)/$(icondesktopdir) || \
-	    mkdir -p $(DESTDIR)/$(icondesktopdir)
-	cp -f core-gui.desktop $(DESTDIR)/$(icondesktopdir)
-
-.PHONY: uninstall-gui-icon
-uninstall-gui-icon:
-	rm -f $(iconpixmapdir)/core-gui.xpm
-	rm -f $(icondesktopdir)/core-gui.desktop
-
-EXTRA_DIST	= core-gui.xpm core-gui.desktop
+uninstall-hook:
+	rmdir -p $(icondesktopdir) || true
+	rmdir -p $(iconpixmapdir) || true
+	rmdir -p $(coreiconsvgdir) || true
+	rmdir -p $(coreicontinydir) || true
+	rmdir -p $(coreiconnormaldir) || true
 
 # extra cruft to remove
 DISTCLEANFILES	= Makefile.in
