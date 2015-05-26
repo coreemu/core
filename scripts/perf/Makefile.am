@@ -20,3 +20,6 @@ dist_hooks_SCRIPTS = perflogstart.sh perflogstop.sh sessiondatacollect.sh \
 perfconfdir=$(sysconfdir)/core
 dist_perfconf_DATA = perflogserver.conf
 
+uninstall-hook:
+	rmdir -p $(perfconfdir) || true
+	rmdir -p $(hooksdir) || true
