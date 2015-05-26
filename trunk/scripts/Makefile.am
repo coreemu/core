@@ -26,7 +26,7 @@ dist-hook:
 # install startup scripts based on --with-startup=option configure option
 # FreeBSD, init.d (default), systemd, SUSE
 if WANT_BSD
-startupdir	= $(DESTDIR)/usr/local/etc/rc.d
+startupdir	= /usr/local/etc/rc.d
 startup_SCRIPTS	= core-daemon
 
 core-daemon: core-daemon-rc.d
@@ -34,18 +34,18 @@ core-daemon: core-daemon-rc.d
 else
 
 if WANT_INITD
-startupdir	= $(DESTDIR)/etc/init.d
+startupdir	= /etc/init.d
 startup_SCRIPTS	= core-daemon
 
 core-daemon: core-daemon-init.d
 	cp $< $@
 endif
 if WANT_SYSTEMD
-startupdir	= $(DESTDIR)/etc/systemd/system
+startupdir	= /etc/systemd/system
 startup_SCRIPTS	= core-daemon.service
 endif
 if WANT_SUSE
-startupdir	= $(DESTDIR)/etc/init.d
+startupdir	= /etc/init.d
 startup_SCRIPTS	= core-daemon
 
 core-daemon: core-daemon-init.d-SUSE
