@@ -7,19 +7,32 @@
 # Makefile for building corens3 components.
 #
 
+SETUPPY		= setup.py
+SETUPPYFLAGS	= -v
+
+EXAMPLE_FILES	=				\
+	examples/ns3lte.py			\
+	examples/ns3wifi.py			\
+	examples/ns3wifirandomwalk.py		\
+	examples/ns3wimax.py
+
+coreexampledir		= $(datadir)/core/examples
+dist_coreexample_DATA	= $(EXAMPLE_FILES)
+
 # Python package build
 noinst_SCRIPTS = build
 build:
-	$(PYTHON) setup.py build
+	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) build
 
 # Python package install
 install-exec-hook:
-	CORE_CONF_DIR=${DESTDIR}/${CORE_CONF_DIR} $(PYTHON) setup.py install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
+	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
 
 # Python package uninstall
 uninstall-hook:
 	rm -f ${pythondir}/corens3_python-${COREDPY_VERSION}-py${PYTHON_VERSION}.egg-info
 	rm -rf ${pythondir}/corens3
+	rmdir -p $(coreexampledir) || true
 
 # Python package cleanup
 clean-local:
@@ -27,7 +40,7 @@ clean-local:
 
 # Python RPM package
 rpm:
-	$(PYTHON) setup.py bdist_rpm
+	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) bdist_rpm
 
 # because we include entire directories with EXTRA_DIST, we need to clean up
 # the source control files
@@ -37,4 +50,4 @@ dist-hook:
 DISTCLEANFILES	= Makefile.in *.pyc corens3/*.pyc MANIFEST
 
 # files to include with distribution tarball
-EXTRA_DIST	= LICENSE setup.py corens3 examples
+EXTRA_DIST	= LICENSE $(SETUPPY) corens3
