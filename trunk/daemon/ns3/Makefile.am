@@ -17,7 +17,7 @@ EXAMPLE_FILES	=				\
 	examples/ns3wimax.py
 
 coreexampledir		= $(datadir)/core/examples/corens3
-dist_coreexample_DATA	= $(EXAMPLE_FILES)
+dist_coreexample_SCRIPTS= $(EXAMPLE_FILES)
 
 # Python package build
 noinst_SCRIPTS = build

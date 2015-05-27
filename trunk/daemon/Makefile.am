@@ -37,7 +37,7 @@ EXAMPLE_FILES		=			\
 	examples/stopsession.py
 
 coreexdir		= $(datadir)/core/examples
-dist_coreex_DATA	= $(EXAMPLE_FILES)
+dist_coreex_SCRIPTS	= $(EXAMPLE_FILES)
 
 EXAMPLE_MYSERVICES_FILES =			\
 	examples/myservices/README.txt		\
@@ -62,7 +62,7 @@ EXAMPLE_NETNS_FILES	=				\
 	examples/netns/wlantest.py
 
 coreexnetnsdir		= $(coreexdir)/netns
-dist_coreexnetns_DATA	= $(EXAMPLE_NETNS_FILES)
+dist_coreexnetns_SCRIPTS= $(EXAMPLE_NETNS_FILES)
 
 EXAMPLE_SERVICES_FILES	=			\
 	examples/services/sampleFirewall	\
