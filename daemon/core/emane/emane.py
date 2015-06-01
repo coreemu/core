@@ -123,21 +123,21 @@ class Emane(ConfigurableManager):
             group, port = self.emane_config.valueof('eventservicegroup', values).split(':')
             eventdev = self.emane_config.valueof('eventservicedevice', values)
             eventnetidx = self.session.getctrlnetidx(eventdev)
-            if eventnetidx < 0:
-                msg = "Invalid Event Service device provided: %s" % eventdev
-                self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
-                               "Emane.initeventservice()", None, msg)
-                self.info(msg)
-                return False
+            if self.version > self.EMANE091:
+                if eventnetidx < 0:
+                    msg = "Invalid Event Service device provided: %s" % eventdev
+                    self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                                           "Emane.initeventservice()", None, msg)
+                    self.info(msg)
+                    return False
             
-            # Make sure the event control network is in place
-            eventnet = self.session.addremovectrlnet(netidx=eventnetidx,
-                                                     remove=False,
-                                                     conf_reqd=False)
-
-            if self.version > self.EMANE091 and eventnet is not None:
-                # direct EMANE events towards control net bridge
-                eventdev = eventnet.brname
+               # Make sure the event control network is in place
+                eventnet = self.session.addremovectrlnet(netidx=eventnetidx,
+                                                         remove=False,
+                                                         conf_reqd=False)
+                if eventnet is not None:
+                    # direct EMANE events towards control net bridge
+                    eventdev = eventnet.brname
             eventchannel = (group, int(port), eventdev) 
 
 
@@ -870,21 +870,11 @@ class Emane(ConfigurableManager):
                                                       values).split(':')
         otadev = self.emane_config.valueof('otamanagerdevice', values)
         otanetidx = self.session.getctrlnetidx(otadev)
-        if otanetidx < 0:
-            errmsg = "Invalid OTA device provided: %s" % otadev
-            self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
-                                   None, errmsg)
-            self.info(errmsg)
 
         eventgroup, eventport = self.emane_config.valueof('eventservicegroup',
                                                       values).split(':')
         eventdev = self.emane_config.valueof('eventservicedevice', values)
         eventservicenetidx = self.session.getctrlnetidx(eventdev)
-        if eventservicenetidx < 0:
-            errmsg = "Invalid Event Service device provided: %s" % eventservicenetidx
-            self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
-                                   None, errmsg)
-            self.info(errmsg)
 
         run_emane_on_host = False
         for node in self.getnodes():
@@ -896,17 +886,22 @@ class Emane(ConfigurableManager):
             n = node.objid
             
             # control network not yet started here
-            self.info("adding ota device ctrl%d" % otanetidx)
-            self.session.addremovectrlif(node, otanetidx, remove=False, conf_reqd=False)
+            self.session.addremovectrlif(node, 0, remove=False, conf_reqd=False)
+
+            if otanetidx > 0:
+                self.info("adding ota device ctrl%d" % otanetidx)
+                self.session.addremovectrlif(node, otanetidx, remove=False, conf_reqd=False)
             
-            self.info("adding event service device ctrl%d" % eventservicenetidx)
-            self.session.addremovectrlif(node, eventservicenetidx, remove=False, conf_reqd=False)
+            if eventservicenetidx >= 0:
+                self.info("adding event service device ctrl%d" % eventservicenetidx)
+                self.session.addremovectrlif(node, eventservicenetidx, remove=False, conf_reqd=False)
             
-            # multicast route is needed for OTA data on ctrl0
+            # multicast route is needed for OTA data 
             cmd = [IP_BIN, "route", "add", otagroup, "dev", otadev]
             #rc = node.cmd(cmd, wait=True)
             node.cmd(cmd, wait=True)
-            if eventgroup != otagroup:
+            # multicast route is also needed for event data if on control network
+            if eventservicenetidx >= 0 and eventgroup != otagroup:
                 cmd = [IP_BIN, "route", "add", eventgroup, "dev", eventdev]
                 node.cmd(cmd, wait=True)
 
