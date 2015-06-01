@@ -12,6 +12,7 @@ share the same MAC+PHY model.
 '''
 
 import sys
+import os.path
 
 from core.api import coreapi
 from core.coreobj import PyCoreNet
@@ -183,8 +184,12 @@ class EmaneNode(EmaneNet):
                 flowcontrol = True
 
         if "virtual" in type.lower():
-            trans.appendChild(emane.xmlparam(transdoc, "devicepath",
-                              "/dev/net/tun"))
+            if os.path.exists("/dev/net/tun_flowctl"):
+                trans.appendChild(emane.xmlparam(transdoc, "devicepath",
+                                  "/dev/net/tun_flowctl"))
+            else:
+                trans.appendChild(emane.xmlparam(transdoc, "devicepath",
+                                  "/dev/net/tun"))
             if flowcontrol:
                 trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable",
                                                  "on"))
