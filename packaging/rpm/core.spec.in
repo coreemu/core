@@ -1,5 +1,6 @@
 %define version @PACKAGE_VERSION@
 %define lib_version @GENERIC_RELEASE@
+%define python_version %(%{__python} -c "import sys; print '%s.%s' % (sys.version_info[0], sys.version_info[1])")%{nil}
 
 %if 0%{?fedora} >= 17
 %define with_kernel_modules_extra 1
@@ -82,7 +83,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 
 %preun
 #if [ "$1" = 0 ]; then
-    #find %{_libdir}/python@PYTHON_VERSION@/site-packages/core -name '*.pyc' -exec rm -f '{}' ';' 2> /dev/null
+    #find %{_libdir}/python%{python_version}/site-packages/core -name '*.pyc' -exec rm -f '{}' ';' 2> /dev/null
 #fi
 
 %postun
@@ -300,7 +301,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %doc  %{_mandir}/man1/vcmd.1.gz
 %doc  %{_mandir}/man1/vnoded.1.gz
 /etc/systemd/system/core-daemon.service
-%{python_sitearch}/core_python_netns-1.0-py@PYTHON_VERSION@.egg-info
+%{python_sitearch}/core_python_netns-1.0-py%{python_version}.egg-info
 %{python_sitearch}/netns.so
 %{python_sitearch}/vcmd.so
 %{python_sitelib}/core/addons/__init__.py*
@@ -352,11 +353,11 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{python_sitelib}/corens3/constants.py*
 %{python_sitelib}/corens3/__init__.py*
 %{python_sitelib}/corens3/obj.py*
-%{python_sitelib}/corens3_python-@COREDPY_VERSION@-py@PYTHON_VERSION@.egg-info
+%{python_sitelib}/corens3_python-@COREDPY_VERSION@-py%{python_version}.egg-info
 %{python_sitelib}/core/phys/__init__.py*
 %{python_sitelib}/core/phys/pnodes.py*
 %{python_sitelib}/core/pycore.py*
-%{python_sitelib}/core_python-@COREDPY_VERSION@-py@PYTHON_VERSION@.egg-info
+%{python_sitelib}/core_python-@COREDPY_VERSION@-py%{python_version}.egg-info
 %{python_sitelib}/core/sdt.py*
 %{python_sitelib}/core/service.py*
 %{python_sitelib}/core/services/bird.py*
