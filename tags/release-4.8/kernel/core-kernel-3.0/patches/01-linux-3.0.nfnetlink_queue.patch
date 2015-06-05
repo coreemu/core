@@ -1,0 +1,516 @@
+From dd504f32d24e9f239d429204c43a5c500c9853c6 Mon Sep 17 00:00:00 2001
+From: Tom Goff <thomas.goff@boeing.com>
+Date: Tue, 3 Jan 2012 15:52:32 -0800
+Subject: [PATCH 2/2] netfilter: nfnetlink_queue: Add netns support.
+
+Make nfnetlink_queue network namespace aware including a per-netns
+/proc/net/netfilter/nfnetlink_queue file.
+
+Signed-off-by: Tom Goff <thomas.goff@boeing.com>
+---
+ include/net/net_namespace.h      |    6 ++
+ include/net/netfilter/nf_queue.h |    3 +-
+ include/net/netns/nfqnl.h        |   14 ++++
+ net/ipv4/netfilter/ip_queue.c    |    6 ++-
+ net/ipv6/netfilter/ip6_queue.c   |    6 ++-
+ net/netfilter/nf_queue.c         |   12 +++-
+ net/netfilter/nfnetlink_queue.c  |  138 +++++++++++++++++++-------------------
+ 7 files changed, 112 insertions(+), 73 deletions(-)
+ create mode 100644 include/net/netns/nfqnl.h
+
+diff --git a/include/net/net_namespace.h b/include/net/net_namespace.h
+index cf126ef..4b6f04a 100644
+--- a/include/net/net_namespace.h
++++ b/include/net/net_namespace.h
+@@ -21,6 +21,9 @@
+ #include <net/netns/conntrack.h>
+ #endif
+ #include <net/netns/xfrm.h>
++#if defined(CONFIG_NETFILTER_NETLINK_QUEUE) || defined(CONFIG_NETFILTER_NETLINK_QUEUE_MODULE)
++#include <net/netns/nfqnl.h>
++#endif
+ 
+ struct proc_dir_entry;
+ struct net_device;
+@@ -93,6 +96,9 @@ struct net {
+ #endif
+ 	struct sock		*nfnl;
+ 	struct sock		*nfnl_stash;
++#if defined(CONFIG_NETFILTER_NETLINK_QUEUE) || defined(CONFIG_NETFILTER_NETLINK_QUEUE_MODULE)
++	struct netns_nfqnl	nfqnl;
++#endif
+ #endif
+ #ifdef CONFIG_WEXT_CORE
+ 	struct sk_buff_head	wext_nlevents;
+diff --git a/include/net/netfilter/nf_queue.h b/include/net/netfilter/nf_queue.h
+index 252fd10..3e5bde8 100644
+--- a/include/net/netfilter/nf_queue.h
++++ b/include/net/netfilter/nf_queue.h
+@@ -19,7 +19,8 @@ struct nf_queue_entry {
+ 
+ /* Packet queuing */
+ struct nf_queue_handler {
+-	int			(*outfn)(struct nf_queue_entry *entry,
++	int			(*outfn)(struct net *net,
++					 struct nf_queue_entry *entry,
+ 					 unsigned int queuenum);
+ 	char			*name;
+ };
+diff --git a/include/net/netns/nfqnl.h b/include/net/netns/nfqnl.h
+new file mode 100644
+index 0000000..0fe7fbe
+--- /dev/null
++++ b/include/net/netns/nfqnl.h
+@@ -0,0 +1,14 @@
++#ifndef __NETNS_NFQNL_H
++#define __NETNS_NFQNL_H
++
++#include <linux/spinlock.h>
++#include <linux/list.h>
++
++#define NFQNL_INSTANCE_BUCKETS	16
++
++struct netns_nfqnl {
++	spinlock_t		instances_lock;
++	struct hlist_head	instance_table[NFQNL_INSTANCE_BUCKETS];
++};
++
++#endif	/* __NETNS_NFQNL_H */
+diff --git a/net/ipv4/netfilter/ip_queue.c b/net/ipv4/netfilter/ip_queue.c
+index e59aabd..f3c43e5 100644
+--- a/net/ipv4/netfilter/ip_queue.c
++++ b/net/ipv4/netfilter/ip_queue.c
+@@ -225,7 +225,8 @@ nlmsg_failure:
+ }
+ 
+ static int
+-ipq_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
++ipq_enqueue_packet(struct net *net, struct nf_queue_entry *entry,
++		   unsigned int queuenum)
+ {
+ 	int status = -EINVAL;
+ 	struct sk_buff *nskb;
+@@ -239,6 +240,9 @@ ipq_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
+ 
+ 	spin_lock_bh(&queue_lock);
+ 
++	if (!net_eq(net, &init_net))
++		goto err_out_free_nskb;
++
+ 	if (!peer_pid)
+ 		goto err_out_free_nskb;
+ 
+diff --git a/net/ipv6/netfilter/ip6_queue.c b/net/ipv6/netfilter/ip6_queue.c
+index e63c397..322c511 100644
+--- a/net/ipv6/netfilter/ip6_queue.c
++++ b/net/ipv6/netfilter/ip6_queue.c
+@@ -225,7 +225,8 @@ nlmsg_failure:
+ }
+ 
+ static int
+-ipq_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
++ipq_enqueue_packet(struct net *net, struct nf_queue_entry *entry,
++		   unsigned int queuenum)
+ {
+ 	int status = -EINVAL;
+ 	struct sk_buff *nskb;
+@@ -239,6 +240,9 @@ ipq_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
+ 
+ 	spin_lock_bh(&queue_lock);
+ 
++	if (!net_eq(net, &init_net))
++		goto err_out_free_nskb;
++
+ 	if (!peer_pid)
+ 		goto err_out_free_nskb;
+ 
+diff --git a/net/netfilter/nf_queue.c b/net/netfilter/nf_queue.c
+index ecb84a3..9490bd5 100644
+--- a/net/netfilter/nf_queue.c
++++ b/net/netfilter/nf_queue.c
+@@ -133,6 +133,16 @@ static int __nf_queue(struct sk_buff *skb,
+ #endif
+ 	const struct nf_afinfo *afinfo;
+ 	const struct nf_queue_handler *qh;
++	struct net *net;
++
++	if (indev)
++		net = dev_net(indev);
++	else if (skb->sk)
++		net = sock_net(skb->sk);
++	else if (outdev)
++		net = dev_net(outdev);
++	else
++		return status;
+ 
+ 	/* QUEUE == DROP if no one is waiting, to be safe. */
+ 	rcu_read_lock();
+@@ -185,7 +195,7 @@ static int __nf_queue(struct sk_buff *skb,
+ #endif
+ 	skb_dst_force(skb);
+ 	afinfo->saveroute(skb, entry);
+-	status = qh->outfn(entry, queuenum);
++	status = qh->outfn(net, entry, queuenum);
+ 
+ 	rcu_read_unlock();
+ 
+diff --git a/net/netfilter/nfnetlink_queue.c b/net/netfilter/nfnetlink_queue.c
+index b615da5..48ea6f4 100644
+--- a/net/netfilter/nfnetlink_queue.c
++++ b/net/netfilter/nfnetlink_queue.c
+@@ -64,24 +64,19 @@ struct nfqnl_instance {
+ 
+ typedef int (*nfqnl_cmpfn)(struct nf_queue_entry *, unsigned long);
+ 
+-static DEFINE_SPINLOCK(instances_lock);
+-
+-#define INSTANCE_BUCKETS	16
+-static struct hlist_head instance_table[INSTANCE_BUCKETS] __read_mostly;
+-
+ static inline u_int8_t instance_hashfn(u_int16_t queue_num)
+ {
+-	return ((queue_num >> 8) | queue_num) % INSTANCE_BUCKETS;
++	return ((queue_num >> 8) | queue_num) % NFQNL_INSTANCE_BUCKETS;
+ }
+ 
+ static struct nfqnl_instance *
+-instance_lookup(u_int16_t queue_num)
++instance_lookup(struct net *net, u_int16_t queue_num)
+ {
+ 	struct hlist_head *head;
+ 	struct hlist_node *pos;
+ 	struct nfqnl_instance *inst;
+ 
+-	head = &instance_table[instance_hashfn(queue_num)];
++	head = &net->nfqnl.instance_table[instance_hashfn(queue_num)];
+ 	hlist_for_each_entry_rcu(inst, pos, head, hlist) {
+ 		if (inst->queue_num == queue_num)
+ 			return inst;
+@@ -90,14 +85,14 @@ instance_lookup(u_int16_t queue_num)
+ }
+ 
+ static struct nfqnl_instance *
+-instance_create(u_int16_t queue_num, int pid)
++instance_create(struct net *net, u_int16_t queue_num, int pid)
+ {
+ 	struct nfqnl_instance *inst;
+ 	unsigned int h;
+ 	int err;
+ 
+-	spin_lock(&instances_lock);
+-	if (instance_lookup(queue_num)) {
++	spin_lock(&net->nfqnl.instances_lock);
++	if (instance_lookup(net, queue_num)) {
+ 		err = -EEXIST;
+ 		goto out_unlock;
+ 	}
+@@ -122,16 +117,16 @@ instance_create(u_int16_t queue_num, int pid)
+ 	}
+ 
+ 	h = instance_hashfn(queue_num);
+-	hlist_add_head_rcu(&inst->hlist, &instance_table[h]);
++	hlist_add_head_rcu(&inst->hlist, &net->nfqnl.instance_table[h]);
+ 
+-	spin_unlock(&instances_lock);
++	spin_unlock(&net->nfqnl.instances_lock);
+ 
+ 	return inst;
+ 
+ out_free:
+ 	kfree(inst);
+ out_unlock:
+-	spin_unlock(&instances_lock);
++	spin_unlock(&net->nfqnl.instances_lock);
+ 	return ERR_PTR(err);
+ }
+ 
+@@ -157,11 +152,11 @@ __instance_destroy(struct nfqnl_instance *inst)
+ }
+ 
+ static void
+-instance_destroy(struct nfqnl_instance *inst)
++instance_destroy(struct net *net, struct nfqnl_instance *inst)
+ {
+-	spin_lock(&instances_lock);
++	spin_lock(&net->nfqnl.instances_lock);
+ 	__instance_destroy(inst);
+-	spin_unlock(&instances_lock);
++	spin_unlock(&net->nfqnl.instances_lock);
+ }
+ 
+ static inline void
+@@ -390,7 +385,8 @@ nla_put_failure:
+ }
+ 
+ static int
+-nfqnl_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
++nfqnl_enqueue_packet(struct net *net, struct nf_queue_entry *entry,
++		     unsigned int queuenum)
+ {
+ 	struct sk_buff *nskb;
+ 	struct nfqnl_instance *queue;
+@@ -398,7 +394,7 @@ nfqnl_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
+ 	__be32 *packet_id_ptr;
+ 
+ 	/* rcu_read_lock()ed by nf_hook_slow() */
+-	queue = instance_lookup(queuenum);
++	queue = instance_lookup(net, queuenum);
+ 	if (!queue) {
+ 		err = -ESRCH;
+ 		goto err_out;
+@@ -432,7 +428,7 @@ nfqnl_enqueue_packet(struct nf_queue_entry *entry, unsigned int queuenum)
+ 	*packet_id_ptr = htonl(entry->id);
+ 
+ 	/* nfnetlink_unicast will either free the nskb or add it to a socket */
+-	err = nfnetlink_unicast(nskb, &init_net, queue->peer_pid, MSG_DONTWAIT);
++	err = nfnetlink_unicast(nskb, net, queue->peer_pid, MSG_DONTWAIT);
+ 	if (err < 0) {
+ 		queue->queue_user_dropped++;
+ 		goto err_out_unlock;
+@@ -541,16 +537,16 @@ dev_cmp(struct nf_queue_entry *entry, unsigned long ifindex)
+ /* drop all packets with either indev or outdev == ifindex from all queue
+  * instances */
+ static void
+-nfqnl_dev_drop(int ifindex)
++nfqnl_dev_drop(struct net *net, int ifindex)
+ {
+ 	int i;
+ 
+ 	rcu_read_lock();
+ 
+-	for (i = 0; i < INSTANCE_BUCKETS; i++) {
++	for (i = 0; i < NFQNL_INSTANCE_BUCKETS; i++) {
+ 		struct hlist_node *tmp;
+ 		struct nfqnl_instance *inst;
+-		struct hlist_head *head = &instance_table[i];
++		struct hlist_head *head = &net->nfqnl.instance_table[i];
+ 
+ 		hlist_for_each_entry_rcu(inst, tmp, head, hlist)
+ 			nfqnl_flush(inst, dev_cmp, ifindex);
+@@ -567,12 +563,9 @@ nfqnl_rcv_dev_event(struct notifier_block *this,
+ {
+ 	struct net_device *dev = ptr;
+ 
+-	if (!net_eq(dev_net(dev), &init_net))
+-		return NOTIFY_DONE;
+-
+ 	/* Drop any packets associated with the downed device */
+ 	if (event == NETDEV_DOWN)
+-		nfqnl_dev_drop(dev->ifindex);
++		nfqnl_dev_drop(dev_net(dev), dev->ifindex);
+ 	return NOTIFY_DONE;
+ }
+ 
+@@ -590,19 +583,19 @@ nfqnl_rcv_nl_event(struct notifier_block *this,
+ 		int i;
+ 
+ 		/* destroy all instances for this pid */
+-		spin_lock(&instances_lock);
+-		for (i = 0; i < INSTANCE_BUCKETS; i++) {
++		spin_lock(&n->net->nfqnl.instances_lock);
++		for (i = 0; i < NFQNL_INSTANCE_BUCKETS; i++) {
+ 			struct hlist_node *tmp, *t2;
+ 			struct nfqnl_instance *inst;
+-			struct hlist_head *head = &instance_table[i];
++			struct hlist_head *head =
++				&n->net->nfqnl.instance_table[i];
+ 
+ 			hlist_for_each_entry_safe(inst, tmp, t2, head, hlist) {
+-				if ((n->net == &init_net) &&
+-				    (n->pid == inst->peer_pid))
++				if (n->pid == inst->peer_pid)
+ 					__instance_destroy(inst);
+ 			}
+ 		}
+-		spin_unlock(&instances_lock);
++		spin_unlock(&n->net->nfqnl.instances_lock);
+ 	}
+ 	return NOTIFY_DONE;
+ }
+@@ -715,9 +710,10 @@ nfqnl_recv_verdict(struct sock *ctnl, struct sk_buff *skb,
+ 	unsigned int verdict;
+ 	struct nf_queue_entry *entry;
+ 	int err;
++	struct net *net = sock_net(ctnl);
+ 
+ 	rcu_read_lock();
+-	queue = instance_lookup(queue_num);
++	queue = instance_lookup(net, queue_num);
+ 	if (!queue) {
+ 		err = -ENODEV;
+ 		goto err_out_unlock;
+@@ -774,6 +770,7 @@ nfqnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
+ 	struct nfqnl_instance *queue;
+ 	struct nfqnl_msg_config_cmd *cmd = NULL;
+ 	int ret = 0;
++	struct net *net = sock_net(ctnl);
+ 
+ 	if (nfqa[NFQA_CFG_CMD]) {
+ 		cmd = nla_data(nfqa[NFQA_CFG_CMD]);
+@@ -790,7 +787,7 @@ nfqnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
+ 	}
+ 
+ 	rcu_read_lock();
+-	queue = instance_lookup(queue_num);
++	queue = instance_lookup(net, queue_num);
+ 	if (queue && queue->peer_pid != NETLINK_CB(skb).pid) {
+ 		ret = -EPERM;
+ 		goto err_out_unlock;
+@@ -803,7 +800,8 @@ nfqnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
+ 				ret = -EBUSY;
+ 				goto err_out_unlock;
+ 			}
+-			queue = instance_create(queue_num, NETLINK_CB(skb).pid);
++			queue = instance_create(net, queue_num,
++						NETLINK_CB(skb).pid);
+ 			if (IS_ERR(queue)) {
+ 				ret = PTR_ERR(queue);
+ 				goto err_out_unlock;
+@@ -814,7 +812,7 @@ nfqnl_recv_config(struct sock *ctnl, struct sk_buff *skb,
+ 				ret = -ENODEV;
+ 				goto err_out_unlock;
+ 			}
+-			instance_destroy(queue);
++			instance_destroy(net, queue);
+ 			break;
+ 		case NFQNL_CFG_CMD_PF_BIND:
+ 		case NFQNL_CFG_CMD_PF_UNBIND:
+@@ -878,65 +876,64 @@ static const struct nfnetlink_subsystem nfqnl_subsys = {
+ 
+ #ifdef CONFIG_PROC_FS
+ struct iter_state {
++	struct seq_net_private p;
+ 	unsigned int bucket;
+ };
+ 
+-static struct hlist_node *get_first(struct seq_file *seq)
++static struct hlist_node *get_first(struct net *net, struct iter_state *st)
+ {
+-	struct iter_state *st = seq->private;
+-
+ 	if (!st)
+ 		return NULL;
+ 
+-	for (st->bucket = 0; st->bucket < INSTANCE_BUCKETS; st->bucket++) {
+-		if (!hlist_empty(&instance_table[st->bucket]))
+-			return instance_table[st->bucket].first;
++	for (st->bucket = 0; st->bucket < NFQNL_INSTANCE_BUCKETS; st->bucket++) {
++		if (!hlist_empty(&net->nfqnl.instance_table[st->bucket]))
++			return net->nfqnl.instance_table[st->bucket].first;
+ 	}
+ 	return NULL;
+ }
+ 
+-static struct hlist_node *get_next(struct seq_file *seq, struct hlist_node *h)
++static struct hlist_node *get_next(struct net *net, struct iter_state *st,
++				   struct hlist_node *h)
+ {
+-	struct iter_state *st = seq->private;
+-
+ 	h = h->next;
+ 	while (!h) {
+-		if (++st->bucket >= INSTANCE_BUCKETS)
++		if (++st->bucket >= NFQNL_INSTANCE_BUCKETS)
+ 			return NULL;
+ 
+-		h = instance_table[st->bucket].first;
++		h = net->nfqnl.instance_table[st->bucket].first;
+ 	}
+ 	return h;
+ }
+ 
+-static struct hlist_node *get_idx(struct seq_file *seq, loff_t pos)
++static struct hlist_node *get_idx(struct net *net, struct iter_state *st,
++				  loff_t pos)
+ {
+ 	struct hlist_node *head;
+-	head = get_first(seq);
++	head = get_first(net, st);
+ 
+ 	if (head)
+-		while (pos && (head = get_next(seq, head)))
++		while (pos && (head = get_next(net, st, head)))
+ 			pos--;
+ 	return pos ? NULL : head;
+ }
+ 
+ static void *seq_start(struct seq_file *seq, loff_t *pos)
+-	__acquires(instances_lock)
+ {
+-	spin_lock(&instances_lock);
+-	return get_idx(seq, *pos);
++	struct net *net = seq_file_net(seq);
++	spin_lock(&net->nfqnl.instances_lock);
++	return get_idx(net, seq->private, *pos);
+ }
+ 
+ static void *seq_next(struct seq_file *s, void *v, loff_t *pos)
+ {
+ 	(*pos)++;
+-	return get_next(s, v);
++	return get_next(seq_file_net(s), s->private, v);
+ }
+ 
+ static void seq_stop(struct seq_file *s, void *v)
+-	__releases(instances_lock)
+ {
+-	spin_unlock(&instances_lock);
++	struct net *net = seq_file_net(s);
++	spin_unlock(&net->nfqnl.instances_lock);
+ }
+ 
+ static int seq_show(struct seq_file *s, void *v)
+@@ -960,8 +957,8 @@ static const struct seq_operations nfqnl_seq_ops = {
+ 
+ static int nfqnl_open(struct inode *inode, struct file *file)
+ {
+-	return seq_open_private(file, &nfqnl_seq_ops,
+-			sizeof(struct iter_state));
++	return seq_open_net(inode, file, &nfqnl_seq_ops,
++			    sizeof(struct iter_state));
+ }
+ 
+ static const struct file_operations nfqnl_file_ops = {
+@@ -969,13 +966,19 @@ static const struct file_operations nfqnl_file_ops = {
+ 	.open	 = nfqnl_open,
+ 	.read	 = seq_read,
+ 	.llseek	 = seq_lseek,
+-	.release = seq_release_private,
++	.release = seq_release_net,
+ };
+ 
+ #endif /* PROC_FS */
+ 
+ static int __net_init nfnetlink_queue_net_init(struct net *net)
+ {
++	int i;
++
++	spin_lock_init(&net->nfqnl.instances_lock);
++	for (i = 0; i < NFQNL_INSTANCE_BUCKETS; i++)
++		INIT_HLIST_HEAD(&net->nfqnl.instance_table[i]);
++
+ #ifdef CONFIG_PROC_FS
+ 	if (!proc_create("nfnetlink_queue", 0440,
+ 			 net->proc_net_netfilter, &nfqnl_file_ops))
+@@ -999,7 +1002,7 @@ static struct pernet_operations nfnetlink_queue_net_ops = {
+ 
+ static int __init nfnetlink_queue_init(void)
+ {
+-	int i, status;
++	int status;
+ 
+ 	status = register_pernet_subsys(&nfnetlink_queue_net_ops);
+ 	if (status) {
+@@ -1008,9 +1011,6 @@ static int __init nfnetlink_queue_init(void)
+ 		return status;
+ 	}
+ 
+-	for (i = 0; i < INSTANCE_BUCKETS; i++)
+-		INIT_HLIST_HEAD(&instance_table[i]);
+-
+ 	netlink_register_notifier(&nfqnl_rtnl_notifier);
+ 	status = nfnetlink_subsys_register(&nfqnl_subsys);
+ 	if (status < 0) {
+-- 
+1.7.5.4
+

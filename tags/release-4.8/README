@@ -1,0 +1,61 @@
+
+CORE: Common Open Research Emulator
+Copyright (c)2005-2013 the Boeing Company.
+See the LICENSE file included in this distribution.
+
+== ABOUT =======================================================================
+CORE is a tool for emulating networks using a GUI or Python scripts. The CORE
+project site (1) is a good source of introductory information, with a manual,
+screenshots, and demos about this software. Also a supplemental
+Google Code page (2) hosts a wiki, blog, bug tracker, and quickstart guide.
+
+  1. http://www.nrl.navy.mil/itd/ncs/products/core
+  2. http://code.google.com/p/coreemu/
+
+
+== BUILDING CORE ===============================================================
+
+To build this software you should use:
+
+  ./bootstrap.sh
+  ./configure
+  make
+  sudo make install
+
+Here is what is installed with 'make install':
+
+  /usr/local/bin/core-gui
+  /usr/local/sbin/core-daemon
+  /usr/local/sbin/[vcmd, vnoded, coresendmsg, core-cleanup.sh]
+  /usr/local/lib/core/*
+  /usr/local/share/core/*
+  /usr/local/lib/python2.6/dist-packages/core/*
+  /usr/local/lib/python2.6/dist-packages/[netns,vcmd].so
+  /etc/core/*
+  /etc/init.d/core
+
+See the manual for the software required for building CORE.
+
+
+== RUNNING CORE ================================================================
+
+First start the CORE services:
+
+  sudo /etc/init.d/core-daemon start
+
+This automatically runs the core-daemon program. 
+Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
+
+  core-gui
+
+This launches the CORE GUI. You do not need to run the GUI as root.
+
+== SUPPORT =====================================================================
+
+If you have questions, comments, or trouble, please use the CORE mailing lists:
+- core-users for general comments and questions
+    http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users
+- core-dev for bugs, compile errors, and other development issues
+    http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev
+
+

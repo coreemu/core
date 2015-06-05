@@ -1,0 +1,12 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=CORE Network Emulator
+GenericName=CORE Network Emulator
+Comment=Intuitive net emulator that interacts with real networks
+Icon=core-gui.xpm
+Exec=core-gui
+Terminal=false
+StartupNotify=false
+Categories=System;Emulator
+Keywords=net;network;emulator;TCP/IP;IPv4;IPv6;routing;router

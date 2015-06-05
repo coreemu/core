@@ -1,0 +1,176 @@
+#!/bin/sh
+#
+# Copyright 2005-2013 the Boeing Company.
+# See the LICENSE file included in this distribution.
+#
+
+#
+# Copyright 2004-2008 University of Zagreb, Croatia.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY AUTHOR AND CONTRIBUTORS ``AS IS'' AND
+# ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED.  IN NO EVENT SHALL AUTHOR OR CONTRIBUTORS BE LIABLE
+# FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+# DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS
+# OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+# HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT
+# LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY
+# OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF
+# SUCH DAMAGE.
+#
+# This work was supported in part by Croatian Ministry of Science
+# and Technology through the research contract #IP-2003-143.
+#
+case $1 in 
+-h | --help) 
+    echo ""
+    echo "Usage: `basename $0` [-h|-v] [-b|-c <sessionid>] [-s] [-a address] [-p port]"
+    echo "                [<configfile.imn>]"
+    echo ""
+    echo "Launches the CORE Tcl/Tk X11 GUI or starts an imn-based emulation."
+    echo ""
+    echo "  -(-h)elp     show help message and exit"
+    echo "  -(-v)ersion  show version number and exit"
+    echo "  -(-b)atch    batch mode (no X11 GUI)"
+    echo -n "  -(-c)losebatch <sessionid>  stop and clean up a batch mode "
+    echo "session <sessionid>"
+    echo "  -(-s)tart    start in execute mode, not edit mode"
+    echo "  -(-a)ddress  connect to the specified IP address (default 127.0.0.1)"
+    echo "  -(-p)port    connect to the specified TCP port (default 4038)"
+    echo "  <configfile.imn>  (optional) load the specified imn scenario file"
+    echo ""
+    echo "With no parameters, starts the GUI in edit mode with a blank canvas."
+    echo ""
+    exit 0
+    ;; 
+-v | --version) 
+    exec echo "`basename $0` version @CORE_VERSION@ (@CORE_VERSION_DATE@)"
+    exit 0
+    ;; 
+esac
+
+SHELL=/bin/sh
+export SHELL
+
+export LIBDIR="@CORE_LIB_DIR@"
+export SBINDIR="@SBINDIR@"
+# eval is used here to expand "~" to user's home dir
+if [ x$CONFDIR = x ]; then export CONFDIR=`eval "echo @CORE_GUI_CONF_DIR@"` ; fi
+export CORE_STATE_DIR="@CORE_STATE_DIR@"
+export CORE_DATA_DIR="@CORE_DATA_DIR@"
+export CORE_USER=`id -u -n`
+export CORE_START_DIR=$PWD
+
+init_conf_dir() {
+    echo "Setting up user config area $CONFDIR, $CONFDIR/configs, and "
+    echo " $CONFDIR/myservices"
+    mkdir -p $CONFDIR
+    if [ $? != 0 ]; then echo "error making directory $CONFDIR!"; fi
+    mkdir -p $CONFDIR/configs
+    if [ $? != 0 ]; then
+	echo "error making directory $CONFDIR/configs!";
+    else
+	cp -a $CORE_DATA_DIR/examples/configs/* $CONFDIR/configs/
+    fi
+    mkdir -p $CONFDIR/myservices
+    if [ $? != 0 ]; then
+	echo "error making directory $CONFDIR/myservices!";
+    else
+	cp -a $CORE_DATA_DIR/examples/myservices/* $CONFDIR/myservices/
+    fi
+}
+
+cd $LIBDIR
+
+core=$LIBDIR/core.tcl
+
+# locate wish8.5 binaries
+WISHLIST="/usr/bin/wish8.6 /usr/local/bin/wish8.5 /usr/bin/wish8.5"
+for wishbin in $WISHLIST
+do
+    if [ -x $wishbin ]
+    then
+	WISH=$wishbin;
+	break;
+    fi;
+done;
+
+if [ a$WISH = a ]
+then
+    echo "CORE could not locate the Tcl/Tk binary (wish8.5)."
+    exit 1;
+fi;
+
+# create /home/user/.core directory if necessary
+if [ ! -e $CONFDIR ]
+then
+    init_conf_dir
+fi;
+
+# check for and fix write permissions on /home/user/.core directory
+while [ ! -w $CONFDIR ];
+do
+    echo "  CORE requires write permissions to the '$CONFDIR'"
+    echo "  configuration directory for the user '$CORE_USER',"
+    echo "  would you like to fix this now [Y/n]?"
+    read yn
+    if [ "z$yn" = "zn" ]; then
+	break
+    fi
+    echo -n "  (sudo may prompt you for a password; if you do not have sudo set"
+    echo " up for the"
+    echo "  user '$CORE_USER', su to root and run this command:"
+    echo "     chown -R $CORE_USER $CONFDIR )"
+    sudo chown -R $U $CONFDIR
+    sudo chmod -R u+w $CONFDIR
+done
+
+# GUI config directory should not be a file (old prefs)
+if [ ! -d $CONFDIR ]
+then
+
+    mv $CONFDIR $CONFDIR.tmp
+    if [ $? != 0 ]; then echo "error moving $CONFDIR!"; exit 1; fi
+    init_conf_dir
+    echo "Old preferences file $CONFDIR has been moved to $CONFDIR/prefs.conf"
+    mv $CONFDIR.tmp $CONFDIR/prefs.conf
+    if [ $? != 0 ]; then echo "error moving $CONFDIR.tmp to $CONFDIR/prefs.conf!"; exit 1; fi
+fi;
+
+case $1 in 
+-b | --batch)
+    TCLBIN=`echo ${WISH} | sed s/wish/tclsh/g` 
+    exec ${TCLBIN} $core "$@" 
+    ;; 
+-c | --closebatch)
+    TCLBIN=`echo ${WISH} | sed s/wish/tclsh/g` 
+    exec ${TCLBIN} $core "$@" 
+    ;; 
+-s)
+    shift
+    exec ${WISH} $core -- "--start" "$@"
+    ;;
+-a)
+    shift
+    exec ${WISH} $core -- "--address" "$@"
+    ;;
+-p)
+    shift
+    exec ${WISH} $core -- "--port" "$@"
+    ;;
+*)
+    exec ${WISH} $core -- $@
+    ;; 
+esac 
+
+cd $CORE_START_DIR

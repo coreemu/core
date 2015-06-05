@@ -1,0 +1,253 @@
+#!/usr/bin/env python
+#
+# CORE
+# Copyright (c)2014 the Boeing Company.
+# See the LICENSE file included in this distribution.
+#
+# author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
+#
+'''
+core-manage: Helper tool to add, remove, or check for services, models, and
+node types in a CORE installation.
+'''
+
+import os
+import sys
+import ast
+import optparse
+import re
+
+from core import pycore
+from core.constants import CORE_CONF_DIR
+
+class FileUpdater(object):
+    ''' Helper class for changing configuration files.
+    '''
+    actions = ("add", "remove", "check")
+    targets = ("service", "model", "nodetype")
+
+    def __init__(self, action, target, data, options):
+        '''
+        '''
+        self.action = action
+        self.target = target
+        self.data = data
+        self.options = options
+        self.verbose = options.verbose
+        self.search, self.filename = self.get_filename(target)
+
+    def process(self):
+        ''' Invoke update_file() using a helper method depending on target.
+        '''
+        if self.verbose:
+            txt = "Updating"
+            if self.action == "check":
+                txt = "Checking"
+            sys.stdout.write("%s file: '%s'\n" % (txt, self.filename))
+
+        if self.target == "service":
+            r = self.update_file(fn=self.update_services)
+        elif self.target == "model":
+            r = self.update_file(fn=self.update_emane_models)
+        elif self.target == "nodetype":
+            r = self.update_nodes_conf()
+
+        if self.verbose:
+            txt = ""
+            if not r:
+                txt = "NOT "
+            if self.action == "check":
+                sys.stdout.write("String %sfound.\n" % txt)
+            else:
+                sys.stdout.write("File %supdated.\n" % txt)
+
+        return r
+
+    def update_services(self, line):
+        ''' Modify the __init__.py file having this format:
+        __all__ = ["quagga", "nrl", "xorp", "bird", ]
+        Returns True or False when "check" is the action, a modified line
+        otherwise.
+        '''
+        line = line.strip('\n')
+        key, valstr = line.split('= ')
+        vals = ast.literal_eval(valstr)
+        r = self.update_keyvals(key, vals)
+        if self.action == "check":
+            return r
+        valstr = '%s' % r
+        return '= '.join([key, valstr]) + '\n'
+
+
+    def update_emane_models(self, line):
+        ''' Modify the core.conf file having this format:
+        emane_models = RfPipe, Ieee80211abg, CommEffect, Bypass
+        Returns True or False when "check" is the action, a modified line
+        otherwise.
+        '''
+        line = line.strip('\n')
+        key, valstr = line.split('= ')
+        vals = valstr.split(', ')
+        r = self.update_keyvals(key, vals)
+        if self.action == "check":
+            return r
+        valstr = ', '.join(r)
+        return '= '.join([key, valstr]) + '\n'
+
+    def update_keyvals(self, key, vals):
+        '''  Perform self.action on (key, vals).
+        Returns True or False when "check" is the action, a modified line
+        otherwise.
+        '''
+        if self.action == "check":
+            if self.data in vals:
+                return True
+            else:
+                return False
+        elif self.action == "add":
+            if self.data not in vals:
+                vals.append(self.data)
+        elif self.action == "remove":
+            try:
+                vals.remove(self.data)
+            except ValueError:
+                pass
+        return vals
+
+    def get_filename(self, target):
+        ''' Return search string and filename based on target.
+        '''
+        if target == "service":
+            pypath = os.path.dirname(pycore.__file__)
+            filename = os.path.join(pypath, "services", "__init__.py")
+            search = "__all__ ="
+        elif target == "model":
+            filename = os.path.join(CORE_CONF_DIR, "core.conf")
+            search = "emane_models ="
+        elif target == "nodetype":
+            if self.options.userpath is None:
+                raise ValueError, "missing user path"
+            filename = os.path.join(self.options.userpath, "nodes.conf")
+            search = self.data
+        else:
+            raise ValueError, "unknown target"
+        if not os.path.exists(filename):
+            raise ValueError, "file '%s' does not exist" % filename
+        return search, filename
+
+    def update_file(self, fn=None):
+        ''' Open a file and search for self.search, invoking the supplied
+        function on the matching line. Write file changes if necessary.
+        Returns True if the file has changed (or action is "check" and the
+        search string is found), False otherwise.
+        '''
+        changed = False
+        output = "" # this accumulates output, assumes input is small
+        with open(self.filename, "r") as f:
+            for line in f:
+                if line[:len(self.search)] == self.search:
+                    r = fn(line) # line may be modified by fn() here
+                    if self.action == "check":
+                        return r
+                    else:
+                        if line != r:
+                            changed = True
+                        line = r
+                output += line
+        if changed:
+            with open(self.filename, "w") as f:
+                f.write(output)
+                
+        return changed
+
+    def update_nodes_conf(self):
+        ''' Add/remove/check entries from nodes.conf. This file
+        contains a Tcl-formatted array of node types. The array index must be
+        properly set for new entries. Uses self.{action, filename, search,
+        data} variables as input and returns the same value as update_file().
+        '''
+        changed = False
+        output = "" # this accumulates output, assumes input is small
+        with open(self.filename, "r") as f:
+            for line in f:
+                # make sure data is not added twice
+                if line.find(self.search) >= 0:
+                    if self.action == "check":
+                        return True
+                    elif self.action == "add":
+                        return False
+                    elif self.action == "remove":
+                        changed = True
+                        continue
+                else:
+                    output += line
+        if self.action == "add":
+            index = int(re.match('^\d+', line).group(0))
+            output += str(index + 1) + ' ' + self.data + '\n'
+            changed = True
+        if changed:
+            with open(self.filename, "w") as f:
+                f.write(output)
+                
+        return changed
+
+
+def main():
+    usagestr = "usage: %prog [-h] [options] <action> <target> <string>\n"
+    usagestr += "\nHelper tool to add, remove, or check for "
+    usagestr += "services, models, and node types\nin a CORE installation.\n"
+    usagestr += "\nExamples:\n  %prog add service newrouting"
+    usagestr += "\n  %prog -v check model RfPipe"
+    usagestr += "\n  %prog --userpath=\"$HOME/.core\" add nodetype \"{ftp ftp.gif ftp.gif {DefaultRoute FTP} netns {FTP server} }\" \n"
+    usagestr += "\nArguments:\n  <action> should be one of: %s" % \
+                ', '.join(FileUpdater.actions)
+    usagestr += "\n  <target> should be one of: %s" % \
+                ', '.join(FileUpdater.targets)
+    usagestr += "\n  <string> is the text to %s" % \
+                ', '.join(FileUpdater.actions)
+    parser = optparse.OptionParser(usage = usagestr)
+    parser.set_defaults(userpath = None, verbose = False,)
+
+    parser.add_option("--userpath", dest = "userpath", type = "string",
+                      help = "use the specified user path (e.g. \"$HOME/.core" \
+                             "\") to access nodes.conf")
+    parser.add_option("-v", "--verbose", dest = "verbose", action="store_true",
+                      help = "be verbose when performing action")
+
+    def usage(msg = None, err = 0):
+        sys.stdout.write("\n")
+        if msg:
+            sys.stdout.write(msg + "\n\n")
+        parser.print_help()
+        sys.exit(err)
+
+    (options, args) = parser.parse_args()
+
+    if len(args) != 3:
+        usage("Missing required arguments!", 1)
+
+    action = args[0]
+    if action not in FileUpdater.actions:
+        usage("invalid action '%s'" % action, 1)
+
+    target = args[1]
+    if target not in FileUpdater.targets:
+        usage("invalid target '%s'" % target, 1)
+
+    if target == "nodetype" and not options.userpath:
+        usage("user path option required for this target (%s)" % target)
+
+    data = args[2]
+
+    try:
+        up = FileUpdater(action, target, data, options)
+        r = up.process()
+    except Exception, e:
+        sys.stderr.write("Exception: %s\n" % e)
+        sys.exit(1)
+    if not r:
+        sys.exit(1)
+    sys.exit(0)
+
+if __name__ == "__main__":
+    main()
