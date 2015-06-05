@@ -11,7 +11,7 @@ Name:		core
 Summary:	Common Open Research Emulator for use with network namespaces
 License:	BSD
 Prefix:		/usr
-Release:	1
+Release:	1%{?dist}
 Source:		core-%{version}.tar.gz
 URL:		http://www.nrl.navy.mil/itd/ncs/products/core
 Version:	%{version}
@@ -22,11 +22,21 @@ building virtual networks using Linux network namespace containers and bridging.
 %package daemon
 Summary:	Common Open Research Emulator daemon back-end
 Group:		System Tools
-Requires:	bash bridge-utils ebtables iproute libev python net-tools procps-ng
+Requires:	bash bridge-utils ebtables iproute libev python net-tools
+%if 0%{?el6}
+Requires: procps
+%else
+Requires: procps-ng
+%endif
 %if %{with_kernel_modules_extra}
 Requires: kernel-modules-extra
 %endif
-BuildRequires:	make automake autoconf libev-devel python-devel bridge-utils ebtables iproute net-tools ImageMagick help2man procps-ng
+BuildRequires:	make automake autoconf libev-devel python-devel bridge-utils ebtables iproute net-tools ImageMagick help2man
+%if 0%{?el6}
+BuildRequires: procps
+%else
+BuildRequires: procps-ng
+%endif
 Provides:	core-daemon
 # python-sphinx
 %description daemon
