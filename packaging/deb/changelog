@@ -1,8 +1,8 @@
-core (4.8rc1-0ubuntu1) precise; urgency=low
+core (4.8-0ubuntu1) precise; urgency=low
 
   * Support for NRL Network Modeling Framework (NMF) XML representation, bugfixes
 
- --  CORE Developers <core-dev@pf.itd.nrl.navy.mil>  Thu, 21 May 2015 10:37:10 -0700
+ --  CORE Developers <core-dev@pf.itd.nrl.navy.mil>  Fri, 05 Jun 2015 00:00:00 -0700
 
 core (4.7-0ubuntu1) precise; urgency=low
 
