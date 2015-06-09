@@ -4,6 +4,7 @@ Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kerne
 
 = 4.8 =
 CORE 4.8 was released on 06/05/2015. The high level changes since version 4.7 are:
+
 *EMANE*
  * support for EMANE 0.9.2
  * run emane in each container when using EMANE 0.9.2
