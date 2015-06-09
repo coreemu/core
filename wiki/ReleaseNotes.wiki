@@ -2,6 +2,43 @@
 
 Refer to the NamespaceKernels and CustomKernels pages for info on good/bad kernels and supported networking features.
 
+= 4.8 =
+CORE 4.8 was released on 06/05/2015. The high level changes since version 4.7 are:
+*EMANE*
+ * support for EMANE 0.9.2
+ * run emane in each container when using EMANE 0.9.2
+ * support using separate control networks for EMANE OTA and event traffic
+*GUI*
+ * fixed an issue where the adjacency widget lines pointed to old node positions
+ * fixed an issue where not all EMANE 0.9.x IEEE 802.11 MAC parameter were configurable
+ * fixed an issue related to running python scripts from the GUI when using tcl/tk version 8.6
+ * improved batch mode execution to display the check emulation light status
+ * improved managing multiple sessions
+ * improved support for using multiple canvases
+ * added a reload option to the file menu to revert back to a saved scenario
+*DAEMON*
+ * support exporting scenarios in NRL Network Modeling Framework 1.0 XML format
+ * support importing scenarios in NRL Network Modeling Framework 1.0 XML format
+ * support exporting the deployed scenario state in NRL NMF XML 1.0 format
+ * improved EMANE post-startup processing to better synchronize distributed emulations
+ * improved how addresses are assigned to tun/tap devices
+ * added support for python state-change callbacks
+*SERVICES*
+ * added mgen sink and mgen actor services
+ * added oslrv2 and olsr.org services
+ * added a docker service
+*BUILD*
+ * improved the install/uninstall process
+ * improved debian and rpm packaging
+*BUGFIXES*
+ * updated the http service for ubuntu 14.04
+ * improved included examples
+ * shortened the length of network interface names
+ * improved how the core system service manages running the core daemon
+ * fixed an issues related to applying session configuration setting
+ * improved detecting when a distributed emulation is already running
+ * improved documentation
+
 = 4.7 =
 CORE 4.7 was released on 8/6/14 (svn r565). Packages are available for the following Linux distributions:
  * debs for Ubuntu 14.04 (trusty), 12.04 (precise)
