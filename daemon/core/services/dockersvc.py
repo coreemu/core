@@ -164,9 +164,12 @@ addservice(DockerService)
 # This auto-loads Docker images having a :core tag, adding them to the list
 # of services under the "Docker" group.
 if 'Client' in globals():
-    client = Client(version='1.10')
-    images = client.images()
-    del client
+    try:
+        client = Client(version='auto')
+        images = client.images()
+        del client
+    except:
+        images = []
 else:
     images = []
 for image in images:
