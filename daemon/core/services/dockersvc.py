@@ -99,6 +99,17 @@ Limitations:
 5. Only set up to use the standard aufs backend of docker
 6. The container is set to respawn when it stops. This overcomes some issues when starting.
    If it is wanted that the container should only run once the the script will have to be manually adjusted.
+7. Docker uses inotify and if you are launching many containers it may fail to start on some due to a limit.
+   You can check it using:
+
+    sysctl fs.inotify.max_user_instances
+
+   On Ubuntu it is 128 which as some are already taken means only just over 100 can be launched.
+   To change this use:
+
+    sudo sysctl -w fs.inotify.max_user_instances=600
+
+   This allowed running of 500 docker nodes without issue.
 
 '''
 
