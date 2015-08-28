@@ -1934,13 +1934,15 @@ proc get_router_id {node} {
         
         set sock [lindex [getEmulPlugin $node] 2]
         set exec_num [newExecCallbackRequest adjacencyrouterid]
-        set cmd "nrlConsole.py ${node}_olsr i"
+        set name [getNodeName $node]
+        set cmd "nrlConsole.py ${name}_olsr i"
         sendExecMessage $sock $node $cmd $exec_num 0x30
         return ""
     } elseif {[lsearch [getNodeServices $node true] "OLSRv2"] != -1 } {
         set sock [lindex [getEmulPlugin $node] 2]
         set exec_num [newExecCallbackRequest adjacencyrouterid]
-        set cmd "nrlConsole.py ${node}_olsrv2 i"
+        set name [getNodeName $node]
+        set cmd "nrlConsole.py ${name}_olsrv2 i"
         sendExecMessage $sock $node $cmd $exec_num 0x30
         return ""
     }
@@ -2047,7 +2049,8 @@ proc widget_adjacency_periodic { now } {
             # widget_adjacency_callback after the response has been received
             set sock [lindex [getEmulPlugin $node] 2]
             set exec_num [newExecCallbackRequest adjacency]
-            set cmd "nrlConsole.py ${node}_olsr n"
+            set name [getNodeName $node]
+            set cmd "nrlConsole.py ${name}_olsr n"
             sendExecMessage $sock $node $cmd $exec_num 0x30
         }
     } elseif { $proto == "OLSRv2_proto" } {
@@ -2062,7 +2065,8 @@ proc widget_adjacency_periodic { now } {
             # widget_adjacency_callback after the response has been received
             set sock [lindex [getEmulPlugin $node] 2]
             set exec_num [newExecCallbackRequest adjacency]
-            set cmd "nrlConsole.py ${node}_olsrv2 n"
+            set name [getNodeName $node]
+            set cmd "nrlConsole.py ${name}_olsrv2 n"
             sendExecMessage $sock $node $cmd $exec_num 0x30
         }
     } else {
