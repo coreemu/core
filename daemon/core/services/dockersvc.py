@@ -128,7 +128,7 @@ class DockerContainerService(CoreService):
     _group = "Docker"
     _depends = ("Docker",)
     _configs = ('dockercontainer.sh', 'dockercontainershutdown.sh')
-    _startindex = 60
+    _startindex = 160
     _startup = ('sh dockercontainer.sh',)
     _shutdown = ('sh dockercontainershutdown.sh', )
     # Container image to start
@@ -178,7 +178,7 @@ class DockerService(CoreService):
     _depends = ()
     _dirs = ('/run/shm', '/run/resolvconf', '/etc/default', '/var/run')
     _configs = ('docker.sh', 'dockershutdown.sh')
-    _startindex = 50
+    _startindex = 150
     _startup = ('sh docker.sh',)
     _shutdown = ('sh dockershutdown.sh', )
     _validate = ("pidof docker", )
