@@ -129,7 +129,7 @@ class DockerContainerService(CoreService):
     _depends = ("Docker",)
     _configs = ('dockercontainer.sh', 'dockercontainershutdown.sh')
     _startindex = 160
-    _startup = ('sh dockercontainer.sh',)
+    _startup = ('sh dockercontainer.sh &',)
     _shutdown = ('sh dockercontainershutdown.sh', )
     # Container image to start
     _image = ""
