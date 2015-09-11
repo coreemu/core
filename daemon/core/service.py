@@ -217,7 +217,6 @@ class CoreServices(ConfigurableManager):
         '''
         services = sorted(node.services,
                           key=lambda service: service._startindex)
-        script = '#!/bin/sh\n\n'
         for s in services:
             if len(str(s._starttime)) > 0:
                 try:
@@ -228,17 +227,15 @@ class CoreServices(ConfigurableManager):
                         continue
                 except ValueError:
                     pass
-            script += self.bootnodeservice(node, s, services)
-        filename = 'start-all-services.sh'
-        node.nodefile(filename,  script)
-        node.cmd(('/bin/sh', filename),  wait = False)
-
+            self.bootnodeservice(node, s, services)
+    
     def bootnodeservice(self, node, s, services):
         ''' Start a service on a node. Create private dirs, generate config
             files, and execute startup commands.
         '''
         if s._custom:
-            return self.bootnodecustomservice(node, s, services)
+            self.bootnodecustomservice(node, s, services)
+            return
         if node.verbose:
             node.info("starting service %s (%s)" % (s._name, s._startindex))
         for d in s._dirs:
@@ -250,10 +247,12 @@ class CoreServices(ConfigurableManager):
         for filename in s.getconfigfilenames(node.objid, services): 
             cfg = s.generateconfig(node,  filename, services)
             node.nodefile(filename,  cfg)
-        startup = '\n'.join(s.getstartup(node, services))
-        if startup:
-            startup += '\n'
-        return startup
+        for cmd in s.getstartup(node, services):
+            try:
+                # NOTE: this wait=False can be problematic!
+                node.cmd(shlex.split(cmd),  wait = False)
+            except Exception, e:
+                node.warn("error starting command %s: %s" % (cmd, e))
 
     def bootnodecustomservice(self, node, s, services):
         ''' Start a custom service on a node. Create private dirs, use supplied
@@ -284,11 +283,14 @@ class CoreServices(ConfigurableManager):
                     "error copying service file '%s': %s" % (filename, e))
                 continue
             node.nodefile(filename,  cfg)
-        startup = '\n'.join(s._startup)
-        if startup:
-            startup += '\n'
-        return startup
-
+            
+        for cmd in s._startup:
+            try:
+                # NOTE: this wait=False can be problematic!
+                node.cmd(shlex.split(cmd),  wait = False)
+            except Exception, e:
+                node.warn("error starting command %s: %s" % (cmd, e))
+                
     def copyservicefile(self, node, filename, cfg):
         ''' Given a configured service filename and config, determine if the
         config references an existing file that should be copied.
