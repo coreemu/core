@@ -312,7 +312,7 @@ class Session(object):
         if state not in self._hooks:
             self._hooks[state] = [hook,]
         else:
-            self._hooks[state] += hook
+            self._hooks[state].append(hook)
         # immediately run a hook if it is in the current state
         # (this allows hooks in the definition and configuration states)
         if self.getstate() == state:
