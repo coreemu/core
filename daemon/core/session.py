@@ -354,7 +354,7 @@ class Session(object):
     def runtime_state_hook(self, state):
         if state == coreapi.CORE_EVENT_RUNTIME_STATE:
             self.emane.poststartup()
-            xmlfilever = self.cfg['xmlfilever']
+            xmlfilever = self.getcfgitem('xmlfilever')
             if xmlfilever in ('1.0',):
                 xmlfilename = os.path.join(self.sessiondir,
                                            'session-deployed.xml')
