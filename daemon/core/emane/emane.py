@@ -347,7 +347,7 @@ class Emane(ConfigurableManager):
     def poststartup(self):
         ''' Retransmit location events now that all NEMs are active.
         '''
-        if self.doeventmonitor():
+        if not self.genlocationevents():
             return
         with self._objslock:
             for n in sorted(self._objs.keys()):
@@ -998,6 +998,16 @@ class Emane(ConfigurableManager):
         # this support must be explicitly turned on; by default, CORE will
         # generate the EMANE events when nodes are moved
         return self.session.getcfgitembool('emane_event_monitor', False)
+
+    def genlocationevents(self):
+        ''' Returns boolean whether or not EMANE events will be generated.
+        '''
+        # By default, CORE generates EMANE location events when nodes
+        # are moved; this can be explicitly disabled in core.conf
+        tmp = self.session.getcfgitembool('emane_event_generate')
+        if tmp is None:
+            tmp = not self.doeventmonitor()
+        return tmp
 
     def starteventmonitor(self):
         ''' Start monitoring EMANE location events if configured to do so.

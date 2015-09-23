@@ -207,7 +207,7 @@ class EmaneNode(EmaneNet):
             EMANE daemons have been started, because that is their only chance
             to bind to the TAPs.
         '''
-        if not self.session.emane.doeventmonitor() and \
+        if self.session.emane.genlocationevents() and \
             self.session.emane.service is None:
             warntxt = "unable to publish EMANE events because the eventservice "
             warntxt += "Python bindings failed to load"
@@ -218,8 +218,7 @@ class EmaneNode(EmaneNet):
             if do_netns and "virtual" in netif.transport_type.lower():
                 netif.install()
             netif.setaddrs()
-            # if we are listening for EMANE events, don't generate them
-            if self.session.emane.doeventmonitor():
+            if not self.session.emane.genlocationevents():
                 netif.poshook = None
                 continue
             # at this point we register location handlers for generating
