@@ -32,6 +32,7 @@ dist_coreconf_DATA	= $(CONF_FILES)
 
 EXAMPLE_FILES		=			\
 	examples/controlnet_updown		\
+	examples/emanemanifest2core.py		\
 	examples/emanemodel2core.py		\
 	examples/findcore.py			\
 	examples/stopsession.py
