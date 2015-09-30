@@ -18,7 +18,7 @@ except:
     pass
 from core.api import coreapi
 from core.constants import *
-from emane import EmaneModel
+from emane import Emane, EmaneModel
 
 try:
     import emaneeventservice
@@ -53,7 +53,7 @@ class EmaneCommEffectModel(EmaneModel):
         ("defaultconnectivitymode", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'On,Off', 'defaultconnectivity'),
     ]
-    if 'EventService' in globals():
+    if Emane.version >= Emane.EMANE091:
         _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
     else:
         _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_081

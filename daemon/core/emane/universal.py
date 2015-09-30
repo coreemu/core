@@ -18,7 +18,7 @@ except:
     pass
 from core.api import coreapi
 from core.constants import *
-from emane import EmaneModel
+from emane import Emane, EmaneModel
 
 class EmaneUniversalModel(EmaneModel):
     ''' This Univeral PHY model is meant to be imported by other models,
@@ -80,7 +80,7 @@ class EmaneUniversalModel(EmaneModel):
         ("propagationmodel", coreapi.CONF_DATA_TYPE_STRING, '2ray',
          'precomputed,2ray,freespace','path loss mode'),
     ]
-    if 'EventService' in globals():
+    if Emane.version >= Emane.EMANE091:
         _confmatrix = _confmatrix_base + _confmatrix_091
     else:
         _confmatrix = _confmatrix_base + _confmatrix_081

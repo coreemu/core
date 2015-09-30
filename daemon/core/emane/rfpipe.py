@@ -18,7 +18,7 @@ except:
     pass
 from core.api import coreapi
 from core.constants import *
-from emane import EmaneModel
+from emane import Emane, EmaneModel
 from universal import EmaneUniversalModel
 
 class EmaneRfPipeModel(EmaneModel):
@@ -27,7 +27,7 @@ class EmaneRfPipeModel(EmaneModel):
 
     # model name
     _name = "emane_rfpipe"
-    if 'EventService' in globals():
+    if Emane.version >= Emane.EMANE091:
         xml_path = '/usr/share/emane/xml/models/mac/rfpipe'
     else:
         xml_path = "/usr/share/emane/models/rfpipe/xml"
@@ -64,7 +64,7 @@ class EmaneRfPipeModel(EmaneModel):
         ("delay", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
          '', 'transmission delay (sec)'),
     ]
-    if 'EventService' in globals():
+    if Emane.version >= Emane.EMANE091:
         _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
     else:
         _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_081

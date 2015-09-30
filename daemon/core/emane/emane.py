@@ -1363,7 +1363,7 @@ class EmaneGlobalModel(EmaneModel):
          '', 'starting NEM ID'),
         ]
 
-    if 'EventService' in globals():
+    if Emane.version >= Emane.EMANE091:
         _confmatrix_platform = _confmatrix_platform_base + \
                                _confmatrix_platform_091
         if Emane.version >= Emane.EMANE092:
