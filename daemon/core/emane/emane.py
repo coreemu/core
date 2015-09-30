@@ -63,44 +63,18 @@ class Emane(ConfigurableManager):
                                                         8200)
         self.doeventloop = False
         self.eventmonthread = None
-        self.detectversion()
+        self.logversion()
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None, self.verbose)
         session.broker.handlers += (self.handledistributed, )
         self.loadmodels()
         self.service = None
 
-    def detectversion(self):
-        ''' Detects the installed EMANE version and sets self.version.
-        '''
-        self.version, self.versionstr = self.detectversionfromcmd()
+    def logversion(self):
+        'Log the installed EMANE version.'
         if self.verbose:
-            self.info("detected EMANE version: %s" % self.versionstr)
+            self.info("using EMANE version: %s" % self.versionstr)
 
-    @classmethod
-    def detectversionfromcmd(cls):
-        ''' Runs 'emane --version' locally to determine version number.
-        '''
-        # for further study: different EMANE versions on distributed machines
-        try:
-            # TODO: fix BUG here -- killall may kill this process too
-            status, result = cmdresult(['emane', '--version'])
-        except OSError:
-            status = -1
-            result = ""
-        v = cls.EMANEUNK
-        if status == 0:
-            if result[:5] == "0.7.4":
-                v = cls.EMANE074
-            elif result[:5] == "0.8.1":
-                v = cls.EMANE081
-            elif result[:5] == "0.9.1":
-                v = cls.EMANE091
-            elif result[:5] == "0.9.2":
-                v = cls.EMANE092
-        return v, result.strip()
-
-        
     def initeventservice(self, filename=None, shutdown=False):
         ''' (Re-)initialize the EMANE Event service.
             The multicast group and/or port may be configured.
@@ -266,8 +240,8 @@ class Emane(ConfigurableManager):
                     self.addobj(obj)
             if len(self._objs) == 0:
                 return Emane.NOT_NEEDED
-        if self.versionstr == "":
-            self.detectversion()
+        if self.version == self.EMANEUNK:
+            raise ValueError, 'EMANE version not properly detected'
         # control network bridge required for EMANE 0.9.2
         # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
@@ -1144,6 +1118,28 @@ class Emane(ConfigurableManager):
         self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
         return True
 
+def emane_version():
+    'Return the locally installed EMANE version identifier and string.'
+    cmd = ('emane', '--version')
+    try:
+        status, result = cmdresult(cmd)
+    except:
+        status = -1
+        result = ''
+    v = Emane.EMANEUNK
+    if status == 0:
+        if result.startswith('0.7.4'):
+            v = Emane.EMANE074
+        elif result.startswith('0.8.1'):
+            v = Emane.EMANE081
+        elif result.startswith('0.9.1'):
+            v = Emane.EMANE091
+        elif result.startswith('0.9.2'):
+            v = Emane.EMANE092
+    return v, result.strip()
+
+# set version variables for the Emane class
+Emane.version, Emane.versionstr = emane_version()
 
 class EmaneModel(WirelessModel):
     ''' EMANE models inherit from this parent class, which takes care of
@@ -1314,12 +1310,6 @@ class EmaneModel(WirelessModel):
             return None
         return addparamlisttoparent(dom, parent=None, name=name, values=values)
 
-# EMANE 0.9.2 detected upon module load to support class vars
-try:
-    HAVE092 = (Emane.detectversionfromcmd()[0] >= Emane.EMANE092)
-except Exception, e:
-    HAVE092 = False
-
 class EmaneGlobalModel(EmaneModel):
     ''' Global EMANE configuration options.
     '''
@@ -1329,7 +1319,7 @@ class EmaneGlobalModel(EmaneModel):
     # Over-The-Air channel required for EMANE 0.9.2
     _DEFAULT_OTA = '0'
     _DEFAULT_DEV = 'lo'
-    if HAVE092:
+    if Emane.version >= Emane.EMANE092:
         _DEFAULT_OTA = '1'
         _DEFAULT_DEV = 'ctrl0'
 
@@ -1376,7 +1366,7 @@ class EmaneGlobalModel(EmaneModel):
     if 'EventService' in globals():
         _confmatrix_platform = _confmatrix_platform_base + \
                                _confmatrix_platform_091
-        if HAVE092:
+        if Emane.version >= Emane.EMANE092:
             _confmatrix_nem = _confmatrix_nem_092
     else:
         _confmatrix_platform = _confmatrix_platform_base + \
