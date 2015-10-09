@@ -63,6 +63,12 @@ class EmaneRfPipeModel(EmaneModel):
          '', 'transmission jitter (sec)'),
         ("delay", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
          '', 'transmission delay (sec)'),
+        ('radiometricenable', coreapi.CONF_DATA_TYPE_BOOL, '0',
+         'On,Off', 'report radio metrics via R2RI'),
+        ('radiometricreportinterval', coreapi.CONF_DATA_TYPE_FLOAT, '1.0',
+         '', 'R2RI radio metric report interval (sec)'),
+        ('neighbormetricdeletetime', coreapi.CONF_DATA_TYPE_FLOAT, '60.0',
+         '', 'R2RI neighbor table inactivity time (sec)'),
     ]
     if Emane.version >= Emane.EMANE091:
         _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
