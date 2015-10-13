@@ -132,6 +132,10 @@ class CoreDeploymentWriter(object):
         assert isinstance(obj, nodes.PyCoreNode)
         el = self.add_host(parent, obj.name)
         device = self.find_device(self.root.baseEle, obj.name)
+        if device is None:
+            self.session.warn('corresponding XML device not found for %s' %
+                              (obj.name))
+            return
         self.add_mapping(device, 'testHost', el.getAttribute('id'))
         self.add_type(el, 'virtual')
         for netif in obj.netifs():
