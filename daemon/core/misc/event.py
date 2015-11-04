@@ -14,6 +14,45 @@ import heapq
 
 class EventLoop(object):
 
+    class Timer(threading.Thread):
+        '''\
+        Based on threading.Timer with additional support to tell if
+        the timer is currently running its callback.
+        '''
+
+        def __init__(self, interval, function, args=[], kwargs={}):
+            super(EventLoop.Timer, self).__init__()
+            self.interval = interval
+            self.function = function
+            self.args = args
+            self.kwargs = kwargs
+            self.finished = threading.Event()
+            self._running = False
+            self._running_lock = threading.Lock()
+
+        def is_running(self):
+            with self._running_lock:
+                running = self._running
+            return running
+
+        def _set_running(self, val):
+            with self._running_lock:
+                running = self._running
+                self._running = val
+            return running
+
+        def cancel(self):
+            """Stop the timer if it hasn't finished yet"""
+            self.finished.set()
+
+        def run(self):
+            self.finished.wait(self.interval)
+            if not self.finished.is_set():
+                self._set_running(True)
+                self.function(*self.args, **self.kwargs)
+                self._set_running(False)
+            self.finished.set()
+
     class Event(object):
         def __init__(self, eventnum, time, func, *args, **kwds):
             self.eventnum = eventnum
@@ -73,7 +112,7 @@ class EventLoop(object):
                 return
             delay = self.queue[0].time - time.time()
             assert self.timer is None
-            self.timer = threading.Timer(delay, self.__run_events)
+            self.timer = EventLoop.Timer(delay, self.__run_events)
             self.timer.daemon = True
             self.timer.start()
 
@@ -116,7 +155,7 @@ class EventLoop(object):
             heapq.heappush(self.queue, event)
             head = self.queue[0]
             if prevhead is not None and prevhead != head:
-                if self.timer is not None and not self.timer.is_alive():
+                if self.timer is not None and not self.timer.is_running():
                     self.timer.cancel()
                     self.timer = None
 
