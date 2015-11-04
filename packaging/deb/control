@@ -18,7 +18,7 @@ Description: Emulate virtual networks in a box.
 
 Package: core-gui
 Architecture: all
-Depends: bash (>=3.0), tcl (>= 8.5), tk (>= 8.5)
+Depends: bash (>=3.0), tcl (>= 8.5), tk (>= 8.5), xterm
 Recommends: libtk-img
 Description: Emulate virtual networks in a box.
  The Common Open Research Emulator provides Python modules for building virtual

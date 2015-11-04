@@ -47,7 +47,7 @@ networks using Linux network namespace containers and bridging.
 %package gui
 Summary:	Common Open Research Emulator GUI front-end
 Group:		System Tools
-Requires:	tcl tk
+Requires:	tcl tk xterm
 BuildArch:	noarch
 BuildRequires:  make automake autoconf
 Provides:	core-gui
