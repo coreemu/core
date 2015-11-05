@@ -13,6 +13,7 @@ that manages a CORE session.
 
 import os, sys, tempfile, shutil, shlex, atexit, gc, pwd
 import threading, time, random
+import traceback
 
 from core.api import coreapi
 if os.uname()[0] == "Linux":
@@ -331,8 +332,9 @@ class Session(object):
                 hook(state)
             except Exception, e:
                 self.warn("ERROR: exception occured when running %s state "
-                          "hook: %s: %s" % (coreapi.state_name(state),
-                                            hook, e))
+                          "hook: %s: %s\n%s" % (coreapi.state_name(state),
+                                                hook, e,
+                                                traceback.format_exc()))
 
     def add_state_hook(self, state, hook):
         try:
