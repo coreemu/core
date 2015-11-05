@@ -16,8 +16,8 @@ class EventLoop(object):
 
     class Timer(threading.Thread):
         '''\
-        Based on threading.Timer with additional support to tell if
-        the timer is currently running its callback.
+        Based on threading.Timer but cancel() returns if the timer was
+        already running.
         '''
 
         def __init__(self, interval, function, args=[], kwargs={}):
@@ -27,31 +27,25 @@ class EventLoop(object):
             self.args = args
             self.kwargs = kwargs
             self.finished = threading.Event()
-            self._running = False
-            self._running_lock = threading.Lock()
-
-        def is_running(self):
-            with self._running_lock:
-                running = self._running
-            return running
-
-        def _set_running(self, val):
-            with self._running_lock:
-                running = self._running
-                self._running = val
-            return running
+            self._running = threading.Lock()
 
         def cancel(self):
-            """Stop the timer if it hasn't finished yet"""
-            self.finished.set()
+            '''\
+            Stop the timer if it hasn't finished yet.  Return False if
+            the timer was already running.
+            '''
+            locked = self._running.acquire(False)
+            if locked:
+                self.finished.set()
+                self._running.release()
+            return locked
 
         def run(self):
             self.finished.wait(self.interval)
-            if not self.finished.is_set():
-                self._set_running(True)
-                self.function(*self.args, **self.kwargs)
-                self._set_running(False)
-            self.finished.set()
+            with self._running:
+                if not self.finished.is_set():
+                    self.function(*self.args, **self.kwargs)
+                self.finished.set()
 
     class Event(object):
         def __init__(self, eventnum, time, func, *args, **kwds):
@@ -155,10 +149,8 @@ class EventLoop(object):
             heapq.heappush(self.queue, event)
             head = self.queue[0]
             if prevhead is not None and prevhead != head:
-                if self.timer is not None and not self.timer.is_running():
-                    self.timer.cancel()
+                if self.timer is not None and self.timer.cancel():
                     self.timer = None
-
             if self.running and self.timer is None:
                 self.__schedule_event()
         return event
