@@ -7,7 +7,7 @@ fi
 
 git_revision()
 {
-    local ver describe commits branch sha dirty
+    local ver describe untagged commits branch sha dirty
 
     ver=$1
 
@@ -18,7 +18,7 @@ git_revision()
     fi
 
     if [ ! "$(git tag -l release-$ver)" ]; then
-        ver="unknown"
+        untagged=".untagged"
     else
         commits=$(git rev-list release-${ver}^..HEAD | wc -l)
         if [ $commits -eq 0 ]; then
@@ -35,7 +35,7 @@ git_revision()
         branch=".$(echo -n $branch | tr -sC '.[:alnum:]' '[.*]')"
     fi
 
-    if [ "$ver" = "unknown" -o "$commits" ]; then
+    if [ "$untagged" -o "$commits" ]; then
         sha=.g$(git log -1 --pretty="%h")
     fi
 
@@ -45,19 +45,19 @@ git_revision()
         dirty=""
     fi
 
-    echo ${ver}${commits}${branch}${sha}${dirty}
+    echo ${ver}${untagged}${commits}${branch}${sha}${dirty}
 }
 
 svn_revision()
 {
-    local ver tagrev commits rev dirty
+    local ver tagrev untagged commits rev dirty
 
     ver=$1
 
     tagrev=$(svn log -q ^/tags/release-$ver --limit 1 2> /dev/null | \
         awk '/^r/ {print $1}')
     if [ ! "$tagrev" ];then
-        ver="unknown"
+        untagged=".untagged"
     else
         commits=$(svn log -q -r $tagrev:HEAD | grep '^r' | wc -l)
         if [ $commits -eq 0 ]; then
@@ -67,7 +67,7 @@ svn_revision()
         fi
     fi
 
-    if [ "$ver" = "unknown" -o "$commits" ]; then
+    if [ "$untagged" -o "$commits" ]; then
         rev=.s$(svn info | awk '/^Revision:/ {print $2}')
     fi
 
@@ -75,7 +75,7 @@ svn_revision()
         dirty=".dirty"
     fi
 
-    echo ${ver}${commits}${rev}${dirty}
+    echo ${ver}${untagged}${commits}${rev}${dirty}
 }
 
 if test -d .git || git rev-parse --git-dir > /dev/null 2>&1; then
