@@ -15,7 +15,7 @@
 AC_INIT(core, m4_esyscmd_s([./revision.sh 4.8]), core-dev@pf.itd.nrl.navy.mil)
 VERSION=$PACKAGE_VERSION
 CORE_VERSION=$PACKAGE_VERSION
-CORE_VERSION_DATE=20150605
+CORE_VERSION_DATE=m4_esyscmd_s([./revision.sh -d])
 COREDPY_VERSION=$PACKAGE_VERSION
 
 #

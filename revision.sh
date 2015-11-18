@@ -1,9 +1,51 @@
 #!/bin/sh
 
-if [ $# -ne 1 ]; then
-    echo "usage: $(basename $0) <base version>" >&2
-    exit 1
-fi
+usage()
+{
+    echo "usage: $(basename $0) (-d | <base version>)" >&2
+    exit $1
+}
+
+func=revision
+while getopts dh f; do
+    case $f in
+        d)
+            func=date
+            ;;
+
+        h)
+            usage 0
+            ;;
+
+        *)
+            usage 1
+            ;;
+    esac
+done
+shift $(($OPTIND - 1))
+
+case $func in
+    revision)
+        if [ $# -ne 1 ]; then
+            usage 1
+        fi
+        ;;
+
+    date)
+        if [ $# -gt 0 ]; then
+            usage 1
+        fi
+        ;;
+
+    *)
+        usage 1
+        ;;
+esac
+
+_revision()
+{
+    echo $1
+}
 
 git_revision()
 {
@@ -78,10 +120,44 @@ svn_revision()
     echo ${ver}${untagged}${commits}${rev}${dirty}
 }
 
+_date()
+{
+    date '+%Y%m%d'
+}
+
+git_date()
+{
+    local date
+
+    if git diff --quiet; then
+        date=$(git log -1 --format='%ci' | \
+            awk '{gsub("-", "", $1); print $1}')
+    else
+        date=$(_date)
+    fi
+
+    echo $date
+}
+
+svn_date()
+{
+    local date
+
+    if ! (svn status -q | grep -q .); then
+        date=$(svn log -q --limit 1 | \
+            awk '/^r[0-9]+/ {gsub("-", "", $5); print $5}')
+    else
+        date=$(_date)
+    fi
+
+    echo $date
+}
+
+repo=""
 if test -d .git || git rev-parse --git-dir > /dev/null 2>&1; then
-    git_revision "$@"
+    repo=git
 elif test -d .svn || svn info > /dev/null 2>&1; then
-    svn_revision "$@"
-else
-    echo "$@"
+    repo=svn
 fi
+
+${repo}_${func} "$@"
