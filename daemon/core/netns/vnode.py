@@ -366,7 +366,8 @@ class LxcNode(SimpleLxcNode):
     def privatedir(self, path):
         if path[0] != "/":
             raise ValueError, "path not fully qualified: " + path
-        hostpath = os.path.join(self.nodedir, path[1:].replace("/", "."))
+        hostpath = os.path.join(self.nodedir,
+                                os.path.normpath(path).strip('/').replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:
