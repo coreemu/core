@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=forking
 PIDFile=/var/run/core-daemon.pid
-ExecStart=/usr/bin/python /usr/sbin/core-daemon -d
+ExecStart=@PYTHON@ @SBINDIR@/core-daemon -d
 
 [Install]
 WantedBy=multi-user.target

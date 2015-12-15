@@ -326,6 +326,7 @@ AC_CONFIG_FILES([Makefile
 		gui/Makefile
 		gui/icons/Makefile
 		scripts/Makefile
+		scripts/core-daemon.service
 		scripts/perf/Makefile
 		scripts/xen/Makefile
 		doc/Makefile

@@ -12,7 +12,7 @@ CLEANFILES	= core-daemon
 DISTCLEANFILES	= Makefile.in xen/Makefile xen/Makefile.in
 
 EXTRA_DIST	= core-daemon-init.d \
-		  core-daemon.service \
+		  core-daemon.service.in \
 		  core-daemon-rc.d \
 		  core-daemon-init.d-SUSE \
 		  xen
