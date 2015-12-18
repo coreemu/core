@@ -45,7 +45,8 @@ class Emane(ConfigurableManager):
     (SUCCESS, NOT_NEEDED, NOT_READY) = (0, 1, 2)
     EVENTCFGVAR = 'LIBEMANEEVENTSERVICECONFIG'
     # possible self.version values
-    (EMANEUNK, EMANE074, EMANE081, EMANE091, EMANE092) = (0, 7, 8, 91, 92)
+    (EMANEUNK, EMANE074, EMANE081, EMANE091, EMANE092, EMANE093) = \
+        (0, 7, 8, 91, 92, 93)
     DEFAULT_LOG_LEVEL = 3
 
     def __init__(self, session):
@@ -1136,6 +1137,8 @@ def emane_version():
             v = Emane.EMANE091
         elif result.startswith('0.9.2'):
             v = Emane.EMANE092
+        elif result.startswith('0.9.3'):
+            v = Emane.EMANE093
     return v, result.strip()
 
 # set version variables for the Emane class
