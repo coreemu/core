@@ -34,6 +34,13 @@ figures_dia	= $(figures:%=%.dia)
 # list of figure + jpg suffix
 figures_jpg	= $(figures:%=%.jpg)
 
+figures_png	=				\
+	controlnetwork.png			\
+	distributed-controlnetwork.png		\
+	distributed-emane-configuration.png	\
+	distributed-emane-network.png		\
+	single-pc-emane.png
+
 # icons from the GUI source
 icons		= select start router host pc mdr router_green \
 		  lanswitch hub wlan cel \
@@ -42,13 +49,13 @@ icons		= select start router host pc mdr router_green \
 # list of icons + .gif.jpg suffix
 icons_jpg	= $(icons:%=%.jpg)
 
-BUILT_SOURCES =	$(figures_dia) $(figures_jpg) $(icons_jpg)
+all-local: $(icons_jpg)
 
 clean-local:
 	rm -f $(icons_jpg)
 
-EXTRA_DIST = $(figures_dia) $(figures_jpg)
+EXTRA_DIST = $(figures_dia) $(figures_jpg) $(figures_png)
 
 # extra cruft to remove
-DISTCLEANFILES	= Makefile.in $(icons_jpg)
+DISTCLEANFILES	= Makefile.in
 

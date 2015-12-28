@@ -50,6 +50,7 @@ dist_coreexmyservices_DATA = $(EXAMPLE_MYSERVICES_FILES)
 
 EXAMPLE_NETNS_FILES	=				\
 	examples/netns/basicrange.py			\
+	examples/netns/daemonnodes.py			\
 	examples/netns/distributed.py			\
 	examples/netns/emane80211.py			\
 	examples/netns/howmanynodes.py			\
