@@ -49,7 +49,7 @@ icons		= select start router host pc mdr router_green \
 # list of icons + .gif.jpg suffix
 icons_jpg	= $(icons:%=%.jpg)
 
-all-local: $(icons_jpg)
+icons: $(icons_jpg)
 
 clean-local:
 	rm -f $(icons_jpg)

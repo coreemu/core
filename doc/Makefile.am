@@ -37,7 +37,7 @@ PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest figures-all
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest figures-icons
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -61,13 +61,13 @@ help:
 clean-local:
 	-rm -rf $(BUILDDIR) $(STATICDIR)
 
-html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest: figures-all $(BUILDDIR) $(STATICDIR)
+html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest: figures-icons $(BUILDDIR) $(STATICDIR)
 
 $(BUILDDIR) $(STATICDIR):
 	$(MKDIR_P) $@
 
-figures-all:
-	$(MAKE) -C figures all
+figures-icons:
+	cd figures && make icons
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
