@@ -17,12 +17,7 @@ rst_files = conf.py  constants.txt credits.rst  ctrlnet.rst devguide.rst  \
 	    emane.rst  index.rst  install.rst  intro.rst  machine.rst  \
 	    ns3.rst  performance.rst  scripting.rst usage.rst
 
-EXTRA_DIST = $(rst_files) _build _static _templates
-
-# clean up dirs included by EXTRA_DIST
-dist-hook:
-	rm -rf $(distdir)/_build/.svn $(distdir)/_static/.svn \
-		$(distdir)/_templates/.svn
+EXTRA_DIST = $(rst_files)
 
 
 ###### below this line was generated using sphinx-quickstart ######
@@ -35,13 +30,14 @@ SPHINXOPTS    =
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
+STATICDIR     = _static
 
 # Internal variables.
 PAPEROPT_a4     = -D latex_paper_size=a4
 PAPEROPT_letter = -D latex_paper_size=letter
 ALLSPHINXOPTS   = -d $(BUILDDIR)/doctrees $(PAPEROPT_$(PAPER)) $(SPHINXOPTS) .
 
-.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest
+.PHONY: help clean html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest figures-all
 
 help:
 	@echo "Please use \`make <target>' where <target> is one of"
@@ -62,8 +58,16 @@ help:
 	@echo "  linkcheck  to check all external links for integrity"
 	@echo "  doctest    to run all doctests embedded in the documentation (if enabled)"
 
-clean:
-	-rm -rf $(BUILDDIR)/*
+clean-local:
+	-rm -rf $(BUILDDIR) $(STATICDIR)
+
+html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf text man changes linkcheck doctest: figures-all $(BUILDDIR) $(STATICDIR)
+
+$(BUILDDIR) $(STATICDIR):
+	$(MKDIR_P) $@
+
+figures-all:
+	$(MAKE) -C figures all
 
 html:
 	$(SPHINXBUILD) -b html $(ALLSPHINXOPTS) $(BUILDDIR)/html
