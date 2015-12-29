@@ -1637,6 +1637,31 @@ signal.signal(signal.SIGTERM, sighandler)
 signal.signal(signal.SIGUSR1, sighandler)
 signal.signal(signal.SIGUSR2, sighandler)
 
+def logrotate(stdout, stderr, stdoutmode = 0644, stderrmode = 0644):
+    def reopen(fileno, filename, mode):
+        err = 0
+        fd = -1
+        try:
+            fd = os.open(filename,
+                         os.O_WRONLY | os.O_CREAT | os.O_APPEND, mode)
+            os.dup2(fd, fileno)
+        except OSError as e:
+            err = e.errno
+        finally:
+            if fd >= 0:
+                os.close(fd)
+            return err
+    if stdout:
+        err = reopen(1, stdout, stdoutmode)
+    if stderr:
+        if stderr == stdout and not err:
+            try:
+                os.dup2(1, 2)
+            except OSError as e:
+                pass
+        else:
+            reopen(2, stderr, stderrmode)
+
 def getMergedConfig(filename):
     ''' Return a configuration after merging config file and command-line
         arguments.
@@ -1750,6 +1775,9 @@ def main():
                   stdout = cfg['logfile'], stderr = cfg['logfile'],
                   pidfilename = cfg['pidfile'],
                   defaultmaxfd = DEFAULT_MAXFD)
+        signal.signal(signal.SIGUSR1, lambda signum, stackframe:
+                      logrotate(stdout = cfg['logfile'],
+                                stderr = cfg['logfile']))
 
     banner()
     if cfg['execfile']:
