@@ -258,6 +258,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/examples/corens3/ns3wifi.py*
 %{_datadir}/%{name}/examples/corens3/ns3wifirandomwalk.py*
 %{_datadir}/%{name}/examples/corens3/ns3wimax.py*
+%{_datadir}/%{name}/examples/emanemanifest2core.py*
 %{_datadir}/%{name}/examples/emanemodel2core.py*
 %{_datadir}/%{name}/examples/findcore.py*
 %dir %{_datadir}/%{name}/examples/hooks
@@ -275,6 +276,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{_datadir}/%{name}/examples/myservices/sample.py*
 %dir %{_datadir}/%{name}/examples/netns
 %{_datadir}/%{name}/examples/netns/basicrange.py*
+%{_datadir}/%{name}/examples/netns/daemonnodes.py*
 %{_datadir}/%{name}/examples/netns/distributed.py*
 %{_datadir}/%{name}/examples/netns/emane80211.py*
 %{_datadir}/%{name}/examples/netns/howmanynodes.py*
@@ -366,6 +368,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %{python_sitelib}/core/services/nrl.py*
 %{python_sitelib}/core/services/quagga.py*
 %{python_sitelib}/core/services/security.py*
+%{python_sitelib}/core/services/startup.py*
 %{python_sitelib}/core/services/ucarp.py*
 %{python_sitelib}/core/services/utility.py*
 %{python_sitelib}/core/services/xorp.py*
