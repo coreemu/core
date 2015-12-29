@@ -302,6 +302,7 @@ sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 %doc  %{_mandir}/man1/netns.1.gz
 %doc  %{_mandir}/man1/vcmd.1.gz
 %doc  %{_mandir}/man1/vnoded.1.gz
+/etc/logrotate.d/core-daemon
 /etc/systemd/system/core-daemon.service
 %{python_sitearch}/core_python_netns-1.0-py%{python_version}.egg-info
 %{python_sitearch}/netns.so

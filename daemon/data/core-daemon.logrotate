@@ -1,0 +1,13 @@
+/var/log/core-daemon.log {
+    rotate 7
+    daily
+    missingok
+    notifempty
+    compress
+    sharedscripts
+    postrotate
+        if [ -r /var/run/core-daemon.pid ]; then
+            kill -USR1 $(cat /var/run/core-daemon.pid) > /dev/null 2>&1
+        fi
+    endscript
+}

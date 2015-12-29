@@ -20,3 +20,4 @@
 # ATpythondirAT is expanding to ${prefix}/lib/python2.7/dist-packages
 /usr/lib/python2.7/dist-packages
 /etc/init.d
+/etc/logrotate.d

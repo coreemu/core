@@ -75,6 +75,9 @@ EXAMPLE_SERVICES_FILES	=			\
 coreexservicesdir	= $(coreexdir)/services
 dist_coreexservices_DATA= $(EXAMPLE_SERVICES_FILES)
 
+LOGROTATE_DIR		= $(sysconfdir)/logrotate.d
+LOGROTATE_FILE		= data/core-daemon.logrotate
+
 # Python package build
 noinst_SCRIPTS = build
 build:
@@ -83,6 +86,14 @@ build:
 # Python package install
 install-exec-hook:
 	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
+
+install-data-local:
+	$(MKDIR_P) $(DESTDIR)$(LOGROTATE_DIR)
+	$(INSTALL_DATA) $(LOGROTATE_FILE) \
+	    $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
+
+uninstall-local:
+	rm -f $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
 
 # Python package uninstall
 uninstall-hook:
@@ -94,6 +105,7 @@ uninstall-hook:
 	rmdir -p $(coreexmyservicesdir) || true
 	rmdir -p $(coreexdir) || true
 	rmdir -p $(coreconfdir) || true
+	rmdir -p $(LOGROTATE_DIR) || true
 
 # Python package cleanup
 clean-local:
@@ -112,4 +124,4 @@ DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST doc/Makefile.in doc/Makefile \
 		  doc/conf.py core/addons/*.pyc
 
 # files to include with distribution tarball
-EXTRA_DIST	= $(SETUPPY) MANIFEST.in CORE.e4p core doc
+EXTRA_DIST	= $(SETUPPY) MANIFEST.in CORE.e4p core doc $(LOGROTATE_FILE)
