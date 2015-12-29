@@ -65,7 +65,7 @@ virtual network topologies.
 # not using --disable-gui/--disable-daemon, because RPM expects both to be
 # installed by this build process
 # assume Fedora, using systemd startup script
-CFLAGS="-fno-strict-aliasing $CFLAGS" %configure --with-startup=systemd
+CFLAGS="-fno-strict-aliasing $RPM_OPT_FLAGS" %configure --with-startup=systemd
 make -j4
 
 %install
