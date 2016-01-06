@@ -96,7 +96,7 @@ svn_revision()
     local ver versuffix tagrev untagged commits rev dirty
 
     ver=$1
-    versuffix=$1
+    versuffix=$2
 
     tagrev=$(svn log -q ^/tags/release-$ver --limit 1 2> /dev/null | \
         awk '/^r/ {print $1}')
