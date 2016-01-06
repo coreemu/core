@@ -56,8 +56,8 @@ class Zebra(CoreService):
     def generateVtyshConf(cls, node, services):
         ''' Returns configuration file text.
         '''
-        return "service integrated-vtysh-config"
-            
+        return "service integrated-vtysh-config\n"
+
     @classmethod
     def generateQuaggaConf(cls, node, services):
         ''' Returns configuration file text. Other services that depend on zebra
