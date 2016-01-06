@@ -2,7 +2,7 @@
 
 usage()
 {
-    echo "usage: $(basename $0) (-d | <base version>)" >&2
+    echo "usage: $(basename $0) (-d | <base version> [<version suffix>])" >&2
     exit $1
 }
 
@@ -26,7 +26,7 @@ shift $(($OPTIND - 1))
 
 case $func in
     revision)
-        if [ $# -ne 1 ]; then
+        if [ $# -lt 1 -o $# -gt 2 ]; then
             usage 1
         fi
         ;;
@@ -44,14 +44,15 @@ esac
 
 _revision()
 {
-    echo $1
+    echo $1$2
 }
 
 git_revision()
 {
-    local ver describe untagged commits branch sha dirty
+    local ver versuffix describe untagged commits branch sha dirty
 
     ver=$1
+    versuffix=$2
 
     describe=$(git describe --tags --dirty  2> /dev/null)
     if [ "$describe" ]; then
@@ -87,14 +88,15 @@ git_revision()
         dirty=""
     fi
 
-    echo ${ver}${untagged}${commits}${branch}${sha}${dirty}
+    echo ${ver}${versuffix}${untagged}${commits}${branch}${sha}${dirty}
 }
 
 svn_revision()
 {
-    local ver tagrev untagged commits rev dirty
+    local ver versuffix tagrev untagged commits rev dirty
 
     ver=$1
+    versuffix=$1
 
     tagrev=$(svn log -q ^/tags/release-$ver --limit 1 2> /dev/null | \
         awk '/^r/ {print $1}')
@@ -117,7 +119,7 @@ svn_revision()
         dirty=".dirty"
     fi
 
-    echo ${ver}${untagged}${commits}${rev}${dirty}
+    echo ${ver}${versuffix}${untagged}${commits}${rev}${dirty}
 }
 
 _date()
