@@ -44,7 +44,11 @@ esac
 
 _revision()
 {
-    echo $1$2
+    if [ -r .version ]; then
+        cat .version
+    else
+        echo $1$2
+    fi
 }
 
 git_revision()
@@ -124,7 +128,11 @@ svn_revision()
 
 _date()
 {
-    date '+%Y%m%d'
+    if [ -r .version.date ]; then
+        cat .version.date
+    else
+        date '+%Y%m%d'
+    fi
 }
 
 git_date()

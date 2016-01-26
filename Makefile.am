@@ -25,6 +25,7 @@ ACLOCAL_AMFLAGS 	= -I config
 # extra files to include with distribution tarball
 EXTRA_DIST		= bootstrap.sh LICENSE README-Xen Changelog kernel \
 			  python-prefix.py revision.sh \
+			  .version .version.date \
 			  packaging/bsd \
 			  packaging/deb/compat \
 			  packaging/deb/copyright \
@@ -70,3 +71,9 @@ core-restart:
 	daemon/sbin/core-cleanup
 	rm -f /var/log/core-daemon.log
 	/etc/init.d/core-daemon start
+
+.version:
+	echo $(CORE_VERSION) > $@
+
+.version.date:
+	echo $(CORE_VERSION_DATE) > $@

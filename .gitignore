@@ -1,4 +1,6 @@
 .deps
+.version
+.version.date
 Makefile
 Makefile.in
 aclocal.m4
