@@ -23,7 +23,7 @@ def enum(**enums):
     return type('Enum', (), enums)
 
 class Attrib(object):
-    ''' scenario plan attribute constants
+    ''' NMF scenario plan attribute constants
     '''
     NetType = enum(WIRELESS = 'wireless', ETHERNET = 'ethernet',
                    PTP_WIRED = 'point-to-point-wired',
@@ -33,8 +33,11 @@ class Attrib(object):
                     NETWORK = "network")
     DevType = enum(HOST = 'host', ROUTER = 'router', SWITCH = 'switch',
                    HUB = 'hub')
+    ''' Node types in CORE
+    '''
     NodeType = enum(ROUTER = 'router', HOST = 'host', MDR = 'mdr',
-                    PC = 'PC', RJ45 = 'rj45')
+                    PC = 'PC', RJ45 = 'rj45', SWITCH = 'lanswitch', 
+                    HUB = 'hub')
     Alias = enum(ID = "COREID")
 
 ''' A link endpoint in CORE
@@ -570,15 +573,14 @@ class DeviceElement(NamedXmlElement):
             elif devObj.type == Attrib.NodeType.RJ45:
                 devType = Attrib.DevType.HOST
                 nodeId = "EMULATOR-HOST"
+            elif devObj.type == Attrib.NodeType.HUB:
+                devType = Attrib.DevType.HUB
+            elif devObj.type == Attrib.NodeType.SWITCH:
+                devType = Attrib.DevType.SWITCH
             else:
                 # Default custom types (defined in ~/.core/nodes.conf) to HOST
                 devType = Attrib.DevType.HOST
 
-        if devType is None:
-            if isinstance(devObj, nodes.HubNode):
-                devType = Attrib.DevType.HUB
-            elif isinstance(devObj, nodes.SwitchNode):
-                devType = Attrib.DevType.SWITCH
 
         if devType is None:
             raise Exception
