@@ -34,6 +34,7 @@ EXTRA_DIST		= bootstrap.sh LICENSE README-Xen Changelog kernel \
 			  packaging/deb/rules \
 			  packaging/deb/control \
 			  packaging/deb/core-daemon.install.in \
+			  packaging/deb/core-daemon.prerm.in \
 			  packaging/deb/core-gui.install.in \
 			  packaging/rpm/core.spec.in \
 			  packaging/rpm/specfiles.sh

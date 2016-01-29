@@ -1,2 +1,3 @@
 core-daemon.install
 core-gui.install
+core-daemon.prerm

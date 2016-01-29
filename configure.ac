@@ -342,6 +342,7 @@ AC_CONFIG_FILES([Makefile
 		daemon/doc/Makefile
 		daemon/doc/conf.py
 		packaging/deb/core-daemon.install
+		packaging/deb/core-daemon.prerm
 		packaging/deb/core-gui.install
 		packaging/rpm/core.spec],)
 AC_OUTPUT
