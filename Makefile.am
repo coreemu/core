@@ -43,6 +43,10 @@ DISTCLEAN_TARGETS	= aclocal.m4 config.h.in
 # extra cruft to remove
 DISTCLEANFILES	= aclocal.m4 config.h.in configure Makefile.in config/compile
 
+MAINTAINERCLEANFILES =				\
+	.version				\
+	.version.date
+
 # don't include svn dirs in source tarball
 dist-hook:
 	rm -rf `find $(distdir)/kernel -name .svn`
@@ -72,8 +76,8 @@ core-restart:
 	rm -f /var/log/core-daemon.log
 	/etc/init.d/core-daemon start
 
-.version:
+.version: Makefile
 	echo $(CORE_VERSION) > $@
 
-.version.date:
+.version.date: Makefile
 	echo $(CORE_VERSION_DATE) > $@
