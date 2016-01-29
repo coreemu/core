@@ -15,7 +15,6 @@
 #include <Python.h>
 #include <structmember.h>
 #include <pthread.h>
-#include <fcntl.h>
 #undef NDEBUG		      /* XXX force enabling asserts for now */
 #include <assert.h>
 
@@ -164,6 +163,8 @@ static int init_evloop(void)
     WARN("pipe() failed");
     return -1;
   }
+  set_cloexec(asyncpipe[0]);
+  set_cloexec(asyncpipe[1]);
   set_nonblock(asyncpipe[0]);
   ev_io_init(&asyncwatcher, vcmd_asyncreq_cb, asyncpipe[0], EV_READ);
   ev_io_start(loop, &asyncwatcher);
