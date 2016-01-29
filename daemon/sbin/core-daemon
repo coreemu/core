@@ -1617,6 +1617,7 @@ def cored(cfg = None):
     sys.stdout.write("server started, listening on: %s:%s\n" % (host, port))
     sys.stdout.flush()
     server.startudp((host,port))
+    closeonexec(server.udpserver.fileno())
     server.serve_forever()
 
 def cleanup():
