@@ -58,6 +58,9 @@ int vnode_connect(const char *name)
     return -1;
   }
 
+  if (set_cloexec(fd))
+    WARN("set_cloexec() failed for fd %d", fd);
+
   if (set_nonblock(fd))
     WARN("set_nonblock() failed for fd %d", fd);
 
