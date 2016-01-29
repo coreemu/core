@@ -105,14 +105,10 @@ def cmdresult(args):
         exit status and result string. stderr output
         is folded into the stdout result string.
     '''
-    cmdid = subprocess.Popen(args, stdin = subprocess.PIPE,
+    cmdid = subprocess.Popen(args, stdin = open(os.devnull, 'r'),
                              stdout = subprocess.PIPE,
-                             stderr = subprocess.PIPE)
-    cmdid.stdin.close()
-    result = cmdid.stdout.read()
-    result += cmdid.stderr.read()
-    cmdid.stdout.close()
-    cmdid.stderr.close()
+                             stderr = subprocess.STDOUT)
+    result, err = cmdid.communicate() # err will always be None
     status = cmdid.wait()
     return (status, result)
 

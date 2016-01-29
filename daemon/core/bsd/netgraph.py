@@ -27,13 +27,8 @@ def createngnode(type, hookstr, name=None):
     cmd = [NGCTL_BIN, "-f", "-"]
     cmdid = subprocess.Popen(cmd, stdin = subprocess.PIPE,
                              stdout = subprocess.PIPE,
-                             stderr = subprocess.PIPE)
-    cmdid.stdin.write(ngcmd)
-    cmdid.stdin.close()
-    result = cmdid.stdout.read()
-    result += cmdid.stderr.read()
-    cmdid.stdout.close()
-    cmdid.stderr.close()
+                             stderr = subprocess.STDOUT)
+    result, err = cmdid.communicate(input = ngcmd) # err will always be None
     status = cmdid.wait()
     if status > 0:
         raise Exception, "error creating Netgraph node %s (%s): %s" % \
