@@ -15,7 +15,7 @@ from xml.dom.minidom import parseString, Document
 from core.constants import *
 from core.api import coreapi
 from core.misc.ipaddr import MacAddr
-from core.misc.utils import maketuplefromstr, cmdresult
+from core.misc.utils import maketuplefromstr, cmdresult, closeonexec
 from core.misc.xmlutils import addtextelementsfromtuples, addparamlisttoparent
 from core.conf import ConfigurableManager, Configurable
 from core.mobility import WirelessModel
@@ -122,6 +122,10 @@ class Emane(ConfigurableManager):
             try:
                 self.service = EventService(eventchannel=eventchannel,
                                             otachannel=None)
+                for f in self.service._socket, self.service._readFd, \
+                    self.service._writeFd, self.service._socketOTA:
+                    if f:
+                        closeonexec(f)
             except Exception, e:
                 msg = "Error instantiating EMANE event service: %s" % e
                 self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
