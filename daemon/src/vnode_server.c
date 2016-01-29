@@ -25,6 +25,7 @@
 #include "vnode_msg.h"
 #include "vnode_chnl.h"
 #include "vnode_cmd.h"
+#include "vnode_io.h"
 
 #include "vnode_server.h"
 
@@ -33,18 +34,6 @@ extern int verbose;
 static vnode_cliententry_t *vnode_server_newclient(vnode_server_t *server,
 						   int fd);
 static void vnode_server_delclient(vnode_cliententry_t *client);
-
-static int cloexec(int fd)
-{
-  int fdflags;
-
-  if ((fdflags = fcntl(fd, F_GETFD)) == -1)
-    fdflags = 0;
-  if (fcntl(fd, F_SETFD, fdflags | FD_CLOEXEC) == -1)
-    return -1;
-
-  return 0;
-}
 
 static void client_ioerror(vnode_msgio_t *msgio)
 {
@@ -71,7 +60,7 @@ static vnode_cliententry_t *vnode_server_newclient(vnode_server_t *server,
   WARNX("new client on fd %d", fd);
 #endif
 
-  cloexec(fd);
+  set_cloexec(fd);
 
   if ((client = malloc(sizeof(*client))) == NULL)
   {
@@ -292,7 +281,7 @@ vnode_server_t *vnoded(int newnetns, const char *ctrlchnlname,
     WARNX("vnode_listen() failed for '%s'", ctrlchnlname);
     return NULL;
   }
-  cloexec(ctrlfd);
+  set_cloexec(ctrlfd);
 
   if (newnetns)
   {

@@ -52,6 +52,8 @@ typedef struct {
 int set_nonblock(int fd);
 int clear_nonblock(int fd);
 
+int set_cloexec(int fd);
+
 int open_stdio_pty(stdio_pty_t *stdiopty);
 void close_stdio_pty(stdio_pty_t *stdiopty);
 

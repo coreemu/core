@@ -57,6 +57,18 @@ int clear_nonblock(int fd)
   return r;
 }
 
+int set_cloexec(int fd)
+{
+  int fdflags;
+
+  if ((fdflags = fcntl(fd, F_GETFD)) == -1)
+    fdflags = 0;
+  if (fcntl(fd, F_SETFD, fdflags | FD_CLOEXEC) == -1)
+    return -1;
+
+  return 0;
+}
+
 int open_stdio_pty(stdio_pty_t *stdiopty)
 {
   int masterfd, slavefd;
