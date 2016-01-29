@@ -81,10 +81,14 @@ rm -rf $RPM_BUILD_ROOT
 # don't run EMANE with realtime option under Fedora
 sed -i 's/emane_realtime = True/emane_realtime = False/' /etc/core/core.conf
 
-%preun
-#if [ "$1" = 0 ]; then
-    #find %{_libdir}/python%{python_version}/site-packages/core -name '*.pyc' -exec rm -f '{}' ';' 2> /dev/null
-#fi
+%preun daemon
+if [ "$1" -eq 0 ]; then
+    systemctl stop core-daemon.service > /dev/null 2>&1 || true
+
+    if [ -x @SBINDIR@/core-cleanup ]; then
+        @SBINDIR@/core-cleanup > /dev/null 2>&1 || true
+    fi
+fi
 
 %postun
 
