@@ -301,8 +301,8 @@ class Session(object):
                 stdout = None
                 stderr = None
             try:
-                check_call(["/bin/sh", filename], stdout=stdout,
-                           stderr=stderr, close_fds=True,
+                check_call(["/bin/sh", filename], stdin=open(os.devnull, 'r'),
+                           stdout=stdout, stderr=stderr, close_fds=True,
                            cwd=self.sessiondir, env=self.getenviron())
             except Exception, e:
                 self.warn("Error running hook '%s' for state %s: %s" %
