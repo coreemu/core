@@ -15,14 +15,22 @@ set -e
 # for details, see http://www.debian.org/doc/debian-policy/ or
 # the debian-policy package
 
+SBINDIR=@SBINDIR@
+pyprefix=@pyprefix@
+pythondir=@pythondir@
+
 core_daemon_stop()
 {
     if [ -x /etc/init.d/core-daemon ]; then
         /etc/init.d/core-daemon stop
     fi
 
-    if [ -x @SBINDIR@/core-cleanup ]; then
-        @SBINDIR@/core-cleanup
+    if [ -x $SBINDIR/core-cleanup ]; then
+        $SBINDIR/core-cleanup
+    fi
+
+    if [ -d $pythondir/core ]; then
+        find $pythondir/core -name '*.pyc' -delete
     fi
 }
 
