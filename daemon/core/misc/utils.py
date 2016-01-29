@@ -12,6 +12,11 @@ procedures.
 '''
 
 import subprocess, os, ast
+import fcntl
+
+def closeonexec(fd):
+    fdflags = fcntl.fcntl(fd, fcntl.F_GETFD)
+    fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 def checkexec(execlist):
     for bin in execlist:
@@ -265,6 +270,6 @@ def checkforkernelmodule(name):
     '''
     with open('/proc/modules', 'r') as f:
         for line in f:
-            if line[:len(name)] == name:
-                return line
+            if line.startswith(name + ' '):
+                return line.rstrip()
     return None
