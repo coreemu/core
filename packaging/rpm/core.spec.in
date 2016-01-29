@@ -311,11 +311,15 @@ fi
 %{python_sitearch}/core_python_netns-1.0-py%{python_version}.egg-info
 %{python_sitearch}/netns.so
 %{python_sitearch}/vcmd.so
+%dir %{python_sitelib}/core
+%dir %{python_sitelib}/core/addons
 %{python_sitelib}/core/addons/__init__.py*
+%dir %{python_sitelib}/core/api
 %{python_sitelib}/core/api/coreapi.py*
 %{python_sitelib}/core/api/data.py*
 %{python_sitelib}/core/api/__init__.py*
 %{python_sitelib}/core/broker.py*
+%dir %{python_sitelib}/core/bsd
 %{python_sitelib}/core/bsd/__init__.py*
 %{python_sitelib}/core/bsd/netgraph.py*
 %{python_sitelib}/core/bsd/nodes.py*
@@ -324,6 +328,7 @@ fi
 %{python_sitelib}/core/conf.py*
 %{python_sitelib}/core/constants.py*
 %{python_sitelib}/core/coreobj.py*
+%dir %{python_sitelib}/core/emane
 %{python_sitelib}/core/emane/bypass.py*
 %{python_sitelib}/core/emane/commeffect.py*
 %{python_sitelib}/core/emane/emane.py*
@@ -334,6 +339,7 @@ fi
 %{python_sitelib}/core/emane/universal.py*
 %{python_sitelib}/core/__init__.py*
 %{python_sitelib}/core/location.py*
+%dir %{python_sitelib}/core/misc
 %{python_sitelib}/core/misc/event.py*
 %{python_sitelib}/core/misc/__init__.py*
 %{python_sitelib}/core/misc/ipaddr.py*
@@ -351,22 +357,26 @@ fi
 %{python_sitelib}/core/misc/xmlwriter0.py*
 %{python_sitelib}/core/misc/xmlwriter1.py*
 %{python_sitelib}/core/mobility.py*
+%dir %{python_sitelib}/core/netns
 %{python_sitelib}/core/netns/__init__.py*
 %{python_sitelib}/core/netns/nodes.py*
 %{python_sitelib}/core/netns/vif.py*
 %{python_sitelib}/core/netns/vnet.py*
 %{python_sitelib}/core/netns/vnodeclient.py*
 %{python_sitelib}/core/netns/vnode.py*
+%dir %{python_sitelib}/corens3
 %{python_sitelib}/corens3/constants.py*
 %{python_sitelib}/corens3/__init__.py*
 %{python_sitelib}/corens3/obj.py*
 %{python_sitelib}/corens3_python-@COREDPY_VERSION@-py%{python_version}.egg-info
+%dir %{python_sitelib}/core/phys
 %{python_sitelib}/core/phys/__init__.py*
 %{python_sitelib}/core/phys/pnodes.py*
 %{python_sitelib}/core/pycore.py*
 %{python_sitelib}/core_python-@COREDPY_VERSION@-py%{python_version}.egg-info
 %{python_sitelib}/core/sdt.py*
 %{python_sitelib}/core/service.py*
+%dir %{python_sitelib}/core/services
 %{python_sitelib}/core/services/bird.py*
 %{python_sitelib}/core/services/__init__.py*
 %{python_sitelib}/core/services/dockersvc.py*
@@ -378,6 +388,7 @@ fi
 %{python_sitelib}/core/services/utility.py*
 %{python_sitelib}/core/services/xorp.py*
 %{python_sitelib}/core/session.py*
+%dir %{python_sitelib}/core/xen
 %{python_sitelib}/core/xen/__init__.py*
 %{python_sitelib}/core/xen/xenconfig.py*
 %{python_sitelib}/core/xen/xen.py*
