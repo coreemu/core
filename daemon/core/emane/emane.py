@@ -305,6 +305,7 @@ class Emane(ConfigurableManager):
             return r  # NOT_NEEDED or NOT_READY
         if self.versionstr == "":
             raise ValueError, "EMANE version not properly detected"
+        nems = []
         with self._objslock:
             if self.version < self.EMANE092:
                 self.buildxml()
@@ -321,7 +322,20 @@ class Emane(ConfigurableManager):
                 if self.numnems() > 0:
                     self.startdaemons2()
                     self.installnetifs(do_netns=False)
-            return Emane.SUCCESS
+            for e in self._objs.itervalues():
+                for netif in e.netifs():
+                    nems.append((netif.node.name, netif.name,
+                                 e.getnemid(netif)))
+        if nems:
+            emane_nems_filename = os.path.join(self.session.sessiondir,
+                                               'emane_nems')
+            try:
+                with open(emane_nems_filename, 'w') as f:
+                    for nodename, ifname, nemid in nems:
+                        f.write('%s %s %s\n' % (nodename, ifname, nemid))
+            except Exception as e:
+                self.warn('Error writing EMANE NEMs file: %s' % e)
+        return Emane.SUCCESS
 
     def poststartup(self):
         ''' Retransmit location events now that all NEMs are active.
