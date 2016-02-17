@@ -194,11 +194,18 @@ bootdaemon()
         return 1
     fi
 
+    flags=""
+
     if [ "$1" != "zebra" ]; then
         waitforvtyfiles zebra.vty
     fi
 
-    $QUAGGA_SBIN_DIR/$1 -u $QUAGGA_USER -g $QUAGGA_GROUP -d
+    if [ "$1" = "xpimd" ] && \\
+        grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
+        flags="$flags -6"
+    fi
+
+    $QUAGGA_SBIN_DIR/$1 $flags -u $QUAGGA_USER -g $QUAGGA_GROUP -d
 }
 
 bootvtysh()
@@ -216,7 +223,11 @@ bootvtysh()
             vtyfiles="$vtyfiles ${r}d.vty"
         fi
     done
-    
+
+    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
+        vtyfiles="$vtyfiles xpimd.vty"
+    fi
+
     # wait for Quagga daemon vty files to appear before invoking vtysh
     waitforvtyfiles $vtyfiles
 
@@ -572,6 +583,36 @@ class Babel(QuaggaService):
 
 addservice(Babel)
 
+class Xpimd(QuaggaService):
+    '''\
+    PIM multicast routing based on XORP.
+    '''
+    _name = 'Xpimd'
+    _startup = ('sh quaggaboot.sh xpimd',)
+    _shutdown = ('killall xpimd', )
+    _validate = ('pidof xpimd', )
+    _ipv4_routing = True
+
+    @classmethod
+    def generatequaggaconfig(cls,  node):
+        ifname = 'eth0'
+        for ifc in node.netifs():
+            if ifc.name != 'lo':
+                ifname = ifc.name
+                break
+        cfg = 'router mfea\n!\n'
+        cfg += 'router pim\n'
+        cfg += '  !ip pim rp-address 10.0.0.1\n'
+        cfg += '  ip pim bsr-candidate %s\n' % ifname
+        cfg += '  ip pim rp-candidate %s\n' % ifname
+        cfg += '  !ip pim spt-threshold interval 10 bytes 80000\n'
+        return cfg
+
+    @classmethod
+    def generatequaggaifcconfig(cls,  node,  ifc):
+        return '  ip mfea\n  ip igmp\n  ip pim\n'
+
+addservice(Xpimd)
 
 class Vtysh(CoreService):
     ''' Simple service to run vtysh -b (boot) after all Quagga daemons have
