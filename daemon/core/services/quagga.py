@@ -601,6 +601,7 @@ class Xpimd(QuaggaService):
                 ifname = ifc.name
                 break
         cfg = 'router mfea\n!\n'
+        cfg = 'router igmp\n!\n'
         cfg += 'router pim\n'
         cfg += '  !ip pim rp-address 10.0.0.1\n'
         cfg += '  ip pim bsr-candidate %s\n' % ifname
