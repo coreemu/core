@@ -37,6 +37,7 @@ typedef struct {
   int _status;
   pthread_mutex_t _mutex;
   pthread_cond_t _cv;
+  VCmd *_vcmd;
 } VCmdWait;
 
 int verbose;
@@ -216,6 +217,7 @@ static PyObject *VCmdWait_new(PyTypeObject *type,
   self->_status = -1;
   pthread_mutex_init(&self->_mutex, NULL);
   pthread_cond_init(&self->_cv, NULL);
+  self->_vcmd = NULL;
 
 #ifdef DEBUG
   WARNX("%p: exit", self);
@@ -232,6 +234,8 @@ static void VCmdWait_dealloc(VCmdWait *self)
 
   pthread_mutex_destroy(&self->_mutex);
   pthread_cond_destroy(&self->_cv);
+  if (self->_vcmd != NULL)
+    Py_DECREF(self->_vcmd);
 
   self->ob_type->tp_free((PyObject *)self);
 
@@ -241,6 +245,12 @@ static void VCmdWait_dealloc(VCmdWait *self)
 static PyObject *VCmdWait_wait(VCmdWait *self)
 {
   int status;
+
+  if (self->_vcmd == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "unstarted command");
+    return NULL;
+  }
 
   pthread_mutex_lock(&self->_mutex);
 
@@ -269,6 +279,12 @@ Py_END_ALLOW_THREADS
 static PyObject *VCmdWait_complete(VCmdWait *self,
 				   PyObject *args, PyObject *kwds)
 {
+  if (self->_vcmd == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "unstarted command");
+    return NULL;
+  }
+
   if (self->_complete)
     Py_RETURN_TRUE;
   else
@@ -278,6 +294,12 @@ static PyObject *VCmdWait_complete(VCmdWait *self,
 static PyObject *VCmdWait_status(VCmdWait *self,
 				 PyObject *args, PyObject *kwds)
 {
+  if (self->_vcmd == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "unstarted command");
+    return NULL;
+  }
+
   if (self->_complete)
     return Py_BuildValue("i", self->_status);
   else
@@ -285,6 +307,9 @@ static PyObject *VCmdWait_status(VCmdWait *self,
 }
 
 static PyMemberDef VCmdWait_members[] = {
+  {"vcmd", T_OBJECT, offsetof(VCmdWait, _vcmd), READONLY,
+   "VCmd instance that created this object"},
+
   {NULL, 0, 0, 0, NULL},
 };
 
@@ -711,6 +736,9 @@ static PyObject *_VCmd_cmd(VCmd *self, PyObject *args, PyObject *kwds,
   /* don't do Py_DECREF(cmdwait) or VCmdWait_dealloc(cmdwait) if
    * there's an error below since cmddonecb should still get called
    */
+
+  Py_INCREF(self);
+  cmdwait->_vcmd = self;
 
   switch (iotype)
   {
