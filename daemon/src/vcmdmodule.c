@@ -22,6 +22,23 @@
 
 /* #define DEBUG */
 
+typedef struct vcmdentry {
+  PyObject_HEAD
+
+  vnode_client_t *_client;
+  int _client_connected;
+} VCmd;
+
+typedef struct {
+  PyObject_HEAD
+
+  int32_t _cmdid;
+  int _complete;
+  int _status;
+  pthread_mutex_t _mutex;
+  pthread_cond_t _cv;
+} VCmdWait;
+
 int verbose;
 
 /* ev_default_loop(0) is not used because it interferes with SIGCHLD */
@@ -180,15 +197,6 @@ static int init_evloop(void)
   return 0;
 }
 
-typedef struct {
-  PyObject_HEAD
-
-  int32_t _cmdid;
-  int _complete;
-  int _status;
-  pthread_mutex_t _mutex;
-  pthread_cond_t _cv;
-} VCmdWait;
 
 static PyObject *VCmdWait_new(PyTypeObject *type,
 			      PyObject *args, PyObject *kwds)
@@ -308,13 +316,6 @@ static PyTypeObject vcmd_VCmdWaitType = {
   .tp_new = VCmdWait_new,
 };
 
-
-typedef struct vcmdentry {
-  PyObject_HEAD
-
-  vnode_client_t *_client;
-  int _client_connected;
-} VCmd;
 
 static PyObject *VCmd_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
 {
