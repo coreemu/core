@@ -306,6 +306,35 @@ static PyObject *VCmdWait_status(VCmdWait *self,
     Py_RETURN_NONE;
 }
 
+static PyObject *VCmdWait_kill(VCmdWait *self,
+			       PyObject *args, PyObject *kwds)
+{
+  int sig;
+
+  if (!PyArg_ParseTuple(args, "i", &sig))
+    return NULL;
+
+  if (self->_vcmd == NULL)
+  {
+    PyErr_SetString(PyExc_ValueError, "unstarted command");
+    return NULL;
+  }
+
+  if (self->_complete)
+  {
+    PyErr_SetString(PyExc_ValueError, "command already complete");
+    return NULL;
+  }
+
+  if (vnode_send_cmdsignal(self->_vcmd->_client->serverfd, self->_cmdid, sig))
+  {
+    PyErr_SetFromErrno(PyExc_OSError);
+    return NULL;
+  }
+
+  Py_RETURN_NONE;
+}
+
 static PyMemberDef VCmdWait_members[] = {
   {"vcmd", T_OBJECT, offsetof(VCmdWait, _vcmd), READONLY,
    "VCmd instance that created this object"},
@@ -325,6 +354,11 @@ static PyMethodDef VCmdWait_methods[] = {
   {"status", (PyCFunction)VCmdWait_status, METH_NOARGS,
    "status() -> int\n\n"
    "Return exit status if command has completed; return None otherwise."},
+
+  {"kill", (PyCFunction)VCmdWait_kill, METH_VARARGS,
+   "kill(signum) -> None\n\n"
+   "Send a signal to command.\n\n"
+   "signum: the signal to send"},
 
   {NULL, NULL, 0, NULL},
 };
