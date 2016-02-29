@@ -263,6 +263,53 @@ proc setLinkBandwidth { link value } {
     }
 }
 
+#****f* linkcfg.tcl/getLinkBuffer
+# NAME
+#   getLinkBuffer -- get link buffer
+# SYNOPSIS
+#   set buffer [getLinkBuffer $link_id]
+# FUNCTION
+#   Returns the link buffer expressed in packets.
+# INPUTS
+#   * link_id -- link id
+# RESULT
+#   * buffer -- The value of link buffer in packets.
+#****
+
+proc getLinkBuffer { link {dir "down"} } {
+    global $link
+
+    set entry [lsearch -inline [set $link] "buffer *"]
+    set val [lindex $entry 1] ;# one or more values
+    if { $dir == "up" } { return [lindex $val 1] }
+    return [lindex $val 0]
+}
+
+#****f* linkcfg.tcl/setLinkBuffer
+# NAME
+#   setLinkBuffer -- set link buffer
+# SYNOPSIS
+#   setLinkBuffer $link_id $value
+# FUNCTION
+#   Sets the link buffer in packets.
+# INPUTS
+#   * link_id -- link id
+#   * value -- link buffer in packets.
+#****
+
+proc setLinkBuffer { link value } {
+    global $link
+
+    set i [lsearch [set $link] "buffer *"]
+    if { $value <= 0 } {
+	set $link [lreplace [set $link] $i $i]
+    } else {
+	if { [llength $value] > 1 } { set value "{$value}" }
+	set $link [lreplace [set $link] $i $i "buffer $value"]
+    }
+}
+
+
 proc getLinkColor { link } {
     global $link defLinkColor
 

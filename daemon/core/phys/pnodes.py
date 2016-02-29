@@ -153,7 +153,7 @@ class PhysicalNode(PyCoreNode):
         if self.up:
             self.cmd([IP_BIN, "link", "set", "dev", netif.localname, "up"])
             
-    def linkconfig(self, netif, bw = None, delay = None,
+    def linkconfig(self, netif, bw = None, buf = None, delay = None,
                    loss = None, duplicate = None, jitter = None, netif2 = None):
         ''' Apply tc queing disciplines using LxBrNet.linkconfig()
         '''

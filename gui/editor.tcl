@@ -2804,6 +2804,17 @@ proc popupConfigDialog { c } {
 	pack $wi.bandwidth.value $wi.bandwidth.label -side right
 	pack $wi.bandwidth -side top -anchor e
 
+	ttk::frame $wi.buffer -borderwidth 4
+	ttk::label $wi.buffer.label -anchor e -text "Buffer size (packets):"
+	$spinbox $wi.buffer.value -justify right -width 10 \
+	    -validate focus -invalidcommand "focusAndFlash %W"
+	$wi.buffer.value insert 0 [getLinkBuffer $target]
+	$wi.buffer.value configure \
+	    -validatecommand {checkIntRange %P 0 10000} \
+	    -from 0 -to 10000 -increment 1
+	pack $wi.buffer.value $wi.buffer.label -side right
+	pack $wi.buffer -side top -anchor e
+
 	ttk::frame $wi.delay -borderwidth 4
 	ttk::label $wi.delay.label -anchor e -text "Delay (us):"
 	$spinbox $wi.delay.value -justify right -width 10 \
@@ -2893,14 +2904,17 @@ proc popupConfigDialog { c } {
 
 	# auto-expand upstream if values exist
 	set bw [getLinkBandwidth $target up]
+	set buf [getLinkBuffer $target up]
 	set dl [getLinkDelay $target up]
 	set jt [getLinkJitter $target up]
 	set ber [getLinkBER $target up]
 	set dup [getLinkDup $target up]
-	if { $bw > 0 || $dl > 0 || $jt > 0 || $ber > 0 || $dup > 0 } {
+	if { $bw > 0 || $buf > 0 || $dl > 0 || $jt > 0 || $ber > 0 || $dup > 0 } {
             linkConfigUni $wi
 	    $wi.bandwidth.value2 delete 0 end
 	    $wi.bandwidth.value2 insert 0 $bw
+	    $wi.buffer.value2 delete 0 end
+	    $wi.buffer.value2 insert 0 $buf
 	    $wi.delay.value2 delete 0 end
 	    $wi.delay.value2 insert 0 $dl
 	    $wi.jitter.value2 delete 0 end
@@ -2958,6 +2972,19 @@ proc linkConfigUni { wi } {
 	pack $wi.bandwidth.value2 -side right
 	pack $wi.bandwidth.value2 -before $wi.bandwidth.value
 
+	set spinbox [getspinbox]
+	if { ![winfo exists $wi.buffer.value2] } {
+	    $spinbox $wi.buffer.value2 -justify right \
+	    	-width 10 -validate focus -invalidcommand "focusAndFlash %W"
+	    $wi.buffer.value2 configure \
+		-validatecommand {checkIntRange %P 0 10000} \
+		-from 0 -to 10000 -increment 1
+	}
+	$wi.buffer.value2 delete 0 end
+	$wi.buffer.value2 insert 0 [$wi.buffer.value get]
+	pack $wi.buffer.value2 -side right
+	pack $wi.buffer.value2 -before $wi.buffer.value
+
 	if { ![winfo exists $wi.delay.value2] } {
 	    $spinbox $wi.delay.value2 -justify right -width 10 \
 		-validate focus -invalidcommand "focusAndFlash %W"
@@ -3010,6 +3037,7 @@ proc linkConfigUni { wi } {
 	$wi.preset.uni configure -text "  >>  "
 	$wi.unilabel.updown configure -text "Symmetric link effects:"
 	pack forget $wi.bandwidth.value2
+	pack forget $wi.buffer.value2
 	pack forget $wi.delay.value2
 	pack forget $wi.jitter.value2
 	pack forget $wi.ber.value2
@@ -3229,6 +3257,9 @@ proc popupConfigApply { wi object_type target phase } {
 	set mirror [getLinkMirror $target]
         
         if { [setIfChanged $target $mirror $wi "bandwidth" "LinkBandwidth"] } {
+	    set changed 1
+	}
+        if { [setIfChanged $target $mirror $wi "buffer" "LinkBuffer"] } {
 	    set changed 1
 	}
         if { [setIfChanged $target $mirror $wi "delay" "LinkDelay"] } {
@@ -4717,6 +4748,7 @@ proc linkPresets { wi linkpreMenu cmd } {
     # set the selected link presets
     set params $link_presets($link_preset_val)
     $wi.bandwidth.value delete 0 end
+    $wi.buffer.value delete 0 end
     $wi.delay.value delete 0 end
     $wi.jitter.value delete 0 end
     $wi.ber.value delete 0 end
@@ -4728,6 +4760,7 @@ proc linkPresets { wi linkpreMenu cmd } {
     $wi.dup.value insert 0 [lindex $params 4]
     if { $g_link_config_uni_state == "uni" } {
 	$wi.bandwidth.value2 delete 0 end
+	$wi.buffer.value2 delete 0 end
 	$wi.delay.value2 delete 0 end
 	$wi.jitter.value2 delete 0 end
 	$wi.ber.value2 delete 0 end

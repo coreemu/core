@@ -53,13 +53,13 @@ class EmaneNode(EmaneNet):
         self.model = None
         self.mobility = None
 
-    def linkconfig(self, netif, bw = None, delay = None,
+    def linkconfig(self, netif, bw = None, buf = None, delay = None,
                    loss = None, duplicate = None, jitter = None, netif2 = None):
         ''' The CommEffect model supports link configuration.
         '''
         if not self.model:
             return
-        return self.model.linkconfig(netif=netif, bw=bw, delay=delay, loss=loss,
+        return self.model.linkconfig(netif=netif, bw=bw, buf=buf, delay=delay, loss=loss,
                             duplicate=duplicate, jitter=jitter, netif2=netif2)
 
     def config(self, conf):
