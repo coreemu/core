@@ -11,7 +11,7 @@ vnet.py: PyCoreNet and LxBrNet classes that implement virtual networks using
 Linux Ethernet bridging and ebtables rules.
 '''
 
-import os, sys, threading, time, subprocess
+import os, sys, threading, time, subprocess, math
 
 from core.api import coreapi
 from core.misc.utils import *
@@ -339,7 +339,7 @@ class LxBrNet(PyCoreNet):
         self._linked_lock.release()
         ebq.ebchange(self)
 
-    def linkconfig(self, netif, bw = None, delay = None,
+    def linkconfig(self, netif, bw = None, buf = None, delay = None,
                    loss = None, duplicate = None, jitter = None, netif2 = None,
                    devname = None):
         ''' Configure link parameters by applying tc queuing disciplines on the
@@ -350,33 +350,9 @@ class LxBrNet(PyCoreNet):
         tc = [TC_BIN, "qdisc", "replace", "dev", devname]
         parent = ["root"]
         changed = False
-        if netif.setparam('bw', bw):
-            # from tc-tbf(8): minimum value for burst is rate / kernel_hz
-            if bw is not None:
-                burst = max(2 * netif.mtu, bw / 1000)
-                limit = 0xffff # max IP payload
-                tbf = ["tbf", "rate", str(bw),
-                       "burst", str(burst), "limit", str(limit)]
-            if bw > 0:
-                if self.up:
-                    if (self.verbose):
-                        self.info("linkconfig: %s" % \
-                                  ([tc + parent + ["handle", "1:"] + tbf],))
-                    check_call(tc + parent + ["handle", "1:"] + tbf)
-                netif.setparam('has_tbf', True)
-                changed = True
-            elif netif.getparam('has_tbf') and bw <= 0:
-                tcd = [] + tc
-                tcd[2] = "delete"
-                if self.up:
-                    check_call(tcd + parent)
-                netif.setparam('has_tbf', False)
-                # removing the parent removes the child
-                netif.setparam('has_netem', False)
-                changed = True
-        if netif.getparam('has_tbf'):
-            parent = ["parent", "1:1"]
         netem = ["netem"]
+	changed = max(changed, netif.setparam('bw', bw))
+	changed = max(changed, netif.setparam('buf', buf))
         changed = max(changed, netif.setparam('delay', delay))
         if loss is not None:
             loss = float(loss)
@@ -388,6 +364,15 @@ class LxBrNet(PyCoreNet):
         if not changed:
             return
         # jitter and delay use the same delay statement
+
+        if bw is not None:
+            limit = 1000
+            if buf is not None and buf > 0:
+                limit = buf
+            elif delay and bw > 0:
+                limit = max(2, math.ceil((2*(int(bw)/1000)*(int(delay)/1000))/(8 * 1500)))
+            netem += ["rate", "%dkbit" % (int(bw)/1000)]
+            netem += ["limit", "%d" % limit]
         if delay is not None:
             netem += ["delay", "%sus" % delay]
         if jitter is not None:

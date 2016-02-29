@@ -246,6 +246,7 @@ class CoreLinkTlv(CoreTlv):
         CORE_TLV_LINK_N2NUMBER: CoreTlvDataUint32,
         CORE_TLV_LINK_DELAY: CoreTlvDataUint64,
         CORE_TLV_LINK_BW: CoreTlvDataUint64,
+        CORE_TLV_LINK_BUF: CoreTlvDataUint64,
         CORE_TLV_LINK_PER: CoreTlvDataString,
         CORE_TLV_LINK_DUP: CoreTlvDataString,
         CORE_TLV_LINK_JITTER: CoreTlvDataUint64,

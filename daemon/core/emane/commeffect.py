@@ -99,7 +99,7 @@ class EmaneCommEffectModel(EmaneModel):
         nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
         e.xmlwrite(nemdoc, self.nemxmlname(ifc))
 
-    def linkconfig(self, netif, bw = None, delay = None,
+    def linkconfig(self, netif, bw = None, buf = None, delay = None,
                 loss = None, duplicate = None, jitter = None, netif2 = None):
         ''' Generate CommEffect events when a Link Message is received having
         link parameters.
