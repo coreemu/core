@@ -409,6 +409,11 @@ static void vcmd_ioerrorcb(vnode_client_t *client)
   assert(self->_client == client);
 
   self->_client_connected = 0;
+  if (self->_client)
+  {
+    vnode_delclient(self->_client);
+    self->_client = NULL;
+  }
 
   if (pythreads)
     PyGILState_Release(gstate);
