@@ -76,6 +76,17 @@ class Emane(ConfigurableManager):
         if self.verbose:
             self.info("using EMANE version: %s" % self.versionstr)
 
+    def deleteeventservice(self):
+        if hasattr(self, 'service'):
+            if self.service:
+                for fd in self.service._readFd, self.service._writeFd:
+                    if fd >= 0:
+                        os.close(fd)
+                for f in self.service._socket, self.service._socketOTA:
+                    if f:
+                        f.close()
+            del self.service
+
     def initeventservice(self, filename=None, shutdown=False):
         ''' (Re-)initialize the EMANE Event service.
             The multicast group and/or port may be configured.
@@ -84,8 +95,7 @@ class Emane(ConfigurableManager):
             - For version >= 0.9.1 this is passed into the EventService
               constructor.
         '''
-        if hasattr(self, 'service'):
-            del self.service
+        self.deleteeventservice()
         self.service = None
 
         # EMANE 0.9.1+ does not require event service XML config
