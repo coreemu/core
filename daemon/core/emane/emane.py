@@ -122,10 +122,6 @@ class Emane(ConfigurableManager):
             try:
                 self.service = EventService(eventchannel=eventchannel,
                                             otachannel=None)
-                for f in self.service._socket, self.service._readFd, \
-                    self.service._writeFd, self.service._socketOTA:
-                    if f:
-                        closeonexec(f)
             except Exception, e:
                 msg = "Error instantiating EMANE event service: %s" % e
                 self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
@@ -140,6 +136,11 @@ class Emane(ConfigurableManager):
         except:
             self.service = None
             rc = False
+        if self.service:
+            for f in self.service._readFd, self.service._writeFd, \
+                self.service._socket, self.service._socketOTA:
+                if f:
+                    closeonexec(f)
         if filename is not None:
             os.environ.pop(self.EVENTCFGVAR)
             if tmp is not None:
