@@ -26,7 +26,6 @@ typedef struct vcmdentry {
   PyObject_HEAD
 
   vnode_client_t *_client;
-  int _client_connected;
 } VCmd;
 
 typedef struct {
@@ -385,7 +384,6 @@ static PyObject *VCmd_new(PyTypeObject *type, PyObject *args, PyObject *kwds)
     return NULL;
 
   self->_client = NULL;
-  self->_client_connected = 0;
 
   return (PyObject *)self;
 }
@@ -408,7 +406,6 @@ static void vcmd_ioerrorcb(vnode_client_t *client)
   assert(self);
   assert(self->_client == client);
 
-  self->_client_connected = 0;
   if (self->_client)
   {
     vnode_delclient(self->_client);
@@ -478,8 +475,6 @@ static int VCmd_init(VCmd *self, PyObject *args, PyObject *kwds)
     return -1;
   }
 
- self->_client_connected = 1;
-
   return 0;
 }
 
@@ -489,7 +484,6 @@ static void VCmd_dealloc(VCmd *self)
   WARNX("%p: enter", self);
 #endif
 
-  self->_client_connected = 0;
   if (self->_client)
   {
     vcmd_delclientreq_t delclreq = {.vcmd = self};
@@ -504,7 +498,7 @@ static void VCmd_dealloc(VCmd *self)
 
 static PyObject *VCmd_connected(VCmd *self, PyObject *args, PyObject *kwds)
 {
-  if (self->_client_connected)
+  if (self->_client != NULL)
     Py_RETURN_TRUE;
   else
     Py_RETURN_FALSE;
@@ -600,7 +594,7 @@ static PyObject *_VCmd_cmd(VCmd *self, PyObject *args, PyObject *kwds,
   PyObject *pyptyfile = NULL;
   PyObject *ret;
 
-  if (!self->_client_connected)
+  if (self->_client == NULL)
   {
     PyErr_SetString(PyExc_ValueError, "not connected");
     return NULL;
