@@ -845,6 +845,18 @@ static PyObject *VCmd_kill(VCmd *self, PyObject *args, PyObject *kwds)
   Py_RETURN_NONE;
 }
 
+static PyObject *VCmd_close(VCmd *self, PyObject *args, PyObject *kwds)
+{
+  if (self->_client)
+  {
+    vcmd_delclientreq_t delclreq = {.vcmd = self};
+
+    call_asyncfunc(async_delclientreq, &delclreq);
+  }
+
+  Py_RETURN_NONE;
+}
+
 static PyMemberDef VCmd_members[] = {
   {NULL, 0, 0, 0, NULL},
 };
@@ -882,6 +894,9 @@ static PyMethodDef VCmd_methods[] = {
    "Send signal to a command.\n\n"
    "cmdwait: the VCmdWait object from an earlier command request\n"
    "signum: the signal to send"},
+
+  {"close", (PyCFunction)VCmd_close, METH_NOARGS,
+   "close() -> None"},
 
   {NULL, NULL, 0, NULL},
 };
