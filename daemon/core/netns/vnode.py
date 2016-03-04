@@ -90,9 +90,6 @@ class SimpleLxcNode(PyCoreNode):
         while self._mounts:
             source, target = self._mounts.pop(-1)
             self.umount(target)
-        #print "XXX del vnodeclient:", self.vnodeclient
-        # XXX XXX XXX this causes a serious crash
-        #del self.vnodeclient
         for netif in self.netifs():
             netif.shutdown()
         try:
@@ -105,9 +102,7 @@ class SimpleLxcNode(PyCoreNode):
         except OSError:
             pass
         self._netif.clear()
-        #del self.session
-        # print "XXX del vnodeclient:", self.vnodeclient
-        del self.vnodeclient
+        self.vnodeclient.close()
         self.up = False
 
     def cmd(self, args, wait = True):

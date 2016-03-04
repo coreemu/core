@@ -43,6 +43,10 @@ class VnodeClient(object):
         else:
             return True
 
+    def close(self):
+        if USE_VCMD_MODULE:
+            self.cmdchnl.close()
+
     def cmd(self, args, wait = True):
         ''' Execute a command on a node and return the status (return code).
         '''
