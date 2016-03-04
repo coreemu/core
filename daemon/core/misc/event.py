@@ -78,9 +78,6 @@ class EventLoop(object):
         self.running = False
         self.start = None
 
-    def __del__(self):
-        self.stop()
-
     def __run_events(self):
         schedule = False
         while True:

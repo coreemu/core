@@ -120,10 +120,6 @@ class Session(object):
                 "non-persistent session %s" % s.sessionid
             s.shutdown()
 
-    def __del__(self):
-        # note: there is no guarantee this will ever run
-        self.shutdown()
-
     def shutdown(self):
         ''' Shut down all emulation objects and remove the session directory.
         '''
