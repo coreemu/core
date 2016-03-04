@@ -433,14 +433,18 @@ static void async_newclientreq(struct ev_loop *loop, void *data)
 }
 
 typedef struct {
-  vnode_client_t *client;
+  VCmd *vcmd;
 } vcmd_delclientreq_t;
 
 static void async_delclientreq(struct ev_loop *loop, void *data)
 {
   vcmd_delclientreq_t *delclreq = data;
 
-  vnode_delclient(delclreq->client);
+  if (delclreq->vcmd->_client)
+  {
+    vnode_delclient(delclreq->vcmd->_client);
+    delclreq->vcmd->_client = NULL;
+  }
 
   return;
 }
@@ -483,10 +487,9 @@ static void VCmd_dealloc(VCmd *self)
   self->_client_connected = 0;
   if (self->_client)
   {
-    vcmd_delclientreq_t delclreq = {.client = self->_client};
+    vcmd_delclientreq_t delclreq = {.vcmd = self};
 
     call_asyncfunc(async_delclientreq, &delclreq);
-    self->_client = NULL;
   }
 
   self->ob_type->tp_free((PyObject *)self);
