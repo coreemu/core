@@ -1,6 +1,6 @@
 #
 # CORE
-# Copyright (c)2010-2012 the Boeing Company.
+# Copyright (c)2010-2016 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
 # authors: Tom Goff <thomas.goff@boeing.com>
@@ -110,6 +110,17 @@ class EbtablesQueue(object):
         while self.doupdateloop:
             self.updatelock.acquire()
             for wlan in self.updates:
+                ''' 
+                Check if wlan is from a previously closed session. Because of the 
+                rate limiting scheme employed here, this may happen if a new session 
+                is started soon after closing a previous session.
+                '''
+                try:
+                    wlan.session
+                except:
+                    # Just mark as updated to remove from self.updates. 
+                    self.updated(wlan)
+                    continue
                 if self.lastupdate(wlan) > self.rate:
                     self.buildcmds(wlan)
                     #print "ebtables commit %d rules" % len(self.cmds)
