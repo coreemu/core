@@ -34,7 +34,28 @@ class CoreDeploymentWriter(object):
         else:
             # TODO: handle other hosts
             raise NotImplementedError
-
+            
+    @staticmethod
+    def get_interface_names(hostname):
+        '''Uses same methodology of get_ipv4_addresses() to get
+           parallel list of interface names to go with ...'''
+        if hostname == 'localhost':
+            iface_list = []
+            cmd = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
+            output = subprocess.check_output(cmd)
+            for line in output.split(os.linesep):
+                split = line.split()
+                if not split:
+                    continue
+                ifaceName = split[1]
+                addr = split[3]
+                if not addr.startswith('127.'):
+                    iface_list.append(ifaceName)
+            return iface_list
+        else:
+            # TODO: handle other hosts
+            raise NotImplementedError
+            
     @staticmethod
     def find_device(scenario, name):
         tagName = ('device', 'host', 'router')
@@ -61,7 +82,8 @@ class CoreDeploymentWriter(object):
                 nodelist.append(obj)
         name = self.hostname
         ipv4_addresses = self.get_ipv4_addresses('localhost')
-        testhost = self.add_physical_host(testbed, name, ipv4_addresses)
+        iface_names = self.get_interface_names('localhost')
+        testhost = self.add_physical_host(testbed, name, ipv4_addresses, iface_names)
         for n in nodelist:
             self.add_virtual_host(testhost, n)
         # TODO: handle other servers
@@ -81,9 +103,11 @@ class CoreDeploymentWriter(object):
             el.setAttribute('id', '%s/%s' % (parent.getAttribute('id'), name))
         return el
 
-    def add_address(self, parent, address_type, address_str):
+    def add_address(self, parent, address_type, address_str, address_iface=None):
         el = self.add_child_element(parent, 'address')
         el.setAttribute('type', address_type)
+        if address_iface is not None:
+            el.setAttribute('iface', address_iface)
         el.appendChild(self.dom.createTextNode(address_str))
         return el
 
@@ -121,11 +145,16 @@ class CoreDeploymentWriter(object):
         el = self.add_child_element_with_nameattr(parent, 'testHost', name)
         return el
 
-    def add_physical_host(self, parent, name, ipv4_addresses):
+    def add_physical_host(self, parent, name, ipv4_addresses, iface_names):
         el = self.add_host(parent, name)
         self.add_type(el, 'physical')
-        for addr in ipv4_addresses:
-            self.add_address(el, 'IPv4', addr)
+        for i in range(0, len(ipv4_addresses)):
+            addr = ipv4_addresses[i]
+            if iface_names:
+                ifaceName = iface_names[i]
+            else:
+                ifaceName = None
+            self.add_address(el, 'IPv4', addr, ifaceName)
         return el
 
     def add_virtual_host(self, parent, obj):
@@ -147,7 +176,7 @@ class CoreDeploymentWriter(object):
                     addr_type = 'IPv6'
                 else:
                     raise NotImplementedError
-                self.add_address(el, addr_type, address)
+                self.add_address(el, addr_type, address, netif.name)
             if isinstance(netif.net, nodes.EmaneNode):
                 nem = self.add_emane_interface(parent, el, netif)
                 interface = self.find_interface(device, netif.name)
