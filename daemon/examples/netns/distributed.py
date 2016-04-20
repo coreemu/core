@@ -64,7 +64,7 @@ def main():
     slaveport = options.slave.split(':')
     slave = slaveport[0]
     if len(slaveport) > 1:
-        port = slaveport[1]
+        port = int(slaveport[1])
     else:
         port = coreapi.CORE_API_PORT
     print "connecting to slave at %s:%d" % (slave, port)
@@ -98,6 +98,7 @@ def main():
                                     name = "n%d" % i, start=False)
         tmp.setposition(x=150*i,y=150)
         tmp.server = slave
+        n.append(tmp)
         session.broker.handlerawmsg(tmp.tonodemsg(flags=flags))
 
     # create remote links via API
@@ -122,7 +123,7 @@ def main():
     session.broker.handlerawmsg(msg)
 
     # start a shell on node 1
-    n[1].term("bash")
+    n[7].term("bash")
 
     # TODO: access to remote nodes is currently limited in this script
 
