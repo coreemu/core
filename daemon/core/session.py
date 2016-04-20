@@ -14,7 +14,6 @@ that manages a CORE session.
 import os, sys, tempfile, shutil, shlex, atexit, gc, pwd
 import threading, time, random
 import traceback
-import subprocess
 
 from core.api import coreapi
 if os.uname()[0] == "Linux":
@@ -290,16 +289,8 @@ class Session(object):
                 self.warn("Error writing hook '%s': %s" % (filename, e))
             self.info("Running hook %s for state %s" % (filename, state))
             try:
-                stdout = open(os.path.join(self.sessiondir,
-                                           filename + '.log'), 'w')
-                stderr = subprocess.STDOUT
-            except:
-                stdout = None
-                stderr = None
-            try:
-                check_call(["/bin/sh", filename], stdin=open(os.devnull, 'r'),
-                           stdout=stdout, stderr=stderr, close_fds=True,
-                           cwd=self.sessiondir, env=self.getenviron())
+                check_call(["/bin/sh", filename], cwd=self.sessiondir,
+                           env=self.getenviron())
             except Exception, e:
                 self.warn("Error running hook '%s' for state %s: %s" %
                           (filename, state, e))
