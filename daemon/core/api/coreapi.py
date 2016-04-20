@@ -271,6 +271,8 @@ class CoreLinkTlv(CoreTlv):
         CORE_TLV_LINK_IF2MAC: CoreTlvDataMacAddr,
         CORE_TLV_LINK_IF2IP6: CoreTlvDataIPv6Addr,
         CORE_TLV_LINK_IF2IP6MASK: CoreTlvDataUint16,
+        CORE_TLV_LINK_IF1NAME: CoreTlvDataString,
+        CORE_TLV_LINK_IF2NAME: CoreTlvDataString,
         CORE_TLV_LINK_OPAQUE: CoreTlvDataString,
     }
 
@@ -311,6 +313,7 @@ class CoreConfTlv(CoreTlv):
         CORE_TLV_CONF_POSSIBLE_VALUES: CoreTlvDataString,
         CORE_TLV_CONF_GROUPS: CoreTlvDataString,
         CORE_TLV_CONF_SESSION: CoreTlvDataString,
+        CORE_TLV_CONF_IFNUM: CoreTlvDataUint16,
         CORE_TLV_CONF_NETID: CoreTlvDataUint32,
         CORE_TLV_CONF_OPAQUE: CoreTlvDataString, 
     }

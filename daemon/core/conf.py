@@ -228,9 +228,13 @@ class Configurable(object):
         nodenum = msg.gettlv(coreapi.CORE_TLV_CONF_NODE)
         objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
         conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
+        
+        ifacenum = msg.gettlv(coreapi.CORE_TLV_CONF_IFNUM)
+        if ifacenum is not None:
+            nodenum = nodenum*1000 + ifacenum
 
         if mgr.verbose:
-            mgr.info("received configure message for %s" % cls._name)
+            mgr.info("received configure message for %s nodenum:%s" % (cls._name, str(nodenum)))
         if conftype == coreapi.CONF_TYPE_FLAGS_REQUEST:
             if mgr.verbose:
                 mgr.info("replying to configure request for %s model" %
