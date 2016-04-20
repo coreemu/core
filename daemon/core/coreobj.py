@@ -232,6 +232,7 @@ class PyCoreNode(PyCoreObj):
         if ifindex in self._netif:
             raise ValueError, "ifindex %s already exists" % ifindex
         self._netif[ifindex] = netif
+        netif.netindex = ifindex
 
     def delnetif(self, ifindex):
         if ifindex not in self._netif:

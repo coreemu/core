@@ -62,11 +62,13 @@ def main():
     names = EmaneIeee80211abgModel.getnames()
     values = list(EmaneIeee80211abgModel.getdefaultvalues())
     # TODO: change any of the EMANE 802.11 parameter values here
+    for i in range(0, len(names)):
+        print "EMANE 80211 \"%s\" = \"%s\"" % (names[i], values[i])
     try:
         values[ names.index('pathlossmode') ] = '2ray'
     except ValueError:
         values[ names.index('propagationmodel') ] = '2ray'
-
+        
     session.emane.setconfig(wlan.objid, EmaneIeee80211abgModel._name, values)
     services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
 

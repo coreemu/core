@@ -235,7 +235,14 @@ class Emane(ConfigurableManager):
             # don't use default values when interface config is the same as net
             # note here that using ifc.node.objid as key allows for only one type
             # of each model per node; TODO: use both node and interface as key
-            values = self.getconfig(ifc.node.objid, conftype, None)[1]
+            
+            # Adamson change: first check for iface config keyed by "node:ifc.name"
+            # (so that nodes w/ multiple interfaces of same conftype can have 
+            #  different configs for each separate interface)
+            key = 1000*ifc.node.objid + ifc.netindex
+            values = self.getconfig(key, conftype, None)[1]
+            if not values:
+                values = self.getconfig(ifc.node.objid, conftype, None)[1]
             if not values and self.version > self.EMANE091:
                 # with EMANE 0.9.2+, we need an extra NEM XML from
                 # model.buildnemxmlfiles(), so defaults are returned here
@@ -1279,7 +1286,9 @@ class EmaneModel(WirelessModel):
         name = "n%s" % self.objid
         if ifc is not None:
             nodenum = ifc.node.objid
-            if emane.getconfig(nodenum, self._name, None)[1] is not None:
+            # Adamson change - use getifcconfig() to get proper result
+            #if emane.getconfig(nodenum, self._name, None)[1] is not None:
+            if emane.getifcconfig(nodenum, self._name, None, ifc) is not None:
                 name = ifc.localname.replace('.','_')
         return "%s%s" % (name, self._name)
 
