@@ -497,6 +497,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         mac1 = msg.gettlv(coreapi.CORE_TLV_LINK_IF1MAC)
         ipv61 = msg.gettlv(coreapi.CORE_TLV_LINK_IF1IP6)
         ipv6mask1 = msg.gettlv(coreapi.CORE_TLV_LINK_IF1IP6MASK)
+        ifname1 = msg.gettlv(coreapi.CORE_TLV_LINK_IF1NAME)
 
         nodenum2 = msg.gettlv(coreapi.CORE_TLV_LINK_N2NUMBER)
         ifindex2 = msg.gettlv(coreapi.CORE_TLV_LINK_IF2NUM)
@@ -505,6 +506,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         mac2 = msg.gettlv(coreapi.CORE_TLV_LINK_IF2MAC)
         ipv62 = msg.gettlv(coreapi.CORE_TLV_LINK_IF2IP6)
         ipv6mask2 = msg.gettlv(coreapi.CORE_TLV_LINK_IF2IP6MASK)
+        ifname2 = msg.gettlv(coreapi.CORE_TLV_LINK_IF2NAME)
 
         node1 = None
         node2 = None
@@ -639,7 +641,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     if ipv62 is not None and ipv6mask2 is not None:
                         netaddrlist.append("%s/%s" % (ipv62, ipv6mask2))
                     ifindex1 = node1.newnetif(net, addrlist = addrlist,
-                                   hwaddr = mac1, ifindex = ifindex1)
+                                   hwaddr = mac1, ifindex = ifindex1, ifname=ifname1)
                     net.linkconfig(node1.netif(ifindex1, net), bw = bw,
                                    delay = delay, loss = loss,
                                    duplicate = duplicate, jitter = jitter)
@@ -663,7 +665,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     if ipv61 is not None and ipv6mask1 is not None:
                         netaddrlist.append("%s/%s" % (ipv61, ipv6mask1))
                     ifindex2 = node2.newnetif(net, addrlist = addrlist,
-                                   hwaddr = mac2, ifindex = ifindex2)
+                                   hwaddr = mac2, ifindex = ifindex2, ifname=ifname2)
                     if not unidirectional:
                         net.linkconfig(node2.netif(ifindex2, net), bw = bw,
                                    delay = delay, loss = loss,
