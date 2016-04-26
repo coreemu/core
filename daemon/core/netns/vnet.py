@@ -348,8 +348,8 @@ class LxBrNet(PyCoreNet):
             interface.
         '''
         
-        sys.stderr.write("enter linkconfig() ...\n")
-        traceback.print_stack()
+        #sys.stderr.write("enter linkconfig() ...\n")
+        #traceback.print_stack()
         
         if devname is None:
             devname = netif.localname
