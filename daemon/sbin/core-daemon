@@ -295,7 +295,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
     # Added to allow the API2 handler to define a different behavior when replying 
     # to messages from clients
-    def dispatchreplies(self, reply):
+    def dispatchreplies(self, replies):
         ''' Dispatch replies to a handled message.
         '''
         for reply in replies:
