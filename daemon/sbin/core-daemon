@@ -1412,7 +1412,7 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         while True:
             try:
                 data = self.recvmsg()
-                msgs = coreapi2.CoreMessage.toLegacyApi(data)
+                msgs = coreapi2.CoreApiBridge.Api2toLegacy(data)
                 if msgs:
                     for msg in msgs:
                         print msg
@@ -1427,12 +1427,14 @@ class CoreApi2RequestHandler(CoreRequestHandler):
     def dispatchreplies(self, replies):
         ''' Dispatch a reply to a previously received message.
         '''
-        api2Replies = coreapi2.CoreMessage.toApi2(replies)
-        for reply in api2Replies:
-            try:
-                self.sendall(reply)
-            except Exception, e:
-                self.warn("Error sending reply data: %s" % e)
+        api2Replies = coreapi2.CoreApiBridge.LegacytoApi2(replies)
+        if api2Replies:
+            for reply in api2Replies:
+                try:
+                    self.request.sendall(struct.pack(coreapi2.HDRFMT, len(reply)))
+                    self.sendall(reply)
+                except Exception, e:
+                    self.warn("Error sending reply data: %s" % e)
 
     def finish(self):
         return SocketServer.BaseRequestHandler.finish(self)
@@ -1443,20 +1445,19 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         '''
 
         try:
-            hdr = self.request.recv(coreapi2.CoreMessage.hdrsiz)
+            hdr = self.request.recv(coreapi2.HDRSIZ)
             if self.debug and len(msghdr) > 0:
                 self.info("received message header:\n%s" % hexdump(msghdr))
         except Exception, e:
             raise IOError, "error receiving API 2 header (%s)" % e
 
-        if len(hdr) != coreapi2.CoreMessage.hdrsiz:
+        if len(hdr) != coreapi2.HDRSIZ:
             if len(hdr) == 0:
                 raise EOFError, "client disconnected"
             else:            
-                print coreapi2.CoreMessage.hdrsiz, len(hdr)
                 raise IOError, "invalid message header size"
                 
-        dataToRead = struct.unpack(coreapi2.CoreMessage.hdrfmt, hdr)[0]
+        dataToRead = struct.unpack(coreapi2.HDRFMT, hdr)[0]
         data = ""
         while len(data) < dataToRead:
             data += self.request.recv(dataToRead - len(data))
