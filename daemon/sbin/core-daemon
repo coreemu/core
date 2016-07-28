@@ -17,6 +17,7 @@ import SocketServer, struct, sys, threading, time, traceback
 import os, optparse, ConfigParser, gc, shlex, socket, shutil
 import atexit
 import signal
+import traceback
 
 try:
     from core import pycore
@@ -1390,6 +1391,7 @@ class CoreApi2RequestHandler(CoreRequestHandler):
             coreapi.CORE_API_EVENT_MSG: self.handleeventmsg,
             coreapi.CORE_API_SESS_MSG: self.handlesessionmsg,
         }
+        self.handlerthreads = [] # TODO: Vet this
         self.nodestatusreq = {}
         self.master = False
         self.session = None
@@ -1415,7 +1417,6 @@ class CoreApi2RequestHandler(CoreRequestHandler):
                 msgs = coreapi2.CoreApiBridge.Api2toLegacy(data)
                 if msgs:
                     for msg in msgs:
-                        print msg
                         self.session.broadcast(self, msg)
                         self.handlemsg(msg)
             except EOFError:
@@ -1431,10 +1432,26 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         if api2Replies:
             for reply in api2Replies:
                 try:
-                    self.request.sendall(struct.pack(coreapi2.HDRFMT, len(reply)))
-                    self.sendall(reply)
+                    # send to API2 client 
+                    self.request.sendall(reply)
                 except Exception, e:
                     self.warn("Error sending reply data: %s" % e)
+
+
+    def sendall(self, data):
+        ''' The daemon calls this method with legacy API data. Convert first
+        API2 then send.
+        '''
+        print "Sending data to API2 client",         len(data)
+
+        #sys.stderr.write("enter linkconfig() ...\n")  
+        #traceback.print_stack()  
+        msgs = coreapi2.CoreApiBridge.LegacytoApi2((data,))
+        print "msgs=", len(msgs)
+        if msgs:
+            for msg in msgs:
+                self.request.sendall(msg)
+
 
     def finish(self):
         return SocketServer.BaseRequestHandler.finish(self)
@@ -1446,8 +1463,6 @@ class CoreApi2RequestHandler(CoreRequestHandler):
 
         try:
             hdr = self.request.recv(coreapi2.HDRSIZ)
-            if self.debug and len(msghdr) > 0:
-                self.info("received message header:\n%s" % hexdump(msghdr))
         except Exception, e:
             raise IOError, "error receiving API 2 header (%s)" % e
 

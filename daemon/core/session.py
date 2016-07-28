@@ -186,6 +186,7 @@ class Session(object):
             if isinstance(msg, coreapi.CoreNodeMessage) or \
                     isinstance(msg, coreapi.CoreLinkMessage):
                 try:
+                    print "broadcasting.."
                     handler.sendall(msg.rawmsg)
                 except Exception, e:
                     self.warn("sendall() error: %s" % e)
@@ -199,6 +200,7 @@ class Session(object):
             if handler == src:
                 continue
             try:
+                print "broadcasting raw data.."
                 handler.sendall(data)
             except Exception, e:
                 self.warn("sendall() error: %s" % e)
@@ -675,6 +677,7 @@ class Session(object):
         self.info("Checking for runtime with %d of %d session nodes" % \
                     (nc, session_node_count))
         if nc < session_node_count:
+            self.info("do not have information on all nodes") 
             return # do not have information on all nodes yet
         # information on all nodes has been received and they have been started
         # enter the runtime state
@@ -683,6 +686,7 @@ class Session(object):
         state = coreapi.CORE_EVENT_RUNTIME_STATE
         self.evq.run()
         self.setstate(state, info=True, sendevent=True)
+        self.info("Entered runtime state") 
 
     def datacollect(self):
         ''' Tear down a running session. Stop the event loop and any running

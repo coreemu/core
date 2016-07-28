@@ -70,10 +70,15 @@ class CoreApiBridge(object):
                 newMsg.session.SetInParent()
                 newMsg.session.clientId = 'client' + sessions[0]
                 newMsg.session.port_num = port_num
-                print "len=", len(newMsg.SerializeToString())
-                api2msgs.append(newMsg.SerializeToString())
+                api2msgs.append(CoreApiBridge.packApi2(newMsg))
+            else:
+                print "received message type", msgtype
         return api2msgs
 
+    @staticmethod
+    def packApi2(message):
+        data = message.SerializeToString()
+        return struct.pack(HDRFMT, len(data)) + data
 
     @staticmethod
     def translateApi2SessionMsg(message):
@@ -97,6 +102,7 @@ class CoreApiBridge(object):
         msgs.append(EventMsgWrapper.createLegacyMessage(legacy.CORE_EVENT_CONFIGURATION_STATE))
 
         # Send location
+        # TODO: Add this info to the Experiment
         msgs.append(ConfigMsgWrapper.createLegacyMessage(obj="location",
                                                          dataTypes=(9,9,9,9,9,9),
                                                          dataValues='0|0| 47.5766974863|-122.125920191|0.0|150.0'))
@@ -118,13 +124,30 @@ class CoreApiBridge(object):
                 node.idx,
                 str(node.name)))
 
+        for device in message.devices:
+            # TODO: Add other fields
+            msgs.append(NodeMsgWrapper.createLegacyMessage(
+                legacy.CORE_API_ADD_FLAG|legacy.CORE_API_STR_FLAG,
+                device.idx,
+                str(device.name),
+                type = legacy.CORE_NODE_SWITCH)) # TODO: Update this later
+
+        for network in message.networks:
+            for channel in network.channels:
+                if len(channel.endpoints) == 2:
+                    ep0 = channel.endpoints[0]
+                    ep1 = channel.endpoints[1]
+                    msgs.append(LinkMsgWrapper.createLegacyMessage(legacy.CORE_API_ADD_FLAG,
+                                                                   ep0.dev_idx,ep0.intf_idx,
+                                                                   ep1.dev_idx,ep1.intf_idx))
+                                                       
         # send metadata
         # TODO
 
 
         # transition to instantiation state
         # TODO
-
+        msgs.append(EventMsgWrapper.createLegacyMessage(legacy.CORE_EVENT_INSTANTIATION_STATE))
         
 
         return msgs
@@ -236,6 +259,71 @@ class NodeMsgWrapper(legacy.CoreNodeMessage):
         return self.gettlv(legacy.CORE_TLV_NODE_OPAQUE)
 
 class LinkMsgWrapper(legacy.CoreLinkMessage):
+
+    @staticmethod
+    def createLegacyMessage(flags, n1number, if1num, n2number, if2num, 
+                            delay=0, bw=0, per=None, dup=None, jitter=0, mer=0, burst=0, mburst=0, 
+                            session=None, type=legacy.CORE_LINK_WIRED, guiattr=None, 
+                            emuid=-1, netid=-1, key=-1, 
+                            if1ip4=None, if1ip4mask=24, if1mac=None, if1ip6=None, if1ip6mask=64, 
+                            if2ip4=None, if2ip4mask=24, if2mac=None, if2ip6=None, if2ip6mask=64, 
+                            opaque=None):
+        tlvdata = legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_N1NUMBER,n1number)
+        tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_N2NUMBER,n2number)
+        # TODO: do we need to set delay, bw, per, dup for default values (as in api.tcl)?
+        tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_DELAY,delay)
+        tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_BW,bw)
+        if per is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_PER,per)
+        if dup is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_DUP,dup)
+        if jitter > 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_JITTER,jitter)
+        if mer > 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_MER,mer)
+        if burst > 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_BURST,burst)
+        if mburst > 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_MBURST,mburst)
+        if session is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_SESSION,session)
+        tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_TYPE,type)
+        if guiattr is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_GUIATTR,guiattr)
+        if emuid >= 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_EMUID,emuid)
+        if netid >= 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_NETID,netid)
+        if key >= 0:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_KEY,key)
+        if if1num > -2:
+        	tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF1NUM,if1num)
+        if if1ip4 is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF1IP4,IPAddr(AF_INET, socket.inet_aton(if1ip4)))
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF1IP4MASK,if1ip4mask)
+        if if1mac is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF1MAC,MacAddr.fromstring(if1mac))
+        if if1ip6 is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF1IP6,IPAddr(AF_INET6, socket.inet_pton(AF_INET6,if1ip6)))
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF1IP6MASK,if1ip6mask)
+        if if2num > -2:
+        	tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF2NUM,if2num)
+        if if2ip4 is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF2IP4,IPAddr(AF_INET, socket.inet_aton(if2ip4)))
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF2IP4MASK,if2ip4mask)
+        if if2mac is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF2MAC,MacAddr.fromstring(if2mac))
+        if if2ip6 is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF2IP6,IPAddr(AF_INET6, socket.inet_pton(AF_INET6,if2ip6)))
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_IF2IP6MASK,if2ip6mask)
+        if opaque is not None:
+            tlvdata = tlvdata + legacy.CoreLinkTlv.pack(legacy.CORE_TLV_LINK_OPAQUE,opaque)
+
+        hdr = struct.pack(legacy.CoreMessage.hdrfmt, legacy.CoreLinkMessage.msgtype, flags, len(tlvdata))
+        return legacy.CoreLinkMessage(flags, hdr, tlvdata)
+
+
+
     def getN1number(self):
         return self.gettlv(legacy.CORE_TLV_LINK_N1NUMBER)
     def getN2number(self):
