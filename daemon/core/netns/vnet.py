@@ -348,9 +348,6 @@ class LxBrNet(PyCoreNet):
             interface.
         '''
         
-        sys.stderr.write("enter linkconfig() ...\n")
-        traceback.print_stack()
-        
         if devname is None:
             devname = netif.localname
         tc = [TC_BIN, "qdisc", "replace", "dev", devname]
