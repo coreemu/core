@@ -13,7 +13,7 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='core.proto',
   package='core_proto',
-  serialized_pb='\n\ncore.proto\x12\ncore_proto\"\xe5\x01\n\x05\x45vent\x12\x10\n\x08node_idx\x18\x01 \x01(\x05\x12\x0f\n\x07\x64\x65v_idx\x18\x02 \x01(\x05\x12\x0f\n\x07net_idx\x18\x03 \x01(\x05\x12\x13\n\x0b\x63hannel_idx\x18\x04 \x01(\x05\x12\x10\n\x08oldstate\x18\x05 \x01(\x05\x12\x10\n\x08newstate\x18\x06 \x01(\x05\"8\n\x08msg_type\x12\x08\n\x04node\x10\x00\x12\n\n\x06\x64\x65vice\x10\x01\x12\x0b\n\x07\x63hannel\x10\x02\x12\t\n\x05state\x10\x03\"5\n\x08mod_type\x12\x07\n\x03\x61\x64\x64\x10\x00\x12\n\n\x06\x64\x65lete\x10\x01\x12\n\n\x06modify\x10\x02\x12\x08\n\x04move\x10\x03\"-\n\x08\x45ndpoint\x12\x0f\n\x07\x64\x65v_idx\x18\x01 \x02(\x05\x12\x10\n\x08intf_idx\x18\x02 \x02(\x05\"?\n\x07\x43hannel\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\'\n\tendpoints\x18\x02 \x03(\x0b\x32\x14.core_proto.Endpoint\"K\n\x07Network\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x08\x63hannels\x18\x03 \x03(\x0b\x32\x13.core_proto.Channel\"\x8d\x01\n\x07Service\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x10\n\x08standard\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x14\n\x0cstart_script\x18\x04 \x01(\t\x12\x13\n\x0bstop_script\x18\x05 \x01(\t\x12\x15\n\rconfiguration\x18\x06 \x01(\t\x12\x13\n\x0b\x64irectories\x18\x07 \x01(\t\"I\n\tInterface\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\x12\x0f\n\x07ip_addr\x18\x04 \x01(\t\"`\n\x06\x44\x65vice\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12\x10\n\x08location\x18\x04 \x01(\t\"\x85\x01\n\x04Node\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12%\n\x08services\x18\x04 \x03(\x0b\x32\x13.core_proto.Service\x12\x10\n\x08location\x18\x05 \x01(\t\"\x9d\x01\n\nExperiment\x12\x14\n\x0c\x65xperimentId\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x1f\n\x05nodes\x18\x03 \x03(\x0b\x32\x10.core_proto.Node\x12#\n\x07\x64\x65vices\x18\x04 \x03(\x0b\x32\x12.core_proto.Device\x12%\n\x08networks\x18\x05 \x03(\x0b\x32\x13.core_proto.Network\"Y\n\x07Session\x12\x10\n\x08\x63lientId\x18\x01 \x02(\t\x12\x10\n\x08port_num\x18\x02 \x01(\x05\x12*\n\nexperiment\x18\x03 \x01(\x0b\x32\x16.core_proto.Experiment\")\n\x0c\x45rrorMessage\x12\x0c\n\x04\x63ode\x18\x01 \x02(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\"\xee\x01\n\x0b\x43oreMessage\x12$\n\x07session\x18\x01 \x01(\x0b\x32\x13.core_proto.Session\x12*\n\nexperiment\x18\x02 \x01(\x0b\x32\x16.core_proto.Experiment\x12\x1e\n\x04node\x18\x03 \x01(\x0b\x32\x10.core_proto.Node\x12\"\n\x06\x64\x65vice\x18\x04 \x01(\x0b\x32\x12.core_proto.Device\x12 \n\x05\x65vent\x18\x05 \x01(\x0b\x32\x11.core_proto.Event\x12\'\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x18.core_proto.ErrorMessage')
+  serialized_pb='\n\ncore.proto\x12\ncore_proto\"\xe5\x01\n\x05\x45vent\x12\x10\n\x08node_idx\x18\x01 \x01(\x05\x12\x0f\n\x07\x64\x65v_idx\x18\x02 \x01(\x05\x12\x0f\n\x07net_idx\x18\x03 \x01(\x05\x12\x13\n\x0b\x63hannel_idx\x18\x04 \x01(\x05\x12\x10\n\x08oldstate\x18\x05 \x01(\x05\x12\x10\n\x08newstate\x18\x06 \x01(\x05\"8\n\x08msg_type\x12\x08\n\x04node\x10\x00\x12\n\n\x06\x64\x65vice\x10\x01\x12\x0b\n\x07\x63hannel\x10\x02\x12\t\n\x05state\x10\x03\"5\n\x08mod_type\x12\x07\n\x03\x61\x64\x64\x10\x00\x12\n\n\x06\x64\x65lete\x10\x01\x12\n\n\x06modify\x10\x02\x12\x08\n\x04move\x10\x03\"-\n\x08\x45ndpoint\x12\x0f\n\x07\x64\x65v_idx\x18\x01 \x02(\x05\x12\x10\n\x08intf_idx\x18\x02 \x02(\x05\"?\n\x07\x43hannel\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\'\n\tendpoints\x18\x02 \x03(\x0b\x32\x14.core_proto.Endpoint\"K\n\x07Network\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x08\x63hannels\x18\x03 \x03(\x0b\x32\x13.core_proto.Channel\"\x8d\x01\n\x07Service\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x10\n\x08standard\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x14\n\x0cstart_script\x18\x04 \x01(\t\x12\x13\n\x0bstop_script\x18\x05 \x01(\t\x12\x15\n\rconfiguration\x18\x06 \x01(\t\x12\x13\n\x0b\x64irectories\x18\x07 \x01(\t\"\x80\x01\n\tInterface\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\x12\x10\n\x08ip4_addr\x18\x04 \x01(\t\x12\x10\n\x08ip4_mask\x18\x05 \x01(\t\x12\x10\n\x08ip6_addr\x18\x06 \x01(\t\x12\x10\n\x08ip6_mask\x18\x07 \x01(\t\"`\n\x06\x44\x65vice\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12\x10\n\x08location\x18\x04 \x01(\t\"\x85\x01\n\x04Node\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12%\n\x08services\x18\x04 \x03(\x0b\x32\x13.core_proto.Service\x12\x10\n\x08location\x18\x05 \x01(\t\"\x9d\x01\n\nExperiment\x12\x14\n\x0c\x65xperimentId\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x1f\n\x05nodes\x18\x03 \x03(\x0b\x32\x10.core_proto.Node\x12#\n\x07\x64\x65vices\x18\x04 \x03(\x0b\x32\x12.core_proto.Device\x12%\n\x08networks\x18\x05 \x03(\x0b\x32\x13.core_proto.Network\"\x83\x01\n\x07Session\x12\x10\n\x08\x63lientId\x18\x01 \x02(\t\x12\x10\n\x08port_num\x18\x02 \x01(\x05\x12*\n\nexperiment\x18\x03 \x01(\x0b\x32\x16.core_proto.Experiment\x12(\n\x08\x61ll_exps\x18\x04 \x03(\x0b\x32\x16.core_proto.Experiment\")\n\x0c\x45rrorMessage\x12\x0c\n\x04\x63ode\x18\x01 \x02(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\"\xee\x01\n\x0b\x43oreMessage\x12$\n\x07session\x18\x01 \x01(\x0b\x32\x13.core_proto.Session\x12*\n\nexperiment\x18\x02 \x01(\x0b\x32\x16.core_proto.Experiment\x12\x1e\n\x04node\x18\x03 \x01(\x0b\x32\x10.core_proto.Node\x12\"\n\x06\x64\x65vice\x18\x04 \x01(\x0b\x32\x12.core_proto.Device\x12 \n\x05\x65vent\x18\x05 \x01(\x0b\x32\x11.core_proto.Event\x12\'\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x18.core_proto.ErrorMessage')
 
 
 
@@ -352,8 +352,29 @@ _INTERFACE = _descriptor.Descriptor(
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='ip_addr', full_name='core_proto.Interface.ip_addr', index=3,
+      name='ip4_addr', full_name='core_proto.Interface.ip4_addr', index=3,
       number=4, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=unicode("", "utf-8"),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip4_mask', full_name='core_proto.Interface.ip4_mask', index=4,
+      number=5, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=unicode("", "utf-8"),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip6_addr', full_name='core_proto.Interface.ip6_addr', index=5,
+      number=6, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=unicode("", "utf-8"),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='ip6_mask', full_name='core_proto.Interface.ip6_mask', index=6,
+      number=7, type=9, cpp_type=9, label=1,
       has_default_value=False, default_value=unicode("", "utf-8"),
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -367,8 +388,8 @@ _INTERFACE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=591,
-  serialized_end=664,
+  serialized_start=592,
+  serialized_end=720,
 )
 
 
@@ -416,8 +437,8 @@ _DEVICE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=666,
-  serialized_end=762,
+  serialized_start=722,
+  serialized_end=818,
 )
 
 
@@ -472,8 +493,8 @@ _NODE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=765,
-  serialized_end=898,
+  serialized_start=821,
+  serialized_end=954,
 )
 
 
@@ -528,8 +549,8 @@ _EXPERIMENT = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=901,
-  serialized_end=1058,
+  serialized_start=957,
+  serialized_end=1114,
 )
 
 
@@ -561,6 +582,13 @@ _SESSION = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='all_exps', full_name='core_proto.Session.all_exps', index=3,
+      number=4, type=11, cpp_type=10, label=3,
+      has_default_value=False, default_value=[],
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
@@ -570,8 +598,8 @@ _SESSION = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1060,
-  serialized_end=1149,
+  serialized_start=1117,
+  serialized_end=1248,
 )
 
 
@@ -605,8 +633,8 @@ _ERRORMESSAGE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1151,
-  serialized_end=1192,
+  serialized_start=1250,
+  serialized_end=1291,
 )
 
 
@@ -668,8 +696,8 @@ _COREMESSAGE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1195,
-  serialized_end=1433,
+  serialized_start=1294,
+  serialized_end=1532,
 )
 
 _EVENT_MSG_TYPE.containing_type = _EVENT;
@@ -683,6 +711,7 @@ _EXPERIMENT.fields_by_name['nodes'].message_type = _NODE
 _EXPERIMENT.fields_by_name['devices'].message_type = _DEVICE
 _EXPERIMENT.fields_by_name['networks'].message_type = _NETWORK
 _SESSION.fields_by_name['experiment'].message_type = _EXPERIMENT
+_SESSION.fields_by_name['all_exps'].message_type = _EXPERIMENT
 _COREMESSAGE.fields_by_name['session'].message_type = _SESSION
 _COREMESSAGE.fields_by_name['experiment'].message_type = _EXPERIMENT
 _COREMESSAGE.fields_by_name['node'].message_type = _NODE
