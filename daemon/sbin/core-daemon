@@ -1442,12 +1442,8 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         ''' The daemon calls this method with legacy API data. Convert first
         API2 then send.
         '''
-        print "Sending data to API2 client",         len(data)
 
-        #sys.stderr.write("enter linkconfig() ...\n")  
-        #traceback.print_stack()  
         msgs = coreapi2.CoreApiBridge.LegacytoApi2((data,))
-        print "msgs=", len(msgs)
         if msgs:
             for msg in msgs:
                 self.request.sendall(msg)
