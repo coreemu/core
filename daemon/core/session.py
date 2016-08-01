@@ -761,7 +761,8 @@ class Session(object):
                                                | coreapi.CORE_API_LOC_FLAG,
                                                  tlvdata)
             try:
-                handler.request.sendall(reply)
+                #Use the handler's sendall (Is this ok with CoreDatagramRequestHandler??)
+                handler.sendall(reply)
             except Exception, e:
                 self.warn("sendall() for node: %d error: %s" % (nodenum, e))
             del handler.nodestatusreq[nodenum]
