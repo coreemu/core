@@ -13,66 +13,124 @@ from google.protobuf import descriptor_pb2
 DESCRIPTOR = _descriptor.FileDescriptor(
   name='core.proto',
   package='core_proto',
-  serialized_pb='\n\ncore.proto\x12\ncore_proto\"\xe5\x01\n\x05\x45vent\x12\x10\n\x08node_idx\x18\x01 \x01(\x05\x12\x0f\n\x07\x64\x65v_idx\x18\x02 \x01(\x05\x12\x0f\n\x07net_idx\x18\x03 \x01(\x05\x12\x13\n\x0b\x63hannel_idx\x18\x04 \x01(\x05\x12\x10\n\x08oldstate\x18\x05 \x01(\x05\x12\x10\n\x08newstate\x18\x06 \x01(\x05\"8\n\x08msg_type\x12\x08\n\x04node\x10\x00\x12\n\n\x06\x64\x65vice\x10\x01\x12\x0b\n\x07\x63hannel\x10\x02\x12\t\n\x05state\x10\x03\"5\n\x08mod_type\x12\x07\n\x03\x61\x64\x64\x10\x00\x12\n\n\x06\x64\x65lete\x10\x01\x12\n\n\x06modify\x10\x02\x12\x08\n\x04move\x10\x03\"-\n\x08\x45ndpoint\x12\x0f\n\x07\x64\x65v_idx\x18\x01 \x02(\x05\x12\x10\n\x08intf_idx\x18\x02 \x02(\x05\"?\n\x07\x43hannel\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\'\n\tendpoints\x18\x02 \x03(\x0b\x32\x14.core_proto.Endpoint\"K\n\x07Network\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x08\x63hannels\x18\x03 \x03(\x0b\x32\x13.core_proto.Channel\"\x8d\x01\n\x07Service\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x10\n\x08standard\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x14\n\x0cstart_script\x18\x04 \x01(\t\x12\x13\n\x0bstop_script\x18\x05 \x01(\t\x12\x15\n\rconfiguration\x18\x06 \x01(\t\x12\x13\n\x0b\x64irectories\x18\x07 \x01(\t\"\x80\x01\n\tInterface\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\x12\x10\n\x08ip4_addr\x18\x04 \x01(\t\x12\x10\n\x08ip4_mask\x18\x05 \x01(\t\x12\x10\n\x08ip6_addr\x18\x06 \x01(\t\x12\x10\n\x08ip6_mask\x18\x07 \x01(\t\"`\n\x06\x44\x65vice\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12\x10\n\x08location\x18\x04 \x01(\t\"\x85\x01\n\x04Node\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12%\n\x08services\x18\x04 \x03(\x0b\x32\x13.core_proto.Service\x12\x10\n\x08location\x18\x05 \x01(\t\"\x9d\x01\n\nExperiment\x12\x14\n\x0c\x65xperimentId\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x1f\n\x05nodes\x18\x03 \x03(\x0b\x32\x10.core_proto.Node\x12#\n\x07\x64\x65vices\x18\x04 \x03(\x0b\x32\x12.core_proto.Device\x12%\n\x08networks\x18\x05 \x03(\x0b\x32\x13.core_proto.Network\"\x83\x01\n\x07Session\x12\x10\n\x08\x63lientId\x18\x01 \x02(\t\x12\x10\n\x08port_num\x18\x02 \x01(\x05\x12*\n\nexperiment\x18\x03 \x01(\x0b\x32\x16.core_proto.Experiment\x12(\n\x08\x61ll_exps\x18\x04 \x03(\x0b\x32\x16.core_proto.Experiment\")\n\x0c\x45rrorMessage\x12\x0c\n\x04\x63ode\x18\x01 \x02(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\"\xee\x01\n\x0b\x43oreMessage\x12$\n\x07session\x18\x01 \x01(\x0b\x32\x13.core_proto.Session\x12*\n\nexperiment\x18\x02 \x01(\x0b\x32\x16.core_proto.Experiment\x12\x1e\n\x04node\x18\x03 \x01(\x0b\x32\x10.core_proto.Node\x12\"\n\x06\x64\x65vice\x18\x04 \x01(\x0b\x32\x12.core_proto.Device\x12 \n\x05\x65vent\x18\x05 \x01(\x0b\x32\x11.core_proto.Event\x12\'\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x18.core_proto.ErrorMessage')
+  serialized_pb='\n\ncore.proto\x12\ncore_proto\"\xb7\x03\n\x05\x45vent\x12\x32\n\x08msg_type\x18\x01 \x01(\x0e\x32\x19.core_proto.Event.MsgType:\x05STATE\x12\x33\n\x08mod_type\x18\x02 \x01(\x0e\x32\x19.core_proto.Event.ModType:\x06MODIFY\x12\x10\n\x08node_idx\x18\x03 \x01(\x05\x12\x0f\n\x07\x64\x65v_idx\x18\x04 \x01(\x05\x12\x0f\n\x07net_idx\x18\x05 \x01(\x05\x12\x13\n\x0b\x63hannel_idx\x18\x06 \x01(\x05\x12\x10\n\x08oldstate\x18\x07 \x01(\x05\x12\x10\n\x08newstate\x18\x08 \x01(\x05\"7\n\x07MsgType\x12\x08\n\x04NODE\x10\x00\x12\n\n\x06\x44\x45VICE\x10\x01\x12\x0b\n\x07\x43HANNEL\x10\x02\x12\t\n\x05STATE\x10\x03\"4\n\x07ModType\x12\x07\n\x03\x41\x44\x44\x10\x00\x12\n\n\x06\x44\x45LETE\x10\x01\x12\n\n\x06MODIFY\x10\x02\x12\x08\n\x04MOVE\x10\x03\"i\n\x05State\x12\x0e\n\nDEFINITION\x10\x00\x12\x11\n\rCONFIGURATION\x10\x01\x12\x11\n\rINSTANTIATION\x10\x02\x12\x0b\n\x07RUNTIME\x10\x03\x12\x0f\n\x0b\x44\x41TACOLLECT\x10\x04\x12\x0c\n\x08SHUTDOWN\x10\x05\"-\n\x08\x45ndpoint\x12\x0f\n\x07\x64\x65v_idx\x18\x01 \x02(\x05\x12\x10\n\x08intf_idx\x18\x02 \x02(\x05\"\xdd\x02\n\x07\x43hannel\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\'\n\tendpoints\x18\x02 \x03(\x0b\x32\x14.core_proto.Endpoint\x12\x10\n\x05\x64\x65lay\x18\x03 \x01(\x03:\x01\x30\x12\x14\n\tbandwidth\x18\x04 \x01(\x03:\x01\x30\x12\x0e\n\x03per\x18\x05 \x01(\x01:\x01\x30\x12\x0f\n\x04\x64ups\x18\x06 \x01(\x01:\x01\x30\x12\x11\n\x06jitter\x18\x07 \x01(\x01:\x01\x30\x12\x0e\n\x03mer\x18\x08 \x01(\x01:\x01\x30\x12\x10\n\x05\x62urst\x18\t \x01(\x01:\x01\x30\x12\x36\n\tlink_type\x18\n \x01(\x0e\x32\x1c.core_proto.Channel.LinkType:\x05WIRED\x12\x16\n\x0eunidirectional\x18\x0b \x01(\x08\x12\x15\n\rdisplay_props\x18\x0c \x01(\t\x12\x12\n\ntunnel_key\x18\r \x01(\x05\"#\n\x08LinkType\x12\x0c\n\x08WIRELESS\x10\x01\x12\t\n\x05WIRED\x10\x02\"K\n\x07Network\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12%\n\x08\x63hannels\x18\x03 \x03(\x0b\x32\x13.core_proto.Channel\"\x8d\x01\n\x07Service\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x10\n\x08standard\x18\x02 \x01(\t\x12\x0c\n\x04name\x18\x03 \x01(\t\x12\x14\n\x0cstart_script\x18\x04 \x01(\t\x12\x13\n\x0bstop_script\x18\x05 \x01(\t\x12\x15\n\rconfiguration\x18\x06 \x01(\t\x12\x13\n\x0b\x64irectories\x18\x07 \x01(\t\"\x80\x01\n\tInterface\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x10\n\x08mac_addr\x18\x03 \x01(\t\x12\x10\n\x08ip4_addr\x18\x04 \x01(\t\x12\x10\n\x08ip4_mask\x18\x05 \x01(\t\x12\x10\n\x08ip6_addr\x18\x06 \x01(\t\x12\x10\n\x08ip6_mask\x18\x07 \x01(\t\"`\n\x06\x44\x65vice\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12\x10\n\x08location\x18\x04 \x01(\t\"\x85\x01\n\x04Node\x12\x0b\n\x03idx\x18\x01 \x02(\x05\x12\x0c\n\x04name\x18\x02 \x01(\t\x12)\n\ninterfaces\x18\x03 \x03(\x0b\x32\x15.core_proto.Interface\x12%\n\x08services\x18\x04 \x03(\x0b\x32\x13.core_proto.Service\x12\x10\n\x08location\x18\x05 \x01(\t\"\x9d\x01\n\nExperiment\x12\x14\n\x0c\x65xperimentId\x18\x01 \x01(\t\x12\x0c\n\x04name\x18\x02 \x01(\t\x12\x1f\n\x05nodes\x18\x03 \x03(\x0b\x32\x10.core_proto.Node\x12#\n\x07\x64\x65vices\x18\x04 \x03(\x0b\x32\x12.core_proto.Device\x12%\n\x08networks\x18\x05 \x03(\x0b\x32\x13.core_proto.Network\"\x83\x01\n\x07Session\x12\x10\n\x08\x63lientId\x18\x01 \x02(\t\x12\x10\n\x08port_num\x18\x02 \x01(\x05\x12*\n\nexperiment\x18\x03 \x01(\x0b\x32\x16.core_proto.Experiment\x12(\n\x08\x61ll_exps\x18\x04 \x03(\x0b\x32\x16.core_proto.Experiment\")\n\x0c\x45rrorMessage\x12\x0c\n\x04\x63ode\x18\x01 \x02(\x05\x12\x0b\n\x03msg\x18\x02 \x01(\t\"\xee\x01\n\x0b\x43oreMessage\x12$\n\x07session\x18\x01 \x01(\x0b\x32\x13.core_proto.Session\x12*\n\nexperiment\x18\x02 \x01(\x0b\x32\x16.core_proto.Experiment\x12\x1e\n\x04node\x18\x03 \x01(\x0b\x32\x10.core_proto.Node\x12\"\n\x06\x64\x65vice\x18\x04 \x01(\x0b\x32\x12.core_proto.Device\x12 \n\x05\x65vent\x18\x05 \x01(\x0b\x32\x11.core_proto.Event\x12\'\n\x05\x65rror\x18\x06 \x01(\x0b\x32\x18.core_proto.ErrorMessage')
 
 
 
-_EVENT_MSG_TYPE = _descriptor.EnumDescriptor(
-  name='msg_type',
-  full_name='core_proto.Event.msg_type',
+_EVENT_MSGTYPE = _descriptor.EnumDescriptor(
+  name='MsgType',
+  full_name='core_proto.Event.MsgType',
   filename=None,
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='node', index=0, number=0,
+      name='NODE', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='device', index=1, number=1,
+      name='DEVICE', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='channel', index=2, number=2,
+      name='CHANNEL', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='state', index=3, number=3,
+      name='STATE', index=3, number=3,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=145,
-  serialized_end=201,
+  serialized_start=250,
+  serialized_end=305,
 )
 
-_EVENT_MOD_TYPE = _descriptor.EnumDescriptor(
-  name='mod_type',
-  full_name='core_proto.Event.mod_type',
+_EVENT_MODTYPE = _descriptor.EnumDescriptor(
+  name='ModType',
+  full_name='core_proto.Event.ModType',
   filename=None,
   file=DESCRIPTOR,
   values=[
     _descriptor.EnumValueDescriptor(
-      name='add', index=0, number=0,
+      name='ADD', index=0, number=0,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='delete', index=1, number=1,
+      name='DELETE', index=1, number=1,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='modify', index=2, number=2,
+      name='MODIFY', index=2, number=2,
       options=None,
       type=None),
     _descriptor.EnumValueDescriptor(
-      name='move', index=3, number=3,
+      name='MOVE', index=3, number=3,
       options=None,
       type=None),
   ],
   containing_type=None,
   options=None,
-  serialized_start=203,
-  serialized_end=256,
+  serialized_start=307,
+  serialized_end=359,
+)
+
+_EVENT_STATE = _descriptor.EnumDescriptor(
+  name='State',
+  full_name='core_proto.Event.State',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='DEFINITION', index=0, number=0,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='CONFIGURATION', index=1, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='INSTANTIATION', index=2, number=2,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='RUNTIME', index=3, number=3,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='DATACOLLECT', index=4, number=4,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='SHUTDOWN', index=5, number=5,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=361,
+  serialized_end=466,
+)
+
+_CHANNEL_LINKTYPE = _descriptor.EnumDescriptor(
+  name='LinkType',
+  full_name='core_proto.Channel.LinkType',
+  filename=None,
+  file=DESCRIPTOR,
+  values=[
+    _descriptor.EnumValueDescriptor(
+      name='WIRELESS', index=0, number=1,
+      options=None,
+      type=None),
+    _descriptor.EnumValueDescriptor(
+      name='WIRED', index=1, number=2,
+      options=None,
+      type=None),
+  ],
+  containing_type=None,
+  options=None,
+  serialized_start=830,
+  serialized_end=865,
 )
 
 
@@ -84,43 +142,57 @@ _EVENT = _descriptor.Descriptor(
   containing_type=None,
   fields=[
     _descriptor.FieldDescriptor(
-      name='node_idx', full_name='core_proto.Event.node_idx', index=0,
-      number=1, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
+      name='msg_type', full_name='core_proto.Event.msg_type', index=0,
+      number=1, type=14, cpp_type=8, label=1,
+      has_default_value=True, default_value=3,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='dev_idx', full_name='core_proto.Event.dev_idx', index=1,
-      number=2, type=5, cpp_type=1, label=1,
-      has_default_value=False, default_value=0,
+      name='mod_type', full_name='core_proto.Event.mod_type', index=1,
+      number=2, type=14, cpp_type=8, label=1,
+      has_default_value=True, default_value=2,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='net_idx', full_name='core_proto.Event.net_idx', index=2,
+      name='node_idx', full_name='core_proto.Event.node_idx', index=2,
       number=3, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='channel_idx', full_name='core_proto.Event.channel_idx', index=3,
+      name='dev_idx', full_name='core_proto.Event.dev_idx', index=3,
       number=4, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='oldstate', full_name='core_proto.Event.oldstate', index=4,
+      name='net_idx', full_name='core_proto.Event.net_idx', index=4,
       number=5, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
     _descriptor.FieldDescriptor(
-      name='newstate', full_name='core_proto.Event.newstate', index=5,
+      name='channel_idx', full_name='core_proto.Event.channel_idx', index=5,
       number=6, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='oldstate', full_name='core_proto.Event.oldstate', index=6,
+      number=7, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='newstate', full_name='core_proto.Event.newstate', index=7,
+      number=8, type=5, cpp_type=1, label=1,
       has_default_value=False, default_value=0,
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
@@ -130,14 +202,15 @@ _EVENT = _descriptor.Descriptor(
   ],
   nested_types=[],
   enum_types=[
-    _EVENT_MSG_TYPE,
-    _EVENT_MOD_TYPE,
+    _EVENT_MSGTYPE,
+    _EVENT_MODTYPE,
+    _EVENT_STATE,
   ],
   options=None,
   is_extendable=False,
   extension_ranges=[],
   serialized_start=27,
-  serialized_end=256,
+  serialized_end=466,
 )
 
 
@@ -171,8 +244,8 @@ _ENDPOINT = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=258,
-  serialized_end=303,
+  serialized_start=468,
+  serialized_end=513,
 )
 
 
@@ -197,17 +270,95 @@ _CHANNEL = _descriptor.Descriptor(
       message_type=None, enum_type=None, containing_type=None,
       is_extension=False, extension_scope=None,
       options=None),
+    _descriptor.FieldDescriptor(
+      name='delay', full_name='core_proto.Channel.delay', index=2,
+      number=3, type=3, cpp_type=2, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='bandwidth', full_name='core_proto.Channel.bandwidth', index=3,
+      number=4, type=3, cpp_type=2, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='per', full_name='core_proto.Channel.per', index=4,
+      number=5, type=1, cpp_type=5, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='dups', full_name='core_proto.Channel.dups', index=5,
+      number=6, type=1, cpp_type=5, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='jitter', full_name='core_proto.Channel.jitter', index=6,
+      number=7, type=1, cpp_type=5, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='mer', full_name='core_proto.Channel.mer', index=7,
+      number=8, type=1, cpp_type=5, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='burst', full_name='core_proto.Channel.burst', index=8,
+      number=9, type=1, cpp_type=5, label=1,
+      has_default_value=True, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='link_type', full_name='core_proto.Channel.link_type', index=9,
+      number=10, type=14, cpp_type=8, label=1,
+      has_default_value=True, default_value=2,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='unidirectional', full_name='core_proto.Channel.unidirectional', index=10,
+      number=11, type=8, cpp_type=7, label=1,
+      has_default_value=False, default_value=False,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='display_props', full_name='core_proto.Channel.display_props', index=11,
+      number=12, type=9, cpp_type=9, label=1,
+      has_default_value=False, default_value=unicode("", "utf-8"),
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
+    _descriptor.FieldDescriptor(
+      name='tunnel_key', full_name='core_proto.Channel.tunnel_key', index=12,
+      number=13, type=5, cpp_type=1, label=1,
+      has_default_value=False, default_value=0,
+      message_type=None, enum_type=None, containing_type=None,
+      is_extension=False, extension_scope=None,
+      options=None),
   ],
   extensions=[
   ],
   nested_types=[],
   enum_types=[
+    _CHANNEL_LINKTYPE,
   ],
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=305,
-  serialized_end=368,
+  serialized_start=516,
+  serialized_end=865,
 )
 
 
@@ -248,8 +399,8 @@ _NETWORK = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=370,
-  serialized_end=445,
+  serialized_start=867,
+  serialized_end=942,
 )
 
 
@@ -318,8 +469,8 @@ _SERVICE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=448,
-  serialized_end=589,
+  serialized_start=945,
+  serialized_end=1086,
 )
 
 
@@ -388,8 +539,8 @@ _INTERFACE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=592,
-  serialized_end=720,
+  serialized_start=1089,
+  serialized_end=1217,
 )
 
 
@@ -437,8 +588,8 @@ _DEVICE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=722,
-  serialized_end=818,
+  serialized_start=1219,
+  serialized_end=1315,
 )
 
 
@@ -493,8 +644,8 @@ _NODE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=821,
-  serialized_end=954,
+  serialized_start=1318,
+  serialized_end=1451,
 )
 
 
@@ -549,8 +700,8 @@ _EXPERIMENT = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=957,
-  serialized_end=1114,
+  serialized_start=1454,
+  serialized_end=1611,
 )
 
 
@@ -598,8 +749,8 @@ _SESSION = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1117,
-  serialized_end=1248,
+  serialized_start=1614,
+  serialized_end=1745,
 )
 
 
@@ -633,8 +784,8 @@ _ERRORMESSAGE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1250,
-  serialized_end=1291,
+  serialized_start=1747,
+  serialized_end=1788,
 )
 
 
@@ -696,13 +847,18 @@ _COREMESSAGE = _descriptor.Descriptor(
   options=None,
   is_extendable=False,
   extension_ranges=[],
-  serialized_start=1294,
-  serialized_end=1532,
+  serialized_start=1791,
+  serialized_end=2029,
 )
 
-_EVENT_MSG_TYPE.containing_type = _EVENT;
-_EVENT_MOD_TYPE.containing_type = _EVENT;
+_EVENT.fields_by_name['msg_type'].enum_type = _EVENT_MSGTYPE
+_EVENT.fields_by_name['mod_type'].enum_type = _EVENT_MODTYPE
+_EVENT_MSGTYPE.containing_type = _EVENT;
+_EVENT_MODTYPE.containing_type = _EVENT;
+_EVENT_STATE.containing_type = _EVENT;
 _CHANNEL.fields_by_name['endpoints'].message_type = _ENDPOINT
+_CHANNEL.fields_by_name['link_type'].enum_type = _CHANNEL_LINKTYPE
+_CHANNEL_LINKTYPE.containing_type = _CHANNEL;
 _NETWORK.fields_by_name['channels'].message_type = _CHANNEL
 _DEVICE.fields_by_name['interfaces'].message_type = _INTERFACE
 _NODE.fields_by_name['interfaces'].message_type = _INTERFACE

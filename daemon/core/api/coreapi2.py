@@ -65,10 +65,22 @@ class CoreApiBridge(object):
                 sessions = sessMsg.getNumber().split("|")
                 port_num = int(sessions[0])
                 newMsg = core_pb2.CoreMessage()
-                newMsg.session.SetInParent()
                 newMsg.session.clientId = 'client' + sessions[0]
                 newMsg.session.port_num = port_num
                 api2msgs.append(CoreApiBridge.packApi2(newMsg))
+            elif parser.getType() == legacy.CORE_API_EVENT_MSG:
+                event = parser.createWrapper()
+                print "Event:"
+                print "\tnode=", event.getNode()
+                print "\ttype=", event.getType()
+                print "\tname=", event.getName()
+                print "\tdata=", event.getData()
+                print "\ttime=", event.getTime()
+                print "\tsessions=", event.getSession()
+                if event.getType() == legacy.CORE_EVENT_RUNTIME_STATE:
+                    newMsg = core_pb2.CoreMessage()
+                    newMsg.event.newstate = core_pb2.Event.RUNTIME
+                    api2msgs.append(CoreApiBridge.packApi2(newMsg))
             else:
                 print "received message type", parser.getType()
         return api2msgs
