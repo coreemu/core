@@ -33,7 +33,7 @@ except ImportError:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
 from core.constants import *
-from core.api import coreapi, coreapi2
+from core.api import coreapi, apibridge
 from core.coreobj import PyCoreNet
 from core.misc.utils import hexdump, daemonize, cmdresult, mutedetach, closeonexec
 from core.misc.xmlsession import opensessionxml, savesessionxml
@@ -1414,7 +1414,7 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         while True:
             try:
                 data = self.recvmsg()
-                msgs = coreapi2.CoreApiBridge.Api2toLegacy(data)
+                msgs = apibridge.CoreApiBridge.Api2toLegacy(data)
                 if msgs:
                     for msg in msgs:
                         self.session.broadcast(self, msg)
@@ -1428,7 +1428,8 @@ class CoreApi2RequestHandler(CoreRequestHandler):
     def dispatchreplies(self, replies):
         ''' Dispatch a reply to a previously received message.
         '''
-        api2Replies = coreapi2.CoreApiBridge.LegacytoApi2(replies)
+        api2Replies = apibridge.CoreApiBridge.LegacytoApi2(
+            replies, self.session.getstate())
         if api2Replies:
             for reply in api2Replies:
                 try:
@@ -1443,7 +1444,8 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         API2 then send.
         '''
 
-        msgs = coreapi2.CoreApiBridge.LegacytoApi2((data,))
+        msgs = apibridge.CoreApiBridge.LegacytoApi2(
+            (data,), self.session.getstate())
         if msgs:
             for msg in msgs:
                 self.request.sendall(msg)
@@ -1458,17 +1460,17 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         '''
 
         try:
-            hdr = self.request.recv(coreapi2.HDRSIZ)
+            hdr = self.request.recv(apibridge.API2HDRSIZ)
         except Exception, e:
             raise IOError, "error receiving API 2 header (%s)" % e
 
-        if len(hdr) != coreapi2.HDRSIZ:
+        if len(hdr) != apibridge.API2HDRSIZ:
             if len(hdr) == 0:
                 raise EOFError, "client disconnected"
             else:            
                 raise IOError, "invalid message header size"
                 
-        dataToRead = struct.unpack(coreapi2.HDRFMT, hdr)[0]
+        dataToRead = struct.unpack(apibridge.API2HDRFMT, hdr)[0]
         data = ""
         while len(data) < dataToRead:
             data += self.request.recv(dataToRead - len(data))
