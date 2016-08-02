@@ -186,7 +186,6 @@ class Session(object):
             if isinstance(msg, coreapi.CoreNodeMessage) or \
                     isinstance(msg, coreapi.CoreLinkMessage):
                 try:
-                    print "broadcasting.."
                     handler.sendall(msg.rawmsg)
                 except Exception, e:
                     self.warn("sendall() error: %s" % e)
@@ -200,7 +199,6 @@ class Session(object):
             if handler == src:
                 continue
             try:
-                print "broadcasting raw data.."
                 handler.sendall(data)
             except Exception, e:
                 self.warn("sendall() error: %s" % e)
