@@ -1395,7 +1395,7 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         self.nodestatusreq = {}
         self.master = False
         self.session = None
-        self.experiment = None
+        self.bridge = apibridge.CoreApiBridge(self)
         self.verbose = bool(server.mainserver.cfg['verbose'].lower() == "true")
         self.debug = bool(server.mainserver.cfg['debug'].lower() == "true")
         SocketServer.BaseRequestHandler.__init__(self, request,
@@ -1414,8 +1414,7 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         self.session.connect(self)
         while True:
             try:
-                data = self.recvmsg()
-                msgs = apibridge.CoreApiBridge.Api2toLegacy(data, self)
+                msgs = self.recvmsg()
                 if msgs:
                     for msg in msgs:
                         self.session.broadcast(self, msg)
@@ -1429,27 +1428,14 @@ class CoreApi2RequestHandler(CoreRequestHandler):
     def dispatchreplies(self, replies):
         ''' Dispatch a reply to a previously received message.
         '''
-        api2Replies = apibridge.CoreApiBridge.LegacytoApi2(
-            replies, self)
-        if api2Replies:
-            for reply in api2Replies:
-                try:
-                    # send to API2 client 
-                    self.request.sendall(reply)
-                except Exception, e:
-                    self.warn("Error sending reply data: %s" % e)
+        self.bridge.dispatchreplies(replies)
 
 
     def sendall(self, data):
         ''' The daemon calls this method with legacy API data. Convert first
         API2 then send.
         '''
-
-        msgs = apibridge.CoreApiBridge.LegacytoApi2(
-            (data,), self.session.getstate())
-        if msgs:
-            for msg in msgs:
-                self.request.sendall(msg)
+        self.bridge.sendall(data)
 
     def finish(self):
         if self.verbose:
@@ -1465,30 +1451,14 @@ class CoreApi2RequestHandler(CoreRequestHandler):
         session handler's queue, if available.
         '''
 
-        try:
-            hdr = self.request.recv(apibridge.API2HDRSIZ)
-        except Exception, e:
-            raise IOError, "error receiving API 2 header (%s)" % e
-
-        if len(hdr) != apibridge.API2HDRSIZ:
-            if len(hdr) == 0:
-                raise EOFError, "client disconnected"
-            else:            
-                raise IOError, "invalid message header size"
-                
-        dataToRead = struct.unpack(apibridge.API2HDRFMT, hdr)[0]
-        data = ""
-        while len(data) < dataToRead:
-            data += self.request.recv(dataToRead - len(data))
-
-        return data
+        return self.bridge.recvmsg()
 
 
         
     def queuemsg(self, msg):
         raise Exception, "TO BE IMPLEMENTED if needed" % msg.typestr()
         
-
+            
 
 
 
