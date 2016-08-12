@@ -1244,6 +1244,12 @@ class SessionMetaData(ConfigurableManager):
     def additem(self, key, value):
         self.configs[key] = value
 
+    def getitem(self, key):
+        try:
+            return self.configs[key]
+        except KeyError:
+            pass
+        return None
     def items(self):
         return self.configs.iteritems()
 
