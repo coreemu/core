@@ -129,20 +129,21 @@ class CoreApiBridge(object):
                 newMsg.session.port_num = port_num
 
                 # List active experiments in the server
-                '''
                 for sid in sessions:
                     sid = int(sid)
                     if sid == 0:
                         continue
-                    session = session.server.getsession(sessionid=sid, useexisting=True)
+                    session = self.handler.session.server.getsession(sessionid=sid, useexisting=True)
                     if session is None:
                         print "Invalid session ID received from daemon"
                         continue
-                    if hasattr(session, 'experiment'):
-                        newMsg.session.all_exps.add(session.experiment.id)
+                    if session == self.handler.session:
+                        continue
+                    expId =  session.metadata.getitem('experimentId')
+                    if expId:
+                        newMsg.session.all_exps.append(expId)
                     else:
-                        newMsg.session.all_exps.add(str(sid))
-                '''
+                        newMsg.session.all_exps.append('_%s' % (str(sid)))
 
                 newMsg.purpose = coreapi2.ADD
                 api2msgs.append(coreapi2.pack(newMsg))
@@ -364,6 +365,13 @@ class CoreApiBridge(object):
                                                        
         # TODO
         # send metadata
+
+
+        # Finally, set the new experiment ID in the legacy core session as metadata
+        # TODO: Append this to the end of metadata above
+        msgs.append(wrapper.ConfMsg.instantiate("metadata", 
+                                                dataTypes = (coreapi.CONF_DATA_TYPE_STRING,),
+                                                dataValues = "experimentId=%s" % (str(message.experimentId))))
 
         return msgs
 
