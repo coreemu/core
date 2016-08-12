@@ -33,10 +33,11 @@ except ImportError:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
 from core.constants import *
-from core.api import coreapi, apibridge
+from core.api import coreapi
 from core.coreobj import PyCoreNet
 from core.misc.utils import hexdump, daemonize, cmdresult, mutedetach, closeonexec
 from core.misc.xmlsession import opensessionxml, savesessionxml
+from core.misc import apibridge
 
 DEFAULT_MAXFD = 1024
 

@@ -9,9 +9,8 @@
 
 
 
-import coreapi2
 import threading, traceback, sys
-from core.api import coreapi, corewrapper
+from core.api import coreapi, corewrapper, coreapi2
 from core.experiments import ExperimentStore
 
 wrapper = corewrapper
@@ -40,23 +39,6 @@ class CoreApiBridge(object):
         '''
 
         data = coreapi2.recvAndUnpack(self.handler.request.recv)
-        '''
-        try:
-            hdr = self.handler.request.recv(coreapi2.API2HDRSIZ)
-        except Exception, e:
-            raise IOError, "error receiving API 2 header (%s)" % e
-
-        if len(hdr) != coreapi2.API2HDRSIZ:
-            if len(hdr) == 0:
-                raise EOFError, "client disconnected"
-            else:            
-                raise IOError, "invalid message header size"
-                
-        dataToRead = struct.unpack(API2HDRFMT, hdr)[0]
-        data = ""
-        while len(data) < dataToRead:
-            data += self.handler.request.recv(dataToRead - len(data))
-        '''
         msgs = self.processApi2Message(data)
 
         return msgs
@@ -183,6 +165,7 @@ class CoreApiBridge(object):
                     with self.lock:
                         if self.collector:
                             self.collector.experiment.running = True
+                            self.collector.purpose = coreapi2.MODIFY
                         else:
                             raise RuntimeError, "runtime entered without an instantiated experiment"
                         api2msgs.append(coreapi2.pack(self.collector))
@@ -261,6 +244,8 @@ class CoreApiBridge(object):
             legacymsgs.append(wrapper.RegMsg.instantiate(0, gui='true'))
             return legacymsgs
             # The response will be sent to the API2 client when a legacy session message is received from the daemon
+        elif purpose == coreapi2.MODIFY:
+            pass
         elif purpose == coreapi2.DELETE:
             # TODO: shutdown session
             pass
@@ -282,7 +267,7 @@ class CoreApiBridge(object):
                         self.collector = response
                     else:
                         raise RuntimeError, "Instantiation of experiment while another is active"
-                self.handler.request.sendall(coreapi2.pack(response)) # TODO: Fix this
+                self.handler.request.sendall(coreapi2.pack(response))
                 return self.translateApi2ExperimentMsg(exp)
             else:
                 return self.Api2Error("unable to add experiment")
