@@ -363,19 +363,23 @@ class CoreApiBridge(object):
         
 
     def processApi2SessionMsg(self, message, purpose):
-        if self.handler.debug:
-            self.info('Received session request message')
         if purpose == coreapi2.ADD:
+            if self.handler.debug:
+                self.info('Received ADD session request message')
+
             legacymsgs = []
             legacymsgs.append(wrapper.RegMsg.instantiate(0, gui='true'))
             return legacymsgs
             # The response will be sent to the API2 client when a legacy session message is received from the daemon
         elif purpose == coreapi2.MODIFY:
+            if self.handler.debug:
+                self.info('Received MODIFY session request message')
+
             legacymsgs = []
             if message.HasField("experiment"):
                 exp = message.experiment
                 if exp.HasField("experimentId"):
-                    expId = str(experiment.experimentId)
+                    expId = str(exp.experimentId)
                     response = coreapi2.CoreMessage()
                     response.experiment.experimentId = exp.experimentId;
                     response.purpose = purpose
@@ -385,6 +389,8 @@ class CoreApiBridge(object):
                     if expId.startswith('_'):
                         try:
                             legacySessNo = int(expId[1:])
+                            legacymsgs.append(wrapper.ConfMsg.instantiate("all", 
+                                                                            coreapi.CONF_TYPE_FLAGS_RESET))
                             legacymsgs.append(wrapper.RegMsg.instantiate(0, gui='true'))
                             legacymsgs.append(wrapper.SessionMsg.instantiate(0, legacySessNo))
                         except:
