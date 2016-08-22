@@ -77,4 +77,27 @@ def getDeviceByIdx(exp, idx):
     return device
 
 
+def getDeviceInterfaceByIdx(exp, devIdx, intfIdx):
+    device = findDeviceByIdx(exp, devIdx)
+    if device:
+        for intf in device.interfaces:
+            if intf.idx == intfIdx:
+                return intf
+        intf = device.interfaces.add()
+        intf.idx = intfIdx
+        return intf
+    return None
 
+
+def getNodeInterfaceByIdx(exp, nodeIdx, intfIdx):
+    node = findNodeByIdx(exp, nodeIdx)
+    if node:
+        for intf in node.interfaces:
+            if intf.idx == intfIdx:
+                return intf
+        intf = node.interfaces.add()
+        intf.idx = intfIdx
+        return intf
+    return None
+
+    
