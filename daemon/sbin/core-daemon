@@ -1730,6 +1730,9 @@ class CoreApi2Server(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         print "api2 setsessionmaster", found
         return found
 
+    def getsession(self, sessionid = None, useexisting = True):
+        return self.mainserver.getsession(sessionid, useexisting)
+
     def tosessionmsg(self, flags = 0):
         return self.mainserver.tosessionmsg(flags)
 
