@@ -214,9 +214,9 @@ class CoreApiBridge(object):
         print "\topaque=",  sessMsg.getOpaque()
         '''
         sessions = sessMsg.getNumber().split("|")
-        port_num = int(sessions[0])
+        port_num = int(sessions[-1])
         newMsg = coreapi2.CoreMessage()
-        newMsg.session.clientId = 'client' + sessions[0]
+        newMsg.session.clientId = 'client' + sessions[-1]
         newMsg.session.port_num = port_num
         
         # List active experiments in the server
