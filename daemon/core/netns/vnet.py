@@ -11,8 +11,6 @@ vnet.py: PyCoreNet and LxBrNet classes that implement virtual networks using
 Linux Ethernet bridging and ebtables rules.
 '''
 
-import traceback
-
 import os, sys, threading, time, subprocess
 
 from core.api import coreapi
@@ -347,10 +345,6 @@ class LxBrNet(PyCoreNet):
         ''' Configure link parameters by applying tc queuing disciplines on the
             interface.
         '''
-        
-        sys.stderr.write("enter linkconfig() ...\n")
-        traceback.print_stack()
-        
         if devname is None:
             devname = netif.localname
         tc = [TC_BIN, "qdisc", "replace", "dev", devname]
