@@ -402,7 +402,7 @@ fi
 %{_sbindir}/vnoded
 
 %changelog
-* Thu Jun 5 2015 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 4.8
+* Fri Jun 5 2015 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 4.8
 - Support for NRL Network Modeling Framework (NMF) XML representation, bugfixes
 * Wed Aug 6 2014 Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil> - 4.7
 - EMANE 0.9.1, asymmetric links, bugfixes
