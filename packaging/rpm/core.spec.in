@@ -336,6 +336,7 @@ fi
 %{python_sitelib}/core/emane/__init__.py*
 %{python_sitelib}/core/emane/nodes.py*
 %{python_sitelib}/core/emane/rfpipe.py*
+%{python_sitelib}/core/emane/tdma.py*
 %{python_sitelib}/core/emane/universal.py*
 %{python_sitelib}/core/__init__.py*
 %{python_sitelib}/core/location.py*
