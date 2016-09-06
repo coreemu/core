@@ -128,7 +128,7 @@ def cored(cfg = None):
         sys.stderr.flush()
         sys.exit(1)
     closeonexec(server.fileno())
-    sys.stdout.write("server started, listening on: %s:%s\n" % (host, port))
+    sys.stdout.write("main server started, listening on: %s:%s\n" % (host, port))
     sys.stdout.flush()
     udpserver = startudp(server, (host,port))
     closeonexec(udpserver.fileno())
