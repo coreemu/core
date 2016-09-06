@@ -746,7 +746,7 @@ class Emane(ConfigurableManager):
         '''
         for n in sorted(self._objs.keys()):
            emanenode = self._objs[n]
-           nems = emanenode.buildnemxmlfiles(self)
+           emanenode.buildnemxmlfiles(self)
 
     def appendtransporttonem(self, doc, nem, nodenum, ifc=None):
         ''' Given a nem XML node and EMANE WLAN node number, append
