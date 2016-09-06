@@ -1,5 +1,6 @@
 .debbuild
 .deps
+.rpmbuild
 .version
 .version.date
 Makefile
