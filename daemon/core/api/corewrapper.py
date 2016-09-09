@@ -86,9 +86,10 @@ class NodeMsg(CoreNodeMessage):
         if opaque is not None:
             tlvdata = tlvdata + CoreNodeTlv.pack(CORE_TLV_NODE_OPAQUE,opaque)
         hdr = struct.pack(CoreMessage.hdrfmt, CoreNodeMessage.msgtype, flags, len(tlvdata))
-        return CoreNodeMessage(flags, hdr, tlvdata)
+        return NodeMsg(flags, hdr, tlvdata)
 
-
+    def __init__(self, flags, hdr, tlvdata):
+        super(NodeMsg, self).__init__(flags,hdr,tlvdata)
     def getNumber(self):
         return self.gettlv(CORE_TLV_NODE_NUMBER)
     def getType(self):
@@ -129,6 +130,14 @@ class NodeMsg(CoreNodeMessage):
         return self.gettlv(CORE_TLV_NODE_ICON)
     def getOpaque(self):
         return self.gettlv(CORE_TLV_NODE_OPAQUE)
+    def addModel(self,model):
+        if model: self.addtlvdata(CORE_TLV_NODE_MODEL,model)
+    def addType(self,type):
+        if type: self.tlvdata[CORE_TLV_NODE_TYPE]=type
+    def addServer(self,server):
+        if server: self.addtlvdata(CORE_TLV_NODE_EMUSRV,server)
+
+
 
 class LinkMsg(CoreLinkMessage):
 
