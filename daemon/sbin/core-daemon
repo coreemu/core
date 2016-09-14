@@ -34,7 +34,6 @@ except ImportError:
 from core.coreserver import *
 from core.constants import *
 from core.api import coreapi
-#from core.coreobj import PyCoreNet
 from core.misc.utils import daemonize, closeonexec
 
 DEFAULT_MAXFD = 1024

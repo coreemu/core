@@ -1250,6 +1250,7 @@ class SessionMetaData(ConfigurableManager):
         except KeyError:
             pass
         return None
+
     def items(self):
         return self.configs.iteritems()
 
