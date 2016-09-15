@@ -377,6 +377,7 @@ fi
 %{python_sitelib}/core_python-@COREDPY_VERSION@-py%{python_version}.egg-info
 %{python_sitelib}/core/sdt.py*
 %{python_sitelib}/core/service.py*
+%{python_sitelib}/core/coreserver.py*
 %dir %{python_sitelib}/core/services
 %{python_sitelib}/core/services/bird.py*
 %{python_sitelib}/core/services/__init__.py*
