@@ -766,7 +766,7 @@ class Session(object):
                                                | coreapi.CORE_API_LOC_FLAG,
                                                  tlvdata)
             try:
-                handler.request.sendall(reply)
+                handler.sendall(reply)
             except Exception, e:
                 self.warn("sendall() for node: %d error: %s" % (nodenum, e))
             del handler.nodestatusreq[nodenum]
@@ -1249,6 +1249,13 @@ class SessionMetaData(ConfigurableManager):
 
     def additem(self, key, value):
         self.configs[key] = value
+
+    def getitem(self, key):
+        try:
+            return self.configs[key]
+        except KeyError:
+            pass
+        return None
 
     def items(self):
         return self.configs.iteritems()
