@@ -91,7 +91,7 @@ class NrlNhdp(NrlService):
         
         servicenames = map(lambda x: x._name,  services)
         if "SMF" in servicenames:
-            cmd += " -flooding ecds"
+            cmd += " -flooding ecds-etx sticky"
             cmd += " -smfClient %s_smf" % node.name
         
         netifs = filter(lambda x: not getattr(x, 'control', False), \

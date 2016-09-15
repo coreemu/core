@@ -198,15 +198,6 @@ if test "x$enable_daemon" = "xyes" ; then
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 fi
 
-# simple architecture detection
-if test `uname -m` = "x86_64"; then
-    ARCH=amd64
-else
-    ARCH=i386
-fi
-AC_MSG_RESULT([using architecture $ARCH])
-AC_SUBST(ARCH)
-
 # Host-specific detection
 want_linux_netns=no
 want_bsd=no
