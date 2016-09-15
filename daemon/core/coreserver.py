@@ -11,7 +11,7 @@
 
 
 import SocketServer, sys, threading, time, traceback
-import os, gc
+import os, gc, shlex, shutil
 from core import pycore
 from core.api import coreapi
 from core.misc.utils import hexdump, cmdresult, mutedetach, closeonexec
@@ -19,12 +19,13 @@ from core.misc.xmlsession import opensessionxml, savesessionxml
 
 
 '''
-Defines server classes and request handlers for TCP and UDP. Also defined here is a TCP based
-
+Defines server classes and request handlers for TCP and UDP. Also defined here is a TCP based auxiliary server class for supporting externally defined handlers.
 '''
 
+
+
 class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    ''' The main server - a TCP server class, manages sessions and spawns request handlers for
+    ''' TCP server class, manages sessions and spawns request handlers for
         incoming connections.
     '''
     daemon_threads = True
@@ -218,14 +219,11 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                     break
         finally:
             self._sessionslock.release()
-
         return found
 
 
-
-
 class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
-    ''' A UDP server class, manages sessions and spawns request handlers for
+    ''' UDP server class, manages sessions and spawns request handlers for
         incoming connections.
     '''
     daemon_threads = True
@@ -235,7 +233,7 @@ class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
         ''' Server class initialization takes configuration data and calls
             the SocketServer constructor
         '''
-        self.mainserver = mainserver # tcpserver is the main server
+        self.mainserver = mainserver
         SocketServer.UDPServer.__init__(self, server_address,
                                         RequestHandlerClass)
                                         
@@ -244,6 +242,7 @@ class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
         '''
         self.serve_forever()
         
+
 
 
 class CoreAuxServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
@@ -269,7 +268,6 @@ class CoreAuxServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
     def tosessionmsg(self, flags = 0):
         return self.mainserver.tosessionmsg(flags)
-
 
 
 
@@ -494,17 +492,17 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         try:
             replies = msghandler(msg)
-            self.dispatchreplies(replies)
+            self.dispatchreplies(replies,msg)
         except Exception, e:
             self.warn("%s: exception while handling msg:\n%s\n%s" %
                       (threading.currentThread().getName(), msg,
                        traceback.format_exc()))
 
-
-    # Added to allow the API2 handler to define a different behavior when replying 
+    # Added to allow the auxiliary handlers to define a different behavior when replying 
     # to messages from clients
-    def dispatchreplies(self, replies):
-        ''' Dispatch replies to a handled message.
+    def dispatchreplies(self, replies, msg):
+        '''
+        Dispatch replies by CORE to message msg previously received from the client.
         '''
         for reply in replies:
             if self.debug:
@@ -524,6 +522,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 self.sendall(reply)
             except Exception, e:
                 self.warn("Error sending reply data: %s" % e)
+
 
     def handle(self):
         ''' Handle a new connection request from a client. Dispatch to the
@@ -1139,10 +1138,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         if ex:
             try:
                 self.info("executing '%s'" % ex)
-                if isinstance(self.server, CoreUdpServer):
+                if not isinstance(self.server, CoreServer): # CoreUdpServer):
                     server = self.server.mainserver
-                elif isinstance(self.server, CoreApi2Server):
-                    server = self.server.mainserver
+                    # elif isinstance(self.server, CoreAuxServer):
+                    # server = self.server.mainserver
                 else:
                     server = self.server
                 if msg.flags & coreapi.CORE_API_STR_FLAG:
@@ -1575,3 +1574,140 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
         ''' Use sendto() on the connectionless UDP socket.
         '''
         self.request[1].sendto(data, self.client_address)
+
+
+
+
+class BaseAuxRequestHandler(CoreRequestHandler):
+    ''' 
+    This is the superclass for auxiliary handlers in CORE. A concrete auxiliary handler class
+    must, at a minimum, define the recvmsg(), sendall(), and dispatchreplies() methods.
+    See SockerServer.BaseRequestHandler for parameter details.
+    '''
+
+    def __init__(self, request, client_address, server):
+        self.msghandler = {
+            coreapi.CORE_API_NODE_MSG: self.handlenodemsg,
+            coreapi.CORE_API_LINK_MSG: self.handlelinkmsg,
+            coreapi.CORE_API_EXEC_MSG: self.handleexecmsg,
+            coreapi.CORE_API_REG_MSG: self.handleregmsg,
+            coreapi.CORE_API_CONF_MSG: self.handleconfmsg,
+            coreapi.CORE_API_FILE_MSG: self.handlefilemsg,
+            coreapi.CORE_API_IFACE_MSG: self.handleifacemsg,
+            coreapi.CORE_API_EVENT_MSG: self.handleeventmsg,
+            coreapi.CORE_API_SESS_MSG: self.handlesessionmsg,
+        }
+        self.handlerthreads = [] 
+        self.nodestatusreq = {}
+        self.master = False
+        self.session = None
+        self.verbose = bool(server.mainserver.cfg['verbose'].lower() == "true")
+        self.debug = bool(server.mainserver.cfg['debug'].lower() == "true")
+        SocketServer.BaseRequestHandler.__init__(self, request,
+                                                 client_address, server)
+    
+    def setup(self):
+        ''' New client has connected to the auxiliary server.
+        '''
+        if self.verbose:
+            self.info("new auxiliary server client: %s:%s" % self.client_address)
+        
+    def handle(self):
+        '''
+        The handler main loop
+        '''
+        port = self.request.getpeername()[1]
+        self.session = self.server.mainserver.getsession(sessionid = port, 
+                                                         useexisting = False)
+        self.session.connect(self)
+        while True:
+            try:
+                msgs = self.recvmsg()
+                if msgs:
+                    for msg in msgs:
+                        self.session.broadcast(self, msg)
+                        self.handlemsg(msg)
+            except EOFError:
+                break;
+            except IOError, e:
+                self.warn("IOError in CoreAuxRequestHandler: %s" % e)
+                break;
+        
+    def finish(self):
+        '''
+        Disconnect the client
+        '''
+        if self.session:
+            self.session.disconnect(self)
+        return SocketServer.BaseRequestHandler.finish(self)
+
+    ''' 
+    =======================================================================
+    Concrete AuxRequestHandler classes must redefine the following methods
+    =======================================================================
+    '''
+
+
+    def recvmsg(self):
+        ''' 
+        Receive data from the client in the supported format. Parse, transform to CORE API format and 
+        return transformed messages.
+
+        EXAMPLE:
+        return self.handler.request.recv(siz)
+        
+        '''
+        pass
+        return None
+
+    def dispatchreplies(self, replies, msg):
+        ''' 
+        Dispatch CORE 'replies' to a previously received message 'msg' from a client.
+        Replies passed to this method follow the CORE API. This method allows transformation to
+        the form supported by the auxiliary handler and within the context of 'msg'. 
+        Add transformation and transmission code here.
+
+        EXAMPLE:
+        transformed_replies = stateful_transform (replies, msg) # stateful_transform method needs to be defined
+        if transformed_replies:
+            for reply in transformed_replies:
+                try:
+                    self.request.sendall(reply)
+                except Exception, e:
+                    if self.debug:
+                        self.info("-"*60)
+                        traceback.print_exc(file=sys.stdout)
+                        self.info("-"*60)
+                    raise e
+
+        '''
+        pass
+
+
+    def sendall(self, data):
+        ''' 
+        CORE calls this method when data needs to be asynchronously sent to a client. The data is
+        in CORE API format. This method allows transformation to the required format supported by this
+        handler prior to transmission. 
+
+        EXAMPLE:
+        msgs = self.transform(data)  # transform method needs to be defined
+        if msgs:
+            for msg in msgs:
+                try:
+                    self.request.sendall(reply)
+                except Exception, e:
+                    if self.debug:
+                        self.info("-"*60)
+                        traceback.print_exc(file=sys.stdout)
+                        self.info("-"*60)
+                    raise e
+        '''
+        pass
+
+
+        
+
+
+
+        

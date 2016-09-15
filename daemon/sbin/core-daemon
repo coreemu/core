@@ -67,9 +67,9 @@ coreapi.add_node_class("CORE_NODE_TUNNEL",
 coreapi.add_node_class("CORE_NODE_EMANE",
                        coreapi.CORE_NODE_EMANE, pycore.nodes.EmaneNode)
 
-
-
-
+#
+# UDP server startup
+# 
 def startudp(mainserver, server_address):
     ''' Start a thread running a UDP server on the same host,port for
     connectionless requests.
@@ -121,13 +121,14 @@ def cored(cfg = None):
     try:
         server = CoreServer((host, port), CoreRequestHandler, cfg)
     except Exception, e:
-        sys.stderr.write("error starting server on:  %s:%s\n\t%s\n" % \
+        sys.stderr.write("error starting main server on:  %s:%s\n\t%s\n" % \
                          (host, port, e))
         sys.stderr.flush()
         sys.exit(1)
     closeonexec(server.fileno())
     sys.stdout.write("main server started, listening on: %s:%s\n" % (host, port))
     sys.stdout.flush()
+
     udpserver = startudp(server, (host,port))
     closeonexec(udpserver.fileno())
 
@@ -200,8 +201,8 @@ def getMergedConfig(filename):
                  'daemonize' : 'False',
                  'debug' : 'False',
                  'execfile' : None,
-                 'aux_request_handler' : None
-               }
+                 'aux_request_handler' : None,
+    }
 
     usagestr = "usage: %prog [-h] [options] [args]\n\n" + \
                "CORE daemon v.%s instantiates Linux network namespace " \
