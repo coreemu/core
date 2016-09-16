@@ -123,7 +123,7 @@ def main():
     session.broker.handlerawmsg(msg)
 
     # start a shell on node 1
-    n[7].term("bash")
+    n[1].term("bash")
 
     # TODO: access to remote nodes is currently limited in this script
 
