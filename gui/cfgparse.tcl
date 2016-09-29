@@ -198,9 +198,12 @@ proc dumpCfg {method dest} {
 	    set state [lindex $hook 1]
 	    set script [lindex $hook 2]
 	    dumpputs $method $dest "hook $state:$name \{"
-	    foreach line [split $script "\n"] {
-	        dumpputs $method $dest "$line"
+	    # remove the final newline here because dumpputs adds a
+	    # newline automatically
+	    if {[string index $script end] == "\n"} {
+		set script [string replace $script end end]
 	    }
+	    dumpputs $method $dest $script
 	    dumpputs $method $dest "\}"
 	    dumpputs $method $dest ""
 	}
