@@ -49,8 +49,8 @@ class CoreBroker(ConfigurableManager):
         # reference counts of nodes on servers
         self.nodecounts = { }
         self.bootcount = 0
-        # list of node numbers that are link-layer nodes (networks)
-        self.nets = []
+        # set of node numbers that are link-layer nodes (networks)
+        self.nets = set()
         # list of node numbers that are PhysicalNode nodes
         self.phys = []
         # allows for other message handlers to process API messages (e.g. EMANE)
@@ -98,7 +98,7 @@ class CoreBroker(ConfigurableManager):
         self.nodecounts.clear()
         self.bootcount = 0
         self.nodemap_lock.release()
-        del self.nets[:]
+        self.nets.clear()
         del self.phys[:]
         while len(self.tunnels) > 0:
             (key, gt) = self.tunnels.popitem()
@@ -463,8 +463,7 @@ class CoreBroker(ConfigurableManager):
     def addnet(self, nodenum):
         ''' Add a node number to the list of link-layer nodes.
         '''
-        if nodenum not in self.nets:
-            self.nets.append(nodenum)
+        self.nets.add(nodenum)
 
     def addphys(self, nodenum):
         ''' Add a node number to the list of physical nodes.
