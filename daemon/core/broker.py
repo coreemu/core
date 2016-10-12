@@ -31,6 +31,7 @@ class CoreServer(object):
         self.host = host
         self.port = port
         self.sock = None
+        self.instantiation_complete = False
 
     def connect(self):
         assert self.sock is None
@@ -206,12 +207,39 @@ class CoreBroker(ConfigurableManager):
             # this allows green link lines for remote WLANs
             msg = coreapi.CoreLinkMessage(msgflags, msghdr, msgdata)
             self.session.sdt.handledistributed(msg)
+        elif msgtype == coreapi.CORE_API_EVENT_MSG:
+            msg = coreapi.CoreEventMessage(msgflags, msghdr, msgdata)
+            eventtype = msg.gettlv(coreapi.CORE_TLV_EVENT_TYPE)
+            if eventtype == coreapi.CORE_EVENT_INSTANTIATION_COMPLETE:
+                server.instantiation_complete = True
+                if self.instantiation_complete():
+                    self.session.checkruntime()
 
         self.session.broadcastraw(None, data)
         if count is not None and count < 1:
             return 0
         else:
             return len(data)
+
+    def local_instantiation_complete(self):
+        '''\
+        Set the local server's instantiation-complete status to True.
+        '''
+        with self.servers_lock:
+            server = self.servers.get('localhost')
+            if server is not None:
+                server.instantiation_complete = True
+
+    def instantiation_complete(self):
+        '''\
+        Return True if all servers have completed instantiation, False
+        otherwise.
+        '''
+        with self.servers_lock:
+            for server in self.servers.itervalues():
+                if not server.instantiation_complete:
+                    return False
+            return True
 
     def addserver(self, name, host, port):
         ''' Add a new server, and try to connect to it. If we're already

@@ -638,6 +638,13 @@ class Session(object):
         # allow time for processes to start
         time.sleep(0.125)
         self.validatenodes()
+        self.broker.local_instantiation_complete()
+        if self.isconnected():
+            tlvdata = ''
+            tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
+                                                 coreapi.CORE_EVENT_INSTANTIATION_COMPLETE)
+            msg = coreapi.CoreEventMessage.pack(0, tlvdata)
+            self.broadcastraw(None, msg)
         # assume either all nodes have booted already, or there are some
         # nodes on slave servers that will be booted and those servers will
         # send a node status response message
@@ -687,8 +694,8 @@ class Session(object):
             return # do not have information on all nodes yet
         # information on all nodes has been received and they have been started
         # enter the runtime state
-        # TODO: more sophisticated checks to verify that all nodes and networks
-        #       are running
+        if not self.broker.instantiation_complete():
+            return
         state = coreapi.CORE_EVENT_RUNTIME_STATE
         self.evq.run()
         self.setstate(state, info=True, sendevent=True)
