@@ -1153,6 +1153,22 @@ class Emane(ConfigurableManager):
         self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
         return True
 
+    def emanerunning(self, node):
+        '''\
+        Return True if an EMANE process associated with the given node
+        is running, False otherwise.
+        '''
+        status = -1
+        cmd = ['pkill', '-0', '-x', 'emane']
+        try:
+            if self.version < self.EMANE092:
+                status = subprocess.call(cmd)
+            else:
+                status = node.cmd(cmd, wait=True)
+        except:
+            pass
+        return status == 0
+
 def emane_version():
     'Return the locally installed EMANE version identifier and string.'
     cmd = ('emane', '--version')
