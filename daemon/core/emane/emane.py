@@ -456,10 +456,9 @@ class Emane(ConfigurableManager):
         self._objslock.release()
 
         for server in servers:
-            if server == "localhost":
+            if server.name == "localhost":
                 continue
-            (host, port, sock) = self.session.broker.getserver(server)
-            if sock is None:
+            if server.sock is None:
                 continue
             platformid += 1
             typeflags = coreapi.CONF_TYPE_FLAGS_UPDATE
@@ -467,12 +466,11 @@ class Emane(ConfigurableManager):
             values[names.index("nem_id_start")] = str(nemid)
             msg = EmaneGlobalModel.toconfmsg(flags=0, nodenum=None,
                                              typeflags=typeflags, values=values)
-            sock.send(msg)
+            server.sock.send(msg)
             # increment nemid for next server by number of interfaces
-            self._ifccountslock.acquire()
-            if server in self._ifccounts:
-                nemid += self._ifccounts[server]
-            self._ifccountslock.release()
+            with self._ifccountslock:
+                if server in self._ifccounts:
+                    nemid += self._ifccounts[server]
 
         return False
 
@@ -511,7 +509,7 @@ class Emane(ConfigurableManager):
         session = self.session
         if not session.master:
             return  # slave server
-        servers = session.broker.getserverlist()
+        servers = session.broker.getservernames()
         if len(servers) < 2:
             return  # not distributed
         prefix = session.cfg.get('controlnet')

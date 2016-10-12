@@ -890,7 +890,7 @@ class Session(object):
                     prefix = prefixes[0] 
             else:
                 # slave servers have their name and localhost in the serverlist
-                servers = self.broker.getserverlist()
+                servers = self.broker.getservernames()
                 servers.remove('localhost')
                 prefix = None
                 for server_prefix in prefixes:
@@ -927,7 +927,7 @@ class Session(object):
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
         self.broker.addnet(oid)
-        for server in self.broker.getserverlist():
+        for server in self.broker.getservers():
             self.broker.addnodemap(server, oid)
         
         return ctrlnet
@@ -1190,7 +1190,7 @@ class SessionConfig(ConfigurableManager, Configurable):
         controlnets = value.split()
         if len(controlnets) < 2:
             return # multiple controlnet prefixes do not exist
-        servers = self.session.broker.getserverlist()
+        servers = self.session.broker.getservernames()
         if len(servers) < 2:
             return # not distributed
         servers.remove("localhost")

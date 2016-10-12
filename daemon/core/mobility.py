@@ -239,8 +239,8 @@ class MobilityManager(ConfigurableManager):
             node = self.phys[nodenum]
             for server in self.session.broker.getserversbynode(nodenum):
                 break
-            (host, port, sock) = self.session.broker.getserver(server)
-            netif = self.session.broker.gettunnel(net.objid, IPAddr.toint(host))
+            netif = self.session.broker.gettunnel(net.objid,
+                                                  IPAddr.toint(server.host))
             node.addnetif(netif, 0)
             netif.node = node
             (x,y,z) = netif.node.position.get()
