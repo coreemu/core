@@ -455,6 +455,7 @@ class Emane(ConfigurableManager):
                     servers.append(s)
         self._objslock.release()
 
+        servers.sort(key = lambda x: x.name)
         for server in servers:
             if server.name == "localhost":
                 continue
