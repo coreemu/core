@@ -71,7 +71,6 @@ class CoreBroker(ConfigurableManager):
         self.nodemap_lock = threading.Lock()
         # reference counts of nodes on servers
         self.nodecounts = {}
-        self.bootcount = 0
         # set of node numbers that are link-layer nodes (networks)
         self.nets = set()
         # set of node numbers that are PhysicalNode nodes
@@ -117,7 +116,6 @@ class CoreBroker(ConfigurableManager):
             if count < 1:
                 self.delserver(server)
         self.nodecounts.clear()
-        self.bootcount = 0
         self.nodemap_lock.release()
         self.nets.clear()
         self.phys.clear()
@@ -197,12 +195,6 @@ class CoreBroker(ConfigurableManager):
                 nodenum = msg.gettlv(coreapi.CORE_TLV_NODE_NUMBER)
                 if nodenum is not None:
                     count = self.delnodemap(server, nodenum)
-            # snoop node add response to increment booted node count
-            # (only CoreNodes send these response messages)
-            elif msgflags & \
-                (coreapi.CORE_API_ADD_FLAG | coreapi.CORE_API_LOC_FLAG):
-                self.incrbootcount()
-                self.session.checkruntime()
         elif msgtype == coreapi.CORE_API_LINK_MSG:
             # this allows green link lines for remote WLANs
             msg = coreapi.CoreLinkMessage(msgflags, msghdr, msgdata)
@@ -462,17 +454,6 @@ class CoreBroker(ConfigurableManager):
                 self.nodecounts[server] = count
             return count
 
-    def incrbootcount(self):
-        ''' Count a node that has booted.
-        '''
-        self.bootcount += 1
-        return self.bootcount
-            
-    def getbootcount(self):
-        ''' Return the number of booted nodes.
-        '''
-        return self.bootcount
-
     def getserversbynode(self, nodenum):
         ''' Retrieve a set of emulation servers given a node number.
         '''
@@ -673,12 +654,6 @@ class CoreBroker(ConfigurableManager):
                 # do not record server name for networks since network
                 # nodes are replicated across all server
                 return servers
-            if issubclass(nodecls, PyCoreNet) and \
-                nodetype == coreapi.CORE_NODE_WLAN:
-                # special case where remote WLANs not in session._objs, and no
-                # node response message received, so they are counted here
-                if msg.gettlv(coreapi.CORE_TLV_NODE_EMUSRV) is not None:
-                    self.incrbootcount()
             elif issubclass(nodecls, PyCoreNode):
                 name = msg.gettlv(coreapi.CORE_TLV_NODE_NAME)
                 if name:

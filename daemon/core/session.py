@@ -647,7 +647,7 @@ class Session(object):
             self.broadcastraw(None, msg)
         # assume either all nodes have booted already, or there are some
         # nodes on slave servers that will be booted and those servers will
-        # send a node status response message
+        # send a status response message
         self.checkruntime()
 
     def getnodecount(self):
@@ -680,20 +680,7 @@ class Session(object):
             return
         if self.getstate() == coreapi.CORE_EVENT_RUNTIME_STATE:
             return
-        session_node_count = int(self.node_count)
-        nc = self.getnodecount()
-        # count booted nodes not emulated on this server
-        # TODO: let slave server determine RUNTIME and wait for Event Message
-        # broker.getbootocunt() counts all CoreNodes from status reponse
-        #  messages, plus any remote WLANs; remote EMANE, hub, switch, etc.
-        #  are already counted in self._objs
-        nc += self.broker.getbootcount()
-        self.info("Checking for runtime with %d of %d session nodes" % \
-                    (nc, session_node_count))
-        if nc < session_node_count:
-            return # do not have information on all nodes yet
-        # information on all nodes has been received and they have been started
-        # enter the runtime state
+        # check if all servers have completed instantiation
         if not self.broker.instantiation_complete():
             return
         state = coreapi.CORE_EVENT_RUNTIME_STATE
