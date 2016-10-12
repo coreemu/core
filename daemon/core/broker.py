@@ -51,8 +51,8 @@ class CoreBroker(ConfigurableManager):
         self.bootcount = 0
         # set of node numbers that are link-layer nodes (networks)
         self.nets = set()
-        # list of node numbers that are PhysicalNode nodes
-        self.phys = []
+        # set of node numbers that are PhysicalNode nodes
+        self.phys = set()
         # allows for other message handlers to process API messages (e.g. EMANE)
         self.handlers = set()
         # dict with tunnel key to tunnel device mapping
@@ -99,7 +99,7 @@ class CoreBroker(ConfigurableManager):
         self.bootcount = 0
         self.nodemap_lock.release()
         self.nets.clear()
-        del self.phys[:]
+        self.phys.clear()
         while len(self.tunnels) > 0:
             (key, gt) = self.tunnels.popitem()
             gt.shutdown()
@@ -468,8 +468,7 @@ class CoreBroker(ConfigurableManager):
     def addphys(self, nodenum):
         ''' Add a node number to the list of physical nodes.
         '''
-        if nodenum not in self.phys:
-            self.phys.append(nodenum)
+        self.phys.add(nodenum)
 
     def configure_reset(self, msg):
         ''' Ignore reset messages, because node delete responses may still 
