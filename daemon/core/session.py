@@ -1132,7 +1132,7 @@ class SessionConfig(ConfigurableManager, Configurable):
 
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
-        session.broker.handlers += (self.handledistributed, )
+        session.broker.handlers.add(self.handledistributed)
         self.reset()
 
     def reset(self):

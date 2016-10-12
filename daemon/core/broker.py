@@ -54,7 +54,7 @@ class CoreBroker(ConfigurableManager):
         # list of node numbers that are PhysicalNode nodes
         self.phys = []
         # allows for other message handlers to process API messages (e.g. EMANE)
-        self.handlers = ()
+        self.handlers = set()
         # dict with tunnel key to tunnel device mapping
         self.tunnels = {}
         self.dorecvloop = False

@@ -67,7 +67,7 @@ class Emane(ConfigurableManager):
         self.logversion()
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None, self.verbose)
-        session.broker.handlers += (self.handledistributed, )
+        session.broker.handlers.add(self.handledistributed)
         self.loadmodels()
         self.service = None
 

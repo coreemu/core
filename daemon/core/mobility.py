@@ -33,7 +33,7 @@ class MobilityManager(ConfigurableManager):
         # dummy node objects for tracking position of nodes on other servers
         self.phys = {}
         self.physnets = {}
-        self.session.broker.handlers += (self.physnodehandlelink, )
+        self.session.broker.handlers.add(self.physnodehandlelink)
         self.register()
 
     def startup(self, nodenums=None):
