@@ -399,45 +399,41 @@ class CoreBroker(ConfigurableManager):
     def addnodemap(self, server, nodenum):
         ''' Record a node number to emulation server mapping.
         '''
-        self.nodemap_lock.acquire()
-        if nodenum in self.nodemap:
-            if server in self.nodemap[nodenum]:
-                self.nodemap_lock.release()
-                return
-            self.nodemap[nodenum].append(server)
-        else:
-            self.nodemap[nodenum] = [server,]
-        if server in self.nodecounts:
-            self.nodecounts[server] += 1
-        else:
-            self.nodecounts[server] = 1
-        self.nodemap_lock.release()
-    
+        with self.nodemap_lock:
+            if nodenum in self.nodemap:
+                if server in self.nodemap[nodenum]:
+                    return
+                self.nodemap[nodenum].add(server)
+            else:
+                self.nodemap[nodenum] = {server}
+            if server in self.nodecounts:
+                self.nodecounts[server] += 1
+            else:
+                self.nodecounts[server] = 1
+
     def delnodemap(self, sock, nodenum):
         ''' Remove a node number to emulation server mapping.
             Return the number of nodes left on this server.
         '''
-        self.nodemap_lock.acquire()
         count = None
-        if nodenum not in self.nodemap:
-            self.nodemap_lock.release()
-            return count
-        found = False
-        for server in self.nodemap[nodenum]:
-            (host, port, srvsock) = self.getserver(server)
-            if srvsock == sock:
-                found = True
-                break
-        if server in self.nodecounts:
-            count = self.nodecounts[server]
-        if found:
-            self.nodemap[nodenum].remove(server)
+        with self.nodemap_lock:
+            if nodenum not in self.nodemap:
+                return count
+            found = False
+            for server in self.nodemap[nodenum]:
+                (host, port, srvsock) = self.getserver(server)
+                if srvsock == sock:
+                    found = True
+                    break
             if server in self.nodecounts:
-                count -= 1
-                self.nodecounts[server] = count
-        self.nodemap_lock.release()
-        return count
-    
+                count = self.nodecounts[server]
+            if found:
+                self.nodemap[nodenum].remove(server)
+                if server in self.nodecounts:
+                    count -= 1
+                    self.nodecounts[server] = count
+            return count
+
     def incrbootcount(self):
         ''' Count a node that has booted.
         '''
@@ -450,15 +446,12 @@ class CoreBroker(ConfigurableManager):
         return self.bootcount
 
     def getserversbynode(self, nodenum):
-        ''' Retrieve a list of emulation servers given a node number.
+        ''' Retrieve a set of emulation servers given a node number.
         '''
-        self.nodemap_lock.acquire()
-        if nodenum not in self.nodemap:
-            self.nodemap_lock.release()
-            return []
-        r = self.nodemap[nodenum]
-        self.nodemap_lock.release()
-        return r
+        with self.nodemap_lock:
+            if nodenum not in self.nodemap:
+                return set()
+            return self.nodemap[nodenum]
 
     def addnet(self, nodenum):
         ''' Add a node number to the list of link-layer nodes.
