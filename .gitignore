@@ -1,4 +1,6 @@
+.debbuild
 .deps
+.rpmbuild
 .version
 .version.date
 Makefile
@@ -11,5 +13,6 @@ config.h.in
 config.log
 config.status
 configure
+core-*.tar.gz
 debian
 stamp-h1

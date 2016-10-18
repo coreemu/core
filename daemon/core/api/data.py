@@ -286,6 +286,7 @@ event_types = dict(enumerate([
     "CORE_EVENT_FILE_SAVE",
     "CORE_EVENT_SCHEDULED",
     "CORE_EVENT_RECONFIGURE",
+    "CORE_EVENT_INSTANTIATION_COMPLETE",
 ]))
 
 enumdict(event_types)
