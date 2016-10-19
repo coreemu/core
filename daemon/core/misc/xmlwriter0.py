@@ -11,7 +11,8 @@ import pwd
 from core.netns import nodes
 from core.api import coreapi
 from xml.dom.minidom import Document
-from xmlutils import *
+from xmlutils import addparamtoparent, addelementsfromlist
+from xmlutils import addtextparamtoparent, addtextelementsfromlist
 
 
 class CoreDocumentWriter0(Document):
@@ -190,7 +191,8 @@ class CoreDocumentWriter0(Document):
             self.addaddresses(i, ifc)
             # per-interface models
             if netmodel and netmodel._name[:6] == "emane_":
-                cfg = self.session.emane.getifcconfig(node.objid, netmodel._name,
+                cfg = self.session.emane.getifcconfig(node.objid,
+                                                      netmodel._name,
                                                       None, ifc)
                 if cfg:
                     self.addmodels(i, ((netmodel, cfg),))
@@ -368,7 +370,7 @@ class CoreDocumentWriter0(Document):
         for i, (k, v) in enumerate(self.session.options.getkeyvaluelist()):
             if str(v) != str(defaults[i]):
                 addtextparamtoparent(self, options, k, v)
-                #addparamtoparent(self, options, k, v)
+                # addparamtoparent(self, options, k, v)
         if options.hasChildNodes():
             self.meta.appendChild(options)
         # hook scripts
@@ -378,4 +380,4 @@ class CoreDocumentWriter0(Document):
         self.meta.appendChild(meta)
         for (k, v) in self.session.metadata.items():
             addtextparamtoparent(self, meta, k, v)
-            #addparamtoparent(self, meta, k, v)
+            # addparamtoparent(self, meta, k, v)

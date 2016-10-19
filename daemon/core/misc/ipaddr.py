@@ -183,7 +183,8 @@ class IPPrefix(object):
             return IPAddr(self.af, self.prefix)
         if tmp == 0 or \
                 tmp > (1 << (self.addrlen - self.prefixlen)) - 1 or \
-                (self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
+                (self.af == AF_INET and
+                 tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
             raise ValueError(
                 "invalid hostid for prefix %s: %s" %
                 (self, hostid))
@@ -232,7 +233,7 @@ class IPv6Prefix(IPPrefix):
 
 def isIPAddress(af, addrstr):
     try:
-        tmp = socket.inet_pton(af, addrstr)
+        # tmp = socket.inet_pton(af, addrstr)
         return True
     except:
         return False

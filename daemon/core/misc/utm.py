@@ -170,14 +170,17 @@ def to_latlon(easting, northing, zone_number, zone_letter):
     latitude = (p_rad - (p_tan / r) *
                 (d2 / 2 -
                  d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
-                d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2))
+                d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 *
+                E_P2 - 3 * c2))
 
     longitude = (d -
                  d3 / 6 * (1 + 2 * p_tan2 + c) +
-                 d5 / 120 * (5 - 2 * c + 28 * p_tan2 - 3 * c2 + 8 * E_P2 + 24 * p_tan4)) / p_cos
+                 d5 / 120 * (5 - 2 * c + 28 * p_tan2 - 3 * c2 + 8 * E_P2 + 24 *
+                             p_tan4)) / p_cos
 
     return (math.degrees(latitude),
-            math.degrees(longitude) + zone_number_to_central_longitude(zone_number))
+            math.degrees(longitude) +
+            zone_number_to_central_longitude(zone_number))
 
 
 def from_latlon(latitude, longitude):
@@ -221,11 +224,13 @@ def from_latlon(latitude, longitude):
 
     easting = K0 * n * (a +
                         a3 / 6 * (1 - lat_tan2 + c) +
-                        a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c - 58 * E_P2)) + 500000
+                        a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c -
+                                    58 * E_P2)) + 500000
 
-    northing = K0 * (m + n * lat_tan * (a2 / 2 +
-                                        a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c**2) +
-                                        a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c - 330 * E_P2)))
+    northing = K0 * (m + n * lat_tan * (a2 / 2 + a4 / 24 *
+                     (5 - lat_tan2 + 9 * c + 4 * c**2) +
+                     a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c -
+                                 330 * E_P2)))
 
     if latitude < 0:
         northing += 10000000

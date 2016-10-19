@@ -13,10 +13,10 @@ import pwd
 import collections
 from core.netns import nodes
 from core.api import coreapi
-from core.misc.ipaddr import *
+from core.misc.ipaddr import isIPv4Address
 
 from xml.dom.minidom import Document
-from xmlutils import *
+from xmlutils import addelementsfromlist, addtextelementsfromlist
 from xmldeployment import CoreDeploymentWriter
 
 
@@ -46,16 +46,19 @@ class Attrib(object):
 net: the network that the endpoint belongs to
 netif: the network interface at this end
 id: the identifier for the endpoint
-l2devport: if the other end is a layer 2 device, this is the assigned port in that device
+l2devport: if the other end is a layer 2 device, this is the assigned port in
+# that device
 params: link/interface parameters
 '''
 Endpoint = collections.namedtuple('Endpoint',
-                                  ['net', 'netif', 'type', 'id', 'l2devport', 'params'])
+                                  ['net', 'netif', 'type',
+                                   'id', 'l2devport', 'params'])
 
 
 class CoreDocumentWriter1(Document):
-    ''' Utility class for writing a CoreSession to XML in the NMF scenPlan schema. The init
-    method builds an xml.dom.minidom.Document, and the writexml() method saves the XML file.
+    ''' Utility class for writing a CoreSession to XML in the NMF scenPlan
+    schema. The init method builds an xml.dom.minidom.Document,
+    and the writexml() method saves the XML file.
     '''
 
     def __init__(self, session):
@@ -148,9 +151,9 @@ class NamedXmlElement(XmlElement):
 
         elementPath = ''
         self.id = None
-        if self.parent is not None and isinstance(
-                self.parent, XmlElement) and self.parent.getTagName() != "scenario":
-            elementPath = "%s/" % self.parent.getAttribute("id")
+        if self.parent is not None and isinstance(self.parent, XmlElement) and\
+                self.parent.getTagName() != "scenario":
+                elementPath = "%s/" % self.parent.getAttribute("id")
 
         self.id = "%s%s" % (elementPath, elementName)
         self.setAttribute("name", elementName)
@@ -286,7 +289,8 @@ class ScenarioPlan(XmlElement):
                 origin.setAttribute(attrs[i], str(refgeo[i]))
                 have_origin = True
         if have_origin:
-            if self.coreSession.location.refscale != 1.0:  # 100 pixels = refscale m
+            # 100 pixels = refscale m
+            if self.coreSession.location.refscale != 1.0:
                 origin.setAttribute(
                     "scale100", str(
                         self.coreSession.location.refscale))
@@ -447,7 +451,8 @@ class NetworkElement(NamedXmlElement):
                     MemberElement(self.scenPlan,
                                   self,
                                   referencedType=Attrib.MembType.INTERFACE,
-                                  referencedId="%s/%s" % (self.id, ep.l2devport))
+                                  referencedId="%s/%s"
+                                  % (self.id, ep.l2devport))
 
         # XXX Revisit this
         # Create implied members given the network type
@@ -550,7 +555,8 @@ class NetworkElement(NamedXmlElement):
 
                     # Add interface parameters
                     for key, value in ep.params:
-                        # XXX lifted from original addnetem function. revisit this.
+                        # XXX lifted from original addnetem function.
+                        # revisit this.
                         # default netem parameters are 0 or None
                         if value is None or value == 0:
                             continue
@@ -589,7 +595,7 @@ class DeviceElement(NamedXmlElement):
                 devType = Attrib.DevType.HOST
             elif devObj.type == Attrib.NodeType.RJ45:
                 devType = Attrib.DevType.HOST
-                nodeId = "EMULATOR-HOST"
+                # nodeId = "EMULATOR-HOST"
             elif devObj.type == Attrib.NodeType.HUB:
                 devType = Attrib.DevType.HUB
             elif devObj.type == Attrib.NodeType.SWITCH:
@@ -648,7 +654,8 @@ class DeviceElement(NamedXmlElement):
             if ifcObj.mtu and ifcObj.mtu != 1500:
                 ifcEle.setAttribute("mtu", "%s" % ifcObj.mtu)
 
-            # The interfaces returned for Switches and Hubs are the interfaces of the nodes connected to them.
+            # The interfaces returned for Switches and Hubs are the interfaces
+            # of the nodes connected to them.
             # The addresses are for those interfaces. Don't include them here.
             if isinstance(devObj, nodes.PyCoreNode):
                 # could use ifcObj.params, transport_type
@@ -656,7 +663,8 @@ class DeviceElement(NamedXmlElement):
                 # per-interface models
                 # XXX Remove???
                 if netmodel and netmodel._name[:6] == "emane_":
-                    cfg = self.coreSession.emane.getifcconfig(devObj.objid, netmodel._name,
+                    cfg = self.coreSession.emane.getifcconfig(devObj.objid,
+                                                              netmodel._name,
                                                               None, ifcObj)
                     if cfg:
                         ifcEle.addModels(((netmodel, cfg),))
@@ -725,7 +733,8 @@ class ChannelElement(NamedXmlElement):
         NamedXmlElement.__init__(
             self, scenPlan, parent, "channel", channelName)
         '''
-        Create a channel element and append a member child referencing this channel element
+        Create a channel element and append a member child referencing this
+        # channel element
         in the parent element.
         '''
         # Create a member element for this channel in the parent
@@ -753,9 +762,9 @@ class ChannelElement(NamedXmlElement):
                 self.addChannelMember(ep.type, ep.id, idx)
                 idx += 1
         else:
-            # A single endpoint is given. Create one channel member for the endpoint,
-            # and if the endpoint is associated with a Layer 2 device port, add the
-            # port as a second member
+            # A single endpoint is given. Create one channel member for
+            # the endpoint, and if the endpoint is associated with a Layer 2
+            # device port, add the port as a second member
             ep = endpoints
             self.addChannelMember(ep.type, ep.id, 0)
             if ep.l2devport is not None:
@@ -821,7 +830,9 @@ class InterfaceElement(NamedXmlElement):
                                       referencedType=Attrib.MembType.NETWORK,
                                       referencedId=net.getAttribute("id"))
         except KeyError:
-            pass  # Not an error. This occurs when an interface belongs to a switch or a hub within a network and the channel is yet to be defined
+            # Not an error. This occurs when an interface belongs to a switch
+            # or a hub within a network and the channel is yet to be defined
+            pass
 
     def addAddresses(self, ifcObj):
         '''
@@ -871,9 +882,10 @@ class InterfaceElement(NamedXmlElement):
 
 class MemberElement(XmlElement):
     '''
-    Member elements are references to other elements in the network plan elements of the scenario.
-    They are used in networks to reference channels, in channels to reference interfaces,
-    and in interfaces to reference networks/channels. Member elements provided allow bi-directional
+    Member elements are references to other elements in the network plan
+    elements of the scenario. They are used in networks to reference channels,
+    in channels to reference interfaces, and in interfaces to reference
+    networks/channels. Member elements provided allow bi-directional
     traversal of network plan components.
     '''
 
@@ -891,9 +903,9 @@ class MemberElement(XmlElement):
 
 
 #
-# =======================================================================================
+# ============================================================================
 #                                        Helpers
-# =======================================================================================
+# ============================================================================
 def getEndpoint(netObj, ifcObj):
     '''
     Create an Endpoint object given the network and the interface of interest
@@ -928,9 +940,11 @@ def getEndpoint(netObj, ifcObj):
                                     ifcObj.othernet.getifindex(ifcObj))
 
             # Create the endpoint.
-            # XXX the interface index might not match what is shown in the gui. For switches and hubs,
-            # The gui assigns its index but doesn't pass it to the daemon and vice versa.
-            # The gui stores it's index in the IMN file, which it reads and writes without daemon intervention.
+            # XXX the interface index might not match what is shown in the
+            # gui. For switches and hubs, the gui assigns its index but
+            # doesn't pass it to the daemon and vice versa.
+            # The gui stores it's index in the IMN file, which it reads and
+            # writes without daemon intervention.
             # Fix this!
             ep = Endpoint(owner,
                           ifcObj,
@@ -940,7 +954,8 @@ def getEndpoint(netObj, ifcObj):
                           l2devport=l2devport,
                           params=params)
         # else this node has an interface that belongs to another network
-        # i.e. a switch/hub interface connected to another switch/hub and CORE has the other switch/hub
+        # i.e. a switch/hub interface connected to another switch/hub and CORE
+        # has the other switch/hub
         # as the containing network
         else:
             ep = Endpoint(
@@ -963,10 +978,12 @@ def getEndpoints(netObj):
 
     # XXX TODO: How to represent physical interfaces.
     #
-    # NOTE: The following code works except it would be missing physical (rj45) interfaces from Pt2pt links
+    # NOTE: The following code works except it would be missing physical
+    # (rj45) interfaces from Pt2pt links
     # TODO: Fix data in net.netifs to include Pt2Pt physical interfaces
     #
-    # Iterate through all the nodes in the scenario, then iterate through all the interface for each node,
+    # Iterate through all the nodes in the scenario, then iterate through all
+    # the interface for each node,
     # and check if the interface is connected to this network.
 
     for ifcObj in netObj.netifs(sort=True):
@@ -981,7 +998,8 @@ def getEndpoints(netObj):
 
 def getDowmstreamL2Devices(netObj):
     '''
-    Helper function for getting a list of all downstream layer 2 devices from the given netObj
+    Helper function for getting a list of all downstream layer 2 devices from
+    the given netObj
     '''
     l2devObjs = [netObj]
     allendpoints = []
@@ -1010,9 +1028,10 @@ def getAllNetworkInterfaces(session):
 
 def inOtherNetwork(netObj):
     '''
-    Determine if CORE considers a given network object to be part of another network.
-    Note: CORE considers layer 2 devices to be their own networks. However, if a l2 device
-    is connected to another device, it is possible that one of its ports belong to the other
+    Determine if CORE considers a given network object to be part of another
+    network. Note: CORE considers layer 2 devices to be their own networks.
+    However, if a l2 device is connected to another device, it is possible
+    that one of its ports belong to the other
     l2 device's network (thus, "othernet").
     '''
     for netif in netObj.netifs(sort=True):

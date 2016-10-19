@@ -8,7 +8,8 @@
 
 from core.netns import nodes
 from xml.dom.minidom import parse
-from xmlutils import *
+from xmlutils import getoneelement, xmltypetonodeclass, getparamssetattrs
+from xmlutils import gettextchild, gettextelementstolist
 
 
 class CoreDocumentParser0(object):
@@ -49,8 +50,8 @@ class CoreDocumentParser0(object):
             self.session.warn("%s %s" % (warnstr, msg))
 
     def getmotiondict(self, mp):
-        ''' Parse a MotionPlan into a dict with node names for keys and coordinates
-        for values.
+        ''' Parse a MotionPlan into a dict with node names for keys and
+        coordinates for values.
         '''
         if mp is None:
             return {}
@@ -200,7 +201,7 @@ class CoreDocumentParser0(object):
         name = model.getAttribute("name")
         if name == '':
             return
-        type = model.getAttribute("type")
+        # type = model.getAttribute("type")
         # convert child text nodes into key=value pairs
         kvs = gettextelementstolist(model)
 
@@ -230,7 +231,7 @@ class CoreDocumentParser0(object):
         # nodes and interfaces do not exist yet, at this point of the parsing,
         # save (key, value) pairs for later
         try:
-            #kvs = map(lambda(k, v): (int(v)), kvs)
+            # kvs = map(lambda(k, v): (int(v)), kvs)
             kvs = map(self.numericvalue, kvs)
         except ValueError:
             self.warn("error parsing link parameters for '%s' on '%s'" %

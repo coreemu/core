@@ -10,7 +10,12 @@ from core.netns import nodes
 from core import constants
 from core.misc.ipaddr import MacAddr
 from xml.dom.minidom import parse
-from xmlutils import *
+from xmlutils import getFirstChildByTagName, iterChildrenWithAttribute
+from xmlutils import getChildTextTrim, getFirstChildTextTrimWithAttribute
+from xmlutils import xmltypetonodeclass, iterChildrenWithName
+from xmlutils import getFirstChildTextTrimByTagName, iterDescendantsWithName
+from xmlutils import iterChildren, getFirstChildWithAttribute
+from xml.dom.minidom import Node
 
 
 class CoreDocumentParser1(object):
