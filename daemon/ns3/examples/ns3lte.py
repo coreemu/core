@@ -12,25 +12,8 @@ ns3lte.py - This script demonstrates using CORE with the ns-3 LTE model.
 
 '''
 
-import os
 import sys
-import time
 import optparse
-import datetime
-import math
-try:
-    from core import pycore
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core import pycore
 
 from core.misc import ipaddr
 from corens3.obj import Ns3Session, Ns3LteNet
@@ -48,8 +31,8 @@ def ltesession(opt):
         ascii = ns.network.AsciiTraceHelper()
         stream = ascii.CreateFileStream('/tmp/ns3lte.tr')
         lte.lte.EnableAsciiAll(stream)
-        #ns.core.LogComponentEnable("EnbNetDevice", ns.core.LOG_LEVEL_INFO)
-        #ns.core.LogComponentEnable("UeNetDevice", ns.core.LOG_LEVEL_INFO)
+        # ns.core.LogComponentEnable("EnbNetDevice", ns.core.LOG_LEVEL_INFO)
+        # ns.core.LogComponentEnable("UeNetDevice", ns.core.LOG_LEVEL_INFO)
         # lte.lte.EnableLogComponents()
 
     prefix = ipaddr.IPv4Prefix("10.0.0.0/16")

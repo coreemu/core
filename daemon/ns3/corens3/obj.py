@@ -9,19 +9,16 @@
 ns3.py: defines classes for running emulations with ns-3 simulated networks.
 '''
 
-import sys
-import os
 import threading
 import time
 
 from core.netns.nodes import CoreNode
 from core.coreobj import PyCoreNet
 from core.session import Session
-from core.misc import ipaddr
-from core.constants import *
 from core.misc.utils import maketuple, check_call
 from core.api import coreapi
 from core.mobility import WayPointMobility
+from core.constants import IP_BIN
 
 try:
     import ns.core
@@ -37,6 +34,10 @@ import ns.tap_bridge
 import ns.wifi
 import ns.wimax
 
+SF_DIRECTION_DOWN = ns.wimax.ServiceFlow.SF_DIRECTION_DOWN,
+SF_DIRECTION_UP = ns.wimax.ServiceFlow.SF_DIRECTION_UP
+SF_TYPE_RTPS = ns.wimax.ServiceFlow.SF_TYPE_RTPS
+
 
 ns.core.GlobalValue.Bind("SimulatorImplementationType",
                          ns.core.StringValue("ns3::RealtimeSimulatorImpl"))
@@ -45,8 +46,8 @@ ns.core.GlobalValue.Bind("ChecksumEnabled", ns.core.BooleanValue("true"))
 
 class CoreNs3Node(CoreNode, ns.network.Node):
     ''' The CoreNs3Node is both a CoreNode backed by a network namespace and
-    an ns-3 Node simulator object. When linked to simulated networks, the TunTap
-    device will be used.
+    an ns-3 Node simulator object. When linked to simulated networks,
+    the TunTap device will be used.
     '''
 
     def __init__(self, *args, **kwds):
@@ -75,9 +76,11 @@ class CoreNs3Node(CoreNode, ns.network.Node):
         (addr, mask) = addrstr.split('/')
         tap = net._tapdevs[netif]
         tap.SetAttribute("IpAddress",
-                         ns.network.Ipv4AddressValue(ns.network.Ipv4Address(addr)))
+                         ns.network.Ipv4AddressValue(
+                            ns.network.Ipv4Address(addr)))
         tap.SetAttribute("Netmask",
-                         ns.network.Ipv4MaskValue(ns.network.Ipv4Mask("/" + mask)))
+                         ns.network.Ipv4MaskValue(
+                            ns.network.Ipv4Mask("/" + mask)))
         ns.core.Simulator.Schedule(ns.core.Time('0'), netif.install)
         return ifindex
 
@@ -99,7 +102,8 @@ class CoreNs3Node(CoreNode, ns.network.Node):
             mm = self.GetObject(ns.mobility.MobilityModel.GetTypeId())
             if z is None:
                 z = 0.0
-            pos = mm.SetPosition(ns.core.Vector(x, y, z))
+            # pos = mm.SetPosition(ns.core.Vector(x, y, z))
+            mm.SetPosition(ns.core.Vector(x, y, z))
         except AttributeError:
             self.warn("ns-3 mobility model not found, not setting position")
 
@@ -121,8 +125,10 @@ class CoreNs3Net(PyCoreNet):
         self._tapdevs = {}
 
     def attach(self, netif):
-        ''' Invoked from netif.attach(). Create a TAP device using the TapBridge
-        object. Call getns3dev() to get model-specific device.
+        ''' Invoked from netif.attach().
+
+        Create a TAP device using the TapBridge object. Call getns3dev()
+        to get model-specific device.
         '''
         self._netif[netif] = netif
         self._linked[netif] = {}
@@ -319,17 +325,21 @@ class Ns3WimaxNet(CoreNs3Net):
         clrec1 = ns.wimax.IpcsClassifierRecord(*clargs1)
         clrec2 = ns.wimax.IpcsClassifierRecord(*clargs2)
         ns3dev1.AddServiceFlow(
-            self.wimax.CreateServiceFlow(ns.wimax.ServiceFlow.SF_DIRECTION_DOWN,
-                                         ns.wimax.ServiceFlow.SF_TYPE_RTPS, clrec1))
+            self.wimax.CreateServiceFlow(SF_DIRECTION_DOWN,
+                                         SF_TYPE_RTPS,
+                                         clrec1))
         ns3dev1.AddServiceFlow(
-            self.wimax.CreateServiceFlow(ns.wimax.ServiceFlow.SF_DIRECTION_UP,
-                                         ns.wimax.ServiceFlow.SF_TYPE_RTPS, clrec2))
+            self.wimax.CreateServiceFlow(SF_DIRECTION_UP,
+                                         SF_TYPE_RTPS,
+                                         clrec2))
         ns3dev2.AddServiceFlow(
-            self.wimax.CreateServiceFlow(ns.wimax.ServiceFlow.SF_DIRECTION_DOWN,
-                                         ns.wimax.ServiceFlow.SF_TYPE_RTPS, clrec2))
+            self.wimax.CreateServiceFlow(SF_DIRECTION_DOWN,
+                                         SF_TYPE_RTPS,
+                                         clrec2))
         ns3dev2.AddServiceFlow(
-            self.wimax.CreateServiceFlow(ns.wimax.ServiceFlow.SF_DIRECTION_UP,
-                                         ns.wimax.ServiceFlow.SF_TYPE_RTPS, clrec1))
+            self.wimax.CreateServiceFlow(SF_DIRECTION_UP,
+                                         SF_TYPE_RTPS,
+                                         clrec1))
 
 
 class Ns3Session(Session):
@@ -405,20 +415,27 @@ class Ns3Session(Session):
         self.mobhelper.SetPositionAllocator("ns3::RandomBoxPositionAllocator",
                                             "X",
                                             ns.core.StringValue(
-                                                "ns3::UniformRandomVariable[Min=0|Max=%s]" % x),
+                                                "ns3::UniformRandom" +
+                                                "Variable[Min=0|Max=%s]" % x),
                                             "Y",
                                             ns.core.StringValue(
-                                                "ns3::UniformRandomVariable[Min=0|Max=%s]" % y),
+                                                "ns3::UniformRandom" +
+                                                "Variable[Min=0|Max=%s]" % y),
                                             "Z",
-                                            ns.core.StringValue("ns3::UniformRandomVariable[Min=0|Max=%s]" % z))
+                                            ns.core.StringValue(
+                                                "ns3::UniformRandom" +
+                                                "Variable[Min=0|Max=%s]" % z))
         self.mobhelper.SetMobilityModel("ns3::RandomWalk2dMobilityModel",
                                         "Mode", ns.core.StringValue("Time"),
                                         "Time", ns.core.StringValue(
                                             "%ss" % time),
                                         "Speed",
-                                        ns.core.StringValue("ns3::UniformRandomVariable[Min=0|Max=%s]"
-                                                            % speed),
-                                        "Bounds", ns.core.StringValue("0|%s|0|%s" % (x, y)))
+                                        ns.core.StringValue(
+                                            "ns3::UniformRandom" +
+                                            "Variable[Min=0|Max=%s]" % speed),
+                                        "Bounds",
+                                        ns.core.StringValue(
+                                            "0|%s|0|%s" % (x, y)))
         self.mobhelper.Install(self.nodes)
 
     def startns3mobility(self, refresh_ms=300):
@@ -463,7 +480,8 @@ class Ns3Session(Session):
         of = ns.network.OutputStreamWrapper(filename, filemode=777)
         self.mobhelper.EnableAsciiAll(of)
         self.mobilitytracethread = threading.Thread(target=self.mobilitytrace,
-                                                    args=(net, filename, nodes, verbose))
+                                                    args=(net, filename,
+                                                          nodes, verbose))
         self.mobilitytracethread.daemon = True
         self.mobilitytracethread.start()
 

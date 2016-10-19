@@ -1,8 +1,6 @@
 # Copyright (c)2012 the Boeing Company.
 # See the LICENSE file included in this directory.
 
-import os
-import glob
 from distutils.core import setup
 from corens3.constants import COREDPY_VERSION
 

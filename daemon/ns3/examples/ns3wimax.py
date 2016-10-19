@@ -16,25 +16,8 @@ Current issues:
 - no packets are sent between nodes - no connection?
 '''
 
-import os
 import sys
-import time
 import optparse
-import datetime
-import math
-try:
-    from core import pycore
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core import pycore
 
 from core.misc import ipaddr
 from corens3.obj import Ns3Session, Ns3WimaxNet
@@ -50,7 +33,7 @@ def wimaxsession(opt):
     prefix = ipaddr.IPv4Prefix("10.0.0.0/16")
     # create one classifier for ICMP (protocol 1) traffic
     # src port low/high, dst port low/high, protocol, priority
-    #classifier = (0, 65000, 0, 65000, 1, 1)
+    # classifier = (0, 65000, 0, 65000, 1, 1)
     classifier = (0, 65000, 0, 65000, 17, 1)
     nodes = []
     for i in xrange(1, opt.numnodes + 1):

@@ -19,30 +19,11 @@ How to run this:
 
 '''
 
-import os
 import sys
-import time
 import optparse
-import datetime
-import math
-import threading
-try:
-    from core import pycore
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core import pycore
 
 import ns.core
 import ns.network
-from core.api import coreapi
 from core.misc import ipaddr
 from corens3.obj import Ns3Session, Ns3WifiNet
 
