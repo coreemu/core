@@ -87,7 +87,7 @@ class CoreDeploymentWriter(object):
         for n in nodelist:
             self.add_virtual_host(testhost, n)
         # TODO: handle other servers
-        #   servers = self.session.broker.getserverlist()
+        #   servers = self.session.broker.getservernames()
         #   servers.remove('localhost')
 
     def add_child_element(self, parent, tagName):

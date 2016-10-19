@@ -638,9 +638,16 @@ class Session(object):
         # allow time for processes to start
         time.sleep(0.125)
         self.validatenodes()
+        self.broker.local_instantiation_complete()
+        if self.isconnected():
+            tlvdata = ''
+            tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
+                                                 coreapi.CORE_EVENT_INSTANTIATION_COMPLETE)
+            msg = coreapi.CoreEventMessage.pack(0, tlvdata)
+            self.broadcastraw(None, msg)
         # assume either all nodes have booted already, or there are some
         # nodes on slave servers that will be booted and those servers will
-        # send a node status response message
+        # send a status response message
         self.checkruntime()
 
     def getnodecount(self):
@@ -673,22 +680,9 @@ class Session(object):
             return
         if self.getstate() == coreapi.CORE_EVENT_RUNTIME_STATE:
             return
-        session_node_count = int(self.node_count)
-        nc = self.getnodecount()
-        # count booted nodes not emulated on this server
-        # TODO: let slave server determine RUNTIME and wait for Event Message
-        # broker.getbootocunt() counts all CoreNodes from status reponse
-        #  messages, plus any remote WLANs; remote EMANE, hub, switch, etc.
-        #  are already counted in self._objs
-        nc += self.broker.getbootcount()
-        self.info("Checking for runtime with %d of %d session nodes" % \
-                    (nc, session_node_count))
-        if nc < session_node_count:
-            return # do not have information on all nodes yet
-        # information on all nodes has been received and they have been started
-        # enter the runtime state
-        # TODO: more sophisticated checks to verify that all nodes and networks
-        #       are running
+        # check if all servers have completed instantiation
+        if not self.broker.instantiation_complete():
+            return
         state = coreapi.CORE_EVENT_RUNTIME_STATE
         self.evq.run()
         self.setstate(state, info=True, sendevent=True)
@@ -890,7 +884,7 @@ class Session(object):
                     prefix = prefixes[0] 
             else:
                 # slave servers have their name and localhost in the serverlist
-                servers = self.broker.getserverlist()
+                servers = self.broker.getservernames()
                 servers.remove('localhost')
                 prefix = None
                 for server_prefix in prefixes:
@@ -927,7 +921,7 @@ class Session(object):
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
         self.broker.addnet(oid)
-        for server in self.broker.getserverlist():
+        for server in self.broker.getservers():
             self.broker.addnodemap(server, oid)
         
         return ctrlnet
@@ -1132,7 +1126,7 @@ class SessionConfig(ConfigurableManager, Configurable):
 
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
-        session.broker.handlers += (self.handledistributed, )
+        session.broker.handlers.add(self.handledistributed)
         self.reset()
 
     def reset(self):
@@ -1190,7 +1184,7 @@ class SessionConfig(ConfigurableManager, Configurable):
         controlnets = value.split()
         if len(controlnets) < 2:
             return # multiple controlnet prefixes do not exist
-        servers = self.session.broker.getserverlist()
+        servers = self.session.broker.getservernames()
         if len(servers) < 2:
             return # not distributed
         servers.remove("localhost")

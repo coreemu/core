@@ -33,7 +33,7 @@ class MobilityManager(ConfigurableManager):
         # dummy node objects for tracking position of nodes on other servers
         self.phys = {}
         self.physnets = {}
-        self.session.broker.handlers += (self.physnodehandlelink, )
+        self.session.broker.handlers.add(self.physnodehandlelink)
         self.register()
 
     def startup(self, nodenums=None):
@@ -237,9 +237,10 @@ class MobilityManager(ConfigurableManager):
             return
         for nodenum in nodenums:
             node = self.phys[nodenum]
-            servers = self.session.broker.getserversbynode(nodenum)
-            (host, port, sock) = self.session.broker.getserver(servers[0])
-            netif = self.session.broker.gettunnel(net.objid, IPAddr.toint(host))
+            for server in self.session.broker.getserversbynode(nodenum):
+                break
+            netif = self.session.broker.gettunnel(net.objid,
+                                                  IPAddr.toint(server.host))
             node.addnetif(netif, 0)
             netif.node = node
             (x,y,z) = netif.node.position.get()
