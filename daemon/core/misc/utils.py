@@ -66,7 +66,7 @@ def maketuplefromstr(s, type):
     s.replace('\\', '\\\\')
     return ast.literal_eval(s)
     # return tuple(type(i) for i in s[1:-1].split(','))
-    #r = ()
+    # r = ()
     # for i in s.strip("()").split(','):
     #    r += (i.strip("' "), )
     # chop empty last element from "('a',)" strings
@@ -257,6 +257,7 @@ def daemonize(rootdir="/", umask=0, close_fds=False, dontclose=(),
     os.umask(umask)
     if close_fds:
         try:
+            # where the hell is resource coming from?
             maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
             if maxfd == resource.RLIM_INFINITY:
                 raise ValueError
