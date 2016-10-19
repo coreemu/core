@@ -9,7 +9,6 @@
 quagga.py: helper class for generating Quagga configuration.
 '''
 
-import os.path
 from string import Template
 
 
@@ -70,6 +69,7 @@ interface $interface
             elif x.find(":") >= 0:
                 return "ipv6 address %s" % x
             else:
+                # Where the hell is Value coming from
                 raise Value, "invalid address: %s", x
         addr = "\n  ".join(map(addrstr, netif.addrlist))
 
