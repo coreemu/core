@@ -7,7 +7,6 @@
 
 import socket
 import optparse
-from core.constants import *
 from core.api import coreapi
 
 
