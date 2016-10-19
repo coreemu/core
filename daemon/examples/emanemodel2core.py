@@ -15,7 +15,6 @@ emanemodel2core.py: scans an EMANE model source file
  the actual model name. Note the capitalization convention.
 '''
 
-import os
 import sys
 import optparse
 
@@ -140,7 +139,9 @@ def convert_line(line):
 def convert_items_to_line(items):
     fields = ('required', 'default', 'count', 'name', 'value', 'type',
               'description')
-    getfield = lambda x: items[fields.index(x)].strip()
+
+    def getfield(x):
+        return items[fields.index(x)].strip()
 
     output = "        ("
     output += "%s, " % getfield('name')
