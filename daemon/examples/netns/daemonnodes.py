@@ -5,23 +5,18 @@
 
 # A distributed example where CORE API messaging is used to create a session
 # on a daemon server. The daemon server defaults to 127.0.0.1:4038
-# to target a remote machine specify '-d <ip address>' parameter, it needs to be
-# running the daemon with listenaddr=0.0.0.0 in the core.conf file.
+# to target a remote machine specify '-d <ip address>' parameter, it needs to
+# be running the daemon with listenaddr=0.0.0.0 in the core.conf file.
 # This script creates no nodes locally and therefore can be run as an
 # unprivileged user.
 
 import sys
 import datetime
 import optparse
-import time
 
 from core import pycore
 from core.misc import ipaddr
-from core.constants import *
 from core.api import coreapi
-
-# declare classes for use with Broker
-import select
 
 coreapi.add_node_class("CORE_NODE_DEF",
                        coreapi.CORE_NODE_DEF, pycore.nodes.CoreNode)
@@ -105,9 +100,10 @@ def main():
     daemonport = options.daemon.split(':')
     daemonip = daemonport[0]
 
-    # Localhost is already set in the session but we change it to be the remote daemon
+    # Localhost is already set in the session but we change it to be the
+    # remote daemon.
     # This stops the remote daemon trying to build a tunnel back which would
-    # fail
+    # fail.
     daemon = 'localhost'
     if len(daemonport) > 1:
         port = int(daemonport[1])
@@ -182,7 +178,8 @@ def main():
 
     print "elapsed time: %s" % (datetime.datetime.now() - start)
 
-    print "To stop this session, use the 'core-cleanup' script on the remote daemon server."
+    print "To stop this session, use the 'core-cleanup' script on the " + \
+        "remote daemon server."
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     main()

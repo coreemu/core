@@ -12,7 +12,7 @@ import optparse
 
 from core import pycore
 from core.misc import ipaddr
-from core.constants import *
+from core.constants import SYSCTL_BIN
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 
 # node list (count from 1)

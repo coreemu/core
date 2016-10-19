@@ -373,7 +373,7 @@ class ManetExperiment(object):
 
 
 class Cmd:
-    """ Helper class for running a command on a node and parsing the result. """
+    """ Helper class for running a command on a node and parsing the result."""
     args = ""
 
     def __init__(self, node, verbose=False):
@@ -460,10 +460,10 @@ class Ospf6MdrLevel(VtyshCmd):
 
     def parse(self):
         line = self.out.readline()
-       # TODO: handle multiple interfaces
+        # TODO: handle multiple interfaces
         field = line.split()
         mdrlevel = field[4]
-        if not mdrlevel in ("MDR", "BMDR", "OTHER"):
+        if mdrlevel not in ("MDR", "BMDR", "OTHER"):
             self.warn("mdrlevel: %s" % mdrlevel)
         if self.verbose:
             self.info("  %s is %s" % (self.node.routerid, mdrlevel))

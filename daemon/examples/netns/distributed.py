@@ -12,12 +12,11 @@
 import sys
 import datetime
 import optparse
-import time
 
 from core import pycore
 from core.misc import ipaddr
-from core.constants import *
 from core.api import coreapi
+from core.constants import SYSCTL_BIN
 
 # declare classes for use with Broker
 coreapi.add_node_class("CORE_NODE_DEF",

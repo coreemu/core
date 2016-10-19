@@ -10,7 +10,6 @@
 
 import optparse
 import sys
-import os
 import datetime
 
 from core import pycore

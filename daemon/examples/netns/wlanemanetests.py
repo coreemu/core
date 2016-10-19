@@ -10,7 +10,8 @@ wlanemanetests.py - This script tests the performance of the WLAN device in
 CORE by measuring various metrics:
     - delay experienced when pinging end-to-end
     - maximum TCP throughput achieved using iperf end-to-end
-    - the CPU used and loss experienced when running an MGEN flow of UDP traffic
+    - the CPU used and loss experienced when running an MGEN flow of
+      UDP traffic
 
 All MANET nodes are arranged in a row, so that any given node can only
 communicate with the node to its right or to its left. Performance is measured
@@ -21,7 +22,8 @@ Various underlying network types are tested:
     - bridged (the CORE default, uses ebtables)
     - bridged with netem (add link effects to the bridge using tc queues)
     - EMANE bypass - the bypass model just forwards traffic
-    - EMANE RF-PIPE - the bandwidth (bitrate) is set very high / no restrictions
+    - EMANE RF-PIPE - the bandwidth (bitrate) is set very high / no
+      restrictions
     - EMANE RF-PIPE - bandwidth is set similar to netem case
     - EMANE RF-PIPE - default connectivity is off and pathloss events are
                       generated to connect the nodes in a line
@@ -36,7 +38,6 @@ import time
 import optparse
 import datetime
 import math
-from string import Template
 try:
     from core import pycore
 except ImportError:
@@ -51,8 +52,6 @@ except ImportError:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
 from core.misc import ipaddr
-from core.misc.utils import mutecall
-from core.constants import QUAGGA_STATE_DIR
 from core.emane.emane import Emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.rfpipe import EmaneRfPipeModel
@@ -114,7 +113,7 @@ def calculatecpu(timesa, timesb):
 
 
 class Cmd(object):
-    ''' Helper class for running a command on a node and parsing the result. '''
+    '''Helper class for running a command on a node and parsing the result.'''
     args = ""
 
     def __init__(self, node, verbose=False):
@@ -138,7 +137,8 @@ class Cmd(object):
     def run(self):
         ''' This is the primary method used for running this command. '''
         self.open()
-        status = self.id.wait()
+        # status = self.id.wait()
+        self.id.wait()
         r = self.parse()
         self.cleanup()
         return r
@@ -165,7 +165,7 @@ class Cmd(object):
 
 
 class ClientServerCmd(Cmd):
-    ''' Helper class for running a command on a node and parsing the result. '''
+    '''Helper class for running a command on a node and parsing the result.'''
     args = ""
     client_args = ""
 
@@ -179,7 +179,8 @@ class ClientServerCmd(Cmd):
         kill the server '''
         self.open()  # server
         self.client_open()  # client
-        status = self.client_id.wait()
+        # status = self.client_id.wait()
+        self.client_id.wait()
         self.node.cmdresult(['killall', self.args[0]])  # stop the server
         r = self.parse()
         self.cleanup()
@@ -208,8 +209,7 @@ class ClientServerCmd(Cmd):
 
 
 class PingCmd(Cmd):
-    ''' Test latency using ping.
-    '''
+    '''Test latency using ping.'''
 
     def __init__(self, node, verbose=False,
                  addr=None, count=50, interval=0.1, ):
@@ -251,8 +251,7 @@ class PingCmd(Cmd):
 
 
 class IperfCmd(ClientServerCmd):
-    ''' Test throughput using iperf.
-    '''
+    ''' Test throughput using iperf.'''
 
     def __init__(self, node, client_node, verbose=False, addr=None, time=10):
         # node is the server
@@ -281,8 +280,7 @@ class IperfCmd(ClientServerCmd):
 
 
 class MgenCmd(ClientServerCmd):
-    ''' Run a test traffic flow using an MGEN sender and receiver.
-    '''
+    ''' Run a test traffic flow using an MGEN sender and receiver.'''
 
     def __init__(self, node, client_node, verbose=False, addr=None, time=10,
                  rate=512):
@@ -300,9 +298,9 @@ class MgenCmd(ClientServerCmd):
 
     @staticmethod
     def mgenrate(kbps):
-        ''' Return a MGEN periodic rate string for the given kilobits-per-sec.
-            Assume 1500 byte MTU, 20-byte IP + 8-byte UDP headers, leaving
-            1472 bytes for data.
+        '''Return a MGEN periodic rate string for the given kilobits-per-sec.
+           Assume 1500 byte MTU, 20-byte IP + 8-byte UDP headers, leaving
+           1472 bytes for data.
         '''
         bps = (kbps / 8) * 1000.0
         maxdata = 1472
@@ -321,7 +319,8 @@ class MgenCmd(ClientServerCmd):
         self.stdin.close()
         self.out.close()
         self.err.close()
-        tmp = self.id.wait()  # non-zero mgen exit status OK
+        # tmp = self.id.wait()  # non-zero mgen exit status OK
+        self.id.wait()
 
     def parse(self):
         ''' Check MGEN receiver's log file for packet sequence numbers, and
@@ -471,7 +470,7 @@ class Experiment(object):
             addr = "%s/%s" % (prefix.addr(i), 32)
             tmp = self.session.addobj(cls=pycore.nodes.CoreNode, objid=i,
                                       name="n%d" % i)
-            #tmp.setposition(i * 20, 50, None)
+            # tmp.setposition(i * 20, 50, None)
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
@@ -558,8 +557,10 @@ class Experiment(object):
                 if old:
                     e.set(0, txnem, 10.0, 10.0)
                     service.publish(emaneeventpathloss.EVENT_ID,
-                                    emaneeventservice.PLATFORMID_ANY, rxnem,
-                                    emaneeventservice.COMPONENTID_ANY, e.export())
+                                    emaneeventservice.PLATFORMID_ANY,
+                                    rxnem,
+                                    emaneeventservice.COMPONENTID_ANY,
+                                    e.export())
                 else:
                     e = PathlossEvent()
                     e.append(txnem, forward=10.0, reverse=10.0)
@@ -805,7 +806,7 @@ def main():
     rfpnames = EmaneRfPipeModel.getnames()
     rfpipevals[rfpnames.index('datarate')] = '54000000'
     # TX delay != propagation delay
-    #rfpipevals[ rfpnames.index('delay') ] = '5000'
+    # rfpipevals[ rfpnames.index('delay') ] = '5000'
     if emanever < Emane.EMANE091:
         rfpipevals[rfpnames.index('pathlossmode')] = '2ray'
         rfpipevals[rfpnames.index('defaultconnectivitymode')] = '1'

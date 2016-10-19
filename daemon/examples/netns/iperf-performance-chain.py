@@ -11,7 +11,8 @@
 #            4            2
 #            n          n - 2
 #
-# Use core-cleanup to clean up after this script as the session is left running.
+# Use core-cleanup to clean up after this script as the
+# session is left running.
 #
 
 import sys
@@ -20,7 +21,7 @@ import optparse
 
 from core import pycore
 from core.misc import ipaddr
-from core.constants import *
+from core.constants import SYSCTL_BIN, IP_BIN
 
 # node list (count from 1)
 n = [None]

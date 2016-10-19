@@ -10,13 +10,11 @@
 
 import optparse
 import sys
-import os
 import datetime
 import time
 
 from core import pycore
 from core.misc import ipaddr
-from core.misc.utils import mutecall
 from core.mobility import BasicRangeModel
 from core.netns.vnet import EbtablesQueue
 
@@ -49,7 +47,7 @@ def test(options):
 
     # example setting node n2 to a high altitude
     # n[1].setposition(10, 10, 2000000) # 2000km
-    #session.sdt.updatenode(n[1].objid, 0, 10, 10, 2000000)
+    # session.sdt.updatenode(n[1].objid, 0, 10, 10, 2000000)
 
     n[0].term("bash")
     # wait for rate seconds to allow ebtables commands to commit

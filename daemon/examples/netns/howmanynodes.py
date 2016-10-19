@@ -14,7 +14,6 @@ specified.
 
 import optparse
 import sys
-import os
 import datetime
 import time
 import shutil
@@ -32,7 +31,7 @@ except ImportError:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
 from core.misc import ipaddr
-from core.constants import *
+from core.constants import SYSCTL_BIN
 
 GBD = 1024.0 * 1024.0
 
