@@ -11,9 +11,9 @@ nodes.py: definition of CoreNode classes and other node classes that inherit
 from the CoreNode, implementing specific node types.
 '''
 
-from vnode import *
+from vnode import JailNode
 from vnet import *
-from core.constants import *
+from core.constants import IFCONFIG_BIN
 from core.misc.ipaddr import *
 from core.api import coreapi
 from core.bsd.netgraph import ngloadkernelmodule

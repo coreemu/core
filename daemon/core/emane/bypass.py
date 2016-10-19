@@ -9,11 +9,8 @@
 bypass.py: EMANE Bypass model for CORE
 '''
 
-import sys
-import string
 from core.api import coreapi
 
-from core.constants import *
 from emane import EmaneModel
 
 

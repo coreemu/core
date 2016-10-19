@@ -8,14 +8,13 @@ xen.py: implementation of the XenNode and XenVEth classes that support
 generating Xen domUs based on an ISO image and persistent configuration area
 '''
 
-from core.netns.vnet import *
+from core.netns.vnet import threading
 from core.netns.vnode import LxcNode
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf
-from core.misc.ipaddr import *
-from core.misc.utils import *
-from core.constants import *
+from core.coreobj import PyCoreNode, PyCoreNetIf
+# from core.misc.ipaddr import *
+from core.misc.utils import check_call, mutecheck_call, mutecall, maketuple
+from core.constants import IP_BIN, MOUNT_BIN, UMOUNT_BIN
 from core.api import coreapi
-from core.netns.vif import TunTap
 from core.emane.nodes import EmaneNode
 
 try:
@@ -31,6 +30,7 @@ import subprocess
 try:
     import fsimage
 except ImportError as e:
+    import sys
     # fix for fsimage under Ubuntu
     sys.path.append("/usr/lib/xen-default/lib/python")
     try:
@@ -42,7 +42,6 @@ except ImportError as e:
 
 
 import os
-import time
 import shutil
 import string
 
@@ -97,7 +96,7 @@ class XenNode(PyCoreNode):
     apitype = coreapi.CORE_NODE_XEN
 
     FilesToIgnore = frozenset([
-        #'ipforward.sh',
+        # 'ipforward.sh',
         'quaggaboot.sh',
     ])
 
@@ -106,10 +105,10 @@ class XenNode(PyCoreNode):
     }
 
     CmdsToIgnore = frozenset([
-        #'sh ipforward.sh',
-        #'sh quaggaboot.sh zebra',
-        #'sh quaggaboot.sh ospfd',
-        #'sh quaggaboot.sh ospf6d',
+        # 'sh ipforward.sh',
+        # 'sh quaggaboot.sh zebra',
+        # 'sh quaggaboot.sh ospfd',
+        # 'sh quaggaboot.sh ospf6d',
         'sh quaggaboot.sh vtysh',
         'killall zebra',
         'killall ospfd',
@@ -130,16 +129,19 @@ class XenNode(PyCoreNode):
 
     def RedirCmd_zebra(self):
         check_call([SED_PATH, '-i', '-e', 's/^zebra=no/zebra=yes/',
-                    os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+                    os.path.join(self.mountdir, self.etcdir,
+                                 'quagga/daemons')])
 
     def RedirCmd_ospfd(self):
         check_call([SED_PATH, '-i', '-e', 's/^ospfd=no/ospfd=yes/',
-                    os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+                    os.path.join(self.mountdir, self.etcdir,
+                                 'quagga/daemons')])
 
     def RedirCmd_ospf6d(self):
         check_call([SED_PATH, '-i', '-e',
                     's/^ospf6d=no/ospf6d=yes/',
-                    os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+                    os.path.join(self.mountdir, self.etcdir,
+                                 'quagga/daemons')])
 
     CmdsRedirection = {
         'sh ipforward.sh': RedirCmd_ipforward,
@@ -338,7 +340,8 @@ class XenNode(PyCoreNode):
         self.createpartition(device=dev, disk=disk, start=1,
                              end=(persist_size - 1), type="ext4")
         self.createpartition(device=dev, disk=disk, start=persist_size,
-                             end=(constraint.maxSize - 1), type="linux-swap(v1)")
+                             end=(constraint.maxSize - 1),
+                             type="linux-swap(v1)")
         disk.commit()
 
     def createpartition(self, device, disk, start, end, type):
@@ -458,7 +461,7 @@ class XenNode(PyCoreNode):
 
     # from class LxcNode
     def privatedir(self, path):
-        #self.warn("XEN PVM privatedir() called")
+        # self.warn("XEN PVM privatedir() called")
         # Do nothing, Xen PVM nodes are fully private
         pass
 
@@ -475,7 +478,7 @@ class XenNode(PyCoreNode):
             raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
-        #dirname = dirname.replace("/", ".")
+        # dirname = dirname.replace("/", ".")
         dirname = os.path.join(self.nodedir, dirname)
         if not os.path.isdir(dirname):
             os.makedirs(dirname, mode=0o755)
@@ -485,7 +488,7 @@ class XenNode(PyCoreNode):
     # from class LxcNode
     def nodefile(self, filename, contents, mode=0o644):
         if filename in self.FilesToIgnore:
-            #self.warn("XEN PVM nodefile(filename=%s) ignored" % [filename])
+            # self.warn("XEN PVM nodefile(filename=%s) ignored" % [filename])
             return
 
         if filename in self.FilesRedirection:
@@ -524,7 +527,8 @@ class XenNode(PyCoreNode):
     def cmd(self, args, wait=True):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
-            #self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
+            # self.warn("XEN PVM cmd(args=[%s]) called and ignored"
+            # % cmdAsString)
             return 0
         if cmdAsString in self.CmdsRedirection:
             self.CmdsRedirection[cmdAsString](self)
@@ -538,7 +542,8 @@ class XenNode(PyCoreNode):
     def cmdresult(self, args):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
-            #self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
+            # self.warn("XEN PVM cmd(args=[%s]) called and ignored" %
+            # cmdAsString)
             return (0, "")
         self.warn(
             "XEN PVM cmdresult(args=[%s]) called, but not yet implemented" %
@@ -570,7 +575,7 @@ class XenNode(PyCoreNode):
         '''
         controlifc = None
         for ifc in self.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 controlifc = ifc
                 break
         cmd = "xterm "
@@ -580,9 +585,9 @@ class XenNode(PyCoreNode):
             cmd += "-e ssh root@%s" % controlip
             return cmd
         # otherwise use 'xm console'
-        #pw = self.getconfigitem('root_password')
+        # pw = self.getconfigitem('root_password')
         # cmd += "-xrm 'XTerm*VT100.translations: #override <Key>F1: "
-        #cmd += "string(\"root\\n\") \\n <Key>F2: string(\"%s\\n\")' " % pw
+        # cmd += "string(\"root\\n\") \\n <Key>F2: string(\"%s\\n\")' " % pw
         cmd += "-e sudo %s console %s" % (XM_PATH, self.vmname)
         return cmd
 
@@ -758,9 +763,12 @@ class XenNode(PyCoreNode):
             # paravirtualized NICs.  Perhaps the "set hw address" isn't
             # triggering a rescan.
             f.write(
-                'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="%s", KERNEL=="eth*", NAME="%s"\n' %
+                'SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ' +
+                'ATTR{address}=="%s", KERNEL=="eth*", NAME="%s"\n' %
                 (hwaddr, self.ifname(ifindex)))
-            #f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", DEVPATH=="/devices/vif-%s/?*", KERNEL=="eth*", NAME="%s"\n' % (ifindex, self.ifname(ifindex)))
+            # f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*",
+            # DEVPATH=="/devices/vif-%s/?*", KERNEL=="eth*", NAME="%s"\n' %
+            # (ifindex, self.ifname(ifindex)))
             f.close()
 
             if hwaddr:
@@ -787,7 +795,8 @@ class XenNode(PyCoreNode):
         # self.cmd([IP_BIN, "link", "set", tmp1, "name", ifname])
         # self.addnetif(PyCoreNetIf(self, ifname), self.newifindex())
         #
-        # check_call([IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
+        # check_call([IP_BIN, "link", "set", tmp2, "netns",
+        # str(othernode.pid)])
         # othernode.cmd([IP_BIN, "link", "set", tmp2, "name", otherifname])
         # othernode.addnetif(PyCoreNetIf(othernode, otherifname),
         #                    othernode.newifindex())
@@ -805,7 +814,7 @@ class XenNode(PyCoreNode):
             return
 
         if filename in self.FilesToIgnore:
-            #self.warn("XEN PVM addfile(filename=%s) ignored" % [filename])
+            # self.warn("XEN PVM addfile(filename=%s) ignored" % [filename])
             return
 
         if filename in self.FilesRedirection:

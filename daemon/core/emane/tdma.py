@@ -10,14 +10,8 @@
 tdma.py: EMANE TDMA model bindings for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
+# from core.constants import *
 from emane import Emane, EmaneModel
 from universal import EmaneUniversalModel
 
@@ -43,21 +37,27 @@ class EmaneTdmaModel(EmaneModel):
         ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10',
          '', 'number of flow control tokens'),
         ("fragmentcheckthreshold", coreapi.CONF_DATA_TYPE_UINT16, '2',
-         '', 'rate in seconds for check if fragment reassembly efforts should be abandoned'),
+         '', 'rate in seconds for check if fragment reassembly efforts '
+         'should be abandoned'),
         ("fragmenttimeoutthreshold", coreapi.CONF_DATA_TYPE_UINT16, '5',
-         '', 'threshold in seconds to wait for another packet fragment for reassembly'),
+         '', 'threshold in seconds to wait for another packet fragment '
+         'for reassembly'),
         ('neighbormetricdeletetime', coreapi.CONF_DATA_TYPE_FLOAT, '60.0',
-         '', 'neighbor RF reception timeout for removal from neighbor table (sec)'),
+         '', 'neighbor RF reception timeout for removal from neighbor '
+         'table (sec)'),
         ('neighbormetricupdateinterval', coreapi.CONF_DATA_TYPE_FLOAT, '1.0',
          '', 'neighbor table update interval (sec)'),
-        ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING, '%s/tdmabasemodelpcr.xml' % xml_path,
+        ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING,
+            '%s/tdmabasemodelpcr.xml' % xml_path,
          '', 'SINR/PCR curve file'),
         ("queue.aggregationenable", coreapi.CONF_DATA_TYPE_BOOL, '1',
          'On,Off', 'enable transmit packet aggregation'),
-        ('queue.aggregationslotthreshold', coreapi.CONF_DATA_TYPE_FLOAT, '90.0',
-         '', 'percentage of a slot that must be filled in order to conclude aggregation'),
+        ('queue.aggregationslotthreshold', coreapi.CONF_DATA_TYPE_FLOAT,
+            '90.0', '', 'percentage of a slot that must be filled in order '
+            'to conclude aggregation'),
         ("queue.depth", coreapi.CONF_DATA_TYPE_UINT16, '256',
-         '', 'size of the per service class downstream packet queues (packets)'),
+         '', 'size of the per service class downstream packet queues '
+         '(packets)'),
         ("queue.fragmentationenable", coreapi.CONF_DATA_TYPE_BOOL, '1',
          'On,Off', 'enable packet fragmentation (over multiple slots)'),
         ("queue.strictdequeueenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
@@ -71,7 +71,8 @@ class EmaneTdmaModel(EmaneModel):
 
     # value groupings
     _confgroups = "TDMA MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % \
-                  (len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(_confmatrix))
+                  (len(_confmatrix_mac), len(_confmatrix_mac) + 1,
+                   len(_confmatrix))
 
     def buildnemxmlfiles(self, e, ifc):
         ''' Build the necessary nem, mac, and phy XMLs in the given path.
@@ -107,7 +108,8 @@ class EmaneTdmaModel(EmaneModel):
         mac.setAttribute("library", "tdmaeventschedulerradiomodel")
         # append MAC options to macdoc
         map(lambda n: mac.appendChild(e.xmlparam(macdoc, n,
-                                                 self.valueof(n, values))), macnames)
+                                                 self.valueof(n, values))),
+            macnames)
         e.xmlwrite(macdoc, self.macxmlname(ifc))
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)

@@ -14,7 +14,7 @@ types and objects used for parsing and building CORE API messages.
 import struct
 
 from core.api.data import *
-from core.misc.ipaddr import *
+from core.misc.ipaddr import IPAddr, MacAddr, AF_INET, AF_INET6
 
 
 class CoreTlvData(object):

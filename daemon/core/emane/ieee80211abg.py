@@ -9,14 +9,8 @@
 ieee80211abg.py: EMANE IEEE 802.11abg model for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
+# from core.constants import *
 from emane import Emane, EmaneModel
 from universal import EmaneUniversalModel
 
@@ -60,8 +54,10 @@ class EmaneIeee80211abgModel(EmaneModel):
          '', 'number of flow control tokens'),
     ]
     # mac parameters introduced in EMANE 0.8.1
-    # Note: The entry format for category queue parameters (queuesize, aifs, etc) were changed in
-    # EMANE 9.x, but are being preserved for the time being due to space constraints in the
+    # Note: The entry format for category queue parameters (queuesize, aifs,
+    # etc) were changed in
+    # EMANE 9.x, but are being preserved for the time being due to space
+    # constraints in the
     # CORE GUI. A conversion function (get9xmacparamequivalent) has been
     # defined to support this.
     _confmatrix_mac_extended = [
@@ -140,7 +136,8 @@ class EmaneIeee80211abgModel(EmaneModel):
                     mac.appendChild(e.xmlparam(macdoc, nvpair[0], nvpair[1]))
         else:
             map(lambda n: mac.appendChild(e.xmlparam(macdoc, n,
-                                                     self.valueof(n, values))), macnames)
+                                                     self.valueof(n, values))),
+                macnames)
 
         e.xmlwrite(macdoc, self.macxmlname(ifc))
 
@@ -149,13 +146,14 @@ class EmaneIeee80211abgModel(EmaneModel):
 
     #
     # TEMP HACK: Account for parameter convention change in EMANE 9.x
-    # This allows CORE to preserve the entry layout for the mac 'category' parameters
-    # and work with EMANE 9.x onwards.
-    #
+    # This allows CORE to preserve the entry layout for the mac 'category'
+    # parameters and work with EMANE 9.x onwards.
+
     def get9xmacparamequivalent(self, macname, values):
-        ''' Generate a list of 80211abg mac parameters in 0.9.x layout for a given mac parameter
-        in 8.x layout.For mac category parameters, the list returned will contain the four
-        equivalent 9.x parameter and value pairs. Otherwise, the list returned will only
+        ''' Generate a list of 80211abg mac parameters in 0.9.x layout for a
+        given mac parameter in 8.x layout.For mac category parameters,
+        the list returned will contain the four equivalent 9.x parameter
+        and value pairs. Otherwise, the list returned will only
         contain a single name and value pair.
         '''
         nvpairlist = []

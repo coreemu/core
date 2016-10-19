@@ -10,14 +10,8 @@
 rfpipe.py: EMANE RF-PIPE model for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
+# from core.constants import *
 from emane import Emane, EmaneModel
 from universal import EmaneUniversalModel
 
@@ -83,8 +77,10 @@ class EmaneRfPipeModel(EmaneModel):
     _confmatrix = _confmatrix_mac + _confmatrix_phy
 
     # value groupings
-    _confgroups = "RF-PIPE MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" \
-        % (len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(_confmatrix))
+    _confgroups = "RF-PIPE MAC Parameters:1-%d|Universal PHY " + \
+                  "Parameters:%d-%d" % (len(_confmatrix_mac),
+                                        len(_confmatrix_mac) + 1,
+                                        len(_confmatrix))
 
     def buildnemxmlfiles(self, e, ifc):
         ''' Build the necessary nem, mac, and phy XMLs in the given path.
@@ -127,7 +123,8 @@ class EmaneRfPipeModel(EmaneModel):
             values[i] = self.emane074_fixup(values[i], 1000)
         # append MAC options to macdoc
         map(lambda n: mac.appendChild(e.xmlparam(macdoc, n,
-                                                 self.valueof(n, values))), macnames)
+                                                 self.valueof(n, values))),
+            macnames)
         e.xmlwrite(macdoc, self.macxmlname(ifc))
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)

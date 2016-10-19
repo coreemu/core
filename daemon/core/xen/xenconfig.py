@@ -19,15 +19,10 @@ Node-specific config:  XenConfigManager.configs[nodenumber] = (type, values)
    The node having this specific number has this config.
 '''
 
-import sys
 import os
-import threading
-import subprocess
-import time
 import string
 import ConfigParser
-from xml.dom.minidom import parseString, Document
-from core.constants import *
+from core.constants import CORE_CONF_DIR
 from core.api import coreapi
 from core.conf import ConfigurableManager, Configurable
 from functools import reduce
@@ -130,7 +125,7 @@ class XenConfigManager(ConfigurableManager):
             if name in self.configfile:
                 return self.configfile[name]
             else:
-                #self.warn("missing config item '%s'" % name)
+                # self.warn("missing config item '%s'" % name)
                 return None
 
 

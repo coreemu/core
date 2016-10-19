@@ -11,13 +11,11 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 '''
 
-import sys
 import os.path
 
 from core.api import coreapi
 from core.coreobj import PyCoreNet
 try:
-    from emanesh.events import EventService
     from emanesh.events import LocationEvent
 except Exception as e:
     pass
@@ -62,8 +60,9 @@ class EmaneNode(EmaneNet):
         '''
         if not self.model:
             return
-        return self.model.linkconfig(netif=netif, bw=bw, delay=delay, loss=loss,
-                                     duplicate=duplicate, jitter=jitter, netif2=netif2)
+        return self.model.linkconfig(netif=netif, bw=bw, delay=delay,
+                                     loss=loss, duplicate=duplicate,
+                                     jitter=jitter, netif2=netif2)
 
     def config(self, conf):
         # print "emane", self.name, "got config:", conf
@@ -211,7 +210,8 @@ class EmaneNode(EmaneNet):
         '''
         if self.session.emane.genlocationevents() and \
                 self.session.emane.service is None:
-            warntxt = "unable to publish EMANE events because the eventservice "
+            warntxt = "unable to publish EMANE events because the " + \
+                      "eventservice "
             warntxt += "Python bindings failed to load"
             self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.name,
                                    self.objid, warntxt)
@@ -268,11 +268,12 @@ class EmaneNode(EmaneNet):
             self.session.emane.service.publish(0, event)
         else:
             event.set(0, nemid, lat, long, alt)
-            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
-                                               emaneeventservice.PLATFORMID_ANY,
-                                               emaneeventservice.NEMID_ANY,
-                                               emaneeventservice.COMPONENTID_ANY,
-                                               event.export())
+            self.session.emane.service.publish(
+                emaneeventlocation.EVENT_ID,
+                emaneeventservice.PLATFORMID_ANY,
+                emaneeventservice.NEMID_ANY,
+                emaneeventservice.COMPONENTID_ANY,
+                event.export())
 
     def setnempositions(self, moved_netifs):
         ''' Several NEMs have moved, from e.g. a WaypointMobilityModel
@@ -314,8 +315,9 @@ class EmaneNode(EmaneNet):
         if self.session.emane.version >= self.session.emane.EMANE091:
             self.session.emane.service.publish(0, event)
         else:
-            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
-                                               emaneeventservice.PLATFORMID_ANY,
-                                               emaneeventservice.NEMID_ANY,
-                                               emaneeventservice.COMPONENTID_ANY,
-                                               event.export())
+            self.session.emane.service.publish(
+                emaneeventlocation.EVENT_ID,
+                emaneeventservice.PLATFORMID_ANY,
+                emaneeventservice.NEMID_ANY,
+                emaneeventservice.COMPONENTID_ANY,
+                event.export())

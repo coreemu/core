@@ -111,8 +111,8 @@ class NetgraphNet(PyCoreNet):
         self._linked[netif1][netif2] = True
 
     def linknet(self, net):
-        ''' Link this bridge with another by creating a veth pair and installing
-            each device into each bridge.
+        ''' Link this bridge with another by creating a veth pair and
+            installing each device into each bridge.
         '''
         raise NotImplementedError
 

@@ -11,8 +11,8 @@ ngctl commands.
 '''
 
 import subprocess
-from core.misc.utils import *
-from core.constants import *
+from core.misc.utils import checkexec, check_call, mutecall
+from core.constants import NGCTL_BIN
 
 checkexec([NGCTL_BIN])
 

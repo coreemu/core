@@ -6,18 +6,12 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-universal.py: EMANE Universal PHY model for CORE. Enumerates configuration items
-used for the Universal PHY.
+universal.py: EMANE Universal PHY model for CORE. Enumerates configuration
+items used for the Universal PHY.
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
+# from core.constants import *
 from emane import Emane, EmaneModel
 
 
@@ -139,7 +133,8 @@ class EmaneUniversalModel(EmaneModel):
 
         # append all PHY options to phydoc
         map(lambda n: phy.appendChild(e.xmlparam(phydoc, n,
-                                                 mac.valueof(n, values))), phynames)
+                                                 mac.valueof(n, values))),
+            phynames)
         if frequencies:
             phy.appendChild(frequencies)
         return phydoc

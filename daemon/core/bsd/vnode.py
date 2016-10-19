@@ -15,9 +15,7 @@ import signal
 import sys
 import subprocess
 import threading
-import string
-import random
-import time
+
 from core.misc.utils import *
 from core.constants import *
 from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position
@@ -378,7 +376,8 @@ class JailNode(SimpleJailNode):
         if path[0] != "/":
             raise ValueError("path not fully qualified: " + path)
         hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+                                os.path.normpath(path).strip('/').
+                                replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:
@@ -389,7 +388,7 @@ class JailNode(SimpleJailNode):
 
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
-        #self.addsymlink(path=dirname, file=basename)
+        # self.addsymlink(path=dirname, file=basename)
         if not basename:
             raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":

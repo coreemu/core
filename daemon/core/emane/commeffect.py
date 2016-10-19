@@ -10,14 +10,7 @@
 commeffect.py: EMANE CommEffect model for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
 from emane import Emane, EmaneModel
 
 try:
@@ -86,7 +79,8 @@ class EmaneCommEffectModel(EmaneModel):
 
         # append all shim options (except filterfile) to shimdoc
         map(lambda n: shim.appendChild(e.xmlparam(shimdoc, n,
-                                                  self.valueof(n, values))), shimnames)
+                                                  self.valueof(n, values))),
+            shimnames)
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
         if ff.strip() != '':
