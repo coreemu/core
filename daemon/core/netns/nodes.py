@@ -10,21 +10,28 @@
 nodes.py: definition of an LxcNode and CoreNode classes, and other node classes
 that inherit from the CoreNode, implementing specific node types.
 '''
-
-from vnode import *
-from vnet import *
-from core.misc.ipaddr import *
+import threading
+import subprocess
+from vnode import LxcNode
+from core.misc.utils import check_call, cmdresult, mutecall, maketuple
+from core.constants import BRCTL_BIN, IP_BIN, AF_INET, AF_INET6, TC_BIN
+from vnet import LxBrNet, GreTapBridge
+from core.misc.ipaddr import IPv4Prefix, isIPv4Address, IPAddr, socket
 from core.api import coreapi
-from core.coreobj import PyCoreNode
+from core.coreobj import PyCoreNode, PyCoreNetIf, PyCoreObj
 
 
 class CtrlNet(LxBrNet):
     policy = "ACCEPT"
     CTRLIF_IDX_BASE = 99  # base control interface index
-    DEFAULT_PREFIX_LIST = ["172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
-                           "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
-                           "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
-                           "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"]
+    DEFAULT_PREFIX_LIST = ["172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 "
+                           "172.16.3.0/24 172.16.4.0/24",
+                           "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 "
+                           "172.17.3.0/24 172.17.4.0/24",
+                           "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 "
+                           "172.18.3.0/24 172.18.4.0/24",
+                           "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 "
+                           "172.19.3.0/24 172.19.4.0/24"]
 
     def __init__(self, session, objid="ctrlnet", name=None,
                  verbose=False, prefix=None,
@@ -64,12 +71,14 @@ class CtrlNet(LxBrNet):
                 check_call([IP_BIN, "link", "set", self.serverintf, "up"])
             except Exception as e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_FATAL, self.brname,
-                               "Error joining server interface %s to controlnet bridge %s: %s" %
+                               "Error joining server interface %s to " +
+                               "controlnet bridge %s: %s" %
                                (self.serverintf, self.brname, e))
 
     def detectoldbridge(self):
-        ''' Occassionally, control net bridges from previously closed sessions are not cleaned up.
-        Check if there are old control net bridges and delete them
+        ''' Occassionally, control net bridges from previously closed sessions
+            are not cleaned up. Check if there are old control net bridges
+            and delete them
         '''
         retstat, retstr = cmdresult([BRCTL_BIN, 'show'])
         if retstat != 0:
@@ -82,15 +91,20 @@ class CtrlNet(LxBrNet):
             flds = cols[0].split('.')
             if len(flds) == 3:
                 if flds[0] == 'b' and flds[1] == self.objid:
-                    self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "CtrlNet.startup()", None,
-                                           "Error: An active control net bridge (%s) found. "
-                                           "An older session might still be running. "
-                                           "Stop all sessions and, if needed, delete %s to continue." %
-                                           (oldbr, oldbr))
+                    self.session.exception(
+                        coreapi.CORE_EXCP_LEVEL_FATAL,
+                        "CtrlNet.startup()",
+                        None,
+                        "Error: An active control net bridge (%s) found. "
+                        "An older session might still be running. "
+                        "Stop all sessions and, if needed, delete %s to "
+                        "continue." %
+                        (oldbr, oldbr))
                     return True
                     '''
                     # Do this if we want to delete the old bridge
-                    self.warn("Warning: Old %s bridge found: %s" % (self.objid, oldbr))
+                    self.warn("Warning: Old %s bridge found: %s" %
+                        (self.objid, oldbr))
                     try:
                         check_call([BRCTL_BIN, 'delbr', oldbr])
                     except Exception, e:
@@ -105,9 +119,11 @@ class CtrlNet(LxBrNet):
             try:
                 check_call([BRCTL_BIN, "delif", self.brname, self.serverintf])
             except Exception as e:
-                self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
-                               "Error deleting server interface %s to controlnet bridge %s: %s" %
-                               (self.serverintf, self.brname, e))
+                self.exception(
+                    coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
+                    "Error deleting server interface %s to controlnet "
+                    "bridge %s: %s" %
+                    (self.serverintf, self.brname, e))
 
         if self.updown_script is not None:
             self.info("interface %s updown script '%s shutdown' called" %

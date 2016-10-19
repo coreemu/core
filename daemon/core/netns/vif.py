@@ -11,20 +11,11 @@ vif.py: PyCoreNetIf classes that implement the interfaces available
 under Linux.
 '''
 
-import os
-import signal
-import shutil
-import sys
-import subprocess
-import vnodeclient
-import threading
-import string
-import random
 import time
 from core.api import coreapi
-from core.misc.utils import *
-from core.constants import *
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position
+from core.misc.utils import checkexec, check_call, mutedetach, mutecall
+from core.constants import IP_BIN
+from core.coreobj import PyCoreNetIf
 from core.emane.nodes import EmaneNode
 
 checkexec([IP_BIN])
@@ -75,7 +66,7 @@ class TunTap(PyCoreNetIf):
         #   Debian does not support -p (tap) option, RedHat does.
         # For now, this is disabled to allow the TAP to be created by another
         # system (e.g. EMANE's emanetransportd)
-        #check_call(["tunctl", "-t", self.name])
+        # check_call(["tunctl", "-t", self.name])
         # self.install()
         self.up = True
 
@@ -151,8 +142,9 @@ class TunTap(PyCoreNetIf):
         netns = str(self.node.pid)
         try:
             check_call([IP_BIN, "link", "set", self.localname, "netns", netns])
-        except Exception as e:
-            msg = "error installing TAP interface %s, command:" % self.localname
+        except Exception:
+            msg = "error installing TAP interface %s, command:" \
+                  % self.localname
             msg += "ip link set %s netns %s" % (self.localname, netns)
             self.node.exception(
                 coreapi.CORE_EXCP_LEVEL_ERROR,

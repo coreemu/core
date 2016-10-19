@@ -12,15 +12,13 @@ Linux Ethernet bridging and ebtables rules.
 '''
 
 import os
-import sys
 import threading
 import time
-import subprocess
 
 from core.api import coreapi
-from core.misc.utils import *
-from core.constants import *
-from core.coreobj import PyCoreNet, PyCoreObj
+from core.misc.utils import checkexec, check_call, mutecall
+from core.constants import BRCTL_BIN, IP_BIN, EBTABLES_BIN, TC_BIN
+from core.coreobj import PyCoreNet
 from core.netns.vif import VEth, GreTap
 
 checkexec([BRCTL_BIN, IP_BIN, EBTABLES_BIN, TC_BIN])
@@ -116,9 +114,10 @@ class EbtablesQueue(object):
             self.updatelock.acquire()
             for wlan in self.updates:
                 '''
-                Check if wlan is from a previously closed session. Because of the
-                rate limiting scheme employed here, this may happen if a new session
-                is started soon after closing a previous session.
+                Check if wlan is from a previously closed session.
+                Because of the rate limiting scheme employed here,
+                this may happen if a new session is started soon after
+                closing a previous session.
                 '''
                 try:
                     wlan.session
@@ -183,14 +182,19 @@ class EbtablesQueue(object):
         for (netif1, v) in wlan._linked.items():
             for (netif2, linked) in v.items():
                 if wlan.policy == "DROP" and linked:
-                    self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
+                    self.cmds.extend([["-A", wlan.brname, "-i",
+                                       netif1.localname,
                                        "-o", netif2.localname, "-j", "ACCEPT"],
-                                      ["-A", wlan.brname, "-o", netif1.localname,
-                                       "-i", netif2.localname, "-j", "ACCEPT"]])
+                                      ["-A", wlan.brname, "-o",
+                                       netif1.localname,
+                                       "-i", netif2.localname,
+                                       "-j", "ACCEPT"]])
                 elif wlan.policy == "ACCEPT" and not linked:
-                    self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
+                    self.cmds.extend([["-A", wlan.brname, "-i",
+                                       netif1.localname,
                                        "-o", netif2.localname, "-j", "DROP"],
-                                      ["-A", wlan.brname, "-o", netif1.localname,
+                                      ["-A", wlan.brname, "-o",
+                                       netif1.localname,
                                        "-i", netif2.localname, "-j", "DROP"]])
         wlan._linked_lock.release()
 
@@ -300,7 +304,8 @@ class LxBrNet(PyCoreNet):
                 check_call([BRCTL_BIN, "delif", self.brname, netif.localname])
             except Exception as e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
-                               "Error removing interface %s from bridge %s: %s" %
+                               "Error removing interface %s from " +
+                               "bridge %s: %s" %
                                (netif.localname, self.brname, e))
                 return
         PyCoreNet.detach(self, netif)
@@ -510,7 +515,8 @@ class GreTapBridge(LxBrNet):
             self.gretap = None
         else:
             self.gretap = GreTap(node=self, name=None, session=session,
-                                 remoteip=remoteip, objid=None, localip=localip, ttl=ttl,
+                                 remoteip=remoteip, objid=None,
+                                 localip=localip, ttl=ttl,
                                  key=self.grekey)
         if start:
             self.startup()

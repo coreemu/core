@@ -13,18 +13,16 @@ virtual node.
 
 import os
 import signal
-import sys
 import subprocess
 import vnodeclient
 import threading
 import string
 import shutil
 import random
-import time
 from core.api import coreapi
-from core.misc.utils import *
-from core.constants import *
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position
+from core.misc.utils import checkexec, check_call, maketuple
+from core.constants import IP_BIN, CORE_SBIN_DIR, MOUNT_BIN, UMOUNT_BIN
+from core.coreobj import PyCoreNode, PyCoreNetIf
 from core.netns.vif import VEth, TunTap
 from core.emane.nodes import EmaneNode
 
@@ -228,7 +226,8 @@ class SimpleLxcNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             (status, result) = self.cmdresult([IP_BIN, "link", "set", "dev",
-                                               self.ifname(ifindex), "address", str(addr)])
+                                               self.ifname(ifindex), "address",
+                                               str(addr)])
             if status:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                "SimpleLxcNode.sethwaddr()",
@@ -375,7 +374,8 @@ class LxcNode(SimpleLxcNode):
         if path[0] != "/":
             raise ValueError("path not fully qualified: " + path)
         hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+                                os.path.normpath(path).strip('/').
+                                replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:

@@ -11,12 +11,11 @@ import os
 import threading
 import subprocess
 
-from core.misc.ipaddr import *
-from core.misc.utils import *
-from core.constants import *
+# from core.misc.ipaddr import *
+from core.misc.utils import maketuple
+from core.constants import IP_BIN, MOUNT_BIN, UMOUNT_BIN
 from core.api import coreapi
-from core.coreobj import PyCoreNode, PyCoreNetIf
-from core.emane.nodes import EmaneNode
+from core.coreobj import PyCoreNode
 if os.uname()[0] == "Linux":
     from core.netns.vnet import LxBrNet
     from core.netns.vif import GreTap
@@ -84,7 +83,7 @@ class PhysicalNode(PyCoreNode):
             else:
                 # os.spawnlp(os.P_NOWAIT, args)
                 subprocess.Popen(args)
-        except CalledProcessError as e:
+        except CalledProcessError as e:  # Where the hell is this coming from?
             self.warn("cmd exited with status %s: %s" % (e, str(args)))
 
     def cmdresult(self, args):
@@ -146,7 +145,8 @@ class PhysicalNode(PyCoreNode):
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
             self.cmd([IP_BIN, "link", "set", "dev", netif.localname, "down"])
-            self.cmd([IP_BIN, "link", "set", netif.localname, "name", netif.name])
+            self.cmd([IP_BIN, "link", "set",
+                      netif.localname, "name", netif.name])
         netif.localname = netif.name
         if hwaddr:
             self.sethwaddr(ifindex, hwaddr)
@@ -214,7 +214,8 @@ class PhysicalNode(PyCoreNode):
         if path[0] != "/":
             raise ValueError("path not fully qualified: " + path)
         hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+                                os.path.normpath(path).strip('/').
+                                replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:

@@ -15,7 +15,7 @@ by invoking the vcmd shell command.
 import os
 import stat
 import sys
-from core.constants import *
+from core.constants import CORE_SBIN_DIR, IP_BIN
 
 USE_VCMD_MODULE = True
 
