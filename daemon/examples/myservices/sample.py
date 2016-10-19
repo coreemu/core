@@ -6,10 +6,8 @@
 ''' Sample user-defined service.
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+from core.misc.ipaddr import IPv4Prefix
 
 
 class MyService(CoreService):
