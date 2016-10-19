@@ -9,7 +9,7 @@
 sdt.py: Scripted Display Tool (SDT3D) helper
 '''
 
-from core.constants import *
+from core.constants import CORE_DATA_DIR, CORE_CONF_DIR
 from core.api import coreapi
 from coreobj import PyCoreNet, PyCoreObj
 from core.netns import nodes
@@ -244,7 +244,8 @@ class Sdt(object):
                     msghdr = msg[:coreapi.CoreMessage.hdrsiz]
                     flags = coreapi.CoreMessage.unpackhdr(msghdr)[1]
                     m = coreapi.CoreLinkMessage(flags, msghdr,
-                                                msg[coreapi.CoreMessage.hdrsiz:])
+                                                msg[coreapi.
+                                                    CoreMessage.hdrsiz:])
                     n1num = m.gettlv(coreapi.CORE_TLV_LINK_N1NUMBER)
                     n2num = m.gettlv(coreapi.CORE_TLV_LINK_N2NUMBER)
                     link_msg_type = m.gettlv(coreapi.CORE_TLV_LINK_TYPE)

@@ -26,7 +26,10 @@ from core.misc.xmlsession import opensessionxml, savesessionxml
 
 
 '''
-Defines server classes and request handlers for TCP and UDP. Also defined here is a TCP based auxiliary server class for supporting externally defined handlers.
+Defines server classes and request handlers for TCP and UDP.
+
+Also defined here is a TCP based auxiliary server class for supporting
+externally defined handlers.
 '''
 
 
@@ -322,7 +325,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         self.verbose = bool(server.cfg['verbose'].lower() == "true")
         self.debug = bool(server.cfg['debug'].lower() == "true")
         self.session = None
-        #self.numwlan = 0
+        # self.numwlan = 0
         closeonexec(request.fileno())
         SocketServer.BaseRequestHandler.__init__(self, request,
                                                  client_address, server)
@@ -422,7 +425,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             if self.debug:
                 self.info("received message data:\n%s" % hexdump(data))
             if len(data) > msglen:
-                self.warn("received message length does not match received data "
+                self.warn("received message length does not match" +
+                          "received data " +
                           "(%s != %s)" % (len(data), msglen))
                 raise IOError
         try:
@@ -490,16 +494,17 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         try:
             replies = msghandler(msg)
             self.dispatchreplies(replies, msg)
-        except Exception as e:
+        except Exception:
             self.warn("%s: exception while handling msg:\n%s\n%s" %
                       (threading.currentThread().getName(), msg,
                        traceback.format_exc()))
 
-    # Added to allow the auxiliary handlers to define a different behavior when replying
-    # to messages from clients
+    # Added to allow the auxiliary handlers to define a different behavior
+    # when replying to messages from clients
     def dispatchreplies(self, replies, msg):
         '''
-        Dispatch replies by CORE to message msg previously received from the client.
+        Dispatch replies by CORE to message msg previously received
+        from the client.
         '''
         for reply in replies:
             if self.debug:
@@ -507,9 +512,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     coreapi.CoreMessage.unpackhdr(reply)
                 try:
                     rmsg = coreapi.msg_class(msgtype)(msgflags,
-                                                      reply[
-                                                          :coreapi.CoreMessage.hdrsiz],
-                                                      reply[coreapi.CoreMessage.hdrsiz:])
+                                                      reply[:coreapi.
+                                                            CoreMessage.
+                                                            hdrsiz],
+                                                      reply[coreapi.
+                                                            CoreMessage.
+                                                            hdrsiz:])
                 except KeyError:
                     # multiple TLVs of same type cause KeyError exception
                     rmsg = "CoreMessage (type %d flags %d length %d)" % \
@@ -547,7 +555,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 time.sleep(0.125)
             self.session.broadcast(self, msg)
         # self.session.shutdown()
-        #del self.session
+        # del self.session
         gc.collect()
 #         print "gc count:", gc.get_count()
 #         for o in gc.get_objects():
@@ -670,8 +678,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
             if msg.flags & coreapi.CORE_API_STR_FLAG:
                 tlvdata = ""
-                tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_NUMBER,
-                                                    nodenum)
+                tlvdata += coreapi.CoreNodeTlv.pack(
+                    coreapi.CORE_TLV_NODE_NUMBER, nodenum)
                 flags = coreapi.CORE_API_DEL_FLAG | coreapi.CORE_API_LOC_FLAG
                 replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
             for reply in self.session.checkshutdown():
@@ -685,7 +693,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 if self.verbose:
                     self.warn("ignoring node message: unknown node number %s"
                               % nodenum)
-            #nodeemuid = msg.gettlv(coreapi.CORE_TLV_NODE_EMUID)
+            # nodeemuid = msg.gettlv(coreapi.CORE_TLV_NODE_EMUID)
             if nodexpos is None or nodeypos is None:
                 if self.verbose:
                     self.info("ignoring node message: nothing to do")
@@ -826,7 +834,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 ''' Add a new link.
                 '''
                 start = False
-                if self.session.getstate() > coreapi.CORE_EVENT_DEFINITION_STATE:
+                if self.session.getstate() > \
+                        coreapi.CORE_EVENT_DEFINITION_STATE:
                     start = True
 
                 if node1 and node2 and not net:
@@ -856,7 +865,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     if ipv62 is not None and ipv6mask2 is not None:
                         netaddrlist.append("%s/%s" % (ipv62, ipv6mask2))
                     ifindex1 = node1.newnetif(net, addrlist=addrlist,
-                                              hwaddr=mac1, ifindex=ifindex1, ifname=ifname1)
+                                              hwaddr=mac1,
+                                              ifindex=ifindex1,
+                                              ifname=ifname1)
                     net.linkconfig(node1.netif(ifindex1, net), bw=bw,
                                    delay=delay, loss=loss,
                                    duplicate=duplicate, jitter=jitter)
@@ -880,7 +891,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     if ipv61 is not None and ipv6mask1 is not None:
                         netaddrlist.append("%s/%s" % (ipv61, ipv6mask1))
                     ifindex2 = node2.newnetif(net, addrlist=addrlist,
-                                              hwaddr=mac2, ifindex=ifindex2, ifname=ifname2)
+                                              hwaddr=mac2,
+                                              ifindex=ifindex2,
+                                              ifname=ifname2)
                     if not unidirectional:
                         net.linkconfig(node2.netif(ifindex2, net), bw=bw,
                                        delay=delay, loss=loss,
@@ -920,7 +933,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 elif net is None and net2 is None and \
                         (node1 is None or node2 is None):
                     # apply address/parameters to PhysicalNodes
-                    fx = (bw, delay, loss, duplicate, jitter)
+                    # fx = (bw, delay, loss, duplicate, jitter)
                     addrlist = []
                     if node1 and isinstance(node1, pycore.pnodes.PhysicalNode):
                         if ipv41 is not None and ipv4mask1 is not None:
@@ -929,7 +942,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                             addrlist.append("%s/%s" % (ipv61, ipv6mask1))
                         node1.adoptnetif(t, ifindex1, mac1, addrlist)
                         node1.linkconfig(t, bw, delay, loss, duplicate, jitter)
-                    elif node2 and isinstance(node2, pycore.pnodes.PhysicalNode):
+                    elif node2 and isinstance(node2,
+                                              pycore.pnodes.PhysicalNode):
                         if ipv42 is not None and ipv4mask2 is not None:
                             addrlist.append("%s/%s" % (ipv42, ipv4mask2))
                         if ipv62 is not None and ipv6mask2 is not None:
@@ -1110,7 +1124,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 else:
                     status, res = n.cmdresult(shlex.split(cmd))
                 if self.verbose:
-                    self.info("done exec cmd='%s' with status=%d res=(%d bytes)"
+                    self.info("done exec cmd='%s' with " +
+                              "status=%d res=(%d bytes)"
                               % (cmd, status, len(res)))
                 if msg.flags & coreapi.CORE_API_TXT_FLAG:
                     tlvdata += coreapi.CoreExecTlv.pack(
@@ -1175,9 +1190,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     session = self.server.getsession(
                         sessionid=sid, useexisting=True)
                     retries = 10
-                    # wait for session to enter RUNTIME state, to prevent GUI from
-                    # connecting while nodes are still being instantiated
-                    while session.getstate() != coreapi.CORE_EVENT_RUNTIME_STATE:
+                    # wait for session to enter RUNTIME state, to prevent GUI
+                    # from connecting while nodes are still being instantiated
+                    while session.getstate() != \
+                            coreapi.CORE_EVENT_RUNTIME_STATE:
                         self.info(
                             "waiting for session %d to enter RUNTIME state" %
                             sid)
@@ -1211,7 +1227,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         else:
             # register capabilities with the GUI
             self.master = True
-            found = self.server.setsessionmaster(self)
+            # found = self.server.setsessionmaster(self)
+            self.server.setsessionmaster(self)
             replies.append(self.register())
             replies.append(self.server.tosessionmsg())
         return replies
@@ -1254,7 +1271,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             if type is not None:
                 if type[:8] == "service:":
                     self.session.services.setservicefile(nodenum, type,
-                                                         filename, srcname, data)
+                                                         filename, srcname,
+                                                         data)
                     return ()
                 elif type[:5] == "hook:":
                     self.session.sethook(type, filename, srcname, data)
@@ -1301,7 +1319,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         if self.verbose:
             self.info("EVENT %d: %s at %s" %
-                      (eventtype, coreapi.event_types[eventtype], time.ctime()))
+                      (eventtype,
+                       coreapi.event_types[eventtype],
+                       time.ctime()))
         if eventtype <= coreapi.CORE_EVENT_SHUTDOWN_STATE:
             if node is not None:
                 try:
@@ -1470,8 +1490,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 elif msg.flags & coreapi.CORE_API_DEL_FLAG:
                     # shut down the specified session(s)
                     self.info("request to terminate session %s" % sid)
-                    session.setstate(state=coreapi.CORE_EVENT_DATACOLLECT_STATE,
-                                     info=True, sendevent=True)
+                    session.setstate(
+                        state=coreapi.CORE_EVENT_DATACOLLECT_STATE,
+                        info=True, sendevent=True)
                     session.setstate(state=coreapi.CORE_EVENT_SHUTDOWN_STATE,
                                      info=True, sendevent=True)
                     session.shutdown()
@@ -1482,8 +1503,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
 class CoreDatagramRequestHandler(CoreRequestHandler):
     ''' A child of the CoreRequestHandler class for handling connectionless
-    UDP messages. No new session is created; messages are handled immediately or
-    sometimes queued on existing session handlers.
+    UDP messages. No new session is created; messages are handled immediately
+    or sometimes queued on existing session handlers.
     '''
 
     def __init__(self, request, client_address, server):
@@ -1514,7 +1535,8 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
             self.info("new UDP connection: %s:%s" % self.client_address)
 
     def handle(self):
-        msg = self.recvmsg()
+        # msg = self.recvmsg()
+        self.recvmsg()
 
     def finish(self):
         return SocketServer.BaseRequestHandler.finish(self)
@@ -1524,7 +1546,7 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
         session handler's queue, if available.
         '''
         data = self.request[0]
-        socket = self.request[1]
+        # socket = self.request[1]
         msghdr = data[:coreapi.CoreMessage.hdrsiz]
         if len(msghdr) < coreapi.CoreMessage.hdrsiz:
             raise IOError("error receiving header (received %d bytes)" %
@@ -1552,7 +1574,7 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
             return
         sids = msg.sessionnumbers()
         msg.queuedtimes = 0
-        #self.info("UDP message has session numbers: %s" % sids)
+        # self.info("UDP message has session numbers: %s" % sids)
         if len(sids) > 0:
             for sid in sids:
                 sess = self.server.mainserver.getsession(sessionid=sid,
@@ -1591,8 +1613,9 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
 
 class BaseAuxRequestHandler(CoreRequestHandler):
     '''
-    This is the superclass for auxiliary handlers in CORE. A concrete auxiliary handler class
-    must, at a minimum, define the recvmsg(), sendall(), and dispatchreplies() methods.
+    This is the superclass for auxiliary handlers in CORE. A concrete
+    auxiliary handler class must, at a minimum, define the recvmsg(),
+    sendall(), and dispatchreplies() methods.
     See SockerServer.BaseRequestHandler for parameter details.
     '''
 
@@ -1662,8 +1685,8 @@ class BaseAuxRequestHandler(CoreRequestHandler):
 
     def recvmsg(self):
         '''
-        Receive data from the client in the supported format. Parse, transform to CORE API format and
-        return transformed messages.
+        Receive data from the client in the supported format. Parse,
+        transform to CORE API format and return transformed messages.
 
         EXAMPLE:
         return self.handler.request.recv(siz)
@@ -1674,13 +1697,17 @@ class BaseAuxRequestHandler(CoreRequestHandler):
 
     def dispatchreplies(self, replies, msg):
         '''
-        Dispatch CORE 'replies' to a previously received message 'msg' from a client.
-        Replies passed to this method follow the CORE API. This method allows transformation to
-        the form supported by the auxiliary handler and within the context of 'msg'.
+        Dispatch CORE 'replies' to a previously received message 'msg' from a
+        client.
+
+        Replies passed to this method follow the CORE API.
+        This method allows transformation to the form supported by
+        the auxiliary handler and within the context of 'msg'.
         Add transformation and transmission code here.
 
         EXAMPLE:
-        transformed_replies = stateful_transform (replies, msg) # stateful_transform method needs to be defined
+        # stateful_transform method needs to be defined
+        transformed_replies = stateful_transform (replies, msg)
         if transformed_replies:
             for reply in transformed_replies:
                 try:
@@ -1697,8 +1724,9 @@ class BaseAuxRequestHandler(CoreRequestHandler):
 
     def sendall(self, data):
         '''
-        CORE calls this method when data needs to be asynchronously sent to a client. The data is
-        in CORE API format. This method allows transformation to the required format supported by this
+        CORE calls this method when data needs to be asynchronously sent to
+        a client. The data is in CORE API format. This method allows
+        transformation to the required format supported by this
         handler prior to transmission.
 
         EXAMPLE:

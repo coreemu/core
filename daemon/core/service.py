@@ -83,7 +83,7 @@ class CoreServices(ConfigurableManager):
             if childdir in self._invalid_custom_names:
                 raise ValueError("use a unique custom services dir name, "
                                  "not '%s'" % childdir)
-            if not parentdir in sys.path:
+            if parentdir not in sys.path:
                 sys.path.append(parentdir)
             exec("from %s import *" % childdir)
         except Exception as e:
@@ -169,7 +169,8 @@ class CoreServices(ConfigurableManager):
     def addservicestonode(self, node, nodetype, services_str, verbose):
         ''' Populate the node.service list using (1) the list of services
             requested from the services TLV, (2) using any custom service
-            configuration, or (3) using the default services for this node type.
+            configuration, or (3) using the default services for this node
+            type.
         '''
         if services_str is not None:
             services = services_str.split('|')
@@ -291,7 +292,8 @@ class CoreServices(ConfigurableManager):
                 node.warn("Error copying service file %s" % filename)
                 node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                "service:%s" % s._name,
-                               "error copying service file '%s': %s" % (filename, e))
+                               "error copying service file '%s': %s" %
+                               (filename, e))
                 continue
             node.nodefile(filename, cfg)
 
@@ -388,8 +390,8 @@ class CoreServices(ConfigurableManager):
             When the opaque field is present, a specific service is being
             configured or requested.
         '''
-        objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
-        conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
+        # objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
+        # conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
         nodenum = msg.gettlv(coreapi.CORE_TLV_CONF_NODE)
         sessionnum = msg.gettlv(coreapi.CORE_TLV_CONF_SESSION)
         opaque = msg.gettlv(coreapi.CORE_TLV_CONF_OPAQUE)
@@ -531,8 +533,8 @@ class CoreServices(ConfigurableManager):
     def buildgroups(self, servicelist):
         ''' Build a string of groups for use in a configuration message given
             a list of services. The group list string has the format
-            "title1:1-5|title2:6-9|10-12", where title is an optional group title
-            and i-j is a numeric range of value indices; groups are
+            "title1:1-5|title2:6-9|10-12", where title is an optional group
+            title and i-j is a numeric range of value indices; groups are
             separated by commas.
         '''
         i = 0
@@ -558,7 +560,8 @@ class CoreServices(ConfigurableManager):
 
     def getservicefile(self, services, node, filename):
         ''' Send a File Message when the GUI has requested a service file.
-        The file data is either auto-generated or comes from an existing config.
+        The file data is either auto-generated or comes from an existing
+        config.
         '''
         svc = services[0]
         # get the filename and determine the config file index
@@ -667,7 +670,7 @@ class CoreServices(ConfigurableManager):
                 if len(cmds) > 0:
                     for cmd in cmds:
                         try:
-                            #node.cmd(shlex.split(cmd),  wait = False)
+                            # node.cmd(shlex.split(cmd),  wait = False)
                             status = node.cmd(shlex.split(cmd), wait=True)
                             if status != 0:
                                 fail += "Start %s(%s)," % (s._name, cmd)
@@ -776,9 +779,11 @@ class CoreService(object):
 
     @classmethod
     def getconfigfilenames(cls, nodenum, services):
-        ''' Return the tuple of configuration file filenames. This default method
-            returns the cls._configs tuple, but this method may be overriden to
-            provide node-specific filenames that may be based on other services.
+        ''' Return the tuple of configuration file filenames.
+
+            This default method returns the cls._configs tuple,
+            but this method may be overriden to provide node-specific
+            filenames that may be based on other services.
         '''
         return cls._configs
 

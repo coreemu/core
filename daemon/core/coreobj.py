@@ -16,7 +16,7 @@ import os
 import shutil
 
 from core.api import coreapi
-from core.misc.ipaddr import *
+from core.misc.ipaddr import isIPv4Address, AF_INET, AF_INET6, IPAddr, socket
 
 
 class Position(object):
@@ -273,8 +273,8 @@ class PyCoreNode(PyCoreObj):
 
     def commonnets(self, obj, want_ctrl=False):
         ''' Given another node or net object, return common networks between
-            this node and that object. A list of tuples is returned, with each tuple
-            consisting of (network, interface1, interface2).
+            this node and that object. A list of tuples is returned, with each
+            tuple consisting of (network, interface1, interface2).
         '''
         r = []
         for netif1 in self.netifs():
@@ -393,7 +393,8 @@ class PyCoreNet(PyCoreObj):
                     tlvtypemask = coreapi.CORE_TLV_LINK_IF2IP6MASK
                 ipl = socket.inet_pton(family, ip)
                 tlvdata += coreapi.CoreLinkTlv.pack(tlvtypeip,
-                                                    IPAddr(af=family, addr=ipl))
+                                                    IPAddr(af=family,
+                                                           addr=ipl))
                 tlvdata += coreapi.CoreLinkTlv.pack(tlvtypemask, mask)
 
             msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)

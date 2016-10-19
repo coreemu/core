@@ -17,7 +17,7 @@ or everything listed in __all__ can be imported using
     from core import *
 """
 
-__all__ = []
-
 # Automatically import all add-ons listed in addons.__all__
 from addons import *
+
+__all__ = []

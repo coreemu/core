@@ -43,7 +43,7 @@ from core.mobility import MobilityManager
 from core.sdt import Sdt
 from core.misc.ipaddr import MacAddr
 from core.misc.event import EventLoop
-from core.constants import *
+from core.constants import CORE_CONF_DIR
 from core.misc.xmlsession import savesessionxml
 
 from core.xen import xenconfig
@@ -190,7 +190,8 @@ class Session(object):
                 self.shutdown()
 
     def broadcast(self, src, msg):
-        ''' Send Node and Link CORE API messages to all handlers connected to this session.
+        ''' Send Node and Link CORE API messages to all handlers connected
+        to this session.
         '''
         self._handlerslock.acquire()
         for handler in self._handlers:
@@ -266,7 +267,8 @@ class Session(object):
                 except Exception as e:
                     self.warn("Error sending Event Message: %s" % e)
             # also inform slave servers
-            tmp = self.broker.handlerawmsg(msg)
+            # tmp = self.broker.handlerawmsg(msg)
+            self.broker.handlerawmsg(msg)
         return replies
 
     def getstate(self):
@@ -525,7 +527,8 @@ class Session(object):
     def addconfobj(self, objname, type, callback):
         ''' Objects can register configuration objects that are included in
             the Register Message and may be configured via the Configure
-            Message. The callback is invoked when receiving a Configure Message.
+            Message. The callback is invoked when receiving a Configure
+            Message.
         '''
         if type not in coreapi.reg_tlvs:
             raise Exception("invalid configuration object type")
@@ -645,7 +648,8 @@ class Session(object):
         # controlnet may be needed by some EMANE models
         self.addremovectrlif(node=None, remove=False)
         if self.emane.startup() == self.emane.NOT_READY:
-            return  # instantiate() will be invoked again upon Emane.configure()
+            # instantiate() will be invoked again uponEmane.configure()
+            return
         self.broker.startup()
         self.mobility.startup()
         # boot the services on each node
@@ -656,8 +660,9 @@ class Session(object):
         self.broker.local_instantiation_complete()
         if self.isconnected():
             tlvdata = ''
+            INSTANTIATION_COMPLETE = coreapi.CORE_EVENT_INSTANTIATION_COMPLETE
             tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
-                                                 coreapi.CORE_EVENT_INSTANTIATION_COMPLETE)
+                                                 INSTANTIATION_COMPLETE)
             msg = coreapi.CoreEventMessage.pack(0, tlvdata)
             self.broadcastraw(None, msg)
         # assume either all nodes have booted already, or there are some
@@ -737,7 +742,8 @@ class Session(object):
                       (self.sessionid, nc))
         if nc == 0:
             replies = self.setstate(state=coreapi.CORE_EVENT_SHUTDOWN_STATE,
-                                    info=True, sendevent=True, returnevent=True)
+                                    info=True, sendevent=True,
+                                    returnevent=True)
             self.sdt.shutdown()
         return replies
 
@@ -913,7 +919,7 @@ class Session(object):
                         prefix = p
                         break
                 if not prefix:
-                    msg = "Control network prefix not found for server '%s'" % \
+                    msg = "Control network prefix not found for server '%s'" %\
                         servers[0]
                     self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                    "Session.addremovectrlnet()", None, msg)
@@ -923,14 +929,16 @@ class Session(object):
                     except IndexError:
                         prefix = prefixes[0]
         else:  # len(prefixes) == 1
-            # TODO: can we get the server name from the servers.conf or from the node assignments?
+            # TODO: can we get the server name from the servers.conf or from
+            # the node assignments?
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
             prefix = prefixes[0]
 
         ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=oid, prefix=prefix,
                               assign_address=assign_address,
-                              updown_script=updown_script, serverintf=serverintf)
+                              updown_script=updown_script,
+                              serverintf=serverintf)
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
         self.broker.addnet(oid)
@@ -960,11 +968,13 @@ class Session(object):
         except ValueError:
             msg = "Control interface not added to node %s. " % node.objid
             msg += "Invalid control network prefix (%s). " % ctrlnet.prefix
-            msg += "A longer prefix length may be required for this many nodes."
+            msg += "A longer prefix length may be required " + \
+                   "for this many nodes."
             node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                            "Session.addremovectrlif()", msg)
             return
-        ifi = node.newnetif(net=ctrlnet, ifindex=ctrlnet.CTRLIF_IDX_BASE + netidx,
+        ifi = node.newnetif(net=ctrlnet,
+                            ifindex=ctrlnet.CTRLIF_IDX_BASE + netidx,
                             ifname="ctrl%d" % netidx, hwaddr=MacAddr.random(),
                             addrlist=addrlist)
         node.netif(ifi).control = True
@@ -987,7 +997,7 @@ class Session(object):
             return
         entries = []
         for ifc in ctrlnet.netifs():
-            name = ifc.node.name
+            # name = ifc.node.name
             for addr in ifc.addrlist:
                 entries.append("%s %s" % (addr.split('/')[0], ifc.node.name))
         if self.getcfgitembool('verbose', False):
@@ -1060,7 +1070,7 @@ class Session(object):
         configs = self.mobility.getallconfigs()
         configs += self.emane.getallconfigs()
         for (nodenum, cls, values) in configs:
-            #cls = self.mobility._modelclsmap[conftype]
+            # cls = self.mobility._modelclsmap[conftype]
             msg = cls.toconfmsg(flags=0, nodenum=nodenum,
                                 typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE,
                                 values=values)
@@ -1103,13 +1113,14 @@ class Session(object):
                 replies.append(coreapi.CoreFileMessage.pack(flags, tlvdata))
 
         # send meta data
+        UPDATE = coreapi.CONF_TYPE_FLAGS_UPDATE
         tmp = coreapi.CoreConfMessage(flags=0, hdr="", data="")
         opts = self.options.configure_request(tmp,
-                                              typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
+                                              typeflags=UPDATE)
         if opts:
             replies.append(opts)
         meta = self.metadata.configure_request(tmp,
-                                               typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
+                                               typeflags=UPDATE)
         if meta:
             replies.append(meta)
 

@@ -8,10 +8,8 @@
 '''
 mobility.py: mobility helpers for moving nodes and calculating wireless range.
 '''
-import sys
 import os
 import time
-import string
 import math
 import threading
 import heapq
@@ -23,8 +21,8 @@ from core.misc.ipaddr import IPAddr
 
 
 class MobilityManager(ConfigurableManager):
-    ''' Member of session class for handling configuration data for mobility and
-    range models.
+    ''' Member of session class for handling configuration data for mobility
+    and range models.
     '''
     _name = "MobilityManager"
     _type = coreapi.CORE_TLV_REG_WIRELESS
@@ -124,7 +122,7 @@ class MobilityManager(ConfigurableManager):
             except KeyError:
                 self.session.warn("Ignoring event for unknown model '%s'" % m)
                 continue
-                _name = "waypoint"
+                # _name = "waypoint"
             if cls._type == coreapi.CORE_TLV_REG_WIRELESS:
                 model = node.mobility
             elif cls._type == coreapi.CORE_TLV_REG_MOBILITY:
@@ -456,8 +454,8 @@ class BasicRangeModel(WirelessModel):
     def linkmsg(self, netif, netif2, flags):
         ''' Create a wireless link/unlink API message.
         '''
-        n1 = netif.localname.split('.')[0]
-        n2 = netif2.localname.split('.')[0]
+        # n1 = netif.localname.split('.')[0]
+        # n2 = netif2.localname.split('.')[0]
         tlvdata = coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N1NUMBER,
                                            netif.node.objid)
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N2NUMBER,
@@ -701,7 +699,7 @@ class WayPointMobility(WirelessModel):
             range calculation.
         '''
         # this would cause PyCoreNetIf.poshook() callback (range calculation)
-        #node.setposition(x, y, z)
+        # node.setposition(x, y, z)
         node.position.set(x, y, z)
         msg = node.tonodemsg(flags=0)
         self.session.broadcastraw(None, msg)
@@ -782,8 +780,10 @@ class Ns2ScriptedMobility(WayPointMobility):
     def __init__(self, session, objid, verbose=False, values=None):
         '''
         '''
-        super(Ns2ScriptedMobility, self).__init__(session=session, objid=objid,
-                                                  verbose=verbose, values=values)
+        super(Ns2ScriptedMobility, self).__init__(session=session,
+                                                  objid=objid,
+                                                  verbose=verbose,
+                                                  values=values)
         self._netifs = {}
         self._netifslock = threading.Lock()
         if values is None:
@@ -877,9 +877,10 @@ class Ns2ScriptedMobility(WayPointMobility):
             self.addinitial(self.map(inodenum), ix, iy, iz)
 
     def findfile(self, fn):
-        ''' Locate a script file. If the specified file doesn't exist, look in the
-            same directory as the scenario file (session.filename), or in the default
-            configs directory (~/.core/configs). This allows for sample files without
+        ''' Locate a script file. If the specified file doesn't exist,
+            look in the same directory as the scenario file
+            (session.filename), or in the default configs directory
+            (~/.core/configs). This allows for sample files without
             absolute pathnames.
         '''
         if os.path.exists(fn):
@@ -923,9 +924,10 @@ class Ns2ScriptedMobility(WayPointMobility):
 
     def startup(self):
         ''' Start running the script if autostart is enabled.
-            Move node to initial positions when any autostart time is specified.
-            Ignore the script if autostart is an empty string (can still be
-            started via GUI controls).
+
+            Move node to initial positions when any autostart time is
+            specified. Ignore the script if autostart is an empty string
+            (can still be started via GUI controls).
         '''
         if self.autostart == '':
             if self.verbose:

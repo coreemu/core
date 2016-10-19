@@ -17,7 +17,6 @@ import os
 import socket
 import select
 import threading
-import sys
 from core.api import coreapi
 from core.coreobj import PyCoreNode, PyCoreNet
 from core.emane.nodes import EmaneNet
@@ -107,8 +106,8 @@ class CoreBroker(ConfigurableManager):
                 name, server = self.servers.popitem()
                 if server.sock is not None:
                     if self.verbose:
-                        self.session.info("closing connection with %s @ %s:%s" %
-                                          (name, server.host, server.port))
+                        self.session.info("closing connection with %s @ %s:%s"
+                                          % (name, server.host, server.port))
                     server.close()
         self.reset()
         self.dorecvloop = False
@@ -266,8 +265,8 @@ class CoreBroker(ConfigurableManager):
                 try:
                     server.connect()
                 except Exception as e:
-                    self.session.warn('error connecting to server %s:%s:\n\t%s' %
-                                      (host, port, e))
+                    self.session.warn('error connecting to server ' +
+                                      '%s:%s:\n\t%s' % (host, port, e))
                 if server.sock is not None:
                     self.startrecvloop()
             self.servers[name] = server
@@ -349,7 +348,8 @@ class CoreBroker(ConfigurableManager):
                             remoteip=remoteip, key=key)
             else:
                 gt = self.session.addobj(cls=GreTapBridge, objid=objid,
-                                         policy="ACCEPT", remoteip=remoteip, key=key)
+                                         policy="ACCEPT", remoteip=remoteip,
+                                         key=key)
             gt.localnum = localnum
             gt.remotenum = remotenum
             self.tunnels[key] = gt
@@ -491,8 +491,10 @@ class CoreBroker(ConfigurableManager):
         ''' Receive configuration message with a list of server:host:port
             combinations that we'll need to connect with.
         '''
-        objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
-        conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
+        # objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
+        # conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
+        msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
+        msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
 
         if values is None:
             self.session.info("emulation server data missing")
@@ -604,7 +606,9 @@ class CoreBroker(ConfigurableManager):
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_DATA_TYPES,
                                             (coreapi.CONF_DATA_TYPE_STRING,))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_VALUES,
-                                            "%s:%s:%s" % (server.name, server.host, server.port))
+                                            "%s:%s:%s" % (server.name,
+                                                          server.host,
+                                                          server.port))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_SESSION,
                                             "%s" % self.session.sessionid)
         msg = coreapi.CoreConfMessage.pack(0, tlvdata)
@@ -629,7 +633,7 @@ class CoreBroker(ConfigurableManager):
             coreapi.CORE_TLV_EXEC_NODE, nodenum)
         tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NUM, execnum)
         tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_CMD, cmd)
-        title = "\\\"CORE: n%s @ %s\\\"" % (nodenum, host)
+        # title = "\\\"CORE: n%s @ %s\\\"" % (nodenum, host)
         res = "ssh -X -f " + host + " xterm -e " + res
         tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_RESULT, res)
 
@@ -637,8 +641,8 @@ class CoreBroker(ConfigurableManager):
 
     def handlenodemsg(self, msg):
         ''' Determine and return the servers to which this node message should
-            be forwarded. Also keep track of link-layer nodes and the mapping of
-            nodes to servers.
+            be forwarded. Also keep track of link-layer nodes and the mapping
+            of nodes to servers.
         '''
         servers = set()
         serverfiletxt = None
@@ -731,8 +735,8 @@ class CoreBroker(ConfigurableManager):
                         else:
                             localn = nn[1]
                 if handle_locally and localn is None:
-                    # having no local node at this point indicates local node is
-                    # the one with the empty server set
+                    # having no local node at this point indicates local node
+                    # is the one with the empty server set
                     if len(servers1) == 0:
                         localn = nn[0]
                     elif len(servers2) == 0:
@@ -775,8 +779,8 @@ class CoreBroker(ConfigurableManager):
     def getlinkendpoint(self, msg, first_is_local):
         ''' A link message between two different servers has been received,
             and we need to determine the tunnel endpoint. First look for
-            opaque data in the link message, otherwise use the IP of the message
-            sender (the master server).
+            opaque data in the link message, otherwise use the IP of the
+            message sender (the master server).
         '''
         host = None
         opaque = msg.gettlv(coreapi.CORE_TLV_LINK_OPAQUE)
