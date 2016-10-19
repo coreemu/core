@@ -23,9 +23,9 @@ This requires a recent version of Docker. This was tested using a PPA on Ubuntu
  with version 1.2.0. The version in the standard Ubuntu repo is to old for
 this purpose (we need --net host).
 
-It also requires docker-py (https://pypi.python.org/pypi/docker-py) which can be
-installed with 'pip install docker-py'. This is used to interface with Docker
-from the python service.
+It also requires docker-py (https://pypi.python.org/pypi/docker-py) which can
+be installed with 'pip install docker-py'. This is used to interface with
+Docker from the python service.
 
 An example use case is to pull an image from Docker.com. A test image has been
 uploaded for this purpose:
@@ -99,21 +99,18 @@ Limitations:
 5. A Docker-daemon is run within each node but the images are shared. This
    does mean that the daemon attempts to access an SQLlite database within the
    host. At startup all the nodes will try to access this and it will be locked
-   for most due to contention. The service just does a hackish wait for 1 second
-   and retry. This means all the docker containers can take a while to come up
-   depending on how many nodes you have.
+   for most due to contention. The service just does a hackish wait for 1
+   second and retry. This means all the docker containers can take a while to
+   come up depending on how many nodes you have.
 
 '''
 
-import os
-import sys
 try:
     from docker import Client
 except Exception:
     pass
 
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
 
 
 class DockerService(CoreService):

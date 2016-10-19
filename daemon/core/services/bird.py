@@ -10,11 +10,8 @@
 bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
-from core.constants import *
+# from core.constants import *
 
 
 class Bird(CoreService):
@@ -44,12 +41,12 @@ class Bird(CoreService):
         ''' Helper to return the first IPv4 address of a node as its router ID.
         '''
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
                     return a .split('/')[0]
-        #raise ValueError,  "no IPv4 address found for router ID"
+        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @classmethod
@@ -58,7 +55,7 @@ class Bird(CoreService):
            will have generatebirdifcconfig() and generatebirdconfig()
            hooks that are invoked here.
         '''
-        cfg  = """\
+        cfg = """\
 /* Main configuration file for BIRD. This is ony a template,
  * you will *need* to customize it according to your needs
  * Beware that only double quotes \'"\' are valid. No singles. */
@@ -105,7 +102,8 @@ class BirdService(CoreService):
     _startindex = 40
     _startup = ()
     _shutdown = ()
-    _meta = "The config file for this service can be found in the bird service."
+    _meta = "The config file for this service can be found in the " + \
+            "bird service."
 
     @classmethod
     def generatebirdconfig(cls, node):
@@ -120,7 +118,7 @@ class BirdService(CoreService):
         cfg = ""
 
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += '        interface "%s";\n' % ifc.name
 
@@ -136,8 +134,8 @@ class BirdBgp(BirdService):
     @classmethod
     def generatebirdconfig(cls, node):
         return """
-/* This is a sample config that should be customized with appropriate AS numbers
- * and peers; add one section like this for each neighbor */
+/* This is a sample config that should be customized with appropriate
+ * AS numbers and peers; add one section like this for each neighbor */
 
 protocol bgp {
     local as 65000;                      # Customize your AS number
@@ -236,7 +234,8 @@ class BirdStatic(BirdService):
         cfg = '/* This is a sample config that must be customized */\n'
 
         cfg += 'protocol static {\n'
-        cfg += '#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n'
+        cfg += '#    route 0.0.0.0/0 via 198.51.100.130; # Default route. ' + \
+               'Do NOT advertise on BGP !\n'
         cfg += '#    route 203.0.113.0/24 reject;        # Sink route\n'
         cfg += '#    route 10.2.0.0/24 via "arc0";       # Secondary network\n'
         cfg += '}\n\n'

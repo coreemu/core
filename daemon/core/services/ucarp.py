@@ -10,11 +10,8 @@
 ucarp.py: defines high-availability IP address controlled by ucarp
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
-from core.constants import *
+# from core.constants import *
 
 
 UCARP_ETC = "/usr/local/etc/ucarp"
@@ -121,7 +118,7 @@ STOP_SCRIPT=${UCARP_CFGDIR}/default-down.sh
 UCARP_OPTS="$OPTIONS -b $UCARP_BASE -k $SKEW -i $INTERFACE -v $INSTANCE_ID -p $PASSWORD -u $START_SCRIPT -d $STOP_SCRIPT -a $VIRTUAL_ADDRESS -s $SOURCE_ADDRESS -f $FACILITY $XPARAM"
 
 ${UCARP_EXEC} -B ${UCARP_OPTS}
-""" %  (ucarp_bin, UCARP_ETC)
+""" % (ucarp_bin, UCARP_ETC)
 
     @classmethod
     def generateUcarpBoot(cls, node, services):
@@ -160,7 +157,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr add ${IP}/${NET} dev "$1"
@@ -185,7 +182,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr del ${IP}/${NET} dev "$1"

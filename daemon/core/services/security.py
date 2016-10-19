@@ -9,10 +9,8 @@ security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.constants import *
+from core.constants import CORE_DATA_DIR
 
 
 class VPNClient(CoreService):
@@ -36,8 +34,8 @@ class VPNClient(CoreService):
         fname = "%s/examples/services/sampleVPNClient" % CORE_DATA_DIR
         try:
             cfg += open(fname, "rb").read()
-        except e:
-            print "Error opening VPN client configuration template (%s): %s" % \
+        except Exception as e:
+            print "Error opening VPN client configuration template (%s): %s" %\
                 (fname, e)
         return cfg
 
@@ -68,8 +66,8 @@ class VPNServer(CoreService):
         fname = "%s/examples/services/sampleVPNServer" % CORE_DATA_DIR
         try:
             cfg += open(fname, "rb").read()
-        except e:
-            print "Error opening VPN server configuration template (%s): %s" % \
+        except Exception as e:
+            print "Error opening VPN server configuration template (%s): %s" %\
                 (fname, e)
         return cfg
 
@@ -98,7 +96,7 @@ class IPsec(CoreService):
         fname = "%s/examples/services/sampleIPsec" % CORE_DATA_DIR
         try:
             cfg += open(fname, "rb").read()
-        except e:
+        except Exception as e:
             print "Error opening IPsec configuration template (%s): %s" % \
                 (fname, e)
         return cfg
@@ -125,7 +123,7 @@ class Firewall(CoreService):
         fname = "%s/examples/services/sampleFirewall" % CORE_DATA_DIR
         try:
             cfg += open(fname, "rb").read()
-        except e:
+        except Exception as e:
             print "Error opening Firewall configuration template (%s): %s" % \
                 (fname, e)
         return cfg

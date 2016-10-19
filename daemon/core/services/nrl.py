@@ -11,9 +11,9 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
 '''
 
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
-from core.misc.utils import *
-from core.constants import *
+from core.misc.ipaddr import IPv4Prefix
+from core.misc.utils import sysctldevname
+# from core.constants import *
 
 
 class NrlService(CoreService):
@@ -40,14 +40,14 @@ class NrlService(CoreService):
         interface's prefix length, so e.g. '/32' can turn into '/24'.
         '''
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
                     addr = a.split('/')[0]
                     pre = IPv4Prefix("%s/%s" % (addr, prefixlen))
                     return str(pre)
-        #raise ValueError,  "no IPv4 address found"
+        # raise ValueError,  "no IPv4 address found"
         return "0.0.0.0/%s" % prefixlen
 
 
@@ -183,7 +183,7 @@ class NrlOlsr(NrlService):
         cmd += " -rpipe %s_olsr" % node.name
 
         servicenames = map(lambda x: x._name, services)
-        if "SMF" in servicenames and not "NHDP" in servicenames:
+        if "SMF" in servicenames and "NHDP" not in servicenames:
             cmd += " -flooding s-mpr"
             cmd += " -smfClient %s_smf" % node.name
         if "zebra" in servicenames:
@@ -255,7 +255,8 @@ class OlsrOrg(NrlService):
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Generate a default olsrd config file to use the broadcast address of 255.255.255.255.
+        ''' Generate a default olsrd config file to use the broadcast address
+            of 255.255.255.255.
         '''
         cfg = """\
 #
@@ -309,9 +310,9 @@ class OlsrOrg(NrlService):
 # these parameters are only working on linux at the moment, but might become
 # useful on BSD in the future
 
-# SrcIpRoutes tells OLSRd to set the Src flag of host routes to the originator-ip
-# of the node. In addition to this an additional localhost device is created
-# to make sure the returning traffic can be received.
+# SrcIpRoutes tells OLSRd to set the Src flag of host routes to the
+# originator-ip of the node. In addition to this an additional localhost
+# device is created to make sure the returning traffic can be received.
 # (Default is "no")
 
 # SrcIpRoutes no
@@ -356,10 +357,11 @@ class OlsrOrg(NrlService):
 
 # Determines the take-down percentage for a non-current smart gateway tunnel.
 # If the cost of the current smart gateway tunnel is less than this percentage
-# of the cost of the non-current smart gateway tunnel, then the non-current smart
-# gateway tunnel is taken down because it is then presumed to be 'too expensive'.
-# This setting is only relevant when SmartGatewayUseCount is larger than 1;
-# a value of 0 will result in the tunnels not being taken down proactively.
+# of the cost of the non-current smart gateway tunnel, then the non-current
+# smart gateway tunnel is taken down because it is then presumed to be
+# 'too expensive'. This setting is only relevant when SmartGatewayUseCount is
+# larger than 1; a value of 0 will result in the tunnels not being taken down
+# proactively.
 # (default is 0)
 
 # SmartGatewayTakeDownPercentage 0
@@ -387,8 +389,8 @@ class OlsrOrg(NrlService):
 
 # Determines the policy routing rules offset for multi-gateway policy routing
 # rules. See the policy routing script for an explanation.
-# (default is 0, which indicates that the rules and tables should be aligned and
-# puts this value at SmartGatewayTablesOffset - # egress interfaces -
+# (default is 0, which indicates that the rules and tables should be aligned
+# and puts this value at SmartGatewayTablesOffset - # egress interfaces -
 # # olsr interfaces)
 
 # SmartGatewayRulesOffset 87

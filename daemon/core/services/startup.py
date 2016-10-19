@@ -1,5 +1,5 @@
 from core.service import CoreService, addservice
-from sys import maxsize
+from sys import maxint
 from inspect import isclass
 
 

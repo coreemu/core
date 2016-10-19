@@ -9,11 +9,8 @@
 xorp.py: defines routing services provided by the XORP routing suite.
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
-from core.constants import *
+# from core.constants import *
 
 
 class XorpRtrmgr(CoreService):
@@ -93,7 +90,8 @@ class XorpService(CoreService):
     _startindex = 40
     _startup = ()
     _shutdown = ()
-    _meta = "The config file for this service can be found in the xorp_rtrmgr service."
+    _meta = "The config file for this service can be found in the " + \
+            "xorp_rtrmgr service."
 
     @staticmethod
     def fea(forwarding):
@@ -112,7 +110,7 @@ class XorpService(CoreService):
         '''
         names = []
         for ifc in ifcs:
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             names.append(ifc.name)
         names.append("register_vif")
@@ -149,12 +147,12 @@ class XorpService(CoreService):
         ''' Helper to return the first IPv4 address of a node as its router ID.
         '''
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
                     return a.split('/')[0]
-        #raise ValueError,  "no IPv4 address found for router ID"
+        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @classmethod
@@ -182,7 +180,7 @@ class XorpOspfv2(XorpService):
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
@@ -218,7 +216,7 @@ class XorpOspfv3(XorpService):
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
@@ -275,7 +273,7 @@ class XorpRip(XorpService):
         cfg += "    rip {\n"
         cfg += "\texport: \"export-connected\"\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -308,7 +306,7 @@ class XorpRipng(XorpService):
         cfg += "    ripng {\n"
         cfg += "\texport: \"export-connected\"\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -344,7 +342,7 @@ class XorpPimSm4(XorpService):
         cfg += "    igmp {\n"
         names = []
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             names.append(ifc.name)
             cfg += "\tinterface %s {\n" % ifc.name
@@ -404,7 +402,7 @@ class XorpPimSm6(XorpService):
         cfg += "    mld {\n"
         names = []
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             names.append(ifc.name)
             cfg += "\tinterface %s {\n" % ifc.name
@@ -464,7 +462,7 @@ class XorpOlsr(XorpService):
         cfg += "    olsr4 {\n"
         cfg += "\tmain-address: %s\n" % rtrid
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
