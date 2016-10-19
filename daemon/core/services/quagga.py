@@ -10,15 +10,15 @@ quagga.py: defines routing services provided by Quagga.
 '''
 
 import os
+from core.service import CoreService, addservice
+from core.misc.ipaddr import IPv4Prefix, isIPv4Address, isIPv6Address
+from core.api import coreapi
+from core.constants import QUAGGA_STATE_DIR
 
 if os.uname()[0] == "Linux":
     from core.netns import nodes
 elif os.uname()[0] == "FreeBSD":
     from core.bsd import nodes
-from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, isIPv4Address, isIPv6Address
-from core.api import coreapi
-from core.constants import *
 
 QUAGGA_USER = "root"
 QUAGGA_GROUP = "root"
@@ -70,7 +70,7 @@ class Zebra(CoreService):
         for ifc in node.netifs():
             cfg += "interface %s\n" % ifc.name
             # include control interfaces in addressing but not routing daemons
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ifc.addrlist))
                 cfg += "\n"
@@ -122,7 +122,7 @@ class Zebra(CoreService):
         elif x.find(":") >= 0:
             return "ipv6 address %s" % x
         else:
-            raise Value, "invalid address: %s", x
+            raise Value, "invalid address: %s", x  # What the hell is Value?
 
     @classmethod
     def generateQuaggaBoot(cls, node, services):
@@ -262,7 +262,8 @@ class QuaggaService(CoreService):
     _startindex = 40
     _startup = ()
     _shutdown = ()
-    _meta = "The config file for this service can be found in the Zebra service."
+    _meta = "The config file for this service can be found in the Zebra " + \
+            "service."
 
     _ipv4_routing = False
     _ipv6_routing = False
@@ -272,12 +273,12 @@ class QuaggaService(CoreService):
         ''' Helper to return the first IPv4 address of a node as its router ID.
         '''
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
                     return a .split('/')[0]
-        #raise ValueError,  "no IPv4 address found for router ID"
+        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @staticmethod
@@ -350,7 +351,7 @@ class Ospfv2(QuaggaService):
         cfg += "  router-id %s\n" % rtrid
         # network 10.0.0.0/24 area 0
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") < 0:
@@ -363,17 +364,17 @@ class Ospfv2(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        #cfg = cls.mtucheck(ifc)
+        # cfg = cls.mtucheck(ifc)
         # external RJ45 connections will use default OSPF timers
         # if cls.rj45check(ifc):
         #    return cfg
-        #cfg += cls.ptpcheck(ifc)
+        # cfg += cls.ptpcheck(ifc)
 
         # return cfg + """\
 #  ip ospf hello-interval 2
 #  ip ospf dead-interval 6
 #  ip ospf retransmit-interval 5
-#"""
+# """
 
 addservice(Ospfv2)
 
@@ -430,7 +431,7 @@ class Ospfv3(QuaggaService):
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "  interface %s area 0.0.0.0\n" % ifc.name
         cfg += "!\n"
@@ -439,17 +440,17 @@ class Ospfv3(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
-        #cfg = cls.mtucheck(ifc)
+        # cfg = cls.mtucheck(ifc)
         # external RJ45 connections will use default OSPF timers
         # if cls.rj45check(ifc):
         #    return cfg
-        #cfg += cls.ptpcheck(ifc)
+        # cfg += cls.ptpcheck(ifc)
 
         # return cfg + """\
 #  ipv6 ospf6 hello-interval 2
 #  ipv6 ospf6 dead-interval 6
 #  ipv6 ospf6 retransmit-interval 5
-#"""
+# """
 
 addservice(Ospfv3)
 
@@ -574,7 +575,7 @@ class Babel(QuaggaService):
     def generatequaggaconfig(cls, node):
         cfg = "router babel\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "  network %s\n" % ifc.name
         cfg += "  redistribute static\n  redistribute connected\n"
@@ -582,7 +583,7 @@ class Babel(QuaggaService):
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
-        type = "wired"
+        # type = "wired"
         if ifc.net and ifc.net.linktype == coreapi.CORE_LINK_WIRELESS:
             return "  babel wireless\n  no babel split-horizon\n"
         else:
