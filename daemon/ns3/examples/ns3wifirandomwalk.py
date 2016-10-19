@@ -6,7 +6,7 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-ns3wifirandomwalk.py - This script demonstrates using CORE with the ns-3 Wifi 
+ns3wifirandomwalk.py - This script demonstrates using CORE with the ns-3 Wifi
 model and random walk mobility.
 Patterned after the ns-3 example 'main-random-walk.cc'.
 
@@ -19,25 +19,12 @@ How to run this:
 
 '''
 
-import os, sys, time, optparse, datetime, math, threading
-try:
-    from core import pycore
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core import pycore
- 
+import sys
+import optparse
+
 import ns.core
 import ns.network
-from core.api import coreapi
-from core.misc import ipaddr 
+from core.misc import ipaddr
 from corens3.obj import Ns3Session, Ns3WifiNet
 
 
@@ -51,7 +38,8 @@ def add_to_server(session):
         return True
     except NameError:
         return False
-        
+
+
 def wifisession(opt):
     ''' Run a random walk wifi session.
     '''
@@ -69,19 +57,19 @@ def wifisession(opt):
     services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
     nodes = []
     for i in xrange(1, opt.numnodes + 1):
-        node = session.addnode(name = "n%d" % i)
+        node = session.addnode(name="n%d" % i)
         node.newnetif(wifi, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         nodes.append(node)
-        session.services.addservicestonode(node, "router", services_str, 
+        session.services.addservicestonode(node, "router", services_str,
                                            opt.verbose)
         session.services.bootnodeservices(node)
     session.setuprandomwalkmobility(bounds=(1000.0, 750.0, 0))
 
     # PHY tracing
-    #wifi.phy.EnableAsciiAll("ns3wifirandomwalk")
+    # wifi.phy.EnableAsciiAll("ns3wifirandomwalk")
 
     # mobility tracing
-    #session.setupmobilitytracing(wifi, "ns3wifirandomwalk.mob.tr",
+    # session.setupmobilitytracing(wifi, "ns3wifirandomwalk.mob.tr",
     #                             nodes, verbose=True)
     session.startns3mobility(refresh_ms=150)
 
@@ -89,26 +77,26 @@ def wifisession(opt):
     # session.instantiate() ?
     session.thread = session.run(vis=opt.viz)
     return session
-  
+
+
 def main():
     ''' Main routine when running from command-line.
     '''
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 5, duration = 600, verbose = False, viz = False)
-    opt = { 'numnodes' : 5, 'duration': 600, 'verbose' :False, 'viz': False }
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=5, duration=600, verbose=False, viz=False)
+    opt = {'numnodes': 5, 'duration': 600, 'verbose': False, 'viz': False}
 
+    parser.add_option("-d", "--duration", dest="duration", type=int,
+                      help="number of seconds to run the simulation")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="store_true", help="be more verbose")
+    parser.add_option("-V", "--visualize", dest="viz",
+                      action="store_true", help="enable PyViz ns-3 visualizer")
 
-    parser.add_option("-d", "--duration", dest = "duration", type = int,
-                      help = "number of seconds to run the simulation")
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
-    parser.add_option("-v", "--verbose", dest = "verbose",
-                      action = "store_true", help = "be more verbose")
-    parser.add_option("-V", "--visualize", dest = "viz",
-                      action = "store_true", help = "enable PyViz ns-3 visualizer")
-
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")

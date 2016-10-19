@@ -9,10 +9,14 @@
 howmanynodes.py - This is a CORE script that creates network namespace nodes
 having one virtual Ethernet interface connected to a bridge. It continues to
 add nodes until an exception occurs. The number of nodes per bridge can be
-specified. 
+specified.
 '''
 
-import optparse, sys, os, datetime, time, shutil
+import optparse
+import sys
+import datetime
+import time
+import shutil
 try:
     from core import pycore
 except ImportError:
@@ -27,9 +31,10 @@ except ImportError:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
 from core.misc import ipaddr
-from core.constants import *
+from core.constants import SYSCTL_BIN
 
 GBD = 1024.0 * 1024.0
+
 
 def linuxversion():
     ''' Return a string having the Linux kernel version.
@@ -41,6 +46,8 @@ def linuxversion():
     return version_str
 
 MEMKEYS = ('total', 'free', 'buff', 'cached', 'stotal', 'sfree')
+
+
 def memfree():
     ''' Returns kilobytes memory [total, free, buff, cached, stotal, sfree].
         useful stats are:
@@ -76,30 +83,30 @@ switchlist = []
 
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(waittime = 0.2, numnodes = 0, bridges = 0, retries = 0,
-                        logfile = None, services = None)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(waittime=0.2, numnodes=0, bridges=0, retries=0,
+                        logfile=None, services=None)
 
-    parser.add_option("-w", "--waittime", dest = "waittime", type = float,
-                      help = "number of seconds to wait between node creation" \
+    parser.add_option("-w", "--waittime", dest="waittime", type=float,
+                      help="number of seconds to wait between node creation"
                       " (default = %s)" % parser.defaults["waittime"])
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes (default = unlimited)")
-    parser.add_option("-b", "--bridges", dest = "bridges", type = int,
-                      help = "number of nodes per bridge; 0 = one bridge " \
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes (default = unlimited)")
+    parser.add_option("-b", "--bridges", dest="bridges", type=int,
+                      help="number of nodes per bridge; 0 = one bridge "
                       "(def. = %s)" % parser.defaults["bridges"])
-    parser.add_option("-r", "--retry", dest = "retries", type = int,
-                      help = "number of retries on error (default = %s)" % \
+    parser.add_option("-r", "--retry", dest="retries", type=int,
+                      help="number of retries on error (default = %s)" %
                       parser.defaults["retries"])
-    parser.add_option("-l", "--log", dest = "logfile", type = str,
-                      help = "log memory usage to this file (default = %s)" % \
+    parser.add_option("-l", "--log", dest="logfile", type=str,
+                      help="log memory usage to this file (default = %s)" %
                       parser.defaults["logfile"])
-    parser.add_option("-s", "--services", dest = "services", type = str,
-                      help = "pipe-delimited list of services added to each " \
-                      "node (default = %s)\n(Example: 'zebra|OSPFv2|OSPFv3|" \
+    parser.add_option("-s", "--services", dest="services", type=str,
+                      help="pipe-delimited list of services added to each "
+                      "node (default = %s)\n(Example: 'zebra|OSPFv2|OSPFv3|"
                       "vtysh|IPForward')" % parser.defaults["services"])
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -118,7 +125,7 @@ def main():
     print " - %s" % linuxversion()
     mem = memfree()
     print " - %.02f GB total memory (%.02f GB swap)" % \
-            (mem['total']/GBD, mem['stotal']/GBD)
+        (mem['total'] / GBD, mem['stotal'] / GBD)
     print " - using IPv4 network prefix %s" % prefix
     print " - using wait time of %s" % options.waittime
     print " - using %d nodes per bridge" % options.bridges
@@ -136,7 +143,7 @@ def main():
         lfp.flush()
 
     session = pycore.Session(persistent=True)
-    switch = session.addobj(cls = pycore.nodes.SwitchNode)
+    switch = session.addobj(cls=pycore.nodes.SwitchNode)
     switchlist.append(switch)
     print "Added bridge %s (%d)." % (switch.brname, len(switchlist))
 
@@ -147,17 +154,17 @@ def main():
         # optionally add a bridge (options.bridges nodes per bridge)
         try:
             if options.bridges > 0 and switch.numnetif() >= options.bridges:
-                switch = session.addobj(cls = pycore.nodes.SwitchNode)
+                switch = session.addobj(cls=pycore.nodes.SwitchNode)
                 switchlist.append(switch)
                 print "\nAdded bridge %s (%d) for node %d." % \
-                       (switch.brname, len(switchlist), i)
-        except Exception, e:
+                    (switch.brname, len(switchlist), i)
+        except Exception as e:
             print "At %d bridges (%d nodes) caught exception:\n%s\n" % \
-                    (len(switchlist), i-1, e)
+                (len(switchlist), i - 1, e)
             break
         # create a node
         try:
-            n = session.addobj(cls = pycore.nodes.LxcNode, name = "n%d" % i)
+            n = session.addobj(cls=pycore.nodes.LxcNode, name="n%d" % i)
             n.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
             n.cmd([SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
             if options.services is not None:
@@ -170,7 +177,7 @@ def main():
                 mem = memfree()
                 free = mem['free'] + mem['buff'] + mem['cached']
                 swap = mem['stotal'] - mem['sfree']
-                print "(%.02f/%.02f GB free/swap)" % (free/GBD , swap/GBD),
+                print "(%.02f/%.02f GB free/swap)" % (free / GBD, swap / GBD),
                 if lfp:
                     lfp.write("%d," % i)
                     lfp.write("%s\n" % ','.join(str(mem[x]) for x in MEMKEYS))
@@ -179,11 +186,11 @@ def main():
                 sys.stdout.write(".")
             sys.stdout.flush()
             time.sleep(options.waittime)
-        except Exception, e:
+        except Exception as e:
             print "At %d nodes caught exception:\n" % i, e
             if retry_count > 0:
                 print "\nWill retry creating node %d." % i
-                shutil.rmtree(n.nodedir, ignore_errors = True)
+                shutil.rmtree(n.nodedir, ignore_errors=True)
                 retry_count -= 1
                 i -= 1
                 time.sleep(options.waittime)

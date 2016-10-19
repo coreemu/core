@@ -7,7 +7,7 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-emanemodel2core.py: scans an EMANE model source file 
+emanemodel2core.py: scans an EMANE model source file
  (e.g. emane/models/rfpipe/maclayer/rfpipemaclayer.cc) and outputs Python
  bindings that allow the model to be used in CORE.
 
@@ -15,7 +15,8 @@ emanemodel2core.py: scans an EMANE model source file
  the actual model name. Note the capitalization convention.
 '''
 
-import os, sys, optparse
+import sys
+import optparse
 
 MODEL_TEMPLATE_PART1 = """
 #
@@ -47,7 +48,7 @@ MODEL_TEMPLATE_PART2 = """
     ]
 
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel._confmatrix 
+    _confmatrix_phy = EmaneUniversalModel._confmatrix
 
     _confmatrix = _confmatrix_mac + _confmatrix_phy
 
@@ -96,6 +97,7 @@ MODEL_TEMPLATE_PART2 = """
 
 """
 
+
 def emane_model_source_to_core(infile, outfile):
     do_parse_line = False
     output = MODEL_TEMPLATE_PART1
@@ -121,6 +123,7 @@ def emane_model_source_to_core(infile, outfile):
         with open(outfile, 'w') as f:
             f.write(output)
 
+
 def convert_line(line):
     line = line.strip()
     # skip comments
@@ -128,14 +131,17 @@ def convert_line(line):
         return None
     items = line.strip('{},').split(',')
     if len(items) != 7:
-        #print "continuning on line=", len(items), items
+        # print "continuning on line=", len(items), items
         return None
     return convert_items_to_line(items)
+
 
 def convert_items_to_line(items):
     fields = ('required', 'default', 'count', 'name', 'value', 'type',
               'description')
-    getfield = lambda(x): items[fields.index(x)].strip()
+
+    def getfield(x):
+        return items[fields.index(x)].strip()
 
     output = "        ("
     output += "%s, " % getfield('name')
@@ -159,15 +165,15 @@ def convert_items_to_line(items):
 
 def main():
     usagestr = "usage: %prog [-h] [options] -- <command> ..."
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(infile = None, outfile = sys.stdout)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(infile=None, outfile=sys.stdout)
 
-    parser.add_option("-i", "--infile", dest = "infile",
-                      help = "file to read (usually '*mac.cc')")
-    parser.add_option("-o", "--outfile", dest = "outfile",
-                      help = "file to write (stdout is default)")
+    parser.add_option("-i", "--infile", dest="infile",
+                      help="file to read (usually '*mac.cc')")
+    parser.add_option("-o", "--outfile", dest="outfile",
+                      help="file to write (stdout is default)")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")

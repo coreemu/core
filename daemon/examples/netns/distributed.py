@@ -9,15 +9,17 @@
 # running the daemon with listenaddr=0.0.0.0 in the core.conf file.
 #
 
-import sys, datetime, optparse, time
+import sys
+import datetime
+import optparse
 
 from core import pycore
 from core.misc import ipaddr
-from core.constants import *
 from core.api import coreapi
+from core.constants import SYSCTL_BIN
 
 # declare classes for use with Broker
-coreapi.add_node_class("CORE_NODE_DEF", 
+coreapi.add_node_class("CORE_NODE_DEF",
                        coreapi.CORE_NODE_DEF, pycore.nodes.CoreNode)
 coreapi.add_node_class("CORE_NODE_SWITCH",
                        coreapi.CORE_NODE_SWITCH, pycore.nodes.SwitchNode)
@@ -25,17 +27,18 @@ coreapi.add_node_class("CORE_NODE_SWITCH",
 # node list (count from 1)
 n = [None]
 
+
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 5, slave = None)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=5, slave=None)
 
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
-    parser.add_option("-s", "--slave-server", dest = "slave", type = str,
-                      help = "slave server IP address")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
+    parser.add_option("-s", "--slave-server", dest="slave", type=str,
+                      help="slave server IP address")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -75,18 +78,18 @@ def main():
                                         coreapi.CORE_EVENT_CONFIGURATION_STATE)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
-    switch = session.addobj(cls = pycore.nodes.SwitchNode, name = "switch")
-    switch.setposition(x=80,y=50)
+    switch = session.addobj(cls=pycore.nodes.SwitchNode, name="switch")
+    switch.setposition(x=80, y=50)
     num_local = options.numnodes / 2
-    num_remote = options.numnodes / 2 +  options.numnodes % 2
+    num_remote = options.numnodes / 2 + options.numnodes % 2
     print "creating %d (%d local / %d remote) nodes with addresses from %s" % \
           (options.numnodes, num_local, num_remote, prefix)
     for i in xrange(1, num_local + 1):
-        tmp = session.addobj(cls = pycore.nodes.CoreNode, name = "n%d" % i,
+        tmp = session.addobj(cls=pycore.nodes.CoreNode, name="n%d" % i,
                              objid=i)
         tmp.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         tmp.cmd([SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
-        tmp.setposition(x=150*i,y=150)
+        tmp.setposition(x=150 * i, y=150)
         n.append(tmp)
 
     flags = coreapi.CORE_API_ADD_FLAG
@@ -94,9 +97,9 @@ def main():
 
     # create remote nodes via API
     for i in xrange(num_local + 1, options.numnodes + 1):
-        tmp = pycore.nodes.CoreNode(session = session, objid = i,
-                                    name = "n%d" % i, start=False)
-        tmp.setposition(x=150*i,y=150)
+        tmp = pycore.nodes.CoreNode(session=session, objid=i,
+                                    name="n%d" % i, start=False)
+        tmp.setposition(x=150 * i, y=150)
         tmp.server = slave
         n.append(tmp)
         session.broker.handlerawmsg(tmp.tonodemsg(flags=flags))
@@ -134,4 +137,3 @@ def main():
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     main()
-

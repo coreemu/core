@@ -11,40 +11,41 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 '''
 
-import sys
 import os.path
 
 from core.api import coreapi
 from core.coreobj import PyCoreNet
 try:
-    from emanesh.events import EventService
     from emanesh.events import LocationEvent
-except Exception, e:
+except Exception as e:
     pass
 
 try:
     import emaneeventservice
     import emaneeventlocation
-except Exception, e:
+except Exception as e:
     ''' Don't require all CORE users to have EMANE libeventservice and its
         Python bindings installed.
     '''
     pass
+
 
 class EmaneNet(PyCoreNet):
     ''' EMANE network base class.
     '''
     apitype = coreapi.CORE_NODE_EMANE
     linktype = coreapi.CORE_LINK_WIRELESS
-    type = "wlan" # icon used
+    type = "wlan"  # icon used
+
 
 class EmaneNode(EmaneNet):
     ''' EMANE node contains NEM configuration and causes connected nodes
         to have TAP interfaces (instead of VEth). These are managed by the
         Emane controller object that exists in a session.
     '''
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                start = True):
+
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True):
         PyCoreNet.__init__(self, session, objid, name, verbose, start)
         self.verbose = verbose
         self.conf = ""
@@ -53,17 +54,18 @@ class EmaneNode(EmaneNet):
         self.model = None
         self.mobility = None
 
-    def linkconfig(self, netif, bw = None, delay = None,
-                   loss = None, duplicate = None, jitter = None, netif2 = None):
+    def linkconfig(self, netif, bw=None, delay=None,
+                   loss=None, duplicate=None, jitter=None, netif2=None):
         ''' The CommEffect model supports link configuration.
         '''
         if not self.model:
             return
-        return self.model.linkconfig(netif=netif, bw=bw, delay=delay, loss=loss,
-                            duplicate=duplicate, jitter=jitter, netif2=netif2)
+        return self.model.linkconfig(netif=netif, bw=bw, delay=delay,
+                                     loss=loss, duplicate=duplicate,
+                                     jitter=jitter, netif2=netif2)
 
     def config(self, conf):
-        #print "emane", self.name, "got config:", conf
+        # print "emane", self.name, "got config:", conf
         self.conf = conf
 
     def shutdown(self):
@@ -87,7 +89,7 @@ class EmaneNode(EmaneNet):
                                verbose=self.verbose)
         elif model._type == coreapi.CORE_TLV_REG_MOBILITY:
             self.mobility = model(session=self.session, objid=self.objid,
-                               verbose=self.verbose, values=config)
+                                  verbose=self.verbose, values=config)
 
     def setnemid(self, netif, nemid):
         ''' Record an interface to numerical ID mapping. The Emane controller
@@ -123,7 +125,7 @@ class EmaneNode(EmaneNet):
         '''
         ret = {}
         if self.model is None:
-            self.info("warning: EmaneNode %s has no associated model" % \
+            self.info("warning: EmaneNode %s has no associated model" %
                       self.name)
             return ret
         for netif in self.netifs():
@@ -186,10 +188,10 @@ class EmaneNode(EmaneNet):
         if "virtual" in type.lower():
             if os.path.exists("/dev/net/tun_flowctl"):
                 trans.appendChild(emane.xmlparam(transdoc, "devicepath",
-                                  "/dev/net/tun_flowctl"))
+                                                 "/dev/net/tun_flowctl"))
             else:
                 trans.appendChild(emane.xmlparam(transdoc, "devicepath",
-                                  "/dev/net/tun"))
+                                                 "/dev/net/tun"))
             if flowcontrol:
                 trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable",
                                                  "on"))
@@ -201,18 +203,18 @@ class EmaneNode(EmaneNet):
         '''
         return "n%strans%s.xml" % (self.objid, type)
 
-
     def installnetifs(self, do_netns=True):
         ''' Install TAP devices into their namespaces. This is done after
             EMANE daemons have been started, because that is their only chance
             to bind to the TAPs.
         '''
         if self.session.emane.genlocationevents() and \
-            self.session.emane.service is None:
-            warntxt = "unable to publish EMANE events because the eventservice "
+                self.session.emane.service is None:
+            warntxt = "unable to publish EMANE events because the " + \
+                      "eventservice "
             warntxt += "Python bindings failed to load"
             self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.name,
-                                    self.objid, warntxt)
+                                   self.objid, warntxt)
 
         for netif in self.netifs():
             if do_netns and "virtual" in netif.transport_type.lower():
@@ -224,7 +226,7 @@ class EmaneNode(EmaneNet):
             # at this point we register location handlers for generating
             # EMANE location events
             netif.poshook = self.setnemposition
-            (x,y,z) = netif.node.position.get()
+            (x, y, z) = netif.node.position.get()
             self.setnemposition(netif, x, y, z)
 
     def deinstallnetifs(self):
@@ -244,7 +246,7 @@ class EmaneNode(EmaneNet):
             if self.verbose:
                 self.info("position service not available")
             return
-        nemid =  self.getnemid(netif)
+        nemid = self.getnemid(netif)
         ifname = netif.localname
         if nemid is None:
             self.info("nemid for %s is unknown" % ifname)
@@ -252,7 +254,7 @@ class EmaneNode(EmaneNet):
         (lat, long, alt) = self.session.location.getgeo(x, y, z)
         if self.verbose:
             self.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)"
-                      "(%.6f,%.6f,%.6f)" % \
+                      "(%.6f,%.6f,%.6f)" %
                       (ifname, nemid, x, y, z, lat, long, alt))
         if self.session.emane.version >= self.session.emane.EMANE091:
             event = LocationEvent()
@@ -266,11 +268,12 @@ class EmaneNode(EmaneNet):
             self.session.emane.service.publish(0, event)
         else:
             event.set(0, nemid, lat, long, alt)
-            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
-                                           emaneeventservice.PLATFORMID_ANY,
-                                           emaneeventservice.NEMID_ANY,
-                                           emaneeventservice.COMPONENTID_ANY,
-                                           event.export())
+            self.session.emane.service.publish(
+                emaneeventlocation.EVENT_ID,
+                emaneeventservice.PLATFORMID_ANY,
+                emaneeventservice.NEMID_ANY,
+                emaneeventservice.COMPONENTID_ANY,
+                event.export())
 
     def setnempositions(self, moved_netifs):
         ''' Several NEMs have moved, from e.g. a WaypointMobilityModel
@@ -290,7 +293,7 @@ class EmaneNode(EmaneNet):
             event = emaneeventlocation.EventLocation(len(moved_netifs))
         i = 0
         for netif in moved_netifs:
-            nemid =  self.getnemid(netif)
+            nemid = self.getnemid(netif)
             ifname = netif.localname
             if nemid is None:
                 self.info("nemid for %s is unknown" % ifname)
@@ -299,7 +302,7 @@ class EmaneNode(EmaneNet):
             (lat, long, alt) = self.session.location.getgeo(x, y, z)
             if self.verbose:
                 self.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)"
-                          "(%.6f,%.6f,%.6f)" % \
+                          "(%.6f,%.6f,%.6f)" %
                           (i, ifname, nemid, x, y, z, lat, long, alt))
             # altitude must be an integer or warning is printed
             alt = int(round(alt))
@@ -312,10 +315,9 @@ class EmaneNode(EmaneNet):
         if self.session.emane.version >= self.session.emane.EMANE091:
             self.session.emane.service.publish(0, event)
         else:
-            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
-                                           emaneeventservice.PLATFORMID_ANY,
-                                           emaneeventservice.NEMID_ANY,
-                                           emaneeventservice.COMPONENTID_ANY,
-                                           event.export())
-
-
+            self.session.emane.service.publish(
+                emaneeventlocation.EVENT_ID,
+                emaneeventservice.PLATFORMID_ANY,
+                emaneeventservice.NEMID_ANY,
+                emaneeventservice.COMPONENTID_ANY,
+                event.export())

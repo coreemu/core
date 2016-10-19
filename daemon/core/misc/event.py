@@ -12,6 +12,7 @@ import time
 import threading
 import heapq
 
+
 class EventLoop(object):
 
     class Timer(threading.Thread):
@@ -48,6 +49,7 @@ class EventLoop(object):
                 self.finished.set()
 
     class Event(object):
+
         def __init__(self, eventnum, time, func, *args, **kwds):
             self.eventnum = eventnum
             self.time = time
@@ -151,6 +153,7 @@ class EventLoop(object):
             if self.running and self.timer is None:
                 self.__schedule_event()
         return event
+
 
 def example():
     loop = EventLoop()

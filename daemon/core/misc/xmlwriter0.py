@@ -11,12 +11,15 @@ import pwd
 from core.netns import nodes
 from core.api import coreapi
 from xml.dom.minidom import Document
-from xmlutils import *
+from xmlutils import addparamtoparent, addelementsfromlist
+from xmlutils import addtextparamtoparent, addtextelementsfromlist
+
 
 class CoreDocumentWriter0(Document):
     ''' Utility class for writing a CoreSession to XML. The init method builds
     an xml.dom.minidom.Document, and the writexml() method saves the XML file.
     '''
+
     def __init__(self, session):
         ''' Create an empty Scenario XML Document, then populate it with
         objects from the given session.
@@ -34,28 +37,28 @@ class CoreDocumentWriter0(Document):
         self.scenario.appendChild(self.mp)
         self.scenario.appendChild(self.sp)
         self.scenario.appendChild(self.meta)
-        
+
         self.populatefromsession()
 
     def populatefromsession(self):
-        self.session.emane.setup() # not during runtime?
+        self.session.emane.setup()  # not during runtime?
         self.addorigin()
         self.adddefaultservices()
         self.addnets()
         self.addnodes()
         self.addmetadata()
-            
+
     def writexml(self, filename):
         self.session.info("saving session XML file %s" % filename)
         f = open(filename, "w")
-        Document.writexml(self, writer=f, indent="", addindent="  ", newl="\n", \
+        Document.writexml(self, writer=f, indent="", addindent="  ", newl="\n",
                           encoding="UTF-8")
         f.close()
         if self.session.user is not None:
             uid = pwd.getpwnam(self.session.user).pw_uid
             gid = os.stat(self.session.sessiondir).st_gid
             os.chown(filename, uid, gid)
-            
+
     def addnets(self):
         ''' Add PyCoreNet objects as NetworkDefinition XML elements.
         '''
@@ -80,13 +83,13 @@ class CoreDocumentWriter0(Document):
             n.setAttribute("key", "%s" % net.grekey)
         # link parameters
         for netif in net.netifs(sort=True):
-            self.addnetem(n, netif)        
+            self.addnetem(n, netif)
         # wireless/mobility models
         modelconfigs = net.session.mobility.getmodels(net)
         modelconfigs += net.session.emane.getmodels(net)
         self.addmodels(n, modelconfigs)
         self.addposition(net)
-        
+
     def addnetem(self, n, netif):
         ''' Similar to addmodels(); used for writing netem link effects
         parameters. TODO: Interface parameters should be moved to the model
@@ -126,7 +129,7 @@ class CoreDocumentWriter0(Document):
             has_params = True
         if has_params:
             n.appendChild(model)
-        
+
     def addmodels(self, n, configs):
         ''' Add models from a list of model-class, config values tuples.
         '''
@@ -169,7 +172,7 @@ class CoreDocumentWriter0(Document):
         addparamtoparent(self, n, "icon", node.icon)
         addparamtoparent(self, n, "canvas", node.canvas)
         self.addservices(node)
-        
+
     def addinterfaces(self, n, node):
         ''' Add PyCoreNetIfs to node XML elements.
         '''
@@ -188,11 +191,11 @@ class CoreDocumentWriter0(Document):
             self.addaddresses(i, ifc)
             # per-interface models
             if netmodel and netmodel._name[:6] == "emane_":
-                cfg = self.session.emane.getifcconfig(node.objid, netmodel._name,
+                cfg = self.session.emane.getifcconfig(node.objid,
+                                                      netmodel._name,
                                                       None, ifc)
                 if cfg:
-                    self.addmodels(i, ((netmodel, cfg),) )
-
+                    self.addmodels(i, ((netmodel, cfg),))
 
     def addnetinterfaces(self, n, net):
         ''' Similar to addinterfaces(), but only adds interface elements to the
@@ -214,23 +217,23 @@ class CoreDocumentWriter0(Document):
     def addposition(self, node):
         ''' Add object coordinates as location XML element.
         '''
-        (x,y,z) = node.position.get()
+        (x, y, z) = node.position.get()
         if x is None or y is None:
             return
         # <Node name="n1">
         mpn = self.createElement("Node")
         mpn.setAttribute("name", node.name)
         self.mp.appendChild(mpn)
-        
+
         #   <motion type="stationary">
         motion = self.createElement("motion")
         motion.setAttribute("type", "stationary")
         mpn.appendChild(motion)
-        
+
         #       <point>$X$,$Y$,$Z$</point>
         pt = self.createElement("point")
         motion.appendChild(pt)
-        coordstxt = "%s,%s" % (x,y)
+        coordstxt = "%s,%s" % (x, y)
         if z:
             coordstxt += ",%s" % z
         coords = self.createTextNode(coordstxt)
@@ -242,7 +245,7 @@ class CoreDocumentWriter0(Document):
         '''
         refgeo = self.session.location.refgeo
         origin = self.createElement("origin")
-        attrs = ("lat","lon","alt")
+        attrs = ("lat", "lon", "alt")
         have_origin = False
         for i in xrange(3):
             if refgeo[i] is not None:
@@ -250,20 +253,22 @@ class CoreDocumentWriter0(Document):
                 have_origin = True
         if not have_origin:
             return
-        if self.session.location.refscale != 1.0: # 100 pixels = refscale m
-            origin.setAttribute("scale100", str(self.session.location.refscale))
+        if self.session.location.refscale != 1.0:  # 100 pixels = refscale m
+            origin.setAttribute(
+                "scale100", str(
+                    self.session.location.refscale))
         if self.session.location.refxyz != (0.0, 0.0, 0.0):
             pt = self.createElement("point")
             origin.appendChild(pt)
-            x,y,z = self.session.location.refxyz
-            coordstxt = "%s,%s" % (x,y)
+            x, y, z = self.session.location.refxyz
+            coordstxt = "%s,%s" % (x, y)
             if z:
                 coordstxt += ",%s" % z
             coords = self.createTextNode(coordstxt)
             pt.appendChild(coords)
 
         self.mp.appendChild(origin)
-        
+
     def adddefaultservices(self):
         ''' Add default services and node types to the ServicePlan.
         '''
@@ -276,7 +281,7 @@ class CoreDocumentWriter0(Document):
                 s = self.createElement("Service")
                 spn.appendChild(s)
                 s.setAttribute("name", str(svc._name))
-        
+
     def addservices(self, node):
         ''' Add services and their customizations to the ServicePlan.
         '''
@@ -301,13 +306,14 @@ class CoreDocumentWriter0(Document):
                 continue
             s.setAttribute("custom", str(svc._custom))
             addelementsfromlist(self, s, svc._dirs, "Directory", "name")
-            
+
             for fn in svc._configs:
                 if len(fn) == 0:
                     continue
                 f = self.createElement("File")
                 f.setAttribute("name", fn)
-                # all file names are added to determine when a file has been deleted
+                # all file names are added to determine when a file has been
+                # deleted
                 s.appendChild(f)
                 data = self.session.services.getservicefiledata(svc, fn)
                 if data is None:
@@ -316,13 +322,13 @@ class CoreDocumentWriter0(Document):
                     continue
                 txt = self.createTextNode(data)
                 f.appendChild(txt)
-                    
+
             addtextelementsfromlist(self, s, svc._startup, "Command",
-                                    (("type","start"),))
+                                    (("type", "start"),))
             addtextelementsfromlist(self, s, svc._shutdown, "Command",
-                                    (("type","stop"),))
+                                    (("type", "stop"),))
             addtextelementsfromlist(self, s, svc._validate, "Command",
-                                    (("type","validate"),))
+                                    (("type", "validate"),))
 
     def addaddresses(self, i, netif):
         ''' Add MAC and IP addresses to interface XML elements.
@@ -339,7 +345,7 @@ class CoreDocumentWriter0(Document):
             # a.setAttribute("type", )
             atxt = self.createTextNode("%s" % addr)
             a.appendChild(atxt)
-            
+
     def addhooks(self):
         ''' Add hook script XML elements to the metadata tag.
         '''
@@ -354,7 +360,7 @@ class CoreDocumentWriter0(Document):
                 hooks.appendChild(hook)
         if hooks.hasChildNodes():
             self.meta.appendChild(hooks)
-            
+
     def addmetadata(self):
         ''' Add CORE-specific session meta-data XML elements.
         '''
@@ -364,7 +370,7 @@ class CoreDocumentWriter0(Document):
         for i, (k, v) in enumerate(self.session.options.getkeyvaluelist()):
             if str(v) != str(defaults[i]):
                 addtextparamtoparent(self, options, k, v)
-                #addparamtoparent(self, options, k, v)
+                # addparamtoparent(self, options, k, v)
         if options.hasChildNodes():
             self.meta.appendChild(options)
         # hook scripts
@@ -374,4 +380,4 @@ class CoreDocumentWriter0(Document):
         self.meta.appendChild(meta)
         for (k, v) in self.session.metadata.items():
             addtextparamtoparent(self, meta, k, v)
-            #addparamtoparent(self, meta, k, v)
+            # addparamtoparent(self, meta, k, v)

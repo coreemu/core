@@ -10,68 +10,77 @@
 nodes.py: definition of an LxcNode and CoreNode classes, and other node classes
 that inherit from the CoreNode, implementing specific node types.
 '''
-
-from vnode import *
-from vnet import *
-from core.misc.ipaddr import *
+import threading
+import subprocess
+from vnode import LxcNode
+from core.misc.utils import check_call, cmdresult, mutecall, maketuple
+from core.constants import BRCTL_BIN, IP_BIN, AF_INET, AF_INET6, TC_BIN
+from vnet import LxBrNet, GreTapBridge
+from core.misc.ipaddr import IPv4Prefix, isIPv4Address, IPAddr, socket
 from core.api import coreapi
-from core.coreobj import PyCoreNode
+from core.coreobj import PyCoreNode, PyCoreNetIf, PyCoreObj
+
 
 class CtrlNet(LxBrNet):
     policy = "ACCEPT"
     CTRLIF_IDX_BASE = 99  # base control interface index
-    DEFAULT_PREFIX_LIST = ["172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
-                           "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
-                           "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
-                           "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"]
-    
-    def __init__(self, session, objid = "ctrlnet", name = None,
-                 verbose = False, prefix = None,  
-                 hostid = None, start = True, assign_address = True,
-                 updown_script = None, serverintf = None):
+    DEFAULT_PREFIX_LIST = ["172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 "
+                           "172.16.3.0/24 172.16.4.0/24",
+                           "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 "
+                           "172.17.3.0/24 172.17.4.0/24",
+                           "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 "
+                           "172.18.3.0/24 172.18.4.0/24",
+                           "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 "
+                           "172.19.3.0/24 172.19.4.0/24"]
+
+    def __init__(self, session, objid="ctrlnet", name=None,
+                 verbose=False, prefix=None,
+                 hostid=None, start=True, assign_address=True,
+                 updown_script=None, serverintf=None):
         self.prefix = IPv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
-        LxBrNet.__init__(self, session, objid = objid, name = name,
-                         verbose = verbose, start = start)
+        LxBrNet.__init__(self, session, objid=objid, name=name,
+                         verbose=verbose, start=start)
 
     def startup(self):
         if self.detectoldbridge():
             return
-        
+
         LxBrNet.startup(self)
         if self.hostid:
             addr = self.prefix.addr(self.hostid)
         else:
             addr = self.prefix.maxaddr()
         msg = "Added control network bridge: %s %s" % \
-                (self.brname, self.prefix)
+            (self.brname, self.prefix)
         addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
         if self.assign_address:
-            self.addrconfig(addrlist = addrlist)
+            self.addrconfig(addrlist=addrlist)
             msg += " address %s" % addr
         self.session.info(msg)
         if self.updown_script is not None:
-            self.info("interface %s updown script '%s startup' called" % \
+            self.info("interface %s updown script '%s startup' called" %
                       (self.brname, self.updown_script))
             check_call([self.updown_script, self.brname, "startup"])
         if self.serverintf is not None:
             try:
                 check_call([BRCTL_BIN, "addif", self.brname, self.serverintf])
                 check_call([IP_BIN, "link", "set", self.serverintf, "up"])
-            except Exception, e:
+            except Exception as e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_FATAL, self.brname,
-                               "Error joining server interface %s to controlnet bridge %s: %s" % \
+                               "Error joining server interface %s to " +
+                               "controlnet bridge %s: %s" %
                                (self.serverintf, self.brname, e))
-                
 
     def detectoldbridge(self):
-        ''' Occassionally, control net bridges from previously closed sessions are not cleaned up.
-        Check if there are old control net bridges and delete them
-        ''' 
-        retstat, retstr = cmdresult([BRCTL_BIN,'show'])
+        ''' Occassionally, control net bridges from previously closed sessions
+            are not cleaned up. Check if there are old control net bridges
+            and delete them
+        '''
+        retstat, retstr = cmdresult([BRCTL_BIN, 'show'])
         if retstat != 0:
             self.exception(coreapi.CORE_EXCP_LEVEL_FATAL, None,
                            "Unable to retrieve list of installed bridges")
@@ -82,15 +91,20 @@ class CtrlNet(LxBrNet):
             flds = cols[0].split('.')
             if len(flds) == 3:
                 if flds[0] == 'b' and flds[1] == self.objid:
-                    self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "CtrlNet.startup()", None,
-                                           "Error: An active control net bridge (%s) found. "\
-                                           "An older session might still be running. " \
-                                           "Stop all sessions and, if needed, delete %s to continue." % \
-                                           (oldbr, oldbr))
+                    self.session.exception(
+                        coreapi.CORE_EXCP_LEVEL_FATAL,
+                        "CtrlNet.startup()",
+                        None,
+                        "Error: An active control net bridge (%s) found. "
+                        "An older session might still be running. "
+                        "Stop all sessions and, if needed, delete %s to "
+                        "continue." %
+                        (oldbr, oldbr))
                     return True
                     '''
                     # Do this if we want to delete the old bridge
-                    self.warn("Warning: Old %s bridge found: %s" % (self.objid, oldbr))
+                    self.warn("Warning: Old %s bridge found: %s" %
+                        (self.objid, oldbr))
                     try:
                         check_call([BRCTL_BIN, 'delbr', oldbr])
                     except Exception, e:
@@ -99,18 +113,20 @@ class CtrlNet(LxBrNet):
                     self.info("Deleted %s" % oldbr)
                     '''
         return False
-        
+
     def shutdown(self):
         if self.serverintf is not None:
             try:
                 check_call([BRCTL_BIN, "delif", self.brname, self.serverintf])
-            except Exception, e:
-                self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
-                               "Error deleting server interface %s to controlnet bridge %s: %s" % \
-                               (self.serverintf, self.brname, e))
-            
+            except Exception as e:
+                self.exception(
+                    coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
+                    "Error deleting server interface %s to controlnet "
+                    "bridge %s: %s" %
+                    (self.serverintf, self.brname, e))
+
         if self.updown_script is not None:
-            self.info("interface %s updown script '%s shutdown' called" % \
+            self.info("interface %s updown script '%s shutdown' called" %
                       (self.brname, self.updown_script))
             check_call([self.updown_script, self.brname, "shutdown"])
         LxBrNet.shutdown(self)
@@ -120,16 +136,18 @@ class CtrlNet(LxBrNet):
         '''
         return []
 
+
 class CoreNode(LxcNode):
     apitype = coreapi.CORE_NODE_DEF
+
 
 class PtpNet(LxBrNet):
     policy = "ACCEPT"
 
     def attach(self, netif):
         if len(self._netif) > 1:
-            raise ValueError, \
-                  "Point-to-point links support at most 2 network interfaces"
+            raise ValueError(
+                "Point-to-point links support at most 2 network interfaces")
         LxBrNet.attach(self, netif)
 
     def tonodemsg(self, flags):
@@ -161,13 +179,13 @@ class PtpNet(LxBrNet):
         if uni:
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI, 1)
 
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM, \
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM,
                                             if1.node.getifindex(if1))
         if if1.hwaddr:
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1MAC,
                                                 if1.hwaddr)
         for addr in if1.addrlist:
-            (ip, sep, mask)  = addr.partition('/')
+            (ip, sep, mask) = addr.partition('/')
             mask = int(mask)
             if isIPv4Address(ip):
                 family = AF_INET
@@ -182,13 +200,13 @@ class PtpNet(LxBrNet):
                                                 IPAddr(af=family, addr=ipl))
             tlvdata += coreapi.CoreLinkTlv.pack(tlvtypemask, mask)
 
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM, \
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM,
                                             if2.node.getifindex(if2))
         if if2.hwaddr:
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2MAC,
                                                 if2.hwaddr)
         for addr in if2.addrlist:
-            (ip, sep, mask)  = addr.partition('/')
+            (ip, sep, mask) = addr.partition('/')
             mask = int(mask)
             if isIPv4Address(ip):
                 family = AF_INET
@@ -204,7 +222,7 @@ class PtpNet(LxBrNet):
             tlvdata += coreapi.CoreLinkTlv.pack(tlvtypemask, mask)
         msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
         if not uni:
-            return [msg,]
+            return [msg, ]
         # build a 2nd link message for the upstream link parameters
         # (swap if1 and if2)
         tlvdata = ""
@@ -214,25 +232,27 @@ class PtpNet(LxBrNet):
                                             if1.node.objid)
         tlvdata += self.netifparamstolink(if2)
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI, 1)
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM, \
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1NUM,
                                             if2.node.getifindex(if2))
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM, \
+        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM,
                                             if1.node.getifindex(if1))
         msg2 = coreapi.CoreLinkMessage.pack(0, tlvdata)
         return [msg, msg2]
+
 
 class SwitchNode(LxBrNet):
     apitype = coreapi.CORE_NODE_SWITCH
     policy = "ACCEPT"
     type = "lanswitch"
 
+
 class HubNode(LxBrNet):
     apitype = coreapi.CORE_NODE_HUB
     policy = "ACCEPT"
     type = "hub"
 
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                        start = True):
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True):
         ''' the Hub node forwards packets to all bridge ports by turning off
             the MAC address learning
         '''
@@ -247,8 +267,8 @@ class WlanNode(LxBrNet):
     policy = "DROP"
     type = "wlan"
 
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                        start = True, policy = None):
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True, policy=None):
         LxBrNet.__init__(self, session, objid, name, verbose, start, policy)
         # wireless model such as basic range
         self.model = None
@@ -261,10 +281,10 @@ class WlanNode(LxBrNet):
             netif.poshook = self.model._positioncallback
             if netif.node is None:
                 return
-            (x,y,z) = netif.node.position.get()
+            (x, y, z) = netif.node.position.get()
             # invokes any netif.poshook
             netif.setposition(x, y, z)
-            #self.model.setlinkparams()
+            # self.model.setlinkparams()
 
     def setmodel(self, model, config):
         ''' Mobility and wireless model.
@@ -278,12 +298,12 @@ class WlanNode(LxBrNet):
                 for netif in self.netifs():
                     netif.poshook = self.model._positioncallback
                     if netif.node is not None:
-                        (x,y,z) = netif.node.position.get()
+                        (x, y, z) = netif.node.position.get()
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model._type == coreapi.CORE_TLV_REG_MOBILITY:
             self.mobility = model(session=self.session, objid=self.objid,
-                               verbose=self.verbose, values=config)
+                                  verbose=self.verbose, values=config)
 
     def updatemodel(self, model_name, values):
         ''' Allow for model updates during runtime (similar to setmodel().)
@@ -300,7 +320,7 @@ class WlanNode(LxBrNet):
                 for netif in self.netifs():
                     netif.poshook = self.model._positioncallback
                     if netif.node is not None:
-                        (x,y,z) = netif.node.position.get()
+                        (x, y, z) = netif.node.position.get()
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
 
@@ -318,12 +338,12 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     apitype = coreapi.CORE_NODE_RJ45
     type = "rj45"
 
-    def __init__(self, session, objid = None, name = None, mtu = 1500,
-                 verbose = False, start = True):
+    def __init__(self, session, objid=None, name=None, mtu=1500,
+                 verbose=False, start=True):
         PyCoreNode.__init__(self, session, objid, name, verbose=verbose,
                             start=start)
         # this initializes net, params, poshook
-        PyCoreNetIf.__init__(self, node=self, name=name, mtu = mtu)
+        PyCoreNetIf.__init__(self, node=self, name=name, mtu=mtu)
         self.up = False
         self.lock = threading.RLock()
         self.ifindex = None
@@ -341,7 +361,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         try:
             check_call([IP_BIN, "link", "set", self.localname, "up"])
         except:
-            self.warn("Failed to run command: %s link set %s up" % \
+            self.warn("Failed to run command: %s link set %s up" %
                       (IP_BIN, self.localname))
             return
         self.up = True
@@ -364,8 +384,8 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     def detachnet(self):
         PyCoreNetIf.detachnet(self)
 
-    def newnetif(self, net = None, addrlist = [], hwaddr = None,
-                 ifindex = None, ifname = None):
+    def newnetif(self, net=None, addrlist=[], hwaddr=None,
+                 ifindex=None, ifname=None):
         ''' This is called when linking with another node. Since this node
             represents an interface, we do not create another object here,
             but attach ourselves to the given network.
@@ -375,10 +395,10 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
             if ifindex is None:
                 ifindex = 0
             if self.net is not None:
-                raise ValueError, \
-                        "RJ45 nodes support at most 1 network interface"
+                raise ValueError(
+                    "RJ45 nodes support at most 1 network interface")
             self._netif[ifindex] = self
-            self.node = self # PyCoreNetIf.node is self
+            self.node = self  # PyCoreNetIf.node is self
             self.ifindex = ifindex
             if net is not None:
                 self.attachnet(net)
@@ -392,12 +412,12 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         if ifindex is None:
             ifindex = 0
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif.pop(ifindex)
         if ifindex == self.ifindex:
             self.shutdown()
         else:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
 
     def netif(self, ifindex, net=None):
         ''' This object is considered the network interface, so we only
@@ -435,7 +455,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         self.old_addrs = []
         cmd = [IP_BIN, "addr", "show", "dev", self.localname]
         try:
-            tmp = subprocess.Popen(cmd, stdout = subprocess.PIPE)
+            tmp = subprocess.Popen(cmd, stdout=subprocess.PIPE)
         except OSError:
             self.warn("Failed to run %s command: %s" % (IP_BIN, cmd))
         if tmp.wait():
@@ -479,11 +499,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         PyCoreNetIf.setposition(self, x, y, z)
 
 
-
-
-
 class TunnelNode(GreTapBridge):
     apitype = coreapi.CORE_NODE_TUNNEL
     policy = "ACCEPT"
     type = "tunnel"
-

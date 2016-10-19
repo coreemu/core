@@ -5,6 +5,7 @@ import os.path
 import re
 import textwrap
 
+
 class EmaneManifest2Model(object):
 
     class EmaneModel(object):
@@ -15,7 +16,7 @@ class EmaneManifest2Model(object):
             indent = ' ' * 16
 
             def __init__(self, name, apitype, default, caption,
-                         possible_values = ()):
+                         possible_values=()):
                 self.name = name
                 self.apitype = apitype
                 self.default = self.intfloat_regex.sub(r'\1.0', default)
@@ -33,7 +34,7 @@ class EmaneManifest2Model(object):
             self.parameters = []
 
         def add_parameter(self, name, apitype, default, caption,
-                          possible_values = ()):
+                          possible_values=()):
             p = self.EmaneModelParameter(name, apitype, default, caption,
                                          possible_values)
             self.parameters.append(p)
@@ -90,7 +91,7 @@ class EmaneManifest2Model(object):
                             possible_values = match.group(1).split('|')
             model.add_parameter(name, apitype, default,
                                 caption, possible_values)
-        model.parameters.sort(key = lambda x: x.name)
+        model.parameters.sort(key=lambda x: x.name)
         return model
 
     @classmethod
@@ -181,29 +182,30 @@ class EmaneManifest2Model(object):
             'confMatrixMac': ',\n'.join(map(str, macmodel.parameters)) + ',',
             'confMatrixPhy': ',\n'.join(map(str, phymodel.parameters)) + ',',
             'modelLibrary': macmodel.name,
-         }
+        }
         return textwrap.dedent(template % d)
+
 
 def main():
     import argparse
     import sys
     parser = argparse.ArgumentParser(
         formatter_class=argparse.RawDescriptionHelpFormatter,
-        description = 'Create skeleton CORE bindings from ' \
-            'EMANE model manifest files.',
-        epilog = 'example:\n' \
-            '    %(prog)s -c RadioX \\\n' \
-            '        -m /usr/share/emane/manifest/radiox.xml \\\n' \
-            '        -p /usr/share/emane/manifest/emanephy.xml')
-    parser.add_argument('-c', '--class-name', dest = 'classname',
-                        required = True, help = 'corresponding python '
+        description='Create skeleton CORE bindings from '
+        'EMANE model manifest files.',
+        epilog='example:\n'
+        '    %(prog)s -c RadioX \\\n'
+        '        -m /usr/share/emane/manifest/radiox.xml \\\n'
+        '        -p /usr/share/emane/manifest/emanephy.xml')
+    parser.add_argument('-c', '--class-name', dest='classname',
+                        required=True, help='corresponding python '
                         'class name: RadioX -> EmaneRadioXModel')
-    parser.add_argument('-m', '--mac-xmlfile', dest = 'macxmlfilename',
-                        required = True,
-                        help = 'MAC model manifest XML filename')
-    parser.add_argument('-p', '--phy-xmlfile', dest = 'phyxmlfilename',
-                        required = True,
-                        help = 'PHY model manifest XML filename')
+    parser.add_argument('-m', '--mac-xmlfile', dest='macxmlfilename',
+                        required=True,
+                        help='MAC model manifest XML filename')
+    parser.add_argument('-p', '--phy-xmlfile', dest='phyxmlfilename',
+                        required=True,
+                        help='PHY model manifest XML filename')
     args = parser.parse_args()
     model = EmaneManifest2Model.core_emane_model(args.classname,
                                                  args.macxmlfilename,

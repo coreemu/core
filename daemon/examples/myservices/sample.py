@@ -6,13 +6,12 @@
 ''' Sample user-defined service.
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+from core.misc.ipaddr import IPv4Prefix
+
 
 class MyService(CoreService):
-    ''' This is a sample user-defined service. 
+    ''' This is a sample user-defined service.
     '''
     # a unique name is required, without spaces
     _name = "MyService"
@@ -42,7 +41,7 @@ class MyService(CoreService):
 
         for ifc in node.netifs():
             cfg += 'echo "Node %s has interface %s"\n' % (node.name, ifc.name)
-            # here we do something interesting 
+            # here we do something interesting
             cfg += "\n".join(map(cls.subnetentry, ifc.addrlist))
             break
         return cfg
@@ -59,6 +58,6 @@ class MyService(CoreService):
             net = IPv4Prefix(x)
             return 'echo "  network %s"' % (net)
 
-# this line is required to add the above class to the list of available services
+# this line is required to add the above class to the list of available
+# services
 addservice(MyService)
-
