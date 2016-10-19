@@ -522,13 +522,14 @@ class CoreBroker(ConfigurableManager):
             Returning False indicates this message should be handled locally.
         '''
         servers = set()
+        handle_locally = False
         # Do not forward messages when in definition state
         # (for e.g. configuring services)
         if self.session.getstate() == coreapi.CORE_EVENT_DEFINITION_STATE:
             return False
         # Decide whether message should be handled locally or forwarded, or both
         if msg.msgtype == coreapi.CORE_API_NODE_MSG:
-            servers = self.handlenodemsg(msg)
+            handle_locally, servers = self.handlenodemsg(msg)
         elif msg.msgtype == coreapi.CORE_API_EVENT_MSG:
             # broadcast events everywhere
             servers = self.getservers()
@@ -547,7 +548,7 @@ class CoreBroker(ConfigurableManager):
 
         if msg.msgtype == coreapi.CORE_API_LINK_MSG:
             # prepare a server list from two node numbers in link message
-            servers, msg = self.handlelinkmsg(msg)
+            handle_locally, servers, msg = self.handlelinkmsg(msg)
         elif len(servers) == 0:
             # check for servers based on node numbers in all messages but link
             nn = msg.nodenumbers()
@@ -562,7 +563,7 @@ class CoreBroker(ConfigurableManager):
             handler(msg)
 
         # Perform any message forwarding
-        handle_locally = self.forwardmsg(msg, servers)
+        handle_locally |= self.forwardmsg(msg, servers)
         return not handle_locally
 
     def setupserver(self, servername):
@@ -629,6 +630,7 @@ class CoreBroker(ConfigurableManager):
             nodes to servers.
         '''
         servers = set()
+        handle_locally = False
         serverfiletxt = None
         # snoop Node Message for emulation server TLV and record mapping
         n = msg.tlvdata[coreapi.CORE_TLV_NODE_NUMBER]
@@ -639,21 +641,22 @@ class CoreBroker(ConfigurableManager):
                 nodecls = coreapi.node_class(nodetype)
             except KeyError:
                 self.session.warn("broker invalid node type %s" % nodetype)
-                return servers
+                return handle_locally, servers
             if nodecls is None:
                 self.session.warn("broker unimplemented node type %s" % nodetype)
-                return servers
+                return handle_locally, servers
             if issubclass(nodecls, PyCoreNet) and \
                 nodetype != coreapi.CORE_NODE_WLAN:
                 # network node replicated on all servers; could be optimized
                 # don't replicate WLANs, because ebtables rules won't work
                 servers = self.getservers()
+                handle_locally = True
                 self.addnet(n)
                 for server in servers:
                     self.addnodemap(server, n)
                 # do not record server name for networks since network
                 # nodes are replicated across all server
-                return servers
+                return handle_locally, servers
             elif issubclass(nodecls, PyCoreNode):
                 name = msg.gettlv(coreapi.CORE_TLV_NODE_NAME)
                 if name:
@@ -674,7 +677,7 @@ class CoreBroker(ConfigurableManager):
         # hook to update coordinates of physical nodes
         if n in self.phys:
             self.session.mobility.physnodeupdateposition(msg)
-        return servers
+        return handle_locally, servers
 
     def handlelinkmsg(self, msg):
         ''' Determine and return the servers to which this link message should
@@ -731,10 +734,11 @@ class CoreBroker(ConfigurableManager):
                     self.addtunnel(host, nn[0], nn[1], localn)
                 elif msg.flags & coreapi.CORE_API_DEL_FLAG:
                     self.deltunnel(nn[0], nn[1])
+                    handle_locally = False
             else:
                 servers = servers1.union(servers2)
 
-        return servers, msg
+        return handle_locally, servers, msg
 
     def addlinkendpoints(self, msg, servers1, servers2):
         ''' For a link message that is not handled locally, inform the remote
