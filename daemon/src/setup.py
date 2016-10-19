@@ -1,8 +1,6 @@
 # Copyright (c)2010-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 
-import os
-import glob
 from distutils.core import setup, Extension
 
 netns = Extension("netns", sources=["netnsmodule.c", "netns.c"])
