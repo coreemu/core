@@ -4,8 +4,8 @@
 # Copyright (c)2011-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-''' 
-security.py: defines security services (vpnclient, vpnserver, ipsec and 
+'''
+security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 '''
 
@@ -14,8 +14,9 @@ import os
 from core.service import CoreService, addservice
 from core.constants import *
 
+
 class VPNClient(CoreService):
-    ''' 
+    '''
     '''
     _name = "VPNClient"
     _group = "Security"
@@ -37,14 +38,16 @@ class VPNClient(CoreService):
             cfg += open(fname, "rb").read()
         except e:
             print "Error opening VPN client configuration template (%s): %s" % \
-                    (fname, e)
+                (fname, e)
         return cfg
 
-# this line is required to add the above class to the list of available services
+# this line is required to add the above class to the list of available
+# services
 addservice(VPNClient)
 
+
 class VPNServer(CoreService):
-    ''' 
+    '''
     '''
     _name = "VPNServer"
     _group = "Security"
@@ -67,10 +70,11 @@ class VPNServer(CoreService):
             cfg += open(fname, "rb").read()
         except e:
             print "Error opening VPN server configuration template (%s): %s" % \
-                    (fname, e)
+                (fname, e)
         return cfg
 
 addservice(VPNServer)
+
 
 class IPsec(CoreService):
     '''
@@ -96,13 +100,14 @@ class IPsec(CoreService):
             cfg += open(fname, "rb").read()
         except e:
             print "Error opening IPsec configuration template (%s): %s" % \
-                    (fname, e)
+                (fname, e)
         return cfg
 
 addservice(IPsec)
 
+
 class Firewall(CoreService):
-    ''' 
+    '''
     '''
     _name = "Firewall"
     _group = "Security"
@@ -122,8 +127,7 @@ class Firewall(CoreService):
             cfg += open(fname, "rb").read()
         except e:
             print "Error opening Firewall configuration template (%s): %s" % \
-                    (fname, e)
+                (fname, e)
         return cfg
 
 addservice(Firewall)
-

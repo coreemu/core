@@ -6,7 +6,7 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-utility.py: defines miscellaneous utility services. 
+utility.py: defines miscellaneous utility services.
 '''
 
 import os
@@ -15,6 +15,7 @@ from core.service import CoreService, addservice
 from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
 from core.misc.utils import *
 from core.constants import *
+
 
 class UtilService(CoreService):
     ''' Parent class for utility services.
@@ -29,15 +30,16 @@ class UtilService(CoreService):
     _shutdown = ()
 
     @classmethod
-    def generateconfig(cls,  node, filename, services):
+    def generateconfig(cls, node, filename, services):
         return ""
+
 
 class IPForwardService(UtilService):
     _name = "IPForward"
     _configs = ("ipforward.sh", )
     _startindex = 5
     _startup = ("sh ipforward.sh", )
-    
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         if os.uname()[0] == "Linux":
@@ -45,7 +47,7 @@ class IPForwardService(UtilService):
         elif os.uname()[0] == "FreeBSD":
             return cls.generateconfigbsd(node, filename, services)
         else:
-            raise Exception, "unknown platform"
+            raise Exception("unknown platform")
 
     @classmethod
     def generateconfiglinux(cls, node, filename, services):
@@ -65,7 +67,7 @@ class IPForwardService(UtilService):
             name = sysctldevname(ifc.name)
             cfg += "%s -w net.ipv4.conf.%s.forwarding=1\n" % (SYSCTL_BIN, name)
             cfg += "%s -w net.ipv4.conf.%s.send_redirects=0\n" % \
-                    (SYSCTL_BIN, name)
+                (SYSCTL_BIN, name)
             cfg += "%s -w net.ipv4.conf.%s.rp_filter=0\n" % (SYSCTL_BIN, name)
         return cfg
 
@@ -82,6 +84,7 @@ class IPForwardService(UtilService):
 
 addservice(IPForwardService)
 
+
 class DefaultRouteService(UtilService):
     _name = "DefaultRoute"
     _configs = ("defaultroute.sh",)
@@ -97,7 +100,7 @@ class DefaultRouteService(UtilService):
             cfg += "\n".join(map(cls.addrstr, ifc.addrlist))
             cfg += "\n"
         return cfg
-        
+
     @staticmethod
     def addrstr(x):
         if x.find(":") >= 0:
@@ -114,10 +117,11 @@ class DefaultRouteService(UtilService):
             elif os.uname()[0] == "FreeBSD":
                 rtcmd = "route add -%s" % fam
             else:
-                raise Exception, "unknown platform"
+                raise Exception("unknown platform")
             return "%s %s" % (rtcmd, net.minaddr())
-        
+
 addservice(DefaultRouteService)
+
 
 class DefaultMulticastRouteService(UtilService):
     _name = "DefaultMulticastRoute"
@@ -139,13 +143,14 @@ class DefaultMulticastRouteService(UtilService):
             elif os.uname()[0] == "FreeBSD":
                 rtcmd = "route add 224.0.0.0/4 -iface"
             else:
-                raise Exception, "unknown platform"
+                raise Exception("unknown platform")
             cfg += "%s %s\n" % (rtcmd, ifc.name)
             cfg += "\n"
             break
         return cfg
-        
+
 addservice(DefaultMulticastRouteService)
+
 
 class StaticRouteService(UtilService):
     _name = "StaticRoute"
@@ -165,7 +170,7 @@ class StaticRouteService(UtilService):
             cfg += "\n".join(map(cls.routestr, ifc.addrlist))
             cfg += "\n"
         return cfg
-        
+
     @staticmethod
     def routestr(x):
         if x.find(":") >= 0:
@@ -184,10 +189,11 @@ class StaticRouteService(UtilService):
             elif os.uname()[0] == "FreeBSD":
                 rtcmd = "#/sbin/route add -%s %s" % (fam, dst)
             else:
-                raise Exception, "unknown platform"
+                raise Exception("unknown platform")
             return "%s %s" % (rtcmd, net.minaddr())
 
 addservice(StaticRouteService)
+
 
 class SshService(UtilService):
     _name = "SSH"
@@ -200,7 +206,7 @@ class SshService(UtilService):
     _startup = ("sh startsshd.sh",)
     _shutdown = ("killall sshd",)
     _validate = ()
-        
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         ''' Use a startup script for launching sshd in order to wait for host
@@ -266,6 +272,7 @@ UseDNS no
 
 addservice(SshService)
 
+
 class DhcpService(UtilService):
     _name = "DHCP"
     _configs = ("/etc/dhcp/dhcpd.conf",)
@@ -273,7 +280,7 @@ class DhcpService(UtilService):
     _startup = ("dhcpd",)
     _shutdown = ("killall dhcpd",)
     _validate = ("pidof dhcpd",)
-        
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         ''' Generate a dhcpd config file using the network address of
@@ -299,7 +306,7 @@ ddns-update-style none;
             cfg += "\n".join(map(cls.subnetentry, ifc.addrlist))
             cfg += "\n"
         return cfg
-        
+
     @staticmethod
     def subnetentry(x):
         ''' Generate a subnet declaration block given an IPv4 prefix string
@@ -325,6 +332,7 @@ subnet %s netmask %s {
 
 addservice(DhcpService)
 
+
 class DhcpClientService(UtilService):
     ''' Use a DHCP client for all interfaces for addressing.
     '''
@@ -333,7 +341,7 @@ class DhcpClientService(UtilService):
     _startup = ("sh startdhcpclient.sh",)
     _shutdown = ("killall dhclient",)
     _validate = ("pidof dhclient",)
-        
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         ''' Generate a script to invoke dhclient on all interfaces.
@@ -350,10 +358,12 @@ class DhcpClientService(UtilService):
             cfg += "#ln -s /var/run/resolvconf/interface/%s.dhclient" % ifc.name
             cfg += " /var/run/resolvconf/resolv.conf\n"
             cfg += "/sbin/dhclient -nw -pf /var/run/dhclient-%s.pid" % ifc.name
-            cfg += " -lf /var/run/dhclient-%s.lease %s\n" % (ifc.name,  ifc.name)
+            cfg += " -lf /var/run/dhclient-%s.lease %s\n" % (
+                ifc.name, ifc.name)
         return cfg
-        
+
 addservice(DhcpClientService)
+
 
 class FtpService(UtilService):
     ''' Start a vsftpd server.
@@ -364,7 +374,7 @@ class FtpService(UtilService):
     _startup = ("vsftpd ./vsftpd.conf",)
     _shutdown = ("killall vsftpd",)
     _validate = ("pidof vsftpd",)
-        
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         ''' Generate a vsftpd.conf configuration file.
@@ -386,6 +396,7 @@ anon_root=/var/ftp
 
 addservice(FtpService)
 
+
 class HttpService(UtilService):
     ''' Start an apache server.
     '''
@@ -399,7 +410,7 @@ class HttpService(UtilService):
     _validate = ("pidof apache2",)
 
     APACHEVER22, APACHEVER24 = (22, 24)
-        
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         ''' Generate an apache2.conf configuration file.
@@ -425,33 +436,32 @@ class HttpService(UtilService):
             return cls.APACHEVER24
         return cls.APACHEVER22
 
-
     @classmethod
     def generateapache2conf(cls, node, filename, services):
-        lockstr = { cls.APACHEVER22: 
-                    'LockFile ${APACHE_LOCK_DIR}/accept.lock\n',
-                    cls.APACHEVER24:
-                    'Mutex file:${APACHE_LOCK_DIR} default\n', }
-        mpmstr = { cls.APACHEVER22: '', cls.APACHEVER24:
-                   'LoadModule mpm_worker_module /usr/lib/apache2/modules/mod_mpm_worker.so\n', }
+        lockstr = {cls.APACHEVER22:
+                   'LockFile ${APACHE_LOCK_DIR}/accept.lock\n',
+                   cls.APACHEVER24:
+                   'Mutex file:${APACHE_LOCK_DIR} default\n', }
+        mpmstr = {cls.APACHEVER22: '', cls.APACHEVER24:
+                  'LoadModule mpm_worker_module /usr/lib/apache2/modules/mod_mpm_worker.so\n', }
 
-        permstr = { cls.APACHEVER22: 
-                    '    Order allow,deny\n    Deny from all\n    Satisfy all\n',
-                    cls.APACHEVER24:
-                    '    Require all denied\n', }
+        permstr = {cls.APACHEVER22:
+                   '    Order allow,deny\n    Deny from all\n    Satisfy all\n',
+                   cls.APACHEVER24:
+                   '    Require all denied\n', }
 
-        authstr = { cls.APACHEVER22: 
-                    'LoadModule authz_default_module /usr/lib/apache2/modules/mod_authz_default.so\n',
-                    cls.APACHEVER24:
-                    'LoadModule authz_core_module /usr/lib/apache2/modules/mod_authz_core.so\n', }
+        authstr = {cls.APACHEVER22:
+                   'LoadModule authz_default_module /usr/lib/apache2/modules/mod_authz_default.so\n',
+                   cls.APACHEVER24:
+                   'LoadModule authz_core_module /usr/lib/apache2/modules/mod_authz_core.so\n', }
 
-        permstr2 = { cls.APACHEVER22: 
-		    '\t\tOrder allow,deny\n\t\tallow from all\n',
+        permstr2 = {cls.APACHEVER22:
+                    '\t\tOrder allow,deny\n\t\tallow from all\n',
                     cls.APACHEVER24:
-		    '\t\tRequire all granted\n', }
+                    '\t\tRequire all granted\n', }
 
         version = cls.detectversionfromcmd()
-        cfg ="# apache2.conf generated by utility.py:HttpService\n"
+        cfg = "# apache2.conf generated by utility.py:HttpService\n"
         cfg += lockstr[version]
         cfg += """\
 PidFile ${APACHE_PID_FILE}
@@ -474,7 +484,7 @@ KeepAliveTimeout 5
 <IfModule mpm_worker_module>
     StartServers          2
     MinSpareThreads      25
-    MaxSpareThreads      75 
+    MaxSpareThreads      75
     ThreadLimit          64
     ThreadsPerChild      25
     MaxClients          150
@@ -484,7 +494,7 @@ KeepAliveTimeout 5
 <IfModule mpm_event_module>
     StartServers          2
     MinSpareThreads      25
-    MaxSpareThreads      75 
+    MaxSpareThreads      75
     ThreadLimit          64
     ThreadsPerChild      25
     MaxClients          150
@@ -590,10 +600,11 @@ export LANG
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control == True:
                 continue
-            body += "<li>%s - %s</li>\n" % (ifc.name, ifc.addrlist)            
+            body += "<li>%s - %s</li>\n" % (ifc.name, ifc.addrlist)
         return "<html><body>%s</body></html>" % body
 
 addservice(HttpService)
+
 
 class PcapService(UtilService):
     ''' Pcap service for logging packets.
@@ -625,7 +636,7 @@ if [ "x$1" = "xstart" ]; then
                 cfg += '# '
             redir = "< /dev/null"
             cfg += "tcpdump ${DUMPOPTS} -w %s.%s.pcap -i %s %s &\n" % \
-                    (node.name, ifc.name, ifc.name, redir)
+                (node.name, ifc.name, ifc.name, redir)
         cfg += """
 
 elif [ "x$1" = "xstop" ]; then
@@ -637,17 +648,19 @@ fi;
 
 addservice(PcapService)
 
+
 class RadvdService(UtilService):
     _name = "radvd"
     _configs = ("/etc/radvd/radvd.conf",)
     _dirs = ("/etc/radvd",)
-    _startup = ("radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log",)
+    _startup = (
+        "radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log",)
     _shutdown = ("pkill radvd",)
     _validate = ("pidof radvd",)
-        
+
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Generate a RADVD router advertisement daemon config file 
+        ''' Generate a RADVD router advertisement daemon config file
         using the network address of each interface.
         '''
         cfg = "# auto-generated by RADVD service (utility.py)\n"
@@ -679,7 +692,7 @@ interface %s
 """ % prefix
             cfg += "};\n"
         return cfg
-        
+
     @staticmethod
     def subnetentry(x):
         ''' Generate a subnet declaration block given an IPv6 prefix string
@@ -693,6 +706,7 @@ interface %s
 
 addservice(RadvdService)
 
+
 class AtdService(UtilService):
     ''' Atd service for scheduling at jobs
     '''
@@ -701,7 +715,7 @@ class AtdService(UtilService):
     _dirs = ("/var/spool/cron/atjobs", "/var/spool/cron/atspool")
     _startup = ("sh startatd.sh", )
     _shutdown = ("pkill atd", )
-    
+
     @classmethod
     def generateconfig(cls, node, filename, services):
         return """
@@ -711,8 +725,9 @@ chown -R daemon /var/spool/cron/*
 chmod -R 700 /var/spool/cron/*
 atd
 """
-        
+
 addservice(AtdService)
+
 
 class UserDefinedService(UtilService):
     ''' Dummy service allowing customization of anything.

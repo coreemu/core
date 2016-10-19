@@ -10,7 +10,10 @@
 # This script creates no nodes locally and therefore can be run as an
 # unprivileged user.
 
-import sys, datetime, optparse, time
+import sys
+import datetime
+import optparse
+import time
 
 from core import pycore
 from core.misc import ipaddr
@@ -29,6 +32,7 @@ coreapi.add_node_class("CORE_NODE_SWITCH",
 n = [None]
 exec_num = 1
 
+
 def cmd(node, exec_cmd):
     '''
     :param node: The node the command should be issued too
@@ -41,7 +45,8 @@ def cmd(node, exec_cmd):
     tlvdata = coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NODE, node.objid)
     tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NUM, exec_num)
     tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_CMD, exec_cmd)
-    msg = coreapi.CoreExecMessage.pack(coreapi.CORE_API_STR_FLAG | coreapi.CORE_API_TXT_FLAG, tlvdata)
+    msg = coreapi.CoreExecMessage.pack(
+        coreapi.CORE_API_STR_FLAG | coreapi.CORE_API_TXT_FLAG, tlvdata)
     node.session.broker.handlerawmsg(msg)
     exec_num += 1
 
@@ -59,17 +64,19 @@ def cmd(node, exec_cmd):
     else:
         return None
 
+
 def main():
     usagestr = "usage: %prog [-n] number of nodes [-d] daemon address"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 5, daemon = '127.0.0.1:'+str(coreapi.CORE_API_PORT))
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=5, daemon='127.0.0.1:' +
+                        str(coreapi.CORE_API_PORT))
 
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
-    parser.add_option("-d", "--daemon-server", dest = "daemon", type = str,
-                      help = "daemon server IP address")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
+    parser.add_option("-d", "--daemon-server", dest="daemon", type=str,
+                      help="daemon server IP address")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -99,7 +106,8 @@ def main():
     daemonip = daemonport[0]
 
     # Localhost is already set in the session but we change it to be the remote daemon
-    # This stops the remote daemon trying to build a tunnel back which would fail
+    # This stops the remote daemon trying to build a tunnel back which would
+    # fail
     daemon = 'localhost'
     if len(daemonport) > 1:
         port = int(daemonport[1])
@@ -110,7 +118,8 @@ def main():
 
     # Set the local session id to match the port.
     # Not necessary but seems neater.
-    session.sessionid = session.broker.getserver('localhost')[2].getsockname()[1]
+    session.sessionid = session.broker.getserver('localhost')[
+        2].getsockname()[1]
     session.broker.setupserver(daemon)
 
     # We do not want the recvloop running as we will deal ourselves
@@ -123,8 +132,9 @@ def main():
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
     flags = coreapi.CORE_API_ADD_FLAG
-    switch = pycore.nodes.SwitchNode(session = session, name='switch', start=False)
-    switch.setposition(x=80,y=50)
+    switch = pycore.nodes.SwitchNode(
+        session=session, name='switch', start=False)
+    switch.setposition(x=80, y=50)
     switch.server = daemon
     session.broker.handlerawmsg(switch.tonodemsg(flags=flags))
 
@@ -135,9 +145,9 @@ def main():
 
     # create remote nodes via API
     for i in xrange(1, numberOfNodes + 1):
-        tmp = pycore.nodes.CoreNode(session = session, objid = i,
-                                    name = "n%d" % i, start=False)
-        tmp.setposition(x=150*i,y=150)
+        tmp = pycore.nodes.CoreNode(session=session, objid=i,
+                                    name="n%d" % i, start=False)
+        tmp.setposition(x=150 * i, y=150)
         tmp.server = daemon
         session.broker.handlerawmsg(tmp.tonodemsg(flags=flags))
         n.append(tmp)
@@ -158,9 +168,10 @@ def main():
         session.broker.handlerawmsg(msg)
 
     # We change the daemon to Instantiation state
-    # We do not change the local session as it would try and build a tunnel and fail
+    # We do not change the local session as it would try and build a tunnel
+    # and fail
     tlvdata = coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
-                                    coreapi.CORE_EVENT_INSTANTIATION_STATE)
+                                        coreapi.CORE_EVENT_INSTANTIATION_STATE)
     msg = coreapi.CoreEventMessage.pack(0, tlvdata)
     session.broker.handlerawmsg(msg)
 
@@ -175,4 +186,3 @@ def main():
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     main()
-

@@ -6,7 +6,9 @@
 # Example CORE Python script that attaches N nodes to an EMANE 802.11abg
 # network. One of the parameters is changed, the pathloss mode.
 
-import sys, datetime, optparse
+import sys
+import datetime
+import optparse
 
 from core import pycore
 from core.misc import ipaddr
@@ -16,15 +18,16 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 # node list (count from 1)
 n = [None]
 
+
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 5)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=5)
 
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -46,9 +49,9 @@ def main():
     prefix = ipaddr.IPv4Prefix("10.83.0.0/16")
     # session with some EMANE initialization
     cfg = {'verbose': 'false'}
-    session = pycore.Session(cfg = cfg, persistent = True)
+    session = pycore.Session(cfg=cfg, persistent=True)
     session.master = True
-    session.location.setrefgeo(47.57917,-122.13232,2.00000)
+    session.location.setrefgeo(47.57917, -122.13232, 2.00000)
     session.location.refscale = 150.0
     session.cfg['emane_models'] = "RfPipe, Ieee80211abg, Bypass"
     session.emane.loadmodels()
@@ -57,30 +60,31 @@ def main():
 
     # EMANE WLAN
     print "creating EMANE WLAN wlan1"
-    wlan = session.addobj(cls = pycore.nodes.EmaneNode, name = "wlan1")
-    wlan.setposition(x=80,y=50)
+    wlan = session.addobj(cls=pycore.nodes.EmaneNode, name="wlan1")
+    wlan.setposition(x=80, y=50)
     names = EmaneIeee80211abgModel.getnames()
     values = list(EmaneIeee80211abgModel.getdefaultvalues())
     # TODO: change any of the EMANE 802.11 parameter values here
     for i in range(0, len(names)):
         print "EMANE 80211 \"%s\" = \"%s\"" % (names[i], values[i])
     try:
-        values[ names.index('pathlossmode') ] = '2ray'
+        values[names.index('pathlossmode')] = '2ray'
     except ValueError:
-        values[ names.index('propagationmodel') ] = '2ray'
-        
+        values[names.index('propagationmodel')] = '2ray'
+
     session.emane.setconfig(wlan.objid, EmaneIeee80211abgModel._name, values)
     services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
 
     print "creating %d nodes with addresses from %s" % \
           (options.numnodes, prefix)
     for i in xrange(1, options.numnodes + 1):
-        tmp = session.addobj(cls = pycore.nodes.CoreNode, name = "n%d" % i,
+        tmp = session.addobj(cls=pycore.nodes.CoreNode, name="n%d" % i,
                              objid=i)
         tmp.newnetif(wlan, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         tmp.cmd([SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
-        tmp.setposition(x=150*i,y=150)
-        session.services.addservicestonode(tmp, "", services_str, verbose=False)
+        tmp.setposition(x=150 * i, y=150)
+        session.services.addservicestonode(
+            tmp, "", services_str, verbose=False)
         n.append(tmp)
 
     # this starts EMANE, etc.
@@ -94,4 +98,3 @@ def main():
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     main()
-

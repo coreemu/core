@@ -21,8 +21,10 @@ from core.constants import *
 from emane import Emane, EmaneModel
 from universal import EmaneUniversalModel
 
+
 class EmaneTdmaModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     # model name
@@ -31,8 +33,7 @@ class EmaneTdmaModel(EmaneModel):
         xml_path = '/usr/share/emane/xml/models/mac/tdmaeventscheduler'
     else:
         raise Exception("EMANE TDMA requires EMANE 1.0.1 or greater")
-    
-    
+
     # MAC parameters
     _confmatrix_mac = [
         ("enablepromiscuousmode", coreapi.CONF_DATA_TYPE_BOOL, '0',
@@ -49,7 +50,7 @@ class EmaneTdmaModel(EmaneModel):
          '', 'neighbor RF reception timeout for removal from neighbor table (sec)'),
         ('neighbormetricupdateinterval', coreapi.CONF_DATA_TYPE_FLOAT, '1.0',
          '', 'neighbor table update interval (sec)'),
-        ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING, '%s/tdmabasemodelpcr.xml' % xml_path, 
+        ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING, '%s/tdmabasemodelpcr.xml' % xml_path,
          '', 'SINR/PCR curve file'),
         ("queue.aggregationenable", coreapi.CONF_DATA_TYPE_BOOL, '1',
          'On,Off', 'enable transmit packet aggregation'),
@@ -64,7 +65,7 @@ class EmaneTdmaModel(EmaneModel):
     ]
 
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel._confmatrix 
+    _confmatrix_phy = EmaneUniversalModel._confmatrix
 
     _confmatrix = _confmatrix_mac + _confmatrix_phy
 
@@ -105,10 +106,9 @@ class EmaneTdmaModel(EmaneModel):
         mac.setAttribute("name", "TDMA MAC")
         mac.setAttribute("library", "tdmaeventschedulerradiomodel")
         # append MAC options to macdoc
-        map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, \
-                                      self.valueof(n, values))), macnames)
+        map(lambda n: mac.appendChild(e.xmlparam(macdoc, n,
+                                                 self.valueof(n, values))), macnames)
         e.xmlwrite(macdoc, self.macxmlname(ifc))
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
         e.xmlwrite(phydoc, self.phyxmlname(ifc))
-

@@ -10,7 +10,8 @@ vnet.py: NetgraphNet and NetgraphPipeNet classes that implement virtual networks
 using the FreeBSD Netgraph subsystem.
 '''
 
-import sys, threading
+import sys
+import threading
 
 from core.misc.utils import *
 from core.constants import *
@@ -18,12 +19,13 @@ from core.coreobj import PyCoreNet, PyCoreObj
 from core.bsd.netgraph import *
 from core.bsd.vnode import VEth
 
+
 class NetgraphNet(PyCoreNet):
     ngtype = None
     nghooks = ()
 
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                        start = True, policy = None):
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True, policy=None):
         PyCoreNet.__init__(self, session, objid, name)
         if name is None:
             name = str(self.objid)
@@ -67,8 +69,8 @@ class NetgraphNet(PyCoreNet):
             (Note that the PtpNet subclass overrides this method.)
         '''
         if self.up:
-            pipe = self.session.addobj(cls = NetgraphPipeNet,
-                                verbose = self.verbose, start = True)
+            pipe = self.session.addobj(cls=NetgraphPipeNet,
+                                       verbose=self.verbose, start=True)
             pipe.attach(netif)
             hook = "link%d" % len(self._netif)
             pipe.attachnet(self, hook)
@@ -82,9 +84,9 @@ class NetgraphNet(PyCoreNet):
     def linked(self, netif1, netif2):
         # check if the network interfaces are attached to this network
         if self._netif[netif1] != netif1:
-            raise ValueError, "inconsistency for netif %s" % netif1.name
+            raise ValueError("inconsistency for netif %s" % netif1.name)
         if self._netif[netif2] != netif2:
-            raise ValueError, "inconsistency for netif %s" % netif2.name
+            raise ValueError("inconsistency for netif %s" % netif2.name)
         try:
             linked = self._linked[netif1][netif2]
         except KeyError:
@@ -114,24 +116,32 @@ class NetgraphNet(PyCoreNet):
         '''
         raise NotImplementedError
 
-    def linkconfig(self, netif, bw = None, delay = None,
-                   loss = None, duplicate = None, jitter = None, netif2=None):
+    def linkconfig(self, netif, bw=None, delay=None,
+                   loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Set link effects by modifying the pipe connected to an interface.
         '''
         if not netif.pipe:
-            self.warn("linkconfig for %s but interface %s has no pipe" % \
+            self.warn("linkconfig for %s but interface %s has no pipe" %
                       (self.name, netif.name))
             return
         return netif.pipe.linkconfig(netif, bw, delay, loss, duplicate, jitter,
                                      netif2)
 
+
 class NetgraphPipeNet(NetgraphNet):
     ngtype = "pipe"
     nghooks = "upper lower"
 
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                        start = True, policy = None):
-        NetgraphNet.__init__(self, session, objid, name, verbose, start, policy)
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True, policy=None):
+        NetgraphNet.__init__(
+            self,
+            session,
+            objid,
+            name,
+            verbose,
+            start,
+            policy)
         if start:
             # account for Ethernet header
             ngmessage(self.ngname, ["setcfg", "{", "header_offset=14", "}"])
@@ -142,15 +152,14 @@ class NetgraphPipeNet(NetgraphNet):
             connected to the "lower" hook.
         '''
         if len(self._netif) > 1:
-            raise ValueError, \
-                  "Netgraph pipes support at most 2 network interfaces"
+            raise ValueError(
+                "Netgraph pipes support at most 2 network interfaces")
         if self.up:
             hook = self.gethook()
             connectngnodes(self.ngname, netif.localname, hook, netif.hook)
         if netif.pipe:
-            raise ValueError, \
-                  "Interface %s already attached to pipe %s" % \
-                  (netif.name, netif.pipe.name)
+            raise ValueError("Interface %s already attached to pipe %s" %
+                             (netif.name, netif.pipe.name))
         netif.pipe = self
         self._netif[netif] = netif
         self._linked[netif] = {}
@@ -171,8 +180,8 @@ class NetgraphPipeNet(NetgraphNet):
         else:
             return hooks[1]
 
-    def linkconfig(self, netif, bw = None, delay = None,
-                   loss = None, duplicate = None, jitter = None, netif2 = None):
+    def linkconfig(self, netif, bw=None, delay=None,
+                   loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Set link effects by sending a Netgraph setcfg message to the pipe.
         '''
         netif.setparam('bw', bw)
@@ -186,31 +195,30 @@ class NetgraphPipeNet(NetgraphNet):
         upstream = []
         downstream = []
         if bw is not None:
-            if str(bw)=="0":
-                bw="-1"
-            params += ["bandwidth=%s" % bw,]
+            if str(bw) == "0":
+                bw = "-1"
+            params += ["bandwidth=%s" % bw, ]
         if delay is not None:
-            if str(delay)=="0":
-                delay="-1"
-            params += ["delay=%s" % delay,]
+            if str(delay) == "0":
+                delay = "-1"
+            params += ["delay=%s" % delay, ]
         if loss is not None:
-            if str(loss)=="0":
-                loss="-1"
-            upstream += ["BER=%s" % loss,]
-            downstream += ["BER=%s" % loss,]
+            if str(loss) == "0":
+                loss = "-1"
+            upstream += ["BER=%s" % loss, ]
+            downstream += ["BER=%s" % loss, ]
         if duplicate is not None:
-            if str(duplicate)=="0":
-                duplicate="-1"
-            upstream += ["duplicate=%s" % duplicate,]
-            downstream += ["duplicate=%s" % duplicate,]
+            if str(duplicate) == "0":
+                duplicate = "-1"
+            upstream += ["duplicate=%s" % duplicate, ]
+            downstream += ["duplicate=%s" % duplicate, ]
         if jitter:
             self.warn("jitter parameter ignored for link %s" % self.name)
         if len(params) > 0 or len(upstream) > 0 or len(downstream) > 0:
-            setcfg = ["setcfg", "{",] + params
+            setcfg = ["setcfg", "{", ] + params
             if len(upstream) > 0:
-                setcfg += ["upstream={",] + upstream + ["}",]
+                setcfg += ["upstream={", ] + upstream + ["}", ]
             if len(downstream) > 0:
-                setcfg += ["downstream={",] + downstream + ["}",]
-            setcfg += ["}",]
+                setcfg += ["downstream={", ] + downstream + ["}", ]
+            setcfg += ["}", ]
             ngmessage(self.ngname, setcfg)
-

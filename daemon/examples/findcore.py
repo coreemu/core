@@ -3,34 +3,36 @@
 # Search for installed CORE library files and Python bindings.
 #
 
-import os, glob
+import os
+import glob
 
 pythondirs = [
- "/usr/lib/python2.7/site-packages",
- "/usr/lib/python2.7/dist-packages",
- "/usr/lib64/python2.7/site-packages",
- "/usr/lib64/python2.7/dist-packages",
- "/usr/local/lib/python2.7/site-packages",
- "/usr/local/lib/python2.7/dist-packages",
- "/usr/local/lib64/python2.7/site-packages",
- "/usr/local/lib64/python2.7/dist-packages",
- "/usr/lib/python2.6/site-packages",
- "/usr/lib/python2.6/dist-packages",
- "/usr/lib64/python2.6/site-packages",
- "/usr/lib64/python2.6/dist-packages",
- "/usr/local/lib/python2.6/site-packages",
- "/usr/local/lib/python2.6/dist-packages",
- "/usr/local/lib64/python2.6/site-packages",
- "/usr/local/lib64/python2.6/dist-packages",
- ]
+    "/usr/lib/python2.7/site-packages",
+    "/usr/lib/python2.7/dist-packages",
+    "/usr/lib64/python2.7/site-packages",
+    "/usr/lib64/python2.7/dist-packages",
+    "/usr/local/lib/python2.7/site-packages",
+    "/usr/local/lib/python2.7/dist-packages",
+    "/usr/local/lib64/python2.7/site-packages",
+    "/usr/local/lib64/python2.7/dist-packages",
+    "/usr/lib/python2.6/site-packages",
+    "/usr/lib/python2.6/dist-packages",
+    "/usr/lib64/python2.6/site-packages",
+    "/usr/lib64/python2.6/dist-packages",
+    "/usr/local/lib/python2.6/site-packages",
+    "/usr/local/lib/python2.6/dist-packages",
+    "/usr/local/lib64/python2.6/site-packages",
+    "/usr/local/lib64/python2.6/dist-packages",
+]
 
 tcldirs = [
- "/usr/lib/core",
- "/usr/local/lib/core",
- ]
+    "/usr/lib/core",
+    "/usr/local/lib/core",
+]
+
 
 def find_in_file(fn, search, column=None):
-    ''' Find a line starting with 'search' in the file given by the filename 
+    ''' Find a line starting with 'search' in the file given by the filename
         'fn'. Return True if found, False if not found, or the column text if
         column is specified.
     '''
@@ -47,6 +49,7 @@ def find_in_file(fn, search, column=None):
         break
     f.close()
     return r
+
 
 def main():
     versions = []
@@ -75,4 +78,3 @@ def main():
 
 if __name__ == "__main__":
     main()
-

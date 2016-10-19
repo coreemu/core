@@ -12,6 +12,7 @@ from core.misc.ipaddr import MacAddr
 from xml.dom.minidom import parse
 from xmlutils import *
 
+
 class CoreDocumentParser1(object):
 
     layer2_device_types = 'hub', 'switch'
@@ -64,11 +65,12 @@ class CoreDocumentParser1(object):
     def get_scenario(dom):
         scenario = getFirstChildByTagName(dom, 'scenario')
         if not scenario:
-            raise ValueError, 'no scenario element found'
+            raise ValueError('no scenario element found')
         version = scenario.getAttribute('version')
         if version and version != '1.0':
-            raise ValueError, \
-                'unsupported scenario version found: \'%s\'' % version
+            raise ValueError(
+                'unsupported scenario version found: \'%s\'' %
+                version)
         return scenario
 
     def parse_scenario(self):
@@ -136,7 +138,7 @@ class CoreDocumentParser1(object):
             if not if_id:
                 continue
             device, if_name = self.find_device_with_interface(if_id)
-            assert device, 'no device for if_id: %s' % if_id # XXX for testing
+            assert device, 'no device for if_id: %s' % if_id  # XXX for testing
             if device:
                 yield device, if_name
 
@@ -168,11 +170,11 @@ class CoreDocumentParser1(object):
         return None
 
     def create_core_object(self, objcls, objid, objname, element, node_type):
-        obj = self.session.addobj(cls = objcls, objid = objid,
-                                  name = objname, start = self.start)
+        obj = self.session.addobj(cls=objcls, objid=objid,
+                                  name=objname, start=self.start)
         if self.verbose:
-            self.info('added object objid=%s name=%s cls=%s' % \
-                          (objid, objname, objcls))
+            self.info('added object objid=%s name=%s cls=%s' %
+                      (objid, objname, objcls))
         self.set_object_position(obj, element)
         self.set_object_presentation(obj, element, node_type)
         return obj
@@ -366,7 +368,7 @@ class CoreDocumentParser1(object):
     def parse_addresses(self, interface):
         mac = []
         ipv4 = []
-        ipv6= []
+        ipv6 = []
         hostname = []
         for address in iterChildrenWithName(interface, 'address'):
             addr_type = address.getAttribute('type')
@@ -416,9 +418,9 @@ class CoreDocumentParser1(object):
             hwaddr = MacAddr.fromstring(mac[0])
         else:
             hwaddr = None
-        ifindex = node.newnetif(network, addrlist = ipv4 + ipv6,
-                                hwaddr = hwaddr, ifindex = None,
-                                ifname = if_name)
+        ifindex = node.newnetif(network, addrlist=ipv4 + ipv6,
+                                hwaddr=hwaddr, ifindex=None,
+                                ifname=if_name)
         # TODO: 'hostname' addresses are unused
         if self.verbose:
             msg = 'node \'%s\' interface \'%s\' connected ' \
@@ -431,7 +433,7 @@ class CoreDocumentParser1(object):
             self.set_wired_link_parameters(network, netif, device_id)
 
     def set_wired_link_parameters(self, network, netif,
-                                  device_id, netif_name = None):
+                                  device_id, netif_name=None):
         if netif_name is None:
             netif_name = netif.name
         key = (device_id, netif_name)
@@ -443,14 +445,14 @@ class CoreDocumentParser1(object):
                 loss = link_params.get('loss')
                 duplicate = link_params.get('duplicate')
                 jitter = link_params.get('jitter')
-                network.linkconfig(netif, bw = bw, delay = delay, loss = loss,
-                                   duplicate = duplicate, jitter = jitter)
+                network.linkconfig(netif, bw=bw, delay=delay, loss=loss,
+                                   duplicate=duplicate, jitter=jitter)
             else:
                 for k, v in link_params.iteritems():
                     netif.setparam(k, v)
 
     @staticmethod
-    def search_for_element(node, tagName, match = None):
+    def search_for_element(node, tagName, match=None):
         '''\
         Search the given node and all ancestors for an element named
         tagName that satisfies the given matching function.
@@ -513,7 +515,7 @@ class CoreDocumentParser1(object):
         device = None
         for dev, if_name in self.iter_network_member_devices(channel):
             if self.device_type(dev) in self.layer2_device_types:
-                assert not device # XXX
+                assert not device  # XXX
                 device = dev
         if device:
             obj = self.get_core_object(device.getAttribute('id'))
@@ -670,7 +672,7 @@ class CoreDocumentParser1(object):
         for f in iterChildrenWithName(service, 'file'):
             filename = f.getAttribute('name')
             if not filename:
-                continue;
+                continue
             filenames.append(filename)
             data = getChildTextTrim(f)
             if data:
@@ -688,11 +690,11 @@ class CoreDocumentParser1(object):
         # NOTE: if a custom service is used, setservicefile() must be
         # called after the custom service exists
         for typestr, filename, data in files:
-            self.session.services.setservicefile(nodenum = node.objid,
-                                                 type = typestr,
-                                                 filename = filename,
-                                                 srcname = None,
-                                                 data = data)
+            self.session.services.setservicefile(nodenum=node.objid,
+                                                 type=typestr,
+                                                 filename=filename,
+                                                 srcname=None,
+                                                 data=data)
         return str(name)
 
     def parse_device_services(self, services, node):
@@ -715,16 +717,16 @@ class CoreDocumentParser1(object):
         if services:
             services_str = self.parse_device_services(services, node)
             if self.verbose:
-                self.info('services for node \'%s\': %s' % \
-                              (node.name, services_str))
+                self.info('services for node \'%s\': %s' %
+                          (node.name, services_str))
         elif node_type in self.default_services:
-            services_str = None # default services will be added
+            services_str = None  # default services will be added
         else:
             return
-        self.session.services.addservicestonode(node = node,
-                                                nodetype = node_type,
-                                                services_str = services_str,
-                                                verbose = self.verbose)
+        self.session.services.addservicestonode(node=node,
+                                                nodetype=node_type,
+                                                services_str=services_str,
+                                                verbose=self.verbose)
 
     def set_object_presentation(self, obj, element, node_type):
         # defaults from the CORE GUI
@@ -735,7 +737,7 @@ class CoreDocumentParser1(object):
             'mdr': 'mdr.gif',
             # 'prouter': 'router_green.gif',
             # 'xen': 'xen.gif'
-            }
+        }
         icon_set = False
         for child in iterChildrenWithName(element, 'CORE:presentation'):
             canvas = child.getAttribute('canvas')
@@ -886,8 +888,8 @@ class CoreDocumentParser1(object):
             if data is None:
                 data = ''       # allow for empty file
             hook_type = "hook:%s" % state
-            self.session.sethook(hook_type, filename = str(filename),
-                                 srcname = None, data = str(data))
+            self.session.sethook(hook_type, filename=str(filename),
+                                 srcname=None, data=str(data))
 
     def parse_session_metadata(self, session_config):
         metadata = getFirstChildByTagName(session_config, 'metadata')
@@ -913,11 +915,11 @@ class CoreDocumentParser1(object):
         self.default_services = {
             'router': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
             'host': ['DefaultRoute', 'SSH'],
-            'PC': ['DefaultRoute',],
+            'PC': ['DefaultRoute', ],
             'mdr': ['zebra', 'OSPFv3MDR', 'vtysh', 'IPForward'],
             # 'prouter': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
             # 'xen': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
-            }
+        }
         default_services = \
             getFirstChildByTagName(self.scenario, 'CORE:defaultservices')
         if not default_services:
@@ -925,8 +927,8 @@ class CoreDocumentParser1(object):
         for device in iterChildrenWithName(default_services, 'device'):
             device_type = device.getAttribute('type')
             if not device_type:
-                self.warn('parse_default_services: no type attribute ' \
-                              'found for device')
+                self.warn('parse_default_services: no type attribute '
+                          'found for device')
                 continue
             services = []
             for service in iterChildrenWithName(device, 'service'):
@@ -938,5 +940,5 @@ class CoreDocumentParser1(object):
         for t, s in self.default_services.iteritems():
             self.session.services.defaultservices[t] = s
             if self.verbose:
-                self.info('default services for node type \'%s\' ' \
-                              'set to: %s' % (t, s))
+                self.info('default services for node type \'%s\' '
+                          'set to: %s' % (t, s))

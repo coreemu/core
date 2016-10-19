@@ -19,7 +19,7 @@ if os.uname()[0] == "Linux":
     try:
         from xen import xen
     except ImportError:
-        #print "Xen support disabled."
+        # print "Xen support disabled."
         pass
 elif os.uname()[0] == "FreeBSD":
     from bsd import nodes

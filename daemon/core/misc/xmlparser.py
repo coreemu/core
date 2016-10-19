@@ -7,6 +7,7 @@ from xmlutils import getFirstChildByTagName
 from xmlparser0 import CoreDocumentParser0
 from xmlparser1 import CoreDocumentParser1
 
+
 class CoreVersionParser(object):
     DEFAULT_SCENARIO_VERSION = '1.0'
 
@@ -17,6 +18,7 @@ class CoreVersionParser(object):
     to prevent parsing a file twice (it can be passed to the
     appropriate CoreDocumentParser class.)
     '''
+
     def __init__(self, filename, options={}):
         if 'dom' in options:
             self.dom = options['dom']
@@ -33,6 +35,7 @@ class CoreVersionParser(object):
         else:
             self.version = 'unknown'
 
+
 def core_document_parser(session, filename, options):
     vp = CoreVersionParser(filename, options)
     if 'dom' not in options:
@@ -42,5 +45,5 @@ def core_document_parser(session, filename, options):
     elif vp.version == '1.0':
         doc = CoreDocumentParser1(session, filename, options)
     else:
-        raise ValueError, 'unsupported document version: %s' % vp.version
+        raise ValueError('unsupported document version: %s' % vp.version)
     return doc

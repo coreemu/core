@@ -3,7 +3,7 @@
 
 """corens3
 
-Python package containing CORE components for use 
+Python package containing CORE components for use
 with the ns-3 simulator.
 
 See http://www.nrl.navy.mil/itd/ncs/products/core and
@@ -19,4 +19,3 @@ or everything listed in __all__ can be imported using
 """
 
 __all__ = []
-

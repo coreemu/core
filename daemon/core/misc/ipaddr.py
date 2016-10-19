@@ -16,13 +16,15 @@ import random
 AF_INET = socket.AF_INET
 AF_INET6 = socket.AF_INET6
 
+
 class MacAddr(object):
+
     def __init__(self, addr):
         self.addr = addr
 
     def __str__(self):
         return ":".join(map(lambda x: ("%02x" % ord(x)), self.addr))
-        
+
     def tolinklocal(self):
         ''' Convert the MAC address to a IPv6 link-local address, using EUI 48
         to EUI 64 conversion process per RFC 5342.
@@ -30,13 +32,13 @@ class MacAddr(object):
         if not self.addr:
             return IPAddr.fromstring("::")
         tmp = struct.unpack("!Q", '\x00\x00' + self.addr)[0]
-        nic = long(tmp) & 0x000000FFFFFFL
-        oui = long(tmp) & 0xFFFFFF000000L
+        nic = long(tmp) & 0x000000FFFFFF
+        oui = long(tmp) & 0xFFFFFF000000
         # toggle U/L bit
-        oui ^= 0x020000000000L
+        oui ^= 0x020000000000
         # append EUI-48 octets
-        oui = (oui << 16) | 0xFFFE000000L
-        return IPAddr(AF_INET6,  struct.pack("!QQ", 0xfe80 << 48, oui | nic))
+        oui = (oui << 16) | 0xFFFE000000
+        return IPAddr(AF_INET6, struct.pack("!QQ", 0xfe80 << 48, oui | nic))
 
     @classmethod
     def fromstring(cls, s):
@@ -50,11 +52,13 @@ class MacAddr(object):
         tmpbytes = struct.pack("!Q", tmp)
         return cls(tmpbytes[2:])
 
+
 class IPAddr(object):
+
     def __init__(self, af, addr):
         # check if (af, addr) is valid
         if not socket.inet_ntop(af, addr):
-            raise ValueError, "invalid af/addr"
+            raise ValueError("invalid af/addr")
         self.af = af
         self.addr = addr
 
@@ -100,10 +104,10 @@ class IPAddr(object):
         for af in AF_INET, AF_INET6:
             try:
                 return cls(af, socket.inet_pton(af, s))
-            except Exception, e:
+            except Exception as e:
                 pass
         raise e
-    
+
     @staticmethod
     def toint(s):
         ''' convert IPv4 string to 32-bit integer
@@ -111,19 +115,21 @@ class IPAddr(object):
         bin = socket.inet_pton(AF_INET, s)
         return(struct.unpack('!I', bin)[0])
 
+
 class IPPrefix(object):
+
     def __init__(self, af, prefixstr):
         "prefixstr format: address/prefixlen"
         tmp = prefixstr.split("/")
         if len(tmp) > 2:
-            raise ValueError, "invalid prefix: '%s'" % prefixstr
+            raise ValueError("invalid prefix: '%s'" % prefixstr)
         self.af = af
         if self.af == AF_INET:
             self.addrlen = 32
         elif self.af == AF_INET6:
             self.addrlen = 128
         else:
-            raise ValueError, "invalid address family: '%s'" % self.af
+            raise ValueError("invalid address family: '%s'" % self.af)
         if len(tmp) == 2:
             self.prefixlen = int(tmp[1])
         else:
@@ -131,7 +137,7 @@ class IPPrefix(object):
         self.prefix = socket.inet_pton(self.af, tmp[0])
         if self.addrlen > self.prefixlen:
             addrbits = self.addrlen - self.prefixlen
-            netmask = ((1L << self.prefixlen) - 1) << addrbits
+            netmask = ((1 << self.prefixlen) - 1) << addrbits
             prefix = ""
             for i in xrange(-1, -(addrbits >> 3) - 2, -1):
                 prefix = chr(ord(self.prefix[i]) & (netmask & 0xff)) + prefix
@@ -172,12 +178,15 @@ class IPPrefix(object):
 
     def addr(self, hostid):
         tmp = int(hostid)
-        if (tmp == 1 or tmp == 0 or tmp == -1) and self.addrlen == self.prefixlen:
+        if (tmp == 1 or tmp == 0 or tmp == -
+                1) and self.addrlen == self.prefixlen:
             return IPAddr(self.af, self.prefix)
         if tmp == 0 or \
-            tmp > (1 << (self.addrlen - self.prefixlen)) - 1 or \
-            (self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
-            raise ValueError, "invalid hostid for prefix %s: %s" % (self, hostid)
+                tmp > (1 << (self.addrlen - self.prefixlen)) - 1 or \
+                (self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
+            raise ValueError(
+                "invalid hostid for prefix %s: %s" %
+                (self, hostid))
         addr = ""
         for i in xrange(-1, -(self.addrlen >> 3) - 1, -1):
             addr = chr(ord(self.prefix[i]) | (tmp & 0xff)) + addr
@@ -198,23 +207,28 @@ class IPPrefix(object):
 
     def numaddr(self):
         return max(0, (1 << (self.addrlen - self.prefixlen)) - 2)
-        
+
     def prefixstr(self):
         return "%s" % socket.inet_ntop(self.af, self.prefix)
-    
+
     def netmaskstr(self):
         addrbits = self.addrlen - self.prefixlen
-        netmask = ((1L << self.prefixlen) - 1) << addrbits
-        netmaskbytes = struct.pack("!L",  netmask)
+        netmask = ((1 << self.prefixlen) - 1) << addrbits
+        netmaskbytes = struct.pack("!L", netmask)
         return IPAddr(af=AF_INET, addr=netmaskbytes).__str__()
 
+
 class IPv4Prefix(IPPrefix):
+
     def __init__(self, prefixstr):
         IPPrefix.__init__(self, AF_INET, prefixstr)
 
+
 class IPv6Prefix(IPPrefix):
+
     def __init__(self, prefixstr):
         IPPrefix.__init__(self, AF_INET6, prefixstr)
+
 
 def isIPAddress(af, addrstr):
     try:
@@ -223,8 +237,10 @@ def isIPAddress(af, addrstr):
     except:
         return False
 
+
 def isIPv4Address(addrstr):
     return isIPAddress(AF_INET, addrstr)
+
 
 def isIPv6Address(addrstr):
     return isIPAddress(AF_INET6, addrstr)

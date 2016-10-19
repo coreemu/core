@@ -23,11 +23,13 @@ from emane import Emane, EmaneModel
 try:
     import emaneeventservice
     import emaneeventcommeffect
-except Exception, e:
+except Exception as e:
     pass
 
+
 class EmaneCommEffectModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     # model name
@@ -61,7 +63,7 @@ class EmaneCommEffectModel(EmaneModel):
     _confmatrix = _confmatrix_shim
     # value groupings
     _confgroups = "CommEffect SHIM Parameters:1-%d" \
-            % len(_confmatrix_shim)
+        % len(_confmatrix_shim)
 
     def buildnemxmlfiles(self, e, ifc):
         ''' Build the necessary nem and commeffect XMLs in the given path.
@@ -83,8 +85,8 @@ class EmaneCommEffectModel(EmaneModel):
         shimnames.remove("filterfile")
 
         # append all shim options (except filterfile) to shimdoc
-        map( lambda n: shim.appendChild(e.xmlparam(shimdoc, n, \
-                                       self.valueof(n, values))), shimnames)
+        map(lambda n: shim.appendChild(e.xmlparam(shimdoc, n,
+                                                  self.valueof(n, values))), shimnames)
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
         if ff.strip() != '':
@@ -99,17 +101,18 @@ class EmaneCommEffectModel(EmaneModel):
         nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
         e.xmlwrite(nemdoc, self.nemxmlname(ifc))
 
-    def linkconfig(self, netif, bw = None, delay = None,
-                loss = None, duplicate = None, jitter = None, netif2 = None):
+    def linkconfig(self, netif, bw=None, delay=None,
+                   loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Generate CommEffect events when a Link Message is received having
         link parameters.
         '''
         if self.session.emane.version >= self.session.emane.EMANE091:
-            raise NotImplementedError, \
-                  "CommEffect linkconfig() not implemented for EMANE 0.9.1+"
+            raise NotImplementedError(
+                "CommEffect linkconfig() not implemented for EMANE 0.9.1+")
+
         def z(x):
             ''' Helper to use 0 for None values. '''
-            if type(x) is str:
+            if isinstance(x, str):
                 x = float(x)
             if x is None:
                 return 0
@@ -118,7 +121,7 @@ class EmaneCommEffectModel(EmaneModel):
 
         service = self.session.emane.service
         if service is None:
-            self.session.warn("%s: EMANE event service unavailable" % \
+            self.session.warn("%s: EMANE event service unavailable" %
                               self._name)
             return
         if netif is None or netif2 is None:
@@ -139,6 +142,3 @@ class EmaneCommEffectModel(EmaneModel):
                         emaneeventservice.PLATFORMID_ANY,
                         nemid2, emaneeventservice.COMPONENTID_ANY,
                         event.export())
-
-
-

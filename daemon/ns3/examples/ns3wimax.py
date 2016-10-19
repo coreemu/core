@@ -16,7 +16,12 @@ Current issues:
 - no packets are sent between nodes - no connection?
 '''
 
-import os, sys, time, optparse, datetime, math
+import os
+import sys
+import time
+import optparse
+import datetime
+import math
 try:
     from core import pycore
 except ImportError:
@@ -30,16 +35,17 @@ except ImportError:
     if "/usr/lib64/python2.7/site-packages" in sys.path:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
- 
-from core.misc import ipaddr 
+
+from core.misc import ipaddr
 from corens3.obj import Ns3Session, Ns3WimaxNet
+
 
 def wimaxsession(opt):
     ''' Run a test wimax session.
     '''
     session = Ns3Session(persistent=True, duration=opt.duration)
     wimax = session.addobj(cls=Ns3WimaxNet, name="wlan1")
-    #wimax.wimax.EnableLogComponents()
+    # wimax.wimax.EnableLogComponents()
 
     prefix = ipaddr.IPv4Prefix("10.0.0.0/16")
     # create one classifier for ICMP (protocol 1) traffic
@@ -48,7 +54,7 @@ def wimaxsession(opt):
     classifier = (0, 65000, 0, 65000, 17, 1)
     nodes = []
     for i in xrange(1, opt.numnodes + 1):
-        node = session.addnode(name = "n%d" % i)
+        node = session.addnode(name="n%d" % i)
         if i == 1:
             wimax.setbasestation(node)
         node.newnetif(wimax, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
@@ -58,22 +64,23 @@ def wimaxsession(opt):
     session.setupconstantmobility()
     session.thread = session.run(vis=False)
     return session
-    
+
+
 def main():
     ''' Main routine when running from command-line.
     '''
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 3, duration = 600, verbose = False)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=3, duration=600, verbose=False)
 
-    parser.add_option("-d", "--duration", dest = "duration", type = int,
-                      help = "number of seconds to run the simulation")
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
-    parser.add_option("-v", "--verbose", dest = "verbose",
-                      action = "store_true", help = "be more verbose")
+    parser.add_option("-d", "--duration", dest="duration", type=int,
+                      help="number of seconds to run the simulation")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="store_true", help="be more verbose")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")

@@ -5,14 +5,16 @@
 # List and stop CORE sessions from the command line.
 #
 
-import socket, optparse
+import socket
+import optparse
 from core.constants import *
 from core.api import coreapi
 
+
 def main():
-    parser = optparse.OptionParser(usage = "usage: %prog [-l] <sessionid>")
-    parser.add_option("-l", "--list", dest = "list", action = "store_true",
-                      help = "list running sessions")
+    parser = optparse.OptionParser(usage="usage: %prog [-l] <sessionid>")
+    parser.add_option("-l", "--list", dest="list", action="store_true",
+                      help="list running sessions")
     (options, args) = parser.parse_args()
 
     if options.list is True:
@@ -37,7 +39,7 @@ def main():
             data = sock.recv(msglen)
         msg = coreapi.CoreMessage(msgflags, hdr, data)
         sessions = msg.gettlv(coreapi.CORE_TLV_SESS_NUMBER)
-        print "sessions:",  sessions
+        print "sessions:", sessions
 
     sock.close()
 

@@ -66,6 +66,7 @@ import math
 
 __all__ = ['to_latlon', 'from_latlon']
 
+
 class OutOfRangeError(ValueError):
     pass
 
@@ -105,13 +106,17 @@ def to_latlon(easting, northing, zone_number, zone_letter):
     zone_letter = zone_letter.upper()
 
     if not 100000 <= easting < 1000000:
-        raise OutOfRangeError('easting out of range (must be between 100.000 m and 999.999 m)')
+        raise OutOfRangeError(
+            'easting out of range (must be between 100.000 m and 999.999 m)')
     if not 0 <= northing <= 10000000:
-        raise OutOfRangeError('northing out of range (must be between 0 m and 10.000.000 m)')
+        raise OutOfRangeError(
+            'northing out of range (must be between 0 m and 10.000.000 m)')
     if not 1 <= zone_number <= 60:
-        raise OutOfRangeError('zone number out of range (must be between 1 and 60)')
+        raise OutOfRangeError(
+            'zone number out of range (must be between 1 and 60)')
     if not 'C' <= zone_letter <= 'X' or zone_letter in ['I', 'O']:
-        raise OutOfRangeError('zone letter out of range (must be between C and X)')
+        raise OutOfRangeError(
+            'zone letter out of range (must be between C and X)')
 
     x = easting - 500000
     y = northing
@@ -122,7 +127,20 @@ def to_latlon(easting, northing, zone_number, zone_letter):
     m = y / K0
     mu = m / (R * M1)
 
-    p_rad = (mu + P2 * math.sin(2 * mu) + P3 * math.sin(4 * mu) + P4 * math.sin(6 * mu))
+    p_rad = (
+        mu +
+        P2 *
+        math.sin(
+            2 *
+            mu) +
+        P3 *
+        math.sin(
+            4 *
+            mu) +
+        P4 *
+        math.sin(
+            6 *
+            mu))
 
     p_sin = math.sin(p_rad)
     p_sin2 = p_sin * p_sin
@@ -152,7 +170,7 @@ def to_latlon(easting, northing, zone_number, zone_letter):
     latitude = (p_rad - (p_tan / r) *
                 (d2 / 2 -
                  d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
-                 d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2))
+                d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2))
 
     longitude = (d -
                  d3 / 6 * (1 + 2 * p_tan2 + c) +
@@ -164,9 +182,11 @@ def to_latlon(easting, northing, zone_number, zone_letter):
 
 def from_latlon(latitude, longitude):
     if not -80.0 <= latitude <= 84.0:
-        raise OutOfRangeError('latitude out of range (must be between 80 deg S and 84 deg N)')
+        raise OutOfRangeError(
+            'latitude out of range (must be between 80 deg S and 84 deg N)')
     if not -180.0 <= longitude <= 180.0:
-        raise OutOfRangeError('northing out of range (must be between 180 deg W and 180 deg E)')
+        raise OutOfRangeError(
+            'northing out of range (must be between 180 deg W and 180 deg E)')
 
     lat_rad = math.radians(latitude)
     lat_sin = math.sin(lat_rad)
@@ -244,16 +264,16 @@ def zone_number_to_central_longitude(zone_number):
 
 def haversine(lon1, lat1, lon2, lat2):
     """
-    Calculate the great circle distance between two points 
+    Calculate the great circle distance between two points
     on the earth (specified in decimal degrees)
     """
-    # convert decimal degrees to radians 
+    # convert decimal degrees to radians
     lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
-    # haversine formula 
-    dlon = lon2 - lon1 
-    dlat = lat2 - lat1 
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a)) 
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat / 2)**2 + math.cos(lat1) * \
+        math.cos(lat2) * math.sin(dlon / 2)**2
+    c = 2 * math.asin(math.sqrt(a))
     m = 6367000 * c
-    return m 
-   
+    return m
