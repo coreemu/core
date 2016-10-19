@@ -116,19 +116,7 @@ class TunTap(PyCoreNetIf):
         def nodedevexists():
             cmd = (IP_BIN, 'link', 'show', self.name)
             return self.node.cmd(cmd)
-        count = 0
-        while True:
-            try:
-                self.waitfor(nodedevexists)
-                break
-            except RuntimeError:
-                # check if this is an EMANE interface; if so, continue
-                # waiting if EMANE is still running
-                if count < 5 and isinstance(self.net, EmaneNode) and \
-                   self.node.session.emane.emanerunning(self.node):
-                    count += 1
-                else:
-                    raise
+        self.waitfor(nodedevexists)
 
     def install(self):
         ''' Install this TAP into its namespace. This is not done from the

@@ -50,7 +50,7 @@ class Sdt(object):
         # node information for remote nodes not in session._objs
         # local nodes also appear here since their obj may not exist yet
         self.remotes = {}
-        session.broker.handlers.add(self.handledistributed)
+        session.broker.handlers += (self.handledistributed, )
         
     def is_enabled(self):
         ''' Check for 'enablesdt' session option. Return False by default if

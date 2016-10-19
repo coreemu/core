@@ -67,7 +67,7 @@ class Emane(ConfigurableManager):
         self.logversion()
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None, self.verbose)
-        session.broker.handlers.add(self.handledistributed)
+        session.broker.handlers += (self.handledistributed, )
         self.loadmodels()
         self.service = None
 
@@ -455,11 +455,11 @@ class Emane(ConfigurableManager):
                     servers.append(s)
         self._objslock.release()
 
-        servers.sort(key = lambda x: x.name)
         for server in servers:
-            if server.name == "localhost":
+            if server == "localhost":
                 continue
-            if server.sock is None:
+            (host, port, sock) = self.session.broker.getserver(server)
+            if sock is None:
                 continue
             platformid += 1
             typeflags = coreapi.CONF_TYPE_FLAGS_UPDATE
@@ -467,11 +467,12 @@ class Emane(ConfigurableManager):
             values[names.index("nem_id_start")] = str(nemid)
             msg = EmaneGlobalModel.toconfmsg(flags=0, nodenum=None,
                                              typeflags=typeflags, values=values)
-            server.sock.send(msg)
+            sock.send(msg)
             # increment nemid for next server by number of interfaces
-            with self._ifccountslock:
-                if server in self._ifccounts:
-                    nemid += self._ifccounts[server]
+            self._ifccountslock.acquire()
+            if server in self._ifccounts:
+                nemid += self._ifccounts[server]
+            self._ifccountslock.release()
 
         return False
 
@@ -510,7 +511,7 @@ class Emane(ConfigurableManager):
         session = self.session
         if not session.master:
             return  # slave server
-        servers = session.broker.getservernames()
+        servers = session.broker.getserverlist()
         if len(servers) < 2:
             return  # not distributed
         prefix = session.cfg.get('controlnet')
@@ -1153,22 +1154,6 @@ class Emane(ConfigurableManager):
         self.session.broadcastraw(None, msg)
         self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
         return True
-
-    def emanerunning(self, node):
-        '''\
-        Return True if an EMANE process associated with the given node
-        is running, False otherwise.
-        '''
-        status = -1
-        cmd = ['pkill', '-0', '-x', 'emane']
-        try:
-            if self.version < self.EMANE092:
-                status = subprocess.call(cmd)
-            else:
-                status = node.cmd(cmd, wait=True)
-        except:
-            pass
-        return status == 0
 
 def emane_version():
     'Return the locally installed EMANE version identifier and string.'
