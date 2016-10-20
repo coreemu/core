@@ -15,19 +15,6 @@ import socket
 import optparse
 import os
 
-try:
-    from core.constants import *
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core.constants import *
 from core.api import coreapi
 
 
@@ -167,7 +154,7 @@ def receive_message(sock):
         print "unimplemented CORE message type: %s" % msg.typestr()
         return msg
     if len(data) > msglen + coreapi.CoreMessage.hdrsiz:
-        print "received a message of type %d, dropping %d bytes of extra data" \
+        print "received a message of type %d, dropping %d bytes of extra data"\
             % (msgtype, len(data) - (msglen + coreapi.CoreMessage.hdrsiz))
     return msgcls(msgflags, msghdr, msgdata)
 

@@ -198,7 +198,8 @@ def main():
     usagestr += "services, models, and node types\nin a CORE installation.\n"
     usagestr += "\nExamples:\n  %prog add service newrouting"
     usagestr += "\n  %prog -v check model RfPipe"
-    usagestr += "\n  %prog --userpath=\"$HOME/.core\" add nodetype \"{ftp ftp.gif ftp.gif {DefaultRoute FTP} netns {FTP server} }\" \n"
+    usagestr += "\n  %prog --userpath=\"$HOME/.core\" add nodetype \"{ftp ftp"
+    usagestr += ".gif ftp.gif {DefaultRoute FTP} netns {FTP server} }\" \n"
     usagestr += "\nArguments:\n  <action> should be one of: %s" % \
                 ', '.join(FileUpdater.actions)
     usagestr += "\n  <target> should be one of: %s" % \

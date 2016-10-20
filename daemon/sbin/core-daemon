@@ -9,20 +9,20 @@
 #
 '''
 core-daemon: the CORE daemon is a server process that receives CORE API
-messages and instantiates emulated nodes and networks within the kernel. Various
-message handlers are defined and some support for sending messages.
+messages and instantiates emulated nodes and networks within the kernel.
+Various message handlers are defined and some support for sending messages.
 '''
 
 import os
 import optparse
 import ConfigParser
-import gc
-import shlex
 import socket
-import shutil
 import atexit
 import signal
 import importlib
+import sys
+import threading
+import time
 
 try:
     from core import pycore
@@ -37,8 +37,9 @@ except ImportError:
     if "/usr/lib64/python2.7/site-packages" in sys.path:
         sys.path.append("/usr/local/lib64/python2.7/site-packages")
     from core import pycore
-from core.coreserver import *
-from core.constants import *
+from core.coreserver import CoreServer, CoreAuxServer, CoreUdpServer
+from core.coreserver import CoreDatagramRequestHandler, CoreRequestHandler
+from core.constants import COREDPY_VERSION, CORE_STATE_DIR, CORE_CONF_DIR
 from core.api import coreapi
 from core.misc.utils import daemonize, closeonexec
 
@@ -83,7 +84,8 @@ def startudp(mainserver, server_address):
     connectionless requests.
     '''
     mainserver.udpserver = CoreUdpServer(server_address,
-                                         CoreDatagramRequestHandler, mainserver)
+                                         CoreDatagramRequestHandler,
+                                         mainserver)
     mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start)
     mainserver.udpthread.daemon = True
     mainserver.udpthread.start()
@@ -196,7 +198,7 @@ def logrotate(stdout, stderr, stdoutmode=0o644, stderrmode=0o644):
         if stderr == stdout and not err:
             try:
                 os.dup2(1, 2)
-            except OSError as e:
+            except OSError:
                 pass
         else:
             reopen(2, stderr, stderrmode)
