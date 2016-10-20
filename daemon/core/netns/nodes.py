@@ -14,11 +14,15 @@ import threading
 import subprocess
 from vnode import LxcNode
 from core.misc.utils import check_call, cmdresult, mutecall, maketuple
-from core.constants import BRCTL_BIN, IP_BIN, AF_INET, AF_INET6, TC_BIN
+from core.constants import BRCTL_BIN, IP_BIN, TC_BIN
 from vnet import LxBrNet, GreTapBridge
 from core.misc.ipaddr import IPv4Prefix, isIPv4Address, IPAddr, socket
 from core.api import coreapi
 from core.coreobj import PyCoreNode, PyCoreNetIf, PyCoreObj
+from socket import AF_INET, AF_INET6
+from core.emane.nodes import EmaneNode
+
+__all__ = ['EmaneNode']
 
 
 class CtrlNet(LxBrNet):
