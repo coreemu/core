@@ -1,6 +1,7 @@
-from core.service import CoreService, addservice
 from sys import maxint
 from inspect import isclass
+
+from core.service import CoreService, addservice
 
 class Startup(CoreService):
     'A CORE service to start other services in order, serially'

@@ -8,13 +8,13 @@
 '''
 sdt.py: Scripted Display Tool (SDT3D) helper
 '''
+from urlparse import urlparse
+import socket
 
 from core.constants import *
 from core.api import coreapi
 from core.coreobj import PyCoreNet, PyCoreObj
 from core.netns import nodes
-from urlparse import urlparse
-import socket
 
 class Sdt(object):
     ''' Helper class for exporting session objects to NRL's SDT3D.

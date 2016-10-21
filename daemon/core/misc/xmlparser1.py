@@ -6,10 +6,11 @@
 
 import sys
 import random
+from xml.dom.minidom import parse
+
 from core.netns import nodes
 from core import constants
 from core.misc.ipaddr import MacAddr
-from xml.dom.minidom import parse
 from core.misc.xmlutils import *
 
 class CoreDocumentParser1(object):

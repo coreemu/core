@@ -8,9 +8,10 @@
 
 import os
 import pwd
+from xml.dom.minidom import Document
+
 from core.netns import nodes
 from core.api import coreapi
-from xml.dom.minidom import Document
 from core.misc.xmlutils import *
 
 class CoreDocumentWriter0(Document):

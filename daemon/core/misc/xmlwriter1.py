@@ -11,11 +11,11 @@
 import os
 import pwd
 import collections
+from xml.dom.minidom import Document
+
 from core.netns import nodes
 from core.api import coreapi
 from core.misc.ipaddr import *
-
-from xml.dom.minidom import Document
 from core.misc.xmlutils import *
 from core.misc.xmldeployment import CoreDeploymentWriter
 

@@ -7,6 +7,32 @@
 xen.py: implementation of the XenNode and XenVEth classes that support 
 generating Xen domUs based on an ISO image and persistent configuration area
 '''
+import os
+import time
+import shutil
+import string
+import sys
+import subprocess
+try:
+    import parted
+except ImportError, e:
+    # print "Failed to load parted Python module required by Xen support."
+    # print "Error was:", e
+    raise ImportError
+
+import base64
+import crypt
+try:
+    import fsimage
+except ImportError, e:
+    # fix for fsimage under Ubuntu
+    sys.path.append("/usr/lib/xen-default/lib/python")
+    try:
+        import fsimage
+    except ImportError, e:
+        # print "Failed to load fsimage Python module required by Xen support."
+        # print "Error was:", e
+        raise ImportError
 
 from core.netns.vnet import *
 from core.netns.vnode import LxcNode
@@ -17,35 +43,6 @@ from core.constants import *
 from core.api import coreapi
 from core.netns.vif import TunTap
 from core.emane.nodes import EmaneNode
-
-try:
-    import parted
-except ImportError, e:
-    #print "Failed to load parted Python module required by Xen support."
-    #print "Error was:", e
-    raise ImportError
-
-import base64
-import crypt
-import subprocess
-try:
-    import fsimage
-except ImportError, e:
-    # fix for fsimage under Ubuntu
-    sys.path.append("/usr/lib/xen-default/lib/python")
-    try:
-        import fsimage
-    except ImportError, e:
-        #print "Failed to load fsimage Python module required by Xen support."
-        #print "Error was:", e
-        raise ImportError
-        
-
-
-import os
-import time
-import shutil
-import string
 
 # XXX move these out to config file
 AWK_PATH = "/bin/awk"

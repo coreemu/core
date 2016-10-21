@@ -6,8 +6,9 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 
-from core.netns import nodes
 from xml.dom.minidom import parse
+
+from core.netns import nodes
 from core.misc.xmlutils import *
 
 class CoreDocumentParser0(object):

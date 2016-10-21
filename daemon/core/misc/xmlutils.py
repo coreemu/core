@@ -6,8 +6,10 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 
-from core.netns import nodes
 from xml.dom.minidom import Node
+
+from core.netns import nodes
+
 
 def addelementsfromlist(dom, parent, iterable, name, attr_name):
     ''' XML helper to iterate through a list and add items to parent using tags
