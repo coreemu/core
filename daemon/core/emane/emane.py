@@ -10,20 +10,17 @@ emane.py: definition of an Emane class for implementing configuration
           control of an EMANE emulation.
 '''
 
-import sys
 import os
 import threading
 import subprocess
-import time
-import string
-from xml.dom.minidom import parseString, Document
+from xml.dom.minidom import parseString
 
 from core.constants import *
 from core.api import coreapi
 from core.misc.ipaddr import MacAddr
 from core.misc.utils import maketuplefromstr, cmdresult, closeonexec
 from core.misc.xmlutils import addtextelementsfromtuples, addparamlisttoparent
-from core.conf import ConfigurableManager, Configurable
+from core.conf import ConfigurableManager
 from core.mobility import WirelessModel
 from core.emane.nodes import EmaneNode
 
@@ -39,6 +36,7 @@ try:
     from emanesh.events import LocationEvent
 except Exception, e:
     pass
+
 
 class Emane(ConfigurableManager):
     ''' EMANE controller object. Lives in a Session instance and is used for

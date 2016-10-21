@@ -10,19 +10,13 @@ vnode.py: SimpleJailNode and JailNode classes that implement the FreeBSD
 jail-based virtual node.
 '''
 
-import sys
 import os
-import signal
 import subprocess
 import threading
-import string
-import random
-import time
 
 from core.misc.utils import *
 from core.constants import *
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position
-from core.emane.nodes import EmaneNode
+from core.coreobj import PyCoreNode, PyCoreNetIf
 from core.bsd.netgraph import *
 
 checkexec([IFCONFIG_BIN, VIMAGE_BIN])

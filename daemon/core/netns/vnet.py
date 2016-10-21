@@ -12,15 +12,13 @@ Linux Ethernet bridging and ebtables rules.
 '''
 
 import os
-import sys
 import threading
 import time
-import subprocess
 
 from core.api import coreapi
 from core.misc.utils import *
 from core.constants import *
-from core.coreobj import PyCoreNet, PyCoreObj
+from core.coreobj import PyCoreNet
 from core.netns.vif import VEth, GreTap
 
 checkexec([BRCTL_BIN, IP_BIN, EBTABLES_BIN, TC_BIN])

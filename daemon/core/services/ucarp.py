@@ -1,5 +1,5 @@
 #
-# CORE configuration for UCARP 
+# CORE configuration for UCARP
 # Copyright (c) 2012 Jonathan deBoer
 # See the LICENSE file included in this distribution.
 #
@@ -10,10 +10,7 @@
 ucarp.py: defines high-availability IP address controlled by ucarp
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
 from core.constants import *
 
 

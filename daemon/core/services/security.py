@@ -9,8 +9,6 @@ security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 '''
 
-import os
-
 from core.service import CoreService, addservice
 from core.constants import *
 

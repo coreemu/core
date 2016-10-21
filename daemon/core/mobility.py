@@ -8,10 +8,8 @@
 '''
 mobility.py: mobility helpers for moving nodes and calculating wireless range.
 '''
-import sys
 import os
 import time
-import string
 import math
 import threading
 import heapq

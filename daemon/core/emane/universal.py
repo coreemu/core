@@ -10,15 +10,10 @@ universal.py: EMANE Universal PHY model for CORE. Enumerates configuration items
 used for the Universal PHY.
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
 from core.constants import *
 from core.emane.emane import Emane, EmaneModel
+
 
 class EmaneUniversalModel(EmaneModel):
     ''' This Univeral PHY model is meant to be imported by other models,

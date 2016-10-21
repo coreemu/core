@@ -9,12 +9,6 @@
 ieee80211abg.py: EMANE IEEE 802.11abg model for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
 from core.constants import *
 from core.emane.emane import Emane, EmaneModel

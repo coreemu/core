@@ -11,7 +11,7 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
 '''
 
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+from core.misc.ipaddr import IPv4Prefix
 from core.misc.utils import *
 from core.constants import *
 

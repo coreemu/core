@@ -8,7 +8,6 @@ xen.py: implementation of the XenNode and XenVEth classes that support
 generating Xen domUs based on an ISO image and persistent configuration area
 '''
 import os
-import time
 import shutil
 import string
 import sys
@@ -36,12 +35,11 @@ except ImportError, e:
 
 from core.netns.vnet import *
 from core.netns.vnode import LxcNode
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf
+from core.coreobj import PyCoreNode, PyCoreNetIf
 from core.misc.ipaddr import *
 from core.misc.utils import *
 from core.constants import *
 from core.api import coreapi
-from core.netns.vif import TunTap
 from core.emane.nodes import EmaneNode
 
 # XXX move these out to config file

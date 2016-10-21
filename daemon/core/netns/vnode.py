@@ -13,18 +13,16 @@ virtual node.
 
 import os
 import signal
-import sys
 import subprocess
 import threading
 import string
 import shutil
 import random
-import time
 from core.netns import vnodeclient
 from core.api import coreapi
 from core.misc.utils import *
 from core.constants import *
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position
+from core.coreobj import PyCoreNode, PyCoreNetIf
 from core.netns.vif import VEth, TunTap
 from core.emane.nodes import EmaneNode
 

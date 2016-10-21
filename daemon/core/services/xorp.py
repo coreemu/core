@@ -9,10 +9,7 @@
 xorp.py: defines routing services provided by the XORP routing suite.
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
 from core.constants import *
 
 class XorpRtrmgr(CoreService):

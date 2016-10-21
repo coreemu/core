@@ -11,13 +11,11 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 '''
 
-import sys
 import os.path
 
 from core.api import coreapi
 from core.coreobj import PyCoreNet
 try:
-    from emanesh.events import EventService
     from emanesh.events import LocationEvent
 except Exception, e:
     pass
@@ -30,6 +28,7 @@ except Exception, e:
         Python bindings installed.
     '''
     pass
+
 
 class EmaneNet(PyCoreNet):
     ''' EMANE network base class.

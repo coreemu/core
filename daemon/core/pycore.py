@@ -26,3 +26,5 @@ elif os.uname()[0] == "FreeBSD":
     from core.bsd import nodes
 
 del os
+
+__all__ = ['Session', 'pnodes', 'nodes', 'xen']

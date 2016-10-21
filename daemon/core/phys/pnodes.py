@@ -15,8 +15,7 @@ from core.misc.ipaddr import *
 from core.misc.utils import *
 from core.constants import *
 from core.api import coreapi
-from core.coreobj import PyCoreNode, PyCoreNetIf
-from core.emane.nodes import EmaneNode
+from core.coreobj import PyCoreNode
 if os.uname()[0] == "Linux":
     from core.netns.vnet import LxBrNet
     from core.netns.vif import GreTap
@@ -35,10 +34,10 @@ class PhysicalNode(PyCoreNode):
         self._mounts = []
         if start:
             self.startup()
-        
+
     def boot(self):
         self.session.services.bootnodeservices(self)
-        
+
     def validate(self):
         self.session.services.validatenodeservices(self)
 
@@ -46,8 +45,8 @@ class PhysicalNode(PyCoreNode):
         self.lock.acquire()
         try:
             self.makenodedir()
-            #self.privatedir("/var/run")
-            #self.privatedir("/var/log")
+            # self.privatedir("/var/run")
+            # self.privatedir("/var/log")
         except OSError, e:
             self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                 "PhysicalNode.startup()", e)

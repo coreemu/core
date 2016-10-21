@@ -13,7 +13,6 @@ CoreRequestHandler.handlemsg() loop to determine if messages should be handled
 locally or forwarded on to another emulation server.
 '''
 
-import sys
 import os
 import socket
 import select

@@ -19,14 +19,9 @@ Node-specific config:  XenConfigManager.configs[nodenumber] = (type, values)
    The node having this specific number has this config.
 '''
 
-import sys
 import os
-import threading
-import subprocess
-import time
 import string
 import ConfigParser
-from xml.dom.minidom import parseString, Document
 
 from core.constants import *
 from core.api import coreapi
@@ -39,7 +34,7 @@ class XenConfigManager(ConfigurableManager):
     '''
     _name = "xen"
     _type = coreapi.CORE_TLV_REG_EMULSRV
-    
+
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
         self.verbose = self.session.getcfgitembool('verbose', False)

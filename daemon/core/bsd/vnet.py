@@ -10,14 +10,11 @@ vnet.py: NetgraphNet and NetgraphPipeNet classes that implement virtual networks
 using the FreeBSD Netgraph subsystem.
 '''
 
-import sys
-import threading
-
 from core.misc.utils import *
 from core.constants import *
-from core.coreobj import PyCoreNet, PyCoreObj
+from core.coreobj import PyCoreNet
 from core.bsd.netgraph import *
-from core.bsd.vnode import VEth
+
 
 class NetgraphNet(PyCoreNet):
     ngtype = None
