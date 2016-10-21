@@ -11,17 +11,21 @@ session.py: defines the Session class used by the core-daemon daemon program
 that manages a CORE session.
 '''
 
-import os, sys, tempfile, shutil, shlex, atexit, gc, pwd
-import threading, time, random
+import os
+import sys
+import tempfile
+import shutil
+import shlex
+import atexit
+import gc
+import pwd
+import threading
+import time
+import random
 import traceback
 import subprocess
 
 from core.api import coreapi
-if os.uname()[0] == "Linux":
-    from core.netns import nodes
-    from core.netns.vnet import GreTapBridge
-elif os.uname()[0] == "FreeBSD":
-    from core.bsd import nodes
 from core.emane import emane
 from core.misc.utils import check_call, mutedetach, readfileintodict, \
                             filemunge, filedemunge
@@ -38,6 +42,12 @@ from core.constants import *
 from core.misc.xmlsession import savesessionxml
 
 from core.xen import xenconfig
+
+if os.uname()[0] == "Linux":
+    from core.netns import nodes
+    from core.netns.vnet import GreTapBridge
+elif os.uname()[0] == "FreeBSD":
+    from core.bsd import nodes
 
 class Session(object):
 

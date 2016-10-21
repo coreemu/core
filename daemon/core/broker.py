@@ -13,7 +13,11 @@ CoreRequestHandler.handlemsg() loop to determine if messages should be handled
 locally or forwarded on to another emulation server.
 '''
 
-import os, socket, select, threading, sys
+import sys
+import os
+import socket
+import select
+import threading
 from core.api import coreapi
 from core.coreobj import PyCoreNode, PyCoreNet
 from core.emane.nodes import EmaneNet

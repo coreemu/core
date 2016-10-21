@@ -6,24 +6,25 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-quagga.py: defines routing services provided by Quagga. 
+quagga.py: defines routing services provided by Quagga.
 '''
 
 import os
 
-if os.uname()[0] == "Linux":
-    from core.netns import nodes
-elif os.uname()[0] == "FreeBSD":
-    from core.bsd import nodes
 from core.service import CoreService, addservice
 from core.misc.ipaddr import IPv4Prefix, isIPv4Address, isIPv6Address
 from core.api import coreapi
 from core.constants import *
 
-QUAGGA_USER="root"
-QUAGGA_GROUP="root"
+if os.uname()[0] == "Linux":
+    from core.netns import nodes
+elif os.uname()[0] == "FreeBSD":
+    from core.bsd import nodes
+
+QUAGGA_USER = "root"
+QUAGGA_GROUP = "root"
 if os.uname()[0] == "FreeBSD":
-    QUAGGA_GROUP="wheel"
+    QUAGGA_GROUP = "wheel"
 
 class Zebra(CoreService):
     ''' 
@@ -51,7 +52,7 @@ class Zebra(CoreService):
             return cls.generateVtyshConf(node, services)
         else:
             raise ValueError
-        
+
     @classmethod
     def generateVtyshConf(cls, node, services):
         ''' Returns configuration file text.

@@ -7,7 +7,9 @@
 #
 ''' PhysicalNode class for including real systems in the emulated network.
 '''
-import os, threading, subprocess
+import os
+import threading
+import subprocess
 
 from core.misc.ipaddr import *
 from core.misc.utils import *

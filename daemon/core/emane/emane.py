@@ -10,8 +10,14 @@ emane.py: definition of an Emane class for implementing configuration
           control of an EMANE emulation.
 '''
 
-import sys, os, threading, subprocess, time, string
+import sys
+import os
+import threading
+import subprocess
+import time
+import string
 from xml.dom.minidom import parseString, Document
+
 from core.constants import *
 from core.api import coreapi
 from core.misc.ipaddr import MacAddr

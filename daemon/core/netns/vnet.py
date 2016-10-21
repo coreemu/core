@@ -11,7 +11,11 @@ vnet.py: PyCoreNet and LxBrNet classes that implement virtual networks using
 Linux Ethernet bridging and ebtables rules.
 '''
 
-import os, sys, threading, time, subprocess
+import os
+import sys
+import threading
+import time
+import subprocess
 
 from core.api import coreapi
 from core.misc.utils import *

@@ -12,7 +12,10 @@ The control channel can be accessed via calls to the vcmd Python module or
 by invoking the vcmd shell command.
 '''
 
-import os, stat, sys
+import sys
+import os
+import stat
+
 from core.constants import *
 
 USE_VCMD_MODULE = True

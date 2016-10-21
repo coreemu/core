@@ -4,7 +4,7 @@
 # See the LICENSE file included in this distribution.
 #
 '''
-xen.py: implementation of the XenNode and XenVEth classes that support 
+xen.py: implementation of the XenNode and XenVEth classes that support
 generating Xen domUs based on an ISO image and persistent configuration area
 '''
 import os

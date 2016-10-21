@@ -14,7 +14,9 @@ a list of available services to the GUI and for configuring individual
 services.
 '''
 
-import sys, os, shlex
+import sys
+import os
+import shlex
 
 from itertools import repeat
 from core.api import coreapi

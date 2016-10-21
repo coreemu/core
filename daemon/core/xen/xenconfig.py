@@ -19,9 +19,15 @@ Node-specific config:  XenConfigManager.configs[nodenumber] = (type, values)
    The node having this specific number has this config.
 '''
 
-import sys, os, threading, subprocess, time, string
+import sys
+import os
+import threading
+import subprocess
+import time
+import string
 import ConfigParser
 from xml.dom.minidom import parseString, Document
+
 from core.constants import *
 from core.api import coreapi
 from core.conf import ConfigurableManager, Configurable

@@ -6,12 +6,19 @@
 #
 # authors: Tom Goff <thomas.goff@boeing.com>
 #          Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#          Rod Santiago 
+#          Rod Santiago
 #
 
+import sys
+import os
+import gc
+import shlex
+import shutil
+import threading
+import time
+import traceback
+import SocketServer
 
-import SocketServer, sys, threading, time, traceback
-import os, gc, shlex, shutil
 from core import pycore
 from core.api import coreapi
 from core.misc.utils import hexdump, cmdresult, mutedetach, closeonexec

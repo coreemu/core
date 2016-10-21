@@ -10,7 +10,10 @@
 coreobj.py: defines the basic objects for emulation: the PyCoreObj base class, 
 along with PyCoreNode, PyCoreNet, and PyCoreNetIf
 '''
-import sys, threading, os, shutil
+import sys
+import os
+import threading
+import shutil
 
 from core.api import coreapi
 from core.misc.ipaddr import *

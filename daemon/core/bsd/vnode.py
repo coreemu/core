@@ -3,15 +3,22 @@
 # Copyright (c)2010-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-# authors: core-dev@pf.itd.nrl.navy.mil 
+# authors: core-dev@pf.itd.nrl.navy.mil
 #
 '''
 vnode.py: SimpleJailNode and JailNode classes that implement the FreeBSD
 jail-based virtual node.
 '''
 
-import os, signal, sys, subprocess, threading, string
-import random, time
+import sys
+import os
+import signal
+import subprocess
+import threading
+import string
+import random
+import time
+
 from core.misc.utils import *
 from core.constants import *
 from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position

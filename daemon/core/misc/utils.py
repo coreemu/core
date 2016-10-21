@@ -11,7 +11,9 @@ utils.py: miscellaneous utility functions, wrappers around some subprocess
 procedures.
 '''
 
-import subprocess, os, ast
+import os
+import subprocess
+import ast
 import fcntl
 
 def closeonexec(fd):

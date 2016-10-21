@@ -8,8 +8,14 @@
 '''
 mobility.py: mobility helpers for moving nodes and calculating wireless range.
 '''
-import sys, os, time, string, math, threading
+import sys
+import os
+import time
+import string
+import math
+import threading
 import heapq
+
 from core.api import coreapi
 from core.conf import ConfigurableManager, Configurable
 from core.coreobj import PyCoreNode

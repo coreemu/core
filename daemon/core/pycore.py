@@ -8,12 +8,12 @@ defaults.
 
 import os
 
+from core.session import Session
+from core.phys import pnodes
+
 from core.misc.utils import ensurepath
 ensurepath(["/sbin", "/bin", "/usr/sbin", "/usr/bin"])
 del ensurepath
-
-from core.session import Session
-
 
 if os.uname()[0] == "Linux":
     from core.netns import nodes
@@ -24,5 +24,5 @@ if os.uname()[0] == "Linux":
         pass
 elif os.uname()[0] == "FreeBSD":
     from core.bsd import nodes
-from core.phys import pnodes
+
 del os
