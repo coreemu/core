@@ -11,8 +11,8 @@ nodes.py: definition of an LxcNode and CoreNode classes, and other node classes
 that inherit from the CoreNode, implementing specific node types.
 '''
 
-from vnode import *
-from vnet import *
+from core.netns.vnode import *
+from core.netns.vnet import *
 from core.misc.ipaddr import *
 from core.api import coreapi
 from core.coreobj import PyCoreNode

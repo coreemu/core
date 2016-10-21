@@ -6,22 +6,23 @@ This is a convenience module that imports a set of platform-dependent
 defaults.
 """
 
-from misc.utils import ensurepath
+import os
+
+from core.misc.utils import ensurepath
 ensurepath(["/sbin", "/bin", "/usr/sbin", "/usr/bin"])
 del ensurepath
 
-from session import Session
+from core.session import Session
 
-import os
 
 if os.uname()[0] == "Linux":
-    from netns import nodes
+    from core.netns import nodes
     try:
-        from xen import xen
+        from core.xen import xen
     except ImportError:
-        #print "Xen support disabled."
+        # print "Xen support disabled."
         pass
 elif os.uname()[0] == "FreeBSD":
-    from bsd import nodes
-from phys import pnodes
+    from core.bsd import nodes
+from core.phys import pnodes
 del os

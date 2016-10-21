@@ -16,11 +16,13 @@ from core.api import coreapi
 from core.misc.ipaddr import *
 
 from xml.dom.minidom import Document
-from xmlutils import *
-from xmldeployment import CoreDeploymentWriter
+from core.misc.xmlutils import *
+from core.misc.xmldeployment import CoreDeploymentWriter
+
 
 def enum(**enums):
     return type('Enum', (), enums)
+
 
 class Attrib(object):
     ''' NMF scenario plan attribute constants

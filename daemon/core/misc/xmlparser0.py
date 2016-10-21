@@ -8,7 +8,7 @@
 
 from core.netns import nodes
 from xml.dom.minidom import parse
-from xmlutils import *
+from core.misc.xmlutils import *
 
 class CoreDocumentParser0(object):
     def __init__(self, session, filename, options):

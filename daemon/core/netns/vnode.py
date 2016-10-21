@@ -11,8 +11,16 @@ vnode.py: PyCoreNode and LxcNode classes that implement the network namespace
 virtual node.
 '''
 
-import os, signal, sys, subprocess, vnodeclient, threading, string, shutil
-import random, time
+import os
+import signal
+import sys
+import subprocess
+import threading
+import string
+import shutil
+import random
+import time
+from core.netns import vnodeclient
 from core.api import coreapi
 from core.misc.utils import *
 from core.constants import *

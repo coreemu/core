@@ -11,8 +11,8 @@ nodes.py: definition of CoreNode classes and other node classes that inherit
 from the CoreNode, implementing specific node types.
 '''
 
-from vnode import *
-from vnet import * 
+from core.bsd.vnode import *
+from core.bsd.vnet import * 
 from core.constants import *
 from core.misc.ipaddr import *
 from core.api import coreapi

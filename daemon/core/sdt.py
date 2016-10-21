@@ -11,7 +11,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 from core.constants import *
 from core.api import coreapi
-from coreobj import PyCoreNet, PyCoreObj
+from core.coreobj import PyCoreNet, PyCoreObj
 from core.netns import nodes
 from urlparse import urlparse
 import socket

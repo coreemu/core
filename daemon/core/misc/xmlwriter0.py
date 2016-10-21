@@ -11,7 +11,7 @@ import pwd
 from core.netns import nodes
 from core.api import coreapi
 from xml.dom.minidom import Document
-from xmlutils import *
+from core.misc.xmlutils import *
 
 class CoreDocumentWriter0(Document):
     ''' Utility class for writing a CoreSession to XML. The init method builds

@@ -18,7 +18,7 @@ except:
     pass
 from core.api import coreapi
 from core.constants import *
-from emane import Emane, EmaneModel
+from core.emane.emane import Emane, EmaneModel
 
 class EmaneUniversalModel(EmaneModel):
     ''' This Univeral PHY model is meant to be imported by other models,

@@ -10,7 +10,7 @@ from core.netns import nodes
 from core import constants
 from core.misc.ipaddr import MacAddr
 from xml.dom.minidom import parse
-from xmlutils import *
+from core.misc.xmlutils import *
 
 class CoreDocumentParser1(object):
 

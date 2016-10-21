@@ -11,8 +11,16 @@ vif.py: PyCoreNetIf classes that implement the interfaces available
 under Linux.
 '''
 
-import os, signal, shutil, sys, subprocess, vnodeclient, threading, string
-import random, time
+import os
+import signal
+import shutil
+import sys
+import subprocess
+import threading
+import string
+import random
+import time
+from core.netns import vnodeclient
 from core.api import coreapi
 from core.misc.utils import *
 from core.constants import *

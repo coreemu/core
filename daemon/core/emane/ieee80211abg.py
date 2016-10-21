@@ -17,8 +17,8 @@ except:
     pass
 from core.api import coreapi
 from core.constants import *
-from emane import Emane, EmaneModel
-from universal import EmaneUniversalModel
+from core.emane.emane import Emane, EmaneModel
+from core.emane.universal import EmaneUniversalModel
 
 class EmaneIeee80211abgModel(EmaneModel):
     def __init__(self, session, objid = None, verbose = False):

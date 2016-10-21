@@ -14,7 +14,7 @@ import string
 from core.api import coreapi
 
 from core.constants import *
-from emane import EmaneModel
+from core.emane.emane import EmaneModel
 
 class EmaneBypassModel(EmaneModel):
     def __init__(self, session, objid = None, verbose = False):

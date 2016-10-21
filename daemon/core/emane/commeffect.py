@@ -18,13 +18,14 @@ except:
     pass
 from core.api import coreapi
 from core.constants import *
-from emane import Emane, EmaneModel
+from core.emane.emane import Emane, EmaneModel
 
 try:
     import emaneeventservice
     import emaneeventcommeffect
 except Exception, e:
     pass
+
 
 class EmaneCommEffectModel(EmaneModel):
     def __init__(self, session, objid = None, verbose = False):
