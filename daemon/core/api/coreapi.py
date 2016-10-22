@@ -14,10 +14,91 @@ types and objects used for parsing and building CORE API messages.
 import struct
 from socket import AF_INET, AF_INET6
 
+from core.misc.ipaddr import IPAddr, MacAddr
 from core.api.data import node_tlvs, link_tlvs, exec_tlvs, reg_tlvs
+# Explicitly import constants from core.api.data
 from core.api.data import conf_tlvs, file_tlvs, iface_tlvs, event_tlvs
 from core.api.data import session_tlvs, exception_tlvs
-from core.misc.ipaddr import IPAddr, MacAddr
+from core.api.data import message_types, message_flags
+from core.api.data import node_types, event_types
+# Node TLVS
+from core.api.data import CORE_TLV_NODE_NUMBER, CORE_TLV_NODE_TYPE
+from core.api.data import CORE_TLV_NODE_NAME, CORE_TLV_NODE_IPADDR
+from core.api.data import CORE_TLV_NODE_MACADDR, CORE_TLV_NODE_IP6ADDR
+from core.api.data import CORE_TLV_NODE_MODEL, CORE_TLV_NODE_EMUSRV
+from core.api.data import CORE_TLV_NODE_SESSION, CORE_TLV_NODE_XPOS
+from core.api.data import CORE_TLV_NODE_YPOS, CORE_TLV_NODE_CANVAS
+from core.api.data import CORE_TLV_NODE_EMUID, CORE_TLV_NODE_NETID
+from core.api.data import CORE_TLV_NODE_SERVICES, CORE_TLV_NODE_LAT
+from core.api.data import CORE_TLV_NODE_LONG, CORE_TLV_NODE_ALT
+from core.api.data import CORE_TLV_NODE_ICON, CORE_TLV_NODE_OPAQUE
+# Link TLVS
+from core.api.data import CORE_TLV_LINK_N1NUMBER, CORE_TLV_LINK_N2NUMBER
+from core.api.data import CORE_TLV_LINK_DELAY, CORE_TLV_LINK_BW
+from core.api.data import CORE_TLV_LINK_PER, CORE_TLV_LINK_DUP
+from core.api.data import CORE_TLV_LINK_JITTER, CORE_TLV_LINK_MER
+from core.api.data import CORE_TLV_LINK_BURST, CORE_TLV_LINK_SESSION
+from core.api.data import CORE_TLV_LINK_MBURST, CORE_TLV_LINK_TYPE
+from core.api.data import CORE_TLV_LINK_GUIATTR, CORE_TLV_LINK_UNI
+from core.api.data import CORE_TLV_LINK_EMUID, CORE_TLV_LINK_NETID
+from core.api.data import CORE_TLV_LINK_KEY, CORE_TLV_LINK_IF1NUM
+from core.api.data import CORE_TLV_LINK_IF1IP4, CORE_TLV_LINK_IF1IP4MASK
+from core.api.data import CORE_TLV_LINK_IF1MAC, CORE_TLV_LINK_IF1IP6
+from core.api.data import CORE_TLV_LINK_IF1IP6MASK, CORE_TLV_LINK_IF2NUM
+from core.api.data import CORE_TLV_LINK_IF2IP4, CORE_TLV_LINK_IF2IP4MASK
+from core.api.data import CORE_TLV_LINK_IF2MAC, CORE_TLV_LINK_IF2IP6
+from core.api.data import CORE_TLV_LINK_IF2IP6MASK, CORE_TLV_LINK_IF1NAME
+from core.api.data import CORE_TLV_LINK_IF2NAME, CORE_TLV_LINK_OPAQUE
+# Exec TLVS
+from core.api.data import CORE_TLV_EXEC_NODE, CORE_TLV_EXEC_NUM
+from core.api.data import CORE_TLV_EXEC_TIME, CORE_TLV_EXEC_CMD
+from core.api.data import CORE_TLV_EXEC_RESULT, CORE_TLV_EXEC_STATUS
+from core.api.data import CORE_TLV_EXEC_SESSION, CORE_TLV_REG_WIRELESS
+from core.api.data import CORE_TLV_REG_MOBILITY, CORE_TLV_REG_UTILITY
+from core.api.data import CORE_TLV_REG_EXECSRV, CORE_TLV_REG_GUI
+from core.api.data import CORE_TLV_REG_EMULSRV, CORE_TLV_REG_SESSION
+# Conf TLVS
+from core.api.data import CORE_TLV_CONF_NODE, CORE_TLV_CONF_OBJ
+from core.api.data import CORE_TLV_CONF_TYPE, CORE_TLV_CONF_DATA_TYPES
+from core.api.data import CORE_TLV_CONF_VALUES, CORE_TLV_CONF_CAPTIONS
+from core.api.data import CORE_TLV_CONF_BITMAP, CORE_TLV_CONF_POSSIBLE_VALUES
+from core.api.data import CORE_TLV_CONF_GROUPS, CORE_TLV_CONF_SESSION
+from core.api.data import CORE_TLV_CONF_IFNUM, CORE_TLV_CONF_NETID
+from core.api.data import CORE_TLV_CONF_OPAQUE
+# File TLVS
+from core.api.data import CORE_TLV_FILE_NODE, CORE_TLV_FILE_NAME
+from core.api.data import CORE_TLV_FILE_MODE, CORE_TLV_FILE_NUM
+from core.api.data import CORE_TLV_FILE_TYPE, CORE_TLV_FILE_SRCNAME
+from core.api.data import CORE_TLV_FILE_SESSION, CORE_TLV_FILE_DATA
+from core.api.data import CORE_TLV_FILE_CMPDATA
+# Iface TLVS
+from core.api.data import CORE_TLV_IFACE_NODE, CORE_TLV_IFACE_NUM
+from core.api.data import CORE_TLV_IFACE_NAME, CORE_TLV_IFACE_IPADDR
+from core.api.data import CORE_TLV_IFACE_MASK, CORE_TLV_IFACE_MACADDR
+from core.api.data import CORE_TLV_IFACE_IP6ADDR, CORE_TLV_IFACE_IP6MASK
+from core.api.data import CORE_TLV_IFACE_TYPE, CORE_TLV_IFACE_SESSION
+from core.api.data import CORE_TLV_IFACE_STATE, CORE_TLV_IFACE_EMUID
+from core.api.data import CORE_TLV_IFACE_NETID
+# Event TLVS
+from core.api.data import CORE_TLV_EVENT_NODE, CORE_TLV_EVENT_TYPE
+from core.api.data import CORE_TLV_EVENT_NAME, CORE_TLV_EVENT_DATA
+from core.api.data import CORE_TLV_EVENT_TIME, CORE_TLV_EVENT_SESSION
+# Session TLVS
+from core.api.data import CORE_TLV_SESS_NUMBER, CORE_TLV_SESS_NAME
+from core.api.data import CORE_TLV_SESS_FILE, CORE_TLV_SESS_NODECOUNT
+from core.api.data import CORE_TLV_SESS_DATE, CORE_TLV_SESS_THUMB
+from core.api.data import CORE_TLV_SESS_USER, CORE_TLV_SESS_OPAQUE
+# Exception Levels
+from core.api.data import CORE_TLV_EXCP_NODE, CORE_TLV_EXCP_SESSION
+from core.api.data import CORE_TLV_EXCP_LEVEL, CORE_TLV_EXCP_SOURCE
+from core.api.data import CORE_TLV_EXCP_DATE, CORE_TLV_EXCP_TEXT
+from core.api.data import CORE_TLV_EXCP_OPAQUE
+# msgclsmap
+from core.api.data import CORE_API_NODE_MSG, CORE_API_LINK_MSG
+from core.api.data import CORE_API_EXEC_MSG, CORE_API_REG_MSG
+from core.api.data import CORE_API_CONF_MSG, CORE_API_FILE_MSG
+from core.api.data import CORE_API_IFACE_MSG, CORE_API_EVENT_MSG
+from core.api.data import CORE_API_SESS_MSG, CORE_API_EXCP_MSG
 
 
 class CoreTlvData(object):
@@ -333,7 +414,7 @@ class CoreConfTlv(CoreTlv):
         CORE_TLV_CONF_SESSION: CoreTlvDataString,
         CORE_TLV_CONF_IFNUM: CoreTlvDataUint16,
         CORE_TLV_CONF_NETID: CoreTlvDataUint32,
-        CORE_TLV_CONF_OPAQUE: CoreTlvDataString, 
+        CORE_TLV_CONF_OPAQUE: CoreTlvDataString,
     }
 
 
@@ -571,10 +652,12 @@ class CoreRegMessage(CoreMessage):
     flagmap = message_flags
     tlvcls = CoreRegTlv
 
+
 class CoreConfMessage(CoreMessage):
     msgtype = CORE_API_CONF_MSG
     flagmap = message_flags
     tlvcls = CoreConfTlv
+
 
 class CoreFileMessage(CoreMessage):
     msgtype = CORE_API_FILE_MSG
