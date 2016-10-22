@@ -10,14 +10,15 @@ data.py: constant definitions for the CORE API, enumerating the
 different message and TLV types (these constants are also found in coreapi.h)
 '''
 
+
 def enumdict(d):
     for k, v in d.iteritems():
         exec "%s = %s" % (v, k) in globals()
 
 # Constants
 
-CORE_API_VER		=	"1.23"
-CORE_API_PORT		=	4038
+CORE_API_VER = "1.23"
+CORE_API_PORT = 4038
 
 # Message types
 

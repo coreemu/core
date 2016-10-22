@@ -11,13 +11,12 @@ tdma.py: EMANE TDMA model bindings for CORE
 '''
 
 from core.api import coreapi
-from core.constants import *
 from core.emane.emane import Emane, EmaneModel
 from core.emane.universal import EmaneUniversalModel
 
 
 class EmaneTdmaModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     # model name
@@ -26,7 +25,6 @@ class EmaneTdmaModel(EmaneModel):
         xml_path = '/usr/share/emane/xml/models/mac/tdmaeventscheduler'
     else:
         raise Exception("EMANE TDMA requires EMANE 1.0.1 or greater")
-
 
     # MAC parameters
     _confmatrix_mac = [
@@ -59,7 +57,7 @@ class EmaneTdmaModel(EmaneModel):
     ]
 
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel._confmatrix 
+    _confmatrix_phy = EmaneUniversalModel._confmatrix
 
     _confmatrix = _confmatrix_mac + _confmatrix_phy
 
@@ -106,4 +104,3 @@ class EmaneTdmaModel(EmaneModel):
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
         e.xmlwrite(phydoc, self.phyxmlname(ifc))
-

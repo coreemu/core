@@ -11,10 +11,11 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 from urlparse import urlparse
 import socket
 
-from core.constants import *
+from core.constants import CORE_DATA_DIR, CORE_CONF_DIR
 from core.api import coreapi
 from core.coreobj import PyCoreNet, PyCoreObj
 from core.netns import nodes
+
 
 class Sdt(object):
     ''' Helper class for exporting session objects to NRL's SDT3D.
@@ -39,7 +40,7 @@ class Sdt(object):
         '''
         def __init__(self, **kwds):
             self.__dict__.update(kwds)
-    
+
     def __init__(self, session):
         self.session = session
         self.sock = None
@@ -51,7 +52,7 @@ class Sdt(object):
         # local nodes also appear here since their obj may not exist yet
         self.remotes = {}
         session.broker.handlers.add(self.handledistributed)
-        
+
     def is_enabled(self):
         ''' Check for 'enablesdt' session option. Return False by default if
             the option is missing.
@@ -112,7 +113,7 @@ class Sdt(object):
             if not self.sendobjs():
                 return False
         return True
-    
+
     def initialize(self):
         ''' Load icon sprites, and fly to the reference point location on
             the virtual globe.
@@ -125,7 +126,7 @@ class Sdt(object):
                 return False
         (lat, long) = self.session.location.refgeo[:2]
         return self.cmd('flyto %.6f,%.6f,%d' % (long, lat, self.DEFAULT_ALT))
-    
+
     def disconnect(self):
         try:
             self.sock.close()
@@ -133,14 +134,14 @@ class Sdt(object):
             pass
         self.sock = None
         self.connected = False
-        
+
     def shutdown(self):
         ''' Invoked from Session.shutdown() and Session.checkshutdown().
         '''
         self.cmd('clear all')
         self.disconnect()
         self.showerror = True
-        
+
     def cmd(self, cmdstr):
         ''' Send an SDT command over a UDP socket. socket.sendall() is used
             as opposed to socket.sendto() because an exception is raised when
@@ -160,7 +161,7 @@ class Sdt(object):
             self.sock = None
             self.connected = False
             return False
-        
+
     def updatenode(self, nodenum, flags, x, y, z,
                          name=None, type=None, icon=None):
         ''' Node is updated from a Node Message or mobility script.
@@ -193,7 +194,7 @@ class Sdt(object):
             return
         pos = "pos %.6f,%.6f,%.6f" % (long, lat, alt)
         self.cmd('node %d %s' % (nodenum, pos))
-        
+
     def updatelink(self, node1num, node2num, flags, wireless=False):
         ''' Link is updated from a Link Message or by a wireless model.
         '''
@@ -210,7 +211,7 @@ class Sdt(object):
             else:
                 attr = " line red,2"
             self.cmd('link %s,%s%s' % (node1num, node2num, attr))
-    
+
     def sendobjs(self):
         ''' Session has already started, and the SDT3D GUI later connects.
             Send all node and link objects for display. Otherwise, nodes and
@@ -255,9 +256,9 @@ class Sdt(object):
                 r = self.remotes[n1num]
                 for (n2num, wl) in r.links:
                     self.updatelink(n1num, n2num, coreapi.CORE_API_ADD_FLAG, wl)
-    
+
     def handledistributed(self, msg):
-        ''' Broker handler for processing CORE API messages as they are 
+        ''' Broker handler for processing CORE API messages as they are
             received. This is used to snoop the Node messages and update
             node positions.
         '''
@@ -265,7 +266,7 @@ class Sdt(object):
             return self.handlelinkmsg(msg)
         elif msg.msgtype == coreapi.CORE_API_NODE_MSG:
             return self.handlenodemsg(msg)
-            
+
     def handlenodemsg(self, msg):
         ''' Process a Node Message to add/delete or move a node on
             the SDT display. Node properties are found in session._objs or
@@ -283,7 +284,7 @@ class Sdt(object):
         y = msg.gettlv(coreapi.CORE_TLV_NODE_YPOS)
         z = None
         name = msg.gettlv(coreapi.CORE_TLV_NODE_NAME)
-        
+
         nodetype = msg.gettlv(coreapi.CORE_TLV_NODE_TYPE)
         model = msg.gettlv(coreapi.CORE_TLV_NODE_MODEL)
         icon = msg.gettlv(coreapi.CORE_TLV_NODE_ICON)
@@ -300,7 +301,7 @@ class Sdt(object):
             net = True
         else:
             type = None
-            
+
         try:
             node = self.session.obj(nodenum)
         except KeyError:
@@ -323,7 +324,7 @@ class Sdt(object):
                 self.remotes[nodenum] = remote
             remote.pos = (x, y, z)
             self.updatenode(nodenum, msg.flags, x, y, z, name, type, icon)
-        
+
     def handlelinkmsg(self, msg):
         ''' Process a Link Message to add/remove links on the SDT display.
             Links are recorded in the remotes[nodenum1].links set for updating

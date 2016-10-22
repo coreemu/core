@@ -25,6 +25,7 @@ from core.misc.utils import maketuplefromstr, expandcorepath
 
 servicelist = []
 
+
 def addservice(service):
     global servicelist
     i = 0
@@ -38,6 +39,7 @@ def addservice(service):
             break
         i += 1
     servicelist.insert(i, service)
+
 
 class CoreServices(ConfigurableManager):
     ''' Class for interacting with a list of available startup services for

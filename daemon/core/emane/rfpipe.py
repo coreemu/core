@@ -11,12 +11,12 @@ rfpipe.py: EMANE RF-PIPE model for CORE
 '''
 
 from core.api import coreapi
-from core.constants import *
 from core.emane.emane import Emane, EmaneModel
 from core.emane.universal import EmaneUniversalModel
 
+
 class EmaneRfPipeModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     # model name
@@ -124,4 +124,3 @@ class EmaneRfPipeModel(EmaneModel):
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
         e.xmlwrite(phydoc, self.phyxmlname(ifc))
-

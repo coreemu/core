@@ -10,7 +10,7 @@ xorp.py: defines routing services provided by the XORP routing suite.
 '''
 
 from core.service import CoreService, addservice
-from core.constants import *
+
 
 class XorpRtrmgr(CoreService):
     ''' XORP router manager service builds a config.boot file based on other 
@@ -49,7 +49,7 @@ class XorpRtrmgr(CoreService):
             except ValueError:
                 pass
         return cfg
-    
+
     @staticmethod
     def addrstr(x):
         ''' helper for mapping IP addresses to XORP config statements
@@ -62,7 +62,7 @@ class XorpRtrmgr(CoreService):
         cfg += "\t\tprefix-length: %s\n" % plen
         cfg +="\t    }\n"
         return cfg
-    
+
     @staticmethod
     def lladdrstr(ifc):
         ''' helper for adding link-local address entries (required by OSPFv3)
@@ -71,8 +71,9 @@ class XorpRtrmgr(CoreService):
         cfg += "\t\tprefix-length: 64\n"
         cfg += "\t    }\n"
         return cfg
-            
+
 addservice(XorpRtrmgr)
+
 
 class XorpService(CoreService):
     ''' Parent class for XORP services. Defines properties and methods
@@ -98,14 +99,14 @@ class XorpService(CoreService):
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-    
+
     @staticmethod
     def mfea(forwarding, ifcs):
         ''' Helper to add a multicast forwarding engine entry to the config file.
         '''
         names = []
         for ifc in ifcs:
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             names.append(ifc.name)
         names.append("register_vif")
@@ -122,7 +123,6 @@ class XorpService(CoreService):
         cfg += "}\n"
         return cfg
 
-        
     @staticmethod
     def policyexportconnected():
         ''' Helper to add a policy statement for exporting connected routes.
@@ -143,12 +143,12 @@ class XorpService(CoreService):
         ''' Helper to return the first IPv4 address of a node as its router ID.
         '''
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
-                    return a.split('/')[0]          
-        #raise ValueError,  "no IPv4 address found for router ID"
+                    return a.split('/')[0]
+        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @classmethod
@@ -158,6 +158,7 @@ class XorpService(CoreService):
     @classmethod
     def generatexorpconfig(cls,  node):
         return ""
+
 
 class XorpOspfv2(XorpService):
     ''' The OSPFv2 service provides IPv4 routing for wired networks. It does
@@ -175,7 +176,7 @@ class XorpOspfv2(XorpService):
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
@@ -191,8 +192,9 @@ class XorpOspfv2(XorpService):
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpOspfv2)
+
 
 class XorpOspfv3(XorpService):
     ''' The OSPFv3 service provides IPv6 routing. It does
@@ -210,7 +212,7 @@ class XorpOspfv3(XorpService):
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
@@ -220,15 +222,16 @@ class XorpOspfv3(XorpService):
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpOspfv3)
+
 
 class XorpBgp(XorpService):
     ''' IPv4 inter-domain routing. AS numbers and peers must be customized.
     '''
     _name = "XORP_BGP"
     _custom_needed = True
-    
+
     @classmethod
     def generatexorpconfig(cls, node):
         cfg = "/* This is a sample config that should be customized with\n"
@@ -252,6 +255,7 @@ class XorpBgp(XorpService):
 
 addservice(XorpBgp)
 
+
 class XorpRip(XorpService):
     ''' RIP IPv4 unicast routing.
     '''
@@ -265,7 +269,7 @@ class XorpRip(XorpService):
         cfg += "    rip {\n"
         cfg += "\texport: \"export-connected\"\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -281,8 +285,9 @@ class XorpRip(XorpService):
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpRip)
+
 
 class XorpRipng(XorpService):
     ''' RIP NG IPv6 unicast routing.
@@ -297,7 +302,7 @@ class XorpRipng(XorpService):
         cfg += "    ripng {\n"
         cfg += "\texport: \"export-connected\"\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -312,12 +317,13 @@ class XorpRipng(XorpService):
             cfg += "\t\t    disable: false\n"
             cfg += "\t\t}\n"
             cfg += "\t    }\n"
-            cfg += "\t}\n"            
+            cfg += "\t}\n"
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpRipng)
+
 
 class XorpPimSm4(XorpService):
     ''' PIM Sparse Mode IPv4 multicast routing.
@@ -327,22 +333,22 @@ class XorpPimSm4(XorpService):
     @classmethod
     def generatexorpconfig(cls,  node):
         cfg = cls.mfea("mfea4", node.netifs())
-                
+
         cfg += "\nprotocols {\n"
         cfg += "    igmp {\n"
         names = []
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             names.append(ifc.name)
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
-            cfg += "\t}\n"            
+            cfg += "\t}\n"
         cfg += "    }\n"
         cfg += "}\n"
-        
+
         cfg += "\nprotocols {\n"
         cfg += "    pimsm4 {\n"
 
@@ -365,18 +371,19 @@ class XorpPimSm4(XorpService):
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
-        
+
         cfg += "    }\n"
         cfg += "}\n"
-        
+
         cfg += "\nprotocols {\n"
         cfg += "    fib2mrib {\n"
         cfg += "\tdisable: false\n"
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpPimSm4)
+
 
 class XorpPimSm6(XorpService):
     ''' PIM Sparse Mode IPv6 multicast routing.
@@ -386,25 +393,25 @@ class XorpPimSm6(XorpService):
     @classmethod
     def generatexorpconfig(cls,  node):
         cfg = cls.mfea("mfea6", node.netifs())
-                
+
         cfg += "\nprotocols {\n"
         cfg += "    mld {\n"
         names = []
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             names.append(ifc.name)
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
             cfg += "\t\tdisable: false\n"
             cfg += "\t    }\n"
-            cfg += "\t}\n"            
+            cfg += "\t}\n"
         cfg += "    }\n"
         cfg += "}\n"
-        
+
         cfg += "\nprotocols {\n"
         cfg += "    pimsm6 {\n"
-        
+
         names.append("register_vif")
         for name in names:
             cfg += "\tinterface %s {\n" % name
@@ -424,18 +431,19 @@ class XorpPimSm6(XorpService):
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
-        
+
         cfg += "    }\n"
         cfg += "}\n"
-        
+
         cfg += "\nprotocols {\n"
         cfg += "    fib2mrib {\n"
         cfg += "\tdisable: false\n"
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpPimSm6)
+
 
 class XorpOlsr(XorpService):
     ''' OLSR IPv4 unicast MANET routing.
@@ -450,7 +458,7 @@ class XorpOlsr(XorpService):
         cfg += "    olsr4 {\n"
         cfg += "\tmain-address: %s\n" % rtrid
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -465,5 +473,5 @@ class XorpOlsr(XorpService):
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-        
+
 addservice(XorpOlsr)

@@ -38,7 +38,7 @@ from core.mobility import MobilityManager
 from core.sdt import Sdt
 from core.misc.ipaddr import MacAddr
 from core.misc.event import EventLoop
-from core.constants import *
+from core.constants import CORE_CONF_DIR
 from core.misc.xmlsession import savesessionxml
 
 from core.xen import xenconfig
@@ -49,6 +49,7 @@ if os.uname()[0] == "Linux":
 elif os.uname()[0] == "FreeBSD":
     from core.bsd import nodes
 
+
 class Session(object):
 
     # sessions that get automatically shutdown when the process
@@ -57,8 +58,8 @@ class Session(object):
 
     ''' CORE session manager.
     '''
-    def __init__(self, sessionid = None, cfg = {}, server = None,
-                 persistent = False, mkdir = True):
+    def __init__(self, sessionid=None, cfg={}, server=None,
+                 persistent=False, mkdir=True):
         if sessionid is None:
             # try to keep this short since it's used to construct
             # network interface names
@@ -145,7 +146,7 @@ class Session(object):
             if self.options.preservedir == '1':
                 preserve = True
         if not preserve:
-            shutil.rmtree(self.sessiondir, ignore_errors = True)
+            shutil.rmtree(self.sessiondir, ignore_errors=True)
         if self.server:
             self.server.delsession(self)
         self.delsession(self)
@@ -227,8 +228,8 @@ class Session(object):
             for handler in self._handlers:
                 return handler
 
-    def setstate(self, state, info = False, sendevent = False,
-                 returnevent = False):
+    def setstate(self, state, info=False, sendevent=False,
+                 returnevent=False):
         ''' Set the session state. When info is true, log the state change
             event using the session handler's info method. When sendevent is
             true, generate a CORE API Event Message and send to the connected
@@ -266,7 +267,6 @@ class Session(object):
             # also inform slave servers
             tmp = self.broker.handlerawmsg(msg)
         return replies
-
 
     def getstate(self):
         ''' Retrieve the current state of the session.
@@ -326,13 +326,13 @@ class Session(object):
         state = int(state)
         hook = (filename, data)
         if state not in self._hooks:
-            self._hooks[state] = [hook,]
+            self._hooks[state] = [hook]
         else:
             self._hooks[state].append(hook)
         # immediately run a hook if it is in the current state
         # (this allows hooks in the definition and configuration states)
         if self.getstate() == state:
-            self.runhook(state, hooks = [hook,])
+            self.runhook(state, hooks=[hook])
 
     def delhooks(self):
         ''' Clear the hook scripts dict.
@@ -412,7 +412,7 @@ class Session(object):
             return
         dstfile = os.path.join(self.sessiondir, os.path.basename(thumbfile))
         shutil.move(thumbfile, dstfile)
-        #print "thumbnail: %s -> %s" % (thumbfile, dstfile)
+        # print "thumbnail: %s -> %s" % (thumbfile, dstfile)
         self.thumbnail = dstfile
 
     def setuser(self, user):
