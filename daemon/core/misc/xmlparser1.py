@@ -14,7 +14,7 @@ from core.misc.ipaddr import MacAddr
 from core.misc.xmlutils import getFirstChildByTagName, iterChildrenWithName
 from core.misc.xmlutils import iterChildrenWithAttribute, getChildTextTrim
 from core.misc.xmlutils import getFirstChildTextTrimWithAttribute
-from core.misc.xmlutils import xmltypetonodeclass, 
+from core.misc.xmlutils import xmltypetonodeclass
 from core.misc.xmlutils import getFirstChildTextTrimByTagName
 
 
