@@ -14,7 +14,7 @@ that inherit from the CoreNode, implementing specific node types.
 import threading
 import subprocess
 from socket import AF_INET, AF_INET6
-import socket.inet_pton
+import socket
 
 from core.netns.vnode import LxcNode
 from core.netns.vnet import LxBrNet, GreTapBridge
