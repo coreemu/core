@@ -16,8 +16,13 @@ project site (1) is a good source of introductory information, with a manual,
 screenshots, and demos about this software. Also a supplemental
 Google Code page (2) hosts a wiki, blog, bug tracker, and quickstart guide.
 
-  1. http://www.nrl.navy.mil/itd/ncs/products/core
-  2. http://code.google.com/p/coreemu/
+1. http://www.nrl.navy.mil/itd/ncs/products/core
+
+2. http://code.google.com/p/coreemu/
+
+3. `Official Documentation`_
+
+.. _Official Documentation: http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html
 
 
 Building CORE
