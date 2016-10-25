@@ -35,7 +35,7 @@ class Sdt(object):
                        ('tunnel','tunnel.gif'),
                        ]
 
-    class Bunch:
+    class Bunch(object):
         ''' Helper class for recording a collection of attributes.
         '''
         def __init__(self, **kwds):
