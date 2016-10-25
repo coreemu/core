@@ -34,7 +34,7 @@ except Exception, e:
 try:
     from emanesh.events import EventService
     from emanesh.events import LocationEvent
-except Exception, e:
+except Exception:
     pass
 
 
@@ -352,8 +352,8 @@ class Emane(ConfigurableManager):
                 with open(emane_nems_filename, 'w') as f:
                     for nodename, ifname, nemid in nems:
                         f.write('%s %s %s\n' % (nodename, ifname, nemid))
-            except Exception as e:
-                self.warn('Error writing EMANE NEMs file: %s' % e)
+            except Exception as err:
+                self.warn('Error writing EMANE NEMs file: %s' % err)
         return Emane.SUCCESS
 
     def poststartup(self):
