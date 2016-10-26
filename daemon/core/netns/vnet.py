@@ -151,7 +151,6 @@ class EbtablesQueue(object):
                 check_call(cmd)
             except Exception, e:
                 self.eberror(wlan, "cmd=%s" % cmd, e)
-                pass
         self.cmds = []
         # commit the table file to the kernel
         cmd = self.ebatomiccmd(["--atomic-commit"])

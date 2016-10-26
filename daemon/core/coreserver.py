@@ -1633,7 +1633,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
             except IOError, e:
                 self.warn("IOError in CoreAuxRequestHandler: %s" % e)
                 break;
-        
+
     def finish(self):
         '''
         Disconnect the client
@@ -1642,7 +1642,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
             self.session.disconnect(self)
         return SocketServer.BaseRequestHandler.finish(self)
 
-    ''' 
+    '''
     =======================================================================
     Concrete AuxRequestHandler classes must redefine the following methods
     =======================================================================
@@ -1650,19 +1650,17 @@ class BaseAuxRequestHandler(CoreRequestHandler):
 
 
     def recvmsg(self):
-        ''' 
+        '''
         Receive data from the client in the supported format. Parse, transform to CORE API format and 
         return transformed messages.
 
         EXAMPLE:
         return self.handler.request.recv(siz)
-        
         '''
-        pass
         return None
 
     def dispatchreplies(self, replies, msg):
-        ''' 
+        '''
         Dispatch CORE 'replies' to a previously received message 'msg' from a client.
         Replies passed to this method follow the CORE API. This method allows transformation to
         the form supported by the auxiliary handler and within the context of 'msg'. 
@@ -1684,9 +1682,8 @@ class BaseAuxRequestHandler(CoreRequestHandler):
         '''
         pass
 
-
     def sendall(self, data):
-        ''' 
+        '''
         CORE calls this method when data needs to be asynchronously sent to a client. The data is
         in CORE API format. This method allows transformation to the required format supported by this
         handler prior to transmission. 

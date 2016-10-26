@@ -23,10 +23,9 @@ except Exception, e:
 try:
     import emaneeventservice
     import emaneeventlocation
-except Exception, e:
-    ''' Don't require all CORE users to have EMANE libeventservice and its
-        Python bindings installed.
-    '''
+except Exception as e:
+    # Don't require all CORE users to have EMANE libeventservice and its
+    # Python bindings installed.
     pass
 
 
