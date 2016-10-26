@@ -16,7 +16,7 @@ import threading
 import time
 
 from core.api import coreapi
-from core.misc.utils import checkexec, check_call
+from core.misc.utils import checkexec, check_call, mutecall
 from core.constants import BRCTL_BIN, IP_BIN, EBTABLES_BIN, TC_BIN
 from core.coreobj import PyCoreNet
 from core.netns.vif import VEth, GreTap
@@ -482,7 +482,8 @@ class LxBrNet(PyCoreNet):
             return
         for addr in addrlist:
             try:
-                check_call([IP_BIN, "addr", "add", str(addr), "dev", self.brname])
+                check_call([IP_BIN, "addr", "add",
+                            str(addr), "dev", self.brname])
             except Exception, e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
                                "Error adding IP address: %s" % e)
