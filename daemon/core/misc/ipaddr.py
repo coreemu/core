@@ -184,7 +184,7 @@ class IPPrefix(object):
         if tmp == 0 or \
             tmp > (1 << (self.addrlen - self.prefixlen)) - 1 or \
             (self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
-            raise ValueError, "invalid hostid for prefix %s: %s" % (self, hostid)
+            raise ValueError("invalid hostid for prefix %s: %s" % (self, hostid))
         addr = ""
         prefix_end_point = -1
         for i in xrange(-1, -(self.addrlen >> 3) - 1, -1):

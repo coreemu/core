@@ -99,12 +99,12 @@ class EmaneCommEffectModel(EmaneModel):
         link parameters.
         '''
         if self.session.emane.version >= self.session.emane.EMANE091:
-            raise NotImplementedError, \
-                  "CommEffect linkconfig() not implemented for EMANE 0.9.1+"
+            raise NotImplementedError(
+                "CommEffect linkconfig() not implemented for EMANE 0.9.1+")
 
         def z(x):
             ''' Helper to use 0 for None values. '''
-            if type(x) is str:
+            if isinstance(x, str):
                 x = float(x)
             if x is None:
                 return 0
@@ -113,7 +113,7 @@ class EmaneCommEffectModel(EmaneModel):
 
         service = self.session.emane.service
         if service is None:
-            self.session.warn("%s: EMANE event service unavailable" % \
+            self.session.warn("%s: EMANE event service unavailable" %
                               self._name)
             return
         if netif is None or netif2 is None:

@@ -11,6 +11,7 @@ conf.py: common support for configurable objects
 import string
 from core.api import coreapi
 
+
 class ConfigurableManager(object):
     ''' A generic class for managing Configurables. This class can register
         with a session to receive Config Messages for setting some parameters
@@ -18,36 +19,36 @@ class ConfigurableManager(object):
     '''
     # name corresponds to configuration object field
     _name = ""
-    # type corresponds with register message types 
+    # type corresponds with register message types
     _type = None
-    
+
     def __init__(self, session=None):
         self.session = session
         self.session.addconfobj(self._name, self._type, self.configure)
         # Configurable key=values, indexed by node number
         self.configs = {}
 
-        
     def configure(self, session, msg):
         ''' Handle configure messages. The configuration message sent to a
             ConfigurableManager usually is used to:
             1. Request a list of Configurables (request flag)
             2. Reset manager and clear configs (reset flag)
-            3. Send values that configure the manager or one of its 
+            3. Send values that configure the manager or one of its
                Configurables
-               
+
             Returns any reply messages.
         '''
         objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
         conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
         if conftype == coreapi.CONF_TYPE_FLAGS_REQUEST:
-            return self.configure_request(msg)            
+            return self.configure_request(msg)
         elif conftype == coreapi.CONF_TYPE_FLAGS_RESET:
             if objname == "all" or objname == self._name:
                 return self.configure_reset(msg)
         else:
             return self.configure_values(msg,
-                                    msg.gettlv(coreapi.CORE_TLV_CONF_VALUES))
+                                         msg.gettlv(
+                                            coreapi.CORE_TLV_CONF_VALUES))
 
     def configure_request(self, msg):
         ''' Request configuration data.
@@ -58,12 +59,12 @@ class ConfigurableManager(object):
         ''' By default, resets this manager to clear configs.
         '''
         return self.reset()
-    
+
     def configure_values(self, msg, values):
         ''' Values have been sent to this manager.
         '''
         return None
-        
+
     def configure_values_keyvalues(self, msg, values, target, keys):
         ''' Helper that can be used for configure_values for parsing in
             'key=value' strings from a values field. The key name must be
@@ -83,14 +84,14 @@ class ConfigurableManager(object):
                 key = keys[kvs.index(kv)]
                 value = kv
             if key not in keys:
-                raise ValueError, "invalid key: %s" % key
+                raise ValueError("invalid key: %s" % key)
             if value is not None:
                 setattr(target, key, value)
         return None
 
     def reset(self):
         return None
-        
+
     def setconfig(self, nodenum, conftype, values):
         ''' add configuration values for a node to a dictionary; values are
             usually received from a Configuration Message, and may refer to a
@@ -125,7 +126,7 @@ class ConfigurableManager(object):
                     return (t, v)
         # return default values provided (may be None)
         return (conftype, defaultvalues)
-        
+
     def getallconfigs(self, use_clsmap=True):
         ''' Return (nodenum, conftype, values) tuples for all stored configs.
         Used when reconnecting to a session.
@@ -135,12 +136,12 @@ class ConfigurableManager(object):
             for (t, v) in self.configs[nodenum]:
                 if use_clsmap:
                     t = self._modelclsmap[t]
-                r.append( (nodenum, t, v) )
+                r.append((nodenum, t, v))
         return r
 
     def clearconfig(self, nodenum):
         ''' remove configuration values for the specified node;
-            when nodenum is None, remove all configuration values 
+            when nodenum is None, remove all configuration values
         '''
         if nodenum is None:
             self.configs = {}
@@ -185,7 +186,7 @@ class ConfigurableManager(object):
 
     def info(self, msg):
         self.session.info(msg)
-    
+
     def warn(self, msg):
         self.session.warn(msg)
 
@@ -201,24 +202,24 @@ class Configurable(object):
     _confmatrix = []
     _confgroups = None
     _bitmap = None
-    
+
     def __init__(self, session=None, objid=None):
         self.session = session
         self.objid = objid
-    
+
     def reset(self):
         pass
-    
+
     def register(self):
         pass
-        
+
     @classmethod
     def getdefaultvalues(cls):
-        return tuple( map(lambda x: x[2], cls._confmatrix) )
-    
+        return tuple(map(lambda x: x[2], cls._confmatrix))
+
     @classmethod
     def getnames(cls):
-        return tuple( map( lambda x: x[0], cls._confmatrix) )
+        return tuple(map(lambda x: x[0], cls._confmatrix))
 
     @classmethod
     def configure(cls, mgr, msg):
@@ -228,7 +229,7 @@ class Configurable(object):
         nodenum = msg.gettlv(coreapi.CORE_TLV_CONF_NODE)
         objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
         conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
-        
+
         ifacenum = msg.gettlv(coreapi.CORE_TLV_CONF_IFNUM)
         if ifacenum is not None:
             nodenum = nodenum*1000 + ifacenum
@@ -238,7 +239,7 @@ class Configurable(object):
         if conftype == coreapi.CONF_TYPE_FLAGS_REQUEST:
             if mgr.verbose:
                 mgr.info("replying to configure request for %s model" %
-                           cls._name)
+                         cls._name)
             # when object name is "all", the reply to this request may be None
             # if this node has not been configured for this model; otherwise we
             # reply with the defaults for this model
@@ -334,10 +335,10 @@ class Configurable(object):
             return "on"
         else:
             return "off"
-            
+
     @staticmethod
     def offontobool(value):
-        if type(value) == str:
+        if isinstance(value, str):
             if value.lower() == "on":
                 return 1
             elif value.lower() == "off":
@@ -366,7 +367,7 @@ class Configurable(object):
             if "=" not in v:
                 return False
         return True
-        
+
     def getkeyvaluelist(self):
         ''' Helper to return a list of (key, value) tuples. Keys come from
         self._confmatrix and values are instance attributes.

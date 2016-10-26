@@ -1244,7 +1244,7 @@ class EmaneModel(WirelessModel):
         '''
         if div == 0:
             return "0"
-        if type(value) is not str:
+        if not isinstance(value, str):
             return str(value / div)
         if value.endswith(tuple(cls._prefix.keys())):
             suffix = value[-1]
