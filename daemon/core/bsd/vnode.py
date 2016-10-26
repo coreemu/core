@@ -247,13 +247,13 @@ class SimpleJailNode(PyCoreNode):
     valid_deladdrtype = ("inet", "inet6", "inet6link")
 
     def delalladdr(self, ifindex, addrtypes=valid_deladdrtype):
-        addr = self.getaddr(self.ifname(ifindex), rescan=True)
+        # addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
-                raise ValueError, "addr type must be in: " + \
-                    " ".join(self.valid_deladdrtype)
-            for a in addr[t]:
-                self.deladdr(ifindex, a)
+                raise ValueError("addr type must be in: " +
+                                 " ".join(self.valid_deladdrtype))
+            # for a in addr[t]:
+            #     self.deladdr(ifindex, a)
         # update cached information
         self.getaddr(self.ifname(ifindex), rescan=True)
 
