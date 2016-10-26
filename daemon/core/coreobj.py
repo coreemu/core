@@ -236,13 +236,13 @@ class PyCoreNode(PyCoreObj):
 
     def addnetif(self, netif, ifindex):
         if ifindex in self._netif:
-            raise ValueError, "ifindex %s already exists" % ifindex
+            raise ValueError("ifindex %s already exists" % ifindex)
         self._netif[ifindex] = netif
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         netif = self._netif.pop(ifindex)
         netif.shutdown()
         del netif
@@ -255,12 +255,12 @@ class PyCoreNode(PyCoreObj):
 
     def attachnet(self, ifindex, net):
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif[ifindex].attachnet(net)
 
     def detachnet(self, ifindex):
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif[ifindex].detachnet()
 
     def setposition(self, x=None, y=None, z=None):
@@ -418,7 +418,9 @@ class PyCoreNet(PyCoreObj):
 class PyCoreNetIf(object):
     ''' Base class for interfaces.
     '''
-    def __init__(self, node, name, mtu):
+    def __init__(self, node, name, mtu=None):
+        if mtu is None:
+            raise NotImplementedError()
         self.node = node
         self.name = name
         if not isinstance(mtu, (int, long)):

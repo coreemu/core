@@ -15,8 +15,6 @@ import random
 import socket
 from socket import AF_INET
 from socket import AF_INET6
-# AF_INET = socket.AF_INET
-# AF_INET6 = socket.AF_INET6
 
 
 class MacAddr(object):
@@ -58,7 +56,7 @@ class IPAddr(object):
     def __init__(self, af, addr):
         # check if (af, addr) is valid
         if not socket.inet_ntop(af, addr):
-            raise ValueError, "invalid af/addr"
+            raise ValueError("invalid af/addr")
         self.af = af
         self.addr = addr
 
@@ -117,8 +115,10 @@ class IPAddr(object):
 
 
 class IPPrefix(object):
-    def __init__(self, af, prefixstr):
-        "prefixstr format: address/prefixlen"
+    def __init__(self, af, prefixstr=None):
+        """prefixstr format: address/prefixlen"""
+        if prefixstr is None:
+            raise NotImplementedError()
         tmp = prefixstr.split("/")
         if len(tmp) > 2:
             raise ValueError, "invalid prefix: '%s'" % prefixstr
