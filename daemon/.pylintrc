@@ -71,7 +71,7 @@ disable=all
 
 # import-error -> goes off for emane and docker if not installed
 
-enable=import-self,reimported,relative-import,deprecated-module,misplaced-future,cyclic-import,wrong-import-order,wrong-import-position,ungrouped-imports,multiple-imports,init-import,relative-beyond-top-level,unused-import,wildcard-import,unused-wildcard-import,import-star-module-level,cyclic-import,old-style-class,redefine-in-handler,simplifiable-if-statement,singleton-comparison,too-many-boolean-expressions,unsubscriptable-object 
+enable=import-self,reimported,relative-import,deprecated-module,misplaced-future,cyclic-import,wrong-import-order,wrong-import-position,ungrouped-imports,multiple-imports,init-import,relative-beyond-top-level,unused-import,wildcard-import,unused-wildcard-import,import-star-module-level,cyclic-import,old-style-class,redefine-in-handler,simplifiable-if-statement,singleton-comparison,too-many-boolean-expressions,unsubscriptable-object,used-before-assignment
 
 
 ###########^^^^^^^^^^^^^^^^^^

@@ -410,13 +410,11 @@ class CoreServices(ConfigurableManager):
         else:
             if nodenum is None:
                 return None
+
             n = self.session.obj(nodenum)
-            if n is None:
-                self.session.warn("Request to configure service %s for " \
-                    "unknown node %s" % (svc._name,  nodenum))
-                return None
+
             servicesstring = opaque.split(':')
-            services,unknown = self.servicesfromopaque(opaque, n.objid)
+            services, unknown = self.servicesfromopaque(opaque, n.objid)
             for u in unknown:
                 self.session.warn("Request for unknown service '%s'" % u)
 
@@ -425,9 +423,15 @@ class CoreServices(ConfigurableManager):
             if len(servicesstring) == 3:
                 # a file request: e.g. "service:zebra:quagga.conf"
                 return self.getservicefile(services, n, servicesstring[2])
-            
+
             # the first service in the list is the one being configured
             svc = services[0]
+
+            if n is None:
+                self.session.warn("Request to configure service %s for "
+                                  "unknown node %s" % (svc._name,  nodenum))
+                return None
+
             # send back:
             # dirs, configs, startindex, startup, shutdown, metadata, config
             tf = coreapi.CONF_TYPE_FLAGS_UPDATE
@@ -437,7 +441,7 @@ class CoreServices(ConfigurableManager):
             captions = None
             possiblevals = None
             groups = None
-            
+
         tlvdata = ""
         if nodenum is not None:
             tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_NODE,
@@ -629,7 +633,7 @@ class CoreServices(ConfigurableManager):
                 configtxtlist += None,
         configtxtlist[i] = data
         svc._configtxt = configtxtlist
-    
+
     def handleevent(self, msg):
         ''' Handle an Event Message used to start, stop, restart, or validate
             a service on a given node.
