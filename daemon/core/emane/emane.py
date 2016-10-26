@@ -1127,8 +1127,12 @@ class Emane(ConfigurableManager):
             self.info("location event NEM %s (%s, %s, %s) -> (%s, %s, %s)" \
                       % (nemid, lat, long, alt, x, y, z))
         try:
-            if (x.bit_length() > 16) or (y.bit_length() > 16) or \
-               (z.bit_length() > 16) or (x < 0) or (y < 0) or (z < 0):
+            if any([x.bit_length() > 16,
+                    y.bit_length() > 16,
+                    z.bit_length() > 16,
+                    x < 0,
+                    y < 0,
+                    z < 0]):
                 warntxt = "Unable to build node location message since " \
                           "received lat/long/alt exceeds coordinate " \
                           "space: NEM %s (%d, %d, %d)" % (nemid, x, y, z)
