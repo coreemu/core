@@ -23,9 +23,9 @@ def closeonexec(fd):
 
 
 def checkexec(execlist):
-    for bin in execlist:
-        if which(bin) is None:
-            raise EnvironmentError, "executable not found: %s" % bin
+    for abin in execlist:
+        if which(abin) is None:
+            raise EnvironmentError("executable not found: %s" % abin)
 
 
 def which(program):
@@ -170,11 +170,13 @@ def filedemunge(pathname, header):
     f.close()
     start = None
     end = None
-    for i in range(len(lines)):
-        if lines[i] == "# BEGIN %s\n" % header:
+
+    for i, line in enumerate(lines):
+        if line == "# BEGIN %s\n" % header:
             start = i
-        elif lines[i] == "# END %s\n" % header:
+        elif line == "# END %s\n" % header:
             end = i + 1
+
     if start is None or end is None:
         return
     f = open(pathname, 'w')

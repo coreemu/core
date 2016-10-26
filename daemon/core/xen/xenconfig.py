@@ -89,9 +89,9 @@ class XenConfigManager(ConfigurableManager):
         # populate default config items from config file entries
         vals = list(self.default_config.getdefaultvalues())
         names = self.default_config.getnames()
-        for i in range(len(names)):
-            if names[i] in self.configfile:
-                vals[i] = self.configfile[names[i]]
+        for i, name in enumerate(names):
+            if name in self.configfile:
+                vals[i] = self.configfile[name]
         # this sets XenConfigManager.configs[0] = (type='xen', vals)
         self.setconfig(None, self.default_config._name, vals)
 
