@@ -734,13 +734,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         node2 = None
         net = None
         net2 = None
-        
+
         uni = msg.gettlv(coreapi.CORE_TLV_LINK_UNI)
-        if uni is not None and uni == 1:
-            unidirectional = True
-        else:
-            unidirectional = False
-        
+        unidirectional = bool(uni)
 
         # one of the nodes may exist on a remote server
         if nodenum1 is not None and nodenum2 is not None:
@@ -757,7 +753,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     nodenum1 = None
                 else:
                     nodenum2 = None
-
 
         if nodenum1 is not None:
             try:
