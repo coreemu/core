@@ -123,7 +123,7 @@ class EmaneNode(EmaneNet):
         '''
         ret = {}
         if self.model is None:
-            self.info("warning: EmaneNode %s has no associated model" % \
+            self.info("warning: EmaneNode %s has no associated model" %
                       self.name)
             return ret
         for netif in self.netifs():
@@ -186,10 +186,10 @@ class EmaneNode(EmaneNet):
         if "virtual" in type.lower():
             if os.path.exists("/dev/net/tun_flowctl"):
                 trans.appendChild(emane.xmlparam(transdoc, "devicepath",
-                                  "/dev/net/tun_flowctl"))
+                                                 "/dev/net/tun_flowctl"))
             else:
                 trans.appendChild(emane.xmlparam(transdoc, "devicepath",
-                                  "/dev/net/tun"))
+                                                 "/dev/net/tun"))
             if flowcontrol:
                 trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable",
                                                  "on"))
@@ -207,11 +207,11 @@ class EmaneNode(EmaneNet):
             to bind to the TAPs.
         '''
         if self.session.emane.genlocationevents() and \
-            self.session.emane.service is None:
-            warntxt = "unable to publish EMANE events because the eventservice "
-            warntxt += "Python bindings failed to load"
+                self.session.emane.service is None:
+            warntxt = "unable to publish EMANE events because the "
+            warntxt += "eventservice Python bindings failed to load"
             self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.name,
-                                    self.objid, warntxt)
+                                   self.objid, warntxt)
 
         for netif in self.netifs():
             if do_netns and "virtual" in netif.transport_type.lower():
@@ -251,7 +251,7 @@ class EmaneNode(EmaneNet):
         (lat, long, alt) = self.session.location.getgeo(x, y, z)
         if self.verbose:
             self.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)"
-                      "(%.6f,%.6f,%.6f)" % \
+                      "(%.6f,%.6f,%.6f)" %
                       (ifname, nemid, x, y, z, lat, long, alt))
         if self.session.emane.version >= self.session.emane.EMANE091:
             event = LocationEvent()
@@ -265,11 +265,12 @@ class EmaneNode(EmaneNet):
             self.session.emane.service.publish(0, event)
         else:
             event.set(0, nemid, lat, long, alt)
-            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
-                                           emaneeventservice.PLATFORMID_ANY,
-                                           emaneeventservice.NEMID_ANY,
-                                           emaneeventservice.COMPONENTID_ANY,
-                                           event.export())
+            self.session.emane.service.publish(
+                emaneeventlocation.EVENT_ID,
+                emaneeventservice.PLATFORMID_ANY,
+                emaneeventservice.NEMID_ANY,
+                emaneeventservice.COMPONENTID_ANY,
+                event.export())
 
     def setnempositions(self, moved_netifs):
         ''' Several NEMs have moved, from e.g. a WaypointMobilityModel
@@ -298,7 +299,7 @@ class EmaneNode(EmaneNet):
             (lat, long, alt) = self.session.location.getgeo(x, y, z)
             if self.verbose:
                 self.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)"
-                          "(%.6f,%.6f,%.6f)" % \
+                          "(%.6f,%.6f,%.6f)" %
                           (i, ifname, nemid, x, y, z, lat, long, alt))
             # altitude must be an integer or warning is printed
             alt = int(round(alt))

@@ -48,7 +48,7 @@ class ConfigurableManager(object):
         else:
             return self.configure_values(msg,
                                          msg.gettlv(
-                                            coreapi.CORE_TLV_CONF_VALUES))
+                                             coreapi.CORE_TLV_CONF_VALUES))
 
     def configure_request(self, msg):
         ''' Request configuration data.

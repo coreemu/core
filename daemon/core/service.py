@@ -270,7 +270,7 @@ class CoreServices(ConfigurableManager):
         '''
         if node.verbose:
             node.info("starting service %s (%s)(custom)" %
-                (s._name, s._startindex))
+                      (s._name, s._startindex))
         for d in s._dirs:
             try:
                 node.privatedir(d)
@@ -344,7 +344,7 @@ class CoreServices(ConfigurableManager):
             for cmd in validate_cmds:
                 if node.verbose:
                     node.info("validating service %s using: %s" %
-                        (s._name, cmd))
+                              (s._name, cmd))
                 try:
                     (status, result) = node.cmdresult(shlex.split(cmd))
                     if status != 0:
@@ -467,7 +467,7 @@ class CoreServices(ConfigurableManager):
                                                 groups)
         if sessionnum is not None:
             tlvdata += coreapi.CoreConfTlv.pack(
-                            coreapi.CORE_TLV_CONF_SESSION, sessionnum)
+                coreapi.CORE_TLV_CONF_SESSION, sessionnum)
         if opaque:
             tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_OPAQUE,
                                                 opaque)
