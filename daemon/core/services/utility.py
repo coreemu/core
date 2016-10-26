@@ -47,7 +47,7 @@ class IPForwardService(UtilService):
         elif os.uname()[0] == "FreeBSD":
             return cls.generateconfigbsd(node, filename, services)
         else:
-            raise Exception, "unknown platform"
+            raise Exception("unknown platform")
 
     @classmethod
     def generateconfiglinux(cls, node, filename, services):
@@ -301,7 +301,7 @@ max-lease-time 7200;
 ddns-update-style none;
 """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             cfg += "\n".join(map(cls.subnetentry, ifc.addrlist))
             cfg += "\n"
