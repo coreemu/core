@@ -121,14 +121,14 @@ class IPPrefix(object):
             raise NotImplementedError()
         tmp = prefixstr.split("/")
         if len(tmp) > 2:
-            raise ValueError, "invalid prefix: '%s'" % prefixstr
+            raise ValueError("invalid prefix: '%s'" % prefixstr)
         self.af = af
         if self.af == AF_INET:
             self.addrlen = 32
         elif self.af == AF_INET6:
             self.addrlen = 128
         else:
-            raise ValueError, "invalid address family: '%s'" % self.af
+            raise ValueError("invalid address family: '%s'" % self.af)
         if len(tmp) == 2:
             self.prefixlen = int(tmp[1])
         else:
@@ -138,10 +138,12 @@ class IPPrefix(object):
             addrbits = self.addrlen - self.prefixlen
             netmask = ((1L << self.prefixlen) - 1) << addrbits
             prefix = ""
+            prefix_end_point = -1
             for i in xrange(-1, -(addrbits >> 3) - 2, -1):
                 prefix = chr(ord(self.prefix[i]) & (netmask & 0xff)) + prefix
                 netmask >>= 8
-            self.prefix = self.prefix[:i] + prefix
+                prefix_end_point = i
+            self.prefix = self.prefix[:prefix_end_point] + prefix
 
     def __str__(self):
         return "%s/%s" % (socket.inet_ntop(self.af, self.prefix),
@@ -184,12 +186,14 @@ class IPPrefix(object):
             (self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
             raise ValueError, "invalid hostid for prefix %s: %s" % (self, hostid)
         addr = ""
+        prefix_end_point = -1
         for i in xrange(-1, -(self.addrlen >> 3) - 1, -1):
+            prefix_end_point = i
             addr = chr(ord(self.prefix[i]) | (tmp & 0xff)) + addr
             tmp >>= 8
             if not tmp:
                 break
-        addr = self.prefix[:i] + addr
+        addr = self.prefix[:prefix_end_point] + addr
         return IPAddr(self.af, addr)
 
     def minaddr(self):

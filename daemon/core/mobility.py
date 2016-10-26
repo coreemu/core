@@ -20,13 +20,15 @@ from core.coreobj import PyCoreNode
 from core.misc.utils import check_call
 from core.misc.ipaddr import IPAddr
 
+
 class MobilityManager(ConfigurableManager):
     ''' Member of session class for handling configuration data for mobility and
     range models.
     '''
     _name = "MobilityManager"
     _type = coreapi.CORE_TLV_REG_WIRELESS
-    
+
+
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
         self.verbose = self.session.getcfgitembool('verbose', False)
@@ -46,13 +48,13 @@ class MobilityManager(ConfigurableManager):
         '''
         if nodenums is None:
             nodenums = self.configs.keys()
-            
+
         for nodenum in nodenums:
             try:
                 n = self.session.obj(nodenum)
             except KeyError:
                 self.session.warn("Skipping mobility configuration for unknown"
-                                "node %d." % nodenum)
+                                  "node %d." % nodenum)
                 continue
             if nodenum not in self.configs:
                 self.session.warn("Missing mobility configuration for node "
@@ -229,7 +231,7 @@ class MobilityManager(ConfigurableManager):
             dummy.setposition(nodexpos, nodeypos, None)
         except KeyError:
             pass
-    
+
     def installphysnodes(self, net):
         ''' After installing a mobility model on a net, include any physical
         nodes that we have recorded. Use the GreTap tunnel to the physical node
@@ -247,7 +249,7 @@ class MobilityManager(ConfigurableManager):
                                                   IPAddr.toint(server.host))
             node.addnetif(netif, 0)
             netif.node = node
-            (x,y,z) = netif.node.position.get()
+            (x, y, z) = netif.node.position.get()
             netif.poshook(netif, x, y, z)
 
 

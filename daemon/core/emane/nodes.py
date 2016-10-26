@@ -35,15 +35,16 @@ class EmaneNet(PyCoreNet):
     '''
     apitype = coreapi.CORE_NODE_EMANE
     linktype = coreapi.CORE_LINK_WIRELESS
-    type = "wlan" # icon used
+    type = "wlan"  # icon used
+
 
 class EmaneNode(EmaneNet):
     ''' EMANE node contains NEM configuration and causes connected nodes
         to have TAP interfaces (instead of VEth). These are managed by the
         Emane controller object that exists in a session.
     '''
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                start = True):
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True):
         PyCoreNet.__init__(self, session, objid, name, verbose, start)
         self.verbose = verbose
         self.conf = ""
@@ -52,8 +53,8 @@ class EmaneNode(EmaneNet):
         self.model = None
         self.mobility = None
 
-    def linkconfig(self, netif, bw = None, delay = None,
-                   loss = None, duplicate = None, jitter = None, netif2 = None):
+    def linkconfig(self, netif, bw=None, delay=None,
+                   loss=None, duplicate=None, jitter=None, netif2=None):
         ''' The CommEffect model supports link configuration.
         '''
         if not self.model:

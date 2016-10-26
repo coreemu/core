@@ -30,7 +30,6 @@ Defines server classes and request handlers for TCP and UDP. Also defined here i
 '''
 
 
-
 class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     ''' TCP server class, manages sessions and spawns request handlers for
         incoming connections.
@@ -1495,19 +1494,19 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
         self.debug = bool(server.mainserver.cfg['debug'].lower() == "true")
         SocketServer.BaseRequestHandler.__init__(self, request,
                                                  client_address, server)
-    
+
     def setup(self):
         ''' Client has connected, set up a new connection.
         '''
         if self.verbose:
             self.info("new UDP connection: %s:%s" % self.client_address)
-        
+
     def handle(self):
         msg = self.recvmsg()
-        
+
     def finish(self):
         return SocketServer.BaseRequestHandler.finish(self)
-        
+
     def recvmsg(self):
         ''' Receive data, parse a CoreMessage and queue it onto an existing
         session handler's queue, if available.
