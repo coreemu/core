@@ -47,6 +47,8 @@ class CoreTlvData(object):
 
     @classmethod
     def fromstring(cls, s):
+        """Parses string s to cls.datatype"""
+        # pylint: disable=not-callable
         return cls.datatype(s)
 
 

@@ -503,5 +503,6 @@ class PyCoreNetIf(object):
     def setposition(self, x, y, z):
         ''' Dispatch to any position hook (self.poshook) handler.
         '''
+        # pylint: disable=not-callable
         if self.poshook is not None:
             self.poshook(self, x, y, z)
