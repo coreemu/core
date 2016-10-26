@@ -42,8 +42,6 @@ addservice(VPNClient)
 
 
 class VPNServer(CoreService):
-    '''
-    '''
     _name = "VPNServer"
     _group = "Security"
     _configs = ('vpnserver.sh', )
