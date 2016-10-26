@@ -32,8 +32,7 @@ class Sdt(object):
                        ('prouter', 'router_green.gif'), ('xen', 'xen.gif'),
                        ('hub', 'hub.gif'), ('lanswitch', 'lanswitch.gif'),
                        ('wlan', 'wlan.gif'), ('rj45', 'rj45.gif'),
-                       ('tunnel', 'tunnel.gif'),
-                       ]
+                       ('tunnel', 'tunnel.gif')]
 
     class Bunch(object):
         ''' Helper class for recording a collection of attributes.
@@ -95,7 +94,8 @@ class Sdt(object):
         if self.sock is None:
             try:
                 if (self.protocol.lower() == 'udp'):
-                    self.sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+                    self.sock = socket.socket(
+                        socket.AF_INET, socket.SOCK_DGRAM)
                     self.sock.connect(self.address)
                 else:
                     # Default to tcp
@@ -251,11 +251,13 @@ class Sdt(object):
                         if (n1num == net.objid):
                             continue
                     wl = (link_msg_type == coreapi.CORE_LINK_WIRELESS)
-                    self.updatelink(n1num, n2num, coreapi.CORE_API_ADD_FLAG, wl)
+                    self.updatelink(n1num, n2num,
+                                    coreapi.CORE_API_ADD_FLAG, wl)
             for n1num in sorted(self.remotes.keys()):
                 r = self.remotes[n1num]
                 for (n2num, wl) in r.links:
-                    self.updatelink(n1num, n2num, coreapi.CORE_API_ADD_FLAG, wl)
+                    self.updatelink(n1num, n2num,
+                                    coreapi.CORE_API_ADD_FLAG, wl)
 
     def handledistributed(self, msg):
         ''' Broker handler for processing CORE API messages as they are

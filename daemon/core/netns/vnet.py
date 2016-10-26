@@ -114,9 +114,10 @@ class EbtablesQueue(object):
             self.updatelock.acquire()
             for wlan in self.updates:
                 '''
-                Check if wlan is from a previously closed session. Because of the
-                rate limiting scheme employed here, this may happen if a new session
-                is started soon after closing a previous session.
+                Check if wlan is from a previously closed session.
+                Because of the rate limiting scheme employed here,
+                this may happen if a new session is started soon after
+                closing a previous session.
                 '''
                 try:
                     wlan.session
@@ -180,15 +181,19 @@ class EbtablesQueue(object):
         for (netif1, v) in wlan._linked.items():
             for (netif2, linked) in v.items():
                 if wlan.policy == "DROP" and linked:
-                    self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
-                        "-o", netif2.localname, "-j", "ACCEPT"],
-                        ["-A", wlan.brname, "-o", netif1.localname,
-                        "-i", netif2.localname, "-j", "ACCEPT"]])
+                    self.cmds.extend([["-A", wlan.brname, "-i",
+                                       netif1.localname, "-o",
+                                       netif2.localname, "-j", "ACCEPT"],
+                                      ["-A", wlan.brname, "-o",
+                                       netif1.localname, "-i",
+                                       netif2.localname, "-j", "ACCEPT"]])
                 elif wlan.policy == "ACCEPT" and not linked:
-                    self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
-                        "-o", netif2.localname, "-j", "DROP"],
-                        ["-A", wlan.brname, "-o", netif1.localname,
-                        "-i", netif2.localname, "-j", "DROP"]])
+                    self.cmds.extend([["-A", wlan.brname, "-i",
+                                       netif1.localname, "-o",
+                                       netif2.localname, "-j", "DROP"],
+                                      ["-A", wlan.brname, "-o",
+                                       netif1.localname, "-i",
+                                       netif2.localname, "-j", "DROP"]])
         wlan._linked_lock.release()
 
     def eberror(self, wlan, source, error):
@@ -247,8 +252,9 @@ class LxBrNet(PyCoreNet):
             ebtablescmds(check_call, [
                 [EBTABLES_BIN, "-N", self.brname, "-P", self.policy],
                 [EBTABLES_BIN, "-A", "FORWARD",
-                "--logical-in", self.brname, "-j", self.brname]])
-            # turn off multicast snooping so mcast forwarding occurs w/o IGMP joins
+                 "--logical-in", self.brname, "-j", self.brname]])
+            # turn off multicast snooping so mcast forwarding
+            # occurs w/o IGMP joins
             snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % \
                 self.brname
             if os.path.exists(snoop):
@@ -284,7 +290,7 @@ class LxBrNet(PyCoreNet):
                 check_call([IP_BIN, "link", "set", netif.localname, "up"])
             except Exception, e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
-                               "Error joining interface %s to bridge %s: %s" % \
+                               "Error joining interface %s to bridge %s: %s" %
                                (netif.localname, self.brname, e))
                 return
         PyCoreNet.attach(self, netif)
@@ -295,7 +301,8 @@ class LxBrNet(PyCoreNet):
                 check_call([BRCTL_BIN, "delif", self.brname, netif.localname])
             except Exception, e:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.brname,
-                               "Error removing interface %s from bridge %s: %s" % \
+                               "Error removing interface %s from "
+                               "bridge %s: %s" %
                                (netif.localname, self.brname, e))
                 return
         PyCoreNet.detach(self, netif)
@@ -303,9 +310,9 @@ class LxBrNet(PyCoreNet):
     def linked(self, netif1, netif2):
         # check if the network interfaces are attached to this network
         if self._netif[netif1.netifi] != netif1:
-            raise ValueError, "inconsistency for netif %s" % netif1.name
+            raise ValueError("inconsistency for netif %s" % netif1.name)
         if self._netif[netif2.netifi] != netif2:
-            raise ValueError, "inconsistency for netif %s" % netif2.name
+            raise ValueError("inconsistency for netif %s" % netif2.name)
         try:
             linked = self._linked[netif1][netif2]
         except KeyError:
@@ -314,7 +321,7 @@ class LxBrNet(PyCoreNet):
             elif self.policy == "DROP":
                 linked = False
             else:
-                raise Exception, "unknown policy: %s" % self.policy
+                raise Exception("unknown policy: %s" % self.policy)
             self._linked[netif1][netif2] = linked
         return linked
 
@@ -363,7 +370,7 @@ class LxBrNet(PyCoreNet):
             if bw > 0:
                 if self.up:
                     if (self.verbose):
-                        self.info("linkconfig: %s" % \
+                        self.info("linkconfig: %s" %
                                   ([tc + parent + ["handle", "1:"] + tbf],))
                     check_call(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam('has_tbf', True)
@@ -404,20 +411,21 @@ class LxBrNet(PyCoreNet):
         if duplicate is not None:
             netem += ["duplicate", "%s%%" % min(duplicate, 100)]
         if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
-            # possibly remove netem if it exists and parent queue wasn't removed
+            # possibly remove netem if it exists and
+            # parent queue wasn't removed
             if not netif.getparam('has_netem'):
                 return
             tc[2] = "delete"
             if self.up:
                 if self.verbose:
-                    self.info("linkconfig: %s" % \
+                    self.info("linkconfig: %s" %
                               ([tc + parent + ["handle", "10:"]],))
                 check_call(tc + parent + ["handle", "10:"])
             netif.setparam('has_netem', False)
         elif len(netem) > 1:
             if self.up:
                 if self.verbose:
-                    self.info("linkconfig: %s" % \
+                    self.info("linkconfig: %s" %
                               ([tc + parent + ["handle", "10:"] + netem],))
                 check_call(tc + parent + ["handle", "10:"] + netem)
             netif.setparam('has_netem', True)
@@ -437,11 +445,11 @@ class LxBrNet(PyCoreNet):
             net_objid = '%s' % net.objid
         localname = 'veth%s.%s.%s' % (self_objid, net_objid, sessionid)
         if len(localname) >= 16:
-            raise ValueError, "interface local name '%s' too long" % \
-                localname
+            raise ValueError("interface local name '%s' too long" %
+                             localname)
         name = 'veth%s.%s.%s' % (net_objid, self_objid, sessionid)
         if len(name) >= 16:
-            raise ValueError, "interface name '%s' too long" % name
+            raise ValueError("interface name '%s' too long" % name)
         netif = VEth(node=None, name=name, localname=localname,
                      mtu=1500, net=self, start=self.up)
         self.attach(netif)

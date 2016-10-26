@@ -107,7 +107,7 @@ class PhysicalNode(PyCoreNode):
         ifname = self.ifname(ifindex)
         if self.up:
             (status, result) = self.cmdresult([IP_BIN, "link", "set", "dev",
-                                              ifname, "address", str(addr)])
+                                               ifname, "address", str(addr)])
             if status:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                "PhysicalNode.sethwaddr()",
@@ -118,7 +118,7 @@ class PhysicalNode(PyCoreNode):
         '''
         if self.up:
             self.cmd([IP_BIN, "addr", "add", str(addr),
-                     "dev", self.ifname(ifindex)])
+                      "dev", self.ifname(ifindex)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
@@ -130,7 +130,7 @@ class PhysicalNode(PyCoreNode):
             self.warn("trying to delete unknown address: %s" % addr)
         if self.up:
             self.cmd([IP_BIN, "addr", "del", str(addr),
-                     "dev", self.ifname(ifindex)])
+                      "dev", self.ifname(ifindex)])
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         ''' The broker builds a GreTap tunnel device to this physical node.
@@ -144,7 +144,8 @@ class PhysicalNode(PyCoreNode):
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
             self.cmd([IP_BIN, "link", "set", "dev", netif.localname, "down"])
-            self.cmd([IP_BIN, "link", "set", netif.localname, "name", netif.name])
+            self.cmd([IP_BIN, "link", "set",
+                      netif.localname, "name", netif.name])
         netif.localname = netif.name
         if hwaddr:
             self.sethwaddr(ifindex, hwaddr)
@@ -162,7 +163,7 @@ class PhysicalNode(PyCoreNode):
         elif os.uname()[0] == "FreeBSD":
             netcls = NetgraphNet
         else:
-            raise NotImplementedError, "unsupported platform"
+            raise NotImplementedError("unsupported platform")
         # borrow the tc qdisc commands from LxBrNet.linkconfig()
         tmp = netcls(session=self.session, start=False)
         tmp.up = True
@@ -210,15 +211,16 @@ class PhysicalNode(PyCoreNode):
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError, "path not fully qualified: " + path
+            raise ValueError("path not fully qualified: " + path)
         hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+                                os.path.normpath(path).strip('/').
+                                replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:
             pass
         except Exception, e:
-            raise Exception, e
+            raise Exception(e)
         self.mount(hostpath, path)
 
     def mount(self, source, target):
@@ -244,7 +246,7 @@ class PhysicalNode(PyCoreNode):
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")

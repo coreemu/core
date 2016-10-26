@@ -178,8 +178,8 @@ class Session(object):
             try:
                 self._handlers.remove(handler)
             except KeyError:
-                raise ValueError, \
-                    "Handler %s not associated with this session" % handler
+                raise ValueError(
+                    "Handler %s not associated with this session" % handler)
             num_handlers = len(self._handlers)
         if num_handlers == 0:
             # shut down this session unless we are instantiating, running,
@@ -189,7 +189,8 @@ class Session(object):
                 self.shutdown()
 
     def broadcast(self, src, msg):
-        ''' Send Node and Link CORE API messages to all handlers connected to this session.
+        ''' Send Node and Link CORE API messages to all handlers connected to
+        this session.
         '''
         self._handlerslock.acquire()
         for handler in self._handlers:
@@ -245,9 +246,9 @@ class Session(object):
             statename = coreapi.state_name(state)
             with self._handlerslock:
                 for handler in self._handlers:
-                    handler.info("SESSION %s STATE %d: %s at %s" % \
-                                (self.sessionid, state, statename,
-                                 time.ctime()))
+                    handler.info("SESSION %s STATE %d: %s at %s" %
+                                 (self.sessionid, state, statename,
+                                  time.ctime()))
         self.writestate(state)
         self.runhook(state)
         if sendevent:
@@ -399,7 +400,7 @@ class Session(object):
         if self.user:
             try:
                 readfileintodict(os.path.join('/home', self.user, ".core",
-                                 "environment"), env)
+                                              "environment"), env)
             except IOError:
                 pass
         return env
@@ -425,7 +426,8 @@ class Session(object):
                 gid = os.stat(self.sessiondir).st_gid
                 os.chown(self.sessiondir, uid, gid)
             except Exception, e:
-                self.warn("Failed to set permission on %s: %s" % (self.sessiondir, e))
+                self.warn("Failed to set permission on %s: %s" %
+                          (self.sessiondir, e))
         self.user = user
 
     def objs(self):
@@ -452,7 +454,7 @@ class Session(object):
         if obj.objid in self._objs:
             self._objslock.release()
             obj.shutdown()
-            raise KeyError, "non-unique object id %s for %s" % (obj.objid, obj)
+            raise KeyError("non-unique object id %s for %s" % (obj.objid, obj))
         self._objs[obj.objid] = obj
         self._objslock.release()
         return obj
@@ -461,7 +463,7 @@ class Session(object):
         ''' Get an emulation object.
         '''
         if objid not in self._objs:
-            raise KeyError, "unknown object id %s" % (objid)
+            raise KeyError("unknown object id %s" % (objid))
         return self._objs[objid]
 
     def objbyname(self, name):
@@ -471,7 +473,7 @@ class Session(object):
             for obj in self.objs():
                 if hasattr(obj, "name") and obj.name == name:
                     return obj
-        raise KeyError, "unknown object with name %s" % (name)
+        raise KeyError("unknown object with name %s" % (name))
 
     def delobj(self, objid):
         ''' Remove an emulation object.
@@ -512,7 +514,8 @@ class Session(object):
             with self._objslock:
                 for objid in sorted(self._objs.keys()):
                     o = self._objs[objid]
-                    f.write("%s %s %s %s\n" % (objid, o.name, o.apitype, type(o)))
+                    f.write(
+                        "%s %s %s %s\n" % (objid, o.name, o.apitype, type(o)))
             f.close()
         except Exception, e:
             self.warn("Error writing nodes file: %s" % e)
@@ -520,10 +523,11 @@ class Session(object):
     def addconfobj(self, objname, type, callback):
         ''' Objects can register configuration objects that are included in
             the Register Message and may be configured via the Configure
-            Message. The callback is invoked when receiving a Configure Message.
+            Message. The callback is invoked when receiving a
+            Configure Message.
         '''
         if type not in coreapi.reg_tlvs:
-            raise Exception, "invalid configuration object type"
+            raise Exception("invalid configuration object type")
         self._confobjslock.acquire()
         self._confobjs[objname] = (type, callback)
         self._confobjslock.release()
@@ -550,7 +554,7 @@ class Session(object):
                 replies.append(reply)
             return replies
         else:
-            self.info("session object doesn't own model '%s', ignoring" % \
+            self.info("session object doesn't own model '%s', ignoring" %
                       objname)
         self._confobjslock.release()
         return replies
@@ -582,10 +586,10 @@ class Session(object):
     def dumpsession(self):
         ''' Debug print this session.
         '''
-        self.info("session id=%s name=%s state=%s connected=%s" % \
+        self.info("session id=%s name=%s state=%s connected=%s" %
                   (self.sessionid, self.name, self._state, self.isconnected()))
         num = len(self._objs)
-        self.info("        file=%s thumb=%s nc=%s/%s" % \
+        self.info("        file=%s thumb=%s nc=%s/%s" %
                   (self.filename, self.thumbnail, self.node_count, num))
 
     def exception(self, level, source, objid, text):
@@ -597,7 +601,7 @@ class Session(object):
         for (t, v) in zip(types, vals):
             if v is not None:
                 tlvdata += coreapi.CoreExceptionTlv.pack(
-                                    eval("coreapi.CORE_TLV_EXCP_%s" % t), v)
+                    eval("coreapi.CORE_TLV_EXCP_%s" % t), v)
         msg = coreapi.CoreExceptionMessage.pack(0, tlvdata)
         self.warn("exception: %s (%s) %s" % (source, objid, text))
         # send Exception Message to connected handlers (e.g. GUI)
@@ -640,7 +644,8 @@ class Session(object):
         # controlnet may be needed by some EMANE models
         self.addremovectrlif(node=None, remove=False)
         if self.emane.startup() == self.emane.NOT_READY:
-            return  # instantiate() will be invoked again upon Emane.configure()
+            # instantiate() will be invoked again upon Emane.configure()
+            return
         self.broker.startup()
         self.mobility.startup()
         # boot the services on each node
@@ -651,8 +656,9 @@ class Session(object):
         self.broker.local_instantiation_complete()
         if self.isconnected():
             tlvdata = ''
-            tlvdata += coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
-                                                 coreapi.CORE_EVENT_INSTANTIATION_COMPLETE)
+            tlvdata += coreapi.CoreEventTlv.pack(
+                coreapi.CORE_TLV_EVENT_TYPE,
+                coreapi.CORE_EVENT_INSTANTIATION_COMPLETE)
             msg = coreapi.CoreEventMessage.pack(0, tlvdata)
             self.broadcastraw(None, msg)
         # assume either all nodes have booted already, or there are some
@@ -666,14 +672,16 @@ class Session(object):
         '''
 
         with self._objslock:
-            count = len(filter(lambda(x): \
-                               not isinstance(x, (nodes.PtpNet, nodes.CtrlNet)),
-                               self.objs()))
+            count = len(
+                filter(
+                    lambda(x): not isinstance(x,
+                                              (nodes.PtpNet, nodes.CtrlNet)),
+                    self.objs()))
             # on Linux, GreTapBridges are auto-created, not part of
             # GUI's node count
             if 'GreTapBridge' in globals():
-                count -= len(filter(lambda(x): \
-                                    isinstance(x, GreTapBridge) and not \
+                count -= len(filter(lambda(x):
+                                    isinstance(x, GreTapBridge) and not
                                     isinstance(x, nodes.TunnelNode),
                                     self.objs()))
         return count
@@ -708,7 +716,8 @@ class Session(object):
                     self.services.stopnodeservices(obj)
         self.emane.shutdown()
         self.updatectrlifhosts(remove=True)
-        # Remove all four possible control networks. Does nothing if ctrlnet is not installed.
+        # Remove all four possible control networks.
+        # Does nothing if ctrlnet is not installed.
         self.addremovectrlif(node=None, remove=True)
         self.addremovectrlif(node=None, netidx=1, remove=True)
         self.addremovectrlif(node=None, netidx=2, remove=True)
@@ -726,11 +735,12 @@ class Session(object):
         # can enter SHUTDOWN
         replies = ()
         if self.getcfgitembool('verbose', False):
-            self.info("Session %d shutdown: %d nodes remaining" % \
+            self.info("Session %d shutdown: %d nodes remaining" %
                       (self.sessionid, nc))
         if nc == 0:
             replies = self.setstate(state=coreapi.CORE_EVENT_SHUTDOWN_STATE,
-                                    info=True, sendevent=True, returnevent=True)
+                                    info=True, sendevent=True,
+                                    returnevent=True)
             self.sdt.shutdown()
         return replies
 
@@ -766,8 +776,8 @@ class Session(object):
                                                 nodenum)
             tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_EMUID,
                                                 nodenum)
-            reply = coreapi.CoreNodeMessage.pack(coreapi.CORE_API_ADD_FLAG \
-                                               | coreapi.CORE_API_LOC_FLAG,
+            reply = coreapi.CoreNodeMessage.pack(coreapi.CORE_API_ADD_FLAG
+                                                 | coreapi.CORE_API_LOC_FLAG,
                                                  tlvdata)
             try:
                 handler.sendall(reply)
@@ -906,7 +916,7 @@ class Session(object):
                         prefix = p
                         break
                 if not prefix:
-                    msg = "Control network prefix not found for server '%s'" % \
+                    msg = "Control network prefix not found for server '%s'" %\
                             servers[0]
                     self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                    "Session.addremovectrlnet()", None, msg)
@@ -955,7 +965,8 @@ class Session(object):
         except ValueError:
             msg = "Control interface not added to node %s. " % node.objid
             msg += "Invalid control network prefix (%s). " % ctrlnet.prefix
-            msg += "A longer prefix length may be required for this many nodes."
+            msg += "A longer prefix length may be required"
+            msg += " for this many nodes."
             node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                            "Session.addremovectrlif()", msg)
             return
@@ -1091,7 +1102,7 @@ class Session(object):
             for (filename, data) in self._hooks[state]:
                 flags = coreapi.CORE_API_ADD_FLAG
                 tlvdata = coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_NAME,
-                                                    str(filename))
+                                                   str(filename))
                 tlvdata += coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_TYPE,
                                                     "hook:%s" % state)
                 tlvdata += coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_DATA,
@@ -1100,12 +1111,12 @@ class Session(object):
 
         # send meta data
         tmp = coreapi.CoreConfMessage(flags=0, hdr="", data="")
-        opts = self.options.configure_request(tmp,
-                                    typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
+        opts = self.options.configure_request(
+            tmp, typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
         if opts:
             replies.append(opts)
-        meta = self.metadata.configure_request(tmp,
-                                    typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
+        meta = self.metadata.configure_request(
+            tmp, typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
         if meta:
             replies.append(meta)
 
@@ -1222,13 +1233,14 @@ class SessionMetaData(ConfigurableManager):
             try:
                 (key, value) = kv.split('=', 1)
             except ValueError:
-                raise ValueError, "invalid key in metdata: %s" % kv
+                raise ValueError("invalid key in metdata: %s" % kv)
             self.additem(key, value)
         return None
 
     def configure_request(self, msg, typeflags=coreapi.CONF_TYPE_FLAGS_NONE):
         nodenum = msg.gettlv(coreapi.CORE_TLV_CONF_NODE)
-        values_str = "|".join(map(lambda(k, v): "%s=%s" % (k, v), self.items()))
+        values_str = "|".join(
+            map(lambda(k, v): "%s=%s" % (k, v), self.items()))
         return self.toconfmsg(0, nodenum, typeflags, values_str)
 
     def toconfmsg(self, flags, nodenum, typeflags, values_str):

@@ -7,14 +7,15 @@
 #
 '''
 location.py: definition of CoreLocation class that is a member of the
-Session object. Provides conversions between Cartesian and geographic coordinate
-systems. Depends on utm contributed module, from
+Session object. Provides conversions between Cartesian and geographic
+coordinate systems. Depends on utm contributed module, from
 https://pypi.python.org/pypi/utm (version 0.3.0).
 '''
 
 from core.conf import ConfigurableManager
 from core.api import coreapi
 from core.misc import utm
+
 
 class CoreLocation(ConfigurableManager):
     ''' Member of session class for handling global location data. This keeps
@@ -63,9 +64,10 @@ class CoreLocation(ConfigurableManager):
         self.setrefgeo(lat, long, alt)
         self.refscale = float(values[5])
         self.session.info("location configured: (%.2f,%.2f,%.2f) = "
-            "(%.5f,%.5f,%.5f) scale=%.2f" %
-            (self.refxyz[0], self.refxyz[1], self.refxyz[2], self.refgeo[0],
-             self.refgeo[1], self.refgeo[2], self.refscale))
+                          "(%.5f,%.5f,%.5f) scale=%.2f" %
+                          (self.refxyz[0], self.refxyz[1],
+                           self.refxyz[2], self.refgeo[0],
+                           self.refgeo[1], self.refgeo[2], self.refscale))
         self.session.info("location configured: UTM(%.5f,%.5f,%.5f)" %
                           (self.refutm[1], self.refutm[2], self.refutm[3]))
 
@@ -169,7 +171,8 @@ class CoreLocation(ConfigurableManager):
 
         (rlat, rlon, ralt) = self.refgeo
         lon2 = rlon + 6*(zonen - rzonen)  # ea. zone is 6deg band
-        (e2, n2, zonen2, zonel2) = utm.from_latlon(rlat, lon2)  # ignore northing
+        # ignore northing
+        (e2, n2, zonen2, zonel2) = utm.from_latlon(rlat, lon2)
         # NOTE: great circle distance used here, not reference ellipsoid!
         xshift = utm.haversine(rlon, rlat, lon2, rlat) - e2
         # cache the return value
@@ -183,8 +186,8 @@ class CoreLocation(ConfigurableManager):
         ''' If the lat, lon coordinates being converted are located in a
         different UTM zone than the canvas reference point, the UTM meters
         may need to be shifted.
-        This picks a reference point in the same latitude band (UTM zone letter)
-        as the provided zone, to calculate the shift in meters for the
+        This picks a reference point in the same latitude band (UTM zone
+        letter) as the provided zone, to calculate the shift in meters for the
         y coordinate.
         '''
         rzonel = self.refutm[0][1]

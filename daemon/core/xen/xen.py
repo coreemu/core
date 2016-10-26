@@ -98,7 +98,7 @@ class XenNode(PyCoreNode):
     ])
 
     FilesRedirection = {
-        'ipforward.sh' : '/core-tmp/ipforward.sh',
+        'ipforward.sh': '/core-tmp/ipforward.sh',
     }
 
     CmdsToIgnore = frozenset([
@@ -125,23 +125,37 @@ class XenNode(PyCoreNode):
         sysctlFile.close()
 
     def RedirCmd_zebra(self):
-        check_call([SED_PATH, '-i', '-e', 's/^zebra=no/zebra=yes/',
-                   os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+        check_call([SED_PATH,
+                    '-i',
+                    '-e',
+                    's/^zebra=no/zebra=yes/',
+                    os.path.join(self.mountdir,
+                                 self.etcdir,
+                                 'quagga/daemons')])
 
     def RedirCmd_ospfd(self):
-        check_call([SED_PATH, '-i', '-e', 's/^ospfd=no/ospfd=yes/',
-                   os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+        check_call([SED_PATH,
+                    '-i',
+                    '-e',
+                    's/^ospfd=no/ospfd=yes/',
+                    os.path.join(self.mountdir,
+                                 self.etcdir,
+                                 'quagga/daemons')])
 
     def RedirCmd_ospf6d(self):
-        check_call([SED_PATH, '-i', '-e',
-                   's/^ospf6d=no/ospf6d=yes/',
-                    os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+        check_call([SED_PATH,
+                    '-i',
+                    '-e',
+                    's/^ospf6d=no/ospf6d=yes/',
+                    os.path.join(self.mountdir,
+                                 self.etcdir,
+                                 'quagga/daemons')])
 
     CmdsRedirection = {
-        'sh ipforward.sh' : RedirCmd_ipforward,
-        'sh quaggaboot.sh zebra' : RedirCmd_zebra,
-        'sh quaggaboot.sh ospfd' : RedirCmd_ospfd,
-        'sh quaggaboot.sh ospf6d' : RedirCmd_ospf6d,
+        'sh ipforward.sh': RedirCmd_ipforward,
+        'sh quaggaboot.sh zebra': RedirCmd_zebra,
+        'sh quaggaboot.sh ospfd': RedirCmd_ospfd,
+        'sh quaggaboot.sh ospf6d': RedirCmd_ospf6d,
     }
 
     # CoreNode: no __init__, take from LxcNode & SimpleLxcNode
@@ -389,8 +403,12 @@ class XenNode(PyCoreNode):
             except IOError, e:
                 self.warn("Failed to open tar file: %s (%s)" % (tarname, e))
                 return
-        p = subprocess.Popen([TAR_PATH, '-C', self.mountdir, '--numeric-owner',
-                             '-xf', '-'], stdin=subprocess.PIPE)
+        p = subprocess.Popen([TAR_PATH,
+                              '-C',
+                              self.mountdir,
+                              '--numeric-owner',
+                              '-xf', '-'],
+                             stdin=subprocess.PIPE)
         p.communicate(input=tardata)
         p.wait()
 
@@ -400,7 +418,7 @@ class XenNode(PyCoreNode):
         '''
         saltedpw = crypt.crypt(pw, '$6$'+base64.b64encode(os.urandom(12)))
         check_call([SED_PATH, '-i', '-e',
-                   '/^root:/s_^root:\([^:]*\):_root:' + saltedpw + ':_',
+                    '/^root:/s_^root:\([^:]*\):_root:' + saltedpw + ':_',
                     os.path.join(self.mountdir, self.etcdir, 'shadow')])
 
     def sethostname(self, old, new):
@@ -408,9 +426,9 @@ class XenNode(PyCoreNode):
             reside on the filesystem mounted in the temporary area.
         '''
         check_call([SED_PATH, '-i', '-e', 's/%s/%s/' % (old, new),
-                   os.path.join(self.mountdir, self.etcdir, 'hostname')])
+                    os.path.join(self.mountdir, self.etcdir, 'hostname')])
         check_call([SED_PATH, '-i', '-e', 's/%s/%s/' % (old, new),
-                   os.path.join(self.mountdir, self.etcdir, 'hosts')])
+                    os.path.join(self.mountdir, self.etcdir, 'hosts')])
 
     def setupssh(self, keypath):
         ''' Configure SSH access by installing host keys and a system-wide
@@ -418,12 +436,12 @@ class XenNode(PyCoreNode):
         '''
         sshdcfg = os.path.join(self.mountdir, self.etcdir, 'ssh/sshd_config')
         check_call([SED_PATH, '-i', '-e',
-                   's/PermitRootLogin no/PermitRootLogin yes/', sshdcfg])
+                    's/PermitRootLogin no/PermitRootLogin yes/', sshdcfg])
         sshdir = os.path.join(self.getconfigitem('mount_path'), self.etcdir,
                               'ssh')
         sshdir = sshdir.replace('/', '\\/')  # backslash slashes for use in sed
         check_call([SED_PATH, '-i', '-e',
-                   's/#AuthorizedKeysFile        %h\/.ssh\/authorized_keys/' +
+                    's/#AuthorizedKeysFile        %h\/.ssh\/authorized_keys/' +
                     'AuthorizedKeysFile ' + sshdir + '\/authorized_keys/',
                     sshdcfg])
         for f in ('ssh_host_rsa_key', 'ssh_host_rsa_key.pub',
@@ -518,7 +536,8 @@ class XenNode(PyCoreNode):
     def cmd(self, args, wait=True):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
-            # self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
+            # self.warn("XEN PVM cmd(args=[%s]) called and ignored"
+            # % cmdAsString)
             return 0
         if cmdAsString in self.CmdsRedirection:
             self.CmdsRedirection[cmdAsString](self)
@@ -531,7 +550,8 @@ class XenNode(PyCoreNode):
     def cmdresult(self, args):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
-            # self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
+            # self.warn("XEN PVM cmd(args=[%s]) called and ignored"
+            # % cmdAsString)
             return (0, "")
         self.warn(
             "XEN PVM cmdresult(args=[%s]) called, but not yet implemented" %
@@ -814,6 +834,7 @@ class XenNode(PyCoreNode):
 
             fout = self.openpausednodefile(filename, "w")
             fout.write(contents)
+            # Where is mode coming from? It is undefined
             os.chmod(fout.name, mode)
             fout.close()
             self.info("created nodefile: '%s'; mode: 0%o" % (fout.name, mode))

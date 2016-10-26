@@ -67,6 +67,7 @@ interface $interface
             elif x.find(":") >= 0:
                 return "ipv6 address %s" % x
             else:
+                # What is Value? It is undefined
                 raise Value, "invalid address: %s", x
         addr = "\n  ".join(map(addrstr, netif.addrlist))
 
@@ -95,7 +96,7 @@ router ospf6
         ospf6ifs = maketuple(ospf6ifs)
         interfaces = "\n!\n".join(map(str, ospf6ifs))
         ospfifs = "\n  ".join(map(lambda x: "interface %s area %s" %
-                              (x.name(), area), ospf6ifs))
+                                  (x.name(), area), ospf6ifs))
         Conf.__init__(self, interfaces=interfaces, routerid=routerid,
                       ospfifs=ospfifs, redistribute=redistribute)
 
