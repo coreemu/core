@@ -29,7 +29,7 @@ class CoreDocumentParser0(object):
 
         self.np = getoneelement(self.dom, "NetworkPlan")
         if self.np is None:
-            raise ValueError, "missing NetworkPlan!"
+            raise ValueError("missing NetworkPlan!")
         self.mp = getoneelement(self.dom, "MotionPlan")
         self.sp = getoneelement(self.dom, "ServicePlan")
         self.meta = getoneelement(self.dom, "CoreMetaData")
@@ -80,7 +80,7 @@ class CoreDocumentParser0(object):
 
     @staticmethod
     def getcommonattributes(obj):
-        ''' Helper to return tuple of attributes common to nodes and nets. 
+        ''' Helper to return tuple of attributes common to nodes and nets.
         '''
         id = int(obj.getAttribute("id"))
         name = str(obj.getAttribute("name"))

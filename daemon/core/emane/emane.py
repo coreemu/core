@@ -238,9 +238,9 @@ class Emane(ConfigurableManager):
             # don't use default values when interface config is the same as net
             # note here that using ifc.node.objid as key allows for only one type
             # of each model per node; TODO: use both node and interface as key
-            
+
             # Adamson change: first check for iface config keyed by "node:ifc.name"
-            # (so that nodes w/ multiple interfaces of same conftype can have 
+            # (so that nodes w/ multiple interfaces of same conftype can have
             #  different configs for each separate interface)
             key = 1000*ifc.node.objid + ifc.netindex
             values = self.getconfig(key, conftype, None)[1]
@@ -907,7 +907,7 @@ class Emane(ConfigurableManager):
                 self.info("adding event service device ctrl%d" % eventservicenetidx)
                 self.session.addremovectrlif(node, eventservicenetidx, remove=False, conf_reqd=False)
 
-            # multicast route is needed for OTA data 
+            # multicast route is needed for OTA data
             cmd = [IP_BIN, "route", "add", otagroup, "dev", otadev]
             # rc = node.cmd(cmd, wait=True)
             node.cmd(cmd, wait=True)

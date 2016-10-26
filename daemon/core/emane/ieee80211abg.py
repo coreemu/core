@@ -54,7 +54,7 @@ class EmaneIeee80211abgModel(EmaneModel):
     # mac parameters introduced in EMANE 0.8.1
     # Note: The entry format for category queue parameters (queuesize, aifs, etc) were changed in
     # EMANE 9.x, but are being preserved for the time being due to space constraints in the
-    # CORE GUI. A conversion function (get9xmacparamequivalent) has been defined to support this. 
+    # CORE GUI. A conversion function (get9xmacparamequivalent) has been defined to support this.
     _confmatrix_mac_extended = [
         ("wmmenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'On,Off', 'WiFi Multimedia (WMM)'),
@@ -145,7 +145,7 @@ class EmaneIeee80211abgModel(EmaneModel):
     #
     def get9xmacparamequivalent(self, macname, values):
         ''' Generate a list of 80211abg mac parameters in 0.9.x layout for a given mac parameter
-        in 8.x layout.For mac category parameters, the list returned will contain the four 
+        in 8.x layout.For mac category parameters, the list returned will contain the four
         equivalent 9.x parameter and value pairs. Otherwise, the list returned will only
         contain a single name and value pair.
         '''

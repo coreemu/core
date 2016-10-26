@@ -14,8 +14,6 @@ from core.constants import CORE_DATA_DIR
 
 
 class VPNClient(CoreService):
-    ''' 
-    '''
     _name = "VPNClient"
     _group = "Security"
     _configs = ('vpnclient.sh', )
@@ -27,7 +25,7 @@ class VPNClient(CoreService):
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Return the client.conf and vpnclient.sh file contents to
+        '''Return the client.conf and vpnclient.sh file contents to
         '''
         cfg = "#!/bin/sh\n"
         cfg += "# custom VPN Client configuration for service (security.py)\n"
@@ -44,7 +42,7 @@ addservice(VPNClient)
 
 
 class VPNServer(CoreService):
-    ''' 
+    '''
     '''
     _name = "VPNServer"
     _group = "Security"
@@ -57,7 +55,7 @@ class VPNServer(CoreService):
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Return the sample server.conf and vpnserver.sh file contents to
+        '''Return the sample server.conf and vpnserver.sh file contents to
             GUI for user customization.
         '''
         cfg = "#!/bin/sh\n"
@@ -74,8 +72,6 @@ addservice(VPNServer)
 
 
 class IPsec(CoreService):
-    '''
-    '''
     _name = "IPsec"
     _group = "Security"
     _configs = ('ipsec.sh', )
@@ -104,8 +100,6 @@ addservice(IPsec)
 
 
 class Firewall(CoreService):
-    ''' 
-    '''
     _name = "Firewall"
     _group = "Security"
     _configs = ('firewall.sh', )

@@ -42,7 +42,7 @@ class EmaneTdmaModel(EmaneModel):
          '', 'neighbor RF reception timeout for removal from neighbor table (sec)'),
         ('neighbormetricupdateinterval', coreapi.CONF_DATA_TYPE_FLOAT, '1.0',
          '', 'neighbor table update interval (sec)'),
-        ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING, '%s/tdmabasemodelpcr.xml' % xml_path, 
+        ("pcrcurveuri", coreapi.CONF_DATA_TYPE_STRING, '%s/tdmabasemodelpcr.xml' % xml_path,
          '', 'SINR/PCR curve file'),
         ("queue.aggregationenable", coreapi.CONF_DATA_TYPE_BOOL, '1',
          'On,Off', 'enable transmit packet aggregation'),

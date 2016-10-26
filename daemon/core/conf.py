@@ -295,7 +295,7 @@ class Configurable(object):
             be passed in.
         '''
         keys = cls.getnames()
-        keyvalues = map(lambda a,b: "%s=%s" % (a,b), keys, values)
+        keyvalues = map(lambda a, b: "%s=%s" % (a, b), keys, values)
         values_str = string.join(keyvalues, '|')
         tlvdata = ""
         if nodenum is not None:
@@ -304,7 +304,7 @@ class Configurable(object):
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_OBJ,
                                             cls._name)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_TYPE,
-                                            typeflags) 
+                                            typeflags)
         datatypes = tuple( map(lambda x: x[1], cls._confmatrix) )
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_DATA_TYPES,
                                             datatypes)

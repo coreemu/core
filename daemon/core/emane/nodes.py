@@ -58,11 +58,12 @@ class EmaneNode(EmaneNet):
         '''
         if not self.model:
             return
-        return self.model.linkconfig(netif=netif, bw=bw, delay=delay, loss=loss,
-                            duplicate=duplicate, jitter=jitter, netif2=netif2)
+        return self.model.linkconfig(netif=netif, bw=bw, delay=delay,
+                                     loss=loss, duplicate=duplicate,
+                                     jitter=jitter, netif2=netif2)
 
     def config(self, conf):
-        #print "emane", self.name, "got config:", conf
+        # print "emane", self.name, "got config:", conf
         self.conf = conf
 
     def shutdown(self):
@@ -86,7 +87,7 @@ class EmaneNode(EmaneNet):
                                verbose=self.verbose)
         elif model._type == coreapi.CORE_TLV_REG_MOBILITY:
             self.mobility = model(session=self.session, objid=self.objid,
-                               verbose=self.verbose, values=config)
+                                  verbose=self.verbose, values=config)
 
     def setnemid(self, netif, nemid):
         ''' Record an interface to numerical ID mapping. The Emane controller

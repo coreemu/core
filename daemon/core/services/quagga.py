@@ -28,8 +28,6 @@ if os.uname()[0] == "FreeBSD":
 
 
 class Zebra(CoreService):
-    ''' 
-    '''
     _name = "zebra"
     _group = "Quagga"
     _depends = ("vtysh", )
@@ -562,7 +560,7 @@ addservice(Ripng)
 
 
 class Babel(QuaggaService):
-    ''' The Babel service provides a loop-avoiding distance-vector routing 
+    ''' The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
     '''
     _name = "Babel"

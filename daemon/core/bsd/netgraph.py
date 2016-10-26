@@ -32,8 +32,8 @@ def createngnode(type, hookstr, name=None):
     result, err = cmdid.communicate(input=ngcmd)  # err will always be None
     status = cmdid.wait()
     if status > 0:
-        raise Exception, "error creating Netgraph node %s (%s): %s" % \
-            (type, ngcmd, result)
+        raise Exception("error creating Netgraph node %s (%s): %s" %
+                        (type, ngcmd, result))
     results = result.split()
     ngname = results[1]
     ngid = results[5]
@@ -64,7 +64,7 @@ def ngmessage(name, msg):
 
 
 def ngloadkernelmodule(name):
-    ''' Load a kernel module by invoking kldstat. This is needed for the 
+    ''' Load a kernel module by invoking kldstat. This is needed for the
         ng_ether module which automatically creates Netgraph nodes when loaded.
     '''
     mutecall(["kldload", name])

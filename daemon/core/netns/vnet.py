@@ -114,8 +114,8 @@ class EbtablesQueue(object):
             self.updatelock.acquire()
             for wlan in self.updates:
                 '''
-                Check if wlan is from a previously closed session. Because of the 
-                rate limiting scheme employed here, this may happen if a new session 
+                Check if wlan is from a previously closed session. Because of the
+                rate limiting scheme employed here, this may happen if a new session
                 is started soon after closing a previous session.
                 '''
                 try:
@@ -481,7 +481,7 @@ class LxBrNet(PyCoreNet):
 
 
 class GreTapBridge(LxBrNet):
-    ''' A network consisting of a bridge with a gretap device for tunneling to 
+    ''' A network consisting of a bridge with a gretap device for tunneling to
         another system.
     '''
     def __init__(self, session, remoteip=None, objid=None, name=None,
@@ -524,7 +524,7 @@ class GreTapBridge(LxBrNet):
         LxBrNet.shutdown(self)
 
     def addrconfig(self, addrlist):
-        ''' Set the remote tunnel endpoint. This is a one-time method for 
+        ''' Set the remote tunnel endpoint. This is a one-time method for
             creating the GreTap device, which requires the remoteip at startup.
             The 1st address in the provided list is remoteip, 2nd optionally
             specifies localip.

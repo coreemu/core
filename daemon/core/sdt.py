@@ -30,9 +30,9 @@ class Sdt(object):
     DEFAULT_SPRITES = [('router', 'router.gif'), ('host', 'host.gif'),
                        ('PC', 'pc.gif'), ('mdr', 'mdr.gif'),
                        ('prouter', 'router_green.gif'), ('xen', 'xen.gif'),
-                       ('hub', 'hub.gif'), ('lanswitch','lanswitch.gif'), 
-                       ('wlan', 'wlan.gif'), ('rj45','rj45.gif'), 
-                       ('tunnel','tunnel.gif'),
+                       ('hub', 'hub.gif'), ('lanswitch', 'lanswitch.gif'),
+                       ('wlan', 'wlan.gif'), ('rj45', 'rj45.gif'),
+                       ('tunnel', 'tunnel.gif'),
                        ]
 
     class Bunch(object):
@@ -69,7 +69,7 @@ class Sdt(object):
             Set self.url, self.address, self.protocol
         '''
         url = None
-        if hasattr(self.session.options,'sdturl'):
+        if hasattr(self.session.options, 'sdturl'):
             if self.session.options.sdturl != "":
                 url = self.session.options.sdturl
         if url is None or url == "":
@@ -90,8 +90,8 @@ class Sdt(object):
 
         self.seturl()
         if self.showerror:
-            self.session.info("connecting to SDT at %s://%s" \
-                                  % (self.protocol, self.address))
+            self.session.info("connecting to SDT at %s://%s"
+                              % (self.protocol, self.address))
         if self.sock is None:
             try:
                 if (self.protocol.lower() == 'udp'):
@@ -163,7 +163,7 @@ class Sdt(object):
             return False
 
     def updatenode(self, nodenum, flags, x, y, z,
-                         name=None, type=None, icon=None):
+                   name=None, type=None, icon=None):
         ''' Node is updated from a Node Message or mobility script.
         '''
         if not self.connect():
@@ -181,7 +181,7 @@ class Sdt(object):
                 icon = icon.replace("$CORE_DATA_DIR", CORE_DATA_DIR)
                 icon = icon.replace("$CORE_CONF_DIR", CORE_CONF_DIR)
                 self.cmd('sprite %s image %s' % (type, icon))
-            self.cmd('node %d type %s label on,"%s" %s' % \
+            self.cmd('node %d type %s label on,"%s" %s' %
                      (nodenum, type, name, pos))
         else:
             self.cmd('node %d %s' % (nodenum, pos))
@@ -237,12 +237,12 @@ class Sdt(object):
 
             for net in nets:
                 # use tolinkmsgs() to handle various types of links
-                msgs = net.tolinkmsgs(flags = coreapi.CORE_API_ADD_FLAG)
+                msgs = net.tolinkmsgs(flags=coreapi.CORE_API_ADD_FLAG)
                 for msg in msgs:
                     msghdr = msg[:coreapi.CoreMessage.hdrsiz]
                     flags = coreapi.CoreMessage.unpackhdr(msghdr)[1]
-                    m = coreapi.CoreLinkMessage(flags, msghdr,
-                                               msg[coreapi.CoreMessage.hdrsiz:])
+                    m = coreapi.CoreLinkMessage(
+                        flags, msghdr, msg[coreapi.CoreMessage.hdrsiz:])
                     n1num = m.gettlv(coreapi.CORE_TLV_LINK_N1NUMBER)
                     n2num = m.gettlv(coreapi.CORE_TLV_LINK_N2NUMBER)
                     link_msg_type = m.gettlv(coreapi.CORE_TLV_LINK_TYPE)
@@ -250,7 +250,7 @@ class Sdt(object):
                        isinstance(net, nodes.EmaneNode):
                         if (n1num == net.objid):
                             continue
-                    wl = (link_msg_type == coreapi.CORE_LINK_WIRELESS)   
+                    wl = (link_msg_type == coreapi.CORE_LINK_WIRELESS)
                     self.updatelink(n1num, n2num, coreapi.CORE_API_ADD_FLAG, wl)
             for n1num in sorted(self.remotes.keys()):
                 r = self.remotes[n1num]
@@ -296,7 +296,7 @@ class Sdt(object):
             if model is None:
                 model = "router"
             type = model
-        elif nodetype != None:
+        elif nodetype is not None:
             type = coreapi.node_class(nodetype).type
             net = True
         else:

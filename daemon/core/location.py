@@ -20,13 +20,13 @@ class CoreLocation(ConfigurableManager):
     ''' Member of session class for handling global location data. This keeps
         track of a latitude/longitude/altitude reference point and scale in
         order to convert between X,Y and geo coordinates.
-        
-        TODO: this could be updated to use more generic 
+
+        TODO: this could be updated to use more generic
               Configurable/ConfigurableManager code like other Session objects
     '''
     _name = "location"
     _type = coreapi.CORE_TLV_REG_UTILITY
-    
+
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
         self.reset()
@@ -92,7 +92,7 @@ class CoreLocation(ConfigurableManager):
         self.refgeo = (lat, lon, alt)
         # easting, northing, zone
         (e, n, zonen, zonel) = utm.from_latlon(lat, lon)
-        self.refutm = ( (zonen, zonel), e, n, alt)
+        self.refutm = ((zonen, zonel), e, n, alt)
 
     def getgeo(self, x, y, z):
         ''' Given (x, y, z) Cartesian coordinates, convert them to latitude,
@@ -109,7 +109,7 @@ class CoreLocation(ConfigurableManager):
         # use UTM coordinates since unit is meters
         zone = self.refutm[0]
         if zone == "":
-            raise ValueError, "reference point not configured"
+            raise ValueError("reference point not configured")
         e = self.refutm[1] + self.px2m(x)
         n = self.refutm[2] + self.px2m(y)
         alt = self.refutm[3] + self.px2m(z)
@@ -117,10 +117,10 @@ class CoreLocation(ConfigurableManager):
         try:
             lat, lon = utm.to_latlon(e, n, zone[0], zone[1])
         except utm.OutOfRangeError:
-            self.info("UTM out of range error for e=%s n=%s zone=%s" \
+            self.info("UTM out of range error for e=%s n=%s zone=%s"
                       "xyz=(%s,%s,%s)" % (e, n, zone, x, y, z))
             (lat, lon) = self.refgeo[:2]
-        #self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
+        # self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
         #          "%.3f,%.3f,%.3f" % (x, y, z, e, n, zone, lat, lon, alt))
         return (lat, lon, alt)
 
@@ -145,7 +145,7 @@ class CoreLocation(ConfigurableManager):
         else:
             ym = n + yshift
         zm = alt - ralt
-        
+
         # shift (x,y,z) over to reference point (x,y,z)
         x = self.m2px(xm) + self.refxyz[0]
         y = -(self.m2px(ym) + self.refxyz[1])
@@ -156,20 +156,20 @@ class CoreLocation(ConfigurableManager):
         ''' If the lat, lon coordinates being converted are located in a
         different UTM zone than the canvas reference point, the UTM meters
         may need to be shifted.
-        This picks a reference point in the same longitudinal band 
+        This picks a reference point in the same longitudinal band
         (UTM zone number) as the provided zone, to calculate the shift in
         meters for the x coordinate.
         '''
         rzonen = int(self.refutm[0][0])
         if zonen == rzonen:
-            return None # same zone number, no x shift required
+            return None  # same zone number, no x shift required
         z = (zonen, zonel)
         if z in self.zoneshifts and self.zoneshifts[z][0] is not None:
-            return self.zoneshifts[z][0] # x shift already calculated, cached
-            
+            return self.zoneshifts[z][0]  # x shift already calculated, cached
+
         (rlat, rlon, ralt) = self.refgeo
-        lon2 = rlon + 6*(zonen - rzonen) # ea. zone is 6deg band
-        (e2, n2, zonen2, zonel2) = utm.from_latlon(rlat, lon2) # ignore northing
+        lon2 = rlon + 6*(zonen - rzonen)  # ea. zone is 6deg band
+        (e2, n2, zonen2, zonel2) = utm.from_latlon(rlat, lon2)  # ignore northing
         # NOTE: great circle distance used here, not reference ellipsoid!
         xshift = utm.haversine(rlon, rlat, lon2, rlat) - e2
         # cache the return value
@@ -178,7 +178,7 @@ class CoreLocation(ConfigurableManager):
             yshift = self.zoneshifts[z][1]
         self.zoneshifts[z] = (xshift, yshift)
         return xshift
-    
+
     def getnorthingshift(self, zonen, zonel):
         ''' If the lat, lon coordinates being converted are located in a
         different UTM zone than the canvas reference point, the UTM meters
@@ -189,15 +189,15 @@ class CoreLocation(ConfigurableManager):
         '''
         rzonel = self.refutm[0][1]
         if zonel == rzonel:
-            return None # same zone letter, no y shift required
+            return None  # same zone letter, no y shift required
         z = (zonen, zonel)
         if z in self.zoneshifts and self.zoneshifts[z][1] is not None:
-            return self.zoneshifts[z][1] # y shift already calculated, cached
-        
+            return self.zoneshifts[z][1]  # y shift already calculated, cached
+
         (rlat, rlon, ralt) = self.refgeo
         # zonemap is used to calculate degrees difference between zone letters
         latshift = self.zonemap[zonel] - self.zonemap[rzonel]
-        lat2 = rlat + latshift # ea. latitude band is 8deg high
+        lat2 = rlat + latshift  # ea. latitude band is 8deg high
         (e2, n2, zonen2, zonel2) = utm.from_latlon(lat2, rlon)
         # NOTE: great circle distance used here, not reference ellipsoid
         yshift = -(utm.haversine(rlon, rlat, rlon, lat2) + n2)
@@ -241,6 +241,3 @@ class CoreLocation(ConfigurableManager):
             n -= 10000000
             zone = (zone[0], 'N')
         return (e, n, zone)
-       
-    
-

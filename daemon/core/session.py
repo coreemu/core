@@ -594,7 +594,7 @@ class Session(object):
         vals = (objid, str(self.sessionid), level, source, time.ctime(), text)
         types = ("NODE", "SESSION", "LEVEL", "SOURCE", "DATE", "TEXT")
         tlvdata = ""
-        for (t,v) in zip(types, vals):
+        for (t, v) in zip(types, vals):
             if v is not None:
                 tlvdata += coreapi.CoreExceptionTlv.pack(
                                     eval("coreapi.CORE_TLV_EXCP_%s" % t), v)
@@ -612,7 +612,7 @@ class Session(object):
         else:
             return self.cfg[cfgname]
 
-    def getcfgitembool(self, cfgname, defaultifnone = None):
+    def getcfgitembool(self, cfgname, defaultifnone=None):
         ''' Return a boolean entry from the configuration dictionary, may
             return None if undefined.
         '''
@@ -621,7 +621,7 @@ class Session(object):
             return defaultifnone
         return bool(item.lower() == "true")
 
-    def getcfgitemint(self, cfgname, defaultifnone = None):
+    def getcfgitemint(self, cfgname, defaultifnone=None):
         ''' Return an integer entry from the configuration dictionary, may
             return None if undefined.
         '''
@@ -635,12 +635,12 @@ class Session(object):
             of various managers and boot the nodes. Validate nodes and check
             for transition to the runtime state.
         '''
-        
+
         self.writeobjs()
         # controlnet may be needed by some EMANE models
         self.addremovectrlif(node=None, remove=False)
         if self.emane.startup() == self.emane.NOT_READY:
-            return # instantiate() will be invoked again upon Emane.configure()
+            return  # instantiate() will be invoked again upon Emane.configure()
         self.broker.startup()
         self.mobility.startup()
         # boot the services on each node
@@ -809,8 +809,7 @@ class Session(object):
         p3 = getattr(self.options, 'controlnet3', self.cfg.get('controlnet3'))
         if not p0 and p:
             p0 = p
-        return [p0,p1,p2,p3]
-        
+        return [p0, p1, p2, p3]
 
     def getctrlnetserverintf(self):
         d0 = self.cfg.get('controlnetif0')
@@ -819,22 +818,20 @@ class Session(object):
         d1 = self.cfg.get('controlnetif1')
         d2 = self.cfg.get('controlnetif2')
         d3 = self.cfg.get('controlnetif3')
-        return [None,d1,d2,d3]
-    
+        return [None, d1, d2, d3]
+
     def getctrlnetidx(self, dev):
-        if dev[0:4] == 'ctrl' and int(dev[4]) in [0,1,2,3]:
+        if dev[0:4] == 'ctrl' and int(dev[4]) in [0, 1, 2, 3]:
             idx = int(dev[4])
             if idx == 0:
                 return idx
             if idx < 4 and self.getctrlnetprefixes()[idx] is not None:
                 return idx
         return -1
-        
 
     def getctrlnetobj(self, netidx):
         oid = "ctrl%dnet" % netidx
         return self.obj(oid)
-    
 
     def addremovectrlnet(self, netidx, remove=False, conf_reqd=True):
         ''' Create a control network bridge as necessary.
@@ -849,7 +846,7 @@ class Session(object):
                 return None  # no controlnet needed
             else:
                 prefixspec = nodes.CtrlNet.DEFAULT_PREFIX_LIST[netidx]
-                
+
         serverintf = self.getctrlnetserverintf()[netidx]
 
         # return any existing controlnet bridge
@@ -879,10 +876,9 @@ class Session(object):
                 new_uds = self.options.controlnet_updown_script
             if new_uds:
                 updown_script = new_uds
-                
 
         prefixes = prefixspec.split()
-        if len(prefixes) > 1: 
+        if len(prefixes) > 1:
             # A list of per-host prefixes is provided
             assign_address = True
             if self.master:
@@ -891,7 +887,7 @@ class Session(object):
                     prefix = prefixes[0].split(':', 1)[1]
                 except IndexError:
                     # no server name. possibly only one server
-                    prefix = prefixes[0] 
+                    prefix = prefixes[0]
             else:
                 # slave servers have their name and localhost in the serverlist
                 servers = self.broker.getservernames()
@@ -904,7 +900,7 @@ class Session(object):
                     except ValueError:
                         server = ""
                         p = None
-                        
+
                     if server == servers[0]:
                         # the server name in the list matches this server
                         prefix = p
@@ -919,13 +915,13 @@ class Session(object):
                         prefix = prefixes[0].split(':', 1)[1]
                     except IndexError:
                         prefix = prefixes[0]
-        else: # len(prefixes) == 1 
+        else:  # len(prefixes) == 1
             # TODO: can we get the server name from the servers.conf or from the node assignments?
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
             prefix = prefixes[0]
 
-        ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=oid, prefix=prefix, 
+        ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=oid, prefix=prefix,
                               assign_address=assign_address,
                               updown_script=updown_script, serverintf=serverintf)
 
@@ -933,7 +929,7 @@ class Session(object):
         self.broker.addnet(oid)
         for server in self.broker.getservers():
             self.broker.addnodemap(server, oid)
-        
+
         return ctrlnet
 
     def addremovectrlif(self, node, netidx=0,  remove=False, conf_reqd=True):
@@ -971,7 +967,7 @@ class Session(object):
         '''
         if not self.getcfgitembool('update_etc_hosts', False):
             return
-        
+
         try:
             ctrlnet = self.getctrlnetobj(netidx)
         except KeyError:
@@ -1008,7 +1004,7 @@ class Session(object):
         runtime = self.runtime()
         if runtime > 0.0:
             if time <= runtime:
-                self.warn("Could not schedule past event for time %s " \
+                self.warn("Could not schedule past event for time %s "
                           "(run time is now %s)" % (time, runtime))
                 return
             etime = etime - runtime
@@ -1016,7 +1012,7 @@ class Session(object):
         self.evq.add_event(etime, func, node=node, name=name, data=data)
         if name is None:
             name = ""
-        self.info("scheduled event %s at time %s data=%s" % \
+        self.info("scheduled event %s at time %s data=%s" %
                   (name, etime + runtime, data))
 
     def runevent(self, node=None, name=None, data=None):
@@ -1040,7 +1036,7 @@ class Session(object):
         # send node messages for node and network objects
         with self._objslock:
             for obj in self.objs():
-                msg = obj.tonodemsg(flags = coreapi.CORE_API_ADD_FLAG)
+                msg = obj.tonodemsg(flags=coreapi.CORE_API_ADD_FLAG)
                 if msg is not None:
                     replies.append(msg)
                     nn += 1
@@ -1049,7 +1045,7 @@ class Session(object):
         # send link messages from net objects
         with self._objslock:
             for obj in self.objs():
-                linkmsgs = obj.tolinkmsgs(flags = coreapi.CORE_API_ADD_FLAG)
+                linkmsgs = obj.tolinkmsgs(flags=coreapi.CORE_API_ADD_FLAG)
                 for msg in linkmsgs:
                     replies.append(msg)
                     nl += 1
@@ -1057,7 +1053,7 @@ class Session(object):
         configs = self.mobility.getallconfigs()
         configs += self.emane.getallconfigs()
         for (nodenum, cls, values) in configs:
-            #cls = self.mobility._modelclsmap[conftype]
+            # cls = self.mobility._modelclsmap[conftype]
             msg = cls.toconfmsg(flags=0, nodenum=nodenum,
                                 typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE,
                                 values=values)
@@ -1102,17 +1098,16 @@ class Session(object):
         # send meta data
         tmp = coreapi.CoreConfMessage(flags=0, hdr="", data="")
         opts = self.options.configure_request(tmp,
-                                    typeflags = coreapi.CONF_TYPE_FLAGS_UPDATE)
+                                    typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
         if opts:
             replies.append(opts)
         meta = self.metadata.configure_request(tmp,
-                                    typeflags = coreapi.CONF_TYPE_FLAGS_UPDATE)
+                                    typeflags=coreapi.CONF_TYPE_FLAGS_UPDATE)
         if meta:
             replies.append(meta)
 
         self.info("informing GUI about %d nodes and %d links" % (nn, nl))
         return replies
-
 
 
 class SessionConfig(ConfigurableManager, Configurable):
@@ -1153,7 +1148,7 @@ class SessionConfig(ConfigurableManager, Configurable):
         return self.configure_values_keyvalues(msg, values, self,
                                                self.getnames())
 
-    def configure_request(self, msg, typeflags = coreapi.CONF_TYPE_FLAGS_NONE):
+    def configure_request(self, msg, typeflags=coreapi.CONF_TYPE_FLAGS_NONE):
         nodenum = msg.gettlv(coreapi.CORE_TLV_CONF_NODE)
         values = []
         for k in self.getnames():
@@ -1193,14 +1188,14 @@ class SessionConfig(ConfigurableManager, Configurable):
         key, value = kv.split('=', 1)
         controlnets = value.split()
         if len(controlnets) < 2:
-            return # multiple controlnet prefixes do not exist
+            return  # multiple controlnet prefixes do not exist
         servers = self.session.broker.getservernames()
         if len(servers) < 2:
-            return # not distributed
+            return  # not distributed
         servers.remove("localhost")
-        servers.insert(0, "localhost") # master always gets first prefix
+        servers.insert(0, "localhost")  # master always gets first prefix
         # create list of "server1:ctrlnet1 server2:ctrlnet2 ..."
-        controlnets = map(lambda(x): "%s:%s" % (x[0],x[1]),
+        controlnets = map(lambda(x): "%s:%s" % (x[0], x[1]),
                           zip(servers, controlnets))
         values[idx] = "controlnet=%s" % (' '.join(controlnets))
         values_str = '|'.join(values)
@@ -1228,9 +1223,9 @@ class SessionMetaData(ConfigurableManager):
             self.additem(key, value)
         return None
 
-    def configure_request(self, msg, typeflags = coreapi.CONF_TYPE_FLAGS_NONE):
+    def configure_request(self, msg, typeflags=coreapi.CONF_TYPE_FLAGS_NONE):
         nodenum = msg.gettlv(coreapi.CORE_TLV_CONF_NODE)
-        values_str = "|".join(map(lambda(k,v): "%s=%s" % (k,v), self.items()))
+        values_str = "|".join(map(lambda(k, v): "%s=%s" % (k, v), self.items()))
         return self.toconfmsg(0, nodenum, typeflags, values_str)
 
     def toconfmsg(self, flags, nodenum, typeflags, values_str):
@@ -1242,8 +1237,8 @@ class SessionMetaData(ConfigurableManager):
                                             self._name)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_TYPE,
                                             typeflags)
-        datatypes = tuple( map(lambda(k,v): coreapi.CONF_DATA_TYPE_STRING,
-                               self.items()) )
+        datatypes = tuple(map(lambda(k, v): coreapi.CONF_DATA_TYPE_STRING,
+                              self.items()))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_DATA_TYPES,
                                             datatypes)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_VALUES,

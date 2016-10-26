@@ -13,7 +13,7 @@ from core.service import CoreService, addservice
 
 
 class XorpRtrmgr(CoreService):
-    ''' XORP router manager service builds a config.boot file based on other 
+    ''' XORP router manager service builds a config.boot file based on other
     enabled XORP services, and launches necessary daemons upon startup.
     '''
     _name = "xorp_rtrmgr"
@@ -28,8 +28,8 @@ class XorpRtrmgr(CoreService):
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Returns config.boot configuration file text. Other services that 
-        depend on this will have generatexorpconfig() hooks that are 
+        ''' Returns config.boot configuration file text. Other services that
+        depend on this will have generatexorpconfig() hooks that are
         invoked here. Filename currently ignored.
         '''
         cfg = "interfaces {\n"

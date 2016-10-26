@@ -79,7 +79,7 @@ class CtrlNet(LxBrNet):
     def detectoldbridge(self):
         ''' Occassionally, control net bridges from previously closed sessions are not cleaned up.
         Check if there are old control net bridges and delete them
-        ''' 
+        '''
         retstat, retstr = cmdresult([BRCTL_BIN, 'show'])
         if retstat != 0:
             self.exception(coreapi.CORE_EXCP_LEVEL_FATAL, None,
