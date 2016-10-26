@@ -498,12 +498,14 @@ class Emane(ConfigurableManager):
         if self.verbose:
             self.info("Emane.buildxml2()")
         # on master, control network bridge added earlier in startup()
-        ctrlnet = self.session.addremovectrlnet(netidx=0, remove=False, conf_reqd=False)
+        ctrlnet = self.session.addremovectrlnet(netidx=0,
+                                                remove=False,
+                                                conf_reqd=False)
         self.buildplatformxml2(ctrlnet)
         self.buildnemxml()
         self.buildeventservicexml()
 
-    def distributedctrlnet(self,  ctrlnet):
+    def distributedctrlnet(self, ctrlnet):
         ''' Distributed EMANE requires multiple control network prefixes to
             be configured. This generates configuration for slave control nets
             using the default list of prefixes.
@@ -520,7 +522,7 @@ class Emane(ConfigurableManager):
         if len(prefixes) >= len(servers):
             return  # normal Config messaging will distribute controlnets
         # this generates a config message having controlnet prefix assignments
-        self.info("Setting up default controlnet prefixes for distributed " \
+        self.info("Setting up default controlnet prefixes for distributed "
                   "(%d configured)" % len(prefixes))
         prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]
         vals = "controlnet='%s'" % prefixes
@@ -570,7 +572,7 @@ class Emane(ConfigurableManager):
         # self.info("%s" % doc.toprettyxml(indent="  "))
         pathname = os.path.join(self.session.sessiondir, filename)
         f = open(pathname, "w")
-        doc.writexml(writer=f, indent="", addindent="  ", newl="\n", \
+        doc.writexml(writer=f, indent="", addindent="  ", newl="\n",
                      encoding="UTF-8")
         f.close()
 
@@ -639,10 +641,12 @@ class Emane(ConfigurableManager):
         platform_names.remove('platform_id_start')
 
         # append all platform options (except starting id) to doc
-        map(lambda n: plat.appendChild(self.xmlparam(doc, n, \
-                        self.emane_config.valueof(n, values))), platform_names)
+        map(lambda n: plat.appendChild(
+            self.xmlparam(doc, n,
+                          self.emane_config.valueof(n, values))),
+            platform_names)
 
-        nemid = int(self.emane_config.valueof("nem_id_start",  values))
+        nemid = int(self.emane_config.valueof("nem_id_start", values))
         # assume self._objslock is already held here
         for n in sorted(self._objs.keys()):
             emanenode = self._objs[n]
@@ -653,19 +657,24 @@ class Emane(ConfigurableManager):
                 nementry.setAttribute("id", "%d" % nemid)
                 if self.version < self.EMANE092:
                     # insert nem options (except nem id) to doc
-                    trans_addr = self.emane_config.valueof("transportendpoint", \
+                    trans_addr = self.emane_config.valueof("transportendpoint",
                                                            values)
-                    nementry.insertBefore(self.xmlparam(doc, "transportendpoint", \
-                                     "%s:%d" % (trans_addr, self.transformport)),
-                                     nementry.firstChild)
-                    platform_addr = self.emane_config.valueof("platformendpoint", \
-                                                              values)
-                    nementry.insertBefore(self.xmlparam(doc, "platformendpoint", \
-                                     "%s:%d" % (platform_addr, self.platformport)),
-                                     nementry.firstChild)
+                    nementry.insertBefore(
+                        self.xmlparam(doc, "transportendpoint",
+                                      "%s:%d" %
+                                      (trans_addr, self.transformport)),
+                        nementry.firstChild)
+                    platform_addr = self.emane_config.valueof(
+                        "platformendpoint", values)
+                    nementry.insertBefore(
+                        self.xmlparam(doc, "platformendpoint",
+                                      "%s:%d" %
+                                      (platform_addr, self.platformport)),
+                        nementry.firstChild)
                 plat.appendChild(nementry)
                 emanenode.setnemid(netif, nemid)
-                # NOTE: MAC address set before here is incorrect, including the one
+                # NOTE: MAC address set before here is incorrect,
+                # including the one
                 #  sent from the GUI via link message
                 # MAC address determined by NEM ID: 02:02:00:00:nn:nn"
                 macstr = self._hwaddr_prefix + ":00:00:"
@@ -695,9 +704,11 @@ class Emane(ConfigurableManager):
             i = platform_names.index('eventservicedevice')
             platform_values[i] = eventdev
         # append all platform options (except starting id) to doc
-        map(lambda n: plat.appendChild(self.xmlparam(doc, n, \
-                        self.emane_config.valueof(n, platform_values))), \
-                        platform_names)
+        map(
+            lambda n: plat.appendChild(
+                self.xmlparam(
+                    doc, n, self.emane_config.valueof(n, platform_values))),
+            platform_names)
         return doc
 
     def buildplatformxml2(self, ctrlnet):
@@ -705,7 +716,7 @@ class Emane(ConfigurableManager):
         '''
         values = self.getconfig(None, "emane",
                                 self.emane_config.getdefaultvalues())[1]
-        nemid = int(self.emane_config.valueof("nem_id_start",  values))
+        nemid = int(self.emane_config.valueof("nem_id_start", values))
         platformxmls = {}
 
         # assume self._objslock is already held here
@@ -769,7 +780,7 @@ class Emane(ConfigurableManager):
             the transportdaemon*.xml.
         '''
         try:
-            subprocess.check_call(["emanegentransportxml", "platform.xml"], \
+            subprocess.check_call(["emanegentransportxml", "platform.xml"],
                                   cwd=self.session.sessiondir)
         except Exception, e:
             self.info("error running emanegentransportxml: %s" % e)
@@ -805,7 +816,7 @@ class Emane(ConfigurableManager):
         doc = self.xmldoc("emaneeventmsgsvc")
         es = doc.getElementsByTagName("emaneeventmsgsvc").pop()
         kvs = (('group', group), ('port', port), ('device', dev),
-               ('mcloop', '1'),  ('ttl', '32'))
+               ('mcloop', '1'), ('ttl', '32'))
         addtextelementsfromtuples(doc, es, kvs)
         filename = 'libemaneeventservice.xml'
         self.xmlwrite(doc, filename)
@@ -825,8 +836,8 @@ class Emane(ConfigurableManager):
         if cfgloglevel:
             self.info("setting user-defined EMANE log level: %d" % cfgloglevel)
             loglevel = str(cfgloglevel)
-        emanecmd = ["emane", "-d", "--logl", loglevel, "-f", \
-                                os.path.join(path, "emane.log")]
+        emanecmd = ["emane", "-d", "--logl", loglevel, "-f",
+                    os.path.join(path, "emane.log")]
         if realtime:
             emanecmd += "-r",
         try:
@@ -841,7 +852,7 @@ class Emane(ConfigurableManager):
             self.info(errmsg)
 
         # start one transport daemon per transportdaemon*.xml file
-        transcmd = ["emanetransportd", "-d", "--logl", loglevel, "-f", \
+        transcmd = ["emanetransportd", "-d", "--logl", loglevel, "-f",
                     os.path.join(path, "emanetransportd.log")]
         if realtime:
             transcmd += "-r",
@@ -855,8 +866,8 @@ class Emane(ConfigurableManager):
                     subprocess.check_call(cmd, cwd=path)
                 except Exception, e:
                     errmsg = "error starting emanetransportd: %s" % e
-                    self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL, "emane",
-                                           None, errmsg)
+                    self.session.exception(coreapi.CORE_EXCP_LEVEL_FATAL,
+                                           "emane", None, errmsg)
                     self.info(errmsg)
 
     def startdaemons2(self):
@@ -882,8 +893,8 @@ class Emane(ConfigurableManager):
         otadev = self.emane_config.valueof('otamanagerdevice', values)
         otanetidx = self.session.getctrlnetidx(otadev)
 
-        eventgroup, eventport = self.emane_config.valueof('eventservicegroup',
-                                                      values).split(':')
+        eventgroup, eventport = self.emane_config.valueof(
+            'eventservicegroup', values).split(':')
         eventdev = self.emane_config.valueof('eventservicedevice', values)
         eventservicenetidx = self.session.getctrlnetidx(eventdev)
 
@@ -897,21 +908,26 @@ class Emane(ConfigurableManager):
             n = node.objid
 
             # control network not yet started here
-            self.session.addremovectrlif(node, 0, remove=False, conf_reqd=False)
+            self.session.addremovectrlif(node, 0,
+                                         remove=False, conf_reqd=False)
 
             if otanetidx > 0:
                 self.info("adding ota device ctrl%d" % otanetidx)
-                self.session.addremovectrlif(node, otanetidx, remove=False, conf_reqd=False)
+                self.session.addremovectrlif(node, otanetidx,
+                                             remove=False, conf_reqd=False)
 
             if eventservicenetidx >= 0:
-                self.info("adding event service device ctrl%d" % eventservicenetidx)
-                self.session.addremovectrlif(node, eventservicenetidx, remove=False, conf_reqd=False)
+                self.info(
+                    "adding event service device ctrl%d" % eventservicenetidx)
+                self.session.addremovectrlif(node, eventservicenetidx,
+                                             remove=False, conf_reqd=False)
 
             # multicast route is needed for OTA data
             cmd = [IP_BIN, "route", "add", otagroup, "dev", otadev]
             # rc = node.cmd(cmd, wait=True)
             node.cmd(cmd, wait=True)
-            # multicast route is also needed for event data if on control network
+            # multicast route is also needed for event data
+            # if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 cmd = [IP_BIN, "route", "add", eventgroup, "dev", eventdev]
                 node.cmd(cmd, wait=True)
@@ -1033,12 +1049,12 @@ class Emane(ConfigurableManager):
                           "unable to load " \
                           "(install the python-emaneeventservice bindings)"
             self.session.exception(coreapi.CORE_EXCP_LEVEL_WARNING, "emane",
-                                       None, errmsg)
+                                   None, errmsg)
             self.warn(errmsg)
 
             return
         self.doeventloop = True
-        self.eventmonthread = threading.Thread(target = self.eventmonitorloop)
+        self.eventmonthread = threading.Thread(target=self.eventmonitorloop)
         self.eventmonthread.daemon = True
         self.eventmonthread.start()
 
@@ -1061,13 +1077,14 @@ class Emane(ConfigurableManager):
         '''
         if self.service is None:
             return
-        self.info("Subscribing to EMANE location events (not generating them). " \
-                  "(%s) " % threading.currentThread().getName())
+        self.info(
+            "Subscribing to EMANE location events (not generating them). "
+            "(%s) " % threading.currentThread().getName())
         while self.doeventloop is True:
             if self.version >= self.EMANE091:
                 (uuid, seq, events) = self.service.nextEvent()
                 if not self.doeventloop:
-                    break # this occurs with 0.9.1 event service
+                    break  # this occurs with 0.9.1 event service
                 for event in events:
                     (nem, eid, data) = event
                     if eid == LocationEvent.IDENTIFIER:
@@ -1076,7 +1093,7 @@ class Emane(ConfigurableManager):
                 (event, platform, nem, cmp, data) = self.service.nextEvent()
                 if event == emaneeventlocation.EVENT_ID:
                     self.handlelocationevent(event, platform, nem, cmp, data)
-        self.info("Unsubscribing from EMANE location events. (%s) " % \
+        self.info("Unsubscribing from EMANE location events. (%s) " %
                   threading.currentThread().getName())
 
     def handlelocationevent(self, event, platform, nem, component, data):
@@ -1096,8 +1113,8 @@ class Emane(ConfigurableManager):
         events.restore(data)
         for event in events:
             (txnemid, attrs) = event
-            if 'latitude' not in attrs or 'longitude' not in attrs or \
-              'altitude' not in attrs:
+            if 'latitude' not in attrs or 'longitude' not in attrs \
+                    or 'altitude' not in attrs:
                 self.warn("dropped invalid location event")
                 continue
             # yaw,pitch,roll,azimuth,elevation,velocity are unhandled
@@ -1124,7 +1141,7 @@ class Emane(ConfigurableManager):
         y = int(y)
         z = int(z)
         if self.verbose:
-            self.info("location event NEM %s (%s, %s, %s) -> (%s, %s, %s)" \
+            self.info("location event NEM %s (%s, %s, %s) -> (%s, %s, %s)"
                       % (nemid, lat, long, alt, x, y, z))
         try:
             if any([x.bit_length() > 16,
@@ -1148,11 +1165,11 @@ class Emane(ConfigurableManager):
         try:
             node = self.session.obj(n)
         except KeyError:
-            self.warn("location event NEM %s has no corresponding node %s" \
-                     % (nemid, n))
+            self.warn("location event NEM %s has no corresponding node %s"
+                      % (nemid, n))
             return False
         # don't use node.setposition(x,y,z) which generates an event
-        node.position.set(x,y,z)
+        node.position.set(x, y, z)
         msg = node.tonodemsg(flags=0)
         self.session.broadcastraw(None, msg)
         self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
@@ -1258,11 +1275,14 @@ class EmaneModel(WirelessModel):
 
     def buildplatformxmlnementry(self, doc, n, ifc):
         ''' Build the NEM definition that goes into the platform.xml file.
-        This returns an XML element that will be added to the <platform/> element.
+        This returns an XML element that will be added to
+        the <platform/> element.
         This default method supports per-interface config
-          (e.g. <nem definition="n2_0_63emane_rfpipe.xml" id="1"> or per-EmaneNode
+          (e.g. <nem definition="n2_0_63emane_rfpipe.xml" id="1">
+          or per-EmaneNode
         config (e.g. <nem definition="n1emane_rfpipe.xml" id="1">.
-        This can be overriden by a model for NEM flexibility; n is the EmaneNode.
+        This can be overriden by a model for NEM flexibility;
+        n is the EmaneNode.
         '''
         nem = doc.createElement("nem")
         nem.setAttribute("name", ifc.localname)
@@ -1274,13 +1294,15 @@ class EmaneModel(WirelessModel):
     def buildplatformxmltransportentry(self, doc, n, ifc):
         ''' Build the transport definition that goes into the platform.xml file.
         This returns an XML element that will added to the nem definition.
-        This default method supports raw and virtual transport types, but may be
-        overriden by a model to support the e.g. pluggable virtual transport.
+        This default method supports raw and virtual transport types,
+        but may be overriden by a model to support the e.g. pluggable
+        virtual transport.
         n is the EmaneNode.
         '''
         ttype = ifc.transport_type
         if not ttype:
-            self.session.info("warning: %s interface type unsupported!" % ifc.name)
+            self.session.info(
+                "warning: %s interface type unsupported!" % ifc.name)
             ttype = "raw"
         trans = doc.createElement("transport")
         trans.setAttribute("definition", n.transportxmlname(ttype))
@@ -1438,5 +1460,5 @@ class EmaneGlobalModel(EmaneModel):
                                _confmatrix_platform_081
     _confmatrix = _confmatrix_platform + _confmatrix_nem
     _confgroups = "Platform Attributes:1-%d|NEM Parameters:%d-%d" % \
-                    (len(_confmatrix_platform), len(_confmatrix_platform) + 1,
-                     len(_confmatrix))
+                  (len(_confmatrix_platform), len(_confmatrix_platform) + 1,
+                   len(_confmatrix))

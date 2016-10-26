@@ -1329,7 +1329,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             if self.session.master:
                 self.warn("Unexpected event message: SHUTDOWN state received "
                           "at session master")
-        elif eventtype in (coreapi.CORE_EVENT_START,  coreapi.CORE_EVENT_STOP,
+        elif eventtype in (coreapi.CORE_EVENT_START, coreapi.CORE_EVENT_STOP,
                            coreapi.CORE_EVENT_RESTART,
                            coreapi.CORE_EVENT_PAUSE,
                            coreapi.CORE_EVENT_RECONFIGURE):

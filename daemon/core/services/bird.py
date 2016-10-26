@@ -58,7 +58,7 @@ class Bird(CoreService):
 /* Main configuration file for BIRD. This is ony a template,
  * you will *need* to customize it according to your needs
  * Beware that only double quotes \'"\' are valid. No singles. */
- 
+
 
 log "/var/log/%s.log" all;
 #debug protocols all;
@@ -104,7 +104,7 @@ class BirdService(CoreService):
     _meta = "The config file for this service can be found in the bird service."
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         return ""
 
     @classmethod
@@ -130,7 +130,7 @@ class BirdBgp(BirdService):
     _custom_needed = True
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         return """
 /* This is a sample config that should be customized with appropriate AS numbers
  * and peers; add one section like this for each neighbor */
@@ -158,7 +158,7 @@ class BirdOspf(BirdService):
     _name = "BIRD_OSPFv2"
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = 'protocol ospf {\n'
         cfg += '    export filter {\n'
         cfg += '        if source = RTS_BGP then {\n'
@@ -181,7 +181,7 @@ class BirdRadv(BirdService):
     _name = "BIRD_RADV"
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = '/* This is a sample config that must be customized */\n'
 
         cfg += 'protocol radv {\n'
@@ -207,7 +207,7 @@ class BirdRip(BirdService):
     _name = "BIRD_RIP"
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = 'protocol rip {\n'
         cfg += '    period 10;\n'
         cfg += '    garbage time 60;\n'
@@ -228,7 +228,7 @@ class BirdStatic(BirdService):
     _custom_needed = True
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = '/* This is a sample config that must be customized */\n'
 
         cfg += 'protocol static {\n'

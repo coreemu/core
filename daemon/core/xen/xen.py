@@ -192,7 +192,7 @@ class XenNode(PyCoreNode):
                 os.makedirs(self.mountdir)
             self.tmpnodedir = True
         else:
-            raise Exception, "Xen PVM node requires a temporary nodedir"
+            raise Exception("Xen PVM node requires a temporary nodedir")
             self.tmpnodedir = False
         self.bootsh = bootsh
         if start:
@@ -209,18 +209,19 @@ class XenNode(PyCoreNode):
 
     # from class LxcNode (also SimpleLxcNode)
     def startup(self):
-        self.warn("XEN PVM startup() called: preparing disk for %s" % self.name)
+        self.warn(
+            "XEN PVM startup() called: preparing disk for %s" % self.name)
         self.lock.acquire()
         try:
             if self.up:
-                raise Exception, "already up"
+                raise Exception("already up")
             self.createlogicalvolume()
             self.createpartitions()
             persistdev = self.createfilesystems()
             check_call([MOUNT_BIN, '-t', 'ext4', persistdev, self.mountdir])
             self.untarpersistent(tarname=self.getconfigitem('persist_tar_iso'),
                                  iso=True)
-            self.setrootpassword(pw = self.getconfigitem('root_password'))
+            self.setrootpassword(pw=self.getconfigitem('root_password'))
             self.sethostname(old='UBASE', new=self.name)
             self.setupssh(keypath=self.getconfigitem('ssh_key_path'))
             self.createvm()
@@ -234,7 +235,7 @@ class XenNode(PyCoreNode):
 
         self.lock.acquire()
         if not self.up:
-            raise Exception, "Can't boot VM without initialized disk"
+            raise Exception("Can't boot VM without initialized disk")
 
         if self.booted:
             self.lock.release()
@@ -300,7 +301,7 @@ class XenNode(PyCoreNode):
                     except OSError:
                         pass
                 if (lvmRemoveCount > 1):
-                    self.warn("XEN PVM shutdown() required %d lvremove " \
+                    self.warn("XEN PVM shutdown() required %d lvremove "
                               "executions." % lvmRemoveCount)
 
                 self._netif.clear()
@@ -316,7 +317,7 @@ class XenNode(PyCoreNode):
         ''' Create a logical volume for this Xen domU. Called from startup().
         '''
         if os.path.exists(self.lvpath):
-            raise Exception, "LVM volume already exists"
+            raise Exception("LVM volume already exists")
         mutecheck_call([LVCREATE_PATH, '--size', self.disksize,
                         '--name', self.lvname, self.vgname])
 
@@ -328,11 +329,12 @@ class XenNode(PyCoreNode):
         dev.removeFromCache()
         disk = parted.freshDisk(dev, 'msdos')
         constraint = parted.Constraint(device=dev)
-        persist_size = int(0.75 * constraint.maxSize);
+        persist_size = int(0.75 * constraint.maxSize)
         self.createpartition(device=dev, disk=disk, start=1,
-                             end=(persist_size - 1) , type="ext4")
+                             end=(persist_size - 1), type="ext4")
         self.createpartition(device=dev, disk=disk, start=persist_size,
-                             end=(constraint.maxSize - 1) , type="linux-swap(v1)")
+                             end=(constraint.maxSize - 1),
+                             type="linux-swap(v1)")
         disk.commit()
 
     def createpartition(self, device, disk, start, end, type):
@@ -369,15 +371,16 @@ class XenNode(PyCoreNode):
             try:
                 fs = fsimage.open(self.isofile, 0)
             except IOError, e:
-                self.warn("Failed to open ISO file: %s (%s)" % (self.isofile,e))
+                self.warn(
+                    "Failed to open ISO file: %s (%s)" % (self.isofile, e))
                 return
             try:
-                tardata = fs.open_file(tarname).read();
+                tardata = fs.open_file(tarname).read()
             except IOError, e:
                 self.warn("Failed to open tar file: %s (%s)" % (tarname, e))
                 return
             finally:
-                del fs;
+                del fs
         else:
             try:
                 f = open(tarname)
@@ -398,7 +401,7 @@ class XenNode(PyCoreNode):
         saltedpw = crypt.crypt(pw, '$6$'+base64.b64encode(os.urandom(12)))
         check_call([SED_PATH, '-i', '-e',
                    '/^root:/s_^root:\([^:]*\):_root:' + saltedpw + ':_',
-                   os.path.join(self.mountdir, self.etcdir, 'shadow')])
+                    os.path.join(self.mountdir, self.etcdir, 'shadow')])
 
     def sethostname(self, old, new):
         ''' Set the hostname by updating the hostname and hosts files that
@@ -418,12 +421,13 @@ class XenNode(PyCoreNode):
                    's/PermitRootLogin no/PermitRootLogin yes/', sshdcfg])
         sshdir = os.path.join(self.getconfigitem('mount_path'), self.etcdir,
                               'ssh')
-        sshdir = sshdir.replace('/','\\/')  # backslash slashes for use in sed
+        sshdir = sshdir.replace('/', '\\/')  # backslash slashes for use in sed
         check_call([SED_PATH, '-i', '-e',
-                   's/#AuthorizedKeysFile        %h\/.ssh\/authorized_keys/' + \
-                   'AuthorizedKeysFile ' + sshdir + '\/authorized_keys/',
+                   's/#AuthorizedKeysFile        %h\/.ssh\/authorized_keys/' +
+                    'AuthorizedKeysFile ' + sshdir + '\/authorized_keys/',
                     sshdcfg])
-        for f in ('ssh_host_rsa_key','ssh_host_rsa_key.pub','authorized_keys'):
+        for f in ('ssh_host_rsa_key', 'ssh_host_rsa_key.pub',
+                  'authorized_keys'):
             src = os.path.join(keypath, f)
             dst = os.path.join(self.mountdir, self.etcdir, 'ssh', f)
             shutil.copy(src, dst)
@@ -454,16 +458,16 @@ class XenNode(PyCoreNode):
         pass
 
     # from class LxcNode
-    def opennodefile(self, filename, mode = "w"):
+    def opennodefile(self, filename, mode="w"):
         self.warn("XEN PVM opennodefile() called")
-        raise Exception, "Can't open VM file with opennodefile()"
+        raise Exception("Can't open VM file with opennodefile()")
 
     # from class LxcNode
     # open a file on a paused Xen node
-    def openpausednodefile(self, filename, mode = "w"):
+    def openpausednodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         # dirname = dirname.replace("/", ".")
@@ -481,19 +485,20 @@ class XenNode(PyCoreNode):
 
         if filename in self.FilesRedirection:
             redirFilename = self.FilesRedirection[filename]
-            self.warn("XEN PVM nodefile(filename=%s) redirected to %s" % (filename, redirFilename))
+            self.warn("XEN PVM nodefile(filename=%s) redirected to %s" %
+                      (filename, redirFilename))
             filename = redirFilename
 
         self.warn("XEN PVM nodefile(filename=%s) called" % [filename])
         self.lock.acquire()
         if not self.up:
             self.lock.release()
-            raise Exception, "Can't access VM file as VM disk isn't ready"
+            raise Exception("Can't access VM file as VM disk isn't ready")
             return
 
         if self.booted:
             self.lock.release()
-            raise Exception, "Can't access VM file as VM is already running"
+            raise Exception("Can't access VM file as VM is already running")
             return
 
         try:
@@ -510,7 +515,7 @@ class XenNode(PyCoreNode):
         # is VM running?
         return False  # XXX
 
-    def cmd(self, args, wait = True):
+    def cmd(self, args, wait=True):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
             # self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
@@ -519,7 +524,8 @@ class XenNode(PyCoreNode):
             self.CmdsRedirection[cmdAsString](self)
             return 0
 
-        self.warn("XEN PVM cmd(args=[%s]) called, but not yet implemented" % cmdAsString)
+        self.warn("XEN PVM cmd(args=[%s]) called, but not yet implemented" %
+                  cmdAsString)
         return 0
 
     def cmdresult(self, args):
@@ -527,24 +533,28 @@ class XenNode(PyCoreNode):
         if cmdAsString in self.CmdsToIgnore:
             # self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
             return (0, "")
-        self.warn("XEN PVM cmdresult(args=[%s]) called, but not yet implemented" % cmdAsString)
+        self.warn(
+            "XEN PVM cmdresult(args=[%s]) called, but not yet implemented" %
+            cmdAsString)
         return (0, "")
 
     def popen(self, args):
         cmdAsString = string.join(args, ' ')
-        self.warn("XEN PVM popen(args=[%s]) called, but not yet implemented" % cmdAsString)
+        self.warn("XEN PVM popen(args=[%s]) called, but not yet implemented" %
+                  cmdAsString)
         return
 
     def icmd(self, args):
         cmdAsString = string.join(args, ' ')
-        self.warn("XEN PVM icmd(args=[%s]) called, but not yet implemented" % cmdAsString)
+        self.warn("XEN PVM icmd(args=[%s]) called, but not yet implemented" %
+                  cmdAsString)
         return
 
-    def term(self, sh = "/bin/sh"):
+    def term(self, sh="/bin/sh"):
         self.warn("XEN PVM term() called, but not yet implemented")
         return
 
-    def termcmdstring(self, sh = "/bin/sh"):
+    def termcmdstring(self, sh="/bin/sh"):
         ''' We may add 'sudo' to the command string because the GUI runs as a
             normal user. Use SSH if control interface is available, otherwise
             use Xen console with a keymapping for easy login.
@@ -568,7 +578,8 @@ class XenNode(PyCoreNode):
         return cmd
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
-        self.warn("XEN PVM shcmd(args=[%s]) called, but not yet implemented" % cmdstr)
+        self.warn("XEN PVM shcmd(args=[%s]) called, but not yet implemented" %
+                  cmdstr)
         return
 
     # from class SimpleLxcNode
@@ -674,8 +685,8 @@ class XenNode(PyCoreNode):
         addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
-                raise ValueError, "addr type must be in: " + \
-                    " ".join(self.valid_deladdrtype)
+                raise ValueError("addr type must be in: " +
+                                 " ".join(self.valid_deladdrtype))
             for a in addr[t]:
                 self.deladdr(ifindex, a)
         # update cached information
@@ -695,17 +706,17 @@ class XenNode(PyCoreNode):
 
         if not self.up:
             self.lock.release()
-            raise Exception, "Can't access add veth as VM disk isn't ready"
+            raise Exception("Can't access add veth as VM disk isn't ready")
             return
 
         if self.booted:
             self.lock.release()
-            raise Exception, "Can't access add veth as VM is already running"
+            raise Exception("Can't access add veth as VM is already running")
             return
 
         try:
             if isinstance(net, EmaneNode):
-                raise Exception, "Xen PVM doesn't yet support Emane nets"
+                raise Exception("Xen PVM doesn't yet support Emane nets")
 
                 # ifindex = self.newtuntap(ifindex = ifindex, ifname = ifname,
                 #                          net = net)
@@ -729,11 +740,19 @@ class XenNode(PyCoreNode):
                                     self.etcdir,
                                     'udev/rules.d/70-persistent-net.rules')
             f = self.openpausednodefile(rulefile, "a")
-            f.write('\n# Xen PVM virtual interface #%s %s with MAC address %s\n' % (ifindex, self.ifname(ifindex), hwaddr))
+            f.write(
+                '\n# Xen PVM virtual interface #%s %s with MAC address %s\n' %
+                (ifindex, self.ifname(ifindex), hwaddr))
             # Using MAC address as we're now loading PVM net driver "early"
-            # OLD: Would like to use MAC address, but udev isn't working with paravirtualized NICs.  Perhaps the "set hw address" isn't triggering a rescan.
-            f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="%s", KERNEL=="eth*", NAME="%s"\n' % (hwaddr, self.ifname(ifindex)))
-            # f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", DEVPATH=="/devices/vif-%s/?*", KERNEL=="eth*", NAME="%s"\n' % (ifindex, self.ifname(ifindex)))
+            # OLD: Would like to use MAC address, but udev isn't working with
+            # paravirtualized NICs.
+            # Perhaps the "set hw address" isn't triggering a rescan.
+            f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*",'
+                    'ATTR{address}=="%s", KERNEL=="eth*", NAME="%s"\n' %
+                    (hwaddr, self.ifname(ifindex)))
+            # f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*",
+            # DEVPATH=="/devices/vif-%s/?*", KERNEL=="eth*", NAME="%s"\n' %
+            # (ifindex, self.ifname(ifindex)))
             f.close()
 
             if hwaddr:
@@ -760,7 +779,8 @@ class XenNode(PyCoreNode):
         # self.cmd([IP_BIN, "link", "set", tmp1, "name", ifname])
         # self.addnetif(PyCoreNetIf(self, ifname), self.newifindex())
         #
-        # check_call([IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
+        # check_call(
+        #     [IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
         # othernode.cmd([IP_BIN, "link", "set", tmp2, "name", otherifname])
         # othernode.addnetif(PyCoreNetIf(othernode, otherifname),
         #                    othernode.newifindex())
@@ -769,12 +789,12 @@ class XenNode(PyCoreNode):
         self.lock.acquire()
         if not self.up:
             self.lock.release()
-            raise Exception, "Can't access VM file as VM disk isn't ready"
+            raise Exception("Can't access VM file as VM disk isn't ready")
             return
 
         if self.booted:
             self.lock.release()
-            raise Exception, "Can't access VM file as VM is already running"
+            raise Exception("Can't access VM file as VM is already running")
             return
 
         if filename in self.FilesToIgnore:
@@ -783,7 +803,8 @@ class XenNode(PyCoreNode):
 
         if filename in self.FilesRedirection:
             redirFilename = self.FilesRedirection[filename]
-            self.warn("XEN PVM addfile(filename=%s) redirected to %s" % (filename, redirFilename))
+            self.warn("XEN PVM addfile(filename=%s) redirected to %s" %
+                      (filename, redirFilename))
             filename = redirFilename
 
         try:

@@ -57,10 +57,10 @@ class XorpRtrmgr(CoreService):
         try:
             (addr, plen) = x.split("/")
         except Exception:
-            raise ValueError, "invalid address"
+            raise ValueError("invalid address")
         cfg = "\t    address %s {\n" % addr
         cfg += "\t\tprefix-length: %s\n" % plen
-        cfg +="\t    }\n"
+        cfg += "\t    }\n"
         return cfg
 
     @staticmethod
@@ -152,11 +152,11 @@ class XorpService(CoreService):
         return "0.0.0.0"
 
     @classmethod
-    def generateconfig(cls,  node, filename, services):
+    def generateconfig(cls, node, filename, services):
         return ""
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         return ""
 
 
@@ -168,7 +168,7 @@ class XorpOspfv2(XorpService):
     _name = "XORP_OSPFv2"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.fea("unicast-forwarding4")
         rtrid = cls.routerid(node)
         cfg += "\nprotocols {\n"
@@ -204,7 +204,7 @@ class XorpOspfv3(XorpService):
     _name = "XORP_OSPFv3"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.fea("unicast-forwarding6")
         rtrid = cls.routerid(node)
         cfg += "\nprotocols {\n"
@@ -262,7 +262,7 @@ class XorpRip(XorpService):
     _name = "XORP_RIP"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.fea("unicast-forwarding4")
         cfg += cls.policyexportconnected()
         cfg += "\nprotocols {\n"
@@ -295,7 +295,7 @@ class XorpRipng(XorpService):
     _name = "XORP_RIPNG"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.fea("unicast-forwarding6")
         cfg += cls.policyexportconnected()
         cfg += "\nprotocols {\n"
@@ -331,7 +331,7 @@ class XorpPimSm4(XorpService):
     _name = "XORP_PIMSM4"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.mfea("mfea4", node.netifs())
 
         cfg += "\nprotocols {\n"
@@ -391,7 +391,7 @@ class XorpPimSm6(XorpService):
     _name = "XORP_PIMSM6"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.mfea("mfea6", node.netifs())
 
         cfg += "\nprotocols {\n"
@@ -451,7 +451,7 @@ class XorpOlsr(XorpService):
     _name = "XORP_OLSR"
 
     @classmethod
-    def generatexorpconfig(cls,  node):
+    def generatexorpconfig(cls, node):
         cfg = cls.fea("unicast-forwarding4")
         rtrid = cls.routerid(node)
         cfg += "\nprotocols {\n"

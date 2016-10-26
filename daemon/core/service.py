@@ -75,7 +75,7 @@ class CoreServices(ConfigurableManager):
         if not path or len(path) == 0:
             return
         if not os.path.isdir(path):
-            self.session.warn("invalid custom service directory specified" \
+            self.session.warn("invalid custom service directory specified"
                               ": %s" % path)
             return
         try:
@@ -169,7 +169,8 @@ class CoreServices(ConfigurableManager):
     def addservicestonode(self, node, nodetype, services_str, verbose):
         ''' Populate the node.service list using (1) the list of services
             requested from the services TLV, (2) using any custom service
-            configuration, or (3) using the default services for this node type.
+            configuration, or (3) using the default services for this node
+            type.
         '''
         if services_str is not None:
             services = services_str.split('|')
@@ -177,11 +178,11 @@ class CoreServices(ConfigurableManager):
                 s = self.getservicebyname(name)
                 if s is None:
                     self.session.warn("configured service %s for node %s is "
-                                      "unknown" % (name,  node.name))
+                                      "unknown" % (name, node.name))
                     continue
                 if verbose:
                     self.session.info("adding configured service %s to "
-                                      "node %s" % (s._name,  node.name))
+                                      "node %s" % (s._name, node.name))
                 s = self.getcustomservice(node.objid, s)
                 node.addservice(s)
         else:
@@ -189,7 +190,7 @@ class CoreServices(ConfigurableManager):
             for s in services:
                 if verbose:
                     self.session.info("adding default service %s to node %s" %
-                                      (s._name,  node.name))
+                                      (s._name, node.name))
                 s = self.getcustomservice(node.objid, s)
                 node.addservice(s)
 
@@ -229,7 +230,8 @@ class CoreServices(ConfigurableManager):
                     t = float(s._starttime)
                     if t > 0.0:
                         fn = self.bootnodeservice
-                        self.session.evq.add_event(t, fn, node, s, services, False)
+                        self.session.evq.add_event(t, fn, node,
+                                                   s, services, False)
                         continue
                 except ValueError:
                     pass
@@ -247,18 +249,18 @@ class CoreServices(ConfigurableManager):
         for d in s._dirs:
             try:
                 node.privatedir(d)
-            except Exception,  e:
+            except Exception, e:
                 node.warn("Error making node %s dir %s: %s" %
-                          (node.name,  d,  e))
+                          (node.name, d, e))
         for filename in s.getconfigfilenames(node.objid, services):
-            cfg = s.generateconfig(node,  filename, services)
-            node.nodefile(filename,  cfg)
+            cfg = s.generateconfig(node, filename, services)
+            node.nodefile(filename, cfg)
         if useStartupService and not self.isStartupService(s):
             return
         for cmd in s.getstartup(node, services):
             try:
                 # NOTE: this wait=False can be problematic!
-                node.cmd(shlex.split(cmd),  wait=False)
+                node.cmd(shlex.split(cmd), wait=False)
             except Exception, e:
                 node.warn("error starting command %s: %s" % (cmd, e))
 
@@ -267,13 +269,14 @@ class CoreServices(ConfigurableManager):
             config files, and execute  supplied startup commands.
         '''
         if node.verbose:
-            node.info("starting service %s (%s)(custom)" % (s._name, s._startindex))
+            node.info("starting service %s (%s)(custom)" %
+                (s._name, s._startindex))
         for d in s._dirs:
             try:
                 node.privatedir(d)
-            except Exception,  e:
+            except Exception, e:
                 node.warn("Error making node %s dir %s: %s" %
-                          (node.name,  d,  e))
+                          (node.name, d, e))
         for i, filename in enumerate(s._configs):
             if len(filename) == 0:
                 continue
@@ -291,7 +294,7 @@ class CoreServices(ConfigurableManager):
                                "error copying service file '%s': %s" %
                                (filename, e))
                 continue
-            node.nodefile(filename,  cfg)
+            node.nodefile(filename, cfg)
 
         if useStartupService and not self.isStartupService(s):
             return
@@ -299,7 +302,7 @@ class CoreServices(ConfigurableManager):
         for cmd in s._startup:
             try:
                 # NOTE: this wait=False can be problematic!
-                node.cmd(shlex.split(cmd),  wait=False)
+                node.cmd(shlex.split(cmd), wait=False)
             except Exception, e:
                 node.warn("error starting command %s: %s" % (cmd, e))
 
@@ -340,7 +343,8 @@ class CoreServices(ConfigurableManager):
         else:
             for cmd in validate_cmds:
                 if node.verbose:
-                    node.info("validating service %s using: %s" % (s._name, cmd))
+                    node.info("validating service %s using: %s" %
+                        (s._name, cmd))
                 try:
                     (status, result) = node.cmdresult(shlex.split(cmd))
                     if status != 0:
@@ -371,7 +375,7 @@ class CoreServices(ConfigurableManager):
         else:
             for cmd in s._shutdown:
                 try:
-                    tmp = node.cmd(shlex.split(cmd),  wait=True)
+                    tmp = node.cmd(shlex.split(cmd), wait=True)
                     status += "%s" % (tmp)
                 except:
                     node.warn("error running stop command %s" % cmd)
@@ -395,9 +399,9 @@ class CoreServices(ConfigurableManager):
             global servicelist
             tf = coreapi.CONF_TYPE_FLAGS_NONE
             datatypes = tuple(repeat(coreapi.CONF_DATA_TYPE_BOOL,
-                                            len(servicelist)))
+                                     len(servicelist)))
             vals = "|".join(repeat('0', len(servicelist)))
-            names = map(lambda x: x._name,  servicelist)
+            names = map(lambda x: x._name, servicelist)
             captions = "|".join(names)
             possiblevals = ""
             for s in servicelist:
@@ -428,7 +432,7 @@ class CoreServices(ConfigurableManager):
 
             if n is None:
                 self.session.warn("Request to configure service %s for "
-                                  "unknown node %s" % (svc._name,  nodenum))
+                                  "unknown node %s" % (svc._name, nodenum))
                 return None
 
             # send back:
@@ -528,11 +532,11 @@ class CoreServices(ConfigurableManager):
                 services.append(s)
         return services, unknown
 
-    def buildgroups(self,  servicelist):
+    def buildgroups(self, servicelist):
         ''' Build a string of groups for use in a configuration message given
             a list of services. The group list string has the format
-            "title1:1-5|title2:6-9|10-12", where title is an optional group title
-            and i-j is a numeric range of value indices; groups are
+            "title1:1-5|title2:6-9|10-12", where title is an optional group
+            title and i-j is a numeric range of value indices; groups are
             separated by commas.
         '''
         i = 0
@@ -550,7 +554,7 @@ class CoreServices(ConfigurableManager):
                 if group == "":
                     r += "%d" % i
                 else:
-                    r += "%s:%d" % (group,  i)
+                    r += "%s:%d" % (group, i)
         # finish the last group list
         if i > 0:
             r += "-%d" % i
@@ -558,14 +562,15 @@ class CoreServices(ConfigurableManager):
 
     def getservicefile(self, services, node, filename):
         ''' Send a File Message when the GUI has requested a service file.
-        The file data is either auto-generated or comes from an existing config.
+        The file data is either auto-generated or comes from an existing
+        config.
         '''
         svc = services[0]
         # get the filename and determine the config file index
         if svc._custom:
             cfgfiles = svc._configs
         else:
-            cfgfiles = svc.getconfigfilenames(node.objid,  services)
+            cfgfiles = svc.getconfigfilenames(node.objid, services)
         if filename not in cfgfiles:
             self.session.warn("Request for unknown file '%s' for service '%s'"
                               % (filename, services[0]))
@@ -581,10 +586,14 @@ class CoreServices(ConfigurableManager):
 
         # send a file message
         flags = coreapi.CORE_API_ADD_FLAG
-        tlvdata = coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_NODE, node.objid)
-        tlvdata += coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_NAME, filename)
-        tlvdata += coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_TYPE, filetypestr)
-        tlvdata += coreapi.CoreFileTlv.pack(coreapi.CORE_TLV_FILE_DATA, data)
+        tlvdata = coreapi.CoreFileTlv.pack(
+            coreapi.CORE_TLV_FILE_NODE, node.objid)
+        tlvdata += coreapi.CoreFileTlv.pack(
+            coreapi.CORE_TLV_FILE_NAME, filename)
+        tlvdata += coreapi.CoreFileTlv.pack(
+            coreapi.CORE_TLV_FILE_TYPE, filetypestr)
+        tlvdata += coreapi.CoreFileTlv.pack(
+            coreapi.CORE_TLV_FILE_DATA, data)
         reply = coreapi.CoreFileMessage.pack(flags, tlvdata)
         return reply
 
@@ -678,7 +687,7 @@ class CoreServices(ConfigurableManager):
                 if s._custom:
                     cfgfiles = s._configs
                 else:
-                    cfgfiles = s.getconfigfilenames(node.objid,  services)
+                    cfgfiles = s.getconfigfilenames(node.objid, services)
                 if len(cfgfiles) > 0:
                     for filename in cfgfiles:
                         if filename[:7] == "file:///":
@@ -762,15 +771,17 @@ class CoreService(object):
         self._custom = True
 
     @classmethod
-    def getconfigfilenames(cls,  nodenum,  services):
-        ''' Return the tuple of configuration file filenames. This default method
-            returns the cls._configs tuple, but this method may be overriden to
-            provide node-specific filenames that may be based on other services.
+    def getconfigfilenames(cls, nodenum, services):
+        ''' Return the tuple of configuration file filenames.
+
+        This default method returns the cls._configs tuple, but this method
+        may be overriden to provide node-specific filenames that may be
+        based on other services.
         '''
         return cls._configs
 
     @classmethod
-    def generateconfig(cls, node,  filename,  services):
+    def generateconfig(cls, node, filename, services):
         ''' Generate configuration file given a node object. The filename is
             provided to allow for multiple config files. The other services are
             provided to allow interdependencies (e.g. zebra and OSPF).
@@ -780,7 +791,7 @@ class CoreService(object):
         raise NotImplementedError
 
     @classmethod
-    def getstartup(cls,  node,  services):
+    def getstartup(cls, node, services):
         ''' Return the tuple of startup commands. This default method
             returns the cls._startup tuple, but this method may be
             overriden to provide node-specific commands that may be
@@ -789,7 +800,7 @@ class CoreService(object):
         return cls._startup
 
     @classmethod
-    def getvalidate(cls,  node,  services):
+    def getvalidate(cls, node, services):
         ''' Return the tuple of validate commands. This default method
             returns the cls._validate tuple, but this method may be
             overriden to provide node-specific commands that may be
@@ -809,7 +820,7 @@ class CoreService(object):
             valmap[valmap.index(cls._configs)] = \
                 cls.getconfigfilenames(node.objid, services)
             valmap[valmap.index(cls._startup)] = \
-                cls.getstartup(node,  services)
+                cls.getstartup(node, services)
         vals = map(lambda a, b: "%s=%s" % (a, str(b)), cls.keys, valmap)
         return "|".join(vals)
 

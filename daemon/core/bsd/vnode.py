@@ -122,11 +122,11 @@ class SimpleJailNode(PyCoreNode):
         try:
             os.spawnlp(os.P_WAIT, VIMAGE_BIN, *vimg)
         except OSError:
-            raise Exception, ("vimage command not found while running: %s" % \
-                    vimg)
+            raise Exception(
+                "vimage command not found while running: %s" % vimg)
         self.up = False
 
-    def cmd(self, args, wait = True):
+    def cmd(self, args, wait=True):
         if wait:
             mode = os.P_WAIT
         else:

@@ -55,11 +55,11 @@ class CoreLocation(ConfigurableManager):
             return None
         values = values.split('|')
         # Cartesian coordinate reference point
-        refx,refy = map(lambda x: float(x), values[0:2])
+        refx, refy = map(lambda x: float(x), values[0:2])
         refz = 0.0
         self.refxyz = (refx, refy, refz)
         # Geographic reference point
-        lat,long,alt = map(lambda x: float(x), values[2:5])
+        lat, long, alt = map(lambda x: float(x), values[2:5])
         self.setrefgeo(lat, long, alt)
         self.refscale = float(values[5])
         self.session.info("location configured: (%.2f,%.2f,%.2f) = "

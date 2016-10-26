@@ -173,7 +173,7 @@ for image in images:
     for repo in image['RepoTags']:
         if u':core' not in repo:
             continue
-        dockerid = repo.encode('ascii','ignore').split(':')[0]
+        dockerid = repo.encode('ascii', 'ignore').split(':')[0]
         SubClass = type('SubClass', (DockerService,),
                         {'_name': dockerid, '_image': dockerid})
         addservice(SubClass)

@@ -125,7 +125,7 @@ class CoreDocumentParser0(object):
             else:
                 netif.swapparams('_params_up')
                 upstream = True
-            key = (n2.name,  ifcname)
+            key = (n2.name, ifcname)
             if key in self.linkparams:
                 for (k, v) in self.linkparams[key]:
                     netif.setparam(k, v)

@@ -305,17 +305,17 @@ class Configurable(object):
                                             cls._name)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_TYPE,
                                             typeflags)
-        datatypes = tuple( map(lambda x: x[1], cls._confmatrix) )
+        datatypes = tuple(map(lambda x: x[1], cls._confmatrix))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_DATA_TYPES,
                                             datatypes)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_VALUES,
                                             values_str)
-        captions = reduce( lambda a,b: a + '|' + b, \
-                           map(lambda x: x[4], cls._confmatrix))
+        captions = reduce(lambda a, b: a + '|' + b,
+                          map(lambda x: x[4], cls._confmatrix))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_CAPTIONS,
                                             captions)
-        possiblevals = reduce( lambda a,b: a + '|' + b, \
-                           map(lambda x: x[3], cls._confmatrix))
+        possiblevals = reduce(lambda a, b: a + '|' + b,
+                              map(lambda x: x[3], cls._confmatrix))
         tlvdata += coreapi.CoreConfTlv.pack(
             coreapi.CORE_TLV_CONF_POSSIBLE_VALUES, possiblevals)
         if cls._bitmap is not None:
@@ -346,7 +346,7 @@ class Configurable(object):
         return value
 
     @classmethod
-    def valueof(cls, name,  values):
+    def valueof(cls, name, values):
         ''' Helper to return a value by the name defined in confmatrix.
             Checks if it is boolean'''
         i = cls.getnames().index(name)
@@ -377,5 +377,3 @@ class Configurable(object):
             if hasattr(self, k):
                 r.append((k, getattr(self, k)))
         return r
-
-

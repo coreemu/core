@@ -636,24 +636,24 @@ def msg_class(msgtypeid):
 nodeclsmap = {}
 
 
-def add_node_class(name, nodetypeid, nodecls, change = False):
+def add_node_class(name, nodetypeid, nodecls, change=False):
     global nodeclsmap
     if nodetypeid in nodeclsmap:
         if not change:
-            raise ValueError, \
-                "node class already exists for nodetypeid %s" % nodetypeid
+            raise ValueError(
+                "node class already exists for nodetypeid %s" % nodetypeid)
     nodeclsmap[nodetypeid] = nodecls
     if nodetypeid not in node_types:
         node_types[nodetypeid] = name
         exec "%s = %s" % (name, nodetypeid) in globals()
     elif name != node_types[nodetypeid]:
-        raise ValueError, "node type already exists for '%s'" % name
+        raise ValueError("node type already exists for '%s'" % name)
     else:
         pass
 
 
 def change_node_class(name, nodetypeid, nodecls):
-    return add_node_class(name, nodetypeid, nodecls, change = True)
+    return add_node_class(name, nodetypeid, nodecls, change=True)
 
 
 def node_class(nodetypeid):

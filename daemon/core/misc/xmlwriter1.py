@@ -901,7 +901,8 @@ def getEndpoint(netObj, ifcObj):
         # i.e. a switch/hub interface connected to another switch/hub and CORE has the other switch/hub
         # as the containing network
         else:
-            ep = Endpoint(netObj, ifcObj,type=None, id=None, l2devport=None, params=None)
+            ep = Endpoint(netObj, ifcObj, type=None, id=None,
+                          l2devport=None, params=None)
 
     return ep
 

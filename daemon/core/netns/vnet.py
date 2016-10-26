@@ -502,7 +502,8 @@ class GreTapBridge(LxBrNet):
             self.gretap = None
         else:
             self.gretap = GreTap(node=self, name=None, session=session,
-                                 remoteip=remoteip, objid=None, localip=localip, ttl = ttl,
+                                 remoteip=remoteip, objid=None,
+                                 localip=localip, ttl=ttl,
                                  key=self.grekey)
         if start:
             self.startup()
@@ -530,7 +531,7 @@ class GreTapBridge(LxBrNet):
             specifies localip.
         '''
         if self.gretap:
-            raise ValueError, "gretap already exists for %s" % self.name
+            raise ValueError("gretap already exists for %s" % self.name)
         remoteip = addrlist[0].split('/')[0]
         localip = None
         if len(addrlist) > 1:

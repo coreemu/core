@@ -201,7 +201,6 @@ class EmaneNode(EmaneNet):
         '''
         return "n%strans%s.xml" % (self.objid, type)
 
-
     def installnetifs(self, do_netns=True):
         ''' Install TAP devices into their namespaces. This is done after
             EMANE daemons have been started, because that is their only chance
@@ -224,7 +223,7 @@ class EmaneNode(EmaneNet):
             # at this point we register location handlers for generating
             # EMANE location events
             netif.poshook = self.setnemposition
-            (x,y,z) = netif.node.position.get()
+            (x, y, z) = netif.node.position.get()
             self.setnemposition(netif, x, y, z)
 
     def deinstallnetifs(self):
@@ -244,7 +243,7 @@ class EmaneNode(EmaneNet):
             if self.verbose:
                 self.info("position service not available")
             return
-        nemid =  self.getnemid(netif)
+        nemid = self.getnemid(netif)
         ifname = netif.localname
         if nemid is None:
             self.info("nemid for %s is unknown" % ifname)
@@ -290,7 +289,7 @@ class EmaneNode(EmaneNet):
             event = emaneeventlocation.EventLocation(len(moved_netifs))
         i = 0
         for netif in moved_netifs:
-            nemid =  self.getnemid(netif)
+            nemid = self.getnemid(netif)
             ifname = netif.localname
             if nemid is None:
                 self.info("nemid for %s is unknown" % ifname)
@@ -312,10 +311,10 @@ class EmaneNode(EmaneNet):
         if self.session.emane.version >= self.session.emane.EMANE091:
             self.session.emane.service.publish(0, event)
         else:
-            self.session.emane.service.publish(emaneeventlocation.EVENT_ID,
-                                           emaneeventservice.PLATFORMID_ANY,
-                                           emaneeventservice.NEMID_ANY,
-                                           emaneeventservice.COMPONENTID_ANY,
-                                           event.export())
-
+            self.session.emane.service.publish(
+                emaneeventlocation.EVENT_ID,
+                emaneeventservice.PLATFORMID_ANY,
+                emaneeventservice.NEMID_ANY,
+                emaneeventservice.COMPONENTID_ANY,
+                event.export())
 

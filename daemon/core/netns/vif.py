@@ -96,7 +96,7 @@ class TunTap(PyCoreNetIf):
             else:
                 msg += ', giving up'
                 self.node.info(msg)
-        raise RuntimeError, 'command failed after %s attempts' % attempts
+        raise RuntimeError('command failed after %s attempts' % attempts)
 
     def waitfordevicelocal(self):
         '''\
@@ -141,14 +141,16 @@ class TunTap(PyCoreNetIf):
         try:
             check_call([IP_BIN, "link", "set", self.localname, "netns", netns])
         except Exception, e:
-            msg = "error installing TAP interface %s, command:" % self.localname
+            msg = "error installing TAP interface %s, command:" % \
+                   self.localname
             msg += "ip link set %s netns %s" % (self.localname, netns)
-            self.node.exception(coreapi.CORE_EXCP_LEVEL_ERROR, self.localname, msg)
+            self.node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
+                                self.localname, msg)
             self.node.warn(msg)
             return
         self.node.cmd([IP_BIN, "link", "set", self.localname,
                        "name", self.name])
-        self.node.cmd([IP_BIN, "link", "set", self.name,  "up"])
+        self.node.cmd([IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
         ''' Set interface addresses based on self.addrlist.
@@ -182,7 +184,7 @@ class GreTap(PyCoreNetIf):
             return
 
         if remoteip is None:
-            raise ValueError, "missing remote IP required for GRE TAP device"
+            raise ValueError("missing remote IP required for GRE TAP device")
         cmd = ("ip", "link", "add", self.localname, "type", "gretap",
                "remote", str(remoteip))
         if localip:

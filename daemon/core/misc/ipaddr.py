@@ -37,7 +37,7 @@ class MacAddr(object):
         oui ^= 0x020000000000L
         # append EUI-48 octets
         oui = (oui << 16) | 0xFFFE000000L
-        return IPAddr(AF_INET6,  struct.pack("!QQ", 0xfe80 << 48, oui | nic))
+        return IPAddr(AF_INET6, struct.pack("!QQ", 0xfe80 << 48, oui | nic))
 
     @classmethod
     def fromstring(cls, s):
@@ -214,7 +214,7 @@ class IPPrefix(object):
     def netmaskstr(self):
         addrbits = self.addrlen - self.prefixlen
         netmask = ((1L << self.prefixlen) - 1) << addrbits
-        netmaskbytes = struct.pack("!L",  netmask)
+        netmaskbytes = struct.pack("!L", netmask)
         return IPAddr(af=AF_INET, addr=netmaskbytes).__str__()
 
 

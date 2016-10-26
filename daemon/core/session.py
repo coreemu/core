@@ -916,14 +916,16 @@ class Session(object):
                     except IndexError:
                         prefix = prefixes[0]
         else:  # len(prefixes) == 1
-            # TODO: can we get the server name from the servers.conf or from the node assignments?
+            # TODO: can we get the server name from the servers.conf or from
+            # the node assignments?
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
             prefix = prefixes[0]
 
         ctrlnet = self.addobj(cls=nodes.CtrlNet, objid=oid, prefix=prefix,
                               assign_address=assign_address,
-                              updown_script=updown_script, serverintf=serverintf)
+                              updown_script=updown_script,
+                              serverintf=serverintf)
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
         self.broker.addnet(oid)
@@ -932,7 +934,7 @@ class Session(object):
 
         return ctrlnet
 
-    def addremovectrlif(self, node, netidx=0,  remove=False, conf_reqd=True):
+    def addremovectrlif(self, node, netidx=0, remove=False, conf_reqd=True):
         ''' Add a control interface to a node when a 'controlnet' prefix is
             listed in the config file or session options. Uses
             addremovectrlnet() to build or remove the control bridge.
@@ -957,9 +959,10 @@ class Session(object):
             node.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                            "Session.addremovectrlif()", msg)
             return
-        ifi = node.newnetif(net = ctrlnet, ifindex = ctrlnet.CTRLIF_IDX_BASE + netidx,
-                            ifname = "ctrl%d" % netidx, hwaddr = MacAddr.random(),
-                            addrlist = addrlist)
+        ifi = node.newnetif(net=ctrlnet,
+                            ifindex=ctrlnet.CTRLIF_IDX_BASE + netidx,
+                            ifname="ctrl%d" % netidx, hwaddr=MacAddr.random(),
+                            addrlist=addrlist)
         node.netif(ifi).control = True
 
     def updatectrlifhosts(self, netidx=0, remove=False):

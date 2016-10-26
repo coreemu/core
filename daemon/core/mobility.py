@@ -90,7 +90,7 @@ class MobilityManager(ConfigurableManager):
                 n = self.session.obj(nodenum)
             except KeyError:
                 self.session.warn("Skipping mobility configuration for unknown"
-                                "node %d." % nodenum)
+                                  "node %d." % nodenum)
             n.updatemodel(conftype, values)
 
     def register(self):
@@ -199,7 +199,7 @@ class MobilityManager(ConfigurableManager):
         else:
             self.physnets[netnum].append(nodenum)
 
-    def physnodehandlelink(self,  msg):
+    def physnodehandlelink(self, msg):
         ''' Broker handler. Snoop Link add messages to get
             node numbers of PhyiscalNodes and their nets.
             Physical nodes exist only on other servers, but a shadow object is
@@ -318,7 +318,7 @@ class BasicRangeModel(WirelessModel):
         if values is None:
             values = session.mobility.getconfig(objid, self._name,
                                                 self.getdefaultvalues())[1]
-        self.range = float(self.valueof("range",  values))
+        self.range = float(self.valueof("range", values))
         if self.verbose:
             self.session.info("Basic range model configured for WLAN %d using"
                               " range %d" % (objid, self.range))
@@ -446,7 +446,7 @@ class BasicRangeModel(WirelessModel):
         WirelessModel.updateconfig()
         '''
         self.valuestolinkparams(values)
-        self.range = float(self.valueof("range",  values))
+        self.range = float(self.valueof("range", values))
         return True
 
     def linkmsg(self, netif, netif2, flags):
@@ -783,7 +783,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         if values is None:
             values = session.mobility.getconfig(objid, self._name,
                                                 self.getdefaultvalues())[1]
-        self.file = self.valueof("file",  values)
+        self.file = self.valueof("file", values)
         self.refresh_ms = int(self.valueof("refresh_ms", values))
         self.loop = (self.valueof("loop", values).lower() == "on")
         self.autostart = self.valueof("autostart", values)

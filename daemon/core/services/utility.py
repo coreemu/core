@@ -30,7 +30,7 @@ class UtilService(CoreService):
     _shutdown = ()
 
     @classmethod
-    def generateconfig(cls,  node, filename, services):
+    def generateconfig(cls, node, filename, services):
         return ""
 
 
@@ -355,10 +355,12 @@ class DhcpClientService(UtilService):
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control is True:
                 continue
-            cfg += "#ln -s /var/run/resolvconf/interface/%s.dhclient" % ifc.name
+            cfg += "#ln -s /var/run/resolvconf/interface/%s.dhclient" % \
+                ifc.name
             cfg += " /var/run/resolvconf/resolv.conf\n"
             cfg += "/sbin/dhclient -nw -pf /var/run/dhclient-%s.pid" % ifc.name
-            cfg += " -lf /var/run/dhclient-%s.lease %s\n" % (ifc.name,  ifc.name)
+            cfg += " -lf /var/run/dhclient-%s.lease %s\n" % \
+                (ifc.name, ifc.name)
         return cfg
 
 addservice(DhcpClientService)

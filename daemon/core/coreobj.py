@@ -204,7 +204,7 @@ class PyCoreNode(PyCoreObj):
                  start=True):
         ''' Initialization for node objects.
         '''
-        PyCoreObj.__init__(self,  session,  objid,  name, verbose=verbose,
+        PyCoreObj.__init__(self, session, objid, name, verbose=verbose,
                            start=start)
         self.services = []
         if not hasattr(self, "type"):
@@ -214,7 +214,7 @@ class PyCoreNode(PyCoreObj):
     def nodeid(self):
         return self.objid
 
-    def addservice(self,  service):
+    def addservice(self, service):
         if service is not None:
             self.services.append(service)
 

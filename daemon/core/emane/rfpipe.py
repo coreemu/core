@@ -75,8 +75,10 @@ class EmaneRfPipeModel(EmaneModel):
     _confmatrix = _confmatrix_mac + _confmatrix_phy
 
     # value groupings
-    _confgroups = "RF-PIPE MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" \
-           % ( len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(_confmatrix))
+    _confgroups = "RF-PIPE MAC Parameters:1-%d|Universal PHY Parameters:%d-%d"\
+                  % (len(_confmatrix_mac),
+                     len(_confmatrix_mac) + 1,
+                     len(_confmatrix))
 
     def buildnemxmlfiles(self, e, ifc):
         ''' Build the necessary nem, mac, and phy XMLs in the given path.

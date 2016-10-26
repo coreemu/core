@@ -29,7 +29,7 @@ class NrlService(CoreService):
     _shutdown = ()
 
     @classmethod
-    def generateconfig(cls,  node, filename, services):
+    def generateconfig(cls, node, filename, services):
         return ""
 
     @staticmethod
@@ -67,7 +67,7 @@ class MgenSinkService(NrlService):
         return cfg
 
     @classmethod
-    def getstartup(cls,  node, services):
+    def getstartup(cls, node, services):
         cmd = cls._startup[0]
         cmd += " output /tmp/mgen_%s.log" % node.name
         return (cmd, )
@@ -84,14 +84,14 @@ class NrlNhdp(NrlService):
     _validate = ("pidof nrlnhdp", )
 
     @classmethod
-    def getstartup(cls,  node,  services):
+    def getstartup(cls, node, services):
         ''' Generate the appropriate command-line based on node interfaces.
         '''
         cmd = cls._startup[0]
         cmd += " -l /var/log/nrlnhdp.log"
         cmd += " -rpipe %s_nhdp" % node.name
 
-        servicenames = map(lambda x: x._name,  services)
+        servicenames = map(lambda x: x._name, services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds-etx sticky"
             cmd += " -smfClient %s_smf" % node.name
@@ -128,7 +128,7 @@ class NrlSmf(NrlService):
         comments = ""
         cmd = "nrlsmf instance %s_smf" % (node.name)
 
-        servicenames = map(lambda x: x._name,  services)
+        servicenames = map(lambda x: x._name, services)
         netifs = filter(lambda x: not getattr(x, 'control', False), \
                         node.netifs())
         if len(netifs) == 0:
@@ -148,7 +148,7 @@ class NrlSmf(NrlService):
                 cmd += " smpr "
             else:
                 cmd += " cf "
-            interfacenames = map(lambda x: x.name,  netifs)
+            interfacenames = map(lambda x: x.name, netifs)
             cmd += ",".join(interfacenames)
 
         cmd += " hash MD5"
@@ -169,7 +169,7 @@ class NrlOlsr(NrlService):
     _validate = ("pidof nrlolsrd", )
 
     @classmethod
-    def getstartup(cls,  node,  services):
+    def getstartup(cls, node, services):
         ''' Generate the appropriate command-line based on node interfaces.
         '''
         cmd = cls._startup[0]
@@ -181,7 +181,7 @@ class NrlOlsr(NrlService):
         cmd += " -l /var/log/nrlolsrd.log"
         cmd += " -rpipe %s_olsr" % node.name
 
-        servicenames = map(lambda x: x._name,  services)
+        servicenames = map(lambda x: x._name, services)
         if "SMF" in servicenames and not "NHDP" in servicenames:
             cmd += " -flooding s-mpr"
             cmd += " -smfClient %s_smf" % node.name
@@ -202,14 +202,14 @@ class NrlOlsrv2(NrlService):
     _validate = ("pidof nrlolsrv2", )
 
     @classmethod
-    def getstartup(cls,  node,  services):
+    def getstartup(cls, node, services):
         ''' Generate the appropriate command-line based on node interfaces.
         '''
         cmd = cls._startup[0]
         cmd += " -l /var/log/nrlolsrv2.log"
         cmd += " -rpipe %s_olsrv2" % node.name
 
-        servicenames = map(lambda x: x._name,  services)
+        servicenames = map(lambda x: x._name, services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
@@ -239,7 +239,7 @@ class OlsrOrg(NrlService):
     _validate = ("pidof olsrd", )
 
     @classmethod
-    def getstartup(cls,  node,  services):
+    def getstartup(cls, node, services):
         ''' Generate the appropriate command-line based on node interfaces.
         '''
         cmd = cls._startup[0]
@@ -611,7 +611,7 @@ class MgenActor(NrlService):
         comments = ""
         cmd = "mgenBasicActor.py -n %s -a 0.0.0.0" % (node.name)
 
-        servicenames = map(lambda x: x._name,  services)
+        servicenames = map(lambda x: x._name, services)
         netifs = filter(lambda x: not getattr(x, 'control', False), \
                         node.netifs())
         if len(netifs) == 0:

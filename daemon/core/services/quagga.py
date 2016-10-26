@@ -31,7 +31,7 @@ class Zebra(CoreService):
     _name = "zebra"
     _group = "Quagga"
     _depends = ("vtysh", )
-    _dirs = ("/usr/local/etc/quagga",  "/var/run/quagga")
+    _dirs = ("/usr/local/etc/quagga", "/var/run/quagga")
     _configs = ("/usr/local/etc/quagga/Quagga.conf",
                 "quaggaboot.sh", "/usr/local/etc/quagga/vtysh.conf")
     _startindex = 35
@@ -81,7 +81,7 @@ class Zebra(CoreService):
             for s in services:
                 if cls._name not in s._depends:
                     continue
-                ifccfg = s.generatequaggaifcconfig(node,  ifc)
+                ifccfg = s.generatequaggaifcconfig(node, ifc)
                 if s._ipv4_routing:
                     want_ipv4 = True
                 if s._ipv6_routing:
@@ -293,15 +293,15 @@ class QuaggaService(CoreService):
         return False
 
     @classmethod
-    def generateconfig(cls,  node, filename, services):
+    def generateconfig(cls, node, filename, services):
         return ""
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         return ""
 
 
@@ -343,7 +343,7 @@ class Ospfv2(QuaggaService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         cfg = "router ospf\n"
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
@@ -360,7 +360,7 @@ class Ospfv2(QuaggaService):
         return cfg
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
         # cfg = cls.mtucheck(ifc)
         # external RJ45 connections will use default OSPF timers
@@ -424,7 +424,7 @@ class Ospfv3(QuaggaService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         cfg = "router ospf6\n"
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
@@ -436,7 +436,7 @@ class Ospfv3(QuaggaService):
         return cfg
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         return cls.mtucheck(ifc)
         # cfg = cls.mtucheck(ifc)
         # external RJ45 connections will use default OSPF timers
@@ -463,7 +463,7 @@ class Ospfv3mdr(Ospfv3):
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         cfg = cls.mtucheck(ifc)
         cfg += "  ipv6 ospf6 instance-id 65\n"
         if ifc.net is not None and \
@@ -497,7 +497,7 @@ class Bgp(QuaggaService):
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         cfg = "!\n! BGP configuration\n!\n"
         cfg += "! You should configure the AS number below,\n"
         cfg += "! along with this router's peers.\n!\n"
@@ -521,7 +521,7 @@ class Rip(QuaggaService):
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         cfg = """\
 router rip
   redistribute static
@@ -545,7 +545,7 @@ class Ripng(QuaggaService):
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         cfg = """\
 router ripng
   redistribute static
@@ -570,7 +570,7 @@ class Babel(QuaggaService):
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         cfg = "router babel\n"
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control is True:
@@ -580,7 +580,7 @@ class Babel(QuaggaService):
         return cfg
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         type = "wired"
         if ifc.net and ifc.net.linktype == coreapi.CORE_LINK_WIRELESS:
             return "  babel wireless\n  no babel split-horizon\n"
@@ -601,7 +601,7 @@ class Xpimd(QuaggaService):
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls,  node):
+    def generatequaggaconfig(cls, node):
         ifname = 'eth0'
         for ifc in node.netifs():
             if ifc.name != 'lo':
@@ -617,7 +617,7 @@ class Xpimd(QuaggaService):
         return cfg
 
     @classmethod
-    def generatequaggaifcconfig(cls,  node,  ifc):
+    def generatequaggaifcconfig(cls, node, ifc):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
 
 addservice(Xpimd)
