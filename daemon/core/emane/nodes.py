@@ -317,4 +317,3 @@ class EmaneNode(EmaneNet):
                 emaneeventservice.NEMID_ANY,
                 emaneeventservice.COMPONENTID_ANY,
                 event.export())
-
