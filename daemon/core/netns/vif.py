@@ -140,7 +140,7 @@ class TunTap(PyCoreNetIf):
         netns = str(self.node.pid)
         try:
             check_call([IP_BIN, "link", "set", self.localname, "netns", netns])
-        except Exception, e:
+        except Exception:
             msg = "error installing TAP interface %s, command:" % \
                    self.localname
             msg += "ip link set %s netns %s" % (self.localname, netns)
@@ -158,7 +158,7 @@ class TunTap(PyCoreNetIf):
         self.waitfordevicenode()
         for addr in self.addrlist:
             self.node.cmd([IP_BIN, "addr", "add", str(addr),
-                          "dev", self.name])
+                           "dev", self.name])
 
 
 class GreTap(PyCoreNetIf):

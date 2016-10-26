@@ -109,14 +109,17 @@ class Emane(ConfigurableManager):
             # Get the control network to be used for events
             values = self.getconfig(None, "emane",
                                     self.emane_config.getdefaultvalues())[1]
-            group, port = self.emane_config.valueof('eventservicegroup', values).split(':')
+            group, port = self.emane_config.valueof(
+                'eventservicegroup', values).split(':')
             eventdev = self.emane_config.valueof('eventservicedevice', values)
             eventnetidx = self.session.getctrlnetidx(eventdev)
             if self.version > self.EMANE091:
                 if eventnetidx < 0:
-                    msg = "Invalid Event Service device provided: %s" % eventdev
+                    msg = "Invalid Event Service device provided: %s" % \
+                        eventdev
                     self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
-                                           "Emane.initeventservice()", None, msg)
+                                           "Emane.initeventservice()",
+                                           None, msg)
                     self.info(msg)
                     return False
 
@@ -151,7 +154,7 @@ class Emane(ConfigurableManager):
             rc = False
         if self.service:
             for f in self.service._readFd, self.service._writeFd, \
-                self.service._socket, self.service._socketOTA:
+                     self.service._socket, self.service._socketOTA:
                 if f:
                     closeonexec(f)
         if filename is not None:
@@ -179,7 +182,8 @@ class Emane(ConfigurableManager):
             except Exception, e:
                 warntxt = "unable to load the EMANE model '%s'" % modelfile
                 warntxt += " specified in the config file (%s)" % e
-                self.session.exception(coreapi.CORE_EXCP_LEVEL_WARNING, "emane",
+                self.session.exception(coreapi.CORE_EXCP_LEVEL_WARNING,
+                                       "emane",
                                        None, warntxt)
                 self.warn(warntxt)
                 continue
@@ -198,8 +202,8 @@ class Emane(ConfigurableManager):
         self._objslock.acquire()
         if obj.objid in self._objs:
             self._objslock.release()
-            raise KeyError, "non-unique EMANE object id %s for %s" % \
-                (obj.objid, obj)
+            raise KeyError("non-unique EMANE object id %s for %s" %
+                           (obj.objid, obj))
         self._objs[obj.objid] = obj
         self._objslock.release()
 
@@ -222,7 +226,7 @@ class Emane(ConfigurableManager):
         # values are configured)
         sorted_ids = sorted(self.configs.keys())
         if None in self.configs and len(sorted_ids) > 1 and \
-          n.objid == sorted_ids[1]:
+                n.objid == sorted_ids[1]:
             v = self.configs[None]
             for model in v:
                 cls = self._modelclsmap[model[0]]
@@ -235,12 +239,14 @@ class Emane(ConfigurableManager):
         if ifc is None:
             return self.getconfig(nodenum, conftype, defaultvalues)[1]
         else:
-            # don't use default values when interface config is the same as net
-            # note here that using ifc.node.objid as key allows for only one type
-            # of each model per node; TODO: use both node and interface as key
+            # don't use default values when interface config is the same as
+            # net note here that using ifc.node.objid as key allows for only
+            # one type of each model per node; TODO: use both node and
+            # interface as key
 
-            # Adamson change: first check for iface config keyed by "node:ifc.name"
-            # (so that nodes w/ multiple interfaces of same conftype can have
+            # Adamson change: first check for iface config keyed by
+            # "node:ifc.name" (so that nodes w/ multiple interfaces of same
+            #  conftype can have
             #  different configs for each separate interface)
             key = 1000*ifc.node.objid + ifc.netindex
             values = self.getconfig(key, conftype, None)[1]
@@ -250,7 +256,9 @@ class Emane(ConfigurableManager):
                 # with EMANE 0.9.2+, we need an extra NEM XML from
                 # model.buildnemxmlfiles(), so defaults are returned here
                 if ifc.transport_type == "raw":
-                    values = self.getconfig(nodenum, conftype, defaultvalues)[1]
+                    values = self.getconfig(nodenum,
+                                            conftype,
+                                            defaultvalues)[1]
             return values
 
     def setup(self):
@@ -266,7 +274,7 @@ class Emane(ConfigurableManager):
             if len(self._objs) == 0:
                 return Emane.NOT_NEEDED
         if self.version == self.EMANEUNK:
-            raise ValueError, 'EMANE version not properly detected'
+            raise ValueError('EMANE version not properly detected')
         # control network bridge required for EMANE 0.9.2
         # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
@@ -277,7 +285,8 @@ class Emane(ConfigurableManager):
             netidx = self.session.getctrlnetidx(otadev)
             if netidx < 0:
                 msg = "EMANE cannot be started. "\
-                "Invalid OTA device provided: %s. Check core.conf." % otadev
+                      "Invalid OTA device provided: %s. Check core.conf." %\
+                      otadev
                 self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                        "Emane.setup()", None, msg)
                 self.info(msg)
@@ -292,7 +301,8 @@ class Emane(ConfigurableManager):
                 netidx = self.session.getctrlnetidx(eventdev)
                 if netidx < 0:
                     msg = "EMANE cannot be started."\
-                    "Invalid Event Service device provided: %s. Check core.conf." % eventdev
+                          "Invalid Event Service device provided: %s. "\
+                          "Check core.conf." % eventdev
                     self.session.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                            "Emane.setup()", None, msg)
                     self.info(msg)
@@ -323,7 +333,7 @@ class Emane(ConfigurableManager):
         if r != Emane.SUCCESS:
             return r  # NOT_NEEDED or NOT_READY
         if self.versionstr == "":
-            raise ValueError, "EMANE version not properly detected"
+            raise ValueError("EMANE version not properly detected")
         nems = []
         with self._objslock:
             if self.version < self.EMANE092:
@@ -418,8 +428,8 @@ class Emane(ConfigurableManager):
     def checkdistributed(self):
         ''' Check for EMANE nodes that exist on multiple emulation servers and
             coordinate the NEM id and port number space.
-            If we are the master EMANE node, return False so initialization will
-            proceed as normal; otherwise slaves return True here and
+            If we are the master EMANE node, return False so initialization
+            will proceed as normal; otherwise slaves return True here and
             initialization is deferred.
         '''
         # check with the session if we are the "master" Emane object?
@@ -445,7 +455,8 @@ class Emane(ConfigurableManager):
             nemcount += emanenode.numnetif()
         nemid = int(self.emane_config.valueof("nem_id_start", values))
         nemid += nemcount
-        platformid = int(self.emane_config.valueof("platform_id_start", values))
+        platformid = int(
+            self.emane_config.valueof("platform_id_start", values))
         names = list(self.emane_config.getnames())
 
         # build an ordered list of servers so platform ID is deterministic
@@ -467,7 +478,8 @@ class Emane(ConfigurableManager):
             values[names.index("platform_id_start")] = str(platformid)
             values[names.index("nem_id_start")] = str(nemid)
             msg = EmaneGlobalModel.toconfmsg(flags=0, nodenum=None,
-                                             typeflags=typeflags, values=values)
+                                             typeflags=typeflags,
+                                             values=values)
             server.sock.send(msg)
             # increment nemid for next server by number of interfaces
             with self._ifccountslock:
@@ -1242,8 +1254,7 @@ class EmaneModel(WirelessModel):
                'P': 1e15,   # peta
                'E': 1e18,   # exa
                'Z': 1e21,   # zetta
-               'Y': 1e24,   # yotta
-               }
+               'Y': 1e24}  # yotta
 
     @classmethod
     def configure_emane(cls, session, msg):

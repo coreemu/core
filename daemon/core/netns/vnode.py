@@ -56,7 +56,7 @@ class SimpleLxcNode(PyCoreNode):
             the hostname.
         '''
         if self.up:
-            raise Exception, "already up"
+            raise Exception("already up")
         vnoded = ["%s/vnoded" % CORE_SBIN_DIR, "-v", "-c", self.ctrlchnlname,
                   "-l", self.ctrlchnlname + ".log",
                   "-p", self.ctrlchnlname + ".pid"]
@@ -72,7 +72,7 @@ class SimpleLxcNode(PyCoreNode):
             msg = "error running vnoded command: %s (%s)" % (vnoded, e)
             self.exception(coreapi.CORE_EXCP_LEVEL_FATAL,
                            "SimpleLxcNode.startup()", msg)
-            raise Exception, msg
+            raise Exception(msg)
         try:
             self.pid = int(tmp.stdout.read())
             tmp.stdout.close()
@@ -82,7 +82,7 @@ class SimpleLxcNode(PyCoreNode):
             self.exception(coreapi.CORE_EXCP_LEVEL_FATAL,
                            "SimpleLxcNode.startup()", msg)
         if tmp.wait():
-            raise Exception, ("command failed: %s" % vnoded)
+            raise Exception("command failed: %s" % vnoded)
         self.vnodeclient = vnodeclient.VnodeClient(self.name,
                                                    self.ctrlchnlname)
         self.info("bringing up loopback interface")
@@ -175,11 +175,11 @@ class SimpleLxcNode(PyCoreNode):
                 suffix = '%s.%s.%s' % (self.objid, ifindex, sessionid)
             localname = 'veth' + suffix
             if len(localname) >= 16:
-                raise ValueError, "interface local name '%s' too long" % \
-                        localname
+                raise ValueError("interface local name '%s' too long" %
+                                 localname)
             name = localname + 'p'
             if len(name) >= 16:
-                raise ValueError, "interface name '%s' too long" % name
+                raise ValueError("interface name '%s' too long" % name)
             ifclass = VEth
             veth = ifclass(node=self, name=name, localname=localname,
                            mtu=1500, net=net, start=self.up)
@@ -225,7 +225,8 @@ class SimpleLxcNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             (status, result) = self.cmdresult([IP_BIN, "link", "set", "dev",
-                                    self.ifname(ifindex), "address", str(addr)])
+                                               self.ifname(ifindex), "address",
+                                               str(addr)])
             if status:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
                                "SimpleLxcNode.sethwaddr()",
@@ -252,8 +253,8 @@ class SimpleLxcNode(PyCoreNode):
         addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
-                raise ValueError, "addr type must be in: " + \
-                    " ".join(self.valid_deladdrtype)
+                raise ValueError("addr type must be in: " +
+                                 " ".join(self.valid_deladdrtype))
             for a in addr[t]:
                 self.deladdr(ifindex, a)
         # update cached information
@@ -369,15 +370,15 @@ class LxcNode(SimpleLxcNode):
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError, "path not fully qualified: " + path
+            raise ValueError("path not fully qualified: " + path)
         hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+                                os.path.normpath(path).strip('/').
+                                replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:
             pass
-        except Exception, e:
-            raise Exception, e
+
         self.mount(hostpath, path)
 
     def hostfilename(self, filename):
@@ -385,7 +386,7 @@ class LxcNode(SimpleLxcNode):
         '''
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")

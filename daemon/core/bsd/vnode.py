@@ -97,13 +97,13 @@ class SimpleJailNode(PyCoreNode):
 
     def startup(self):
         if self.up:
-            raise Exception, "already up"
+            raise Exception("already up")
         vimg = [VIMAGE_BIN, "-c", self.name]
         try:
             os.spawnlp(os.P_WAIT, VIMAGE_BIN, *vimg)
         except OSError:
-            raise Exception, ("vimage command not found while running: %s" % \
-                    vimg)
+            raise Exception("vimage command not found while running: %s" %
+                            vimg)
         self.info("bringing up loopback interface")
         self.cmd([IFCONFIG_BIN, "lo0", "127.0.0.1"])
         self.info("setting hostname: %s" % self.name)
@@ -155,8 +155,8 @@ class SimpleJailNode(PyCoreNode):
         cmd = [VIMAGE_BIN, self.name]
         cmd.extend(args)
         tmp = subprocess.Popen(cmd, stdin=subprocess.PIPE,
-                                stdout=subprocess.PIPE,
-                                stderr=subprocess.PIPE, cwd=self.nodedir)
+                               stdout=subprocess.PIPE,
+                               stderr=subprocess.PIPE, cwd=self.nodedir)
         return tmp, tmp.stdin, tmp.stdout, tmp.stderr
 
     def icmd(self, args):
@@ -170,7 +170,9 @@ class SimpleJailNode(PyCoreNode):
         ''' We add 'sudo' to the command string because the GUI runs as a
             normal user.
         '''
-        return "cd %s && sudo %s %s %s" % (self.nodedir, VIMAGE_BIN, self.name, sh)
+        return "cd %s && sudo %s %s %s" % (self.nodedir,
+                                           VIMAGE_BIN,
+                                           self.name, sh)
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.cmd([sh, "-c", cmdstr])
@@ -219,7 +221,7 @@ class SimpleJailNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             self.cmd([IFCONFIG_BIN, self.ifname(ifindex), "link",
-                     str(addr)])
+                      str(addr)])
 
     def addaddr(self, ifindex, addr):
         if self.up:
@@ -228,7 +230,7 @@ class SimpleJailNode(PyCoreNode):
             else:
                 family = "inet"
             self.cmd([IFCONFIG_BIN, self.ifname(ifindex), family, "alias",
-                     str(addr)])
+                      str(addr)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
@@ -242,7 +244,7 @@ class SimpleJailNode(PyCoreNode):
             else:
                 family = "inet"
             self.cmd([IFCONFIG_BIN, self.ifname(ifindex), family, "-alias",
-                     str(addr)])
+                      str(addr)])
 
     valid_deladdrtype = ("inet", "inet6", "inet6link")
 
@@ -303,7 +305,8 @@ class SimpleJailNode(PyCoreNode):
         dirname = dirname.replace("/", ".")
         if file:
             pathname = os.path.join(path, file)
-            sym = os.path.join(self.session.sessiondir, "@.conf", dirname, file)
+            sym = os.path.join(self.session.sessiondir, "@.conf",
+                               dirname, file)
         else:
             pathname = path
             sym = os.path.join(self.session.sessiondir, "@.conf", dirname)
@@ -315,7 +318,7 @@ class SimpleJailNode(PyCoreNode):
             os.unlink(pathname)
         else:
             if os.path.exists(pathname):
-                self.warn("did not create symlink for %s since path " \
+                self.warn("did not create symlink for %s since path "
                           "exists on host" % pathname)
                 return
         self.info("creating symlink %s -> %s" % (pathname, sym))
@@ -366,22 +369,20 @@ class JailNode(SimpleJailNode):
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError, "path not fully qualified: " + path
-        hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+            raise ValueError("path not fully qualified: " + path)
+        hostpath = os.path.join(
+            self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:
             pass
-        except Exception, e:
-            raise Exception, e
         self.mount(hostpath, path)
 
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
         # self.addsymlink(path=dirname, file=basename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")
