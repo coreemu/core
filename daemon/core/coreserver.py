@@ -306,6 +306,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         self.msgq = []
         self.msgcv = threading.Condition()
         self.nodestatusreq = {}
+        self._shutdownlock = threading.Lock()
         numthreads = int(server.cfg['numthreads'])
         if numthreads < 1:
             raise ValueError, \
@@ -666,16 +667,19 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 n = self.session.obj(nodenum)
             except KeyError:
                 pass
-            self.session.delobj(nodenum)
-            
-            if msg.flags & coreapi.CORE_API_STR_FLAG:
-                tlvdata = ""
-                tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_NUMBER,
-                                                    nodenum)
-                flags = coreapi.CORE_API_DEL_FLAG | coreapi.CORE_API_LOC_FLAG
-                replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
-            for reply in self.session.checkshutdown():
-                replies.append(reply)
+
+            with self._shutdownlock:
+                self.session.delobj(nodenum)
+                
+                if msg.flags & coreapi.CORE_API_STR_FLAG:
+                    tlvdata = ""
+                    tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_NUMBER,
+                                                        nodenum)
+                    flags = coreapi.CORE_API_DEL_FLAG | coreapi.CORE_API_LOC_FLAG
+                    replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
+                
+                for reply in self.session.checkshutdown():
+                    replies.append(reply)
         # Node modify message (no add/del flag)
         else:
             n = None
