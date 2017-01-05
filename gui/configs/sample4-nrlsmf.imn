@@ -65,7 +65,7 @@ node n1 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -101,7 +101,7 @@ node n2 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -137,7 +137,7 @@ node n3 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -173,7 +173,7 @@ node n4 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -209,7 +209,7 @@ node n5 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_green.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -245,7 +245,7 @@ node n6 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -281,7 +281,7 @@ node n7 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -317,7 +317,7 @@ node n8 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -353,7 +353,7 @@ node n9 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh
@@ -389,7 +389,7 @@ node n10 {
     canvas c1
     interface-peer {eth0 n11}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
-    services {zebra OSPFv3MDR vtysh SMF IPForward UserDefined}
+    services {zebra OSPFv3MDR SMF IPForward UserDefined}
     custom-config {
 	custom-config-id service:UserDefined:custom-post-config-commands.sh
 	custom-command custom-post-config-commands.sh

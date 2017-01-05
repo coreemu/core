@@ -109,7 +109,6 @@ class XenNode(PyCoreNode):
         #'sh quaggaboot.sh zebra',
         #'sh quaggaboot.sh ospfd',
         #'sh quaggaboot.sh ospf6d',
-        'sh quaggaboot.sh vtysh',
         'killall zebra',
         'killall ospfd',
         'killall ospf6d',

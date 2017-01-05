@@ -30,7 +30,6 @@ class Zebra(CoreService):
     '''
     _name = "zebra"
     _group = "Quagga"
-    _depends = ("vtysh", )
     _dirs = ("/usr/local/etc/quagga",  "/var/run/quagga")
     _configs = ("/usr/local/etc/quagga/Quagga.conf",
                 "quaggaboot.sh","/usr/local/etc/quagga/vtysh.conf")
@@ -205,17 +204,10 @@ bootdaemon()
     $FLOCK_BIN_DIR/flock $QUAGGA_STATE_DIR $QUAGGA_BIN_DIR/vtysh -b
 }
 
-bootvtysh()
-{
-    echo "'vtysh' service is deprecated!"
-}
-
 confcheck
 if [ "x$1" = "x" ]; then
     echo "ERROR: missing the name of the Quagga daemon to boot"
     exit 1
-elif [ "$1" = "vtysh" ]; then
-    bootvtysh $1
 else
     bootdaemon $1
 fi
@@ -590,21 +582,3 @@ class Xpimd(QuaggaService):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
 
 addservice(Xpimd)
-
-class Vtysh(CoreService):
-    ''' Simple service to run vtysh -b (boot) after all Quagga daemons have
-        started.
-    '''
-    _name = "vtysh"
-    _group = "Quagga"
-    _startindex = 45
-    _startup = ("sh quaggaboot.sh vtysh",)
-    _shutdown = ()
-
-    @classmethod
-    def generateconfig(cls, node, filename, services):
-        return ""
-
-addservice(Vtysh)
-
-
