@@ -170,21 +170,6 @@ confcheck()
     fi
 }
 
-waitforvtyfiles()
-{
-    for f in "$@"; do
-        count=1
-        until [ -e $QUAGGA_STATE_DIR/$f ]; do
-            if [ $count -eq 10 ]; then
-                echo "ERROR: vty file not found: $QUAGGA_STATE_DIR/$f" >&2
-                return 1
-            fi
-            sleep 0.1
-            count=$(($count + 1))
-        done
-    done 
-}
-
 bootdaemon()
 {
     QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
@@ -194,11 +179,21 @@ bootdaemon()
         return 1
     fi
 
-    flags=""
-
-    if [ "$1" != "zebra" ]; then
-        waitforvtyfiles zebra.vty
+    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
+    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
+        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
+        return 1
     fi
+
+    FLOCK_BIN_DIR=$(searchforprog 'flock' $QUAGGA_BIN_SEARCH)
+    if [ "z$FLOCK_BIN_DIR" = "z" ]; then
+        echo "ERROR: Couldn't find the 'flock' utility in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
+        return 1
+    fi
+
+    flags=""
 
     if [ "$1" = "xpimd" ] && \\
         grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
@@ -206,32 +201,13 @@ bootdaemon()
     fi
 
     $QUAGGA_SBIN_DIR/$1 $flags -u $QUAGGA_USER -g $QUAGGA_GROUP -d
+    # (re-)run 'vtysh -b' to configure new daemon from integrated config file:
+    $FLOCK_BIN_DIR/flock $QUAGGA_STATE_DIR $QUAGGA_BIN_DIR/vtysh -b
 }
 
 bootvtysh()
 {
-    QUAGGA_BIN_DIR=$(searchforprog $1 $QUAGGA_BIN_SEARCH)
-    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's '$1' daemon not found in search path:"
-        echo "  $QUAGGA_SBIN_SEARCH"
-        return 1
-    fi
-
-    vtyfiles="zebra.vty"
-    for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
-            vtyfiles="$vtyfiles ${r}d.vty"
-        fi
-    done
-
-    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
-        vtyfiles="$vtyfiles xpimd.vty"
-    fi
-
-    # wait for Quagga daemon vty files to appear before invoking vtysh
-    waitforvtyfiles $vtyfiles
-
-    $QUAGGA_BIN_DIR/vtysh -b
+    echo "'vtysh' service is deprecated!"
 }
 
 confcheck

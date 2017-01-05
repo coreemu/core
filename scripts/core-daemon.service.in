@@ -6,6 +6,7 @@ After=network.target
 Type=forking
 PIDFile=/var/run/core-daemon.pid
 ExecStart=@PYTHON@ @SBINDIR@/core-daemon -d
+TasksMax=infinity
 
 [Install]
 WantedBy=multi-user.target
