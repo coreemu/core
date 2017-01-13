@@ -160,7 +160,7 @@ proc upgradeNetworkConfigToServices { } {
 	set bgp [netconfFetchSection $node "router bgp"]
 	if { $ospfv2 != "" || $ospfv3 != "" || $rip != "" || $ripng != "" } {
 	    set cfg ""
-	    set services "zebra vtysh IPForward"
+	    set services "zebra IPForward"
 	    foreach ifc [ifcList $node] {
 		lappend cfg "interface $ifc"
 		set ifccfg [netconfFetchSection $node "interface $ifc"]
