@@ -20,11 +20,6 @@ from core.misc.ipaddr import IPv4Prefix, isIPv4Address, isIPv6Address
 from core.api import coreapi
 from core.constants import *
 
-QUAGGA_USER="root"
-QUAGGA_GROUP="root"
-if os.uname()[0] == "FreeBSD":
-    QUAGGA_GROUP="wheel"
-
 class Zebra(CoreService):
     ''' 
     '''
@@ -140,8 +135,6 @@ QUAGGA_CONF=%s
 QUAGGA_SBIN_SEARCH=%s
 QUAGGA_BIN_SEARCH=%s
 QUAGGA_STATE_DIR=%s
-QUAGGA_USER=%s
-QUAGGA_GROUP=%s
 
 searchforprog()
 {
@@ -205,7 +198,7 @@ bootdaemon()
         flags="$flags -6"
     fi
 
-    $QUAGGA_SBIN_DIR/$1 $flags -u $QUAGGA_USER -g $QUAGGA_GROUP -d
+    $QUAGGA_SBIN_DIR/$1 $flags -d
 }
 
 bootvtysh()
@@ -244,7 +237,7 @@ else
     bootdaemon $1
 fi
 """ % (cls._configs[0], quagga_sbin_search, quagga_bin_search, \
-       QUAGGA_STATE_DIR, QUAGGA_USER, QUAGGA_GROUP)
+       QUAGGA_STATE_DIR)
 
 addservice(Zebra)
 
