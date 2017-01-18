@@ -354,7 +354,7 @@ node n1 {
 	
 	}
     }
-    services {zebra OSPFv2 OSPFv3 vtysh IPForward IPsec}
+    services {zebra OSPFv2 OSPFv3 IPForward IPsec}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
 }
 
@@ -528,7 +528,7 @@ node n2 {
 	
 	}
     }
-    services {zebra OSPFv2 OSPFv3 vtysh IPForward IPsec}
+    services {zebra OSPFv2 OSPFv3 IPForward IPsec}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
 }
 
@@ -697,7 +697,7 @@ node n3 {
 	
 	}
     }
-    services {zebra OSPFv2 OSPFv3 vtysh IPForward IPsec}
+    services {zebra OSPFv2 OSPFv3 IPForward IPsec}
     custom-image $CORE_DATA_DIR/icons/normal/router_red.gif
 }
 

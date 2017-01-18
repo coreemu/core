@@ -105,7 +105,7 @@ node n5 {
     labelcoords {540.0 376.0}
     interface-peer {eth0 n10}
     interface-peer {eth1 n15}
-    services {zebra OSPFv2 OSPFv3MDR vtysh IPForward}
+    services {zebra OSPFv2 OSPFv3MDR IPForward}
     custom-config {
 	custom-config-id service:zebra
 	custom-command zebra

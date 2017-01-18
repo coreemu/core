@@ -66,7 +66,7 @@ def wifisession(opt):
     wifi.phy.Set("RxGain", ns.core.DoubleValue(18.0))
 
     prefix = ipaddr.IPv4Prefix("10.0.0.0/16")
-    services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
+    services_str = "zebra|OSPFv3MDR|IPForward"
     nodes = []
     for i in xrange(1, opt.numnodes + 1):
         node = session.addnode(name = "n%d" % i)

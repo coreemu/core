@@ -30,7 +30,6 @@ class Zebra(CoreService):
     '''
     _name = "zebra"
     _group = "Quagga"
-    _depends = ("vtysh", )
     _dirs = ("/usr/local/etc/quagga",  "/var/run/quagga")
     _configs = ("/usr/local/etc/quagga/Quagga.conf",
                 "quaggaboot.sh","/usr/local/etc/quagga/vtysh.conf")
@@ -170,21 +169,6 @@ confcheck()
     fi
 }
 
-waitforvtyfiles()
-{
-    for f in "$@"; do
-        count=1
-        until [ -e $QUAGGA_STATE_DIR/$f ]; do
-            if [ $count -eq 10 ]; then
-                echo "ERROR: vty file not found: $QUAGGA_STATE_DIR/$f" >&2
-                return 1
-            fi
-            sleep 0.1
-            count=$(($count + 1))
-        done
-    done 
-}
-
 bootdaemon()
 {
     QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
@@ -194,11 +178,21 @@ bootdaemon()
         return 1
     fi
 
-    flags=""
-
-    if [ "$1" != "zebra" ]; then
-        waitforvtyfiles zebra.vty
+    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
+    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
+        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
+        return 1
     fi
+
+    FLOCK_BIN_DIR=$(searchforprog 'flock' $QUAGGA_BIN_SEARCH)
+    if [ "z$FLOCK_BIN_DIR" = "z" ]; then
+        echo "ERROR: Couldn't find the 'flock' utility in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
+        return 1
+    fi
+
+    flags=""
 
     if [ "$1" = "xpimd" ] && \\
         grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
@@ -206,40 +200,14 @@ bootdaemon()
     fi
 
     $QUAGGA_SBIN_DIR/$1 $flags -u $QUAGGA_USER -g $QUAGGA_GROUP -d
-}
-
-bootvtysh()
-{
-    QUAGGA_BIN_DIR=$(searchforprog $1 $QUAGGA_BIN_SEARCH)
-    if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's '$1' daemon not found in search path:"
-        echo "  $QUAGGA_SBIN_SEARCH"
-        return 1
-    fi
-
-    vtyfiles="zebra.vty"
-    for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
-            vtyfiles="$vtyfiles ${r}d.vty"
-        fi
-    done
-
-    if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
-        vtyfiles="$vtyfiles xpimd.vty"
-    fi
-
-    # wait for Quagga daemon vty files to appear before invoking vtysh
-    waitforvtyfiles $vtyfiles
-
-    $QUAGGA_BIN_DIR/vtysh -b
+    # (re-)run 'vtysh -b' to configure new daemon from integrated config file:
+    $FLOCK_BIN_DIR/flock $QUAGGA_STATE_DIR $QUAGGA_BIN_DIR/vtysh -b
 }
 
 confcheck
 if [ "x$1" = "x" ]; then
     echo "ERROR: missing the name of the Quagga daemon to boot"
     exit 1
-elif [ "$1" = "vtysh" ]; then
-    bootvtysh $1
 else
     bootdaemon $1
 fi
@@ -614,21 +582,3 @@ class Xpimd(QuaggaService):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
 
 addservice(Xpimd)
-
-class Vtysh(CoreService):
-    ''' Simple service to run vtysh -b (boot) after all Quagga daemons have
-        started.
-    '''
-    _name = "vtysh"
-    _group = "Quagga"
-    _startindex = 45
-    _startup = ("sh quaggaboot.sh vtysh",)
-    _shutdown = ()
-
-    @classmethod
-    def generateconfig(cls, node, filename, services):
-        return ""
-
-addservice(Vtysh)
-
-
