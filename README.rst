@@ -13,16 +13,19 @@ About
 
 CORE is a tool for emulating networks using a GUI or Python scripts. The CORE
 project site (1) is a good source of introductory information, with a manual,
-screenshots, and demos about this software. Also a supplemental
-Google Code page (2) hosts a wiki, blog, bug tracker, and quickstart guide.
+screenshots, and demos about this software. The GitHub project (2) hosts the
+source repos, wiki, and bug tracker. There is a deprecated
+Google Code page (3) with the old wiki, blog, bug tracker, and quickstart guide.
 
 1. http://www.nrl.navy.mil/itd/ncs/products/core
 
-2. http://code.google.com/p/coreemu/
+2. https://github.com/coreemu/core
 
-3. `Official Documentation`_
+3. http://code.google.com/p/coreemu/
 
-.. _Official Documentation: http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html
+4. `Official Documentation`_
+
+.. _Official Documentation: https://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html
 
 
 Building CORE
@@ -75,7 +78,7 @@ If you have questions, comments, or trouble, please use the CORE mailing lists:
 - `core-dev`_ for bugs, compile errors, and other development issues
 
 
-.. _core-users: http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users
-.. _core-dev: http://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev
+.. _core-users: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users
+.. _core-dev: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev
 
 
