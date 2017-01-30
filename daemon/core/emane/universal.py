@@ -10,21 +10,15 @@ universal.py: EMANE Universal PHY model for CORE. Enumerates configuration items
 used for the Universal PHY.
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
-from emane import Emane, EmaneModel
+from core.emane.emane import Emane, EmaneModel
+
 
 class EmaneUniversalModel(EmaneModel):
     ''' This Univeral PHY model is meant to be imported by other models,
         not instantiated.
     '''
-    def __init__(self, session, objid = None, verbose = False):
+    def __init__(self, session, objid=None, verbose=False):
         raise SyntaxError
 
     _name = "emane_universal"
@@ -34,51 +28,51 @@ class EmaneUniversalModel(EmaneModel):
     # universal PHY parameters
     _confmatrix_base = [
         ("bandwidth", coreapi.CONF_DATA_TYPE_UINT64, '1M',
-          '', 'rf bandwidth (hz)'),
+         '', 'rf bandwidth (hz)'),
         ("frequency", coreapi.CONF_DATA_TYPE_UINT64, '2.347G',
-         '','frequency (Hz)'),
+         '', 'frequency (Hz)'),
         ("frequencyofinterest", coreapi.CONF_DATA_TYPE_UINT64, '2.347G',
-         '','frequency of interest (Hz)'),
+         '', 'frequency of interest (Hz)'),
         ("subid", coreapi.CONF_DATA_TYPE_UINT16, '1',
-         '','subid'),
+         '', 'subid'),
         ("systemnoisefigure", coreapi.CONF_DATA_TYPE_FLOAT, '4.0',
-         '','system noise figure (dB)'),
+         '', 'system noise figure (dB)'),
         ("txpower", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '','transmit power (dBm)'),
+         '', 'transmit power (dBm)'),
     ]
     _confmatrix_081 = [
         ("antennagain", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '','antenna gain (dBi)'),
+         '', 'antenna gain (dBi)'),
         ("antennaazimuth", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '','antenna azimuth (deg)'),
+         '', 'antenna azimuth (deg)'),
         ("antennaelevation", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '','antenna elevation (deg)'),
+         '', 'antenna elevation (deg)'),
         ("antennaprofileid", coreapi.CONF_DATA_TYPE_STRING, '1',
-         '','antenna profile ID'),
+         '', 'antenna profile ID'),
         ("antennaprofilemanifesturi", coreapi.CONF_DATA_TYPE_STRING, '',
-         '','antenna profile manifest URI'),
+         '', 'antenna profile manifest URI'),
         ("antennaprofileenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'On,Off','antenna profile mode'),
+         'On,Off', 'antenna profile mode'),
         ("defaultconnectivitymode", coreapi.CONF_DATA_TYPE_BOOL, '1',
-         'On,Off','default connectivity'),
+         'On,Off', 'default connectivity'),
         ("frequencyofinterestfilterenable", coreapi.CONF_DATA_TYPE_BOOL, '1',
-         'On,Off','frequency of interest filter enable'),
+         'On,Off', 'frequency of interest filter enable'),
         ("noiseprocessingmode", coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'On,Off','enable noise processing'),
+         'On,Off', 'enable noise processing'),
         ("pathlossmode", coreapi.CONF_DATA_TYPE_STRING, '2ray',
-         'pathloss,2ray,freespace','path loss mode'),
+         'pathloss,2ray,freespace', 'path loss mode'),
     ]
     _confmatrix_091 = [
         ("fixedantennagain", coreapi.CONF_DATA_TYPE_FLOAT, '0.0',
-         '','antenna gain (dBi)'),
+         '', 'antenna gain (dBi)'),
         ("fixedantennagainenable", coreapi.CONF_DATA_TYPE_BOOL, '1',
-         'On,Off','enable fixed antenna gain'),
+         'On,Off', 'enable fixed antenna gain'),
         ("noisemode", coreapi.CONF_DATA_TYPE_STRING, 'none',
-         'none,all,outofband','noise processing mode'),
+         'none,all,outofband', 'noise processing mode'),
         ("noisebinsize", coreapi.CONF_DATA_TYPE_UINT64, '20',
-         '','noise bin size in microseconds'),
+         '', 'noise bin size in microseconds'),
         ("propagationmodel", coreapi.CONF_DATA_TYPE_STRING, '2ray',
-         'precomputed,2ray,freespace','path loss mode'),
+         'precomputed,2ray,freespace', 'path loss mode'),
     ]
     if Emane.version >= Emane.EMANE091:
         _confmatrix = _confmatrix_base + _confmatrix_091
@@ -88,11 +82,11 @@ class EmaneUniversalModel(EmaneModel):
     # old parameters
     _confmatrix_ver074 = [
         ("antennaazimuthbeamwidth", coreapi.CONF_DATA_TYPE_FLOAT, '360.0',
-         '','azimith beam width (deg)'),
+         '', 'azimith beam width (deg)'),
         ("antennaelevationbeamwidth", coreapi.CONF_DATA_TYPE_FLOAT, '180.0',
-         '','elevation beam width (deg)'),
+         '', 'elevation beam width (deg)'),
         ("antennatype", coreapi.CONF_DATA_TYPE_STRING, 'omnidirectional',
-         'omnidirectional,unidirectional','antenna type'),
+         'omnidirectional,unidirectional', 'antenna type'),
         ]
 
     # parameters that require unit conversion for 0.7.4
@@ -101,7 +95,6 @@ class EmaneUniversalModel(EmaneModel):
     _remove_ver074 = ("antennaprofileenable", "antennaprofileid",
                       "antennaprofilemanifesturi",
                       "frequencyofinterestfilterenable")
-
 
     @classmethod
     def getphydoc(cls, e, mac, values, phynames):
@@ -137,10 +130,8 @@ class EmaneUniversalModel(EmaneModel):
                 phynames.remove("frequencyofinterest")
 
         # append all PHY options to phydoc
-        map( lambda n: phy.appendChild(e.xmlparam(phydoc, n, \
-                                       mac.valueof(n, values))), phynames)
+        map(lambda n: phy.appendChild(e.xmlparam(phydoc, n, \
+                                      mac.valueof(n, values))), phynames)
         if frequencies:
             phy.appendChild(frequencies)
         return phydoc
-
-

@@ -11,17 +11,22 @@ utils.py: miscellaneous utility functions, wrappers around some subprocess
 procedures.
 '''
 
-import subprocess, os, ast
+import os
+import subprocess
+import ast
 import fcntl
+
 
 def closeonexec(fd):
     fdflags = fcntl.fcntl(fd, fcntl.F_GETFD)
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
+
 def checkexec(execlist):
-    for bin in execlist:
-        if which(bin) is None:
-            raise EnvironmentError, "executable not found: %s" % bin
+    for abin in execlist:
+        if which(abin) is None:
+            raise EnvironmentError("executable not found: %s" % abin)
+
 
 def which(program):
     ''' From: http://stackoverflow.com/questions/377017/test-if-executable-exists-in-python
@@ -42,58 +47,69 @@ def which(program):
 
     return None
 
+
 def ensurepath(pathlist):
     searchpath = os.environ["PATH"].split(":")
     for p in set(pathlist):
         if p not in searchpath:
             os.environ["PATH"] += ":" + p
 
+
 def maketuple(obj):
     if hasattr(obj, "__iter__"):
         return tuple(obj)
     else:
         return (obj,)
-        
+
+
 def maketuplefromstr(s, type):
     s.replace('\\', '\\\\')
     return ast.literal_eval(s)
-    #return tuple(type(i) for i in s[1:-1].split(','))
-    #r = ()
-    #for i in s.strip("()").split(','):
-    #    r += (i.strip("' "), )
+    # return tuple(type(i) for i in s[1:-1].split(','))
+    # r = ()
+    # for i in s.strip("()").split(','):
+    #     r += (i.strip("' "), )
     # chop empty last element from "('a',)" strings
-    #if r[-1] == '':
-    #    r = r[:-1]
-    #return r
+    # if r[-1] == '':
+    #     r = r[:-1]
+    # return r
+
 
 def call(*args, **kwds):
     return subprocess.call(*args, **kwds)
+
 
 def mutecall(*args, **kwds):
     kwds["stdout"] = open(os.devnull, "w")
     kwds["stderr"] = subprocess.STDOUT
     return call(*args, **kwds)
 
+
 def check_call(*args, **kwds):
     return subprocess.check_call(*args, **kwds)
+
 
 def mutecheck_call(*args, **kwds):
     kwds["stdout"] = open(os.devnull, "w")
     kwds["stderr"] = subprocess.STDOUT
     return subprocess.check_call(*args, **kwds)
 
+
 def spawn(*args, **kwds):
     return subprocess.Popen(*args, **kwds).pid
+
 
 def mutespawn(*args, **kwds):
     kwds["stdout"] = open(os.devnull, "w")
     kwds["stderr"] = subprocess.STDOUT
     return subprocess.Popen(*args, **kwds).pid
 
+
 def detachinit():
     if os.fork():
         os._exit(0)                 # parent exits
     os.setsid()
+
 
 def detach(*args, **kwds):
     kwds["preexec_fn"] = detachinit
@@ -105,19 +121,21 @@ def mutedetach(*args, **kwds):
     kwds["stderr"] = subprocess.STDOUT
     return subprocess.Popen(*args, **kwds).pid
 
+
 def cmdresult(args):
     ''' Execute a command on the host and return a tuple containing the
         exit status and result string. stderr output
         is folded into the stdout result string.
     '''
-    cmdid = subprocess.Popen(args, stdin = open(os.devnull, 'r'),
-                             stdout = subprocess.PIPE,
-                             stderr = subprocess.STDOUT)
-    result, err = cmdid.communicate() # err will always be None
+    cmdid = subprocess.Popen(args, stdin=open(os.devnull, 'r'),
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.STDOUT)
+    result, err = cmdid.communicate()  # err will always be None
     status = cmdid.wait()
     return (status, result)
 
-def hexdump(s, bytes_per_word = 2, words_per_line = 8):
+
+def hexdump(s, bytes_per_word=2, words_per_line=8):
     dump = ""
     count = 0
     bytes = bytes_per_word * words_per_line
@@ -132,15 +150,17 @@ def hexdump(s, bytes_per_word = 2, words_per_line = 8):
         count += len(line)
     return dump[:-1]
 
+
 def filemunge(pathname, header, text):
     ''' Insert text at the end of a file, surrounded by header comments.
     '''
-    filedemunge(pathname, header) # prevent duplicates
+    filedemunge(pathname, header)  # prevent duplicates
     f = open(pathname, 'a')
     f.write("# BEGIN %s\n" % header)
     f.write(text)
     f.write("# END %s\n" % header)
     f.close()
+
 
 def filedemunge(pathname, header):
     ''' Remove text that was inserted in a file surrounded by header comments.
@@ -150,18 +170,21 @@ def filedemunge(pathname, header):
     f.close()
     start = None
     end = None
-    for i in range(len(lines)):
-        if lines[i] == "# BEGIN %s\n" % header:
+
+    for i, line in enumerate(lines):
+        if line == "# BEGIN %s\n" % header:
             start = i
-        elif lines[i] == "# END %s\n" % header:
+        elif line == "# END %s\n" % header:
             end = i + 1
+
     if start is None or end is None:
         return
     f = open(pathname, 'w')
     lines = lines[:start] + lines[end:]
     f.write("".join(lines))
     f.close()
-    
+
+
 def expandcorepath(pathname, session=None, node=None):
     ''' Expand a file path given session information.
     '''
@@ -174,7 +197,8 @@ def expandcorepath(pathname, session=None, node=None):
         pathname = pathname.replace('%NODE%', str(node.objid))
         pathname = pathname.replace('%NODENAME%', node.name)
     return pathname
-  
+
+
 def sysctldevname(devname):
     ''' Translate a device name to the name used with sysctl.
     '''
@@ -182,10 +206,11 @@ def sysctldevname(devname):
         return None
     return devname.replace(".", "/")
 
-def daemonize(rootdir = "/", umask = 0, close_fds = False, dontclose = (),
-              stdin = os.devnull, stdout = os.devnull, stderr = os.devnull,
-              stdoutmode = 0644, stderrmode = 0644, pidfilename = None,
-              defaultmaxfd = 1024):
+
+def daemonize(rootdir="/", umask=0, close_fds=False, dontclose=(),
+              stdin=os.devnull, stdout=os.devnull, stderr=os.devnull,
+              stdoutmode=0644, stderrmode=0644, pidfilename=None,
+              defaultmaxfd=1024):
     ''' Run the background process as a daemon.
     '''
     if not hasattr(dontclose, "__contains__"):
@@ -245,6 +270,7 @@ def daemonize(rootdir = "/", umask = 0, close_fds = False, dontclose = (),
                 os.close(fd)
             except:
                 pass
+
 
 def readfileintodict(filename, d):
     ''' Read key=value pairs from a file, into a dict.

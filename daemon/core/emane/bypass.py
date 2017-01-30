@@ -9,21 +9,19 @@
 bypass.py: EMANE Bypass model for CORE
 '''
 
-import sys
-import string
 from core.api import coreapi
 
-from core.constants import *
-from emane import EmaneModel
+from core.emane.emane import EmaneModel
+
 
 class EmaneBypassModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     _name = "emane_bypass"
     _confmatrix = [
-        ("none",coreapi.CONF_DATA_TYPE_BOOL, '0',
-         'True,False','There are no parameters for the bypass model.'),
+        ("none", coreapi.CONF_DATA_TYPE_BOOL, '0',
+         'True,False', 'There are no parameters for the bypass model.'),
     ]
 
     # value groupings
@@ -62,5 +60,3 @@ class EmaneBypassModel(EmaneModel):
         phy.setAttribute("name", "BYPASS PHY")
         phy.setAttribute("library", "bypassphylayer")
         e.xmlwrite(phydoc, self.phyxmlname(ifc))
-
-

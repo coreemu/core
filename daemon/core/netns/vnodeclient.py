@@ -12,8 +12,11 @@ The control channel can be accessed via calls to the vcmd Python module or
 by invoking the vcmd shell command.
 '''
 
-import os, stat, sys
-from core.constants import *
+import sys
+import os
+import stat
+
+from core.constants import CORE_SBIN_DIR, IP_BIN
 
 USE_VCMD_MODULE = True
 
@@ -23,6 +26,7 @@ else:
     import subprocess
 
 VCMD = os.path.join(CORE_SBIN_DIR, "vcmd")
+
 
 class VnodeClient(object):
     def __init__(self, name, ctrlchnlname):
@@ -47,7 +51,7 @@ class VnodeClient(object):
         if USE_VCMD_MODULE:
             self.cmdchnl.close()
 
-    def cmd(self, args, wait = True):
+    def cmd(self, args, wait=True):
         ''' Execute a command on a node and return the status (return code).
         '''
         if USE_VCMD_MODULE:
@@ -92,16 +96,16 @@ class VnodeClient(object):
         else:
             cmd = [VCMD, "-c", self.ctrlchnlname, "--"]
             cmd.extend(args)
-            tmp = subprocess.Popen(cmd, stdin = subprocess.PIPE,
-                                   stdout = subprocess.PIPE,
-                                   stderr = subprocess.PIPE)
+            tmp = subprocess.Popen(cmd, stdin=subprocess.PIPE,
+                                   stdout=subprocess.PIPE,
+                                   stderr=subprocess.PIPE)
             return tmp, tmp.stdin, tmp.stdout, tmp.stderr
 
     def icmd(self, args):
         return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname,
                           "--", *args)
 
-    def redircmd(self, infd, outfd, errfd, args, wait = True):
+    def redircmd(self, infd, outfd, errfd, args, wait=True):
         '''
         Execute a command on a node with standard input, output, and
         error redirected according to the given file descriptors.
@@ -118,7 +122,7 @@ class VnodeClient(object):
             self.warn("cmd exited with status %s: %s" % (tmp, str(args)))
         return tmp
 
-    def term(self, sh = "/bin/sh"):
+    def term(self, sh="/bin/sh"):
         cmd = ("xterm", "-ut", "-title", self.name, "-e",
                VCMD, "-c", self.ctrlchnlname, "--", sh)
         if "SUDO_USER" in os.environ:
@@ -127,13 +131,13 @@ class VnodeClient(object):
                    os.environ["SUDO_USER"])
         return os.spawnvp(os.P_NOWAIT, cmd[0], cmd)
 
-    def termcmdstring(self, sh = "/bin/sh"):
+    def termcmdstring(self, sh="/bin/sh"):
         return "%s -c %s -- %s" % (VCMD, self.ctrlchnlname, sh)
 
-    def shcmd(self, cmdstr, sh = "/bin/sh"):
+    def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.cmd([sh, "-c", cmdstr])
 
-    def getaddr(self, ifname, rescan = False):
+    def getaddr(self, ifname, rescan=False):
         if ifname in self._addr and not rescan:
             return self._addr[ifname]
         tmp = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
@@ -166,7 +170,7 @@ class VnodeClient(object):
         self._addr[ifname] = tmp
         return tmp
 
-    def netifstats(self, ifname = None):
+    def netifstats(self, ifname=None):
         stats = {}
         cmd = ["cat", "/proc/net/dev"]
         cmdid, cmdin, cmdout, cmderr = self.popen(cmd)
@@ -203,8 +207,9 @@ class VnodeClient(object):
         else:
             return stats
 
-def createclients(sessiondir, clientcls = VnodeClient,
-                  cmdchnlfilterfunc = None):
+
+def createclients(sessiondir, clientcls=VnodeClient,
+                  cmdchnlfilterfunc=None):
     direntries = map(lambda x: os.path.join(sessiondir, x),
                      os.listdir(sessiondir))
     cmdchnls = filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries)
@@ -213,15 +218,16 @@ def createclients(sessiondir, clientcls = VnodeClient,
     cmdchnls.sort()
     return map(lambda x: clientcls(os.path.basename(x), x), cmdchnls)
 
-def createremoteclients(sessiondir, clientcls = VnodeClient,
-                  filterfunc = None):
+
+def createremoteclients(sessiondir, clientcls=VnodeClient,
+                        filterfunc=None):
     ''' Creates remote VnodeClients, for nodes emulated on other machines. The
     session.Broker writes a n1.conf/server file having the server's info.
     '''
     direntries = map(lambda x: os.path.join(sessiondir, x),
                      os.listdir(sessiondir))
     nodedirs = filter(lambda x: stat.S_ISDIR(os.stat(x).st_mode), direntries)
-    nodedirs = filter(lambda x: os.path.exists(os.path.join(x, "server")), 
+    nodedirs = filter(lambda x: os.path.exists(os.path.join(x, "server")),
                       nodedirs)
     if filterfunc:
         nodedirs = filter(filterfunc, nodedirs)

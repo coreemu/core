@@ -3,9 +3,9 @@
 # See the LICENSE file included in this distribution.
 
 from xml.dom.minidom import parse
-from xmlutils import getFirstChildByTagName
-from xmlparser0 import CoreDocumentParser0
-from xmlparser1 import CoreDocumentParser1
+from core.misc.xmlutils import getFirstChildByTagName
+from core.misc.xmlparser0 import CoreDocumentParser0
+from core.misc.xmlparser1 import CoreDocumentParser1
 
 class CoreVersionParser(object):
     DEFAULT_SCENARIO_VERSION = '1.0'

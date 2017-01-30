@@ -13,8 +13,9 @@ the main public interface here.
 
 import os.path
 from core.netns import nodes
-from xmlparser import core_document_parser
-from xmlwriter import core_document_writer
+from core.misc.xmlparser import core_document_parser
+from core.misc.xmlwriter import core_document_writer
+
 
 def opensessionxml(session, filename, start=False, nodecls=nodes.CoreNode):
     ''' Import a session from the EmulationScript XML format.
@@ -26,6 +27,7 @@ def opensessionxml(session, filename, start=False, nodecls=nodes.CoreNode):
         session.filename = filename
         session.node_count = str(session.getnodecount())
         session.instantiate()
+
 
 def savesessionxml(session, filename, version):
     ''' Export a session to the EmulationScript XML format.

@@ -7,24 +7,30 @@
 #          Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 '''
-coreobj.py: defines the basic objects for emulation: the PyCoreObj base class, 
+coreobj.py: defines the basic objects for emulation: the PyCoreObj base class,
 along with PyCoreNode, PyCoreNet, and PyCoreNetIf
 '''
-import sys, threading, os, shutil
+import sys
+import os
+import threading
+import shutil
+from socket import socket
+from socket import AF_INET, AF_INET6
 
 from core.api import coreapi
-from core.misc.ipaddr import *
+from core.misc.ipaddr import IPAddr, isIPv4Address
+
 
 class Position(object):
     ''' Helper class for Cartesian coordinate position
     '''
-    def __init__(self, x = None, y = None, z = None):
+    def __init__(self, x=None, y=None, z=None):
         self.x = None
         self.y = None
         self.z = None
         self.set(x, y, z)
 
-    def set(self, x = None, y = None, z = None):
+    def set(self, x=None, y=None, z=None):
         ''' Returns True if the position has actually changed.
         '''
         if self.x == x and self.y == y and self.z == z:
@@ -39,16 +45,17 @@ class Position(object):
         '''
         return (self.x, self.y, self.z)
 
+
 class PyCoreObj(object):
     ''' Base class for pycore objects (nodes and nets)
     '''
     apitype = None
 
-    def __init__(self, session, objid = None, name = None, verbose = False, 
-                start = True):
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True):
         self.session = session
         if objid is None:
-            objid = session.getobjid()            
+            objid = session.getobjid()
         self.objid = objid
         if name is None:
             name = "o%s" % self.objid
@@ -72,10 +79,10 @@ class PyCoreObj(object):
         '''
         raise NotImplementedError
 
-    def setposition(self, x = None, y = None, z = None):
+    def setposition(self, x=None, y=None, z=None):
         ''' Set the (x,y,z) position of the object.
         '''
-        return self.position.set(x = x, y = y, z = z)
+        return self.position.set(x=x, y=y, z=z)
 
     def getposition(self):
         ''' Return an (x,y,z) tuple representing this object's position.
@@ -97,7 +104,7 @@ class PyCoreObj(object):
         ''' Return the attached interface count.
         '''
         return len(self._netif)
-    
+
     def getifindex(self, netif):
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
@@ -134,10 +141,9 @@ class PyCoreObj(object):
         if hasattr(self, "services") and len(self.services) != 0:
             nodeservices = []
             for s in self.services:
-                 nodeservices.append(s._name)
+                nodeservices.append(s._name)
             tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_SERVICES,
                                                 "|".join(nodeservices))
-
 
         if x is not None:
             tlvdata += coreapi.CoreNodeTlv.pack(coreapi.CORE_TLV_NODE_XPOS, x)
@@ -163,7 +169,7 @@ class PyCoreObj(object):
             PyCoreNets do.
         '''
         return []
-        
+
     def info(self, msg):
         ''' Utility method for printing informational messages when verbose
             is turned on.
@@ -177,7 +183,7 @@ class PyCoreObj(object):
         '''
         print >> sys.stderr, "%s: %s" % (self.name, msg)
         sys.stderr.flush()
-        
+
     def exception(self, level, source, text):
         ''' Generate an Exception Message for this session, providing this
             object number.
@@ -194,11 +200,11 @@ class PyCoreObj(object):
 class PyCoreNode(PyCoreObj):
     ''' Base class for nodes
     '''
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                 start = True):
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True):
         ''' Initialization for node objects.
         '''
-        PyCoreObj.__init__(self,  session,  objid,  name, verbose=verbose,
+        PyCoreObj.__init__(self, session, objid, name, verbose=verbose,
                            start=start)
         self.services = []
         if not hasattr(self, "type"):
@@ -207,8 +213,8 @@ class PyCoreNode(PyCoreObj):
 
     def nodeid(self):
         return self.objid
-        
-    def addservice(self,  service):
+
+    def addservice(self, service):
         if service is not None:
             self.services.append(service)
 
@@ -220,45 +226,45 @@ class PyCoreNode(PyCoreObj):
             self.tmpnodedir = True
         else:
             self.tmpnodedir = False
-    
+
     def rmnodedir(self):
         if hasattr(self.session.options, 'preservedir'):
             if self.session.options.preservedir == '1':
                 return
         if self.tmpnodedir:
-            shutil.rmtree(self.nodedir, ignore_errors = True)
+            shutil.rmtree(self.nodedir, ignore_errors=True)
 
     def addnetif(self, netif, ifindex):
         if ifindex in self._netif:
-            raise ValueError, "ifindex %s already exists" % ifindex
+            raise ValueError("ifindex %s already exists" % ifindex)
         self._netif[ifindex] = netif
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         netif = self._netif.pop(ifindex)
         netif.shutdown()
         del netif
 
-    def netif(self, ifindex, net = None):
+    def netif(self, ifindex, net=None):
         if ifindex in self._netif:
             return self._netif[ifindex]
         else:
             return None
-        
+
     def attachnet(self, ifindex, net):
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif[ifindex].attachnet(net)
 
     def detachnet(self, ifindex):
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif[ifindex].detachnet()
 
-    def setposition(self, x = None, y = None, z = None):
-        changed = PyCoreObj.setposition(self, x = x, y = y, z = z)
+    def setposition(self, x=None, y=None, z=None):
+        changed = PyCoreObj.setposition(self, x=x, y=y, z=z)
         if not changed:
             # save extra interface range calculations
             return
@@ -276,9 +282,8 @@ class PyCoreNode(PyCoreObj):
                 continue
             for netif2 in obj.netifs():
                 if netif1.net == netif2.net:
-                    r += (netif1.net, netif1, netif2),                    
+                    r += (netif1.net, netif1, netif2)
         return r
-
 
 
 class PyCoreNet(PyCoreObj):
@@ -286,7 +291,7 @@ class PyCoreNet(PyCoreObj):
     '''
     linktype = coreapi.CORE_LINK_WIRED
 
-    def __init__(self, session, objid, name, verbose = False, start = True):
+    def __init__(self, session, objid, name, verbose=False, start=True):
         ''' Initialization for network objects.
         '''
         PyCoreObj.__init__(self, session, objid, name, verbose=verbose,
@@ -300,7 +305,7 @@ class PyCoreNet(PyCoreObj):
         netif.netifi = i
         with self._linked_lock:
             self._linked[netif] = {}
-        
+
     def detach(self, netif):
         del self._netif[netif.netifi]
         netif.netifi = None
@@ -323,7 +328,7 @@ class PyCoreNet(PyCoreObj):
         if bw is not None:
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_BW, bw)
         if loss is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_PER, 
+            tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_PER,
                                                 str(loss))
         if duplicate is not None:
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_DUP,
@@ -333,7 +338,6 @@ class PyCoreNet(PyCoreObj):
                                                 jitter)
         return tlvdata
 
-        
     def tolinkmsgs(self, flags):
         ''' Build CORE API Link Messages for this network. Each link message
             describes a link between this network and a node.
@@ -358,7 +362,7 @@ class PyCoreNet(PyCoreObj):
                 netif.swapparams('_params_up')
                 if netif.getparams() != upstream_params:
                     uni = True
-                
+
             tlvdata = ""
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N1NUMBER,
                                                 self.objid)
@@ -377,7 +381,7 @@ class PyCoreNet(PyCoreObj):
                     coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2MAC,
                                              netif.hwaddr)
             for addr in netif.addrlist:
-                (ip, sep, mask)  = addr.partition('/')
+                (ip, sep, mask) = addr.partition('/')
                 mask = int(mask)
                 if isIPv4Address(ip):
                     family = AF_INET
@@ -408,12 +412,15 @@ class PyCoreNet(PyCoreObj):
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_UNI, 1)
             msg = coreapi.CoreLinkMessage.pack(0, tlvdata)
             msgs.append(msg)
-        return msgs 
+        return msgs
+
 
 class PyCoreNetIf(object):
     ''' Base class for interfaces.
     '''
-    def __init__(self, node, name, mtu):
+    def __init__(self, node, name, mtu=None):
+        if mtu is None:
+            raise NotImplementedError()
         self.node = node
         self.name = name
         if not isinstance(mtu, (int, long)):
@@ -434,7 +441,7 @@ class PyCoreNetIf(object):
 
     def shutdown(self):
         pass
-    
+
     def attachnet(self, net):
         if self.net:
             self.detachnet()
@@ -462,7 +469,7 @@ class PyCoreNetIf(object):
         if key not in self._params:
             return None
         return self._params[key]
-        
+
     def getparams(self):
         ''' Return (key, value) pairs from the _params dict.
         '''
@@ -470,7 +477,7 @@ class PyCoreNetIf(object):
         for k in sorted(self._params.keys()):
             r.append((k, self._params[k]))
         return r
-    
+
     def setparam(self, key, value):
         ''' Set a parameter in the _params dict.
             Returns True if the parameter has changed.
@@ -483,7 +490,7 @@ class PyCoreNetIf(object):
                 return False
         self._params[key] = value
         return True
-        
+
     def swapparams(self, name):
         ''' Swap out the _params dict for name. If name does not exist,
         intialize it. This is for supporting separate upstream/downstream
@@ -498,6 +505,6 @@ class PyCoreNetIf(object):
     def setposition(self, x, y, z):
         ''' Dispatch to any position hook (self.poshook) handler.
         '''
+        # pylint: disable=not-callable
         if self.poshook is not None:
             self.poshook(self, x, y, z)
-

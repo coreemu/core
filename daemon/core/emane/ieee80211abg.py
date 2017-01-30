@@ -9,19 +9,13 @@
 ieee80211abg.py: EMANE IEEE 802.11abg model for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
-from emane import Emane, EmaneModel
-from universal import EmaneUniversalModel
+from core.emane.emane import Emane, EmaneModel
+from core.emane.universal import EmaneUniversalModel
+
 
 class EmaneIeee80211abgModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     # model name
@@ -57,10 +51,10 @@ class EmaneIeee80211abgModel(EmaneModel):
         ("flowcontroltokens", coreapi.CONF_DATA_TYPE_UINT16, '10',
          '', 'number of flow control tokens'),
     ]
-    # mac parameters introduced in EMANE 0.8.1 
+    # mac parameters introduced in EMANE 0.8.1
     # Note: The entry format for category queue parameters (queuesize, aifs, etc) were changed in
     # EMANE 9.x, but are being preserved for the time being due to space constraints in the
-    # CORE GUI. A conversion function (get9xmacparamequivalent) has been defined to support this. 
+    # CORE GUI. A conversion function (get9xmacparamequivalent) has been defined to support this.
     _confmatrix_mac_extended = [
         ("wmmenable", coreapi.CONF_DATA_TYPE_BOOL, '0',
          'On,Off', 'WiFi Multimedia (WMM)'),
@@ -136,9 +130,9 @@ class EmaneIeee80211abgModel(EmaneModel):
                 for nvpair in mac9xnvpairlist:
                     mac.appendChild(e.xmlparam(macdoc, nvpair[0], nvpair[1]))
         else:
-            map( lambda n: mac.appendChild(e.xmlparam(macdoc, n, \
-                                       self.valueof(n, values))), macnames)
-            
+            map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, \
+                                          self.valueof(n, values))), macnames)
+
         e.xmlwrite(macdoc, self.macxmlname(ifc))
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
@@ -149,25 +143,25 @@ class EmaneIeee80211abgModel(EmaneModel):
     # This allows CORE to preserve the entry layout for the mac 'category' parameters
     # and work with EMANE 9.x onwards.
     #
-    def  get9xmacparamequivalent(self, macname, values):
+    def get9xmacparamequivalent(self, macname, values):
         ''' Generate a list of 80211abg mac parameters in 0.9.x layout for a given mac parameter
-        in 8.x layout.For mac category parameters, the list returned will contain the four 
+        in 8.x layout.For mac category parameters, the list returned will contain the four
         equivalent 9.x parameter and value pairs. Otherwise, the list returned will only
         contain a single name and value pair.
         '''
         nvpairlist = []
         macparmval = self.valueof(macname, values)
-        if macname in ["queuesize","aifs","cwmin","cwmax","txop","retrylimit"]:
+        if macname in ["queuesize", "aifs", "cwmin",
+                       "cwmax", "txop", "retrylimit"]:
             for catval in macparmval.split():
                 idx_and_val = catval.split(":")
                 idx = int(idx_and_val[0])
                 val = idx_and_val[1]
                 # aifs and tx are in microseconds. Convert to seconds.
-                if macname in ["aifs","txop"]:
+                if macname in ["aifs", "txop"]:
                     val = "%f" % (float(val)*(1e-6))
                 name9x = "%s%d" % (macname, idx)
                 nvpairlist.append([name9x, val])
         else:
             nvpairlist.append([macname, macparmval])
         return nvpairlist
-        
