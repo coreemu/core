@@ -11,20 +11,27 @@ vnode.py: PyCoreNode and LxcNode classes that implement the network namespace
 virtual node.
 '''
 
-import os, signal, sys, subprocess, vnodeclient, threading, string, shutil
-import random, time
+import os
+import signal
+import subprocess
+import threading
+import string
+import shutil
+import random
+from core.netns import vnodeclient
 from core.api import coreapi
-from core.misc.utils import *
-from core.constants import *
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf, Position
+from core.misc.utils import checkexec, check_call, maketuple
+from core.constants import IP_BIN, CORE_SBIN_DIR, MOUNT_BIN, UMOUNT_BIN
+from core.coreobj import PyCoreNode, PyCoreNetIf
 from core.netns.vif import VEth, TunTap
 from core.emane.nodes import EmaneNode
 
 checkexec([IP_BIN])
 
+
 class SimpleLxcNode(PyCoreNode):
-    def __init__(self, session, objid = None, name = None, nodedir = None,
-                 verbose = False, start = True):
+    def __init__(self, session, objid=None, name=None, nodedir=None,
+                 verbose=False, start=True):
         PyCoreNode.__init__(self, session, objid, name, verbose=verbose,
                             start=start)
         self.nodedir = nodedir
@@ -60,11 +67,11 @@ class SimpleLxcNode(PyCoreNode):
         env['NODE_NAME'] = str(self.name)
 
         try:
-            tmp = subprocess.Popen(vnoded, stdout = subprocess.PIPE, env = env)
+            tmp = subprocess.Popen(vnoded, stdout=subprocess.PIPE, env=env)
         except OSError, e:
             msg = "error running vnoded command: %s (%s)" % (vnoded, e)
             self.exception(coreapi.CORE_EXCP_LEVEL_FATAL,
-                "SimpleLxcNode.startup()", msg)
+                           "SimpleLxcNode.startup()", msg)
             raise Exception, msg
         try:
             self.pid = int(tmp.stdout.read())
@@ -105,7 +112,7 @@ class SimpleLxcNode(PyCoreNode):
         self.vnodeclient.close()
         self.up = False
 
-    def cmd(self, args, wait = True):
+    def cmd(self, args, wait=True):
         return self.vnodeclient.cmd(args, wait)
 
     def cmdresult(self, args):
@@ -117,17 +124,17 @@ class SimpleLxcNode(PyCoreNode):
     def icmd(self, args):
         return self.vnodeclient.icmd(args)
 
-    def redircmd(self, infd, outfd, errfd, args, wait = True):
+    def redircmd(self, infd, outfd, errfd, args, wait=True):
         return self.vnodeclient.redircmd(infd, outfd, errfd, args, wait)
 
-    def term(self, sh = "/bin/sh"):
-        return self.vnodeclient.term(sh = sh)
+    def term(self, sh="/bin/sh"):
+        return self.vnodeclient.term(sh=sh)
 
-    def termcmdstring(self, sh = "/bin/sh"):
-        return self.vnodeclient.termcmdstring(sh = sh)
+    def termcmdstring(self, sh="/bin/sh"):
+        return self.vnodeclient.termcmdstring(sh=sh)
 
-    def shcmd(self, cmdstr, sh = "/bin/sh"):
-        return self.vnodeclient.shcmd(cmdstr, sh = sh)
+    def shcmd(self, cmdstr, sh="/bin/sh"):
+        return self.vnodeclient.shcmd(cmdstr, sh=sh)
 
     def boot(self):
         pass
@@ -154,7 +161,7 @@ class SimpleLxcNode(PyCoreNode):
         with self.lock:
             return PyCoreNode.newifindex(self)
 
-    def newveth(self, ifindex = None, ifname = None, net = None):
+    def newveth(self, ifindex=None, ifname=None, net=None):
         self.lock.acquire()
         try:
             if ifindex is None:
@@ -174,8 +181,8 @@ class SimpleLxcNode(PyCoreNode):
             if len(name) >= 16:
                 raise ValueError, "interface name '%s' too long" % name
             ifclass = VEth
-            veth = ifclass(node = self, name = name, localname = localname,
-                           mtu = 1500, net = net, start = self.up)
+            veth = ifclass(node=self, name=name, localname=localname,
+                           mtu=1500, net=net, start=self.up)
             if self.up:
                 check_call([IP_BIN, "link", "set", veth.name,
                             "netns", str(self.pid)])
@@ -191,7 +198,7 @@ class SimpleLxcNode(PyCoreNode):
         finally:
             self.lock.release()
 
-    def newtuntap(self, ifindex = None, ifname = None, net = None):
+    def newtuntap(self, ifindex=None, ifname=None, net=None):
         self.lock.acquire()
         try:
             if ifindex is None:
@@ -202,8 +209,8 @@ class SimpleLxcNode(PyCoreNode):
             localname = "tap%s.%s.%s" % (self.objid, ifindex, sessionid)
             name = ifname
             ifclass = TunTap
-            tuntap = ifclass(node = self, name = name, localname = localname,
-                             mtu = 1500, net = net, start = self.up)
+            tuntap = ifclass(node=self, name=name, localname=localname,
+                             mtu=1500, net=net, start=self.up)
             try:
                 self.addnetif(tuntap, ifindex)
             except:
@@ -221,12 +228,13 @@ class SimpleLxcNode(PyCoreNode):
                                     self.ifname(ifindex), "address", str(addr)])
             if status:
                 self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
-                    "SimpleLxcNode.sethwaddr()",
-                    "error setting MAC address %s" % str(addr))
+                               "SimpleLxcNode.sethwaddr()",
+                               "error setting MAC address %s" % str(addr))
+
     def addaddr(self, ifindex, addr):
         if self.up:
             self.cmd([IP_BIN, "addr", "add", str(addr),
-                  "dev", self.ifname(ifindex)])
+                      "dev", self.ifname(ifindex)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
@@ -236,11 +244,12 @@ class SimpleLxcNode(PyCoreNode):
             self.warn("trying to delete unknown address: %s" % addr)
         if self.up:
             self.cmd([IP_BIN, "addr", "del", str(addr),
-                  "dev", self.ifname(ifindex)])
+                      "dev", self.ifname(ifindex)])
 
     valid_deladdrtype = ("inet", "inet6", "inet6link")
-    def delalladdr(self, ifindex, addrtypes = valid_deladdrtype):
-        addr = self.getaddr(self.ifname(ifindex), rescan = True)
+
+    def delalladdr(self, ifindex, addrtypes=valid_deladdrtype):
+        addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
                 raise ValueError, "addr type must be in: " + \
@@ -248,19 +257,19 @@ class SimpleLxcNode(PyCoreNode):
             for a in addr[t]:
                 self.deladdr(ifindex, a)
         # update cached information
-        self.getaddr(self.ifname(ifindex), rescan = True)
+        self.getaddr(self.ifname(ifindex), rescan=True)
 
     def ifup(self, ifindex):
         if self.up:
             self.cmd([IP_BIN, "link", "set", self.ifname(ifindex), "up"])
 
-    def newnetif(self, net = None, addrlist = [], hwaddr = None,
-                 ifindex = None, ifname = None):
+    def newnetif(self, net=None, addrlist=[], hwaddr=None,
+                 ifindex=None, ifname=None):
         self.lock.acquire()
         try:
             if isinstance(net, EmaneNode):
-                ifindex = self.newtuntap(ifindex = ifindex, ifname = ifname,
-                                         net = net)
+                ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname,
+                                         net=net)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
@@ -272,8 +281,8 @@ class SimpleLxcNode(PyCoreNode):
                     netif.addaddr(addr)
                 return ifindex
             else:
-                ifindex = self.newveth(ifindex = ifindex, ifname = ifname,
-                                       net = net)
+                ifindex = self.newveth(ifindex=ifindex, ifname=ifname,
+                                       net=net)
             if net is not None:
                 self.attachnet(ifindex, net)
             if hwaddr:
@@ -308,27 +317,27 @@ class SimpleLxcNode(PyCoreNode):
             (filename, srcname, filename)
         self.shcmd(shcmd)
 
-    def getaddr(self, ifname, rescan = False):
-        return self.vnodeclient.getaddr(ifname = ifname, rescan = rescan)
+    def getaddr(self, ifname, rescan=False):
+        return self.vnodeclient.getaddr(ifname=ifname, rescan=rescan)
 
-    def netifstats(self, ifname = None):
-        return self.vnodeclient.netifstats(ifname = ifname)
+    def netifstats(self, ifname=None):
+        return self.vnodeclient.netifstats(ifname=ifname)
 
 
 class LxcNode(SimpleLxcNode):
-    def __init__(self, session, objid = None, name = None,
-                 nodedir = None, bootsh = "boot.sh", verbose = False,
-                 start = True):
-        super(LxcNode, self).__init__(session = session, objid = objid,
-                                      name = name, nodedir = nodedir,
-                                      verbose = verbose, start = start)
+    def __init__(self, session, objid=None, name=None,
+                 nodedir=None, bootsh="boot.sh", verbose=False,
+                 start=True):
+        super(LxcNode, self).__init__(session=session, objid=objid,
+                                      name=name, nodedir=nodedir,
+                                      verbose=verbose, start=start)
         self.bootsh = bootsh
         if start:
             self.startup()
 
     def boot(self):
         self.session.services.bootnodeservices(self)
-        
+
     def validate(self):
         self.session.services.validatenodeservices(self)
 
@@ -342,7 +351,7 @@ class LxcNode(SimpleLxcNode):
         except OSError, e:
             self.warn("Error with LxcNode.startup(): %s" % e)
             self.exception(coreapi.CORE_EXCP_LEVEL_ERROR,
-                "LxcNode.startup()", "%s" % e)
+                           "LxcNode.startup()", "%s" % e)
         finally:
             self.lock.release()
 
@@ -351,7 +360,7 @@ class LxcNode(SimpleLxcNode):
             return
         self.lock.acquire()
         # services are instead stopped when session enters datacollect state
-        #self.session.services.stopnodeservices(self)
+        # self.session.services.stopnodeservices(self)
         try:
             super(LxcNode, self).shutdown()
         finally:
@@ -383,21 +392,21 @@ class LxcNode(SimpleLxcNode):
         dirname = os.path.join(self.nodedir, dirname)
         return os.path.join(dirname, basename)
 
-    def opennodefile(self, filename, mode = "w"):
+    def opennodefile(self, filename, mode="w"):
         hostfilename = self.hostfilename(filename)
         dirname, basename = os.path.split(hostfilename)
         if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode = 0755)
+            os.makedirs(dirname, mode=0755)
         return open(hostfilename, mode)
 
-    def nodefile(self, filename, contents, mode = 0644):
+    def nodefile(self, filename, contents, mode=0644):
         f = self.opennodefile(filename, "w")
         f.write(contents)
         os.chmod(f.name, mode)
         f.close()
         self.info("created nodefile: '%s'; mode: 0%o" % (f.name, mode))
-        
-    def nodefilecopy(self, filename, srcfilename, mode = None):
+
+    def nodefilecopy(self, filename, srcfilename, mode=None):
         ''' Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
         '''
@@ -406,5 +415,3 @@ class LxcNode(SimpleLxcNode):
         if mode is not None:
             os.chmod(hostfilename, mode)
         self.info("copied nodefile: '%s'; mode: %s" % (hostfilename, mode))
-        
-

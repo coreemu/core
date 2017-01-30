@@ -9,7 +9,6 @@
 quagga.py: helper class for generating Quagga configuration.
 '''
 
-import os.path
 from string import Template
 
 def maketuple(obj):

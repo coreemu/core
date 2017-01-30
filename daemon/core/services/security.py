@@ -4,15 +4,14 @@
 # Copyright (c)2011-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-''' 
-security.py: defines security services (vpnclient, vpnserver, ipsec and 
+'''
+security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.constants import *
+from core.constants import CORE_DATA_DIR
+
 
 class VPNClient(CoreService):
     ''' 
@@ -43,6 +42,7 @@ class VPNClient(CoreService):
 # this line is required to add the above class to the list of available services
 addservice(VPNClient)
 
+
 class VPNServer(CoreService):
     ''' 
     '''
@@ -71,6 +71,7 @@ class VPNServer(CoreService):
         return cfg
 
 addservice(VPNServer)
+
 
 class IPsec(CoreService):
     '''
@@ -101,6 +102,7 @@ class IPsec(CoreService):
 
 addservice(IPsec)
 
+
 class Firewall(CoreService):
     ''' 
     '''
@@ -126,4 +128,3 @@ class Firewall(CoreService):
         return cfg
 
 addservice(Firewall)
-

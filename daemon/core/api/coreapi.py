@@ -12,9 +12,18 @@ types and objects used for parsing and building CORE API messages.
 '''
 
 import struct
+from socket import AF_INET, AF_INET6
 
+from core.misc.ipaddr import IPAddr, MacAddr
+
+from core.api.data import node_tlvs, link_tlvs, exec_tlvs, reg_tlvs
+from core.api.data import conf_tlvs, file_tlvs, iface_tlvs, event_tlvs
+from core.api.data import session_tlvs, exception_tlvs
+from core.api.data import message_types, message_flags
+from core.api.data import node_types, event_types
+# Import everything from core.api.data
+# pylint: disable=wildcard-import,unused-wildcard-import
 from core.api.data import *
-from core.misc.ipaddr import *
 
 
 class CoreTlvData(object):
@@ -31,14 +40,15 @@ class CoreTlvData(object):
     @classmethod
     def unpack(cls, data):
         return struct.unpack(cls.datafmt, data)[0]
-    
+
     @classmethod
     def packstring(cls, strvalue):
         return cls.pack(cls.fromstring(strvalue))
-        
+
     @classmethod
     def fromstring(cls, s):
         return cls.datatype(s)
+
 
 class CoreTlvDataObj(CoreTlvData):
     @classmethod
@@ -59,20 +69,24 @@ class CoreTlvDataObj(CoreTlvData):
     def newobj(obj):
         raise NotImplementedError
 
+
 class CoreTlvDataUint16(CoreTlvData):
     datafmt = "!H"
     datatype = int
     padlen = 0
+
 
 class CoreTlvDataUint32(CoreTlvData):
     datafmt = "!2xI"
     datatype = int
     padlen = 2
 
+
 class CoreTlvDataUint64(CoreTlvData):
     datafmt = "!2xQ"
     datatype = long
     padlen = 2
+
 
 class CoreTlvDataString(CoreTlvData):
     datatype = str
@@ -91,6 +105,7 @@ class CoreTlvDataString(CoreTlvData):
     @staticmethod
     def unpack(data):
         return data.rstrip('\0')
+
 
 class CoreTlvDataUint16List(CoreTlvData):
     ''' List of unsigned 16-bit values.
@@ -111,10 +126,11 @@ class CoreTlvDataUint16List(CoreTlvData):
     def unpack(data):
         datafmt = "!%dH" % (len(data)/2)
         return struct.unpack(datafmt, data)
-        
+
     @classmethod
     def fromstring(cls, s):
         return tuple(map(lambda(x): int(x), s.split()))
+
 
 class CoreTlvDataIPv4Addr(CoreTlvDataObj):
     datafmt = "!2x4s"
@@ -127,7 +143,8 @@ class CoreTlvDataIPv4Addr(CoreTlvDataObj):
 
     @staticmethod
     def newobj(value):
-        return IPAddr(af = AF_INET, addr = value)
+        return IPAddr(af=AF_INET, addr=value)
+
 
 class CoreTlvDataIPv6Addr(CoreTlvDataObj):
     datafmt = "!16s2x"
@@ -140,7 +157,8 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
 
     @staticmethod
     def newobj(value):
-        return IPAddr(af = AF_INET6, addr = value)
+        return IPAddr(af=AF_INET6, addr=value)
+
 
 class CoreTlvDataMacAddr(CoreTlvDataObj):
     datafmt = "!2x8s"
@@ -149,11 +167,12 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
 
     @staticmethod
     def getvalue(obj):
-        return '\0\0' + obj.addr # extend to 64 bits
+        return '\0\0' + obj.addr  # extend to 64 bits
 
     @staticmethod
     def newobj(value):
-        return MacAddr(addr = value[2:]) # only use 48 bits
+        return MacAddr(addr=value[2:])  # only use 48 bits
+
 
 class CoreTlv(object):
     hdrfmt = "!BB"
@@ -199,7 +218,7 @@ class CoreTlv(object):
         else:
             hdr = struct.pack(cls.longhdrfmt, tlvtype, 0, tlvlen)
         return hdr + tlvdata
-        
+
     @classmethod
     def packstring(cls, tlvtype, value):
         return cls.pack(tlvtype, cls.tlvdataclsmap[tlvtype].fromstring(value))
@@ -213,6 +232,7 @@ class CoreTlv(object):
     def __str__(self):
         return "%s <tlvtype = %s, value = %s>" % \
                (self.__class__.__name__, self.typestr(), self.value)
+
 
 class CoreNodeTlv(CoreTlv):
     tlvtypemap = node_tlvs
@@ -238,6 +258,7 @@ class CoreNodeTlv(CoreTlv):
         CORE_TLV_NODE_ICON: CoreTlvDataString,
         CORE_TLV_NODE_OPAQUE: CoreTlvDataString,
     }
+
 
 class CoreLinkTlv(CoreTlv):
     tlvtypemap = link_tlvs
@@ -276,6 +297,7 @@ class CoreLinkTlv(CoreTlv):
         CORE_TLV_LINK_OPAQUE: CoreTlvDataString,
     }
 
+
 class CoreExecTlv(CoreTlv):
     tlvtypemap = exec_tlvs
     tlvdataclsmap = {
@@ -288,6 +310,7 @@ class CoreExecTlv(CoreTlv):
         CORE_TLV_EXEC_SESSION: CoreTlvDataString,
     }
 
+
 class CoreRegTlv(CoreTlv):
     tlvtypemap = reg_tlvs
     tlvdataclsmap = {
@@ -299,6 +322,7 @@ class CoreRegTlv(CoreTlv):
         CORE_TLV_REG_EMULSRV: CoreTlvDataString,
         CORE_TLV_REG_SESSION: CoreTlvDataString,
     }
+
 
 class CoreConfTlv(CoreTlv):
     tlvtypemap = conf_tlvs
@@ -315,8 +339,9 @@ class CoreConfTlv(CoreTlv):
         CORE_TLV_CONF_SESSION: CoreTlvDataString,
         CORE_TLV_CONF_IFNUM: CoreTlvDataUint16,
         CORE_TLV_CONF_NETID: CoreTlvDataUint32,
-        CORE_TLV_CONF_OPAQUE: CoreTlvDataString, 
+        CORE_TLV_CONF_OPAQUE: CoreTlvDataString,
     }
+
 
 class CoreFileTlv(CoreTlv):
     tlvtypemap = file_tlvs
@@ -331,6 +356,7 @@ class CoreFileTlv(CoreTlv):
         CORE_TLV_FILE_DATA: CoreTlvDataString,
         CORE_TLV_FILE_CMPDATA: CoreTlvDataString,
     }
+
 
 class CoreIfaceTlv(CoreTlv):
     tlvtypemap = iface_tlvs
@@ -350,6 +376,7 @@ class CoreIfaceTlv(CoreTlv):
         CORE_TLV_IFACE_NETID: CoreTlvDataUint32,
     }
 
+
 class CoreEventTlv(CoreTlv):
     tlvtypemap = event_tlvs
     tlvdataclsmap = {
@@ -360,6 +387,7 @@ class CoreEventTlv(CoreTlv):
         CORE_TLV_EVENT_TIME: CoreTlvDataString,
         CORE_TLV_EVENT_SESSION: CoreTlvDataString,
     }
+
 
 class CoreSessionTlv(CoreTlv):
     tlvtypemap = session_tlvs
@@ -373,6 +401,7 @@ class CoreSessionTlv(CoreTlv):
         CORE_TLV_SESS_USER: CoreTlvDataString,
         CORE_TLV_SESS_OPAQUE: CoreTlvDataString,
     }
+
 
 class CoreExceptionTlv(CoreTlv):
     tlvtypemap = exception_tlvs
@@ -429,7 +458,7 @@ class CoreMessage(object):
         while data:
             tlv, data = self.tlvcls.unpack(data)
             self.addtlvdata(tlv.tlvtype, tlv.value)
-            
+
     def packtlvdata(self):
         ''' Opposite of parsedata(). Return packed TLV data using
         self.tlvdata dict. Used by repack().
@@ -440,7 +469,7 @@ class CoreMessage(object):
             v = self.tlvdata[k]
             tlvdata += self.tlvcls.pack(k, v)
         return tlvdata
-    
+
     def repack(self):
         ''' Invoke after updating self.tlvdata[] to rebuild self.rawmsg.
         Useful for modifying a message that has been parsed, before
@@ -507,7 +536,7 @@ class CoreMessage(object):
         if n2 is not None:
             r.append(n2)
         return r
-        
+
     def sessionnumbers(self):
         ''' Return a list of session numbers included in this message.
         '''
@@ -530,45 +559,54 @@ class CoreNodeMessage(CoreMessage):
     flagmap = message_flags
     tlvcls = CoreNodeTlv
 
+
 class CoreLinkMessage(CoreMessage):
     msgtype = CORE_API_LINK_MSG
     flagmap = message_flags
     tlvcls = CoreLinkTlv
+
 
 class CoreExecMessage(CoreMessage):
     msgtype = CORE_API_EXEC_MSG
     flagmap = message_flags
     tlvcls = CoreExecTlv
 
+
 class CoreRegMessage(CoreMessage):
     msgtype = CORE_API_REG_MSG
     flagmap = message_flags
     tlvcls = CoreRegTlv
+
 
 class CoreConfMessage(CoreMessage):
     msgtype = CORE_API_CONF_MSG
     flagmap = message_flags
     tlvcls = CoreConfTlv
 
+
 class CoreFileMessage(CoreMessage):
     msgtype = CORE_API_FILE_MSG
     flagmap = message_flags
     tlvcls = CoreFileTlv
+
 
 class CoreIfaceMessage(CoreMessage):
     msgtype = CORE_API_IFACE_MSG
     flagmap = message_flags
     tlvcls = CoreIfaceTlv
 
+
 class CoreEventMessage(CoreMessage):
     msgtype = CORE_API_EVENT_MSG
     flagmap = message_flags
     tlvcls = CoreEventTlv
 
+
 class CoreSessionMessage(CoreMessage):
     msgtype = CORE_API_SESS_MSG
     flagmap = message_flags
     tlvcls = CoreSessionTlv
+
 
 class CoreExceptionMessage(CoreMessage):
     msgtype = CORE_API_EXCP_MSG
@@ -588,11 +626,13 @@ msgclsmap = {
     CORE_API_EXCP_MSG: CoreExceptionMessage,
 }
 
+
 def msg_class(msgtypeid):
     global msgclsmap
     return msgclsmap[msgtypeid]
 
 nodeclsmap = {}
+
 
 def add_node_class(name, nodetypeid, nodecls, change = False):
     global nodeclsmap
@@ -609,12 +649,15 @@ def add_node_class(name, nodetypeid, nodecls, change = False):
     else:
         pass
 
+
 def change_node_class(name, nodetypeid, nodecls):
     return add_node_class(name, nodetypeid, nodecls, change = True)
+
 
 def node_class(nodetypeid):
     global nodeclsmap
     return nodeclsmap[nodetypeid]
+
 
 def str_to_list(s):
     ''' Helper to convert pipe-delimited string ("a|b|c") into a list (a, b, c)
@@ -622,6 +665,7 @@ def str_to_list(s):
     if s is None:
         return None
     return s.split("|")
+
 
 def state_name(n):
     ''' Helper to convert state number into state name using event types.

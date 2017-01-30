@@ -4,30 +4,24 @@
 # See the LICENSE file included in this distribution.
 #
 '''
-xen.py: implementation of the XenNode and XenVEth classes that support 
+xen.py: implementation of the XenNode and XenVEth classes that support
 generating Xen domUs based on an ISO image and persistent configuration area
 '''
-
-from core.netns.vnet import *
-from core.netns.vnode import LxcNode
-from core.coreobj import PyCoreObj, PyCoreNode, PyCoreNetIf
-from core.misc.ipaddr import *
-from core.misc.utils import *
-from core.constants import *
-from core.api import coreapi
-from core.netns.vif import TunTap
-from core.emane.nodes import EmaneNode
-
+import os
+import shutil
+import string
+import sys
+import subprocess
+import threading
 try:
     import parted
 except ImportError, e:
-    #print "Failed to load parted Python module required by Xen support."
-    #print "Error was:", e
+    # print "Failed to load parted Python module required by Xen support."
+    # print "Error was:", e
     raise ImportError
 
 import base64
 import crypt
-import subprocess
 try:
     import fsimage
 except ImportError, e:
@@ -36,16 +30,18 @@ except ImportError, e:
     try:
         import fsimage
     except ImportError, e:
-        #print "Failed to load fsimage Python module required by Xen support."
-        #print "Error was:", e
+        # print "Failed to load fsimage Python module required by Xen support."
+        # print "Error was:", e
         raise ImportError
-        
 
-
-import os
-import time
-import shutil
-import string
+# from core.netns.vnet import *
+from core.netns.vnode import LxcNode
+from core.coreobj import PyCoreNode, PyCoreNetIf
+# from core.misc.ipaddr import *
+from core.misc.utils import check_call, mutecheck_call, mutecall, maketuple
+from core.constants import MOUNT_BIN, IP_BIN, UMOUNT_BIN
+from core.api import coreapi
+from core.emane.nodes import EmaneNode
 
 # XXX move these out to config file
 AWK_PATH = "/bin/awk"
@@ -60,11 +56,12 @@ SED_PATH = "/bin/sed"
 XM_PATH = "/usr/sbin/xm"
 UDEVADM_PATH = "/sbin/udevadm"
 
+
 class XenVEth(PyCoreNetIf):
-    def __init__(self, node, name, localname, mtu = 1500, net = None,
-                 start = True, hwaddr = None):
+    def __init__(self, node, name, localname, mtu=1500, net=None,
+                 start=True, hwaddr=None):
         # note that net arg is ignored
-        PyCoreNetIf.__init__(self, node = node, name = name, mtu = mtu)
+        PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.localname = localname
         self.up = False
         self.hwaddr = hwaddr
@@ -87,7 +84,7 @@ class XenVEth(PyCoreNetIf):
             if self.hwaddr is not None:
                 pass
                 # this should be doable, but some argument isn't a string
-                #check_call([XM_PATH, 'network-detach', self.node.vmname,
+                # check_call([XM_PATH, 'network-detach', self.node.vmname,
                 #           self.hwaddr])
         self.up = False
 
@@ -96,7 +93,7 @@ class XenNode(PyCoreNode):
     apitype = coreapi.CORE_NODE_XEN
 
     FilesToIgnore = frozenset([
-        #'ipforward.sh',
+        # 'ipforward.sh',
         'quaggaboot.sh',
     ])
 
@@ -105,10 +102,10 @@ class XenNode(PyCoreNode):
     }
 
     CmdsToIgnore = frozenset([
-        #'sh ipforward.sh',
-        #'sh quaggaboot.sh zebra',
-        #'sh quaggaboot.sh ospfd',
-        #'sh quaggaboot.sh ospf6d',
+        # 'sh ipforward.sh',
+        # 'sh quaggaboot.sh zebra',
+        # 'sh quaggaboot.sh ospfd',
+        # 'sh quaggaboot.sh ospf6d',
         'sh quaggaboot.sh vtysh',
         'killall zebra',
         'killall ospfd',
@@ -122,7 +119,7 @@ class XenNode(PyCoreNode):
         p1 = subprocess.Popen([AWK_PATH,
                                '/^\/sbin\/sysctl -w/ {print $NF}',
                                os.path.join(self.nodedir,
-                                            'core-tmp/ipforward.sh') ],
+                                            'core-tmp/ipforward.sh')],
                               stdout=sysctlFile)
         p1.wait()
         sysctlFile.close()
@@ -130,9 +127,11 @@ class XenNode(PyCoreNode):
     def RedirCmd_zebra(self):
         check_call([SED_PATH, '-i', '-e', 's/^zebra=no/zebra=yes/',
                    os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+
     def RedirCmd_ospfd(self):
         check_call([SED_PATH, '-i', '-e', 's/^ospfd=no/ospfd=yes/',
                    os.path.join(self.mountdir, self.etcdir, 'quagga/daemons')])
+
     def RedirCmd_ospf6d(self):
         check_call([SED_PATH, '-i', '-e',
                    's/^ospf6d=no/ospf6d=yes/',
@@ -146,14 +145,14 @@ class XenNode(PyCoreNode):
     }
 
     # CoreNode: no __init__, take from LxcNode & SimpleLxcNode
-    def __init__(self, session, objid = None, name = None,
-                 nodedir = None, bootsh = "boot.sh", verbose = False,
-                 start = True, model = None,
-                 vgname = None, ramsize = None, disksize = None, 
-                 isofile = None):
+    def __init__(self, session, objid=None, name=None,
+                 nodedir=None, bootsh="boot.sh", verbose=False,
+                 start=True, model=None,
+                 vgname=None, ramsize=None, disksize=None,
+                 isofile=None):
         # SimpleLxcNode initialization
-        PyCoreNode.__init__(self, session = session, objid = objid, name = name,
-                            verbose = verbose)
+        PyCoreNode.__init__(self, session=session, objid=objid, name=name,
+                            verbose=verbose)
         self.nodedir = nodedir
         self.model = model
         # indicates startup() has been invoked and disk has been initialized
@@ -181,7 +180,7 @@ class XenNode(PyCoreNode):
         # TODO: remove this temporary hack
         self.FilesRedirection['/usr/local/etc/quagga/Quagga.conf'] = \
             os.path.join(self.getconfigitem('mount_path'), self.etcdir,
-                        'quagga/Quagga.conf')
+                         'quagga/Quagga.conf')
 
         # LxcNode initialization
         # self.makenodedir()
@@ -202,7 +201,7 @@ class XenNode(PyCoreNode):
     def getconfigitem(self, name, default=None):
         ''' Configuration items come from the xen.conf file and/or input from
             the GUI, and are stored in the session using the XenConfigManager
-            object. self.model is used to identify particular profiles 
+            object. self.model is used to identify particular profiles
             associated with a node type in the GUI.
         '''
         return self.session.xen.getconfigitem(name=name, model=self.model,
@@ -218,7 +217,7 @@ class XenNode(PyCoreNode):
             self.createlogicalvolume()
             self.createpartitions()
             persistdev = self.createfilesystems()
-            check_call([MOUNT_BIN, '-t', 'ext4', persistdev, self.mountdir]) 
+            check_call([MOUNT_BIN, '-t', 'ext4', persistdev, self.mountdir])
             self.untarpersistent(tarname=self.getconfigitem('persist_tar_iso'),
                                  iso=True)
             self.setrootpassword(pw = self.getconfigitem('root_password'))
@@ -252,8 +251,8 @@ class XenNode(PyCoreNode):
             check_call([UDEVADM_PATH, 'settle'])
             check_call([KPARTX_PATH, '-d', self.lvpath])
 
-            #time.sleep(5)
-            #time.sleep(1)
+            # time.sleep(5)
+            # time.sleep(1)
 
             # unpause VM
             if self.verbose:
@@ -266,7 +265,7 @@ class XenNode(PyCoreNode):
 
     def validate(self):
         self.session.services.validatenodeservices(self)
-        
+
     # from class LxcNode (also SimpleLxcNode)
     def shutdown(self):
         self.warn("XEN PVM shutdown() called")
@@ -331,9 +330,9 @@ class XenNode(PyCoreNode):
         constraint = parted.Constraint(device=dev)
         persist_size = int(0.75 * constraint.maxSize);
         self.createpartition(device=dev, disk=disk, start=1,
-                         end=(persist_size - 1) , type="ext4")
+                             end=(persist_size - 1) , type="ext4")
         self.createpartition(device=dev, disk=disk, start=persist_size,
-                         end=(constraint.maxSize - 1) , type="linux-swap(v1)")
+                             end=(constraint.maxSize - 1) , type="linux-swap(v1)")
         disk.commit()
 
     def createpartition(self, device, disk, start, end, type):
@@ -365,7 +364,7 @@ class XenNode(PyCoreNode):
         ''' Unpack a persistent template tar file to the mounted mount dir.
             Uses fsimage library to read from an ISO file.
         '''
-        tarname = tarname.replace('%h', self.name) # filename may use hostname
+        tarname = tarname.replace('%h', self.name)  # filename may use hostname
         if iso:
             try:
                 fs = fsimage.open(self.isofile, 0)
@@ -419,7 +418,7 @@ class XenNode(PyCoreNode):
                    's/PermitRootLogin no/PermitRootLogin yes/', sshdcfg])
         sshdir = os.path.join(self.getconfigitem('mount_path'), self.etcdir,
                               'ssh')
-        sshdir = sshdir.replace('/','\\/') # backslash slashes for use in sed
+        sshdir = sshdir.replace('/','\\/')  # backslash slashes for use in sed
         check_call([SED_PATH, '-i', '-e',
                    's/#AuthorizedKeysFile        %h\/.ssh\/authorized_keys/' + \
                    'AuthorizedKeysFile ' + sshdir + '\/authorized_keys/',
@@ -450,7 +449,7 @@ class XenNode(PyCoreNode):
 
     # from class LxcNode
     def privatedir(self, path):
-        #self.warn("XEN PVM privatedir() called")
+        # self.warn("XEN PVM privatedir() called")
         # Do nothing, Xen PVM nodes are fully private
         pass
 
@@ -467,24 +466,24 @@ class XenNode(PyCoreNode):
             raise ValueError, "no basename for filename: " + filename
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
-        #dirname = dirname.replace("/", ".")
+        # dirname = dirname.replace("/", ".")
         dirname = os.path.join(self.nodedir, dirname)
         if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode = 0755)
+            os.makedirs(dirname, mode=0755)
         hostfilename = os.path.join(dirname, basename)
         return open(hostfilename, mode)
 
     # from class LxcNode
-    def nodefile(self, filename, contents, mode = 0644):
+    def nodefile(self, filename, contents, mode=0644):
         if filename in self.FilesToIgnore:
-            #self.warn("XEN PVM nodefile(filename=%s) ignored" % [filename])
+            # self.warn("XEN PVM nodefile(filename=%s) ignored" % [filename])
             return
 
         if filename in self.FilesRedirection:
             redirFilename = self.FilesRedirection[filename]
             self.warn("XEN PVM nodefile(filename=%s) redirected to %s" % (filename, redirFilename))
             filename = redirFilename
-            
+
         self.warn("XEN PVM nodefile(filename=%s) called" % [filename])
         self.lock.acquire()
         if not self.up:
@@ -509,24 +508,24 @@ class XenNode(PyCoreNode):
     # from class SimpleLxcNode
     def alive(self):
         # is VM running?
-        return False # XXX
+        return False  # XXX
 
     def cmd(self, args, wait = True):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
-            #self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
+            # self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
             return 0
         if cmdAsString in self.CmdsRedirection:
             self.CmdsRedirection[cmdAsString](self)
             return 0
 
         self.warn("XEN PVM cmd(args=[%s]) called, but not yet implemented" % cmdAsString)
-        return 0 
+        return 0
 
     def cmdresult(self, args):
         cmdAsString = string.join(args, ' ')
         if cmdAsString in self.CmdsToIgnore:
-            #self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
+            # self.warn("XEN PVM cmd(args=[%s]) called and ignored" % cmdAsString)
             return (0, "")
         self.warn("XEN PVM cmdresult(args=[%s]) called, but not yet implemented" % cmdAsString)
         return (0, "")
@@ -552,7 +551,7 @@ class XenNode(PyCoreNode):
         '''
         controlifc = None
         for ifc in self.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 controlifc = ifc
                 break
         cmd = "xterm "
@@ -561,14 +560,14 @@ class XenNode(PyCoreNode):
             controlip = controlifc.addrlist[0].split('/')[0]
             cmd += "-e ssh root@%s" % controlip
             return cmd
-        # otherwise use 'xm console' 
-        #pw = self.getconfigitem('root_password')
-        #cmd += "-xrm 'XTerm*VT100.translations: #override <Key>F1: "
-        #cmd += "string(\"root\\n\") \\n <Key>F2: string(\"%s\\n\")' " % pw
+        # otherwise use 'xm console'
+        # pw = self.getconfigitem('root_password')
+        # cmd += "-xrm 'XTerm*VT100.translations: #override <Key>F1: "
+        # cmd += "string(\"root\\n\") \\n <Key>F2: string(\"%s\\n\")' " % pw
         cmd += "-e sudo %s console %s" % (XM_PATH, self.vmname)
         return cmd
 
-    def shcmd(self, cmdstr, sh = "/bin/sh"):
+    def shcmd(self, cmdstr, sh="/bin/sh"):
         self.warn("XEN PVM shcmd(args=[%s]) called, but not yet implemented" % cmdstr)
         return
 
@@ -614,7 +613,7 @@ class XenNode(PyCoreNode):
         self.warn("XEN PVM delnetif() called")
         PyCoreNode.delnetif(self, ifindex)
 
-    def newveth(self, ifindex = None, ifname = None, net = None, hwaddr = None):
+    def newveth(self, ifindex=None, ifname=None, net=None, hwaddr=None):
         self.warn("XEN PVM newveth(ifindex=%s, ifname=%s) called" %
                   (ifindex, ifname))
 
@@ -628,8 +627,8 @@ class XenNode(PyCoreNode):
             name = "n%s.%s.%s" % (self.objid, ifindex, sessionid)
             localname = "n%s.%s.%s" % (self.objid, ifname, sessionid)
             ifclass = XenVEth
-            veth = ifclass(node = self, name = name, localname = localname,
-                           mtu = 1500, net = net, hwaddr = hwaddr)
+            veth = ifclass(node=self, name=name, localname=localname,
+                           mtu=1500, net=net, hwaddr=hwaddr)
 
             veth.name = ifname
             try:
@@ -642,14 +641,14 @@ class XenNode(PyCoreNode):
         finally:
             self.lock.release()
 
-    def newtuntap(self, ifindex = None, ifname = None, net = None):
+    def newtuntap(self, ifindex=None, ifname=None, net=None):
         self.warn("XEN PVM newtuntap() called but not implemented")
 
     def sethwaddr(self, ifindex, addr):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             pass
-            #self.cmd([IP_BIN, "link", "set", "dev", self.ifname(ifindex),
+            # self.cmd([IP_BIN, "link", "set", "dev", self.ifname(ifindex),
             #    "address", str(addr)])
 
     def addaddr(self, ifindex, addr):
@@ -670,8 +669,9 @@ class XenNode(PyCoreNode):
             #       "dev", self.ifname(ifindex)])
 
     valid_deladdrtype = ("inet", "inet6", "inet6link")
-    def delalladdr(self, ifindex, addrtypes = valid_deladdrtype):
-        addr = self.getaddr(self.ifname(ifindex), rescan = True)
+
+    def delalladdr(self, ifindex, addrtypes=valid_deladdrtype):
+        addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
                 raise ValueError, "addr type must be in: " + \
@@ -679,15 +679,15 @@ class XenNode(PyCoreNode):
             for a in addr[t]:
                 self.deladdr(ifindex, a)
         # update cached information
-        self.getaddr(self.ifname(ifindex), rescan = True)
+        self.getaddr(self.ifname(ifindex), rescan=True)
 
     # Xen PVM relies on boot process to bring up links
-    #def ifup(self, ifindex):
-    #    if self.up:
-    #        self.cmd([IP_BIN, "link", "set", self.ifname(ifindex), "up"])
+    # def ifup(self, ifindex):
+    #     if self.up:
+    #         self.cmd([IP_BIN, "link", "set", self.ifname(ifindex), "up"])
 
-    def newnetif(self, net = None, addrlist = [], hwaddr = None,
-                 ifindex = None, ifname = None):
+    def newnetif(self, net=None, addrlist=[], hwaddr=None,
+                 ifindex=None, ifname=None):
         self.warn("XEN PVM newnetif(ifindex=%s, ifname=%s) called" %
                   (ifindex, ifname))
 
@@ -720,8 +720,8 @@ class XenNode(PyCoreNode):
                 #     netif.addaddr(addr)
                 # return ifindex
             else:
-                ifindex = self.newveth(ifindex = ifindex, ifname = ifname,
-                                       net = net, hwaddr = hwaddr)
+                ifindex = self.newveth(ifindex=ifindex, ifname=ifname,
+                                       net=net, hwaddr=hwaddr)
             if net is not None:
                 self.attachnet(ifindex, net)
 
@@ -733,14 +733,14 @@ class XenNode(PyCoreNode):
             # Using MAC address as we're now loading PVM net driver "early"
             # OLD: Would like to use MAC address, but udev isn't working with paravirtualized NICs.  Perhaps the "set hw address" isn't triggering a rescan.
             f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", ATTR{address}=="%s", KERNEL=="eth*", NAME="%s"\n' % (hwaddr, self.ifname(ifindex)))
-            #f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", DEVPATH=="/devices/vif-%s/?*", KERNEL=="eth*", NAME="%s"\n' % (ifindex, self.ifname(ifindex)))
+            # f.write('SUBSYSTEM=="net", ACTION=="add", DRIVERS=="?*", DEVPATH=="/devices/vif-%s/?*", KERNEL=="eth*", NAME="%s"\n' % (ifindex, self.ifname(ifindex)))
             f.close()
 
             if hwaddr:
                 self.sethwaddr(ifindex, hwaddr)
             for addr in maketuple(addrlist):
                 self.addaddr(ifindex, addr)
-            #self.ifup(ifindex)
+            # self.ifup(ifindex)
             return ifindex
         finally:
             self.lock.release()
@@ -778,7 +778,7 @@ class XenNode(PyCoreNode):
             return
 
         if filename in self.FilesToIgnore:
-            #self.warn("XEN PVM addfile(filename=%s) ignored" % [filename])
+            # self.warn("XEN PVM addfile(filename=%s) ignored" % [filename])
             return
 
         if filename in self.FilesRedirection:
@@ -801,9 +801,9 @@ class XenNode(PyCoreNode):
 
         self.warn("XEN PVM addfile(filename=%s) called" % [filename])
 
-        #shcmd = "mkdir -p $(dirname '%s') && mv '%s' '%s' && sync" % \
-        #    (filename, srcname, filename)
-        #self.shcmd(shcmd)
+        # shcmd = "mkdir -p $(dirname '%s') && mv '%s' '%s' && sync" % \
+        #     (filename, srcname, filename)
+        # self.shcmd(shcmd)
 
     def unmount_all(self, path):
         ''' Namespaces inherit the host mounts, so we need to ensure that all
@@ -815,4 +815,3 @@ class XenNode(PyCoreNode):
             if not isinstance(o, LxcNode):
                 continue
             o.umount(path)
-

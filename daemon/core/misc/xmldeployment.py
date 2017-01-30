@@ -1,7 +1,7 @@
 import socket
 import subprocess
 import os
-import xmlutils
+from core.misc import xmlutils
 
 from core.netns import nodes
 from core.misc import ipaddr

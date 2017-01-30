@@ -1,5 +1,5 @@
 #
-# CORE configuration for UCARP 
+# CORE configuration for UCARP
 # Copyright (c) 2012 Jonathan deBoer
 # See the LICENSE file included in this distribution.
 #
@@ -10,21 +10,17 @@
 ucarp.py: defines high-availability IP address controlled by ucarp
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
-from core.constants import *
 
 
-UCARP_ETC="/usr/local/etc/ucarp"
+UCARP_ETC = "/usr/local/etc/ucarp"
 
 class Ucarp(CoreService):
     ''' 
     '''
     _name = "ucarp"
     _group = "Utility"
-    _depends = ( )
+    _depends = ()
     _dirs = (UCARP_ETC, )
     _configs = (UCARP_ETC + "/default.sh", UCARP_ETC + "/default-up.sh", UCARP_ETC + "/default-down.sh", "ucarpboot.sh",)
     _startindex = 65
@@ -46,7 +42,7 @@ class Ucarp(CoreService):
             return cls.generateUcarpBoot(node, services)
         else:
             raise ValueError
-        
+
     @classmethod
     def generateUcarpConf(cls, node, services):
         ''' Returns configuration file text. 
@@ -151,7 +147,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr add ${IP}/${NET} dev "$1"
@@ -176,7 +172,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr del ${IP}/${NET} dev "$1"
@@ -186,4 +182,3 @@ fi
 
 
 addservice(Ucarp)
-

@@ -10,15 +10,8 @@
 commeffect.py: EMANE CommEffect model for CORE
 '''
 
-import sys
-import string
-try:
-    from emanesh.events import EventService
-except:
-    pass
 from core.api import coreapi
-from core.constants import *
-from emane import Emane, EmaneModel
+from core.emane.emane import Emane, EmaneModel
 
 try:
     import emaneeventservice
@@ -26,8 +19,9 @@ try:
 except Exception, e:
     pass
 
+
 class EmaneCommEffectModel(EmaneModel):
-    def __init__(self, session, objid = None, verbose = False):
+    def __init__(self, session, objid=None, verbose=False):
         EmaneModel.__init__(self, session, objid, verbose)
 
     # model name
@@ -83,7 +77,7 @@ class EmaneCommEffectModel(EmaneModel):
         shimnames.remove("filterfile")
 
         # append all shim options (except filterfile) to shimdoc
-        map( lambda n: shim.appendChild(e.xmlparam(shimdoc, n, \
+        map(lambda n: shim.appendChild(e.xmlparam(shimdoc, n, \
                                        self.valueof(n, values))), shimnames)
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
@@ -99,14 +93,15 @@ class EmaneCommEffectModel(EmaneModel):
         nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
         e.xmlwrite(nemdoc, self.nemxmlname(ifc))
 
-    def linkconfig(self, netif, bw = None, delay = None,
-                loss = None, duplicate = None, jitter = None, netif2 = None):
+    def linkconfig(self, netif, bw=None, delay=None,
+                   loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Generate CommEffect events when a Link Message is received having
         link parameters.
         '''
         if self.session.emane.version >= self.session.emane.EMANE091:
             raise NotImplementedError, \
                   "CommEffect linkconfig() not implemented for EMANE 0.9.1+"
+
         def z(x):
             ''' Helper to use 0 for None values. '''
             if type(x) is str:
@@ -139,6 +134,3 @@ class EmaneCommEffectModel(EmaneModel):
                         emaneeventservice.PLATFORMID_ANY,
                         nemid2, emaneeventservice.COMPONENTID_ANY,
                         event.export())
-
-
-

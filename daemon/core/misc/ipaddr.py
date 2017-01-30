@@ -9,12 +9,15 @@
 ipaddr.py: helper objects for dealing with IPv4/v6 addresses.
 '''
 
-import socket
 import struct
 import random
 
-AF_INET = socket.AF_INET
-AF_INET6 = socket.AF_INET6
+import socket
+from socket import AF_INET
+from socket import AF_INET6
+# AF_INET = socket.AF_INET
+# AF_INET6 = socket.AF_INET6
+
 
 class MacAddr(object):
     def __init__(self, addr):
@@ -22,7 +25,7 @@ class MacAddr(object):
 
     def __str__(self):
         return ":".join(map(lambda x: ("%02x" % ord(x)), self.addr))
-        
+
     def tolinklocal(self):
         ''' Convert the MAC address to a IPv6 link-local address, using EUI 48
         to EUI 64 conversion process per RFC 5342.
@@ -49,6 +52,7 @@ class MacAddr(object):
         tmp |= 0x00163E << 24    # use the Xen OID 00:16:3E
         tmpbytes = struct.pack("!Q", tmp)
         return cls(tmpbytes[2:])
+
 
 class IPAddr(object):
     def __init__(self, af, addr):
@@ -103,13 +107,14 @@ class IPAddr(object):
             except Exception, e:
                 pass
         raise e
-    
+
     @staticmethod
     def toint(s):
         ''' convert IPv4 string to 32-bit integer
         '''
         bin = socket.inet_pton(AF_INET, s)
         return(struct.unpack('!I', bin)[0])
+
 
 class IPPrefix(object):
     def __init__(self, af, prefixstr):
@@ -198,23 +203,26 @@ class IPPrefix(object):
 
     def numaddr(self):
         return max(0, (1 << (self.addrlen - self.prefixlen)) - 2)
-        
+
     def prefixstr(self):
         return "%s" % socket.inet_ntop(self.af, self.prefix)
-    
+
     def netmaskstr(self):
         addrbits = self.addrlen - self.prefixlen
         netmask = ((1L << self.prefixlen) - 1) << addrbits
         netmaskbytes = struct.pack("!L",  netmask)
         return IPAddr(af=AF_INET, addr=netmaskbytes).__str__()
 
+
 class IPv4Prefix(IPPrefix):
     def __init__(self, prefixstr):
         IPPrefix.__init__(self, AF_INET, prefixstr)
 
+
 class IPv6Prefix(IPPrefix):
     def __init__(self, prefixstr):
         IPPrefix.__init__(self, AF_INET6, prefixstr)
+
 
 def isIPAddress(af, addrstr):
     try:
@@ -223,8 +231,10 @@ def isIPAddress(af, addrstr):
     except:
         return False
 
+
 def isIPv4Address(addrstr):
     return isIPAddress(AF_INET, addrstr)
+
 
 def isIPv6Address(addrstr):
     return isIPAddress(AF_INET6, addrstr)

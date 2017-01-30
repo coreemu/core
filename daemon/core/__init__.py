@@ -19,5 +19,6 @@ or everything listed in __all__ can be imported using
 
 __all__ = []
 
+# pylint: disable=wildcard-import
 # Automatically import all add-ons listed in addons.__all__
-from addons import *
+from core.addons import *

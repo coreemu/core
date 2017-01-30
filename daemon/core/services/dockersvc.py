@@ -105,15 +105,13 @@ Limitations:
 
 '''
 
-import os
-import sys
 try:
     from docker import Client
 except Exception:
     pass
 
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+
 
 class DockerService(CoreService):
     ''' This is a service which will allow running docker containers in a CORE

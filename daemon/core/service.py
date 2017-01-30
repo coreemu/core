@@ -14,7 +14,9 @@ a list of available services to the GUI and for configuring individual
 services.
 '''
 
-import sys, os, shlex
+import sys
+import os
+import shlex
 
 from itertools import repeat
 from core.api import coreapi
@@ -22,6 +24,7 @@ from core.conf import ConfigurableManager, Configurable
 from core.misc.utils import maketuplefromstr, expandcorepath
 
 servicelist = []
+
 
 def addservice(service):
     global servicelist
@@ -36,6 +39,7 @@ def addservice(service):
             break
         i += 1
     servicelist.insert(i, service)
+
 
 class CoreServices(ConfigurableManager):
     ''' Class for interacting with a list of available startup services for

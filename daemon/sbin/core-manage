@@ -20,6 +20,7 @@ import re
 from core import pycore
 from core.constants import CORE_CONF_DIR
 
+
 class FileUpdater(object):
     ''' Helper class for changing configuration files.
     '''
@@ -77,7 +78,6 @@ class FileUpdater(object):
             return r
         valstr = '%s' % r
         return '= '.join([key, valstr]) + '\n'
-
 
     def update_emane_models(self, line):
         ''' Modify the core.conf file having this format:
@@ -142,7 +142,7 @@ class FileUpdater(object):
         search string is found), False otherwise.
         '''
         changed = False
-        output = "" # this accumulates output, assumes input is small
+        output = ""  # this accumulates output, assumes input is small
         with open(self.filename, "r") as f:
             for line in f:
                 if line[:len(self.search)] == self.search:
@@ -157,7 +157,7 @@ class FileUpdater(object):
         if changed:
             with open(self.filename, "w") as f:
                 f.write(output)
-                
+
         return changed
 
     def update_nodes_conf(self):
@@ -167,7 +167,7 @@ class FileUpdater(object):
         data} variables as input and returns the same value as update_file().
         '''
         changed = False
-        output = "" # this accumulates output, assumes input is small
+        output = ""  # this accumulates output, assumes input is small
         with open(self.filename, "r") as f:
             for line in f:
                 # make sure data is not added twice
@@ -188,7 +188,7 @@ class FileUpdater(object):
         if changed:
             with open(self.filename, "w") as f:
                 f.write(output)
-                
+
         return changed
 
 
@@ -205,16 +205,16 @@ def main():
                 ', '.join(FileUpdater.targets)
     usagestr += "\n  <string> is the text to %s" % \
                 ', '.join(FileUpdater.actions)
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(userpath = None, verbose = False,)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(userpath=None, verbose=False,)
 
-    parser.add_option("--userpath", dest = "userpath", type = "string",
-                      help = "use the specified user path (e.g. \"$HOME/.core" \
+    parser.add_option("--userpath", dest="userpath", type="string",
+                      help="use the specified user path (e.g. \"$HOME/.core" \
                              "\") to access nodes.conf")
-    parser.add_option("-v", "--verbose", dest = "verbose", action="store_true",
-                      help = "be verbose when performing action")
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
+                      help="be verbose when performing action")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
