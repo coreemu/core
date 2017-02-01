@@ -30,7 +30,6 @@ class Zebra(CoreService):
     '''
     _name = "zebra"
     _group = "Quagga"
-    _depends = ("vtysh", )
     _dirs = ("/usr/local/etc/quagga",  "/var/run/quagga")
     _configs = ("/usr/local/etc/quagga/Quagga.conf",
                 "quaggaboot.sh","/usr/local/etc/quagga/vtysh.conf")
@@ -593,21 +592,3 @@ class Xpimd(QuaggaService):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
 
 addservice(Xpimd)
-
-class Vtysh(CoreService):
-    ''' Simple service to run vtysh -b (boot) after all Quagga daemons have
-        started.
-    '''
-    _name = "vtysh"
-    _group = "Quagga"
-    _startindex = 45
-    _startup = ()
-    _shutdown = ()
-
-    @classmethod
-    def generateconfig(cls, node, filename, services):
-        return ""
-
-addservice(Vtysh)
-
-

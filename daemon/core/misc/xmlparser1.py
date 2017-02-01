@@ -911,12 +911,12 @@ class CoreDocumentParser1(object):
     def parse_default_services(self):
         # defaults from the CORE GUI
         self.default_services = {
-            'router': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
+            'router': ['zebra', 'OSPFv2', 'OSPFv3', 'IPForward'],
             'host': ['DefaultRoute', 'SSH'],
             'PC': ['DefaultRoute',],
-            'mdr': ['zebra', 'OSPFv3MDR', 'vtysh', 'IPForward'],
-            # 'prouter': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
-            # 'xen': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
+            'mdr': ['zebra', 'OSPFv3MDR', 'IPForward'],
+            # 'prouter': ['zebra', 'OSPFv2', 'OSPFv3', 'IPForward'],
+            # 'xen': ['zebra', 'OSPFv2', 'OSPFv3', 'IPForward'],
             }
         default_services = \
             getFirstChildByTagName(self.scenario, 'CORE:defaultservices')
