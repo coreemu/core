@@ -15,6 +15,7 @@ services.
 '''
 
 import sys, os, shlex
+import imp
 
 from itertools import repeat
 from core.api import coreapi
@@ -47,9 +48,8 @@ class CoreServices(ConfigurableManager):
     _name = "services"
     _type = coreapi.CORE_TLV_REG_UTILITY
 
-    _invalid_custom_names = ('core', 'addons', 'api', 'bsd', 'emane', 'misc',
-                             'netns', 'phys', 'services', 'xen')
-    
+    service_path = set()
+
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
         # dict of default services tuples, key is node type
@@ -65,23 +65,34 @@ class CoreServices(ConfigurableManager):
                 self.importcustom(path)
         self.isStartupService = startup.Startup.isStartupService
 
+    @classmethod
+    def add_service_path(cls, path):
+        cls.service_path.add(path)
+
     def importcustom(self, path):
         ''' Import services from a myservices directory.
         '''
-        if not path or len(path) == 0:
+        if not path or path in self.service_path:
             return
         if not os.path.isdir(path):
             self.session.warn("invalid custom service directory specified" \
                               ": %s" % path)
             return
+        self.add_service_path(path)
         try:
             parentdir, childdir = os.path.split(path)
-            if childdir in self._invalid_custom_names:
-                raise ValueError, "use a unique custom services dir name, " \
-                        "not '%s'" % childdir
-            if not parentdir in sys.path:
-                sys.path.append(parentdir)
-            exec("from %s import *" % childdir)
+            f, pathname, description = imp.find_module(childdir, [parentdir])
+            name = 'core.services.custom.' + childdir
+            if name in sys.modules:
+                i = 1
+                while name + str(i) in sys.modules:
+                    i += 1
+                name += str(i)
+            m = imp.load_module(name, f, pathname, description)
+            if hasattr(m, '__all__'):
+                for x in m.__all__:
+                    f, pathname, description = imp.find_module(x, [path])
+                    imp.load_module(name + '.' + x, f, pathname, description)
         except Exception, e:
             self.session.warn("error importing custom services from " \
                 "%s:\n%s" % (path, e))
