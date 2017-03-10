@@ -111,7 +111,7 @@ class NetgraphNet(PyCoreNet):
         '''
         raise NotImplementedError
 
-    def linkconfig(self, netif, bw=None, delay=None,
+    def linkconfig(self, netif, bw=None, buf=None, delay=None,
                    loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Set link effects by modifying the pipe connected to an interface.
         '''
@@ -169,7 +169,7 @@ class NetgraphPipeNet(NetgraphNet):
         else:
             return hooks[1]
 
-    def linkconfig(self, netif, bw=None, delay=None,
+    def linkconfig(self, netif, bw=None, buf=None, delay=None,
                    loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Set link effects by sending a Netgraph setcfg message to the pipe.
         '''

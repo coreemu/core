@@ -1385,7 +1385,7 @@ class EmaneModel(WirelessModel):
             return
         wlan.setnempositions(moved_netifs)
 
-    def linkconfig(self, netif, bw=None, delay=None,
+    def linkconfig(self, netif, bw=None, buf=None, delay=None,
                    loss=None, duplicate=None, jitter=None, netif2=None):
         ''' Invoked when a Link Message is received. Default is unimplemented.
         '''

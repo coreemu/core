@@ -836,6 +836,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                                               start=start)
 
                 bw = msg.gettlv(coreapi.CORE_TLV_LINK_BW)
+                buf = msg.gettlv(coreapi.CORE_TLV_LINK_BUF)
                 delay = msg.gettlv(coreapi.CORE_TLV_LINK_DELAY)
                 loss = msg.gettlv(coreapi.CORE_TLV_LINK_PER)
                 duplicate = msg.gettlv(coreapi.CORE_TLV_LINK_DUP)
@@ -859,7 +860,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                                               hwaddr=mac1, ifindex=ifindex1,
                                               ifname=ifname1)
                     net.linkconfig(node1.netif(ifindex1, net), bw=bw,
-                                   delay=delay, loss=loss,
+                                   buf=buf, delay=delay, loss=loss,
                                    duplicate=duplicate, jitter=jitter)
                 if node1 is None and net:
                     if ipv41 is not None and ipv4mask1 is not None:
@@ -885,7 +886,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                                               ifname=ifname2)
                     if not unidirectional:
                         net.linkconfig(node2.netif(ifindex2, net), bw=bw,
-                                       delay=delay, loss=loss,
+                                       buf=buf, delay=delay, loss=loss,
                                        duplicate=duplicate, jitter=jitter)
                 if node2 is None and net2:
                     if ipv42 is not None and ipv4mask2 is not None:
@@ -910,13 +911,14 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         netif = net2.linknet(net)
                     else:
                         netif = net.linknet(net2)
-                    net.linkconfig(netif, bw=bw, delay=delay, loss=loss,
-                                   duplicate=duplicate, jitter=jitter)
+                    net.linkconfig(netif, bw=bw, buf=buf, delay=delay,
+                                   loss=loss, duplicate=duplicate,
+                                   jitter=jitter)
                     if not unidirectional:
                         netif.swapparams('_params_up')
-                        net2.linkconfig(netif, bw=bw, delay=delay, loss=loss,
-                                        duplicate=duplicate, jitter=jitter,
-                                        devname=netif.name)
+                        net2.linkconfig(netif, bw=bw, buf=buf, delay=delay,
+                                        loss=loss, duplicate=duplicate,
+                                        jitter=jitter, devname=netif.name)
                         netif.swapparams('_params_up')
 
                 elif net is None and net2 is None and \
@@ -930,7 +932,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         if ipv61 is not None and ipv6mask1 is not None:
                             addrlist.append("%s/%s" % (ipv61, ipv6mask1))
                         node1.adoptnetif(t, ifindex1, mac1, addrlist)
-                        node1.linkconfig(t, bw, delay, loss, duplicate, jitter)
+                        node1.linkconfig(t, bw, buf, delay, loss, duplicate,
+                                         jitter)
 
                     elif node2 and isinstance(node2,
                                               pycore.pnodes.PhysicalNode):
@@ -939,7 +942,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         if ipv62 is not None and ipv6mask2 is not None:
                             addrlist.append("%s/%s" % (ipv62, ipv6mask2))
                         node2.adoptnetif(t, ifindex2, mac2, addrlist)
-                        node2.linkconfig(t, bw, delay, loss, duplicate, jitter)
+                        node2.linkconfig(t, bw, buf, delay, loss, duplicate,
+                                         jitter)
 
             # delete a link
             elif msg.flags & coreapi.CORE_API_DEL_FLAG:
@@ -977,6 +981,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 ''' Modify a link.
                 '''
                 bw = msg.gettlv(coreapi.CORE_TLV_LINK_BW)
+                buf = msg.gettlv(coreapi.CORE_TLV_LINK_BUF)
                 delay = msg.gettlv(coreapi.CORE_TLV_LINK_DELAY)
                 loss = msg.gettlv(coreapi.CORE_TLV_LINK_PER)
                 duplicate = msg.gettlv(coreapi.CORE_TLV_LINK_DUP)
@@ -997,23 +1002,25 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                                 "modify unknown link between nets")
                         if upstream:
                             netif.swapparams('_params_up')
-                            net.linkconfig(netif, bw=bw, delay=delay,
+                            net.linkconfig(netif, bw=bw, buf=buf, delay=delay,
                                            loss=loss, duplicate=duplicate,
                                            jitter=jitter, devname=netif.name)
                             netif.swapparams('_params_up')
                         else:
-                            net.linkconfig(netif, bw=bw, delay=delay,
+                            net.linkconfig(netif, bw=bw, buf=buf, delay=delay,
                                            loss=loss, duplicate=duplicate,
                                            jitter=jitter)
                         if not unidirectional:
                             if upstream:
-                                net2.linkconfig(netif, bw=bw, delay=delay,
+                                net2.linkconfig(netif, bw=bw, buf=buf,
+                                                delay=delay,
                                                 loss=loss,
                                                 duplicate=duplicate,
                                                 jitter=jitter)
                             else:
                                 netif.swapparams('_params_up')
-                                net2.linkconfig(netif, bw=bw, delay=delay,
+                                net2.linkconfig(netif, bw=bw, buf=buf,
+                                                delay=delay,
                                                 loss=loss,
                                                 duplicate=duplicate,
                                                 jitter=jitter,
@@ -1023,12 +1030,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         raise ValueError("modify link for unknown nodes")
                 elif node1 is None:
                     # node1 = layer 2node, node2 = layer3 node
-                    net.linkconfig(node2.netif(ifindex2, net), bw=bw,
+                    net.linkconfig(node2.netif(ifindex2, net), bw=bw, buf=buf,
                                    delay=delay, loss=loss,
                                    duplicate=duplicate, jitter=jitter)
                 elif node2 is None:
                     # node2 = layer 2node, node1 = layer3 node
-                    net.linkconfig(node1.netif(ifindex1, net), bw=bw,
+                    net.linkconfig(node1.netif(ifindex1, net), bw=bw, buf=buf
                                    delay=delay, loss=loss,
                                    duplicate=duplicate, jitter=jitter)
                 else:
@@ -1037,11 +1044,11 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         if ifindex1 is not None and \
                                 ifindex1 != node1.getifindex(netif1):
                             continue
-                        net.linkconfig(netif1, bw=bw, delay=delay,
+                        net.linkconfig(netif1, bw=bw, buf=buf, delay=delay,
                                        loss=loss, duplicate=duplicate,
                                        jitter=jitter, netif2=netif2)
                         if not unidirectional:
-                            net.linkconfig(netif2, bw=bw, delay=delay,
+                            net.linkconfig(netif2, bw=bw, buf=buf, delay=delay,
                                            loss=loss, duplicate=duplicate,
                                            jitter=jitter, netif2=netif1)
                         numnet += 1
