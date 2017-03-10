@@ -1,3 +1,6 @@
+Simply merging CORE stuff and see how it goes :)
+================================================
+
 ====
 CORE
 ====
@@ -60,7 +63,7 @@ First start the CORE services:
 
     sudo /etc/init.d/core-daemon start
 
-This automatically runs the core-daemon program. 
+This automatically runs the core-daemon program.
 Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
 
     core-gui
@@ -80,5 +83,3 @@ If you have questions, comments, or trouble, please use the CORE mailing lists:
 
 .. _core-users: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users
 .. _core-dev: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev
-
-
