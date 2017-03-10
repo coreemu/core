@@ -4,19 +4,16 @@
 # Copyright (c)2011-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-''' 
-security.py: defines security services (vpnclient, vpnserver, ipsec and 
+'''
+security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 '''
 
-import os
-
 from core.service import CoreService, addservice
-from core.constants import *
+from core.constants import CORE_DATA_DIR
+
 
 class VPNClient(CoreService):
-    ''' 
-    '''
     _name = "VPNClient"
     _group = "Security"
     _configs = ('vpnclient.sh', )
@@ -28,7 +25,7 @@ class VPNClient(CoreService):
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Return the client.conf and vpnclient.sh file contents to
+        '''Return the client.conf and vpnclient.sh file contents to
         '''
         cfg = "#!/bin/sh\n"
         cfg += "# custom VPN Client configuration for service (security.py)\n"
@@ -43,9 +40,8 @@ class VPNClient(CoreService):
 # this line is required to add the above class to the list of available services
 addservice(VPNClient)
 
+
 class VPNServer(CoreService):
-    ''' 
-    '''
     _name = "VPNServer"
     _group = "Security"
     _configs = ('vpnserver.sh', )
@@ -57,7 +53,7 @@ class VPNServer(CoreService):
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Return the sample server.conf and vpnserver.sh file contents to
+        '''Return the sample server.conf and vpnserver.sh file contents to
             GUI for user customization.
         '''
         cfg = "#!/bin/sh\n"
@@ -72,9 +68,8 @@ class VPNServer(CoreService):
 
 addservice(VPNServer)
 
+
 class IPsec(CoreService):
-    '''
-    '''
     _name = "IPsec"
     _group = "Security"
     _configs = ('ipsec.sh', )
@@ -101,9 +96,8 @@ class IPsec(CoreService):
 
 addservice(IPsec)
 
+
 class Firewall(CoreService):
-    ''' 
-    '''
     _name = "Firewall"
     _group = "Security"
     _configs = ('firewall.sh', )
@@ -126,4 +120,3 @@ class Firewall(CoreService):
         return cfg
 
 addservice(Firewall)
-

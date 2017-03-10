@@ -2,8 +2,9 @@
 # Copyright (c) 2015 The Boeing Company.
 # See the LICENSE file included in this distribution.
 
-from xmlwriter0 import CoreDocumentWriter0
-from xmlwriter1 import CoreDocumentWriter1
+from core.misc.xmlwriter0 import CoreDocumentWriter0
+from core.misc.xmlwriter1 import CoreDocumentWriter1
+
 
 def core_document_writer(session, version):
     if version == '0.0':

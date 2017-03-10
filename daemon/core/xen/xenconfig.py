@@ -19,10 +19,11 @@ Node-specific config:  XenConfigManager.configs[nodenumber] = (type, values)
    The node having this specific number has this config.
 '''
 
-import sys, os, threading, subprocess, time, string
+import os
+import string
 import ConfigParser
-from xml.dom.minidom import parseString, Document
-from core.constants import *
+
+from core.constants import CORE_CONF_DIR
 from core.api import coreapi
 from core.conf import ConfigurableManager, Configurable
 
@@ -33,7 +34,7 @@ class XenConfigManager(ConfigurableManager):
     '''
     _name = "xen"
     _type = coreapi.CORE_TLV_REG_EMULSRV
-    
+
     def __init__(self, session):
         ConfigurableManager.__init__(self, session)
         self.verbose = self.session.getcfgitembool('verbose', False)
@@ -45,8 +46,8 @@ class XenConfigManager(ConfigurableManager):
             usually received from a Configuration Message, and may refer to a
             node for which no object exists yet
         '''
-        if nodenum is None: 
-            nodenum = 0 # used for storing the global default config
+        if nodenum is None:
+            nodenum = 0  # used for storing the global default config
         return ConfigurableManager.setconfig(self, nodenum, conftype, values)
 
     def getconfig(self, nodenum, conftype, defaultvalues):
@@ -54,8 +55,8 @@ class XenConfigManager(ConfigurableManager):
             our dictionary then return the default values supplied; if conftype
             is None then we return a match on any conftype.
         '''
-        if nodenum is None: 
-            nodenum = 0 # used for storing the global default config
+        if nodenum is None:
+            nodenum = 0  # used for storing the global default config
         return ConfigurableManager.getconfig(self, nodenum, conftype,
                                              defaultvalues)
 
@@ -88,9 +89,9 @@ class XenConfigManager(ConfigurableManager):
         # populate default config items from config file entries
         vals = list(self.default_config.getdefaultvalues())
         names = self.default_config.getnames()
-        for i in range(len(names)):
-            if names[i] in self.configfile:
-                vals[i] = self.configfile[names[i]]
+        for i, name in enumerate(names):
+            if name in self.configfile:
+                vals[i] = self.configfile[name]
         # this sets XenConfigManager.configs[0] = (type='xen', vals)
         self.setconfig(None, self.default_config._name, vals)
 
@@ -111,7 +112,7 @@ class XenConfigManager(ConfigurableManager):
                                     defaultvalues=None)
         if v is None:
             # get item from default config for the machine type
-            (t, v) = self.getconfig(nodenum=None, 
+            (t, v) = self.getconfig(nodenum=None,
                                     conftype=self.default_config._name,
                                     defaultvalues=None)
 
@@ -124,14 +125,14 @@ class XenConfigManager(ConfigurableManager):
             if name in self.configfile:
                 return self.configfile[name]
             else:
-                #self.warn("missing config item '%s'" % name)
+                # self.warn("missing config item '%s'" % name)
                 return None
 
 
 class XenConfig(Configurable):
     ''' Manage Xen configuration profiles.
     '''
-    
+
     @classmethod
     def configure(cls, xen, msg):
         ''' Handle configuration messages for setting up a model.
@@ -167,7 +168,7 @@ class XenConfig(Configurable):
             values = xen.getconfig(nodenum, nodetype, defaultvalues=None)[1]
             if values is None:
                 # get defaults from default "xen" config which includes
-                # settings from both cls._confdefaultvalues and  xen.conf 
+                # settings from both cls._confdefaultvalues and  xen.conf
                 defaults = cls.getdefaultvalues()
                 values = xen.getconfig(nodenum, cls._name, defaults)[1]
             if values is None:
@@ -179,7 +180,7 @@ class XenConfig(Configurable):
         elif conftype == coreapi.CONF_TYPE_FLAGS_RESET:
             if objname == "all":
                 xen.clearconfig(nodenum)
-        #elif conftype == coreapi.CONF_TYPE_FLAGS_UPDATE:
+        # elif conftype == coreapi.CONF_TYPE_FLAGS_UPDATE:
         else:
             # store the configuration values for later use, when the XenNode
             # object has been created
@@ -209,20 +210,20 @@ class XenConfig(Configurable):
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_OBJ,
                                             cls._name)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_TYPE,
-                                            typeflags) 
-        datatypes = tuple( map(lambda x: x[1], cls._confmatrix) )
+                                            typeflags)
+        datatypes = tuple(map(lambda x: x[1], cls._confmatrix))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_DATA_TYPES,
-                                            datatypes) 
+                                            datatypes)
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_VALUES,
                                             values_str)
-        captions = reduce( lambda a,b: a + '|' + b, \
-                           map(lambda x: x[4], cls._confmatrix))
+        captions = reduce(lambda a, b: a + '|' + b, \
+                          map(lambda x: x[4], cls._confmatrix))
         tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_CAPTIONS,
                                             captions)
-        possiblevals = reduce( lambda a,b: a + '|' + b, \
-                               map(lambda x: x[3], cls._confmatrix))
+        possiblevals = reduce(lambda a, b: a + '|' + b, \
+                              map(lambda x: x[3], cls._confmatrix))
         tlvdata += coreapi.CoreConfTlv.pack(
-            coreapi.CORE_TLV_CONF_POSSIBLE_VALUES, possiblevals) 
+            coreapi.CORE_TLV_CONF_POSSIBLE_VALUES, possiblevals)
         if cls._bitmap is not None:
             tlvdata += coreapi.CoreConfTlv.pack(coreapi.CORE_TLV_CONF_BITMAP,
                                                 cls._bitmap)
@@ -243,7 +244,7 @@ class XenDefaultConfig(XenConfig):
     # Configuration items:
     #   ('name', 'type', 'default', 'possible-value-list', 'caption')
     _confmatrix = [
-        ('ram_size', coreapi.CONF_DATA_TYPE_STRING, '256', '', 
+        ('ram_size', coreapi.CONF_DATA_TYPE_STRING, '256', '',
          'ram size (MB)'),
         ('disk_size', coreapi.CONF_DATA_TYPE_STRING, '256M', '',
          'disk size (use K/M/G suffix)'),
@@ -262,4 +263,3 @@ class XenDefaultConfig(XenConfig):
         ]
 
     _confgroups = "domU properties:1-%d" % len(_confmatrix)
-

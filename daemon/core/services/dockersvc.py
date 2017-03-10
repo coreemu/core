@@ -20,7 +20,7 @@ service to the Docker group. The image will then be auto run if that service is
 selected.
 
 This requires a recent version of Docker. This was tested using a PPA on Ubuntu
- with version 1.2.0. The version in the standard Ubuntu repo is to old for 
+ with version 1.2.0. The version in the standard Ubuntu repo is to old for
 this purpose (we need --net host).
 
 It also requires docker-py (https://pypi.python.org/pypi/docker-py) which can be
@@ -47,13 +47,13 @@ The id will be different on your machine so use it in the following command:
 
 sudo docker tag 4833487e66d2 stuartmarsden/multicastping:core
 
-This image will be listed in the services after we restart the core-daemon: 
+This image will be listed in the services after we restart the core-daemon:
 
 sudo service core-daemon restart
 
 You can set up a simple network with a number of PCs connected to a switch. Set
 the stuartmarsden/multicastping service for all the PCs. When started they will
-all begin sending Multicast pings. 
+all begin sending Multicast pings.
 
 In order to see what is happening you can go in to the terminal of a node and
 look at the docker log. Easy shorthand is:
@@ -89,11 +89,11 @@ Datagram 'Client: Ping' received from ('10.0.5.20', 8005)
 
 Limitations:
 
-1. Docker images must be downloaded on the host as usually a CORE node does not 
+1. Docker images must be downloaded on the host as usually a CORE node does not
    have access to the internet.
 2. Each node isolates running containers (keeps things simple)
-3. Recent version of docker needed so that --net host can be used. This does 
-   not further abstract the network within a node and allows multicast which 
+3. Recent version of docker needed so that --net host can be used. This does
+   not further abstract the network within a node and allows multicast which
    is not enabled within Docker containers at the moment.
 4. The core-daemon must be restarted for new images to show up.
 5. Only set up to use the standard aufs backend of docker
@@ -110,18 +110,15 @@ Limitations:
     sudo sysctl -w fs.inotify.max_user_instances=600
 
    This allowed running of 500 docker nodes without issue.
-
 '''
 
-import os
-import sys
 try:
     from docker import Client
 except Exception:
     pass
 
 from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+
 
 class DockerContainerService(CoreService):
     _name = "DockerContainer"
@@ -180,7 +177,7 @@ done
 
 class DockerService(CoreService):
     ''' This is a service which will allow running docker containers in a CORE
-        node. 
+        node.
     '''
     _name = "Docker"
     _group = "Docker"

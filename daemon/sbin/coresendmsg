@@ -15,19 +15,6 @@ import socket
 import optparse
 import os
 
-try:
-    from core.constants import *
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core.constants import *
 from core.api import coreapi
 
 
@@ -39,6 +26,7 @@ def msgtypenum_to_str(num):
     r = fulltypestr.split('_')[2]
     return r.lower()
 
+
 def str_to_msgtypenum(s):
     ''' Convert a shorthand string into a message type number.
     '''
@@ -48,10 +36,12 @@ def str_to_msgtypenum(s):
             return k
     return None
 
+
 def str_to_msgtypename(s):
     ''' Convert a shorthand string into a message type name.
     '''
     return "CORE_API_%s_MSG" % s.upper()
+
 
 def msgflagnum_to_str(num):
     ''' Convert the message flag number into a string, such as 
@@ -61,10 +51,12 @@ def msgflagnum_to_str(num):
     r = fullflagstr.split('_')[2]
     return r.lower()
 
+
 def str_to_msgflagname(s):
     ''' Convert a shorthand string into a message flag name.
     '''
     return "CORE_API_%s_FLAG" % s.upper()
+
 
 def str_to_msgflagnum(s):
     flagname = str_to_msgflagname(s)
@@ -73,11 +65,13 @@ def str_to_msgflagnum(s):
             return k
     return None
 
+
 def tlvname_to_str(name):
     ''' Convert a TLV name such as CORE_TLV_CONF_NODE to a short sring 'node'.
     '''
     items = name.split('_')[3:]
     return '_'.join(items).lower()
+
 
 def tlvname_to_num(tlv_cls, name):
     ''' Convert the given TLV Type class and TLV name to the TLV number.
@@ -86,6 +80,7 @@ def tlvname_to_num(tlv_cls, name):
         if v == name:
             return k
     return None
+
 
 def str_to_tlvname(t, s):
     ''' Convert the given TLV type t and string s to a TLV name.
@@ -100,23 +95,24 @@ def print_available_tlvs(t, tlv_cls):
     for k in sorted(tlv_cls.tlvtypemap.keys()):
         print "%d:%s" % (k, tlvname_to_str(tlv_cls.tlvtypemap[k])),
 
+
 def print_examples(name):
     ''' Print example usage of this script.
     '''
-    examples = [ 
+    examples = [
       ('link n1number=2 n2number=3 delay=15000',
-      'set a 15ms delay on the link between n2 and n3'),
+       'set a 15ms delay on the link between n2 and n3'),
       ('link n1number=2 n2number=3 guiattr=\'color=blue\'',
-      'change the color of the link between n2 and n3'),
+       'change the color of the link between n2 and n3'),
       ('node number=3 xpos=125 ypos=525',
-       'move node number 3 to x,y=(125,525)'), 
+       'move node number 3 to x,y=(125,525)'),
       ('node number=4 icon=/usr/local/share/core/icons/normal/router_red.gif',
        'change node number 4\'s icon to red'),
       ('node flags=add number=5 type=0 name=\'n5\' xpos=500 ypos=500',
-        'add a new router node n5'),
+       'add a new router node n5'),
       ('link flags=add n1number=4 n2number=5 if1ip4=\'10.0.3.2\' ' \
        'if1ip4mask=24 if2ip4=\'10.0.3.1\' if2ip4mask=24',
-        'link node n5 with n4 using the given interface addresses'),
+       'link node n5 with n4 using the given interface addresses'),
       ('exec flags=str,txt node=1 num=1000 cmd=\'uname -a\' -l',
        'run a command on node 1 and wait for the result'),
       ('exec node=2 num=1001 cmd=\'killall ospfd\'',
@@ -130,6 +126,7 @@ def print_examples(name):
     print "Example %s invocations:" % name
     for cmd, descr in examples:
         print "  %s %s\n\t\t%s" % (name, cmd, descr)
+
 
 def receive_message(sock):
     ''' Retrieve a message from a socket and return the CoreMessage object or
@@ -222,36 +219,35 @@ def main():
     usagestr += "[message-TLVs]\n\n"
     usagestr += "Supported message types:\n  %s\n" % types
     usagestr += "Supported message flags (flags=f1,f2,...):\n  %s" % flags
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(port = coreapi.CORE_API_PORT,
-                        address = "localhost",
-                        session = None,
-                        listen = False,
-                        examples = False,
-                        tlvs = False,
-                        tcp = False)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(port=coreapi.CORE_API_PORT,
+                        address="localhost",
+                        session=None,
+                        listen=False,
+                        examples=False,
+                        tlvs=False,
+                        tcp=False)
 
-    parser.add_option("-H", dest = "examples", action = "store_true",
-                      help = "show example usage help message and exit")
-    parser.add_option("-p", "--port", dest = "port", type = int,
-                      help = "TCP port to connect to, default: %d" % \
+    parser.add_option("-H", dest="examples", action="store_true",
+                      help="show example usage help message and exit")
+    parser.add_option("-p", "--port", dest="port", type=int,
+                      help="TCP port to connect to, default: %d" % \
                       parser.defaults['port'])
-    parser.add_option("-a", "--address", dest = "address", type = str,
-                      help = "Address to connect to, default: %s" % \
+    parser.add_option("-a", "--address", dest="address", type=str,
+                      help="Address to connect to, default: %s" % \
                       parser.defaults['address'])
-    parser.add_option("-s", "--session", dest = "session", type = str,
-                      help = "Session to join, default: %s" % \
+    parser.add_option("-s", "--session", dest="session", type=str,
+                      help="Session to join, default: %s" % \
                       parser.defaults['session'])
-    parser.add_option("-l", "--listen", dest = "listen", action = "store_true",
-                      help = "Listen for a response message and print it.")
-    parser.add_option("-t", "--list-tlvs", dest = "tlvs", action = "store_true",
-                      help = "List TLVs for the specified message type.")
-    parser.add_option("-T", "--tcp", dest = "tcp", action = "store_true",
-                      help = "Use TCP instead of UDP and connect to a session" \
+    parser.add_option("-l", "--listen", dest="listen", action="store_true",
+                      help="Listen for a response message and print it.")
+    parser.add_option("-t", "--list-tlvs", dest="tlvs", action="store_true",
+                      help="List TLVs for the specified message type.")
+    parser.add_option("-T", "--tcp", dest="tcp", action="store_true",
+                      help="Use TCP instead of UDP and connect to a session" \
                       ", default: %s" % parser.defaults['tcp'])
 
-    
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")

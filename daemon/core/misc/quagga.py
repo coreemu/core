@@ -9,8 +9,8 @@
 quagga.py: helper class for generating Quagga configuration.
 '''
 
-import os.path
 from string import Template
+
 
 def maketuple(obj):
     if hasattr(obj, "__iter__"):
@@ -18,10 +18,12 @@ def maketuple(obj):
     else:
         return (obj,)
 
+
 class NetIf(object):
-    def __init__(self, name, addrlist = []):
+    def __init__(self, name, addrlist=[]):
         self.name = name
         self.addrlist = addrlist
+
 
 class Conf(object):
     def __init__(self, **kwds):
@@ -32,6 +34,7 @@ class Conf(object):
         if tmp[-1] == '\n':
             tmp = tmp[:-1]
         return tmp
+
 
 class QuaggaOSPF6Interface(Conf):
     AF_IPV6_ID = 0
@@ -54,25 +57,28 @@ interface $interface
 #   ipv6 ospf6 simhelloLLtoULRecv :$simhelloport
 #   !$ipaddr:$simhelloport
 
-    def __init__(self, netif, instanceid = AF_IPV4_ID,
-                 network = "manet-designated-router", **kwds):
+    def __init__(self, netif, instanceid=AF_IPV4_ID,
+                 network="manet-designated-router", **kwds):
         self.netif = netif
+
         def addrstr(x):
             if x.find(".") >= 0:
                 return "ip address %s" % x
             elif x.find(":") >= 0:
                 return "ipv6 address %s" % x
             else:
+                # What is Value? It is undefined
                 raise Value, "invalid address: %s", x
         addr = "\n  ".join(map(addrstr, netif.addrlist))
 
         self.instanceid = instanceid
         self.network = network
-        Conf.__init__(self, interface = netif.name, addr = addr,
-                      instanceid = instanceid, network = network, **kwds)
+        Conf.__init__(self, interface=netif.name, addr=addr,
+                      instanceid=instanceid, network=network, **kwds)
 
     def name(self):
         return self.netif.name
+
 
 class QuaggaOSPF6(Conf):
 
@@ -86,13 +92,13 @@ router ospf6
 """)
 
     def __init__(self, ospf6ifs, area, routerid,
-                 redistribute = "! no redistribute"):
+                 redistribute="! no redistribute"):
         ospf6ifs = maketuple(ospf6ifs)
         interfaces = "\n!\n".join(map(str, ospf6ifs))
-        ospfifs = "\n  ".join(map(lambda x: "interface %s area %s" % \
-                                (x.name(), area), ospf6ifs))
-        Conf.__init__(self, interfaces = interfaces, routerid = routerid,
-                      ospfifs = ospfifs, redistribute = redistribute)
+        ospfifs = "\n  ".join(map(lambda x: "interface %s area %s" %
+                                  (x.name(), area), ospf6ifs))
+        Conf.__init__(self, interfaces=interfaces, routerid=routerid,
+                      ospfifs=ospfifs, redistribute=redistribute)
 
 
 class QuaggaConf(Conf):
@@ -105,12 +111,12 @@ $routers
 $forwarding
 """)
 
-    def __init__(self, routers, logfile, debugs = ()):
+    def __init__(self, routers, logfile, debugs=()):
         routers = "\n!\n".join(map(str, maketuple(routers)))
         if debugs:
             debugs = "\n".join(maketuple(debugs))
         else:
             debugs = "! no debugs"
         forwarding = "ip forwarding\nipv6 forwarding"
-        Conf.__init__(self, logfile = logfile, debugs = debugs,
-                      routers = routers, forwarding = forwarding)
+        Conf.__init__(self, logfile=logfile, debugs=debugs,
+                      routers=routers, forwarding=forwarding)

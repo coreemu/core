@@ -8,12 +8,15 @@
 '''
 broker.py: definition of CoreBroker class that is part of the
 pycore session object. Handles distributing parts of the emulation out to
-other emulation servers. The broker is consulted during the 
+other emulation servers. The broker is consulted during the
 CoreRequestHandler.handlemsg() loop to determine if messages should be handled
 locally or forwarded on to another emulation server.
 '''
 
-import os, socket, select, threading, sys
+import os
+import socket
+import select
+import threading
 from core.api import coreapi
 from core.coreobj import PyCoreNode, PyCoreNet
 from core.emane.nodes import EmaneNet
@@ -24,6 +27,7 @@ from core.conf import ConfigurableManager
 if os.uname()[0] == "Linux":
     from core.netns.vif import GreTap
     from core.netns.vnet import GreTapBridge
+
 
 class CoreServer(object):
     def __init__(self, name, host, port):
@@ -36,7 +40,7 @@ class CoreServer(object):
     def connect(self):
         assert self.sock is None
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        #sock.setblocking(0)
+        # sock.setblocking(0)
         try:
             sock.connect((self.host, self.port))
         except:
@@ -49,14 +53,15 @@ class CoreServer(object):
             self.sock.close()
             self.sock = None
 
+
 class CoreBroker(ConfigurableManager):
     ''' Member of pycore session class for handling global emulation server
         data.
     '''
     _name = "broker"
     _type = coreapi.CORE_TLV_REG_UTILITY
-    
-    def __init__(self, session, verbose = False):
+
+    def __init__(self, session, verbose=False):
         ConfigurableManager.__init__(self, session)
         self.session_id_master = None
         self.myip = None
@@ -99,8 +104,9 @@ class CoreBroker(ConfigurableManager):
                 name, server = self.servers.popitem()
                 if server.sock is not None:
                     if self.verbose:
-                        self.session.info("closing connection with %s @ %s:%s" % \
-                                          (name, server.host, server.port))
+                        self.session.info(
+                            "closing connection with %s @ %s:%s" %
+                            (name, server.host, server.port))
                     server.close()
         self.reset()
         self.dorecvloop = False
@@ -133,7 +139,7 @@ class CoreBroker(ConfigurableManager):
                 self.recvthread.join()
         # start reading data from connected sockets
         self.dorecvloop = True
-        self.recvthread = threading.Thread(target = self.recvloop)
+        self.recvthread = threading.Thread(target=self.recvloop)
         self.recvthread.daemon = True
         self.recvthread.start()
 
@@ -141,7 +147,7 @@ class CoreBroker(ConfigurableManager):
         ''' Thread target that receives messages from server sockets.
         '''
         self.dorecvloop = True
-        # note: this loop continues after emulation is stopped, 
+        # note: this loop continues after emulation is stopped,
         # even with 0 servers
         while self.dorecvloop:
             rlist = []
@@ -176,7 +182,7 @@ class CoreBroker(ConfigurableManager):
             return 0
         if len(msghdr) != coreapi.CoreMessage.hdrsiz:
             if self.verbose:
-                self.session.info("warning: broker received not enough data " \
+                self.session.info("warning: broker received not enough data "
                                   "len=%s" % len(msghdr))
             return len(msghdr)
 
@@ -246,20 +252,21 @@ class CoreBroker(ConfigurableManager):
                     # leave this socket connected
                     return
                 if self.verbose:
-                    self.session.info('closing connection with %s @ %s:%s' % \
+                    self.session.info('closing connection with %s @ %s:%s' %
                                       (name, server.host, server.port))
                 server.close()
                 del self.servers[name]
             if self.verbose:
-                self.session.info('adding server %s @ %s:%s' % \
+                self.session.info('adding server %s @ %s:%s' %
                                   (name, host, port))
             server = CoreServer(name, host, port)
             if host is not None and port is not None:
                 try:
                     server.connect()
                 except Exception as e:
-                    self.session.warn('error connecting to server %s:%s:\n\t%s' % \
-                                      (host, port, e))
+                    self.session.warn(
+                        'error connecting to server %s:%s:\n\t%s' %
+                        (host, port, e))
                 if server.sock is not None:
                     self.startrecvloop()
             self.servers[name] = server
@@ -275,7 +282,7 @@ class CoreBroker(ConfigurableManager):
                 pass
         if server.sock is not None:
             if self.verbose:
-                self.session.info("closing connection with %s @ %s:%s" % \
+                self.session.info("closing connection with %s @ %s:%s" %
                                   (server.name, server.host, server.port))
             server.close()
 
@@ -298,7 +305,7 @@ class CoreBroker(ConfigurableManager):
     def getservers(self):
         '''Return a list of servers sorted by name.'''
         with self.servers_lock:
-            return sorted(self.servers.values(), key = lambda x: x.name)
+            return sorted(self.servers.values(), key=lambda x: x.name)
 
     def getservernames(self):
         ''' Return a sorted list of server names (keys from self.servers).
@@ -315,10 +322,10 @@ class CoreBroker(ConfigurableManager):
         if sid is None:
             # this is the master session
             sid = self.session.sessionid
-            
-        key = (sid  << 16) ^ hash(n1num)  ^ (hash(n2num) << 8)
+
+        key = (sid << 16) ^ hash(n1num) ^ (hash(n2num) << 8)
         return key & 0xFFFFFFFF
-    
+
     def addtunnel(self, remoteip, n1num, n2num, localnum):
         ''' Add a new GreTapBridge between nodes on two different machines.
         '''
@@ -328,23 +335,24 @@ class CoreBroker(ConfigurableManager):
         else:
             remotenum = n2num
         if key in self.tunnels.keys():
-            self.session.warn("tunnel with key %s (%s-%s) already exists!" % \
+            self.session.warn("tunnel with key %s (%s-%s) already exists!" %
                               (key, n1num, n2num))
         else:
-            objid = key & ((1<<16)-1)
-            self.session.info("Adding tunnel for %s-%s to %s with key %s" % \
+            objid = key & ((1 << 16)-1)
+            self.session.info("Adding tunnel for %s-%s to %s with key %s" %
                               (n1num, n2num, remoteip, key))
             if localnum in self.phys:
                 # no bridge is needed on physical nodes; use the GreTap directly
                 gt = GreTap(node=None, name=None, session=self.session,
-                                remoteip=remoteip, key=key)
+                            remoteip=remoteip, key=key)
             else:
-                gt = self.session.addobj(cls = GreTapBridge, objid = objid,
-                                    policy="ACCEPT", remoteip=remoteip, key = key)
+                gt = self.session.addobj(cls=GreTapBridge, objid=objid,
+                                         policy="ACCEPT", remoteip=remoteip,
+                                         key=key)
             gt.localnum = localnum
             gt.remotenum = remotenum
             self.tunnels[key] = gt
-            
+
     def addnettunnels(self):
         ''' Add GreTaps between network devices on different machines.
         The GreTapBridge is not used since that would add an extra bridge.
@@ -356,7 +364,7 @@ class CoreBroker(ConfigurableManager):
         try:
             net = self.session.obj(n)
         except KeyError:
-            raise KeyError, "network node %s not found" % n
+            raise KeyError("network node %s not found" % n)
         # add other nets here that do not require tunnels
         if isinstance(net, EmaneNet):
             return None
@@ -392,10 +400,10 @@ class CoreBroker(ConfigurableManager):
             key = self.tunnelkey(n, IPAddr.toint(myip))
             if key in self.tunnels.keys():
                 continue
-            self.session.info("Adding tunnel for net %s to %s with key %s" % \
+            self.session.info("Adding tunnel for net %s to %s with key %s" %
                               (n, host, key))
             gt = GreTap(node=None, name=None, session=self.session,
-                            remoteip=host, key=key)
+                        remoteip=host, key=key)
             self.tunnels[key] = gt
             r.append(gt)
             # attaching to net will later allow gt to be destroyed
@@ -414,7 +422,7 @@ class CoreBroker(ConfigurableManager):
         if gt:
             self.session.delobj(gt.objid)
             del gt
-    
+
     def gettunnel(self, n1num, n2num):
         ''' Return the GreTap between two nodes if it exists.
         '''
@@ -473,7 +481,7 @@ class CoreBroker(ConfigurableManager):
         self.phys.add(nodenum)
 
     def configure_reset(self, msg):
-        ''' Ignore reset messages, because node delete responses may still 
+        ''' Ignore reset messages, because node delete responses may still
             arrive and require the use of nodecounts.
         '''
         return None
@@ -484,11 +492,11 @@ class CoreBroker(ConfigurableManager):
         '''
         objname = msg.gettlv(coreapi.CORE_TLV_CONF_OBJ)
         conftype = msg.gettlv(coreapi.CORE_TLV_CONF_TYPE)
-        
+
         if values is None:
             self.session.info("emulation server data missing")
             return None
-        values = values.split('|')       
+        values = values.split('|')
         # string of "server:ip:port,server:ip:port,..."
         serverstrings = values[0]
         server_list = serverstrings.split(',')
@@ -757,7 +765,7 @@ class CoreBroker(ConfigurableManager):
                 break
         tlvdata = msg.rawmsg[coreapi.CoreMessage.hdrsiz:]
         tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_OPAQUE,
-                                    "%s:%s" % (ip1, ip2))
+                                            "%s:%s" % (ip1, ip2))
         newraw = coreapi.CoreLinkMessage.pack(msg.flags, tlvdata)
         msghdr = newraw[:coreapi.CoreMessage.hdrsiz]
         return coreapi.CoreLinkMessage(msg.flags, msghdr, tlvdata)
@@ -792,7 +800,8 @@ class CoreBroker(ConfigurableManager):
         hdr = msg[:coreapi.CoreMessage.hdrsiz]
         msgtype, flags, msglen = coreapi.CoreMessage.unpackhdr(hdr)
         msgcls = coreapi.msg_class(msgtype)
-        return self.handlemsg(msgcls(flags, hdr, msg[coreapi.CoreMessage.hdrsiz:]))
+        return self.handlemsg(msgcls(flags, hdr,
+                                     msg[coreapi.CoreMessage.hdrsiz:]))
 
     def forwardmsg(self, msg, servers):
         ''' Forward API message to all given servers.
@@ -806,7 +815,7 @@ class CoreBroker(ConfigurableManager):
                 # local emulation server, handle this locally
                 handle_locally = True
             elif server.sock is None:
-                self.session.info("server %s @ %s:%s is disconnected" % \
+                self.session.info("server %s @ %s:%s is disconnected" %
                                   (server.name, server.host, server.port))
             else:
                 server.sock.send(msg.rawmsg)
