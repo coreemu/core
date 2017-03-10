@@ -6,8 +6,10 @@
 # author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
 #
 
-from core.netns import nodes
 from xml.dom.minidom import Node
+
+from core.netns import nodes
+
 
 def addelementsfromlist(dom, parent, iterable, name, attr_name):
     ''' XML helper to iterate through a list and add items to parent using tags
@@ -24,6 +26,7 @@ def addelementsfromlist(dom, parent, iterable, name, attr_name):
         element.setAttribute(attr_name, item)
         parent.appendChild(element)
 
+
 def addtextelementsfromlist(dom, parent, iterable, name, attrs):
     ''' XML helper to iterate through a list and add items to parent using tags
     of the given name, attributes specified in the attrs tuple, and having the
@@ -38,11 +41,12 @@ def addtextelementsfromlist(dom, parent, iterable, name, attrs):
     '''
     for item in iterable:
         element = dom.createElement(name)
-        for k,v in attrs:
+        for k, v in attrs:
             element.setAttribute(k, v)
         parent.appendChild(element)
         txt = dom.createTextNode(item)
         element.appendChild(txt)
+
 
 def addtextelementsfromtuples(dom, parent, iterable, attrs=()):
     ''' XML helper to iterate through a list of tuples and add items to
@@ -60,11 +64,12 @@ def addtextelementsfromtuples(dom, parent, iterable, attrs=()):
     '''
     for name, value in iterable:
         element = dom.createElement(name)
-        for k,v in attrs:
+        for k, v in attrs:
             element.setAttribute(k, v)
         parent.appendChild(element)
         txt = dom.createTextNode(value)
         element.appendChild(txt)
+
 
 def gettextelementstolist(parent):
     ''' XML helper to parse child text nodes from the given parent and return
@@ -75,14 +80,15 @@ def gettextelementstolist(parent):
         if n.nodeType != Node.ELEMENT_NODE:
             continue
         k = str(n.nodeName)
-        v = '' # sometimes want None here?
+        v = ''  # sometimes want None here?
         for c in n.childNodes:
             if c.nodeType != Node.TEXT_NODE:
                 continue
             v = str(c.nodeValue)
             break
-        r.append((k,v))
+        r.append((k, v))
     return r
+
 
 def addparamtoparent(dom, parent, name, value):
     ''' XML helper to add a <param name="name" value="value"/> tag to the parent
@@ -96,6 +102,7 @@ def addparamtoparent(dom, parent, name, value):
     p.setAttribute("value", "%s" % value)
     return p
 
+
 def addtextparamtoparent(dom, parent, name, value):
     ''' XML helper to add a <param name="name">value</param> tag to the parent
     element, when value is not None.
@@ -108,6 +115,7 @@ def addtextparamtoparent(dom, parent, name, value):
     txt = dom.createTextNode(value)
     p.appendChild(txt)
     return p
+
 
 def addparamlisttoparent(dom, parent, name, values):
     ''' XML helper to return a parameter list and optionally add it to the
@@ -129,13 +137,15 @@ def addparamlisttoparent(dom, parent, name, values):
         p.appendChild(item)
     return p
 
+
 def getoneelement(dom, name):
     e = dom.getElementsByTagName(name)
     if len(e) == 0:
         return None
     return e[0]
 
-def iterDescendants(dom, max_depth = 0):
+
+def iterDescendants(dom, max_depth=0):
     '''\
     Iterate over all descendant element nodes in breadth first order.
     Only consider nodes up to max_depth deep when max_depth is greater
@@ -160,7 +170,8 @@ def iterDescendants(dom, max_depth = 0):
             current_depth_nodes = next_depth_nodes
             next_depth_nodes = 0
 
-def iterMatchingDescendants(dom, matchFunction, max_depth = 0):
+
+def iterMatchingDescendants(dom, matchFunction, max_depth=0):
     '''\
     Iterate over descendant elements where matchFunction(descendant)
     returns true.  Only consider nodes up to max_depth deep when
@@ -170,7 +181,8 @@ def iterMatchingDescendants(dom, matchFunction, max_depth = 0):
         if matchFunction(d):
             yield d
 
-def iterDescendantsWithName(dom, tagName, max_depth = 0):
+
+def iterDescendantsWithName(dom, tagName, max_depth=0):
     '''\
     Iterate over descendant elements whose name is contained in
     tagName (or is named tagName if tagName is a string).  Only
@@ -183,8 +195,9 @@ def iterDescendantsWithName(dom, tagName, max_depth = 0):
         return d.tagName in tagName
     return iterMatchingDescendants(dom, match, max_depth)
 
+
 def iterDescendantsWithAttribute(dom, tagName, attrName, attrValue,
-                                 max_depth = 0):
+                                 max_depth=0):
     '''\
     Iterate over descendant elements whose name is contained in
     tagName (or is named tagName if tagName is a string) and have an
@@ -198,6 +211,7 @@ def iterDescendantsWithAttribute(dom, tagName, attrName, attrValue,
             d.getAttribute(attrName) == attrValue
     return iterMatchingDescendants(dom, match, max_depth)
 
+
 def iterChildren(dom, nodeType):
     '''\
     Iterate over all child elements of the given type.
@@ -205,6 +219,7 @@ def iterChildren(dom, nodeType):
     for child in dom.childNodes:
         if child.nodeType == nodeType:
             yield child
+
 
 def gettextchild(dom):
     '''\
@@ -214,11 +229,13 @@ def gettextchild(dom):
         return str(child.nodeValue)
     return None
 
+
 def getChildTextTrim(dom):
     text = gettextchild(dom)
     if text:
         text = text.strip()
     return text
+
 
 def getparamssetattrs(dom, param_names, target):
     ''' XML helper to get <param name="name" value="value"/> tags and set
@@ -230,9 +247,10 @@ def getparamssetattrs(dom, param_names, target):
         param_name = param.getAttribute("name")
         value = param.getAttribute("value")
         if value is None:
-            continue # never reached?
+            continue  # never reached?
         if param_name in param_names:
             setattr(target, param_name, str(value))
+
 
 def xmltypetonodeclass(session, type):
     ''' Helper to convert from a type string to a class name in nodes.*.
@@ -242,11 +260,14 @@ def xmltypetonodeclass(session, type):
     else:
         return None
 
+
 def iterChildrenWithName(dom, tagName):
     return iterDescendantsWithName(dom, tagName, 1)
 
+
 def iterChildrenWithAttribute(dom, tagName, attrName, attrValue):
     return iterDescendantsWithAttribute(dom, tagName, attrName, attrValue, 1)
+
 
 def getFirstChildByTagName(dom, tagName):
     '''\
@@ -256,6 +277,7 @@ def getFirstChildByTagName(dom, tagName):
     for child in iterChildrenWithName(dom, tagName):
         return child
     return None
+
 
 def getFirstChildTextByTagName(dom, tagName):
     '''\
@@ -268,11 +290,13 @@ def getFirstChildTextByTagName(dom, tagName):
         return gettextchild(child)
     return None
 
+
 def getFirstChildTextTrimByTagName(dom, tagName):
     text = getFirstChildTextByTagName(dom, tagName)
     if text:
         text = text.strip()
     return text
+
 
 def getFirstChildWithAttribute(dom, tagName, attrName, attrValue):
     '''\
@@ -285,6 +309,7 @@ def getFirstChildWithAttribute(dom, tagName, attrName, attrValue):
         return child
     return None
 
+
 def getFirstChildTextWithAttribute(dom, tagName, attrName, attrValue):
     '''\
     Return the corresponding text of the first child element whose
@@ -295,6 +320,7 @@ def getFirstChildTextWithAttribute(dom, tagName, attrName, attrValue):
     if child:
         return gettextchild(child)
     return None
+
 
 def getFirstChildTextTrimWithAttribute(dom, tagName, attrName, attrValue):
     text = getFirstChildTextWithAttribute(dom, tagName, attrName, attrValue)

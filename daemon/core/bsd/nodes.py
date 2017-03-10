@@ -10,18 +10,23 @@
 nodes.py: definition of CoreNode classes and other node classes that inherit
 from the CoreNode, implementing specific node types.
 '''
+import socket
+from socket import AF_INET, AF_INET6
 
-from vnode import *
-from vnet import * 
-from core.constants import *
-from core.misc.ipaddr import *
+from core.bsd.vnode import JailNode
+from core.bsd.vnet import NetgraphPipeNet, NetgraphNet
+from core.constants import IFCONFIG_BIN
+from core.misc.ipaddr import IPAddr, isIPv4Address
+from core.misc.utils import checkexec, check_call
 from core.api import coreapi
-from core.bsd.netgraph import ngloadkernelmodule
+from core.bsd.netgraph import ngloadkernelmodule, connectngnodes
 
 checkexec([IFCONFIG_BIN])
 
+
 class CoreNode(JailNode):
     apitype = coreapi.CORE_NODE_DEF
+
 
 class PtpNet(NetgraphPipeNet):
     def tonodemsg(self, flags):
@@ -72,7 +77,7 @@ class PtpNet(NetgraphPipeNet):
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF1MAC,
                                                 if1.hwaddr)
         for addr in if1.addrlist:
-            (ip, sep, mask)  = addr.partition('/')
+            (ip, sep, mask) = addr.partition('/')
             mask = int(mask)
             if isIPv4Address(ip):
                 family = AF_INET
@@ -93,7 +98,7 @@ class PtpNet(NetgraphPipeNet):
             tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2MAC,
                                                 if2.hwaddr)
         for addr in if2.addrlist:
-            (ip, sep, mask)  = addr.partition('/')
+            (ip, sep, mask) = addr.partition('/')
             mask = int(mask)
             if isIPv4Address(ip):
                 family = AF_INET
@@ -109,7 +114,8 @@ class PtpNet(NetgraphPipeNet):
             tlvdata += coreapi.CoreLinkTlv.pack(tlvtypemask, mask)
 
         msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
-        return [msg,]
+        return [msg]
+
 
 class SwitchNode(NetgraphNet):
     ngtype = "bridge"
@@ -117,34 +123,36 @@ class SwitchNode(NetgraphNet):
     apitype = coreapi.CORE_NODE_SWITCH
     policy = "ACCEPT"
 
+
 class HubNode(NetgraphNet):
     ngtype = "hub"
     nghooks = "link0 link0\nmsg .link0 setpersistent"
     apitype = coreapi.CORE_NODE_HUB
     policy = "ACCEPT"
-    
+
+
 class WlanNode(NetgraphNet):
     ngtype = "wlan"
     nghooks = "anchor anchor"
     apitype = coreapi.CORE_NODE_WLAN
     linktype = coreapi.CORE_LINK_WIRELESS
     policy = "DROP"
-    
-    def __init__(self, session, objid = None, name = None, verbose = False,
-                        start = True, policy = None):
+
+    def __init__(self, session, objid=None, name=None, verbose=False,
+                 start=True, policy=None):
         NetgraphNet.__init__(self, session, objid, name, verbose, start, policy)
         # wireless model such as basic range
         self.model = None
         # mobility model such as scripted
         self.mobility = None
-    
+
     def attach(self, netif):
         NetgraphNet.attach(self, netif)
         if self.model:
             netif.poshook = self.model._positioncallback
             if netif.node is None:
                 return
-            (x,y,z) = netif.node.position.get()
+            (x, y, z) = netif.node.position.get()
             netif.poshook(netif, x, y, z)
 
     def setmodel(self, model, config):
@@ -159,7 +167,7 @@ class WlanNode(NetgraphNet):
                 for netif in self.netifs():
                     netif.poshook = self.model._positioncallback
                     if netif.node is not None:
-                        (x,y,z) = netif.node.position.get()
+                        (x, y, z) = netif.node.position.get()
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model._type == coreapi.CORE_TLV_REG_MOBILITY:
@@ -171,7 +179,7 @@ class RJ45Node(NetgraphPipeNet):
     apitype = coreapi.CORE_NODE_RJ45
     policy = "ACCEPT"
 
-    def __init__(self, session, objid, name, verbose, start = True):
+    def __init__(self, session, objid, name, verbose, start=True):
         if start:
             ngloadkernelmodule("ng_ether")
         NetgraphPipeNet.__init__(self, session, objid, name, verbose, start)
@@ -195,9 +203,9 @@ class RJ45Node(NetgraphPipeNet):
         NetgraphPipeNet.attach(self, netif)
         connectngnodes(self.ngname, self.name, self.gethook(), "lower")
 
+
 class TunnelNode(NetgraphNet):
     ngtype = "pipe"
     nghooks = "upper lower"
     apitype = coreapi.CORE_NODE_TUNNEL
     policy = "ACCEPT"
-

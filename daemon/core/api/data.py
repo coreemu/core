@@ -10,14 +10,15 @@ data.py: constant definitions for the CORE API, enumerating the
 different message and TLV types (these constants are also found in coreapi.h)
 '''
 
+
 def enumdict(d):
     for k, v in d.iteritems():
         exec "%s = %s" % (v, k) in globals()
 
 # Constants
 
-CORE_API_VER		=	"1.23"
-CORE_API_PORT		=	4038
+CORE_API_VER = "1.23"
+CORE_API_PORT = 4038
 
 # Message types
 
@@ -115,6 +116,7 @@ link_tlvs = {
     0x08: "CORE_TLV_LINK_MER",
     0x09: "CORE_TLV_LINK_BURST",
     CORE_TLV_NODE_SESSION: "CORE_TLV_LINK_SESSION",
+    0x0B: "CORE_TLV_LINK_BUF",
     0x10: "CORE_TLV_LINK_MBURST",
     0x20: "CORE_TLV_LINK_TYPE",
     0x21: "CORE_TLV_LINK_GUIATTR",

@@ -560,7 +560,7 @@ proc parseLinkMessage { data len flags } {
     #puts "Parsing link message of length=$len, flags=$flags"
 
     array set typenames {	1 node1num 2 node2num 3 delay 4 bw 5 per \
-			6 dup 7 jitter 8 mer 9 burst 10 session \
+			6 dup 7 jitter 8 mer 9 burst 10 session 11 buf \
 			16 mburst 32 ltype 33 guiattr 34 uni \
 			35 emuid1 36 netid 37 key \
 			48 if1num 49 if1ipv4 50 if1ipv4mask 51 if1mac \
@@ -568,14 +568,14 @@ proc parseLinkMessage { data len flags } {
 			54 if2num 55 if2ipv4 56 if2ipv4mask 57 if2mac \
 			64 if2ipv6 65 if2ipv6mask }
     array set typesizes {	node1num 4 node2num 4 delay 8 bw 8 per -1 \
-			dup -1 jitter 8 mer 2 burst 2 session -1 \
+			dup -1 jitter 8 mer 2 burst 2 session -1 buf 8 \
 			mburst 2 ltype 4 guiattr -1 uni 2 \
 			emuid1 4 netid 4 key 4 \
 			if1num 2 if1ipv4 4 if1ipv4mask 2 if1mac 8 \
 			if1ipv6 16 if1ipv6mask 2 \
 			if2num 2 if2ipv4 4 if2ipv4mask 2 if2mac 8 \
 			if2ipv6 16 if2ipv6mask 2 }
-    array set vals {	node1num -1 node2num -1 delay 0 bw 0 per "" \
+    array set vals {	node1num -1 node2num -1 delay 0 bw 0 buf 0 per "" \
 			dup "" jitter 0 mer 0 burst 0 session "" \
 			mburst 0 ltype 0 guiattr "" uni 0 \
 			emuid1 -1 netid -1 key -1 \
@@ -631,6 +631,8 @@ proc parseLinkMessage { data len flags } {
 	jitter { if { $vals($typename) > 2000000 } {
 	    array set vals [list $typename 2000000] } }
 	bw { if { $vals($typename) > 1000000000 } {
+	    array set vals [list $typename 0] } }
+	buf { if { $vals($typename) > 10000 } {
 	    array set vals [list $typename 0] } }
 	per { if { $vals($typename) > 100 } {
 	    array set vals [list $typename 100] } }
@@ -760,24 +762,28 @@ proc apiLinkAddModify { node1 node2 vals_ref add } {
 	    set peers [linkPeers $wired_link]
 	    if { $node1 == [lindex $peers 0] } { ;# downstream n1 <-- n2
 		set bw     [list $vals(bw) [getLinkBandwidth $wired_link up]]
+		set buf    [list $vals(buf) [getLinkBuffer $wired_link up]]
 		set delay  [list $vals(delay) [getLinkDelay $wired_link up]]
 		set per    [list $vals(per) [getLinkBER $wired_link up]]
 		set dup    [list $vals(dup) [getLinkBER $wired_link up]]
 		set jitter [list $vals(jitter) [getLinkJitter $wired_link up]]
 	    } else { ;# upstream n1 --> n2
 		set bw     [list [getLinkBandwidth $wired_link] $vals(bw)]
+		set buf    [list [getLinkBuffer $wired_link] $vals(buf)]
 		set delay  [list [getLinkDelay $wired_link] $vals(delay)]
 		set per    [list [getLinkBER $wired_link] $vals(per)]
 		set dup    [list [getLinkBER $wired_link] $vals(dup)]
 		set jitter [list $vals(jitter) [getLinkJitter $wired_link]]
 	    }
 	    setLinkBandwidth $wired_link $bw
+	    setLinkBuffer $wired_link $buf
 	    setLinkDelay $wired_link $delay
 	    setLinkBER $wired_link $per
 	    setLinkDup $wired_link $dup
 	    setLinkJitter $wired_link $jitter
 	} else {
 	    setLinkBandwidth $wired_link $vals(bw)
+	    setLinkBuffer $wired_link $vals(buf)
 	    setLinkDelay $wired_link $vals(delay)
 	    setLinkBER $wired_link $vals(per)
 	    setLinkDup $wired_link $vals(dup)
@@ -823,6 +829,7 @@ proc apiLinkAddModify { node1 node2 vals_ref add } {
 		set wired_link [linkByPeers $node1 $node2]
 	    }
 	    setLinkBandwidth $wired_link $vals(bw)
+	    setLinkBuffer $wired_link $vals(buf)
 	    setLinkDelay $wired_link $vals(delay)
 	    setLinkBER $wired_link $vals(per)
 	    setLinkDup $wired_link $vals(dup)
@@ -832,6 +839,7 @@ proc apiLinkAddModify { node1 node2 vals_ref add } {
 	    # adopt link effects for WLAN (WLAN must be node 1)
 	    if { [nodeType $node1] == "wlan" } {
 		setLinkBandwidth $node1 $vals(bw)
+		setLinkBuffer $node1 $vals(buf)
 		setLinkDelay $node1 $vals(delay)
 		setLinkBER $node1 $vals(per)
 	    }
@@ -2002,6 +2010,8 @@ proc sendLinkMessage { channel link type {sendboth true} } {
     if { $jitter == "" } { set jitter 0 }
     set bw [getLinkBandwidth $link]
     if { $bw == "" } { set bw 0 }
+    set buf [getLinkBuffer $link]
+    if { $buf == "" } { set buf 0 }
     set per [getLinkBER $link]; # PER and BER
     if { $per == "" } { set per 0 }
     set per_len 0
@@ -2011,9 +2021,9 @@ proc sendLinkMessage { channel link type {sendboth true} } {
     set dup_len 0
     set dup_msg [buildStringTLV 0x6 $dup dup_len]
     if { $type != "delete" } {
-        incr len [expr {12+12+$per_len+$dup_len+12}] ;# delay,bw,per,dup,jitter
+        incr len [expr {12+12+12+$per_len+$dup_len+12}] ;# delay,bw,buf,per,dup,jitter
 	if {$prmsg==1 } {
-	    puts -nonewline "$delay,$bw,$per,$dup,$jitter,"
+	    puts -nonewline "$delay,$bw,$buf,$per,$dup,$jitter,"
 	}
     }
     # TODO: mer, burst, mburst
@@ -2066,6 +2076,7 @@ proc sendLinkMessage { channel link type {sendboth true} } {
     if { $type != "delete" } {
 	puts -nonewline $channel [binary format c2sW {0x3 8} 0 $delay]
 	puts -nonewline $channel [binary format c2sW {0x4 8} 0 $bw]
+	puts -nonewline $channel [binary format c2sW {0xb 8} 0 $buf]
 	puts -nonewline $channel $per_msg
 	puts -nonewline $channel $dup_msg
 	puts -nonewline $channel [binary format c2sW {0x7 8} 0 $jitter]
@@ -2141,6 +2152,8 @@ proc sendLinkMessage { channel link type {sendboth true} } {
     if { $jitter == "" } { set jitter 0 }
     set bw [getLinkBandwidth $link up]
     if { $bw == "" } { set bw 0 }
+    set buf [getLinkBuffer $link up]
+    if { $buf == "" } { set buf 0 }
     set per [getLinkBER $link up]; # PER and BER
     if { $per == "" } { set per 0 }
     set per_len 0
@@ -2149,9 +2162,9 @@ proc sendLinkMessage { channel link type {sendboth true} } {
     if { $dup == "" } { set dup 0 }
     set dup_len 0
     set dup_msg [buildStringTLV 0x6 $dup dup_len]
-    incr len [expr {12+12+$per_len+$dup_len+12}] ;# delay,bw,per,dup,jitter
+    incr len [expr {12+12+12+$per_len+$dup_len+12}] ;# delay,bw,buf,per,dup,jitter
     if {$prmsg==1 } {
-        puts -nonewline "$delay,$bw,$per,$dup,$jitter,"
+        puts -nonewline "$delay,$bw,$buf,$per,$dup,$jitter,"
     }
     if { $prmsg == 1 } { puts -nonewline "type=$ltype," }
     incr len 4 ;# unidirectional flag
@@ -2175,6 +2188,7 @@ proc sendLinkMessage { channel link type {sendboth true} } {
     puts -nonewline $channel $msg
     puts -nonewline $channel [binary format c2sW {0x3 8} 0 $delay]
     puts -nonewline $channel [binary format c2sW {0x4 8} 0 $bw]
+    puts -nonewline $channel [binary format c2sW {0xb 8} 0 $buf]
     puts -nonewline $channel $per_msg
     puts -nonewline $channel $dup_msg
     puts -nonewline $channel [binary format c2sW {0x7 8} 0 $jitter]
