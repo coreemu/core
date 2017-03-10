@@ -693,9 +693,14 @@ class Session(object):
         '''
         self.evq.stop()
         with self._objslock:
+            threads = []
             for obj in self.objs():
                 if isinstance(obj, nodes.PyCoreNode):
-                    self.services.stopnodeservices(obj)
+                    thread = threading.Thread(target=self.services.stopnodeservices, args=(obj,))
+                    thread.start()
+                    threads.append(thread)
+            for thread in threads:
+                thread.join()
         self.emane.shutdown()
         self.updatectrlifhosts(remove=True)
         # Remove all four possible control networks. Does nothing if ctrlnet is not installed.
