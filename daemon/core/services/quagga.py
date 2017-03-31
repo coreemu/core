@@ -194,6 +194,12 @@ bootquagga()
         return 1
     fi
 
+    # fix /var/run/quagga permissions
+    id -u quagga 2>/dev/null >/dev/null
+    if [ "$?" = "0" ]; then
+        chown quagga $QUAGGA_STATE_DIR
+    fi
+
     bootdaemon "zebra"
     for r in rip ripng ospf6 ospf bgp babel; do
         if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
