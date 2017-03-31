@@ -919,6 +919,7 @@ proc getstats_bytes_netgraph { raw_input } {
 }
 
 proc getstats_link_ifname { link } {
+    global g_current_session
     set lnode1 [lindex [linkPeers $link] 0]
     set lnode2 [lindex [linkPeers $link] 1]
 
@@ -932,13 +933,10 @@ proc getstats_link_ifname { link } {
 	set ifname [ifcByPeer $lnode2 $lnode1]
     }
     if { $node_num < 0 } { return "" }
-    set node_num [format %x $node_num]
-
-    # TODO: need to determine session number used by daemon
-    #       instead this uses a '*' character for a regexp match against
-    #       the interfaces in /proc/net/dev
+    set ssid [shortSessionID $g_current_session]
     set hex [format "%x" $node_num]
-    set ifname "veth$hex\\.[string range $ifname 3 end]\\.*"
+    set ifnum [string range $ifname 3 end]
+    set ifname "veth$hex.$ifnum.$ssid"
     return $ifname
 }
 
