@@ -1035,7 +1035,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                                    duplicate=duplicate, jitter=jitter)
                 elif node2 is None:
                     # node2 = layer 2node, node1 = layer3 node
-                    net.linkconfig(node1.netif(ifindex1, net), bw=bw, buf=buf
+                    net.linkconfig(node1.netif(ifindex1, net), bw=bw, buf=buf,
                                    delay=delay, loss=loss,
                                    duplicate=duplicate, jitter=jitter)
                 else:
