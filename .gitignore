@@ -19,3 +19,4 @@ stamp-h1
 
 # intelli
 *.iml
+.idea
