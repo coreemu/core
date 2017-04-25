@@ -88,7 +88,7 @@ class EmaneManager(ConfigurableManager):
         self.logversion()
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None)
-        session.broker.handlers += (self.handledistributed,)
+        session.broker.handlers.add(self.handledistributed)
         self.service = None
         self._modelclsmap = {
             self.emane_config.name: self.emane_config
@@ -458,22 +458,22 @@ class EmaneManager(ConfigurableManager):
         self._objslock.release()
 
         for server in servers:
-            if server == "localhost":
+            if server.name == "localhost":
                 continue
-            (host, port, sock) = self.session.broker.getserver(server)
-            if sock is None:
+
+            if server.sock is None:
                 continue
+
             platformid += 1
             typeflags = ConfigFlags.UPDATE.value
             values[names.index("platform_id_start")] = str(platformid)
             values[names.index("nem_id_start")] = str(nemid)
             msg = EmaneGlobalModel.config_data(flags=0, node_id=None, type_flags=typeflags, values=values)
-            sock.send(msg)
+            server.sock.send(msg)
             # increment nemid for next server by number of interfaces
-            self._ifccountslock.acquire()
-            if server in self._ifccounts:
-                nemid += self._ifccounts[server]
-            self._ifccountslock.release()
+            with self._ifccountslock:
+                if server in self._ifccounts:
+                    nemid += self._ifccounts[server]
 
         return False
 
@@ -511,16 +511,19 @@ class EmaneManager(ConfigurableManager):
         using the default list of prefixes.
         """
         session = self.session
+        # slave server
         if not session.master:
-            return  # slave server
-        servers = session.broker.getserverlist()
+            return
+        servers = session.broker.getservernames()
+        # not distributed
         if len(servers) < 2:
-            return  # not distributed
+            return
         prefix = session.config.get('controlnet')
         prefix = getattr(session.options, 'controlnet', prefix)
         prefixes = prefix.split()
+        # normal Config messaging will distribute controlnets
         if len(prefixes) >= len(servers):
-            return  # normal Config messaging will distribute controlnets
+            return
         # this generates a config message having controlnet prefix assignments
         logger.info("Setting up default controlnet prefixes for distributed (%d configured)" % len(prefixes))
         prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]

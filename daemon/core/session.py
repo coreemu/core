@@ -225,6 +225,7 @@ class Session(object):
         self.xen = XenConfigManager(session=self)
         self.add_config_object(XenConfigManager.name, XenConfigManager.config_type, self.xen.configure)
 
+        # setup sdt
         self.sdt = Sdt(session=self)
 
         # future parameters set by the GUI may go here
@@ -782,8 +783,9 @@ class Session(object):
         # controlnet may be needed by some EMANE models
         self.add_remove_control_interface(node=None, remove=False)
 
+        # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
-            return  # instantiate() will be invoked again upon Emane.configure()
+            return
 
         # startup broker
         self.broker.startup()
@@ -799,6 +801,9 @@ class Session(object):
 
         # validate nodes
         self.validate_nodes()
+
+        # set broker local instantiation to complete
+        self.broker.local_instantiation_complete()
 
         # assume either all nodes have booted already, or there are some
         # nodes on slave servers that will be booted and those servers will
@@ -851,7 +856,10 @@ class Session(object):
         #     return  # do not have information on all nodes yet
 
         # information on all nodes has been received and they have been started enter the runtime state
-        # TODO: more sophisticated checks to verify that all nodes and networks are running
+
+        # check to verify that all nodes and networks are running
+        if not self.broker.instantiation_complete():
+            return
 
         # start event loop and set to runtime
         self.event_loop.run()
@@ -1029,7 +1037,7 @@ class Session(object):
                     prefix = prefixes[0]
             else:
                 # slave servers have their name and localhost in the serverlist
-                servers = self.broker.getserverlist()
+                servers = self.broker.getservernames()
                 servers.remove("localhost")
                 prefix = None
 
@@ -1066,7 +1074,7 @@ class Session(object):
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
         self.broker.addnet(object_id)
-        for server in self.broker.getserverlist():
+        for server in self.broker.getservers():
             self.broker.addnodemap(server, object_id)
 
         return control_net
@@ -1299,7 +1307,7 @@ class SessionConfig(ConfigurableManager, Configurable):
         """
         ConfigurableManager.__init__(self)
         self.session = session
-        self.session.broker.handlers += (self.handle_distributed,)
+        self.session.broker.handlers.add(self.handle_distributed)
         self.reset()
 
     def reset(self):
@@ -1376,7 +1384,7 @@ class SessionConfig(ConfigurableManager, Configurable):
             logger.warn("multiple controlnet prefixes do not exist")
             return
 
-        servers = self.session.broker.getserverlist()
+        servers = self.session.broker.getservernames()
         if len(servers) < 2:
             logger.warn("not distributed")
             return

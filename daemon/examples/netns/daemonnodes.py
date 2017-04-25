@@ -54,15 +54,15 @@ def cmd(node, exec_cmd):
     exec_num += 1
 
     # Now wait for the response
-    h, p, sock = node.session.broker.servers["localhost"]
-    sock.settimeout(50.0)
+    server = node.session.broker.servers["localhost"]
+    server.sock.settimeout(50.0)
 
     # receive messages until we get our execute response
     result = None
     while True:
-        msghdr = sock.recv(coreapi.CoreMessage.header_len)
+        msghdr = server.sock.recv(coreapi.CoreMessage.header_len)
         msgtype, msgflags, msglen = coreapi.CoreMessage.unpack_header(msghdr)
-        msgdata = sock.recv(msglen)
+        msgdata = server.sock.recv(msglen)
 
         # If we get the right response return the results
         print "received response message: %s" % MessageTypes(msgtype)

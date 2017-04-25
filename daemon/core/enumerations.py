@@ -277,6 +277,7 @@ class EventTypes(Enum):
     FILE_SAVE = 12
     SCHEDULED = 13
     RECONFIGURE = 14
+    INSTANTIATION_COMPLETE = 15
 
 
 # Session Message TLV Types
