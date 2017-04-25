@@ -1,0 +1,6 @@
+enum34==1.1.6
+grpcio==1.0.0
+grpcio-tools==1.0.0
+pycco==0.5.1
+sphinx==1.4.8
+sphinx_rtd_theme==0.1.9

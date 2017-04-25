@@ -5,71 +5,86 @@
 
 # A distributed example where CORE API messaging is used to create a session
 # on a daemon server. The daemon server defaults to 127.0.0.1:4038
-# to target a remote machine specify '-d <ip address>' parameter, it needs to be
+# to target a remote machine specify "-d <ip address>" parameter, it needs to be
 # running the daemon with listenaddr=0.0.0.0 in the core.conf file.
 # This script creates no nodes locally and therefore can be run as an
 # unprivileged user.
 
-import sys, datetime, optparse, time
+import datetime
+import optparse
+import sys
 
-from core import pycore
-from core.misc import ipaddr
-from core.constants import *
 from core.api import coreapi
+from core.api import dataconversion
+from core.api.coreapi import CoreExecuteTlv
+from core.enumerations import CORE_API_PORT
+from core.enumerations import EventTlvs
+from core.enumerations import EventTypes
+from core.enumerations import ExecuteTlvs
+from core.enumerations import LinkTlvs
+from core.enumerations import LinkTypes
+from core.enumerations import MessageFlags
+from core.enumerations import MessageTypes
+from core.misc import ipaddress, nodeutils, nodemaps
+from core.netns import nodes
 
 # declare classes for use with Broker
-import select
 
-coreapi.add_node_class("CORE_NODE_DEF",
-                       coreapi.CORE_NODE_DEF, pycore.nodes.CoreNode)
-coreapi.add_node_class("CORE_NODE_SWITCH",
-                       coreapi.CORE_NODE_SWITCH, pycore.nodes.SwitchNode)
+from core.session import Session
 
 # node list (count from 1)
 n = [None]
 exec_num = 1
 
+
 def cmd(node, exec_cmd):
-    '''
+    """
     :param node: The node the command should be issued too
     :param exec_cmd: A string with the command to be run
     :return: Returns the result of the command
-    '''
+    """
     global exec_num
 
     # Set up the command api message
-    tlvdata = coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NODE, node.objid)
-    tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_NUM, exec_num)
-    tlvdata += coreapi.CoreExecTlv.pack(coreapi.CORE_TLV_EXEC_CMD, exec_cmd)
-    msg = coreapi.CoreExecMessage.pack(coreapi.CORE_API_STR_FLAG | coreapi.CORE_API_TXT_FLAG, tlvdata)
+    tlvdata = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    tlvdata += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, exec_num)
+    tlvdata += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
+    msg = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlvdata)
     node.session.broker.handlerawmsg(msg)
     exec_num += 1
 
     # Now wait for the response
-    (h, p, sock) = node.session.broker.servers['localhost']
+    h, p, sock = node.session.broker.servers["localhost"]
     sock.settimeout(50.0)
-    msghdr = sock.recv(coreapi.CoreMessage.hdrsiz)
-    msgtype, msgflags, msglen = coreapi.CoreMessage.unpackhdr(msghdr)
-    msgdata = sock.recv(msglen)
 
-    # If we get the right response return the results
-    if msgtype == coreapi.CORE_API_EXEC_MSG:
-        msg = coreapi.CoreExecMessage(msgflags, msghdr, msgdata)
-        return msg.gettlv(coreapi.CORE_TLV_EXEC_RESULT)
-    else:
-        return None
+    # receive messages until we get our execute response
+    result = None
+    while True:
+        msghdr = sock.recv(coreapi.CoreMessage.header_len)
+        msgtype, msgflags, msglen = coreapi.CoreMessage.unpack_header(msghdr)
+        msgdata = sock.recv(msglen)
+
+        # If we get the right response return the results
+        print "received response message: %s" % MessageTypes(msgtype)
+        if msgtype == MessageTypes.EXECUTE.value:
+            msg = coreapi.CoreExecMessage(msgflags, msghdr, msgdata)
+            result = msg.get_tlv(ExecuteTlvs.RESULT.value)
+            break
+
+    return result
+
 
 def main():
     usagestr = "usage: %prog [-n] number of nodes [-d] daemon address"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 5, daemon = '127.0.0.1:'+str(coreapi.CORE_API_PORT))
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=5, daemon="127.0.0.1:" + str(CORE_API_PORT))
 
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
-    parser.add_option("-d", "--daemon-server", dest = "daemon", type = str,
-                      help = "daemon server IP address")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
+    parser.add_option("-d", "--daemon-server", dest="daemon", type=str,
+                      help="daemon server IP address")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -85,94 +100,95 @@ def main():
         usage("daemon server IP address (-d) is a required argument")
 
     for a in args:
-        sys.stderr.write("ignoring command line argument: '%s'\n" % a)
+        sys.stderr.write("ignoring command line argument: %s\n" % a)
 
     start = datetime.datetime.now()
 
-    prefix = ipaddr.IPv4Prefix("10.83.0.0/16")
-    session = pycore.Session(persistent=True)
-    if 'server' in globals():
+    prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
+    session = Session(1, persistent=True)
+    if "server" in globals():
         server.addsession(session)
 
     # distributed setup - connect to daemon server
-    daemonport = options.daemon.split(':')
+    daemonport = options.daemon.split(":")
     daemonip = daemonport[0]
 
     # Localhost is already set in the session but we change it to be the remote daemon
     # This stops the remote daemon trying to build a tunnel back which would fail
-    daemon = 'localhost'
+    daemon = "localhost"
     if len(daemonport) > 1:
         port = int(daemonport[1])
     else:
-        port = coreapi.CORE_API_PORT
+        port = CORE_API_PORT
     print "connecting to daemon at %s:%d" % (daemon, port)
     session.broker.addserver(daemon, daemonip, port)
 
     # Set the local session id to match the port.
     # Not necessary but seems neater.
-    session.sessionid = session.broker.getserver('localhost')[2].getsockname()[1]
+    # session.sessionid = session.broker.getserver("localhost")[2].getsockname()[1]
     session.broker.setupserver(daemon)
 
     # We do not want the recvloop running as we will deal ourselves
     session.broker.dorecvloop = False
 
     # Change to configuration state on both machines
-    session.setstate(coreapi.CORE_EVENT_CONFIGURATION_STATE)
-    tlvdata = coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
-                                        coreapi.CORE_EVENT_CONFIGURATION_STATE)
+    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
-    flags = coreapi.CORE_API_ADD_FLAG
-    switch = pycore.nodes.SwitchNode(session = session, name='switch', start=False)
-    switch.setposition(x=80,y=50)
+    flags = MessageFlags.ADD.value
+    switch = nodes.SwitchNode(session=session, name="switch", start=False)
+    switch.setposition(x=80, y=50)
     switch.server = daemon
-    session.broker.handlerawmsg(switch.tonodemsg(flags=flags))
+    switch_data = switch.data(flags)
+    switch_message = dataconversion.convert_node(switch_data)
+    session.broker.handlerawmsg(switch_message)
 
-    numberOfNodes = options.numnodes
+    number_of_nodes = options.numnodes
 
-    print "creating %d remote nodes with addresses from %s" % \
-          (options.numnodes, prefix)
+    print "creating %d remote nodes with addresses from %s" % (options.numnodes, prefix)
 
     # create remote nodes via API
-    for i in xrange(1, numberOfNodes + 1):
-        tmp = pycore.nodes.CoreNode(session = session, objid = i,
-                                    name = "n%d" % i, start=False)
-        tmp.setposition(x=150*i,y=150)
-        tmp.server = daemon
-        session.broker.handlerawmsg(tmp.tonodemsg(flags=flags))
-        n.append(tmp)
+    for i in xrange(1, number_of_nodes + 1):
+        node = nodes.CoreNode(session=session, objid=i, name="n%d" % i, start=False)
+        node.setposition(x=150 * i, y=150)
+        node.server = daemon
+        node_data = node.data(flags)
+        node_message = dataconversion.convert_node(node_data)
+        session.broker.handlerawmsg(node_message)
+        n.append(node)
 
     # create remote links via API
-    for i in xrange(1, numberOfNodes + 1):
-        tlvdata = coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N1NUMBER,
-                                           switch.objid)
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_N2NUMBER, i)
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_TYPE,
-                                            coreapi.CORE_LINK_WIRED)
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2NUM, 0)
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2IP4,
-                                            prefix.addr(i))
-        tlvdata += coreapi.CoreLinkTlv.pack(coreapi.CORE_TLV_LINK_IF2IP4MASK,
-                                            prefix.prefixlen)
+    for i in xrange(1, number_of_nodes + 1):
+        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, prefix.addr(i))
+        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix.prefixlen)
         msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
         session.broker.handlerawmsg(msg)
 
     # We change the daemon to Instantiation state
     # We do not change the local session as it would try and build a tunnel and fail
-    tlvdata = coreapi.CoreEventTlv.pack(coreapi.CORE_TLV_EVENT_TYPE,
-                                    coreapi.CORE_EVENT_INSTANTIATION_STATE)
+    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_STATE.value)
     msg = coreapi.CoreEventMessage.pack(0, tlvdata)
     session.broker.handlerawmsg(msg)
 
     # Get the ip or last node and ping it from the first
-    print 'Pinging from the first to the last node'
-    pingip = cmd(n[-1], 'ip -4 -o addr show dev eth0').split()[3].split('/')[0]
-    print cmd(n[1], 'ping -c 5 ' + pingip)
+    print "Pinging from the first to the last node"
+    pingip = cmd(n[-1], "ip -4 -o addr show dev eth0").split()[3].split("/")[0]
+    print cmd(n[1], "ping -c 5 " + pingip)
 
     print "elapsed time: %s" % (datetime.datetime.now() - start)
 
-    print "To stop this session, use the 'core-cleanup' script on the remote daemon server."
+    print "To stop this session, use the core-cleanup script on the remote daemon server."
+    raw_input("press enter to exit")
+
 
 if __name__ == "__main__" or __name__ == "__builtin__":
-    main()
+    # configure nodes to use
+    node_map = nodemaps.CLASSIC_NODES
+    nodeutils.set_node_map(node_map)
 
+    main()

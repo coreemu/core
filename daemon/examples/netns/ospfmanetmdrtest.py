@@ -7,26 +7,22 @@
 # that all neighbor states are either full or two-way, and check the routes
 # in zebra vs those installed in the kernel.
 
-import os, sys, random, time, optparse, datetime
+import datetime
+import optparse
+import os
+import random
+import sys
+import time
 from string import Template
-try:
-    from core import pycore
-except ImportError:
-    # hack for Fedora autoconf that uses the following pythondir:
-    if "/usr/lib/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.6/site-packages")
-    if "/usr/lib64/python2.6/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.6/site-packages")
-    if "/usr/lib/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib/python2.7/site-packages")
-    if "/usr/lib64/python2.7/site-packages" in sys.path:
-        sys.path.append("/usr/local/lib64/python2.7/site-packages")
-    from core import pycore
-from core.misc import ipaddr
-from core.misc.utils import mutecall
+
 from core.constants import QUAGGA_STATE_DIR
+from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc.utils import mutecall
+from core.netns import nodes
 
 # this is the /etc/core/core.conf default
+from core.session import Session
+
 quagga_sbin_search = ("/usr/local/sbin", "/usr/sbin", "/usr/lib/quagga")
 quagga_path = "zebra"
 
@@ -37,12 +33,13 @@ try:
             quagga_path = p
             break
     mutecall([os.path.join(quagga_path, "zebra"),
-             "-u", "root", "-g", "root", "-v"])
+              "-u", "root", "-g", "root", "-v"])
 except OSError:
     sys.stderr.write("ERROR: running zebra failed\n")
     sys.exit(1)
 
-class ManetNode(pycore.nodes.LxcNode):
+
+class ManetNode(nodes.LxcNode):
     """ An Lxc namespace node configured for Quagga OSPFv3 MANET MDR
     """
     conftemp = Template("""\
@@ -66,19 +63,19 @@ ip forwarding
 
     confdir = "/usr/local/etc/quagga"
 
-    def __init__(self, core, ipaddr, routerid = None,
-                 objid = None, name = None, nodedir = None):
+    def __init__(self, core, ipaddr, routerid=None,
+                 objid=None, name=None, nodedir=None):
         if routerid is None:
             routerid = ipaddr.split("/")[0]
         self.ipaddr = ipaddr
         self.routerid = routerid
-        pycore.nodes.LxcNode.__init__(self, core, objid, name, nodedir)
+        nodes.LxcNode.__init__(self, core, objid, name, nodedir)
         self.privatedir(self.confdir)
         self.privatedir(QUAGGA_STATE_DIR)
 
     def qconf(self):
-        return self.conftemp.substitute(ipaddr = self.ipaddr,
-                                        routerid = self.routerid)
+        return self.conftemp.substitute(ipaddr=self.ipaddr,
+                                        routerid=self.routerid)
 
     def config(self):
         filename = os.path.join(self.confdir, "Quagga.conf")
@@ -87,7 +84,7 @@ ip forwarding
         f.close()
         tmp = self.bootscript()
         if tmp:
-            self.nodefile(self.bootsh, tmp, mode = 0755)
+            self.nodefile(self.bootsh, tmp, mode=0755)
 
     def boot(self):
         self.config()
@@ -125,14 +122,16 @@ waitfile $STATEDIR/ospf6d.vty
 vtysh -b
 """ % (QUAGGA_STATE_DIR, quagga_path, quagga_path)
 
+
 class Route(object):
     """ Helper class for organzing routing table entries. """
-    def __init__(self, prefix = None, gw = None, metric = None):
-	try:
-            self.prefix = ipaddr.IPv4Prefix(prefix)
+
+    def __init__(self, prefix=None, gw=None, metric=None):
+        try:
+            self.prefix = ipaddress.Ipv4Prefix(prefix)
         except Exception, e:
             raise ValueError, "Invalid prefix given to Route object: %s\n%s" % \
-                     (prefix, e)
+                              (prefix, e)
         self.gw = gw
         self.metric = metric
 
@@ -156,7 +155,8 @@ class Route(object):
 class ManetExperiment(object):
     """ A class for building an MDR network and checking and logging its state.
     """
-    def __init__(self,  options,  start):
+
+    def __init__(self, options, start):
         """ Initialize with options and start time. """
         self.session = None
         # node list
@@ -168,8 +168,8 @@ class ManetExperiment(object):
         self.options = options
         self.start = start
         self.logbegin()
-    
-    def info(self,  msg):
+
+    def info(self, msg):
         ''' Utility method for writing output to stdout. '''
         print msg
         sys.stdout.flush()
@@ -180,7 +180,7 @@ class ManetExperiment(object):
         print >> sys.stderr, msg
         sys.stderr.flush()
         self.log(msg)
-    
+
     def logbegin(self):
         """ Start logging. """
         self.logfp = None
@@ -188,32 +188,32 @@ class ManetExperiment(object):
             return
         self.logfp = open(self.options.logfile, "w")
         self.log("ospfmanetmdrtest begin: %s\n" % self.start.ctime())
-    
+
     def logend(self):
         """ End logging. """
         if not self.logfp:
             return
         end = datetime.datetime.now()
         self.log("ospfmanetmdrtest end: %s (%s)\n" % \
-                 (end.ctime(),  end - self.start))
+                 (end.ctime(), end - self.start))
         self.logfp.flush()
         self.logfp.close()
         self.logfp = None
-        
+
     def log(self, msg):
         """ Write to the log file, if any. """
         if not self.logfp:
             return
-        print >> self.logfp,  msg
-        
-    def logdata(self, nbrs,  mdrs,  lsdbs,  krs,  zrs):
+        print >> self.logfp, msg
+
+    def logdata(self, nbrs, mdrs, lsdbs, krs, zrs):
         """ Dump experiment parameters and data to the log file. """
         self.log("ospfmantetmdrtest data:")
         self.log("----- parameters -----")
         self.log("%s" % self.options)
         self.log("----- neighbors -----")
         for rtrid in sorted(nbrs.keys()):
-            self.log("%s: %s" % (rtrid,  nbrs[rtrid]))
+            self.log("%s: %s" % (rtrid, nbrs[rtrid]))
         self.log("----- mdr levels -----")
         self.log(mdrs)
         self.log("----- link state databases -----")
@@ -233,20 +233,20 @@ class ManetExperiment(object):
             for rt in zrs[rtrid]:
                 msg += "%s" % rt
             self.log(msg)
-    
-    def topology(self,  numnodes, linkprob, verbose = False):
+
+    def topology(self, numnodes, linkprob, verbose=False):
         """ Build a topology consisting of the given number of  ManetNodes
             connected to a WLAN and probabilty of links and set
             the session, WLAN, and node list objects.
         """
         # IP subnet
-        prefix = ipaddr.IPv4Prefix("10.14.0.0/16")
-        self.session = pycore.Session()
+        prefix = ipaddress.Ipv4Prefix("10.14.0.0/16")
+        self.session = Session(1)
         # emulated network
-        self.net = self.session.addobj(cls = pycore.nodes.WlanNode)
+        self.net = self.session.add_object(cls=nodes.WlanNode)
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.addobj(cls = ManetNode, ipaddr = addr, objid= "%d" % i, name = "n%d" % i)
+            tmp = self.session.add_object(cls=ManetNode, ipaddr=addr, objid="%d" % i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
         # connect nodes with probability linkprob
@@ -277,9 +277,9 @@ class ManetExperiment(object):
         if kr != zr:
             self.warn("kernel and zebra routes differ")
             if self.verbose:
-                msg =  "kernel: "
+                msg = "kernel: "
                 for r in kr:
-                    msg += "%s " % r                    
+                    msg += "%s " % r
                 msg += "\nzebra: "
                 for r in zr:
                     msg += "%s " % r
@@ -317,15 +317,15 @@ class ManetExperiment(object):
             if lsdbs[prev.routerid] != db:
                 msg = "LSDBs of all routers are not consistent"
                 self.warn("XXX LSDBs inconsistent for %s and %s" % \
-                           (n.routerid, prev.routerid))
+                          (n.routerid, prev.routerid))
                 i = 0
                 for entry in lsdbs[n.routerid].split("\n"):
                     preventries = lsdbs[prev.routerid].split("\n")
                     try:
                         preventry = preventries[i]
                     except IndexError:
-                        preventry = None                    
-                    if entry != preventry:                        
+                        preventry = None
+                    if entry != preventry:
                         self.warn("%s: %s" % (n.routerid, entry))
                         self.warn("%s: %s" % (prev.routerid, preventry))
                     i += 1
@@ -343,19 +343,21 @@ class ManetExperiment(object):
         v = self.verbose
         for n in self.nodes:
             self.info("checking %s" % n.name)
-            nbrs[n.routerid] = Ospf6NeighState(n,  verbose=v).run()
-            krs[n.routerid] = KernelRoutes(n,  verbose=v).run()
-            zrs[n.routerid] = ZebraRoutes(n,  verbose=v).run()
+            nbrs[n.routerid] = Ospf6NeighState(n, verbose=v).run()
+            krs[n.routerid] = KernelRoutes(n, verbose=v).run()
+            zrs[n.routerid] = ZebraRoutes(n, verbose=v).run()
             self.compareroutes(n, krs[n.routerid], zrs[n.routerid])
-            mdrs[n.routerid] = Ospf6MdrLevel(n,  verbose=v).run()
-            lsdbs[n.routerid] = Ospf6Database(n,  verbose=v).run()
+            mdrs[n.routerid] = Ospf6MdrLevel(n, verbose=v).run()
+            lsdbs[n.routerid] = Ospf6Database(n, verbose=v).run()
         self.comparemdrlevels(nbrs, mdrs)
         self.comparelsdbs(lsdbs)
-        self.logdata(nbrs,  mdrs,  lsdbs,  krs,  zrs)
+        self.logdata(nbrs, mdrs, lsdbs, krs, zrs)
+
 
 class Cmd:
     """ Helper class for running a command on a node and parsing the result. """
     args = ""
+
     def __init__(self, node, verbose=False):
         """ Initialize with a CoreNode (LxcNode) """
         self.id = None
@@ -363,35 +365,35 @@ class Cmd:
         self.out = None
         self.node = node
         self.verbose = verbose
-    
-    def info(self,  msg):
+
+    def info(self, msg):
         ''' Utility method for writing output to stdout.'''
         print msg
         sys.stdout.flush()
 
     def warn(self, msg):
         ''' Utility method for writing output to stderr. '''
-        print >> sys.stderr, "XXX %s:" % self.node.routerid,  msg
+        print >> sys.stderr, "XXX %s:" % self.node.routerid, msg
         sys.stderr.flush()
-        
+
     def run(self):
         """ This is the primary method used for running this command. """
         self.open()
         r = self.parse()
         self.cleanup()
         return r
-        
+
     def open(self):
         """ Exceute call to node.popen(). """
         self.id, self.stdin, self.out, self.err = \
-               self.node.popen((self.args))
-    
+            self.node.popen(self.args)
+
     def parse(self):
         """ This method is overloaded by child classes and should return some
             result.
         """
         return None
-    
+
     def cleanup(self):
         """ Close the Popen channels."""
         self.stdin.close()
@@ -401,18 +403,22 @@ class Cmd:
         if tmp:
             self.warn("nonzero exit status:", tmp)
 
+
 class VtyshCmd(Cmd):
     """ Runs a vtysh command. """
+
     def open(self):
-        args = ("vtysh",  "-c",  self.args)
-        self.id, self.stdin, self.out, self.err = self.node.popen((args))
-        
+        args = ("vtysh", "-c", self.args)
+        self.id, self.stdin, self.out, self.err = self.node.popen(args)
+
+
 class Ospf6NeighState(VtyshCmd):
     """ Check a node for OSPFv3 neighbors in the full/two-way states. """
     args = "show ipv6 ospf6 neighbor"
-    
+
     def parse(self):
-        self.out.readline()                   # skip first line
+        # skip first line
+        self.out.readline()
         nbrlist = []
         for line in self.out:
             field = line.split()
@@ -428,13 +434,14 @@ class Ospf6NeighState(VtyshCmd):
             self.info("  %s has %d neighbors" % (self.node.routerid, len(nbrlist)))
         return nbrlist
 
+
 class Ospf6MdrLevel(VtyshCmd):
     """ Retrieve the OSPFv3 MDR level for a node. """
     args = "show ipv6 ospf6 mdrlevel"
-    
+
     def parse(self):
         line = self.out.readline()
-       # TODO: handle multiple interfaces
+        # TODO: handle multiple interfaces
         field = line.split()
         mdrlevel = field[4]
         if not mdrlevel in ("MDR", "BMDR", "OTHER"):
@@ -443,12 +450,13 @@ class Ospf6MdrLevel(VtyshCmd):
             self.info("  %s is %s" % (self.node.routerid, mdrlevel))
         return mdrlevel
 
+
 class Ospf6Database(VtyshCmd):
     """ Retrieve the OSPFv3 LSDB summary for a node. """
     args = "show ipv6 ospf6 database"
-    
+
     def parse(self):
-        db = "" 
+        db = ""
         for line in self.out:
             field = line.split()
             if len(field) < 8:
@@ -458,15 +466,17 @@ class Ospf6Database(VtyshCmd):
             db += " ".join(filtered) + "\n"
         return db
 
+
 class ZebraRoutes(VtyshCmd):
     """ Return a list of Route objects for a node based on its zebra
         routing table.
     """
     args = "show ip route"
-    
+
     def parse(self):
-        for i in xrange(0,3):
-            self.out.readline()                   # skip first three lines
+        for i in xrange(0, 3):
+            # skip first three lines
+            self.out.readline()
         r = []
         prefix = None
         for line in self.out:
@@ -497,12 +507,13 @@ class ZebraRoutes(VtyshCmd):
             self.info("  %s has %d zebra routes" % (self.node.routerid, len(r)))
         return r
 
+
 class KernelRoutes(Cmd):
-    """ Return a list of Route objects for a node based on its kernel 
+    """ Return a list of Route objects for a node based on its kernel
         routing table.
     """
-    args = ("/sbin/ip",  "route",  "show")
-    
+    args = ("/sbin/ip", "route", "show")
+
     def parse(self):
         r = []
         prefix = None
@@ -521,7 +532,8 @@ class KernelRoutes(Cmd):
             if field[1] == "proto":
                 # nexthop entry is on the next line
                 continue
-            gw = field[2]   # nexthop IP or interface
+            # nexthop IP or interface
+            gw = field[2]
             r.append(Route(prefix, gw, metric))
             prefix = None
 
@@ -531,25 +543,26 @@ class KernelRoutes(Cmd):
             self.info("  %s has %d kernel routes" % (self.node.routerid, len(r)))
         return r
 
+
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
-    parser.set_defaults(numnodes = 10, linkprob = 0.35, delay = 20, seed = None)
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.set_defaults(numnodes=10, linkprob=0.35, delay=20, seed=None)
 
-    parser.add_option("-n", "--numnodes", dest = "numnodes", type = int,
-                      help = "number of nodes")
-    parser.add_option("-p", "--linkprob", dest = "linkprob", type = float,
-                      help = "link probabilty")
-    parser.add_option("-d", "--delay", dest = "delay", type = float,
-                      help = "wait time before checking")
-    parser.add_option("-s", "--seed", dest = "seed", type = int,
-                      help = "specify integer to use for random seed")
-    parser.add_option("-v", "--verbose", dest = "verbose",
-                      action = "store_true", help = "be more verbose")
-    parser.add_option("-l", "--logfile", dest = "logfile", type = str,
-                      help = "log detailed output to the specified file")
+    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
+                      help="number of nodes")
+    parser.add_option("-p", "--linkprob", dest="linkprob", type=float,
+                      help="link probabilty")
+    parser.add_option("-d", "--delay", dest="delay", type=float,
+                      help="wait time before checking")
+    parser.add_option("-s", "--seed", dest="seed", type=int,
+                      help="specify integer to use for random seed")
+    parser.add_option("-v", "--verbose", dest="verbose",
+                      action="store_true", help="be more verbose")
+    parser.add_option("-l", "--logfile", dest="logfile", type=str,
+                      help="log detailed output to the specified file")
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -572,11 +585,11 @@ def main():
     if options.seed:
         random.seed(options.seed)
 
-    me = ManetExperiment(options = options, start=datetime.datetime.now())
+    me = ManetExperiment(options=options, start=datetime.datetime.now())
     me.info("creating topology: numnodes = %s; linkprob = %s" % \
-                (options.numnodes, options.linkprob))
+            (options.numnodes, options.linkprob))
     me.topology(options.numnodes, options.linkprob)
-    
+
     me.info("waiting %s sec" % options.delay)
     time.sleep(options.delay)
     me.info("checking neighbor state and routes")
@@ -584,8 +597,13 @@ def main():
     me.info("done")
     me.info("elapsed time: %s" % (datetime.datetime.now() - me.start))
     me.logend()
-    
+
     return me
 
+
 if __name__ == "__main__":
+    # configure nodes to use
+    node_map = nodemaps.CLASSIC_NODES
+    nodeutils.set_node_map(node_map)
+
     me = main()

@@ -1,7 +1,8 @@
 # Copyright (c)2010-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 
-"""core
+"""
+core
 
 Top-level Python package containing CORE components.
 

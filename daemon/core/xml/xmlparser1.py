@@ -1,19 +1,19 @@
-#
-# CORE
-# Copyright (c) 2015 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-import sys
 import random
-from core.netns import nodes
-from core import constants
-from core.misc.ipaddr import MacAddr
+from xml.dom.minidom import Node
 from xml.dom.minidom import parse
-from xmlutils import *
+
+from core import constants
+from core.enumerations import NodeTypes
+from core.misc import log
+from core.misc import nodeutils
+from core.misc.ipaddress import MacAddress
+from core.service import ServiceManager
+from core.xml import xmlutils
+
+logger = log.get_logger(__name__)
+
 
 class CoreDocumentParser1(object):
-
     layer2_device_types = 'hub', 'switch'
     layer3_device_types = 'host', 'router'
     device_types = layer2_device_types + layer3_device_types
@@ -23,8 +23,14 @@ class CoreDocumentParser1(object):
     #   TunnelNode
 
     def __init__(self, session, filename, options):
+        """
+
+        :param core.session.Session session:
+        :param filename:
+        :param options:
+        :return:
+        """
         self.session = session
-        self.verbose = self.session.getcfgitembool('verbose', False)
         self.filename = filename
         if 'dom' in options:
             # this prevents parsing twice when detecting file versions
@@ -46,23 +52,9 @@ class CoreDocumentParser1(object):
         if self.scenario:
             self.parse_scenario()
 
-    def info(self, msg):
-        s = 'XML parsing \'%s\': %s' % (self.filename, msg)
-        if self.session:
-            self.session.info(s)
-        else:
-            sys.stdout.write(s + '\n')
-
-    def warn(self, msg):
-        s = 'WARNING XML parsing \'%s\': %s' % (self.filename, msg)
-        if self.session:
-            self.session.warn(s)
-        else:
-            sys.stderr.write(s + '\n')
-
     @staticmethod
     def get_scenario(dom):
-        scenario = getFirstChildByTagName(dom, 'scenario')
+        scenario = xmlutils.get_first_child_by_tag_name(dom, 'scenario')
         if not scenario:
             raise ValueError, 'no scenario element found'
         version = scenario.getAttribute('version')
@@ -90,10 +82,10 @@ class CoreDocumentParser1(object):
                 return x
 
     def get_id(self, idstr):
-        '''\
+        """
         Get a, possibly new, object id (node number) corresponding to
         the given XML string id.
-        '''
+        """
         if not idstr:
             idn = self.rand_id()
             self.objids.add(idn)
@@ -109,19 +101,21 @@ class CoreDocumentParser1(object):
             return idn
 
     def get_common_attributes(self, node):
-        '''\
+        """
         Return id, name attributes for the given XML element.  These
         attributes are common to nodes and networks.
-        '''
+        """
         idstr = node.getAttribute('id')
         # use an explicit set COREID if it exists
         coreid = self.find_core_id(node)
+
         if coreid:
             idn = int(coreid)
             if idstr:
                 self.assign_id(idstr, idn)
         else:
             idn = self.get_id(idstr)
+
         # TODO: consider supporting unicode; for now convert to an
         # ascii string
         namestr = str(node.getAttribute('name'))
@@ -129,50 +123,43 @@ class CoreDocumentParser1(object):
 
     def iter_network_member_devices(self, element):
         # element can be a network or a channel
-        for interface in iterChildrenWithAttribute(element, 'member',
-                                                   'type', 'interface'):
-            if_id = getChildTextTrim(interface)
-            assert if_id        # XXX for testing
+        for interface in xmlutils.iter_children_with_attribute(element, 'member', 'type', 'interface'):
+            if_id = xmlutils.get_child_text_trim(interface)
+            assert if_id  # XXX for testing
             if not if_id:
                 continue
             device, if_name = self.find_device_with_interface(if_id)
-            assert device, 'no device for if_id: %s' % if_id # XXX for testing
+            assert device, 'no device for if_id: %s' % if_id  # XXX for testing
             if device:
                 yield device, if_name
 
     def network_class(self, network, network_type):
-        '''\
+        """
         Return the corresponding CORE network class for the given
         network/network_type.
-        '''
-        if network_type == 'ethernet':
-            return nodes.PtpNet
-        elif network_type == 'satcom':
-            return nodes.PtpNet
+        """
+        if network_type in ['ethernet', 'satcom']:
+            return nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
         elif network_type == 'wireless':
-            channel = getFirstChildByTagName(network, 'channel')
+            channel = xmlutils.get_first_child_by_tag_name(network, 'channel')
             if channel:
                 # use an explicit CORE type if it exists
-                coretype = getFirstChildTextTrimWithAttribute(channel, 'type',
-                                                              'domain', 'CORE')
+                coretype = xmlutils.get_first_child_text_trim_with_attribute(channel, 'type', 'domain', 'CORE')
                 if coretype:
                     if coretype == 'basic_range':
-                        return nodes.WlanNode
+                        return nodeutils.get_node_class(NodeTypes.WIRELESS_LAN)
                     elif coretype.startswith('emane'):
-                        return nodes.EmaneNode
+                        return nodeutils.get_node_class(NodeTypes.EMANE)
                     else:
-                        self.warn('unknown network type: \'%s\'' % coretype)
-                        return xmltypetonodeclass(self.session, coretype)
-            return nodes.WlanNode
-        self.warn('unknown network type: \'%s\'' % network_type)
+                        logger.warn('unknown network type: \'%s\'', coretype)
+                        return xmlutils.xml_type_to_node_class(self.session, coretype)
+            return nodeutils.get_node_class(NodeTypes.WIRELESS_LAN)
+        logger.warn('unknown network type: \'%s\'', network_type)
         return None
 
     def create_core_object(self, objcls, objid, objname, element, node_type):
-        obj = self.session.addobj(cls = objcls, objid = objid,
-                                  name = objname, start = self.start)
-        if self.verbose:
-            self.info('added object objid=%s name=%s cls=%s' % \
-                          (objid, objname, objcls))
+        obj = self.session.add_object(cls=objcls, objid=objid, name=objname, start=self.start)
+        logger.info('added object objid=%s name=%s cls=%s' % (objid, objname, objcls))
         self.set_object_position(obj, element)
         self.set_object_presentation(obj, element, node_type)
         return obj
@@ -180,7 +167,7 @@ class CoreDocumentParser1(object):
     def get_core_object(self, idstr):
         if idstr and idstr in self.objidmap:
             objid = self.objidmap[idstr]
-            return self.session.obj(objid)
+            return self.session.get_object(objid)
         return None
 
     def parse_network_plan(self):
@@ -192,8 +179,7 @@ class CoreDocumentParser1(object):
         self.parse_networks()
         self.parse_layer3_devices()
 
-    def set_ethernet_link_parameters(self, channel, link_params,
-                                     mobility_model_name, mobility_params):
+    def set_ethernet_link_parameters(self, channel, link_params, mobility_model_name, mobility_params):
         # save link parameters for later use, indexed by the tuple
         # (device_id, interface_name)
         for dev, if_name in self.iter_network_member_devices(channel):
@@ -204,18 +190,15 @@ class CoreDocumentParser1(object):
         if mobility_model_name or mobility_params:
             raise NotImplementedError
 
-    def set_wireless_link_parameters(self, channel, link_params,
-                                     mobility_model_name, mobility_params):
+    def set_wireless_link_parameters(self, channel, link_params, mobility_model_name, mobility_params):
         network = self.find_channel_network(channel)
         network_id = network.getAttribute('id')
         if network_id in self.objidmap:
             nodenum = self.objidmap[network_id]
         else:
-            self.warn('unknown network: %s' % network.toxml('utf-8'))
-            assert False        # XXX for testing
-            return
-        model_name = getFirstChildTextTrimWithAttribute(channel, 'type',
-                                                        'domain', 'CORE')
+            logger.warn('unknown network: %s', network.toxml('utf-8'))
+            assert False  # XXX for testing
+        model_name = xmlutils.get_first_child_text_trim_with_attribute(channel, 'type', 'domain', 'CORE')
         if not model_name:
             model_name = 'basic_range'
         if model_name == 'basic_range':
@@ -229,21 +212,20 @@ class CoreDocumentParser1(object):
             raise NotImplementedError
         mgr.setconfig_keyvalues(nodenum, model_name, link_params.items())
         if mobility_model_name and mobility_params:
-            mgr.setconfig_keyvalues(nodenum, mobility_model_name,
-                                    mobility_params.items())
+            mgr.setconfig_keyvalues(nodenum, mobility_model_name, mobility_params.items())
 
     def link_layer2_devices(self, device1, ifname1, device2, ifname2):
-        '''\
+        """
         Link two layer-2 devices together.
-        '''
+        """
         devid1 = device1.getAttribute('id')
         dev1 = self.get_core_object(devid1)
         devid2 = device2.getAttribute('id')
         dev2 = self.get_core_object(devid2)
-        assert dev1 and dev2    # XXX for testing
+        assert dev1 and dev2  # XXX for testing
         if dev1 and dev2:
             # TODO: review this
-            if isinstance(dev2, nodes.RJ45Node):
+            if nodeutils.is_node(dev2, NodeTypes.RJ45):
                 # RJ45 nodes have different linknet()
                 netif = dev2.linknet(dev1)
             else:
@@ -266,44 +248,38 @@ class CoreDocumentParser1(object):
     @classmethod
     def parse_parameter_children(cls, parent):
         params = {}
-        for parameter in iterChildrenWithName(parent, 'parameter'):
+        for parameter in xmlutils.iter_children_with_name(parent, 'parameter'):
             param_name = parameter.getAttribute('name')
-            assert param_name   # XXX for testing
+            assert param_name  # XXX for testing
             if not param_name:
                 continue
             # TODO: consider supporting unicode; for now convert
             # to an ascii string
             param_name = str(param_name)
-            param_val = cls.parse_xml_value(getChildTextTrim(parameter))
+            param_val = cls.parse_xml_value(xmlutils.get_child_text_trim(parameter))
             # TODO: check if the name already exists?
             if param_name and param_val:
                 params[param_name] = param_val
         return params
 
     def parse_network_channel(self, channel):
-        element = self.search_for_element(channel, 'type',
-                                          lambda x: not x.hasAttributes())
-        channel_type = getChildTextTrim(element)
+        element = self.search_for_element(channel, 'type', lambda x: not x.hasAttributes())
+        channel_type = xmlutils.get_child_text_trim(element)
         link_params = self.parse_parameter_children(channel)
 
-        mobility = getFirstChildByTagName(channel, 'CORE:mobility')
+        mobility = xmlutils.get_first_child_by_tag_name(channel, 'CORE:mobility')
         if mobility:
-            mobility_model_name = \
-                getFirstChildTextTrimByTagName(mobility, 'type')
+            mobility_model_name = xmlutils.get_first_child_text_trim_by_tag_name(mobility, 'type')
             mobility_params = self.parse_parameter_children(mobility)
         else:
             mobility_model_name = None
             mobility_params = None
         if channel_type == 'wireless':
-            self.set_wireless_link_parameters(channel, link_params,
-                                              mobility_model_name,
-                                              mobility_params)
+            self.set_wireless_link_parameters(channel, link_params, mobility_model_name, mobility_params)
         elif channel_type == 'ethernet':
             # TODO: maybe this can be done in the loop below to avoid
             # iterating through channel members multiple times
-            self.set_ethernet_link_parameters(channel, link_params,
-                                              mobility_model_name,
-                                              mobility_params)
+            self.set_ethernet_link_parameters(channel, link_params, mobility_model_name, mobility_params)
         else:
             raise NotImplementedError
         layer2_device = []
@@ -316,14 +292,14 @@ class CoreDocumentParser1(object):
                                      layer2_device[1][0], layer2_device[1][1])
 
     def parse_network(self, network):
-        '''\
+        """
         Each network element should have an 'id' and 'name' attribute
         and include the following child elements:
 
             type	(one)
             member	(zero or more with type="interface" or type="channel")
             channel	(zero or more)
-        '''
+        """
         layer2_members = set()
         layer3_members = 0
         for dev, if_name in self.iter_network_member_devices(network):
@@ -336,53 +312,48 @@ class CoreDocumentParser1(object):
                 layer3_members += 1
             else:
                 raise NotImplementedError
+
         if len(layer2_members) == 0:
-            net_type = getFirstChildTextTrimByTagName(network, 'type')
+            net_type = xmlutils.get_first_child_text_trim_by_tag_name(network, 'type')
             if not net_type:
-                msg = 'no network type found for network: \'%s\'' % \
-                    network.toxml('utf-8')
-                self.warn(msg)
-                assert False    # XXX for testing
-                return
+                logger.warn('no network type found for network: \'%s\'', network.toxml('utf-8'))
+                assert False  # XXX for testing
             net_cls = self.network_class(network, net_type)
             objid, net_name = self.get_common_attributes(network)
-            if self.verbose:
-                self.info('parsing network: %s %s' % (net_name, objid))
-            if objid in self.session._objs:
+            logger.info('parsing network: name=%s id=%s' % (net_name, objid))
+            if objid in self.session.objects:
                 return
-            n = self.create_core_object(net_cls, objid, net_name,
-                                        network, None)
+            n = self.create_core_object(net_cls, objid, net_name, network, None)
+
         # handle channel parameters
-        for channel in iterChildrenWithName(network, 'channel'):
+        for channel in xmlutils.iter_children_with_name(network, 'channel'):
             self.parse_network_channel(channel)
 
     def parse_networks(self):
-        '''\
+        """
         Parse all 'network' elements.
-        '''
-        for network in iterDescendantsWithName(self.scenario, 'network'):
+        """
+        for network in xmlutils.iter_descendants_with_name(self.scenario, 'network'):
             self.parse_network(network)
 
     def parse_addresses(self, interface):
         mac = []
         ipv4 = []
-        ipv6= []
+        ipv6 = []
         hostname = []
-        for address in iterChildrenWithName(interface, 'address'):
+        for address in xmlutils.iter_children_with_name(interface, 'address'):
             addr_type = address.getAttribute('type')
             if not addr_type:
                 msg = 'no type attribute found for address ' \
-                    'in interface: \'%s\'' % interface.toxml('utf-8')
-                self.warn(msg)
-                assert False    # XXX for testing
-                continue
-            addr_text = getChildTextTrim(address)
+                      'in interface: \'%s\'' % interface.toxml('utf-8')
+                logger.warn(msg)
+                assert False  # XXX for testing
+            addr_text = xmlutils.get_child_text_trim(address)
             if not addr_text:
                 msg = 'no text found for address ' \
-                    'in interface: \'%s\'' % interface.toxml('utf-8')
-                self.warn(msg)
-                assert False    # XXX for testing
-                continue
+                      'in interface: \'%s\'' % interface.toxml('utf-8')
+                logger.warn(msg)
+                assert False  # XXX for testing
             if addr_type == 'mac':
                 mac.append(addr_text)
             elif addr_type == 'IPv4':
@@ -393,45 +364,38 @@ class CoreDocumentParser1(object):
                 hostname.append(addr_text)
             else:
                 msg = 'skipping unknown address type \'%s\' in ' \
-                    'interface: \'%s\'' % (addr_type, interface.toxml('utf-8'))
-                self.warn(msg)
-                assert False    # XXX for testing
-                continue
+                      'interface: \'%s\'' % (addr_type, interface.toxml('utf-8'))
+                logger.warn(msg)
+                assert False  # XXX for testing
         return mac, ipv4, ipv6, hostname
 
     def parse_interface(self, node, device_id, interface):
-        '''\
+        """
         Each interface can have multiple 'address' elements.
-        '''
+        """
         if_name = interface.getAttribute('name')
         network = self.find_interface_network_object(interface)
         if not network:
             msg = 'skipping node \'%s\' interface \'%s\': ' \
-                'unknown network' % (node.name, if_name)
-            self.warn(msg)
-            assert False    # XXX for testing
-            return
+                  'unknown network' % (node.name, if_name)
+            logger.warn(msg)
+            assert False  # XXX for testing
         mac, ipv4, ipv6, hostname = self.parse_addresses(interface)
         if mac:
-            hwaddr = MacAddr.fromstring(mac[0])
+            hwaddr = MacAddress.from_string(mac[0])
         else:
             hwaddr = None
-        ifindex = node.newnetif(network, addrlist = ipv4 + ipv6,
-                                hwaddr = hwaddr, ifindex = None,
-                                ifname = if_name)
+        ifindex = node.newnetif(network, addrlist=ipv4 + ipv6, hwaddr=hwaddr, ifindex=None, ifname=if_name)
         # TODO: 'hostname' addresses are unused
-        if self.verbose:
-            msg = 'node \'%s\' interface \'%s\' connected ' \
-                'to network \'%s\'' % (node.name, if_name, network.name)
-            self.info(msg)
+        msg = 'node \'%s\' interface \'%s\' connected ' \
+              'to network \'%s\'' % (node.name, if_name, network.name)
+        logger.info(msg)
         # set link parameters for wired links
-        if isinstance(network,
-                      (nodes.HubNode, nodes.PtpNet, nodes.SwitchNode)):
+        if nodeutils.is_node(network, (NodeTypes.HUB, NodeTypes.PEER_TO_PEER, NodeTypes.SWITCH)):
             netif = node.netif(ifindex)
             self.set_wired_link_parameters(network, netif, device_id)
 
-    def set_wired_link_parameters(self, network, netif,
-                                  device_id, netif_name = None):
+    def set_wired_link_parameters(self, network, netif, device_id, netif_name=None):
         if netif_name is None:
             netif_name = netif.name
         key = (device_id, netif_name)
@@ -443,22 +407,20 @@ class CoreDocumentParser1(object):
                 loss = link_params.get('loss')
                 duplicate = link_params.get('duplicate')
                 jitter = link_params.get('jitter')
-                network.linkconfig(netif, bw = bw, delay = delay, loss = loss,
-                                   duplicate = duplicate, jitter = jitter)
+                network.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate, jitter=jitter)
             else:
                 for k, v in link_params.iteritems():
                     netif.setparam(k, v)
 
     @staticmethod
-    def search_for_element(node, tagName, match = None):
-        '''\
+    def search_for_element(node, tag_name, match=None):
+        """
         Search the given node and all ancestors for an element named
         tagName that satisfies the given matching function.
-        '''
+        """
         while True:
-            for child in iterChildren(node, Node.ELEMENT_NODE):
-                if child.tagName == tagName and \
-                        (match is None or match(child)):
+            for child in xmlutils.iter_children(node, Node.ELEMENT_NODE):
+                if child.tagName == tag_name and (match is None or match(child)):
                     return child
             node = node.parentNode
             if not node:
@@ -470,9 +432,10 @@ class CoreDocumentParser1(object):
         def match(x):
             domain = x.getAttribute('domain')
             return domain == 'COREID'
+
         alias = cls.search_for_element(node, 'alias', match)
         if alias:
-            return getChildTextTrim(alias)
+            return xmlutils.get_child_text_trim(alias)
         return None
 
     @classmethod
@@ -487,8 +450,7 @@ class CoreDocumentParser1(object):
         return None
 
     def find_interface_network_object(self, interface):
-        network_id = getFirstChildTextTrimWithAttribute(interface, 'member',
-                                                        'type', 'network')
+        network_id = xmlutils.get_first_child_text_trim_with_attribute(interface, 'member', 'type', 'network')
         if not network_id:
             # support legacy notation: <interface net="netid" ...
             network_id = interface.getAttribute('net')
@@ -498,22 +460,19 @@ class CoreDocumentParser1(object):
             return obj
         # the network should correspond to a layer-2 device if the
         # network_id does not exist
-        channel_id = getFirstChildTextTrimWithAttribute(interface, 'member',
-                                                        'type', 'channel')
+        channel_id = xmlutils.get_first_child_text_trim_with_attribute(interface, 'member', 'type', 'channel')
         if not network_id or not channel_id:
             return None
-        network = getFirstChildWithAttribute(self.scenario, 'network',
-                                             'id', network_id)
+        network = xmlutils.get_first_child_with_attribute(self.scenario, 'network', 'id', network_id)
         if not network:
             return None
-        channel = getFirstChildWithAttribute(network, 'channel',
-                                             'id', channel_id)
+        channel = xmlutils.get_first_child_with_attribute(network, 'channel', 'id', channel_id)
         if not channel:
             return None
         device = None
         for dev, if_name in self.iter_network_member_devices(channel):
             if self.device_type(dev) in self.layer2_device_types:
-                assert not device # XXX
+                assert not device  # XXX
                 device = dev
         if device:
             obj = self.get_core_object(device.getAttribute('id'))
@@ -532,12 +491,10 @@ class CoreDocumentParser1(object):
         # TODO: zMode is unused
         # z_mode = point.getAttribute('zMode'))
         if x < 0.0:
-            self.warn('limiting negative x position of \'%s\' to zero: %s' %
-                      (obj.name, x))
+            logger.warn('limiting negative x position of \'%s\' to zero: %s' % (obj.name, x))
             x = 0.0
         if y < 0.0:
-            self.warn('limiting negative y position of \'%s\' to zero: %s' %
-                      (obj.name, y))
+            logger.warn('limiting negative y position of \'%s\' to zero: %s' % (obj.name, y))
             y = 0.0
         obj.setposition(x, y, z)
 
@@ -558,12 +515,10 @@ class CoreDocumentParser1(object):
             self.location_refgeo_set = True
         x, y, z = self.session.location.getxyz(lat, lon, zalt)
         if x < 0.0:
-            self.warn('limiting negative x position of \'%s\' to zero: %s' %
-                      (obj.name, x))
+            logger.warn('limiting negative x position of \'%s\' to zero: %s' % (obj.name, x))
             x = 0.0
         if y < 0.0:
-            self.warn('limiting negative y position of \'%s\' to zero: %s' %
-                      (obj.name, y))
+            logger.warn('limiting negative y position of \'%s\' to zero: %s' % (obj.name, y))
             y = 0.0
         obj.setposition(x, y, z)
 
@@ -586,30 +541,27 @@ class CoreDocumentParser1(object):
         y = self.session.location.m2px(ym) + self.session.location.refxyz[1]
         z = self.session.location.m2px(zm) + self.session.location.refxyz[2]
         if x < 0.0:
-            self.warn('limiting negative x position of \'%s\' to zero: %s' %
-                      (obj.name, x))
+            logger.warn('limiting negative x position of \'%s\' to zero: %s' % (obj.name, x))
             x = 0.0
         if y < 0.0:
-            self.warn('limiting negative y position of \'%s\' to zero: %s' %
-                      (obj.name, y))
+            logger.warn('limiting negative y position of \'%s\' to zero: %s' % (obj.name, y))
             y = 0.0
         obj.setposition(x, y, z)
 
     def set_object_position(self, obj, element):
-        '''\
+        """
         Set the x,y,x position of obj from the point associated with
         the given element.
-        '''
+        """
         point = self.find_point(element)
         if not point:
             return False
         point_type = point.getAttribute('type')
         if not point_type:
             msg = 'no type attribute found for point: \'%s\'' % \
-                point.toxml('utf-8')
-            self.warn(msg)
-            assert False    # XXX for testing
-            return False
+                  point.toxml('utf-8')
+            logger.warn(msg)
+            assert False  # XXX for testing
         elif point_type == 'pixel':
             self.set_object_position_pixel(obj, point)
         elif point_type == 'gps':
@@ -617,21 +569,17 @@ class CoreDocumentParser1(object):
         elif point_type == 'cart':
             self.set_object_position_cartesian(obj, point)
         else:
-            self.warn("skipping unknown point type: '%s'" % point_type)
-            assert False    # XXX for testing
-            return False
-        if self.verbose:
-            msg = 'set position of %s from point element: \'%s\'' % \
-                (obj.name, point.toxml('utf-8'))
-            self.info(msg)
+            logger.warn("skipping unknown point type: '%s'" % point_type)
+            assert False  # XXX for testing
+
+        logger.info('set position of %s from point element: \'%s\'', obj.name, point.toxml('utf-8'))
         return True
 
     def parse_device_service(self, service, node):
         name = service.getAttribute('name')
-        session_service = self.session.services.getservicebyname(name)
+        session_service = ServiceManager.get(name)
         if not session_service:
-            assert False        # XXX for testing
-            return None
+            assert False  # XXX for testing
         values = []
         startup_idx = service.getAttribute('startup_idx')
         if startup_idx:
@@ -640,7 +588,7 @@ class CoreDocumentParser1(object):
         if startup_time:
             values.append('starttime=%s' % startup_time)
         dirs = []
-        for directory in iterChildrenWithName(service, 'directory'):
+        for directory in xmlutils.iter_children_with_name(service, 'directory'):
             dirname = directory.getAttribute('name')
             dirs.append(str(dirname))
         if dirs:
@@ -648,9 +596,9 @@ class CoreDocumentParser1(object):
         startup = []
         shutdown = []
         validate = []
-        for command in iterChildrenWithName(service, 'command'):
+        for command in xmlutils.iter_children_with_name(service, 'command'):
             command_type = command.getAttribute('type')
-            command_text = getChildTextTrim(command)
+            command_text = xmlutils.get_child_text_trim(command)
             if not command_text:
                 continue
             if command_type == 'start':
@@ -667,12 +615,12 @@ class CoreDocumentParser1(object):
             values.append('cmdval=%s' % validate)
         filenames = []
         files = []
-        for f in iterChildrenWithName(service, 'file'):
+        for f in xmlutils.iter_children_with_name(service, 'file'):
             filename = f.getAttribute('name')
             if not filename:
-                continue;
+                continue
             filenames.append(filename)
-            data = getChildTextTrim(f)
+            data = xmlutils.get_child_text_trim(f)
             if data:
                 data = str(data)
             else:
@@ -683,48 +631,48 @@ class CoreDocumentParser1(object):
             values.append('files=%s' % filenames)
         custom = service.getAttribute('custom')
         if custom and custom.lower() == 'true':
-            self.session.services.setcustomservice(node.objid,
-                                                   session_service, values)
+            self.session.services.setcustomservice(node.objid, session_service, values)
         # NOTE: if a custom service is used, setservicefile() must be
         # called after the custom service exists
         for typestr, filename, data in files:
-            self.session.services.setservicefile(nodenum = node.objid,
-                                                 type = typestr,
-                                                 filename = filename,
-                                                 srcname = None,
-                                                 data = data)
+            self.session.services.setservicefile(
+                nodenum=node.objid,
+                type=typestr,
+                filename=filename,
+                srcname=None,
+                data=data
+            )
         return str(name)
 
     def parse_device_services(self, services, node):
-        '''\
+        """
         Use session.services manager to store service customizations
         before they are added to a node.
-        '''
+        """
         service_names = []
-        for service in iterChildrenWithName(services, 'service'):
+        for service in xmlutils.iter_children_with_name(services, 'service'):
             name = self.parse_device_service(service, node)
             if name:
                 service_names.append(name)
         return '|'.join(service_names)
 
     def add_device_services(self, node, device, node_type):
-        '''\
+        """
         Add services to the given node.
-        '''
-        services = getFirstChildByTagName(device, 'CORE:services')
+        """
+        services = xmlutils.get_first_child_by_tag_name(device, 'CORE:services')
         if services:
             services_str = self.parse_device_services(services, node)
-            if self.verbose:
-                self.info('services for node \'%s\': %s' % \
-                              (node.name, services_str))
+            logger.info('services for node \'%s\': %s' % (node.name, services_str))
         elif node_type in self.default_services:
-            services_str = None # default services will be added
+            services_str = None  # default services will be added
         else:
             return
-        self.session.services.addservicestonode(node = node,
-                                                nodetype = node_type,
-                                                services_str = services_str,
-                                                verbose = self.verbose)
+        self.session.services.addservicestonode(
+            node=node,
+            nodetype=node_type,
+            services_str=services_str
+        )
 
     def set_object_presentation(self, obj, element, node_type):
         # defaults from the CORE GUI
@@ -735,9 +683,9 @@ class CoreDocumentParser1(object):
             'mdr': 'mdr.gif',
             # 'prouter': 'router_green.gif',
             # 'xen': 'xen.gif'
-            }
+        }
         icon_set = False
-        for child in iterChildrenWithName(element, 'CORE:presentation'):
+        for child in xmlutils.iter_children_with_name(element, 'CORE:presentation'):
             canvas = child.getAttribute('canvas')
             if canvas:
                 obj.canvas = int(canvas)
@@ -757,18 +705,15 @@ class CoreDocumentParser1(object):
 
     def core_node_type(self, device):
         # use an explicit CORE type if it exists
-        coretype = getFirstChildTextTrimWithAttribute(device, 'type',
-                                                      'domain', 'CORE')
+        coretype = xmlutils.get_first_child_text_trim_with_attribute(device, 'type', 'domain', 'CORE')
         if coretype:
             return coretype
         return self.device_type(device)
 
     def find_device_with_interface(self, interface_id):
         # TODO: suport generic 'device' elements
-        for device in iterDescendantsWithName(self.scenario,
-                                              self.device_types):
-            interface = getFirstChildWithAttribute(device, 'interface',
-                                                   'id', interface_id)
+        for device in xmlutils.iter_descendants_with_name(self.scenario, self.device_types):
+            interface = xmlutils.get_first_child_with_attribute(device, 'interface', 'id', interface_id)
             if interface:
                 if_name = interface.getAttribute('name')
                 return device, if_name
@@ -776,72 +721,70 @@ class CoreDocumentParser1(object):
 
     def parse_layer2_device(self, device):
         objid, device_name = self.get_common_attributes(device)
-        if self.verbose:
-            self.info('parsing layer-2 device: %s %s' % (device_name, objid))
+        logger.info('parsing layer-2 device: name=%s id=%s' % (device_name, objid))
+
         try:
-            return self.session.obj(objid)
+            return self.session.get_object(objid)
         except KeyError:
-            pass
+            logger.exception("error geting object: %s", objid)
+
         device_type = self.device_type(device)
         if device_type == 'hub':
-            device_class = nodes.HubNode
+            device_class = nodeutils.get_node_class(NodeTypes.HUB)
         elif device_type == 'switch':
-            device_class = nodes.SwitchNode
+            device_class = nodeutils.get_node_class(NodeTypes.SWITCH)
         else:
-            self.warn('unknown layer-2 device type: \'%s\'' % device_type)
-            assert False        # XXX for testing
-            return None
-        n = self.create_core_object(device_class, objid, device_name,
-                                    device, None)
+            logger.warn('unknown layer-2 device type: \'%s\'' % device_type)
+            assert False  # XXX for testing
+
+        n = self.create_core_object(device_class, objid, device_name, device, None)
         return n
 
     def parse_layer3_device(self, device):
         objid, device_name = self.get_common_attributes(device)
-        if self.verbose:
-            self.info('parsing layer-3 device: %s %s' % (device_name, objid))
+        logger.info('parsing layer-3 device: name=%s id=%s', device_name, objid)
+
         try:
-            return self.session.obj(objid)
+            return self.session.get_object(objid)
         except KeyError:
-            pass
+            logger.exception("error getting session object: %s", objid)
+
         device_cls = self.nodecls
         core_node_type = self.core_node_type(device)
-        n = self.create_core_object(device_cls, objid, device_name,
-                                    device, core_node_type)
+        n = self.create_core_object(device_cls, objid, device_name, device, core_node_type)
         n.type = core_node_type
         self.add_device_services(n, device, core_node_type)
-        for interface in iterChildrenWithName(device, 'interface'):
+        for interface in xmlutils.iter_children_with_name(device, 'interface'):
             self.parse_interface(n, device.getAttribute('id'), interface)
         return n
 
     def parse_layer2_devices(self):
-        '''\
+        """
         Parse all layer-2 device elements.  A device can be: 'switch',
         'hub'.
-        '''
+        """
         # TODO: suport generic 'device' elements
-        for device in iterDescendantsWithName(self.scenario,
-                                              self.layer2_device_types):
+        for device in xmlutils.iter_descendants_with_name(self.scenario, self.layer2_device_types):
             self.parse_layer2_device(device)
 
     def parse_layer3_devices(self):
-        '''\
+        """
         Parse all layer-3 device elements.  A device can be: 'host',
         'router'.
-        '''
+        """
         # TODO: suport generic 'device' elements
-        for device in iterDescendantsWithName(self.scenario,
-                                              self.layer3_device_types):
+        for device in xmlutils.iter_descendants_with_name(self.scenario, self.layer3_device_types):
             self.parse_layer3_device(device)
 
     def parse_session_origin(self, session_config):
-        '''\
+        """
         Parse the first origin tag and set the CoreLocation reference
         point appropriately.
-        '''
+        """
         # defaults from the CORE GUI
         self.session.location.setrefgeo(47.5791667, -122.132322, 2.0)
         self.session.location.refscale = 150.0
-        origin = getFirstChildByTagName(session_config, 'origin')
+        origin = xmlutils.get_first_child_by_tag_name(session_config, 'origin')
         if not origin:
             return
         lat = origin.getAttribute('lat')
@@ -853,18 +796,17 @@ class CoreDocumentParser1(object):
         scale100 = origin.getAttribute("scale100")
         if scale100:
             self.session.location.refscale = float(scale100)
-        point = getFirstChildTextTrimByTagName(origin, 'point')
+        point = xmlutils.get_first_child_text_trim_by_tag_name(origin, 'point')
         if point:
             xyz = point.split(',')
             if len(xyz) == 2:
                 xyz.append('0.0')
             if len(xyz) == 3:
-                self.session.location.refxyz = \
-                    (float(xyz[0]), float(xyz[1]), float(xyz[2]))
+                self.session.location.refxyz = (float(xyz[0]), float(xyz[1]), float(xyz[2]))
                 self.location_refxyz_set = True
 
     def parse_session_options(self, session_config):
-        options = getFirstChildByTagName(session_config, 'options')
+        options = xmlutils.get_first_child_by_tag_name(session_config, 'options')
         if not options:
             return
         params = self.parse_parameter_children(options)
@@ -873,34 +815,32 @@ class CoreDocumentParser1(object):
                 setattr(self.session.options, str(name), str(value))
 
     def parse_session_hooks(self, session_config):
-        '''\
+        """
         Parse hook scripts.
-        '''
-        hooks = getFirstChildByTagName(session_config, 'hooks')
+        """
+        hooks = xmlutils.get_first_child_by_tag_name(session_config, 'hooks')
         if not hooks:
             return
-        for hook in iterChildrenWithName(hooks, 'hook'):
+        for hook in xmlutils.iter_children_with_name(hooks, 'hook'):
             filename = hook.getAttribute('name')
             state = hook.getAttribute('state')
-            data = getChildTextTrim(hook)
+            data = xmlutils.get_child_text_trim(hook)
             if data is None:
-                data = ''       # allow for empty file
+                data = ''  # allow for empty file
             hook_type = "hook:%s" % state
-            self.session.sethook(hook_type, filename = str(filename),
-                                 srcname = None, data = str(data))
+            self.session.set_hook(hook_type, file_name=str(filename), source_name=None, data=str(data))
 
     def parse_session_metadata(self, session_config):
-        metadata = getFirstChildByTagName(session_config, 'metadata')
+        metadata = xmlutils.get_first_child_by_tag_name(session_config, 'metadata')
         if not metadata:
             return
         params = self.parse_parameter_children(metadata)
         for name, value in params.iteritems():
             if name and value:
-                self.session.metadata.additem(str(name), str(value))
+                self.session.metadata.add_item(str(name), str(value))
 
     def parse_session_config(self):
-        session_config = \
-            getFirstChildByTagName(self.scenario, 'CORE:sessionconfig')
+        session_config = xmlutils.get_first_child_by_tag_name(self.scenario, 'CORE:sessionconfig')
         if not session_config:
             return
         self.parse_session_origin(session_config)
@@ -913,23 +853,21 @@ class CoreDocumentParser1(object):
         self.default_services = {
             'router': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
             'host': ['DefaultRoute', 'SSH'],
-            'PC': ['DefaultRoute',],
+            'PC': ['DefaultRoute', ],
             'mdr': ['zebra', 'OSPFv3MDR', 'vtysh', 'IPForward'],
             # 'prouter': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
             # 'xen': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
-            }
-        default_services = \
-            getFirstChildByTagName(self.scenario, 'CORE:defaultservices')
+        }
+        default_services = xmlutils.get_first_child_by_tag_name(self.scenario, 'CORE:defaultservices')
         if not default_services:
             return
-        for device in iterChildrenWithName(default_services, 'device'):
+        for device in xmlutils.iter_children_with_name(default_services, 'device'):
             device_type = device.getAttribute('type')
             if not device_type:
-                self.warn('parse_default_services: no type attribute ' \
-                              'found for device')
+                logger.warn('parse_default_services: no type attribute found for device')
                 continue
             services = []
-            for service in iterChildrenWithName(device, 'service'):
+            for service in xmlutils.iter_children_with_name(device, 'service'):
                 name = service.getAttribute('name')
                 if name:
                     services.append(str(name))
@@ -937,6 +875,4 @@ class CoreDocumentParser1(object):
         # store default services for the session
         for t, s in self.default_services.iteritems():
             self.session.services.defaultservices[t] = s
-            if self.verbose:
-                self.info('default services for node type \'%s\' ' \
-                              'set to: %s' % (t, s))
+            logger.info('default services for node type \'%s\' set to: %s' % (t, s))

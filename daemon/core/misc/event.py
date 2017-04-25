@@ -1,75 +1,76 @@
-#
-# CORE
-# Copyright (c)2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# authors: Tom Goff <thomas.goff@boeing.com>
-#
-'''
+"""
 event.py: event loop implementation using a heap queue and threads.
-'''
-import time
-import threading
+"""
+
 import heapq
+import threading
+import time
+
+from core.misc import log
+
+logger = log.get_logger(__name__)
+
+
+class Timer(threading.Thread):
+    """
+    Based on threading.Timer but cancel() returns if the timer was
+    already running.
+    """
+
+    def __init__(self, interval, function, args=[], kwargs={}):
+        super(Timer, self).__init__()
+        self.interval = interval
+        self.function = function
+        self.args = args
+        self.kwargs = kwargs
+        self.finished = threading.Event()
+        self._running = threading.Lock()
+
+    def cancel(self):
+        """
+        Stop the timer if it hasn't finished yet.  Return False if
+        the timer was already running.
+        """
+        locked = self._running.acquire(False)
+        if locked:
+            self.finished.set()
+            self._running.release()
+        return locked
+
+    def run(self):
+        self.finished.wait(self.interval)
+        with self._running:
+            if not self.finished.is_set():
+                self.function(*self.args, **self.kwargs)
+            self.finished.set()
+
+
+class Event(object):
+    def __init__(self, eventnum, event_time, func, *args, **kwds):
+        self.eventnum = eventnum
+        self.time = event_time
+        self.func = func
+        self.args = args
+        self.kwds = kwds
+        self.canceled = False
+
+    def __cmp__(self, other):
+        tmp = cmp(self.time, other.time)
+        if tmp == 0:
+            tmp = cmp(self.eventnum, other.eventnum)
+        return tmp
+
+    def run(self):
+        if self.canceled:
+            return
+        self.func(*self.args, **self.kwds)
+
+    def cancel(self):
+        # XXX not thread-safe
+        self.canceled = True
+
 
 class EventLoop(object):
-
-    class Timer(threading.Thread):
-        '''\
-        Based on threading.Timer but cancel() returns if the timer was
-        already running.
-        '''
-
-        def __init__(self, interval, function, args=[], kwargs={}):
-            super(EventLoop.Timer, self).__init__()
-            self.interval = interval
-            self.function = function
-            self.args = args
-            self.kwargs = kwargs
-            self.finished = threading.Event()
-            self._running = threading.Lock()
-
-        def cancel(self):
-            '''\
-            Stop the timer if it hasn't finished yet.  Return False if
-            the timer was already running.
-            '''
-            locked = self._running.acquire(False)
-            if locked:
-                self.finished.set()
-                self._running.release()
-            return locked
-
-        def run(self):
-            self.finished.wait(self.interval)
-            with self._running:
-                if not self.finished.is_set():
-                    self.function(*self.args, **self.kwargs)
-                self.finished.set()
-
-    class Event(object):
-        def __init__(self, eventnum, time, func, *args, **kwds):
-            self.eventnum = eventnum
-            self.time = time
-            self.func = func
-            self.args = args
-            self.kwds = kwds
-            self.canceled = False
-
-        def __cmp__(self, other):
-            tmp = cmp(self.time, other.time)
-            if tmp == 0:
-                tmp = cmp(self.eventnum, other.eventnum)
-            return tmp
-
-        def run(self):
-            if self.canceled:
-                return
-            self.func(*self.args, **self.kwds)
-
-        def cancel(self):
-            self.canceled = True      # XXX not thread-safe
-
     def __init__(self):
         self.lock = threading.RLock()
         self.queue = []
@@ -103,7 +104,7 @@ class EventLoop(object):
                 return
             delay = self.queue[0].time - time.time()
             assert self.timer is None
-            self.timer = EventLoop.Timer(delay, self.__run_events)
+            self.timer = Timer(delay, self.__run_events)
             self.timer.daemon = True
             self.timer.start()
 
@@ -136,7 +137,7 @@ class EventLoop(object):
             evtime = float(delaysec)
             if self.running:
                 evtime += time.time()
-            event = self.Event(eventnum, evtime, func, *args, **kwds)
+            event = Event(eventnum, evtime, func, *args, **kwds)
 
             if self.queue:
                 prevhead = self.queue[0]
@@ -152,12 +153,13 @@ class EventLoop(object):
                 self.__schedule_event()
         return event
 
+
 def example():
     loop = EventLoop()
 
     def msg(arg):
         delta = time.time() - loop.start
-        print delta, 'arg:', arg
+        logger.debug("%s arg: %s", delta, arg)
 
     def repeat(interval, count):
         count -= 1

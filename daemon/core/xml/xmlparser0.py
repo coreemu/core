@@ -1,19 +1,17 @@
-#
-# CORE
-# Copyright (c)2011-2014 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-
-from core.netns import nodes
 from xml.dom.minidom import parse
-from xmlutils import *
+
+from core.enumerations import NodeTypes
+from core.misc import log
+from core.misc import nodeutils
+from core.service import ServiceManager
+from core.xml import xmlutils
+
+logger = log.get_logger(__name__)
+
 
 class CoreDocumentParser0(object):
     def __init__(self, session, filename, options):
         self.session = session
-        self.verbose = self.session.getcfgitembool('verbose', False)
         self.filename = filename
         if 'dom' in options:
             # this prevents parsing twice when detecting file versions
@@ -23,17 +21,17 @@ class CoreDocumentParser0(object):
         self.start = options['start']
         self.nodecls = options['nodecls']
 
-        self.np = getoneelement(self.dom, "NetworkPlan")
+        self.np = xmlutils.get_one_element(self.dom, "NetworkPlan")
         if self.np is None:
             raise ValueError, "missing NetworkPlan!"
-        self.mp = getoneelement(self.dom, "MotionPlan")
-        self.sp = getoneelement(self.dom, "ServicePlan")
-        self.meta = getoneelement(self.dom, "CoreMetaData")
-        
+        self.mp = xmlutils.get_one_element(self.dom, "MotionPlan")
+        self.sp = xmlutils.get_one_element(self.dom, "ServicePlan")
+        self.meta = xmlutils.get_one_element(self.dom, "CoreMetaData")
+
         self.coords = self.getmotiondict(self.mp)
         # link parameters parsed in parsenets(), applied in parsenodes()
         self.linkparams = {}
-        
+
         self.parsedefaultservices()
         self.parseorigin()
         self.parsenets()
@@ -41,16 +39,11 @@ class CoreDocumentParser0(object):
         self.parseservices()
         self.parsemeta()
 
-        
-    def warn(self, msg):
-        if self.session:
-            warnstr = "XML parsing '%s':" % (self.filename)
-            self.session.warn("%s %s" % (warnstr, msg))
-        
     def getmotiondict(self, mp):
-        ''' Parse a MotionPlan into a dict with node names for keys and coordinates
+        """
+        Parse a MotionPlan into a dict with node names for keys and coordinates
         for values.
-        '''
+        """
         if mp is None:
             return {}
         coords = {}
@@ -70,35 +63,34 @@ class CoreDocumentParser0(object):
                 xyz = map(int, txt.nodeValue.split(','))
                 z = None
                 x, y = xyz[0:2]
-                if (len(xyz) == 3):
+                if len(xyz) == 3:
                     z = xyz[2]
                 coords[nodename] = (x, y, z)
         return coords
 
     @staticmethod
     def getcommonattributes(obj):
-        ''' Helper to return tuple of attributes common to nodes and nets. 
-        '''
+        """
+        Helper to return tuple of attributes common to nodes and nets.
+        """
         id = int(obj.getAttribute("id"))
         name = str(obj.getAttribute("name"))
         type = str(obj.getAttribute("type"))
-        return(id, name, type)
-        
+        return id, name, type
+
     def parsenets(self):
         linkednets = []
         for net in self.np.getElementsByTagName("NetworkDefinition"):
             id, name, type = self.getcommonattributes(net)
-            nodecls = xmltypetonodeclass(self.session, type)
+            nodecls = xmlutils.xml_type_to_node_class(self.session, type)
             if not nodecls:
-                self.warn("skipping unknown network node '%s' type '%s'" % \
-                          (name, type))
+                logger.warn("skipping unknown network node '%s' type '%s'", name, type)
                 continue
-            n = self.session.addobj(cls = nodecls, objid = id, name = name,
-                                    start = self.start)
+            n = self.session.add_object(cls=nodecls, objid=id, name=name, start=self.start)
             if name in self.coords:
                 x, y, z = self.coords[name]
                 n.setposition(x, y, z)
-            getparamssetattrs(net, ("icon", "canvas", "opaque"), n)
+            xmlutils.get_params_set_attrs(net, ("icon", "canvas", "opaque"), n)
             if hasattr(n, "canvas") and n.canvas is not None:
                 n.canvas = int(n.canvas)
             # links between two nets (e.g. switch-switch)
@@ -108,12 +100,11 @@ class CoreDocumentParser0(object):
                 linkednets.append((n, netid, ifcname))
             self.parsemodels(net, n)
         # link networks together now that they all have been parsed
-        for (n, netid, ifcname) in linkednets:
+        for n, netid, ifcname in linkednets:
             try:
-                n2 = n.session.objbyname(netid)
+                n2 = n.session.get_object_by_name(netid)
             except KeyError:
-                n.warn("skipping net %s interface: unknown net %s" % \
-                          (n.name, netid))
+                logger.warn("skipping net %s interface: unknown net %s", n.name, netid)
                 continue
             upstream = False
             netif = n.getlinknetif(n2)
@@ -122,87 +113,87 @@ class CoreDocumentParser0(object):
             else:
                 netif.swapparams('_params_up')
                 upstream = True
-            key = (n2.name,  ifcname)
+            key = (n2.name, ifcname)
             if key in self.linkparams:
-                for (k, v) in self.linkparams[key]:
+                for k, v in self.linkparams[key]:
                     netif.setparam(k, v)
             if upstream:
                 netif.swapparams('_params_up')
-    
+
     def parsenodes(self):
         for node in self.np.getElementsByTagName("Node"):
             id, name, type = self.getcommonattributes(node)
             if type == "rj45":
-                nodecls = nodes.RJ45Node
+                nodecls = nodeutils.get_node_class(NodeTypes.RJ45)
             else:
                 nodecls = self.nodecls
-            n = self.session.addobj(cls = nodecls, objid = id, name = name,
-                                    start = self.start)
+            n = self.session.add_object(cls=nodecls, objid=id, name=name, start=self.start)
             if name in self.coords:
                 x, y, z = self.coords[name]
                 n.setposition(x, y, z)
             n.type = type
-            getparamssetattrs(node, ("icon", "canvas", "opaque"), n)
+            xmlutils.get_params_set_attrs(node, ("icon", "canvas", "opaque"), n)
             if hasattr(n, "canvas") and n.canvas is not None:
                 n.canvas = int(n.canvas)
             for ifc in node.getElementsByTagName("interface"):
                 self.parseinterface(n, ifc)
-    
+
     def parseinterface(self, n, ifc):
-        '''  Parse a interface block such as:
+        """
+        Parse a interface block such as:
         <interface name="eth0" net="37278">
             <address type="mac">00:00:00:aa:00:01</address>
             <address>10.0.0.2/24</address>
             <address>2001::2/64</address>
         </interface>
-        '''
+        """
         name = str(ifc.getAttribute("name"))
         netid = str(ifc.getAttribute("net"))
         hwaddr = None
         addrlist = []
         try:
-            net = n.session.objbyname(netid)
+            net = n.session.get_object_by_name(netid)
         except KeyError:
-            n.warn("skipping node %s interface %s: unknown net %s" % \
-                      (n.name, name, netid))
+            logger.warn("skipping node %s interface %s: unknown net %s", n.name, name, netid)
             return
         for addr in ifc.getElementsByTagName("address"):
-            addrstr = gettextchild(addr)
+            addrstr = xmlutils.get_text_child(addr)
             if addrstr is None:
                 continue
             if addr.getAttribute("type") == "mac":
                 hwaddr = addrstr
             else:
                 addrlist.append(addrstr)
-        i = n.newnetif(net, addrlist = addrlist, hwaddr = hwaddr,
-                       ifindex = None, ifname = name)
+        i = n.newnetif(net, addrlist=addrlist, hwaddr=hwaddr, ifindex=None, ifname=name)
         for model in ifc.getElementsByTagName("model"):
             self.parsemodel(model, n, n.objid)
         key = (n.name, name)
         if key in self.linkparams:
             netif = n.netif(i)
-            for (k, v) in self.linkparams[key]:
+            for k, v in self.linkparams[key]:
                 netif.setparam(k, v)
-    
+
     def parsemodels(self, dom, obj):
-        ''' Mobility/wireless model config is stored in a ConfigurableManager's
+        """
+        Mobility/wireless model config is stored in a ConfigurableManager's
         config dict.
-        '''
+        """
         nodenum = int(dom.getAttribute("id"))
         for model in dom.getElementsByTagName("model"):
             self.parsemodel(model, obj, nodenum)
-    
+
     def parsemodel(self, model, obj, nodenum):
-        ''' Mobility/wireless model config is stored in a ConfigurableManager's
+        """
+        Mobility/wireless model config is stored in a ConfigurableManager's
         config dict.
-        '''
+        """
         name = model.getAttribute("name")
         if name == '':
             return
         type = model.getAttribute("type")
         # convert child text nodes into key=value pairs
-        kvs = gettextelementstolist(model)
-            
+        kvs = xmlutils.get_text_elements_to_list(model)
+
         mgr = self.session.mobility
         # TODO: the session.confobj() mechanism could be more generic;
         #       it only allows registering Conf Message callbacks, but here
@@ -218,24 +209,24 @@ class CoreDocumentParser0(object):
         # TODO: assign other config managers here
         if mgr:
             mgr.setconfig_keyvalues(nodenum, name, kvs)
-        
+
     def parsenetem(self, model, obj, kvs):
-        ''' Determine interface and invoke setparam() using the parsed
+        """
+        Determine interface and invoke setparam() using the parsed
         (key, value) pairs.
-        '''
+        """
         ifname = model.getAttribute("netif")
         peer = model.getAttribute("peer")
         key = (peer, ifname)
         # nodes and interfaces do not exist yet, at this point of the parsing,
         # save (key, value) pairs for later
         try:
-            #kvs = map(lambda(k, v): (int(v)), kvs)
+            # kvs = map(lambda(k, v): (int(v)), kvs)
             kvs = map(self.numericvalue, kvs)
         except ValueError:
-            self.warn("error parsing link parameters for '%s' on '%s'" % \
-                      (ifname, peer))
+            logger.warn("error parsing link parameters for '%s' on '%s'", ifname, peer)
         self.linkparams[key] = kvs
-    
+
     @staticmethod
     def numericvalue(keyvalue):
         (key, value) = keyvalue
@@ -243,18 +234,19 @@ class CoreDocumentParser0(object):
             value = float(value)
         else:
             value = int(value)
-        return (key, value)
+        return key, value
 
     def parseorigin(self):
-        ''' Parse any origin tag from the Mobility Plan and set the CoreLocation
-            reference point appropriately.
-        '''
-        origin = getoneelement(self.mp, "origin")
+        """
+        Parse any origin tag from the Mobility Plan and set the CoreLocation
+        reference point appropriately.
+        """
+        origin = xmlutils.get_one_element(self.mp, "origin")
         if not origin:
             return
         location = self.session.location
         geo = []
-        attrs = ("lat","lon","alt")
+        attrs = ("lat", "lon", "alt")
         for i in xrange(3):
             a = origin.getAttribute(attrs[i])
             if a is not None:
@@ -264,44 +256,44 @@ class CoreDocumentParser0(object):
         scale = origin.getAttribute("scale100")
         if scale is not None:
             location.refscale = float(scale)
-        point = getoneelement(origin, "point")
+        point = xmlutils.get_one_element(origin, "point")
         if point is not None and point.firstChild is not None:
             xyz = point.firstChild.nodeValue.split(',')
             if len(xyz) == 2:
                 xyz.append('0.0')
             if len(xyz) == 3:
-                xyz = map(lambda(x): float(x), xyz)
+                xyz = map(lambda (x): float(x), xyz)
                 location.refxyz = (xyz[0], xyz[1], xyz[2])
-            
+
     def parsedefaultservices(self):
-        ''' Prior to parsing nodes, use session.services manager to store
+        """
+        Prior to parsing nodes, use session.services manager to store
         default services for node types
-        '''
+        """
         for node in self.sp.getElementsByTagName("Node"):
             type = node.getAttribute("type")
             if type == '':
-                continue # node-specific service config
+                continue  # node-specific service config
             services = []
             for service in node.getElementsByTagName("Service"):
                 services.append(str(service.getAttribute("name")))
             self.session.services.defaultservices[type] = services
-            self.session.info("default services for type %s set to %s" % \
-                              (type, services))
-        
+            logger.info("default services for type %s set to %s" % (type, services))
+
     def parseservices(self):
-        ''' After node objects exist, parse service customizations and add them
+        """
+        After node objects exist, parse service customizations and add them
         to the nodes.
-        '''
+        """
         svclists = {}
         # parse services and store configs into session.services.configs
         for node in self.sp.getElementsByTagName("Node"):
             name = node.getAttribute("name")
             if name == '':
-                continue # node type without name
-            n = self.session.objbyname(name)
+                continue  # node type without name
+            n = self.session.get_object_by_name(name)
             if n is None:
-                self.warn("skipping service config for unknown node '%s'" % \
-                          name)
+                logger.warn("skipping service config for unknown node '%s'" % name)
                 continue
             for service in node.getElementsByTagName("Service"):
                 svcname = service.getAttribute("name")
@@ -310,28 +302,27 @@ class CoreDocumentParser0(object):
                         svclists[n.objid] += "|" + svcname
                     else:
                         svclists[n.objid] = svcname
-        # nodes in NetworkPlan but not in ServicePlan use the 
+        # nodes in NetworkPlan but not in ServicePlan use the
         # default services for their type
         for node in self.np.getElementsByTagName("Node"):
             id, name, type = self.getcommonattributes(node)
             if id in svclists:
-                continue # custom config exists
+                continue  # custom config exists
             else:
-                svclists[int(id)] = None # use defaults
+                svclists[int(id)] = None  # use defaults
 
         # associate nodes with services
         for objid in sorted(svclists.keys()):
-            n = self.session.obj(objid)
-            self.session.services.addservicestonode(node=n, nodetype=n.type,
-                                                services_str=svclists[objid],
-                                                verbose=self.verbose)
-                
+            n = self.session.get_object(objid)
+            self.session.services.addservicestonode(node=n, nodetype=n.type, services_str=svclists[objid])
+
     def parseservice(self, service, n):
-        ''' Use session.services manager to store service customizations before
+        """
+        Use session.services manager to store service customizations before
         they are added to a node.
-        '''
+        """
         name = service.getAttribute("name")
-        svc = self.session.services.getservicebyname(name)
+        svc = ServiceManager.get(name)
         if svc is None:
             return False
         values = []
@@ -347,13 +338,13 @@ class CoreDocumentParser0(object):
             dirs.append(dirname)
         if len(dirs):
             values.append("dirs=%s" % dirs)
-        
+
         startup = []
         shutdown = []
         validate = []
         for cmd in service.getElementsByTagName("Command"):
             type = cmd.getAttribute("type")
-            cmdstr = gettextchild(cmd)
+            cmdstr = xmlutils.get_text_child(cmd)
             if cmdstr is None:
                 continue
             if type == "start":
@@ -368,12 +359,12 @@ class CoreDocumentParser0(object):
             values.append("cmddown=%s" % shutdown)
         if len(validate):
             values.append("cmdval=%s" % validate)
-            
+
         files = []
         for file in service.getElementsByTagName("File"):
             filename = file.getAttribute("name")
             files.append(filename)
-            data = gettextchild(file)
+            data = xmlutils.get_text_child(file)
             typestr = "service:%s:%s" % (name, filename)
             self.session.services.setservicefile(nodenum=n.objid, type=typestr,
                                                  filename=filename,
@@ -384,37 +375,36 @@ class CoreDocumentParser0(object):
             return True
         self.session.services.setcustomservice(n.objid, svc, values)
         return True
-    
+
     def parsehooks(self, hooks):
         ''' Parse hook scripts from XML into session._hooks.
         '''
         for hook in hooks.getElementsByTagName("Hook"):
             filename = hook.getAttribute("name")
             state = hook.getAttribute("state")
-            data = gettextchild(hook)
+            data = xmlutils.get_text_child(hook)
             if data is None:
-                data = "" # allow for empty file
+                data = ""  # allow for empty file
             type = "hook:%s" % state
-            self.session.sethook(type, filename=filename,
-                                 srcname=None, data=data)
-        
+            self.session.set_hook(type, file_name=filename, source_name=None, data=data)
+
     def parsemeta(self):
-        opt = getoneelement(self.meta, "SessionOptions")
+        opt = xmlutils.get_one_element(self.meta, "SessionOptions")
         if opt:
             for param in opt.getElementsByTagName("param"):
                 k = str(param.getAttribute("name"))
                 v = str(param.getAttribute("value"))
                 if v == '':
-                    v = gettextchild(param) # allow attribute/text for newlines
+                    v = xmlutils.get_text_child(param)  # allow attribute/text for newlines
                 setattr(self.session.options, k, v)
-        hooks = getoneelement(self.meta, "Hooks")
+        hooks = xmlutils.get_one_element(self.meta, "Hooks")
         if hooks:
             self.parsehooks(hooks)
-        meta = getoneelement(self.meta, "MetaData")
+        meta = xmlutils.get_one_element(self.meta, "MetaData")
         if meta:
             for param in meta.getElementsByTagName("param"):
                 k = str(param.getAttribute("name"))
                 v = str(param.getAttribute("value"))
                 if v == '':
-                    v = gettextchild(param)
-                self.session.metadata.additem(k, v)
+                    v = xmlutils.get_text_child(param)
+                self.session.metadata.add_item(k, v)
