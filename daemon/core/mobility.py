@@ -422,33 +422,34 @@ class BasicRangeModel(WirelessModel):
         """
         if netif == netif2:
             return
-        try:
-            (x, y, z) = self._netifs[netif]
-            (x2, y2, z2) = self._netifs[netif2]
-        except KeyError:
-            return
-        if x2 is None or y2 is None:
-            return
 
-        d = self.calcdistance((x, y, z), (x2, y2, z2))
-        # ordering is important, to keep the wlan._linked dict organized
-        a = min(netif, netif2)
-        b = max(netif, netif2)
         try:
-            self.wlan._linked_lock.acquire()
-            linked = self.wlan.linked(a, b)
+            x, y, z = self._netifs[netif]
+            x2, y2, z2 = self._netifs[netif2]
+
+            if x2 is None or y2 is None:
+                return
+
+            d = self.calcdistance((x, y, z), (x2, y2, z2))
+
+            # ordering is important, to keep the wlan._linked dict organized
+            a = min(netif, netif2)
+            b = max(netif, netif2)
+
+            with self.wlan._linked_lock:
+                linked = self.wlan.linked(a, b)
+
+            logger.info("checking if link distance is out of range: %s > %s", d, self.range)
+            if d > self.range:
+                if linked:
+                    self.wlan.unlink(a, b)
+                    self.sendlinkmsg(a, b, unlink=True)
+            else:
+                if not linked:
+                    self.wlan.link(a, b)
+                    self.sendlinkmsg(a, b)
         except KeyError:
-            return
-        finally:
-            self.wlan._linked_lock.release()
-        if d > self.range:
-            if linked:
-                self.wlan.unlink(a, b)
-                self.sendlinkmsg(a, b, unlink=True)
-        else:
-            if not linked:
-                self.wlan.link(a, b)
-                self.sendlinkmsg(a, b)
+            logger.exception("error getting interfaces during calclinkS")
 
     @staticmethod
     def calcdistance(p1, p2):

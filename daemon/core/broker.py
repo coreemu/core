@@ -38,6 +38,7 @@ from core.phys.pnodes import PhysicalNode
 logger = log.get_logger(__name__)
 
 
+# TODO: name conflict with main core server, probably should rename
 class CoreServer(object):
     def __init__(self, name, host, port):
         self.name = name
@@ -93,7 +94,6 @@ class CoreBroker(ConfigurableManager):
         self.nodemap_lock = threading.Lock()
         # reference counts of nodes on servers
         self.nodecounts = {}
-        self.bootcount = 0
         # set of node numbers that are link-layer nodes (networks)
         self.network_nodes = set()
         # set of node numbers that are PhysicalNode nodes
@@ -224,11 +224,6 @@ class CoreBroker(ConfigurableManager):
                 nodenum = msg.get_tlv(NodeTlvs.NUMBER.value)
                 if nodenum is not None:
                     count = self.delnodemap(server, nodenum)
-            # snoop node add response to increment booted node count
-            # (only CoreNodes send these response messages)
-            elif msgflags & (MessageFlags.ADD.value | MessageFlags.LOCAL.value):
-                self.incrbootcount()
-                self.session.check_runtime()
         elif msgtype == MessageTypes.LINK.value:
             # this allows green link lines for remote WLANs
             msg = coreapi.CoreLinkMessage(msgflags, msghdr, msgdata)
@@ -485,19 +480,6 @@ class CoreBroker(ConfigurableManager):
                 self.nodecounts[server] = count
             return count
 
-    def incrbootcount(self):
-        """
-        Count a node that has booted.
-        """
-        self.bootcount += 1
-        return self.bootcount
-
-    def getbootcount(self):
-        """
-        Return the number of booted nodes.
-        """
-        return self.bootcount
-
     def getserversbynode(self, nodenum):
         """
         Retrieve a set of emulation servers given a node number.
@@ -588,13 +570,14 @@ class CoreBroker(ConfigurableManager):
         :rtype: bool
         """
         servers = set()
+        handle_locally = False
         # Do not forward messages when in definition state
         # (for e.g. configuring services)
         if self.session.state == EventTypes.DEFINITION_STATE.value:
             return False
         # Decide whether message should be handled locally or forwarded, or both
         if message.message_type == MessageTypes.NODE.value:
-            servers = self.handlenodemsg(message)
+            handle_locally, servers = self.handlenodemsg(message)
         elif message.message_type == MessageTypes.EVENT.value:
             # broadcast events everywhere
             servers = self.getservers()
@@ -611,7 +594,7 @@ class CoreBroker(ConfigurableManager):
                 servers = self.getservers()
         if message.message_type == MessageTypes.LINK.value:
             # prepare a server list from two node numbers in link message
-            servers, message = self.handlelinkmsg(message)
+            handle_locally, servers, message = self.handlelinkmsg(message)
         elif len(servers) == 0:
             # check for servers based on node numbers in all messages but link
             nn = message.node_numbers()
@@ -626,7 +609,7 @@ class CoreBroker(ConfigurableManager):
             handler(message)
 
         # Perform any message forwarding
-        handle_locally = self.forwardmsg(message, servers)
+        handle_locally |= self.forwardmsg(message, servers)
         return not handle_locally
 
     def setupserver(self, servername):
@@ -694,6 +677,7 @@ class CoreBroker(ConfigurableManager):
         :return:
         """
         servers = set()
+        handle_locally = False
         serverfiletxt = None
         # snoop Node Message for emulation server TLV and record mapping
         n = message.tlv_data[NodeTlvs.NUMBER.value]
@@ -704,25 +688,21 @@ class CoreBroker(ConfigurableManager):
                 nodecls = nodeutils.get_node_class(NodeTypes(nodetype))
             except KeyError:
                 logger.warn("broker invalid node type %s" % nodetype)
-                return servers
+                return handle_locally, servers
             if nodecls is None:
                 logger.warn("broker unimplemented node type %s" % nodetype)
-                return servers
+                return handle_locally, servers
             if issubclass(nodecls, PyCoreNet) and nodetype != NodeTypes.WIRELESS_LAN.value:
                 # network node replicated on all servers; could be optimized
                 # don"t replicate WLANs, because ebtables rules won"t work
                 servers = self.getservers()
+                handle_locally = True
                 self.addnet(n)
                 for server in servers:
                     self.addnodemap(server, n)
                 # do not record server name for networks since network
                 # nodes are replicated across all server
-                return servers
-            if issubclass(nodecls, PyCoreNet) and nodetype == NodeTypes.WIRELESS_LAN.value:
-                # special case where remote WLANs not in session._objs, and no
-                # node response message received, so they are counted here
-                if message.get_tlv(NodeTlvs.EMULATION_SERVER.value) is not None:
-                    self.incrbootcount()
+                return handle_locally, servers
             elif issubclass(nodecls, PyCoreNode):
                 name = message.get_tlv(NodeTlvs.NAME.value)
                 if name:
@@ -743,7 +723,7 @@ class CoreBroker(ConfigurableManager):
         # hook to update coordinates of physical nodes
         if n in self.physical_nodes:
             self.session.mobility.physnodeupdateposition(message)
-        return servers
+        return handle_locally, servers
 
     def handlelinkmsg(self, message):
         """
@@ -804,10 +784,11 @@ class CoreBroker(ConfigurableManager):
                     self.addtunnel(host, nn[0], nn[1], localn)
                 elif message.flags & MessageFlags.DELETE.value:
                     self.deltunnel(nn[0], nn[1])
+                    handle_locally = False
             else:
                 servers = servers1.union(servers2)
 
-        return servers, message
+        return handle_locally, servers, message
 
     def addlinkendpoints(self, message, servers1, servers2):
         """
@@ -946,7 +927,7 @@ class CoreBroker(ConfigurableManager):
             if server is not None:
                 server.instantiation_complete = True
 
-        if self.session.is_connected():
+        if self.session_handler:
             tlvdata = ""
             tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value)
             msg = coreapi.CoreEventMessage.pack(0, tlvdata)

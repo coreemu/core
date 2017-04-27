@@ -312,7 +312,7 @@ class WlanNode(LxBrNet):
                 for netif in self.netifs():
                     netif.poshook = self.model.position_callback
                     if netif.node is not None:
-                        (x, y, z) = netif.node.position.get()
+                        x, y, z = netif.node.position.get()
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model.config_type == RegisterTlvs.MOBILITY.value:

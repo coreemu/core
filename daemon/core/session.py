@@ -636,12 +636,9 @@ class Session(object):
         with self._objects_lock:
             try:
                 obj = self.objects.pop(object_id)
+                obj.shutdown()
             except KeyError:
                 logger.error("failed to remove object, object with id was not found: %s", object_id)
-                obj = None
-
-        if obj:
-            obj.shutdown()
 
     def delete_objects(self):
         """
@@ -839,23 +836,6 @@ class Session(object):
         if self.state == EventTypes.RUNTIME_STATE.value:
             logger.info("valid runtime state found, returning")
             return
-
-        # session_node_count = self.get_node_count()
-        #
-        # node_count = self.get_node_count()
-
-        # count booted nodes not emulated on this server
-        # TODO: let slave server determine RUNTIME and wait for Event Message
-        # broker.getbootocunt() counts all CoreNodes from status reponse
-        #  messages, plus any remote WLANs; remote EMANE, hub, switch, etc.
-        #  are already counted in self._objs
-        # node_count += self.broker.getbootcount()
-        # logger.info("Checking for runtime with %d of %d session nodes",
-        #             node_count, session_node_count)
-        # if node_count < session_node_count:
-        #     return  # do not have information on all nodes yet
-
-        # information on all nodes has been received and they have been started enter the runtime state
 
         # check to verify that all nodes and networks are running
         if not self.broker.instantiation_complete():

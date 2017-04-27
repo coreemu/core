@@ -71,6 +71,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         }
         self.message_queue = Queue.Queue()
         self.node_status_request = {}
+        self._shutdown_lock = threading.Lock()
 
         self.handler_threads = []
         num_threads = int(server.config["numthreads"])
@@ -602,22 +603,16 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 self.node_status_request[node_id] = True
 
         elif message.flags & MessageFlags.DELETE.value:
-            # TODO: logic below seems pointless, when the deletion is attempted regardless
-            node = None
-            try:
-                node = self.session.get_object(node_id)
-            except KeyError:
-                logger.exception("error retrieving object: %s", node_id)
+            with self._shutdown_lock:
+                self.session.delete_object(node_id)
 
-            self.session.delete_object(node_id)
+                if message.flags & MessageFlags.STRING.value:
+                    tlvdata = ""
+                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
+                    flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
+                    replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
 
-            if message.flags & MessageFlags.STRING.value:
-                tlv_data = ""
-                tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
-                flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
-                replies.append(coreapi.CoreNodeMessage.pack(flags, tlv_data))
-
-            self.session.check_shutdown()
+                self.session.check_shutdown()
         # Node modify message (no add/del flag)
         else:
             try:

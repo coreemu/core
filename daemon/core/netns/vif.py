@@ -8,7 +8,9 @@ import time
 
 from core import constants
 from core.coreobj import PyCoreNetIf
+from core.enumerations import NodeTypes
 from core.misc import log
+from core.misc import nodeutils
 from core.misc import utils
 
 logger = log.get_logger(__name__)
@@ -116,7 +118,20 @@ class TunTap(PyCoreNetIf):
             cmd = (constants.IP_BIN, 'link', 'show', self.name)
             return self.node.cmd(cmd)
 
-        self.waitfor(nodedevexists)
+        count = 0
+        while True:
+            try:
+                self.waitfor(nodedevexists)
+                break
+            except RuntimeError as e:
+                # check if this is an EMANE interface; if so, continue
+                # waiting if EMANE is still running
+                # TODO: remove emane code
+                if count < 5 and nodeutils.is_node(self.net, NodeTypes.EMANE) and \
+                    self.node.session.emane.emanerunning(self.node):
+                    count += 1
+                else:
+                    raise e
 
     def install(self):
         """

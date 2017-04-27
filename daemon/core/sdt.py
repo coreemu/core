@@ -40,8 +40,7 @@ class Sdt(object):
     DEFAULT_SDT_URL = "tcp://127.0.0.1:50000/"
     # default altitude (in meters) for flyto view
     DEFAULT_ALT = 2500
-    # TODO: read in user's nodes.conf here; below are default node types
-    #       from the GUI
+    # TODO: read in user's nodes.conf here; below are default node types from the GUI
     DEFAULT_SPRITES = [
         ('router', 'router.gif'), ('host', 'host.gif'),
         ('PC', 'pc.gif'), ('mdr', 'mdr.gif'),

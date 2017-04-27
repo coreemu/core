@@ -60,6 +60,7 @@ def test(options):
 
     # launches terminal for the first node
     # n[0].term("bash")
+    n[0].icmd(["ping", "-c",  "5", "127.0.0.1"])
 
     # wait for rate seconds to allow ebtables commands to commit
     time.sleep(EbtablesQueue.rate)

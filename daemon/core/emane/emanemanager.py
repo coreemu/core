@@ -457,6 +457,7 @@ class EmaneManager(ConfigurableManager):
                     servers.append(s)
         self._objslock.release()
 
+        servers.sort(key=lambda x: x.name)
         for server in servers:
             if server.name == "localhost":
                 continue
@@ -1138,6 +1139,24 @@ class EmaneManager(ConfigurableManager):
         # self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
 
         return True
+
+    def emanerunning(self, node):
+        """
+        Return True if an EMANE process associated with the given node
+        is running, False otherwise.
+        """
+        status = -1
+        cmd = ['pkill', '-0', '-x', 'emane']
+
+        try:
+            if self.version < emane.EMANE092:
+                status = subprocess.call(cmd)
+            else:
+                status = node.cmd(cmd, wait=True)
+        except IOError:
+            logger.exception("error checking if emane is running")
+
+        return status == 0
 
 
 class EmaneGlobalModel(EmaneModel):
