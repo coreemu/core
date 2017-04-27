@@ -107,10 +107,7 @@ Limitations:
 
 import os
 import sys
-try:
-    from docker import Client
-except Exception:
-    pass
+from docker import Client
 
 from core.service import CoreService, addservice
 from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
@@ -164,7 +161,7 @@ addservice(DockerService)
 # This auto-loads Docker images having a :core tag, adding them to the list
 # of services under the "Docker" group.
 if 'Client' in globals():
-    client = Client(version='1.10')
+    client = Client(version='1.24')
     images = client.images()
     del client
 else:
