@@ -88,27 +88,34 @@ class SimpleLxcNode(PyCoreNode):
         self.up = True
 
     def shutdown(self):
+        # nothing to do if node is not up
         if not self.up:
             return
 
+        # unmount all targets
         while self._mounts:
             source, target = self._mounts.pop(-1)
             self.umount(target)
 
+        # shutdown all interfaces
         for netif in self.netifs():
             netif.shutdown()
 
+        # attempt to kill node process and wait for termination of children
         try:
             os.kill(self.pid, signal.SIGTERM)
             os.waitpid(self.pid, 0)
         except OSError:
             logger.exception("error killing process")
 
+        # remove node directory if present
         try:
-            os.unlink(self.ctrlchnlname)
+            if os.path.exists(self.ctrlchnlname):
+                os.unlink(self.ctrlchnlname)
         except OSError:
             logger.exception("error removing file")
 
+        # clear interface data, close client, and mark self and not up
         self._netif.clear()
         self.vnodeclient.close()
         self.up = False

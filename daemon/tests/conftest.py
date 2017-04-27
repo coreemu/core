@@ -1,7 +1,6 @@
 """
 Unit test fixture module.
 """
-
 import os
 import pytest
 

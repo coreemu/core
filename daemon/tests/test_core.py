@@ -1,6 +1,9 @@
 """
 Unit tests for testing with a CORE switch.
 """
+
+import time
+
 from core.mobility import BasicRangeModel
 from core.netns import nodes
 
@@ -161,7 +164,6 @@ class TestCore:
         core.assert_nodes()
 
         # ping n2 from n1 and assert failure
-        import time
         time.sleep(1)
         status = core.ping("n1", "n2")
         assert status
@@ -173,22 +175,8 @@ class TestCore:
         :param conftest.Core core: core fixture to test with
         """
 
-        # create switch
-        ptp_node = core.session.add_object(cls=nodes.PtpNet)
-
-        # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
-
-        # add interfaces
-        interface_one = core.add_interface(ptp_node, "n1")
-        interface_two = core.add_interface(ptp_node, "n2")
-
-        # instantiate session
-        core.session.instantiate()
-
-        # assert node directories created
-        core.assert_nodes()
+        # create link network
+        ptp_node, interface_one, interface_two = core.create_link_network()
 
         # output csv index
         bandwidth_index = 8
@@ -197,7 +185,6 @@ class TestCore:
         stdout = core.iperf("n1", "n2")
         assert stdout
         value = int(stdout.split(',')[bandwidth_index])
-        print "bandwidth before: %s" % value
         assert 900000 <= value <= 1100000
 
         # change bandwidth in bits per second
@@ -219,22 +206,8 @@ class TestCore:
         :param conftest.Core core: core fixture to test with
         """
 
-        # create switch
-        ptp_node = core.session.add_object(cls=nodes.PtpNet)
-
-        # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
-
-        # add interfaces
-        interface_one = core.add_interface(ptp_node, "n1")
-        interface_two = core.add_interface(ptp_node, "n2")
-
-        # instantiate session
-        core.session.instantiate()
-
-        # assert node directories created
-        core.assert_nodes()
+        # create link network
+        ptp_node, interface_one, interface_two = core.create_link_network()
 
         # output csv index
         loss_index = -2
@@ -264,22 +237,8 @@ class TestCore:
         :param conftest.Core core: core fixture to test with
         """
 
-        # create switch
-        ptp_node = core.session.add_object(cls=nodes.PtpNet)
-
-        # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
-
-        # add interfaces
-        interface_one = core.add_interface(ptp_node, "n1")
-        interface_two = core.add_interface(ptp_node, "n2")
-
-        # instantiate session
-        core.session.instantiate()
-
-        # assert node directories created
-        core.assert_nodes()
+        # create link network
+        ptp_node, interface_one, interface_two = core.create_link_network()
 
         # run ping for delay information
         stdout = core.ping_output("n1", "n2")
