@@ -112,8 +112,8 @@ class CoreTlvDataObj(CoreTlvData):
         :param data: data to unpack custom object from
         :return: unpacked custom object
         """
-        data = cls.new_obj(data)
-        return super(CoreTlvDataObj, cls).unpack(data)
+        data = super(CoreTlvDataObj, cls).unpack(data)
+        return cls.new_obj(data)
 
     @staticmethod
     def get_value(obj):
@@ -276,6 +276,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
+        logger.info("getting new ipv4 address for: %s", value)
         return IpAddress(af=socket.AF_INET, address=value)
 
 
