@@ -44,20 +44,46 @@ class CoreTlvData(object):
 
     @classmethod
     def pack(cls, value):
+        """
+        Convenience method for packing data using the struct module.
+
+        :param value: value to pack
+        :return: length of data and the packed data itself
+        :rtype: tuple
+        """
         data = struct.pack(cls.data_format, value)
         length = len(data) - cls.pad_len
         return length, data
 
     @classmethod
     def unpack(cls, data):
+        """
+        Convenience method for unpacking data using the struct module.
+
+        :param data: data to unpack
+        :return: the value of the unpacked data
+        """
         return struct.unpack(cls.data_format, data)[0]
 
     @classmethod
     def pack_string(cls, value):
+        """
+        Convenience method for packing data from a string representation.
+
+        :param str value: value to pack
+        :return: length of data and the packed data itself
+        :rtype: tuple
+        """
         return cls.pack(cls.from_string(value))
 
     @classmethod
     def from_string(cls, value):
+        """
+        Retrieve the value type from a string representation.
+
+        :param str value: value to get a data type from
+        :return: value parse from string representation
+        """
         return cls.data_type(value)
 
 
@@ -68,20 +94,45 @@ class CoreTlvDataObj(CoreTlvData):
 
     @classmethod
     def pack(cls, obj):
-        data = struct.pack(cls.data_format, cls.get_value(obj))
-        length = len(data) - cls.pad_len
-        return length, data
+        """
+        Convenience method for packing custom object data.
+
+        :param obj: custom object to pack
+        :return: length of data and the packed data itself
+        :rtype: tuple
+        """
+        value = cls.get_value(obj)
+        return super(CoreTlvDataObj, cls).pack(value)
 
     @classmethod
     def unpack(cls, data):
-        return cls.new_obj(struct.unpack(cls.data_format, data)[0])
+        """
+        Convenience method for unpacking custom object data.
+
+        :param data: data to unpack custom object from
+        :return: unpacked custom object
+        """
+        data = cls.new_obj(data)
+        return super(CoreTlvDataObj, cls).unpack(data)
 
     @staticmethod
     def get_value(obj):
+        """
+        Method that will be used to retrieve the data to pack from a custom object.
+
+        :param obj: custom object to get data to pack
+        :return: data value to pack
+        """
         raise NotImplementedError
 
     @staticmethod
     def new_obj(obj):
+        """
+        Method for retrieving data to unpack from an object.
+
+        :param obj: object to get unpack data from
+        :return: value of unpacked data
+        """
         raise NotImplementedError
 
 
@@ -120,6 +171,13 @@ class CoreTlvDataString(CoreTlvData):
 
     @classmethod
     def pack(cls, value):
+        """
+        Convenience method for packing string data.
+
+        :param str value: string to pack
+        :return: length of data packed and the packed data
+        :rtype: tuple
+        """
         if not isinstance(value, str):
             raise ValueError("value not a string: %s" % value)
 
@@ -129,11 +187,17 @@ class CoreTlvDataString(CoreTlvData):
             header_len = CoreTlv.long_header_len
 
         pad_len = -(header_len + len(value)) % 4
-        return len(value), value + '\0' * pad_len
+        return len(value), value + "\0" * pad_len
 
     @classmethod
     def unpack(cls, data):
-        return data.rstrip('\0')
+        """
+        Convenience method for unpacking string data.
+
+        :param str data: unpack string data
+        :return: unpacked string data
+        """
+        return data.rstrip("\0")
 
 
 class CoreTlvDataUint16List(CoreTlvData):
@@ -145,6 +209,13 @@ class CoreTlvDataUint16List(CoreTlvData):
 
     @classmethod
     def pack(cls, values):
+        """
+        Convenience method for packing a uint 16 list.
+
+        :param list values: unint 16 list to pack
+        :return: length of data packed and the packed data
+        :rtype: tuple
+        """
         if not isinstance(values, tuple):
             raise ValueError("value not a tuple: %s" % values)
 
@@ -157,59 +228,123 @@ class CoreTlvDataUint16List(CoreTlvData):
 
     @classmethod
     def unpack(cls, data):
+        """
+        Convenience method for unpacking a uint 16 list.
+
+        :param data: data to unpack
+        :return: unpacked data
+        """
         data_format = "!%dH" % (len(data) / 2)
         return struct.unpack(data_format, data)
 
     @classmethod
     def from_string(cls, value):
+        """
+        Retrieves a unint 16 list from a string
+
+        :param str value: string representation of a uint 16 list
+        :return: unint 16 list
+        :rtype: list
+        """
         return tuple(map(lambda (x): int(x), value.split()))
 
 
 class CoreTlvDataIpv4Addr(CoreTlvDataObj):
+    """
+    Utility class for packing/unpacking Ipv4 addresses.
+    """
     data_type = IpAddress.from_string
     data_format = "!2x4s"
     pad_len = 2
 
     @staticmethod
     def get_value(obj):
+        """
+        Retrieve Ipv4 address value from object.
+
+        :param core.misc.ipaddress.IpAddress obj: ip address to get value from
+        :return:
+        """
         return obj.addr
 
     @staticmethod
     def new_obj(value):
+        """
+        Retrieve Ipv4 address from a string representation.
+
+        :param str value: value to get Ipv4 address from
+        :return: Ipv4 address
+        :rtype: core.misc.ipaddress.IpAddress
+        """
         return IpAddress(af=socket.AF_INET, address=value)
 
 
 class CoreTlvDataIPv6Addr(CoreTlvDataObj):
+    """
+    Utility class for packing/unpacking Ipv6 addresses.
+    """
     data_format = "!16s2x"
     data_type = IpAddress.from_string
     pad_len = 2
 
     @staticmethod
     def get_value(obj):
+        """
+        Retrieve Ipv6 address value from object.
+
+        :param core.misc.ipaddress.IpAddress obj: ip address to get value from
+        :return:
+        """
         return obj.addr
 
     @staticmethod
     def new_obj(value):
+        """
+        Retrieve Ipv6 address from a string representation.
+
+        :param str value: value to get Ipv4 address from
+        :return: Ipv4 address
+        :rtype: core.misc.ipaddress.IpAddress
+        """
         return IpAddress(af=socket.AF_INET6, address=value)
 
 
 class CoreTlvDataMacAddr(CoreTlvDataObj):
+    """
+    Utility class for packing/unpacking mac addresses.
+    """
     data_format = "!2x8s"
     data_type = MacAddress.from_string
     pad_len = 2
 
     @staticmethod
     def get_value(obj):
+        """
+        Retrieve Ipv6 address value from object.
+
+        :param core.misc.ipaddress.MacAddress obj: mac address to get value from
+        :return:
+        """
         # extend to 64 bits
-        return '\0\0' + obj.addr
+        return "\0\0" + obj.addr
 
     @staticmethod
     def new_obj(value):
+        """
+        Retrieve mac address from a string representation.
+
+        :param str value: value to get Ipv4 address from
+        :return: Ipv4 address
+        :rtype: core.misc.ipaddress.MacAddress
+        """
         # only use 48 bits
         return MacAddress(address=value[2:])
 
 
 class CoreTlv(object):
+    """
+    Base class for representing CORE TLVs.
+    """
     header_format = "!BB"
     header_len = struct.calcsize(header_format)
 
@@ -220,6 +355,13 @@ class CoreTlv(object):
     tlv_data_class_map = {}
 
     def __init__(self, tlv_type, tlv_data):
+        """
+        Create a CoreTlv instance.
+
+        :param int tlv_type: tlv type
+        :param tlv_data: data to unpack
+        :return: unpacked data
+        """
         self.tlv_type = tlv_type
         if tlv_data:
             try:
@@ -232,7 +374,10 @@ class CoreTlv(object):
     @classmethod
     def unpack(cls, data):
         """
-        parse data and return unpacked class.
+        Parse data and return unpacked class.
+
+        :param data: data to unpack
+        :return: unpacked data class
         """
         tlv_type, tlv_len = struct.unpack(cls.header_format, data[:cls.header_len])
         header_len = cls.header_len
@@ -240,11 +385,19 @@ class CoreTlv(object):
             tlv_type, zero, tlv_len = struct.unpack(cls.long_header_format, data[:cls.long_header_len])
             header_len = cls.long_header_len
         tlv_size = header_len + tlv_len
-        tlv_size += -tlv_size % 4  # for 32-bit alignment
+        # for 32-bit alignment
+        tlv_size += -tlv_size % 4
         return cls(tlv_type, data[header_len:tlv_size]), data[tlv_size:]
 
     @classmethod
     def pack(cls, tlv_type, value):
+        """
+        Pack a TLV value, based on type.
+
+        :param int tlv_type: type of data to pack
+        :param value: data to pack
+        :return: header and packed data
+        """
         tlv_len, tlv_data = cls.tlv_data_class_map[tlv_type].pack(value)
 
         if tlv_len < 256:
@@ -256,19 +409,42 @@ class CoreTlv(object):
 
     @classmethod
     def pack_string(cls, tlv_type, value):
+        """
+        Pack data type from a string representation
+
+        :param int tlv_type: type of data to pack
+        :param str value: string representation of data
+        :return: header and packed data
+        """
         return cls.pack(tlv_type, cls.tlv_data_class_map[tlv_type].from_string(value))
 
     def type_str(self):
+        """
+        Retrieve type string for this data type.
+
+        :return: data type name
+        :rtype: str
+        """
         try:
             return self.tlv_type_map(self.tlv_type).name
         except ValueError:
             return "unknown tlv type: %s" % str(self.tlv_type)
 
     def __str__(self):
+        """
+        String representation of this data type.
+
+        :return: string representation
+        :rtype: str
+        """
         return "%s <tlvtype = %s, value = %s>" % (self.__class__.__name__, self.type_str(), self.value)
 
 
 class CoreNodeTlv(CoreTlv):
+    """
+    Class for representing CORE Node TLVs.
+    """
+
     tlv_type_map = NodeTlvs
     tlv_data_class_map = {
         NodeTlvs.NUMBER.value: CoreTlvDataUint32,
@@ -295,6 +471,10 @@ class CoreNodeTlv(CoreTlv):
 
 
 class CoreLinkTlv(CoreTlv):
+    """
+    Class for representing CORE link TLVs.
+    """
+
     tlv_type_map = LinkTlvs
     tlv_data_class_map = {
         LinkTlvs.N1_NUMBER.value: CoreTlvDataUint32,
@@ -333,6 +513,10 @@ class CoreLinkTlv(CoreTlv):
 
 
 class CoreExecuteTlv(CoreTlv):
+    """
+    Class for representing CORE execute TLVs.
+    """
+
     tlv_type_map = ExecuteTlvs
     tlv_data_class_map = {
         ExecuteTlvs.NODE.value: CoreTlvDataUint32,
@@ -346,6 +530,10 @@ class CoreExecuteTlv(CoreTlv):
 
 
 class CoreRegisterTlv(CoreTlv):
+    """
+    Class for representing CORE register TLVs.
+    """
+
     tlv_type_map = RegisterTlvs
     tlv_data_class_map = {
         RegisterTlvs.WIRELESS.value: CoreTlvDataString,
@@ -359,6 +547,10 @@ class CoreRegisterTlv(CoreTlv):
 
 
 class CoreConfigTlv(CoreTlv):
+    """
+    Class for representing CORE configuration TLVs.
+    """
+
     tlv_type_map = ConfigTlvs
     tlv_data_class_map = {
         ConfigTlvs.NODE.value: CoreTlvDataUint32,
@@ -378,6 +570,10 @@ class CoreConfigTlv(CoreTlv):
 
 
 class CoreFileTlv(CoreTlv):
+    """
+    Class for representing CORE file TLVs.
+    """
+
     tlv_type_map = FileTlvs
     tlv_data_class_map = {
         FileTlvs.NODE.value: CoreTlvDataUint32,
@@ -393,6 +589,10 @@ class CoreFileTlv(CoreTlv):
 
 
 class CoreInterfaceTlv(CoreTlv):
+    """
+    Class for representing CORE interface TLVs.
+    """
+
     tlv_type_map = InterfaceTlvs
     tlv_data_class_map = {
         InterfaceTlvs.NODE.value: CoreTlvDataUint32,
@@ -412,6 +612,10 @@ class CoreInterfaceTlv(CoreTlv):
 
 
 class CoreEventTlv(CoreTlv):
+    """
+    Class for representing CORE event TLVs.
+    """
+
     tlv_type_map = EventTlvs
     tlv_data_class_map = {
         EventTlvs.NODE.value: CoreTlvDataUint32,
@@ -424,6 +628,10 @@ class CoreEventTlv(CoreTlv):
 
 
 class CoreSessionTlv(CoreTlv):
+    """
+    Class for representing CORE session TLVs.
+    """
+
     tlv_type_map = SessionTlvs
     tlv_data_class_map = {
         SessionTlvs.NUMBER.value: CoreTlvDataString,
@@ -438,6 +646,10 @@ class CoreSessionTlv(CoreTlv):
 
 
 class CoreExceptionTlv(CoreTlv):
+    """
+    Class for representing CORE exception TLVs.
+    """
+
     tlv_type_map = ExceptionTlvs
     tlv_data_class_map = {
         ExceptionTlvs.NODE.value: CoreTlvDataUint32,
@@ -451,6 +663,10 @@ class CoreExceptionTlv(CoreTlv):
 
 
 class CoreMessage(object):
+    """
+    Base class for representing CORE messages.
+    """
+
     header_format = "!BBH"
     header_len = struct.calcsize(header_format)
     message_type = None
@@ -477,19 +693,45 @@ class CoreMessage(object):
 
     @classmethod
     def pack(cls, message_flags, tlv_data):
+        """
+        Pack CORE message data.
+
+        :param message_flags: message flags to pack with data
+        :param tlv_data: data to get length from for packing
+        :return: combined header and tlv data
+        """
         header = struct.pack(cls.header_format, cls.message_type, message_flags, len(tlv_data))
         return header + tlv_data
 
     def add_tlv_data(self, key, value):
+        """
+        Add TLV data into the data map.
+
+        :param int key: key to store TLV data
+        :param value: data to associate with key
+        :return: nothing
+        """
         if key in self.tlv_data:
             raise KeyError("key already exists: %s (val=%s)" % (key, value))
 
         self.tlv_data[key] = value
 
     def get_tlv(self, tlv_type):
+        """
+        Retrieve TLV data from data map.
+
+        :param int tlv_type: type of data to retrieve
+        :return: TLV type data
+        """
         return self.tlv_data.get(tlv_type)
 
     def parse_data(self, data):
+        """
+        Parse data while possible and adding TLV data to the data map.
+
+        :param data: data to parse for TLV data
+        :return: nothing
+        """
         while data:
             tlv, data = self.tlv_class.unpack(data)
             self.add_tlv_data(tlv.tlv_type, tlv.value)
@@ -522,12 +764,24 @@ class CoreMessage(object):
         self.raw_message = self.pack(self.flags, tlv_data)
 
     def type_str(self):
+        """
+        Retrieve data of the message type.
+
+        :return: name of message type
+        :rtype: str
+        """
         try:
             return MessageTypes(self.message_type).name
         except ValueError:
             return "unknown message type: %s" % str(self.message_type)
 
     def flag_str(self):
+        """
+        Retrieve message flag string.
+
+        :return: message flag string
+        :rtype: str
+        """
         message_flags = []
         flag = 1L
 
@@ -544,6 +798,12 @@ class CoreMessage(object):
         return "0x%x <%s>" % (self.flags, " | ".join(message_flags))
 
     def __str__(self):
+        """
+        Retrieve string representation of the message.
+
+        :return: string representation
+        :rtype: str
+        """
         result = "%s <msgtype = %s, flags = %s>" % (self.__class__.__name__, self.type_str(), self.flag_str())
 
         for key, value in self.tlv_data.iteritems():
@@ -612,55 +872,86 @@ class CoreMessage(object):
 
 
 class CoreNodeMessage(CoreMessage):
+    """
+    CORE node message class.
+    """
     message_type = MessageTypes.NODE.value
     tlv_class = CoreNodeTlv
 
 
 class CoreLinkMessage(CoreMessage):
+    """
+    CORE link message class.
+    """
     message_type = MessageTypes.LINK.value
     tlv_class = CoreLinkTlv
 
 
 class CoreExecMessage(CoreMessage):
+    """
+    CORE execute message class.
+    """
     message_type = MessageTypes.EXECUTE.value
     tlv_class = CoreExecuteTlv
 
 
 class CoreRegMessage(CoreMessage):
+    """
+    CORE register message class.
+    """
     message_type = MessageTypes.REGISTER.value
     tlv_class = CoreRegisterTlv
 
 
 class CoreConfMessage(CoreMessage):
+    """
+    CORE configuration message class.
+    """
     message_type = MessageTypes.CONFIG.value
     tlv_class = CoreConfigTlv
 
 
 class CoreFileMessage(CoreMessage):
+    """
+    CORE file message class.
+    """
     message_type = MessageTypes.FILE.value
     tlv_class = CoreFileTlv
 
 
 class CoreIfaceMessage(CoreMessage):
+    """
+    CORE interface message class.
+    """
     message_type = MessageTypes.INTERFACE.value
     tlv_class = CoreInterfaceTlv
 
 
 class CoreEventMessage(CoreMessage):
+    """
+    CORE event message class.
+    """
     message_type = MessageTypes.EVENT.value
     tlv_class = CoreEventTlv
 
 
 class CoreSessionMessage(CoreMessage):
+    """
+    CORE session message class.
+    """
     message_type = MessageTypes.SESSION.value
     tlv_class = CoreSessionTlv
 
 
 class CoreExceptionMessage(CoreMessage):
+    """
+    CORE exception message class.
+    """
     message_type = MessageTypes.EXCEPTION.value
     tlv_class = CoreExceptionTlv
 
 
+# map used to translate enumerated message type values to message class objects
 CLASS_MAP = {
     MessageTypes.NODE.value: CoreNodeMessage,
     MessageTypes.LINK.value: CoreLinkMessage,

@@ -53,11 +53,29 @@ logger = log.get_logger(__name__)
 
 
 class HookManager(object):
+    """
+    Manages hooks that can be ran as part of state changes.
+    """
+
     def __init__(self, hook_dir):
+        """
+        Creates a HookManager instance.
+
+        :param str hook_dir: the hook directory
+        """
         self.hook_dir = hook_dir
         self.hooks = {}
 
     def add(self, hook_type, file_name, source_name, data):
+        """
+        Adds a hook to the manager.
+
+        :param str hook_type: hook type
+        :param str file_name: file name for hook
+        :param str source_name: source name for hook
+        :param data: data for hook
+        :return: nothing
+        """
         logger.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
 
         hook_id, state = hook_type.split(":")[:2]
@@ -73,9 +91,21 @@ class HookManager(object):
         state_hooks.append(hook)
 
     def clear(self):
+        """
+        Clear all known hooks.
+
+        :return: nothing
+        """
         self.hooks.clear()
 
     def state_change(self, state, environment):
+        """
+        Mark a state change to notify related hooks to run with the provided environment.
+
+        :param int state: the new state after a change
+        :param dict environment: environment to run hook in
+        :return: nothing
+        """
         # retrieve all state hooks
         hooks = self.hooks.get(state, [])
 
@@ -87,6 +117,13 @@ class HookManager(object):
             self.run(hook, environment)
 
     def run(self, hook, environment):
+        """
+        Run a hook, with a provided environment.
+
+        :param tuple hook: hook to run
+        :param dict environment: environment to run hook with
+        :return:
+        """
         file_name, data = hook
         logger.info("running hook: %s", file_name)
         hook_file_name = os.path.join(self.hook_dir, file_name)
@@ -119,17 +156,32 @@ class HookManager(object):
 
 
 class SessionManager(object):
+    """
+    Manages currently known sessions.
+    """
     sessions = set()
     session_lock = threading.Lock()
 
     @classmethod
     def add(cls, session):
+        """
+        Add a session to the manager.
+
+        :param Session session: session to add
+        :return: nothing
+        """
         with cls.session_lock:
             logger.info("adding session to manager: %s", session.session_id)
             cls.sessions.add(session)
 
     @classmethod
     def remove(cls, session):
+        """
+        Remove session from the manager.
+
+        :param Session session: session to remove
+        :return: nothing
+        """
         with cls.session_lock:
             logger.info("removing session from manager: %s", session.session_id)
             if session in cls.sessions:
@@ -139,6 +191,11 @@ class SessionManager(object):
 
     @classmethod
     def on_exit(cls):
+        """
+        Method used to shutdown all currently known sessions, in case of unexpected exit.
+
+        :return: nothing
+        """
         logger.info("caught program exit, shutting down all known sessions")
         while cls.sessions:
             with cls.session_lock:
@@ -154,6 +211,15 @@ class Session(object):
     """
 
     def __init__(self, session_id, config=None, server=None, persistent=False, mkdir=True):
+        """
+        Create a Session instance.
+
+        :param int session_id: session id
+        :param dict config: session configuration
+        :param core.coreserver.CoreServer server: core server object
+        :param bool persistent: flag is session is considered persistent
+        :param bool mkdir: flag to determine if a directory should be made
+        """
         self.session_id = session_id
 
         # dict of configuration items from /etc/core/core.conf config file
@@ -346,7 +412,7 @@ class Session(object):
 
         :param EventTypes state: state to set to
         :param send_event: if true, generate core API event messages
-        :return:
+        :return: nothing
         """
         state_name = coreapi.state_name(state)
 
@@ -389,6 +455,9 @@ class Session(object):
     def write_state(self, state):
         """
         Write the current state to a state file in the session dir.
+
+        :param int state: state to write to file
+        :return: nothing
         """
         try:
             state_file = open(self._state_file, "w")
@@ -401,7 +470,7 @@ class Session(object):
         """
         Run hook scripts upon changing states. If hooks is not specified, run all hooks in the given state.
 
-        :param state: state to run hooks for
+        :param int state: state to run hooks for
         :return: nothing
         """
 
@@ -421,6 +490,12 @@ class Session(object):
     def set_hook(self, hook_type, file_name, source_name, data):
         """
         Store a hook from a received file message.
+
+        :param str hook_type: hook type
+        :param str file_name: file name for hook
+        :param str source_name: source name
+        :param data: hook data
+        :return: nothing
         """
         logger.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
 
@@ -449,6 +524,12 @@ class Session(object):
         self._hooks.clear()
 
     def run_hook(self, hook):
+        """
+        Run a hook.
+
+        :param tuple hook: hook to run
+        :return: nothing
+        """
         file_name, data = hook
         logger.info("running hook %s", file_name)
 
@@ -478,6 +559,12 @@ class Session(object):
             logger.exception("error running hook '%s'", file_name)
 
     def run_state_hooks(self, state):
+        """
+        Run state hooks.
+
+        :param int state: state to run hooks for
+        :return: nothing
+        """
         for hook in self._state_hooks.get(state, []):
             try:
                 hook(state)
@@ -492,6 +579,13 @@ class Session(object):
                 )
 
     def add_state_hook(self, state, hook):
+        """
+        Add a state hook.
+
+        :param int state: state to add hook for
+        :param func hook: hook callback for the state
+        :return: nothing
+        """
         hooks = self._state_hooks.setdefault(state, [])
         assert hook not in hooks
         hooks.append(hook)
@@ -500,10 +594,23 @@ class Session(object):
             hook(state)
 
     def del_state_hook(self, state, hook):
+        """
+        Delete a state hook.
+
+        :param int state: state to delete hook for
+        :param func hook: hook to delete
+        :return:
+        """
         hooks = self._state_hooks.setdefault(state, [])
         hooks.remove(hook)
 
     def runtime_state_hook(self, state):
+        """
+        Runtime state hook check.
+
+        :param int state: state to check
+        :return: nothing
+        """
         if state == EventTypes.RUNTIME_STATE.value:
             self.emane.poststartup()
             xml_file_version = self.get_config_item("xmlfilever")
@@ -516,6 +623,9 @@ class Session(object):
         Get an environment suitable for a subprocess.Popen call.
         This is the current process environment with some session-specific
         variables.
+
+        :param bool state: flag to determine if session state should be included
+        :return:
         """
         env = os.environ.copy()
         env["SESSION"] = "%s" % self.session_id
@@ -550,6 +660,9 @@ class Session(object):
     def set_thumbnail(self, thumb_file):
         """
         Set the thumbnail filename. Move files from /tmp to session dir.
+
+        :param str thumb_file: tumbnail file to set for session
+        :return: nothing
         """
         if not os.path.exists(thumb_file):
             logger.error("thumbnail file to set does not exist: %s", thumb_file)
@@ -565,7 +678,7 @@ class Session(object):
         Set the username for this session. Update the permissions of the
         session dir to allow the user write access.
 
-        :param user: user to give write permissions to for the session directory
+        :param str user: user to give write permissions to for the session directory
         :return: nothing
         """
         if user:
@@ -595,6 +708,11 @@ class Session(object):
     def add_object(self, cls, *clsargs, **clskwds):
         """
         Add an emulation object.
+
+        :param class cls: object class to add
+        :param list clsargs: list of arguments for the class to create
+        :param dict clskwds: dictionary of arguments for the class to create
+        :return: the created class instance
         """
         obj = cls(self, *clsargs, **clskwds)
 
@@ -611,6 +729,9 @@ class Session(object):
     def get_object(self, object_id):
         """
         Get an emulation object.
+
+        :param int object_id: object id to retrieve
+        :return: object for the given id
         """
         if object_id not in self.objects:
             raise KeyError("unknown object id %s" % object_id)
@@ -619,6 +740,9 @@ class Session(object):
     def get_object_by_name(self, name):
         """
         Get an emulation object using its name attribute.
+
+        :param str name: name of object to retrieve
+        :return: object for the name given
         """
         with self._objects_lock:
             for obj in self.objects.itervalues():
@@ -630,7 +754,7 @@ class Session(object):
         """
         Remove an emulation object.
 
-        :param object_id: object id to remove
+        :param int object_id: object id to remove
         :return: nothing
         """
         with self._objects_lock:
@@ -642,7 +766,7 @@ class Session(object):
 
     def delete_objects(self):
         """
-        Clear the _objs dictionary, and call each obj.shutdown() routine.
+        Clear the objects dictionary, and call shutdown for each object.
         """
         with self._objects_lock:
             while self.objects:
@@ -652,8 +776,7 @@ class Session(object):
     def write_objects(self):
         """
         Write objects to a 'nodes' file in the session dir.
-        The 'nodes' file lists:
-        number, name, api-type, class-type
+        The 'nodes' file lists: number, name, api-type, class-type
         """
         try:
             nodes_file = open(os.path.join(self.session_dir, "nodes"), "w")
@@ -670,6 +793,11 @@ class Session(object):
         Objects can register configuration objects that are included in
         the Register Message and may be configured via the Configure
         Message. The callback is invoked when receiving a Configure Message.
+
+        :param str name: name of configuration object to add
+        :param int object_type: register tlv type
+        :param func callback: callback function for object
+        :return: nothing
         """
         register_tlv = RegisterTlvs(object_type)
         logger.info("adding config object callback: %s - %s", name, register_tlv)
@@ -678,8 +806,12 @@ class Session(object):
 
     def config_object(self, config_data):
         """
-        Invoke the callback for an object upon receipt of a Configure
-        Message for that object. A no-op if the object doesn't exist.
+        Invoke the callback for an object upon receipt of configuration data for that object.
+        A no-op if the object doesn't exist.
+
+        :param core.data.ConfigData config_data: configuration data to execute against
+        :return: responses to the configuration data
+        :rtype: list
         """
         name = config_data.object
         logger.info("session(%s): handling config message(%s): \n%s",
@@ -715,7 +847,7 @@ class Session(object):
 
     def dump_session(self):
         """
-        Debug print this session.
+        Log information about the session in its current state.
         """
         logger.info("session id=%s name=%s state=%s", self.session_id, self.name, self.state)
         logger.info("file=%s thumbnail=%s node_count=%s/%s",
@@ -723,7 +855,13 @@ class Session(object):
 
     def exception(self, level, source, object_id, text):
         """
-        Generate an Exception Message
+        Generate and broadcast an exception event.
+
+        :param str level: exception level
+        :param str source: source name
+        :param int object_id: object id
+        :param str text: exception message
+        :return: nothing
         """
 
         exception_data = ExceptionData(
@@ -751,6 +889,11 @@ class Session(object):
         """
         Return a boolean entry from the configuration dictionary, may
         return None if undefined.
+
+        :param str name: configuration item name
+        :param default: default value to return if not found
+        :return: boolean value of the configuration item
+        :rtype: bool
         """
         item = self.get_config_item(name)
         if item is None:
@@ -761,6 +904,11 @@ class Session(object):
         """
         Return an integer entry from the configuration dictionary, may
         return None if undefined.
+
+        :param str name: configuration item name
+        :param default: default value to return if not found
+        :return: integer value of the configuration item
+        :rtype: int
         """
         item = self.get_config_item(name)
         if item is None:
@@ -856,6 +1004,7 @@ class Session(object):
         # stop node services
         with self._objects_lock:
             for obj in self.objects.itervalues():
+                # TODO: determine if checking for CoreNode alone is ok
                 if isinstance(obj, nodes.PyCoreNode):
                     self.services.stopnodeservices(obj)
 
@@ -901,6 +1050,7 @@ class Session(object):
         """
         with self._objects_lock:
             for obj in self.objects.itervalues():
+                # TODO: determine instance type we need to check, due to method issue below
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
                     self.add_remove_control_interface(node=obj, remove=False)
@@ -909,9 +1059,14 @@ class Session(object):
         self.update_control_interface_hosts()
 
     def validate_nodes(self):
+        """
+        Validate all nodes that are known by the session.
+
+        :return: nothing
+        """
         with self._objects_lock:
             for obj in self.objects.itervalues():
-                # TODO: this can be extended to validate everything
+                # TODO: this can be extended to validate everything, bad node check here as well
                 # such as vnoded process, bridges, etc.
                 if not isinstance(obj, nodes.PyCoreNode):
                     continue
@@ -922,6 +1077,12 @@ class Session(object):
                 obj.validate()
 
     def get_control_lnet_prefixes(self):
+        """
+        Retrieve control net prefixes.
+
+        :return: control net prefix list
+        :rtype: list
+        """
         p = getattr(self.options, "controlnet", self.config.get("controlnet"))
         p0 = getattr(self.options, "controlnet0", self.config.get("controlnet0"))
         p1 = getattr(self.options, "controlnet1", self.config.get("controlnet1"))
@@ -934,6 +1095,12 @@ class Session(object):
         return [p0, p1, p2, p3]
 
     def get_control_net_server_interfaces(self):
+        """
+        Retrieve control net server interfaces.
+
+        :return: list of control net server interfaces
+        :rtype: list
+        """
         d0 = self.config.get("controlnetif0")
         if d0:
             logger.error("controlnet0 cannot be assigned with a host interface")
@@ -943,6 +1110,13 @@ class Session(object):
         return [None, d1, d2, d3]
 
     def get_control_net_index(self, dev):
+        """
+        Retrieve control net index.
+
+        :param str dev: device to get control net index for
+        :return: control net index, -1 otherwise
+        :rtype: int
+        """
         if dev[0:4] == "ctrl" and int(dev[4]) in [0, 1, 2, 3]:
             index = int(dev[4])
             if index == 0:
@@ -952,6 +1126,7 @@ class Session(object):
         return -1
 
     def get_control_net_object(self, net_index):
+        # TODO: all nodes use an integer id and now this wants to use a string =(
         object_id = "ctrl%dnet" % net_index
         return self.get_object(object_id)
 
@@ -961,12 +1136,19 @@ class Session(object):
         When the remove flag is True, remove the bridge that connects control
         interfaces. The conf_reqd flag, when False, causes a control network
         bridge to be added even if one has not been configured.
+
+        :param int net_index: network index
+        :param bool remove: flag to check if it should be removed
+        :param bool conf_required: flag to check if conf is required
+        :return: control net object
+        :rtype: core.netns.nodes.CtrlNet
         """
         prefix_spec_list = self.get_control_lnet_prefixes()
         prefix_spec = prefix_spec_list[net_index]
         if not prefix_spec:
             if conf_required:
-                return None  # no controlnet needed
+                # no controlnet needed
+                return None
             else:
                 control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
                 prefix_spec = control_net_class.DEFAULT_PREFIX_LIST[net_index]
@@ -1041,7 +1223,8 @@ class Session(object):
                         prefix = prefixes[0].split(':', 1)[1]
                     except IndexError:
                         prefix = prefixes[0]
-        else:  # len(prefixes) == 1
+        # len(prefixes) == 1
+        else:
             # TODO: can we get the server name from the servers.conf or from the node assignments?
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
@@ -1053,6 +1236,7 @@ class Session(object):
                                       updown_script=updown_script, serverintf=server_interface)
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
+        # TODO: potentialy remove documentation saying object ids are ints
         self.broker.addnet(object_id)
         for server in self.broker.getservers():
             self.broker.addnodemap(server, object_id)
@@ -1066,6 +1250,12 @@ class Session(object):
         addremovectrlnet() to build or remove the control bridge.
         If conf_reqd is False, the control network may be built even
         when the user has not configured one (e.g. for EMANE.)
+
+        :param core.netns.nodes.CoreNode node: node to add or remove control interface
+        :param int net_index: network index
+        :param bool remove: flag to check if it should be removed
+        :param bool conf_required: flag to check if conf is required
+        :return: nothing
         """
         control_net = self.add_remove_control_net(net_index, remove, conf_required)
         if not control_net:
@@ -1074,8 +1264,9 @@ class Session(object):
         if not node:
             return
 
+        # ctrl# already exists
         if node.netif(control_net.CTRLIF_IDX_BASE + net_index):
-            return  # ctrl# already exists
+            return
 
         control_ip = node.objid
 
@@ -1097,6 +1288,10 @@ class Session(object):
     def update_control_interface_hosts(self, net_index=0, remove=False):
         """
         Add the IP addresses of control interfaces to the /etc/hosts file.
+
+        :param int net_index: network index to update
+        :param bool remove: flag to check if it should be removed
+        :return: nothing
         """
         if not self.get_config_item_bool("update_etc_hosts", False):
             return
@@ -1137,6 +1332,12 @@ class Session(object):
         """
         Add an event to the event queue, with a start time relative to the
         start of the runtime state.
+
+        :param event_time: event time
+        :param core.netns.nodes.CoreNode node: node to add event for
+        :param str name: name of event
+        :param data: data for event
+        :return: nothing
         """
         event_time = float(event_time)
         current_time = self.runtime()
@@ -1156,6 +1357,11 @@ class Session(object):
     def run_event(self, node_id=None, name=None, data=None):
         """
         Run a scheduled event, executing commands in the data string.
+
+        :param int node_id: node id to run event
+        :param str name: event name
+        :param data: event data
+        :return: nothing
         """
         now = self.runtime()
         if not name:
@@ -1266,6 +1472,9 @@ class Session(object):
 
 
 class SessionConfig(ConfigurableManager, Configurable):
+    """
+    Session configuration object.
+    """
     name = "session"
     config_type = RegisterTlvs.UTILITY.value
     config_matrix = [
@@ -1291,6 +1500,11 @@ class SessionConfig(ConfigurableManager, Configurable):
         self.reset()
 
     def reset(self):
+        """
+        Reset the session configuration.
+
+        :return: nothing
+        """
         defaults = self.getdefaultvalues()
         for key in self.getnames():
             # value may come from config file
@@ -1302,6 +1516,8 @@ class SessionConfig(ConfigurableManager, Configurable):
 
     def configure_values(self, config_data):
         """
+        Handle configuration values.
+
         :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
         :return: None
         """
@@ -1309,6 +1525,7 @@ class SessionConfig(ConfigurableManager, Configurable):
 
     def configure_request(self, config_data, type_flags=ConfigFlags.NONE.value):
         """
+        Handle a configuration request.
 
         :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
         :param type_flags:
@@ -1325,11 +1542,15 @@ class SessionConfig(ConfigurableManager, Configurable):
 
         return self.config_data(0, node_id, type_flags, values)
 
+    # TODO: update logic to not be tied to old style messages
     def handle_distributed(self, message):
         """
         Handle the session options config message as it has reached the
         broker. Options requiring modification for distributed operation should
         be handled here.
+
+        :param message: message to handle
+        :return: nothing
         """
         if not self.session.master:
             return
@@ -1350,11 +1571,17 @@ class SessionConfig(ConfigurableManager, Configurable):
             if key == "controlnet":
                 self.handle_distributed_control_net(message, value_strings, value_strings.index(value_string))
 
+    # TODO: update logic to not be tied to old style messages
     def handle_distributed_control_net(self, message, values, index):
         """
         Modify Config Message if multiple control network prefixes are
         defined. Map server names to prefixes and repack the message before
         it is forwarded to slave servers.
+
+        :param message: message to handle
+        :param list values: values to handle
+        :param int index: index ti get key value from
+        :return: nothing
         """
         key_value = values[index]
         key, value = key_value.split('=', 1)
@@ -1391,8 +1618,10 @@ class SessionMetaData(ConfigurableManager):
 
     def configure_values(self, config_data):
         """
+        Handle configuration values.
+
         :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return:
+        :return: None
         """
         values = config_data.data_values
         if values is None:
@@ -1411,17 +1640,28 @@ class SessionMetaData(ConfigurableManager):
 
     def configure_request(self, config_data, type_flags=ConfigFlags.NONE.value):
         """
-
+        Handle a configuration request.
 
         :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :param type_flags:
-        :return:
+        :param int type_flags: configuration request flag value
+        :return: configuration data
+        :rtype: ConfigData
         """
         node_number = config_data.node
         values_str = "|".join(map(lambda item: "%s=%s" % item, self.items()))
         return self.config_data(0, node_number, type_flags, values_str)
 
     def config_data(self, flags, node_id, type_flags, values_str):
+        """
+        Retrieve configuration data object, leveraging provided data.
+
+        :param flags: configuration data flags
+        :param int node_id: node id
+        :param type_flags: type flags
+        :param values_str: values string
+        :return: configuration data
+        :rtype: ConfigData
+        """
         data_types = tuple(map(lambda (k, v): ConfigDataTypes.STRING.value, self.items()))
 
         return ConfigData(
@@ -1434,9 +1674,22 @@ class SessionMetaData(ConfigurableManager):
         )
 
     def add_item(self, key, value):
+        """
+        Add configuration key/value pair.
+
+        :param key: configuration key
+        :param value: configuration value
+        :return: nothing
+        """
         self.configs[key] = value
 
     def get_item(self, key):
+        """
+        Retrieve configuration value.
+
+        :param key: key for configuration value to retrieve
+        :return: configuration value
+        """
         try:
             return self.configs[key]
         except KeyError:
@@ -1445,7 +1698,13 @@ class SessionMetaData(ConfigurableManager):
         return None
 
     def items(self):
+        """
+        Retrieve configuration items.
+
+        :return: configuration items iterator
+        """
         return self.configs.iteritems()
 
 
+# configure the program exit function to run
 atexit.register(SessionManager.on_exit)

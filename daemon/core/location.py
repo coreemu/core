@@ -29,12 +29,15 @@ class CoreLocation(ConfigurableManager):
         """
         Creates a MobilityManager instance.
 
-        :param core.session.Session session: session this manager is tied to
         :return: nothing
         """
         ConfigurableManager.__init__(self)
         self.reset()
         self.zonemap = {}
+        self.refxyz = (0.0, 0.0, 0.0)
+        self.refscale = 1.0
+        self.zoneshifts = {}
+        self.refgeo = (0.0, 0.0, 0.0)
         for n, l in utm.ZONE_LETTERS:
             self.zonemap[l] = n
 
@@ -85,6 +88,9 @@ class CoreLocation(ConfigurableManager):
         Convert the specified value in pixels to meters using the
         configured scale. The scale is given as s, where
         100 pixels = s meters.
+
+        :param val: value to use in converting to meters
+        :return: value converted to meters
         """
         return (val / 100.0) * self.refscale
 
@@ -93,6 +99,9 @@ class CoreLocation(ConfigurableManager):
         Convert the specified value in meters to pixels using the
         configured scale. The scale is given as s, where
         100 pixels = s meters.
+
+        :param val: value to convert to pixels
+        :return: value converted to pixels
         """
         if self.refscale == 0.0:
             return 0.0
@@ -102,10 +111,15 @@ class CoreLocation(ConfigurableManager):
         """
         Record the geographical reference point decimal (lat, lon, alt)
         and convert and store its UTM equivalent for later use.
+
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
+        :return: nothing
         """
         self.refgeo = (lat, lon, alt)
         # easting, northing, zone
-        (e, n, zonen, zonel) = utm.from_latlon(lat, lon)
+        e, n, zonen, zonel = utm.from_latlon(lat, lon)
         self.refutm = ((zonen, zonel), e, n, alt)
 
     def getgeo(self, x, y, z):
@@ -113,9 +127,15 @@ class CoreLocation(ConfigurableManager):
         Given (x, y, z) Cartesian coordinates, convert them to latitude,
         longitude, and altitude based on the configured reference point
         and scale.
+
+        :param x: x value
+        :param y: y value
+        :param z: z value
+        :return: lat, lon, alt values for provided coordinates
+        :rtype: tuple
         """
         # shift (x,y,z) over to reference point (x,y,z)
-        x = x - self.refxyz[0]
+        x -= self.refxyz[0]
         y = -(y - self.refxyz[1])
         if z is None:
             z = self.refxyz[2]
@@ -124,7 +144,7 @@ class CoreLocation(ConfigurableManager):
         # use UTM coordinates since unit is meters
         zone = self.refutm[0]
         if zone == "":
-            raise ValueError, "reference point not configured"
+            raise ValueError("reference point not configured")
         e = self.refutm[1] + self.px2m(x)
         n = self.refutm[2] + self.px2m(y)
         alt = self.refutm[3] + self.px2m(z)
@@ -133,7 +153,7 @@ class CoreLocation(ConfigurableManager):
             lat, lon = utm.to_latlon(e, n, zone[0], zone[1])
         except utm.OutOfRangeError:
             logger.exception("UTM out of range error for n=%s zone=%s xyz=(%s,%s,%s)", n, zone, x, y, z)
-            (lat, lon) = self.refgeo[:2]
+            lat, lon = self.refgeo[:2]
         # self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
         #          "%.3f,%.3f,%.3f" % (x, y, z, e, n, zone, lat, lon, alt))
         return lat, lon, alt
@@ -145,6 +165,12 @@ class CoreLocation(ConfigurableManager):
         reference point and scale. Lat/lon is converted to UTM meter
         coordinates, UTM zones are accounted for, and the scale turns
         meters to pixels.
+
+        :param lat: latitude
+        :param lon: longitude
+        :param alt: altitude
+        :return: converted x, y, z coordinates
+        :rtype: tuple
         """
         # convert lat/lon to UTM coordinates in meters
         e, n, zonen, zonel = utm.from_latlon(lat, lon)
@@ -175,17 +201,25 @@ class CoreLocation(ConfigurableManager):
         This picks a reference point in the same longitudinal band
         (UTM zone number) as the provided zone, to calculate the shift in
         meters for the x coordinate.
+
+        :param zonen: zonen
+        :param zonel: zone1
+        :return: the x shift value
         """
         rzonen = int(self.refutm[0][0])
+        # same zone number, no x shift required
         if zonen == rzonen:
-            return None  # same zone number, no x shift required
+            return None
         z = (zonen, zonel)
+        # x shift already calculated, cached
         if z in self.zoneshifts and self.zoneshifts[z][0] is not None:
-            return self.zoneshifts[z][0]  # x shift already calculated, cached
+            return self.zoneshifts[z][0]
 
         rlat, rlon, ralt = self.refgeo
-        lon2 = rlon + 6 * (zonen - rzonen)  # ea. zone is 6deg band
-        e2, n2, zonen2, zonel2 = utm.from_latlon(rlat, lon2)  # ignore northing
+        # ea. zone is 6deg band
+        lon2 = rlon + 6 * (zonen - rzonen)
+        # ignore northing
+        e2, n2, zonen2, zonel2 = utm.from_latlon(rlat, lon2)
         # NOTE: great circle distance used here, not reference ellipsoid!
         xshift = utm.haversine(rlon, rlat, lon2, rlat) - e2
         # cache the return value
@@ -203,18 +237,25 @@ class CoreLocation(ConfigurableManager):
         This picks a reference point in the same latitude band (UTM zone letter)
         as the provided zone, to calculate the shift in meters for the
         y coordinate.
+
+        :param zonen: zonen
+        :param zonel:  zone1
+        :return: calculated y shift
         """
         rzonel = self.refutm[0][1]
+        # same zone letter, no y shift required
         if zonel == rzonel:
-            return None  # same zone letter, no y shift required
+            return None
         z = (zonen, zonel)
+        # y shift already calculated, cached
         if z in self.zoneshifts and self.zoneshifts[z][1] is not None:
-            return self.zoneshifts[z][1]  # y shift already calculated, cached
+            return self.zoneshifts[z][1]
 
         rlat, rlon, ralt = self.refgeo
         # zonemap is used to calculate degrees difference between zone letters
         latshift = self.zonemap[zonel] - self.zonemap[rzonel]
-        lat2 = rlat + latshift  # ea. latitude band is 8deg high
+        # ea. latitude band is 8deg high
+        lat2 = rlat + latshift
         e2, n2, zonen2, zonel2 = utm.from_latlon(lat2, rlon)
         # NOTE: great circle distance used here, not reference ellipsoid
         yshift = -(utm.haversine(rlon, rlat, rlon, lat2) + n2)
@@ -231,6 +272,11 @@ class CoreLocation(ConfigurableManager):
         the reference point's zone boundary. Return the UTM coordinates in a
         different zone and the new zone if they do. Zone lettering is only
         changed when the reference point is in the opposite hemisphere.
+
+        :param e: easting value
+        :param n: northing value
+        :return: modified easting, northing, and zone values
+        :rtype: tuple
         """
         zone = self.refutm[0]
         rlat, rlon, ralt = self.refgeo

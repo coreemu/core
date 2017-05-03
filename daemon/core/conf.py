@@ -1,5 +1,5 @@
 """
-conf.py: common support for configurable objects
+Common support for configurable CORE objects.
 """
 
 import string
@@ -34,6 +34,9 @@ class ConfigurableManager(object):
         # configurable key=values, indexed by node number
         self.configs = {}
 
+        # TODO: fix the need for this and isolate to the mobility class that wants it
+        self._modelclsmap = {}
+
     def configure(self, session, config_data):
         """
         Handle configure messages. The configuration message sent to a
@@ -45,6 +48,7 @@ class ConfigurableManager(object):
 
         Returns any reply messages.
 
+        :param core.session.Session session: CORE session object
         :param ConfigData config_data: configuration data for carrying out a configuration
         :return: response messages
         """
@@ -89,10 +93,10 @@ class ConfigurableManager(object):
         'key=value' strings from a values field. The key name must be
         in the keys list, and target.key=value is set.
 
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
+        :param ConfigData config_data: configuration data for carrying out a configuration
         :param target: target to set attribute values on
         :param keys: list of keys to verify validity
-        :return: None
+        :return: nothing
         """
         values = config_data.data_values
 
@@ -117,13 +121,23 @@ class ConfigurableManager(object):
         return None
 
     def reset(self):
+        """
+        Reset functionality for the configurable class.
+
+        :return: nothing
+        """
         return None
 
     def setconfig(self, nodenum, conftype, values):
         """
-        add configuration values for a node to a dictionary; values are
+        Add configuration values for a node to a dictionary; values are
         usually received from a Configuration Message, and may refer to a
         node for which no object exists yet
+
+        :param int nodenum: node id
+        :param conftype: configuration types
+        :param values: configuration values
+        :return: nothing
         """
         logger.info("setting config for node(%s): %s - %s", nodenum, conftype, values)
         conflist = []
@@ -145,8 +159,14 @@ class ConfigurableManager(object):
 
     def getconfig(self, nodenum, conftype, defaultvalues):
         """
-        get configuration values for a node; if the values don't exist in
+        Get configuration values for a node; if the values don't exist in
         our dictionary then return the default values supplied
+
+        :param int nodenum: node id
+        :param conftype: configuration type
+        :param defaultvalues: default values
+        :return: configuration type and default values
+        :type: tuple
         """
         logger.info("getting config for node(%s): %s - default(%s)",
                     nodenum, conftype, defaultvalues)
@@ -163,6 +183,10 @@ class ConfigurableManager(object):
         """
         Return (nodenum, conftype, values) tuples for all stored configs.
         Used when reconnecting to a session.
+
+        :param bool use_clsmap: should a class map be used, default to True
+        :return: list of all configurations
+        :rtype: list
         """
         r = []
         for nodenum in self.configs:
@@ -176,6 +200,9 @@ class ConfigurableManager(object):
         """
         remove configuration values for the specified node;
         when nodenum is None, remove all configuration values
+
+        :param int nodenum: node id
+        :return: nothing
         """
         if nodenum is None:
             self.configs = {}
@@ -185,7 +212,12 @@ class ConfigurableManager(object):
 
     def setconfig_keyvalues(self, nodenum, conftype, keyvalues):
         """
-        keyvalues list of tuples
+        Key values list of tuples for a node.
+
+        :param int nodenum: node id
+        :param conftype: configuration type
+        :param keyvalues: key valyes
+        :return: nothing
         """
         if conftype not in self._modelclsmap:
             logger.warn("Unknown model type '%s'" % conftype)
@@ -209,6 +241,10 @@ class ConfigurableManager(object):
         configured. This is invoked when exporting a session to XML.
         This assumes self.configs contains an iterable of (model-names, values)
         and a self._modelclsmapdict exists.
+
+        :param n: network node to get models for
+        :return: list of model and values tuples for the network node
+        :rtype: list
         """
         r = []
         if n.objid in self.configs:
@@ -239,29 +275,57 @@ class Configurable(object):
 
         :param core.session.Session session: session for this configurable
         :param object_id:
-        :return:
         """
         self.session = session
         self.object_id = object_id
 
     def reset(self):
+        """
+        Reset method.
+
+        :return: nothing
+        """
         pass
 
     def register(self):
+        """
+        Register method.
+
+        :return: nothing
+        """
         pass
 
     @classmethod
     def getdefaultvalues(cls):
+        """
+        Retrieve default values from configuration matrix.
+
+        :return: tuple of default values
+        :rtype: tuple
+        """
+        # TODO: why the need for a tuple?
         return tuple(map(lambda x: x[2], cls.config_matrix))
 
     @classmethod
     def getnames(cls):
+        """
+        Retrieve name values from configuration matrix.
+
+        :return: tuple of name values
+        :rtype: tuple
+        """
+        # TODO: why the need for a tuple?
         return tuple(map(lambda x: x[0], cls.config_matrix))
 
     @classmethod
     def configure(cls, manager, config_data):
         """
         Handle configuration messages for this object.
+
+        :param ConfigurableManager manager: configuration manager
+        :param config_data: configuration data
+        :return: configuration data object
+        :rtype: ConfigData
         """
         reply = None
         node_id = config_data.node
@@ -330,6 +394,13 @@ class Configurable(object):
         Convert this class to a Config API message. Some TLVs are defined
         by the class, but node number, conf type flags, and values must
         be passed in.
+
+        :param flags: message flags
+        :param int node_id: node id
+        :param type_flags: type flags
+        :param values: values
+        :return: configuration data object
+        :rtype: ConfigData
         """
         keys = cls.getnames()
         keyvalues = map(lambda a, b: "%s=%s" % (a, b), keys, values)
@@ -355,6 +426,10 @@ class Configurable(object):
     def booltooffon(value):
         """
         Convenience helper turns bool into on (True) or off (False) string.
+
+        :param str value: value to retrieve on/off value for
+        :return: on or off string
+        :rtype: str
         """
         if value == "1" or value == "true" or value == "on":
             return "on"
@@ -363,6 +438,13 @@ class Configurable(object):
 
     @staticmethod
     def offontobool(value):
+        """
+        Convenience helper for converting an on/off string to a integer.
+
+        :param str value: on/off string
+        :return: on/off integer value
+        :rtype: int
+        """
         if type(value) == str:
             if value.lower() == "on":
                 return 1
@@ -375,6 +457,10 @@ class Configurable(object):
         """
         Helper to return a value by the name defined in confmatrix.
         Checks if it is boolean
+
+        :param str name: name to get value of
+        :param values: values to get value from
+        :return: value for name
         """
         i = cls.getnames().index(name)
         if cls.config_matrix[i][1] == ConfigDataTypes.BOOL.value and values[i] != "":
@@ -387,6 +473,10 @@ class Configurable(object):
         """
         Helper to check for list of key=value pairs versus a plain old
         list of values. Returns True if all elements are "key=value".
+
+        :param values: items to check for key/value pairs
+        :return: True if all values are key/value pairs, False otherwise
+        :rtype: bool
         """
         if len(values) == 0:
             return False
@@ -398,10 +488,16 @@ class Configurable(object):
     def getkeyvaluelist(self):
         """
         Helper to return a list of (key, value) tuples. Keys come from
-        self._confmatrix and values are instance attributes.
+        configuration matrix and values are instance attributes.
+
+        :return: tuples of key value pairs
+        :rtype: list
         """
-        r = []
-        for k in self.getnames():
-            if hasattr(self, k):
-                r.append((k, getattr(self, k)))
-        return r
+        key_values = []
+
+        for name in self.getnames():
+            if hasattr(self, name):
+                value = getattr(self, name)
+                key_values.append((name, value))
+
+        return key_values

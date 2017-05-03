@@ -1,5 +1,6 @@
 """
-Defines server classes and request handlers for TCP and UDP. Also defined here is a TCP based auxiliary server class for supporting externally defined handlers.
+Defines server classes and request handlers for TCP and UDP. Also defined here is a TCP based
+auxiliary server class for supporting externally defined handlers.
 """
 
 import SocketServer
@@ -48,6 +49,7 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     @classmethod
     def add_server(cls, server):
         """
+        Add a core server to the known servers set.
 
         :param CoreServer server: server to add
         :return: nothing
@@ -57,9 +59,10 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     @classmethod
     def remove_server(cls, server):
         """
+        Remove a core server from the known servers set.
 
         :param CoreServer server: server to remove
-        :return:
+        :return: nothing
         """
         try:
             cls.servers.remove(server)
@@ -67,6 +70,11 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
             logger.exception("error removing server: %s", server)
 
     def shutdown(self):
+        """
+        Shutdown the server, all known sessions, and remove server from known servers set.
+
+        :return: nothing
+        """
         # shutdown all known sessions
         for session in self.sessions.values():
             session.shutdown()
@@ -103,6 +111,7 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
         :param core.session.Session session: session to remove
         :return: removed session
+        :rtype: core.session.Session
         """
         with self._sessions_lock:
             if session.session_id not in self.sessions:
@@ -115,6 +124,9 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     def get_session_ids(self):
         """
         Return a list of active session numbers.
+
+        :return: known session ids
+        :rtype: list
         """
         with self._sessions_lock:
             session_ids = self.sessions.keys()
@@ -178,6 +190,9 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     def to_session_message(self, flags=0):
         """
         Build CORE API Sessions message based on current session info.
+
+        :param int flags: message flags
+        :return: session message
         """
         id_list = []
         name_list = []
@@ -242,7 +257,7 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
 
     def dump_sessions(self):
         """
-        Debug print all session info.
+        Log currently known session information.
         """
         logger.info("sessions:")
         with self._sessions_lock:
@@ -277,6 +292,10 @@ class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
         """
         Server class initialization takes configuration data and calls
         the SocketServer constructor
+
+        :param str server_address: server address
+        :param class handler_class: class for handling requests
+        :param main_server: main server to associate with
         """
         self.mainserver = main_server
         SocketServer.UDPServer.__init__(self, server_address, handler_class)
@@ -284,6 +303,8 @@ class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
     def start(self):
         """
         Thread target to run concurrently with the TCP server.
+
+        :return: nothing
         """
         self.serve_forever()
 
@@ -296,18 +317,49 @@ class CoreAuxServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     allow_reuse_address = True
 
     def __init__(self, server_address, handler_class, main_server):
+        """
+        Create a CoreAuxServer instance.
+
+        :param str server_address: server address
+        :param class handler_class: class for handling requests
+        :param main_server: main server to associate with
+        """
+
         self.mainserver = main_server
         logger.info("auxiliary server started, listening on: %s", server_address)
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
 
     def start(self):
+        """
+        Start the core auxiliary server.
+
+        :return: nothing
+        """
         self.serve_forever()
 
     def set_session_master(self, handler):
+        """
+        Set the session master handler.
+
+        :param func handler: session master handler
+        :return:
+        """
         return self.mainserver.set_session_master(handler)
 
     def get_session(self, session_id=None):
+        """
+        Retrieve a session.
+
+        :param int session_id: id of session to retrieve
+        :return: core.session.Session
+        """
         return self.mainserver.get_session(session_id)
 
     def to_session_message(self, flags=0):
+        """
+        Retrieve a session message.
+
+        :param flags: message flags
+        :return: session message
+        """
         return self.mainserver.to_session_message(flags)

@@ -1,6 +1,7 @@
 """
 Converts CORE data objects into legacy API messages.
 """
+
 from core.api import coreapi
 from core.enumerations import NodeTlvs
 from core.misc import log

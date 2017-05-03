@@ -1,6 +1,6 @@
 """
-coreobj.py: defines the basic objects for emulation: the PyCoreObj base class,
-along with PyCoreNode, PyCoreNet, and PyCoreNetIf
+Defines the basic objects for CORE emulation: the PyCoreObj base class, along with PyCoreNode,
+PyCoreNet, and PyCoreNetIf.
 """
 
 import os
@@ -23,14 +23,27 @@ class Position(object):
     """
 
     def __init__(self, x=None, y=None, z=None):
-        self.x = None
-        self.y = None
-        self.z = None
-        self.set(x, y, z)
+        """
+        Creates a Position instance.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return:
+        """
+        self.x = x
+        self.y = y
+        self.z = z
 
     def set(self, x=None, y=None, z=None):
         """
         Returns True if the position has actually changed.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return: True if position changed, False otherwise
+        :rtype: bool
         """
         if self.x == x and self.y == y and self.z == z:
             return False
@@ -41,18 +54,32 @@ class Position(object):
 
     def get(self):
         """
-        Fetch the (x,y,z) position tuple.
+        Retrieve x,y,z position.
+
+        :return: x,y,z position tuple
+        :rtype: tuple
         """
         return self.x, self.y, self.z
 
 
 class PyCoreObj(object):
     """
-    Base class for pycore objects (nodes and nets)
+    Base class for CORE objects (nodes and networks)
     """
     apitype = None
 
+    # TODO: appears start has no usage, verify and remove
     def __init__(self, session, objid=None, name=None, start=True):
+        """
+        Creates a PyCoreObj instance.
+
+        :param core.session.Session session: CORE session object
+        :param int objid: object id
+        :param str name: object name
+        :param bool start: start value
+        :return:
+        """
+
         self.session = session
         if objid is None:
             objid = session.get_object_id()
@@ -71,33 +98,57 @@ class PyCoreObj(object):
     def startup(self):
         """
         Each object implements its own startup method.
+
+        :return: nothing
         """
         raise NotImplementedError
 
     def shutdown(self):
         """
         Each object implements its own shutdown method.
+
+        :return: nothing
         """
         raise NotImplementedError
 
     def setposition(self, x=None, y=None, z=None):
         """
         Set the (x,y,z) position of the object.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return: True if position changed, False otherwise
+        :rtype: bool
         """
         return self.position.set(x=x, y=y, z=z)
 
     def getposition(self):
         """
         Return an (x,y,z) tuple representing this object's position.
+
+        :return: x,y,z position tuple
+        :rtype: tuple
         """
         return self.position.get()
 
     def ifname(self, ifindex):
-        return self.netif(ifindex).name
+        """
+        Retrieve interface name for index.
+
+        :param int ifindex: interface index
+        :return: interface name
+        :rtype: str
+        """
+        return self._netif[ifindex].name
 
     def netifs(self, sort=False):
         """
-        Iterate over attached network interfaces.
+        Retrieve network interfaces, sorted if desired.
+
+        :param bool sort: boolean used to determine if interfaces should be sorted
+        :return: network interfaces
+        :rtype: list
         """
         if sort:
             return map(lambda k: self._netif[k], sorted(self._netif.keys()))
@@ -107,16 +158,34 @@ class PyCoreObj(object):
     def numnetif(self):
         """
         Return the attached interface count.
+
+        :return: number of network interfaces
+        :rtype: int
         """
         return len(self._netif)
 
     def getifindex(self, netif):
+        """
+        Retrieve index for an interface.
+
+        :param PyCoreNetIf netif: interface to get index for
+        :return: interface index if found, -1 otherwise
+        :rtype: int
+        """
+
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
                 return ifindex
+
         return -1
 
     def newifindex(self):
+        """
+        Create a new interface index.
+
+        :return: interface index
+        :rtype: int
+        """
         while self.ifindex in self._netif:
             self.ifindex += 1
         ifindex = self.ifindex
@@ -171,102 +240,184 @@ class PyCoreObj(object):
 
     def all_link_data(self, flags):
         """
-        Build CORE API Link Messages for this object. There is no default
+        Build CORE Link data for this object. There is no default
         method for PyCoreObjs as PyCoreNodes do not implement this but
         PyCoreNets do.
+
+        :param flags: message flags
+        :return: list of link data
+        :rtype: link
         """
         return []
 
 
 class PyCoreNode(PyCoreObj):
     """
-    Base class for nodes
+    Base class for CORE nodes.
     """
 
+    # TODO: start seems like it should go away
     def __init__(self, session, objid=None, name=None, start=True):
         """
-        Initialization for node objects.
+        Create a PyCoreNode instance.
+
+        :param core.session.Session session: CORE session object
+        :param int objid: object id
+        :param str name: object name
+        :param bool start: boolean for starting
         """
         PyCoreObj.__init__(self, session, objid, name, start=start)
         self.services = []
         if not hasattr(self, "type"):
             self.type = None
         self.nodedir = None
+        self.tmpnodedir = False
 
+    # TODO: getter method that should not be needed
     def nodeid(self):
+        """
+        Retrieve node id.
+
+        :return: node id
+        :rtype: int
+        """
         return self.objid
 
     def addservice(self, service):
+        """
+        Add a services to the service list.
+
+        :param core.service.CoreService service: service to add
+        :return: nothing
+        """
         if service is not None:
             self.services.append(service)
 
     def makenodedir(self):
+        """
+        Create the node directory.
+
+        :return: nothing
+        """
         if self.nodedir is None:
-            self.nodedir = \
-                os.path.join(self.session.session_dir, self.name + ".conf")
+            self.nodedir = os.path.join(self.session.session_dir, self.name + ".conf")
             os.makedirs(self.nodedir)
             self.tmpnodedir = True
         else:
             self.tmpnodedir = False
 
     def rmnodedir(self):
-        if hasattr(self.session.options, 'preservedir'):
-            if self.session.options.preservedir == '1':
-                return
+        """
+        Remove the node directory, unless preserve directory has been set.
+
+        :return: nothing
+        """
+        preserve = getattr(self.session.options, "preservedir", None)
+        if preserve == "1":
+            return
+
         if self.tmpnodedir:
             shutil.rmtree(self.nodedir, ignore_errors=True)
 
     def addnetif(self, netif, ifindex):
+        """
+        Add network interface to node and set the network interface index if successful.
+
+        :param PyCoreNetIf netif: network interface to add
+        :param int ifindex: interface index
+        :return: nothing
+        """
         if ifindex in self._netif:
-            raise ValueError, "ifindex %s already exists" % ifindex
+            raise ValueError("ifindex %s already exists" % ifindex)
         self._netif[ifindex] = netif
+        # TODO: this hould have probably been set ahead, seems bad to me, check for failure and fix
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
+        """
+        Delete a network interface
+
+        :param int ifindex: interface index to delete
+        :return: nothing
+        """
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         netif = self._netif.pop(ifindex)
         netif.shutdown()
         del netif
 
+    # TODO: net parameter is not used, remove
     def netif(self, ifindex, net=None):
+        """
+        Retrieve network interface.
+
+        :param int ifindex: index of interface to retrieve
+        :param PyCoreNetIf net: network node
+        :return: network interface, or None if not found
+        :rtype: PyCoreNetIf
+        """
         if ifindex in self._netif:
             return self._netif[ifindex]
         else:
             return None
 
     def attachnet(self, ifindex, net):
+        """
+        Attach a network.
+
+        :param int ifindex: interface of index to attach
+        :param PyCoreNetIf net: network to attach
+        :return:
+        """
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif[ifindex].attachnet(net)
 
     def detachnet(self, ifindex):
+        """
+        Detach network interface.
+
+        :param int ifindex: interface index to detach
+        :return: nothing
+        """
         if ifindex not in self._netif:
-            raise ValueError, "ifindex %s does not exist" % ifindex
+            raise ValueError("ifindex %s does not exist" % ifindex)
         self._netif[ifindex].detachnet()
 
     def setposition(self, x=None, y=None, z=None):
-        changed = PyCoreObj.setposition(self, x=x, y=y, z=z)
-        if not changed:
-            # save extra interface range calculations
-            return
-        for netif in self.netifs(sort=True):
-            netif.setposition(x, y, z)
+        """
+        Set position.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return: nothing
+        """
+        changed = super(PyCoreNode, self).setposition(x, y, z)
+        if changed:
+            for netif in self.netifs(sort=True):
+                netif.setposition(x, y, z)
 
     def commonnets(self, obj, want_ctrl=False):
         """
         Given another node or net object, return common networks between
         this node and that object. A list of tuples is returned, with each tuple
         consisting of (network, interface1, interface2).
+
+        :param obj: object to get common network with
+        :param want_ctrl: flag set to determine if control network are wanted
+        :return: tuples of common networks
+        :rtype: list
         """
-        r = []
+        common = []
         for netif1 in self.netifs():
-            if not want_ctrl and hasattr(netif1, 'control'):
+            if not want_ctrl and hasattr(netif1, "control"):
                 continue
             for netif2 in obj.netifs():
                 if netif1.net == netif2.net:
-                    r += (netif1.net, netif1, netif2),
-        return r
+                    common.append((netif1.net, netif1, netif2))
+
+        return common
 
 
 class PyCoreNet(PyCoreObj):
@@ -275,15 +426,27 @@ class PyCoreNet(PyCoreObj):
     """
     linktype = LinkTypes.WIRED.value
 
+    # TODO: remove start if appropriate
     def __init__(self, session, objid, name, start=True):
         """
-        Initialization for network objects.
+        Create a PyCoreNet instance.
+
+        :param core.session.Session session: CORE session object
+        :param int objid: object id
+        :param str name: object name
+        :param bool start: should object start
         """
         PyCoreObj.__init__(self, session, objid, name, start=start)
         self._linked = {}
         self._linked_lock = threading.Lock()
 
     def attach(self, netif):
+        """
+        Attach network interface.
+
+        :param PyCoreNetIf netif: network interface to attach
+        :return: nothing
+        """
         i = self.newifindex()
         self._netif[i] = netif
         netif.netifi = i
@@ -291,22 +454,31 @@ class PyCoreNet(PyCoreObj):
             self._linked[netif] = {}
 
     def detach(self, netif):
+        """
+        Detach network interface.
+
+        :param PyCoreNetIf netif: network interface to detach
+        :return: nothing
+        """
         del self._netif[netif.netifi]
         netif.netifi = None
         with self._linked_lock:
             del self._linked[netif]
 
+    # TODO: needs to be abstracted out, seems like it may be ok to remove
     def netifparamstolink(self, netif):
         """
-        Helper for tolinkmsgs() to build TLVs having link parameters
-        from interface parameters.
+        Helper for tolinkmsgs() to build TLVs having link parameters from interface parameters.
+
+        :param PyCoreNetIf netif: network interface to retrieve params from
+        :return: tlv data
         """
 
-        delay = netif.getparam('delay')
-        bw = netif.getparam('bw')
-        loss = netif.getparam('loss')
-        duplicate = netif.getparam('duplicate')
-        jitter = netif.getparam('jitter')
+        delay = netif.getparam("delay")
+        bw = netif.getparam("bw")
+        loss = netif.getparam("loss")
+        duplicate = netif.getparam("duplicate")
+        jitter = netif.getparam("jitter")
 
         tlvdata = ""
         if delay is not None:
@@ -319,12 +491,13 @@ class PyCoreNet(PyCoreObj):
             tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.DUP.value, str(duplicate))
         if jitter is not None:
             tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.JITTER.value, jitter)
+
         return tlvdata
 
     def all_link_data(self, flags):
         """
-        Build CORE API Link Messages for this network. Each link message
-        describes a link between this network and a node.
+        Build link data objects for this network. Each link object describes a link
+        between this network and a node.
         """
         all_links = []
 
@@ -415,10 +588,18 @@ class PyCoreNet(PyCoreObj):
 
 class PyCoreNetIf(object):
     """
-    Base class for interfaces.
+    Base class for network interfaces.
     """
 
     def __init__(self, node, name, mtu):
+        """
+        Creates a PyCoreNetIf instance.
+
+        :param node: node for interface
+        :param str name: interface name
+        :param mtu: mtu value
+        """
+
         self.node = node
         self.name = name
         if not isinstance(mtu, (int, long)):
@@ -437,68 +618,114 @@ class PyCoreNetIf(object):
         self.flow_id = None
 
     def startup(self):
+        """
+        Startup method for the interface.
+
+        :return: nothing
+        """
         pass
 
     def shutdown(self):
+        """
+        Shutdown method for the interface.
+
+        :return: nothing
+        """
         pass
 
     def attachnet(self, net):
+        """
+        Attach network.
+
+        :param PyCoreNet net: network to attach to
+        :return:nothing
+        """
         if self.net:
             self.detachnet()
             self.net = None
+
         net.attach(self)
         self.net = net
 
     def detachnet(self):
+        """
+        Detach from a network.
+
+        :return: nothing
+        """
         if self.net is not None:
             self.net.detach(self)
 
     def addaddr(self, addr):
+        """
+        Add address.
+
+        :param str addr: address to add
+        :return: nothing
+        """
+
         self.addrlist.append(addr)
 
     def deladdr(self, addr):
+        """
+        Delete address.
+
+        :param str addr: address to delete
+        :return: nothing
+        """
         self.addrlist.remove(addr)
 
     def sethwaddr(self, addr):
+        """
+        Set hardware address.
+
+        :param str addr: hardware address to set to.
+        :return: nothing
+        """
         self.hwaddr = addr
 
     def getparam(self, key):
         """
-        Retrieve a parameter from the _params dict,
-        or None if the parameter does not exist.
+        Retrieve a parameter from the, or None if the parameter does not exist.
+
+        :param key: parameter to get value for
+        :return: parameter value
         """
-        if key not in self._params:
-            return None
-        return self._params[key]
+        return self._params.get(key)
 
     def getparams(self):
         """
-        Return (key, value) pairs from the _params dict.
+        Return (key, value) pairs for parameters.
         """
-        r = []
+        parameters = []
         for k in sorted(self._params.keys()):
-            r.append((k, self._params[k]))
-        return r
+            parameters.append((k, self._params[k]))
+        return parameters
 
     def setparam(self, key, value):
         """
-        Set a parameter in the _params dict.
-        Returns True if the parameter has changed.
+        Set a parameter value, returns True if the parameter has changed.
+
+        :param key: parameter name to set
+        :param value: parameter value
+        :return: True if parameter changed, False otherwise
         """
-        if key in self._params:
-            if self._params[key] == value:
-                return False
-            elif self._params[key] <= 0 and value <= 0:
-                # treat None and 0 as unchanged values
-                return False
+        # treat None and 0 as unchanged values
+        current_value = self._params.get(key)
+        if current_value == value or current_value <= 0 and value <= 0:
+            return False
+
         self._params[key] = value
         return True
 
     def swapparams(self, name):
         """
-        Swap out the _params dict for name. If name does not exist,
+        Swap out parameters dict for name. If name does not exist,
         intialize it. This is for supporting separate upstream/downstream
         parameters when two layer-2 nodes are linked together.
+
+        :param str name: name of parameter to swap
+        :return: nothing
         """
         tmp = self._params
         if not hasattr(self, name):
@@ -508,7 +735,12 @@ class PyCoreNetIf(object):
 
     def setposition(self, x, y, z):
         """
-        Dispatch to any position hook (self.poshook) handler.
+        Dispatch position hook handler.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return: nothing
         """
         if self.poshook is not None:
             self.poshook(self, x, y, z)

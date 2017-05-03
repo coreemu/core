@@ -57,6 +57,14 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     """
 
     def __init__(self, request, client_address, server):
+        """
+        Create a CoreRequestHandler instance.
+
+        :param request: request object
+        :param str client_address: client address
+        :param CoreServer server: core server instance
+        :return:
+        """
         self.done = False
         self.message_handlers = {
             MessageTypes.NODE.value: self.handle_node_message,
@@ -93,6 +101,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def setup(self):
         """
         Client has connected, set up a new connection.
+
+        :return: nothing
         """
         logger.info("new TCP connection: %s", self.client_address)
         # self.register()
@@ -101,6 +111,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         """
         Client has disconnected, end this request handler and disconnect
         from the session. Shutdown sessions that are not running.
+
+        :return: nothing
         """
         logger.info("finishing request handler")
         self.done = True
@@ -322,6 +334,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def register(self):
         """
         Return a Register Message
+
+        :return: register message data
         """
         logger.info("GUI has connected to session %d at %s", self.session.session_id, time.ctime())
 
@@ -341,14 +355,19 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         """
         Send raw data to the other end of this TCP connection
         using socket"s sendall().
+
+        :param data: data to send over request socket
+        :return: data sent
         """
         return self.request.sendall(data)
 
     def receive_message(self):
         """
         Receive data and return a CORE API message object.
-        """
 
+        :return: received message
+        :rtype: coreapi.CoreMessage
+        """
         try:
             header = self.request.recv(coreapi.CoreMessage.header_len)
             if len(header) > 0:
@@ -389,6 +408,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def queue_message(self, message):
         """
         Queue an API message for later processing.
+
+        :param message: message to queue
+        :return: nothing
         """
         logger.info("queueing msg (queuedtimes = %s): type %s",
                     message.queuedtimes, MessageTypes(message.message_type))
@@ -399,6 +421,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         CORE API message handling loop that is spawned for each server
         thread; get CORE API messages from the incoming message queue,
         and call handlemsg() for processing.
+
+        :return: nothing
         """
         while not self.done:
             try:
@@ -411,6 +435,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         """
         Handle an incoming message; dispatch based on message type,
         optionally sending replies.
+
+        :return: nothing
         """
         if self.session and self.session.broker.handle_message(message):
             logger.info("%s forwarding message:\n%s", threading.currentThread().getName(), message)
@@ -436,6 +462,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def dispatch_replies(self, replies, message):
         """
         Dispatch replies by CORE to message msg previously received from the client.
+
+        :param replies: reply messages to dispatch
+        :param message: message for replies
+        :return: nothing
         """
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
@@ -462,6 +492,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         Handle a new connection request from a client. Dispatch to the
         recvmsg() method for receiving data into CORE API messages, and
         add them to an incoming message queue.
+
+        :return: nothing
         """
         # use port as session id
         port = self.request.getpeername()[1]
@@ -505,6 +537,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_node_message(self, message):
         """
         Node Message handler
+
+        :param coreapi.CoreNodeMessage message: node message
+        :return: replies to node message
         """
         replies = []
         if message.flags & MessageFlags.ADD.value and message.flags & MessageFlags.DELETE.value:
@@ -634,6 +669,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_link_message(self, message):
         """
         Link Message handler
+
+        :param coreapi.CoreLinkMessage message: link message to handle
+        :return: link message replies
         """
         # get node classes
         ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
@@ -988,6 +1026,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_execute_message(self, message):
         """
         Execute Message handler
+
+        :param coreapi.CoreExecMessage message: execute message to handle
+        :return: reply messages
         """
         node_num = message.get_tlv(ExecuteTlvs.NODE.value)
         execute_num = message.get_tlv(ExecuteTlvs.NUMBER.value)
@@ -1060,6 +1101,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_register_message(self, message):
         """
         Register Message Handler
+
+        :param coreapi.CoreRegMessage message: register message to handle
+        :return: reply messages
         """
         replies = []
 
@@ -1093,7 +1137,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     )
                     thread.daemon = True
                     thread.start()
-                    time.sleep(0.25)  # allow time for session creation
+                    # allow time for session creation
+                    time.sleep(0.25)
                 if message.flags & MessageFlags.STRING.value:
                     new_session_ids = set(server.get_session_ids())
                     new_sid = new_session_ids.difference(old_session_ids)
@@ -1145,8 +1190,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_config_message(self, message):
         """
         Configuration Message handler
-        """
 
+        :param coreapi.CoreConfMessage message: configuration message to handle
+        :return: reply messages
+        """
         # convert config message to standard config data object
         config_data = ConfigData(
             node=message.get_tlv(ConfigTlvs.NODE.value),
@@ -1174,6 +1221,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_file_message(self, message):
         """
         File Message handler
+
+        :param coreapi.CoreFileMessage message: file message to handle
+        :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
             node_num = message.get_tlv(NodeTlvs.NUMBER.value)
@@ -1231,6 +1281,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_interface_message(self, message):
         """
         Interface Message handler
+
+        :param message: interface message to handle
+        :return: reply messages
         """
         logger.info("ignoring Interface message")
         return ()
@@ -1238,6 +1291,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_event_message(self, message):
         """
         Event Message handler
+
+        :param coreapi.CoreEventMessage message: event message to handle
+        :return: reply messages
         """
         event_data = EventData(
             node=message.get_tlv(EventTlvs.NODE.value),
@@ -1350,6 +1406,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
     def handle_session_message(self, message):
         """
         Session Message handler
+
+        :param coreapi.CoreSessionMessage message: session message to handle
+        :return: reply messages
         """
         session_id_str = message.get_tlv(SessionTlvs.NUMBER.value)
         name_str = message.get_tlv(SessionTlvs.NAME.value)
@@ -1436,10 +1495,11 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
     def send_node_emulation_id(self, node_id):
         """
-        Send back node messages to the GUI for node messages that had
-        the status request flag.
-        """
+        Node emulation id to send.
 
+        :param int node_id: node id to send
+        :return: nothing
+        """
         if node_id in self.node_status_request:
             tlv_data = ""
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
@@ -1462,6 +1522,13 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
     """
 
     def __init__(self, request, client_address, server):
+        """
+        Create a CoreDatagramRequestHandler instance.
+
+        :param request: request object
+        :param str client_address: client address
+        :param CoreServer server: core server instance
+        """
         # TODO: decide which messages cannot be handled with connectionless UDP
         self.message_handlers = {
             MessageTypes.NODE.value: self.handle_node_message,
@@ -1482,19 +1549,33 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
     def setup(self):
         """
         Client has connected, set up a new connection.
+
+        :return: nothing
         """
         logger.info("new UDP connection: %s:%s" % self.client_address)
 
     def handle(self):
+        """
+        Receive a message.
+
+        :return: nothing
+        """
         self.receive_message()
 
     def finish(self):
+        """
+        Handle the finish state of a client.
+
+        :return: nothing
+        """
         return SocketServer.BaseRequestHandler.finish(self)
 
     def receive_message(self):
         """
         Receive data, parse a CoreMessage and queue it onto an existing
         session handler"s queue, if available.
+
+        :return: nothing
         """
         data = self.request[0]
         sock = self.request[1]
@@ -1550,12 +1631,16 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
     def queue_message(self, message):
         """
         UDP handlers are short-lived and do not have message queues.
+
+        :return: nothing
         """
         raise Exception("Unable to queue %s message for later processing using UDP!" % message.type_str())
 
     def sendall(self, data):
         """
         Use sendto() on the connectionless UDP socket.
+
+        :return: nothing
         """
         self.request[1].sendto(data, self.client_address)
 
@@ -1568,6 +1653,13 @@ class BaseAuxRequestHandler(CoreRequestHandler):
     """
 
     def __init__(self, request, client_address, server):
+        """
+        Create a BaseAuxRequestHandler instance.
+
+        :param request: request client
+        :param str client_address: client address
+        :param CoreServer server: core server instance
+        """
         self.message_handlers = {
             MessageTypes.NODE.value: self.handle_node_message,
             MessageTypes.LINK.value: self.handle_link_message,
@@ -1588,12 +1680,16 @@ class BaseAuxRequestHandler(CoreRequestHandler):
     def setup(self):
         """
         New client has connected to the auxiliary server.
+
+        :return: nothing
         """
         logger.info("new auxiliary server client: %s:%s" % self.client_address)
 
     def handle(self):
         """
         The handler main loop
+
+        :return: nothing
         """
         port = self.request.getpeername()[1]
         self.session = self.server.mainserver.create_session(session_id=port)
@@ -1616,6 +1712,8 @@ class BaseAuxRequestHandler(CoreRequestHandler):
     def finish(self):
         """
         Disconnect the client
+
+        :return: nothing
         """
         if self.session:
             self.session.event_handlers.remove(self.handle_broadcast_event)
@@ -1639,6 +1737,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
         EXAMPLE:
         return self.handler.request.recv(siz)
 
+        :return: nothing
         """
         raise NotImplemented
 
@@ -1662,6 +1761,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
                         logger.info("-"*60)
                     raise e
 
+        :return: nothing
         """
         raise NotImplemented
 
@@ -1683,5 +1783,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
                         traceback.print_exc(file=sys.stdout)
                         logger.info("-"*60)
                     raise e
+
+        :return: nothing
         """
         raise NotImplemented
