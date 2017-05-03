@@ -1,6 +1,5 @@
 """
-vnode.py: PyCoreNode and LxcNode classes that implement the network namespace
-virtual node.
+PyCoreNode and LxcNode classes that implement the network namespac virtual node.
 """
 
 import os
@@ -28,7 +27,21 @@ utils.check_executables([constants.IP_BIN])
 
 
 class SimpleLxcNode(PyCoreNode):
+    """
+    Provides simple lxc functionality for core nodes.
+    """
+    valid_deladdrtype = ("inet", "inet6", "inet6link")
+
     def __init__(self, session, objid=None, name=None, nodedir=None, start=True):
+        """
+        Create a SimpleLxcNode instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: object id
+        :param str name: object name
+        :param str nodedir: node directory
+        :param bool start: start flag
+        """
         PyCoreNode.__init__(self, session, objid, name, start=start)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
@@ -39,10 +52,17 @@ class SimpleLxcNode(PyCoreNode):
         self._mounts = []
 
     def alive(self):
+        """
+        Check if the node is alive.
+
+        :return: True if node is alive, False otherwise
+        :rtype: bool
+        """
         try:
             os.kill(self.pid, 0)
         except OSError:
             return False
+
         return True
 
     def startup(self):
@@ -50,6 +70,8 @@ class SimpleLxcNode(PyCoreNode):
         Start a new namespace node by invoking the vnoded process that
         allocates a new namespace. Bring up the loopback device and set
         the hostname.
+
+        :return: nothing
         """
         if self.up:
             raise Exception("already up")
@@ -88,6 +110,11 @@ class SimpleLxcNode(PyCoreNode):
         self.up = True
 
     def shutdown(self):
+        """
+        Shutdown logic for simple lxc nodes.
+
+        :return: nothing
+        """
         # nothing to do if node is not up
         if not self.up:
             return
@@ -120,56 +147,143 @@ class SimpleLxcNode(PyCoreNode):
         self.vnodeclient.close()
         self.up = False
 
+    # TODO: potentially remove all these wrapper methods, just make use of object itself.
     def cmd(self, args, wait=True):
+        """
+        Wrapper around vnodeclient cmd.
+
+        :param args: arguments for ocmmand
+        :param wait: wait or not
+        :return:
+        """
         return self.vnodeclient.cmd(args, wait)
 
     def cmdresult(self, args):
+        """
+        Wrapper around vnodeclient cmdresult.
+
+        :param args: arguments for ocmmand
+        :return:
+        """
         return self.vnodeclient.cmdresult(args)
 
     def popen(self, args):
+        """
+        Wrapper around vnodeclient popen.
+
+        :param args: arguments for ocmmand
+        :return:
+        """
         return self.vnodeclient.popen(args)
 
     def icmd(self, args):
+        """
+        Wrapper around vnodeclient icmd.
+
+        :param args: arguments for ocmmand
+        :return:
+        """
         return self.vnodeclient.icmd(args)
 
     def redircmd(self, infd, outfd, errfd, args, wait=True):
+        """
+        Wrapper around vnodeclient redircmd.
+
+        :param infd: input file descriptor
+        :param outfd: output file descriptor
+        :param errfd: err file descriptor
+        :param args: command arguments
+        :param wait: wait or not
+        :return:
+        """
         return self.vnodeclient.redircmd(infd, outfd, errfd, args, wait)
 
     def term(self, sh="/bin/sh"):
+        """
+        Wrapper around vnodeclient term.
+
+        :param sh: shell to create terminal for
+        :return:
+        """
         return self.vnodeclient.term(sh=sh)
 
     def termcmdstring(self, sh="/bin/sh"):
+        """
+        Wrapper around vnodeclient termcmdstring.
+
+        :param sh: shell to run command in
+        :return:
+        """
         return self.vnodeclient.termcmdstring(sh=sh)
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
+        """
+        Wrapper around vnodeclient shcmd.
+
+        :param str cmdstr: command string
+        :param sh: shell to run command in
+        :return:
+        """
         return self.vnodeclient.shcmd(cmdstr, sh=sh)
 
     def boot(self):
+        """
+        Boot logic.
+
+        :return: nothing
+        """
         pass
 
     def mount(self, source, target):
+        """
+        Create and mount a directory.
+
+        :param str source: source directory to mount
+        :param str target: target directory to create
+        :return: nothing
+        """
         source = os.path.abspath(source)
         logger.info("mounting %s at %s" % (source, target))
         try:
-            shcmd = "mkdir -p '%s' && %s -n --bind '%s' '%s'" % \
-                    (target, constants.MOUNT_BIN, source, target)
+            shcmd = "mkdir -p '%s' && %s -n --bind '%s' '%s'" % (
+                target, constants.MOUNT_BIN, source, target)
             self.shcmd(shcmd)
             self._mounts.append((source, target))
-        except:
+        except IOError:
             logger.exception("mounting failed for %s at %s", source, target)
 
     def umount(self, target):
+        """
+        Unmount a target directory.
+
+        :param str target: target directory to unmount
+        :return: nothing
+        """
         logger.info("unmounting '%s'" % target)
         try:
             self.cmd([constants.UMOUNT_BIN, "-n", "-l", target])
-        except:
+        except IOError:
             logger.exception("unmounting failed for %s" % target)
 
     def newifindex(self):
+        """
+        Retrieve a new interface index.
+
+        :return: new interface index
+        :rtype: int
+        """
         with self.lock:
-            return PyCoreNode.newifindex(self)
+            return super(SimpleLxcNode, self).newifindex()
 
     def newveth(self, ifindex=None, ifname=None, net=None):
+        """
+        Create a new interface.
+
+        :param int ifindex: index for the new interface
+        :param str ifname: name for the new interface
+        :param net: network to associate interface with
+        :return: nothing
+        """
         self.lock.acquire()
         try:
             if ifindex is None:
@@ -187,8 +301,7 @@ class SimpleLxcNode(PyCoreNode):
 
             localname = 'veth' + suffix
             if len(localname) >= 16:
-                raise ValueError, "interface local name '%s' too long" % \
-                                  localname
+                raise ValueError("interface local name '%s' too long" % localname)
             name = localname + 'p'
             if len(name) >= 16:
                 raise ValueError, "interface name '%s' too long" % name
@@ -221,6 +334,15 @@ class SimpleLxcNode(PyCoreNode):
             self.lock.release()
 
     def newtuntap(self, ifindex=None, ifname=None, net=None):
+        """
+        Create a new tunnel tap.
+
+        :param int ifindex: interface index
+        :param str ifname: interface name
+        :param net: network to associate with
+        :return: interface index
+        :rtype: int
+        """
         self.lock.acquire()
         try:
             if ifindex is None:
@@ -235,15 +357,22 @@ class SimpleLxcNode(PyCoreNode):
                              mtu=1500, net=net, start=self.up)
             try:
                 self.addnetif(tuntap, ifindex)
-            except:
+            except Exception as e:
                 tuntap.shutdown()
                 del tuntap
-                raise
+                raise e
             return ifindex
         finally:
             self.lock.release()
 
     def sethwaddr(self, ifindex, addr):
+        """
+        Set hardware addres for an interface.
+
+        :param int ifindex: index of interface to set hardware address for
+        :param str addr: hardware address to set
+        :return: mothing
+        """
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             (status, result) = self.cmdresult([constants.IP_BIN, "link", "set", "dev",
@@ -252,12 +381,26 @@ class SimpleLxcNode(PyCoreNode):
                 logger.error("error setting MAC address %s", str(addr))
 
     def addaddr(self, ifindex, addr):
+        """
+        Add interface address.
+
+        :param int ifindex: index of interface to add address to
+        :param str addr: address to add to interface
+        :return: nothing
+        """
         if self.up:
             self.cmd([constants.IP_BIN, "addr", "add", str(addr),
                       "dev", self.ifname(ifindex)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
+        """
+        Delete address from an interface.
+
+        :param int ifindex: index of interface to delete address from
+        :param str addr: address to delete from interface
+        :return: nothing
+        """
         try:
             self._netif[ifindex].deladdr(addr)
         except ValueError:
@@ -266,9 +409,14 @@ class SimpleLxcNode(PyCoreNode):
         if self.up:
             self.cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
-    valid_deladdrtype = ("inet", "inet6", "inet6link")
-
     def delalladdr(self, ifindex, addrtypes=valid_deladdrtype):
+        """
+        Delete all addresses from an interface.
+
+        :param int ifindex: index of interface to delete all addresses from
+        :param tuple addrtypes: address types to delete
+        :return: nothing
+        """
         addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
@@ -279,16 +427,32 @@ class SimpleLxcNode(PyCoreNode):
         self.getaddr(self.ifname(ifindex), rescan=True)
 
     def ifup(self, ifindex):
+        """
+        Bring an interface up.
+
+        :param int ifindex: index of interface to bring up
+        :return: nothing
+        """
         if self.up:
             self.cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
 
-    def newnetif(self, net=None, addrlist=[], hwaddr=None,
-                 ifindex=None, ifname=None):
+    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
+        """
+        Create a new network interface.
+
+        :param net: network to associate with
+        :param list addrlist: addresses to add on the interface
+        :param str hwaddr: hardware address to set for interface
+        :param int ifindex: index of interface to create
+        :param str ifname: name for interface
+        :return: interface index
+        :rtype: int
+        """
         self.lock.acquire()
         try:
+            # TODO: see if you can move this to emane specific code
             if nodeutils.is_node(net, NodeTypes.EMANE):
-                ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname,
-                                         net=net)
+                ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
@@ -308,8 +472,9 @@ class SimpleLxcNode(PyCoreNode):
             if hwaddr:
                 self.sethwaddr(ifindex, hwaddr)
 
-            for addr in utils.maketuple(addrlist):
-                self.addaddr(ifindex, addr)
+            if addrlist:
+                for addr in utils.maketuple(addrlist):
+                    self.addaddr(ifindex, addr)
 
             self.ifup(ifindex)
             return ifindex
@@ -317,6 +482,14 @@ class SimpleLxcNode(PyCoreNode):
             self.lock.release()
 
     def connectnode(self, ifname, othernode, otherifname):
+        """
+        Connect a node.
+
+        :param str ifname: name of interface to connect
+        :param core.netns.nodes.LxcNode othernode: node to connect to
+        :param str otherifname: interface name to connect to
+        :return: nothing
+        """
         tmplen = 8
         tmp1 = "tmp." + "".join([random.choice(string.ascii_lowercase)
                                  for x in xrange(tmplen)])
@@ -335,20 +508,53 @@ class SimpleLxcNode(PyCoreNode):
                            othernode.newifindex())
 
     def addfile(self, srcname, filename):
-        shcmd = "mkdir -p $(dirname '%s') && mv '%s' '%s' && sync" % \
-                (filename, srcname, filename)
+        """
+        Add a file.
+
+        :param str srcname: source file name
+        :param str filename: file name to add
+        :return: nothing
+        """
+        shcmd = "mkdir -p $(dirname '%s') && mv '%s' '%s' && sync" % (filename, srcname, filename)
         self.shcmd(shcmd)
 
     def getaddr(self, ifname, rescan=False):
+        """
+        Wrapper around vnodeclient getaddr.
+
+        :param str ifname: interface name to get address for
+        :param bool rescan: rescan flag
+        :return:
+        """
         return self.vnodeclient.getaddr(ifname=ifname, rescan=rescan)
 
     def netifstats(self, ifname=None):
+        """
+        Wrapper around vnodeclient netifstate.
+
+        :param str ifname: interface name to get state for
+        :return:
+        """
         return self.vnodeclient.netifstats(ifname=ifname)
 
 
 class LxcNode(SimpleLxcNode):
+    """
+    Provides lcx node functionality for core nodes.
+    """
+
     def __init__(self, session, objid=None, name=None,
                  nodedir=None, bootsh="boot.sh", start=True):
+        """
+        Create a LxcNode instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: object id
+        :param str name: object name
+        :param str nodedir: node directory
+        :param bootsh: boot shell
+        :param bool start: start flag
+        """
         super(LxcNode, self).__init__(session=session, objid=objid,
                                       name=name, nodedir=nodedir, start=start)
         self.bootsh = bootsh
@@ -356,12 +562,27 @@ class LxcNode(SimpleLxcNode):
             self.startup()
 
     def boot(self):
+        """
+        Boot the node.
+
+        :return: nothing
+        """
         self.session.services.bootnodeservices(self)
 
     def validate(self):
+        """
+        Validate the node.
+
+        :return: nothing
+        """
         self.session.services.validatenodeservices(self)
 
     def startup(self):
+        """
+        Startup logic for the node.
+
+        :return: nothing
+        """
         self.lock.acquire()
         try:
             self.makenodedir()
@@ -374,6 +595,11 @@ class LxcNode(SimpleLxcNode):
             self.lock.release()
 
     def shutdown(self):
+        """
+        Shutdown logic for the node.
+
+        :return: nothing
+        """
         if not self.up:
             return
         self.lock.acquire()
@@ -381,11 +607,19 @@ class LxcNode(SimpleLxcNode):
         # self.session.services.stopnodeservices(self)
         try:
             super(LxcNode, self).shutdown()
+        except:
+            logger.exception("error during shutdown")
         finally:
             self.rmnodedir()
             self.lock.release()
 
     def privatedir(self, path):
+        """
+        Create a private directory.
+
+        :param str path: path to create
+        :return: nothing
+        """
         if path[0] != "/":
             raise ValueError("path not fully qualified: %s" % path)
         hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
@@ -400,10 +634,13 @@ class LxcNode(SimpleLxcNode):
     def hostfilename(self, filename):
         """
         Return the name of a node's file on the host filesystem.
+
+        :param str filename: host file name
+        :return: path to file
         """
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")
@@ -411,6 +648,14 @@ class LxcNode(SimpleLxcNode):
         return os.path.join(dirname, basename)
 
     def opennodefile(self, filename, mode="w"):
+        """
+        Open a node file, within it's directory.
+
+        :param str filename: file name to open
+        :param str mode: mode to open file in
+        :return: open file
+        :rtype: file
+        """
         hostfilename = self.hostfilename(filename)
         dirname, basename = os.path.split(hostfilename)
         if not os.path.isdir(dirname):
@@ -418,6 +663,14 @@ class LxcNode(SimpleLxcNode):
         return open(hostfilename, mode)
 
     def nodefile(self, filename, contents, mode=0644):
+        """
+        Create a node file with a given mode.
+
+        :param str filename: name of file to create
+        :param contents: contents of file
+        :param int mode: mode for file
+        :return: nothing
+        """
         f = self.opennodefile(filename, "w")
         f.write(contents)
         os.chmod(f.name, mode)
@@ -428,6 +681,11 @@ class LxcNode(SimpleLxcNode):
         """
         Copy a file to a node, following symlinks and preserving metadata.
         Change file mode if specified.
+
+        :param str filename: file name to copy file to
+        :param str srcfilename: file to copy
+        :param int mode: mode to copy to
+        :return: nothing
         """
         hostfilename = self.hostfilename(filename)
         shutil.copy2(srcfilename, hostfilename)

@@ -1,6 +1,6 @@
 """
-nodes.py: definition of an LxcNode and CoreNode classes, and other node classes
-that inherit from the CoreNode, implementing specific node types.
+Definition of LxcNode, CoreNode, and other node classes that inherit from the CoreNode,
+implementing specific node types.
 """
 
 import socket
@@ -28,6 +28,9 @@ logger = log.get_logger(__name__)
 
 
 class CtrlNet(LxBrNet):
+    """
+    Control network functionality.
+    """
     policy = "ACCEPT"
     # base control interface index
     CTRLIF_IDX_BASE = 99
@@ -41,6 +44,20 @@ class CtrlNet(LxBrNet):
     def __init__(self, session, objid="ctrlnet", name=None, prefix=None,
                  hostid=None, start=True, assign_address=True,
                  updown_script=None, serverintf=None):
+        """
+        Creates a CtrlNet instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: node id
+        :param str name: node namee
+        :param prefix: control network ipv4 prefix
+        :param hostid: host id
+        :param bool start: start flag
+        :param str assign_address: assigned address
+        :param str updown_script: updown script
+        :param serverintf: server interface
+        :return:
+        """
         self.prefix = ipaddress.Ipv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
@@ -49,6 +66,11 @@ class CtrlNet(LxBrNet):
         LxBrNet.__init__(self, session, objid=objid, name=name, start=start)
 
     def startup(self):
+        """
+        Startup functionality for the control network.
+
+        :return: nothing
+        """
         if self.detectoldbridge():
             return
 
@@ -80,6 +102,9 @@ class CtrlNet(LxBrNet):
         """
         Occassionally, control net bridges from previously closed sessions are not cleaned up.
         Check if there are old control net bridges and delete them
+
+        :return: True if an old bridge was detected, False otherwise
+        :rtype: bool
         """
         retstat, retstr = utils.cmdresult([constants.BRCTL_BIN, 'show'])
         if retstat != 0:
@@ -110,6 +135,11 @@ class CtrlNet(LxBrNet):
         return False
 
     def shutdown(self):
+        """
+        Control network shutdown.
+
+        :return: nothing
+        """
         if self.serverintf is not None:
             try:
                 subprocess.check_call([constants.BRCTL_BIN, "delif", self.brname, self.serverintf])
@@ -125,27 +155,42 @@ class CtrlNet(LxBrNet):
     def all_link_data(self, flags):
         """
         Do not include CtrlNet in link messages describing this session.
+
+        :return: nothing
         """
         return []
 
 
 class CoreNode(LxcNode):
+    """
+    Basic core node class for nodes to extend.
+    """
     apitype = NodeTypes.DEFAULT.value
 
 
 class PtpNet(LxBrNet):
+    """
+    Peer to peer network node.
+    """
     policy = "ACCEPT"
 
     def attach(self, netif):
-        if len(self._netif) > 1:
-            raise ValueError, \
-                "Point-to-point links support at most 2 network interfaces"
+        """
+        Attach a network interface, but limit attachment to two interfaces.
+
+        :param core.coreobj.PyCoreNetIf netif: network interface
+        :return: nothing
+        """
+        if len(self._netif) >= 2:
+            raise ValueError("Point-to-point links support at most 2 network interfaces")
         LxBrNet.attach(self, netif)
 
     def data(self, message_type):
         """
         Do not generate a Node Message for point-to-point links. They are
         built using a link message instead.
+
+        :return: nothing
         """
         pass
 
@@ -153,6 +198,9 @@ class PtpNet(LxBrNet):
         """
         Build CORE API TLVs for a point-to-point link. One Link message
         describes this network.
+
+        :return: all link data
+        :rtype: list[LinkData]
         """
 
         all_links = []
@@ -253,20 +301,31 @@ class PtpNet(LxBrNet):
 
 
 class SwitchNode(LxBrNet):
+    """
+    Provides switch functionality within a core node.
+    """
     apitype = NodeTypes.SWITCH.value
     policy = "ACCEPT"
     type = "lanswitch"
 
 
 class HubNode(LxBrNet):
+    """
+    Provides hub functionality within a core node, forwards packets to all bridge
+    ports by turning off MAC address learning.
+    """
     apitype = NodeTypes.HUB.value
     policy = "ACCEPT"
     type = "hub"
 
     def __init__(self, session, objid=None, name=None, start=True):
         """
-        the Hub node forwards packets to all bridge ports by turning off
-        the MAC address learning
+        Creates a HubNode instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: node id
+        :param str name: node namee
+        :param bool start: start flag
         """
         LxBrNet.__init__(self, session, objid, name, start)
         if start:
@@ -274,12 +333,24 @@ class HubNode(LxBrNet):
 
 
 class WlanNode(LxBrNet):
+    """
+    Provides wireless lan functionality within a core node.
+    """
     apitype = NodeTypes.WIRELESS_LAN.value
     linktype = LinkTypes.WIRELESS.value
     policy = "DROP"
     type = "wlan"
 
     def __init__(self, session, objid=None, name=None, start=True, policy=None):
+        """
+        Create a WlanNode instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: node id
+        :param str name: node name
+        :param bool start: start flag
+        :param policy: wlan policy
+        """
         LxBrNet.__init__(self, session, objid, name, start, policy)
         # wireless model such as basic range
         self.model = None
@@ -287,12 +358,18 @@ class WlanNode(LxBrNet):
         self.mobility = None
 
     def attach(self, netif):
+        """
+        Attach a network interface.
+
+        :param core.coreobj.PyCoreNetIf netif: network interface
+        :return: nothing
+        """
         LxBrNet.attach(self, netif)
         if self.model:
             netif.poshook = self.model.position_callback
             if netif.node is None:
                 return
-            (x, y, z) = netif.node.position.get()
+            x, y, z = netif.node.position.get()
             # invokes any netif.poshook
             netif.setposition(x, y, z)
             # self.model.setlinkparams()
@@ -302,8 +379,8 @@ class WlanNode(LxBrNet):
         Sets the mobility and wireless model.
 
         :param core.mobility.WirelessModel.cls model: wireless model to set to
-        :param config:
-        :return:
+        :param config: model configuration
+        :return: nothing
         """
         logger.info("adding model %s" % model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
@@ -321,6 +398,10 @@ class WlanNode(LxBrNet):
     def updatemodel(self, model_name, values):
         """
         Allow for model updates during runtime (similar to setmodel().)
+
+        :param model_name: model name to update
+        :param values: values to update model with
+        :return: nothing
         """
         logger.info("updating model %s" % model_name)
         if self.model is None or self.model.name != model_name:
@@ -338,6 +419,13 @@ class WlanNode(LxBrNet):
             self.model.setlinkparams()
 
     def all_link_data(self, flags):
+        """
+        Retrieve all link data.
+
+        :param flags: link flags
+        :return: all link data
+        :rtype: list[LinkData]
+        """
         all_links = LxBrNet.all_link_data(self, flags)
 
         if self.model:
@@ -355,6 +443,16 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     type = "rj45"
 
     def __init__(self, session, objid=None, name=None, mtu=1500, start=True):
+        """
+        Create an RJ45Node instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: node id
+        :param str name: node name
+        :param mtu: rj45 mtu
+        :param bool start: start flag
+        :return:
+        """
         PyCoreNode.__init__(self, session, objid, name, start=start)
         # this initializes net, params, poshook
         PyCoreNetIf.__init__(self, node=self, name=name, mtu=mtu)
@@ -370,20 +468,24 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     def startup(self):
         """
         Set the interface in the up state.
+
+        :return: nothing
         """
         # interface will also be marked up during net.attach()
         self.savestate()
+
         try:
             subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "up"])
+            self.up = True
         except subprocess.CalledProcessError:
             logger.exception("failed to run command: %s link set %s up", constants.IP_BIN, self.localname)
-            return
-        self.up = True
 
     def shutdown(self):
         """
         Bring the interface down. Remove any addresses and queuing
         disciplines.
+
+        :return: nothing
         """
         if not self.up:
             return
@@ -393,43 +495,72 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         self.up = False
         self.restorestate()
 
+    # TODO: issue in that both classes inherited from provide the same method with different signatures
     def attachnet(self, net):
+        """
+        Attach a network.
+
+        :param core.coreobj.PyCoreNet net: network to attach
+        :return: nothing
+        """
         PyCoreNetIf.attachnet(self, net)
 
     def detachnet(self):
+        """
+        Detach a network.
+
+        :return: nothing
+        """
         PyCoreNetIf.detachnet(self)
 
-    def newnetif(self, net=None, addrlist=[], hwaddr=None,
-                 ifindex=None, ifname=None):
+    # TODO: parameters are not used
+    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
         This is called when linking with another node. Since this node
         represents an interface, we do not create another object here,
         but attach ourselves to the given network.
+
+        :param core.coreobj.PyCoreNet net: new network instance
+        :param list[str] addrlist: address list
+        :param str hwaddr: hardware address
+        :param int ifindex: interface index
+        :param str ifname: interface name
+        :return:
         """
-        self.lock.acquire()
-        try:
+        with self.lock:
             if ifindex is None:
                 ifindex = 0
+
             if self.net is not None:
-                raise ValueError, \
-                    "RJ45 nodes support at most 1 network interface"
+                raise ValueError("RJ45 nodes support at most 1 network interface")
+
             self._netif[ifindex] = self
             # PyCoreNetIf.node is self
             self.node = self
             self.ifindex = ifindex
+
             if net is not None:
                 self.attachnet(net)
-            for addr in utils.maketuple(addrlist):
-                self.addaddr(addr)
+
+            if addrlist:
+                for addr in utils.maketuple(addrlist):
+                    self.addaddr(addr)
+
             return ifindex
-        finally:
-            self.lock.release()
 
     def delnetif(self, ifindex):
+        """
+        Delete a network interface.
+
+        :param int ifindex: interface index to delete
+        :return: nothing
+        """
         if ifindex is None:
             ifindex = 0
+
         if ifindex not in self._netif:
             raise ValueError, "ifindex %s does not exist" % ifindex
+
         self._netif.pop(ifindex)
         if ifindex == self.ifindex:
             self.shutdown()
@@ -441,26 +572,54 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         This object is considered the network interface, so we only
         return self here. This keeps the RJ45Node compatible with
         real nodes.
+
+        :param int ifindex: interface index to retrieve
+        :param net: network to retrieve
+        :return: a network interface
+        :rtype: core.coreobj.PyCoreNetIf
         """
         if net is not None and net == self.net:
             return self
+
         if ifindex is None:
             ifindex = 0
+
         if ifindex == self.ifindex:
             return self
+
         return None
 
     def getifindex(self, netif):
+        """
+        Retrieve network interface index.
+
+        :param core.coreobj.PyCoreNetIf netif: network interface to retrieve index for
+        :return: interface index, None otherwise
+        :rtype: int
+        """
         if netif != self:
             return None
+
         return self.ifindex
 
     def addaddr(self, addr):
+        """
+        Add address to to network interface.
+
+        :param str addr: address to add
+        :return: nothing
+        """
         if self.up:
             subprocess.check_call([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
         PyCoreNetIf.addaddr(self, addr)
 
     def deladdr(self, addr):
+        """
+        Delete address from network interface.
+
+        :param str addr: address to delete
+        :return: nothing
+        """
         if self.up:
             subprocess.check_call([constants.IP_BIN, "addr", "del", str(addr), "dev", self.name])
         PyCoreNetIf.deladdr(self, addr)
@@ -469,6 +628,8 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         """
         Save the addresses and other interface state before using the
         interface for emulation purposes. TODO: save/restore the PROMISC flag
+
+        :return: nothing
         """
         self.old_up = False
         self.old_addrs = []
@@ -500,6 +661,8 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     def restorestate(self):
         """
         Restore the addresses and other interface state after using it.
+
+        :return: nothing
         """
         for addr in self.old_addrs:
             if addr[1] is None:
@@ -512,6 +675,8 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     def setposition(self, x=None, y=None, z=None):
         """
         Use setposition() from both parent classes.
+
+        :return: nothing
         """
         PyCoreObj.setposition(self, x, y, z)
         # invoke any poshook
@@ -519,6 +684,9 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
 
 
 class TunnelNode(GreTapBridge):
+    """
+    Provides tunnel functionality in a core node.
+    """
     apitype = NodeTypes.TUNNEL.value
     policy = "ACCEPT"
     type = "tunnel"

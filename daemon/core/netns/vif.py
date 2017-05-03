@@ -1,6 +1,5 @@
 """
-PyCoreNetIf classes that implement the interfaces available
-under Linux.
+virtual ethernet classes that implement the interfaces available under Linux.
 """
 
 import subprocess
@@ -19,7 +18,23 @@ utils.check_executables([constants.IP_BIN])
 
 
 class VEth(PyCoreNetIf):
+    """
+    Provides virtual ethernet functionality for core nodes.
+    """
+
+    # TODO: network is not used, why was it needed?
     def __init__(self, node, name, localname, mtu=1500, net=None, start=True):
+        """
+        Creates a VEth instance.
+
+        :param core.netns.nodes.CoreNode node: related core node
+        :param str name: interface name
+        :param str localname: interface local name
+        :param mtu: interface mtu
+        :param net: network
+        :param bool start: start flag
+        :return:
+        """
         # note that net arg is ignored
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.localname = localname
@@ -28,12 +43,22 @@ class VEth(PyCoreNetIf):
             self.startup()
 
     def startup(self):
+        """
+        Interface startup logic.
+
+        :return: nothing
+        """
         subprocess.check_call([constants.IP_BIN, "link", "add", "name", self.localname,
                                "type", "veth", "peer", "name", self.name])
         subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "up"])
         self.up = True
 
     def shutdown(self):
+        """
+        Interface shutdown logic.
+
+        :return: nothing
+        """
         if not self.up:
             return
         if self.node:
@@ -48,7 +73,18 @@ class TunTap(PyCoreNetIf):
     TUN/TAP virtual device in TAP mode
     """
 
+    # TODO: network is not used, why was it needed?
     def __init__(self, node, name, localname, mtu=1500, net=None, start=True):
+        """
+        Create a TunTap instance.
+
+        :param core.netns.nodes.CoreNode node: related core node
+        :param str name: interface name
+        :param str localname: local interface name
+        :param mtu: interface mtu
+        :param net: related network
+        :param bool start: start flag
+        """
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.localname = localname
         self.up = False
@@ -57,6 +93,11 @@ class TunTap(PyCoreNetIf):
             self.startup()
 
     def startup(self):
+        """
+        Startup logic for a tunnel tap.
+
+        :return: nothing
+        """
         # TODO: more sophisticated TAP creation here
         #   Debian does not support -p (tap) option, RedHat does.
         # For now, this is disabled to allow the TAP to be created by another
@@ -66,6 +107,11 @@ class TunTap(PyCoreNetIf):
         self.up = True
 
     def shutdown(self):
+        """
+        Shutdown functionality for a tunnel tap.
+
+        :return: nothing
+        """
         if not self.up:
             return
         self.node.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
@@ -75,7 +121,12 @@ class TunTap(PyCoreNetIf):
 
     def waitfor(self, func, attempts=10, maxretrydelay=0.25):
         """
-        Wait for func() to return zero with exponential backoff
+        Wait for func() to return zero with exponential backoff.
+
+        :param func: function to wait for a result of zero
+        :param int attempts: number of attempts to wait for a zero result
+        :param float maxretrydelay: maximum retry delay
+        :return: nothing
         """
         delay = 0.01
         for i in xrange(1, attempts + 1):
@@ -100,6 +151,9 @@ class TunTap(PyCoreNetIf):
         """
         Check for presence of a local device - tap device may not
         appear right away waits
+
+        :return: wait for device local response
+        :rtype: int
         """
 
         def localdevexists():
@@ -110,8 +164,9 @@ class TunTap(PyCoreNetIf):
 
     def waitfordevicenode(self):
         """
-        Check for presence of a node device - tap device may not
-        appear right away waits
+        Check for presence of a node device - tap device may not appear right away waits.
+
+        :return: nothing
         """
 
         def nodedevexists():
@@ -139,9 +194,12 @@ class TunTap(PyCoreNetIf):
         startup() method but called at a later time when a userspace
         program (running on the host) has had a chance to open the socket
         end of the TAP.
+
+        :return: nothing
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
+
         try:
             subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
         except subprocess.CalledProcessError:
@@ -149,12 +207,15 @@ class TunTap(PyCoreNetIf):
             msg += "ip link set %s netns %s" % (self.localname, netns)
             logger.exception(msg)
             return
+
         self.node.cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
         self.node.cmd([constants.IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
         """
         Set interface addresses based on self.addrlist.
+
+        :return: nothing
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
@@ -171,6 +232,20 @@ class GreTap(PyCoreNetIf):
     def __init__(self, node=None, name=None, session=None, mtu=1458,
                  remoteip=None, objid=None, localip=None, ttl=255,
                  key=None, start=True):
+        """
+        Creates a GreTap instance.
+
+        :param core.netns.nodes.CoreNode node: related core node
+        :param str name: interface name
+        :param core.session.Session session: core session instance
+        :param mtu: interface mtu
+        :param str remoteip: remote address
+        :param int objid: object id
+        :param str localip: local address
+        :param ttl: ttl value
+        :param key: gre tap key
+        :param bool start: start flag
+        """
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.session = session
         if objid is None:
@@ -201,6 +276,11 @@ class GreTap(PyCoreNetIf):
         self.up = True
 
     def shutdown(self):
+        """
+        Shutdown logic for a GreTap.
+
+        :return: nothing
+        """
         if self.localname:
             cmd = ("ip", "link", "set", self.localname, "down")
             subprocess.check_call(cmd)
@@ -209,7 +289,20 @@ class GreTap(PyCoreNetIf):
             self.localname = None
 
     def data(self, message_type):
+        """
+        Data for a gre tap.
+
+        :param message_type: message type for data
+        :return: None
+        """
         return None
 
     def all_link_data(self, flags):
+        """
+        Retrieve link data.
+
+        :param flags: link flags
+        :return: link data
+        :rtype: list[core.data.LinkData]
+        """
         return []

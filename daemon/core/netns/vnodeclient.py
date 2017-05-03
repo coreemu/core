@@ -24,7 +24,17 @@ VCMD = os.path.join(constants.CORE_SBIN_DIR, "vcmd")
 
 
 class VnodeClient(object):
+    """
+    Provides client functionality for interacting with a virtual node.
+    """
+
     def __init__(self, name, ctrlchnlname):
+        """
+        Create a VnodeClient instance.
+
+        :param str name: name for client
+        :param str ctrlchnlname: control channel name
+        """
         self.name = name
         self.ctrlchnlname = ctrlchnlname
         if USE_VCMD_MODULE:
@@ -34,18 +44,34 @@ class VnodeClient(object):
         self._addr = {}
 
     def connected(self):
+        """
+        Check if node is connected or not.
+
+        :return: True if connected, False otherwise
+        :rtype: bool
+        """
         if USE_VCMD_MODULE:
             return self.cmdchnl.connected()
         else:
             return True
 
     def close(self):
+        """
+        Close the client connection.
+
+        :return: nothing
+        """
         if USE_VCMD_MODULE:
             self.cmdchnl.close()
 
     def cmd(self, args, wait=True):
         """
         Execute a command on a node and return the status (return code).
+
+        :param list args: command arguments
+        :param bool wait: wait for command to end or not
+        :return: command status
+        :rtype: int
         """
         if USE_VCMD_MODULE:
             if not self.cmdchnl.connected():
@@ -62,8 +88,10 @@ class VnodeClient(object):
             tmp = os.spawnlp(mode, VCMD, VCMD, "-c", self.ctrlchnlname, "-q", "--", *args)
             if not wait:
                 return tmp
+
         if tmp:
             logger.warn("cmd exited with status %s: %s" % (tmp, str(args)))
+
         return tmp
 
     def cmdresult(self, args):
@@ -71,6 +99,10 @@ class VnodeClient(object):
         Execute a command on a node and return a tuple containing the
         exit status and result string. stderr output
         is folded into the stdout result string.
+
+        :param list args: command arguments
+        :return: command status and combined stdout and stderr output
+        :rtype: tuple[int, str]
         """
         cmdid, cmdin, cmdout, cmderr = self.popen(args)
         result = cmdout.read()
@@ -82,6 +114,13 @@ class VnodeClient(object):
         return status, result
 
     def popen(self, args):
+        """
+        Execute a popen command against the node.
+
+        :param list args: command arguments
+        :return: popen object, stdin, stdout, and stderr
+        :rtype: tuple
+        """
         if USE_VCMD_MODULE:
             if not self.cmdchnl.connected():
                 raise ValueError("self.cmdchnl not connected")
@@ -93,12 +132,27 @@ class VnodeClient(object):
             return tmp, tmp.stdin, tmp.stdout, tmp.stderr
 
     def icmd(self, args):
+        """
+        Execute an icmd against a node.
+
+        :param list args: command arguments
+        :return: command result
+        :rtype: int
+        """
         return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname, "--", *args)
 
     def redircmd(self, infd, outfd, errfd, args, wait=True):
         """
         Execute a command on a node with standard input, output, and
         error redirected according to the given file descriptors.
+
+        :param infd: stdin file descriptor
+        :param outfd: stdout file descriptor
+        :param errfd: stderr file descriptor
+        :param list args: command arguments
+        :param bool wait: wait flag
+        :return: command status
+        :rtype: int
         """
         if not USE_VCMD_MODULE:
             raise NotImplementedError
@@ -113,6 +167,13 @@ class VnodeClient(object):
         return tmp
 
     def term(self, sh="/bin/sh"):
+        """
+        Open a terminal on a node.
+
+        :param str sh: shell to open terminal with
+        :return: terminal command result
+        :rtype: int
+        """
         cmd = ("xterm", "-ut", "-title", self.name, "-e",
                VCMD, "-c", self.ctrlchnlname, "--", sh)
         if "SUDO_USER" in os.environ:
@@ -122,12 +183,34 @@ class VnodeClient(object):
         return os.spawnvp(os.P_NOWAIT, cmd[0], cmd)
 
     def termcmdstring(self, sh="/bin/sh"):
+        """
+        Create a terminal command string.
+
+        :param str sh: shell to execute command in
+        :return: str
+        """
         return "%s -c %s -- %s" % (VCMD, self.ctrlchnlname, sh)
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
+        """
+        Execute a shell command.
+
+        :param str cmdstr: command string
+        :param str sh: shell to run command in
+        :return: command result
+        :rtype: int
+        """
         return self.cmd([sh, "-c", cmdstr])
 
     def getaddr(self, ifname, rescan=False):
+        """
+        Get address for interface on node.
+
+        :param str ifname: interface name to get address for
+        :param bool rescan: rescan flag
+        :return: interface information
+        :rtype: dict
+        """
         if ifname in self._addr and not rescan:
             return self._addr[ifname]
         tmp = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
@@ -161,6 +244,13 @@ class VnodeClient(object):
         return tmp
 
     def netifstats(self, ifname=None):
+        """
+        Retrieve network interface state.
+
+        :param str ifname: name of interface to get state for
+        :return: interface state information
+        :rtype: dict
+        """
         stats = {}
         cmd = ["cat", "/proc/net/dev"]
         cmdid, cmdin, cmdout, cmderr = self.popen(cmd)
@@ -199,6 +289,15 @@ class VnodeClient(object):
 
 
 def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
+    """
+    Create clients
+
+    :param str sessiondir: session directory to create clients
+    :param class clientcls: class to create clients from
+    :param func cmdchnlfilterfunc: command channel filter function
+    :return: list of created clients
+    :rtype: list
+    """
     direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
     cmdchnls = filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries)
     if cmdchnlfilterfunc:
@@ -211,6 +310,12 @@ def createremoteclients(sessiondir, clientcls=VnodeClient, filterfunc=None):
     """
     Creates remote VnodeClients, for nodes emulated on other machines. The
     session.Broker writes a n1.conf/server file having the server's info.
+
+    :param str sessiondir: session directory to create clients
+    :param class clientcls: class to create clients from
+    :param func filterfunc: filter function
+    :return: list of remove clients
+    :rtype: list
     """
     direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
     nodedirs = filter(lambda x: stat.S_ISDIR(os.stat(x).st_mode), direntries)

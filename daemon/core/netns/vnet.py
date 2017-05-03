@@ -58,6 +58,8 @@ class EbtablesQueue(object):
     def startupdateloop(self, wlan):
         """
         Kick off the update loop; only needs to be invoked once.
+
+        :return: nothing
         """
         self.updatelock.acquire()
         self.last_update_time[wlan] = time.time()
@@ -72,6 +74,8 @@ class EbtablesQueue(object):
     def stopupdateloop(self, wlan):
         """
         Kill the update loop thread if there are no more WLANs using it.
+
+        :return: nothing
         """
         self.updatelock.acquire()
         try:
@@ -90,6 +94,10 @@ class EbtablesQueue(object):
     def ebatomiccmd(self, cmd):
         """
         Helper for building ebtables atomic file command list.
+
+        :param list[str] cmd: ebtable command
+        :return: ebtable atomic command
+        :rtype: list[str]
         """
         r = [constants.EBTABLES_BIN, "--atomic-file", self.atomic_file]
         if cmd:
@@ -99,17 +107,25 @@ class EbtablesQueue(object):
     def lastupdate(self, wlan):
         """
         Return the time elapsed since this WLAN was last updated.
+
+        :param wlan: wlan entity
+        :return: elpased time
+        :rtype: float
         """
         try:
             elapsed = time.time() - self.last_update_time[wlan]
         except KeyError:
             self.last_update_time[wlan] = time.time()
             elapsed = 0.0
+
         return elapsed
 
     def updated(self, wlan):
         """
         Keep track of when this WLAN was last updated.
+
+        :param wlan: wlan entity
+        :return: nothing
         """
         self.last_update_time[wlan] = time.time()
         self.updates.remove(wlan)
@@ -119,6 +135,8 @@ class EbtablesQueue(object):
         Thread target that looks for WLANs needing update, and
         rate limits the amount of ebtables activity. Only one userspace program
         should use ebtables at any given time, or results can be unpredictable.
+
+        :return: nothing
         """
         while self.doupdateloop:
             self.updatelock.acquire()
@@ -144,8 +162,9 @@ class EbtablesQueue(object):
 
     def ebcommit(self, wlan):
         """
-        Perform ebtables atomic commit using commands built in the
-        self.cmds list.
+        Perform ebtables atomic commit using commands built in the self.cmds list.
+
+        :return: nothing
         """
         # save kernel ebtables snapshot to a file
         cmd = self.ebatomiccmd(["--atomic-save", ])
@@ -177,6 +196,8 @@ class EbtablesQueue(object):
         """
         Flag a change to the given WLAN's _linked dict, so the ebtables
         chain will be rebuilt at the next interval.
+
+        :return: nothing
         """
         self.updatelock.acquire()
         if wlan not in self.updates:
@@ -185,8 +206,9 @@ class EbtablesQueue(object):
 
     def buildcmds(self, wlan):
         """
-        Inspect a _linked dict from a wlan, and rebuild the ebtables chain
-        for that WLAN.
+        Inspect a _linked dict from a wlan, and rebuild the ebtables chain for that WLAN.
+
+        :return: nothing
         """
         wlan._linked_lock.acquire()
         # flush the chain
@@ -213,18 +235,34 @@ ebq = EbtablesQueue()
 
 
 def ebtablescmds(call, cmds):
-    ebtables_lock.acquire()
-    try:
+    """
+    Run ebtable commands.
+
+    :param func call: function to call commands
+    :param list cmds: commands to call
+    :return: nothing
+    """
+    with ebtables_lock:
         for cmd in cmds:
             call(cmd)
-    finally:
-        ebtables_lock.release()
 
 
 class LxBrNet(PyCoreNet):
+    """
+    Provides linux bridge network functionlity for core nodes.
+    """
     policy = "DROP"
 
     def __init__(self, session, objid=None, name=None, start=True, policy=None):
+        """
+        Creates a LxBrNet instance.
+
+        :param core.session.Session session: core session instance
+        :param int objid: object id
+        :param str name: object name
+        :param bool start: start flag
+        :param policy: network policy
+        """
         PyCoreNet.__init__(self, session, objid, name, start)
         if name is None:
             name = str(self.objid)
@@ -239,6 +277,11 @@ class LxBrNet(PyCoreNet):
             ebq.startupdateloop(self)
 
     def startup(self):
+        """
+        Linux bridge starup logic.
+
+        :return: nothing
+        """
         try:
             subprocess.check_call([constants.BRCTL_BIN, "addbr", self.brname])
         except subprocess.CalledProcessError:
@@ -264,6 +307,11 @@ class LxBrNet(PyCoreNet):
         self.up = True
 
     def shutdown(self):
+        """
+        Linux bridge shutdown logic.
+
+        :return: nothing
+        """
         if not self.up:
             return
         ebq.stopupdateloop(self)
@@ -282,6 +330,12 @@ class LxBrNet(PyCoreNet):
         self.up = False
 
     def attach(self, netif):
+        """
+        Attach a network interface.
+
+        :param core.netns.vif.VEth netif: network interface to attach
+        :return: nothing
+        """
         if self.up:
             try:
                 subprocess.check_call([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
@@ -292,6 +346,12 @@ class LxBrNet(PyCoreNet):
         PyCoreNet.attach(self, netif)
 
     def detach(self, netif):
+        """
+        Detach a network interface.
+
+        :param core.netns.vif.Veth netif: network interface to detach
+        :return: nothing
+        """
         if self.up:
             try:
                 subprocess.check_call([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
@@ -301,11 +361,21 @@ class LxBrNet(PyCoreNet):
         PyCoreNet.detach(self, netif)
 
     def linked(self, netif1, netif2):
+        """
+        Determine if the provided network interfaces are linked.
+
+        :param core.netns.vif.Veth netif1: interface one
+        :param core.netns.vif.Veth netif2: interface two
+        :return: True if interfaces are linked, False otherwise
+        :rtype: bool
+        """
         # check if the network interfaces are attached to this network
         if self._netif[netif1.netifi] != netif1:
-            raise ValueError, "inconsistency for netif %s" % netif1.name
+            raise ValueError("inconsistency for netif %s" % netif1.name)
+
         if self._netif[netif2.netifi] != netif2:
-            raise ValueError, "inconsistency for netif %s" % netif2.name
+            raise ValueError("inconsistency for netif %s" % netif2.name)
+
         try:
             linked = self._linked[netif1][netif2]
         except KeyError:
@@ -314,14 +384,19 @@ class LxBrNet(PyCoreNet):
             elif self.policy == "DROP":
                 linked = False
             else:
-                raise Exception, "unknown policy: %s" % self.policy
+                raise Exception("unknown policy: %s" % self.policy)
             self._linked[netif1][netif2] = linked
+
         return linked
 
     def unlink(self, netif1, netif2):
         """
         Unlink two PyCoreNetIfs, resulting in adding or removing ebtables
         filtering rules.
+
+        :param core.netns.vif.Veth netif1: interface one
+        :param core.netns.vif.Veth netif2: interface two
+        :return: nothing
         """
         self._linked_lock.acquire()
         if not self.linked(netif1, netif2):
@@ -335,6 +410,10 @@ class LxBrNet(PyCoreNet):
         """
         Link two PyCoreNetIfs together, resulting in adding or removing
         ebtables filtering rules.
+
+        :param core.netns.vif.Veth netif1: interface one
+        :param core.netns.vif.Veth netif2: interface two
+        :return: nothing
         """
         self._linked_lock.acquire()
         if self.linked(netif1, netif2):
@@ -347,8 +426,17 @@ class LxBrNet(PyCoreNet):
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None,
                    jitter=None, netif2=None, devname=None):
         """
-        Configure link parameters by applying tc queuing disciplines on the
-        interface.
+        Configure link parameters by applying tc queuing disciplines on the interface.
+
+        :param core.netns.vif.Veth netif: interface one
+        :param bw: bandwidth to set to
+        :param delay: packet delay to set to
+        :param loss: packet loss to set to
+        :param duplicate: duplicate percentage to set to
+        :param jitter: jitter to set to
+        :param core.netns.vif.Veth netif2: interface two
+        :param devname: device name
+        :return: nothing
         """
         if devname is None:
             devname = netif.localname
@@ -359,7 +447,8 @@ class LxBrNet(PyCoreNet):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
             if bw is not None:
                 burst = max(2 * netif.mtu, bw / 1000)
-                limit = 0xffff  # max IP payload
+                # max IP payload
+                limit = 0xffff
                 tbf = ["tbf", "rate", str(bw),
                        "burst", str(burst), "limit", str(limit)]
             if bw > 0:
@@ -422,22 +511,26 @@ class LxBrNet(PyCoreNet):
         """
         Link this bridge with another by creating a veth pair and installing
         each device into each bridge.
+
+        :param core.netns.vnet.LxBrNet net: network to link with
+        :return: created interface
+        :rtype: Veth
         """
         sessionid = self.session.short_session_id()
         try:
-            self_objid = '%x' % self.objid
+            self_objid = "%x" % self.objid
         except TypeError:
-            self_objid = '%s' % self.objid
+            self_objid = "%s" % self.objid
         try:
-            net_objid = '%x' % net.objid
+            net_objid = "%x" % net.objid
         except TypeError:
-            net_objid = '%s' % net.objid
-        localname = 'veth%s.%s.%s' % (self_objid, net_objid, sessionid)
+            net_objid = "%s" % net.objid
+        localname = "veth%s.%s.%s" % (self_objid, net_objid, sessionid)
         if len(localname) >= 16:
-            raise ValueError("interface local name '%s' too long" % localname)
-        name = 'veth%s.%s.%s' % (net_objid, self_objid, sessionid)
+            raise ValueError("interface local name %s too long" % localname)
+        name = "veth%s.%s.%s" % (net_objid, self_objid, sessionid)
         if len(name) >= 16:
-            raise ValueError("interface name '%s' too long" % name)
+            raise ValueError("interface name %s too long" % name)
         netif = VEth(node=None, name=name, localname=localname,
                      mtu=1500, net=self, start=self.up)
         self.attach(netif)
@@ -458,15 +551,22 @@ class LxBrNet(PyCoreNet):
         """
         Return the interface of that links this net with another net
         (that were linked using linknet()).
+
+        :param core.netns.vnet.LxBrNet net: interface to get link for
+        :return: interface the provided network is linked to
+        :rtype: core.netns.vnet.LxBrNet
         """
         for netif in self.netifs():
-            if hasattr(netif, 'othernet') and netif.othernet == net:
+            if hasattr(netif, "othernet") and netif.othernet == net:
                 return netif
         return None
 
     def addrconfig(self, addrlist):
         """
         Set addresses on the bridge.
+
+        :param list[str] addrlist: address list
+        :return: nothing
         """
         if not self.up:
             return
@@ -485,6 +585,20 @@ class GreTapBridge(LxBrNet):
 
     def __init__(self, session, remoteip=None, objid=None, name=None,
                  policy="ACCEPT", localip=None, ttl=255, key=None, start=True):
+        """
+        Create a GreTapBridge instance.
+
+        :param core.session.Session session: core session instance
+        :param str remoteip: remote address
+        :param int objid: object id
+        :param str name: object name
+        :param policy: network policy
+        :param str localip: local address
+        :param ttl: ttl value
+        :param key: gre tap key
+        :param bool start: start flag
+        :return:
+        """
         LxBrNet.__init__(self, session=session, objid=objid, name=name, policy=policy, start=False)
         self.grekey = key
         if self.grekey is None:
@@ -497,15 +611,16 @@ class GreTapBridge(LxBrNet):
         if remoteip is None:
             self.gretap = None
         else:
-            self.gretap = GreTap(node=self, name=None, session=session,
-                                 remoteip=remoteip, objid=None, localip=localip, ttl=ttl,
-                                 key=self.grekey)
+            self.gretap = GreTap(node=self, name=None, session=session, remoteip=remoteip,
+                                 objid=None, localip=localip, ttl=ttl, key=self.grekey)
         if start:
             self.startup()
 
     def startup(self):
         """
         Creates a bridge and adds the gretap device to it.
+
+        :return: nothing
         """
         LxBrNet.startup(self)
         if self.gretap:
@@ -514,6 +629,8 @@ class GreTapBridge(LxBrNet):
     def shutdown(self):
         """
         Detach the gretap device and remove the bridge.
+
+        :return: nothing
         """
         if self.gretap:
             self.detach(self.gretap)
@@ -527,15 +644,17 @@ class GreTapBridge(LxBrNet):
         creating the GreTap device, which requires the remoteip at startup.
         The 1st address in the provided list is remoteip, 2nd optionally
         specifies localip.
+
+        :param list addrlist: address list
+        :return: nothing
         """
         if self.gretap:
-            raise ValueError, "gretap already exists for %s" % self.name
+            raise ValueError("gretap already exists for %s" % self.name)
         remoteip = addrlist[0].split('/')[0]
         localip = None
         if len(addrlist) > 1:
             localip = addrlist[1].split('/')[0]
-        self.gretap = GreTap(session=self.session, remoteip=remoteip,
-                             objid=None, name=None,
+        self.gretap = GreTap(session=self.session, remoteip=remoteip, objid=None, name=None,
                              localip=localip, ttl=self.ttl, key=self.grekey)
         self.attach(self.gretap)
 
@@ -543,5 +662,8 @@ class GreTapBridge(LxBrNet):
         """
         Set the GRE key used for the GreTap device. This needs to be set
         prior to instantiating the GreTap device (before addrconfig).
+
+        :param key: gre key
+        :return: nothing
         """
         self.grekey = key
