@@ -5,7 +5,7 @@ Convenience methods to setup logging.
 import logging
 
 _LOG_LEVEL = logging.INFO
-_LOG_FORMAT = '%(levelname)-7s %(asctime)s %(name)-15s %(funcName)-15s %(lineno)-4d: %(message)s'
+_LOG_FORMAT = "%(levelname)-7s %(asctime)s %(name)-15s %(funcName)-15s %(lineno)-4d: %(message)s"
 _INITIAL = True
 
 

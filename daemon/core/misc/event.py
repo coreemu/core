@@ -17,19 +17,41 @@ class Timer(threading.Thread):
     already running.
     """
 
-    def __init__(self, interval, function, args=[], kwargs={}):
+    def __init__(self, interval, function, args=None, kwargs=None):
+        """
+        Create a Timer instance.
+
+        :param interval: time interval
+        :param function: function to call when timer finishes
+        :param args: function arguments
+        :param kwargs: function keyword arguments
+        """
         super(Timer, self).__init__()
         self.interval = interval
         self.function = function
-        self.args = args
-        self.kwargs = kwargs
+
         self.finished = threading.Event()
         self._running = threading.Lock()
+
+        # validate arguments were provided
+        if args:
+            self.args = args
+        else:
+            self.args = []
+
+        # validate keyword arguments were provided
+        if kwargs:
+            self.kwargs = kwargs
+        else:
+            self.kwargs = {}
 
     def cancel(self):
         """
         Stop the timer if it hasn't finished yet.  Return False if
         the timer was already running.
+
+        :return: True if canceled, False otherwise
+        :rtype: bool
         """
         locked = self._running.acquire(False)
         if locked:
@@ -38,6 +60,11 @@ class Timer(threading.Thread):
         return locked
 
     def run(self):
+        """
+        Run the timer.
+
+        :return: nothing
+        """
         self.finished.wait(self.interval)
         with self._running:
             if not self.finished.is_set():
@@ -46,7 +73,20 @@ class Timer(threading.Thread):
 
 
 class Event(object):
+    """
+    Provides event objects that can be used within the EventLoop class.
+    """
+
     def __init__(self, eventnum, event_time, func, *args, **kwds):
+        """
+        Create an Event instance.
+
+        :param eventnum: event number
+        :param event_time: event time
+        :param func: event function
+        :param args: function arguments
+        :param kwds: function keyword arguments
+        """
         self.eventnum = eventnum
         self.time = event_time
         self.func = func
@@ -55,23 +95,47 @@ class Event(object):
         self.canceled = False
 
     def __cmp__(self, other):
+        """
+        Comparison function.
+
+        :param Event other: event to compare with
+        :return: comparison result
+        :rtype: int
+        """
         tmp = cmp(self.time, other.time)
         if tmp == 0:
             tmp = cmp(self.eventnum, other.eventnum)
         return tmp
 
     def run(self):
+        """
+        Run an event.
+
+        :return: nothing
+        """
         if self.canceled:
             return
         self.func(*self.args, **self.kwds)
 
     def cancel(self):
+        """
+        Cancel event.
+
+        :return: nothing
+        """
         # XXX not thread-safe
         self.canceled = True
 
 
 class EventLoop(object):
+    """
+    Provides an event loop for running events.
+    """
+
     def __init__(self):
+        """
+        Creates a EventLoop instance.
+        """
         self.lock = threading.RLock()
         self.queue = []
         self.eventnum = 0
@@ -80,6 +144,11 @@ class EventLoop(object):
         self.start = None
 
     def __run_events(self):
+        """
+        Run events.
+
+        :return: nothing
+        """
         schedule = False
         while True:
             with self.lock:
@@ -92,12 +161,18 @@ class EventLoop(object):
                 event = heapq.heappop(self.queue)
             assert event.time <= now
             event.run()
+
         with self.lock:
             self.timer = None
             if schedule:
                 self.__schedule_event()
 
     def __schedule_event(self):
+        """
+        Schedule event.
+
+        :return: nothing
+        """
         with self.lock:
             assert self.running
             if not self.queue:
@@ -109,6 +184,11 @@ class EventLoop(object):
             self.timer.start()
 
     def run(self):
+        """
+        Start event loop.
+
+        :return: nothing
+        """
         with self.lock:
             if self.running:
                 return
@@ -119,6 +199,11 @@ class EventLoop(object):
             self.__schedule_event()
 
     def stop(self):
+        """
+        Stop event loop.
+
+        :return: nothing
+        """
         with self.lock:
             if not self.running:
                 return
@@ -131,6 +216,16 @@ class EventLoop(object):
             self.start = None
 
     def add_event(self, delaysec, func, *args, **kwds):
+        """
+        Add an event to the event loop.
+
+        :param int delaysec: delay in seconds for event
+        :param func: event function
+        :param args: event arguments
+        :param kwds: event keyword arguments
+        :return: created event
+        :rtype: Event
+        """
         with self.lock:
             eventnum = self.eventnum
             self.eventnum += 1
@@ -154,6 +249,7 @@ class EventLoop(object):
         return event
 
 
+# TODO: move example to documentation
 def example():
     loop = EventLoop()
 

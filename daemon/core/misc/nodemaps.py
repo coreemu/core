@@ -1,3 +1,7 @@
+"""
+Provides default node maps that can be used to run core with.
+"""
+
 from core.emane.nodes import EmaneNet
 from core.emane.nodes import EmaneNode
 from core.enumerations import NodeTypes
@@ -7,6 +11,7 @@ from core.netns.vnet import GreTapBridge
 from core.phys import pnodes
 from core.xen import xen
 
+# legacy core nodes, that leverage linux bridges
 CLASSIC_NODES = {
     NodeTypes.DEFAULT: nodes.CoreNode,
     NodeTypes.PHYSICAL: pnodes.PhysicalNode,
@@ -25,6 +30,7 @@ CLASSIC_NODES = {
     NodeTypes.CONTROL_NET: nodes.CtrlNet
 }
 
+# ovs nodes, that depend on ovs to leverage ovs based bridges
 OVS_NODES = {
     NodeTypes.DEFAULT: nodes.CoreNode,
     NodeTypes.PHYSICAL: pnodes.PhysicalNode,

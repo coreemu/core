@@ -1,3 +1,7 @@
+"""
+Utilities for working with python struct data.
+"""
+
 from core.misc import log
 
 logger = log.get_logger(__name__)
