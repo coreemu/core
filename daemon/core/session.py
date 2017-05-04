@@ -52,109 +52,6 @@ from core.xml.xmlsession import save_session_xml
 logger = log.get_logger(__name__)
 
 
-class HookManager(object):
-    """
-    Manages hooks that can be ran as part of state changes.
-    """
-
-    def __init__(self, hook_dir):
-        """
-        Creates a HookManager instance.
-
-        :param str hook_dir: the hook directory
-        """
-        self.hook_dir = hook_dir
-        self.hooks = {}
-
-    def add(self, hook_type, file_name, source_name, data):
-        """
-        Adds a hook to the manager.
-
-        :param str hook_type: hook type
-        :param str file_name: file name for hook
-        :param str source_name: source name for hook
-        :param data: data for hook
-        :return: nothing
-        """
-        logger.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
-
-        hook_id, state = hook_type.split(":")[:2]
-        if not state.isdigit():
-            logger.error("error setting hook having state: %s", state)
-            return
-
-        state = int(state)
-        hook = file_name, data
-
-        # append hook to current state hooks
-        state_hooks = self.hooks.setdefault(state, [])
-        state_hooks.append(hook)
-
-    def clear(self):
-        """
-        Clear all known hooks.
-
-        :return: nothing
-        """
-        self.hooks.clear()
-
-    def state_change(self, state, environment):
-        """
-        Mark a state change to notify related hooks to run with the provided environment.
-
-        :param int state: the new state after a change
-        :param dict environment: environment to run hook in
-        :return: nothing
-        """
-        # retrieve all state hooks
-        hooks = self.hooks.get(state, [])
-
-        if not hooks:
-            logger.info("no state hooks for state: %s", state)
-
-        # execute all state hooks
-        for hook in hooks:
-            self.run(hook, environment)
-
-    def run(self, hook, environment):
-        """
-        Run a hook, with a provided environment.
-
-        :param tuple hook: hook to run
-        :param dict environment: environment to run hook with
-        :return: nothing
-        """
-        file_name, data = hook
-        logger.info("running hook: %s", file_name)
-        hook_file_name = os.path.join(self.hook_dir, file_name)
-
-        # write data to hook file
-        try:
-            hook_file = open(hook_file_name, "w")
-            hook_file.write(data)
-            hook_file.close()
-        except IOError:
-            logger.exception("error writing hook: %s", file_name)
-
-        # setup hook stdout and stderr
-        try:
-            stdout = open(hook_file_name + ".log", "w")
-            stderr = subprocess.STDOUT
-        except IOError:
-            logger.exception("error setting up hook stderr and stdout: %s", hook_file_name)
-            stdout = None
-            stderr = None
-
-        # execute hook file
-        try:
-            stdin = open(os.devnull, "r")
-            command = ["/bin/sh", file_name]
-            subprocess.check_call(command, stdin=stdin, stdout=stdout, stderr=stderr,
-                                  close_fds=True, cwd=self.hook_dir, env=environment)
-        except subprocess.CalledProcessError:
-            logger.exception("error running hook '%s'", file_name)
-
-
 class SessionManager(object):
     """
     Manages currently known sessions.
@@ -407,7 +304,7 @@ class Session(object):
         """
         Set the session's current state.
 
-        :param EventTypes state: state to set to
+        :param int state: state to set to
         :param send_event: if true, generate core API event messages
         :return: nothing
         """
@@ -415,7 +312,7 @@ class Session(object):
 
         if self.state == state:
             logger.info("session is already in state: %s, skipping change", state_name)
-            return []
+            return
 
         self.state = state
         self._state_time = time.time()
@@ -427,23 +324,8 @@ class Session(object):
         self.run_state_hooks(state)
 
         if send_event:
-            event_data = EventData(
-                event_type=state,
-                time="%s" % time.time()
-            )
+            event_data = EventData(event_type=state, time="%s" % time.time())
             self.broadcast_event(event_data)
-            # TODO: append data to replies? convert replies to data?
-            # replies.append(event_data)
-
-            # send event message to connected handlers (e.g. GUI)
-            # if self.is_connected():
-            # try:
-            #     if return_event:
-            #         replies.append(message)
-            #     else:
-            #         self.broadcast_raw(None, message)
-            # except IOError:
-            #     logger.exception("error broadcasting event message: %s", message)
 
             # also inform slave servers
             # TODO: deal with broker, potentially broker should really live within the core server/handlers

@@ -280,8 +280,10 @@ class EventTypes(Enum):
     INSTANTIATION_COMPLETE = 15
 
 
-# Session Message TLV Types
 class SessionTlvs(Enum):
+    """
+    Session type, length, value enumerations.
+    """
     NUMBER = 0x01
     NAME = 0x02
     FILE = 0x03
