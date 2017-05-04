@@ -210,13 +210,12 @@ class Session(object):
     CORE session manager.
     """
 
-    def __init__(self, session_id, config=None, server=None, persistent=False, mkdir=True):
+    def __init__(self, session_id, config=None, persistent=False, mkdir=True):
         """
         Create a Session instance.
 
         :param int session_id: session id
         :param dict config: session configuration
-        :param core.coreserver.CoreServer server: core server object
         :param bool persistent: flag is session is considered persistent
         :param bool mkdir: flag to determine if a directory should be made
         """
@@ -255,9 +254,6 @@ class Session(object):
         self._state_hooks = {}
 
         self.add_state_hook(state=EventTypes.RUNTIME_STATE.value, hook=self.runtime_state_hook)
-
-        # TODO: remove this server reference
-        self.server = server
 
         if not persistent:
             SessionManager.add(self)
@@ -307,6 +303,7 @@ class Session(object):
         self.link_handlers = []
         self.file_handlers = []
         self.config_handlers = []
+        self.shutdown_handlers = []
 
     def shutdown(self):
         """
@@ -333,12 +330,12 @@ class Session(object):
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
 
-        # remove session from server if one was provided
-        if self.server:
-            self.server.remove_session(self)
-
         # remove this session from the manager
         SessionManager.remove(self)
+
+        # call session shutdown handlers
+        for handler in self.shutdown_handlers:
+            handler(self)
 
     def broadcast_event(self, event_data):
         """

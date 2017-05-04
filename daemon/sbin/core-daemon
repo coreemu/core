@@ -31,6 +31,7 @@ from core import corehandlers
 from core import coreserver
 from core import enumerations
 from core.api import coreapi
+from core.corehandlers import CoreDatagramRequestHandler
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
 from core.misc import log
@@ -48,54 +49,64 @@ from core.services import ucarp
 from core.services import utility
 from core.services import xorp
 
+logger = log.get_logger(__name__)
+
 DEFAULT_MAXFD = 1024
 
 
-#
-# UDP server startup
-#
-def startudp(mainserver, server_address):
-    """ Start a thread running a UDP server on the same host,port for
-    connectionless requests.
+def startudp(core_server, server_address):
     """
-    mainserver.udpserver = coreserver.CoreUdpServer(
-            server_address,
-            corehandlers.CoreDatagramRequestHandler,
-            mainserver)
-    mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start)
-    mainserver.udpthread.daemon = True
-    mainserver.udpthread.start()
-    return mainserver.udpserver
+    Start a thread running a UDP server on the same host,port for connectionless requests.
+
+    :param core.coreserver.CoreServer core_server: core server instance
+    :param tuple[str, int] server_address: server address
+    :return: created core udp server
+    :rtype: core.coreserver.CoreUdpServer
+    """
+    core_server.udpserver = coreserver.CoreUdpServer(server_address, CoreDatagramRequestHandler, core_server)
+    core_server.udpthread = threading.Thread(target=core_server.udpserver.start)
+    core_server.udpthread.daemon = True
+    core_server.udpthread.start()
+    return core_server.udpserver
 
 
-#
-# Auxiliary server startup
-#
-def startaux(mainserver, aux_address, aux_handler):
-    """ Start a thread running an auxiliary TCP server on the given address.
+def startaux(core_server, aux_address, aux_handler):
+    """
+    Start a thread running an auxiliary TCP server on the given address.
     This server will communicate with client requests using a handler
     using the aux_handler class. The aux_handler can provide an alternative
     API to CORE.
+
+    :param core.coreserver.CoreServer core_server: core server instance
+    :param tuple[str, int] aux_address: auxiliary server address
+    :param str aux_handler: auxiliary handler string to import
+    :return: auxiliary server
     """
     handlermodname, dot, handlerclassname = aux_handler.rpartition(".")
     handlermod = importlib.import_module(handlermodname)
     handlerclass = getattr(handlermod, handlerclassname)
-    mainserver.auxserver = coreserver.CoreAuxServer(aux_address, handlerclass, mainserver)
-    mainserver.auxthread = threading.Thread(target=mainserver.auxserver.start)
-    mainserver.auxthread.daemon = True
-    mainserver.auxthread.start()
-    return mainserver.auxserver
+    core_server.auxserver = coreserver.CoreAuxServer(aux_address, handlerclass, core_server)
+    core_server.auxthread = threading.Thread(target=core_server.auxserver.start)
+    core_server.auxthread.daemon = True
+    core_server.auxthread.start()
+    return core_server.auxserver
 
 
 def banner():
-    """ Output the program banner printed to the terminal or log file.
     """
-    sys.stdout.write("CORE daemon v.%s started %s\n" % (constants.COREDPY_VERSION, time.ctime()))
-    sys.stdout.flush()
+    Output the program banner printed to the terminal or log file.
+
+    :return: nothing
+    """
+    logger.info("CORE daemon v.%s started %s\n" % (constants.COREDPY_VERSION, time.ctime()))
 
 
 def cored(cfg=None):
-    """ Start the CoreServer object and enter the server loop.
+    """
+    Start the CoreServer object and enter the server loop.
+
+    :param dict cfg: core configuration
+    :return: nothing
     """
     host = cfg["listenaddr"]
     port = int(cfg["port"])
@@ -103,30 +114,32 @@ def cored(cfg=None):
         host = "localhost"
     try:
         server = coreserver.CoreServer((host, port), corehandlers.CoreRequestHandler, cfg)
-    except Exception, e:
-        sys.stderr.write("error starting main server on:  %s:%s\n\t%s\n" % (host, port, e))
-        sys.stderr.flush()
+    except:
+        logger.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
+
     closeonexec(server.fileno())
-    sys.stdout.write("main server started, listening on: %s:%s\n" % (host, port))
-    sys.stdout.flush()
+    logger.info("main server started, listening on: %s:%s\n" % (host, port))
 
     udpserver = startudp(server, (host, port))
     closeonexec(udpserver.fileno())
 
     auxreqhandler = cfg["aux_request_handler"]
     if auxreqhandler:
-        try:
-            handler, auxport = auxreqhandler.rsplit(":")
-            auxserver = startaux(server, (host, int(auxport)), handler)
-            closeonexec(auxserver.fileno())
-        except Exception as e:
-            raise ValueError, "invalid auxreqhandler:(%s)\nError: %s" % (auxreqhandler, e)
+        handler, auxport = auxreqhandler.rsplit(":")
+        auxserver = startaux(server, (host, int(auxport)), handler)
+        closeonexec(auxserver.fileno())
 
     server.serve_forever()
 
 
+# TODO: should sessions and the main core daemon both catch at exist to shutdown independently?
 def cleanup():
+    """
+    Runs server shutdown and cleanup when catching an exit signal.
+
+    :return: nothing
+    """
     while coreserver.CoreServer.servers:
         server = coreserver.CoreServer.servers.pop()
         server.shutdown()
@@ -136,7 +149,14 @@ atexit.register(cleanup)
 
 
 def sighandler(signum, stackframe):
-    print >> sys.stderr, "terminated by signal:", signum
+    """
+    Signal handler when different signals are sent.
+
+    :param int signum: singal number sent
+    :param stackframe: stack frame sent
+    :return: nothing
+    """
+    logger.error("terminated by signal: %s", signum)
     sys.exit(signum)
 
 
@@ -149,6 +169,16 @@ signal.signal(signal.SIGUSR2, sighandler)
 
 
 def logrotate(stdout, stderr, stdoutmode=0644, stderrmode=0644):
+    """
+    Log rotation method.
+
+    :param stdout: stdout
+    :param stderr: stderr
+    :param int stdoutmode: stdout mode
+    :param int stderrmode: stderr mode
+    :return:
+    """
+
     def reopen(fileno, filename, mode):
         err = 0
         fd = -1
@@ -176,8 +206,12 @@ def logrotate(stdout, stderr, stdoutmode=0644, stderrmode=0644):
 
 
 def get_merged_config(filename):
-    """ Return a configuration after merging config file and command-line
-        arguments.
+    """
+    Return a configuration after merging config file and command-line arguments.
+
+    :param str filename: file name to merge configuration settings with
+    :return: merged configuration
+    :rtype: dict
     """
     # these are the defaults used in the config file
     defaults = {"port": "%d" % enumerations.CORE_API_PORT,
@@ -227,7 +261,7 @@ def get_merged_config(filename):
                            defaults["debug"])
 
     # parse command line options
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
 
     # read the config file
     if options.configfile is not None:
@@ -263,12 +297,14 @@ def get_merged_config(filename):
 
 
 def exec_file(cfg):
-    """ Send a Register Message to execute a new session based on XML or Python
-    script file.
+    """
+    Send a Register Message to execute a new session based on XML or Python script file.
+
+    :param dict cfg: configuration settings
+    :return: 0
     """
     filename = cfg["execfile"]
-    sys.stdout.write("Telling daemon to execute file: %s...\n" % filename)
-    sys.stdout.flush()
+    logger.info("Telling daemon to execute file: %s...", filename)
     tlvdata = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, filename)
     msg = coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlvdata)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -278,12 +314,15 @@ def exec_file(cfg):
 
 
 def main():
-    """ Main program startup.
+    """
+    Main program startup.
+
+    :return: nothing
     """
     # get a configuration merged from config file and command-line arguments
     cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     for a in args:
-        sys.stderr.write("ignoring command line argument: %s\n" % a)
+        logger.error("ignoring command line argument: %s", a)
 
     if cfg["daemonize"] == "True":
         daemonize(rootdir=None, umask=0, close_fds=False,
@@ -292,8 +331,7 @@ def main():
                   pidfilename=cfg["pidfile"],
                   defaultmaxfd=DEFAULT_MAXFD)
         signal.signal(signal.SIGUSR1, lambda signum, stackframe:
-        logrotate(stdout=cfg["logfile"],
-                  stderr=cfg["logfile"]))
+        logrotate(stdout=cfg["logfile"], stderr=cfg["logfile"]))
 
     banner()
     if cfg["execfile"]:
@@ -302,7 +340,7 @@ def main():
     try:
         cored(cfg)
     except KeyboardInterrupt:
-        pass
+        logger.info("keyboard interrupt, stopping core daemon")
 
     sys.exit(0)
 

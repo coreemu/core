@@ -31,7 +31,7 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         Server class initialization takes configuration data and calls
         the SocketServer constructor
 
-        :param tuple server_address: server host and port to use
+        :param tuple[str, int] server_address: server host and port to use
         :param class handler_class: request handler
         :param dict config: configuration setting
         :return:
@@ -64,10 +64,8 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         :param CoreServer server: server to remove
         :return: nothing
         """
-        try:
+        if server in cls.servers:
             cls.servers.remove(server)
-        except KeyError:
-            logger.exception("error removing server: %s", server)
 
     def shutdown(self):
         """
@@ -150,8 +148,13 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                 if session_id not in self.sessions
             )
 
-        session = Session(session_id, config=self.config, server=self)
+        # create and add session to local manager
+        session = Session(session_id, config=self.config)
         self.add_session(session)
+
+        # add shutdown handler to remove session from manager
+        session.shutdown_handlers.append(self.session_shutdown)
+
         return session
 
     def get_session(self, session_id=None):
@@ -186,6 +189,15 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
                     break
 
             return session
+
+    def session_shutdown(self, session):
+        """
+        Handler method to be used as a callback when a session has shutdown.
+
+        :param core.session.Session session: session shutting down
+        :return: nothing
+        """
+        self.remove_session(session)
 
     def to_session_message(self, flags=0):
         """
@@ -293,7 +305,7 @@ class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
         Server class initialization takes configuration data and calls
         the SocketServer constructor
 
-        :param str server_address: server address
+        :param tuple[str, int] server_address: server address
         :param class handler_class: class for handling requests
         :param main_server: main server to associate with
         """
@@ -320,7 +332,7 @@ class CoreAuxServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         """
         Create a CoreAuxServer instance.
 
-        :param str server_address: server address
+        :param tuple[str, int] server_address: server address
         :param class handler_class: class for handling requests
         :param main_server: main server to associate with
         """
