@@ -679,7 +679,7 @@ class PyCoreNetIf(object):
         """
         Set hardware address.
 
-        :param str addr: hardware address to set to.
+        :param core.misc.ipaddress.MacAddress addr: hardware address to set to.
         :return: nothing
         """
         self.hwaddr = addr

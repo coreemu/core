@@ -370,7 +370,7 @@ class SimpleLxcNode(PyCoreNode):
         Set hardware addres for an interface.
 
         :param int ifindex: index of interface to set hardware address for
-        :param str addr: hardware address to set
+        :param core.misc.ipaddress.MacAddress addr: hardware address to set
         :return: mothing
         """
         self._netif[ifindex].sethwaddr(addr)
@@ -442,7 +442,7 @@ class SimpleLxcNode(PyCoreNode):
 
         :param net: network to associate with
         :param list addrlist: addresses to add on the interface
-        :param str hwaddr: hardware address to set for interface
+        :param core.misc.ipaddress.MacAddress hwaddr: hardware address to set for interface
         :param int ifindex: index of interface to create
         :param str ifname: name for interface
         :return: interface index
