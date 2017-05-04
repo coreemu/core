@@ -122,7 +122,7 @@ class HookManager(object):
 
         :param tuple hook: hook to run
         :param dict environment: environment to run hook with
-        :return:
+        :return: nothing
         """
         file_name, data = hook
         logger.info("running hook: %s", file_name)
@@ -1073,7 +1073,7 @@ class Session(object):
 
                 obj.validate()
 
-    def get_control_lnet_prefixes(self):
+    def get_control_net_prefixes(self):
         """
         Retrieve control net prefixes.
 
@@ -1118,7 +1118,7 @@ class Session(object):
             index = int(dev[4])
             if index == 0:
                 return index
-            if index < 4 and self.get_control_lnet_prefixes()[index] is not None:
+            if index < 4 and self.get_control_net_prefixes()[index] is not None:
                 return index
         return -1
 
@@ -1140,7 +1140,7 @@ class Session(object):
         :return: control net object
         :rtype: core.netns.nodes.CtrlNet
         """
-        prefix_spec_list = self.get_control_lnet_prefixes()
+        prefix_spec_list = self.get_control_net_prefixes()
         prefix_spec = prefix_spec_list[net_index]
         if not prefix_spec:
             if conf_required:
