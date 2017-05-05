@@ -6,9 +6,41 @@ import time
 
 from core.mobility import BasicRangeModel
 from core.netns import nodes
+from core.phys.pnodes import PhysicalNode
 
 
 class TestCore:
+    def test_physical(self, core):
+        """
+        Test physical node network.
+
+        :param conftest.Core core: core fixture to test with
+        """
+
+        # create switch node
+        switch_node = core.session.add_object(cls=nodes.SwitchNode)
+
+        # create a physical node
+        physical_node = core.session.add_object(cls=PhysicalNode, name="p1")
+        core.nodes[physical_node.name] = physical_node
+
+        # create regular node
+        core.create_node("n1")
+
+        # add interface
+        core.add_interface(switch_node, "n1")
+        core.add_interface(switch_node, "p1")
+
+        # instantiate session
+        core.session.instantiate()
+
+        # assert node directories created
+        core.assert_nodes()
+
+        # ping n2 from n1 and assert success
+        status = core.ping("n1", "p1")
+        assert not status
+
     def test_ptp(self, core):
         """
         Test ptp node network.
@@ -16,7 +48,7 @@ class TestCore:
         :param conftest.Core core: core fixture to test with
         """
 
-        # create switch
+        # create ptp
         ptp_node = core.session.add_object(cls=nodes.PtpNet)
 
         # create nodes
@@ -44,7 +76,7 @@ class TestCore:
         :param conftest.Core core: core fixture to test with
         """
 
-        # create switch
+        # create hub
         hub_node = core.session.add_object(cls=nodes.HubNode)
 
         # create nodes

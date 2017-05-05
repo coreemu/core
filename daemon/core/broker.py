@@ -426,32 +426,35 @@ class CoreBroker(ConfigurableManager):
         for n in self.network_nodes:
             self.addnettunnel(n)
 
-    def addnettunnel(self, node):
+    def addnettunnel(self, node_id):
         """
         Add network tunnel between node and broker.
 
-        :param node: node to add network tunnel to
-        :return: list of grep taps
+        :param int node_id: node id of network to add tunnel to
+        :return: list of gre taps
         :rtype: list
         """
         try:
-            net = self.session.get_object(node)
+            net = self.session.get_object(node_id)
         except KeyError:
-            raise KeyError("network node %s not found" % node)
+            raise KeyError("network node %s not found" % node_id)
 
         # add other nets here that do not require tunnels
         if nodeutils.is_node(net, NodeTypes.EMANE_NET):
+            logger.warn("emane network does not require a tunnel")
             return None
 
         server_interface = getattr(net, "serverintf", None)
         if nodeutils.is_node(net, NodeTypes.CONTROL_NET) and server_interface is not None:
+            logger.warn("control networks with server interfaces do not need a tunnel")
             return None
 
-        servers = self.getserversbynode(node)
+        servers = self.getserversbynode(node_id)
         if len(servers) < 2:
+            logger.warn("not enough servers to create a tunnel: %s", servers)
             return None
-        hosts = []
 
+        hosts = []
         for server in servers:
             if server.host is None:
                 continue
@@ -469,10 +472,10 @@ class CoreBroker(ConfigurableManager):
             else:
                 # we are the session master
                 myip = host
-            key = self.tunnelkey(node, IpAddress.to_int(myip))
+            key = self.tunnelkey(node_id, IpAddress.to_int(myip))
             if key in self.tunnels.keys():
                 continue
-            logger.info("Adding tunnel for net %s to %s with key %s" % (node, host, key))
+            logger.info("Adding tunnel for net %s to %s with key %s" % (node_id, host, key))
             gt = GreTap(node=None, name=None, session=self.session, remoteip=host, key=key)
             self.tunnels[key] = gt
             r.append(gt)

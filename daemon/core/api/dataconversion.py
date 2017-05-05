@@ -15,7 +15,7 @@ def convert_node(node_data):
     Callback to handle an node broadcast out from a session.
 
     :param core.data.NodeData node_data: node data to handle
-    :return: nothing
+    :return: packed node message
     """
     logger.debug("converting node data to message: %s", node_data)
 

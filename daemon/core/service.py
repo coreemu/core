@@ -489,10 +489,9 @@ class CoreServices(ConfigurableManager):
         session_id = config_data.session
         opaque = config_data.opaque
 
-        type_flag = ConfigFlags.UPDATE.value
-
         # send back a list of available services
         if opaque is None:
+            type_flag = ConfigFlags.NONE.value
             data_types = tuple(repeat(ConfigDataTypes.BOOL.value, len(ServiceManager.services)))
             values = "|".join(repeat('0', len(ServiceManager.services)))
             names = map(lambda x: x._name, ServiceManager.services)
@@ -526,40 +525,15 @@ class CoreServices(ConfigurableManager):
             svc = services[0]
             # send back:
             # dirs, configs, startindex, startup, shutdown, metadata, config
+            type_flag = ConfigFlags.UPDATE.value
             data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(svc.keys)))
             values = svc.tovaluelist(n, services)
             captions = None
             possible_values = None
             groups = None
 
-        # create response message
-        # tlv_data = ""
-        # if node_id is not None:
-        #     tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.NODE.value, node_id)
-
-        # tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, self.name)
-        # tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, type_flag)
-        # tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPES.value, data_types)
-        # tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES, values)
-
-        # if captions:
-        #     tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.CAPTIONS.value, captions)
-        #
-        # if possible_values:
-        #     tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.POSSIBLE_VALUES.value, possible_values)
-        #
-        # if groups:
-        #     tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.GROUPS.value, groups)
-        #
-        # if session_id is not None:
-        #     tlv_data += coreapi.CoreConfigTlv.pack(coreapi.ConfigTlvs.SESSION.value, session_id)
-        #
-        # if opaque:
-        #     tlv_data += coreapi.CoreConfigTlv.pack(ConfigTlvs.OPAQUE.value, opaque)
-
-        # return coreapi.CoreConfMessage.pack(0, tlv_data)
-
         return ConfigData(
+            message_type=0,
             node=node_id,
             object=self.name,
             type=type_flag,

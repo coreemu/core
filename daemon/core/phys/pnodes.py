@@ -39,7 +39,7 @@ class PhysicalNode(PyCoreNode):
             # self.privatedir("/var/run")
             # self.privatedir("/var/log")
         except OSError:
-            logger.exception("PhysicalNode.startup()")
+            logger.exception("startup error")
         finally:
             self.lock.release()
 
@@ -154,30 +154,25 @@ class PhysicalNode(PyCoreNode):
         """
         Apply tc queing disciplines using LxBrNet.linkconfig()
         """
-        netcls = LxBrNet
-
         # borrow the tc qdisc commands from LxBrNet.linkconfig()
-        tmp = netcls(session=self.session, start=False)
-        tmp.up = True
-        tmp.linkconfig(netif, bw=bw, delay=delay, loss=loss,
-                       duplicate=duplicate, jitter=jitter, netif2=netif2)
-        del tmp
+        linux_bridge = LxBrNet(session=self.session, start=False)
+        linux_bridge.up = True
+        linux_bridge.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate,
+                                jitter=jitter, netif2=netif2)
+        del linux_bridge
 
     def newifindex(self):
-        self.lock.acquire()
-        try:
+        with self.lock:
             while self.ifindex in self._netif:
                 self.ifindex += 1
             ifindex = self.ifindex
             self.ifindex += 1
             return ifindex
-        finally:
-            self.lock.release()
 
-    def newnetif(self, net=None, addrlist=[], hwaddr=None,
-                 ifindex=None, ifname=None):
+    def newnetif(self, net=None, addrlist=[], hwaddr=None, ifindex=None, ifname=None):
         if self.up and net is None:
             raise NotImplementedError
+
         if ifindex is None:
             ifindex = self.newifindex()
 
@@ -186,7 +181,7 @@ class PhysicalNode(PyCoreNode):
             # tunnel to net not built yet, so build it now and adopt it
             gt = self.session.broker.addnettunnel(net.objid)
             if gt is None or len(gt) != 1:
-                logger.warn("Error building tunnel from PhysicalNode.newnetif()")
+                raise ValueError("error building tunnel from adding a new network interface: %s" % gt)
             gt = gt[0]
             net.detach(gt)
             self.adoptnetif(gt, ifindex, hwaddr, addrlist)
@@ -195,16 +190,15 @@ class PhysicalNode(PyCoreNode):
         # this is reached when configuring services (self.up=False)
         if ifname is None:
             ifname = "gt%d" % ifindex
-        netif = GreTap(node=self, name=ifname, session=self.session,
-                       start=False)
+
+        netif = GreTap(node=self, name=ifname, session=self.session, start=False)
         self.adoptnetif(netif, ifindex, hwaddr, addrlist)
         return ifindex
 
     def privatedir(self, path):
         if path[0] != "/":
             raise ValueError, "path not fully qualified: " + path
-        hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip('/').replace('/', '.'))
+        hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
         try:
             os.mkdir(hostpath)
         except OSError:

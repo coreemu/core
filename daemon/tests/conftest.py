@@ -48,18 +48,10 @@ class Core(object):
         network.link(from_interface, to_interface)
 
     def configure_link(self, network, interface_one, interface_two, values, unidirectional=False):
-        network.linkconfig(
-            netif=interface_one,
-            netif2=interface_two,
-            **values
-        )
+        network.linkconfig(netif=interface_one, netif2=interface_two, **values)
 
         if not unidirectional:
-            network.linkconfig(
-                netif=interface_two,
-                netif2=interface_one,
-                **values
-            )
+            network.linkconfig(netif=interface_two, netif2=interface_one, **values)
 
     def ping(self, from_name, to_name):
         from_node = self.nodes[from_name]

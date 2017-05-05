@@ -212,7 +212,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             (ConfigTlvs.NETWORK_ID, config_data.network_id),
             (ConfigTlvs.OPAQUE, config_data.opaque),
         ])
-        message = coreapi.CoreConfMessage.pack(0, tlv_data)
+        message = coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)
 
         try:
             self.sendall(message)
@@ -467,6 +467,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
+        logger.info("replies to dispatch: %s", replies)
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -613,9 +614,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
             # add services to a node, either from its services TLV or
             # through the configured defaults for this node type
-            if node_type == NodeTypes.DEFAULT.value or \
-                    node_type == NodeTypes.PHYSICAL.value or \
-                    node_type == NodeTypes.XEN.value:
+            if node_type in [NodeTypes.DEFAULT.value, NodeTypes.PHYSICAL.value, NodeTypes.XEN.value]:
                 if model is None:
                     # TODO: default model from conf file?
                     model = "router"
@@ -1215,8 +1214,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         # dispatch to any registered callback for this object type
         replies = self.session.config_object(config_data)
 
-        # config requests usually have a reply with default data
-        return replies
+        for reply in replies:
+            self.handle_broadcast_config(reply)
+
+        return []
 
     def handle_file_message(self, message):
         """
@@ -1280,7 +1281,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
     def handle_interface_message(self, message):
         """
-        Interface Message handler
+        Interface Message handler.
 
         :param message: interface message to handle
         :return: reply messages
