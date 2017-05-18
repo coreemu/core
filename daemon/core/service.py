@@ -831,7 +831,7 @@ class CoreService(object):
 
     def setvalue(self, key, value):
         if key not in self.keys:
-            raise ValueError
+            raise ValueError('key `%s` not in `%s`' % (key, self.keys))
         # this handles data conversion to int, string, and tuples
         if value:
             if key == "startidx":
