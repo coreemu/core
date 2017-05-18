@@ -1113,7 +1113,7 @@ proc get_text_editor { want_default } {
 #   variable, then find the first in the list of terminals that exists on the
 #   system
 set TERMS "{gnome-terminal -x} {lxterminal -e} {konsole -e} {xterm -e}"
-set TERMS "$TERMS {aterm -e} {eterm -e} {rxvt -e} {xfce4-terminal -e}"
+set TERMS "$TERMS {aterm -e} {eterm -e} {rxvt -e} {xfce4-terminal -x}"
 
 proc get_term_prog { want_default } {
     global g_prefs env TERMS
@@ -1130,8 +1130,13 @@ proc get_term_prog { want_default } {
     }
     if { $term != "" } {
 	set arg "-e"
-	# gnome-terminal has problem w/subsequent arguments after -e, needs -x
-	if { [file tail $term] == "gnome-terminal" } { set arg "-x" }
+	# gnome-terminal and xfce4-terminal have problems w/subsequent
+	# arguments after -e, needs -x
+	set basename [file tail $term]
+	if {[lsearch -exact \
+                 {"gnome-terminal" "xfce4-terminal"} $basename] >= 0} {
+	    set arg "-x"
+	}
 	set term "$term $arg"
     }
 
