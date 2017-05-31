@@ -364,7 +364,7 @@ class CoreServices(ConfigurableManager):
         ''' Stop all services on a node.
         '''
         services = sorted(node.services,
-                          key=lambda service: service._startindex)
+                          key=lambda service: service._startindex, reverse=True)
         for s in services:
             self.stopnodeservice(node, s)
     
