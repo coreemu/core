@@ -1475,7 +1475,7 @@ proc addInterfaceCommand { node parentmenu txt cmd state isnodecmd } {
     $parentmenu add cascade -label $txt -menu $childmenu -state $state
     if { ! $isnodecmd } {
 	if { $g_current_session == 0 } { set state disabled }
-	set ssid [shortSessionID $g_current_session] 
+	set ssid [shortSessionID $g_current_session]
     }
     foreach ifc [ifcList $node] {
         set addr [lindex [getIfcIPv4addr $node $ifc] 0]
@@ -1483,10 +1483,11 @@ proc addInterfaceCommand { node parentmenu txt cmd state isnodecmd } {
 	if { $isnodecmd } { ;# run command in a node
 	    set icmd "spawnShell $node \"$cmd $ifc\""
 	} else { ;# exec a command directly
-	    set nodenum [string range $node 1 end]
+	    set node_num [string range $node 1 end]
+            set hex [format "%x" $node_num]
 	    set ifnum [string range $ifc 3 end]
-	    set localifc veth$nodenum.$ifnum.$ssid
-	    set icmd "exec $cmd $localifc &"
+            set ifname "veth$hex\\.$ifnum\\.$ssid"
+	    set icmd "exec $cmd $ifname &"
 	}
         $childmenu add command -label "$ifc$addr" -state $state -command $icmd
     }

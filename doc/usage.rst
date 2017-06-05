@@ -1448,13 +1448,13 @@ Here are the default node types and their services:
 .. index:: Xen
 .. index:: physical nodes
 
-* *router* - zebra, OSFPv2, OSPFv3, vtysh, and IPForward services for IGP
+* *router* - zebra, OSFPv2, OSPFv3, and IPForward services for IGP
   link-state routing.
 * *host* - DefaultRoute and SSH services, representing an SSH server having a
   default route when connected directly to a router.
 * *PC* - DefaultRoute service for having a default route when connected
   directly to a router.
-* *mdr* - zebra, OSPFv3MDR, vtysh, and IPForward services for
+* *mdr* - zebra, OSPFv3MDR, and IPForward services for
   wireless-optimized MANET Designated Router routing.
 * *prouter* - a physical router, having the same default services as the
   *router* node type; for incorporating Linux testbed machines into an

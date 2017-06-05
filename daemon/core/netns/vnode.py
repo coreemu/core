@@ -225,8 +225,12 @@ class SimpleLxcNode(PyCoreNode):
                     "error setting MAC address %s" % str(addr))
     def addaddr(self, ifindex, addr):
         if self.up:
-            self.cmd([IP_BIN, "addr", "add", str(addr),
-                  "dev", self.ifname(ifindex)])
+            if ":" in str(addr): # check if addr is ipv6
+                self.cmd([IP_BIN, "addr", "add", str(addr),
+                    "dev", self.ifname(ifindex)])
+            else:
+                self.cmd([IP_BIN, "addr", "add", str(addr), "broadcast", "+",
+                    "dev", self.ifname(ifindex)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):

@@ -20,17 +20,11 @@ from core.misc.ipaddr import IPv4Prefix, isIPv4Address, isIPv6Address
 from core.api import coreapi
 from core.constants import *
 
-QUAGGA_USER="root"
-QUAGGA_GROUP="root"
-if os.uname()[0] == "FreeBSD":
-    QUAGGA_GROUP="wheel"
-
 class Zebra(CoreService):
     ''' 
     '''
     _name = "zebra"
     _group = "Quagga"
-    _depends = ("vtysh", )
     _dirs = ("/usr/local/etc/quagga",  "/var/run/quagga")
     _configs = ("/usr/local/etc/quagga/Quagga.conf",
                 "quaggaboot.sh","/usr/local/etc/quagga/vtysh.conf")
@@ -140,8 +134,6 @@ QUAGGA_CONF=%s
 QUAGGA_SBIN_SEARCH=%s
 QUAGGA_BIN_SEARCH=%s
 QUAGGA_STATE_DIR=%s
-QUAGGA_USER=%s
-QUAGGA_GROUP=%s
 
 searchforprog()
 {
@@ -170,21 +162,6 @@ confcheck()
     fi
 }
 
-waitforvtyfiles()
-{
-    for f in "$@"; do
-        count=1
-        until [ -e $QUAGGA_STATE_DIR/$f ]; do
-            if [ $count -eq 10 ]; then
-                echo "ERROR: vty file not found: $QUAGGA_STATE_DIR/$f" >&2
-                return 1
-            fi
-            sleep 0.1
-            count=$(($count + 1))
-        done
-    done 
-}
-
 bootdaemon()
 {
     QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
@@ -196,55 +173,55 @@ bootdaemon()
 
     flags=""
 
-    if [ "$1" != "zebra" ]; then
-        waitforvtyfiles zebra.vty
-    fi
-
     if [ "$1" = "xpimd" ] && \\
         grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
         flags="$flags -6"
     fi
 
-    $QUAGGA_SBIN_DIR/$1 $flags -u $QUAGGA_USER -g $QUAGGA_GROUP -d
+    $QUAGGA_SBIN_DIR/$1 $flags -d
+    if [ "$?" != "0" ]; then
+        echo "ERROR: Quagga's '$1' daemon failed to start!:"
+        return 1
+    fi
 }
 
-bootvtysh()
+bootquagga()
 {
-    QUAGGA_BIN_DIR=$(searchforprog $1 $QUAGGA_BIN_SEARCH)
+    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
     if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's '$1' daemon not found in search path:"
-        echo "  $QUAGGA_SBIN_SEARCH"
+        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
         return 1
     fi
 
-    vtyfiles="zebra.vty"
+    # fix /var/run/quagga permissions
+    id -u quagga 2>/dev/null >/dev/null
+    if [ "$?" = "0" ]; then
+        chown quagga $QUAGGA_STATE_DIR
+    fi
+
+    bootdaemon "zebra"
     for r in rip ripng ospf6 ospf bgp babel; do
         if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
-            vtyfiles="$vtyfiles ${r}d.vty"
+            bootdaemon "${r}d"
         fi
     done
 
     if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
-        vtyfiles="$vtyfiles xpimd.vty"
+        bootdaemon "xpimd"
     fi
-
-    # wait for Quagga daemon vty files to appear before invoking vtysh
-    waitforvtyfiles $vtyfiles
 
     $QUAGGA_BIN_DIR/vtysh -b
 }
 
-confcheck
-if [ "x$1" = "x" ]; then
-    echo "ERROR: missing the name of the Quagga daemon to boot"
+if [ "$1" != "zebra" ]; then
+    echo "WARNING: '$1': all Quagga daemons are launched by the 'zebra' service!"
     exit 1
-elif [ "$1" = "vtysh" ]; then
-    bootvtysh $1
-else
-    bootdaemon $1
 fi
+confcheck
+bootquagga
 """ % (cls._configs[0], quagga_sbin_search, quagga_bin_search, \
-       QUAGGA_STATE_DIR, QUAGGA_USER, QUAGGA_GROUP)
+       QUAGGA_STATE_DIR)
 
 addservice(Zebra)
 
@@ -311,7 +288,7 @@ class Ospfv2(QuaggaService):
         unified Quagga.conf file.
     '''
     _name = "OSPFv2"
-    _startup = ("sh quaggaboot.sh ospfd",)
+    _startup = ()
     _shutdown = ("killall ospfd", )
     _validate = ("pidof ospfd", )
     _ipv4_routing = True
@@ -382,7 +359,7 @@ class Ospfv3(QuaggaService):
         unified Quagga.conf file.
     '''
     _name = "OSPFv3"
-    _startup = ("sh quaggaboot.sh ospf6d",)
+    _startup = ()
     _shutdown = ("killall ospf6d", )
     _validate = ("pidof ospf6d", )
     _ipv4_routing = True
@@ -486,7 +463,7 @@ class Bgp(QuaggaService):
         having the same AS number.
     '''
     _name = "BGP"
-    _startup = ("sh quaggaboot.sh bgpd",)
+    _startup = ()
     _shutdown = ("killall bgpd", )
     _validate = ("pidof bgpd", )
     _custom_needed = True
@@ -511,7 +488,7 @@ class Rip(QuaggaService):
     ''' The RIP service provides IPv4 routing for wired networks.
     '''
     _name = "RIP"
-    _startup = ("sh quaggaboot.sh ripd",)
+    _startup = ()
     _shutdown = ("killall ripd", )
     _validate = ("pidof ripd", )
     _ipv4_routing = True
@@ -534,7 +511,7 @@ class Ripng(QuaggaService):
     ''' The RIP NG service provides IPv6 routing for wired networks.
     '''
     _name = "RIPNG"
-    _startup = ("sh quaggaboot.sh ripngd",)
+    _startup = ()
     _shutdown = ("killall ripngd", )
     _validate = ("pidof ripngd", )
     _ipv6_routing = True
@@ -558,7 +535,7 @@ class Babel(QuaggaService):
     protocol for IPv6 and IPv4 with fast convergence properties.
     '''
     _name = "Babel"
-    _startup = ("sh quaggaboot.sh babeld",)
+    _startup = ()
     _shutdown = ("killall babeld", )
     _validate = ("pidof babeld", )
     _ipv6_routing = True
@@ -588,7 +565,7 @@ class Xpimd(QuaggaService):
     PIM multicast routing based on XORP.
     '''
     _name = 'Xpimd'
-    _startup = ('sh quaggaboot.sh xpimd',)
+    _startup = ()
     _shutdown = ('killall xpimd', )
     _validate = ('pidof xpimd', )
     _ipv4_routing = True
@@ -614,21 +591,3 @@ class Xpimd(QuaggaService):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
 
 addservice(Xpimd)
-
-class Vtysh(CoreService):
-    ''' Simple service to run vtysh -b (boot) after all Quagga daemons have
-        started.
-    '''
-    _name = "vtysh"
-    _group = "Quagga"
-    _startindex = 45
-    _startup = ("sh quaggaboot.sh vtysh",)
-    _shutdown = ()
-
-    @classmethod
-    def generateconfig(cls, node, filename, services):
-        return ""
-
-addservice(Vtysh)
-
-

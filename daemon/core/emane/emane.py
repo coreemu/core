@@ -239,7 +239,9 @@ class Emane(ConfigurableManager):
             # Adamson change: first check for iface config keyed by "node:ifc.name"
             # (so that nodes w/ multiple interfaces of same conftype can have 
             #  different configs for each separate interface)
-            key = 1000*ifc.node.objid + ifc.netindex
+            key = 1000*ifc.node.objid
+            if ifc.netindex is not None:
+                key += ifc.netindex
             values = self.getconfig(key, conftype, None)[1]
             if not values:
                 values = self.getconfig(ifc.node.objid, conftype, None)[1]

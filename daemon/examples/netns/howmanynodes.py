@@ -97,7 +97,7 @@ def main():
     parser.add_option("-s", "--services", dest = "services", type = str,
                       help = "pipe-delimited list of services added to each " \
                       "node (default = %s)\n(Example: 'zebra|OSPFv2|OSPFv3|" \
-                      "vtysh|IPForward')" % parser.defaults["services"])
+                      "IPForward')" % parser.defaults["services"])
 
     def usage(msg = None, err = 0):
         sys.stdout.write("\n")

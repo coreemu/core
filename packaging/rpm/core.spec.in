@@ -32,11 +32,17 @@ Requires: procps-ng
 %if %{with_kernel_modules_extra}
 Requires: kernel-modules-extra
 %endif
+%if 0%{?fedora} >= 25
+Requires: iproute-tc
+%endif
 BuildRequires:	make automake autoconf libev-devel python-devel bridge-utils ebtables iproute net-tools ImageMagick help2man
 %if 0%{?el6}
 BuildRequires: procps
 %else
 BuildRequires: procps-ng
+%endif
+%if 0%{?fedora} >= 25
+BuildRequires: iproute-tc
 %endif
 Provides:	core-daemon
 # python-sphinx

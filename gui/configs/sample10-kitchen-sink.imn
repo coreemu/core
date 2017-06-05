@@ -283,7 +283,7 @@ node n11 {
 	
 	}
     }
-    services {zebra OSPFv2 OSPFv3MDR vtysh IPForward}
+    services {zebra OSPFv2 OSPFv3MDR IPForward}
 }
 
 node n12 {
@@ -517,7 +517,7 @@ node n20 {
 	
 	}
     }
-    services {zebra OSPFv2 OSPFv3MDR vtysh IPForward}
+    services {zebra OSPFv2 OSPFv3MDR IPForward}
 }
 
 node n21 {
