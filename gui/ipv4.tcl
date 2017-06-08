@@ -113,7 +113,7 @@ proc autoIPv4addr { node iface } {
 
     set peer_node [logicalPeerByIfc $node $iface]
     # find addresses of NETWORK layer peer nodes
-    if { [[typemodel $peer_node].layer] == "LINK" } {
+    if { [[typemodel $peer_node].layer] == "LINK" || [nodeType $peer_node] == "OVS" } {
 	foreach l2node [listLANnodes $peer_node {}] {
 	    foreach ifc [ifcList $l2node] {
 		set peer [logicalPeerByIfc $l2node $ifc]

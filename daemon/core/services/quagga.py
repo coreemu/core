@@ -3,6 +3,7 @@ quagga.py: defines routing services provided by Quagga.
 """
 
 import os
+import re
 
 from core import constants
 from core.enumerations import LinkTypes, NodeTypes
@@ -52,15 +53,28 @@ class Zebra(CoreService):
 
     @classmethod
     def generateQuaggaConf(cls, node, services):
+        """ Returns configuration file text. Other services that depend on zebra
+           will have generatequaggaifcconfig() and generatequaggaconfig()
+           hooks that are invoked here.
         """
-        Returns configuration file text. Other services that depend on zebra
-        will have generatequaggaifcconfig() and generatequaggaconfig()
-        hooks that are invoked here.
-        """
+        # Check whether the node is running OVS
+        has_ovs = 0
+        for s in services:
+            if s._name == "OvsService":
+                has_ovs =1
+            
         # we could verify here that filename == Quagga.conf
         cfg = ""
         for ifc in node.netifs():
-            cfg += "interface %s\n" % ifc.name
+            if has_ovs == 0:
+                ifname = ifc.name
+            else:
+                ifnumstr = re.findall(r"\d+", ifc.name)
+                ifnum = ifnumstr[0]
+                ifname = "rtr%s" % ifnum
+                
+            cfg += "interface %s\n" % ifname
+            #cfg += "interface %s\n" % ifc.name
             # include control interfaces in addressing but not routing daemons
             if hasattr(ifc, 'control') and ifc.control == True:
                 cfg += "  "
@@ -100,7 +114,7 @@ class Zebra(CoreService):
         for s in services:
             if cls._name not in s._depends:
                 continue
-            cfg += s.generatequaggaconfig(node)
+            cfg += s.generatequaggaconfig(node, services)
         return cfg
 
     @staticmethod
@@ -294,7 +308,7 @@ class QuaggaService(CoreService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
         return ""
 
 
@@ -339,7 +353,7 @@ class Ospfv2(QuaggaService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
         cfg = "router ospf\n"
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
@@ -424,13 +438,26 @@ class Ospfv3(QuaggaService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
+        # Check whether the node is running OVS
+        has_ovs = 0
+        for s in services:
+            if s._name == "OvsService":
+                has_ovs =1
+            
         cfg = "router ospf6\n"
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control is True:
                 continue
+            if has_ovs == 0:
+                ifname = ifc.name
+            else:
+                ifnumstr = re.findall(r"\d+", ifc.name)
+                ifnum = ifnumstr[0]
+                ifname = "rtr%s" % ifnum
+                
             cfg += "  interface %s area 0.0.0.0\n" % ifc.name
         cfg += "!\n"
         return cfg
@@ -466,6 +493,7 @@ class Ospfv3mdr(Ospfv3):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         cfg = cls.mtucheck(ifc)
+        # Uncomment the following line to use Address Family Translation for IPv4
         cfg += "  ipv6 ospf6 instance-id 65\n"
         if ifc.net is not None and nodeutils.is_node(ifc.net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
             return cfg + """\
@@ -479,7 +507,6 @@ class Ospfv3mdr(Ospfv3):
 """
         else:
             return cfg
-
 
 class Bgp(QuaggaService):
     """
@@ -496,7 +523,7 @@ class Bgp(QuaggaService):
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
         cfg = "!\n! BGP configuration\n!\n"
         cfg += "! You should configure the AS number below,\n"
         cfg += "! along with this router's peers.\n!\n"
@@ -506,7 +533,6 @@ class Bgp(QuaggaService):
         cfg += "  redistribute connected\n"
         cfg += "! neighbor 1.2.3.4 remote-as 555\n!\n"
         return cfg
-
 
 class Rip(QuaggaService):
     """
@@ -519,7 +545,7 @@ class Rip(QuaggaService):
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
         cfg = """\
 router rip
   redistribute static
@@ -529,7 +555,6 @@ router rip
 !
 """
         return cfg
-
 
 class Ripng(QuaggaService):
     """
@@ -542,7 +567,7 @@ class Ripng(QuaggaService):
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
         cfg = """\
 router ripng
   redistribute static
@@ -552,7 +577,6 @@ router ripng
 !
 """
         return cfg
-
 
 class Babel(QuaggaService):
     """
@@ -566,11 +590,24 @@ class Babel(QuaggaService):
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node):
+    def generatequaggaconfig(cls, node, services):
+        # Check whether the node is running OVS
+        has_ovs = 0
+        for s in services:
+            if s._name == "OvsService":
+                has_ovs =1
+            
         cfg = "router babel\n"
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control is True:
                 continue
+            if has_ovs == 0:
+                ifname = ifc.name
+            else:
+                ifnumstr = re.findall(r"\d+", ifc.name)
+                ifnum = ifnumstr[0]
+                ifname = "rtr%s" % ifnum
+            
             cfg += "  network %s\n" % ifc.name
         cfg += "  redistribute static\n  redistribute connected\n"
         return cfg
@@ -583,7 +620,6 @@ class Babel(QuaggaService):
         else:
             return "  babel wired\n  babel split-horizon\n"
 
-
 class Xpimd(QuaggaService):
     """
     PIM multicast routing based on XORP.
@@ -595,11 +631,26 @@ class Xpimd(QuaggaService):
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node):
-        ifname = 'eth0'
+    def generatequaggaconfig(cls, node, services):
+        # Check whether the node is running OVS
+        has_ovs = 0
+        for s in services:
+            if s._name == "OvsService":
+                has_ovs =1
+        if has_ovs == 0:        
+            ifname = 'eth0'
+        else:
+            ifname = 'rtr0'
+            
         for ifc in node.netifs():
             if ifc.name != 'lo':
-                ifname = ifc.name
+                if has_ovs == 0:
+                    ifname = ifc.name
+                else:
+                    ifnumstr = re.findall(r"\d+", ifc.name)
+                    ifnum = ifnumstr[0]
+                    ifname = "rtr%s" % ifnum
+
                 break
         cfg = 'router mfea\n!\n'
         cfg += 'router igmp\n!\n'
@@ -613,7 +664,6 @@ class Xpimd(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
-
 
 class Vtysh(CoreService):
     """
@@ -629,7 +679,6 @@ class Vtysh(CoreService):
     @classmethod
     def generateconfig(cls, node, filename, services):
         return ""
-
 
 def load_services():
     ServiceManager.add(Zebra)
