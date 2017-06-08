@@ -1,15 +1,12 @@
-#
-# CORE
-# Copyright (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-''' Sample user-defined service.
-'''
-
+"""
+This service starts Open vSwitch (if already installed) on nodes 
+running the service.
+"""
 import os
 import re
 
-from core.service import CoreService, addservice
+from core.service import CoreService
+from core.service import ServiceManager
 
 class OvsService(CoreService):
     ''' This is a sample user-defined service. 
@@ -104,10 +101,10 @@ class OvsService(CoreService):
 
     @staticmethod
     def subnetentry(x):
-        # TODO - Maybe move default flow rules to here?
+        # Maybe move default flow rules to here?
         return
 
 
 # this line is required to add the above class to the list of available services
-addservice(OvsService)
+ServiceManager.add(OvsService)
 
