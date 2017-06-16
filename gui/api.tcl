@@ -2716,7 +2716,7 @@ proc sendNodeTypeInfo { sock reset } {
     set typesinuse ""
     foreach node $node_list {
 	set type [nodeType $node]
-	if { $type != "router" } { continue }
+	if { $type != "router" && $type != "OVS" } { continue }
 	set model [getNodeModel $node]
 	if { [lsearch $typesinuse $model] < 0 } { lappend typesinuse $model }
     }
@@ -2920,6 +2920,7 @@ proc getNodeTypeAPI { node } {
 	router  { return 0x0 }
 	netns   { return 0x0 }
 	jail    { return 0x0 }
+	OVS 	{ return 0x0 }
 	physical { return 0x1 }
 	xen	{ return 0x2 }
 	tbd	{ return 0x3 }

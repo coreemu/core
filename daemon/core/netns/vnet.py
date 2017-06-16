@@ -301,6 +301,12 @@ class LxBrNet(PyCoreNet):
             snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % self.brname
             if os.path.exists(snoop):
                 open(snoop, "w").write('0')
+
+            # turn on LLDP forwarding (disabled by default in linux)
+            lldpfile = "/sys/class/net/%s/bridge/group_fwd_mask" % self.brname
+            if os.path.exists(lldpfile):
+                open(lldpfile, "w").write('0x4000')
+            
         except subprocess.CalledProcessError:
             logger.exception("Error setting bridge parameters")
 

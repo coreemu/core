@@ -8,8 +8,10 @@
 
 import os
 
-from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix, IPv6Prefix
+from core.misc.ipaddress import Ipv4Prefix
+from core.misc.ipaddress import Ipv6Prefix
+from core.service import CoreService
+from core.service import ServiceManager
 
 class MyService(CoreService):
     ''' This is a sample user-defined service. 
@@ -60,5 +62,5 @@ class MyService(CoreService):
             return 'echo "  network %s"' % (net)
 
 # this line is required to add the above class to the list of available services
-addservice(MyService)
+ServiceManager.add(MyService)
 

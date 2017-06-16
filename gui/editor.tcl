@@ -338,7 +338,7 @@ proc redrawAll {} {
 
 proc drawNode { c node } {
     global showNodeLabels
-    global router pc host lanswitch rj45 hub pseudo
+    global router pc host lanswitch rj45 hub pseudo OVS
     global curcanvas zoom
     global wlan
     if { $c == "" } { set c .c } ;# default canvas
@@ -353,7 +353,7 @@ proc drawNode { c node } {
     set cimg ""
     set imgzoom $zoom
     if { $zoom == 0.75 || $zoom == 1.5 } { set imgzoom 1.0 }
-    if { $type == "router" } {
+    if { $type == "router" || $type == "OVS" } {
 	set model [getNodeModel $node]
 	set cimg [getNodeTypeImage $model normal]
     }
@@ -409,7 +409,8 @@ proc drawNode { c node } {
 	set ifc [ifcByPeer $pnode [getNodeMirror $node]]
 	if { $pcanvas != $curcanvas } {
 	    set label [$c create text $x $y -fill blue \
-		-text "[getNodeName $pnode]:$ifc@[getCanvasName $pcanvas]" \
+		-text "[getNodeName $pnode]:$ifc
+@[getCanvasName $pcanvas]" \
 		-tags "nodelabel $node" -justify center]
 	} else {
 	    set label [$c create text $x $y -fill blue \
@@ -698,13 +699,16 @@ proc updateIfcLabel { lnode1 lnode2 } {
 	set labelstr ""
     }
     if { $showIfNames } {
-	set labelstr "$labelstr$ifc"
+	set labelstr "$labelstr$ifc
+"
     }
     if { $showIfIPaddrs && $ifipv4addr != "" } {
-	set labelstr "$labelstr$ifipv4addr"
+	set labelstr "$labelstr$ifipv4addr
+"
     }
     if { $showIfIPv6addrs && $ifipv6addr != "" } {
-	set labelstr "$labelstr$ifipv6addr"
+	set labelstr "$labelstr$ifipv6addr
+"
     }
     set labelstr \
 	[string range $labelstr 0 [expr {[string length $labelstr] - 2}]]
@@ -735,18 +739,23 @@ proc updateLinkLabel { link } {
     set delstr [getLinkDelayString $link]
     set berstr [getLinkBERString $link]
     set dupstr [getLinkDupString $link]
-    set labelstr ""
+    set labelstr "
+"
     if { "$bwstr" != "" } {
-	set labelstr "$labelstr$bwstr"
+	set labelstr "$labelstr$bwstr
+"
     }
     if { "$delstr" != "" } {
-	set labelstr "$labelstr$delstr"
+	set labelstr "$labelstr$delstr
+"
     }
     if { "$berstr" != "" } {
-	set labelstr "$labelstr$berstr"
+	set labelstr "$labelstr$berstr
+"
     }
     if { "$dupstr" != "" } {
-	set labelstr "$labelstr$dupstr"
+	set labelstr "$labelstr$dupstr
+"
     }
     set labelstr \
 	[string range $labelstr 0 [expr {[string length $labelstr] - 2}]]
@@ -1530,7 +1539,7 @@ proc raiseAll {c} {
 proc button1 { c x y button } {
     global node_list plot_list curcanvas zoom
     global activetool activetoolp newlink curobj changed def_router_model
-    global router pc host lanswitch rj45 hub
+    global router pc host lanswitch rj45 hub OVS
     global oval rectangle text
     global lastX lastY
     global background selectbox
@@ -1602,7 +1611,10 @@ proc button1 { c x y button } {
 			rectangle text} $activetool] < 0 } {
 	    if { $g_view_locked == 1 } { return }
 	    if { $activetoolp == "routers" } {
-		set node [newNode router]
+                if {$activetool != "OVS"} {
+                  set node [newNode router] 
+		} else {
+		  set node [newNode OVS]}
 		setNodeModel $node $activetool
 	    } else {
 		set node [newNode $activetool]
@@ -2542,8 +2554,8 @@ proc popupConfigDialog { c } {
 	    -side right -padx 4 -pady 4
 	# end Boeing
 	pack $wi.ftop -side top
-
-	if { $type == "router" } {
+	if { $type == "router" || $type == "OVS"} {
+	    
 	    ttk::frame $wi.model -borderwidth 4
 	    ttk::label $wi.model.label -text "Type:"
 	    set runstate "disabled"
