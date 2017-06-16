@@ -927,14 +927,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                                 netif1 = tmp1
                                 netif2 = tmp2
                                 break
-                    if netif1 is None or netif2 is None:
-                        pass
-                    elif netif1.net or netif2.net:
-                        if netif1.net != netif2.net:
-                            if not netif1.up or not netif2.up:
-                                pass
-                            else:
-                                raise ValueError("no common network found")
+
+                    if all([netif1, netif2]) and any([netif1.net, netif2.net]):
+                        if netif1.net != netif2.net and all([netif1.up, netif2.up]):
+                            raise ValueError("no common network found")
                         net = netif1.net
                         netif1.detachnet()
                         netif2.detachnet()
@@ -1334,8 +1330,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             self.session.delete_objects()
             self.session.del_hooks()
             self.session.broker.reset()
-        elif event_type == EventTypes.CONFIGURATION_STATE.value:
-            pass
         elif event_type == EventTypes.INSTANTIATION_STATE.value:
             if len(self.handler_threads) > 1:
                 # TODO: sync handler threads here before continuing

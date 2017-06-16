@@ -591,23 +591,15 @@ class DeviceElement(NamedXmlElement):
         core_device_type = None
         if hasattr(device_object, "type") and device_object.type:
             core_device_type = device_object.type
-            if device_object.type == NodeType.ROUTER:
+            if device_object.type in [NodeType.ROUTER, NodeType.MDR]:
                 device_type = DevType.ROUTER
-            elif device_object.type == NodeType.MDR:
-                device_type = DevType.ROUTER
-            elif device_object.type == NodeType.HOST:
-                device_type = DevType.HOST
-            elif device_object.type == NodeType.PC:
-                device_type = DevType.HOST
-            elif device_object.type == NodeType.RJ45:
-                device_type = DevType.HOST
-                node_id = "EMULATOR-HOST"
             elif device_object.type == NodeType.HUB:
                 device_type = DevType.HUB
             elif device_object.type == NodeType.SWITCH:
                 device_type = DevType.SWITCH
+            # includes known node types (HOST, PC, RJ45)
+            # Default custom types (defined in ~/.core/nodes.conf) to HOST
             else:
-                # Default custom types (defined in ~/.core/nodes.conf) to HOST
                 device_type = DevType.HOST
 
         if device_type is None:

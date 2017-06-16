@@ -73,8 +73,6 @@ class NetgraphNet(PyCoreNet):
         PyCoreNet.attach(self, netif)
 
     def detach(self, netif):
-        if self.up:
-            pass
         PyCoreNet.detach(self, netif)
 
     def linked(self, netif1, netif2):
