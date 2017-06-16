@@ -17,6 +17,9 @@ core-*.tar.gz
 debian
 stamp-h1
 
-# intelli
+# intellij
 *.iml
 .idea
+
+# sonarqube sonar-scanner
+.scannerwork

@@ -451,6 +451,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         message_handler = self.message_handlers[message.message_type]
 
         try:
+            # TODO: this needs to be removed, make use of the broadcast message methods
             replies = message_handler(message)
             self.dispatch_replies(replies, message)
         except:
