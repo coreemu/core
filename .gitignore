@@ -16,3 +16,7 @@ configure
 core-*.tar.gz
 debian
 stamp-h1
+
+# intelli
+*.iml
+.idea

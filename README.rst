@@ -38,6 +38,9 @@ To build this software you should use:
     make
     sudo make install
 
+Note: You may need to pass the proxy settings to sudo make install:
+    sudo make install HTTP_PROXY=<proxy>
+
 Here is what is installed with 'make install':
 
     /usr/local/bin/core-gui

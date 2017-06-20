@@ -5,35 +5,76 @@
 #
 # author: Tom Goff <thomas.goff@boeing.com>
 #
-'''
-quagga.py: helper class for generating Quagga configuration.
-'''
 
-import os.path
+"""
+quagga.py: helper class for generating Quagga configuration.
+"""
+
 from string import Template
 
-def maketuple(obj):
-    if hasattr(obj, "__iter__"):
-        return tuple(obj)
+from core.misc import utils
+
+
+def addrstr(x):
+    if x.find(".") >= 0:
+        return "ip address %s" % x
+    elif x.find(":") >= 0:
+        return "ipv6 address %s" % x
     else:
-        return (obj,)
+        raise ValueError("invalid address: %s" % x)
+
 
 class NetIf(object):
-    def __init__(self, name, addrlist = []):
+    """
+    Represents a network interface.
+    """
+
+    def __init__(self, name, addrlist=None):
+        """
+        Create a NetIf instance.
+
+        :param str name: interface name
+        :param addrlist: address list for the interface
+        """
         self.name = name
-        self.addrlist = addrlist
+
+        if addrlist:
+            self.addrlist = addrlist
+        else:
+            self.addrlist = []
+
 
 class Conf(object):
-    def __init__(self, **kwds):
-        self.kwds = kwds
+    """
+    Provides a configuration object.
+    """
+
+    def __init__(self, **kwargs):
+        """
+        Create a Conf instance.
+
+        :param dict kwargs: configuration keyword arguments
+        """
+        self.kwargs = kwargs
 
     def __str__(self):
-        tmp = self.template.substitute(**self.kwds)
-        if tmp[-1] == '\n':
+        """
+        Provides a string representation of a configuration object.
+
+        :return: string representation
+        :rtype: str
+        """
+        # TODO: seems like an error here
+        tmp = self.template.substitute(**self.kwargs)
+        if tmp[-1] == "\n":
             tmp = tmp[:-1]
         return tmp
 
+
 class QuaggaOSPF6Interface(Conf):
+    """
+    Provides quagga ospf6 interface functionality.
+    """
     AF_IPV6_ID = 0
     AF_IPV4_ID = 65
 
@@ -50,32 +91,40 @@ interface $interface
   ipv6 ospf6 lsafullness mincostlsa
 """)
 
-#   ip address $ipaddr/32
-#   ipv6 ospf6 simhelloLLtoULRecv :$simhelloport
-#   !$ipaddr:$simhelloport
+    #   ip address $ipaddr/32
+    #   ipv6 ospf6 simhelloLLtoULRecv :$simhelloport
+    #   !$ipaddr:$simhelloport
 
-    def __init__(self, netif, instanceid = AF_IPV4_ID,
-                 network = "manet-designated-router", **kwds):
+    def __init__(self, netif, instanceid=AF_IPV4_ID, network="manet-designated-router", **kwargs):
+        """
+        Create a QuaggaOSPF6Interface instance.
+
+        :param netif: network interface
+        :param int instanceid: instance id
+        :param network: network
+        :param dict kwargs: keyword arguments
+        """
         self.netif = netif
-        def addrstr(x):
-            if x.find(".") >= 0:
-                return "ip address %s" % x
-            elif x.find(":") >= 0:
-                return "ipv6 address %s" % x
-            else:
-                raise Value, "invalid address: %s", x
         addr = "\n  ".join(map(addrstr, netif.addrlist))
-
         self.instanceid = instanceid
         self.network = network
-        Conf.__init__(self, interface = netif.name, addr = addr,
-                      instanceid = instanceid, network = network, **kwds)
+        Conf.__init__(self, interface=netif.name, addr=addr,
+                      instanceid=instanceid, network=network, **kwargs)
 
     def name(self):
+        """
+        Retrieve network interface name.
+
+        :return: network interface name
+        :rtype: str
+        """
         return self.netif.name
 
-class QuaggaOSPF6(Conf):
 
+class QuaggaOSPF6(Conf):
+    """
+    Provides quagga ospf6 functionality.
+    """
     template = Template("""\
 $interfaces
 !
@@ -85,17 +134,25 @@ router ospf6
   $redistribute
 """)
 
-    def __init__(self, ospf6ifs, area, routerid,
-                 redistribute = "! no redistribute"):
-        ospf6ifs = maketuple(ospf6ifs)
+    def __init__(self, ospf6ifs, area, routerid, redistribute="! no redistribute"):
+        """
+        Create a QuaggaOSPF6 instance.
+
+        :param list ospf6ifs: ospf6 interfaces
+        :param area: area
+        :param routerid: router id
+        :param str redistribute: redistribute value
+        """
+        ospf6ifs = utils.maketuple(ospf6ifs)
         interfaces = "\n!\n".join(map(str, ospf6ifs))
-        ospfifs = "\n  ".join(map(lambda x: "interface %s area %s" % \
-                                (x.name(), area), ospf6ifs))
-        Conf.__init__(self, interfaces = interfaces, routerid = routerid,
-                      ospfifs = ospfifs, redistribute = redistribute)
+        ospfifs = "\n  ".join(map(lambda x: "interface %s area %s" % (x.name(), area), ospf6ifs))
+        Conf.__init__(self, interfaces=interfaces, routerid=routerid, ospfifs=ospfifs, redistribute=redistribute)
 
 
 class QuaggaConf(Conf):
+    """
+    Provides quagga configuration functionality.
+    """
     template = Template("""\
 log file $logfile
 $debugs
@@ -105,12 +162,18 @@ $routers
 $forwarding
 """)
 
-    def __init__(self, routers, logfile, debugs = ()):
-        routers = "\n!\n".join(map(str, maketuple(routers)))
+    def __init__(self, routers, logfile, debugs=()):
+        """
+        Create a QuaggaConf instance.
+
+        :param list routers: routers
+        :param str logfile: log file name
+        :param debugs: debug options
+        """
+        routers = "\n!\n".join(map(str, utils.maketuple(routers)))
         if debugs:
-            debugs = "\n".join(maketuple(debugs))
+            debugs = "\n".join(utils.maketuple(debugs))
         else:
             debugs = "! no debugs"
         forwarding = "ip forwarding\nipv6 forwarding"
-        Conf.__init__(self, logfile = logfile, debugs = debugs,
-                      routers = routers, forwarding = forwarding)
+        Conf.__init__(self, logfile=logfile, debugs=debugs, routers=routers, forwarding=forwarding)
