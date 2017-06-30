@@ -23,7 +23,7 @@ setup(name = "core-python-netns",
       ext_modules = [netns, vcmd],
       url = "http://www.nrl.navy.mil/itd/ncs/products/core",
       author = "Boeing Research & Technology",
-      author_email = "core-dev@pf.itd.nrl.navy.mil",
+      author_email = "core-dev@nrl.navy.mil",
       license = "BSD",
       long_description="Extension modules and utilities to support virtual " \
           "nodes using Linux network namespaces")

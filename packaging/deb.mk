@@ -20,7 +20,7 @@ build: changelog
 changelog: debian
 	echo "core ($(CORE_VERSION)-1) unstable; urgency=low" > $(COREBUILD)/debian/changelog.generated
 	echo "  * interim package generated from source" >> $(COREBUILD)/debian/changelog.generated
-	echo " -- CORE Developers <core-dev@pf.itd.nrl.navy.mil>  $$(date -R)" >> $(COREBUILD)/debian/changelog.generated
+	echo " -- CORE Developers <core-dev@nrl.navy.mil>  $$(date -R)" >> $(COREBUILD)/debian/changelog.generated
 	cd $(COREBUILD)/debian && \
 	    { test ! -L changelog && mv -f changelog changelog.save; } && \
 	    { test "$$(readlink changelog)" = "changelog.generated" || \

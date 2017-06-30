@@ -604,7 +604,7 @@ menu .menubar.help -tearoff 0
 .menubar.help add command -label "CORE website (www)" -command \
   "_launchBrowser http://www.nrl.navy.mil/itd/ncs/products/core"
 .menubar.help add command -label "Mailing list (www)" -command \
-  "_launchBrowser http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users"
+  "_launchBrowser https://publists.nrl.navy.mil/mailman/listinfo/core-users"
 .menubar.help add command -label "About" -command popupAbout
 
 #
