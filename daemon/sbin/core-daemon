@@ -43,6 +43,7 @@ from core.services import bird
 from core.services import dockersvc
 from core.services import nrl
 from core.services import quagga
+from core.services import sdn
 from core.services import security
 from core.services import startup
 from core.services import ucarp
@@ -364,5 +365,6 @@ if __name__ == "__main__":
     ucarp.load_services()
     dockersvc.load_services()
     startup.load_services()
+    sdn.load_services()
 
     main()
