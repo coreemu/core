@@ -1061,7 +1061,7 @@ class Session(object):
                 logger.exception("error retreiving controlnet updown script")
 
             # Check if session option set, overwrite if so
-            new_updown_script = getattr(self.options, "controlnet_updown_script", default=None)
+            new_updown_script = getattr(self.options, "controlnet_updown_script", None)
             if new_updown_script:
                 updown_script = new_updown_script
 
