@@ -12,16 +12,11 @@ from core.misc import nodeutils
 from core.service import CoreService
 from core.service import ServiceManager
 
-QUAGGA_USER = "root"
-QUAGGA_GROUP = "root"
-if os.uname()[0] == "FreeBSD":
-    QUAGGA_GROUP = "wheel"
 
 
 class Zebra(CoreService):
     _name = "zebra"
     _group = "Quagga"
-    _depends = ("vtysh",)
     _dirs = ("/usr/local/etc/quagga", "/var/run/quagga")
     _configs = ("/usr/local/etc/quagga/Quagga.conf",
                 "quaggaboot.sh", "/usr/local/etc/quagga/vtysh.conf")
@@ -53,16 +48,11 @@ class Zebra(CoreService):
 
     @classmethod
     def generateQuaggaConf(cls, node, services):
-        """ Returns configuration file text. Other services that depend on zebra
-           will have generatequaggaifcconfig() and generatequaggaconfig()
-           hooks that are invoked here.
         """
-        # Check whether the node is running OVS
-        has_ovs = 0
-        for s in services:
-            if s._name == "OvsService":
-                has_ovs =1
-            
+        Returns configuration file text. Other services that depend on zebra
+        will have generatequaggaifcconfig() and generatequaggaconfig()
+        hooks that are invoked here.
+        """
         # we could verify here that filename == Quagga.conf
         cfg = ""
         for ifc in node.netifs():
@@ -72,7 +62,7 @@ class Zebra(CoreService):
                 ifnumstr = re.findall(r"\d+", ifc.name)
                 ifnum = ifnumstr[0]
                 ifname = "rtr%s" % ifnum
-                
+
             cfg += "interface %s\n" % ifname
             #cfg += "interface %s\n" % ifc.name
             # include control interfaces in addressing but not routing daemons
@@ -147,8 +137,6 @@ QUAGGA_CONF=%s
 QUAGGA_SBIN_SEARCH=%s
 QUAGGA_BIN_SEARCH=%s
 QUAGGA_STATE_DIR=%s
-QUAGGA_USER=%s
-QUAGGA_GROUP=%s
 
 searchforprog()
 {
@@ -177,21 +165,6 @@ confcheck()
     fi
 }
 
-waitforvtyfiles()
-{
-    for f in "$@"; do
-        count=1
-        until [ -e $QUAGGA_STATE_DIR/$f ]; do
-            if [ $count -eq 10 ]; then
-                echo "ERROR: vty file not found: $QUAGGA_STATE_DIR/$f" >&2
-                return 1
-            fi
-            sleep 0.1
-            count=$(($count + 1))
-        done
-    done
-}
-
 bootdaemon()
 {
     QUAGGA_SBIN_DIR=$(searchforprog $1 $QUAGGA_SBIN_SEARCH)
@@ -203,54 +176,54 @@ bootdaemon()
 
     flags=""
 
-    if [ "$1" != "zebra" ]; then
-        waitforvtyfiles zebra.vty
-    fi
-
     if [ "$1" = "xpimd" ] && \\
         grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $QUAGGA_CONF; then
         flags="$flags -6"
     fi
 
-    $QUAGGA_SBIN_DIR/$1 $flags -u $QUAGGA_USER -g $QUAGGA_GROUP -d
+    $QUAGGA_SBIN_DIR/$1 $flags -d
+    if [ "$?" != "0" ]; then
+        echo "ERROR: Quagga's '$1' daemon failed to start!:"
+        return 1
+    fi
 }
 
-bootvtysh()
+bootquagga()
 {
-    QUAGGA_BIN_DIR=$(searchforprog $1 $QUAGGA_BIN_SEARCH)
+    QUAGGA_BIN_DIR=$(searchforprog 'vtysh' $QUAGGA_BIN_SEARCH)
     if [ "z$QUAGGA_BIN_DIR" = "z" ]; then
-        echo "ERROR: Quagga's '$1' daemon not found in search path:"
-        echo "  $QUAGGA_SBIN_SEARCH"
+        echo "ERROR: Quagga's 'vtysh' program not found in search path:"
+        echo "  $QUAGGA_BIN_SEARCH"
         return 1
     fi
 
-    vtyfiles="zebra.vty"
+    # fix /var/run/quagga permissions
+    id -u quagga 2>/dev/null >/dev/null
+    if [ "$?" = "0" ]; then
+        chown quagga $QUAGGA_STATE_DIR
+    fi
+
+    bootdaemon "zebra"
     for r in rip ripng ospf6 ospf bgp babel; do
         if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
-            vtyfiles="$vtyfiles ${r}d.vty"
+            bootdaemon "${r}d"
         fi
     done
 
     if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $QUAGGA_CONF; then
-        vtyfiles="$vtyfiles xpimd.vty"
+        bootdaemon "xpimd"
     fi
-
-    # wait for Quagga daemon vty files to appear before invoking vtysh
-    waitforvtyfiles $vtyfiles
 
     $QUAGGA_BIN_DIR/vtysh -b
 }
 
-confcheck
-if [ "x$1" = "x" ]; then
-    echo "ERROR: missing the name of the Quagga daemon to boot"
+if [ "$1" != "zebra" ]; then
+    echo "WARNING: '$1': all Quagga daemons are launched by the 'zebra' service!"
     exit 1
-elif [ "$1" = "vtysh" ]; then
-    bootvtysh $1
-else
-    bootdaemon $1
 fi
-""" % (cls._configs[0], quagga_sbin_search, quagga_bin_search, constants.QUAGGA_STATE_DIR, QUAGGA_USER, QUAGGA_GROUP)
+confcheck
+bootquagga
+""" % (cls._configs[0], quagga_sbin_search, quagga_bin_search, constants.QUAGGA_STATE_DIR)
 
 
 class QuaggaService(CoreService):
@@ -308,7 +281,7 @@ class QuaggaService(CoreService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
+    def generatequaggaconfig(cls, node):
         return ""
 
 
@@ -319,9 +292,9 @@ class Ospfv2(QuaggaService):
     unified Quagga.conf file.
     """
     _name = "OSPFv2"
-    _startup = ("sh quaggaboot.sh ospfd",)
-    _shutdown = ("killall ospfd",)
-    _validate = ("pidof ospfd",)
+    _startup = ()
+    _shutdown = ("killall ospfd", )
+    _validate = ("pidof ospfd", )
     _ipv4_routing = True
 
     @staticmethod
@@ -353,7 +326,7 @@ class Ospfv2(QuaggaService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
+    def generatequaggaconfig(cls, node):
         cfg = "router ospf\n"
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
@@ -394,9 +367,9 @@ class Ospfv3(QuaggaService):
     unified Quagga.conf file.
     """
     _name = "OSPFv3"
-    _startup = ("sh quaggaboot.sh ospf6d",)
-    _shutdown = ("killall ospf6d",)
-    _validate = ("pidof ospf6d",)
+    _startup = ()
+    _shutdown = ("killall ospf6d", )
+    _validate = ("pidof ospf6d", )
     _ipv4_routing = True
     _ipv6_routing = True
 
@@ -438,13 +411,7 @@ class Ospfv3(QuaggaService):
         return ""
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
-        # Check whether the node is running OVS
-        has_ovs = 0
-        for s in services:
-            if s._name == "OvsService":
-                has_ovs =1
-            
+    def generatequaggaconfig(cls, node):
         cfg = "router ospf6\n"
         rtrid = cls.routerid(node)
         cfg += "  router-id %s\n" % rtrid
@@ -457,7 +424,7 @@ class Ospfv3(QuaggaService):
                 ifnumstr = re.findall(r"\d+", ifc.name)
                 ifnum = ifnumstr[0]
                 ifname = "rtr%s" % ifnum
-                
+
             cfg += "  interface %s area 0.0.0.0\n" % ifc.name
         cfg += "!\n"
         return cfg
@@ -508,6 +475,7 @@ class Ospfv3mdr(Ospfv3):
         else:
             return cfg
 
+
 class Bgp(QuaggaService):
     """
     The BGP service provides interdomain routing.
@@ -515,15 +483,15 @@ class Bgp(QuaggaService):
     having the same AS number.
     """
     _name = "BGP"
-    _startup = ("sh quaggaboot.sh bgpd",)
-    _shutdown = ("killall bgpd",)
-    _validate = ("pidof bgpd",)
+    _startup = ()
+    _shutdown = ("killall bgpd", )
+    _validate = ("pidof bgpd", )
     _custom_needed = True
     _ipv4_routing = True
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
+    def generatequaggaconfig(cls, node):
         cfg = "!\n! BGP configuration\n!\n"
         cfg += "! You should configure the AS number below,\n"
         cfg += "! along with this router's peers.\n!\n"
@@ -534,18 +502,19 @@ class Bgp(QuaggaService):
         cfg += "! neighbor 1.2.3.4 remote-as 555\n!\n"
         return cfg
 
+
 class Rip(QuaggaService):
     """
     The RIP service provides IPv4 routing for wired networks.
     """
     _name = "RIP"
-    _startup = ("sh quaggaboot.sh ripd",)
-    _shutdown = ("killall ripd",)
-    _validate = ("pidof ripd",)
+    _startup = ()
+    _shutdown = ("killall ripd", )
+    _validate = ("pidof ripd", )
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
+    def generatequaggaconfig(cls, node):
         cfg = """\
 router rip
   redistribute static
@@ -556,18 +525,19 @@ router rip
 """
         return cfg
 
+
 class Ripng(QuaggaService):
     """
     The RIP NG service provides IPv6 routing for wired networks.
     """
     _name = "RIPNG"
-    _startup = ("sh quaggaboot.sh ripngd",)
-    _shutdown = ("killall ripngd",)
-    _validate = ("pidof ripngd",)
+    _startup = ()
+    _shutdown = ("killall ripngd", )
+    _validate = ("pidof ripngd", )
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
+    def generatequaggaconfig(cls, node):
         cfg = """\
 router ripng
   redistribute static
@@ -578,36 +548,24 @@ router ripng
 """
         return cfg
 
+
 class Babel(QuaggaService):
     """
     The Babel service provides a loop-avoiding distance-vector routing
     protocol for IPv6 and IPv4 with fast convergence properties.
     """
     _name = "Babel"
-    _startup = ("sh quaggaboot.sh babeld",)
-    _shutdown = ("killall babeld",)
-    _validate = ("pidof babeld",)
+    _startup = ()
+    _shutdown = ("killall babeld", )
+    _validate = ("pidof babeld", )
     _ipv6_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
-        # Check whether the node is running OVS
-        has_ovs = 0
-        for s in services:
-            if s._name == "OvsService":
-                has_ovs =1
-            
+    def generatequaggaconfig(cls, node):
         cfg = "router babel\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
-            if has_ovs == 0:
-                ifname = ifc.name
-            else:
-                ifnumstr = re.findall(r"\d+", ifc.name)
-                ifnum = ifnumstr[0]
-                ifname = "rtr%s" % ifnum
-            
             cfg += "  network %s\n" % ifc.name
         cfg += "  redistribute static\n  redistribute connected\n"
         return cfg
@@ -620,37 +578,23 @@ class Babel(QuaggaService):
         else:
             return "  babel wired\n  babel split-horizon\n"
 
+
 class Xpimd(QuaggaService):
     """
     PIM multicast routing based on XORP.
     """
     _name = 'Xpimd'
-    _startup = ('sh quaggaboot.sh xpimd',)
-    _shutdown = ('killall xpimd',)
-    _validate = ('pidof xpimd',)
+    _startup = ()
+    _shutdown = ('killall xpimd', )
+    _validate = ('pidof xpimd', )
     _ipv4_routing = True
 
     @classmethod
-    def generatequaggaconfig(cls, node, services):
-        # Check whether the node is running OVS
-        has_ovs = 0
-        for s in services:
-            if s._name == "OvsService":
-                has_ovs =1
-        if has_ovs == 0:        
-            ifname = 'eth0'
-        else:
-            ifname = 'rtr0'
-            
+    def generatequaggaconfig(cls, node):
+        ifname = 'eth0'
         for ifc in node.netifs():
             if ifc.name != 'lo':
-                if has_ovs == 0:
-                    ifname = ifc.name
-                else:
-                    ifnumstr = re.findall(r"\d+", ifc.name)
-                    ifnum = ifnumstr[0]
-                    ifname = "rtr%s" % ifnum
-
+                ifname = ifc.name
                 break
         cfg = 'router mfea\n!\n'
         cfg += 'router igmp\n!\n'
@@ -665,20 +609,6 @@ class Xpimd(QuaggaService):
     def generatequaggaifcconfig(cls, node, ifc):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
 
-class Vtysh(CoreService):
-    """
-    Simple service to run vtysh -b (boot) after all Quagga daemons have
-    started.
-    """
-    _name = "vtysh"
-    _group = "Quagga"
-    _startindex = 45
-    _startup = ("sh quaggaboot.sh vtysh",)
-    _shutdown = ()
-
-    @classmethod
-    def generateconfig(cls, node, filename, services):
-        return ""
 
 def load_services():
     ServiceManager.add(Zebra)
@@ -690,4 +620,3 @@ def load_services():
     ServiceManager.add(Ripng)
     ServiceManager.add(Babel)
     ServiceManager.add(Xpimd)
-    ServiceManager.add(Vtysh)

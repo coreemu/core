@@ -106,6 +106,10 @@ class CoreServices(ConfigurableManager):
         from core.services import startup
         self.is_startup_service = startup.Startup.is_startup_service
 
+    @classmethod
+    def add_service_path(cls, path):
+        cls.service_path.add(path)
+
     def importcustom(self, path):
         """
         Import services from a myservices directory.
@@ -975,7 +979,7 @@ class CoreService(object):
         :return: nothing
         """
         if key not in self.keys:
-            raise ValueError
+            raise ValueError('key `%s` not in `%s`' % (key, self.keys))
         # this handles data conversion to int, string, and tuples
         if value:
             if key == "startidx":

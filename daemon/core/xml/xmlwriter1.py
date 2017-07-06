@@ -603,7 +603,7 @@ class DeviceElement(NamedXmlElement):
                 device_type = DevType.HOST
 
         if device_type is None:
-            raise Exception
+            raise ValueError("unknown device type: %s" % core_device_type)
 
         NamedXmlElement.__init__(self, scen_plan, parent, device_type, device_object.name)
 

@@ -20,7 +20,7 @@ node n1 {
     interface-peer {eth1 n2}
     interface-peer {eth2 n3}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -82,7 +82,7 @@ node n2 {
     interface-peer {eth1 n16}
     interface-peer {eth2 n6}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -140,7 +140,7 @@ node n3 {
     interface-peer {eth0 n4}
     interface-peer {eth1 n1}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -197,7 +197,7 @@ node n4 {
     interface-peer {eth0 n3}
     interface-peer {eth1 n7}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -258,7 +258,7 @@ node n5 {
     interface-peer {eth0 n7}
     interface-peer {eth1 n6}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -323,7 +323,7 @@ node n6 {
     interface-peer {eth0 n5}
     interface-peer {eth1 n2}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -376,7 +376,7 @@ node n7 {
     interface-peer {eth0 n5}
     interface-peer {eth1 n4}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf
@@ -555,7 +555,7 @@ node n16 {
     interface-peer {eth0 n1}
     interface-peer {eth1 n2}
     canvas c1
-    services {zebra BGP vtysh IPForward}
+    services {zebra BGP IPForward}
     custom-config {
 	custom-config-id service:zebra:/usr/local/etc/quagga/Quagga.conf
 	custom-command /usr/local/etc/quagga/Quagga.conf

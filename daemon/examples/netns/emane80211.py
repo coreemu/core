@@ -76,7 +76,7 @@ def main():
         values[names.index('propagationmodel')] = '2ray'
 
     session.emane.setconfig(wlan.objid, EmaneIeee80211abgModel.name, values)
-    services_str = "zebra|OSPFv3MDR|vtysh|IPForward"
+    services_str = "zebra|OSPFv3MDR|IPForward"
 
     print "creating %d nodes with addresses from %s" % \
           (options.numnodes, prefix)

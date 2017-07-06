@@ -163,7 +163,6 @@ def sighandler(signum, stackframe):
 
 signal.signal(signal.SIGHUP, sighandler)
 signal.signal(signal.SIGINT, sighandler)
-signal.signal(signal.SIGPIPE, sighandler)
 signal.signal(signal.SIGTERM, sighandler)
 signal.signal(signal.SIGUSR1, sighandler)
 signal.signal(signal.SIGUSR2, sighandler)

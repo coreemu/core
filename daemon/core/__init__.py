@@ -13,7 +13,5 @@ Pieces can be imported individually, for example
     from core.netns import vnode
 """
 
-__all__ = []
-
 # Automatically import all add-ons listed in addons.__all__
 from addons import *

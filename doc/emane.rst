@@ -111,7 +111,7 @@ Here are quick instructions for installing all EMANE packages:
 ::
 
   # install dependencies
-  sudo apt-get install libssl-dev libxml-lixbml-perl libxml-simple-perl
+  sudo apt-get install libssl-dev libxml-libxml-perl libxml-simple-perl
   # download and install EMANE 0.8.1
   export URL=http://downloads.pf.itd.nrl.navy.mil/emane/0.8.1-r2
   wget $URL/emane-0.8.1-release-2.ubuntu-12_04.amd64.tgz

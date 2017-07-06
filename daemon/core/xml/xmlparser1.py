@@ -851,12 +851,10 @@ class CoreDocumentParser1(object):
     def parse_default_services(self):
         # defaults from the CORE GUI
         self.default_services = {
-            'router': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
+            'router': ['zebra', 'OSPFv2', 'OSPFv3', 'IPForward'],
             'host': ['DefaultRoute', 'SSH'],
             'PC': ['DefaultRoute', ],
-            'mdr': ['zebra', 'OSPFv3MDR', 'vtysh', 'IPForward'],
-            # 'prouter': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
-            # 'xen': ['zebra', 'OSPFv2', 'OSPFv3', 'vtysh', 'IPForward'],
+            'mdr': ['zebra', 'OSPFv3MDR', 'IPForward'],
         }
         default_services = xmlutils.get_first_child_by_tag_name(self.scenario, 'CORE:defaultservices')
         if not default_services:

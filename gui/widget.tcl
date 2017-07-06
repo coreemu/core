@@ -572,7 +572,7 @@ proc exec_observer_callback { node execnum cmd result status } {
 #####                                                                      #####
 ################################################################################
 
-array set thruConfig { show 1 avg 1 thresh 250.0 width 10 color #FF0000 }
+array set thruConfig { show 1 up 1 down 1 avg 1 thresh 250.0 width 10 color #FF0000 }
 
 # netgraph names of pipe nodes
 array set throughput_cache { }
@@ -597,7 +597,12 @@ proc widget_thru_config {} {
     checkbutton $wi.tlab.avg \
 	-text "Use exponentially weighted moving average" \
 	-variable thruConfig(avg)
-    pack $wi.tlab.show_thru $wi.tlab.avg -side top -anchor w -padx 4 
+    checkbutton $wi.tlab.down \
+    -text "Include transmissions" -variable thruConfig(down)
+    checkbutton $wi.tlab.up \
+    -text "Include receptions" -variable thruConfig(up)
+    pack $wi.tlab.show_thru $wi.tlab.avg $wi.tlab.down \
+    $wi.tlab.up -side top -anchor w -padx 4 
     pack $wi.tlab -side top
 
     frame $wi.msg -borderwidth 4
@@ -807,7 +812,14 @@ proc widget_thru_periodic { now } {
 	set div [expr { (1000.0 / 8.0) * $dt }]
 	set kbps_down [expr { ([lindex $bytes 0]-[lindex $bytes2 0]) / $div }]
 	set kbps_up [expr { ([lindex $bytes 1]-[lindex $bytes2 1]) / $div }]
-	set kbps [expr {$kbps_down + $kbps_up}]
+	set kbps 0.0
+    if { $thruConfig(up) } {
+        set kbps [expr {$kbps + $kbps_up}]
+    }
+    if { $thruConfig(down) } {
+        set kbps [expr {$kbps + $kbps_down}]
+    }
+    #set kbps [expr {$kbps_down + $kbps_up}]
 	
 	if { $thruConfig(avg) } {
 	    if { ![info exists link_thru_avg_stats($key)] } {
@@ -907,6 +919,7 @@ proc getstats_bytes_netgraph { raw_input } {
 }
 
 proc getstats_link_ifname { link } {
+    global g_current_session
     set lnode1 [lindex [linkPeers $link] 0]
     set lnode2 [lindex [linkPeers $link] 1]
 
@@ -920,11 +933,10 @@ proc getstats_link_ifname { link } {
 	set ifname [ifcByPeer $lnode2 $lnode1]
     }
     if { $node_num < 0 } { return "" }
-
-    # TODO: need to determine session number used by daemon
-    #       instead this uses a '*' character for a regexp match against
-    #       the interfaces in /proc/net/dev
-    set ifname "veth$node_num\\.[string range $ifname 3 end]\\.*"
+    set ssid [shortSessionID $g_current_session]
+    set hex [format "%x" $node_num]
+    set ifnum [string range $ifname 3 end]
+    set ifname "veth$hex.$ifnum.$ssid"
     return $ifname
 }
 
