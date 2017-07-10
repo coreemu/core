@@ -1054,16 +1054,14 @@ class Session(object):
         updown_script = None
 
         if net_index == 0:
-            try:
-                if self.config["controlnet_updown_script"]:
-                    updown_script = self.config["controlnet_updown_script"]
-            except KeyError:
-                logger.exception("error retreiving controlnet updown script")
+            updown_script = self.config.get("controlnet_updown_script")
+            if not updown_script:
+                logger.warning("controlnet updown script not configured")
 
-            # Check if session option set, overwrite if so
-            new_updown_script = getattr(self.options, "controlnet_updown_script", None)
-            if new_updown_script:
-                updown_script = new_updown_script
+            # check if session option set, overwrite if so
+            options_updown_script = getattr(self.options, "controlnet_updown_script", None)
+            if options_updown_script:
+                updown_script = options_updown_script
 
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:

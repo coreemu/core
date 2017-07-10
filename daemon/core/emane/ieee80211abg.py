@@ -10,11 +10,6 @@ from core.misc import log
 
 logger = log.get_logger(__name__)
 
-try:
-    from emanesh.events import EventService
-except:
-    logger.error("error importing emanesh")
-
 
 class EmaneIeee80211abgModel(EmaneModel):
     def __init__(self, session, object_id=None):
@@ -33,7 +28,7 @@ class EmaneIeee80211abgModel(EmaneModel):
     # MAC parameters
     _confmatrix_mac_base = [
         ("mode", ConfigDataTypes.UINT8.value, '0',
-         '0 802.11b (DSSS only),1 802.11b (DSSS only),' + \
+         '0 802.11b (DSSS only),1 802.11b (DSSS only),' +
          '2 802.11a or g (OFDM),3 802.11b/g (DSSS and OFDM)', 'mode'),
         ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, '0',
          'On,Off', 'enable promiscuous mode'),

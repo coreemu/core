@@ -10,11 +10,6 @@ from core.misc import log
 
 logger = log.get_logger(__name__)
 
-try:
-    from emanesh.events import EventService
-except ImportError:
-    logger.error("error importing emanesh")
-
 
 class EmaneUniversalModel(EmaneModel):
     """

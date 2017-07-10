@@ -9,6 +9,8 @@ from core.misc import ipaddress
 from core.misc import nodemaps
 from core.misc import nodeutils
 from core.netns import nodes
+from core.services import quagga
+from core.services import utility
 
 
 class Core(object):
@@ -19,8 +21,12 @@ class Core(object):
         self.nodes = {}
         self.node_ips = {}
 
-    def create_node(self, name, cls=nodes.CoreNode, objid=None):
+    def create_node(self, name, cls=nodes.CoreNode, objid=None, position=None, services=None):
         node = self.session.add_object(cls=cls, name=name, objid=objid)
+        if position:
+            node.setposition(*position)
+        if services:
+            self.session.services.addservicestonode(node, "", services)
         self.nodes[name] = node
 
     def add_interface(self, network, name):
@@ -105,6 +111,11 @@ class Core(object):
 
         return ptp_node, interface_one, interface_two
 
+    def set_emane_model(self, emane_node, emane_model):
+        # set the emane model
+        values = emane_model.getdefaultvalues()
+        self.session.emane.setconfig(emane_node.objid, emane_model.name, values)
+
 
 @pytest.fixture()
 def session():
@@ -123,6 +134,37 @@ def session():
     assert not os.path.exists(session_fixture.session_dir)
 
 
+@pytest.fixture()
+def session_emane():
+    # configure default nodes
+    node_map = nodemaps.CLASSIC_NODES
+    nodeutils.set_node_map(node_map)
+
+    # create and return session
+    session_fixture = Session(1, persistent=True)
+    assert os.path.exists(session_fixture.session_dir)
+
+    # load emane services
+    quagga.load_services()
+    utility.load_services()
+
+    # set location
+    session_fixture.master = True
+    session_fixture.location.setrefgeo(47.57917, -122.13232, 2.00000)
+    session_fixture.location.refscale = 150.0
+
+    # load emane models
+    session_fixture.emane.loadmodels()
+
+    # return session fixture
+    yield session_fixture
+
+    # cleanup
+    print "shutting down session"
+    session_fixture.shutdown()
+    assert not os.path.exists(session_fixture.session_dir)
+
+
 @pytest.fixture(scope="module")
 def ip_prefix():
     return ipaddress.Ipv4Prefix("10.83.0.0/16")
@@ -131,3 +173,8 @@ def ip_prefix():
 @pytest.fixture()
 def core(session, ip_prefix):
     return Core(session, ip_prefix)
+
+
+@pytest.fixture()
+def core_emane(session_emane, ip_prefix):
+    return Core(session_emane, ip_prefix)

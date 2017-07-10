@@ -16,7 +16,6 @@ from core.misc import log
 logger = log.get_logger(__name__)
 
 try:
-    from emanesh.events import EventService
     from emanesh.events import LocationEvent
 except ImportError:
     logger.error("error loading emanesh")

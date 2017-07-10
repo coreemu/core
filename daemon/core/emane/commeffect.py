@@ -10,11 +10,6 @@ from core.misc import log
 logger = log.get_logger(__name__)
 
 try:
-    from emanesh.events import EventService
-except ImportError:
-    logger.error("error importing emanesh")
-
-try:
     import emaneeventservice
     import emaneeventcommeffect
 except ImportError:
@@ -99,8 +94,7 @@ class EmaneCommEffectModel(EmaneModel):
         link parameters.
         """
         if emane.VERSION >= emane.EMANE091:
-            raise NotImplementedError, \
-                "CommEffect linkconfig() not implemented for EMANE 0.9.1+"
+            raise NotImplementedError("CommEffect linkconfig() not implemented for EMANE 0.9.1+")
 
         def z(x):
             """
