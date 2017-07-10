@@ -97,18 +97,16 @@ def maketuple(obj):
         return obj,
 
 
-# TODO: remove unused parameter type
-def maketuplefromstr(s, type):
+def maketuplefromstr(s, value_type):
     """
     Create a tuple from a string.
 
     :param str s: string to convert to a tuple
-    :param type: type of tuple to convert to
+    :param value_type: type of values to be contained within tuple
     :return: tuple from string
     :rtype: tuple
     """
-    s.replace("\\", "\\\\")
-    return ast.literal_eval(s)
+    return tuple(value_type(i) for i in s.split(","))
 
 
 def mutecall(*args, **kwargs):

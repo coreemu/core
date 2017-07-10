@@ -2,16 +2,12 @@
 quagga.py: defines routing services provided by Quagga.
 """
 
-import os
-import re
-
 from core import constants
 from core.enumerations import LinkTypes, NodeTypes
 from core.misc import ipaddress
 from core.misc import nodeutils
 from core.service import CoreService
 from core.service import ServiceManager
-
 
 
 class Zebra(CoreService):
@@ -56,17 +52,9 @@ class Zebra(CoreService):
         # we could verify here that filename == Quagga.conf
         cfg = ""
         for ifc in node.netifs():
-            if has_ovs == 0:
-                ifname = ifc.name
-            else:
-                ifnumstr = re.findall(r"\d+", ifc.name)
-                ifnum = ifnumstr[0]
-                ifname = "rtr%s" % ifnum
-
-            cfg += "interface %s\n" % ifname
-            #cfg += "interface %s\n" % ifc.name
+            cfg += "interface %s\n" % ifc.name
             # include control interfaces in addressing but not routing daemons
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 cfg += "  "
                 cfg += "\n  ".join(map(cls.addrstr, ifc.addrlist))
                 cfg += "\n"
@@ -104,7 +92,7 @@ class Zebra(CoreService):
         for s in services:
             if cls._name not in s._depends:
                 continue
-            cfg += s.generatequaggaconfig(node, services)
+            cfg += s.generatequaggaconfig(node)
         return cfg
 
     @staticmethod
@@ -293,8 +281,8 @@ class Ospfv2(QuaggaService):
     """
     _name = "OSPFv2"
     _startup = ()
-    _shutdown = ("killall ospfd", )
-    _validate = ("pidof ospfd", )
+    _shutdown = ("killall ospfd",)
+    _validate = ("pidof ospfd",)
     _ipv4_routing = True
 
     @staticmethod
@@ -368,8 +356,8 @@ class Ospfv3(QuaggaService):
     """
     _name = "OSPFv3"
     _startup = ()
-    _shutdown = ("killall ospf6d", )
-    _validate = ("pidof ospf6d", )
+    _shutdown = ("killall ospf6d",)
+    _validate = ("pidof ospf6d",)
     _ipv4_routing = True
     _ipv6_routing = True
 
@@ -418,13 +406,6 @@ class Ospfv3(QuaggaService):
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control is True:
                 continue
-            if has_ovs == 0:
-                ifname = ifc.name
-            else:
-                ifnumstr = re.findall(r"\d+", ifc.name)
-                ifnum = ifnumstr[0]
-                ifname = "rtr%s" % ifnum
-
             cfg += "  interface %s area 0.0.0.0\n" % ifc.name
         cfg += "!\n"
         return cfg
@@ -484,8 +465,8 @@ class Bgp(QuaggaService):
     """
     _name = "BGP"
     _startup = ()
-    _shutdown = ("killall bgpd", )
-    _validate = ("pidof bgpd", )
+    _shutdown = ("killall bgpd",)
+    _validate = ("pidof bgpd",)
     _custom_needed = True
     _ipv4_routing = True
     _ipv6_routing = True
@@ -509,8 +490,8 @@ class Rip(QuaggaService):
     """
     _name = "RIP"
     _startup = ()
-    _shutdown = ("killall ripd", )
-    _validate = ("pidof ripd", )
+    _shutdown = ("killall ripd",)
+    _validate = ("pidof ripd",)
     _ipv4_routing = True
 
     @classmethod
@@ -532,8 +513,8 @@ class Ripng(QuaggaService):
     """
     _name = "RIPNG"
     _startup = ()
-    _shutdown = ("killall ripngd", )
-    _validate = ("pidof ripngd", )
+    _shutdown = ("killall ripngd",)
+    _validate = ("pidof ripngd",)
     _ipv6_routing = True
 
     @classmethod
@@ -556,8 +537,8 @@ class Babel(QuaggaService):
     """
     _name = "Babel"
     _startup = ()
-    _shutdown = ("killall babeld", )
-    _validate = ("pidof babeld", )
+    _shutdown = ("killall babeld",)
+    _validate = ("pidof babeld",)
     _ipv6_routing = True
 
     @classmethod
@@ -585,8 +566,8 @@ class Xpimd(QuaggaService):
     """
     _name = 'Xpimd'
     _startup = ()
-    _shutdown = ('killall xpimd', )
-    _validate = ('pidof xpimd', )
+    _shutdown = ('killall xpimd',)
+    _validate = ('pidof xpimd',)
     _ipv4_routing = True
 
     @classmethod

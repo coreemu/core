@@ -3,10 +3,16 @@ Unit tests for testing with a CORE switch.
 """
 from core.api import coreapi, dataconversion
 from core.api.coreapi import CoreExecuteTlv
-from core.enumerations import CORE_API_PORT, EventTypes, EventTlvs, MessageFlags, LinkTlvs, LinkTypes, ExecuteTlvs, \
-    MessageTypes
+from core.enumerations import CORE_API_PORT
+from core.enumerations import EventTlvs
+from core.enumerations import EventTypes
+from core.enumerations import ExecuteTlvs
+from core.enumerations import LinkTlvs
+from core.enumerations import LinkTypes
+from core.enumerations import MessageFlags
+from core.enumerations import MessageTypes
 from core.misc import ipaddress
-from core.netns.nodes import SwitchNode, CoreNode
+from core.netns.nodes import SwitchNode
 
 
 def cmd(node, exec_cmd):

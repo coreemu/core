@@ -59,8 +59,6 @@ class EmaneManager(ConfigurableManager):
     emulation, and for controlling the EMANE daemons.
     """
     name = "emane"
-    version = None
-    versionstr = None
     config_type = RegisterTlvs.EMULATION_SERVER.value
     _hwaddr_prefix = "02:02"
     (SUCCESS, NOT_NEEDED, NOT_READY) = (0, 1, 2)
@@ -121,20 +119,21 @@ class EmaneManager(ConfigurableManager):
         - For version >= 0.9.1 this is passed into the EventService
           constructor.
         """
+        logger.info("initializing emane event service: %s", emane.VERSIONSTR)
+
         self.deleteeventservice()
         self.service = None
 
         # EMANE 0.9.1+ does not require event service XML config
-        if EmaneManager.version >= emane.EMANE091:
+        if emane.VERSION >= emane.EMANE091:
             if shutdown:
                 return
             # Get the control network to be used for events
-            values = self.getconfig(None, "emane",
-                                    self.emane_config.getdefaultvalues())[1]
+            values = self.getconfig(None, "emane", self.emane_config.getdefaultvalues())[1]
             group, port = self.emane_config.valueof('eventservicegroup', values).split(':')
             eventdev = self.emane_config.valueof('eventservicedevice', values)
             eventnetidx = self.session.get_control_net_index(eventdev)
-            if EmaneManager.version > emane.EMANE091:
+            if emane.VERSION > emane.EMANE091:
                 if eventnetidx < 0:
                     msg = "Invalid Event Service device provided: %s" % eventdev
                     logger.error(msg)
@@ -913,8 +912,9 @@ class EmaneManager(ConfigurableManager):
             try:
                 cmd = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]
                 logger.info("Emane.startdaemons2() running %s" % str(cmd))
-                status = node.cmd(cmd, wait=True)
+                status, output = node.cmdresult(cmd)
                 logger.info("Emane.startdaemons2() return code %d" % status)
+                logger.info("Emane.startdaemons2() output: %s" % output)
             except subprocess.CalledProcessError:
                 logger.exception("error starting emane")
 
@@ -1151,7 +1151,7 @@ class EmaneManager(ConfigurableManager):
         cmd = ['pkill', '-0', '-x', 'emane']
 
         try:
-            if self.version < emane.EMANE092:
+            if emane.VERSION < emane.EMANE092:
                 status = subprocess.call(cmd)
             else:
                 status = node.cmd(cmd, wait=True)

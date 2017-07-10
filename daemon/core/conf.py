@@ -348,7 +348,7 @@ class Configurable(object):
                 typeflags = ConfigFlags.UPDATE.value
             else:
                 defaults = cls.getdefaultvalues()
-                typeflags = ConfigFlags.coreapi.CONF_TYPE_FLAGS_NONE
+                typeflags = ConfigFlags.NONE.value
             values = manager.getconfig(node_id, cls.name, defaults)[1]
             if values is None:
                 # node has no active config for this model (don't send defaults)

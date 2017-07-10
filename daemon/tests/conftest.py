@@ -19,8 +19,8 @@ class Core(object):
         self.nodes = {}
         self.node_ips = {}
 
-    def create_node(self, name):
-        node = self.session.add_object(cls=nodes.CoreNode, name=name)
+    def create_node(self, name, cls=nodes.CoreNode, objid=None):
+        node = self.session.add_object(cls=cls, name=name, objid=objid)
         self.nodes[name] = node
 
     def add_interface(self, network, name):
