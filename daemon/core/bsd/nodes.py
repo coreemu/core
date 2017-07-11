@@ -3,7 +3,7 @@
 # Copyright (c)2010-2013 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-# author: core-dev@pf.itd.nrl.navy.mil
+# author: core-dev@nrl.navy.mil
 #
 
 '''

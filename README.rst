@@ -78,7 +78,7 @@ If you have questions, comments, or trouble, please use the CORE mailing lists:
 - `core-dev`_ for bugs, compile errors, and other development issues
 
 
-.. _core-users: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users
-.. _core-dev: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev
+.. _core-users: https://publists.nrl.navy.mil/mailman/listinfo/core-users
+.. _core-dev: https://publists.nrl.navy.mil/mailman/listinfo/core-dev
 
 

@@ -3,7 +3,7 @@
 # Copyright (c)2010-2012 the Boeing Company.
 # See the LICENSE file included in this distribution.
 #
-# authors: core-dev@pf.itd.nrl.navy.mil 
+# authors: core-dev@nrl.navy.mil 
 #
 '''
 vnode.py: SimpleJailNode and JailNode classes that implement the FreeBSD

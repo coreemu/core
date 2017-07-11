@@ -1,7 +1,7 @@
 Source: core
 Section: net
 Priority: optional
-Maintainer: CORE Developers <core-dev@pf.itd.nrl.navy.mil>
+Maintainer: CORE Developers <core-dev@nrl.navy.mil>
 Standards-Version: 3.8.4
 Build-Depends: debhelper (>= 9), cdbs, dh-autoreconf, autoconf, automake, gcc, libev-dev, make, python-dev, libreadline-dev, bridge-utils, ebtables, iproute2 | iproute, imagemagick, pkg-config, help2man
 # python-sphinx
