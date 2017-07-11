@@ -39,7 +39,7 @@ logger = log.get_logger(__name__)
 # TODO: name conflict with main core server, probably should rename
 class CoreServer(object):
     """
-    Reptesents CORE daemon servers for communication.
+    Represents CORE daemon servers for communication.
     """
     def __init__(self, name, host, port):
         """
@@ -104,7 +104,7 @@ class CoreBroker(ConfigurableManager):
 
         ConfigurableManager.__init__(self)
         self.session = session
-        self.session_handler = None
+        self.session_clients = []
         self.session_id_master = None
         self.myip = None
         # dict containing tuples of (host, port, sock)
@@ -263,7 +263,8 @@ class CoreBroker(ConfigurableManager):
             logger.error("unknown message type received: %s", msgtype)
 
         try:
-            self.session_handler.sendall(data)
+            for session_client in self.session_clients:
+                session_client.sendall(data)
         except IOError:
             logger.exception("error sending message")
 
@@ -460,9 +461,11 @@ class CoreBroker(ConfigurableManager):
                 continue
             hosts.append(server.host)
 
-        if len(hosts) == 0 and self.session_handler.client_address != "":
-            # get IP address from API message sender (master)
-            hosts.append(self.session_handler.client_address[0])
+        if len(hosts) == 0:
+            for session_client in self.session_clients:
+                # get IP address from API message sender (master)
+                if session_client.client_address != "":
+                    hosts.append(session_client.client_address[0])
 
         r = []
         for host in hosts:
@@ -942,9 +945,14 @@ class CoreBroker(ConfigurableManager):
                 host = opaque.split(":")[0]
             if host == "":
                 host = None
-        if host is None and self.session_handler.client_address != "":
-            # get IP address from API message sender (master)
-            host = self.session_handler.client_address[0]
+
+        if host is None:
+            for session_client in self.session_clients:
+                # get IP address from API message sender (master)
+                if session_client.client_address != "":
+                    host = session_client.client_address[0]
+                    break
+
         return host
 
     def handlerawmsg(self, msg):
@@ -1049,11 +1057,12 @@ class CoreBroker(ConfigurableManager):
             if server is not None:
                 server.instantiation_complete = True
 
-        if self.session_handler:
-            tlvdata = ""
-            tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value)
-            msg = coreapi.CoreEventMessage.pack(0, tlvdata)
-            self.session_handler.sendall(msg)
+        # broadcast out instantiate complete
+        tlvdata = ""
+        tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value)
+        message = coreapi.CoreEventMessage.pack(0, tlvdata)
+        for session_client in self.session_clients:
+            session_client.sendall(message)
 
     def instantiation_complete(self):
         """

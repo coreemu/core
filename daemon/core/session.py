@@ -1256,24 +1256,27 @@ class Session(object):
         """
         Return API messages that describe the current session.
         """
-
-        # send node messages for node and network objects
-        # send link messages from net objects
-        number_nodes = 0
-        number_links = 0
+        # find all nodes and links
+        nodes_data = []
+        links_data = []
         with self._objects_lock:
             for obj in self.objects.itervalues():
                 node_data = obj.data(message_type=MessageFlags.ADD.value)
                 if node_data:
-                    self.broadcast_node(node_data)
-                    # replies.append(message)
-                    number_nodes += 1
+                    nodes_data.append(node_data)
 
-                links_data = obj.all_link_data(flags=MessageFlags.ADD.value)
-                for link_data in links_data:
-                    self.broadcast_link(link_data)
-                    # replies.append(link_data)
-                    number_links += 1
+                node_links = obj.all_link_data(flags=MessageFlags.ADD.value)
+                for link_data in node_links:
+                    links_data.append(link_data)
+
+        # send all nodes first, so that they will exist for any links
+        logger.info("nodes: %s", nodes_data)
+        logger.info("links: %s", links_data)
+        for node_data in nodes_data:
+            self.broadcast_node(node_data)
+
+        for link_data in links_data:
+            self.broadcast_link(link_data)
 
         # send model info
         configs = self.mobility.getallconfigs()
@@ -1295,18 +1298,10 @@ class Session(object):
                 node=node_number,
                 opaque=opaque
             )
-            # replies.append(self.services.configure_request(config_data))
             config_response = self.services.configure_request(config_data)
             self.broadcast_config(config_response)
 
             for file_name, config_data in self.services.getallfiles(service):
-                # flags = MessageFlags.ADD.value
-                # tlv_data = coreapi.CoreFileTlv.pack(FileTlvs.NODE.value, node_number)
-                # tlv_data += coreapi.CoreFileTlv.pack(FileTlvs.NAME.value, str(file_name))
-                # tlv_data += coreapi.CoreFileTlv.pack(FileTlvs.TYPE.value, opaque)
-                # tlv_data += coreapi.CoreFileTlv.pack(FileTlvs.DATA.value, str(config_data))
-                # replies.append(coreapi.CoreFileMessage.pack(flags, tlv_data))
-
                 file_data = FileData(
                     message_type=MessageFlags.ADD.value,
                     node=node_number,
@@ -1321,12 +1316,6 @@ class Session(object):
         # send hook scripts
         for state in sorted(self._hooks.keys()):
             for file_name, config_data in self._hooks[state]:
-                # flags = MessageFlags.ADD.value
-                # tlv_data = coreapi.CoreFileTlv.pack(FileTlvs.NAME.value, str(file_name))
-                # tlv_data += coreapi.CoreFileTlv.pack(FileTlvs.TYPE.value, "hook:%s" % state)
-                # tlv_data += coreapi.CoreFileTlv.pack(FileTlvs.DATA.value, str(config_data))
-                # replies.append(coreapi.CoreFileMessage.pack(flags, tlv_data))
-
                 file_data = FileData(
                     message_type=MessageFlags.ADD.value,
                     name=str(file_name),
@@ -1345,7 +1334,7 @@ class Session(object):
         metadata_config = self.metadata.configure_request(config_data, type_flags=ConfigFlags.UPDATE.value)
         self.broadcast_config(metadata_config)
 
-        logger.info("informing GUI about %d nodes and %d links", number_nodes, number_links)
+        logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
 
 class SessionConfig(ConfigurableManager, Configurable):

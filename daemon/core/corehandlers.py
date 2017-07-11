@@ -133,7 +133,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             self.session.exception_handlers.remove(self.handle_broadcast_exception)
             self.session.node_handlers.remove(self.handle_broadcast_node)
             self.session.link_handlers.remove(self.handle_broadcast_link)
-            self.session.shutdown()
+            self.session.file_handlers.remove(self.handle_broadcast_file)
+
+            # remove client from session broker and shutdown if there are no clients
+            self.session.broker.session_clients.remove(self)
+            if not self.session.broker.session_clients:
+                self.session.shutdown()
 
         return SocketServer.BaseRequestHandler.finish(self)
 
@@ -505,8 +510,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
         # TODO: broker needs to be pulled out of session to the server/handler level
-        self.session.broker.session_handler = self
-        # self.session.connect(self)
+        if self.master:
+            logger.info("SESSION SET TO MASTER!")
+            self.session.master = True
+        self.session.broker.session_clients.append(self)
 
         # add handlers for various data
         logger.info("adding session broadcast handlers")
@@ -1178,6 +1185,13 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
             # TODO: need to replicate functionality?
             # self.server.set_session_master(self)
+            # find the session containing this client and set the session to master
+            for session in self.server.sessions.itervalues():
+                if self in session.broker.session_clients:
+                    logger.info("SESSION SET TO MASTER!: %s", session.session_id)
+                    session.master = True
+                    break
+
             replies.append(self.register())
             replies.append(self.server.to_session_message())
 
@@ -1460,18 +1474,35 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     logger.info("session %s not found (flags=0x%x)", session_id, message.flags)
                     continue
 
-                if session.server is None:
-                    # this needs to be set when executing a Python script
-                    session.server = self.server
-
                 if message.flags & MessageFlags.ADD.value:
                     # connect to the first session that exists
                     logger.info("request to connect to session %s" % session_id)
-                    # this may shutdown the session if no handlers exist
-                    # TODO: determine what we want to do here
-                    self.session.disconnect(self)
+
+                    # remove client from session broker and shutdown if needed
+                    self.session.broker.session_clients.remove(self)
+                    active_states = [
+                        EventTypes.RUNTIME_STATE.value,
+                        EventTypes.RUNTIME_STATE.value,
+                        EventTypes.DATACOLLECT_STATE.value
+                    ]
+                    if not self.session.broker.session_clients and self.session.state not in active_states:
+                        self.session.shutdown()
+
+                    # set session to join
                     self.session = session
-                    self.session.connect(self)
+
+                    # add client to session broker and set master if needed
+                    if self.master:
+                        self.session.master = True
+                    self.session.broker.session_clients.append(self)
+
+                    # add broadcast handlers
+                    logger.info("adding session broadcast handlers")
+                    self.session.event_handlers.append(self.handle_broadcast_event)
+                    self.session.exception_handlers.append(self.handle_broadcast_exception)
+                    self.session.node_handlers.append(self.handle_broadcast_node)
+                    self.session.link_handlers.append(self.handle_broadcast_link)
+                    self.session.file_handlers.append(self.handle_broadcast_file)
 
                     if user is not None:
                         self.session.set_user(user)
@@ -1716,6 +1747,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
             self.session.exception_handlers.remove(self.handle_broadcast_exception)
             self.session.node_handlers.remove(self.handle_broadcast_node)
             self.session.link_handlers.remove(self.handle_broadcast_link)
+            self.session.file_handlers.remove(self.handle_broadcast_file)
             self.session.shutdown()
         return SocketServer.BaseRequestHandler.finish(self)
 

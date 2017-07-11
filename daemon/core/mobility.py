@@ -281,12 +281,7 @@ class MobilityManager(ConfigurableManager):
         :param net: network to install
         :return: nothing
         """
-        try:
-            nodenums = self.physnets[net.objid]
-        except KeyError:
-            logger.exception("error retriving physical net object")
-            return
-
+        nodenums = self.physnets.get(net.objid, [])
         for nodenum in nodenums:
             node = self.phys[nodenum]
             # TODO: fix this bad logic, relating to depending on a break to get a valid server
