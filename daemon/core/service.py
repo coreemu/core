@@ -228,6 +228,7 @@ class CoreServices(ConfigurableManager):
         :return: nothing
         """
         if services_str is not None:
+            logger.info("setting node specific services: %s", services_str)
             services = services_str.split("|")
             for name in services:
                 s = ServiceManager.get(name)
@@ -238,6 +239,7 @@ class CoreServices(ConfigurableManager):
                 s = self.getcustomservice(node.objid, s)
                 node.addservice(s)
         else:
+            logger.info("setting default services for node (%s) type (%s)", node.objid, nodetype)
             services = self.getdefaultservices(nodetype)
             for s in services:
                 logger.info("adding default service %s to node %s", s._name, node.name)

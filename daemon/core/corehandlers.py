@@ -607,8 +607,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 self.session.options, "enablerj45") and self.session.options.enablerj45 == "0":
                 class_args["start"] = False
 
-            # this instantiates an object of class nodecls,
-            # creating the node or network
+            # this instantiates an object of class nodecls, creating the node or network
             node = self.session.add_object(cls=node_class, objid=node_id, name=node_name, **class_args)
             if x_position is not None and y_position is not None:
                 node.setposition(x_position, y_position, None)
@@ -628,6 +627,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     model = "router"
                 node.type = model
                 services_str = message.get_tlv(NodeTlvs.SERVICES.value)
+                logger.info("setting model (%s) with services (%s)", model, services_str)
                 self.session.services.addservicestonode(node, model, services_str)
 
             # boot nodes if they are added after runtime (like

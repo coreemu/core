@@ -21,12 +21,14 @@ class Core(object):
         self.nodes = {}
         self.node_ips = {}
 
-    def create_node(self, name, cls=nodes.CoreNode, objid=None, position=None, services=None):
+    def create_node(self, name, cls=nodes.CoreNode, objid=None, position=None, services=None, model=""):
         node = self.session.add_object(cls=cls, name=name, objid=objid)
+        if model:
+            node.type = model
         if position:
             node.setposition(*position)
         if services:
-            self.session.services.addservicestonode(node, "", services)
+            self.session.services.addservicestonode(node, model, services)
         self.nodes[name] = node
 
     def add_interface(self, network, name):

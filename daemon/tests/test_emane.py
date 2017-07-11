@@ -27,8 +27,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneIeee80211abgModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES)
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES)
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
@@ -59,8 +59,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneRfPipeModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES)
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES)
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
@@ -91,8 +91,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneCommEffectModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES)
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES)
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
@@ -123,8 +123,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneBypassModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES)
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES)
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
