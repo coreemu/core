@@ -16,7 +16,7 @@ from itertools import repeat
 from core.api import coreapi
 from core.conf import Configurable
 from core.conf import ConfigurableManager
-from core.data import EventData, ConfigData
+from core.data import EventData, ConfigData, FileData
 from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
 from core.enumerations import EventTypes
@@ -525,7 +525,8 @@ class CoreServices(ConfigurableManager):
                 return None
             if len(servicesstring) == 3:
                 # a file request: e.g. "service:zebra:quagga.conf"
-                return self.getservicefile(services, n, servicesstring[2])
+                file_data = self.getservicefile(services, n, servicesstring[2])
+                self.session.broadcast_file(file_data)
 
             # the first service in the list is the one being configured
             svc = services[0]
@@ -654,7 +655,6 @@ class CoreServices(ConfigurableManager):
             r += "-%d" % i
         return r
 
-    # TODO: need to remove depenency on old message structure below
     def getservicefile(self, services, node, filename):
         """
         Send a File Message when the GUI has requested a service file.
@@ -683,14 +683,13 @@ class CoreServices(ConfigurableManager):
             data = "%s" % data
         filetypestr = "service:%s" % svc._name
 
-        # send a file message
-        flags = MessageFlags.ADD.value
-        tlvdata = coreapi.CoreFileTlv.pack(FileTlvs.NODE.value, node.objid)
-        tlvdata += coreapi.CoreFileTlv.pack(FileTlvs.NAME.value, filename)
-        tlvdata += coreapi.CoreFileTlv.pack(FileTlvs.TYPE.value, filetypestr)
-        tlvdata += coreapi.CoreFileTlv.pack(FileTlvs.FILE_DATA.value, data)
-        reply = coreapi.CoreFileMessage.pack(flags, tlvdata)
-        return reply
+        return FileData(
+            message_type=MessageFlags.ADD.value,
+            node=node.objid,
+            name=filename,
+            type=filetypestr,
+            data=data
+        )
 
     def getservicefiledata(self, service, filename):
         """
