@@ -12,6 +12,8 @@ from core.netns import nodes
 from core.services import quagga
 from core.services import utility
 
+EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
+
 
 class Core(object):
     def __init__(self, session, ip_prefix):
@@ -127,6 +129,7 @@ def session():
 
     # create and return session
     session_fixture = Session(1, persistent=True)
+    session_fixture.master = True
     assert os.path.exists(session_fixture.session_dir)
     yield session_fixture
 
@@ -151,7 +154,7 @@ def session_emane():
     utility.load_services()
 
     # set location
-    session_fixture.master = True
+    # session_fixture.master = True
     session_fixture.location.setrefgeo(47.57917, -122.13232, 2.00000)
     session_fixture.location.refscale = 150.0
 

@@ -4,13 +4,14 @@ Unit tests for testing with a CORE switch.
 
 import time
 
+from conftest import EMANE_SERVICES
 from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.phys.pnodes import PhysicalNode
 
 
 class TestCore:
-    def test_physical(self, core):
+    def skip_test_physical(self, core):
         """
         Test physical node network.
 
@@ -138,8 +139,8 @@ class TestCore:
         wlan_node.setmodel(BasicRangeModel, values)
 
         # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
+        core.create_node("n1", services=EMANE_SERVICES, model="mdr")
+        core.create_node("n2", services=EMANE_SERVICES, model="mdr")
 
         # add interfaces
         interface_one = core.add_interface(wlan_node, "n1")
@@ -175,8 +176,8 @@ class TestCore:
         wlan_node.setmodel(BasicRangeModel, values)
 
         # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
+        core.create_node("n1", services=EMANE_SERVICES, model="mdr")
+        core.create_node("n2", services=EMANE_SERVICES, model="mdr")
 
         # add interfaces
         interface_one = core.add_interface(wlan_node, "n1")

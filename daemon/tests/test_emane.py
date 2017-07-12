@@ -1,14 +1,14 @@
 """
 Unit tests for testing with a CORE switch.
 """
+from conftest import EMANE_SERVICES
+
 from core.data import ConfigData
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
-
-_EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
 
 class TestGui:
@@ -27,8 +27,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneIeee80211abgModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
@@ -59,8 +59,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneRfPipeModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
@@ -101,8 +101,8 @@ class TestGui:
         EmaneCommEffectModel.configure_emane(core_emane.session, config_data)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
@@ -133,8 +133,8 @@ class TestGui:
         core_emane.set_emane_model(emane_node, EmaneBypassModel)
 
         # create nodes
-        core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")
-        core_emane.create_node("n2", objid=2, position=(300, 150), services=_EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n1", objid=1, position=(150, 150), services=EMANE_SERVICES, model="mdr")
+        core_emane.create_node("n2", objid=2, position=(300, 150), services=EMANE_SERVICES, model="mdr")
 
         # add interfaces to nodes
         core_emane.add_interface(emane_node, "n1")
