@@ -1,7 +1,7 @@
 """
 Unit tests for testing with a CORE switch.
 """
-
+from core.data import ConfigData
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
@@ -89,6 +89,16 @@ class TestGui:
 
         # set the emane model
         core_emane.set_emane_model(emane_node, EmaneCommEffectModel)
+
+        # configure emane to enable default connectivity
+        config_data = ConfigData(
+            node=emane_node.objid,
+            object="emane_commeffect",
+            type=2,
+            data_types=(11,),
+            data_values="defaultconnectivitymode=1"
+        )
+        EmaneCommEffectModel.configure_emane(core_emane.session, config_data)
 
         # create nodes
         core_emane.create_node("n1", objid=1, position=(150, 150), services=_EMANE_SERVICES, model="mdr")

@@ -351,6 +351,7 @@ class Configurable(object):
                 typeflags = ConfigFlags.NONE.value
             values = manager.getconfig(node_id, cls.name, defaults)[1]
             if values is None:
+                logger.warn("no active configuration for node (%s), ignoring request")
                 # node has no active config for this model (don't send defaults)
                 return None
             # reply with config options
