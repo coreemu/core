@@ -495,6 +495,8 @@ class CoreServices(ConfigurableManager):
         session_id = config_data.session
         opaque = config_data.opaque
 
+        logger.info("configuration request: node(%s) session(%s) opaque(%s)", node_id, session_id, opaque)
+
         # send back a list of available services
         if opaque is None:
             type_flag = ConfigFlags.NONE.value
@@ -512,21 +514,25 @@ class CoreServices(ConfigurableManager):
         else:
             if node_id is None:
                 return None
-            n = self.session.get_object(node_id)
-            if n is None:
+            node = self.session.get_object(node_id)
+            if node is None:
                 logger.warn("Request to configure service for unknown node %s", node_id)
                 return None
             servicesstring = opaque.split(':')
-            services, unknown = self.servicesfromopaque(opaque, n.objid)
+            services, unknown = self.servicesfromopaque(opaque, node.objid)
             for u in unknown:
                 logger.warn("Request for unknown service '%s'" % u)
 
             if len(services) < 1:
                 return None
+
             if len(servicesstring) == 3:
                 # a file request: e.g. "service:zebra:quagga.conf"
-                file_data = self.getservicefile(services, n, servicesstring[2])
+                file_data = self.getservicefile(services, node, servicesstring[2])
                 self.session.broadcast_file(file_data)
+
+                # short circuit this request early to avoid returning response below
+                return None
 
             # the first service in the list is the one being configured
             svc = services[0]
@@ -534,7 +540,7 @@ class CoreServices(ConfigurableManager):
             # dirs, configs, startindex, startup, shutdown, metadata, config
             type_flag = ConfigFlags.UPDATE.value
             data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(svc.keys)))
-            values = svc.tovaluelist(n, services)
+            values = svc.tovaluelist(node, services)
             captions = None
             possible_values = None
             groups = None
