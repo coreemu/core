@@ -536,12 +536,20 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             message.queuedtimes = 0
             self.queue_message(message)
 
+            # delay is required for brief connections, allow session joining
             if message.message_type == MessageTypes.SESSION.value:
-                # delay is required for brief connections, allow session joining
                 time.sleep(0.125)
 
-                # TODO: do we really want to broadcast node and link messages from a client to other clients?
-                # self.session.broadcast(self, message)
+            # broadcast node/link messages to other connected clients
+            if message.message_type not in [MessageTypes.NODE.value, MessageTypes.LINK.value]:
+                continue
+
+            for client in self.session.broker.session_clients:
+                if client == self:
+                    continue
+
+                logger.info("BROADCAST TO OTHER CLIENT: %s", client)
+                client.sendall(message.raw_message)
 
     def handle_node_message(self, message):
         """
