@@ -228,12 +228,12 @@ class Session(object):
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
 
-        # remove this session from the manager
-        SessionManager.remove(self)
-
         # call session shutdown handlers
         for handler in self.shutdown_handlers:
             handler(self)
+
+        # remove this session from the manager
+        SessionManager.remove(self)
 
     def broadcast_event(self, event_data):
         """
@@ -912,6 +912,7 @@ class Session(object):
         # TODO: do we really want a check that finds 0 nodes to initiate a shutdown state?
         if node_count == 0:
             self.set_state(state=EventTypes.SHUTDOWN_STATE.value, send_event=True)
+            # TODO: this seems redundant as it occurs during shutdown as well
             self.sdt.shutdown()
 
     def short_session_id(self):
