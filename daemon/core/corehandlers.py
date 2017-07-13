@@ -129,11 +129,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         logger.info("connection closed: %s", self.client_address)
         if self.session:
-            self.session.event_handlers.remove(self.handle_broadcast_event)
-            self.session.exception_handlers.remove(self.handle_broadcast_exception)
-            self.session.node_handlers.remove(self.handle_broadcast_node)
-            self.session.link_handlers.remove(self.handle_broadcast_link)
-            self.session.file_handlers.remove(self.handle_broadcast_file)
+            self.remove_session_handlers()
 
             # remove client from session broker and shutdown if there are no clients
             self.session.broker.session_clients.remove(self)
@@ -517,11 +513,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         # add handlers for various data
         logger.info("adding session broadcast handlers")
-        self.session.event_handlers.append(self.handle_broadcast_event)
-        self.session.exception_handlers.append(self.handle_broadcast_exception)
-        self.session.node_handlers.append(self.handle_broadcast_node)
-        self.session.link_handlers.append(self.handle_broadcast_link)
-        self.session.file_handlers.append(self.handle_broadcast_file)
+        self.add_session_handlers()
 
         # set initial session state
         self.session.set_state(state=EventTypes.DEFINITION_STATE.value)
@@ -550,6 +542,24 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
                 logger.info("BROADCAST TO OTHER CLIENT: %s", client)
                 client.sendall(message.raw_message)
+
+    def add_session_handlers(self):
+        logger.info("adding session broadcast handlers")
+        self.session.event_handlers.append(self.handle_broadcast_event)
+        self.session.exception_handlers.append(self.handle_broadcast_exception)
+        self.session.node_handlers.append(self.handle_broadcast_node)
+        self.session.link_handlers.append(self.handle_broadcast_link)
+        self.session.file_handlers.append(self.handle_broadcast_file)
+        self.session.config_handlers.append(self.handle_broadcast_config)
+
+    def remove_session_handlers(self):
+        logger.info("removing session broadcast handlers")
+        self.session.event_handlers.remove(self.handle_broadcast_event)
+        self.session.exception_handlers.remove(self.handle_broadcast_exception)
+        self.session.node_handlers.remove(self.handle_broadcast_node)
+        self.session.link_handlers.remove(self.handle_broadcast_link)
+        self.session.file_handlers.remove(self.handle_broadcast_file)
+        self.session.config_handlers.remove(self.handle_broadcast_config)
 
     def handle_node_message(self, message):
         """
@@ -1506,11 +1516,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
                     # add broadcast handlers
                     logger.info("adding session broadcast handlers")
-                    self.session.event_handlers.append(self.handle_broadcast_event)
-                    self.session.exception_handlers.append(self.handle_broadcast_exception)
-                    self.session.node_handlers.append(self.handle_broadcast_node)
-                    self.session.link_handlers.append(self.handle_broadcast_link)
-                    self.session.file_handlers.append(self.handle_broadcast_file)
+                    self.add_session_handlers()
 
                     if user is not None:
                         self.session.set_user(user)
@@ -1751,11 +1757,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
         :return: nothing
         """
         if self.session:
-            self.session.event_handlers.remove(self.handle_broadcast_event)
-            self.session.exception_handlers.remove(self.handle_broadcast_exception)
-            self.session.node_handlers.remove(self.handle_broadcast_node)
-            self.session.link_handlers.remove(self.handle_broadcast_link)
-            self.session.file_handlers.remove(self.handle_broadcast_file)
+            self.remove_session_handlers()
             self.session.shutdown()
         return SocketServer.BaseRequestHandler.finish(self)
 

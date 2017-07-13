@@ -5,6 +5,7 @@ that manages a CORE session.
 
 import atexit
 import os
+import pprint
 import random
 import shlex
 import shutil
@@ -1270,24 +1271,29 @@ class Session(object):
                     links_data.append(link_data)
 
         # send all nodes first, so that they will exist for any links
-        logger.info("nodes: %s", nodes_data)
-        logger.info("links: %s", links_data)
+        logger.info("sending nodes:")
         for node_data in nodes_data:
+            logger.info(pprint.pformat(dict(node_data._asdict())))
             self.broadcast_node(node_data)
 
+        logger.info("sending links:")
         for link_data in links_data:
+            logger.info(pprint.pformat(dict(link_data._asdict())))
             self.broadcast_link(link_data)
 
         # send model info
         configs = self.mobility.getallconfigs()
         configs += self.emane.getallconfigs()
+        logger.info("sending model configs:")
         for node_number, cls, values in configs:
+            logger.info("config: node(%s) class(%s) values(%s)", node_number, cls, values)
             config_data = cls.config_data(
                 flags=0,
                 node_id=node_number,
                 type_flags=ConfigFlags.UPDATE.value,
                 values=values
             )
+            logger.info(pprint.pformat(dict(config_data._asdict())))
             self.broadcast_config(config_data)
 
         # service customizations

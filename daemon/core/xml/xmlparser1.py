@@ -24,12 +24,14 @@ class CoreDocumentParser1(object):
 
     def __init__(self, session, filename, options):
         """
+        Creates an CoreDocumentParser1 object.
 
         :param core.session.Session session:
-        :param filename:
-        :param options:
+        :param str filename: file name to open and parse
+        :param dict options: parsing options
         :return:
         """
+        logger.info("creating xml parser: file (%s) options(%s)", filename, options)
         self.session = session
         self.filename = filename
         if 'dom' in options:
@@ -56,11 +58,10 @@ class CoreDocumentParser1(object):
     def get_scenario(dom):
         scenario = xmlutils.get_first_child_by_tag_name(dom, 'scenario')
         if not scenario:
-            raise ValueError, 'no scenario element found'
+            raise ValueError('no scenario element found')
         version = scenario.getAttribute('version')
         if version and version != '1.0':
-            raise ValueError, \
-                'unsupported scenario version found: \'%s\'' % version
+            raise ValueError('unsupported scenario version found: \'%s\'' % version)
         return scenario
 
     def parse_scenario(self):
@@ -210,6 +211,8 @@ class CoreDocumentParser1(object):
         else:
             # TODO: any other config managers?
             raise NotImplementedError
+        logger.info("setting wireless link params: node(%s) model(%s) mobility_model(%s)",
+                    nodenum, model_name, mobility_model_name)
         mgr.setconfig_keyvalues(nodenum, model_name, link_params.items())
         if mobility_model_name and mobility_params:
             mgr.setconfig_keyvalues(nodenum, mobility_model_name, mobility_params.items())
@@ -274,6 +277,7 @@ class CoreDocumentParser1(object):
         else:
             mobility_model_name = None
             mobility_params = None
+
         if channel_type == 'wireless':
             self.set_wireless_link_parameters(channel, link_params, mobility_model_name, mobility_params)
         elif channel_type == 'ethernet':
@@ -282,10 +286,12 @@ class CoreDocumentParser1(object):
             self.set_ethernet_link_parameters(channel, link_params, mobility_model_name, mobility_params)
         else:
             raise NotImplementedError
+
         layer2_device = []
         for dev, if_name in self.iter_network_member_devices(channel):
             if self.device_type(dev) in self.layer2_device_types:
                 layer2_device.append((dev, if_name))
+
         assert len(layer2_device) <= 2
         if len(layer2_device) == 2:
             self.link_layer2_devices(layer2_device[0][0], layer2_device[0][1],
