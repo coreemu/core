@@ -528,13 +528,16 @@ class BasicRangeModel(WirelessModel):
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
 
-            logger.info("checking if link distance is out of range: %s > %s", d, self.range)
+            logger.info("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
+                        a.name, b.name, linked, d, self.range)
             if d > self.range:
                 if linked:
+                    logger.info("was linked, unlinking")
                     self.wlan.unlink(a, b)
                     self.sendlinkmsg(a, b, unlink=True)
             else:
                 if not linked:
+                    logger.info("was not linked, linking")
                     self.wlan.link(a, b)
                     self.sendlinkmsg(a, b)
         except KeyError:

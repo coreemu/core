@@ -139,8 +139,8 @@ class TestCore:
         wlan_node.setmodel(BasicRangeModel, values)
 
         # create nodes
-        core.create_node("n1", services=EMANE_SERVICES, model="mdr")
-        core.create_node("n2", services=EMANE_SERVICES, model="mdr")
+        core.create_node("n1", position=(0, 0), services=EMANE_SERVICES, model="mdr")
+        core.create_node("n2", position=(0, 0), services=EMANE_SERVICES, model="mdr")
 
         # add interfaces
         interface_one = core.add_interface(wlan_node, "n1")
@@ -148,10 +148,6 @@ class TestCore:
 
         # link nodes in wlan
         core.link(wlan_node, interface_one, interface_two)
-
-        # mark node position as together
-        core.get_node("n1").setposition(0, 0)
-        core.get_node("n2").setposition(0, 0)
 
         # instantiate session
         core.session.instantiate()
@@ -176,8 +172,8 @@ class TestCore:
         wlan_node.setmodel(BasicRangeModel, values)
 
         # create nodes
-        core.create_node("n1", services=EMANE_SERVICES, model="mdr")
-        core.create_node("n2", services=EMANE_SERVICES, model="mdr")
+        core.create_node("n1", position=(0, 0), services=EMANE_SERVICES, model="mdr")
+        core.create_node("n2", position=(0, 0), services=EMANE_SERVICES, model="mdr")
 
         # add interfaces
         interface_one = core.add_interface(wlan_node, "n1")
@@ -196,8 +192,8 @@ class TestCore:
         # assert node directories created
         core.assert_nodes()
 
-        # ping n2 from n1 and assert failure
-        time.sleep(1)
+        # ping n2 from n1 and assert failure        )
+        time.sleep(3)
         status = core.ping("n1", "n2")
         assert status
 
@@ -261,7 +257,7 @@ class TestCore:
         stdout = core.iperf("n1", "n2")
         assert stdout
         value = float(stdout.split(',')[loss_index])
-        assert 45 <= value <= 55
+        assert 40 <= value <= 60
 
     def test_link_delay(self, core):
         """

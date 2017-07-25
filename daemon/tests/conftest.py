@@ -131,23 +131,6 @@ def session():
     session_fixture = Session(1, persistent=True)
     session_fixture.master = True
     assert os.path.exists(session_fixture.session_dir)
-    yield session_fixture
-
-    # cleanup
-    print "shutting down session"
-    session_fixture.shutdown()
-    assert not os.path.exists(session_fixture.session_dir)
-
-
-@pytest.fixture()
-def session_emane():
-    # configure default nodes
-    node_map = nodemaps.CLASSIC_NODES
-    nodeutils.set_node_map(node_map)
-
-    # create and return session
-    session_fixture = Session(1, persistent=True)
-    assert os.path.exists(session_fixture.session_dir)
 
     # load emane services
     quagga.load_services()
@@ -178,8 +161,3 @@ def ip_prefix():
 @pytest.fixture()
 def core(session, ip_prefix):
     return Core(session, ip_prefix)
-
-
-@pytest.fixture()
-def core_emane(session_emane, ip_prefix):
-    return Core(session_emane, ip_prefix)

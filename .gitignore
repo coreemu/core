@@ -23,3 +23,6 @@ stamp-h1
 
 # sonarqube sonar-scanner
 .scannerwork
+
+# ignore test coverage files
+coverage.xml

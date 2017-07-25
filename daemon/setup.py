@@ -27,8 +27,13 @@ setup(name="core-python",
       install_requires=[
         "enum34"
       ],
-      setup_requires=["pytest-runner"],
-      tests_require=["pytest"],
+      setup_requires=[
+          "pytest-runner"
+      ],
+      tests_require=[
+          "pytest",
+          "pytest-cov"
+      ],
       description="Python components of CORE",
       url="http://www.nrl.navy.mil/itd/ncs/products/core",
       author="Boeing Research & Technology",
