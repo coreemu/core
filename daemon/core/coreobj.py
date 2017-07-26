@@ -273,16 +273,6 @@ class PyCoreNode(PyCoreObj):
         self.nodedir = None
         self.tmpnodedir = False
 
-    # TODO: getter method that should not be needed
-    def nodeid(self):
-        """
-        Retrieve node id.
-
-        :return: node id
-        :rtype: int
-        """
-        return self.objid
-
     def addservice(self, service):
         """
         Add a services to the service list.
@@ -464,35 +454,6 @@ class PyCoreNet(PyCoreObj):
         netif.netifi = None
         with self._linked_lock:
             del self._linked[netif]
-
-    # TODO: needs to be abstracted out, seems like it may be ok to remove
-    def netifparamstolink(self, netif):
-        """
-        Helper for tolinkmsgs() to build TLVs having link parameters from interface parameters.
-
-        :param PyCoreNetIf netif: network interface to retrieve params from
-        :return: tlv data
-        """
-
-        delay = netif.getparam("delay")
-        bw = netif.getparam("bw")
-        loss = netif.getparam("loss")
-        duplicate = netif.getparam("duplicate")
-        jitter = netif.getparam("jitter")
-
-        tlvdata = ""
-        if delay is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.DELAY.value, delay)
-        if bw is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.BANDWIDTH.value, bw)
-        if loss is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.PER.value, str(loss))
-        if duplicate is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.DUP.value, str(duplicate))
-        if jitter is not None:
-            tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.JITTER.value, jitter)
-
-        return tlvdata
 
     def all_link_data(self, flags):
         """

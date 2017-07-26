@@ -32,7 +32,8 @@ setup(name="core-python",
       ],
       tests_require=[
           "pytest",
-          "pytest-cov"
+          "pytest-cov",
+          "mock"
       ],
       description="Python components of CORE",
       url="http://www.nrl.navy.mil/itd/ncs/products/core",

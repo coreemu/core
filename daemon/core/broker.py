@@ -437,6 +437,7 @@ class CoreBroker(ConfigurableManager):
         """
         try:
             net = self.session.get_object(node_id)
+            logger.info("adding net tunnel for: id(%s) %s", node_id, net)
         except KeyError:
             raise KeyError("network node %s not found" % node_id)
 
@@ -583,7 +584,9 @@ class CoreBroker(ConfigurableManager):
         :param int nodenum: node id to add
         :return: nothing
         """
+        logger.info("adding net to broker: %s", nodenum)
         self.network_nodes.add(nodenum)
+        logger.info("broker network nodes: %s", self.network_nodes)
 
     def addphys(self, nodenum):
         """
@@ -1010,10 +1013,10 @@ class CoreBroker(ConfigurableManager):
                 for server in servers:
                     if server.name == "localhost":
                         continue
-                    try:
+
+                    lhost, lport = None, None
+                    if server.sock:
                         lhost, lport = server.sock.getsockname()
-                    except IOError:
-                        lhost, lport = None, None
                     f.write("%s %s %s %s %s\n" % (server.name, server.host, server.port, lhost, lport))
         except IOError:
             logger.exception("error writing server list to the file: %s" % filename)

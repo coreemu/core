@@ -168,7 +168,7 @@ class CoreDocumentWriter0(Document):
         n = self.createElement("Node")
         self.np.appendChild(n)
         n.setAttribute("name", node.name)
-        n.setAttribute("id", "%s" % node.nodeid())
+        n.setAttribute("id", "%s" % node.objid)
         if node.type:
             n.setAttribute("type", node.type)
         self.addinterfaces(n, node)

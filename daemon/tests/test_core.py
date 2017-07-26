@@ -4,14 +4,66 @@ Unit tests for testing with a CORE switch.
 
 import time
 
+from mock import MagicMock
+
 from conftest import EMANE_SERVICES
+from core.enumerations import MessageFlags
 from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.phys.pnodes import PhysicalNode
 
 
 class TestCore:
-    def skip_test_physical(self, core):
+
+    def test_netif(self, core):
+        """
+        Test netif methods.
+
+        :param conftest.Core core: core fixture to test with
+        """
+
+        # create ptp
+        ptp_node = core.session.add_object(cls=nodes.PtpNet)
+
+        # create nodes
+        core.create_node("n1")
+        core.create_node("n2")
+
+        # add interfaces
+        n1_interface = core.add_interface(ptp_node, "n1")
+        n2_interface = core.add_interface(ptp_node, "n2")
+
+        # get nodes
+        n1 = core.get_node("n1")
+        n2 = core.get_node("n2")
+
+        # instantiate session
+        core.session.instantiate()
+
+        # assert node directories created
+        core.assert_nodes()
+
+        # check link data gets generated
+        assert ptp_node.all_link_data(MessageFlags.ADD.value)
+
+        # check common nets exist between linked nodes
+        assert n1.commonnets(n2)
+        assert n2.commonnets(n1)
+
+        # check we can retrieve netif index
+        assert n1.getifindex(n1_interface) == 0
+        assert n2.getifindex(n2_interface) == 0
+
+        # check interface parameters
+        n1_interface.setparam("test", 1)
+        assert n1_interface.getparam("test") == 1
+        assert n1_interface.getparams()
+
+        # delete netif and test that if no longer exists
+        n1.delnetif(0)
+        assert not n1.netif(0)
+
+    def test_physical(self, core):
         """
         Test physical node network.
 
@@ -22,8 +74,11 @@ class TestCore:
         switch_node = core.session.add_object(cls=nodes.SwitchNode)
 
         # create a physical node
-        physical_node = core.session.add_object(cls=PhysicalNode, name="p1")
-        core.nodes[physical_node.name] = physical_node
+        core.create_node(cls=PhysicalNode, name="p1")
+
+        # mock method that will not work
+        physical_node = core.get_node("p1")
+        physical_node.newnetif = MagicMock(return_value=0)
 
         # create regular node
         core.create_node("n1")
@@ -37,10 +92,6 @@ class TestCore:
 
         # assert node directories created
         core.assert_nodes()
-
-        # ping n2 from n1 and assert success
-        status = core.ping("n1", "p1")
-        assert not status
 
     def test_ptp(self, core):
         """
