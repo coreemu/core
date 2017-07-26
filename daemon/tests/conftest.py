@@ -4,13 +4,17 @@ Unit test fixture module.
 import os
 import pytest
 
-from core.session import Session
+from core.corehandlers import CoreRequestHandler
+from core.coreserver import CoreServer
+from core.enumerations import CORE_API_PORT
 from core.misc import ipaddress
 from core.misc import nodemaps
 from core.misc import nodeutils
 from core.netns import nodes
 from core.services import quagga
 from core.services import utility
+from core.session import Session
+
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
@@ -161,3 +165,16 @@ def ip_prefix():
 @pytest.fixture()
 def core(session, ip_prefix):
     return Core(session, ip_prefix)
+
+
+@pytest.fixture()
+def cored():
+    address = ("localhost", CORE_API_PORT)
+    server = CoreServer(address, CoreRequestHandler, {
+        "numthreads": 1,
+        "daemonize": False
+    })
+    yield server
+
+    # cleanup
+    server.shutdown()

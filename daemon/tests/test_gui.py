@@ -1,6 +1,8 @@
 """
 Unit tests for testing with a CORE switch.
 """
+import threading
+
 from core.api import coreapi, dataconversion
 from core.api.coreapi import CoreExecuteTlv
 from core.enumerations import CORE_API_PORT
@@ -15,7 +17,51 @@ from core.misc import ipaddress
 from core.netns.nodes import SwitchNode
 
 
-def cmd(node, exec_cmd):
+def command_message(node, command):
+    """
+    Create an execute command TLV message.
+
+    :param node: node to execute command for
+    :param command: command to execute
+    :return: packed execute message
+    """
+    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
+    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
+    return coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
+
+
+def state_message(state):
+    """
+    Create a event TLV message for a new state.
+
+    :param core.enumerations.EventTypes state: state to create message for
+    :return: packed event message
+    """
+    tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, state.value)
+    return coreapi.CoreEventMessage.pack(0, tlv_data)
+
+
+def switch_link_message(switch, node, address, prefix_len):
+    """
+    Create a link TLV message for node to a switch, with the provided address and prefix length.
+
+    :param switch: switch for link
+    :param node: node for link
+    :param address: address node on link
+    :param prefix_len: prefix length of address
+    :return: packed link message
+    """
+    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.objid)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, address)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix_len)
+    return coreapi.CoreLinkMessage.pack(MessageFlags.ADD.value, tlv_data)
+
+
+def run_cmd(node, exec_cmd):
     """
     Convenience method for sending commands to a node using the legacy API.
 
@@ -24,10 +70,11 @@ def cmd(node, exec_cmd):
     :return: Returns the result of the command
     """
     # Set up the command api message
-    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
-    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
-    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
-    message = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
+    # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
+    # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
+    # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
+    message = command_message(node, exec_cmd)
     node.session.broker.handlerawmsg(message)
 
     # Now wait for the response
@@ -36,6 +83,7 @@ def cmd(node, exec_cmd):
 
     # receive messages until we get our execute response
     result = None
+    status = False
     while True:
         message_header = server.sock.recv(coreapi.CoreMessage.header_len)
         message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(message_header)
@@ -46,19 +94,26 @@ def cmd(node, exec_cmd):
         if message_type == MessageTypes.EXECUTE.value:
             message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
             result = message.get_tlv(ExecuteTlvs.RESULT.value)
+            status = message.get_tlv(ExecuteTlvs.STATUS.value)
             break
 
-    return result
+    return result, status
 
 
 class TestGui:
-    def test_broker(self, core):
+    def test_broker(self, core, cored):
         """
         Test session broker creation.
 
         :param conftest.Core core: core fixture to test with
         """
 
+        # set core daemon to run in the background
+        thread = threading.Thread(target=cored.serve_forever)
+        thread.daemon = True
+        thread.start()
+
+        # ip prefix for nodes
         prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
         daemon = "localhost"
 
@@ -73,9 +128,8 @@ class TestGui:
 
         # have broker handle a configuration state change
         core.session.set_state(EventTypes.CONFIGURATION_STATE.value)
-        tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
-        raw_event_message = coreapi.CoreEventMessage.pack(0, tlv_data)
-        core.session.broker.handlerawmsg(raw_event_message)
+        event_message = state_message(EventTypes.CONFIGURATION_STATE)
+        core.session.broker.handlerawmsg(event_message)
 
         # create a switch node
         switch = core.session.add_object(cls=SwitchNode, name="switch", start=False)
@@ -105,22 +159,17 @@ class TestGui:
 
         # create links to switch from nodes for broker to handle
         for index, node in enumerate([node_one, node_two], start=1):
-            tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
-            tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.objid)
-            tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
-            tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
             ip4_address = prefix.addr(index)
-            tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, ip4_address)
-            tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix.prefixlen)
-            raw_link_message = coreapi.CoreLinkMessage.pack(MessageFlags.ADD.value, tlv_data)
-            core.session.broker.handlerawmsg(raw_link_message)
+            link_message = switch_link_message(switch, node, ip4_address, prefix.prefixlen)
+            core.session.broker.handlerawmsg(link_message)
 
         # change session to instantiation state
-        tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_STATE.value)
-        raw_event_message = coreapi.CoreEventMessage.pack(0, tlv_data)
-        core.session.broker.handlerawmsg(raw_event_message)
+        event_message = state_message(EventTypes.INSTANTIATION_STATE)
+        core.session.broker.handlerawmsg(event_message)
 
         # Get the ip or last node and ping it from the first
         print "pinging from the first to the last node"
-        pingip = cmd(node_one, "ip -4 -o addr show dev eth0").split()[3].split("/")[0]
-        print cmd(node_two, "ping -c 5 " + pingip)
+        output, status = run_cmd(node_one, "ip -4 -o addr show dev eth0")
+        pingip = output.split()[3].split("/")[0]
+        output, status = run_cmd(node_two, "ping -c 5 " + pingip)
+        assert not status

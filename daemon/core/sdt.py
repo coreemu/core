@@ -71,7 +71,7 @@ class Sdt(object):
         # node information for remote nodes not in session._objs
         # local nodes also appear here since their obj may not exist yet
         self.remotes = {}
-        session.broker.handlers.add(self.handledistributed)
+        session.broker.handlers.add(self.handle_distributed)
 
     def is_enabled(self):
         """
@@ -330,7 +330,7 @@ class Sdt(object):
                     self.updatelink(n1num, n2num, MessageFlags.ADD.value, wl)
 
     # TODO: remove the need for this
-    def handledistributed(self, message):
+    def handle_distributed(self, message):
         """
         Broker handler for processing CORE API messages as they are
         received. This is used to snoop the Node messages and update
