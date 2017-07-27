@@ -5,5 +5,5 @@ pytest.main([
     "--cov-report",
     "xml",
     "--cov=.",
-    "tests/test_core.py"
+    "tests"
 ])

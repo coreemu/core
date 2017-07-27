@@ -10,10 +10,70 @@ from conftest import EMANE_SERVICES
 from core.enumerations import MessageFlags
 from core.mobility import BasicRangeModel
 from core.netns import nodes
+from core.netns import vnodeclient
 from core.phys.pnodes import PhysicalNode
 
 
 class TestCore:
+
+    def test_vnode_client(self, core):
+        """
+        Test vnode client methods.
+
+        :param conftest.Core core: core fixture to test with
+        """
+
+        # create ptp
+        ptp_node = core.session.add_object(cls=nodes.PtpNet)
+
+        # create nodes
+        core.create_node("n1")
+        core.create_node("n2")
+
+        # add interfaces
+        core.add_interface(ptp_node, "n1")
+        core.add_interface(ptp_node, "n2")
+
+        # get node client for testing
+        n1 = core.get_node("n1")
+        client = n1.vnodeclient
+
+        # instantiate session
+        core.session.instantiate()
+
+        # assert node directories created
+        core.assert_nodes()
+
+        # check we are connected
+        assert client.connected()
+
+        # check various command using vcmd module
+        command = ["ls"]
+        assert not client.cmd(command)
+        status, output = client.cmdresult(command)
+        assert not status
+        p, stdin, stdout, stderr = client.popen(command)
+        assert not p.status()
+        assert not client.icmd(command)
+        assert not client.redircmd(MagicMock(), MagicMock(), MagicMock(), command)
+        assert not client.shcmd(command[0])
+
+        # check various command using command line
+        vnodeclient.USE_VCMD_MODULE = False
+        assert not client.cmd(command)
+        status, output = client.cmdresult(command)
+        assert not status
+        p, stdin, stdout, stderr = client.popen(command)
+        assert not p.wait()
+        assert not client.icmd(command)
+        assert not client.shcmd(command[0])
+
+        # check module methods
+        assert vnodeclient.createclients(core.session.session_dir)
+
+        # check convenience methods for interface information
+        assert client.getaddr("eth0")
+        assert client.netifstats()
 
     def test_netif(self, core):
         """
@@ -326,7 +386,7 @@ class TestCore:
         rtt_line = stdout.split("\n")[-1]
         rtt_values = rtt_line.split("=")[1].split("ms")[0].strip()
         rtt_avg = float(rtt_values.split("/")[2])
-        assert 0 <= rtt_avg <= 0.1
+        assert 0 <= rtt_avg <= 0.2
 
         # change delay in microseconds
         delay = 1000000

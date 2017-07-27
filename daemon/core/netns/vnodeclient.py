@@ -7,6 +7,7 @@ by invoking the vcmd shell command.
 
 import os
 import stat
+import subprocess
 
 from core import constants
 from core.misc import log
@@ -17,8 +18,6 @@ USE_VCMD_MODULE = True
 
 if USE_VCMD_MODULE:
     import vcmd
-else:
-    import subprocess
 
 VCMD = os.path.join(constants.CORE_SBIN_DIR, "vcmd")
 
