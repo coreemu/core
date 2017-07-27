@@ -16,6 +16,7 @@ from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
+from core.emane.tdma import EmaneTdmaModel
 from core.enumerations import ConfigDataTypes, NodeTypes
 from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
@@ -48,7 +49,8 @@ EMANE_MODELS = [
     EmaneRfPipeModel,
     EmaneIeee80211abgModel,
     EmaneCommEffectModel,
-    EmaneBypassModel
+    EmaneBypassModel,
+    EmaneTdmaModel
 ]
 
 

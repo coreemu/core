@@ -21,8 +21,8 @@ from core.xml import xmlsession
 _XML_VERSIONS = ["0.0", "1.0"]
 _NODE_CLASSES = [nodes.PtpNet, nodes.HubNode, nodes.SwitchNode]
 
-class TestCore:
 
+class TestCore:
     @pytest.mark.parametrize("cls", _NODE_CLASSES)
     def test_nodes(self, core, cls):
         """
