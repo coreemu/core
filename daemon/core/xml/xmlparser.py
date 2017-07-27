@@ -42,5 +42,5 @@ def core_document_parser(session, filename, options):
     elif vp.version == '1.0':
         doc = CoreDocumentParser1(session, filename, options)
     else:
-        raise ValueError, 'unsupported document version: %s' % vp.version
+        raise ValueError('unsupported document version: %s' % vp.version)
     return doc

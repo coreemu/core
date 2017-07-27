@@ -4,6 +4,10 @@ Unit tests for testing with a CORE switch.
 
 import time
 
+import pytest
+
+from xml.etree import ElementTree
+
 from mock import MagicMock
 
 from conftest import EMANE_SERVICES
@@ -12,9 +16,97 @@ from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.netns import vnodeclient
 from core.phys.pnodes import PhysicalNode
+from core.xml import xmlsession
 
+_XML_VERSIONS = ["0.0", "1.0"]
+_NODE_CLASSES = [nodes.PtpNet, nodes.HubNode, nodes.SwitchNode]
 
 class TestCore:
+
+    @pytest.mark.parametrize("cls", _NODE_CLASSES)
+    def test_nodes(self, core, cls):
+        """
+        Test ptp node network.
+
+        :param conftest.Core core: core fixture to test with
+        :param cls: node classes that work within a simple network
+        """
+
+        # create ptp
+        network_node = core.session.add_object(cls=cls)
+
+        # create nodes
+        core.create_node("n1")
+        core.create_node("n2")
+
+        # add interfaces
+        core.add_interface(network_node, "n1")
+        core.add_interface(network_node, "n2")
+
+        # instantiate session
+        core.session.instantiate()
+
+        # assert node directories created
+        core.assert_nodes()
+
+        # ping n2 from n1 and assert success
+        status = core.ping("n1", "n2")
+        assert not status
+
+    @pytest.mark.parametrize("version", _XML_VERSIONS)
+    def test_xml(self, core, tmpdir, version):
+        """
+        Test xml client methods.
+
+        :param conftest.Core core: core fixture to test with
+        :param str version: xml version to write and parse
+        """
+
+        # create ptp
+        ptp_node = core.session.add_object(cls=nodes.PtpNet)
+
+        # create nodes
+        core.create_node("n1")
+        core.create_node("n2")
+
+        # add interfaces
+        core.add_interface(ptp_node, "n1")
+        core.add_interface(ptp_node, "n2")
+
+        # instantiate session
+        core.session.instantiate()
+
+        # assert node directories created
+        core.assert_nodes()
+
+        # get ids for nodes
+        n1_id = core.get_node("n1").objid
+        n2_id = core.get_node("n2").objid
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        xmlsession.save_session_xml(core.session, file_path, version)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        core.session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(KeyError):
+            assert not core.session.get_object_by_name(n1_id)
+        with pytest.raises(KeyError):
+            assert not core.session.get_object(n2_id)
+
+        # load saved xml
+        xmlsession.open_session_xml(core.session, file_path, start=True)
+
+        # verify nodes have been recreated
+        assert core.session.get_object(n1_id)
+        assert core.session.get_object(n2_id)
 
     def test_vnode_client(self, core):
         """
@@ -152,90 +244,6 @@ class TestCore:
 
         # assert node directories created
         core.assert_nodes()
-
-    def test_ptp(self, core):
-        """
-        Test ptp node network.
-
-        :param conftest.Core core: core fixture to test with
-        """
-
-        # create ptp
-        ptp_node = core.session.add_object(cls=nodes.PtpNet)
-
-        # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
-
-        # add interfaces
-        core.add_interface(ptp_node, "n1")
-        core.add_interface(ptp_node, "n2")
-
-        # instantiate session
-        core.session.instantiate()
-
-        # assert node directories created
-        core.assert_nodes()
-
-        # ping n2 from n1 and assert success
-        status = core.ping("n1", "n2")
-        assert not status
-
-    def test_hub(self, core):
-        """
-        Test basic hub network.
-
-        :param conftest.Core core: core fixture to test with
-        """
-
-        # create hub
-        hub_node = core.session.add_object(cls=nodes.HubNode)
-
-        # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
-
-        # add interfaces
-        core.add_interface(hub_node, "n1")
-        core.add_interface(hub_node, "n2")
-
-        # instantiate session
-        core.session.instantiate()
-
-        # assert node directories created
-        core.assert_nodes()
-
-        # ping n2 from n1 and assert success
-        status = core.ping("n1", "n2")
-        assert not status
-
-    def test_switch(self, core):
-        """
-        Test basic switch network.
-
-        :param conftest.Core core: core fixture to test with
-        """
-
-        # create switch
-        switch_node = core.session.add_object(cls=nodes.SwitchNode)
-
-        # create nodes
-        core.create_node("n1")
-        core.create_node("n2")
-
-        # add interfaces
-        core.add_interface(switch_node, "n1")
-        core.add_interface(switch_node, "n2")
-
-        # instantiate session
-        core.session.instantiate()
-
-        # assert node directories created
-        core.assert_nodes()
-
-        # ping n2 from n1 and assert success
-        status = core.ping("n1", "n2")
-        assert not status
 
     def test_wlan_basic_range_good(self, core):
         """

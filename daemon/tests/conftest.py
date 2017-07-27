@@ -27,10 +27,9 @@ class Core(object):
         self.nodes = {}
         self.node_ips = {}
 
-    def create_node(self, name, cls=nodes.CoreNode, objid=None, position=None, services=None, model=""):
+    def create_node(self, name, cls=nodes.CoreNode, objid=None, position=None, services=None, model="host"):
         node = self.session.add_object(cls=cls, name=name, objid=objid)
-        if model:
-            node.type = model
+        node.type = model
         if position:
             node.setposition(*position)
         if services:
