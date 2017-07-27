@@ -134,6 +134,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             # remove client from session broker and shutdown if there are no clients
             self.session.broker.session_clients.remove(self)
             if not self.session.broker.session_clients:
+                logger.info("no session clients left, initiating shutdown")
                 self.session.shutdown()
 
         return SocketServer.BaseRequestHandler.finish(self)
@@ -672,7 +673,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
 
-                self.session.check_shutdown()
+                if self.session.check_shutdown():
+                    tlvdata = ""
+                    tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, self.session.state)
+                    replies.append(coreapi.CoreEventMessage.pack(0, tlvdata))
         # Node modify message (no add/del flag)
         else:
             try:

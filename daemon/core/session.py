@@ -906,14 +906,15 @@ class Session(object):
         and links remain.
         """
         node_count = self.get_node_count()
-
         logger.info("checking shutdown for session %d: %d nodes remaining", self.session_id, node_count)
 
-        # TODO: do we really want a check that finds 0 nodes to initiate a shutdown state?
+        shutdown = False
         if node_count == 0:
-            self.set_state(state=EventTypes.SHUTDOWN_STATE.value, send_event=True)
+            shutdown = True
+            self.set_state(state=EventTypes.SHUTDOWN_STATE.value)
             # TODO: this seems redundant as it occurs during shutdown as well
             self.sdt.shutdown()
+        return shutdown
 
     def short_session_id(self):
         """
