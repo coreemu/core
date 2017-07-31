@@ -81,7 +81,7 @@ class EbtablesQueue(object):
         try:
             del self.last_update_time[wlan]
         except KeyError:
-            logger.exception("error deleting last update time for wlan: %s", wlan)
+            logger.exception("error deleting last update time for wlan, ignored before: %s", wlan)
 
         self.updatelock.release()
         if len(self.last_update_time) > 0:

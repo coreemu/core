@@ -169,7 +169,11 @@ class PhysicalNode(PyCoreNode):
             self.ifindex += 1
             return ifindex
 
-    def newnetif(self, net=None, addrlist=[], hwaddr=None, ifindex=None, ifname=None):
+    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
+        logger.info("creating interface")
+        if not addrlist:
+            addrlist = []
+
         if self.up and net is None:
             raise NotImplementedError
 
@@ -229,7 +233,7 @@ class PhysicalNode(PyCoreNode):
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: " + filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")

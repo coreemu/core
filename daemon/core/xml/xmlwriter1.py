@@ -962,7 +962,7 @@ def get_endpoints(network_object):
             if ep is not None:
                 endpoints.append(ep)
         except:
-            logger.exception("error geting enpoints")
+            logger.exception("error geting endpoints, was skipped before")
 
     return endpoints
 

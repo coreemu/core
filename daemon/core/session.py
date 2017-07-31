@@ -26,7 +26,7 @@ from core.data import EventData
 from core.data import ExceptionData
 from core.data import FileData
 from core.emane.emanemanager import EmaneManager
-from core.enumerations import ConfigDataTypes
+from core.enumerations import ConfigDataTypes, EventTlvs
 from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTypes
@@ -830,6 +830,10 @@ class Session(object):
         # set broker local instantiation to complete
         self.broker.local_instantiation_complete()
 
+        # notify listeners that instantiation is complete
+        event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
+        self.broadcast_event(event)
+
         # assume either all nodes have booted already, or there are some
         # nodes on slave servers that will be booted and those servers will
         # send a node status response message
@@ -935,8 +939,12 @@ class Session(object):
                 # TODO: determine instance type we need to check, due to method issue below
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
+                    logger.info("booting node: %s - %s", obj.objid, obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
                     obj.boot()
+
+                # TODO(blake): send node emu ids back
+                # self.sendnodeemuid(obj.objid)
 
         self.update_control_interface_hosts()
 

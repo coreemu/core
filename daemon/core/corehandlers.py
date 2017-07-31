@@ -441,7 +441,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         if self.session and self.session.broker.handle_message(message):
-            logger.info("%s forwarding message:\n%s", threading.currentThread().getName(), message)
+            logger.info("message not being handled locally")
             return
 
         logger.info("%s handling message:\n%s", threading.currentThread().getName(), message)
@@ -484,7 +484,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 reply_message = "CoreMessage (type %d flags %d length %d)" % (
                     message_type, message_flags, message_length)
 
-            logger.info("%s: reply msg: \n%s", threading.currentThread().getName(), reply_message)
+            logger.info("reply to %s: \n%s", self.request.getpeername(), reply_message)
 
             try:
                 self.sendall(reply)
@@ -735,8 +735,11 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             unidirectional = False
 
         # one of the nodes may exist on a remote server
+        logger.info("link message between node1(%s:%s) and node2(%s:%s)",
+                    node_num1, interface_index1, node_num2, interface_index2)
         if node_num1 is not None and node_num2 is not None:
             tunnel = self.session.broker.gettunnel(node_num1, node_num2)
+            logger.info("tunnel between nodes: %s", tunnel)
             if isinstance(tunnel, coreobj.PyCoreNet):
                 net = tunnel
                 if tunnel.remotenum == node_num1:
@@ -840,7 +843,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 key = message.get_tlv(LinkTlvs.KEY.value)
 
                 netaddrlist = []
-                # print " n1=%s n2=%s net=%s net2=%s" % (node1, node2, net, net2)
                 if node1 and net:
                     addrlist = []
                     if ipv41 is not None and ipv4_mask1 is not None:
