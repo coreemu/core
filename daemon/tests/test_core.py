@@ -1,5 +1,5 @@
 """
-Unit tests for testing with a CORE switch.
+Unit tests for testing basic CORE networks.
 """
 
 import time

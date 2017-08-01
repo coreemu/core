@@ -15,7 +15,6 @@ from core.services import quagga
 from core.services import utility
 from core.session import Session
 
-
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
 
@@ -168,6 +167,14 @@ def core(session, ip_prefix):
 
 @pytest.fixture()
 def cored():
+    # configure default nodes
+    node_map = nodemaps.CLASSIC_NODES
+    nodeutils.set_node_map(node_map)
+
+    # load emane services
+    quagga.load_services()
+    utility.load_services()
+
     address = ("localhost", CORE_API_PORT)
     server = CoreServer(address, CoreRequestHandler, {
         "numthreads": 1,
