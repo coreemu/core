@@ -865,6 +865,7 @@ class Session(object):
         # this is called from instantiate() after receiving an event message
         # for the instantiation state, and from the broker when distributed
         # nodes have been started
+        logger.info("checking runtime: %s", self.state)
         if self.state == EventTypes.RUNTIME_STATE.value:
             logger.info("valid runtime state found, returning")
             return

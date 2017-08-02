@@ -2,6 +2,8 @@
 Unit tests for testing basic CORE networks.
 """
 
+import os
+import threading
 import time
 
 import pytest
@@ -11,13 +13,17 @@ from xml.etree import ElementTree
 from mock import MagicMock
 
 from conftest import EMANE_SERVICES
-from core.enumerations import MessageFlags
+from core.data import ConfigData
+from core.data import EventData
+from core.enumerations import MessageFlags, ConfigTlvs, EventTypes
 from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.netns import vnodeclient
 from core.phys.pnodes import PhysicalNode
 from core.xml import xmlsession
 
+_PATH = os.path.abspath(os.path.dirname(__file__))
+_MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
 _XML_VERSIONS = ["0.0", "1.0"]
 _NODE_CLASSES = [nodes.PtpNet, nodes.HubNode, nodes.SwitchNode]
 
@@ -315,6 +321,56 @@ class TestCore:
         time.sleep(3)
         status = core.ping("n1", "n2")
         assert status
+
+    def test_mobility(self, core):
+        """
+        Test basic wlan network.
+
+        :param conftest.Core core: core fixture to test with
+        """
+
+        # create wlan
+        wlan_node = core.session.add_object(cls=nodes.WlanNode)
+        values = BasicRangeModel.getdefaultvalues()
+        wlan_node.setmodel(BasicRangeModel, values)
+
+        # create nodes
+        core.create_node("n1", objid=1, position=(0, 0), services=EMANE_SERVICES, model="mdr")
+        core.create_node("n2", objid=2, position=(0, 0), services=EMANE_SERVICES, model="mdr")
+
+        # add interfaces
+        interface_one = core.add_interface(wlan_node, "n1")
+        interface_two = core.add_interface(wlan_node, "n2")
+
+        # link nodes in wlan
+        core.link(wlan_node, interface_one, interface_two)
+
+        # configure mobility script for session
+        config = ConfigData(
+            node=wlan_node.objid,
+            object="ns2script",
+            type=0,
+            data_types=(10, 3, 11, 10, 10, 10, 10, 10, 0),
+            data_values="file=%s|refresh_ms=50|loop=1|autostart=0.0|"
+                        "map=|script_start=|script_pause=|script_stop=" % _MOBILITY_FILE
+        )
+        core.session.config_object(config)
+
+        # add handler for receiving node updates
+        event = threading.Event()
+
+        def node_update(_):
+            event.set()
+        core.session.node_handlers.append(node_update)
+
+        # instantiate session
+        core.session.instantiate()
+
+        # assert node directories created
+        core.assert_nodes()
+
+        # validate we receive a node message for updating its location
+        assert event.wait(5)
 
     def test_link_bandwidth(self, core):
         """

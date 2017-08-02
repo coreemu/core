@@ -212,7 +212,7 @@ class MobilityManager(ConfigurableManager):
             try:
                 n = self.session.get_object(nodenum)
             except KeyError:
-                logger.exception("error getting session object")
+                logger.exception("error getting session object, this was ignored before")
                 continue
             if n.model:
                 n.model.update(moved, moved_netifs)
@@ -759,6 +759,7 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
+        logger.info("running mobility scenario")
         self.timezero = time.time()
         self.lasttime = self.timezero - (0.001 * self.refresh_ms)
         self.movenodesinitial()
@@ -1194,6 +1195,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
+        logger.info("starting script")
         laststate = self.state
         super(Ns2ScriptedMobility, self).start()
         if laststate == self.STATE_PAUSED:

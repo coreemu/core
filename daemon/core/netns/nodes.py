@@ -382,7 +382,7 @@ class WlanNode(LxBrNet):
         :param config: model configuration
         :return: nothing
         """
-        logger.info("adding model %s" % model.name)
+        logger.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
             self.model = model(session=self.session, object_id=self.objid, values=config)
             if self.model.position_callback:
