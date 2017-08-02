@@ -350,14 +350,17 @@ class CoreServices(ConfigurableManager):
         :param bool use_startup_service: flag to use startup services or not
         :return: nothing
         """
-        logger.info("starting service %s (%s)(custom)" % (service._name, service._startindex))
+        logger.info("starting service(%s) %s (%s)(custom)",
+                    service, service._name, service._startindex)
         for directory in service._dirs:
             try:
                 node.privatedir(directory)
             except:
-                logger.exception("Error making node %s dir %s", node.name, directory)
+                logger.exception("error making node %s dir %s", node.name, directory)
 
+        logger.info("service configurations: %s", service._configs)
         for i, filename in enumerate(service._configs):
+            logger.info("generating service config: %s", filename)
             if len(filename) == 0:
                 continue
             cfg = self.getservicefiledata(service, filename)

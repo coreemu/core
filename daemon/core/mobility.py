@@ -722,13 +722,13 @@ class WayPointMobility(WirelessModel):
                 nexttime = self.queue[0].time - now
                 if nexttime > (0.001 * self.refresh_ms):
                     nexttime -= 0.001 * self.refresh_ms
-                self.session.evq.add_event(nexttime, self.runround)
+                self.session.event_loop.add_event(nexttime, self.runround)
                 return
             else:
                 # no more waypoints or queued items, loop?
                 if not self.empty_queue_stop:
                     # keep running every refresh_ms, even with empty queue
-                    self.session.evq.add_event(0.001 * self.refresh_ms, self.runround)
+                    self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
                     return
                 if not self.loopwaypoints():
                     return self.stop(move_initial=False)
@@ -751,7 +751,7 @@ class WayPointMobility(WirelessModel):
         self.session.mobility.updatewlans(moved, moved_netifs)
 
         # TODO: check session state
-        self.session.evq.add_event(0.001 * self.refresh_ms, self.runround)
+        self.session.event_loop.add_event(0.001 * self.refresh_ms, self.runround)
 
     def run(self):
         """
@@ -1107,9 +1107,9 @@ class Ns2ScriptedMobility(WayPointMobility):
     def findfile(self, file_name):
         """
         Locate a script file. If the specified file doesn't exist, look in the
-        same directory as the scenario file (session.filename), or in the default
+        same directory as the scenario file, or in the default
         configs directory (~/.core/configs). This allows for sample files without
-        absolute pathnames.
+        absolute path names.
 
         :param str file_name: file name to find
         :return: absolute path to the file
@@ -1118,8 +1118,8 @@ class Ns2ScriptedMobility(WayPointMobility):
         if os.path.exists(file_name):
             return file_name
 
-        if self.session.filename is not None:
-            d = os.path.dirname(self.session.filename)
+        if self.session.file_name is not None:
+            d = os.path.dirname(self.session.file_name)
             sessfn = os.path.join(d, file_name)
             if os.path.exists(sessfn):
                 return sessfn
@@ -1163,7 +1163,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         try:
             return self.nodemap[nodenum]
         except KeyError:
-            logger.exception("error find value in node map")
+            logger.exception("error finding value in node map, ignored and returns node id")
             return nodenum
 
     def startup(self):
@@ -1186,7 +1186,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         self.movenodesinitial()
         logger.info("scheduling ns-2 script for %s autostart at %s" % (self.wlan.name, t))
         self.state = self.STATE_RUNNING
-        self.session.evq.add_event(t, self.run)
+        self.session.event_loop.add_event(t, self.run)
 
     def start(self):
         """

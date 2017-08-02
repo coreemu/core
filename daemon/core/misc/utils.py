@@ -106,7 +106,9 @@ def maketuplefromstr(s, value_type):
     :return: tuple from string
     :rtype: tuple
     """
-    return tuple(value_type(i) for i in s.split(","))
+    # remove tuple braces and strip commands and space from all values in the tuple string
+    values = [x.strip("' ") for x in s.strip("(), ").split(",")]
+    return tuple(value_type(i) for i in values)
 
 
 def mutecall(*args, **kwargs):

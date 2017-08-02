@@ -14,8 +14,11 @@ class Zebra(CoreService):
     _name = "zebra"
     _group = "Quagga"
     _dirs = ("/usr/local/etc/quagga", "/var/run/quagga")
-    _configs = ("/usr/local/etc/quagga/Quagga.conf",
-                "quaggaboot.sh", "/usr/local/etc/quagga/vtysh.conf")
+    _configs = (
+        "/usr/local/etc/quagga/Quagga.conf",
+        "quaggaboot.sh",
+        "/usr/local/etc/quagga/vtysh.conf"
+    )
     _startindex = 35
     _startup = ("sh quaggaboot.sh zebra",)
     _shutdown = ("killall zebra",)
@@ -33,7 +36,8 @@ class Zebra(CoreService):
         elif filename == cls._configs[2]:
             return cls.generateVtyshConf(node, services)
         else:
-            raise ValueError
+            raise ValueError("file name (%s) is not a known configuration: %s",
+                             filename, cls._configs)
 
     @classmethod
     def generateVtyshConf(cls, node, services):
