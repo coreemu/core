@@ -109,7 +109,7 @@ class TestGui:
         """
 
         # set core daemon to run in the background
-        thread = threading.Thread(target=cored.serve_forever)
+        thread = threading.Thread(target=cored.server.serve_forever)
         thread.daemon = True
         thread.start()
 
@@ -168,7 +168,6 @@ class TestGui:
         core.session.broker.handlerawmsg(event_message)
 
         # Get the ip or last node and ping it from the first
-        print "pinging from the first to the last node"
         output, status = run_cmd(node_one, "ip -4 -o addr show dev eth0")
         pingip = output.split()[3].split("/")[0]
         output, status = run_cmd(node_two, "ping -c 5 " + pingip)

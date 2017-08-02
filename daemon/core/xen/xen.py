@@ -152,7 +152,7 @@ class XenNode(PyCoreNode):
         self.lock = threading.RLock()
         self._netif = {}
         # domU name
-        self.vmname = "c" + str(session.sessionid) + "-" + name
+        self.vmname = "c" + str(session.session_id) + "-" + name
         # LVM volume group name
         self.vgname = self.getconfigitem('vg_name', vgname)
         # LVM logical volume name

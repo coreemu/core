@@ -23,7 +23,7 @@ from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import RegisterTlvs
 from core.enumerations import SessionTlvs
-from core.misc import log
+from core.misc import log, structutils
 from core.misc.ipaddress import IpAddress
 from core.misc.ipaddress import MacAddress
 
@@ -691,6 +691,13 @@ class CoreMessage(object):
         """
         message_type, message_flags, message_len = struct.unpack(cls.header_format, data[:cls.header_len])
         return message_type, message_flags, message_len
+
+    @classmethod
+    def create(cls, flags, values):
+        tlv_data = structutils.pack_values(cls.tlv_class, values)
+        packed = cls.pack(flags, tlv_data)
+        header_data = packed[:cls.header_len]
+        return cls(flags, header_data, tlv_data)
 
     @classmethod
     def pack(cls, message_flags, tlv_data):

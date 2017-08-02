@@ -30,7 +30,7 @@ class NetgraphNet(PyCoreNet):
         if policy is not None:
             self.policy = policy
         self.name = name
-        self.ngname = "n_%s_%s" % (str(self.objid), self.session.sessionid)
+        self.ngname = "n_%s_%s" % (str(self.objid), self.session.session_id)
         self.ngid = None
         self.verbose = verbose
         self._netif = {}
