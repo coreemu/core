@@ -3,10 +3,10 @@ xenconfig.py: Implementation of the XenConfigManager class for managing
 configurable items for XenNodes.
 
 Configuration for a XenNode is available at these three levels:
-Global config:         XenConfigManager.configs[0] = (type='xen', values)
+Global config:         XenConfigManager.configs[0] = (type="xen", values)
    Nodes of this machine type have this config. These are the default values.
    XenConfigManager.default_config comes from defaults + xen.conf
-Node type config:      XenConfigManager.configs[0] = (type='mytype', values)
+Node type config:      XenConfigManager.configs[0] = (type="mytype", values)
    All nodes of this type have this config.
 Node-specific config:  XenConfigManager.configs[nodenumber] = (type, values)
    The node having this specific number has this config.
@@ -50,27 +50,43 @@ class XenConfigManager(ConfigurableManager):
 
     def setconfig(self, nodenum, conftype, values):
         """
-        add configuration values for a node to a dictionary; values are
+        Add configuration values for a node to a dictionary; values are
         usually received from a Configuration Message, and may refer to a
         node for which no object exists yet
+
+        :param int nodenum: node id to configure
+        :param str conftype: configuration type
+        :param tuple values: values to configure
+        :return: None
         """
+        # used for storing the global default config
         if nodenum is None:
-            nodenum = 0  # used for storing the global default config
+            nodenum = 0
         return ConfigurableManager.setconfig(self, nodenum, conftype, values)
 
     def getconfig(self, nodenum, conftype, defaultvalues):
         """
-        get configuration values for a node; if the values don't exist in
+        Get configuration values for a node; if the values don"t exist in
         our dictionary then return the default values supplied; if conftype
         is None then we return a match on any conftype.
+
+        :param int nodenum: node id to configure
+        :param str conftype: configuration type
+        :param tuple defaultvalues: default values to return
+        :return: configuration for node and config type
+        :rtype: tuple
         """
+        # used for storing the global default config
         if nodenum is None:
-            nodenum = 0  # used for storing the global default config
+            nodenum = 0
         return ConfigurableManager.getconfig(self, nodenum, conftype, defaultvalues)
 
     def clearconfig(self, nodenum):
         """
-        remove configuration values for a node
+        Remove configuration values for a node
+
+        :param int nodenum: node id to clear config
+        :return: nothing
         """
         ConfigurableManager.clearconfig(self, nodenum)
         if 0 in self.configs:
@@ -87,16 +103,19 @@ class XenConfigManager(ConfigurableManager):
     def loadconfigfile(self, filename=None):
         """
         Load defaults from the /etc/core/xen.conf file into dict object.
+
+        :param str filename: file name of configuration to load
+        :return: nothing
         """
         if filename is None:
-            filename = os.path.join(constants.CORE_CONF_DIR, 'xen.conf')
+            filename = os.path.join(constants.CORE_CONF_DIR, "xen.conf")
         cfg = ConfigParser.SafeConfigParser()
         if filename not in cfg.read(filename):
-            logger.warn("unable to read Xen config file: %s" % filename)
+            logger.warn("unable to read Xen config file: %s", filename)
             return
         section = "xen"
         if not cfg.has_section(section):
-            logger.warn("%s is missing a xen section!" % filename)
+            logger.warn("%s is missing a xen section!", filename)
             return
         self.configfile = dict(cfg.items(section))
         # populate default config items from config file entries
@@ -105,7 +124,7 @@ class XenConfigManager(ConfigurableManager):
         for i in range(len(names)):
             if names[i] in self.configfile:
                 vals[i] = self.configfile[names[i]]
-        # this sets XenConfigManager.configs[0] = (type='xen', vals)
+        # this sets XenConfigManager.configs[0] = (type="xen", vals)
         self.setconfig(None, self.default_config.name, vals)
 
     def getconfigitem(self, name, model=None, node=None, value=None):
@@ -113,6 +132,12 @@ class XenConfigManager(ConfigurableManager):
         Get a config item of the given name, first looking for node-specific
         configuration, then model specific, and finally global defaults.
         If a value is supplied, it will override any stored config.
+
+        :param str name: name of config item to get
+        :param model: model config to get
+        :param node: node config to get
+        :param value: value to override stored config, if provided
+        :return: nothing
         """
         if value is not None:
             return value
@@ -122,13 +147,10 @@ class XenConfigManager(ConfigurableManager):
         (t, v) = self.getconfig(nodenum=n, conftype=model, defaultvalues=None)
         if n is not None and v is None:
             # get item from default config for the node type
-            (t, v) = self.getconfig(nodenum=None, conftype=model,
-                                    defaultvalues=None)
+            (t, v) = self.getconfig(nodenum=None, conftype=model, defaultvalues=None)
         if v is None:
             # get item from default config for the machine type
-            (t, v) = self.getconfig(nodenum=None,
-                                    conftype=self.default_config.name,
-                                    defaultvalues=None)
+            (t, v) = self.getconfig(nodenum=None, conftype=self.default_config.name, defaultvalues=None)
 
         confignames = self.default_config.getnames()
         if v and name in confignames:
@@ -139,7 +161,7 @@ class XenConfigManager(ConfigurableManager):
             if name in self.configfile:
                 return self.configfile[name]
             else:
-                # logger.warn("missing config item '%s'" % name)
+                # logger.warn("missing config item "%s"" % name)
                 return None
 
 
@@ -167,7 +189,7 @@ class XenConfig(Configurable):
 
         nodetype = object_name
         if opaque is not None:
-            opaque_items = opaque.split(':')
+            opaque_items = opaque.split(":")
             if len(opaque_items) != 2:
                 logger.warn("xen config: invalid opaque data in conf message")
                 return None
@@ -211,7 +233,7 @@ class XenConfig(Configurable):
                 values = xen.getconfig(node_id, cls.name, defaults)[1]
             else:
                 # use new values supplied from the conf message
-                values = values_str.split('|')
+                values = values_str.split("|")
             xen.setconfig(node_id, nodetype, values)
 
         return reply
@@ -222,8 +244,15 @@ class XenConfig(Configurable):
         Convert this class to a Config API message. Some TLVs are defined
         by the class, but node number, conf type flags, and values must
         be passed in.
+
+        :param int flags: configuration flags
+        :param int node_id: node id
+        :param int type_flags: type flags
+        :param int nodetype: node type
+        :param tuple values: values
+        :return: configuration message
         """
-        values_str = string.join(values, '|')
+        values_str = string.join(values, "|")
         tlvdata = ""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.NODE.value, node_id)
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, cls.name)
@@ -231,9 +260,9 @@ class XenConfig(Configurable):
         datatypes = tuple(map(lambda x: x[1], cls.config_matrix))
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.DATA_TYPES.value, datatypes)
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value, values_str)
-        captions = reduce(lambda a, b: a + '|' + b, map(lambda x: x[4], cls.config_matrix))
+        captions = reduce(lambda a, b: a + "|" + b, map(lambda x: x[4], cls.config_matrix))
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.CAPTIONS, captions)
-        possiblevals = reduce(lambda a, b: a + '|' + b, map(lambda x: x[3], cls.config_matrix))
+        possiblevals = reduce(lambda a, b: a + "|" + b, map(lambda x: x[3], cls.config_matrix))
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.POSSIBLE_VALUES.value, possiblevals)
         if cls.bitmap is not None:
             tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.BITMAP.value, cls.bitmap)
@@ -251,24 +280,24 @@ class XenDefaultConfig(XenConfig):
     """
     name = "xen"
     # Configuration items:
-    #   ('name', 'type', 'default', 'possible-value-list', 'caption')
+    #   ("name", "type", "default", "possible-value-list", "caption")
     config_matrix = [
-        ('ram_size', ConfigDataTypes.STRING.value, '256', '',
-         'ram size (MB)'),
-        ('disk_size', ConfigDataTypes.STRING.value, '256M', '',
-         'disk size (use K/M/G suffix)'),
-        ('iso_file', ConfigDataTypes.STRING.value, '', '',
-         'iso file'),
-        ('mount_path', ConfigDataTypes.STRING.value, '', '',
-         'mount path'),
-        ('etc_path', ConfigDataTypes.STRING.value, '', '',
-         'etc path'),
-        ('persist_tar_iso', ConfigDataTypes.STRING.value, '', '',
-         'iso persist tar file'),
-        ('persist_tar', ConfigDataTypes.STRING.value, '', '',
-         'persist tar file'),
-        ('root_password', ConfigDataTypes.STRING.value, 'password', '',
-         'root password'),
+        ("ram_size", ConfigDataTypes.STRING.value, "256", "",
+         "ram size (MB)"),
+        ("disk_size", ConfigDataTypes.STRING.value, "256M", "",
+         "disk size (use K/M/G suffix)"),
+        ("iso_file", ConfigDataTypes.STRING.value, "", "",
+         "iso file"),
+        ("mount_path", ConfigDataTypes.STRING.value, "", "",
+         "mount path"),
+        ("etc_path", ConfigDataTypes.STRING.value, "", "",
+         "etc path"),
+        ("persist_tar_iso", ConfigDataTypes.STRING.value, "", "",
+         "iso persist tar file"),
+        ("persist_tar", ConfigDataTypes.STRING.value, "", "",
+         "persist tar file"),
+        ("root_password", ConfigDataTypes.STRING.value, "password", "",
+         "root password"),
     ]
 
     config_groups = "domU properties:1-%d" % len(config_matrix)
