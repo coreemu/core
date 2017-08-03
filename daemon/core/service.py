@@ -6,6 +6,7 @@ The CoreServices class handles configuration messages for sending
 a list of available services to the GUI and for configuring individual
 services.
 """
+
 import importlib
 import inspect
 import os
@@ -30,7 +31,7 @@ from core.misc import utils
 logger = log.get_logger(__name__)
 
 
-def valid_module(path, file_name):
+def _valid_module(path, file_name):
     """
     Check if file is a valid python module.
 
@@ -52,7 +53,7 @@ def valid_module(path, file_name):
     return True
 
 
-def is_service(module, member):
+def _is_service(module, member):
     """
     Validates if a module member is a class and an instance of a CoreService.
 
@@ -71,35 +72,6 @@ def is_service(module, member):
         return False
 
     return True
-
-
-def get_services(path):
-    """
-    Method for retrieving all CoreServices from a given path.
-
-    :param str path: path to retrieve services from
-    :return: list of core services
-    :rtype: list
-    """
-    logger.info("getting custom services from: %s", path)
-    parent_path = os.path.dirname(path)
-    logger.info("adding parent path to allow imports: %s", parent_path)
-    sys.path.append(parent_path)
-    base_module = os.path.basename(path)
-    module_names = os.listdir(path)
-    module_names = filter(lambda x: valid_module(path, x), module_names)
-    module_names = map(lambda x: x[:-3], module_names)
-
-    custom_services = []
-    for module_name in module_names:
-        import_statement = "%s.%s" % (base_module, module_name)
-        logger.info("importing custom service: %s", import_statement)
-        module = importlib.import_module(import_statement)
-        members = inspect.getmembers(module, lambda x: is_service(module, x))
-        for member in members:
-            custom_services.append(member[1])
-
-    return custom_services
 
 
 class ServiceManager(object):
@@ -138,6 +110,37 @@ class ServiceManager(object):
             if service._name == name:
                 return service
         return None
+
+    @classmethod
+    def add_services(cls, path):
+        """
+        Method for retrieving all CoreServices from a given path.
+
+        :param str path: path to retrieve services from
+        :return: list of core services
+        :rtype: list
+        """
+        logger.info("getting custom services from: %s", path)
+        parent_path = os.path.dirname(path)
+        if parent_path not in sys.path:
+            logger.info("adding parent path to allow imports: %s", parent_path)
+            sys.path.append(parent_path)
+        base_module = os.path.basename(path)
+        module_names = os.listdir(path)
+        module_names = filter(lambda x: _valid_module(path, x), module_names)
+        module_names = map(lambda x: x[:-3], module_names)
+
+        # custom_services = []
+        for module_name in module_names:
+            import_statement = "%s.%s" % (base_module, module_name)
+            logger.info("importing custom service module: %s", import_statement)
+            module = importlib.import_module(import_statement)
+            members = inspect.getmembers(module, lambda x: _is_service(module, x))
+            for member in members:
+                # custom_services.append(member[1])
+                cls.add(member[1])
+
+                # return custom_services
 
 
 class CoreServices(ConfigurableManager):
@@ -194,9 +197,7 @@ class CoreServices(ConfigurableManager):
             logger.warn("invalid custom service directory specified" ": %s" % path)
             return
 
-        for service in get_services(path):
-            logger.info("adding new service to manager: %s", service)
-            ServiceManager.add(service)
+        ServiceManager.add_services(path)
 
     def reset(self):
         """

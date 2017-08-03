@@ -2,7 +2,6 @@
 Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
-import ast
 import os
 import subprocess
 

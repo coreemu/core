@@ -30,6 +30,7 @@ from core import constants
 from core import corehandlers
 from core import coreserver
 from core import enumerations
+from core import services
 from core.api import coreapi
 from core.corehandlers import CoreDatagramRequestHandler
 from core.enumerations import MessageFlags
@@ -39,16 +40,6 @@ from core.misc import nodemaps
 from core.misc import nodeutils
 from core.misc.utils import closeonexec
 from core.misc.utils import daemonize
-from core.services import bird
-from core.services import dockersvc
-from core.services import nrl
-from core.services import quagga
-from core.services import sdn
-from core.services import security
-from core.services import startup
-from core.services import ucarp
-from core.services import utility
-from core.services import xorp
 
 logger = log.get_logger(__name__)
 
@@ -355,15 +346,6 @@ if __name__ == "__main__":
     nodeutils.set_node_map(node_map)
 
     # load default services
-    quagga.load_services()
-    nrl.load_services()
-    xorp.load_services()
-    bird.load_services()
-    utility.load_services()
-    security.load_services()
-    ucarp.load_services()
-    dockersvc.load_services()
-    startup.load_services()
-    sdn.load_services()
+    services.load()
 
     main()
