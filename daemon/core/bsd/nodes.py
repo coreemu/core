@@ -12,6 +12,7 @@ from the CoreNode, implementing specific node types.
 """
 
 import socket
+import subprocess
 
 from core import constants
 from core.api import coreapi
@@ -25,9 +26,12 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.misc import ipaddress
+from core.misc import log
 from core.misc import utils
 
-utils.checkexec([constants.IFCONFIG_BIN])
+logger = log.get_logger(__name__)
+
+utils.check_executables([constants.IFCONFIG_BIN])
 
 
 class CoreNode(JailNode):
@@ -36,14 +40,16 @@ class CoreNode(JailNode):
 
 class PtpNet(NetgraphPipeNet):
     def tonodemsg(self, flags):
-        """ Do not generate a Node Message for point-to-point links. They are
-            built using a link message instead.
+        """
+        Do not generate a Node Message for point-to-point links. They are
+        built using a link message instead.
         """
         pass
 
     def tolinkmsgs(self, flags):
-        """ Build CORE API TLVs for a point-to-point link. One Link message
-            describes this network.
+        """
+        Build CORE API TLVs for a point-to-point link. One Link message
+        describes this network.
         """
         tlvdata = ""
         if len(self._netif) != 2:
@@ -74,7 +80,7 @@ class PtpNet(NetgraphPipeNet):
         if if1.hwaddr:
             tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE1_MAC.value, if1.hwaddr)
         for addr in if1.addrlist:
-            (ip, sep, mask) = addr.partition("/")
+            ip, sep, mask = addr.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = socket.AF_INET
@@ -92,7 +98,7 @@ class PtpNet(NetgraphPipeNet):
         if if2.hwaddr:
             tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_MAC.value, if2.hwaddr)
         for addr in if2.addrlist:
-            (ip, sep, mask) = addr.partition("/")
+            ip, sep, mask = addr.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = socket.AF_INET
@@ -131,9 +137,8 @@ class WlanNode(NetgraphNet):
     linktype = LinkTypes.WIRELESS.value
     policy = "DROP"
 
-    def __init__(self, session, objid=None, name=None, verbose=False,
-                 start=True, policy=None):
-        NetgraphNet.__init__(self, session, objid, name, verbose, start, policy)
+    def __init__(self, session, objid=None, name=None, start=True, policy=None):
+        NetgraphNet.__init__(self, session, objid, name, start, policy)
         # wireless model such as basic range
         self.model = None
         # mobility model such as scripted
@@ -142,40 +147,42 @@ class WlanNode(NetgraphNet):
     def attach(self, netif):
         NetgraphNet.attach(self, netif)
         if self.model:
-            netif.poshook = self.model._positioncallback
+            netif.poshook = self.model.position_callback
             if netif.node is None:
                 return
             x, y, z = netif.node.position.get()
             netif.poshook(netif, x, y, z)
 
     def setmodel(self, model, config):
-        """ Mobility and wireless model.
         """
-        if self.verbose:
-            self.info("adding model %s" % model._name)
-        if model._type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, objid=self.objid,
-                               verbose=self.verbose, values=config)
-            if self.model._positioncallback:
+        Mobility and wireless model.
+
+        :param core.mobility.WirelessModel.cls model: model to set
+        :param dict config: configuration for model
+        :return:
+        """
+        logger.info("adding model %s" % model.name)
+        if model.config_type == RegisterTlvs.WIRELESS.value:
+            self.model = model(session=self.session, objid=self.objid, values=config)
+            if self.model.position_callback:
                 for netif in self.netifs():
-                    netif.poshook = self.model._positioncallback
+                    netif.poshook = self.model.position_callback
                     if netif.node is not None:
-                        (x, y, z) = netif.node.position.get()
+                        x, y, z = netif.node.position.get()
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
-        elif model._type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, objid=self.objid,
-                                  verbose=self.verbose, values=config)
+        elif model.config_type == RegisterTlvs.MOBILITY.value:
+            self.mobility = model(session=self.session, objid=self.objid, values=config)
 
 
 class RJ45Node(NetgraphPipeNet):
     apitype = NodeTypes.RJ45.value
     policy = "ACCEPT"
 
-    def __init__(self, session, objid, name, verbose, start=True):
+    def __init__(self, session, objid, name, start=True):
         if start:
             ngloadkernelmodule("ng_ether")
-        NetgraphPipeNet.__init__(self, session, objid, name, verbose, start)
+        NetgraphPipeNet.__init__(self, session, objid, name, start)
         if start:
             self.setpromisc(True)
 
@@ -187,12 +194,11 @@ class RJ45Node(NetgraphPipeNet):
         p = "promisc"
         if not promisc:
             p = "-" + p
-        utils.check_call([constants.IFCONFIG_BIN, self.name, "up", p])
+        subprocess.check_call([constants.IFCONFIG_BIN, self.name, "up", p])
 
     def attach(self, netif):
         if len(self._netif) > 0:
-            raise ValueError, \
-                "RJ45 networks support at most 1 network interface"
+            raise ValueError("RJ45 networks support at most 1 network interface")
         NetgraphPipeNet.attach(self, netif)
         connectngnodes(self.ngname, self.name, self.gethook(), "lower")
 

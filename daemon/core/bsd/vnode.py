@@ -20,9 +20,12 @@ from core.bsd.netgraph import createngnode
 from core.bsd.netgraph import destroyngnode
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
+from core.misc import log
 from core.misc import utils
 
-utils.checkexec([constants.IFCONFIG_BIN, constants.VIMAGE_BIN])
+logger = log.get_logger(__name__)
+
+utils.check_executables([constants.IFCONFIG_BIN, constants.VIMAGE_BIN])
 
 
 class VEth(PyCoreNetIf):
@@ -46,11 +49,10 @@ class VEth(PyCoreNetIf):
 
     def startup(self):
         hookstr = "%s %s" % (self.hook, self.hook)
-        ngname, ngid = createngnode(type="eiface", hookstr=hookstr,
-                                    name=self.localname)
+        ngname, ngid = createngnode(node_type="eiface", hookstr=hookstr, name=self.localname)
         self.name = ngname
         self.ngid = ngid
-        utils.check_call([constants.IFCONFIG_BIN, ngname, "up"])
+        subprocess.check_call([constants.IFCONFIG_BIN, ngname, "up"])
         self.up = True
 
     def shutdown(self):
@@ -81,19 +83,18 @@ class VEth(PyCoreNetIf):
 
 
 class TunTap(PyCoreNetIf):
-    """TUN/TAP virtual device in TAP mode"""
+    """
+    TUN/TAP virtual device in TAP mode
+    """
 
-    def __init__(self, node, name, localname, mtu=None, net=None,
-                 start=True):
+    def __init__(self, node, name, localname, mtu=None, net=None, start=True):
         raise NotImplementedError
 
 
 class SimpleJailNode(PyCoreNode):
-    def __init__(self, session, objid=None, name=None, nodedir=None,
-                 verbose=False):
+    def __init__(self, session, objid=None, name=None, nodedir=None):
         PyCoreNode.__init__(self, session, objid, name)
         self.nodedir = nodedir
-        self.verbose = verbose
         self.pid = None
         self.up = False
         self.lock = threading.RLock()
@@ -101,16 +102,15 @@ class SimpleJailNode(PyCoreNode):
 
     def startup(self):
         if self.up:
-            raise Exception, "already up"
+            raise Exception("already up")
         vimg = [constants.VIMAGE_BIN, "-c", self.name]
         try:
             os.spawnlp(os.P_WAIT, constants.VIMAGE_BIN, *vimg)
         except OSError:
-            raise Exception, ("vimage command not found while running: %s" % \
-                              vimg)
-        self.info("bringing up loopback interface")
+            raise Exception("vimage command not found while running: %s" % vimg)
+        logger.info("bringing up loopback interface")
         self.cmd([constants.IFCONFIG_BIN, "lo0", "127.0.0.1"])
-        self.info("setting hostname: %s" % self.name)
+        logger.info("setting hostname: %s", self.name)
         self.cmd(["hostname", self.name])
         self.cmd([constants.SYSCTL_BIN, "vfs.morphing_symlinks=1"])
         self.up = True
@@ -134,11 +134,11 @@ class SimpleJailNode(PyCoreNode):
             mode = os.P_WAIT
         else:
             mode = os.P_NOWAIT
-        tmp = utils.call([constants.VIMAGE_BIN, self.name] + args, cwd=self.nodedir)
+        tmp = subprocess.call([constants.VIMAGE_BIN, self.name] + args, cwd=self.nodedir)
         if not wait:
             tmp = None
         if tmp:
-            self.warn("cmd exited with status %s: %s" % (tmp, str(args)))
+            logger.warn("cmd exited with status %s: %s", tmp, str(args))
         return tmp
 
     def cmdresult(self, args, wait=True):
@@ -170,8 +170,9 @@ class SimpleJailNode(PyCoreNode):
                           "-title", self.name, "-e", constants.VIMAGE_BIN, self.name, sh)
 
     def termcmdstring(self, sh="/bin/sh"):
-        """ We add "sudo" to the command string because the GUI runs as a
-            normal user.
+        """
+        We add "sudo" to the command string because the GUI runs as a
+        normal user.
         """
         return "cd %s && sudo %s %s %s" % (self.nodedir, constants.VIMAGE_BIN, self.name, sh)
 
@@ -183,11 +184,11 @@ class SimpleJailNode(PyCoreNode):
 
     def mount(self, source, target):
         source = os.path.abspath(source)
-        self.info("mounting %s at %s" % (source, target))
+        logger.info("mounting %s at %s", source, target)
         self.addsymlink(path=target, file=None)
 
     def umount(self, target):
-        self.info("unmounting %s" % target)
+        logger.info("unmounting %s", target)
 
     def newveth(self, ifindex=None, ifname=None, net=None):
         self.lock.acquire()
@@ -204,7 +205,7 @@ class SimpleJailNode(PyCoreNode):
                            mtu=1500, net=net, start=self.up)
             if self.up:
                 # install into jail
-                utils.check_call([constants.IFCONFIG_BIN, veth.name, "vnet", self.name])
+                subprocess.check_call([constants.IFCONFIG_BIN, veth.name, "vnet", self.name])
 
                 # rename from "ngeth0" to "eth0"
                 self.cmd([constants.IFCONFIG_BIN, veth.name, "name", ifname])
@@ -223,8 +224,7 @@ class SimpleJailNode(PyCoreNode):
     def sethwaddr(self, ifindex, addr):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
-            self.cmd([constants.IFCONFIG_BIN, self.ifname(ifindex), "link",
-                      str(addr)])
+            self.cmd([constants.IFCONFIG_BIN, self.ifname(ifindex), "link", str(addr)])
 
     def addaddr(self, ifindex, addr):
         if self.up:
@@ -232,15 +232,14 @@ class SimpleJailNode(PyCoreNode):
                 family = "inet6"
             else:
                 family = "inet"
-            self.cmd([constants.IFCONFIG_BIN, self.ifname(ifindex), family, "alias",
-                      str(addr)])
+            self.cmd([constants.IFCONFIG_BIN, self.ifname(ifindex), family, "alias", str(addr)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
         try:
             self._netif[ifindex].deladdr(addr)
         except ValueError:
-            self.warn("trying to delete unknown address: %s" % addr)
+            logger.warn("trying to delete unknown address: %s", addr)
         if self.up:
             if ":" in addr:
                 family = "inet6"
@@ -255,8 +254,7 @@ class SimpleJailNode(PyCoreNode):
         addr = self.getaddr(self.ifname(ifindex), rescan=True)
         for t in addrtypes:
             if t not in self.valid_deladdrtype:
-                raise ValueError, "addr type must be in: " + \
-                                  " ".join(self.valid_deladdrtype)
+                raise ValueError("addr type must be in: " + " ".join(self.valid_deladdrtype))
             for a in addr[t]:
                 self.deladdr(ifindex, a)
         # update cached information
@@ -297,8 +295,9 @@ class SimpleJailNode(PyCoreNode):
         # return self.vnodeclient.getaddr(ifname = ifname, rescan = rescan)
 
     def addsymlink(self, path, file):
-        """ Create a symbolic link from /path/name/file ->
-            /tmp/pycore.nnnnn/@.conf/path.name/file
+        """
+        Create a symbolic link from /path/name/file ->
+        /tmp/pycore.nnnnn/@.conf/path.name/file
         """
         dirname = path
         if dirname and dirname[0] == "/":
@@ -318,20 +317,15 @@ class SimpleJailNode(PyCoreNode):
             os.unlink(pathname)
         else:
             if os.path.exists(pathname):
-                self.warn("did not create symlink for %s since path " \
-                          "exists on host" % pathname)
+                logger.warn("did not create symlink for %s since path exists on host", pathname)
                 return
-        self.info("creating symlink %s -> %s" % (pathname, sym))
+        logger.info("creating symlink %s -> %s", pathname, sym)
         os.symlink(sym, pathname)
 
 
 class JailNode(SimpleJailNode):
-    def __init__(self, session, objid=None, name=None,
-                 nodedir=None, bootsh="boot.sh", verbose=False,
-                 start=True):
-        super(JailNode, self).__init__(session=session, objid=objid,
-                                       name=name, nodedir=nodedir,
-                                       verbose=verbose)
+    def __init__(self, session, objid=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
+        super(JailNode, self).__init__(session=session, objid=objid, name=name, nodedir=nodedir)
         self.bootsh = bootsh
         if not start:
             return
@@ -369,8 +363,10 @@ class JailNode(SimpleJailNode):
     def privatedir(self, path):
         if path[0] != "/":
             raise ValueError, "path not fully qualified: " + path
-        hostpath = os.path.join(self.nodedir,
-                                os.path.normpath(path).strip("/").replace("/", "."))
+        hostpath = os.path.join(
+            self.nodedir,
+            os.path.normpath(path).strip("/").replace("/", ".")
+        )
         try:
             os.mkdir(hostpath)
         except OSError:
@@ -383,7 +379,7 @@ class JailNode(SimpleJailNode):
         dirname, basename = os.path.split(filename)
         # self.addsymlink(path=dirname, file=basename)
         if not basename:
-            raise ValueError, "no basename for filename: " + filename
+            raise ValueError("no basename for filename: %s" % filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")
@@ -398,4 +394,4 @@ class JailNode(SimpleJailNode):
         f.write(contents)
         os.chmod(f.name, mode)
         f.close()
-        self.info("created nodefile: %s; mode: 0%o" % (f.name, mode))
+        logger.info("created nodefile: %s; mode: 0%o", f.name, mode)
