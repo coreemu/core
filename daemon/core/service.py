@@ -6,27 +6,100 @@ The CoreServices class handles configuration messages for sending
 a list of available services to the GUI and for configuring individual
 services.
 """
-
+import importlib
+import inspect
 import os
 import shlex
 import sys
 import time
 from itertools import repeat
 
-from core.api import coreapi
 from core.conf import Configurable
 from core.conf import ConfigurableManager
-from core.data import EventData, ConfigData, FileData
+from core.data import ConfigData
+from core.data import EventData
+from core.data import FileData
 from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
 from core.enumerations import EventTypes
-from core.enumerations import FileTlvs
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
 from core.misc import log
 from core.misc import utils
 
 logger = log.get_logger(__name__)
+
+
+def valid_module(path, file_name):
+    """
+    Check if file is a valid python module.
+
+    :param str path: path to file
+    :param str file_name: file name to check
+    :return: True if a valid python module file, False otherwise
+    :rtype: bool
+    """
+    file_path = os.path.join(path, file_name)
+    if not os.path.isfile(file_path):
+        return False
+
+    if file_name.startswith("_"):
+        return False
+
+    if not file_name.endswith(".py"):
+        return False
+
+    return True
+
+
+def is_service(module, member):
+    """
+    Validates if a module member is a class and an instance of a CoreService.
+
+    :param module: module to validate for service
+    :param member: member to validate for service
+    :return: True if a valid service, False otherwise
+    :rtype: bool
+    """
+    if not inspect.isclass(member):
+        return False
+
+    if not issubclass(member, CoreService):
+        return False
+
+    if member.__module__ != module.__name__:
+        return False
+
+    return True
+
+
+def get_services(path):
+    """
+    Method for retrieving all CoreServices from a given path.
+
+    :param str path: path to retrieve services from
+    :return: list of core services
+    :rtype: list
+    """
+    logger.info("getting custom services from: %s", path)
+    parent_path = os.path.dirname(path)
+    logger.info("adding parent path to allow imports: %s", parent_path)
+    sys.path.append(parent_path)
+    base_module = os.path.basename(path)
+    module_names = os.listdir(path)
+    module_names = filter(lambda x: valid_module(path, x), module_names)
+    module_names = map(lambda x: x[:-3], module_names)
+
+    custom_services = []
+    for module_name in module_names:
+        import_statement = "%s.%s" % (base_module, module_name)
+        logger.info("importing custom service: %s", import_statement)
+        module = importlib.import_module(import_statement)
+        members = inspect.getmembers(module, lambda x: is_service(module, x))
+        for member in members:
+            custom_services.append(member[1])
+
+    return custom_services
 
 
 class ServiceManager(object):
@@ -106,10 +179,6 @@ class CoreServices(ConfigurableManager):
         from core.services import startup
         self.is_startup_service = startup.Startup.is_startup_service
 
-    @classmethod
-    def add_service_path(cls, path):
-        cls.service_path.add(path)
-
     def importcustom(self, path):
         """
         Import services from a myservices directory.
@@ -117,6 +186,7 @@ class CoreServices(ConfigurableManager):
         :param str path: path to import custom services from
         :return: nothing
         """
+
         if not path or len(path) == 0:
             return
 
@@ -124,18 +194,9 @@ class CoreServices(ConfigurableManager):
             logger.warn("invalid custom service directory specified" ": %s" % path)
             return
 
-        try:
-            parentdir, childdir = os.path.split(path)
-            if childdir in self._invalid_custom_names:
-                raise ValueError("use a unique custom services dir name, " "not '%s'" % childdir)
-            if parentdir not in sys.path:
-                sys.path.append(parentdir)
-            # TODO: remove use of this exec statement
-            statement = "from %s import *" % childdir
-            logger.info("custom import: %s", statement)
-            exec (statement)
-        except:
-            logger.exception("error importing custom services from %s", path)
+        for service in get_services(path):
+            logger.info("adding new service to manager: %s", service)
+            ServiceManager.add(service)
 
     def reset(self):
         """

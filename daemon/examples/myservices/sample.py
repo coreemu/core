@@ -64,6 +64,7 @@ class MyService(CoreService):
             return 'echo "  network %s"' % net
 
 
+# this is needed to load desired services when being integrated into core, otherwise this is not needed
 def load_services():
     # this line is required to add the above class to the list of available services
     ServiceManager.add(MyService)

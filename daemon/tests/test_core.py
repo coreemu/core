@@ -19,15 +19,27 @@ from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.netns import vnodeclient
 from core.phys.pnodes import PhysicalNode
+from core.service import ServiceManager
 from core.xml import xmlsession
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
+_SERVICES_PATH = os.path.join(_PATH, "myservices")
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
 _XML_VERSIONS = ["0.0", "1.0"]
 _NODE_CLASSES = [nodes.PtpNet, nodes.HubNode, nodes.SwitchNode]
 
 
 class TestCore:
+    def test_import_service(self, core):
+        """
+        Test importing a custom service.
+
+        :param conftest.Core core: core fixture to test with
+        """
+        core.session.services.importcustom(_SERVICES_PATH)
+        assert ServiceManager.get("MyService")
+        assert ServiceManager.get("MyService2")
+
     @pytest.mark.parametrize("cls", _NODE_CLASSES)
     def test_nodes(self, core, cls):
         """
