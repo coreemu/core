@@ -62,7 +62,7 @@ def node_message(objid, name, emulation_server=None, node_type=NodeTypes.DEFAULT
     return CoreNodeMessage.create(MessageFlags.ADD.value, values)
 
 
-def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address_two=None):
+def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address_two=None, key=None):
     """
     Convenience method for creating link TLV messages.
 
@@ -72,6 +72,7 @@ def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address
     :param core.misc.ipaddress.IpAddress address_one: node one ip4 address
     :param int intf_two: node two interface id
     :param core.misc.ipaddress.IpAddress address_two: node two ip4 address
+    :param int key: tunnel key for link if needed
     :return: tlv mesage
     :rtype: core.api.coreapi.CoreLinkMessage
     """
@@ -81,7 +82,7 @@ def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address
     if address_two:
         mac_two = MacAddress.random()
 
-    return CoreLinkMessage.create(MessageFlags.ADD.value, [
+    values = [
         (LinkTlvs.N1_NUMBER, n1),
         (LinkTlvs.N2_NUMBER, n2),
         (LinkTlvs.DELAY, 0),
@@ -98,7 +99,12 @@ def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address
         (LinkTlvs.INTERFACE2_IP4, address_two),
         (LinkTlvs.INTERFACE2_IP4_MASK, 24),
         (LinkTlvs.INTERFACE2_MAC, mac_two),
-    ])
+    ]
+
+    if key:
+        values.append((LinkTlvs.KEY, key))
+
+    return CoreLinkMessage.create(MessageFlags.ADD.value, values)
 
 
 def command_message(node, command):
@@ -258,6 +264,9 @@ class CoreServerTest(object):
         self.request_handler = None
 
     def setup(self, distributed_address):
+        # validate address
+        assert distributed_address, "distributed server address was not provided"
+
         # create session
         self.session = self.server.create_session(1)
         self.session.master = True

@@ -212,7 +212,6 @@ class MobilityManager(ConfigurableManager):
             try:
                 n = self.session.get_object(nodenum)
             except KeyError:
-                logger.exception("error getting session object, this was ignored before")
                 continue
             if n.model:
                 n.model.update(moved, moved_netifs)
