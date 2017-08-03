@@ -14,8 +14,7 @@ from mock import MagicMock
 
 from conftest import EMANE_SERVICES
 from core.data import ConfigData
-from core.data import EventData
-from core.enumerations import MessageFlags, ConfigTlvs, EventTypes
+from core.enumerations import MessageFlags
 from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.netns import vnodeclient
@@ -361,6 +360,7 @@ class TestCore:
 
         def node_update(_):
             event.set()
+
         core.session.node_handlers.append(node_update)
 
         # instantiate session

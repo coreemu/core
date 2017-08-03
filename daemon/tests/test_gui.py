@@ -1,6 +1,7 @@
 """
 Unit tests for testing with a CORE switch.
 """
+
 import threading
 
 from core.api import coreapi, dataconversion

@@ -196,7 +196,7 @@ class SimpleJailNode(PyCoreNode):
                 ifindex = self.newifindex()
             if ifname is None:
                 ifname = "eth%d" % ifindex
-            sessionid = self.session.shortsessionid()
+            sessionid = self.session.short_session_id()
             name = "n%s_%s_%s" % (self.objid, ifindex, sessionid)
             localname = name
             ifclass = VEth
@@ -306,10 +306,10 @@ class SimpleJailNode(PyCoreNode):
         dirname = dirname.replace("/", ".")
         if file:
             pathname = os.path.join(path, file)
-            sym = os.path.join(self.session.sessiondir, "@.conf", dirname, file)
+            sym = os.path.join(self.session.session_dir, "@.conf", dirname, file)
         else:
             pathname = path
-            sym = os.path.join(self.session.sessiondir, "@.conf", dirname)
+            sym = os.path.join(self.session.session_dir, "@.conf", dirname)
 
         if os.path.islink(pathname):
             if os.readlink(pathname) == sym:

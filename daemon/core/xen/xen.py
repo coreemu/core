@@ -174,7 +174,7 @@ class XenNode(PyCoreNode):
         # LxcNode initialization
         # self.makenodedir()
         if self.nodedir is None:
-            self.nodedir = os.path.join(session.sessiondir, self.name + ".conf")
+            self.nodedir = os.path.join(session.session_dir, self.name + ".conf")
             self.mountdir = self.nodedir + self.getconfigitem('mount_path')
             if not os.path.isdir(self.mountdir):
                 os.makedirs(self.mountdir)
@@ -201,7 +201,7 @@ class XenNode(PyCoreNode):
         self.lock.acquire()
         try:
             if self.up:
-                raise Exception, "already up"
+                raise Exception("already up")
             self.createlogicalvolume()
             self.createpartitions()
             persistdev = self.createfilesystems()
