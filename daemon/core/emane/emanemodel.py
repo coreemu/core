@@ -17,25 +17,26 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the _confmatrix list of
     configurable parameters. Helper functions also live here.
     """
-    _prefix = {'y': 1e-24,  # yocto
-               'z': 1e-21,  # zepto
-               'a': 1e-18,  # atto
-               'f': 1e-15,  # femto
-               'p': 1e-12,  # pico
-               'n': 1e-9,  # nano
-               'u': 1e-6,  # micro
-               'm': 1e-3,  # mili
-               'c': 1e-2,  # centi
-               'd': 1e-1,  # deci
-               'k': 1e3,  # kilo
-               'M': 1e6,  # mega
-               'G': 1e9,  # giga
-               'T': 1e12,  # tera
-               'P': 1e15,  # peta
-               'E': 1e18,  # exa
-               'Z': 1e21,  # zetta
-               'Y': 1e24,  # yotta
-               }
+    _prefix = {
+        "y": 1e-24,  # yocto
+        "z": 1e-21,  # zepto
+        "a": 1e-18,  # atto
+        "f": 1e-15,  # femto
+        "p": 1e-12,  # pico
+        "n": 1e-9,  # nano
+        "u": 1e-6,  # micro
+        "m": 1e-3,  # mili
+        "c": 1e-2,  # centi
+        "d": 1e-1,  # deci
+        "k": 1e3,  # kilo
+        "M": 1e6,  # mega
+        "G": 1e9,  # giga
+        "T": 1e12,  # tera
+        "P": 1e15,  # peta
+        "E": 1e18,  # exa
+        "Z": 1e21,  # zetta
+        "Y": 1e24,  # yotta
+    }
 
     @classmethod
     def configure_emane(cls, session, config_data):
@@ -106,10 +107,10 @@ class EmaneModel(WirelessModel):
         param = doc.createElement("param")
         param.setAttribute("name", "device")
         if ttype == "raw":
-            # raw RJ45 name e.g. 'eth0'
+            # raw RJ45 name e.g. "eth0"
             param.setAttribute("value", ifc.name)
         else:
-            # virtual TAP name e.g. 'n3.0.17'
+            # virtual TAP name e.g. "n3.0.17"
             param.setAttribute("value", ifc.localname)
             if emane.VERSION > emane.EMANE091:
                 param.setAttribute("value", ifc.name)
@@ -120,7 +121,7 @@ class EmaneModel(WirelessModel):
     def basename(self, interface=None):
         """
         Return the string that other names are based on.
-        If a specific config is stored for a node's interface, a unique
+        If a specific config is stored for a node"s interface, a unique
         filename is needed; otherwise the name of the EmaneNode is used.
         """
         emane = self.session.emane
@@ -130,12 +131,12 @@ class EmaneModel(WirelessModel):
             # Adamson change - use getifcconfig() to get proper result
             # if emane.getconfig(nodenum, self._name, None)[1] is not None:
             if emane.getifcconfig(nodenum, self.name, None, interface) is not None:
-                name = interface.localname.replace('.', '_')
+                name = interface.localname.replace(".", "_")
         return "%s%s" % (name, self.name)
 
     def nemxmlname(self, interface=None):
         """
-        Return the string name for the NEM XML file, e.g. 'n3rfpipenem.xml'
+        Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
         """
         append = ""
         if emane.VERSION > emane.EMANE091:
@@ -145,19 +146,19 @@ class EmaneModel(WirelessModel):
 
     def shimxmlname(self, ifc=None):
         """
-        Return the string name for the SHIM XML file, e.g. 'commeffectshim.xml'
+        Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
         """
         return "%sshim.xml" % self.basename(ifc)
 
     def macxmlname(self, ifc=None):
         """
-        Return the string name for the MAC XML file, e.g. 'n3rfpipemac.xml'
+        Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
         """
         return "%smac.xml" % self.basename(ifc)
 
     def phyxmlname(self, ifc=None):
         """
-        Return the string name for the PHY XML file, e.g. 'n3rfpipephy.xml'
+        Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
         """
         return "%sphy.xml" % self.basename(ifc)
 
@@ -194,7 +195,7 @@ class EmaneModel(WirelessModel):
             logger.exception("error in value string to param list")
             return None
 
-        if not hasattr(values, '__iter__'):
+        if not hasattr(values, "__iter__"):
             return None
 
         if len(values) < 2:

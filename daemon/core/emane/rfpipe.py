@@ -18,47 +18,47 @@ class EmaneRfPipeModel(EmaneModel):
     # model name
     name = "emane_rfpipe"
     if emane.VERSION >= emane.EMANE091:
-        xml_path = '/usr/share/emane/xml/models/mac/rfpipe'
+        xml_path = "/usr/share/emane/xml/models/mac/rfpipe"
     else:
         xml_path = "/usr/share/emane/models/rfpipe/xml"
 
     # configuration parameters are
-    #  ( 'name', 'type', 'default', 'possible-value-list', 'caption')
+    #  ( "name", "type", "default", "possible-value-list", "caption")
     # MAC parameters
     _confmatrix_mac_base = [
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, '0',
-         'True,False', 'enable promiscuous mode'),
-        ("datarate", ConfigDataTypes.UINT32.value, '1M',
-         '', 'data rate (bps)'),
-        ("flowcontrolenable", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'enable traffic flow control'),
-        ("flowcontroltokens", ConfigDataTypes.UINT16.value, '10',
-         '', 'number of flow control tokens'),
+        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
+         "True,False", "enable promiscuous mode"),
+        ("datarate", ConfigDataTypes.UINT32.value, "1M",
+         "", "data rate (bps)"),
+        ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "enable traffic flow control"),
+        ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10",
+         "", "number of flow control tokens"),
         ("pcrcurveuri", ConfigDataTypes.STRING.value,
-         '%s/rfpipepcr.xml' % xml_path,
-         '', 'SINR/PCR curve file'),
+         "%s/rfpipepcr.xml" % xml_path,
+         "", "SINR/PCR curve file"),
     ]
     _confmatrix_mac_081 = [
-        ("jitter", ConfigDataTypes.FLOAT.value, '0.0',
-         '', 'transmission jitter (usec)'),
-        ("delay", ConfigDataTypes.FLOAT.value, '0.0',
-         '', 'transmission delay (usec)'),
-        ("transmissioncontrolmap", ConfigDataTypes.STRING.value, '',
-         '', 'tx control map (nem:rate:freq:tx_dBm)'),
-        ("enabletighttiming", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'enable tight timing for pkt delay'),
+        ("jitter", ConfigDataTypes.FLOAT.value, "0.0",
+         "", "transmission jitter (usec)"),
+        ("delay", ConfigDataTypes.FLOAT.value, "0.0",
+         "", "transmission delay (usec)"),
+        ("transmissioncontrolmap", ConfigDataTypes.STRING.value, "",
+         "", "tx control map (nem:rate:freq:tx_dBm)"),
+        ("enabletighttiming", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "enable tight timing for pkt delay"),
     ]
     _confmatrix_mac_091 = [
-        ("jitter", ConfigDataTypes.FLOAT.value, '0.0',
-         '', 'transmission jitter (sec)'),
-        ("delay", ConfigDataTypes.FLOAT.value, '0.0',
-         '', 'transmission delay (sec)'),
-        ('radiometricenable', ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'report radio metrics via R2RI'),
-        ('radiometricreportinterval', ConfigDataTypes.FLOAT.value, '1.0',
-         '', 'R2RI radio metric report interval (sec)'),
-        ('neighbormetricdeletetime', ConfigDataTypes.FLOAT.value, '60.0',
-         '', 'R2RI neighbor table inactivity time (sec)'),
+        ("jitter", ConfigDataTypes.FLOAT.value, "0.0",
+         "", "transmission jitter (sec)"),
+        ("delay", ConfigDataTypes.FLOAT.value, "0.0",
+         "", "transmission delay (sec)"),
+        ("radiometricenable", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "report radio metrics via R2RI"),
+        ("radiometricreportinterval", ConfigDataTypes.FLOAT.value, "1.0",
+         "", "R2RI radio metric report interval (sec)"),
+        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0",
+         "", "R2RI neighbor table inactivity time (sec)"),
     ]
     if emane.VERSION >= emane.EMANE091:
         _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
@@ -111,7 +111,7 @@ class EmaneRfPipeModel(EmaneModel):
         # EMANE 0.7.4 support
         if emane.VERSION == emane.EMANE074:
             # convert datarate from bps to kbps
-            i = names.index('datarate')
+            i = names.index("datarate")
             values = list(values)
             values[i] = self.emane074_fixup(values[i], 1000)
         # append MAC options to macdoc

@@ -24,24 +24,24 @@ class EmaneCommEffectModel(EmaneModel):
     name = "emane_commeffect"
     # CommEffect parameters
     _confmatrix_shim_base = [
-        ("filterfile", ConfigDataTypes.STRING.value, '',
-         '', 'filter file'),
-        ("groupid", ConfigDataTypes.UINT32.value, '0',
-         '', 'NEM Group ID'),
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'enable promiscuous mode'),
-        ("receivebufferperiod", ConfigDataTypes.FLOAT.value, '1.0',
-         '', 'receivebufferperiod'),
+        ("filterfile", ConfigDataTypes.STRING.value, "",
+         "", "filter file"),
+        ("groupid", ConfigDataTypes.UINT32.value, "0",
+         "", "NEM Group ID"),
+        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "enable promiscuous mode"),
+        ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0",
+         "", "receivebufferperiod"),
     ]
     _confmatrix_shim_081 = [
-        ("defaultconnectivity", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'defaultconnectivity'),
-        ("enabletighttimingmode", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'enable tight timing mode'),
+        ("defaultconnectivity", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "defaultconnectivity"),
+        ("enabletighttimingmode", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "enable tight timing mode"),
     ]
     _confmatrix_shim_091 = [
-        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'defaultconnectivity'),
+        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "defaultconnectivity"),
     ]
     if emane.VERSION >= emane.EMANE091:
         _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
@@ -75,7 +75,7 @@ class EmaneCommEffectModel(EmaneModel):
         map(lambda n: shim.appendChild(e.xmlparam(shimdoc, n, self.valueof(n, values))), shimnames)
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
-        if ff.strip() != '':
+        if ff.strip() != "":
             shim.appendChild(e.xmlparam(shimdoc, "filterfile", ff))
         e.xmlwrite(shimdoc, self.shimxmlname(ifc))
 

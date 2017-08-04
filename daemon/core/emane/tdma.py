@@ -18,38 +18,38 @@ class EmaneTdmaModel(EmaneModel):
     # model name
     name = "emane_tdma"
     if emane.VERSION >= emane.EMANE101:
-        xml_path = '/usr/share/emane/xml/models/mac/tdmaeventscheduler'
+        xml_path = "/usr/share/emane/xml/models/mac/tdmaeventscheduler"
     else:
         raise Exception("EMANE TDMA requires EMANE 1.0.1 or greater")
 
     # MAC parameters
     _confmatrix_mac = [
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, '0',
-         'True,False', 'enable promiscuous mode'),
-        ("flowcontrolenable", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'enable traffic flow control'),
-        ("flowcontroltokens", ConfigDataTypes.UINT16.value, '10',
-         '', 'number of flow control tokens'),
-        ("fragmentcheckthreshold", ConfigDataTypes.UINT16.value, '2',
-         '', 'rate in seconds for check if fragment reassembly efforts should be abandoned'),
-        ("fragmenttimeoutthreshold", ConfigDataTypes.UINT16.value, '5',
-         '', 'threshold in seconds to wait for another packet fragment for reassembly'),
-        ('neighbormetricdeletetime', ConfigDataTypes.FLOAT.value, '60.0',
-         '', 'neighbor RF reception timeout for removal from neighbor table (sec)'),
-        ('neighbormetricupdateinterval', ConfigDataTypes.FLOAT.value, '1.0',
-         '', 'neighbor table update interval (sec)'),
-        ("pcrcurveuri", ConfigDataTypes.STRING.value, '%s/tdmabasemodelpcr.xml' % xml_path,
-         '', 'SINR/PCR curve file'),
-        ("queue.aggregationenable", ConfigDataTypes.BOOL.value, '1',
-         'On,Off', 'enable transmit packet aggregation'),
-        ('queue.aggregationslotthreshold', ConfigDataTypes.FLOAT.value, '90.0',
-         '', 'percentage of a slot that must be filled in order to conclude aggregation'),
-        ("queue.depth", ConfigDataTypes.UINT16.value, '256',
-         '', 'size of the per service class downstream packet queues (packets)'),
-        ("queue.fragmentationenable", ConfigDataTypes.BOOL.value, '1',
-         'On,Off', 'enable packet fragmentation (over multiple slots)'),
-        ("queue.strictdequeueenable", ConfigDataTypes.BOOL.value, '0',
-         'On,Off', 'enable strict dequeueing to specified queues  only'),
+        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
+         "True,False", "enable promiscuous mode"),
+        ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "enable traffic flow control"),
+        ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10",
+         "", "number of flow control tokens"),
+        ("fragmentcheckthreshold", ConfigDataTypes.UINT16.value, "2",
+         "", "rate in seconds for check if fragment reassembly efforts should be abandoned"),
+        ("fragmenttimeoutthreshold", ConfigDataTypes.UINT16.value, "5",
+         "", "threshold in seconds to wait for another packet fragment for reassembly"),
+        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0",
+         "", "neighbor RF reception timeout for removal from neighbor table (sec)"),
+        ("neighbormetricupdateinterval", ConfigDataTypes.FLOAT.value, "1.0",
+         "", "neighbor table update interval (sec)"),
+        ("pcrcurveuri", ConfigDataTypes.STRING.value, "%s/tdmabasemodelpcr.xml" % xml_path,
+         "", "SINR/PCR curve file"),
+        ("queue.aggregationenable", ConfigDataTypes.BOOL.value, "1",
+         "On,Off", "enable transmit packet aggregation"),
+        ("queue.aggregationslotthreshold", ConfigDataTypes.FLOAT.value, "90.0",
+         "", "percentage of a slot that must be filled in order to conclude aggregation"),
+        ("queue.depth", ConfigDataTypes.UINT16.value, "256",
+         "", "size of the per service class downstream packet queues (packets)"),
+        ("queue.fragmentationenable", ConfigDataTypes.BOOL.value, "1",
+         "On,Off", "enable packet fragmentation (over multiple slots)"),
+        ("queue.strictdequeueenable", ConfigDataTypes.BOOL.value, "0",
+         "On,Off", "enable strict dequeueing to specified queues  only"),
     ]
 
     # PHY parameters from Universal PHY

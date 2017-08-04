@@ -12,8 +12,8 @@ class EmaneBypassModel(EmaneModel):
 
     name = "emane_bypass"
     config_matrix = [
-        ("none", ConfigDataTypes.BOOL.value, '0',
-         'True,False', 'There are no parameters for the bypass model.'),
+        ("none", ConfigDataTypes.BOOL.value, "0",
+         "True,False", "There are no parameters for the bypass model."),
     ]
 
     # value groupings
