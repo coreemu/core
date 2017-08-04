@@ -45,7 +45,7 @@ class MacAddress(object):
         """
         if not self.addr:
             return IpAddress.from_string("::")
-        tmp = struct.unpack("!Q", '\x00\x00' + self.addr)[0]
+        tmp = struct.unpack("!Q", "\x00\x00" + self.addr)[0]
         nic = long(tmp) & 0x000000FFFFFFL
         oui = long(tmp) & 0xFFFFFF000000L
         # toggle U/L bit
@@ -203,7 +203,7 @@ class IpAddress(object):
         :rtype: int
         """
         bin = socket.inet_pton(AF_INET, s)
-        return struct.unpack('!I', bin)[0]
+        return struct.unpack("!I", bin)[0]
 
 
 class IpPrefix(object):
@@ -221,14 +221,14 @@ class IpPrefix(object):
         # prefixstr format: address/prefixlen
         tmp = prefixstr.split("/")
         if len(tmp) > 2:
-            raise ValueError("invalid prefix: '%s'" % prefixstr)
+            raise ValueError("invalid prefix: %s" % prefixstr)
         self.af = af
         if self.af == AF_INET:
             self.addrlen = 32
         elif self.af == AF_INET6:
             self.addrlen = 128
         else:
-            raise ValueError("invalid address family: '%s'" % self.af)
+            raise ValueError("invalid address family: %s" % self.af)
         if len(tmp) == 2:
             self.prefixlen = int(tmp[1])
         else:

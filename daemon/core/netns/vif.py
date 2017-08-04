@@ -101,7 +101,7 @@ class TunTap(PyCoreNetIf):
         # TODO: more sophisticated TAP creation here
         #   Debian does not support -p (tap) option, RedHat does.
         # For now, this is disabled to allow the TAP to be created by another
-        # system (e.g. EMANE's emanetransportd)
+        # system (e.g. EMANE"s emanetransportd)
         # check_call(["tunctl", "-t", self.name])
         # self.install()
         self.up = True
@@ -133,19 +133,19 @@ class TunTap(PyCoreNetIf):
             r = func()
             if r == 0:
                 return
-            msg = 'attempt %s failed with nonzero exit status %s' % (i, r)
+            msg = "attempt %s failed with nonzero exit status %s" % (i, r)
             if i < attempts + 1:
-                msg += ', retrying...'
+                msg += ", retrying..."
                 logger.info(msg)
                 time.sleep(delay)
                 delay = delay + delay
                 if delay > maxretrydelay:
                     delay = maxretrydelay
             else:
-                msg += ', giving up'
+                msg += ", giving up"
                 logger.info(msg)
 
-        raise RuntimeError('command failed after %s attempts' % attempts)
+        raise RuntimeError("command failed after %s attempts" % attempts)
 
     def waitfordevicelocal(self):
         """
@@ -157,7 +157,7 @@ class TunTap(PyCoreNetIf):
         """
 
         def localdevexists():
-            cmd = (constants.IP_BIN, 'link', 'show', self.localname)
+            cmd = (constants.IP_BIN, "link", "show", self.localname)
             return utils.mutecall(cmd)
 
         self.waitfor(localdevexists)
@@ -170,7 +170,7 @@ class TunTap(PyCoreNetIf):
         """
 
         def nodedevexists():
-            cmd = (constants.IP_BIN, 'link', 'show', self.name)
+            cmd = (constants.IP_BIN, "link", "show", self.name)
             return self.node.cmd(cmd)
 
         count = 0
@@ -183,7 +183,7 @@ class TunTap(PyCoreNetIf):
                 # waiting if EMANE is still running
                 # TODO: remove emane code
                 if count < 5 and nodeutils.is_node(self.net, NodeTypes.EMANE) and \
-                    self.node.session.emane.emanerunning(self.node):
+                        self.node.session.emane.emanerunning(self.node):
                     count += 1
                 else:
                     raise e

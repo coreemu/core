@@ -194,7 +194,7 @@ class EbtablesQueue(object):
 
     def ebchange(self, wlan):
         """
-        Flag a change to the given WLAN's _linked dict, so the ebtables
+        Flag a change to the given WLAN"s _linked dict, so the ebtables
         chain will be rebuilt at the next interval.
 
         :return: nothing
@@ -300,7 +300,7 @@ class LxBrNet(PyCoreNet):
             # turn off multicast snooping so mcast forwarding occurs w/o IGMP joins
             snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % self.brname
             if os.path.exists(snoop):
-                open(snoop, "w").write('0')
+                open(snoop, "w").write("0")
         except subprocess.CalledProcessError:
             logger.exception("Error setting bridge parameters")
 
@@ -443,7 +443,7 @@ class LxBrNet(PyCoreNet):
         tc = [constants.TC_BIN, "qdisc", "replace", "dev", devname]
         parent = ["root"]
         changed = False
-        if netif.setparam('bw', bw):
+        if netif.setparam("bw", bw):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
             if bw is not None:
                 burst = max(2 * netif.mtu, bw / 1000)
@@ -455,28 +455,28 @@ class LxBrNet(PyCoreNet):
                 if self.up:
                     logger.info("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
                     subprocess.check_call(tc + parent + ["handle", "1:"] + tbf)
-                netif.setparam('has_tbf', True)
+                netif.setparam("has_tbf", True)
                 changed = True
-            elif netif.getparam('has_tbf') and bw <= 0:
+            elif netif.getparam("has_tbf") and bw <= 0:
                 tcd = [] + tc
                 tcd[2] = "delete"
                 if self.up:
                     subprocess.check_call(tcd + parent)
-                netif.setparam('has_tbf', False)
+                netif.setparam("has_tbf", False)
                 # removing the parent removes the child
-                netif.setparam('has_netem', False)
+                netif.setparam("has_netem", False)
                 changed = True
-        if netif.getparam('has_tbf'):
+        if netif.getparam("has_tbf"):
             parent = ["parent", "1:1"]
         netem = ["netem"]
-        changed = max(changed, netif.setparam('delay', delay))
+        changed = max(changed, netif.setparam("delay", delay))
         if loss is not None:
             loss = float(loss)
-        changed = max(changed, netif.setparam('loss', loss))
+        changed = max(changed, netif.setparam("loss", loss))
         if duplicate is not None:
             duplicate = float(duplicate)
-        changed = max(changed, netif.setparam('duplicate', duplicate))
-        changed = max(changed, netif.setparam('jitter', jitter))
+        changed = max(changed, netif.setparam("duplicate", duplicate))
+        changed = max(changed, netif.setparam("jitter", jitter))
         if not changed:
             return
         # jitter and delay use the same delay statement
@@ -494,18 +494,18 @@ class LxBrNet(PyCoreNet):
             netem += ["duplicate", "%s%%" % min(duplicate, 100)]
         if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
             # possibly remove netem if it exists and parent queue wasn't removed
-            if not netif.getparam('has_netem'):
+            if not netif.getparam("has_netem"):
                 return
             tc[2] = "delete"
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
                 subprocess.check_call(tc + parent + ["handle", "10:"])
-            netif.setparam('has_netem', False)
+            netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
                 subprocess.check_call(tc + parent + ["handle", "10:"] + netem)
-            netif.setparam('has_netem', True)
+            netif.setparam("has_netem", True)
 
     def linknet(self, net):
         """
@@ -650,10 +650,10 @@ class GreTapBridge(LxBrNet):
         """
         if self.gretap:
             raise ValueError("gretap already exists for %s" % self.name)
-        remoteip = addrlist[0].split('/')[0]
+        remoteip = addrlist[0].split("/")[0]
         localip = None
         if len(addrlist) > 1:
-            localip = addrlist[1].split('/')[0]
+            localip = addrlist[1].split("/")[0]
         self.gretap = GreTap(session=self.session, remoteip=remoteip, objid=None, name=None,
                              localip=localip, ttl=self.ttl, key=self.grekey)
         self.attach(self.gretap)

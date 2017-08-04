@@ -81,8 +81,8 @@ class SimpleLxcNode(PyCoreNode):
         if self.nodedir:
             vnoded += ["-C", self.nodedir]
         env = self.session.get_environment(state=False)
-        env['NODE_NUMBER'] = str(self.objid)
-        env['NODE_NAME'] = str(self.name)
+        env["NODE_NUMBER"] = str(self.objid)
+        env["NODE_NAME"] = str(self.name)
 
         try:
             tmp = subprocess.Popen(vnoded, stdout=subprocess.PIPE, env=env)
@@ -245,7 +245,7 @@ class SimpleLxcNode(PyCoreNode):
         source = os.path.abspath(source)
         logger.info("mounting %s at %s" % (source, target))
         try:
-            shcmd = "mkdir -p '%s' && %s -n --bind '%s' '%s'" % (
+            shcmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (
                 target, constants.MOUNT_BIN, source, target)
             self.shcmd(shcmd)
             self._mounts.append((source, target))
@@ -259,7 +259,7 @@ class SimpleLxcNode(PyCoreNode):
         :param str target: target directory to unmount
         :return: nothing
         """
-        logger.info("unmounting '%s'" % target)
+        logger.info("unmounting: %s", target)
         try:
             self.cmd([constants.UMOUNT_BIN, "-n", "-l", target])
         except IOError:
@@ -295,16 +295,16 @@ class SimpleLxcNode(PyCoreNode):
             sessionid = self.session.short_session_id()
 
             try:
-                suffix = '%x.%s.%s' % (self.objid, ifindex, sessionid)
+                suffix = "%x.%s.%s" % (self.objid, ifindex, sessionid)
             except TypeError:
-                suffix = '%s.%s.%s' % (self.objid, ifindex, sessionid)
+                suffix = "%s.%s.%s" % (self.objid, ifindex, sessionid)
 
-            localname = 'veth' + suffix
+            localname = "veth" + suffix
             if len(localname) >= 16:
-                raise ValueError("interface local name '%s' too long" % localname)
-            name = localname + 'p'
+                raise ValueError("interface local name (%s) too long" % localname)
+            name = localname + "p"
             if len(name) >= 16:
-                raise ValueError, "interface name '%s' too long" % name
+                raise ValueError("interface name (%s) too long" % name)
             veth = VEth(node=self, name=name, localname=localname, mtu=1500, net=net, start=self.up)
 
             if self.up:
@@ -389,7 +389,7 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         if self.up:
-            if ":" in str(addr): # check if addr is ipv6
+            if ":" in str(addr):  # check if addr is ipv6
                 self.cmd([constants.IP_BIN, "addr", "add", str(addr),
                           "dev", self.ifname(ifindex)])
             else:
@@ -519,7 +519,7 @@ class SimpleLxcNode(PyCoreNode):
         :param str filename: file name to add
         :return: nothing
         """
-        shcmd = "mkdir -p $(dirname '%s') && mv '%s' '%s' && sync" % (filename, srcname, filename)
+        shcmd = 'mkdir -p $(dirname "%s") && mv "%s" "%s" && sync' % (filename, srcname, filename)
         self.shcmd(shcmd)
 
     def getaddr(self, ifname, rescan=False):
@@ -626,7 +626,7 @@ class LxcNode(SimpleLxcNode):
         """
         if path[0] != "/":
             raise ValueError("path not fully qualified: %s" % path)
-        hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
+        hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip("/").replace("/", "."))
 
         try:
             os.mkdir(hostpath)
@@ -637,7 +637,7 @@ class LxcNode(SimpleLxcNode):
 
     def hostfilename(self, filename):
         """
-        Return the name of a node's file on the host filesystem.
+        Return the name of a node"s file on the host filesystem.
 
         :param str filename: host file name
         :return: path to file
@@ -653,7 +653,7 @@ class LxcNode(SimpleLxcNode):
 
     def opennodefile(self, filename, mode="w"):
         """
-        Open a node file, within it's directory.
+        Open a node file, within it"s directory.
 
         :param str filename: file name to open
         :param str mode: mode to open file in
@@ -679,7 +679,7 @@ class LxcNode(SimpleLxcNode):
         f.write(contents)
         os.chmod(f.name, mode)
         f.close()
-        logger.info("created nodefile: '%s'; mode: 0%o" % (f.name, mode))
+        logger.info("created nodefile: %s; mode: 0%o", f.name, mode)
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -695,4 +695,4 @@ class LxcNode(SimpleLxcNode):
         shutil.copy2(srcfilename, hostfilename)
         if mode is not None:
             os.chmod(hostfilename, mode)
-        logger.info("copied nodefile: '%s'; mode: %s" % (hostfilename, mode))
+        logger.info("copied nodefile: %s; mode: %s", hostfilename, mode)

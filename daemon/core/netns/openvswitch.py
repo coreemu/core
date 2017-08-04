@@ -91,7 +91,7 @@ class OvsNet(PyCoreNet):
         try:
             # turn off spanning tree protocol and forwarding delay
             # TODO: appears stp and rstp are off by default, make sure this always holds true
-            # TODO: apears ovs only supports rstp forward delay and again it's off by default
+            # TODO: apears ovs only supports rstp forward delay and again it"s off by default
             subprocess.check_call([constants.IP_BIN, "link", "set", self.bridge_name, "up"])
 
             # create a new ebtables chain for this bridge
@@ -428,7 +428,7 @@ class OvsCtrlNet(OvsNet):
                                  self.serverintf, self.bridge_name)
 
         if self.updown_script:
-            logger.info("interface %s updown script '%s shutdown' called", self.bridge_name, self.updown_script)
+            logger.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
             subprocess.check_call([self.updown_script, self.bridge_name, "shutdown"])
 
         OvsNet.shutdown(self)
@@ -478,7 +478,7 @@ class OvsPtpNet(OvsNet):
         interface1_ip6 = None
         interface1_ip6_mask = None
         for address in if1.addrlist:
-            ip, sep, mask = address.partition('/')
+            ip, sep, mask = address.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
@@ -496,7 +496,7 @@ class OvsPtpNet(OvsNet):
         interface2_ip6 = None
         interface2_ip6_mask = None
         for address in if2.addrlist:
-            ip, sep, mask = address.partition('/')
+            ip, sep, mask = address.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
@@ -510,7 +510,7 @@ class OvsPtpNet(OvsNet):
                 interface2_ip6_mask = mask
 
         # TODO: not currently used
-        # loss=netif.getparam('loss')
+        # loss=netif.getparam("loss")
         link_data = LinkData(
             message_type=flags,
             node1_id=if1.node.objid,
@@ -723,11 +723,11 @@ class OvsGreTapBridge(OvsNet):
         if self.gretap:
             raise ValueError("gretap already exists for %s" % self.name)
 
-        remoteip = addresses[0].split('/')[0]
+        remoteip = addresses[0].split("/")[0]
         localip = None
 
         if len(addresses) > 1:
-            localip = addresses[1].split('/')[0]
+            localip = addresses[1].split("/")[0]
 
         self.gretap = GreTap(session=self.session, remoteip=remoteip, objid=None, name=None,
                              localip=localip, ttl=self.ttl, key=self.grekey)

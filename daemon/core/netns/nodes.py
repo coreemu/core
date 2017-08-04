@@ -79,16 +79,15 @@ class CtrlNet(LxBrNet):
             addr = self.prefix.addr(self.hostid)
         else:
             addr = self.prefix.max_addr()
-        msg = "Added control network bridge: %s %s" % \
-              (self.brname, self.prefix)
+        msg = "Added control network bridge: %s %s" % (self.brname, self.prefix)
         addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
         if self.assign_address:
             self.addrconfig(addrlist=addrlist)
             msg += " address %s" % addr
         logger.info(msg)
         if self.updown_script is not None:
-            logger.info("interface %s updown script '%s startup' called" % \
-                        (self.brname, self.updown_script))
+            logger.info("interface %s updown script (%s startup) called",
+                        self.brname, self.updown_script)
             subprocess.check_call([self.updown_script, self.brname, "startup"])
         if self.serverintf is not None:
             try:
@@ -106,16 +105,16 @@ class CtrlNet(LxBrNet):
         :return: True if an old bridge was detected, False otherwise
         :rtype: bool
         """
-        retstat, retstr = utils.cmdresult([constants.BRCTL_BIN, 'show'])
+        retstat, retstr = utils.cmdresult([constants.BRCTL_BIN, "show"])
         if retstat != 0:
             logger.error("Unable to retrieve list of installed bridges")
-        lines = retstr.split('\n')
+        lines = retstr.split("\n")
         for line in lines[1:]:
-            cols = line.split('\t')
+            cols = line.split("\t")
             oldbr = cols[0]
-            flds = cols[0].split('.')
+            flds = cols[0].split(".")
             if len(flds) == 3:
-                if flds[0] == 'b' and flds[1] == self.objid:
+                if flds[0] == "b" and flds[1] == self.objid:
                     logger.error(
                         "Error: An active control net bridge (%s) found. " \
                         "An older session might still be running. " \
@@ -127,7 +126,7 @@ class CtrlNet(LxBrNet):
                     # Do this if we want to delete the old bridge
                     logger.warn("Warning: Old %s bridge found: %s" % (self.objid, oldbr))
                     try:
-                        check_call([BRCTL_BIN, 'delbr', oldbr])
+                        check_call([BRCTL_BIN, "delbr", oldbr])
                     except subprocess.CalledProcessError as e:
                         logger.exception("Error deleting old bridge %s", oldbr, e)
                     logger.info("Deleted %s", oldbr)
@@ -148,7 +147,7 @@ class CtrlNet(LxBrNet):
                                  self.serverintf, self.brname)
 
         if self.updown_script is not None:
-            logger.info("interface %s updown script '%s shutdown' called" % (self.brname, self.updown_script))
+            logger.info("interface %s updown script (%s shutdown) called" % (self.brname, self.updown_script))
             subprocess.check_call([self.updown_script, self.brname, "shutdown"])
         LxBrNet.shutdown(self)
 
@@ -221,7 +220,7 @@ class PtpNet(LxBrNet):
         interface1_ip6 = None
         interface1_ip6_mask = None
         for address in if1.addrlist:
-            ip, sep, mask = address.partition('/')
+            ip, sep, mask = address.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
@@ -239,7 +238,7 @@ class PtpNet(LxBrNet):
         interface2_ip6 = None
         interface2_ip6_mask = None
         for address in if2.addrlist:
-            ip, sep, mask = address.partition('/')
+            ip, sep, mask = address.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
@@ -253,7 +252,7 @@ class PtpNet(LxBrNet):
                 interface2_ip6_mask = mask
 
         # TODO: not currently used
-        # loss=netif.getparam('loss')
+        # loss=netif.getparam("loss")
         link_data = LinkData(
             message_type=flags,
             node1_id=if1.node.objid,
@@ -643,12 +642,12 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
             return
         lines = tmp.stdout.read()
         tmp.stdout.close()
-        for l in lines.split('\n'):
+        for l in lines.split("\n"):
             items = l.split()
             if len(items) < 2:
                 continue
             if items[1] == "%s:" % self.localname:
-                flags = items[2][1:-1].split(',')
+                flags = items[2][1:-1].split(",")
                 if "UP" in flags:
                     self.old_up = True
             elif items[0] == "inet":
