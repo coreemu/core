@@ -7,13 +7,11 @@ import subprocess
 import threading
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNode
-from core.misc import log
 from core.misc import utils
 from core.netns.vnet import GreTap
 from core.netns.vnet import LxBrNet
-
-logger = log.get_logger(__name__)
 
 
 class PhysicalNode(PyCoreNode):

@@ -16,14 +16,12 @@ import subprocess
 import threading
 
 from core import constants
+from core import logger
 from core.bsd.netgraph import createngnode
 from core.bsd.netgraph import destroyngnode
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
-from core.misc import log
 from core.misc import utils
-
-logger = log.get_logger(__name__)
 
 utils.check_executables([constants.IFCONFIG_BIN, constants.VIMAGE_BIN])
 

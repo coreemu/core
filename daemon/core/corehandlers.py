@@ -12,6 +12,7 @@ import threading
 import time
 
 from core import coreobj
+from core import logger
 from core.api import coreapi
 from core.coreserver import CoreServer
 from core.data import ConfigData
@@ -31,15 +32,12 @@ from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.enumerations import SessionTlvs
-from core.misc import log
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
 from core.netns import nodes
 from core.xml.xmlsession import open_session_xml
 from core.xml.xmlsession import save_session_xml
-
-logger = log.get_logger(__name__)
 
 
 class CoreRequestHandler(SocketServer.BaseRequestHandler):

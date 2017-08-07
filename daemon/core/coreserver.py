@@ -8,13 +8,11 @@ import os
 import threading
 import time
 
+from core import logger
 from core.api import coreapi
 from core.enumerations import EventTypes
 from core.enumerations import SessionTlvs
-from core.misc import log
 from core.session import Session
-
-logger = log.get_logger(__name__)
 
 
 class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):

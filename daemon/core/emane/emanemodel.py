@@ -3,12 +3,10 @@ Defines Emane Models used within CORE.
 """
 
 from core import emane
-from core.misc import log
+from core import logger
 from core.misc import utils
 from core.mobility import WirelessModel
 from core.xml import xmlutils
-
-logger = log.get_logger(__name__)
 
 
 class EmaneModel(WirelessModel):

@@ -9,6 +9,7 @@ import subprocess
 import threading
 import time
 
+from core import logger
 from core.conf import Configurable
 from core.conf import ConfigurableManager
 from core.coreobj import PyCoreNode
@@ -20,10 +21,7 @@ from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.misc.ipaddress import IpAddress
-
-logger = log.get_logger(__name__)
 
 
 class MobilityManager(ConfigurableManager):

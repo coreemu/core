@@ -9,6 +9,7 @@ from xml.dom.minidom import parseString
 
 from core import constants
 from core import emane
+from core import logger
 from core.api import coreapi
 from core.conf import ConfigurableManager
 from core.emane.bypass import EmaneBypassModel
@@ -23,13 +24,10 @@ from core.enumerations import ConfigTlvs
 from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.misc import nodeutils
 from core.misc import utils
 from core.misc.ipaddress import MacAddress
 from core.xml import xmlutils
-
-logger = log.get_logger(__name__)
 
 # EMANE 0.7.4/0.8.1
 try:

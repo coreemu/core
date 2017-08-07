@@ -6,9 +6,6 @@ from core import emane
 from core.emane.emanemodel import EmaneModel
 from core.emane.universal import EmaneUniversalModel
 from core.enumerations import ConfigDataTypes
-from core.misc import log
-
-logger = log.get_logger(__name__)
 
 
 class EmaneRfPipeModel(EmaneModel):

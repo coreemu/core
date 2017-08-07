@@ -4,9 +4,7 @@ Serves as a global point for storing and retrieving node types needed during sim
 
 import pprint
 
-from core.misc import log
-
-logger = log.get_logger(__name__)
+from core import logger
 
 _NODE_MAP = None
 

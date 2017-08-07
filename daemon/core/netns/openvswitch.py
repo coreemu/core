@@ -9,20 +9,18 @@ from socket import AF_INET
 from socket import AF_INET6
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNet
 from core.data import LinkData
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.misc import ipaddress
-from core.misc import log
 from core.misc import utils
 from core.netns.vif import GreTap
 from core.netns.vif import VEth
 from core.netns.vnet import EbtablesQueue
 from core.netns.vnet import GreTapBridge
-
-logger = log.get_logger(__name__)
 
 # a global object because all WLANs share the same queue
 # cannot have multiple threads invoking the ebtables commnd

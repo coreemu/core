@@ -4,12 +4,10 @@ Common support for configurable CORE objects.
 
 import string
 
+from core import logger
 from core.data import ConfigData
 from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
-from core.misc import log
-
-logger = log.get_logger(__name__)
 
 
 class ConfigurableManager(object):

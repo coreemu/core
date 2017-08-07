@@ -15,6 +15,7 @@ import socket
 import subprocess
 
 from core import constants
+from core import logger
 from core.api import coreapi
 from core.bsd.netgraph import connectngnodes
 from core.bsd.netgraph import ngloadkernelmodule
@@ -26,10 +27,7 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.misc import ipaddress
-from core.misc import log
 from core.misc import utils
-
-logger = log.get_logger(__name__)
 
 utils.check_executables([constants.IFCONFIG_BIN])
 

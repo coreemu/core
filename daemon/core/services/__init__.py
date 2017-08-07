@@ -6,10 +6,7 @@ __all__ is automatically loaded by the main core module.
 """
 import os
 
-from core.misc import log
 from core.service import ServiceManager
-
-logger = log.get_logger(__name__)
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 

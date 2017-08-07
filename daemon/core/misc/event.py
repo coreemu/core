@@ -6,9 +6,7 @@ import heapq
 import threading
 import time
 
-from core.misc import log
-
-logger = log.get_logger(__name__)
+from core import logger
 
 
 class Timer(threading.Thread):

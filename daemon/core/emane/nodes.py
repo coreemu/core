@@ -7,13 +7,11 @@ share the same MAC+PHY model.
 from os import path
 
 from core import emane
+from core import logger
 from core.coreobj import PyCoreNet
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
-from core.misc import log
-
-logger = log.get_logger(__name__)
 
 try:
     from emanesh.events import LocationEvent

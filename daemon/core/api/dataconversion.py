@@ -2,12 +2,10 @@
 Converts CORE data objects into legacy API messages.
 """
 
+from core import logger
 from core.api import coreapi
 from core.enumerations import NodeTlvs
-from core.misc import log
 from core.misc import structutils
-
-logger = log.get_logger(__name__)
 
 
 def convert_node(node_data):

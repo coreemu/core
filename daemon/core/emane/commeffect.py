@@ -3,11 +3,9 @@ commeffect.py: EMANE CommEffect model for CORE
 """
 
 from core import emane
+from core import logger
 from core.emane.emanemodel import EmaneModel
 from core.enumerations import ConfigDataTypes
-from core.misc import log
-
-logger = log.get_logger(__name__)
 
 try:
     import emaneeventservice

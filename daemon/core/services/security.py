@@ -4,11 +4,9 @@ firewall)
 """
 
 from core import constants
-from core.misc import log
+from core import logger
 from core.service import CoreService
 from core.service import ServiceManager
-
-logger = log.get_logger(__name__)
 
 
 class VPNClient(CoreService):

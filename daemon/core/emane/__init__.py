@@ -1,9 +1,7 @@
 import subprocess
 
-from core.misc import log
+from core import logger
 from core.misc import utils
-
-logger = log.get_logger(__name__)
 
 EMANEUNK = 0
 EMANE074 = 7

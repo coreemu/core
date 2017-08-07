@@ -25,7 +25,8 @@ setup(name="core-python",
           "core.xml",
       ],
       install_requires=[
-        "enum34"
+          "enum34"
+          "logzero"
       ],
       setup_requires=[
           "pytest-runner"

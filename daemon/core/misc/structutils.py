@@ -2,9 +2,7 @@
 Utilities for working with python struct data.
 """
 
-from core.misc import log
-
-logger = log.get_logger(__name__)
+from core import logger
 
 
 def pack_values(clazz, packers):

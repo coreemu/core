@@ -17,6 +17,7 @@ import time
 import pwd
 
 from core import constants
+from core import logger
 from core.api import coreapi
 from core.broker import CoreBroker
 from core.conf import Configurable
@@ -36,7 +37,6 @@ from core.enumerations import MessageTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.location import CoreLocation
-from core.misc import log
 from core.misc import nodeutils
 from core.misc import utils
 from core.misc.event import EventLoop
@@ -49,8 +49,6 @@ from core.sdt import Sdt
 from core.service import CoreServices
 from core.xen.xenconfig import XenConfigManager
 from core.xml.xmlsession import save_session_xml
-
-logger = log.get_logger(__name__)
 
 
 class SessionManager(object):

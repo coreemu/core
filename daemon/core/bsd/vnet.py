@@ -11,14 +11,12 @@ vnet.py: NetgraphNet and NetgraphPipeNet classes that implement virtual networks
 using the FreeBSD Netgraph subsystem.
 """
 
+from core import logger
 from core.bsd.netgraph import connectngnodes
 from core.bsd.netgraph import createngnode
 from core.bsd.netgraph import destroyngnode
 from core.bsd.netgraph import ngmessage
 from core.coreobj import PyCoreNet
-from core.misc import log
-
-logger = log.get_logger(__name__)
 
 
 class NetgraphNet(PyCoreNet):

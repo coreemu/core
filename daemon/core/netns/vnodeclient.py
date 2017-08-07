@@ -10,9 +10,7 @@ import stat
 import subprocess
 
 from core import constants
-from core.misc import log
-
-logger = log.get_logger(__name__)
+from core import logger
 
 USE_VCMD_MODULE = True
 

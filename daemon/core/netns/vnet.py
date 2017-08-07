@@ -9,13 +9,11 @@ import threading
 import time
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNet
-from core.misc import log
 from core.misc import utils
 from core.netns.vif import GreTap
 from core.netns.vif import VEth
-
-logger = log.get_logger(__name__)
 
 utils.check_executables([
     constants.BRCTL_BIN,

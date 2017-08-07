@@ -10,9 +10,7 @@ import threading
 from socket import AF_INET
 from socket import AF_INET6
 
-from core.api import coreapi
 from core.data import NodeData, LinkData
-from core.enumerations import LinkTlvs
 from core.enumerations import LinkTypes
 from core.misc import ipaddress
 

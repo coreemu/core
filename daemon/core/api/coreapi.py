@@ -10,6 +10,7 @@ import struct
 
 from enum import Enum
 
+from core import logger
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
@@ -26,8 +27,6 @@ from core.enumerations import SessionTlvs
 from core.misc import log, structutils
 from core.misc.ipaddress import IpAddress
 from core.misc.ipaddress import MacAddress
-
-logger = log.get_logger(__name__)
 
 
 class CoreTlvData(object):

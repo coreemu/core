@@ -5,17 +5,15 @@ from xml.dom.minidom import Document
 import pwd
 
 from core import coreobj
+from core import logger
 from core.enumerations import EventTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.misc import ipaddress
-from core.misc import log
 from core.misc import nodeutils
 from core.netns import nodes
 from core.xml import xmlutils
 from core.xml.xmldeployment import CoreDeploymentWriter
-
-logger = log.get_logger(__name__)
 
 
 class Alias:

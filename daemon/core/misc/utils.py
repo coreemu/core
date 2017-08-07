@@ -8,9 +8,7 @@ import subprocess
 import fcntl
 import resource
 
-from core.misc import log
-
-logger = log.get_logger(__name__)
+from core import logger
 
 
 def closeonexec(fd):

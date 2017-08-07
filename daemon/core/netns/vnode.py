@@ -11,17 +11,15 @@ import subprocess
 import threading
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
 from core.enumerations import NodeTypes
-from core.misc import log
 from core.misc import nodeutils
 from core.misc import utils
 from core.netns import vnodeclient
 from core.netns.vif import TunTap
 from core.netns.vif import VEth
-
-logger = log.get_logger(__name__)
 
 utils.check_executables([constants.IP_BIN])
 

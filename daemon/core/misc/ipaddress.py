@@ -8,9 +8,7 @@ import struct
 from socket import AF_INET
 from socket import AF_INET6
 
-from core.misc import log
-
-logger = log.get_logger(__name__)
+from core import logger
 
 
 class MacAddress(object):

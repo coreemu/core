@@ -15,6 +15,7 @@ import sys
 import time
 from itertools import repeat
 
+from core import logger
 from core.conf import Configurable
 from core.conf import ConfigurableManager
 from core.data import ConfigData
@@ -25,10 +26,7 @@ from core.enumerations import ConfigFlags
 from core.enumerations import EventTypes
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.misc import utils
-
-logger = log.get_logger(__name__)
 
 
 def _valid_module(path, file_name):
@@ -120,27 +118,27 @@ class ServiceManager(object):
         :return: list of core services
         :rtype: list
         """
+        # validate path exists for importing
         logger.info("getting custom services from: %s", path)
         parent_path = os.path.dirname(path)
         if parent_path not in sys.path:
             logger.info("adding parent path to allow imports: %s", parent_path)
             sys.path.append(parent_path)
+
+        # retrieve potential service modules, and filter out invalid modules
         base_module = os.path.basename(path)
         module_names = os.listdir(path)
         module_names = filter(lambda x: _valid_module(path, x), module_names)
         module_names = map(lambda x: x[:-3], module_names)
 
-        # custom_services = []
+        # import and add all service modules in the path
         for module_name in module_names:
             import_statement = "%s.%s" % (base_module, module_name)
             logger.info("importing custom service module: %s", import_statement)
             module = importlib.import_module(import_statement)
             members = inspect.getmembers(module, lambda x: _is_service(module, x))
             for member in members:
-                # custom_services.append(member[1])
                 cls.add(member[1])
-
-                # return custom_services
 
 
 class CoreServices(ConfigurableManager):

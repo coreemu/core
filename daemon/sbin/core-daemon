@@ -17,7 +17,6 @@ message handlers are defined and some support for sending messages.
 import ConfigParser
 import atexit
 import importlib
-import logging
 import optparse
 import os
 import signal
@@ -30,18 +29,16 @@ from core import constants
 from core import corehandlers
 from core import coreserver
 from core import enumerations
+from core import logger
 from core import services
 from core.api import coreapi
 from core.corehandlers import CoreDatagramRequestHandler
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.misc import nodemaps
 from core.misc import nodeutils
 from core.misc.utils import closeonexec
 from core.misc.utils import daemonize
-
-logger = log.get_logger(__name__)
 
 DEFAULT_MAXFD = 1024
 
@@ -337,8 +334,6 @@ def main():
 
 
 if __name__ == "__main__":
-    log.setup(level=logging.INFO)
-
     # configure nodes to use
     node_map = nodemaps.CLASSIC_NODES
     if len(sys.argv) == 2 and sys.argv[1] == "ovs":

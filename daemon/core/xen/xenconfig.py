@@ -17,6 +17,7 @@ import os
 import string
 
 from core import constants
+from core import logger
 from core.api import coreapi
 from core.conf import Configurable
 from core.conf import ConfigurableManager
@@ -24,9 +25,6 @@ from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
 from core.enumerations import RegisterTlvs
-from core.misc import log
-
-logger = log.get_logger(__name__)
 
 
 class XenConfigManager(ConfigurableManager):

@@ -14,15 +14,13 @@ import threading
 import crypt
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
 from core.enumerations import NodeTypes
-from core.misc import log
 from core.misc import nodeutils
 from core.misc import utils
 from core.netns.vnode import LxcNode
-
-logger = log.get_logger(__name__)
 
 try:
     import parted

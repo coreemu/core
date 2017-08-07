@@ -6,13 +6,11 @@ import subprocess
 import time
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNetIf
 from core.enumerations import NodeTypes
-from core.misc import log
 from core.misc import nodeutils
 from core.misc import utils
-
-logger = log.get_logger(__name__)
 
 utils.check_executables([constants.IP_BIN])
 

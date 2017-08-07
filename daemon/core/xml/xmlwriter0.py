@@ -3,13 +3,11 @@ from xml.dom.minidom import Document
 
 import pwd
 
+from core import logger
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreNode
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.xml import xmlutils
-
-logger = log.get_logger(__name__)
 
 
 class CoreDocumentWriter0(Document):

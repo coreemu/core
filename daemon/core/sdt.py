@@ -6,6 +6,7 @@ import socket
 from urlparse import urlparse
 
 from core import constants
+from core import logger
 from core.api import coreapi
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreObj
@@ -16,10 +17,7 @@ from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
-from core.misc import log
 from core.misc import nodeutils
-
-logger = log.get_logger(__name__)
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this

@@ -3,14 +3,12 @@ from xml.dom.minidom import Node
 from xml.dom.minidom import parse
 
 from core import constants
+from core import logger
 from core.enumerations import NodeTypes
-from core.misc import log
 from core.misc import nodeutils
 from core.misc.ipaddress import MacAddress
 from core.service import ServiceManager
 from core.xml import xmlutils
-
-logger = log.get_logger(__name__)
 
 
 class CoreDocumentParser1(object):

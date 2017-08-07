@@ -1,17 +1,9 @@
-# Copyright (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
+import logzero
 
-"""
-core
+# configure custom format with function name
+_format_template = "%(color)s[%(levelname)1.1s %(asctime)s %(module)s:%(funcName)s:" \
+                   "%(lineno)d]%(end_color)s %(message)s"
+_formatter = logzero.LogFormatter(fmt=_format_template)
+logzero.formatter(_formatter)
 
-Top-level Python package containing CORE components.
-
-See http://www.nrl.navy.mil/itd/ncs/products/core for more information on CORE.
-
-Pieces can be imported individually, for example
-
-    from core.netns import vnode
-"""
-
-# Automatically import all add-ons listed in addons.__all__
-from addons import *
+logger = logzero.logger

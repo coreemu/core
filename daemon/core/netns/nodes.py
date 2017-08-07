@@ -10,6 +10,7 @@ from socket import AF_INET
 from socket import AF_INET6
 
 from core import constants
+from core import logger
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
 from core.coreobj import PyCoreObj
@@ -18,13 +19,10 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.misc import ipaddress
-from core.misc import log
 from core.misc import utils
 from core.netns.vnet import GreTapBridge
 from core.netns.vnet import LxBrNet
 from core.netns.vnode import LxcNode
-
-logger = log.get_logger(__name__)
 
 
 class CtrlNet(LxBrNet):

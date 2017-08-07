@@ -1,9 +1,7 @@
 from xml.dom.minidom import Node
 
-from core.misc import log
+from core import logger
 from core.netns import nodes
-
-logger = log.get_logger(__name__)
 
 
 def add_elements_from_list(dom, parent, iterable, name, attr_name):

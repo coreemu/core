@@ -5,12 +5,10 @@ systems. Depends on utm contributed module, from
 https://pypi.python.org/pypi/utm (version 0.3.0).
 """
 
+from core import logger
 from core.conf import ConfigurableManager
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.misc import utm
-
-logger = log.get_logger(__name__)
 
 
 class CoreLocation(ConfigurableManager):

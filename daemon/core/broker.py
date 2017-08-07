@@ -9,6 +9,7 @@ import select
 import socket
 import threading
 
+from core import logger
 from core.api import coreapi
 from core.conf import ConfigurableManager
 from core.coreobj import PyCoreNet
@@ -26,14 +27,11 @@ from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
-from core.misc import log
 from core.misc import nodeutils
 from core.misc.ipaddress import IpAddress
 from core.netns.vif import GreTap
 from core.netns.vnet import GreTapBridge
 from core.phys.pnodes import PhysicalNode
-
-logger = log.get_logger(__name__)
 
 
 # TODO: name conflict with main core server, probably should rename
