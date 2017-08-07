@@ -71,6 +71,42 @@ class Sdt(object):
         self.remotes = {}
         session.broker.handlers.add(self.handle_distributed)
 
+        # add handler for node updates
+        self.session.node_handlers.append(self.handle_node_update)
+
+        # add handler for link updates
+        self.session.link_handlers.append(self.handle_link_update)
+
+    def handle_node_update(self, node_data):
+        """
+        Handler for node updates, specifically for updating their location.
+
+        :param core.data.NodeData node_data: node data being updated
+        :return: nothing
+        """
+        x = node_data.x_position
+        y = node_data.y_position
+        lat = node_data.latitude
+        lon = node_data.longitude
+        alt = node_data.altitude
+
+        if all([lat, lon, alt]):
+            self.updatenodegeo(node_data.id, node_data.latitude, node_data.longitude, node_data.altitude)
+
+        if node_data.message_type == 0:
+            # TODO: z is not currently supported by node messages
+            self.updatenode(node_data.id, 0, x, y, 0)
+
+    def handle_link_update(self, link_data):
+        """
+        Handler for link updates, checking for wireless link/unlink messages.
+
+        :param core.data.LinkData link_data: link data being updated
+        :return: nothing
+        """
+        if link_data.link_type == LinkTypes.WIRELESS.value:
+            self.updatelink(link_data.node1_id, link_data.node2_id, link_data.message_type, wireless=True)
+
     def is_enabled(self):
         """
         Check for "enablesdt" session option. Return False by default if
@@ -180,6 +216,7 @@ class Sdt(object):
 
         :return: nothing
         """
+        logger.info("SDT shutdown!")
         self.cmd("clear all")
         self.disconnect()
         self.showerror = True
@@ -227,8 +264,8 @@ class Sdt(object):
             return
         if x is None or y is None:
             return
-        lat, long, alt = self.session.location.getgeo(x, y, z)
-        pos = "pos %.6f,%.6f,%.6f" % (long, lat, alt)
+        lat, lon, alt = self.session.location.getgeo(x, y, z)
+        pos = "pos %.6f,%.6f,%.6f" % (lon, lat, alt)
         if flags & MessageFlags.ADD.value:
             if icon is not None:
                 type = name
@@ -327,7 +364,6 @@ class Sdt(object):
                 for n2num, wl in r.links:
                     self.updatelink(n1num, n2num, MessageFlags.ADD.value, wl)
 
-    # TODO: remove the need for this
     def handle_distributed(self, message):
         """
         Broker handler for processing CORE API messages as they are
@@ -342,7 +378,6 @@ class Sdt(object):
         elif message.message_type == MessageTypes.NODE.value:
             return self.handlenodemsg(message)
 
-    # TODO: remove the need for this
     def handlenodemsg(self, msg):
         """
         Process a Node Message to add/delete or move a node on
@@ -403,7 +438,6 @@ class Sdt(object):
             remote.pos = (x, y, z)
             self.updatenode(nodenum, msg.flags, x, y, z, name, type, icon)
 
-    # TODO: remove the need for this
     def handlelinkmsg(self, msg):
         """
         Process a Link Message to add/remove links on the SDT display.

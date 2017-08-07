@@ -34,11 +34,11 @@ from core.netns.vnet import GreTapBridge
 from core.phys.pnodes import PhysicalNode
 
 
-# TODO: name conflict with main core server, probably should rename
-class CoreServer(object):
+class CoreDistributedServer(object):
     """
     Represents CORE daemon servers for communication.
     """
+
     def __init__(self, name, host, port):
         """
         Creates a CoreServer instance.
@@ -121,6 +121,7 @@ class CoreBroker(ConfigurableManager):
         self.physical_nodes = set()
         # allows for other message handlers to process API messages (e.g. EMANE)
         self.handlers = set()
+        self.handlers.add(self.handle_distributed)
         # dict with tunnel key to tunnel device mapping
         self.tunnels = {}
         self.dorecvloop = False
@@ -223,7 +224,7 @@ class CoreBroker(ConfigurableManager):
         and forwarded. Return value of zero indicates the socket has closed
         and should be removed from the self.servers dict.
 
-        :param CoreServer server: server to receive from
+        :param CoreDistributedServer server: server to receive from
         :return: message length
         :rtype: int
         """
@@ -302,7 +303,7 @@ class CoreBroker(ConfigurableManager):
                 del self.servers[name]
 
             logger.info("adding server: %s @ %s:%s" % (name, host, port))
-            server = CoreServer(name, host, port)
+            server = CoreDistributedServer(name, host, port)
             if host is not None and port is not None:
                 try:
                     server.connect()
@@ -316,7 +317,7 @@ class CoreBroker(ConfigurableManager):
         """
         Remove a server and hang up any connection.
 
-        :param CoreServer server: server to delete
+        :param CoreDistributedServer server: server to delete
         :return: nothing
         """
         with self.servers_lock:
@@ -336,7 +337,7 @@ class CoreBroker(ConfigurableManager):
 
         :param str name: name of server to retrieve
         :return: server for given name
-        :rtype: CoreServer
+        :rtype: CoreDistributedServer
         """
         with self.servers_lock:
             return self.servers.get(name)
@@ -347,7 +348,7 @@ class CoreBroker(ConfigurableManager):
 
         :param sock: socket associated with a server
         :return: core server associated wit the socket
-        :rtype: CoreServer
+        :rtype: CoreDistributedServer
         """
         with self.servers_lock:
             for server in self.servers.itervalues():
@@ -540,7 +541,7 @@ class CoreBroker(ConfigurableManager):
         """
         Record a node number to emulation server mapping.
 
-        :param CoreServer server: core server to associate node with
+        :param CoreDistributedServer server: core server to associate node with
         :param int nodenum: node id
         :return: nothing
         """
@@ -562,7 +563,7 @@ class CoreBroker(ConfigurableManager):
         Remove a node number to emulation server mapping.
         Return the number of nodes left on this server.
 
-        :param CoreServer server: server to remove from node map
+        :param CoreDistributedServer server: server to remove from node map
         :param int nodenum: node id
         :return: number of nodes left on server
         :rtype: int
@@ -1056,7 +1057,7 @@ class CoreBroker(ConfigurableManager):
         VnodeClient class.
 
         :param str nodestr: node string
-        :param CoreServer server: core server
+        :param CoreDistributedServer server: core server
         :return: nothing
         """
         serverstr = "%s %s %s" % (server.name, server.host, server.port)
@@ -1107,3 +1108,62 @@ class CoreBroker(ConfigurableManager):
                 if not server.instantiation_complete:
                     return False
             return True
+
+    def handle_distributed(self, message):
+        """
+        Handle the session options config message as it has reached the
+        broker. Options requiring modification for distributed operation should
+        be handled here.
+
+        :param message: message to handle
+        :return: nothing
+        """
+        if not self.session.master:
+            return
+
+        if message.message_type != MessageTypes.CONFIG.value or message.get_tlv(ConfigTlvs.OBJECT.value) != "session":
+            return
+
+        values_str = message.get_tlv(ConfigTlvs.VALUES.value)
+        if values_str is None:
+            return
+
+        value_strings = values_str.split('|')
+        for value_string in value_strings:
+            key, value = value_string.split('=', 1)
+            if key == "controlnet":
+                self.handle_distributed_control_net(message, value_strings, value_strings.index(value_string))
+
+    def handle_distributed_control_net(self, message, values, index):
+        """
+        Modify Config Message if multiple control network prefixes are
+        defined. Map server names to prefixes and repack the message before
+        it is forwarded to slave servers.
+
+        :param message: message to handle
+        :param list values: values to handle
+        :param int index: index ti get key value from
+        :return: nothing
+        """
+        key_value = values[index]
+        key, value = key_value.split('=', 1)
+        control_nets = value.split()
+
+        if len(control_nets) < 2:
+            logger.warn("multiple controlnet prefixes do not exist")
+            return
+
+        servers = self.session.broker.getservernames()
+        if len(servers) < 2:
+            logger.warn("not distributed")
+            return
+
+        servers.remove("localhost")
+        # master always gets first prefix
+        servers.insert(0, "localhost")
+        # create list of "server1:ctrlnet1 server2:ctrlnet2 ..."
+        control_nets = map(lambda x: "%s:%s" % (x[0], x[1]), zip(servers, control_nets))
+        values[index] = "controlnet=%s" % (" ".join(control_nets))
+        values_str = "|".join(values)
+        message.tlvdata[ConfigTlvs.VALUES.value] = values_str
+        message.repack()

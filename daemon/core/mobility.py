@@ -607,9 +607,6 @@ class BasicRangeModel(WirelessModel):
         link_data = self.create_link_data(netif, netif2, message_type)
         self.session.broadcast_link(link_data)
 
-        # TODO: account for SDT wanting to listen as well
-        # self.session.sdt.updatelink(netif.node.objid, netif2.node.objid, flags, wireless=True)
-
     def all_link_data(self, flags):
         """
         Return a list of wireless link messages for when the GUI reconnects.
@@ -912,9 +909,6 @@ class WayPointMobility(WirelessModel):
         node.position.set(x, y, z)
         node_data = node.data(message_type=0)
         self.session.broadcast_node(node_data)
-
-        # TODO: determine how to add handler for SDT
-        # self.session.sdt.updatenode(node.objid, flags=0, x=x, y=y, z=z)
 
     def setendtime(self):
         """

@@ -301,7 +301,6 @@ class Configurable(object):
         :return: tuple of default values
         :rtype: tuple
         """
-        # TODO: why the need for a tuple?
         return tuple(map(lambda x: x[2], cls.config_matrix))
 
     @classmethod
@@ -312,7 +311,6 @@ class Configurable(object):
         :return: tuple of name values
         :rtype: tuple
         """
-        # TODO: why the need for a tuple?
         return tuple(map(lambda x: x[0], cls.config_matrix))
 
     @classmethod

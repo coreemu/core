@@ -1094,25 +1094,25 @@ class EmaneManager(ConfigurableManager):
             alt = attrs["altitude"]
             self.handlelocationeventtoxyz(txnemid, lat, long, alt)
 
-    def handlelocationeventtoxyz(self, nemid, lat, long, alt):
+    def handlelocationeventtoxyz(self, nemid, lat, lon, alt):
         """
         Convert the (NEM ID, lat, long, alt) from a received location event
         into a node and x,y,z coordinate values, sending a Node Message.
         Returns True if successfully parsed and a Node Message was sent.
         """
         # convert nemid to node number
-        (emanenode, netif) = self.nemlookup(nemid)
+        emanenode, netif = self.nemlookup(nemid)
         if netif is None:
-            logger.info("location event for unknown NEM %s" % nemid)
+            logger.info("location event for unknown NEM %s", nemid)
             return False
         n = netif.node.objid
         # convert from lat/long/alt to x,y,z coordinates
-        x, y, z = self.session.location.getxyz(lat, long, alt)
+        x, y, z = self.session.location.getxyz(lat, lon, alt)
         x = int(x)
         y = int(y)
         z = int(z)
         logger.info("location event NEM %s (%s, %s, %s) -> (%s, %s, %s)",
-                    nemid, lat, long, alt, x, y, z)
+                    nemid, lat, lon, alt, x, y, z)
         try:
             if (x.bit_length() > 16) or (y.bit_length() > 16) or \
                 (z.bit_length() > 16) or (x < 0) or (y < 0) or (z < 0):
@@ -1123,7 +1123,7 @@ class EmaneManager(ConfigurableManager):
                 return False
         except AttributeError:
             # int.bit_length() not present on Python 2.6
-            logger.exception("error wusing bit_length")
+            logger.exception("error using bit_length")
 
         # generate a node message for this location update
         try:
@@ -1134,11 +1134,8 @@ class EmaneManager(ConfigurableManager):
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
 
-        node_data = node.data(message_type=0)
+        node_data = node.data(message_type=0, lat=lat, lon=lon, alt=alt)
         self.session.broadcast_node(node_data)
-
-        # TODO: determinehow to add SDT handlers
-        # self.session.sdt.updatenodegeo(node.objid, lat, long, alt)
 
         return True
 

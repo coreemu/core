@@ -249,8 +249,6 @@ class PtpNet(LxBrNet):
                 interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
                 interface2_ip6_mask = mask
 
-        # TODO: not currently used
-        # loss=netif.getparam("loss")
         link_data = LinkData(
             message_type=flags,
             node1_id=if1.node.objid,
@@ -510,7 +508,6 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         """
         PyCoreNetIf.detachnet(self)
 
-    # TODO: parameters are not used
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
         This is called when linking with another node. Since this node

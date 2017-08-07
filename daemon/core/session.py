@@ -27,13 +27,11 @@ from core.data import EventData
 from core.data import ExceptionData
 from core.data import FileData
 from core.emane.emanemanager import EmaneManager
-from core.enumerations import ConfigDataTypes, EventTlvs
+from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
-from core.enumerations import ConfigTlvs
 from core.enumerations import EventTypes
 from core.enumerations import ExceptionLevels
 from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.location import CoreLocation
@@ -156,6 +154,15 @@ class Session(object):
 
         self.master = False
 
+        # handlers for broadcasting information
+        self.event_handlers = []
+        self.exception_handlers = []
+        self.node_handlers = []
+        self.link_handlers = []
+        self.file_handlers = []
+        self.config_handlers = []
+        self.shutdown_handlers = []
+
         # setup broker
         self.broker = CoreBroker(session=self)
         self.add_config_object(CoreBroker.name, CoreBroker.config_type, self.broker.configure)
@@ -191,15 +198,6 @@ class Session(object):
         self.add_config_object(SessionConfig.name, SessionConfig.config_type, self.options.configure)
         self.metadata = SessionMetaData()
         self.add_config_object(SessionMetaData.name, SessionMetaData.config_type, self.metadata.configure)
-
-        # handlers for broadcasting information
-        self.event_handlers = []
-        self.exception_handlers = []
-        self.node_handlers = []
-        self.link_handlers = []
-        self.file_handlers = []
-        self.config_handlers = []
-        self.shutdown_handlers = []
 
     def shutdown(self):
         """
@@ -325,10 +323,6 @@ class Session(object):
         if send_event:
             event_data = EventData(event_type=state, time="%s" % time.time())
             self.broadcast_event(event_data)
-
-            # also inform slave servers
-            # TODO: deal with broker, potentially broker should really live within the core server/handlers
-            # self.broker.handlerawmsg(message)
 
     def write_state(self, state):
         """
@@ -915,8 +909,7 @@ class Session(object):
         if node_count == 0:
             shutdown = True
             self.set_state(state=EventTypes.SHUTDOWN_STATE.value)
-            # TODO: this seems redundant as it occurs during shutdown as well
-            self.sdt.shutdown()
+
         return shutdown
 
     def short_session_id(self):
@@ -935,15 +928,12 @@ class Session(object):
         """
         with self._objects_lock:
             for obj in self.objects.itervalues():
-                # TODO: determine instance type we need to check, due to method issue below
+                # TODO: PyCoreNode is not the type to check, but there are two types, due to bsd and netns
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
                     logger.info("booting node: %s - %s", obj.objid, obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
                     obj.boot()
-
-                # TODO(blake): send node emu ids back
-                # self.sendnodeemuid(obj.objid)
 
         self.update_control_interface_hosts()
 
@@ -955,7 +945,7 @@ class Session(object):
         """
         with self._objects_lock:
             for obj in self.objects.itervalues():
-                # TODO: this can be extended to validate everything, bad node check here as well
+                # TODO: issues with checking PyCoreNode alone, validate is not a method
                 # such as vnoded process, bridges, etc.
                 if not isinstance(obj, nodes.PyCoreNode):
                     continue
@@ -1015,7 +1005,7 @@ class Session(object):
         return -1
 
     def get_control_net_object(self, net_index):
-        # TODO: all nodes use an integer id and now this wants to use a string =(
+        # TODO: all nodes use an integer id and now this wants to use a string
         object_id = "ctrl%dnet" % net_index
         return self.get_object(object_id)
 
@@ -1123,7 +1113,8 @@ class Session(object):
                                       updown_script=updown_script, serverintf=server_interface)
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
-        # TODO: potentialy remove documentation saying object ids are ints
+        # TODO: potentially remove documentation saying object ids are ints
+        # TODO: need to move broker code out of the session object
         self.broker.addnet(object_id)
         for server in self.broker.getservers():
             self.broker.addnodemap(server, object_id)
@@ -1377,7 +1368,6 @@ class SessionConfig(ConfigurableManager, Configurable):
         """
         ConfigurableManager.__init__(self)
         self.session = session
-        self.session.broker.handlers.add(self.handle_distributed)
         self.reset()
 
     def reset(self):
@@ -1422,70 +1412,6 @@ class SessionConfig(ConfigurableManager, Configurable):
             values.append("%s" % value)
 
         return self.config_data(0, node_id, type_flags, values)
-
-    # TODO: update logic to not be tied to old style messages
-    def handle_distributed(self, message):
-        """
-        Handle the session options config message as it has reached the
-        broker. Options requiring modification for distributed operation should
-        be handled here.
-
-        :param message: message to handle
-        :return: nothing
-        """
-        if not self.session.master:
-            return
-
-        if message.message_type != MessageTypes.CONFIG.value or message.get_tlv(ConfigTlvs.OBJECT.value) != "session":
-            return
-
-        values_str = message.get_tlv(ConfigTlvs.VALUES.value)
-        if values_str is None:
-            return
-
-        value_strings = values_str.split('|')
-        if not self.haskeyvalues(value_strings):
-            return
-
-        for value_string in value_strings:
-            key, value = value_string.split('=', 1)
-            if key == "controlnet":
-                self.handle_distributed_control_net(message, value_strings, value_strings.index(value_string))
-
-    # TODO: update logic to not be tied to old style messages
-    def handle_distributed_control_net(self, message, values, index):
-        """
-        Modify Config Message if multiple control network prefixes are
-        defined. Map server names to prefixes and repack the message before
-        it is forwarded to slave servers.
-
-        :param message: message to handle
-        :param list values: values to handle
-        :param int index: index ti get key value from
-        :return: nothing
-        """
-        key_value = values[index]
-        key, value = key_value.split('=', 1)
-        control_nets = value.split()
-
-        if len(control_nets) < 2:
-            logger.warn("multiple controlnet prefixes do not exist")
-            return
-
-        servers = self.session.broker.getservernames()
-        if len(servers) < 2:
-            logger.warn("not distributed")
-            return
-
-        servers.remove("localhost")
-        # master always gets first prefix
-        servers.insert(0, "localhost")
-        # create list of "server1:ctrlnet1 server2:ctrlnet2 ..."
-        control_nets = map(lambda x: "%s:%s" % (x[0], x[1]), zip(servers, control_nets))
-        values[index] = "controlnet=%s" % (" ".join(control_nets))
-        values_str = "|".join(values)
-        message.tlvdata[ConfigTlvs.VALUES.value] = values_str
-        message.repack()
 
 
 class SessionMetaData(ConfigurableManager):

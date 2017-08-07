@@ -296,7 +296,8 @@ def exec_file(cfg):
     tlvdata = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, filename)
     msg = coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlvdata)
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    sock.connect(("localhost", int(cfg["port"])))  # TODO: connect address option
+    # TODO: connect address option
+    sock.connect(("localhost", int(cfg["port"])))
     sock.sendall(msg)
     return 0
 

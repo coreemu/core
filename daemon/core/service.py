@@ -867,7 +867,8 @@ class CoreServices(ConfigurableManager):
                 if len(cfgfiles) > 0:
                     for filename in cfgfiles:
                         if filename[:7] == "file:///":
-                            raise NotImplementedError  # TODO
+                            # TODO: implement this
+                            raise NotImplementedError
                         cfg = self.getservicefiledata(s, filename)
                         if cfg is None:
                             cfg = s.generateconfig(node, filename, services)

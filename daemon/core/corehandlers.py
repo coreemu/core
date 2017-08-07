@@ -945,8 +945,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 Remove a link.
                 """
                 if node1 and node2:
-                    # TODO: fix this for the case where ifindex[1,2] are
-                    #       not specified
+                    # TODO: fix this for the case where ifindex[1,2] are not specified
                     # a wired unlink event, delete the connecting bridge
                     netif1 = node1.netif(interface_index1)
                     netif2 = node2.netif(interface_index2)
@@ -1211,7 +1210,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             # find the session containing this client and set the session to master
             for session in self.server.sessions.itervalues():
                 if self in session.broker.session_clients:
-                    logger.info("SESSION SET TO MASTER!: %s", session.session_id)
+                    logger.info("setting session to master: %s", session.session_id)
                     session.master = True
                     break
 
@@ -1746,8 +1745,6 @@ class BaseAuxRequestHandler(CoreRequestHandler):
                 messages = self.receive_message()
                 if messages:
                     for message in messages:
-                        # TODO: do we really want to broadcast node and link messages from a client to other clients?
-                        # self.session.broadcast(self, message)
                         self.handle_message(message)
             except EOFError:
                 break

@@ -190,18 +190,21 @@ class PyCoreObj(object):
         self.ifindex += 1
         return ifindex
 
-    def data(self, message_type):
+    def data(self, message_type, lat=None, lon=None, alt=None):
         """
         Build a data object for this node.
 
         :param message_type: purpose for the data object we are creating
+        :param float lat: latitude
+        :param float lon: longitude
+        :param float alt: altitude
         :return: node data object
         :rtype: core.data.NodeData
         """
         if self.apitype is None:
             return None
 
-        x, y, z = self.getposition()
+        x, y, _ = self.getposition()
 
         model = None
         if hasattr(self, "type"):
@@ -229,6 +232,9 @@ class PyCoreObj(object):
             opaque=self.opaque,
             x_position=x,
             y_position=y,
+            latitude=lat,
+            longitude=lon,
+            altitude=alt,
             model=model,
             emulation_server=emulation_server,
             services=services
@@ -254,7 +260,6 @@ class PyCoreNode(PyCoreObj):
     Base class for CORE nodes.
     """
 
-    # TODO: start seems like it should go away
     def __init__(self, session, objid=None, name=None, start=True):
         """
         Create a PyCoreNode instance.
@@ -414,7 +419,6 @@ class PyCoreNet(PyCoreObj):
     """
     linktype = LinkTypes.WIRED.value
 
-    # TODO: remove start if appropriate
     def __init__(self, session, objid, name, start=True):
         """
         Create a PyCoreNet instance.
@@ -502,8 +506,6 @@ class PyCoreNet(PyCoreObj):
                     interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
                     interface2_ip6_mask = mask
 
-            # TODO: not currently used
-            # loss = netif.getparam('loss')
             link_data = LinkData(
                 message_type=flags,
                 node1_id=self.objid,
