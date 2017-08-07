@@ -151,7 +151,7 @@ class CoreDocumentParser1(object):
                         return nodeutils.get_node_class(NodeTypes.EMANE)
                     else:
                         logger.warn('unknown network type: \'%s\'', coretype)
-                        return xmlutils.xml_type_to_node_class(self.session, coretype)
+                        return xmlutils.xml_type_to_node_class(coretype)
             return nodeutils.get_node_class(NodeTypes.WIRELESS_LAN)
         logger.warn('unknown network type: \'%s\'', network_type)
         return None

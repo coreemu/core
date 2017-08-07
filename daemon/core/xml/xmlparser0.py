@@ -71,20 +71,20 @@ class CoreDocumentParser0(object):
         """
         Helper to return tuple of attributes common to nodes and nets.
         """
-        id = int(obj.getAttribute("id"))
+        node_id = int(obj.getAttribute("id"))
         name = str(obj.getAttribute("name"))
-        type = str(obj.getAttribute("type"))
-        return id, name, type
+        node_type = str(obj.getAttribute("type"))
+        return node_id, name, node_type
 
     def parsenets(self):
         linkednets = []
         for net in self.np.getElementsByTagName("NetworkDefinition"):
-            id, name, type = self.getcommonattributes(net)
-            nodecls = xmlutils.xml_type_to_node_class(self.session, type)
+            node_id, name, node_type = self.getcommonattributes(net)
+            nodecls = xmlutils.xml_type_to_node_class(node_type)
             if not nodecls:
-                logger.warn("skipping unknown network node '%s' type '%s'", name, type)
+                logger.warn("skipping unknown network node '%s' type '%s'", name, node_type)
                 continue
-            n = self.session.add_object(cls=nodecls, objid=id, name=name, start=self.start)
+            n = self.session.add_object(cls=nodecls, objid=node_id, name=name, start=self.start)
             if name in self.coords:
                 x, y, z = self.coords[name]
                 n.setposition(x, y, z)

@@ -436,6 +436,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         Handle an incoming message; dispatch based on message type,
         optionally sending replies.
 
+        :param message: message to handle
         :return: nothing
         """
         if self.session and self.session.broker.handle_message(message):

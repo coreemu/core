@@ -49,6 +49,8 @@ class Conf(object):
     Provides a configuration object.
     """
 
+    template = Template("")
+
     def __init__(self, **kwargs):
         """
         Create a Conf instance.
@@ -64,7 +66,6 @@ class Conf(object):
         :return: string representation
         :rtype: str
         """
-        # TODO: seems like an error here
         tmp = self.template.substitute(**self.kwargs)
         if tmp[-1] == "\n":
             tmp = tmp[:-1]

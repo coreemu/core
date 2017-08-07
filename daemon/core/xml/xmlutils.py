@@ -4,6 +4,19 @@ from core import logger
 from core.netns import nodes
 
 
+_NODE_MAP = {
+    nodes.CoreNode.__name__: nodes.CoreNode,
+    nodes.SwitchNode.__name__: nodes.SwitchNode,
+    nodes.HubNode.__name__: nodes.HubNode,
+    nodes.WlanNode.__name__: nodes.WlanNode,
+    nodes.RJ45Node.__name__: nodes.RJ45Node,
+    nodes.TunnelNode.__name__: nodes.TunnelNode,
+    nodes.GreTapBridge.__name__: nodes.GreTapBridge,
+    nodes.PtpNet.__name__: nodes.PtpNet,
+    nodes.CtrlNet.__name__: nodes.CtrlNet
+}
+
+
 def add_elements_from_list(dom, parent, iterable, name, attr_name):
     """
     XML helper to iterate through a list and add items to parent using tags
@@ -77,7 +90,8 @@ def get_text_elements_to_list(parent):
         if n.nodeType != Node.ELEMENT_NODE:
             continue
         k = str(n.nodeName)
-        v = ''  # sometimes want None here?
+        # sometimes want None here?
+        v = ''
         for c in n.childNodes:
             if c.nodeType != Node.TEXT_NODE:
                 continue
@@ -251,19 +265,19 @@ def get_params_set_attrs(dom, param_names, target):
         param_name = param.getAttribute("name")
         value = param.getAttribute("value")
         if value is None:
-            continue  # never reached?
+            # never reached?
+            continue
         if param_name in param_names:
             setattr(target, param_name, str(value))
 
 
-def xml_type_to_node_class(session, type):
+def xml_type_to_node_class(node_type):
     """
     Helper to convert from a type string to a class name in nodes.*.
     """
-    if hasattr(nodes, type):
-        # TODO: remove and use a mapping to known nodes
-        logger.error("using eval to retrieve node type: %s", type)
-        return eval("nodes.%s" % type)
+    logger.error("xml type to node type: %s", node_type)
+    if hasattr(nodes, node_type):
+        return _NODE_MAP[node_type]
     else:
         return None
 

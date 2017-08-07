@@ -118,10 +118,7 @@ def main():
     # start a shell on node 1
     n[1].term("bash")
 
-    # TODO: access to remote nodes is currently limited in this script
-
     print "elapsed time: %s" % (datetime.datetime.now() - start)
-
     print "To stop this session, use the 'core-cleanup' script on this server"
     print "and on the remote slave server."
 
