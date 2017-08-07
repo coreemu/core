@@ -153,27 +153,25 @@ done
 """ % (cls._image,)
         return cfg
 
+    @classmethod
+    def on_load(cls):
+        logger.debug("loading custom docker services")
 
-def load_services():
-    ServiceManager.add(DockerService)
+        if "Client" in globals():
+            client = Client(version="1.10")
+            images = client.images()
+            del client
+        else:
+            images = []
 
-    # This auto-loads Docker images having a :core tag, adding them to the list
-    # of services under the "Docker" group.
-    # TODO: change this logic, should be a proper configurable, or docker needs to be a required library
-    # TODO: also should make this call possible real time for reloading removing "magic" auto loading on import
-    if 'Client' in globals():
-        client = Client(version='1.10')
-        images = client.images()
-        del client
-    else:
-        images = []
-    for image in images:
-        if u'<none>' in image['RepoTags'][0]:
-            continue
-        for repo in image['RepoTags']:
-            if u':core' not in repo:
+        for image in images:
+            if u"<none>" in image["RepoTags"][0]:
                 continue
-            dockerid = repo.encode('ascii', 'ignore').split(':')[0]
-            sub_class = type('SubClass', (DockerService,), {'_name': dockerid, '_image': dockerid})
-            ServiceManager.add(sub_class)
-    del images
+            for repo in image["RepoTags"]:
+                if u":core" not in repo:
+                    continue
+                dockerid = repo.encode("ascii", "ignore").split(":")[0]
+                sub_class = type("SubClass", (DockerService,), {"_name": dockerid, "_image": dockerid})
+                ServiceManager.add(sub_class)
+
+        del images

@@ -6,7 +6,6 @@ firewall)
 from core import constants
 from core import logger
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class VPNClient(CoreService):
@@ -115,11 +114,3 @@ class Firewall(CoreService):
             logger.exception("Error opening Firewall configuration template (%s)", fname)
 
         return cfg
-
-
-def load_services():
-    # this line is required to add the above class to the list of available services
-    ServiceManager.add(VPNClient)
-    ServiceManager.add(VPNServer)
-    ServiceManager.add(IPsec)
-    ServiceManager.add(Firewall)

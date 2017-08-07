@@ -2,7 +2,6 @@ from inspect import isclass
 from sys import maxint
 
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class Startup(CoreService):
@@ -37,7 +36,3 @@ class Startup(CoreService):
             if start:
                 script += start + '\n'
         return script
-
-
-def load_services():
-    ServiceManager.add(Startup)

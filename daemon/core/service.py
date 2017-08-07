@@ -138,7 +138,9 @@ class ServiceManager(object):
             module = importlib.import_module(import_statement)
             members = inspect.getmembers(module, lambda x: _is_service(module, x))
             for member in members:
-                cls.add(member[1])
+                clazz = member[1]
+                clazz.on_load()
+                cls.add(clazz)
 
 
 class CoreServices(ConfigurableManager):
@@ -942,6 +944,10 @@ class CoreService(object):
         configuration is used to override their default parameters.
         """
         self._custom = True
+
+    @classmethod
+    def on_load(cls):
+        pass
 
     @classmethod
     def getconfigfilenames(cls, nodenum, services):

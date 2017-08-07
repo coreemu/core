@@ -6,7 +6,6 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
 from core.misc import utils
 from core.misc.ipaddress import Ipv4Prefix
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class NrlService(CoreService):
@@ -651,16 +650,3 @@ done
         cfg += " stability 10"
         cfg += " 2>&1 > /var/log/arouted.log &\n\n"
         return cfg
-
-
-def load_services():
-    ServiceManager.add(MgenSinkService)
-    ServiceManager.add(NrlNhdp)
-    ServiceManager.add(NrlSmf)
-    ServiceManager.add(NrlOlsr)
-    ServiceManager.add(NrlOlsrv2)
-    ServiceManager.add(OlsrOrg)
-    # this line is required to add the above class to the list of available services
-    ServiceManager.add(MgenActor)
-    # experimental
-    # ServiceManager.add(Arouted)

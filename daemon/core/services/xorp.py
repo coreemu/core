@@ -4,7 +4,6 @@ xorp.py: defines routing services provided by the XORP routing suite.
 
 from core import logger
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class XorpRtrmgr(CoreService):
@@ -468,15 +467,3 @@ class XorpOlsr(XorpService):
         cfg += "    }\n"
         cfg += "}\n"
         return cfg
-
-
-def load_services():
-    ServiceManager.add(XorpRtrmgr)
-    ServiceManager.add(XorpOspfv2)
-    ServiceManager.add(XorpOspfv3)
-    ServiceManager.add(XorpBgp)
-    ServiceManager.add(XorpRip)
-    ServiceManager.add(XorpRipng)
-    ServiceManager.add(XorpPimSm4)
-    ServiceManager.add(XorpPimSm6)
-    ServiceManager.add(XorpOlsr)

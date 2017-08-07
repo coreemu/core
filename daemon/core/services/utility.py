@@ -10,7 +10,6 @@ from core.misc import utils
 from core.misc.ipaddress import Ipv4Prefix
 from core.misc.ipaddress import Ipv6Prefix
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class UtilService(CoreService):
@@ -724,19 +723,3 @@ class UserDefinedService(UtilService):
     _name = "UserDefined"
     _startindex = 50
     _meta = "Customize this service to do anything upon startup."
-
-
-def load_services():
-    ServiceManager.add(IPForwardService)
-    ServiceManager.add(DefaultRouteService)
-    ServiceManager.add(DefaultMulticastRouteService)
-    ServiceManager.add(StaticRouteService)
-    ServiceManager.add(SshService)
-    ServiceManager.add(DhcpService)
-    ServiceManager.add(DhcpClientService)
-    ServiceManager.add(FtpService)
-    ServiceManager.add(HttpService)
-    ServiceManager.add(PcapService)
-    ServiceManager.add(RadvdService)
-    ServiceManager.add(AtdService)
-    ServiceManager.add(UserDefinedService)

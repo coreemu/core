@@ -3,7 +3,6 @@ ucarp.py: defines high-availability IP address controlled by ucarp
 """
 
 from core.service import CoreService
-from core.service import ServiceManager
 
 UCARP_ETC = "/usr/local/etc/ucarp"
 
@@ -179,7 +178,3 @@ fi
 
 
 """
-
-
-def load_services():
-    ServiceManager.add(Ucarp)

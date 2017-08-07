@@ -7,7 +7,6 @@ from core.enumerations import LinkTypes, NodeTypes
 from core.misc import ipaddress
 from core.misc import nodeutils
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class Zebra(CoreService):
@@ -593,15 +592,3 @@ class Xpimd(QuaggaService):
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
         return '  ip mfea\n  ip igmp\n  ip pim\n'
-
-
-def load_services():
-    ServiceManager.add(Zebra)
-    ServiceManager.add(Ospfv2)
-    ServiceManager.add(Ospfv3)
-    ServiceManager.add(Ospfv3mdr)
-    ServiceManager.add(Bgp)
-    ServiceManager.add(Rip)
-    ServiceManager.add(Ripng)
-    ServiceManager.add(Babel)
-    ServiceManager.add(Xpimd)

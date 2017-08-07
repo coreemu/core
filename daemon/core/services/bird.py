@@ -3,7 +3,6 @@ bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 """
 
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class Bird(CoreService):
@@ -238,21 +237,9 @@ class BirdStatic(BirdService):
     @classmethod
     def generatebirdconfig(cls, node):
         cfg = '/* This is a sample config that must be customized */\n'
-
         cfg += 'protocol static {\n'
         cfg += '#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n'
         cfg += '#    route 203.0.113.0/24 reject;        # Sink route\n'
         cfg += '#    route 10.2.0.0/24 via "arc0";       # Secondary network\n'
         cfg += '}\n\n'
-
         return cfg
-
-
-def load_services():
-    # Register all protocols
-    ServiceManager.add(Bird)
-    ServiceManager.add(BirdOspf)
-    ServiceManager.add(BirdBgp)
-    # ServiceManager.add(BirdRadv)  # untested
-    ServiceManager.add(BirdRip)
-    ServiceManager.add(BirdStatic)
