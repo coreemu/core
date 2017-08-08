@@ -85,7 +85,7 @@ build:
 
 # Python package install
 install-exec-hook:
-	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
+	pip install .
 
 install-data-local:
 	$(MKDIR_P) $(DESTDIR)$(LOGROTATE_DIR)
@@ -97,7 +97,7 @@ uninstall-local:
 
 # Python package uninstall
 uninstall-hook:
-	rm -f ${pythondir}/core_python-${COREDPY_VERSION}-py${PYTHON_VERSION}.egg-info
+	yes | pip uninstall core_python
 	rm -f ${pythondir}/core_python_netns-1.0-py${PYTHON_VERSION}.egg-info
 	rm -rf ${pythondir}/core
 	rmdir -p $(coreexservicesdir) || true

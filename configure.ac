@@ -147,6 +147,11 @@ if test "x$enable_daemon" = "xyes" ; then
   AC_CHECK_PROG(ovs_of_path, ovs-ofctl, $as_dir, no, $SEARCHPATH)
 fi
 
+AC_CHECK_PROG(pip_installed, pip, yes, no, $SEARCHPATH)
+if test "x$pip_installed" = "xno" ; then
+    AC_MSG_ERROR([Could not locate pip. Please install python-pip.])
+fi
+
 #AC_CHECK_PROG(dia, dia, yes, no)
 AC_CHECK_PROG(help2man, help2man, yes, no, $SEARCHPATH)
 if test "x$convert" = "xno" ; then
