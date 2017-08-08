@@ -3,6 +3,7 @@ tdma.py: EMANE TDMA model bindings for CORE
 """
 
 from core import emane
+from core import logger
 from core.emane.emanemodel import EmaneModel
 from core.emane.universal import EmaneUniversalModel
 from core.enumerations import ConfigDataTypes
@@ -14,10 +15,9 @@ class EmaneTdmaModel(EmaneModel):
 
     # model name
     name = "emane_tdma"
-    if emane.VERSION >= emane.EMANE101:
-        xml_path = "/usr/share/emane/xml/models/mac/tdmaeventscheduler"
-    else:
-        raise Exception("EMANE TDMA requires EMANE 1.0.1 or greater")
+    xml_path = "/usr/share/emane/xml/models/mac/tdmaeventscheduler"
+    if emane.VERSION < emane.EMANE101:
+        logger.error("EMANE TDMA requires EMANE 1.0.1 or greater")
 
     # MAC parameters
     _confmatrix_mac = [

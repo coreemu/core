@@ -135,12 +135,15 @@ class ServiceManager(object):
         for module_name in module_names:
             import_statement = "%s.%s" % (base_module, module_name)
             logger.info("importing custom service module: %s", import_statement)
-            module = importlib.import_module(import_statement)
-            members = inspect.getmembers(module, lambda x: _is_service(module, x))
-            for member in members:
-                clazz = member[1]
-                clazz.on_load()
-                cls.add(clazz)
+            try:
+                module = importlib.import_module(import_statement)
+                members = inspect.getmembers(module, lambda x: _is_service(module, x))
+                for member in members:
+                    clazz = member[1]
+                    clazz.on_load()
+                    cls.add(clazz)
+            except:
+                logger.exception("unexpected error during import, skipping: %s", import_statement)
 
 
 class CoreServices(ConfigurableManager):

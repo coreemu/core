@@ -24,7 +24,7 @@ from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import RegisterTlvs
 from core.enumerations import SessionTlvs
-from core.misc import log, structutils
+from core.misc import structutils
 from core.misc.ipaddress import IpAddress
 from core.misc.ipaddress import MacAddress
 

@@ -7,7 +7,6 @@ from core import emane
 from core import logger
 from core.enumerations import NodeTypes
 from core.misc import ipaddress
-from core.misc import log
 from core.misc import nodeutils
 from core.netns import nodes
 from core.xml import xmlutils
