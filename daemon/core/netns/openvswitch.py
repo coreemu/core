@@ -737,3 +737,14 @@ class OvsGreTapBridge(OvsNet):
         prior to instantiating the GreTap device (before addrconfig).
         """
         self.grekey = key
+
+
+OVS_NODES = {
+    NodeTypes.SWITCH: OvsSwitchNode,
+    NodeTypes.HUB: OvsHubNode,
+    NodeTypes.WIRELESS_LAN: OvsWlanNode,
+    NodeTypes.TUNNEL: OvsTunnelNode,
+    NodeTypes.TAP_BRIDGE: OvsGreTapBridge,
+    NodeTypes.PEER_TO_PEER: OvsPtpNet,
+    NodeTypes.CONTROL_NET: OvsCtrlNet
+}

@@ -101,7 +101,7 @@ def main():
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     # configure nodes to use
-    node_map = nodemaps.CLASSIC_NODES
+    node_map = nodemaps.NODES
     nodeutils.set_node_map(node_map)
 
     main()

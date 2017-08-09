@@ -206,3 +206,15 @@ class TunnelNode(NetgraphNet):
     nghooks = "upper lower"
     apitype = NodeTypes.TUNNEL.value
     policy = "ACCEPT"
+
+
+BSD_NODES = {
+    NodeTypes.DEFAULT: CoreNode,
+    NodeTypes.SWITCH: SwitchNode,
+    NodeTypes.HUB: HubNode,
+    NodeTypes.WIRELESS_LAN: WlanNode,
+    NodeTypes.RJ45: RJ45Node,
+    NodeTypes.TUNNEL: TunnelNode,
+    NodeTypes.PEER_TO_PEER: PtpNet,
+    NodeTypes.CONTROL_NET: None
+}

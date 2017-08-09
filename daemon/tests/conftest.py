@@ -245,7 +245,7 @@ class Core(object):
 class CoreServerTest(object):
     def __init__(self):
         # setup nodes
-        node_map = nodemaps.CLASSIC_NODES
+        node_map = nodemaps.NODES
         nodeutils.set_node_map(node_map)
 
         # load emane services
@@ -321,7 +321,7 @@ class CoreServerTest(object):
 @pytest.fixture()
 def session():
     # configure default nodes
-    node_map = nodemaps.CLASSIC_NODES
+    node_map = nodemaps.NODES
     nodeutils.set_node_map(node_map)
 
     # create and return session
