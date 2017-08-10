@@ -7,10 +7,8 @@ Defines how CORE will be built for installation.
 
 from setuptools import setup
 
-from core.constants import COREDPY_VERSION
-
 setup(name="core-python",
-      version=COREDPY_VERSION,
+      version="5.0.0",
       packages=[
           "core",
           "core.addons",
