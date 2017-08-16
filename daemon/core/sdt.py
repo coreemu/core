@@ -7,7 +7,6 @@ from urlparse import urlparse
 
 from core import constants
 from core import logger
-from core.api import coreapi
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreObj
 from core.enumerations import EventTypes
@@ -344,25 +343,24 @@ class Sdt(object):
                                 r.name, r.type, r.icon)
 
             for net in nets:
-                # use tolinkmsgs() to handle various types of links
-                messages = net.all_link_data(flags=MessageFlags.ADD.value)
-                for message in messages:
-                    msghdr = message[:coreapi.CoreMessage.header_len]
-                    flags = coreapi.CoreMessage.unpack_header(msghdr)[1]
-                    m = coreapi.CoreLinkMessage(flags, msghdr, message[coreapi.CoreMessage.header_len:])
-                    n1num = m.get_tlv(LinkTlvs.N1_NUMBER.value)
-                    n2num = m.get_tlv(LinkTlvs.N2_NUMBER.value)
-                    link_msg_type = m.get_tlv(LinkTlvs.TYPE.value)
-                    if nodeutils.is_node(net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
-                        if n1num == net.objid:
-                            continue
-                    wl = link_msg_type == LinkTypes.WIRELESS.value
-                    self.updatelink(n1num, n2num, MessageFlags.ADD.value, wl)
+                all_links = net.all_link_data(flags=MessageFlags.ADD.value)
+                for link_data in all_links:
+                    is_wireless = nodeutils.is_node(net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE))
+                    wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
+                    if is_wireless and link_data.node1_id == net.objid:
+                        continue
+
+                    self.updatelink(
+                        link_data.node1_id,
+                        link_data.node2_id,
+                        MessageFlags.ADD.value,
+                        wireless_link
+                    )
 
             for n1num in sorted(self.remotes.keys()):
                 r = self.remotes[n1num]
-                for n2num, wl in r.links:
-                    self.updatelink(n1num, n2num, MessageFlags.ADD.value, wl)
+                for n2num, wireless_link in r.links:
+                    self.updatelink(n1num, n2num, MessageFlags.ADD.value, wireless_link)
 
     def handle_distributed(self, message):
         """
