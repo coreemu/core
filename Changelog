@@ -7,7 +7,7 @@
     - leverage "logzero" module to make easy usage of the standard logging module
     - improvements to documentation across the code base
     - initial work to separate the dependence on TCP API messaging from the core library (easier core scripting)
-    - beta support for running core in openvswitch mode, leveraging ovs bridges, instead of linux bridges
+    - beta support for running core in Open vSwitch mode, leveraging Open vSwitch bridges, instead of Linux bridges
   * SERVICES:
     - added Ryu SDN controller service
     - added Open vSwitch service

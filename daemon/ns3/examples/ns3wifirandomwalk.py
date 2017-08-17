@@ -30,7 +30,7 @@ def add_to_server(session):
     """
     global server
     try:
-        server.addsession(session)
+        server.add_session(session)
         return True
     except NameError:
         return False

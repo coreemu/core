@@ -21,10 +21,10 @@ or online via interactive Python.
 The best starting point is the sample scripts that are
 included with CORE. If you have a CORE source tree, the example script files
 can be found under :file:`core/daemon/examples/netns/`. When CORE is installed
-from packages, the example script files will be in 
+from packages, the example script files will be in
 :file:`/usr/share/core/examples/netns/` (or the :file:`/usr/local/...` prefix
 when installed from source.) For the most part, the example scripts
-are self-documenting; see the comments contained within the Python code. 
+are self-documenting; see the comments contained within the Python code.
 
 The scripts should be run with root privileges because they create new
 network namespaces. In general, a CORE Python script does not connect to the
@@ -37,20 +37,19 @@ allow for GUI connections.
 Here are the basic elements of a CORE Python script:
 ::
 
-  #!/usr/bin/python
+  from core.session import Session
+  from core.netns import nodes
 
-  from core import pycore
-
-  session = pycore.Session(persistent=True)
-  node1 = session.addobj(cls=pycore.nodes.CoreNode, name="n1")
-  node2 = session.addobj(cls=pycore.nodes.CoreNode, name="n2")
-  hub1 = session.addobj(cls=pycore.nodes.HubNode, name="hub1")
+  session = Session(persistent=True)
+  node1 = session.add_object(cls=nodes.CoreNode, name="n1")
+  node2 = session.add_object(cls=nodes.CoreNode, name="n2")
+  hub1 = session.add_object(cls=nodes.HubNode, name="hub1")
   node1.newnetif(hub1, ["10.0.0.1/24"])
   node2.newnetif(hub1, ["10.0.0.2/24"])
 
   node1.icmd(["ping", "-c", "5", "10.0.0.2"])
   session.shutdown()
-  
+
 
 The above script creates a CORE session having two nodes connected with a hub.
 The first node pings the second node with 5 ping packets; the result is
@@ -63,19 +62,19 @@ a test ping to the other.
 
 The CORE Python modules are documented with comments in the code. From an
 interactive Python shell, you can retrieve online help about the various
-classes and methods; for example *help(pycore.nodes.CoreNode)* or
-*help(pycore.Session)*.
+classes and methods; for example *help(nodes.CoreNode)* or
+*help(Session)*.
 
 An interactive development environment (IDE) is available for browsing
 the CORE source, the
-`Eric Python IDE <http://eric-ide.python-projects.org/index.html>`_. 
+`Eric Python IDE <http://eric-ide.python-projects.org/index.html>`_.
 CORE has a project file that can be opened by Eric, in the source under
 :file:`core/daemon/CORE.e4p`.
 This IDE
 has a class browser for viewing a tree of classes and methods. It features
 syntax highlighting, auto-completion, indenting, and more. One feature that
 is helpful with learning the CORE Python modules is the ability to generate
-class diagrams; right-click on a class, choose *Diagrams*, and 
+class diagrams; right-click on a class, choose *Diagrams*, and
 *Class Diagram*.
 
 .. index:: daemon versus script
@@ -90,12 +89,12 @@ class diagrams; right-click on a class, choose *Diagrams*, and
    does not need to be running for your script to work.
 
 The session created by a Python script may be viewed in the GUI if certain
-steps are followed. The GUI has a :ref:`File_Menu`, *Execute Python script...* 
+steps are followed. The GUI has a :ref:`File_Menu`, *Execute Python script...*
 option for running a script and automatically connecting to it. Once connected,
 normal GUI interaction is possible, such as moving and double-clicking nodes,
 activating Widgets, etc.
 
-The script should have a line such as the following for running it from 
+The script should have a line such as the following for running it from
 the GUI.
 ::
 
@@ -113,14 +112,14 @@ A global ``server`` variable is exposed to the script pointing to the
       '''
       global server
       try:
-          server.addsession(session)
+          server.add_session(session)
           return True
       except NameError:
           return False
 
 ::
 
-   session = pycore.Session(persistent=True)
+   session = Session(persistent=True)
    add_to_server(session)
 
 
@@ -129,7 +128,7 @@ otherwise they will be grouped at the coordinates ``<0, 0>``. First sketching
 the topology in the GUI and then using the *Export Python script* option may
 help here.
 ::
-   
+
    switch.setposition(x=80,y=50)
 
 

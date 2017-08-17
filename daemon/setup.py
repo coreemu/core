@@ -8,7 +8,7 @@ Defines how CORE will be built for installation.
 from setuptools import setup
 
 setup(name="core-python",
-      version="5.0.0",
+      version="5.0",
       packages=[
           "core",
           "core.addons",

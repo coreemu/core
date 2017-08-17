@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="corens3-python",
-    version="5.0.0",
+    version="5.0",
     packages=[
         "corens3",
     ],

@@ -16,7 +16,7 @@ Release:	1%{?dist}
 Source:		core-%{version}.tar.gz
 URL:		http://www.nrl.navy.mil/itd/ncs/products/core
 Version:	%{version}
-%description 
+%description
 The Common Open Research Emulator provides Python modules and a GUI for
 building virtual networks using Linux network namespace containers and bridging.
 
@@ -48,7 +48,7 @@ Provides:	core-daemon
 # python-sphinx
 %description daemon
 The Common Open Research Emulator provides Python modules for building virtual
-networks using Linux network namespace containers and bridging. 
+networks using Linux network namespace containers and bridging.
 
 %package gui
 Summary:	Common Open Research Emulator GUI front-end
@@ -59,7 +59,7 @@ BuildRequires:  make automake autoconf
 Provides:	core-gui
 %description gui
 The Common Open Research Emulator canvas-based Tcl/Tk GUI for easily drawing
-virtual network topologies. 
+virtual network topologies.
 
 %prep
 
@@ -410,6 +410,8 @@ fi
 %{_sbindir}/vnoded
 
 %changelog
+* XXX XXX X 2017 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 5.0
+- Added Ryu SD and Open vSwitch services, code cleanup and refactoring
 * Fri Jun 5 2015 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 4.8
 - Support for NRL Network Modeling Framework (NMF) XML representation, bugfixes
 * Wed Aug 6 2014 Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil> - 4.7

@@ -97,7 +97,7 @@ uninstall-local:
 
 # Python package uninstall
 uninstall-hook:
-	yes | pip uninstall core_python
+	yes | pip uninstall core-python
 	rm -f ${pythondir}/core_python_netns-1.0-py${PYTHON_VERSION}.egg-info
 	rm -rf ${pythondir}/core
 	rmdir -p $(coreexservicesdir) || true
