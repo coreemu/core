@@ -19,6 +19,8 @@ import ns.network
 
 from core import logger
 from core.misc import ipaddress
+from core.misc import nodemaps
+from core.misc import nodeutils
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
 
@@ -40,7 +42,8 @@ def wifisession(opt):
     """
     Run a random walk wifi session.
     """
-    session = Ns3Session(persistent=True, duration=opt.duration)
+    nodeutils.set_node_map(nodemaps.NODES)
+    session = Ns3Session(1, persistent=True, duration=opt.duration)
     session.name = "ns3wifirandomwalk"
     session.filename = session.name + ".py"
     session.node_count = str(opt.numnodes + 1)

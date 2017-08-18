@@ -360,11 +360,11 @@ class Ns3Session(Session):
     A Session that starts an ns-3 simulation thread.
     """
 
-    def __init__(self, persistent=False, duration=600):
+    def __init__(self, session_id, persistent=False, duration=600):
         self.duration = duration
         self.nodes = ns.network.NodeContainer()
         self.mobhelper = ns.mobility.MobilityHelper()
-        Session.__init__(self, persistent=persistent)
+        Session.__init__(self, session_id, persistent=persistent)
 
     def run(self, vis=False):
         """
@@ -478,7 +478,7 @@ class Ns3Session(Session):
                     continue
                 # from WayPointMobility.setnodeposition(node, x, y, z)
                 node.position.set(x, y, z)
-                node_data = node.data(flags=0)
+                node_data = node.data(0)
                 self.broadcast_node(node_data)
                 self.sdt.updatenode(node.objid, flags=0, x=x, y=y, z=z)
             time.sleep(0.001 * refresh_ms)

@@ -14,6 +14,8 @@ import sys
 
 from core import logger
 from core.misc import ipaddress
+from core.misc import nodemaps
+from core.misc import nodeutils
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WimaxNet
 
@@ -22,7 +24,8 @@ def wimaxsession(opt):
     """
     Run a test wimax session.
     """
-    session = Ns3Session(persistent=True, duration=opt.duration)
+    nodeutils.set_node_map(nodemaps.NODES)
+    session = Ns3Session(1, persistent=True, duration=opt.duration)
     wimax = session.add_object(cls=Ns3WimaxNet, name="wlan1")
     # wimax.wimax.EnableLogComponents()
 

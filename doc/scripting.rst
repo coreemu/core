@@ -40,7 +40,7 @@ Here are the basic elements of a CORE Python script:
   from core.session import Session
   from core.netns import nodes
 
-  session = Session(persistent=True)
+  session = Session(1, persistent=True)
   node1 = session.add_object(cls=nodes.CoreNode, name="n1")
   node2 = session.add_object(cls=nodes.CoreNode, name="n2")
   hub1 = session.add_object(cls=nodes.HubNode, name="hub1")

@@ -17,7 +17,7 @@ To run with the CORE GUI:
     # in another terminal
     core-daemon -e ./ns3wifi.py
     # in a third terminal
-    core
+    core-gui
     # now select the running session
 
 """
@@ -29,7 +29,8 @@ import ns.core
 
 from core import logger
 from core.misc import ipaddress
-
+from core.misc import nodeutils
+from core.misc import nodemaps
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
 
@@ -51,7 +52,8 @@ def wifisession(opt):
     """
     Run a test wifi session.
     """
-    session = Ns3Session(persistent=True, duration=opt.duration)
+    nodeutils.set_node_map(nodemaps.NODES)
+    session = Ns3Session(1, persistent=True, duration=opt.duration)
     session.name = "ns3wifi"
     session.filename = session.name + ".py"
     session.node_count = str(opt.numnodes + 1)
