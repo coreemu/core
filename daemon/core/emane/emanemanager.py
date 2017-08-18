@@ -112,12 +112,11 @@ class EmaneManager(ConfigurableManager):
 
     def initeventservice(self, filename=None, shutdown=False):
         """
-        (Re-)initialize the EMANE Event service.
+        Re-initialize the EMANE Event service.
         The multicast group and/or port may be configured.
-        - For versions < 0.9.1 this can be changed via XML config file
-          and an environment variable pointing to that file.
-        - For version >= 0.9.1 this is passed into the EventService
-          constructor.
+        - For versions < 0.9.1 this can be changed via XML config file and an environment variable
+        pointing to that file.
+        - For version >= 0.9.1 this is passed into the EventService constructor.
         """
         logger.info("initializing emane event service: %s", emane.VERSIONSTR)
 

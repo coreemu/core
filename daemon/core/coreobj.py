@@ -250,7 +250,7 @@ class PyCoreObj(object):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: link
+        :rtype: core.data.LinkData
         """
         return []
 
@@ -598,7 +598,7 @@ class PyCoreNetIf(object):
         """
         Attach network.
 
-        :param PyCoreNet net: network to attach to
+        :param core.coreobj.PyCoreNet net: network to attach to
         :return:nothing
         """
         if self.net:

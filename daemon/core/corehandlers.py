@@ -465,7 +465,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         """
         Dispatch replies by CORE to message msg previously received from the client.
 
-        :param replies: reply messages to dispatch
+        :param list replies: reply messages to dispatch
         :param message: message for replies
         :return: nothing
         """
@@ -1763,12 +1763,6 @@ class BaseAuxRequestHandler(CoreRequestHandler):
             self.session.shutdown()
         return SocketServer.BaseRequestHandler.finish(self)
 
-    """
-    =======================================================================
-    Concrete AuxRequestHandler classes must redefine the following methods
-    =======================================================================
-    """
-
     def receive_message(self):
         """
         Receive data from the client in the supported format. Parse, transform to CORE API format and
@@ -1783,24 +1777,13 @@ class BaseAuxRequestHandler(CoreRequestHandler):
 
     def dispatch_replies(self, replies, message):
         """
-        Dispatch CORE "replies" to a previously received message "msg" from a client.
+        Dispatch CORE replies to a previously received message msg from a client.
         Replies passed to this method follow the CORE API. This method allows transformation to
         the form supported by the auxiliary handler and within the context of "msg".
         Add transformation and transmission code here.
 
-        EXAMPLE:
-        transformed_replies = stateful_transform (replies, msg) # stateful_transform method needs to be defined
-        if transformed_replies:
-            for reply in transformed_replies:
-                try:
-                    self.request.sendall(reply)
-                except Exception, e:
-                    if self.debug:
-                        logger.info("-"*60)
-                        traceback.print_exc(file=sys.stdout)
-                        logger.info("-"*60)
-                    raise e
-
+        :param list replies: replies to dispatch
+        :param message: message being replied to
         :return: nothing
         """
         raise NotImplemented
@@ -1811,19 +1794,7 @@ class BaseAuxRequestHandler(CoreRequestHandler):
         in CORE API format. This method allows transformation to the required format supported by this
         handler prior to transmission.
 
-        EXAMPLE:
-        msgs = self.transform(data)  # transform method needs to be defined
-        if msgs:
-            for msg in msgs:
-                try:
-                    self.request.sendall(reply)
-                except Exception, e:
-                    if self.debug:
-                        logger.info("-"*60)
-                        traceback.print_exc(file=sys.stdout)
-                        logger.info("-"*60)
-                    raise e
-
+        :param data: data to send
         :return: nothing
         """
         raise NotImplemented

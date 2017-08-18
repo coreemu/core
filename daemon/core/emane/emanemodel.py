@@ -73,10 +73,12 @@ class EmaneModel(WirelessModel):
     def buildplatformxmlnementry(self, doc, n, ifc):
         """
         Build the NEM definition that goes into the platform.xml file.
+
         This returns an XML element that will be added to the <platform/> element.
-        This default method supports per-interface config
-          (e.g. <nem definition="n2_0_63emane_rfpipe.xml" id="1"> or per-EmaneNode
-        config (e.g. <nem definition="n1emane_rfpipe.xml" id="1">.
+
+        This default method supports per-interface config (e.g. <nem definition="n2_0_63emane_rfpipe.xml" id="1">
+        or per-EmaneNode config (e.g. <nem definition="n1emane_rfpipe.xml" id="1">.
+
         This can be overriden by a model for NEM flexibility; n is the EmaneNode.
         """
         nem = doc.createElement("nem")

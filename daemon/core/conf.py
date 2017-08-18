@@ -25,9 +25,6 @@ class ConfigurableManager(object):
     def __init__(self):
         """
         Creates a ConfigurableManager instance.
-
-        :param core.session.Session session: session this manager is tied to
-        :return: nothing
         """
         # configurable key=values, indexed by node number
         self.configs = {}
@@ -41,10 +38,7 @@ class ConfigurableManager(object):
         ConfigurableManager usually is used to:
         1. Request a list of Configurables (request flag)
         2. Reset manager and clear configs (reset flag)
-        3. Send values that configure the manager or one of its
-           Configurables
-
-        Returns any reply messages.
+        3. Send values that configure the manager or one of its Configurables
 
         :param core.session.Session session: CORE session object
         :param ConfigData config_data: configuration data for carrying out a configuration
