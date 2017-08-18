@@ -1,11 +1,3 @@
-#
-# CORE
-# Copyright (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# authors: core-dev@pf.itd.nrl.navy.mil
-#
-
 """
 vnet.py: NetgraphNet and NetgraphPipeNet classes that implement virtual networks
 using the FreeBSD Netgraph subsystem.

@@ -1,11 +1,3 @@
-#
-# CORE
-# Copyright (c)2010-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: core-dev@pf.itd.nrl.navy.mil
-#
-
 """
 nodes.py: definition of CoreNode classes and other node classes that inherit
 from the CoreNode, implementing specific node types.

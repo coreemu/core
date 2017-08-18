@@ -1,6 +1,3 @@
-# Copyright (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-
 """
 Defines how CORE will be built for installation.
 """

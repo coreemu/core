@@ -34,6 +34,14 @@ class CoreVersionParser(object):
 
 
 def core_document_parser(session, filename, options):
+    """
+    Retrieves the xml document parser.
+
+    :param core.session.Session session: core
+    :param str filename: name of file to save to or load from
+    :param dict options: parsing options
+    :return: xml document parser
+    """
     vp = CoreVersionParser(filename, options)
     if 'dom' not in options:
         options['dom'] = vp.dom

@@ -1,11 +1,3 @@
-#
-# CORE
-# Copyright (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Tom Goff <thomas.goff@boeing.com>
-#
-
 """
 quagga.py: helper class for generating Quagga configuration.
 """
