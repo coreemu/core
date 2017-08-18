@@ -55,6 +55,16 @@ Here is what is installed with 'make install':
 
 See the manual for the software required for building CORE.
 
+Building Documentation
+======================
+
+Being able to build documentation depends on help2man being installed.
+
+Once that has been done you can run the following commands:
+
+    ./bootstrap.sh
+    ./configure
+    make html
 
 Running CORE
 ============
@@ -63,7 +73,7 @@ First start the CORE services:
 
     sudo /etc/init.d/core-daemon start
 
-This automatically runs the core-daemon program. 
+This automatically runs the core-daemon program.
 Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
 
     core-gui
