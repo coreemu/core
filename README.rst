@@ -34,8 +34,11 @@ Building CORE
 To build this software you should use:
 
     ./bootstrap.sh
+
     ./configure
+    
     make
+    
     sudo make install
 
 Here is what is installed with 'make install':
