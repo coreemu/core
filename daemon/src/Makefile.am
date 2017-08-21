@@ -8,6 +8,8 @@
 #
 
 AM_CFLAGS	= -Wall -fno-strict-aliasing -O3 -g @libev_CFLAGS@
+SETUPPY		= setup.py
+SETUPPYFLAGS	= -v
 # 				-DDEBUG
 
 SRC_COMMON	= vnode_msg.c vnode_cmd.c vnode_chnl.c vnode_io.c \
@@ -36,8 +38,13 @@ libnetns.a:
 
 # Python libraries install
 install-exec-local:
-	SBINDIR=${DESTDIR}/@SBINDIR@ $(PYTHON) setup.py install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
-#python setup.py install --prefix=${DESTDIR}${PYTHON_PREFIX}
+	$(MKDIR_P) ${DESTDIR}/${pythondir}
+	$(MKDIR_P) ${DESTDIR}/${pyexecdir}
+	SBINDIR=${DESTDIR}/@SBINDIR@ PYTHONPATH=${DESTDIR}/${pythondir} $(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
+		--prefix=${DESTDIR}/${pyprefix} \
+		--install-purelib=${DESTDIR}/${pythondir} \
+		--install-platlib=${DESTDIR}/${pyexecdir} \
+		--no-compile
 
 # Python libraries uninstall
 uninstall-hook:
