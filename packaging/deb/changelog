@@ -2,7 +2,7 @@ core (5.0-0ubuntu1) precise; urgency=low
 
   * Added Ryu SD and Open vSwitch services, code cleanup and refactoring
 
- --  CORE Developers <core-dev@nrl.navy.mil>  XXX, XX XXX 2017 00:00:00 -0700
+ --  CORE Developers <core-dev@nrl.navy.mil>  Fri, 01 Sep 2017 00:00:00 -0700
 
 core (4.8-0ubuntu1) precise; urgency=low
 

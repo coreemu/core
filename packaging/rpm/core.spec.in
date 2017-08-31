@@ -409,7 +409,7 @@ fi
 %{_sbindir}/vnoded
 
 %changelog
-* Fri Aug 18 2017 CORE Developers <core-dev@nrl.navy.mil> - 5.0
+* Fri Sep 01 2017 CORE Developers <core-dev@nrl.navy.mil> - 5.0
 - Added Ryu SD and Open vSwitch services, code cleanup and refactoring
 * Fri Jun 5 2015 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 4.8
 - Support for NRL Network Modeling Framework (NMF) XML representation, bugfixes
