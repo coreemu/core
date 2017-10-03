@@ -312,7 +312,7 @@ class OvsNet(PyCoreNet):
         if network.up:
             # this is similar to net.attach() but uses netif.name instead
             # of localname
-            subprocess.check_call([constants.OVS_BIN, "add-port", network.brname, interface.name])
+            subprocess.check_call([constants.OVS_BIN, "add-port", network.bridge_name, interface.name])
             subprocess.check_call([constants.IP_BIN, "link", "set", interface.name, "up"])
 
         # TODO: is there a native method for this? see if this  causes issues
