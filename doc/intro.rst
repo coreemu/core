@@ -30,17 +30,11 @@ demonstrations, application and platform testing, evaluating networking
 scenarios, security studies, and increasing the size of physical test networks.
 
 What's New?
-=================
-For readers who are already familiar with CORE and have read this manual before, below is a list of what changed in version 4.8:
+===========
+For readers who are already familiar with CORE and have read this manual before, below is a list of what changed in version 5.0:
 
-* :ref:`Configuration_Files` - a new XML format has been defined by the U.S. Naval Research Lab (NRL) for the Network Management Framework. . 
-
-* :ref:`EMANE` - `Release 0.9.2 of EMANE <https://github.com/adjacentlink/emane/wiki/Release-Notes#092>`_ included a new capability that, in order to be leveraged, needs changes on how it is deployed by CORE. The EMANE section of this document has been updated with new method of connecting together the deployed instances. 
-* :ref:`Control_Network` - with EMANE 0.9.2, the CORE control network has become an important component of CORE. Auxiliary control networks have been added to the primary control network to host EMANE traffic. As a result, the discussion on the control network has been elevated to a top level topic.  
-* `Tips, Hints, Important Information` - miscellaneous information added to several chapters in the document.
-
-
-
+* :ref:`Services` - Added Ryu SD and Open vSwitch services
+* :ref:`Python_Scripting` - Updated script examples to reflect code changes
 
 .. index::
    single: CORE; components of
@@ -109,7 +103,7 @@ and FreeBSD systems. The primary platform used for development is Linux.
    single: LXC
    single: network namespaces
 
-* :ref:`Linux` CORE uses Linux network namespace virtualization to build virtual nodes, and ties them together with virtual networks using Linux Ethernet bridging. 
+* :ref:`Linux` CORE uses Linux network namespace virtualization to build virtual nodes, and ties them together with virtual networks using Linux Ethernet bridging.
 * :ref:`FreeBSD` CORE uses jails with a network stack virtualization kernel option to build virtual nodes, and ties them together with virtual networks using BSD's Netgraph system.
 
 
@@ -154,7 +148,7 @@ running programs. Starting with FreeBSD 8.0, a new `vimage` kernel option
 extends BSD jails so that each jail can have its own virtual network stack --
 its own networking variables such as addresses, interfaces, routes, counters,
 protocol state, socket information, etc. The existing networking algorithms and
-code paths are intact but operate on this virtualized state. 
+code paths are intact but operate on this virtualized state.
 
 Each jail plus network stack forms a lightweight virtual machine. These are
 named jails or *virtual images* (or *vimages*) and are created using a the
@@ -172,13 +166,13 @@ added this functionality to the
 mainline 8.0-RELEASE and newer kernels.
 
 .. index::
-   single: FreeBSD; Netgraph 
+   single: FreeBSD; Netgraph
 
 The FreeBSD Operating System kernel features a graph-based
 networking subsystem named Netgraph. The netgraph(4) manual page quoted below
-best defines this system: 
+best defines this system:
 
-  The netgraph system provides a uniform and modular system for the 
+  The netgraph system provides a uniform and modular system for the
   implementation of kernel objects which perform various networking functions.
   The objects, known as nodes, can be arranged into arbitrarily complicated
   graphs.  Nodes have hooks which are used to connect two nodes together,
@@ -202,8 +196,8 @@ best defines this system:
 Prior Work
 ==========
 
-The Tcl/Tk CORE GUI was originally derived from the open source 
-`IMUNES <http://www.tel.fer.hr/imunes/>`_ 
+The Tcl/Tk CORE GUI was originally derived from the open source
+`IMUNES <http://www.tel.fer.hr/imunes/>`_
 project from the University of Zagreb
 as a custom project within Boeing Research and Technology's Network
 Technology research group in 2004. Since then they have developed the CORE
@@ -212,7 +206,7 @@ Python framework, and made numerous user- and kernel-space developments, such
 as support for wireless networks, IPsec, the ability to distribute emulations,
 simulation integration, and more. The IMUNES project also consists of userspace
 and kernel components. Originally, one had to download and apply a patch for
-the FreeBSD 4.11 kernel, but the more recent 
+the FreeBSD 4.11 kernel, but the more recent
 `VirtNet <http://www.nlnet.nl/project/virtnet/>`_
 effort has brought network stack
 virtualization to the more modern FreeBSD 8.x kernel.

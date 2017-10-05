@@ -66,6 +66,7 @@ import math
 
 __all__ = ['to_latlon', 'from_latlon']
 
+
 class OutOfRangeError(ValueError):
     pass
 
@@ -139,7 +140,7 @@ def to_latlon(easting, northing, zone_number, zone_letter):
     n = R / ep_sin_sqrt
     r = (1 - E) / ep_sin
 
-    c = _E * p_cos**2
+    c = _E * p_cos ** 2
     c2 = c * c
 
     d = x / (n * K0)
@@ -152,7 +153,7 @@ def to_latlon(easting, northing, zone_number, zone_letter):
     latitude = (p_rad - (p_tan / r) *
                 (d2 / 2 -
                  d4 / 24 * (5 + 3 * p_tan2 + 10 * c - 4 * c2 - 9 * E_P2)) +
-                 d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2))
+                d6 / 720 * (61 + 90 * p_tan2 + 298 * c + 45 * p_tan4 - 252 * E_P2 - 3 * c2))
 
     longitude = (d -
                  d3 / 6 * (1 + 2 * p_tan2 + c) +
@@ -184,8 +185,8 @@ def from_latlon(latitude, longitude):
 
     zone_letter = latitude_to_zone_letter(latitude)
 
-    n = R / math.sqrt(1 - E * lat_sin**2)
-    c = E_P2 * lat_cos**2
+    n = R / math.sqrt(1 - E * lat_sin ** 2)
+    c = E_P2 * lat_cos ** 2
 
     a = lat_cos * (lon_rad - central_lon_rad)
     a2 = a * a
@@ -204,7 +205,7 @@ def from_latlon(latitude, longitude):
                         a5 / 120 * (5 - 18 * lat_tan2 + lat_tan4 + 72 * c - 58 * E_P2)) + 500000
 
     northing = K0 * (m + n * lat_tan * (a2 / 2 +
-                                        a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c**2) +
+                                        a4 / 24 * (5 - lat_tan2 + 9 * c + 4 * c ** 2) +
                                         a6 / 720 * (61 - 58 * lat_tan2 + lat_tan4 + 600 * c - 330 * E_P2)))
 
     if latitude < 0:
@@ -244,16 +245,15 @@ def zone_number_to_central_longitude(zone_number):
 
 def haversine(lon1, lat1, lon2, lat2):
     """
-    Calculate the great circle distance between two points 
+    Calculate the great circle distance between two points
     on the earth (specified in decimal degrees)
     """
-    # convert decimal degrees to radians 
+    # convert decimal degrees to radians
     lon1, lat1, lon2, lat2 = map(math.radians, [lon1, lat1, lon2, lat2])
-    # haversine formula 
-    dlon = lon2 - lon1 
-    dlat = lat2 - lat1 
-    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
-    c = 2 * math.asin(math.sqrt(a)) 
+    # haversine formula
+    dlon = lon2 - lon1
+    dlat = lat2 - lat1
+    a = math.sin(dlat / 2) ** 2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon / 2) ** 2
+    c = 2 * math.asin(math.sqrt(a))
     m = 6367000 * c
-    return m 
-   
+    return m

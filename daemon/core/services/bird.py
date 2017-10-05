@@ -1,24 +1,14 @@
-#
-# CORE
-# Copyright (c)2012 Jean-Tiare Le Bigot.
-# See the LICENSE file included in this distribution.
-#
-# authors: Jean-Tiare Le Bigot <admin@jtlebi.fr>
-#          Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-'''
+"""
 bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
-'''
+"""
 
-import os
+from core.service import CoreService
 
-from core.service import CoreService, addservice
-from core.misc.ipaddr import IPv4Prefix
-from core.constants import *
 
 class Bird(CoreService):
-    ''' Bird router support
-    '''
+    """
+    Bird router support
+    """
     _name = "bird"
     _group = "BIRD"
     _depends = ()
@@ -26,13 +16,14 @@ class Bird(CoreService):
     _configs = ("/etc/bird/bird.conf",)
     _startindex = 35
     _startup = ("bird -c %s" % (_configs[0]),)
-    _shutdown = ("killall bird", )
-    _validate = ("pidof bird", )
+    _shutdown = ("killall bird",)
+    _validate = ("pidof bird",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
-        ''' Return the bird.conf file contents.
-        '''
+        """
+        Return the bird.conf file contents.
+        """
         if filename == cls._configs[0]:
             return cls.generateBirdConf(node, services)
         else:
@@ -40,28 +31,30 @@ class Bird(CoreService):
 
     @staticmethod
     def routerid(node):
-        ''' Helper to return the first IPv4 address of a node as its router ID.
-        '''
+        """
+        Helper to return the first IPv4 address of a node as its router ID.
+        """
         for ifc in node.netifs():
             if hasattr(ifc, 'control') and ifc.control == True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
-                    return a .split('/') [0]
-        #raise ValueError,  "no IPv4 address found for router ID"
+                    return a.split('/')[0]
+        # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
     @classmethod
     def generateBirdConf(cls, node, services):
-        ''' Returns configuration file text. Other services that depend on bird
-           will have generatebirdifcconfig() and generatebirdconfig()
-           hooks that are invoked here.
-        '''
-        cfg  = """\
+        """
+        Returns configuration file text. Other services that depend on bird
+        will have generatebirdifcconfig() and generatebirdconfig()
+        hooks that are invoked here.
+        """
+        cfg = """\
 /* Main configuration file for BIRD. This is ony a template,
  * you will *need* to customize it according to your needs
  * Beware that only double quotes \'"\' are valid. No singles. */
- 
+
 
 log "/var/log/%s.log" all;
 #debug protocols all;
@@ -90,14 +83,16 @@ protocol device {
 
         return cfg
 
+
 class BirdService(CoreService):
-    ''' Parent class for Bird services. Defines properties and methods
+    """
+    Parent class for Bird services. Defines properties and methods
     common to Bird's routing daemons.
-    '''
+    """
 
     _name = "BirdDaemon"
     _group = "BIRD"
-    _depends = ("bird", )
+    _depends = ("bird",)
     _dirs = ()
     _configs = ()
     _startindex = 40
@@ -106,7 +101,7 @@ class BirdService(CoreService):
     _meta = "The config file for this service can be found in the bird service."
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         return ""
 
     @classmethod
@@ -118,20 +113,23 @@ class BirdService(CoreService):
         cfg = ""
 
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True: continue
-            cfg += '        interface "%s";\n'% ifc.name
+            if hasattr(ifc, 'control') and ifc.control == True:
+                continue
+            cfg += '        interface "%s";\n' % ifc.name
 
         return cfg
 
 
 class BirdBgp(BirdService):
-    '''BGP BIRD Service (configuration generation)'''
+    """
+    BGP BIRD Service (configuration generation)
+    """
 
     _name = "BIRD_BGP"
     _custom_needed = True
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         return """
 /* This is a sample config that should be customized with appropriate AS numbers
  * and peers; add one section like this for each neighbor */
@@ -152,13 +150,16 @@ protocol bgp {
 
 """
 
+
 class BirdOspf(BirdService):
-    '''OSPF BIRD Service (configuration generation)'''
+    """
+    OSPF BIRD Service (configuration generation)
+    """
 
     _name = "BIRD_OSPFv2"
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = 'protocol ospf {\n'
         cfg += '    export filter {\n'
         cfg += '        if source = RTS_BGP then {\n'
@@ -168,7 +169,7 @@ class BirdOspf(BirdService):
         cfg += '        accept;\n'
         cfg += '    };\n'
         cfg += '    area 0.0.0.0 {\n'
-        cfg +=         cls.generatebirdifcconfig(node)
+        cfg += cls.generatebirdifcconfig(node)
         cfg += '    };\n'
         cfg += '}\n\n'
 
@@ -176,17 +177,19 @@ class BirdOspf(BirdService):
 
 
 class BirdRadv(BirdService):
-    '''RADV BIRD Service (configuration generation)'''
+    """
+    RADV BIRD Service (configuration generation)
+    """
 
     _name = "BIRD_RADV"
 
     @classmethod
-    def generatebirdconfig(cls,  node):
-        cfg  = '/* This is a sample config that must be customized */\n'
+    def generatebirdconfig(cls, node):
+        cfg = '/* This is a sample config that must be customized */\n'
 
         cfg += 'protocol radv {\n'
         cfg += '    # auto configuration on all interfaces\n'
-        cfg +=      cls.generatebirdifcconfig(node)
+        cfg += cls.generatebirdifcconfig(node)
         cfg += '    # Advertise DNS\n'
         cfg += '    rdnss {\n'
         cfg += '#        lifetime mult 10;\n'
@@ -202,16 +205,18 @@ class BirdRadv(BirdService):
 
 
 class BirdRip(BirdService):
-    '''RIP BIRD Service (configuration generation)'''
+    """
+    RIP BIRD Service (configuration generation)
+    """
 
     _name = "BIRD_RIP"
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = 'protocol rip {\n'
         cfg += '    period 10;\n'
         cfg += '    garbage time 60;\n'
-        cfg +=         cls.generatebirdifcconfig(node)
+        cfg += cls.generatebirdifcconfig(node)
         cfg += '    honor neighbor;\n'
         cfg += '    authentication none;\n'
         cfg += '    import all;\n'
@@ -222,28 +227,19 @@ class BirdRip(BirdService):
 
 
 class BirdStatic(BirdService):
-    '''Static Bird Service (configuration generation)'''
+    """
+    Static Bird Service (configuration generation)
+    """
 
     _name = "BIRD_static"
     _custom_needed = True
 
     @classmethod
-    def generatebirdconfig(cls,  node):
+    def generatebirdconfig(cls, node):
         cfg = '/* This is a sample config that must be customized */\n'
-
         cfg += 'protocol static {\n'
         cfg += '#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n'
         cfg += '#    route 203.0.113.0/24 reject;        # Sink route\n'
         cfg += '#    route 10.2.0.0/24 via "arc0";       # Secondary network\n'
         cfg += '}\n\n'
-
         return cfg
-
-
-# Register all protocols
-addservice(Bird)
-addservice(BirdOspf)
-addservice(BirdBgp)
-#addservice(BirdRadv)  # untested
-addservice(BirdRip)
-addservice(BirdStatic)

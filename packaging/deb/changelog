@@ -1,3 +1,9 @@
+core (5.0-0ubuntu1) precise; urgency=low
+
+  * Added Ryu SD and Open vSwitch services, code cleanup and refactoring
+
+ --  CORE Developers <core-dev@nrl.navy.mil>  Fri, 01 Sep 2017 00:00:00 -0700
+
 core (4.8-0ubuntu1) precise; urgency=low
 
   * Support for NRL Network Modeling Framework (NMF) XML representation, bugfixes
@@ -18,7 +24,7 @@ core (4.6-0ubuntu1) precise; urgency=low
 
 core (4.5-0ubuntu1) precise; urgency=low
 
-  * XML support, SDT3D support, EMANE 0.8.1, ns-3 locations, code cleanup, 
+  * XML support, SDT3D support, EMANE 0.8.1, ns-3 locations, code cleanup,
     bugfixes, and more.
 
  --  Jeff Ahrenholz <core-dev@pf.itd.nrl.navy.mil>  Thu, 11 Apr 2013 14:19:05 -0700

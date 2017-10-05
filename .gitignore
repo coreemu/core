@@ -16,3 +16,13 @@ configure
 core-*.tar.gz
 debian
 stamp-h1
+
+# intellij
+*.iml
+.idea
+
+# sonarqube sonar-scanner
+.scannerwork
+
+# ignore test coverage files
+coverage.xml

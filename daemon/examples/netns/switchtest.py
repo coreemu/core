@@ -8,11 +8,14 @@
 # and repeat for minnodes <= n <= maxnodes with a step size of
 # nodestep
 
-import optparse, sys, os, datetime
+import datetime
+import optparse
+import sys
 
-from core import pycore
-from core.misc import ipaddr
+from core.misc import ipaddress, nodeutils, nodemaps
 from core.misc.utils import mutecall
+from core.netns import nodes
+from core.session import Session
 
 try:
     mutecall(["iperf", "-v"])
@@ -20,48 +23,52 @@ except OSError:
     sys.stderr.write("ERROR: running iperf failed\n")
     sys.exit(1)
 
+
 def test(numnodes, testsec):
     # node list
     n = []
     # IP subnet
-    prefix = ipaddr.IPv4Prefix("10.83.0.0/16")
-    session = pycore.Session()
+    prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
+    session = Session(1)
     # emulated network
-    net = session.addobj(cls = pycore.nodes.SwitchNode)
+    net = session.add_object(cls=nodes.SwitchNode)
     for i in xrange(1, numnodes + 1):
-        tmp = session.addobj(cls = pycore.nodes.LxcNode, name = "n%d" % i)
+        tmp = session.add_object(cls=nodes.LxcNode, name="n%d" % i)
         tmp.newnetif(net, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         n.append(tmp)
     n[0].cmd(["iperf", "-s", "-D"])
     n[-1].icmd(["iperf", "-t", str(int(testsec)), "-c", str(prefix.addr(1))])
     n[0].cmd(["killall", "-9", "iperf"])
+
+    raw_input("press enter to exit")
     session.shutdown()
+
 
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
-    parser = optparse.OptionParser(usage = usagestr)
+    parser = optparse.OptionParser(usage=usagestr)
 
-    parser.set_defaults(minnodes = 2)
-    parser.add_option("-m", "--minnodes", dest = "minnodes", type = int,
-                      help = "min number of nodes to test; default = %s" %
-                      parser.defaults["minnodes"])
+    parser.set_defaults(minnodes=2)
+    parser.add_option("-m", "--minnodes", dest="minnodes", type=int,
+                      help="min number of nodes to test; default = %s" %
+                           parser.defaults["minnodes"])
 
-    parser.set_defaults(maxnodes = 2)
-    parser.add_option("-n", "--maxnodes", dest = "maxnodes", type = int,
-                      help = "max number of nodes to test; default = %s" %
-                      parser.defaults["maxnodes"])
+    parser.set_defaults(maxnodes=2)
+    parser.add_option("-n", "--maxnodes", dest="maxnodes", type=int,
+                      help="max number of nodes to test; default = %s" %
+                           parser.defaults["maxnodes"])
 
-    parser.set_defaults(testsec = 10)
-    parser.add_option("-t", "--testsec", dest = "testsec", type = int,
-                      help = "test time in seconds; default = %s" %
-                      parser.defaults["testsec"])
+    parser.set_defaults(testsec=10)
+    parser.add_option("-t", "--testsec", dest="testsec", type=int,
+                      help="test time in seconds; default = %s" %
+                           parser.defaults["testsec"])
 
-    parser.set_defaults(nodestep = 1)
-    parser.add_option("-s", "--nodestep", dest = "nodestep", type = int,
-                      help = "number of nodes step size; default = %s" %
-                      parser.defaults["nodestep"])
+    parser.set_defaults(nodestep=1)
+    parser.add_option("-s", "--nodestep", dest="nodestep", type=int,
+                      help="number of nodes step size; default = %s" %
+                           parser.defaults["nodestep"])
 
-    def usage(msg = None, err = 0):
+    def usage(msg=None, err=0):
         sys.stdout.write("\n")
         if msg:
             sys.stdout.write(msg + "\n\n")
@@ -90,8 +97,12 @@ def main():
         test(i, options.testsec)
         print >> sys.stderr, ""
 
-    print >> sys.stderr, \
-          "elapsed time: %s" % (datetime.datetime.now() - start)
+    print >> sys.stderr, "elapsed time: %s" % (datetime.datetime.now() - start)
+
 
 if __name__ == "__main__":
+    # configure nodes to use
+    node_map = nodemaps.NODES
+    nodeutils.set_node_map(node_map)
+
     main()

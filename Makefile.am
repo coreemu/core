@@ -8,7 +8,7 @@
 #
 
 if WANT_DOCS
-  DOCS			= doc
+  DOCS			= doc daemon/doc
 endif
 if WANT_GUI
   GUI			= gui
@@ -52,10 +52,11 @@ dist-hook:
 	rm -rf `find $(distdir)/kernel -name .svn`
 	rm -rf $(distdir)/packaging/bsd/.svn
 
-# build a source RPM using Fedora ~/rpmbuild dirs
+# build a source RPM
 .PHONY: rpm
 rpm: dist
-	rpmdev-setuptree
+	mkdir -p $(HOME)/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
+	echo '%_topdir $(HOME)/rpmbuild' > ~/.rpmmacros
 	cp -afv core-@CORE_VERSION@.tar.gz ~/rpmbuild/SOURCES
 	cp -afv packaging/rpm/core.spec ~/rpmbuild/SPECS
 	rpmbuild -bs ~/rpmbuild/SPECS/core.spec

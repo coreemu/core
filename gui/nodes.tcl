@@ -28,10 +28,12 @@ array set g_node_types_default {
 	    physical {built-in type for physical nodes}}
 	6 {xen xen.gif xen.gif {zebra OSPFv2 OSPFv3 IPForward} \
 	    xen {built-in type for Xen PVM domU router}}
+	7 {OVS lanswitch.gif lanswitch.gif {DefaultRoute SSH OvsService} OVS {} }
+
 }
 
 # possible machine types for nodes
-set MACHINE_TYPES "netns physical xen"
+set MACHINE_TYPES "netns physical xen OVS"
 
 # array populated from nodes.conf file
 array set g_node_types { }
@@ -189,7 +191,7 @@ proc getNodeTypeServices { type } {
 # node type from the toolbar
 proc getNodeTypeMachineType { type } {
     global MACHINE_TYPES g_node_types
-    set default_machine_type [lindex $MACHINE_TYPES 0]
+    set default_machine_type [lindex $MACHINE_TYPES 3]
     set i [getNodeTypeIndex $type]
     if { $i < 0 } { return $default_machine_type }; # failsafe
     return [lindex $g_node_types($i) 4]
@@ -213,7 +215,7 @@ proc getNodeTypeProfile { type } {
 # node type from the toolbar
 proc getNodeTypeMachineType { type } {
     global MACHINE_TYPES g_node_types
-    set default_machine_type [lindex $MACHINE_TYPES 0]
+    set default_machine_type [lindex $MACHINE_TYPES 3]
     set i [getNodeTypeIndex $type]
     if { $i < 0 } { return $default_machine_type }; # failsafe
     return [lindex $g_node_types($i) 4]
@@ -719,6 +721,7 @@ proc lanswitch.layer {} { return LINK }
 proc hub.layer {}       { return LINK }
 proc tunnel.layer {}    { return LINK }
 proc wlan.layer {}      { return LINK }
+proc OVS.layer {}       { return NETWORK }
 proc router.layer {}    { return NETWORK }
 proc router.shellcmd { n } { return "vtysh" }
 

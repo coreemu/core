@@ -4,7 +4,7 @@ CORE
 
 CORE: Common Open Research Emulator
 
-Copyright (c)2005-2013 the Boeing Company.
+Copyright (c)2005-2017 the Boeing Company.
 
 See the LICENSE file included in this distribution.
 
@@ -41,6 +41,9 @@ To build this software you should use:
     
     sudo make install
 
+Note: You may need to pass the proxy settings to sudo make install:
+    sudo make install HTTP_PROXY=<proxy>
+
 Here is what is installed with 'make install':
 
     /usr/local/bin/core-gui
@@ -55,6 +58,16 @@ Here is what is installed with 'make install':
 
 See the manual for the software required for building CORE.
 
+Building Documentation
+======================
+
+Being able to build documentation depends on help2man being installed.
+
+Once that has been done you can run the following commands:
+
+    ./bootstrap.sh
+    ./configure
+    make html
 
 Running CORE
 ============
@@ -63,7 +76,7 @@ First start the CORE services:
 
     sudo /etc/init.d/core-daemon start
 
-This automatically runs the core-daemon program. 
+This automatically runs the core-daemon program.
 Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
 
     core-gui

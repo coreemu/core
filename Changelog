@@ -1,3 +1,21 @@
+2017-09-01 CORE 5.0
+  * DEVELOPMENT:
+    - support for editorconfig to help standardize development across IDEs, from the defined configuration file
+    - support for sonarqube analysis, from the defined configuration file
+  * DAEMON:
+    - code cleanup and improvements to adhere to coding standards (SonarQube)
+    - leverage "logzero" module to make easy usage of the standard logging module
+    - improvements to documentation across the code base
+    - initial work to separate the dependence on TCP API messaging from the core library (easier core scripting)
+    - beta support for running core in Open vSwitch mode, leveraging Open vSwitch bridges, instead of Linux bridges
+  * SERVICES:
+    - added Ryu SDN controller service
+    - added Open vSwitch service
+  * TEST:
+    - added unit/integration tests to support validating changes going forward
+  * BUGFIXES:
+    - merged pull requests for: #115, #110, #109, #107, #106, #105, #103, #102, #101, #96
+
 2015-06-05 CORE 4.8
   * EMANE:
     - support for EMANE 0.9.2
@@ -89,24 +107,24 @@
     - EMANE poststartup() to re-transmit location events during initialization
     - added debug port to EMANE options
     - added a basic EMANE 802.11 CORE Python script example
-    - expose transport XML block generation to EmaneModels 
+    - expose transport XML block generation to EmaneModels
     - expose NEM entry to the EmaneModel so it can be overridden by a model
     - add the control interface bridge prior to starting EMANE, as some models may
     - depend on the controlnet functionality
     - added EMANE model to CORE converter
     - parse lat/long/alt from node messages, for moving nodes using command-line
     - fix bug #196 incorrect distance when traversing UTM zones
- 
+
   * GUI:
     - added Cut, Copy, and Paste options to the Edit menu
-    - paste will copy selected services and take care of node and interface 
+    - paste will copy selected services and take care of node and interface
     -  renumbering
     - implement Edit > Find dialog for searching nodes and links
     - when copying existing file for a service, perform string replacement of:
     -  "~", "%SESSION%", "%SESSION_DIR%", "%SESSION_USER%", "%NODE%", "%NODENAME%"
     - use CORE_DATA_DIR insteadof LIBDIR
     - fix Adjacency Widget to work with OSPFv2 only networks
- 
+
   * BUILD:
     - build/packaging improvements for inclusion on Debian
     - fix error when running scenario with a mobility script in batch mode
@@ -203,7 +221,7 @@
     - added an event queue to a session with notion of time zero
     - added UDP support to cored.py
     - use UDP by default in coresendmsg.py; added '-H' option to print examples
-    - enter a bash shell by default when running vcmd with no arguments 
+    - enter a bash shell by default when running vcmd with no arguments
     - fixes to distributed emulation entering runtime state
     - write 'nodes' file upon session startup
     - make session number and other attributes available in environment

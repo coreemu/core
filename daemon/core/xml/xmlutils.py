@@ -1,16 +1,25 @@
-#
-# CORE
-# Copyright (c)2011-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-
-from core.netns import nodes
 from xml.dom.minidom import Node
 
-def addelementsfromlist(dom, parent, iterable, name, attr_name):
-    ''' XML helper to iterate through a list and add items to parent using tags
+from core import logger
+from core.netns import nodes
+
+
+_NODE_MAP = {
+    nodes.CoreNode.__name__: nodes.CoreNode,
+    nodes.SwitchNode.__name__: nodes.SwitchNode,
+    nodes.HubNode.__name__: nodes.HubNode,
+    nodes.WlanNode.__name__: nodes.WlanNode,
+    nodes.RJ45Node.__name__: nodes.RJ45Node,
+    nodes.TunnelNode.__name__: nodes.TunnelNode,
+    nodes.GreTapBridge.__name__: nodes.GreTapBridge,
+    nodes.PtpNet.__name__: nodes.PtpNet,
+    nodes.CtrlNet.__name__: nodes.CtrlNet
+}
+
+
+def add_elements_from_list(dom, parent, iterable, name, attr_name):
+    """
+    XML helper to iterate through a list and add items to parent using tags
     of the given name and the item value as an attribute named attr_name.
     Example: addelementsfromlist(dom, parent, ('a','b','c'), "letter", "value")
     <parent>
@@ -18,14 +27,16 @@ def addelementsfromlist(dom, parent, iterable, name, attr_name):
       <letter value="b"/>
       <letter value="c"/>
     </parent>
-    '''
+    """
     for item in iterable:
         element = dom.createElement(name)
         element.setAttribute(attr_name, item)
         parent.appendChild(element)
 
-def addtextelementsfromlist(dom, parent, iterable, name, attrs):
-    ''' XML helper to iterate through a list and add items to parent using tags
+
+def add_text_elements_from_list(dom, parent, iterable, name, attrs):
+    """
+    XML helper to iterate through a list and add items to parent using tags
     of the given name, attributes specified in the attrs tuple, and having the
     text of the item within the tags.
     Example: addtextelementsfromlist(dom, parent, ('a','b','c'), "letter",
@@ -35,17 +46,19 @@ def addtextelementsfromlist(dom, parent, iterable, name, attrs):
       <letter show="True">b</letter>
       <letter show="True">c</letter>
     </parent>
-    '''
+    """
     for item in iterable:
         element = dom.createElement(name)
-        for k,v in attrs:
+        for k, v in attrs:
             element.setAttribute(k, v)
         parent.appendChild(element)
         txt = dom.createTextNode(item)
         element.appendChild(txt)
 
-def addtextelementsfromtuples(dom, parent, iterable, attrs=()):
-    ''' XML helper to iterate through a list of tuples and add items to
+
+def add_text_elements_from_tuples(dom, parent, iterable, attrs=()):
+    """
+    XML helper to iterate through a list of tuples and add items to
     parent using tags named for the first tuple element,
     attributes specified in the attrs tuple, and having the
     text of second tuple element.
@@ -57,37 +70,42 @@ def addtextelementsfromtuples(dom, parent, iterable, attrs=()):
       <second show="True">b</second>
       <third show="True">c</third>
     </parent>
-    '''
+    """
     for name, value in iterable:
         element = dom.createElement(name)
-        for k,v in attrs:
+        for k, v in attrs:
             element.setAttribute(k, v)
         parent.appendChild(element)
         txt = dom.createTextNode(value)
         element.appendChild(txt)
 
-def gettextelementstolist(parent):
-    ''' XML helper to parse child text nodes from the given parent and return
+
+def get_text_elements_to_list(parent):
+    """
+    XML helper to parse child text nodes from the given parent and return
     a list of (key, value) tuples.
-    '''
+    """
     r = []
     for n in parent.childNodes:
         if n.nodeType != Node.ELEMENT_NODE:
             continue
         k = str(n.nodeName)
-        v = '' # sometimes want None here?
+        # sometimes want None here?
+        v = ''
         for c in n.childNodes:
             if c.nodeType != Node.TEXT_NODE:
                 continue
             v = str(c.nodeValue)
             break
-        r.append((k,v))
+        r.append((k, v))
     return r
 
-def addparamtoparent(dom, parent, name, value):
-    ''' XML helper to add a <param name="name" value="value"/> tag to the parent
+
+def add_param_to_parent(dom, parent, name, value):
+    """
+    XML helper to add a <param name="name" value="value"/> tag to the parent
     element, when value is not None.
-    '''
+    """
     if value is None:
         return None
     p = dom.createElement("param")
@@ -96,10 +114,12 @@ def addparamtoparent(dom, parent, name, value):
     p.setAttribute("value", "%s" % value)
     return p
 
-def addtextparamtoparent(dom, parent, name, value):
-    ''' XML helper to add a <param name="name">value</param> tag to the parent
+
+def add_text_param_to_parent(dom, parent, name, value):
+    """
+    XML helper to add a <param name="name">value</param> tag to the parent
     element, when value is not None.
-    '''
+    """
     if value is None:
         return None
     p = dom.createElement("param")
@@ -109,14 +129,16 @@ def addtextparamtoparent(dom, parent, name, value):
     p.appendChild(txt)
     return p
 
-def addparamlisttoparent(dom, parent, name, values):
-    ''' XML helper to return a parameter list and optionally add it to the
+
+def add_param_list_to_parent(dom, parent, name, values):
+    """
+    XML helper to return a parameter list and optionally add it to the
     parent element:
     <paramlist name="name">
        <item value="123">
        <item value="456">
     </paramlist>
-    '''
+    """
     if values is None:
         return None
     p = dom.createElement("paramlist")
@@ -129,18 +151,20 @@ def addparamlisttoparent(dom, parent, name, values):
         p.appendChild(item)
     return p
 
-def getoneelement(dom, name):
+
+def get_one_element(dom, name):
     e = dom.getElementsByTagName(name)
     if len(e) == 0:
         return None
     return e[0]
 
-def iterDescendants(dom, max_depth = 0):
-    '''\
+
+def iter_descendants(dom, max_depth=0):
+    """
     Iterate over all descendant element nodes in breadth first order.
     Only consider nodes up to max_depth deep when max_depth is greater
     than zero.
-    '''
+    """
     nodes = [dom]
     depth = 0
     current_depth_nodes = 1
@@ -160,144 +184,167 @@ def iterDescendants(dom, max_depth = 0):
             current_depth_nodes = next_depth_nodes
             next_depth_nodes = 0
 
-def iterMatchingDescendants(dom, matchFunction, max_depth = 0):
-    '''\
+
+def iter_matching_descendants(dom, match_function, max_depth=0):
+    """
     Iterate over descendant elements where matchFunction(descendant)
     returns true.  Only consider nodes up to max_depth deep when
     max_depth is greater than zero.
-    '''
-    for d in iterDescendants(dom, max_depth):
-        if matchFunction(d):
+    """
+    for d in iter_descendants(dom, max_depth):
+        if match_function(d):
             yield d
 
-def iterDescendantsWithName(dom, tagName, max_depth = 0):
-    '''\
+
+def iter_descendants_with_name(dom, tag_name, max_depth=0):
+    """
     Iterate over descendant elements whose name is contained in
     tagName (or is named tagName if tagName is a string).  Only
     consider nodes up to max_depth deep when max_depth is greater than
     zero.
-    '''
-    if isinstance(tagName, basestring):
-        tagName = (tagName,)
-    def match(d):
-        return d.tagName in tagName
-    return iterMatchingDescendants(dom, match, max_depth)
+    """
+    if isinstance(tag_name, basestring):
+        tag_name = (tag_name,)
 
-def iterDescendantsWithAttribute(dom, tagName, attrName, attrValue,
-                                 max_depth = 0):
-    '''\
+    def match(d):
+        return d.tagName in tag_name
+
+    return iter_matching_descendants(dom, match, max_depth)
+
+
+def iter_descendants_with_attribute(dom, tag_name, attr_name, attr_value, max_depth=0):
+    """
     Iterate over descendant elements whose name is contained in
     tagName (or is named tagName if tagName is a string) and have an
     attribute named attrName with value attrValue.  Only consider
     nodes up to max_depth deep when max_depth is greater than zero.
-    '''
-    if isinstance(tagName, basestring):
-        tagName = (tagName,)
-    def match(d):
-        return d.tagName in tagName and \
-            d.getAttribute(attrName) == attrValue
-    return iterMatchingDescendants(dom, match, max_depth)
+    """
+    if isinstance(tag_name, basestring):
+        tag_name = (tag_name,)
 
-def iterChildren(dom, nodeType):
-    '''\
+    def match(d):
+        return d.tagName in tag_name and \
+               d.getAttribute(attr_name) == attr_value
+
+    return iter_matching_descendants(dom, match, max_depth)
+
+
+def iter_children(dom, node_type):
+    """
     Iterate over all child elements of the given type.
-    '''
+    """
     for child in dom.childNodes:
-        if child.nodeType == nodeType:
+        if child.nodeType == node_type:
             yield child
 
-def gettextchild(dom):
-    '''\
+
+def get_text_child(dom):
+    """
     Return the text node of the given element.
-    '''
-    for child in iterChildren(dom, Node.TEXT_NODE):
+    """
+    for child in iter_children(dom, Node.TEXT_NODE):
         return str(child.nodeValue)
     return None
 
-def getChildTextTrim(dom):
-    text = gettextchild(dom)
+
+def get_child_text_trim(dom):
+    text = get_text_child(dom)
     if text:
         text = text.strip()
     return text
 
-def getparamssetattrs(dom, param_names, target):
-    ''' XML helper to get <param name="name" value="value"/> tags and set
+
+def get_params_set_attrs(dom, param_names, target):
+    """
+    XML helper to get <param name="name" value="value"/> tags and set
     the attribute in the target object. String type is used. Target object
     attribute is unchanged if the XML attribute is not present.
-    '''
+    """
     params = dom.getElementsByTagName("param")
     for param in params:
         param_name = param.getAttribute("name")
         value = param.getAttribute("value")
         if value is None:
-            continue # never reached?
+            # never reached?
+            continue
         if param_name in param_names:
             setattr(target, param_name, str(value))
 
-def xmltypetonodeclass(session, type):
-    ''' Helper to convert from a type string to a class name in nodes.*.
-    '''
-    if hasattr(nodes, type):
-        return eval("nodes.%s" % type)
+
+def xml_type_to_node_class(node_type):
+    """
+    Helper to convert from a type string to a class name in nodes.*.
+    """
+    logger.error("xml type to node type: %s", node_type)
+    if hasattr(nodes, node_type):
+        return _NODE_MAP[node_type]
     else:
         return None
 
-def iterChildrenWithName(dom, tagName):
-    return iterDescendantsWithName(dom, tagName, 1)
 
-def iterChildrenWithAttribute(dom, tagName, attrName, attrValue):
-    return iterDescendantsWithAttribute(dom, tagName, attrName, attrValue, 1)
+def iter_children_with_name(dom, tag_name):
+    return iter_descendants_with_name(dom, tag_name, 1)
 
-def getFirstChildByTagName(dom, tagName):
-    '''\
+
+def iter_children_with_attribute(dom, tag_name, attr_name, attr_value):
+    return iter_descendants_with_attribute(dom, tag_name, attr_name, attr_value, 1)
+
+
+def get_first_child_by_tag_name(dom, tag_name):
+    """
     Return the first child element whose name is contained in tagName
     (or is named tagName if tagName is a string).
-    '''
-    for child in iterChildrenWithName(dom, tagName):
+    """
+    for child in iter_children_with_name(dom, tag_name):
         return child
     return None
 
-def getFirstChildTextByTagName(dom, tagName):
-    '''\
+
+def get_first_child_text_by_tag_name(dom, tag_name):
+    """
     Return the corresponding text of the first child element whose
     name is contained in tagName (or is named tagName if tagName is a
     string).
-    '''
-    child = getFirstChildByTagName(dom, tagName)
+    """
+    child = get_first_child_by_tag_name(dom, tag_name)
     if child:
-        return gettextchild(child)
+        return get_text_child(child)
     return None
 
-def getFirstChildTextTrimByTagName(dom, tagName):
-    text = getFirstChildTextByTagName(dom, tagName)
+
+def get_first_child_text_trim_by_tag_name(dom, tag_name):
+    text = get_first_child_text_by_tag_name(dom, tag_name)
     if text:
         text = text.strip()
     return text
 
-def getFirstChildWithAttribute(dom, tagName, attrName, attrValue):
-    '''\
+
+def get_first_child_with_attribute(dom, tag_name, attr_name, attr_value):
+    """
     Return the first child element whose name is contained in tagName
     (or is named tagName if tagName is a string) that has an attribute
     named attrName with value attrValue.
-    '''
+    """
     for child in \
-            iterChildrenWithAttribute(dom, tagName, attrName, attrValue):
+        iter_children_with_attribute(dom, tag_name, attr_name, attr_value):
         return child
     return None
 
-def getFirstChildTextWithAttribute(dom, tagName, attrName, attrValue):
-    '''\
+
+def get_first_child_text_with_attribute(dom, tag_name, attr_name, attr_value):
+    """
     Return the corresponding text of the first child element whose
     name is contained in tagName (or is named tagName if tagName is a
     string) that has an attribute named attrName with value attrValue.
-    '''
-    child = getFirstChildWithAttribute(dom, tagName, attrName, attrValue)
+    """
+    child = get_first_child_with_attribute(dom, tag_name, attr_name, attr_value)
     if child:
-        return gettextchild(child)
+        return get_text_child(child)
     return None
 
-def getFirstChildTextTrimWithAttribute(dom, tagName, attrName, attrValue):
-    text = getFirstChildTextWithAttribute(dom, tagName, attrName, attrValue)
+
+def get_first_child_text_trim_with_attribute(dom, tag_name, attr_name, attr_value):
+    text = get_first_child_text_with_attribute(dom, tag_name, attr_name, attr_value)
     if text:
         text = text.strip()
     return text

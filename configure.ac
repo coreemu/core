@@ -12,7 +12,7 @@
 #
 # this defines the CORE version number, must be static for AC_INIT
 #
-AC_INIT(core, m4_esyscmd_s([./revision.sh 4.8]), core-dev@nrl.navy.mil)
+AC_INIT(core, m4_esyscmd_s([./revision.sh 5.0]), core-dev@nrl.navy.mil)
 VERSION=$PACKAGE_VERSION
 CORE_VERSION=$PACKAGE_VERSION
 CORE_VERSION_DATE=m4_esyscmd_s([./revision.sh -d])
@@ -84,7 +84,7 @@ AC_SUBST(CORE_DATA_DIR)
 AC_ARG_WITH([guiconfdir],
 	    [AS_HELP_STRING([--with-guiconfdir=dir],
 			    [specify GUI configuration directory])],
-	    [CORE_GUI_CONF_DIR="$with_guiconfdir"], 
+	    [CORE_GUI_CONF_DIR="$with_guiconfdir"],
 	    [CORE_GUI_CONF_DIR="\${HOME}/.core"])
 AC_SUBST(CORE_GUI_CONF_DIR)
 AC_ARG_ENABLE([gui],
@@ -143,6 +143,8 @@ if test "x$enable_daemon" = "xyes" ; then
   AC_CHECK_PROG(mount_path, mount, $as_dir, no, $SEARCHPATH)
   AC_CHECK_PROG(umount_path, umount, $as_dir, no, $SEARCHPATH)
   AC_CHECK_PROG(convert, convert, yes, no, $SEARCHPATH)
+  AC_CHECK_PROG(ovs_vs_path, ovs-vsctl, $as_dir, no, $SEARCHPATH)
+  AC_CHECK_PROG(ovs_of_path, ovs-ofctl, $as_dir, no, $SEARCHPATH)
 fi
 
 #AC_CHECK_PROG(dia, dia, yes, no)

@@ -26,7 +26,13 @@ build:
 
 # Python package install
 install-exec-hook:
-	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install --prefix=${DESTDIR}/${pyprefix} --install-purelib=${DESTDIR}/${pythondir} --install-platlib=${DESTDIR}/${pyexecdir} --no-compile
+	$(MKDIR_P) ${DESTDIR}/${pythondir}
+	$(MKDIR_P) ${DESTDIR}/${pyexecdir}
+	PYTHONPATH=${DESTDIR}/${pythondir} $(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
+		--prefix=${DESTDIR}/${pyprefix} \
+		--install-purelib=${DESTDIR}/${pythondir} \
+		--install-platlib=${DESTDIR}/${pyexecdir} \
+		--no-compile
 
 # Python package uninstall
 uninstall-hook:
