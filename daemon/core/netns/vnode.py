@@ -120,7 +120,8 @@ class SimpleLxcNode(PyCoreNode):
         # unmount all targets
         while self._mounts:
             source, target = self._mounts.pop(-1)
-            self.umount(target)
+            # Mount namespaces automatically removed when last process exits!
+            #self.umount(target)
 
         # shutdown all interfaces
         for netif in self.netifs():
