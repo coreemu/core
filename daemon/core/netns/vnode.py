@@ -117,11 +117,9 @@ class SimpleLxcNode(PyCoreNode):
         if not self.up:
             return
 
-        # unmount all targets
-        while self._mounts:
-            source, target = self._mounts.pop(-1)
-            # Mount namespaces automatically removed when last process exits!
-            #self.umount(target)
+        # unmount all targets (NOTE: non-persistent mount namespaces are
+        # removed by the kernel when last referencing process is killed)
+        self._mounts = []
 
         # shutdown all interfaces
         for netif in self.netifs():
@@ -250,19 +248,6 @@ class SimpleLxcNode(PyCoreNode):
             self._mounts.append((source, target))
         except IOError:
             logger.exception("mounting failed for %s at %s", source, target)
-
-    def umount(self, target):
-        """
-        Unmount a target directory.
-
-        :param str target: target directory to unmount
-        :return: nothing
-        """
-        logger.info("unmounting: %s", target)
-        try:
-            self.cmd([constants.UMOUNT_BIN, "-n", "-l", target])
-        except IOError:
-            logger.exception("unmounting failed for %s" % target)
 
     def newifindex(self):
         """
