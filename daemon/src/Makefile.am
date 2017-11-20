@@ -40,7 +40,7 @@ libnetns.a:
 install-exec-local:
 	$(MKDIR_P) ${DESTDIR}/${pythondir}
 	$(MKDIR_P) ${DESTDIR}/${pyexecdir}
-	SBINDIR=${DESTDIR}/@SBINDIR@ PYTHONPATH=${DESTDIR}/${pythondir} $(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
+	SBINDIR=${DESTDIR}/@SBINDIR@ PYTHONPATH=${DESTDIR}/${pythondir}:${DESTDIR}/${pyexecdir} $(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
 		--prefix=${DESTDIR}/${pyprefix} \
 		--install-purelib=${DESTDIR}/${pythondir} \
 		--install-platlib=${DESTDIR}/${pyexecdir} \
