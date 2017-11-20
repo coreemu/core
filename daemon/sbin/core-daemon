@@ -25,6 +25,9 @@ import sys
 import threading
 import time
 
+from pkg_resources import require
+require("core_python", "corens3_python", "core_python_netns")
+
 from core import constants
 from core import corehandlers
 from core import coreserver
