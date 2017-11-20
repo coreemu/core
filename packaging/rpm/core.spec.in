@@ -24,6 +24,7 @@ building virtual networks using Linux network namespace containers and bridging.
 Summary:	Common Open Research Emulator daemon back-end
 Group:		System Tools
 Requires:	bash bridge-utils ebtables iproute libev python net-tools
+Requires:	python2-logzero python-enum34
 %if 0%{?el6}
 Requires: procps
 %else
@@ -36,6 +37,8 @@ Requires: kernel-modules-extra
 Requires: iproute-tc
 %endif
 BuildRequires:	make automake autoconf libev-devel python-devel bridge-utils ebtables iproute net-tools ImageMagick help2man
+BuildRequires:	python2-pytest-runner python2-sphinx
+BuildRequires:	python2-logzero python-enum34
 %if 0%{?el6}
 BuildRequires: procps
 %else
@@ -77,6 +80,10 @@ make -j4
 %install
 rm -rf $RPM_BUILD_ROOT
 make DESTDIR=$RPM_BUILD_ROOT install
+rm -f $RPM_BUILD_ROOT/%{python_sitelib}/site.py* \
+      $RPM_BUILD_ROOT/%{python_sitearch}/site.py* \
+      $RPM_BUILD_ROOT/%{python_sitelib}/easy-install.pth \
+      $RPM_BUILD_ROOT/%{python_sitearch}/easy-install.pth
 
 %clean
 rm -rf $RPM_BUILD_ROOT
@@ -314,91 +321,8 @@ fi
 %doc  %{_mandir}/man1/vnoded.1.gz
 /etc/logrotate.d/core-daemon
 /etc/systemd/system/core-daemon.service
-%{python_sitearch}/core_python_netns-1.0-py%{python_version}.egg-info
-%{python_sitearch}/netns.so
-%{python_sitearch}/vcmd.so
-%dir %{python_sitelib}/core
-%{python_sitelib}/core/sdt.py*
-%{python_sitelib}/core/service.py*
-%{python_sitelib}/core/coreserver.py*
-%dir %{python_sitelib}/core/addons
-%{python_sitelib}/core/addons/__init__.py*
-%dir %{python_sitelib}/core/api
-%{python_sitelib}/core/api/coreapi.py*
-%{python_sitelib}/core/api/data.py*
-%{python_sitelib}/core/api/__init__.py*
-%{python_sitelib}/core/broker.py*
-%dir %{python_sitelib}/core/bsd
-%{python_sitelib}/core/bsd/__init__.py*
-%{python_sitelib}/core/bsd/netgraph.py*
-%{python_sitelib}/core/bsd/nodes.py*
-%{python_sitelib}/core/bsd/vnet.py*
-%{python_sitelib}/core/bsd/vnode.py*
-%{python_sitelib}/core/conf.py*
-%{python_sitelib}/core/constants.py*
-%{python_sitelib}/core/coreobj.py*
-%dir %{python_sitelib}/core/emane
-%{python_sitelib}/core/emane/bypass.py*
-%{python_sitelib}/core/emane/commeffect.py*
-%{python_sitelib}/core/emane/emane.py*
-%{python_sitelib}/core/emane/ieee80211abg.py*
-%{python_sitelib}/core/emane/__init__.py*
-%{python_sitelib}/core/emane/nodes.py*
-%{python_sitelib}/core/emane/rfpipe.py*
-%{python_sitelib}/core/emane/tdma.py*
-%{python_sitelib}/core/emane/universal.py*
-%{python_sitelib}/core/__init__.py*
-%{python_sitelib}/core/location.py*
-%dir %{python_sitelib}/core/misc
-%{python_sitelib}/core/misc/event.py*
-%{python_sitelib}/core/misc/__init__.py*
-%{python_sitelib}/core/misc/ipaddr.py*
-%{python_sitelib}/core/misc/LatLongUTMconversion.py*
-%{python_sitelib}/core/misc/quagga.py*
-%{python_sitelib}/core/misc/utils.py*
-%{python_sitelib}/core/misc/utm.py*
-%{python_sitelib}/core/misc/xmldeployment.py*
-%{python_sitelib}/core/misc/xmlparser.py*
-%{python_sitelib}/core/misc/xmlparser0.py*
-%{python_sitelib}/core/misc/xmlparser1.py*
-%{python_sitelib}/core/misc/xmlsession.py*
-%{python_sitelib}/core/misc/xmlutils.py*
-%{python_sitelib}/core/misc/xmlwriter.py*
-%{python_sitelib}/core/misc/xmlwriter0.py*
-%{python_sitelib}/core/misc/xmlwriter1.py*
-%{python_sitelib}/core/mobility.py*
-%dir %{python_sitelib}/core/netns
-%{python_sitelib}/core/netns/__init__.py*
-%{python_sitelib}/core/netns/nodes.py*
-%{python_sitelib}/core/netns/vif.py*
-%{python_sitelib}/core/netns/vnet.py*
-%{python_sitelib}/core/netns/vnodeclient.py*
-%{python_sitelib}/core/netns/vnode.py*
-%dir %{python_sitelib}/corens3
-%{python_sitelib}/corens3/constants.py*
-%{python_sitelib}/corens3/__init__.py*
-%{python_sitelib}/corens3/obj.py*
-%{python_sitelib}/corens3_python-@COREDPY_VERSION@-py%{python_version}.egg-info
-%dir %{python_sitelib}/core/phys
-%{python_sitelib}/core/phys/__init__.py*
-%{python_sitelib}/core/phys/pnodes.py*
-%{python_sitelib}/core_python-@COREDPY_VERSION@-py%{python_version}.egg-info
-%dir %{python_sitelib}/core/services
-%{python_sitelib}/core/services/bird.py*
-%{python_sitelib}/core/services/__init__.py*
-%{python_sitelib}/core/services/dockersvc.py*
-%{python_sitelib}/core/services/nrl.py*
-%{python_sitelib}/core/services/quagga.py*
-%{python_sitelib}/core/services/security.py*
-%{python_sitelib}/core/services/startup.py*
-%{python_sitelib}/core/services/ucarp.py*
-%{python_sitelib}/core/services/utility.py*
-%{python_sitelib}/core/services/xorp.py*
-%{python_sitelib}/core/session.py*
-%dir %{python_sitelib}/core/xen
-%{python_sitelib}/core/xen/__init__.py*
-%{python_sitelib}/core/xen/xenconfig.py*
-%{python_sitelib}/core/xen/xen.py*
+%{python_sitearch}/*
+%{python_sitelib}/*
 %{_sbindir}/core-cleanup
 %{_sbindir}/core-daemon
 %{_sbindir}/core-manage
@@ -409,6 +333,8 @@ fi
 %{_sbindir}/vnoded
 
 %changelog
+* Mon Nov 20 2017 Gabriel Somlo <glsomlo@cert.org> - 5.0
+- update RPM spec file to match 5.0 release
 * Fri Sep 01 2017 CORE Developers <core-dev@nrl.navy.mil> - 5.0
 - Added Ryu SD and Open vSwitch services, code cleanup and refactoring
 * Fri Jun 5 2015 CORE Developers <core-dev@pf.itd.nrl.navy.mil> - 4.8
