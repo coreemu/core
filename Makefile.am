@@ -23,7 +23,9 @@ SUBDIRS			= ${GUI} ${DAEMON} ${DOCS}
 ACLOCAL_AMFLAGS 	= -I config
 
 # extra files to include with distribution tarball
-EXTRA_DIST		= bootstrap.sh LICENSE README-Xen Changelog kernel \
+EXTRA_DIST		= bootstrap.sh LICENSE \
+ 			  README.rst ASSIGNMENT_OF_COPYRIGHT.pdf \
+			  README-Xen Changelog kernel \
 			  python-prefix.py revision.sh \
 			  .version .version.date \
 			  packaging/bsd \
