@@ -23,17 +23,15 @@ setup(name="core-python",
           "enum34",
           "logzero"
       ],
-      setup_requires=[
-          "pytest-runner"
-      ],
       tests_require=[
           "pytest",
+          "pytest-runner"
           "pytest-cov",
           "mock"
       ],
       description="Python components of CORE",
       url="http://www.nrl.navy.mil/itd/ncs/products/core",
       author="Boeing Research & Technology",
-      author_email="core-dev@pf.itd.nrl.navy.mil",
+      author_email="core-dev@nrl.navy.mil",
       license="BSD",
       long_description="Python scripts and modules for building virtual emulated networks.")

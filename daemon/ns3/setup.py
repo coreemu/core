@@ -9,7 +9,7 @@ setup(
     description="Python ns-3 components of CORE",
     url="http://www.nrl.navy.mil/itd/ncs/products/core",
     author="Boeing Research & Technology",
-    author_email="core-dev@pf.itd.nrl.navy.mil",
+    author_email="core-dev@nrl.navy.mil",
     license="GPLv2",
     long_description="Python scripts and modules for building virtual simulated networks."
 )
