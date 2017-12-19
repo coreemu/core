@@ -26,10 +26,9 @@ vcmd = Extension(
 )
 
 setup(
-    name="core-python-netns",
+    name="core-netns",
     version="1.0",
-    description="Extension modules to support virtual nodes using "
-                "Linux network namespaces",
+    description="Extension modules to support virtual nodes using Linux network namespaces",
     ext_modules=[
         netns,
         vcmd
@@ -38,6 +37,5 @@ setup(
     author="Boeing Research & Technology",
     author_email="core-dev@nrl.navy.mil",
     license="BSD",
-    long_description="Extension modules and utilities to support virtual "
-                     "nodes using Linux network namespaces"
+    long_description="Extension modules and utilities to support virtual nodes using Linux network namespaces"
 )
