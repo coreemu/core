@@ -59,7 +59,6 @@ dist_coreaddons_DATA = $(ADDONS_FILES)
 coreconfigsdir		= $(datadir)/core/examples/configs
 dist_coreconfigs_DATA	= $(CONFIG_FILES) 
 
-
 dist-hook:
 	rm -rf $(distdir)/addons/.svn
 

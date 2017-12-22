@@ -34,7 +34,7 @@ netns_SOURCES	= ${SRC_NETNS}
 noinst_LIBRARIES = libnetns.a
 libnetns_a_SOURCES = netnsmodule.c vcmdmodule.c
 libnetns.a:
-	SBINDIR=@SBINDIR@ LDFLAGS="$(LDFLAGS) @libev_LIBS@" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build
+	SBINDIR=@SBINDIR@ LDFLAGS="$(LDFLAGS) @libev_LIBS@" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build_ext
 
 # Python libraries install
 install-exec-local:

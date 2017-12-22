@@ -22,13 +22,29 @@ setup(
     ],
     install_requires=[
         "enum34",
-        "logzero"
+        #"logzero",
     ],
     tests_require=[
         "pytest",
-        "pytest-runner"
+        "pytest-runner",
         "pytest-cov",
-        "mock"
+        "mock",
+    ],
+    data_files=[
+        ("/etc/core", [
+            "data/core.conf", 
+            "data/xen.conf",
+        ]),
+        ("/etc/init.d", [
+            "../scripts/core-daemon",
+        ]),
+    ],
+    scripts=[
+        "sbin/core-cleanup",
+        "sbin/core-daemon",
+        "sbin/core-manage",
+        "sbin/coresendmsg",
+        "sbin/core-xen-cleanup",
     ],
     description="Python components of CORE",
     url="http://www.nrl.navy.mil/itd/ncs/products/core",

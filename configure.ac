@@ -17,6 +17,8 @@ VERSION=$PACKAGE_VERSION
 CORE_VERSION=$PACKAGE_VERSION
 CORE_VERSION_DATE=m4_esyscmd_s([./revision.sh -d])
 COREDPY_VERSION=$PACKAGE_VERSION
+CORE_MAINTAINERS="CORE Developers <core-dev@nrl.navy.mil>"
+CORE_VENDOR="CORE Developers"
 
 #
 # autoconf and automake initialization
@@ -30,6 +32,8 @@ AM_INIT_AUTOMAKE([tar-ustar])
 AC_SUBST(CORE_VERSION)
 AC_SUBST(CORE_VERSION_DATE)
 AC_SUBST(COREDPY_VERSION)
+AC_SUBST(CORE_MAINTAINERS)
+AC_SUBST(CORE_VENDOR)
 
 #
 # some of the following directory variables are not expanded at configure-time,

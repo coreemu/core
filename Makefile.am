@@ -72,57 +72,62 @@ deb:
 	@echo "First create source archive with:  dpkg-source -b core-@CORE_VERSION@"
 	@echo "Then build with:  pbuilder-dist precise i386 build core*.dsc"
 
-.PHONE: fpm
+
+define fpm-python =
+fpm -s python -t $1 \
+	-m "$(CORE_MAINTAINERS)" \
+	--vendor "$(CORE_VENDOR)" \
+	$2
+endef
+
+define fpm-gui =
+fpm -s dir -t $1 -n core-gui \
+	-m "$(CORE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator GUI front-end" \
+	--url http://www.nrl.navy.mil/itd/ncs/products/core \
+	--vendor "$(CORE_VENDOR)" \
+	-p core-gui_VERSION_ARCH.$1 \
+	-v $(CORE_VERSION) \
+	-d "bash" \
+	-d "tcl" \
+	-d "tk" \
+	$2 \
+	-C $(DESTDIR)
+endef
+
+.PHONY: fpm
 fpm:
+	rm -f *.deb && rm -f *.rpm
+	$(call fpm-gui,rpm,-d "tkimg")
+	$(call fpm-gui,deb,-d "libtk-img")
+	$(call fpm-python,rpm,daemon/ns3/setup.py)
+	$(call fpm-python,deb,daemon/ns3/setup.py)
 	fpm -s python -t rpm \
-			-m "CORE Developers <core-dev@nrl.navy.mil>" \
-			--vendor "CORE Developers" \
-			daemon/setup.py
-	fpm -s python -t rpm \
-    		-m "CORE Developers <core-dev@nrl.navy.mil>" \
-    		--vendor "CORE Developers" \
-    		daemon/src/setup.py
-    fpm -s python -t rpm \
-    		-m "CORE Developers <core-dev@nrl.navy.mil>" \
-    		--vendor "CORE Developers" \
-    		daemon/ns3/setup.py
-
-.PHONY: fpm-deb
-fpm-deb:
-	fpm -s dir -t deb -n core -v $(CORE_VERSION) -C "$DESTDIR" \
-			-p core_VERSION_ARCH.deb \
-			--license "BSD 2-clause" \
-			--vendor "CORE Developers" \
-			--description "Emulate virtual networks in a box." \
-			--url http://www.nrl.navy.mil/itd/ncs/products/core \
-			-m "CORE Developers <core-dev@nrl.navy.mil>" \
-			-d "procps" \
-			-d "libc6 >= 2.14" \
-			-d "bash >= 3.0" \
-			-d "bridge-utils" \
-			-d "ebtables" \
-			-d "iproute2" \
-			-d "libev4" \
-			-d "python >= 2.7" \
-			--deb-recommends quagga
-
-
-.PHONY: fpm-rpm
-fpm-rpm:
-	fpm -s dir -t rpm -n core -v $(CORE_VERSION) -C "$DESTDIR" \
-			-p core_VERSION_ARCH.rpm \
-			--license "BSD 2-clause" \
-			--vendor "CORE Developers" \
-			--description "Emulate virtual networks in a box." \
-			--url http://www.nrl.navy.mil/itd/ncs/products/core \
-			-m "CORE Developers <core-dev@nrl.navy.mil>" \
-			-d "procps" \
-			-d "bash >= 3.0" \
-			-d "bridge-utils" \
-			-d "ebtables" \
-			-d "iproute" \
-			-d "libev" \
-			-d "python >= 2.7"
+		-m "$(CORE_MAINTAINERS)" \
+		--vendor "$(CORE_VENDOR)" \
+		-d "procps-ng" \
+		-d "bash >= 3.0" \
+		-d "bridge-utils" \
+		-d "ebtables" \
+		-d "iproute" \
+		-d "libev" \
+		-d "net-tools" \
+		-d "python >= 2.7, python < 3.0" \
+		daemon/src/setup.py daemon/setup.py
+	fpm -s python -t deb \
+		-m "$(CORE_MAINTAINERS)" \
+		--vendor "$(CORE_VENDOR)" \
+		-d "procps" \
+		-d "libc6 >= 2.14" \
+		-d "bash >= 3.0" \
+		-d "bridge-utils" \
+		-d "ebtables" \
+		-d "iproute2" \
+		-d "libev4" \
+		-d "python (>= 2.7), python (<< 3.0)" \
+		--deb-recommends quagga \
+		daemon/src/setup.py daemon/setup.py
 
 .PHONY: core-restart
 core-restart:
