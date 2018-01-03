@@ -2,24 +2,12 @@
 Defines how CORE will be built for installation.
 """
 
-from setuptools import setup
+from setuptools import setup, find_packages
 
 setup(
     name="core",
     version="5.0",
-    packages=[
-        "core",
-        "core.addons",
-        "core.api",
-        "core.bsd",
-        "core.emane",
-        "core.misc",
-        "core.netns",
-        "core.phys",
-        "core.services",
-        "core.xen",
-        "core.xml",
-    ],
+    packages=find_packages(),
     install_requires=[
         "enum34",
     ],
