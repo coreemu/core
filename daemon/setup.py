@@ -22,7 +22,6 @@ setup(
     ],
     install_requires=[
         "enum34",
-        #"logzero",
     ],
     tests_require=[
         "pytest",
@@ -34,6 +33,7 @@ setup(
         ("/etc/core", [
             "data/core.conf", 
             "data/xen.conf",
+            "data/logging.conf",
         ]),
         ("/etc/init.d", [
             "../scripts/core-daemon",
