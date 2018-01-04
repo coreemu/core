@@ -16,9 +16,12 @@ endif
 if WANT_DAEMON
   DAEMON		= scripts daemon
 endif
+if WANT_NETNS
+  NETNS 		= netns
+endif
 
 # keep docs last due to dependencies on binaries
-SUBDIRS			= ${GUI} ${DAEMON} ${DOCS}
+SUBDIRS			= ${GUI} ${DAEMON} ${DOCS} ${NETNS}
 
 ACLOCAL_AMFLAGS 	= -I config
 
@@ -113,7 +116,7 @@ fpm: clean-local-fpm
 		-d "libev" \
 		-d "net-tools" \
 		-d "python >= 2.7, python < 3.0" \
-		daemon/src/setup.py daemon/setup.py
+		netns/setup.py daemon/setup.py
 	fpm -s python -t deb \
 		-m "$(CORE_MAINTAINERS)" \
 		--vendor "$(CORE_VENDOR)" \
@@ -126,7 +129,7 @@ fpm: clean-local-fpm
 		-d "libev4" \
 		-d "python (>= 2.7), python (<< 3.0)" \
 		--deb-recommends quagga \
-		daemon/src/setup.py daemon/setup.py
+		netns/setup.py daemon/setup.py
 
 .PHONY: clean-local-fpm
 clean-local-fpm:

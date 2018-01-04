@@ -11,7 +11,7 @@ SETUPPY		= setup.py
 SETUPPYFLAGS	= -v
 
 if WANT_NETNS
-  SUBDIRS 	= src ns3
+  SUBDIRS 	= ns3
 endif
 
 SBIN_FILES		=			\

@@ -34,7 +34,7 @@ These are being actively developed as of CORE |version|:
   project.
 * *daemon* - Python modules are found in the :file:`daemon/core` directory, the
   daemon under :file:`daemon/sbin/core-daemon`, and Python extension modules for
-  Linux Network Namespace support are in :file:`daemon/src`.
+  Linux Network Namespace support are in :file:`netns`.
 * *doc* - Documentation for the manual lives here in reStructuredText format.
 * *packaging* - Control files and script for building CORE packages are here.
 

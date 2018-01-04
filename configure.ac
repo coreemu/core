@@ -23,7 +23,7 @@ CORE_VENDOR="CORE Developers"
 #
 # autoconf and automake initialization
 #
-AC_CONFIG_SRCDIR([daemon/src/version.h.in])
+AC_CONFIG_SRCDIR([netns/version.h.in])
 AC_CONFIG_AUX_DIR(config)
 AC_CONFIG_MACRO_DIR(config)
 AC_CONFIG_HEADERS([config.h])
@@ -331,8 +331,8 @@ AC_CONFIG_FILES([Makefile
 		doc/man/Makefile
 		doc/figures/Makefile
 		daemon/Makefile
-		daemon/src/Makefile
-		daemon/src/version.h
+		netns/Makefile
+		netns/version.h
 		daemon/core/constants.py
 		daemon/ns3/Makefile
 		daemon/ns3/corens3/constants.py
