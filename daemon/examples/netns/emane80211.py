@@ -13,7 +13,7 @@ import sys
 from core import constants
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNode
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.netns import nodes
 
 # node list (count from 1)
@@ -100,8 +100,4 @@ def main():
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

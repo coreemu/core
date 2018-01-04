@@ -16,7 +16,7 @@ import time
 from string import Template
 
 from core.constants import QUAGGA_STATE_DIR
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.misc.utils import mutecall
 from core.netns import nodes
 
@@ -602,8 +602,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     me = main()

@@ -16,7 +16,7 @@ import sys
 from core import constants
 from core.api import coreapi, dataconversion
 from core.enumerations import CORE_API_PORT, EventTypes, EventTlvs, LinkTlvs, LinkTypes, MessageFlags
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.netns import nodes
 from core.session import Session
 
@@ -124,8 +124,4 @@ def main():
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

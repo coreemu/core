@@ -25,7 +25,7 @@ from core.enumerations import LinkTlvs
 from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.netns import nodes
 
 # declare classes for use with Broker
@@ -187,8 +187,4 @@ def main():
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

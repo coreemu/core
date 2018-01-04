@@ -9,6 +9,12 @@ from core import logger
 _NODE_MAP = None
 
 
+def _log_map():
+    global _NODE_MAP
+    print_map = reduce(lambda x, y: _convert_map(x, y), _NODE_MAP.items(), {})
+    logger.info("node class map: \n%s", pprint.pformat(print_map, indent=4))
+
+
 def _convert_map(x, y):
     """
     Convenience method to create a human readable version of the node map to log.
@@ -21,6 +27,18 @@ def _convert_map(x, y):
     return x
 
 
+def update_node_map(node_map):
+    """
+    Update the current node map with the provided node map values.
+
+
+    :param dict node_map: node map to update with
+    """
+    global _NODE_MAP
+    _NODE_MAP.update(node_map)
+    _log_map()
+
+
 def set_node_map(node_map):
     """
     Set the global node map that proides a consistent way to retrieve differently configured nodes.
@@ -29,9 +47,8 @@ def set_node_map(node_map):
     :return: nothing
     """
     global _NODE_MAP
-    print_map = reduce(lambda x, y: _convert_map(x, y), node_map.items(), {})
-    logger.info("setting node class map: \n%s", pprint.pformat(print_map, indent=4))
     _NODE_MAP = node_map
+    _log_map()
 
 
 def get_node_class(node_type):

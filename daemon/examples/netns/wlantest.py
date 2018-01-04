@@ -12,7 +12,7 @@ import datetime
 import optparse
 import sys
 
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.misc.utils import mutecall
 from core.netns import nodes
 from core.session import Session
@@ -99,8 +99,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

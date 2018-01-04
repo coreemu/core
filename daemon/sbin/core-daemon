@@ -336,17 +336,14 @@ def main():
 
 if __name__ == "__main__":
     # configure nodes to use
-    node_map = nodemaps.NODES
     if len(sys.argv) == 2 and sys.argv[1] == "ovs":
         from core.netns.openvswitch import OVS_NODES
-        node_map.update(OVS_NODES)
+        nodeutils.update_node_map(OVS_NODES)
 
     # update with BSD based nodes
     if os.uname()[0] == "FreeBSD":
         from core.bsd.nodes import BSD_NODES
-        node_map.update(BSD_NODES)
-
-    nodeutils.set_node_map(node_map)
+        nodeutils.update_node_map(BSD_NODES)
 
     # load default services
     services.load()

@@ -41,7 +41,7 @@ from core import emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
-from core.misc import ipaddress, nodemaps, nodeutils
+from core.misc import ipaddress
 from core.netns import nodes
 from core.session import Session
 
@@ -851,8 +851,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

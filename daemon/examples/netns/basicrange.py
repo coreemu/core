@@ -13,8 +13,7 @@ import optparse
 import sys
 import time
 
-from core.misc import ipaddress, nodeutils
-from core.misc import nodemaps
+from core.misc import ipaddress
 from core.mobility import BasicRangeModel
 from core.netns.nodes import WlanNode
 from core.netns.vnet import EbtablesQueue
@@ -108,8 +107,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()
