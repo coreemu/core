@@ -99,37 +99,51 @@ fpm -s dir -t $1 -n core-gui \
 	-C $(DESTDIR)
 endef
 
+define fpm-daemon-rpm =
+fpm -s python -t rpm \
+	-p NAME_$1_VERSION_ARCH.rpm \
+	--python-setup-py-arguments --service=$1 \
+	-m "$(CORE_MAINTAINERS)" \
+	--vendor "$(CORE_VENDOR)" \
+	-d "procps-ng" \
+	-d "bash >= 3.0" \
+	-d "bridge-utils" \
+	-d "ebtables" \
+	-d "iproute" \
+	-d "libev" \
+	-d "net-tools" \
+	-d "python >= 2.7, python < 3.0" \
+	netns/setup.py daemon/setup.py
+endef
+
+define fpm-daemon-deb =
+fpm -s python -t deb \
+	-p NAME_$1_VERSION_ARCH.deb \
+	--python-setup-py-arguments --service=$1 \
+	-m "$(CORE_MAINTAINERS)" \
+	--vendor "$(CORE_VENDOR)" \
+	-d "procps" \
+	-d "libc6 >= 2.14" \
+	-d "bash >= 3.0" \
+	-d "bridge-utils" \
+	-d "ebtables" \
+	-d "iproute2" \
+	-d "libev4" \
+	-d "python (>= 2.7), python (<< 3.0)" \
+	--deb-recommends quagga \
+	netns/setup.py daemon/setup.py
+endef
+
 .PHONY: fpm
 fpm: clean-local-fpm
 	$(call fpm-gui,rpm,-d "tkimg")
 	$(call fpm-gui,deb,-d "libtk-img")
 	$(call fpm-python,rpm,daemon/ns3/setup.py)
 	$(call fpm-python,deb,daemon/ns3/setup.py)
-	fpm -s python -t rpm \
-		-m "$(CORE_MAINTAINERS)" \
-		--vendor "$(CORE_VENDOR)" \
-		-d "procps-ng" \
-		-d "bash >= 3.0" \
-		-d "bridge-utils" \
-		-d "ebtables" \
-		-d "iproute" \
-		-d "libev" \
-		-d "net-tools" \
-		-d "python >= 2.7, python < 3.0" \
-		netns/setup.py daemon/setup.py
-	fpm -s python -t deb \
-		-m "$(CORE_MAINTAINERS)" \
-		--vendor "$(CORE_VENDOR)" \
-		-d "procps" \
-		-d "libc6 >= 2.14" \
-		-d "bash >= 3.0" \
-		-d "bridge-utils" \
-		-d "ebtables" \
-		-d "iproute2" \
-		-d "libev4" \
-		-d "python (>= 2.7), python (<< 3.0)" \
-		--deb-recommends quagga \
-		netns/setup.py daemon/setup.py
+	$(call fpm-daemon-rpm,systemd)
+	$(call fpm-daemon-rpm,sysv)
+	$(call fpm-daemon-deb,systemd)
+	$(call fpm-daemon-deb,sysv)
 
 .PHONY: clean-local-fpm
 clean-local-fpm:
