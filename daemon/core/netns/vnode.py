@@ -73,7 +73,7 @@ class SimpleLxcNode(PyCoreNode):
         """
         if self.up:
             raise Exception("already up")
-        vnoded = ["%s/vnoded" % constants.CORE_SBIN_DIR, "-v", "-c", self.ctrlchnlname,
+        vnoded = ["%s/vnoded" % constants.CORE_BIN_DIR, "-v", "-c", self.ctrlchnlname,
                   "-l", self.ctrlchnlname + ".log",
                   "-p", self.ctrlchnlname + ".pid"]
         if self.nodedir:

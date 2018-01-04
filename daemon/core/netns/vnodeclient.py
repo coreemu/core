@@ -17,7 +17,7 @@ USE_VCMD_MODULE = True
 if USE_VCMD_MODULE:
     import vcmd
 
-VCMD = os.path.join(constants.CORE_SBIN_DIR, "vcmd")
+VCMD = os.path.join(constants.CORE_BIN_DIR, "vcmd")
 
 
 class VnodeClient(object):

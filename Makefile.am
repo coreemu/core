@@ -97,8 +97,7 @@ fpm -s dir -t $1 -n core-gui \
 endef
 
 .PHONY: fpm
-fpm:
-	rm -f *.deb && rm -f *.rpm
+fpm: clean-local-fpm
 	$(call fpm-gui,rpm,-d "tkimg")
 	$(call fpm-gui,deb,-d "libtk-img")
 	$(call fpm-python,rpm,daemon/ns3/setup.py)
@@ -129,12 +128,19 @@ fpm:
 		--deb-recommends quagga \
 		daemon/src/setup.py daemon/setup.py
 
+.PHONY: clean-local-fpm
+clean-local-fpm:
+	-rm -rf *.deb
+	-rm -rf *.rpm
+
 .PHONY: core-restart
 core-restart:
 	/etc/init.d/core-daemon stop
 	daemon/sbin/core-cleanup
 	rm -f /var/log/core-daemon.log
 	/etc/init.d/core-daemon start
+
+clean-local: clean-local-fpm
 
 .version: Makefile
 	echo $(CORE_VERSION) > $@
