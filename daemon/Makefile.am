@@ -10,10 +10,6 @@
 SETUPPY		= setup.py
 SETUPPYFLAGS	= -v
 
-if WANT_NETNS
-  SUBDIRS 	= ns3
-endif
-
 SBIN_FILES		=			\
 	sbin/core-cleanup			\
 	sbin/core-daemon			\

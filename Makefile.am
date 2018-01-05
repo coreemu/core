@@ -17,7 +17,7 @@ if WANT_DAEMON
   DAEMON		= scripts daemon
 endif
 if WANT_NETNS
-  NETNS 		= netns
+  NETNS 		= netns ns3
 endif
 
 # keep docs last due to dependencies on binaries
@@ -138,8 +138,8 @@ endef
 fpm: clean-local-fpm
 	$(call fpm-gui,rpm,-d "tkimg")
 	$(call fpm-gui,deb,-d "libtk-img")
-	$(call fpm-python,rpm,daemon/ns3/setup.py)
-	$(call fpm-python,deb,daemon/ns3/setup.py)
+	$(call fpm-python,rpm,ns3/setup.py)
+	$(call fpm-python,deb,ns3/setup.py)
 	$(call fpm-daemon-rpm,systemd)
 	$(call fpm-daemon-rpm,sysv)
 	$(call fpm-daemon-deb,systemd)

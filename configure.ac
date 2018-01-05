@@ -331,13 +331,13 @@ AC_CONFIG_FILES([Makefile
 		doc/man/Makefile
 		doc/figures/Makefile
 		daemon/Makefile
-		netns/Makefile
-		netns/version.h
 		daemon/core/constants.py
-		daemon/ns3/Makefile
-		daemon/ns3/corens3/constants.py
 		daemon/doc/Makefile
 		daemon/doc/conf.py
+		netns/Makefile
+		netns/version.h
+		ns3/Makefile
+		ns3/corens3/constants.py
 		packaging/deb/core-daemon.install
 		packaging/deb/core-daemon.prerm
 		packaging/deb/core-gui.install
