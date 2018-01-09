@@ -33,3 +33,6 @@ coverage.xml
 # ignore package files
 *.rpm
 *.deb
+
+# pytest cache files
+.cache

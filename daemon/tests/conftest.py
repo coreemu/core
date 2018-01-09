@@ -8,12 +8,11 @@ import pytest
 
 from mock.mock import MagicMock
 
+from core import services
 from core.coreserver import CoreServer
 from core.misc import nodemaps
 from core.misc import nodeutils
 from core.netns import nodes
-from core.services import quagga
-from core.services import utility
 from core.session import Session
 from core.api.coreapi import CoreConfMessage
 from core.api.coreapi import CoreEventMessage
@@ -244,14 +243,6 @@ class Core(object):
 
 class CoreServerTest(object):
     def __init__(self):
-        # setup nodes
-        node_map = nodemaps.NODES
-        nodeutils.set_node_map(node_map)
-
-        # load emane services
-        quagga.load_services()
-        utility.load_services()
-
         address = ("localhost", CORE_API_PORT)
         self.server = CoreServer(address, CoreRequestHandler, {
             "numthreads": 1,
@@ -320,18 +311,13 @@ class CoreServerTest(object):
 
 @pytest.fixture()
 def session():
-    # configure default nodes
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
+    # load default services
+    services.load()
 
     # create and return session
     session_fixture = Session(1, persistent=True)
     session_fixture.master = True
     assert os.path.exists(session_fixture.session_dir)
-
-    # load emane services
-    quagga.load_services()
-    utility.load_services()
 
     # set location
     # session_fixture.master = True
@@ -362,6 +348,9 @@ def core(session, ip_prefix):
 
 @pytest.fixture()
 def cored():
+    # load default services
+    services.load()
+
     # create and return server
     server = CoreServerTest()
     yield server

@@ -118,7 +118,11 @@ class ServiceManager(object):
         :return: list of core services
         :rtype: list
         """
-        # validate path exists for importing
+        # validate path exists
+        logger.info("attempting to add services from path: %s", path)
+        if not os.path.isdir(path):
+            logger.warn("invalid custom service directory specified" ": %s" % path)
+        # check if path is in sys.path
         logger.info("getting custom services from: %s", path)
         parent_path = os.path.dirname(path)
         if parent_path not in sys.path:
@@ -175,32 +179,9 @@ class CoreServices(ConfigurableManager):
         # dict of tuple of service objects, key is node number
         self.customservices = {}
 
-        paths = self.session.get_config_item('custom_services_dir')
-        if paths:
-            for path in paths.split(','):
-                path = path.strip()
-                self.importcustom(path)
-
         # TODO: remove need for cyclic import
         from core.services import startup
         self.is_startup_service = startup.Startup.is_startup_service
-
-    def importcustom(self, path):
-        """
-        Import services from a myservices directory.
-
-        :param str path: path to import custom services from
-        :return: nothing
-        """
-
-        if not path or len(path) == 0:
-            return
-
-        if not os.path.isdir(path):
-            logger.warn("invalid custom service directory specified" ": %s" % path)
-            return
-
-        ServiceManager.add_services(path)
 
     def reset(self):
         """

@@ -36,7 +36,7 @@ class TestCore:
 
         :param conftest.Core core: core fixture to test with
         """
-        core.session.services.importcustom(_SERVICES_PATH)
+        ServiceManager.add_services(_SERVICES_PATH)
         assert ServiceManager.get("MyService")
         assert ServiceManager.get("MyService2")
 

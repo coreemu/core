@@ -39,6 +39,7 @@ from core.misc import nodemaps
 from core.misc import nodeutils
 from core.misc.utils import closeonexec
 from core.misc.utils import daemonize
+from core.service import ServiceManager
 
 DEFAULT_MAXFD = 1024
 
@@ -312,6 +313,14 @@ def main():
     cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     for a in args:
         logger.error("ignoring command line argument: %s", a)
+
+    # attempt load custom services
+    service_paths = cfg.get("custom_services_dir")
+    logger.debug("custom service paths: %s", service_paths)
+    if service_paths:
+        for service_path in service_paths.split(','):
+            service_path = service_path.strip()
+            ServiceManager.add_services(service_path)
 
     if cfg["daemonize"] == "True":
         daemonize(rootdir=None, umask=0, close_fds=False,
