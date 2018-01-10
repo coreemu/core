@@ -25,30 +25,23 @@ The primary dependencies are Tcl/Tk (8.5 or newer) for the GUI, and Python 2.6 o
 .. index:: paths
 .. index:: install paths
 
-CORE files are installed to the following directories. When installing from
-source, the :file:`/usr/local` prefix is used in place of :file:`/usr` by
-default.
+CORE files are installed to the following directories.
 
-============================================= =================================
-Install Path                                  Description
-============================================= =================================
-:file:`/usr/bin/core-gui`                     GUI startup command
-:file:`/usr/sbin/core-daemon`                 Daemon startup command
-:file:`/usr/sbin/`                            Misc. helper commands/scripts
-:file:`/usr/lib/core`                         GUI files
-:file:`/usr/lib/python2.7/dist-packages/core` Python modules for daemon/scripts
-:file:`/etc/core/`                            Daemon configuration files
-:file:`~/.core/`                              User-specific GUI preferences and scenario files
-:file:`/usr/share/core/`                      Example scripts and scenarios
-:file:`/usr/share/man/man1/`                  Command man pages
-:file:`/etc/init.d/core-daemon`               System startup script for daemon
-============================================= =================================
-
-
-Under Fedora, :file:`/site-packages/` is used instead of :file:`/dist-packages/`
-for the Python modules, and :file:`/etc/systemd/system/core-daemon.service`
-instead of :file:`/etc/init.d/core-daemon` for the system startup script.
-
+======================================================= =================================
+Install Path                                            Description
+======================================================= =================================
+:file:`/usr/local/bin/core-gui`                         GUI startup command
+:file:`/usr/local/bin/core-daemon`                      Daemon startup command
+:file:`/usr/local/bin/`                                 Misc. helper commands/scripts
+:file:`/usr/local/lib/core`                             GUI files
+:file:`/usr/local/lib/python2.7/dist-packages/core`     Python modules for daemon/scripts
+:file:`/etc/core/`                                      Daemon configuration files
+:file:`~/.core/`                                        User-specific GUI preferences and scenario files
+:file:`/usr/local/share/core/`                          Example scripts and scenarios
+:file:`/usr/local/share/man/man1/`                      Command man pages
+:file:`/etc/init.d/core-daemon`                         SysV startup script for daemon
+:file:`/etc/systemd/system/core-daemon.service`         Systemd startup script for daemon
+======================================================= =================================
 
 .. _Prerequisites:
 
@@ -121,7 +114,8 @@ Installing from Packages
 The easiest way to install CORE is using the pre-built packages. The package
 managers on Ubuntu or Fedora will
 automatically install dependencies for you. 
-You can obtain the CORE packages from the `CORE downloads <http://downloads.pf.itd.nrl.navy.mil/core/packages/>`_ page.
+You can obtain the CORE packages from the `CORE downloads <http://downloads.pf.itd.nrl.navy.mil/core/packages/>`_ page
+or `CORE GitHub <https://github.com/coreemu/core/releases>`_.
 
 .. _Installing_from_Packages_on_Ubuntu:
 
@@ -285,14 +279,14 @@ Fedora release number.
 
   .. parsed-literal::
 
-      yum localinstall core-daemon-|version|-|CORERPM| --nogpgcheck
+      yum localinstall python-core_|service|-|version|-|CORERPM| --nogpgcheck
       yum localinstall core-gui-|version|-|CORERPM2| --nogpgcheck
     
   or install from the command-line:
 
   .. parsed-literal::
 
-      rpm -ivh core-daemon-|version|-|CORERPM|
+      rpm -ivh python-core_|service|-|version|-|CORERPM|
       rpm -ivh core-gui-|version|-|CORERPM2|
     
 

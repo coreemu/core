@@ -33,8 +33,9 @@ These are being actively developed as of CORE |version|:
 * *gui* - Tcl/Tk GUI. This uses Tcl/Tk because of its roots with the IMUNES
   project.
 * *daemon* - Python modules are found in the :file:`daemon/core` directory, the
-  daemon under :file:`daemon/sbin/core-daemon`, and Python extension modules for
-  Linux Network Namespace support are in :file:`netns`.
+  daemon under :file:`daemon/sbin/core-daemon`
+* *netns* - Python extension modules for Linux Network Namespace support are in :file:`netns`.
+* *ns3* - Python ns3 script support for running CORE.
 * *doc* - Documentation for the manual lives here in reStructuredText format.
 * *packaging* - Control files and script for building CORE packages are here.
 
