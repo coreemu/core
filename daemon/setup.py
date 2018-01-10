@@ -2,8 +2,26 @@
 Defines how CORE will be built for installation.
 """
 
+import glob
+import os
+
 from setuptools import setup, find_packages
 from distutils.command.install import install
+
+
+def recursive_files(data_path, files_path):
+    data_files = []
+    for path, directories, filenames in os.walk(files_path):
+        directory = os.path.join(data_path, path)
+        files = []
+        for filename in filenames:
+            files.append(os.path.join(path, filename))
+        data_files.append((directory, files))
+    return data_files
+
+
+def glob_files(glob_path):
+    return glob.glob(glob_path)
 
 
 class CustomInstall(install):
@@ -50,7 +68,8 @@ setup(
             "data/xen.conf",
             "data/logging.conf",
         ]),
-    ],
+        ("/usr/local/share/man/man1", glob_files("../doc/man/**.1")),
+    ] + recursive_files("/usr/local/share/core", "examples"),
     scripts=[
         "sbin/core-cleanup",
         "sbin/core-daemon",
