@@ -51,7 +51,7 @@ class CustomInstall(install):
 
 setup(
     name="core",
-    version="5.0",
+    version="5.1",
     packages=find_packages(),
     install_requires=[
         "enum34",

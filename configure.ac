@@ -12,7 +12,7 @@
 #
 # this defines the CORE version number, must be static for AC_INIT
 #
-AC_INIT(core, m4_esyscmd_s([./revision.sh 5.0]), core-dev@nrl.navy.mil)
+AC_INIT(core, m4_esyscmd_s([./revision.sh 5.1]), core-dev@nrl.navy.mil)
 VERSION=$PACKAGE_VERSION
 CORE_VERSION=$PACKAGE_VERSION
 CORE_VERSION_DATE=m4_esyscmd_s([./revision.sh -d])

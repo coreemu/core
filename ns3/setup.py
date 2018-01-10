@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name="core-ns3",
-    version="5.0",
+    version="5.1",
     packages=[
         "corens3",
     ],
