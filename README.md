@@ -1,4 +1,3 @@
-====
 CORE
 ====
 
@@ -9,7 +8,7 @@ Copyright (c)2005-2017 the Boeing Company.
 See the LICENSE file included in this distribution.
 
 About
-=====
+-----
 
 CORE is a tool for emulating networks using a GUI or Python scripts. The CORE
 project site (1) is a good source of introductory information, with a manual,
@@ -23,7 +22,7 @@ Google Code page (3) with the old wiki, blog, bug tracker, and quickstart guide.
 1. [Official Documentation](https://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html)
 
 Building CORE
-=============
+-------------
 
 To build this software you should use:
 
@@ -52,7 +51,7 @@ Here is what is installed with 'make install':
 See the manual for the software required for building CORE.
 
 Building Documentation
-======================
+----------------------
 
 Being able to build documentation depends on help2man being installed.
 
@@ -65,7 +64,7 @@ make html
 ```
 
 Building Packages
-=================
+-----------------
 
 Install fpm
 
@@ -88,7 +87,7 @@ This will produce:
 * CORE python rpm/deb files for SysV and systemd service types
 
 Running CORE
-============
+------------
 
 First start the CORE services:
 
@@ -107,7 +106,7 @@ This launches the CORE GUI. You do not need to run the GUI as root.
 
 
 Support
-=======
+-------
 
 If you have questions, comments, or trouble, please use the CORE mailing lists:
 
