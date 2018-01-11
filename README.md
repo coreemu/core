@@ -33,7 +33,7 @@ Building CORE
 
 To build this software you should use:
 
-```bash
+```shell
 ./bootstrap.sh
 ./configure
 make
@@ -64,7 +64,7 @@ Being able to build documentation depends on help2man being installed.
 
 Once that has been done you can run the following commands:
 
-```bash
+```shell
 ./bootstrap.sh
 ./configure
 make html
@@ -79,7 +79,7 @@ Install fpm
 
 Build package commands, DESTDIR is used for gui packaging only
 
-```bash
+```shell
 ./bootstrap.sh
 ./configure
 make
@@ -98,14 +98,14 @@ Running CORE
 
 First start the CORE services:
 
-```bash
+```shell
 sudo /etc/init.d/core-daemon start
 ```
 
 This automatically runs the core-daemon program.
 Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
 
-```bash
+```shell
 core-gui
 ```
 

@@ -27,7 +27,7 @@ ACLOCAL_AMFLAGS 	= -I config
 
 # extra files to include with distribution tarball
 EXTRA_DIST		= bootstrap.sh LICENSE \
- 			  README.rst ASSIGNMENT_OF_COPYRIGHT.pdf \
+ 			  README.md ASSIGNMENT_OF_COPYRIGHT.pdf \
 			  README-Xen Changelog kernel \
 			  python-prefix.py revision.sh \
 			  .version .version.date \
@@ -101,7 +101,6 @@ endef
 
 define fpm-daemon-rpm =
 fpm -s python -t rpm \
-	--verbose \
 	-p NAME_$1_VERSION_ARCH.rpm \
 	--python-setup-py-arguments --service=$1 \
 	-m "$(CORE_MAINTAINERS)" \
