@@ -18,15 +18,9 @@ source repos, wiki, and bug tracker. There is a deprecated
 Google Code page (3) with the old wiki, blog, bug tracker, and quickstart guide.
 
 1. http://www.nrl.navy.mil/itd/ncs/products/core
-
-2. https://github.com/coreemu/core
-
-3. http://code.google.com/p/coreemu/
-
-4. `Official Documentation`_
-
-.. _Official Documentation: https://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html
-
+1. https://github.com/coreemu/core
+1. http://code.google.com/p/coreemu/
+1. [Official Documentation](https://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html)
 
 Building CORE
 =============
@@ -117,12 +111,5 @@ Support
 
 If you have questions, comments, or trouble, please use the CORE mailing lists:
 
-- `core-users`_ for general comments and questions
-
-- `core-dev`_ for bugs, compile errors, and other development issues
-
-
-.. _core-users: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users
-.. _core-dev: https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev
-
-
+- [core-users](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users) for general comments and questions
+- [core-dev](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev) for bugs, compile errors, and other development issues
