@@ -33,10 +33,12 @@ Building CORE
 
 To build this software you should use:
 
-    ./bootstrap.sh
-    ./configure
-    make
-    sudo make install
+```bash
+./bootstrap.sh
+./configure
+make
+sudo make install
+```
 
 Note: You may need to pass the proxy settings to sudo make install:
     sudo make install HTTP_PROXY=<proxy>
@@ -62,9 +64,11 @@ Being able to build documentation depends on help2man being installed.
 
 Once that has been done you can run the following commands:
 
-    ./bootstrap.sh
-    ./configure
-    make html
+```bash
+./bootstrap.sh
+./configure
+make html
+```
 
 Building Packages
 =================
@@ -75,11 +79,13 @@ Install fpm
 
 Build package commands, DESTDIR is used for gui packaging only
 
-* ./bootstrap.sh
-* ./configure
-* make
-* mkdir /tmp/core-gui
-* make fpm DESTDIR=/tmp/core-gui
+```bash
+./bootstrap.sh
+./configure
+make
+mkdir /tmp/core-gui
+make fpm DESTDIR=/tmp/core-gui
+```
 
 This will produce:
 
@@ -92,12 +98,16 @@ Running CORE
 
 First start the CORE services:
 
-    sudo /etc/init.d/core-daemon start
+```bash
+sudo /etc/init.d/core-daemon start
+```
 
 This automatically runs the core-daemon program.
 Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
 
-    core-gui
+```bash
+core-gui
+```
 
 This launches the CORE GUI. You do not need to run the GUI as root.
 
