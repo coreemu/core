@@ -1,3 +1,14 @@
+2018-XX-XX CORE 5.1
+  * DAEMON:
+   - default nodes are now set in the node map
+   - moved ns3 and netns directories to the top of the repo
+   - changes to make use of fpm as the tool for building packages
+   - removed usage of logzero to avoid dependency issues for built packages
+  * TEST:
+   - fixed some broken tests
+  * BUGFIXES:
+   - #142 - duplication of custom services
+
 2017-09-01 CORE 5.0
   * DEVELOPMENT:
     - support for editorconfig to help standardize development across IDEs, from the defined configuration file

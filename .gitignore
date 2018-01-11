@@ -17,6 +17,9 @@ core-*.tar.gz
 debian
 stamp-h1
 
+# python build directory
+dist
+
 # intellij
 *.iml
 .idea

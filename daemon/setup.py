@@ -9,6 +9,13 @@ from setuptools import setup, find_packages
 from distutils.command.install import install
 
 
+_CORE_DIR = "/etc/core"
+_MAN_DIR = "/usr/local/share/man/man1"
+_SHARE_DIR = "/usr/local/share/core"
+_SYSV = "/etc/init.d"
+_SYSTEMD = "/etc/systemd/system"
+
+
 def recursive_files(data_path, files_path):
     data_files = []
     for path, directories, filenames in os.walk(files_path):
@@ -40,13 +47,24 @@ class CustomInstall(install):
     def run(self):
         if self.service == "sysv":
             self.distribution.data_files.append((
-                "/etc/init.d", ["../scripts/core-daemon"]
+                _SYSV, ["../scripts/core-daemon"]
             ))
         else:
             self.distribution.data_files.append((
-                "/etc/systemd/system", ["../scripts/core-daemon.service"]
+                _SYSTEMD, ["../scripts/core-daemon.service"]
             ))
         install.run(self)
+
+
+data_files = [
+    (_CORE_DIR, [
+        "data/core.conf", 
+        "data/xen.conf",
+        "data/logging.conf",
+    ]),
+    (_MAN_DIR, glob_files("../doc/man/**.1")),
+]
+data_files.extend(recursive_files(_SHARE_DIR, "examples"))
 
 
 setup(
@@ -62,14 +80,7 @@ setup(
         "pytest-cov",
         "mock",
     ],
-    data_files=[
-        ("/etc/core", [
-            "data/core.conf", 
-            "data/xen.conf",
-            "data/logging.conf",
-        ]),
-        ("/usr/local/share/man/man1", glob_files("../doc/man/**.1")),
-    ] + recursive_files("/usr/local/share/core", "examples"),
+    data_files=data_files,
     scripts=[
         "sbin/core-cleanup",
         "sbin/core-daemon",

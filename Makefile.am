@@ -101,6 +101,7 @@ endef
 
 define fpm-daemon-rpm =
 fpm -s python -t rpm \
+	--verbose \
 	-p NAME_$1_VERSION_ARCH.rpm \
 	--python-setup-py-arguments --service=$1 \
 	-m "$(CORE_MAINTAINERS)" \
@@ -136,6 +137,7 @@ endef
 
 .PHONY: fpm
 fpm: clean-local-fpm
+	$(MAKE) -C gui install DESTDIR=$(DESTDIR)
 	$(call fpm-gui,rpm,-d "tkimg")
 	$(call fpm-gui,deb,-d "libtk-img")
 	$(call fpm-python,rpm,ns3/setup.py)

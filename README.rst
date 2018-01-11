@@ -44,8 +44,8 @@ Note: You may need to pass the proxy settings to sudo make install:
 Here is what is installed with 'make install':
 
     /usr/local/bin/core-gui
-    /usr/local/sbin/core-daemon
-    /usr/local/sbin/[vcmd, vnoded, coresendmsg, core-cleanup.sh]
+    /usr/local/bin/core-daemon
+    /usr/local/bin/[vcmd, vnoded, coresendmsg, core-cleanup.sh]
     /usr/local/lib/core/*
     /usr/local/share/core/*
     /usr/local/lib/python2.6/dist-packages/core/*
@@ -65,6 +65,27 @@ Once that has been done you can run the following commands:
     ./bootstrap.sh
     ./configure
     make html
+
+Building Packages
+=================
+
+Install fpm
+
+    http://fpm.readthedocs.io/en/latest/installing.html
+
+Build package commands, DESTDIR is used for gui packaging only
+
+* ./bootstrap.sh
+* ./configure
+* make
+* mkdir /tmp/core-gui
+* make fpm DESTDIR=/tmp/core-gui
+
+This will produce:
+
+* CORE GUI rpm/deb files
+* CORE ns3 rpm/deb files
+* CORE python rpm/deb files for SysV and systemd service types
 
 Running CORE
 ============
