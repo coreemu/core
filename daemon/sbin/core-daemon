@@ -35,7 +35,6 @@ from core.api import coreapi
 from core.corehandlers import CoreDatagramRequestHandler
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
-from core.misc import nodemaps
 from core.misc import nodeutils
 from core.misc.utils import closeonexec
 from core.misc.utils import daemonize
@@ -347,11 +346,13 @@ if __name__ == "__main__":
     # configure nodes to use
     if len(sys.argv) == 2 and sys.argv[1] == "ovs":
         from core.netns.openvswitch import OVS_NODES
+
         nodeutils.update_node_map(OVS_NODES)
 
     # update with BSD based nodes
     if os.uname()[0] == "FreeBSD":
         from core.bsd.nodes import BSD_NODES
+
         nodeutils.update_node_map(BSD_NODES)
 
     # load default services
