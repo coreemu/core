@@ -321,8 +321,6 @@ fi
 %{python_sitelib}/core/sdt.py*
 %{python_sitelib}/core/service.py*
 %{python_sitelib}/core/coreserver.py*
-%dir %{python_sitelib}/core/addons
-%{python_sitelib}/core/addons/__init__.py*
 %dir %{python_sitelib}/core/api
 %{python_sitelib}/core/api/coreapi.py*
 %{python_sitelib}/core/api/data.py*

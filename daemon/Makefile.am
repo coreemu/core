@@ -122,7 +122,7 @@ dist-hook:
 	rm -rf `find $(distdir)/ -name .svn` `find $(distdir)/ -name '*.pyc'`
 
 DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST doc/Makefile.in doc/Makefile \
-		  doc/conf.py core/addons/*.pyc
+		  doc/conf.py 
 
 # files to include with distribution tarball
 EXTRA_DIST	= $(SETUPPY) MANIFEST.in core doc $(LOGROTATE_FILE)

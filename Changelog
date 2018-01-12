@@ -4,6 +4,7 @@
    - moved ns3 and netns directories to the top of the repo
    - changes to make use of fpm as the tool for building packages
    - removed usage of logzero to avoid dependency issues for built packages
+   - removed daemon addons directory
   * TEST:
    - fixed some broken tests
   * BUGFIXES:

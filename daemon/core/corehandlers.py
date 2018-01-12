@@ -1137,10 +1137,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         if execute_server:
             try:
                 logger.info("executing: %s", execute_server)
+                # TODO: remove this, unless we want to support udp/aux at any level
                 if not isinstance(self.server, CoreServer):  # CoreUdpServer):
                     server = self.server.mainserver
-                    # elif isinstance(self.server, CoreAuxServer):
-                    # server = self.server.mainserver
                 else:
                     server = self.server
                 if message.flags & MessageFlags.STRING.value:

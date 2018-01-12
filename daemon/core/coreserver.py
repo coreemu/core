@@ -38,8 +38,6 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         self.sessions = {}
         self.udpserver = None
         self.udpthread = None
-        self.auxserver = None
-        self.auxthread = None
         self._sessions_lock = threading.Lock()
         CoreServer.add_server(self)
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
@@ -317,59 +315,3 @@ class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
         :return: nothing
         """
         self.serve_forever()
-
-
-class CoreAuxServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
-    """
-    An auxiliary TCP server.
-    """
-    daemon_threads = True
-    allow_reuse_address = True
-
-    def __init__(self, server_address, handler_class, main_server):
-        """
-        Create a CoreAuxServer instance.
-
-        :param tuple[str, int] server_address: server address
-        :param class handler_class: class for handling requests
-        :param main_server: main server to associate with
-        """
-
-        self.mainserver = main_server
-        logger.info("auxiliary server started, listening on: %s", server_address)
-        SocketServer.TCPServer.__init__(self, server_address, handler_class)
-
-    def start(self):
-        """
-        Start the core auxiliary server.
-
-        :return: nothing
-        """
-        self.serve_forever()
-
-    def set_session_master(self, handler):
-        """
-        Set the session master handler.
-
-        :param func handler: session master handler
-        :return:
-        """
-        return self.mainserver.set_session_master(handler)
-
-    def get_session(self, session_id=None):
-        """
-        Retrieve a session.
-
-        :param int session_id: id of session to retrieve
-        :return: core.session.Session
-        """
-        return self.mainserver.get_session(session_id)
-
-    def to_session_message(self, flags=0):
-        """
-        Retrieve a session message.
-
-        :param flags: message flags
-        :return: session message
-        """
-        return self.mainserver.to_session_message(flags)

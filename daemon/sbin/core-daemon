@@ -59,28 +59,6 @@ def startudp(core_server, server_address):
     return core_server.udpserver
 
 
-def startaux(core_server, aux_address, aux_handler):
-    """
-    Start a thread running an auxiliary TCP server on the given address.
-    This server will communicate with client requests using a handler
-    using the aux_handler class. The aux_handler can provide an alternative
-    API to CORE.
-
-    :param core.coreserver.CoreServer core_server: core server instance
-    :param tuple[str, int] aux_address: auxiliary server address
-    :param str aux_handler: auxiliary handler string to import
-    :return: auxiliary server
-    """
-    handlermodname, dot, handlerclassname = aux_handler.rpartition(".")
-    handlermod = importlib.import_module(handlermodname)
-    handlerclass = getattr(handlermod, handlerclassname)
-    core_server.auxserver = coreserver.CoreAuxServer(aux_address, handlerclass, core_server)
-    core_server.auxthread = threading.Thread(target=core_server.auxserver.start)
-    core_server.auxthread.daemon = True
-    core_server.auxthread.start()
-    return core_server.auxserver
-
-
 def banner():
     """
     Output the program banner printed to the terminal or log file.
@@ -112,12 +90,6 @@ def cored(cfg=None):
 
     udpserver = startudp(server, (host, port))
     closeonexec(udpserver.fileno())
-
-    auxreqhandler = cfg["aux_request_handler"]
-    if auxreqhandler:
-        handler, auxport = auxreqhandler.rsplit(":")
-        auxserver = startaux(server, (host, int(auxport)), handler)
-        closeonexec(auxserver.fileno())
 
     server.serve_forever()
 
@@ -212,7 +184,6 @@ def get_merged_config(filename):
                 "daemonize": "False",
                 "debug": "False",
                 "execfile": None,
-                "aux_request_handler": None,
                 }
 
     usagestr = "usage: %prog [-h] [options] [args]\n\n" + \

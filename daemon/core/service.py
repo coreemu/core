@@ -162,7 +162,7 @@ class CoreServices(ConfigurableManager):
     config_type = RegisterTlvs.UTILITY.value
 
     _invalid_custom_names = (
-        'core', 'addons', 'api', 'bsd', 'emane', 'misc', 'netns', 'phys', 'services', 'xen'
+        'core', 'api', 'bsd', 'emane', 'misc', 'netns', 'phys', 'services', 'xen'
     )
 
     def __init__(self, session):
