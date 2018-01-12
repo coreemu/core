@@ -125,4 +125,4 @@ DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST doc/Makefile.in doc/Makefile \
 		  doc/conf.py core/addons/*.pyc
 
 # files to include with distribution tarball
-EXTRA_DIST	= $(SETUPPY) MANIFEST.in CORE.e4p core doc $(LOGROTATE_FILE)
+EXTRA_DIST	= $(SETUPPY) MANIFEST.in core doc $(LOGROTATE_FILE)
