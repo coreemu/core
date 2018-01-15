@@ -16,7 +16,6 @@ message handlers are defined and some support for sending messages.
 
 import ConfigParser
 import atexit
-import importlib
 import optparse
 import os
 import signal
