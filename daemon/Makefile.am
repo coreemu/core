@@ -10,6 +10,10 @@
 SETUPPY		= setup.py
 SETUPPYFLAGS	= -v
 
+if WANT_DOCS
+  SUBDIRS = doc
+endif
+
 SBIN_FILES		=			\
 	sbin/core-cleanup			\
 	sbin/core-daemon			\
@@ -121,8 +125,7 @@ rpm:
 dist-hook:
 	rm -rf `find $(distdir)/ -name .svn` `find $(distdir)/ -name '*.pyc'`
 
-DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST doc/Makefile.in doc/Makefile \
-		  doc/conf.py 
+DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST 
 
 # files to include with distribution tarball
 EXTRA_DIST	= $(SETUPPY) MANIFEST.in core doc $(LOGROTATE_FILE)

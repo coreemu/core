@@ -9,6 +9,8 @@
    - fixed some broken tests
   * BUGFIXES:
    - #142 - duplication of custom services
+   - #136 - sphinx-apidoc command not found
+   - #137 - make command fails when using distclean
 
 2017-09-01 CORE 5.0
   * DEVELOPMENT:

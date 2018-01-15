@@ -8,7 +8,7 @@
 #
 
 # extra cruft to remove
-DISTCLEANFILES	= conf.py Makefile.in stamp-vti *.rst
+DISTCLEANFILES	= conf.py Makefile Makefile.in stamp-vti *.rst
 
 all:	index.rst
 

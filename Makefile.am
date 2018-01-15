@@ -8,7 +8,7 @@
 #
 
 if WANT_DOCS
-  DOCS			= doc daemon/doc
+  DOCS			= doc
 endif
 if WANT_GUI
   GUI			= gui
