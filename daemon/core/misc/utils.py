@@ -527,8 +527,8 @@ def load_classes(path, clazz):
             module = importlib.import_module(import_statement)
             members = inspect.getmembers(module, lambda x: _is_class(module, x, clazz))
             for member in members:
-                clazz = member[1]
-                classes.append(clazz)
+                valid_class = member[1]
+                classes.append(valid_class)
         except:
             logger.exception("unexpected error during import, skipping: %s", import_statement)
 

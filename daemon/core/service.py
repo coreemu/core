@@ -29,49 +29,6 @@ from core.enumerations import RegisterTlvs
 from core.misc import utils
 
 
-def _valid_module(path, file_name):
-    """
-    Check if file is a valid python module.
-
-    :param str path: path to file
-    :param str file_name: file name to check
-    :return: True if a valid python module file, False otherwise
-    :rtype: bool
-    """
-    file_path = os.path.join(path, file_name)
-    if not os.path.isfile(file_path):
-        return False
-
-    if file_name.startswith("_"):
-        return False
-
-    if not file_name.endswith(".py"):
-        return False
-
-    return True
-
-
-def _is_service(module, member):
-    """
-    Validates if a module member is a class and an instance of a CoreService.
-
-    :param module: module to validate for service
-    :param member: member to validate for service
-    :return: True if a valid service, False otherwise
-    :rtype: bool
-    """
-    if not inspect.isclass(member):
-        return False
-
-    if not issubclass(member, CoreService):
-        return False
-
-    if member.__module__ != module.__name__:
-        return False
-
-    return True
-
-
 class ServiceManager(object):
     """
     Manages services available for CORE nodes to use.
@@ -118,36 +75,10 @@ class ServiceManager(object):
         :return: list of core services
         :rtype: list
         """
-        # validate path exists
-        logger.info("attempting to add services from path: %s", path)
-        if not os.path.isdir(path):
-            logger.warn("invalid custom service directory specified" ": %s" % path)
-        # check if path is in sys.path
-        logger.info("getting custom services from: %s", path)
-        parent_path = os.path.dirname(path)
-        if parent_path not in sys.path:
-            logger.info("adding parent path to allow imports: %s", parent_path)
-            sys.path.append(parent_path)
-
-        # retrieve potential service modules, and filter out invalid modules
-        base_module = os.path.basename(path)
-        module_names = os.listdir(path)
-        module_names = filter(lambda x: _valid_module(path, x), module_names)
-        module_names = map(lambda x: x[:-3], module_names)
-
-        # import and add all service modules in the path
-        for module_name in module_names:
-            import_statement = "%s.%s" % (base_module, module_name)
-            logger.info("importing custom service module: %s", import_statement)
-            try:
-                module = importlib.import_module(import_statement)
-                members = inspect.getmembers(module, lambda x: _is_service(module, x))
-                for member in members:
-                    clazz = member[1]
-                    clazz.on_load()
-                    cls.add(clazz)
-            except:
-                logger.exception("unexpected error during import, skipping: %s", import_statement)
+        services = utils.load_classes(path, CoreService)
+        for service in services:
+            service.on_load()
+            cls.add(service)
 
 
 class CoreServices(ConfigurableManager):

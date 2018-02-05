@@ -93,7 +93,16 @@ class EmaneManager(ConfigurableManager):
         self._modelclsmap = {
             self.emane_config.name: self.emane_config
         }
-        self.load_models(_PATH)
+
+        # load provided models
+        self.load_models(EMANE_MODELS)
+
+        # load custom models
+        custom_models_path = session.config.get("emane_models_dir")
+        if custom_models_path:
+            emane_models = utils.load_classes(custom_models_path, EmaneModel)
+            self.load_models(emane_models)
+
 
     def logversion(self):
         """
@@ -183,25 +192,10 @@ class EmaneManager(ConfigurableManager):
 
         return rc
 
-    def loadmodels(self):
+    def load_models(self, emane_models):
         """
         load EMANE models and make them available.
         """
-        for emane_model in EMANE_MODELS:
-            logger.info("loading emane model: (%s) %s - %s",
-                        emane_model, emane_model.name, RegisterTlvs(emane_model.config_type))
-            self._modelclsmap[emane_model.name] = emane_model
-            self.session.add_config_object(emane_model.name, emane_model.config_type,
-                                           emane_model.configure_emane)
-
-    def load_models(self, path):
-        """
-        Loads EMANE models into the manager for usage within CORE.
-
-        :param str path: path to retrieve model from
-        :return: nothing
-        """
-        emane_models = utils.load_classes(path, EmaneModel)
         for emane_model in emane_models:
             logger.info("loading emane model: (%s) %s - %s",
                         emane_model, emane_model.name, RegisterTlvs(emane_model.config_type))

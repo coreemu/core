@@ -88,6 +88,12 @@ init_conf_dir() {
     else
 	cp -a $CORE_DATA_DIR/examples/myservices/* $CONFDIR/myservices/
     fi
+    mkdir -p $CONFDIR/myemane
+    if [ $? != 0 ]; then
+	echo "error making directory $CONFDIR/myemane!";
+    else
+	cp -a $CORE_DATA_DIR/examples/myemane/* $CONFDIR/myemane/
+    fi
 }
 
 cd $LIBDIR
