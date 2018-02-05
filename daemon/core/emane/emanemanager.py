@@ -29,6 +29,8 @@ from core.misc import utils
 from core.misc.ipaddress import MacAddress
 from core.xml import xmlutils
 
+_PATH = os.path.abspath(os.path.dirname(__file__))
+
 # EMANE 0.7.4/0.8.1
 try:
     import emaneeventservice
@@ -91,7 +93,7 @@ class EmaneManager(ConfigurableManager):
         self._modelclsmap = {
             self.emane_config.name: self.emane_config
         }
-        self.loadmodels()
+        self.load_models(_PATH)
 
     def logversion(self):
         """
@@ -186,6 +188,21 @@ class EmaneManager(ConfigurableManager):
         load EMANE models and make them available.
         """
         for emane_model in EMANE_MODELS:
+            logger.info("loading emane model: (%s) %s - %s",
+                        emane_model, emane_model.name, RegisterTlvs(emane_model.config_type))
+            self._modelclsmap[emane_model.name] = emane_model
+            self.session.add_config_object(emane_model.name, emane_model.config_type,
+                                           emane_model.configure_emane)
+
+    def load_models(self, path):
+        """
+        Loads EMANE models into the manager for usage within CORE.
+
+        :param str path: path to retrieve model from
+        :return: nothing
+        """
+        emane_models = utils.load_classes(path, EmaneModel)
+        for emane_model in emane_models:
             logger.info("loading emane model: (%s) %s - %s",
                         emane_model, emane_model.name, RegisterTlvs(emane_model.config_type))
             self._modelclsmap[emane_model.name] = emane_model
