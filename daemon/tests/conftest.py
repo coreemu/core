@@ -324,9 +324,6 @@ def session():
     session_fixture.location.setrefgeo(47.57917, -122.13232, 2.00000)
     session_fixture.location.refscale = 150.0
 
-    # load emane models
-    session_fixture.emane.loadmodels()
-
     # return session fixture
     yield session_fixture
 
