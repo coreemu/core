@@ -6,6 +6,7 @@ by invoking the vcmd shell command.
 """
 
 import os
+import shlex
 
 import vcmd
 
@@ -92,6 +93,10 @@ class VnodeClient(object):
         :rtype: tuple[int, str]
         """
         self._verify_connection()
+
+        # split shell string to shell array for convenience
+        if type(args) == str:
+            args = shlex.split(args)
 
         p, stdin, stdout, stderr = self.popen(args)
         output = stdout.read() + stderr.read()
@@ -183,6 +188,17 @@ class VnodeClient(object):
         :rtype: int
         """
         return self.cmd([sh, "-c", cmdstr])
+
+    def shcmd_result(self, cmd, sh="/bin/sh"):
+        """
+        Execute a shell command and return the exist status and combined output.
+
+        :param str cmd: shell command to run
+        :param str sh: shell to run command in
+        :return: exist status and combined output
+        :rtype: tuple[int, str]
+        """
+        return self.cmdresult([sh, "-c", cmd])
 
     def getaddr(self, ifname, rescan=False):
         """
