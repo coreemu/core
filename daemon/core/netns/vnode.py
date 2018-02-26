@@ -311,14 +311,16 @@ class SimpleLxcNode(PyCoreNode):
 
             veth.name = ifname
 
-            # retrieve interface information
-            result, output = self.cmdresult(["ip", "link", "show", veth.name])
-            logger.info("interface command output: %s", output)
-            output = output.split("\n")
-            veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-            logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
-            veth.hwaddr = output[1].strip().split()[1]
-            logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
+            if self.up:
+                # TODO: potentially find better way to query interface ID
+                # retrieve interface information
+                result, output = self.cmdresult(["ip", "link", "show", veth.name])
+                logger.info("interface command output: %s", output)
+                output = output.split("\n")
+                veth.flow_id = int(output[0].strip().split(":")[0]) + 1
+                logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
+                veth.hwaddr = output[1].strip().split()[1]
+                logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
                 self.addnetif(veth, ifindex)
