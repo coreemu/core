@@ -19,7 +19,7 @@ import optparse
 import sys
 
 from core import constants
-from core.misc import ipaddress 
+from core.misc import ipaddress
 from core.netns import nodes
 
 # node list (count from 1)
@@ -72,9 +72,9 @@ def main():
         prefix = ipaddress.Ipv4Prefix("10.83.%d.0/24" % i)
         right = session.add_object(cls=nodes.PtpNet)
         tmp.newnetif(right, ["%s/%s" % (prefix.addr(1), prefix.prefixlen)])
-        tmp.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
-        tmp.cmd([constants.SYSCTL_BIN, "net.ipv4.conf.all.forwarding=1"])
-        tmp.cmd([constants.SYSCTL_BIN, "net.ipv4.conf.default.rp_filter=0"])
+        tmp.client.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
+        tmp.client.cmd([constants.SYSCTL_BIN, "net.ipv4.conf.all.forwarding=1"])
+        tmp.client.cmd([constants.SYSCTL_BIN, "net.ipv4.conf.default.rp_filter=0"])
         tmp.setposition(x=100 * i, y=150)
         n.append(tmp)
         left = right

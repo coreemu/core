@@ -282,7 +282,6 @@ class SimpleJailNode(PyCoreNode):
 
     def getaddr(self, ifname, rescan=False):
         return None
-        # return self.vnodeclient.getaddr(ifname = ifname, rescan = rescan)
 
     def addsymlink(self, path, file):
         """

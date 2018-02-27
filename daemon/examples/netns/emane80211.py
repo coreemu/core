@@ -84,7 +84,7 @@ def main():
         tmp = session.add_object(cls=nodes.CoreNode, name="n%d" % i,
                                  objid=i)
         tmp.newnetif(wlan, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
-        tmp.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
+        tmp.client.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
         tmp.setposition(x=150 * i, y=150)
         session.services.addservicestonode(tmp, "", services_str)
         n.append(tmp)

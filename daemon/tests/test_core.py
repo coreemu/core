@@ -3,13 +3,12 @@ Unit tests for testing basic CORE networks.
 """
 
 import os
+import stat
 import threading
 import time
-
-import pytest
-
 from xml.etree import ElementTree
 
+import pytest
 from mock import MagicMock
 
 from conftest import EMANE_SERVICES
@@ -18,6 +17,7 @@ from core.enumerations import MessageFlags
 from core.mobility import BasicRangeModel
 from core.netns import nodes
 from core.netns import vnodeclient
+from core.netns.vnodeclient import VnodeClient
 from core.phys.pnodes import PhysicalNode
 from core.service import ServiceManager
 from core.xml import xmlsession
@@ -27,6 +27,24 @@ _SERVICES_PATH = os.path.join(_PATH, "myservices")
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
 _XML_VERSIONS = ["0.0", "1.0"]
 _NODE_CLASSES = [nodes.PtpNet, nodes.HubNode, nodes.SwitchNode]
+
+
+def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
+    """
+    Create clients
+
+    :param str sessiondir: session directory to create clients
+    :param class clientcls: class to create clients from
+    :param func cmdchnlfilterfunc: command channel filter function
+    :return: list of created clients
+    :rtype: list
+    """
+    direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
+    cmdchnls = filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries)
+    if cmdchnlfilterfunc:
+        cmdchnls = filter(cmdchnlfilterfunc, cmdchnls)
+    cmdchnls.sort()
+    return map(lambda x: clientcls(os.path.basename(x), x), cmdchnls)
 
 
 class TestCore:
@@ -145,7 +163,7 @@ class TestCore:
 
         # get node client for testing
         n1 = core.get_node("n1")
-        client = n1.vnodeclient
+        client = n1.client
 
         # instantiate session
         core.session.instantiate()
@@ -178,7 +196,7 @@ class TestCore:
         assert not client.shcmd(command[0])
 
         # check module methods
-        assert vnodeclient.createclients(core.session.session_dir)
+        assert createclients(core.session.session_dir)
 
         # check convenience methods for interface information
         assert client.getaddr("eth0")

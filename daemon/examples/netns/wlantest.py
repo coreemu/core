@@ -37,9 +37,9 @@ def test(numnodes, testsec):
         tmp.newnetif(net, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         n.append(tmp)
     net.link(n[0].netif(0), n[-1].netif(0))
-    n[0].cmd(["iperf", "-s", "-D"])
-    n[-1].icmd(["iperf", "-t", str(int(testsec)), "-c", str(prefix.addr(1))])
-    n[0].cmd(["killall", "-9", "iperf"])
+    n[0].client.cmd(["iperf", "-s", "-D"])
+    n[-1].client.icmd(["iperf", "-t", str(int(testsec)), "-c", str(prefix.addr(1))])
+    n[0].client.cmd(["killall", "-9", "iperf"])
     session.shutdown()
 
 

@@ -47,7 +47,7 @@ Here are the basic elements of a CORE Python script:
   node1.newnetif(hub1, ["10.0.0.1/24"])
   node2.newnetif(hub1, ["10.0.0.2/24"])
 
-  node1.icmd(["ping", "-c", "5", "10.0.0.2"])
+  node1.vnodeclient.icmd(["ping", "-c", "5", "10.0.0.2"])
   session.shutdown()
 
 

@@ -610,6 +610,7 @@ class Session(object):
 
         :param int object_id: object id to retrieve
         :return: object for the given id
+        :rtype: core.netns.vnode.SimpleLxcNode
         """
         if object_id not in self.objects:
             raise KeyError("unknown object id %s" % object_id)
@@ -1257,7 +1258,7 @@ class Session(object):
             utils.mutedetach(commands)
         else:
             node = self.get_object(node_id)
-            node.cmd(commands, wait=False)
+            node.client.cmd(commands, wait=False)
 
     def send_objects(self):
         """

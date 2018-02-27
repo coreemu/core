@@ -27,6 +27,14 @@ utils.check_executables([constants.IP_BIN])
 class SimpleLxcNode(PyCoreNode):
     """
     Provides simple lxc functionality for core nodes.
+
+    :type nodedir: str
+    :type ctrlchnlname: str
+    :type client: core.netns.vnodeclient.VnodeClient
+    :type pid: int
+    :type up: bool
+    :type lock: threading.RLock
+    :type _mounts: list[tuple[str, str]]
     """
     valid_deladdrtype = ("inet", "inet6", "inet6link")
 
@@ -43,7 +51,7 @@ class SimpleLxcNode(PyCoreNode):
         PyCoreNode.__init__(self, session, objid, name, start=start)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
-        self.vnodeclient = None
+        self.client = None
         self.pid = None
         self.up = False
         self.lock = threading.RLock()
@@ -100,11 +108,11 @@ class SimpleLxcNode(PyCoreNode):
         if tmp.wait():
             raise Exception("command failed: %s" % vnoded)
 
-        self.vnodeclient = vnodeclient.VnodeClient(self.name, self.ctrlchnlname)
+        self.client = vnodeclient.VnodeClient(self.name, self.ctrlchnlname)
         logger.info("bringing up loopback interface")
-        self.cmd([constants.IP_BIN, "link", "set", "lo", "up"])
+        self.client.cmd([constants.IP_BIN, "link", "set", "lo", "up"])
         logger.info("setting hostname: %s" % self.name)
-        self.cmd(["hostname", self.name])
+        self.client.cmd(["hostname", self.name])
         self.up = True
 
     def shutdown(self):
@@ -142,87 +150,8 @@ class SimpleLxcNode(PyCoreNode):
 
         # clear interface data, close client, and mark self and not up
         self._netif.clear()
-        self.vnodeclient.close()
+        self.client.close()
         self.up = False
-
-    # TODO: potentially remove all these wrapper methods, just make use of object itself.
-    def cmd(self, args, wait=True):
-        """
-        Wrapper around vnodeclient cmd.
-
-        :param args: arguments for ocmmand
-        :param wait: wait or not
-        :return:
-        """
-        return self.vnodeclient.cmd(args, wait)
-
-    def cmdresult(self, args):
-        """
-        Wrapper around vnodeclient cmdresult.
-
-        :param args: arguments for ocmmand
-        :return:
-        """
-        return self.vnodeclient.cmdresult(args)
-
-    def popen(self, args):
-        """
-        Wrapper around vnodeclient popen.
-
-        :param args: arguments for ocmmand
-        :return:
-        """
-        return self.vnodeclient.popen(args)
-
-    def icmd(self, args):
-        """
-        Wrapper around vnodeclient icmd.
-
-        :param args: arguments for ocmmand
-        :return:
-        """
-        return self.vnodeclient.icmd(args)
-
-    def redircmd(self, infd, outfd, errfd, args, wait=True):
-        """
-        Wrapper around vnodeclient redircmd.
-
-        :param infd: input file descriptor
-        :param outfd: output file descriptor
-        :param errfd: err file descriptor
-        :param args: command arguments
-        :param wait: wait or not
-        :return:
-        """
-        return self.vnodeclient.redircmd(infd, outfd, errfd, args, wait)
-
-    def term(self, sh="/bin/sh"):
-        """
-        Wrapper around vnodeclient term.
-
-        :param sh: shell to create terminal for
-        :return:
-        """
-        return self.vnodeclient.term(sh=sh)
-
-    def termcmdstring(self, sh="/bin/sh"):
-        """
-        Wrapper around vnodeclient termcmdstring.
-
-        :param sh: shell to run command in
-        :return:
-        """
-        return self.vnodeclient.termcmdstring(sh=sh)
-
-    def shcmd(self, cmdstr, sh="/bin/sh"):
-        """
-        Wrapper around vnodeclient shcmd.
-
-        :param str cmdstr: command string
-        :param sh: shell to run command in
-        :return:
-        """
-        return self.vnodeclient.shcmd(cmdstr, sh=sh)
 
     def boot(self):
         """
@@ -243,9 +172,8 @@ class SimpleLxcNode(PyCoreNode):
         source = os.path.abspath(source)
         logger.info("mounting %s at %s" % (source, target))
         try:
-            shcmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (
-                target, constants.MOUNT_BIN, source, target)
-            self.shcmd(shcmd)
+            shcmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
+            self.client.shcmd(shcmd)
             self._mounts.append((source, target))
         except IOError:
             logger.exception("mounting failed for %s at %s", source, target)
@@ -259,7 +187,7 @@ class SimpleLxcNode(PyCoreNode):
         """
         logger.info("unmounting: %s", target)
         try:
-            self.cmd([constants.UMOUNT_BIN, "-n", "-l", target])
+            self.client.cmd([constants.UMOUNT_BIN, "-n", "-l", target])
         except IOError:
             logger.exception("unmounting failed for %s" % target)
 
@@ -307,14 +235,14 @@ class SimpleLxcNode(PyCoreNode):
 
             if self.up:
                 subprocess.check_call([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
-                self.cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
+                self.client.cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
 
             veth.name = ifname
 
             if self.up:
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
-                result, output = self.cmdresult(["ip", "link", "show", veth.name])
+                result, output = self.client.cmdresult(["ip", "link", "show", veth.name])
                 logger.info("interface command output: %s", output)
                 output = output.split("\n")
                 veth.flow_id = int(output[0].strip().split(":")[0]) + 1
@@ -375,8 +303,8 @@ class SimpleLxcNode(PyCoreNode):
         """
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
-            (status, result) = self.cmdresult([constants.IP_BIN, "link", "set", "dev",
-                                               self.ifname(ifindex), "address", str(addr)])
+            (status, result) = self.client.cmdresult([constants.IP_BIN, "link", "set", "dev",
+                                                      self.ifname(ifindex), "address", str(addr)])
             if status:
                 logger.error("error setting MAC address %s", str(addr))
 
@@ -390,11 +318,11 @@ class SimpleLxcNode(PyCoreNode):
         """
         if self.up:
             if ":" in str(addr):  # check if addr is ipv6
-                self.cmd([constants.IP_BIN, "addr", "add", str(addr),
-                          "dev", self.ifname(ifindex)])
+                self.client.cmd([constants.IP_BIN, "addr", "add", str(addr),
+                                 "dev", self.ifname(ifindex)])
             else:
-                self.cmd([constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+",
-                          "dev", self.ifname(ifindex)])
+                self.client.cmd([constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+",
+                                 "dev", self.ifname(ifindex)])
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
@@ -411,7 +339,7 @@ class SimpleLxcNode(PyCoreNode):
             logger.exception("trying to delete unknown address: %s" % addr)
 
         if self.up:
-            self.cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            self.client.cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
     def delalladdr(self, ifindex, addrtypes=valid_deladdrtype):
         """
@@ -438,7 +366,7 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         if self.up:
-            self.cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
+            self.client.cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
@@ -503,13 +431,12 @@ class SimpleLxcNode(PyCoreNode):
                                "type", "veth", "peer", "name", tmp2])
 
         subprocess.call([constants.IP_BIN, "link", "set", tmp1, "netns", str(self.pid)])
-        self.cmd([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
+        self.client.cmd([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
         self.addnetif(PyCoreNetIf(self, ifname), self.newifindex())
 
         subprocess.check_call([constants.IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
-        othernode.cmd([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
-        othernode.addnetif(PyCoreNetIf(othernode, otherifname),
-                           othernode.newifindex())
+        othernode.client.cmd([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
+        othernode.addnetif(PyCoreNetIf(othernode, otherifname), othernode.newifindex())
 
     def addfile(self, srcname, filename):
         """
@@ -520,7 +447,7 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         shcmd = 'mkdir -p $(dirname "%s") && mv "%s" "%s" && sync' % (filename, srcname, filename)
-        self.shcmd(shcmd)
+        self.client.shcmd(shcmd)
 
     def getaddr(self, ifname, rescan=False):
         """
@@ -530,7 +457,7 @@ class SimpleLxcNode(PyCoreNode):
         :param bool rescan: rescan flag
         :return:
         """
-        return self.vnodeclient.getaddr(ifname=ifname, rescan=rescan)
+        return self.client.getaddr(ifname=ifname, rescan=rescan)
 
     def netifstats(self, ifname=None):
         """
@@ -539,7 +466,7 @@ class SimpleLxcNode(PyCoreNode):
         :param str ifname: interface name to get state for
         :return:
         """
-        return self.vnodeclient.netifstats(ifname=ifname)
+        return self.client.netifstats(ifname=ifname)
 
 
 class LxcNode(SimpleLxcNode):

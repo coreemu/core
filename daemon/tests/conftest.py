@@ -186,18 +186,18 @@ class Core(object):
     def ping(self, from_name, to_name):
         from_node = self.nodes[from_name]
         to_ip = str(self.get_ip(to_name))
-        return from_node.cmd(["ping", "-c", "3", to_ip])
+        return from_node.client.cmd(["ping", "-c", "3", to_ip])
 
     def ping_output(self, from_name, to_name):
         from_node = self.nodes[from_name]
         to_ip = str(self.get_ip(to_name))
-        vcmd, stdin, stdout, stderr = from_node.popen(["ping", "-i", "0.05", "-c", "3", to_ip])
+        vcmd, stdin, stdout, stderr = from_node.client.popen(["ping", "-i", "0.05", "-c", "3", to_ip])
         return stdout.read().strip()
 
     def iping(self, from_name, to_name):
         from_node = self.nodes[from_name]
         to_ip = str(self.get_ip(to_name))
-        from_node.icmd(["ping", "-i", "0.01", "-c", "10", to_ip])
+        from_node.client.icmd(["ping", "-i", "0.01", "-c", "10", to_ip])
 
     def iperf(self, from_name, to_name):
         from_node = self.nodes[from_name]
@@ -205,9 +205,9 @@ class Core(object):
         to_ip = str(self.get_ip(to_name))
 
         # run iperf server, run client, kill iperf server
-        vcmd, stdin, stdout, stderr = to_node.popen(["iperf", "-s", "-u", "-y", "C"])
-        from_node.cmd(["iperf", "-u", "-t", "5", "-c", to_ip])
-        to_node.cmd(["killall", "-9", "iperf"])
+        vcmd, stdin, stdout, stderr = to_node.client.popen(["iperf", "-s", "-u", "-y", "C"])
+        from_node.client.cmd(["iperf", "-u", "-t", "5", "-c", to_ip])
+        to_node.client.cmd(["killall", "-9", "iperf"])
 
         return stdout.read().strip()
 

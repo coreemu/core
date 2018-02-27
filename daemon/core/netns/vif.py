@@ -60,7 +60,7 @@ class VEth(PyCoreNetIf):
         if not self.up:
             return
         if self.node:
-            self.node.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            self.node.client.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
         if self.localname:
             utils.mutedetach([constants.IP_BIN, "link", "delete", self.localname])
         self.up = False
@@ -112,7 +112,7 @@ class TunTap(PyCoreNetIf):
         """
         if not self.up:
             return
-        self.node.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+        self.node.client.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
         # if self.name:
         #    mutedetach(["tunctl", "-d", self.localname])
         self.up = False
@@ -169,7 +169,7 @@ class TunTap(PyCoreNetIf):
 
         def nodedevexists():
             cmd = (constants.IP_BIN, "link", "show", self.name)
-            return self.node.cmd(cmd)
+            return self.node.client.cmd(cmd)
 
         count = 0
         while True:
@@ -206,8 +206,8 @@ class TunTap(PyCoreNetIf):
             logger.exception(msg)
             return
 
-        self.node.cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
-        self.node.cmd([constants.IP_BIN, "link", "set", self.name, "up"])
+        self.node.client.cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
+        self.node.client.cmd([constants.IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
         """
@@ -217,7 +217,7 @@ class TunTap(PyCoreNetIf):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            self.node.client.cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
 
 
 class GreTap(PyCoreNetIf):

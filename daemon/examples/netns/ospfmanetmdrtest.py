@@ -16,6 +16,7 @@ import time
 from string import Template
 
 from core.constants import QUAGGA_STATE_DIR
+
 from core.misc import ipaddress
 from core.misc.utils import mutecall
 from core.netns import nodes
@@ -267,7 +268,7 @@ class ManetExperiment(object):
             self.nodes[i].boot()
         # run the boot.sh script on all nodes to start Quagga
         for i in xrange(numnodes):
-            self.nodes[i].cmd(["./%s" % self.nodes[i].bootsh])
+            self.nodes[i].client.cmd(["./%s" % self.nodes[i].bootsh])
 
     def compareroutes(self, node, kr, zr):
         """ Compare two lists of Route objects.
@@ -386,7 +387,7 @@ class Cmd:
     def open(self):
         """ Exceute call to node.popen(). """
         self.id, self.stdin, self.out, self.err = \
-            self.node.popen(self.args)
+            self.node.client.popen(self.args)
 
     def parse(self):
         """ This method is overloaded by child classes and should return some
@@ -409,7 +410,7 @@ class VtyshCmd(Cmd):
 
     def open(self):
         args = ("vtysh", "-c", self.args)
-        self.id, self.stdin, self.out, self.err = self.node.popen(args)
+        self.id, self.stdin, self.out, self.err = self.node.client.popen(args)
 
 
 class Ospf6NeighState(VtyshCmd):

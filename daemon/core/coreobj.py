@@ -556,7 +556,7 @@ class PyCoreNetIf(object):
         """
         Creates a PyCoreNetIf instance.
 
-        :param node: node for interface
+        :param core.netns.vnode.SimpleLxcNode node: node for interface
         :param str name: interface name
         :param mtu: mtu value
         """

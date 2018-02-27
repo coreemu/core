@@ -82,7 +82,7 @@ def main():
     for i in xrange(1, num_local + 1):
         node = session.add_object(cls=nodes.CoreNode, name="n%d" % i, objid=i)
         node.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
-        node.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
+        node.client.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
         node.setposition(x=150 * i, y=150)
         n.append(node)
 

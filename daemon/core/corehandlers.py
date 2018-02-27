@@ -988,7 +988,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                             upstream = True
                             netif = net2.getlinknetif(net)
                         if netif is None:
-                            raise ValueError, "modify unknown link between nets"
+                            raise ValueError("modify unknown link between nets")
                         if upstream:
                             netif.swapparams("_params_up")
                             net.linkconfig(netif, bw=bw, delay=delay,
@@ -1087,7 +1087,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 # echo back exec message with cmd for spawning interactive terminal
                 if command == "bash":
                     command = "/bin/bash"
-                res = node.termcmdstring(command)
+                res = node.client.termcmdstring(command)
                 tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
                 reply = coreapi.CoreExecMessage.pack(MessageFlags.TTY.value, tlv_data)
                 return reply,
@@ -1099,7 +1099,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     if message.flags & MessageFlags.LOCAL.value:
                         status, res = utils.cmdresult(shlex.split(command))
                     else:
-                        status, res = node.cmdresult(shlex.split(command))
+                        status, res = node.client.cmdresult(shlex.split(command))
                     logger.info("done exec cmd=%s with status=%d res=(%d bytes)", command, status, len(res))
                     if message.flags & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
@@ -1112,7 +1112,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     if message.flags & MessageFlags.LOCAL.value:
                         utils.mutedetach(shlex.split(command))
                     else:
-                        node.cmd(shlex.split(command), wait=False)
+                        node.client.cmd(shlex.split(command), wait=False)
         except KeyError:
             logger.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later

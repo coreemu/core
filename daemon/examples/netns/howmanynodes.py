@@ -159,7 +159,7 @@ def main():
         try:
             n = session.add_object(cls=nodes.LxcNode, name="n%d" % i)
             n.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
-            n.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
+            n.client.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
             if options.services is not None:
                 session.services.addservicestonode(n, "", options.services)
                 n.boot()

@@ -6,16 +6,11 @@ by invoking the vcmd shell command.
 """
 
 import os
-import stat
-import subprocess
+
+import vcmd
 
 from core import constants
 from core import logger
-
-USE_VCMD_MODULE = True
-
-if USE_VCMD_MODULE:
-    import vcmd
 
 VCMD = os.path.join(constants.CORE_BIN_DIR, "vcmd")
 
@@ -34,11 +29,18 @@ class VnodeClient(object):
         """
         self.name = name
         self.ctrlchnlname = ctrlchnlname
-        if USE_VCMD_MODULE:
-            self.cmdchnl = vcmd.VCmd(self.ctrlchnlname)
-        else:
-            self.cmdchnl = None
+        self.cmdchnl = vcmd.VCmd(self.ctrlchnlname)
         self._addr = {}
+
+    def _verify_connection(self):
+        """
+        Checks that the vcmd client is properly connected.
+
+        :return: nothing
+        :raises ValueError: when not connected
+        """
+        if not self.connected():
+            raise ValueError("vcmd not connected")
 
     def connected(self):
         """
@@ -47,10 +49,7 @@ class VnodeClient(object):
         :return: True if connected, False otherwise
         :rtype: bool
         """
-        if USE_VCMD_MODULE:
-            return self.cmdchnl.connected()
-        else:
-            return True
+        return self.cmdchnl.connected()
 
     def close(self):
         """
@@ -58,8 +57,7 @@ class VnodeClient(object):
 
         :return: nothing
         """
-        if USE_VCMD_MODULE:
-            self.cmdchnl.close()
+        self.cmdchnl.close()
 
     def cmd(self, args, wait=True):
         """
@@ -70,24 +68,16 @@ class VnodeClient(object):
         :return: command status
         :rtype: int
         """
-        if USE_VCMD_MODULE:
-            if not self.cmdchnl.connected():
-                raise ValueError("self.cmdchnl not connected")
-            tmp = self.cmdchnl.qcmd(args)
-            if not wait:
-                return tmp
-            tmp = tmp.wait()
-        else:
-            if wait:
-                mode = os.P_WAIT
-            else:
-                mode = os.P_NOWAIT
-            tmp = os.spawnlp(mode, VCMD, VCMD, "-c", self.ctrlchnlname, "-q", "--", *args)
-            if not wait:
-                return tmp
+        self._verify_connection()
+
+        # TODO: clean this up after checking return value for qcmd
+        tmp = self.cmdchnl.qcmd(args)
+        if not wait:
+            return tmp
+        tmp = tmp.wait()
 
         if tmp:
-            logger.warn("cmd exited with status %s: %s" % (tmp, str(args)))
+            logger.warn("cmd exited with status %s: %s", tmp, args)
 
         return tmp
 
@@ -101,14 +91,16 @@ class VnodeClient(object):
         :return: command status and combined stdout and stderr output
         :rtype: tuple[int, str]
         """
-        cmdid, cmdin, cmdout, cmderr = self.popen(args)
-        result = cmdout.read()
-        result += cmderr.read()
-        cmdin.close()
-        cmdout.close()
-        cmderr.close()
-        status = cmdid.wait()
-        return status, result
+        self._verify_connection()
+
+        p, stdin, stdout, stderr = self.popen(args)
+        output = stdout.read() + stderr.read()
+        stdin.close()
+        stdout.close()
+        stderr.close()
+        status = p.wait()
+
+        return status, output
 
     def popen(self, args):
         """
@@ -118,15 +110,8 @@ class VnodeClient(object):
         :return: popen object, stdin, stdout, and stderr
         :rtype: tuple
         """
-        if USE_VCMD_MODULE:
-            if not self.cmdchnl.connected():
-                raise ValueError("self.cmdchnl not connected")
-            return self.cmdchnl.popen(args)
-        else:
-            cmd = [VCMD, "-c", self.ctrlchnlname, "--"]
-            cmd.extend(args)
-            tmp = subprocess.Popen(cmd, stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-            return tmp, tmp.stdin, tmp.stdout, tmp.stderr
+        self._verify_connection()
+        return self.cmdchnl.popen(args)
 
     def icmd(self, args):
         """
@@ -151,18 +136,20 @@ class VnodeClient(object):
         :return: command status
         :rtype: int
         """
-        if not USE_VCMD_MODULE:
-            raise NotImplementedError
-        if not self.cmdchnl.connected():
-            raise ValueError("self.cmdchnl not connected")
+        self._verify_connection()
+
+        # TODO: clean this up after verifying redircmd return values
         tmp = self.cmdchnl.redircmd(infd, outfd, errfd, args)
         if not wait:
             return tmp
+
         tmp = tmp.wait()
         if tmp:
-            logger.warn("cmd exited with status %s: %s" % (tmp, str(args)))
+            logger.warn("cmd exited with status %s: %s", tmp, args)
+
         return tmp
 
+    # TODO: validate if this is ever used
     def term(self, sh="/bin/sh"):
         """
         Open a terminal on a node.
@@ -171,8 +158,7 @@ class VnodeClient(object):
         :return: terminal command result
         :rtype: int
         """
-        cmd = ("xterm", "-ut", "-title", self.name, "-e",
-               VCMD, "-c", self.ctrlchnlname, "--", sh)
+        cmd = ("xterm", "-ut", "-title", self.name, "-e", VCMD, "-c", self.ctrlchnlname, "--", sh)
         if "SUDO_USER" in os.environ:
             cmd = ("su", "-s", "/bin/sh", "-c",
                    "exec " + " ".join(map(lambda x: "'%s'" % x, cmd)),
@@ -210,35 +196,36 @@ class VnodeClient(object):
         """
         if ifname in self._addr and not rescan:
             return self._addr[ifname]
-        tmp = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
-        cmd = [constants.IP_BIN, "addr", "show", "dev", ifname]
-        cmdid, cmdin, cmdout, cmderr = self.popen(cmd)
-        cmdin.close()
 
-        for line in cmdout:
+        interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
+        cmd = [constants.IP_BIN, "addr", "show", "dev", ifname]
+        p, stdin, stdout, stderr = self.popen(cmd)
+        stdin.close()
+
+        for line in stdout:
             line = line.strip().split()
             if line[0] == "link/ether":
-                tmp["ether"].append(line[1])
+                interface["ether"].append(line[1])
             elif line[0] == "inet":
-                tmp["inet"].append(line[1])
+                interface["inet"].append(line[1])
             elif line[0] == "inet6":
                 if line[3] == "global":
-                    tmp["inet6"].append(line[1])
+                    interface["inet6"].append(line[1])
                 elif line[3] == "link":
-                    tmp["inet6link"].append(line[1])
+                    interface["inet6link"].append(line[1])
                 else:
                     logger.warn("unknown scope: %s" % line[3])
 
-        err = cmderr.read()
-        cmdout.close()
-        cmderr.close()
-        status = cmdid.wait()
+        err = stderr.read()
+        stdout.close()
+        stderr.close()
+        status = p.wait()
         if status:
-            logger.warn("nonzero exist status (%s) for cmd: %s" % (status, cmd))
+            logger.warn("nonzero exist status (%s) for cmd: %s", status, cmd)
         if err:
-            logger.warn("error output: %s" % err)
-        self._addr[ifname] = tmp
-        return tmp
+            logger.warn("error output: %s", err)
+        self._addr[ifname] = interface
+        return interface
 
     def netifstats(self, ifname=None):
         """
@@ -250,15 +237,15 @@ class VnodeClient(object):
         """
         stats = {}
         cmd = ["cat", "/proc/net/dev"]
-        cmdid, cmdin, cmdout, cmderr = self.popen(cmd)
-        cmdin.close()
+        p, stdin, stdout, stderr = self.popen(cmd)
+        stdin.close()
         # ignore first line
-        cmdout.readline()
+        stdout.readline()
         # second line has count names
-        tmp = cmdout.readline().strip().split("|")
+        tmp = stdout.readline().strip().split("|")
         rxkeys = tmp[1].split()
         txkeys = tmp[2].split()
-        for line in cmdout:
+        for line in stdout:
             line = line.strip().split()
             devname, tmp = line[0].split(":")
             if tmp:
@@ -271,53 +258,15 @@ class VnodeClient(object):
             for count in txkeys:
                 stats[devname]["tx"][count] = int(line[field])
                 field += 1
-        err = cmderr.read()
-        cmdout.close()
-        cmderr.close()
-        status = cmdid.wait()
+        err = stderr.read()
+        stdout.close()
+        stderr.close()
+        status = p.wait()
         if status:
-            logger.warn("nonzero exist status (%s) for cmd: %s" % (status, cmd))
+            logger.warn("nonzero exist status (%s) for cmd: %s", status, cmd)
         if err:
-            logger.warn("error output: %s" % err)
+            logger.warn("error output: %s", err)
         if ifname is not None:
             return stats[ifname]
         else:
             return stats
-
-
-def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
-    """
-    Create clients
-
-    :param str sessiondir: session directory to create clients
-    :param class clientcls: class to create clients from
-    :param func cmdchnlfilterfunc: command channel filter function
-    :return: list of created clients
-    :rtype: list
-    """
-    direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
-    cmdchnls = filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries)
-    if cmdchnlfilterfunc:
-        cmdchnls = filter(cmdchnlfilterfunc, cmdchnls)
-    cmdchnls.sort()
-    return map(lambda x: clientcls(os.path.basename(x), x), cmdchnls)
-
-
-def createremoteclients(sessiondir, clientcls=VnodeClient, filterfunc=None):
-    """
-    Creates remote VnodeClients, for nodes emulated on other machines. The
-    session.Broker writes a n1.conf/server file having the server's info.
-
-    :param str sessiondir: session directory to create clients
-    :param class clientcls: class to create clients from
-    :param func filterfunc: filter function
-    :return: list of remove clients
-    :rtype: list
-    """
-    direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
-    nodedirs = filter(lambda x: stat.S_ISDIR(os.stat(x).st_mode), direntries)
-    nodedirs = filter(lambda x: os.path.exists(os.path.join(x, "server")), nodedirs)
-    if filterfunc:
-        nodedirs = filter(filterfunc, nodedirs)
-    nodedirs.sort()
-    return map(lambda x: clientcls(x), nodedirs)

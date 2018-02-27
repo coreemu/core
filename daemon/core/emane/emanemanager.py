@@ -912,17 +912,16 @@ class EmaneManager(ConfigurableManager):
 
             # multicast route is needed for OTA data
             cmd = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
-            # rc = node.cmd(cmd, wait=True)
-            node.cmd(cmd, wait=True)
+            node.client.cmd(cmd, wait=True)
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 cmd = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
-                node.cmd(cmd, wait=True)
+                node.client.cmd(cmd, wait=True)
 
             try:
                 cmd = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]
                 logger.info("Emane.startdaemons2() running %s" % str(cmd))
-                status, output = node.cmdresult(cmd)
+                status, output = node.client.cmdresult(cmd)
                 logger.info("Emane.startdaemons2() return code %d" % status)
                 logger.info("Emane.startdaemons2() output: %s" % output)
             except subprocess.CalledProcessError:
@@ -955,7 +954,7 @@ class EmaneManager(ConfigurableManager):
                     stop_emane_on_host = True
                     continue
                 if node.up:
-                    node.cmd(cmd, wait=False)
+                    node.client.cmd(cmd, wait=False)
                     # TODO: RJ45 node
         else:
             stop_emane_on_host = True
@@ -1161,7 +1160,7 @@ class EmaneManager(ConfigurableManager):
             if emane.VERSION < emane.EMANE092:
                 status = subprocess.call(cmd)
             else:
-                status = node.cmd(cmd, wait=True)
+                status = node.client.cmd(cmd, wait=True)
         except IOError:
             logger.exception("error checking if emane is running")
 

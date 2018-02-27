@@ -312,7 +312,7 @@ class CoreServices(ConfigurableManager):
         for cmd in service.getstartup(node, services):
             try:
                 # NOTE: this wait=False can be problematic!
-                node.cmd(shlex.split(cmd), wait=False)
+                node.client.cmd(shlex.split(cmd), wait=False)
             except:
                 logger.exception("error starting command %s", cmd)
 
@@ -358,7 +358,7 @@ class CoreServices(ConfigurableManager):
         for cmd in service._startup:
             try:
                 # NOTE: this wait=False can be problematic!
-                node.cmd(shlex.split(cmd), wait=False)
+                node.client.cmd(shlex.split(cmd), wait=False)
             except:
                 logger.exception("error starting command %s", cmd)
 
@@ -417,7 +417,7 @@ class CoreServices(ConfigurableManager):
             for cmd in validate_cmds:
                 logger.info("validating service %s using: %s", service._name, cmd)
                 try:
-                    status, result = node.cmdresult(shlex.split(cmd))
+                    status, result = node.client.cmdresult(shlex.split(cmd))
                     if status != 0:
                         raise ValueError("non-zero exit status")
                 except:
@@ -453,7 +453,7 @@ class CoreServices(ConfigurableManager):
         else:
             for cmd in service._shutdown:
                 try:
-                    tmp = node.cmd(shlex.split(cmd), wait=True)
+                    tmp = node.client.cmd(shlex.split(cmd), wait=True)
                     status += "%s" % tmp
                 except:
                     logger.exception("error running stop command %s", cmd)
@@ -766,7 +766,7 @@ class CoreServices(ConfigurableManager):
                     for cmd in cmds:
                         try:
                             # node.cmd(shlex.split(cmd),  wait = False)
-                            status = node.cmd(shlex.split(cmd), wait=True)
+                            status = node.client.cmd(shlex.split(cmd), wait=True)
                             if status != 0:
                                 fail += "Start %s(%s)," % (s._name, cmd)
                         except:
