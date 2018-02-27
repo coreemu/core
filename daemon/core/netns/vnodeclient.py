@@ -70,16 +70,16 @@ class VnodeClient(object):
         """
         self._verify_connection()
 
-        # TODO: clean this up after checking return value for qcmd
-        tmp = self.cmdchnl.qcmd(args)
+        # run command, return process when not waiting
+        p = self.cmdchnl.qcmd(args)
         if not wait:
-            return tmp
-        tmp = tmp.wait()
+            return p
 
-        if tmp:
-            logger.warn("cmd exited with status %s: %s", tmp, args)
-
-        return tmp
+        # wait for and return exit status
+        status = p.wait()
+        if status:
+            logger.warn("cmd exited with status %s: %s", status, args)
+        return status
 
     def cmdresult(self, args):
         """
@@ -138,16 +138,16 @@ class VnodeClient(object):
         """
         self._verify_connection()
 
-        # TODO: clean this up after verifying redircmd return values
-        tmp = self.cmdchnl.redircmd(infd, outfd, errfd, args)
+        # run command, return process when not waiting
+        p = self.cmdchnl.redircmd(infd, outfd, errfd, args)
         if not wait:
-            return tmp
+            return p
 
-        tmp = tmp.wait()
-        if tmp:
-            logger.warn("cmd exited with status %s: %s", tmp, args)
-
-        return tmp
+        # wait for and return exit status
+        status = p.wait()
+        if status:
+            logger.warn("cmd exited with status %s: %s", status, args)
+        return status
 
     # TODO: validate if this is ever used
     def term(self, sh="/bin/sh"):
