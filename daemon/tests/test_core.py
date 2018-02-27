@@ -186,7 +186,6 @@ class TestCore:
         assert not client.shcmd(command[0])
 
         # check various command using command line
-        vnodeclient.USE_VCMD_MODULE = False
         assert not client.cmd(command)
         status, output = client.cmdresult(command)
         assert not status

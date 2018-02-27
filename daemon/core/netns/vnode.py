@@ -173,8 +173,10 @@ class SimpleLxcNode(PyCoreNode):
         source = os.path.abspath(source)
         logger.info("mounting %s at %s" % (source, target))
         try:
-            shcmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
-            self.client.shcmd(shcmd)
+            cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
+            status, output = self.client.shcmd_result(cmd)
+            if status:
+                raise IOError("error during mount: %s" % output)
             self._mounts.append((source, target))
         except IOError:
             logger.exception("mounting failed for %s at %s", source, target)
@@ -447,8 +449,16 @@ class SimpleLxcNode(PyCoreNode):
         :param str filename: file name to add
         :return: nothing
         """
-        shcmd = 'mkdir -p $(dirname "%s") && mv "%s" "%s" && sync' % (filename, srcname, filename)
-        self.client.shcmd(shcmd)
+        logger.info("adding file from %s to %s", srcname, filename)
+        directory = os.path.dirname(filename)
+
+        try:
+            cmd = 'mkdir -p "%s" && mv "%s" "%s" && sync' % (directory, srcname, filename)
+            status, output = self.client.shcmd_result(cmd)
+            if status:
+                logger.error("error adding file: %s", output)
+        except IOError:
+            logger.exception("error during addfile")
 
     def getaddr(self, ifname, rescan=False):
         """
