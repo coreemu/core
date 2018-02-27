@@ -161,6 +161,7 @@ class SimpleLxcNode(PyCoreNode):
         """
         pass
 
+    # TODO: should change how this exception is just swallowed up
     def mount(self, source, target):
         """
         Create and mount a directory.
@@ -474,8 +475,7 @@ class LxcNode(SimpleLxcNode):
     Provides lcx node functionality for core nodes.
     """
 
-    def __init__(self, session, objid=None, name=None,
-                 nodedir=None, bootsh="boot.sh", start=True):
+    def __init__(self, session, objid=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
         """
         Create a LxcNode instance.
 
@@ -486,8 +486,7 @@ class LxcNode(SimpleLxcNode):
         :param bootsh: boot shell
         :param bool start: start flag
         """
-        super(LxcNode, self).__init__(session=session, objid=objid,
-                                      name=name, nodedir=nodedir, start=start)
+        super(LxcNode, self).__init__(session=session, objid=objid, name=name, nodedir=nodedir, start=start)
         self.bootsh = bootsh
         if start:
             self.startup()
@@ -544,6 +543,7 @@ class LxcNode(SimpleLxcNode):
             self.rmnodedir()
             self.lock.release()
 
+    # TODO: should change how this exception is just swallowed up
     def privatedir(self, path):
         """
         Create a private directory.
