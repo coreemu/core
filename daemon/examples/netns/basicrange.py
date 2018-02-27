@@ -58,7 +58,6 @@ def test(options):
     # session.sdt.updatenode(n[1].objid, 0, 10, 10, 2000000)
 
     # launches terminal for the first node
-    # n[0].term("bash")
     n[0].client.icmd(["ping", "-c",  "5", "127.0.0.1"])
 
     # wait for rate seconds to allow ebtables commands to commit

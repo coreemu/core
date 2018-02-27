@@ -66,7 +66,7 @@ def main():
     print "elapsed time: %s" % (datetime.datetime.now() - start)
 
     # start a shell on node 1
-    n[1].term("bash")
+    n[1].client.term("bash")
 
     raw_input("press enter to exit")
     session.shutdown()

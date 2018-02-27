@@ -116,7 +116,7 @@ def main():
     session.broker.handlerawmsg(msg)
 
     # start a shell on node 1
-    n[1].term("bash")
+    n[1].client.term("bash")
 
     print "elapsed time: %s" % (datetime.datetime.now() - start)
     print "To stop this session, use the 'core-cleanup' script on this server"

@@ -149,7 +149,6 @@ class VnodeClient(object):
             logger.warn("cmd exited with status %s: %s", status, args)
         return status
 
-    # TODO: validate if this is ever used
     def term(self, sh="/bin/sh"):
         """
         Open a terminal on a node.
