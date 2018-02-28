@@ -389,7 +389,7 @@ class CoreDocumentParser1(object):
             hwaddr = MacAddress.from_string(mac[0])
         else:
             hwaddr = None
-        ifindex = node.newnetif(network, addrlist=ipv4 + ipv6, hwaddr=hwaddr, ifindex=None, ifname=if_name)
+        ifindex = node.newnetif(network, address_list=ipv4 + ipv6, hwaddr=hwaddr, ifindex=None, ifname=if_name)
         # TODO: 'hostname' addresses are unused
         msg = 'node \'%s\' interface \'%s\' connected ' \
               'to network \'%s\'' % (node.name, if_name, network.name)

@@ -25,7 +25,7 @@ class VEth(PyCoreNetIf):
         """
         Creates a VEth instance.
 
-        :param core.netns.nodes.CoreNode node: related core node
+        :param core.netns.vnode.SimpleLxcNode node: related core node
         :param str name: interface name
         :param str localname: interface local name
         :param mtu: interface mtu
@@ -76,7 +76,7 @@ class TunTap(PyCoreNetIf):
         """
         Create a TunTap instance.
 
-        :param core.netns.nodes.CoreNode node: related core node
+        :param core.netns.vnode.SimpleLxcNode node: related core node
         :param str name: interface name
         :param str localname: local interface name
         :param mtu: interface mtu
@@ -136,7 +136,7 @@ class TunTap(PyCoreNetIf):
                 msg += ", retrying..."
                 logger.info(msg)
                 time.sleep(delay)
-                delay = delay + delay
+                delay += delay
                 if delay > maxretrydelay:
                     delay = maxretrydelay
             else:
@@ -168,7 +168,7 @@ class TunTap(PyCoreNetIf):
         """
 
         def nodedevexists():
-            cmd = (constants.IP_BIN, "link", "show", self.name)
+            cmd = [constants.IP_BIN, "link", "show", self.name]
             return self.node.client.cmd(cmd)
 
         count = 0
@@ -180,8 +180,8 @@ class TunTap(PyCoreNetIf):
                 # check if this is an EMANE interface; if so, continue
                 # waiting if EMANE is still running
                 # TODO: remove emane code
-                if count < 5 and nodeutils.is_node(self.net, NodeTypes.EMANE) and \
-                        self.node.session.emane.emanerunning(self.node):
+                if count < 5 and nodeutils.is_node(self.net, NodeTypes.EMANE) and self.node.session.emane.emanerunning(
+                    self.node):
                     count += 1
                 else:
                     raise e
@@ -233,7 +233,7 @@ class GreTap(PyCoreNetIf):
         """
         Creates a GreTap instance.
 
-        :param core.netns.nodes.CoreNode node: related core node
+        :param core.netns.vnode.SimpleLxcNode node: related core node
         :param str name: interface name
         :param core.session.Session session: core session instance
         :param mtu: interface mtu

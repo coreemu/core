@@ -215,7 +215,7 @@ class EventLoop(object):
         """
         Add an event to the event loop.
 
-        :param int delaysec: delay in seconds for event
+        :param float delaysec: delay in seconds for event
         :param func: event function
         :param args: event arguments
         :param kwds: event keyword arguments

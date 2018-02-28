@@ -49,7 +49,6 @@ from core.service import CoreServices
 from core.xen.xenconfig import XenConfigManager
 from core.xml.xmlsession import save_session_xml
 
-
 # set default node map
 node_map = nodemaps.NODES
 nodeutils.set_node_map(node_map)
@@ -523,7 +522,7 @@ class Session(object):
             if os.path.isfile(environment_config_file):
                 utils.readfileintodict(environment_config_file, env)
         except IOError:
-            logger.exception("error reading environment configuration file: %s", environment_config_file)
+            logger.warn("environment configuration file does not exist: %s", environment_config_file)
 
         # attempt to read and add user environment file
         if self.user:
@@ -610,7 +609,7 @@ class Session(object):
 
         :param int object_id: object id to retrieve
         :return: object for the given id
-        :rtype: core.netns.vnode.SimpleLxcNode
+        :rtype: core.netns.vnode.LxcNode
         """
         if object_id not in self.objects:
             raise KeyError("unknown object id %s" % object_id)
@@ -1167,7 +1166,7 @@ class Session(object):
         interface1 = node.newnetif(net=control_net,
                                    ifindex=control_net.CTRLIF_IDX_BASE + net_index,
                                    ifname="ctrl%d" % net_index, hwaddr=MacAddress.random(),
-                                   addrlist=addrlist)
+                                   address_list=addrlist)
         node.netif(interface1).control = True
 
     def update_control_interface_hosts(self, net_index=0, remove=False):

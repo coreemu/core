@@ -7,11 +7,7 @@ a list of available services to the GUI and for configuring individual
 services.
 """
 
-import importlib
-import inspect
-import os
 import shlex
-import sys
 import time
 from itertools import repeat
 
@@ -263,8 +259,8 @@ class CoreServices(ConfigurableManager):
         """
         Start all services on a node.
 
-        :param core.netns.nodes.CoreNode node: node to start services on
-        :return:
+        :param core.netns.vnode.LxcNode node: node to start services on
+        :return: nothing
         """
         services = sorted(node.services, key=lambda service: service._startindex)
         use_startup_service = any(map(self.is_startup_service, services))
@@ -285,7 +281,7 @@ class CoreServices(ConfigurableManager):
         Start a service on a node. Create private dirs, generate config
         files, and execute startup commands.
 
-        :param core.netns.nodes.CoreNode node: node to boot services on
+        :param core.netns.vnode.LxcNode node: node to boot services on
         :param CoreService service: service to start
         :param list services: service list
         :param bool use_startup_service: flag to use startup services or not
@@ -295,7 +291,7 @@ class CoreServices(ConfigurableManager):
             self.bootnodecustomservice(node, service, services, use_startup_service)
             return
 
-        logger.info("starting service %s (%s)" % (service._name, service._startindex))
+        logger.info("starting service %s (%s)", service._name, service._startindex)
         for directory in service._dirs:
             try:
                 node.privatedir(directory)
@@ -321,7 +317,7 @@ class CoreServices(ConfigurableManager):
         Start a custom service on a node. Create private dirs, use supplied
         config files, and execute  supplied startup commands.
 
-        :param core.netns.nodes.CoreNode node: node to boot services on
+        :param core.netns.vnode.LxcNode node: node to boot services on
         :param CoreService service: service to start
         :param list services: service list
         :param bool use_startup_service: flag to use startup services or not
@@ -368,7 +364,7 @@ class CoreServices(ConfigurableManager):
         config references an existing file that should be copied.
         Returns True for local files, False for generated.
 
-        :param core.netns.nodes.CoreNode node: node to copy service for
+        :param core.netns.vnode.LxcNode node: node to copy service for
         :param str filename: file name for a configured service
         :param str cfg: configuration string
         :return: True if successful, False otherwise
@@ -387,7 +383,7 @@ class CoreServices(ConfigurableManager):
         """
         Run validation commands for all services on a node.
 
-        :param core.netns.nodes.CoreNode node: node to validate services for
+        :param core.netns.vnode.LxcNode node: node to validate services for
         :return: nothing
         """
         services = sorted(node.services, key=lambda service: service._startindex)
@@ -398,7 +394,7 @@ class CoreServices(ConfigurableManager):
         """
         Run the validation command(s) for a service.
 
-        :param core.netns.nodes.CoreNode node: node to validate service for
+        :param core.netns.vnode.LxcNode node: node to validate service for
         :param CoreService service: service to validate
         :param list services: services for node
         :return: service validation status
@@ -441,7 +437,7 @@ class CoreServices(ConfigurableManager):
         """
         Stop a service on a node.
 
-        :param core.netns.nodes.CoreNode node: node to stop a service on
+        :param core.netns.vnode.LxcNode node: node to stop a service on
         :param CoreService service: service to stop
         :return: status for stopping the services
         :rtype: str
@@ -647,7 +643,7 @@ class CoreServices(ConfigurableManager):
         The file data is either auto-generated or comes from an existing config.
 
         :param list services: service list
-        :param core.netns.nodes.CoreNode node: node to get service file from
+        :param core.netns.vnode.LxcNode node: node to get service file from
         :param str filename: file name to retrieve
         :return: file message for node
         """
@@ -887,7 +883,7 @@ class CoreService(object):
         Return the configuration string to be written to a file or sent
         to the GUI for customization.
 
-        :param core.netns.nodes.CoreNode node: node to generate config for
+        :param core.netns.vnode.LxcNode node: node to generate config for
         :param str filename: file name to generate config for
         :param list services: services for node
         :return: nothing
@@ -902,7 +898,7 @@ class CoreService(object):
         overridden to provide node-specific commands that may be
         based on other services.
 
-        :param core.netns.nodes.CoreNode node: node to get startup for
+        :param core.netns.vnode.LxcNode node: node to get startup for
         :param list services: services for node
         :return: startup commands
         :rtype: tuple
@@ -917,7 +913,7 @@ class CoreService(object):
         overriden to provide node-specific commands that may be
         based on other services.
 
-        :param core.netns.nodes.CoreNode node: node to validate
+        :param core.netns.vnode.LxcNode node: node to validate
         :param list services: services for node
         :return: validation commands
         :rtype: tuple
@@ -939,10 +935,8 @@ class CoreService(object):
                   cls._shutdown, cls._validate, cls._meta, cls._starttime]
         if not cls._custom:
             # this is always reached due to classmethod
-            valmap[valmap.index(cls._configs)] = \
-                cls.getconfigfilenames(node.objid, services)
-            valmap[valmap.index(cls._startup)] = \
-                cls.getstartup(node, services)
+            valmap[valmap.index(cls._configs)] = cls.getconfigfilenames(node.objid, services)
+            valmap[valmap.index(cls._startup)] = cls.getstartup(node, services)
         vals = map(lambda a, b: "%s=%s" % (a, str(b)), cls.keys, valmap)
         return "|".join(vals)
 
