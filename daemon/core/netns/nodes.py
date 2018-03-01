@@ -103,7 +103,7 @@ class CtrlNet(LxBrNet):
         :return: True if an old bridge was detected, False otherwise
         :rtype: bool
         """
-        retstat, retstr = utils.cmdresult([constants.BRCTL_BIN, "show"])
+        retstat, retstr = utils.cmd_output([constants.BRCTL_BIN, "show"])
         if retstat != 0:
             logger.error("Unable to retrieve list of installed bridges")
         lines = retstr.split("\n")

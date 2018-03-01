@@ -1087,7 +1087,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 # echo back exec message with cmd for spawning interactive terminal
                 if command == "bash":
                     command = "/bin/bash"
-                res = node.client.termcmdstring(command)
+                res = node.termcmdstring(command)
                 tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
                 reply = coreapi.CoreExecMessage.pack(MessageFlags.TTY.value, tlv_data)
                 return reply,
@@ -1097,9 +1097,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 if message.flags & MessageFlags.STRING.value or message.flags & MessageFlags.TEXT.value:
                     # shlex.split() handles quotes within the string
                     if message.flags & MessageFlags.LOCAL.value:
-                        status, res = utils.cmdresult(shlex.split(command))
+                        status, res = utils.cmd_output(command)
                     else:
-                        status, res = node.client.cmdresult(shlex.split(command))
+                        status, res = node.cmd_output(command)
                     logger.info("done exec cmd=%s with status=%d res=(%d bytes)", command, status, len(res))
                     if message.flags & MessageFlags.TEXT.value:
                         tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
@@ -1110,9 +1110,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 # execute the command with no response
                 else:
                     if message.flags & MessageFlags.LOCAL.value:
+                        # TODO: get this consolidated into utils
                         utils.mutedetach(shlex.split(command))
                     else:
-                        node.client.cmd(shlex.split(command), wait=False)
+                        node.cmd(command, wait=False)
         except KeyError:
             logger.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later

@@ -103,7 +103,6 @@ class EmaneManager(ConfigurableManager):
             emane_models = utils.load_classes(custom_models_path, EmaneModel)
             self.load_models(emane_models)
 
-
     def logversion(self):
         """
         Log the installed EMANE version.
@@ -912,16 +911,23 @@ class EmaneManager(ConfigurableManager):
 
             # multicast route is needed for OTA data
             cmd = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
-            node.client.cmd(cmd, wait=True)
+            try:
+                node.check_cmd(cmd)
+            except subprocess.CalledProcessError:
+                logger.exception("error adding route for OTA data")
+
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 cmd = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
-                node.client.cmd(cmd, wait=True)
+                try:
+                    node.check_cmd(cmd)
+                except subprocess.CalledProcessError:
+                    logger.exception("error adding route for event data")
 
             try:
                 cmd = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]
                 logger.info("Emane.startdaemons2() running %s" % str(cmd))
-                status, output = node.client.cmdresult(cmd)
+                status, output = node.check_cmd(cmd)
                 logger.info("Emane.startdaemons2() return code %d" % status)
                 logger.info("Emane.startdaemons2() output: %s" % output)
             except subprocess.CalledProcessError:
@@ -934,8 +940,8 @@ class EmaneManager(ConfigurableManager):
         try:
             emanecmd += ["-f", os.path.join(path, "emane.log")]
             cmd = emanecmd + [os.path.join(path, "platform.xml")]
-            logger.info("Emane.startdaemons2() running %s" % str(cmd))
-            subprocess.check_call(cmd, cwd=path)
+            logger.info("Emane.startdaemons2() running %s" % cmd)
+            utils.check_cmd(cmd, cwd=path)
         except subprocess.CalledProcessError:
             logger.exception("error starting emane")
 
@@ -954,7 +960,7 @@ class EmaneManager(ConfigurableManager):
                     stop_emane_on_host = True
                     continue
                 if node.up:
-                    node.client.cmd(cmd, wait=False)
+                    node.cmd(cmd, wait=False)
                     # TODO: RJ45 node
         else:
             stop_emane_on_host = True
@@ -1158,10 +1164,10 @@ class EmaneManager(ConfigurableManager):
 
         try:
             if emane.VERSION < emane.EMANE092:
-                status = subprocess.call(cmd)
+                status = subprocess.check_call(cmd)
             else:
-                status = node.client.cmd(cmd, wait=True)
-        except IOError:
+                status, _ = node.check_cmd(cmd)
+        except subprocess.CalledProcessError:
             logger.exception("error checking if emane is running")
 
         return status == 0

@@ -177,7 +177,7 @@ class TestCore:
         # check various command using vcmd module
         command = ["ls"]
         assert not client.cmd(command)
-        status, output = client.cmdresult(command)
+        status, output = client.cmd_output(command)
         assert not status
         p, stdin, stdout, stderr = client.popen(command)
         assert not p.status()
@@ -187,7 +187,7 @@ class TestCore:
 
         # check various command using command line
         assert not client.cmd(command)
-        status, output = client.cmdresult(command)
+        status, output = client.cmd_output(command)
         assert not status
         p, stdin, stdout, stderr = client.popen(command)
         assert not p.wait()

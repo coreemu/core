@@ -5,6 +5,7 @@ Miscellaneous utility functions, wrappers around some subprocess procedures.
 import importlib
 import inspect
 import os
+import shlex
 import subprocess
 import sys
 
@@ -111,6 +112,20 @@ def maketuplefromstr(s, value_type):
     return tuple(value_type(i) for i in values)
 
 
+def split_cmd(cmd):
+    """
+    Convenience method for splitting potential string commands into a shell-like syntax list.
+
+    :param list/str cmd: command list or string
+    :return: shell-like syntax list
+    :rtype: list
+    """
+    # split shell string to shell array for convenience
+    if type(cmd) == str:
+        cmd = shlex.split(cmd)
+    return cmd
+
+
 def mutecall(*args, **kwargs):
     """
     Run a muted call command.
@@ -129,11 +144,12 @@ def check_alloutput(cmd, **kwargs):
     """
     Convenience wrapper to run subprocess.check_output and include stderr as well.
 
-    :param list[str] cmd: command arguments to run
+    :param list[str]/str cmd: command arguments to run
     :param dict kwargs: option for running subprocess.check_output, beyond setting stderr to stdout
     :return: combined stdout and stderr
     :raises subprocess.CalledProcessError: when a non-zero exit status is encountered
     """
+    cmd = split_cmd(cmd)
     kwargs["stderr"] = subprocess.STDOUT
     return subprocess.check_output(cmd, **kwargs)
 
@@ -218,20 +234,43 @@ def mutedetach(*args, **kwargs):
     return subprocess.Popen(*args, **kwargs).pid
 
 
-def cmdresult(args):
+def cmd_output(cmd):
     """
     Execute a command on the host and return a tuple containing the exit status and result string. stderr output
     is folded into the stdout result string.
 
-    :param list args: command arguments
+    :param list[str]/str cmd: command arguments
     :return: command status and stdout
     :rtype: tuple[int, str]
     """
-    cmdid = subprocess.Popen(args, stdin=open(os.devnull, "r"), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-    # err will always be None
-    result, err = cmdid.communicate()
-    status = cmdid.wait()
-    return status, result
+    # split shell string to shell array for convenience
+    cmd = split_cmd(cmd)
+    p = subprocess.Popen(cmd, stdin=open(os.devnull, "r"), stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+    stdout, _ = p.communicate()
+    status = p.wait()
+    return status, stdout
+
+
+def check_cmd(cmd, **kwargs):
+    """
+    Execute a command on the host and return a tuple containing the exit status and result string. stderr output
+    is folded into the stdout result string.
+
+    :param list[str]/str cmd: command arguments
+    :param dict kwargs: keyword arguments to pass to subprocess.Popen
+    :return: command status and stdout
+    :rtype: tuple[int, str]
+    :raises subprocess.CalledProcessError: when there is a non-zero exit status
+    """
+    kwargs["stdout"] = subprocess.PIPE
+    kwargs["stderr"] = subprocess.STDOUT
+    cmd = split_cmd(cmd)
+    p = subprocess.Popen(cmd, **kwargs)
+    stdout, _ = p.communicate()
+    status = p.wait()
+    if status:
+        raise subprocess.CalledProcessError(status, cmd, stdout)
+    return status, stdout
 
 
 def hexdump(s, bytes_per_word=2, words_per_line=8):

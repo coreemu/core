@@ -6,8 +6,7 @@ The CoreServices class handles configuration messages for sending
 a list of available services to the GUI and for configuring individual
 services.
 """
-
-import shlex
+import subprocess
 import time
 from itertools import repeat
 
@@ -307,8 +306,8 @@ class CoreServices(ConfigurableManager):
 
         for cmd in service.getstartup(node, services):
             try:
-                # NOTE: this wait=False can be problematic!
-                node.client.cmd(shlex.split(cmd), wait=False)
+                # TODO: this wait=False can be problematic!
+                node.cmd(cmd, wait=False)
             except:
                 logger.exception("error starting command %s", cmd)
 
@@ -353,8 +352,8 @@ class CoreServices(ConfigurableManager):
 
         for cmd in service._startup:
             try:
-                # NOTE: this wait=False can be problematic!
-                node.client.cmd(shlex.split(cmd), wait=False)
+                # TODO: this wait=False can be problematic!
+                node.cmd(cmd, wait=False)
             except:
                 logger.exception("error starting command %s", cmd)
 
@@ -413,11 +412,9 @@ class CoreServices(ConfigurableManager):
             for cmd in validate_cmds:
                 logger.info("validating service %s using: %s", service._name, cmd)
                 try:
-                    status, result = node.client.cmdresult(shlex.split(cmd))
-                    if status != 0:
-                        raise ValueError("non-zero exit status")
-                except:
-                    logger.exception("validate command failed: %s", cmd)
+                    status, _ = node.check_cmd(cmd)
+                except subprocess.CalledProcessError:
+                    logger.exception("validate command failed")
                     status = -1
 
         return status
@@ -449,11 +446,12 @@ class CoreServices(ConfigurableManager):
         else:
             for cmd in service._shutdown:
                 try:
-                    tmp = node.client.cmd(shlex.split(cmd), wait=True)
-                    status += "%s" % tmp
-                except:
+                    status, _ = node.check_cmd(cmd)
+                    status = str(status)
+                except subprocess.CalledProcessError:
                     logger.exception("error running stop command %s", cmd)
-                    status += "-1"
+                    # TODO: determine if its ok to just return the bad exit status
+                    status = "-1"
         return status
 
     def configure_request(self, config_data):
@@ -761,13 +759,10 @@ class CoreServices(ConfigurableManager):
                 if len(cmds) > 0:
                     for cmd in cmds:
                         try:
-                            # node.cmd(shlex.split(cmd),  wait = False)
-                            status = node.client.cmd(shlex.split(cmd), wait=True)
-                            if status != 0:
-                                fail += "Start %s(%s)," % (s._name, cmd)
-                        except:
+                            node.check_cmd(cmd)
+                        except subprocess.CalledProcessError:
                             logger.exception("error starting command %s", cmd)
-                            fail += "Start %s," % s._name
+                            fail += "Start %s(%s)," % (s._name, cmd)
             if event_type == EventTypes.PAUSE.value:
                 status = self.validatenodeservice(node, s, services)
                 if status != 0:

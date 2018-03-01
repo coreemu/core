@@ -24,7 +24,7 @@ def emane_version():
     cmd = ("emane", "--version")
 
     try:
-        status, result = utils.cmdresult(cmd)
+        status, result = utils.cmd_output(cmd)
     except (OSError, subprocess.CalledProcessError):
         logger.exception("error checking emane version")
         status = -1

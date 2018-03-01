@@ -6,13 +6,13 @@ by invoking the vcmd shell command.
 """
 
 import os
-import shlex
 import subprocess
 
 import vcmd
 
 from core import constants
 from core import logger
+from core.misc import utils
 
 VCMD = os.path.join(constants.CORE_BIN_DIR, "vcmd")
 
@@ -61,89 +61,86 @@ class VnodeClient(object):
         """
         self.cmdchnl.close()
 
-    def cmd(self, args, wait=True):
+    def cmd(self, cmd, wait=True):
         """
         Execute a command on a node and return the status (return code).
 
-        :param list args: command arguments
+        :param list[str]/str cmd: command arguments
         :param bool wait: wait for command to end or not
         :return: command status
         :rtype: int
         """
         self._verify_connection()
+        cmd = utils.split_cmd(cmd)
 
         # run command, return process when not waiting
-        p = self.cmdchnl.qcmd(args)
+        p = self.cmdchnl.qcmd(cmd)
         if not wait:
-            return p
+            return 0
 
         # wait for and return exit status
         status = p.wait()
         if status:
-            logger.warn("cmd exited with status %s: %s", status, args)
+            logger.warn("cmd exited with status %s: %s", status, cmd)
+
         return status
 
-    def cmdresult(self, cmd):
+    def cmd_output(self, cmd):
         """
         Execute a command on a node and return a tuple containing the
         exit status and result string. stderr output
         is folded into the stdout result string.
 
-        :param list cmd: command arguments
+        :param list[str]/str cmd: command to run
         :return: command status and combined stdout and stderr output
         :rtype: tuple[int, str]
         """
-        self._verify_connection()
-
-        # split shell string to shell array for convenience
-        if type(cmd) == str:
-            cmd = shlex.split(cmd)
-
         p, stdin, stdout, stderr = self.popen(cmd)
         stdin.close()
         output = stdout.read() + stderr.read()
         stdout.close()
         stderr.close()
         status = p.wait()
-
         return status, output
 
-    def check_alloutput(self, cmd):
+    def check_cmd(self, cmd):
         """
-        Run command and return output, raises exception when non-zero exit status is encountered.
+        Run command and return exit status and combined stdout and stderr.
 
-        :param cmd:
-        :return: combined stdout and stderr combined
-        :rtype: str
+        :param list[str]/str cmd: command to run
+        :return: exit status and combined stdout and stderr
+        :rtype: tuple[int, str]
         :raises subprocess.CalledProcessError: when there is a non-zero exit status
         """
-        status, output = self.cmdresult(cmd)
+        status, output = self.cmd_output(cmd)
         if status:
             raise subprocess.CalledProcessError(status, cmd, output)
-        return output
+        return status, output
 
-    def popen(self, args):
+    def popen(self, cmd):
         """
         Execute a popen command against the node.
 
-        :param list args: command arguments
+        :param list[str]/str cmd: command arguments
         :return: popen object, stdin, stdout, and stderr
         :rtype: tuple
         """
         self._verify_connection()
-        return self.cmdchnl.popen(args)
+        cmd = utils.split_cmd(cmd)
+        return self.cmdchnl.popen(cmd)
 
-    def icmd(self, args):
+    def icmd(self, cmd):
         """
         Execute an icmd against a node.
 
-        :param list args: command arguments
+        :param list[str]/str cmd: command arguments
         :return: command result
         :rtype: int
         """
-        return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname, "--", *args)
+        cmd = utils.split_cmd(cmd)
+        return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname, "--", *cmd)
 
-    def redircmd(self, infd, outfd, errfd, args, wait=True):
+    def redircmd(self, infd, outfd, errfd, cmd, wait=True):
         """
         Execute a command on a node with standard input, output, and
         error redirected according to the given file descriptors.
@@ -151,7 +148,7 @@ class VnodeClient(object):
         :param infd: stdin file descriptor
         :param outfd: stdout file descriptor
         :param errfd: stderr file descriptor
-        :param list args: command arguments
+        :param list[str]/str cmd: command arguments
         :param bool wait: wait flag
         :return: command status
         :rtype: int
@@ -159,14 +156,15 @@ class VnodeClient(object):
         self._verify_connection()
 
         # run command, return process when not waiting
-        p = self.cmdchnl.redircmd(infd, outfd, errfd, args)
+        cmd = utils.split_cmd(cmd)
+        p = self.cmdchnl.redircmd(infd, outfd, errfd, cmd)
         if not wait:
             return p
 
         # wait for and return exit status
         status = p.wait()
         if status:
-            logger.warn("cmd exited with status %s: %s", status, args)
+            logger.warn("cmd exited with status %s: %s", status, cmd)
         return status
 
     def term(self, sh="/bin/sh"):
@@ -193,16 +191,16 @@ class VnodeClient(object):
         """
         return "%s -c %s -- %s" % (VCMD, self.ctrlchnlname, sh)
 
-    def shcmd(self, cmdstr, sh="/bin/sh"):
+    def shcmd(self, cmd, sh="/bin/sh"):
         """
         Execute a shell command.
 
-        :param str cmdstr: command string
+        :param str cmd: command string
         :param str sh: shell to run command in
         :return: command result
         :rtype: int
         """
-        return self.cmd([sh, "-c", cmdstr])
+        return self.cmd([sh, "-c", cmd])
 
     def shcmd_result(self, cmd, sh="/bin/sh"):
         """
@@ -213,7 +211,7 @@ class VnodeClient(object):
         :return: exist status and combined output
         :rtype: tuple[int, str]
         """
-        return self.cmdresult([sh, "-c", cmd])
+        return self.cmd_output([sh, "-c", cmd])
 
     def getaddr(self, ifname, rescan=False):
         """

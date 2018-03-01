@@ -5,23 +5,18 @@ Unit test fixture module.
 import os
 
 import pytest
-
 from mock.mock import MagicMock
 
 from core import services
-from core.coreserver import CoreServer
-from core.misc import nodemaps
-from core.misc import nodeutils
-from core.netns import nodes
-from core.session import Session
 from core.api.coreapi import CoreConfMessage
 from core.api.coreapi import CoreEventMessage
 from core.api.coreapi import CoreExecMessage
 from core.api.coreapi import CoreLinkMessage
 from core.api.coreapi import CoreNodeMessage
 from core.corehandlers import CoreRequestHandler
-from core.enumerations import ConfigTlvs
+from core.coreserver import CoreServer
 from core.enumerations import CORE_API_PORT
+from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
 from core.enumerations import ExecuteTlvs
@@ -32,6 +27,8 @@ from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.misc import ipaddress
 from core.misc.ipaddress import MacAddress
+from core.netns import nodes
+from core.session import Session
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
@@ -186,18 +183,13 @@ class Core(object):
     def ping(self, from_name, to_name):
         from_node = self.nodes[from_name]
         to_ip = str(self.get_ip(to_name))
-        return from_node.client.cmd(["ping", "-c", "3", to_ip])
+        return from_node.cmd(["ping", "-c", "3", to_ip])
 
     def ping_output(self, from_name, to_name):
         from_node = self.nodes[from_name]
         to_ip = str(self.get_ip(to_name))
-        vcmd, stdin, stdout, stderr = from_node.client.popen(["ping", "-i", "0.05", "-c", "3", to_ip])
-        return stdout.read().strip()
-
-    def iping(self, from_name, to_name):
-        from_node = self.nodes[from_name]
-        to_ip = str(self.get_ip(to_name))
-        from_node.client.icmd(["ping", "-i", "0.01", "-c", "10", to_ip])
+        _, output = from_node.check_cmd(["ping", "-i", "0.05", "-c", "3", to_ip])
+        return output
 
     def iperf(self, from_name, to_name):
         from_node = self.nodes[from_name]
@@ -206,8 +198,8 @@ class Core(object):
 
         # run iperf server, run client, kill iperf server
         vcmd, stdin, stdout, stderr = to_node.client.popen(["iperf", "-s", "-u", "-y", "C"])
-        from_node.client.cmd(["iperf", "-u", "-t", "5", "-c", to_ip])
-        to_node.client.cmd(["killall", "-9", "iperf"])
+        from_node.cmd(["iperf", "-u", "-t", "5", "-c", to_ip])
+        to_node.cmd(["killall", "-9", "iperf"])
 
         return stdout.read().strip()
 

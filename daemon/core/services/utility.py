@@ -418,7 +418,7 @@ class HttpService(UtilService):
         Detect the apache2 version using the 'a2query' command.
         """
         try:
-            status, result = utils.cmdresult(['a2query', '-v'])
+            status, result = utils.cmd_output(['a2query', '-v'])
         except subprocess.CalledProcessError:
             status = -1
 

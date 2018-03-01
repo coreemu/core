@@ -65,29 +65,46 @@ class PhysicalNode(PyCoreNode):
         run a command on the physical node
         """
         os.chdir(self.nodedir)
+        status = -1
+
         try:
             if wait:
                 # os.spawnlp(os.P_WAIT, args)
-                subprocess.call(args)
+                status = subprocess.call(args)
             else:
                 # os.spawnlp(os.P_NOWAIT, args)
                 subprocess.Popen(args)
+                status = 0
         except subprocess.CalledProcessError:
-            logger.exception("cmd exited with status: %s", str(args))
+            logger.exception("cmd exited with status: %s", args)
 
-    def cmdresult(self, args):
+        return status
+
+    def cmd_output(self, args):
         """
         run a command on the physical node and get the result
         """
         os.chdir(self.nodedir)
         # in Python 2.7 we can use subprocess.check_output() here
-        tmp = subprocess.Popen(args, stdin=open(os.devnull, 'r'),
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         # err will always be None
-        result, err = tmp.communicate()
-        status = tmp.wait()
-        return status, result
+        stdout, err = p.communicate()
+        status = p.wait()
+        return status, stdout
+
+    def check_cmd(self, cmd):
+        """
+        Runs shell command on node.
+
+        :param list[str]/str cmd: command to run
+        :return: exist status and combined stdout and stderr
+        :rtype: tuple[int, str]
+        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        """
+        status, output = self.cmd_output(cmd)
+        if status:
+            raise subprocess.CalledProcessError(status, cmd, output)
+        return status, output
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.cmd([sh, "-c", cmdstr])
@@ -99,10 +116,10 @@ class PhysicalNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         ifname = self.ifname(ifindex)
         if self.up:
-            (status, result) = self.cmdresult(
-                [constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
-            if status:
-                logger.error("error setting MAC address %s", str(addr))
+            try:
+                self.check_cmd([constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
+            except subprocess.CalledProcessError:
+                logger.exception("error setting MAC address %s", addr)
 
     def addaddr(self, ifindex, addr):
         """

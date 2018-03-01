@@ -59,10 +59,16 @@ class VEth(PyCoreNetIf):
         """
         if not self.up:
             return
+
         if self.node:
-            self.node.client.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            try:
+                self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            except subprocess.CalledProcessError:
+                logger.exception("error shutting down interface")
+
         if self.localname:
             utils.mutedetach([constants.IP_BIN, "link", "delete", self.localname])
+
         self.up = False
 
 
@@ -98,10 +104,10 @@ class TunTap(PyCoreNetIf):
         """
         # TODO: more sophisticated TAP creation here
         #   Debian does not support -p (tap) option, RedHat does.
-        # For now, this is disabled to allow the TAP to be created by another
-        # system (e.g. EMANE"s emanetransportd)
-        # check_call(["tunctl", "-t", self.name])
-        # self.install()
+        #   For now, this is disabled to allow the TAP to be created by another
+        #   system (e.g. EMANE"s emanetransportd)
+        #   check_call(["tunctl", "-t", self.name])
+        #   self.install()
         self.up = True
 
     def shutdown(self):
@@ -112,9 +118,12 @@ class TunTap(PyCoreNetIf):
         """
         if not self.up:
             return
-        self.node.client.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
-        # if self.name:
-        #    mutedetach(["tunctl", "-d", self.localname])
+
+        try:
+            self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+        except subprocess.CalledProcessError:
+            logger.exception("error shutting down tunnel tap")
+
         self.up = False
 
     def waitfor(self, func, attempts=10, maxretrydelay=0.25):
@@ -169,7 +178,7 @@ class TunTap(PyCoreNetIf):
 
         def nodedevexists():
             cmd = [constants.IP_BIN, "link", "show", self.name]
-            return self.node.client.cmd(cmd)
+            return self.node.cmd(cmd)
 
         count = 0
         while True:
@@ -199,15 +208,11 @@ class TunTap(PyCoreNetIf):
         netns = str(self.node.pid)
 
         try:
-            subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
+            self.node.check_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
+            self.node.check_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
         except subprocess.CalledProcessError:
-            msg = "error installing TAP interface %s, command:" % self.localname
-            msg += "ip link set %s netns %s" % (self.localname, netns)
-            logger.exception(msg)
-            return
-
-        self.node.client.cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
-        self.node.client.cmd([constants.IP_BIN, "link", "set", self.name, "up"])
+            logger.exception("error installing TAP interface")
 
     def setaddrs(self):
         """
@@ -217,7 +222,10 @@ class TunTap(PyCoreNetIf):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.client.cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            try:
+                self.node.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            except subprocess.CalledProcessError:
+                logger.exception("failure setting interface address")
 
 
 class GreTap(PyCoreNetIf):

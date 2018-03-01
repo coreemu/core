@@ -36,9 +36,9 @@ def test(numnodes, testsec):
         tmp = session.add_object(cls=nodes.LxcNode, name="n%d" % i)
         tmp.newnetif(net, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         n.append(tmp)
-    n[0].client.cmd(["iperf", "-s", "-D"])
+    n[0].cmd(["iperf", "-s", "-D"])
     n[-1].client.icmd(["iperf", "-t", str(int(testsec)), "-c", str(prefix.addr(1))])
-    n[0].client.cmd(["killall", "-9", "iperf"])
+    n[0].cmd(["killall", "-9", "iperf"])
 
     raw_input("press enter to exit")
     session.shutdown()

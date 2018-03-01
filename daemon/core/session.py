@@ -530,7 +530,7 @@ class Session(object):
             try:
                 utils.readfileintodict(environment_user_file, env)
             except IOError:
-                logger.exception("error reading user core environment settings file: %s", environment_user_file)
+                logger.warn("error reading user core environment settings file: %s", environment_user_file)
 
         return env
 
@@ -609,7 +609,7 @@ class Session(object):
 
         :param int object_id: object id to retrieve
         :return: object for the given id
-        :rtype: core.netns.vnode.LxcNode
+        :rtype: core.coreobj.PyCoreNode
         """
         if object_id not in self.objects:
             raise KeyError("unknown object id %s" % object_id)
@@ -1238,13 +1238,14 @@ class Session(object):
             name = ""
         logger.info("scheduled event %s at time %s data=%s", name, event_time + current_time, data)
 
+    # TODO: if data is None, this blows up, but this ties into how event functions are ran, need to clean that up
     def run_event(self, node_id=None, name=None, data=None):
         """
         Run a scheduled event, executing commands in the data string.
 
         :param int node_id: node id to run event
         :param str name: event name
-        :param data: event data
+        :param str data: event data
         :return: nothing
         """
         now = self.runtime()
@@ -1252,12 +1253,13 @@ class Session(object):
             name = ""
 
         logger.info("running event %s at time %s cmd=%s" % (name, now, data))
-        commands = shlex.split(data)
         if not node_id:
+            # TODO: look to consolidate shlex to utils
+            commands = shlex.split(data)
             utils.mutedetach(commands)
         else:
             node = self.get_object(node_id)
-            node.client.cmd(commands, wait=False)
+            node.cmd(data, wait=False)
 
     def send_objects(self):
         """

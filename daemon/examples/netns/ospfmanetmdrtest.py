@@ -268,7 +268,7 @@ class ManetExperiment(object):
             self.nodes[i].boot()
         # run the boot.sh script on all nodes to start Quagga
         for i in xrange(numnodes):
-            self.nodes[i].client.cmd(["./%s" % self.nodes[i].bootsh])
+            self.nodes[i].cmd(["./%s" % self.nodes[i].bootsh])
 
     def compareroutes(self, node, kr, zr):
         """ Compare two lists of Route objects.
@@ -386,8 +386,7 @@ class Cmd:
 
     def open(self):
         """ Exceute call to node.popen(). """
-        self.id, self.stdin, self.out, self.err = \
-            self.node.client.popen(self.args)
+        self.id, self.stdin, self.out, self.err = self.node.client.popen(self.args)
 
     def parse(self):
         """ This method is overloaded by child classes and should return some
