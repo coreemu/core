@@ -7,6 +7,7 @@ by invoking the vcmd shell command.
 
 import os
 import shlex
+import subprocess
 
 import vcmd
 
@@ -38,10 +39,10 @@ class VnodeClient(object):
         Checks that the vcmd client is properly connected.
 
         :return: nothing
-        :raises ValueError: when not connected
+        :raises IOError: when not connected
         """
         if not self.connected():
-            raise ValueError("vcmd not connected")
+            raise IOError("vcmd not connected")
 
     def connected(self):
         """
@@ -82,30 +83,44 @@ class VnodeClient(object):
             logger.warn("cmd exited with status %s: %s", status, args)
         return status
 
-    def cmdresult(self, args):
+    def cmdresult(self, cmd):
         """
         Execute a command on a node and return a tuple containing the
         exit status and result string. stderr output
         is folded into the stdout result string.
 
-        :param list args: command arguments
+        :param list cmd: command arguments
         :return: command status and combined stdout and stderr output
         :rtype: tuple[int, str]
         """
         self._verify_connection()
 
         # split shell string to shell array for convenience
-        if type(args) == str:
-            args = shlex.split(args)
+        if type(cmd) == str:
+            cmd = shlex.split(cmd)
 
-        p, stdin, stdout, stderr = self.popen(args)
-        output = stdout.read() + stderr.read()
+        p, stdin, stdout, stderr = self.popen(cmd)
         stdin.close()
+        output = stdout.read() + stderr.read()
         stdout.close()
         stderr.close()
         status = p.wait()
 
         return status, output
+
+    def check_alloutput(self, cmd):
+        """
+        Run command and return output, raises exception when non-zero exit status is encountered.
+
+        :param cmd:
+        :return: combined stdout and stderr combined
+        :rtype: str
+        :raises subprocess.CalledProcessError: when there is a non-zero exit status
+        """
+        status, output = self.cmdresult(cmd)
+        if status:
+            raise subprocess.CalledProcessError(status, cmd, output)
+        return output
 
     def popen(self, args):
         """

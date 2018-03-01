@@ -125,6 +125,19 @@ def mutecall(*args, **kwargs):
     return subprocess.call(*args, **kwargs)
 
 
+def check_alloutput(cmd, **kwargs):
+    """
+    Convenience wrapper to run subprocess.check_output and include stderr as well.
+
+    :param list[str] cmd: command arguments to run
+    :param dict kwargs: option for running subprocess.check_output, beyond setting stderr to stdout
+    :return: combined stdout and stderr
+    :raises subprocess.CalledProcessError: when a non-zero exit status is encountered
+    """
+    kwargs["stderr"] = subprocess.STDOUT
+    return subprocess.check_output(cmd, **kwargs)
+
+
 def mutecheck_call(*args, **kwargs):
     """
     Run a muted check call command.

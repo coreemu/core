@@ -99,24 +99,28 @@ class SimpleLxcNode(PyCoreNode):
         env["NODE_NAME"] = str(self.name)
 
         try:
-            p = subprocess.Popen(vnoded, stdout=subprocess.PIPE, env=env)
-            stdout, _ = p.communicate()
-            if p.returncode:
-                raise IOError("vnoded command failed: %s" % vnoded)
-            self.pid = int(stdout)
-        except (OSError, ValueError):
-            logger.exception("vnoded failed to create a namespace; check kernel support and user priveleges")
+            output = utils.check_alloutput(vnoded, env=env)
+            # p = subprocess.Popen(vnoded, stdout=subprocess.PIPE, env=env)
+            # stdout, _ = p.communicate()
+            # if p.returncode:
+            #     raise IOError("vnoded command failed: %s" % vnoded)
+            self.pid = int(output)
+        except subprocess.CalledProcessError:
+            logger.exception("vnoded failed to create a namespace; check kernel support and user privileges")
 
         # create vnode client
         self.client = vnodeclient.VnodeClient(self.name, self.ctrlchnlname)
 
-        # bring up the loopback interface
-        logger.info("bringing up loopback interface")
-        self.client.cmd([constants.IP_BIN, "link", "set", "lo", "up"])
+        try:
+            # bring up the loopback interface
+            logger.info("bringing up loopback interface")
+            self.client.check_alloutput([constants.IP_BIN, "link", "set", "lo", "up"])
 
-        # set hostname for node
-        logger.info("setting hostname: %s" % self.name)
-        self.client.cmd(["hostname", self.name])
+            # set hostname for node
+            logger.info("setting hostname: %s" % self.name)
+            self.client.check_alloutput(["hostname", self.name])
+        except subprocess.CalledProcessError:
+            logger.exception("error setting up loopback and hostname: %s")
 
         # mark node as up
         self.up = True
@@ -196,10 +200,8 @@ class SimpleLxcNode(PyCoreNode):
         """
         logger.info("unmounting: %s", target)
         try:
-            status, output = self.client.cmdresult([constants.UMOUNT_BIN, "-n", "-l", target])
-            if status:
-                raise IOError("error unmounting %s: %s", target, output)
-        except IOError:
+            self.client.check_alloutput([constants.UMOUNT_BIN, "-n", "-l", target])
+        except subprocess.CalledProcessError:
             logger.exception("error during unmount")
 
     def newifindex(self):
@@ -244,21 +246,27 @@ class SimpleLxcNode(PyCoreNode):
             veth = VEth(node=self, name=name, localname=localname, net=net, start=self.up)
 
             if self.up:
-                subprocess.check_call([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
-                self.client.cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
+                try:
+                    utils.check_alloutput([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
+                    self.client.check_alloutput([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
+                except subprocess.CalledProcessError:
+                    logger.exception("failure setting eth name")
 
             veth.name = ifname
 
             if self.up:
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
-                result, output = self.client.cmdresult(["ip", "link", "show", veth.name])
-                logger.info("interface command output: %s", output)
-                output = output.split("\n")
-                veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-                logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
-                veth.hwaddr = output[1].strip().split()[1]
-                logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
+                try:
+                    output = self.client.check_alloutput(["ip", "link", "show", veth.name])
+                    logger.info("interface command output: %s", output)
+                    output = output.split("\n")
+                    veth.flow_id = int(output[0].strip().split(":")[0]) + 1
+                    logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
+                    veth.hwaddr = output[1].strip().split()[1]
+                    logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
+                except subprocess.CalledProcessError:
+                    logger.exception("failure getting flow id and mac address")
 
             try:
                 self.addnetif(veth, ifindex)
@@ -282,18 +290,22 @@ class SimpleLxcNode(PyCoreNode):
         with self.lock:
             if ifindex is None:
                 ifindex = self.newifindex()
+
             if ifname is None:
                 ifname = "eth%d" % ifindex
+
             sessionid = self.session.short_session_id()
             localname = "tap%s.%s.%s" % (self.objid, ifindex, sessionid)
             name = ifname
             tuntap = TunTap(node=self, name=name, localname=localname, net=net, start=self.up)
+
             try:
                 self.addnetif(tuntap, ifindex)
             except ValueError as e:
                 tuntap.shutdown()
                 del tuntap
                 raise e
+
             return ifindex
 
     def sethwaddr(self, ifindex, addr):
@@ -307,9 +319,10 @@ class SimpleLxcNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             cmd = [constants.IP_BIN, "link", "set", "dev", self.ifname(ifindex), "address", str(addr)]
-            status, output = self.client.cmdresult(cmd)
-            if status:
-                logger.error("error setting MAC address %s: %s", addr, output)
+            try:
+                self.client.check_alloutput(cmd)
+            except subprocess.CalledProcessError:
+                logger.exception("error setting MAC address %s: %s", addr)
 
     def addaddr(self, ifindex, addr):
         """
@@ -320,13 +333,17 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         if self.up:
-            # check if addr is ipv6
-            if ":" in str(addr):
-                cmd = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
-                self.client.cmd(cmd)
-            else:
-                cmd = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
-                self.client.cmd(cmd)
+            try:
+                # check if addr is ipv6
+                if ":" in str(addr):
+                    cmd = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
+                    self.client.check_alloutput(cmd)
+                else:
+                    cmd = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
+                    self.client.check_alloutput(cmd)
+            except subprocess.CalledProcessError:
+                logger.exception("failure adding interface address")
+
         self._netif[ifindex].addaddr(addr)
 
     def deladdr(self, ifindex, addr):
@@ -343,7 +360,10 @@ class SimpleLxcNode(PyCoreNode):
             logger.exception("trying to delete unknown address: %s" % addr)
 
         if self.up:
-            self.client.cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            try:
+                self.client.check_alloutput([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            except subprocess.CalledProcessError:
+                logger.exception("failure deleting address")
 
     def delalladdr(self, ifindex, address_types=valid_address_types):
         """
@@ -355,11 +375,13 @@ class SimpleLxcNode(PyCoreNode):
         """
         interface_name = self.ifname(ifindex)
         addresses = self.client.getaddr(interface_name, rescan=True)
+
         for address_type in address_types:
             if address_type not in self.valid_address_types:
                 raise ValueError("addr type must be in: %s" % " ".join(self.valid_address_types))
             for address in addresses[address_type]:
                 self.deladdr(ifindex, address)
+
         # update cached information
         self.client.getaddr(interface_name, rescan=True)
 
@@ -371,7 +393,10 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         if self.up:
-            self.client.cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
+            try:
+                self.client.check_alloutput([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
+            except subprocess.CalledProcessError:
+                logger.exception("failure bringing interface up")
 
     def newnetif(self, net=None, address_list=None, hwaddr=None, ifindex=None, ifname=None):
         """
@@ -429,15 +454,15 @@ class SimpleLxcNode(PyCoreNode):
         tmplen = 8
         tmp1 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in xrange(tmplen)])
         tmp2 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in xrange(tmplen)])
-        subprocess.check_call([constants.IP_BIN, "link", "add", "name", tmp1, "type", "veth", "peer", "name", tmp2])
+        utils.check_alloutput([constants.IP_BIN, "link", "add", "name", tmp1, "type", "veth", "peer", "name", tmp2])
 
-        subprocess.call([constants.IP_BIN, "link", "set", tmp1, "netns", str(self.pid)])
-        self.client.cmd([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
+        utils.check_alloutput([constants.IP_BIN, "link", "set", tmp1, "netns", str(self.pid)])
+        self.client.check_alloutput([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
         interface = PyCoreNetIf(node=self, name=ifname, mtu=_DEFAULT_MTU)
         self.addnetif(interface, self.newifindex())
 
-        subprocess.check_call([constants.IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
-        othernode.client.cmd([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
+        utils.check_alloutput([constants.IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
+        othernode.client.check_alloutput([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
         other_interface = PyCoreNetIf(node=othernode, name=otherifname, mtu=_DEFAULT_MTU)
         othernode.addnetif(other_interface, othernode.newifindex())
 
