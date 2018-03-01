@@ -101,7 +101,7 @@ class VnodeClient(object):
         stdout.close()
         stderr.close()
         status = p.wait()
-        return status, output
+        return status, output.strip()
 
     def check_cmd(self, cmd):
         """
@@ -115,7 +115,7 @@ class VnodeClient(object):
         status, output = self.cmd_output(cmd)
         if status:
             raise subprocess.CalledProcessError(status, cmd, output)
-        return status, output
+        return status, output.strip()
 
     def popen(self, cmd):
         """

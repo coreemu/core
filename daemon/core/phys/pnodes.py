@@ -90,7 +90,7 @@ class PhysicalNode(PyCoreNode):
         # err will always be None
         stdout, err = p.communicate()
         status = p.wait()
-        return status, stdout
+        return status, stdout.strip()
 
     def check_cmd(self, cmd):
         """
@@ -104,7 +104,7 @@ class PhysicalNode(PyCoreNode):
         status, output = self.cmd_output(cmd)
         if status:
             raise subprocess.CalledProcessError(status, cmd, output)
-        return status, output
+        return status, output.strip()
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.cmd([sh, "-c", cmdstr])
