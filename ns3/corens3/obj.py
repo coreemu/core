@@ -51,21 +51,21 @@ class CoreNs3Node(CoreNode, ns.network.Node):
             kwds['objid'] = objid
         CoreNode.__init__(self, *args, **kwds)
 
-    def newnetif(self, net=None, address_list=None, hwaddr=None, ifindex=None, ifname=None):
+    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
         Add a network interface. If we are attaching to a CoreNs3Net, this
         will be a TunTap. Otherwise dispatch to CoreNode.newnetif().
         """
-        if not address_list:
-            address_list = []
+        if not addrlist:
+            addrlist = []
 
         if not isinstance(net, CoreNs3Net):
-            return CoreNode.newnetif(self, net, address_list, hwaddr, ifindex, ifname)
+            return CoreNode.newnetif(self, net, addrlist, hwaddr, ifindex, ifname)
         ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
         self.attachnet(ifindex, net)
         netif = self.netif(ifindex)
         netif.sethwaddr(hwaddr)
-        for addr in maketuple(address_list):
+        for addr in maketuple(addrlist):
             netif.addaddr(addr)
 
         addrstr = netif.addrlist[0]

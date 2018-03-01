@@ -162,7 +162,7 @@ class CoreDocumentParser0(object):
                 hwaddr = addrstr
             else:
                 addrlist.append(addrstr)
-        i = n.newnetif(net, address_list=addrlist, hwaddr=hwaddr, ifindex=None, ifname=name)
+        i = n.newnetif(net, addrlist=addrlist, hwaddr=hwaddr, ifindex=None, ifname=name)
         for model in ifc.getElementsByTagName("model"):
             self.parsemodel(model, n, n.objid)
         key = (n.name, name)

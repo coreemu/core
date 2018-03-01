@@ -1166,7 +1166,7 @@ class Session(object):
         interface1 = node.newnetif(net=control_net,
                                    ifindex=control_net.CTRLIF_IDX_BASE + net_index,
                                    ifname="ctrl%d" % net_index, hwaddr=MacAddress.random(),
-                                   address_list=addrlist)
+                                   addrlist=addrlist)
         node.netif(interface1).control = True
 
     def update_control_interface_hosts(self, net_index=0, remove=False):

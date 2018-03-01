@@ -398,20 +398,20 @@ class SimpleLxcNode(PyCoreNode):
             except subprocess.CalledProcessError:
                 logger.exception("failure bringing interface up")
 
-    def newnetif(self, net=None, address_list=None, hwaddr=None, ifindex=None, ifname=None):
+    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
         Create a new network interface.
 
         :param net: network to associate with
-        :param list address_list: addresses to add on the interface
+        :param list addrlist: addresses to add on the interface
         :param core.misc.ipaddress.MacAddress hwaddr: hardware address to set for interface
         :param int ifindex: index of interface to create
         :param str ifname: name for interface
         :return: interface index
         :rtype: int
         """
-        if not address_list:
-            address_list = []
+        if not addrlist:
+            addrlist = []
 
         with self.lock:
             # TODO: see if you can move this to emane specific code
@@ -424,7 +424,7 @@ class SimpleLxcNode(PyCoreNode):
                 self.attachnet(ifindex, net)
                 netif = self.netif(ifindex)
                 netif.sethwaddr(hwaddr)
-                for address in utils.maketuple(address_list):
+                for address in utils.maketuple(addrlist):
                     netif.addaddr(address)
                 return ifindex
             else:
@@ -436,7 +436,7 @@ class SimpleLxcNode(PyCoreNode):
             if hwaddr:
                 self.sethwaddr(ifindex, hwaddr)
 
-            for address in utils.maketuple(address_list):
+            for address in utils.maketuple(addrlist):
                 self.addaddr(ifindex, address)
 
             self.ifup(ifindex)
