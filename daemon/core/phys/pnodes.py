@@ -125,7 +125,7 @@ class PhysicalNode(PyCoreNode):
         same as SimpleLxcNode.addaddr()
         """
         if self.up:
-            self.cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)])
+            self.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)])
 
         self._netif[ifindex].addaddr(addr)
 
@@ -139,7 +139,7 @@ class PhysicalNode(PyCoreNode):
             logger.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         """
@@ -151,17 +151,22 @@ class PhysicalNode(PyCoreNode):
         netif.name = "gt%d" % ifindex
         netif.node = self
         self.addnetif(netif, ifindex)
+
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
-            self.cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "down"])
-            self.cmd([constants.IP_BIN, "link", "set", netif.localname, "name", netif.name])
+            self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "down"])
+            self.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "name", netif.name])
+
         netif.localname = netif.name
+
         if hwaddr:
             self.sethwaddr(ifindex, hwaddr)
+
         for addr in utils.make_tuple(addrlist):
             self.addaddr(ifindex, addr)
+
         if self.up:
-            self.cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])
+            self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])
 
     def linkconfig(self, netif, bw=None, delay=None,
                    loss=None, duplicate=None, jitter=None, netif2=None):
@@ -230,19 +235,19 @@ class PhysicalNode(PyCoreNode):
 
         try:
             os.makedirs(target)
-            self.cmd([constants.MOUNT_BIN, "--bind", source, target])
+            self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
             self._mounts.append((source, target))
         except OSError:
             logger.exception("error making directories")
-        except:
-            logger.exception("mounting failed for %s at %s", source, target)
+        except subprocess.CalledProcessError as e:
+            logger.exception("mounting failed for %s at %s: %s", source, target, e.output)
 
     def umount(self, target):
         logger.info("unmounting '%s'" % target)
         try:
-            self.cmd([constants.UMOUNT_BIN, "-l", target])
-        except:
-            logger.exception("unmounting failed for %s", target)
+            self.check_cmd([constants.UMOUNT_BIN, "-l", target])
+        except subprocess.CalledProcessError as e:
+            logger.exception("unmounting failed for %s: %s", target, e.output)
 
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
