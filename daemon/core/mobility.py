@@ -5,7 +5,6 @@ mobility.py: mobility helpers for moving nodes and calculating wireless range.
 import heapq
 import math
 import os
-import subprocess
 import threading
 import time
 
@@ -1238,8 +1237,5 @@ class Ns2ScriptedMobility(WayPointMobility):
         if filename is None or filename == '':
             return
         filename = self.findfile(filename)
-        try:
-            args = ["/bin/sh", filename, typestr]
-            utils.check_cmd(args, cwd=self.session.sessiondir, env=self.session.get_environment())
-        except subprocess.CalledProcessError:
-            logger.exception("Error running script '%s' for WLAN state %s", filename, typestr)
+        args = ["/bin/sh", filename, typestr]
+        utils.check_cmd(args, cwd=self.session.sessiondir, env=self.session.get_environment())

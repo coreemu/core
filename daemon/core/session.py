@@ -529,7 +529,7 @@ class Session(object):
             try:
                 utils.load_config(environment_user_file, env)
             except IOError:
-                logger.warn("error reading user core environment settings file: %s", environment_user_file)
+                logger.info("error reading user core environment settings file: %s", environment_user_file)
 
         return env
 
