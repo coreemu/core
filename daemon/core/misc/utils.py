@@ -162,7 +162,7 @@ def mute_detach(args, **kwargs):
     kwargs["preexec_fn"] = _detach_init
     kwargs["stdout"] = DEVNULL
     kwargs["stderr"] = subprocess.STDOUT
-    return subprocess.Popen(*args, **kwargs).pid
+    return subprocess.Popen(args, **kwargs).pid
 
 
 def cmd(args, wait=True):
