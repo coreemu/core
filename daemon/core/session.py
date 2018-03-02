@@ -7,7 +7,6 @@ import atexit
 import os
 import pprint
 import random
-import shlex
 import shutil
 import subprocess
 import tempfile
@@ -520,7 +519,7 @@ class Session(object):
         environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
         try:
             if os.path.isfile(environment_config_file):
-                utils.readfileintodict(environment_config_file, env)
+                utils.load_config(environment_config_file, env)
         except IOError:
             logger.warn("environment configuration file does not exist: %s", environment_config_file)
 
@@ -528,7 +527,7 @@ class Session(object):
         if self.user:
             environment_user_file = os.path.join("/home", self.user, ".core", "environment")
             try:
-                utils.readfileintodict(environment_user_file, env)
+                utils.load_config(environment_user_file, env)
             except IOError:
                 logger.warn("error reading user core environment settings file: %s", environment_user_file)
 
@@ -1189,7 +1188,7 @@ class Session(object):
         header = "CORE session %s host entries" % self.session_id
         if remove:
             logger.info("Removing /etc/hosts file entries.")
-            utils.filedemunge("/etc/hosts", header)
+            utils.file_demunge("/etc/hosts", header)
             return
 
         entries = []
@@ -1200,7 +1199,7 @@ class Session(object):
 
         logger.info("Adding %d /etc/hosts file entries." % len(entries))
 
-        utils.filemunge("/etc/hosts", header, "\n".join(entries) + "\n")
+        utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
     def runtime(self):
         """
@@ -1254,9 +1253,7 @@ class Session(object):
 
         logger.info("running event %s at time %s cmd=%s" % (name, now, data))
         if not node_id:
-            # TODO: look to consolidate shlex to utils
-            commands = shlex.split(data)
-            utils.mutedetach(commands)
+            utils.mute_detach(data)
         else:
             node = self.get_object(node_id)
             node.cmd(data, wait=False)

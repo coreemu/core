@@ -313,15 +313,21 @@ class LxBrNet(PyCoreNet):
         if not self.up:
             return
         ebq.stopupdateloop(self)
-        utils.mutecall([constants.IP_BIN, "link", "set", self.brname, "down"])
-        utils.mutecall([constants.BRCTL_BIN, "delbr", self.brname])
-        ebtablescmds(utils.mutecall, [
-            [constants.EBTABLES_BIN, "-D", "FORWARD",
-             "--logical-in", self.brname, "-j", self.brname],
-            [constants.EBTABLES_BIN, "-X", self.brname]])
+
+        try:
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "down"])
+            utils.check_cmd([constants.BRCTL_BIN, "delbr", self.brname])
+            ebtablescmds(utils.check_cmd, [
+                [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.brname, "-j", self.brname],
+                [constants.EBTABLES_BIN, "-X", self.brname]
+            ])
+        except subprocess.CalledProcessError as e:
+            logger.exception("error during shutdown: %s", e.output)
+
+        # removes veth pairs used for bridge-to-bridge connections
         for netif in self.netifs():
-            # removes veth pairs used for bridge-to-bridge connections
             netif.shutdown()
+
         self._netif.clear()
         self._linked.clear()
         del self.session

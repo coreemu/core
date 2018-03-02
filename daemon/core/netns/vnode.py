@@ -461,7 +461,7 @@ class SimpleLxcNode(PyCoreNode):
                 self.attachnet(ifindex, net)
                 netif = self.netif(ifindex)
                 netif.sethwaddr(hwaddr)
-                for address in utils.maketuple(addrlist):
+                for address in utils.make_tuple(addrlist):
                     netif.addaddr(address)
                 return ifindex
             else:
@@ -473,7 +473,7 @@ class SimpleLxcNode(PyCoreNode):
             if hwaddr:
                 self.sethwaddr(ifindex, hwaddr)
 
-            for address in utils.maketuple(addrlist):
+            for address in utils.make_tuple(addrlist):
                 self.addaddr(ifindex, address)
 
             self.ifup(ifindex)

@@ -158,7 +158,7 @@ class PhysicalNode(PyCoreNode):
         netif.localname = netif.name
         if hwaddr:
             self.sethwaddr(ifindex, hwaddr)
-        for addr in utils.maketuple(addrlist):
+        for addr in utils.make_tuple(addrlist):
             self.addaddr(ifindex, addr)
         if self.up:
             self.cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])

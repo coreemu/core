@@ -36,12 +36,9 @@ utils.check_executables([
 
 
 def ebtables_commands(call, commands):
-    ebtables_lock.acquire()
-    try:
+    with ebtables_lock:
         for command in commands:
             call(command)
-    finally:
-        ebtables_lock.release()
 
 
 class OvsNet(PyCoreNet):
@@ -109,16 +106,18 @@ class OvsNet(PyCoreNet):
 
         ebtables_queue.stopupdateloop(self)
 
-        utils.mutecall([constants.IP_BIN, "link", "set", self.bridge_name, "down"])
-        utils.mutecall([constants.OVS_BIN, "del-br", self.bridge_name])
+        try:
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.bridge_name, "down"])
+            utils.check_cmd([constants.OVS_BIN, "del-br", self.bridge_name])
+            ebtables_commands(utils.check_cmd, [
+                [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name],
+                [constants.EBTABLES_BIN, "-X", self.bridge_name]
+            ])
+        except subprocess.CalledProcessError as e:
+            logger.exception("error bringing bridge down and removing it: %s", e.output)
 
-        ebtables_commands(utils.mutecall, [
-            [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name],
-            [constants.EBTABLES_BIN, "-X", self.bridge_name]
-        ])
-
+        # removes veth pairs used for bridge-to-bridge connections
         for interface in self.netifs():
-            # removes veth pairs used for bridge-to-bridge connections
             interface.shutdown()
 
         self._netif.clear()

@@ -190,7 +190,7 @@ class EmaneModel(WirelessModel):
         multiple values.
         """
         try:
-            values = utils.maketuplefromstr(value, str)
+            values = utils.make_tuple_fromstr(value, str)
         except SyntaxError:
             logger.exception("error in value string to param list")
             return None

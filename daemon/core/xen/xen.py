@@ -237,7 +237,7 @@ class XenNode(PyCoreNode):
 
             # unpause VM
             logger.warn("XEN PVM boot() unpause domU %s", self.vmname)
-            utils.mutecheck_call([XM_PATH, "unpause", self.vmname])
+            utils.check_cmd([XM_PATH, "unpause", self.vmname])
 
             self.booted = True
         finally:
@@ -261,7 +261,7 @@ class XenNode(PyCoreNode):
                 try:
                     # RJE XXX what to do here
                     if self.booted:
-                        utils.mutecheck_call([XM_PATH, "destroy", self.vmname])
+                        utils.check_cmd([XM_PATH, "destroy", self.vmname])
                         self.booted = False
                 except (OSError, subprocess.CalledProcessError):
                     # ignore this error too, the VM may have exited already
@@ -272,9 +272,9 @@ class XenNode(PyCoreNode):
                 while os.path.exists(self.lvpath):
                     try:
                         subprocess.check_call([UDEVADM_PATH, "settle"])
-                        utils.mutecall([LVCHANGE_PATH, "-an", self.lvpath])
+                        utils.check_cmd([LVCHANGE_PATH, "-an", self.lvpath])
                         lvm_remove_count += 1
-                        utils.mutecall([LVREMOVE_PATH, "-f", self.lvpath])
+                        utils.check_cmd([LVREMOVE_PATH, "-f", self.lvpath])
                     except OSError:
                         logger.exception("error during shutdown")
 
@@ -296,8 +296,8 @@ class XenNode(PyCoreNode):
         """
         if os.path.exists(self.lvpath):
             raise Exception, "LVM volume already exists"
-        utils.mutecheck_call([LVCREATE_PATH, "--size", self.disksize,
-                              "--name", self.lvname, self.vgname])
+        utils.check_cmd([LVCREATE_PATH, "--size", self.disksize,
+                         "--name", self.lvname, self.vgname])
 
     def createpartitions(self):
         """
@@ -337,8 +337,8 @@ class XenNode(PyCoreNode):
         persistdev = "/dev/mapper/" + lines[0].strip().split(" ")[0].strip()
         swapdev = "/dev/mapper/" + lines[1].strip().split(" ")[0].strip()
         subprocess.check_call([KPARTX_PATH, "-a", self.lvpath])
-        utils.mutecheck_call([MKFSEXT4_PATH, "-L", "persist", persistdev])
-        utils.mutecheck_call([MKSWAP_PATH, "-f", "-L", "swap", swapdev])
+        utils.check_cmd([MKFSEXT4_PATH, "-L", "persist", persistdev])
+        utils.check_cmd([MKSWAP_PATH, "-f", "-L", "swap", swapdev])
         return persistdev
 
     def untarpersistent(self, tarname, iso):
@@ -431,7 +431,7 @@ class XenNode(PyCoreNode):
         for action in ("poweroff", "reboot", "suspend", "crash", "halt"):
             args.append("on_%s=destroy" % action)
         args.append("extra=" + self.getconfigitem("xm_create_extra"))
-        utils.mutecheck_call(args)
+        utils.check_cmd(args)
 
     # from class LxcNode
     def privatedir(self, path):
@@ -710,7 +710,7 @@ class XenNode(PyCoreNode):
 
             if hwaddr:
                 self.sethwaddr(ifindex, hwaddr)
-            for addr in utils.maketuple(addrlist):
+            for addr in utils.make_tuple(addrlist):
                 self.addaddr(ifindex, addr)
             # self.ifup(ifindex)
             return ifindex

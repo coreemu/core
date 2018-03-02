@@ -372,7 +372,7 @@ class CoreServices(ConfigurableManager):
         if cfg[:7] == 'file://':
             src = cfg[7:]
             src = src.split('\n')[0]
-            src = utils.expandcorepath(src, node.session, node)
+            src = utils.expand_corepath(src, node.session, node)
             # TODO: glob here
             node.nodefilecopy(filename, src, mode=0644)
             return True
@@ -968,7 +968,7 @@ class CoreService(object):
             elif key == "meta":
                 value = str(value)
             else:
-                value = utils.maketuplefromstr(value, str)
+                value = utils.make_tuple_fromstr(value, str)
 
         if key == "dirs":
             self._dirs = value

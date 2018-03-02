@@ -67,7 +67,7 @@ class VEth(PyCoreNetIf):
                 logger.exception("error shutting down interface")
 
         if self.localname:
-            utils.mutedetach([constants.IP_BIN, "link", "delete", self.localname])
+            utils.mute_detach([constants.IP_BIN, "link", "delete", self.localname])
 
         self.up = False
 
@@ -164,8 +164,8 @@ class TunTap(PyCoreNetIf):
         """
 
         def localdevexists():
-            args = (constants.IP_BIN, "link", "show", self.localname)
-            return utils.mutecall(args)
+            args = [constants.IP_BIN, "link", "show", self.localname]
+            return utils.cmd(args)
 
         self.waitfor(localdevexists)
 
@@ -269,7 +269,7 @@ class GreTap(PyCoreNetIf):
         if remoteip is None:
             raise ValueError, "missing remote IP required for GRE TAP device"
         args = ("ip", "link", "add", self.localname, "type", "gretap",
-               "remote", str(remoteip))
+                "remote", str(remoteip))
         if localip:
             args += ("local", str(localip))
         if ttl:

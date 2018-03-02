@@ -263,7 +263,7 @@ class SimpleJailNode(PyCoreNode):
                 self.attachnet(ifindex, net)
             if hwaddr:
                 self.sethwaddr(ifindex, hwaddr)
-            for addr in utils.maketuple(addrlist):
+            for addr in utils.make_tuple(addrlist):
                 self.addaddr(ifindex, addr)
             self.ifup(ifindex)
             return ifindex

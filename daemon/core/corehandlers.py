@@ -93,7 +93,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         self.master = False
         self.session = None
 
-        utils.closeonexec(request.fileno())
+        utils.close_onexec(request.fileno())
         SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def setup(self):
@@ -371,7 +371,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         try:
             header = self.request.recv(coreapi.CoreMessage.header_len)
             if len(header) > 0:
-                logger.debug("received message header: %s", utils.hexdump(header))
+                logger.debug("received message header: %s", utils.hex_dump(header))
         except IOError as e:
             raise IOError("error receiving header (%s)" % e)
 
@@ -388,7 +388,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         data = ""
         while len(data) < message_len:
             data += self.request.recv(message_len - len(data))
-            logger.debug("received message data: %s" % utils.hexdump(data))
+            logger.debug("received message data: %s" % utils.hex_dump(data))
             if len(data) > message_len:
                 error_message = "received message length does not match received data (%s != %s)" % (
                     len(data), message_len)
@@ -1110,8 +1110,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 # execute the command with no response
                 else:
                     if message.flags & MessageFlags.LOCAL.value:
-                        # TODO: get this consolidated into utils
-                        utils.mutedetach(shlex.split(command))
+                        utils.mute_detach(command)
                     else:
                         node.cmd(command, wait=False)
         except KeyError:

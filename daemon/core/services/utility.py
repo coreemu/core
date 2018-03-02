@@ -60,7 +60,7 @@ class IPForwardService(UtilService):
 %(sysctl)s -w net.ipv4.conf.default.rp_filter=0
 """ % {'sysctl': constants.SYSCTL_BIN}
         for ifc in node.netifs():
-            name = utils.sysctldevname(ifc.name)
+            name = utils.sysctl_devname(ifc.name)
             cfg += "%s -w net.ipv4.conf.%s.forwarding=1\n" % (constants.SYSCTL_BIN, name)
             cfg += "%s -w net.ipv4.conf.%s.send_redirects=0\n" % \
                    (constants.SYSCTL_BIN, name)

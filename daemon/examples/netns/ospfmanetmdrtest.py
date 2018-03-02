@@ -18,7 +18,7 @@ from string import Template
 from core.constants import QUAGGA_STATE_DIR
 
 from core.misc import ipaddress
-from core.misc.utils import mutecall
+from core.misc.utils import check_cmd
 from core.netns import nodes
 
 # this is the /etc/core/core.conf default
@@ -33,8 +33,7 @@ try:
         if os.path.exists(os.path.join(p, "zebra")):
             quagga_path = p
             break
-    mutecall([os.path.join(quagga_path, "zebra"),
-              "-u", "root", "-g", "root", "-v"])
+    check_cmd([os.path.join(quagga_path, "zebra"), "-u", "root", "-g", "root", "-v"])
 except OSError:
     sys.stderr.write("ERROR: running zebra failed\n")
     sys.exit(1)

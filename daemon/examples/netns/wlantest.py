@@ -13,12 +13,12 @@ import optparse
 import sys
 
 from core.misc import ipaddress
-from core.misc.utils import mutecall
+from core.misc.utils import check_cmd
 from core.netns import nodes
 from core.session import Session
 
 try:
-    mutecall(["iperf", "-v"])
+    check_cmd(["iperf", "-v"])
 except OSError:
     sys.stderr.write("ERROR: running iperf failed\n")
     sys.exit(1)

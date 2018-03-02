@@ -35,7 +35,7 @@ from core.corehandlers import CoreDatagramRequestHandler
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
 from core.misc import nodeutils
-from core.misc.utils import closeonexec
+from core.misc.utils import close_onexec
 from core.misc.utils import daemonize
 from core.service import ServiceManager
 
@@ -84,11 +84,11 @@ def cored(cfg=None):
         logger.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
 
-    closeonexec(server.fileno())
+    close_onexec(server.fileno())
     logger.info("main server started, listening on: %s:%s\n" % (host, port))
 
     udpserver = startudp(server, (host, port))
-    closeonexec(udpserver.fileno())
+    close_onexec(udpserver.fileno())
 
     server.serve_forever()
 

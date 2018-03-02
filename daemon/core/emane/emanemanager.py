@@ -182,7 +182,7 @@ class EmaneManager(ConfigurableManager):
         if self.service:
             for f in self.service._readFd, self.service._writeFd, self.service._socket, self.service._socketOTA:
                 if f:
-                    utils.closeonexec(f)
+                    utils.close_onexec(f)
 
         if filename is not None:
             os.environ.pop(EmaneManager.EVENTCFGVAR)

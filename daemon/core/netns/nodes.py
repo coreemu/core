@@ -487,7 +487,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         try:
             utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "down"])
             utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
-            utils.mutecall([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
+            utils.check_cmd([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
         except subprocess.CalledProcessError as e:
             logger.exception("error shutting down: %s", e.output)
 
@@ -541,7 +541,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
                 self.attachnet(net)
 
             if addrlist:
-                for addr in utils.maketuple(addrlist):
+                for addr in utils.make_tuple(addrlist):
                     self.addaddr(addr)
 
             return ifindex

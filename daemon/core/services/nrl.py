@@ -57,7 +57,7 @@ class MgenSinkService(NrlService):
     def generateconfig(cls, node, filename, services):
         cfg = "0.0 LISTEN UDP 5000\n"
         for ifc in node.netifs():
-            name = utils.sysctldevname(ifc.name)
+            name = utils.sysctl_devname(ifc.name)
             cfg += "0.0 Join 224.225.1.2 INTERFACE %s\n" % name
         return cfg
 

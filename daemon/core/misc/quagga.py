@@ -136,7 +136,7 @@ router ospf6
         :param routerid: router id
         :param str redistribute: redistribute value
         """
-        ospf6ifs = utils.maketuple(ospf6ifs)
+        ospf6ifs = utils.make_tuple(ospf6ifs)
         interfaces = "\n!\n".join(map(str, ospf6ifs))
         ospfifs = "\n  ".join(map(lambda x: "interface %s area %s" % (x.name(), area), ospf6ifs))
         Conf.__init__(self, interfaces=interfaces, routerid=routerid, ospfifs=ospfifs, redistribute=redistribute)
@@ -163,9 +163,9 @@ $forwarding
         :param str logfile: log file name
         :param debugs: debug options
         """
-        routers = "\n!\n".join(map(str, utils.maketuple(routers)))
+        routers = "\n!\n".join(map(str, utils.make_tuple(routers)))
         if debugs:
-            debugs = "\n".join(utils.maketuple(debugs))
+            debugs = "\n".join(utils.make_tuple(debugs))
         else:
             debugs = "! no debugs"
         forwarding = "ip forwarding\nipv6 forwarding"

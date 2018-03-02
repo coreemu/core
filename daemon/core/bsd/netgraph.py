@@ -86,4 +86,4 @@ def ngloadkernelmodule(name):
     :param str name: module name
     :return: nothing
     """
-    utils.mutecall(["kldload", name])
+    utils.check_cmd(["kldload", name])

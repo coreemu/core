@@ -21,7 +21,7 @@ from core.coreobj import PyCoreNet
 from core.enumerations import EventTypes
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
-from core.misc.utils import maketuple
+from core.misc.utils import make_tuple
 from core.mobility import WayPointMobility
 from core.netns.nodes import CoreNode
 from core.session import Session
@@ -65,7 +65,7 @@ class CoreNs3Node(CoreNode, ns.network.Node):
         self.attachnet(ifindex, net)
         netif = self.netif(ifindex)
         netif.sethwaddr(hwaddr)
-        for addr in maketuple(addrlist):
+        for addr in make_tuple(addrlist):
             netif.addaddr(addr)
 
         addrstr = netif.addrlist[0]
