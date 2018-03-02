@@ -21,31 +21,30 @@ def emane_version():
     """
     global VERSION
     global VERSIONSTR
-    args = ("emane", "--version")
-
-    try:
-        status, result = utils.check_cmd(args)
-    except subprocess.CalledProcessError:
-        logger.exception("error checking emane version")
-        status = -1
-        result = ""
+    args = ["emane", "--version"]
 
     VERSION = EMANEUNK
-    if status == 0:
-        if result.startswith("0.7.4"):
-            VERSION = EMANE074
-        elif result.startswith("0.8.1"):
-            VERSION = EMANE081
-        elif result.startswith("0.9.1"):
-            VERSION = EMANE091
-        elif result.startswith("0.9.2"):
-            VERSION = EMANE092
-        elif result.startswith("0.9.3"):
-            VERSION = EMANE093
-        elif result.startswith("1.0.1"):
-            VERSION = EMANE101
 
-    VERSIONSTR = result.strip()
+    try:
+        status, output = utils.check_cmd(args)
+        if status == 0:
+            if output.startswith("0.7.4"):
+                VERSION = EMANE074
+            elif output.startswith("0.8.1"):
+                VERSION = EMANE081
+            elif output.startswith("0.9.1"):
+                VERSION = EMANE091
+            elif output.startswith("0.9.2"):
+                VERSION = EMANE092
+            elif output.startswith("0.9.3"):
+                VERSION = EMANE093
+            elif output.startswith("1.0.1"):
+                VERSION = EMANE101
+    except subprocess.CalledProcessError:
+        logger.exception("error checking emane version")
+        output = ""
+
+    VERSIONSTR = output.strip()
 
 
 # set version variables for the Emane class

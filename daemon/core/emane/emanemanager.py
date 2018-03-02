@@ -925,7 +925,8 @@ class EmaneManager(ConfigurableManager):
                     logger.exception("error adding route for event data")
 
             try:
-                args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]
+                args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n),
+                                   os.path.join(path, "platform%d.xml" % n)]
                 logger.info("Emane.startdaemons2() running %s" % str(args))
                 status, output = node.check_cmd(args)
                 logger.info("Emane.startdaemons2() return code %d" % status)
@@ -1163,14 +1164,15 @@ class EmaneManager(ConfigurableManager):
         Return True if an EMANE process associated with the given node
         is running, False otherwise.
         """
-        status = -1
         args = ["pkill", "-0", "-x", "emane"]
 
+        status = -1
         try:
             if emane.VERSION < emane.EMANE092:
-                status = utils.check_cmd(args)
+                utils.check_cmd(args)
             else:
-                status, _ = node.check_cmd(args)
+                node.check_cmd(args)
+            status = 0
         except subprocess.CalledProcessError:
             logger.exception("error checking if emane is running")
 

@@ -78,24 +78,23 @@ class OvsNet(PyCoreNet):
             ebtables_queue.startupdateloop(self)
 
     def startup(self):
-        try:
-            utils.check_cmd([constants.OVS_BIN, "add-br", self.bridge_name])
-        except subprocess.CalledProcessError:
-            logger.exception("error adding bridge")
+        """
 
-        try:
-            # turn off spanning tree protocol and forwarding delay
-            # TODO: appears stp and rstp are off by default, make sure this always holds true
-            # TODO: apears ovs only supports rstp forward delay and again it's off by default
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.bridge_name, "up"])
+        :return:
+        :raises subprocess.CalledProcessError: when there is a command exception
+        """
+        utils.check_cmd([constants.OVS_BIN, "add-br", self.bridge_name])
 
-            # create a new ebtables chain for this bridge
-            ebtables_commands(utils.check_cmd, [
-                [constants.EBTABLES_BIN, "-N", self.bridge_name, "-P", self.policy],
-                [constants.EBTABLES_BIN, "-A", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name]
-            ])
-        except subprocess.CalledProcessError:
-            logger.exception("Error setting bridge parameters")
+        # turn off spanning tree protocol and forwarding delay
+        # TODO: appears stp and rstp are off by default, make sure this always holds true
+        # TODO: apears ovs only supports rstp forward delay and again it's off by default
+        utils.check_cmd([constants.IP_BIN, "link", "set", self.bridge_name, "up"])
+
+        # create a new ebtables chain for this bridge
+        ebtables_commands(utils.check_cmd, [
+            [constants.EBTABLES_BIN, "-N", self.bridge_name, "-P", self.policy],
+            [constants.EBTABLES_BIN, "-A", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name]
+        ])
 
         self.up = True
 
@@ -127,22 +126,14 @@ class OvsNet(PyCoreNet):
 
     def attach(self, interface):
         if self.up:
-            try:
-                utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, interface.localname])
-                utils.check_cmd([constants.IP_BIN, "link", "set", interface.localname, "up"])
-            except subprocess.CalledProcessError:
-                logger.exception("error joining interface %s to bridge %s", interface.localname, self.bridge_name)
-                return
+            utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, interface.localname])
+            utils.check_cmd([constants.IP_BIN, "link", "set", interface.localname, "up"])
 
         PyCoreNet.attach(self, interface)
 
     def detach(self, interface):
         if self.up:
-            try:
-                utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, interface.localname])
-            except subprocess.CalledProcessError:
-                logger.exception("error removing interface %s from bridge %s", interface.localname, self.bridge_name)
-                return
+            utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, interface.localname])
 
         PyCoreNet.detach(self, interface)
 
@@ -345,10 +336,7 @@ class OvsNet(PyCoreNet):
             return
 
         for address in addresses:
-            try:
-                utils.check_cmd([constants.IP_BIN, "addr", "add", str(address), "dev", self.bridge_name])
-            except subprocess.CalledProcessError:
-                logger.exception("error adding IP address")
+            utils.check_cmd([constants.IP_BIN, "addr", "add", str(address), "dev", self.bridge_name])
 
 
 class OvsCtrlNet(OvsNet):
@@ -392,20 +380,16 @@ class OvsCtrlNet(OvsNet):
             utils.check_cmd([self.updown_script, self.bridge_name, "startup"])
 
         if self.serverintf:
-            try:
-                utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, self.serverintf])
-                utils.check_cmd([constants.IP_BIN, "link", "set", self.serverintf, "up"])
-            except subprocess.CalledProcessError:
-                logger.exception("error joining server interface %s to controlnet bridge %s",
-                                 self.serverintf, self.bridge_name)
+            utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, self.serverintf])
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.serverintf, "up"])
 
     def detectoldbridge(self):
         """
-        Occassionally, control net bridges from previously closed sessions are not cleaned up.
+        Occasionally, control net bridges from previously closed sessions are not cleaned up.
         Check if there are old control net bridges and delete them
         """
 
-        status, output = utils.cmd_output([constants.OVS_BIN, "list-br"])
+        _, output = utils.check_cmd([constants.OVS_BIN, "list-br"])
         output = output.strip()
         if output:
             for line in output.split("\n"):
@@ -420,13 +404,16 @@ class OvsCtrlNet(OvsNet):
         if self.serverintf:
             try:
                 utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, self.serverintf])
-            except subprocess.CalledProcessError:
-                logger.exception("Error deleting server interface %s to controlnet bridge %s",
-                                 self.serverintf, self.bridge_name)
+            except subprocess.CalledProcessError as e:
+                logger.exception("error deleting server interface %s to controlnet bridge %s: %s",
+                                 self.serverintf, self.bridge_name, e.output)
 
         if self.updown_script:
-            logger.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
-            utils.check_cmd([self.updown_script, self.bridge_name, "shutdown"])
+            try:
+                logger.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
+                utils.check_cmd([self.updown_script, self.bridge_name, "shutdown"])
+            except subprocess.CalledProcessError as e:
+                logger.exception("error during updown script shutdown: %s", e.output)
 
         OvsNet.shutdown(self)
 
@@ -445,12 +432,12 @@ class OvsPtpNet(OvsNet):
             raise ValueError("point-to-point links support at most 2 network interfaces")
         OvsNet.attach(self, interface)
 
-    def data(self, message_type):
+    def data(self, message_type, lat=None, lon=None, alt=None):
         """
         Do not generate a Node Message for point-to-point links. They are
         built using a link message instead.
         """
-        pass
+        return None
 
     def all_link_data(self, flags):
         """
@@ -685,8 +672,8 @@ class OvsGreTapBridge(OvsNet):
         if remoteip is None:
             self.gretap = None
         else:
-            self.gretap = GreTap(node=self, name=None, session=session, remoteip=remoteip,
-                                 objid=None, localip=localip, ttl=ttl, key=self.grekey)
+            self.gretap = GreTap(node=self, session=session, remoteip=remoteip,
+                                 localip=localip, ttl=ttl, key=self.grekey)
         if start:
             self.startup()
 
@@ -726,7 +713,7 @@ class OvsGreTapBridge(OvsNet):
         if len(addresses) > 1:
             localip = addresses[1].split("/")[0]
 
-        self.gretap = GreTap(session=self.session, remoteip=remoteip, objid=None, name=None,
+        self.gretap = GreTap(session=self.session, remoteip=remoteip,
                              localip=localip, ttl=self.ttl, key=self.grekey)
         self.attach(self.gretap)
 

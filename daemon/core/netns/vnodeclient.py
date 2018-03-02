@@ -109,7 +109,7 @@ class VnodeClient(object):
         :raises subprocess.CalledProcessError: when there is a non-zero exit status
         """
         status, output = self.cmd_output(args)
-        if status:
+        if status != 0:
             raise subprocess.CalledProcessError(status, args, output)
         return status, output.strip()
 
@@ -174,8 +174,8 @@ class VnodeClient(object):
         args = ("xterm", "-ut", "-title", self.name, "-e", VCMD, "-c", self.ctrlchnlname, "--", sh)
         if "SUDO_USER" in os.environ:
             args = ("su", "-s", "/bin/sh", "-c",
-                   "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
-                   os.environ["SUDO_USER"])
+                    "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
+                    os.environ["SUDO_USER"])
         return os.spawnvp(os.P_NOWAIT, args[0], args)
 
     def termcmdstring(self, sh="/bin/sh"):

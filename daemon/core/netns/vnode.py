@@ -98,25 +98,19 @@ class SimpleLxcNode(PyCoreNode):
         env["NODE_NUMBER"] = str(self.objid)
         env["NODE_NAME"] = str(self.name)
 
-        try:
-            _, output = utils.check_cmd(vnoded, env=env)
-            self.pid = int(output)
-        except subprocess.CalledProcessError:
-            logger.exception("vnoded failed to create a namespace; check kernel support and user privileges")
+        _, output = utils.check_cmd(vnoded, env=env)
+        self.pid = int(output)
 
         # create vnode client
         self.client = vnodeclient.VnodeClient(self.name, self.ctrlchnlname)
 
-        try:
-            # bring up the loopback interface
-            logger.info("bringing up loopback interface")
-            self.check_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
+        # bring up the loopback interface
+        logger.info("bringing up loopback interface")
+        self.check_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
 
-            # set hostname for node
-            logger.info("setting hostname: %s" % self.name)
-            self.check_cmd(["hostname", self.name])
-        except subprocess.CalledProcessError:
-            logger.exception("error setting up loopback and hostname: %s")
+        # set hostname for node
+        logger.info("setting hostname: %s" % self.name)
+        self.check_cmd(["hostname", self.name])
 
         # mark node as up
         self.up = True
@@ -165,7 +159,7 @@ class SimpleLxcNode(PyCoreNode):
 
         :return: nothing
         """
-        pass
+        return None
 
     def cmd(self, args, wait=True):
         """
@@ -208,7 +202,6 @@ class SimpleLxcNode(PyCoreNode):
         """
         return self.client.termcmdstring(sh)
 
-    # TODO: should change how this exception is just swallowed up
     def mount(self, source, target):
         """
         Create and mount a directory.
@@ -216,17 +209,15 @@ class SimpleLxcNode(PyCoreNode):
         :param str source: source directory to mount
         :param str target: target directory to create
         :return: nothing
+        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         source = os.path.abspath(source)
         logger.info("mounting %s at %s" % (source, target))
-        try:
-            cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
-            status, output = self.client.shcmd_result(cmd)
-            if status:
-                raise IOError("error during mount: %s" % output)
-            self._mounts.append((source, target))
-        except IOError:
-            logger.exception("mounting failed for %s at %s", source, target)
+        cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
+        status, output = self.client.shcmd_result(cmd)
+        if status:
+            raise subprocess.CalledProcessError(status, cmd, output)
+        self._mounts.append((source, target))
 
     def umount(self, target):
         """
@@ -238,8 +229,8 @@ class SimpleLxcNode(PyCoreNode):
         logger.info("unmounting: %s", target)
         try:
             self.check_cmd([constants.UMOUNT_BIN, "-n", "-l", target])
-        except subprocess.CalledProcessError:
-            logger.exception("error during unmount")
+        except subprocess.CalledProcessError as e:
+            logger.exception("error during unmount: %s", e.output)
 
     def newifindex(self):
         """
@@ -277,33 +268,29 @@ class SimpleLxcNode(PyCoreNode):
             localname = "veth" + suffix
             if len(localname) >= 16:
                 raise ValueError("interface local name (%s) too long" % localname)
+
             name = localname + "p"
             if len(name) >= 16:
                 raise ValueError("interface name (%s) too long" % name)
+
             veth = VEth(node=self, name=name, localname=localname, net=net, start=self.up)
 
             if self.up:
-                try:
-                    utils.check_cmd([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
-                    self.check_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
-                except subprocess.CalledProcessError:
-                    logger.exception("failure setting eth name")
+                utils.check_cmd([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
+                self.check_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
 
             veth.name = ifname
 
             if self.up:
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
-                try:
-                    _, output = self.check_cmd(["ip", "link", "show", veth.name])
-                    logger.info("interface command output: %s", output)
-                    output = output.split("\n")
-                    veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-                    logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
-                    veth.hwaddr = output[1].strip().split()[1]
-                    logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
-                except subprocess.CalledProcessError:
-                    logger.exception("failure getting flow id and mac address")
+                _, output = self.check_cmd(["ip", "link", "show", veth.name])
+                logger.info("interface command output: %s", output)
+                output = output.split("\n")
+                veth.flow_id = int(output[0].strip().split(":")[0]) + 1
+                logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
+                veth.hwaddr = output[1].strip().split()[1]
+                logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
                 self.addnetif(veth, ifindex)
@@ -351,15 +338,13 @@ class SimpleLxcNode(PyCoreNode):
 
         :param int ifindex: index of interface to set hardware address for
         :param core.misc.ipaddress.MacAddress addr: hardware address to set
-        :return: mothing
+        :return: nothing
+        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             args = [constants.IP_BIN, "link", "set", "dev", self.ifname(ifindex), "address", str(addr)]
-            try:
-                self.check_cmd(args)
-            except subprocess.CalledProcessError:
-                logger.exception("error setting MAC address %s: %s", addr)
+            self.check_cmd(args)
 
     def addaddr(self, ifindex, addr):
         """
@@ -370,16 +355,13 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         if self.up:
-            try:
-                # check if addr is ipv6
-                if ":" in str(addr):
-                    args = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
-                    self.check_cmd(args)
-                else:
-                    args = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
-                    self.check_cmd(args)
-            except subprocess.CalledProcessError:
-                logger.exception("failure adding interface address")
+            # check if addr is ipv6
+            if ":" in str(addr):
+                args = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
+                self.check_cmd(args)
+            else:
+                args = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
+                self.check_cmd(args)
 
         self._netif[ifindex].addaddr(addr)
 
@@ -390,6 +372,7 @@ class SimpleLxcNode(PyCoreNode):
         :param int ifindex: index of interface to delete address from
         :param str addr: address to delete from interface
         :return: nothing
+        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         try:
             self._netif[ifindex].deladdr(addr)
@@ -397,10 +380,7 @@ class SimpleLxcNode(PyCoreNode):
             logger.exception("trying to delete unknown address: %s" % addr)
 
         if self.up:
-            try:
-                self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
-            except subprocess.CalledProcessError:
-                logger.exception("failure deleting address")
+            self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
     def delalladdr(self, ifindex, address_types=valid_address_types):
         """
@@ -409,6 +389,7 @@ class SimpleLxcNode(PyCoreNode):
         :param int ifindex: index of interface to delete address types from
         :param tuple[str] address_types: address types to delete
         :return: nothing
+        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         interface_name = self.ifname(ifindex)
         addresses = self.client.getaddr(interface_name, rescan=True)
@@ -430,10 +411,7 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         """
         if self.up:
-            try:
-                self.check_cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
-            except subprocess.CalledProcessError:
-                logger.exception("failure bringing interface up")
+            self.check_cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
@@ -510,17 +488,15 @@ class SimpleLxcNode(PyCoreNode):
         :param str srcname: source file name
         :param str filename: file name to add
         :return: nothing
+        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         logger.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
 
-        try:
-            cmd = 'mkdir -p "%s" && mv "%s" "%s" && sync' % (directory, srcname, filename)
-            status, output = self.client.shcmd_result(cmd)
-            if status:
-                raise IOError("error adding file: %s" % output)
-        except IOError:
-            logger.exception("error during addfile")
+        cmd = 'mkdir -p "%s" && mv "%s" "%s" && sync' % (directory, srcname, filename)
+        status, output = self.client.shcmd_result(cmd)
+        if status:
+            raise subprocess.CalledProcessError(status, cmd, output)
 
 
 class LxcNode(SimpleLxcNode):
@@ -567,13 +543,10 @@ class LxcNode(SimpleLxcNode):
         :return: nothing
         """
         with self.lock:
-            try:
-                self.makenodedir()
-                super(LxcNode, self).startup()
-                self.privatedir("/var/run")
-                self.privatedir("/var/log")
-            except OSError:
-                logger.exception("error during startup")
+            self.makenodedir()
+            super(LxcNode, self).startup()
+            self.privatedir("/var/run")
+            self.privatedir("/var/log")
 
     def shutdown(self):
         """
@@ -585,8 +558,6 @@ class LxcNode(SimpleLxcNode):
             return
 
         with self.lock:
-            # services are instead stopped when session enters datacollect state
-            # self.session.services.stopnodeservices(self)
             try:
                 super(LxcNode, self).shutdown()
             except OSError:
@@ -605,12 +576,7 @@ class LxcNode(SimpleLxcNode):
         if path[0] != "/":
             raise ValueError("path not fully qualified: %s" % path)
         hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip("/").replace("/", "."))
-
-        try:
-            os.mkdir(hostpath)
-        except OSError:
-            logger.exception("error creating directory: %s", hostpath)
-
+        os.mkdir(hostpath)
         self.mount(hostpath, path)
 
     def hostfilename(self, filename):
@@ -622,7 +588,7 @@ class LxcNode(SimpleLxcNode):
         """
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError("no basename for filename: " + filename)
+            raise ValueError("no basename for filename: %s" % filename)
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")

@@ -199,7 +199,7 @@ def cmd_output(args):
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, _ = p.communicate()
         status = p.wait()
-        return status, stdout
+        return status, stdout.strip()
     except OSError:
         raise subprocess.CalledProcessError(-1, args)
 
@@ -222,9 +222,9 @@ def check_cmd(args, **kwargs):
         p = subprocess.Popen(args, **kwargs)
         stdout, _ = p.communicate()
         status = p.wait()
-        if status:
+        if status != 0:
             raise subprocess.CalledProcessError(status, args, stdout)
-        return status, stdout
+        return status, stdout.strip()
     except OSError:
         raise subprocess.CalledProcessError(-1, args)
 

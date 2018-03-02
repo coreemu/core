@@ -37,9 +37,9 @@ class Position(object):
         """
         Returns True if the position has actually changed.
 
-        :param x: x position
-        :param y: y position
-        :param z: z position
+        :param float x: x position
+        :param float y: y position
+        :param float z: z position
         :return: True if position changed, False otherwise
         :rtype: bool
         """
@@ -113,9 +113,9 @@ class PyCoreObj(object):
         """
         Set the (x,y,z) position of the object.
 
-        :param x: x position
-        :param y: y position
-        :param z: z position
+        :param float x: x position
+        :param float y: y position
+        :param float z: z position
         :return: True if position changed, False otherwise
         :rtype: bool
         """
@@ -460,6 +460,22 @@ class PyCoreNet(PyCoreObj):
     """
     linktype = LinkTypes.WIRED.value
 
+    def startup(self):
+        """
+        Each object implements its own startup method.
+
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    def shutdown(self):
+        """
+        Each object implements its own shutdown method.
+
+        :return: nothing
+        """
+        raise NotImplementedError
+
     def __init__(self, session, objid, name, start=True):
         """
         Create a PyCoreNet instance.
@@ -597,7 +613,7 @@ class PyCoreNetIf(object):
         """
         Creates a PyCoreNetIf instance.
 
-        :param core.netns.vnode.SimpleLxcNode node: node for interface
+        :param core.coreobj.PyCoreNode node: node for interface
         :param str name: interface name
         :param mtu: mtu value
         """

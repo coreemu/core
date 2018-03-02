@@ -31,7 +31,7 @@ class VEth(PyCoreNetIf):
         :param mtu: interface mtu
         :param net: network
         :param bool start: start flag
-        :return:
+        :raises subprocess.CalledProcessError: when there is a command exception
         """
         # note that net arg is ignored
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
@@ -45,6 +45,7 @@ class VEth(PyCoreNetIf):
         Interface startup logic.
 
         :return: nothing
+        :raises subprocess.CalledProcessError: when there is a command exception
         """
         utils.check_cmd([constants.IP_BIN, "link", "add", "name", self.localname,
                          "type", "veth", "peer", "name", self.name])
@@ -63,11 +64,14 @@ class VEth(PyCoreNetIf):
         if self.node:
             try:
                 self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
-            except subprocess.CalledProcessError:
-                logger.exception("error shutting down interface")
+            except subprocess.CalledProcessError as e:
+                logger.exception("error shutting down interface: %s", e.output)
 
         if self.localname:
-            utils.mute_detach([constants.IP_BIN, "link", "delete", self.localname])
+            try:
+                utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
+            except subprocess.CalledProcessError as e:
+                logger.exception("error deleting link: %s", e.output)
 
         self.up = False
 
@@ -121,8 +125,8 @@ class TunTap(PyCoreNetIf):
 
         try:
             self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
-        except subprocess.CalledProcessError:
-            logger.exception("error shutting down tunnel tap")
+        except subprocess.CalledProcessError as e:
+            logger.exception("error shutting down tunnel tap: %s", e.output)
 
         self.up = False
 
@@ -133,13 +137,16 @@ class TunTap(PyCoreNetIf):
         :param func: function to wait for a result of zero
         :param int attempts: number of attempts to wait for a zero result
         :param float maxretrydelay: maximum retry delay
-        :return: nothing
+        :return: True if wait succeeded, False otherwise
+        :rtype: bool
         """
         delay = 0.01
+        result = False
         for i in xrange(1, attempts + 1):
             r = func()
             if r == 0:
-                return
+                result = True
+                break
             msg = "attempt %s failed with nonzero exit status %s" % (i, r)
             if i < attempts + 1:
                 msg += ", retrying..."
@@ -152,7 +159,7 @@ class TunTap(PyCoreNetIf):
                 msg += ", giving up"
                 logger.info(msg)
 
-        raise RuntimeError("command failed after %s attempts" % attempts)
+        return result
 
     def waitfordevicelocal(self):
         """
@@ -182,18 +189,20 @@ class TunTap(PyCoreNetIf):
 
         count = 0
         while True:
-            try:
-                self.waitfor(nodedevexists)
+            result = self.waitfor(nodedevexists)
+            if result:
                 break
-            except RuntimeError as e:
-                # check if this is an EMANE interface; if so, continue
-                # waiting if EMANE is still running
-                # TODO: remove emane code
-                if count < 5 and nodeutils.is_node(self.net, NodeTypes.EMANE) and self.node.session.emane.emanerunning(
-                    self.node):
-                    count += 1
-                else:
-                    raise e
+
+            # check if this is an EMANE interface; if so, continue
+            # waiting if EMANE is still running
+            # TODO: remove emane code
+            should_retry = count < 5
+            is_emane_node = nodeutils.is_node(self.net, NodeTypes.EMANE)
+            is_emane_running = self.node.session.emane.emanerunning(self.node)
+            if all([should_retry, is_emane_node, is_emane_running]):
+                count += 1
+            else:
+                raise RuntimeError("node device failed to exist")
 
     def install(self):
         """
@@ -203,16 +212,13 @@ class TunTap(PyCoreNetIf):
         end of the TAP.
 
         :return: nothing
+        :raises subprocess.CalledProcessError: when there is a command exception
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
-
-        try:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
-            self.node.check_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
-            self.node.check_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
-        except subprocess.CalledProcessError:
-            logger.exception("error installing TAP interface")
+        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
+        self.node.check_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
+        self.node.check_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
         """
@@ -222,10 +228,7 @@ class TunTap(PyCoreNetIf):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            try:
-                self.node.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
-            except subprocess.CalledProcessError:
-                logger.exception("failure setting interface address")
+            self.node.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
 
 
 class GreTap(PyCoreNetIf):
@@ -251,6 +254,7 @@ class GreTap(PyCoreNetIf):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
+        :raises subprocess.CalledProcessError: when there is a command exception
         """
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.session = session
@@ -268,16 +272,16 @@ class GreTap(PyCoreNetIf):
 
         if remoteip is None:
             raise ValueError, "missing remote IP required for GRE TAP device"
-        args = ("ip", "link", "add", self.localname, "type", "gretap",
-                "remote", str(remoteip))
+        args = ["ip", "link", "add", self.localname, "type", "gretap",
+                "remote", str(remoteip)]
         if localip:
-            args += ("local", str(localip))
+            args += ["local", str(localip)]
         if ttl:
-            args += ("ttl", str(ttl))
+            args += ["ttl", str(ttl)]
         if key:
-            args += ("key", str(key))
+            args += ["key", str(key)]
         utils.check_cmd(args)
-        args = ("ip", "link", "set", self.localname, "up")
+        args = ["ip", "link", "set", self.localname, "up"]
         utils.check_cmd(args)
         self.up = True
 
@@ -288,10 +292,14 @@ class GreTap(PyCoreNetIf):
         :return: nothing
         """
         if self.localname:
-            args = ("ip", "link", "set", self.localname, "down")
-            utils.check_cmd(args)
-            args = ("ip", "link", "del", self.localname)
-            utils.check_cmd(args)
+            try:
+                args = ["ip", "link", "set", self.localname, "down"]
+                utils.check_cmd(args)
+                args = ["ip", "link", "del", self.localname]
+                utils.check_cmd(args)
+            except subprocess.CalledProcessError as e:
+                logger.exception("error during shutdown: %s", e.output)
+
             self.localname = None
 
     def data(self, message_type):
