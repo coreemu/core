@@ -1,12 +1,11 @@
 import os
 import socket
-import subprocess
 
 from core import constants
 from core import emane
 from core import logger
 from core.enumerations import NodeTypes
-from core.misc import ipaddress
+from core.misc import ipaddress, utils
 from core.misc import nodeutils
 from core.netns import nodes
 from core.xml import xmlutils
@@ -26,8 +25,8 @@ class CoreDeploymentWriter(object):
     def get_ipv4_addresses(hostname):
         if hostname == 'localhost':
             addr_list = []
-            cmd = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
-            output = subprocess.check_output(cmd)
+            args = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
+            _, output = utils.check_cmd(args)
             for line in output.split(os.linesep):
                 split = line.split()
                 if not split:
@@ -48,8 +47,8 @@ class CoreDeploymentWriter(object):
        """
         if hostname == 'localhost':
             iface_list = []
-            cmd = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
-            output = subprocess.check_output(cmd)
+            args = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
+            _, output = utils.check_cmd(args)
             for line in output.split(os.linesep):
                 split = line.split()
                 if not split:

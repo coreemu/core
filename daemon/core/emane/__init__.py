@@ -21,11 +21,11 @@ def emane_version():
     """
     global VERSION
     global VERSIONSTR
-    cmd = ("emane", "--version")
+    args = ("emane", "--version")
 
     try:
-        status, result = utils.cmd_output(cmd)
-    except (OSError, subprocess.CalledProcessError):
+        status, result = utils.check_cmd(args)
+    except subprocess.CalledProcessError:
         logger.exception("error checking emane version")
         status = -1
         result = ""

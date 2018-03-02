@@ -99,11 +99,7 @@ class SimpleLxcNode(PyCoreNode):
         env["NODE_NAME"] = str(self.name)
 
         try:
-            output = utils.check_alloutput(vnoded, env=env)
-            # p = subprocess.Popen(vnoded, stdout=subprocess.PIPE, env=env)
-            # stdout, _ = p.communicate()
-            # if p.returncode:
-            #     raise IOError("vnoded command failed: %s" % vnoded)
+            _, output = utils.check_cmd(vnoded, env=env)
             self.pid = int(output)
         except subprocess.CalledProcessError:
             logger.exception("vnoded failed to create a namespace; check kernel support and user privileges")
@@ -171,37 +167,37 @@ class SimpleLxcNode(PyCoreNode):
         """
         pass
 
-    def cmd(self, cmd, wait=True):
+    def cmd(self, args, wait=True):
         """
         Runs shell command on node, with option to not wait for a result.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :param bool wait: wait for command to exit, defaults to True
         :return: exit status for command
         :rtype: int
         """
-        return self.client.cmd(cmd, wait)
+        return self.client.cmd(args, wait)
 
-    def cmd_output(self, cmd):
+    def cmd_output(self, args):
         """
         Runs shell command on node and get exit status and output.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         """
-        return self.client.cmd_output(cmd)
+        return self.client.cmd_output(args)
 
-    def check_cmd(self, cmd):
+    def check_cmd(self, args):
         """
         Runs shell command on node.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: exist status and combined stdout and stderr
         :rtype: tuple[int, str]
         :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
-        return self.client.check_cmd(cmd)
+        return self.client.check_cmd(args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -359,9 +355,9 @@ class SimpleLxcNode(PyCoreNode):
         """
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
-            cmd = [constants.IP_BIN, "link", "set", "dev", self.ifname(ifindex), "address", str(addr)]
+            args = [constants.IP_BIN, "link", "set", "dev", self.ifname(ifindex), "address", str(addr)]
             try:
-                self.check_cmd(cmd)
+                self.check_cmd(args)
             except subprocess.CalledProcessError:
                 logger.exception("error setting MAC address %s: %s", addr)
 
@@ -377,11 +373,11 @@ class SimpleLxcNode(PyCoreNode):
             try:
                 # check if addr is ipv6
                 if ":" in str(addr):
-                    cmd = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
-                    self.check_cmd(cmd)
+                    args = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
+                    self.check_cmd(args)
                 else:
-                    cmd = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
-                    self.check_cmd(cmd)
+                    args = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
+                    self.check_cmd(args)
             except subprocess.CalledProcessError:
                 logger.exception("failure adding interface address")
 

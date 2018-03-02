@@ -73,26 +73,31 @@ class CtrlNet(LxBrNet):
             return
 
         LxBrNet.startup(self)
+
         if self.hostid:
             addr = self.prefix.addr(self.hostid)
         else:
             addr = self.prefix.max_addr()
+
         msg = "Added control network bridge: %s %s" % (self.brname, self.prefix)
         addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
+
         if self.assign_address:
             self.addrconfig(addrlist=addrlist)
             msg += " address %s" % addr
         logger.info(msg)
+
         if self.updown_script is not None:
             logger.info("interface %s updown script (%s startup) called",
                         self.brname, self.updown_script)
-            subprocess.check_call([self.updown_script, self.brname, "startup"])
+            utils.check_cmd([self.updown_script, self.brname, "startup"])
+
         if self.serverintf is not None:
             try:
-                subprocess.check_call([constants.BRCTL_BIN, "addif", self.brname, self.serverintf])
-                subprocess.check_call([constants.IP_BIN, "link", "set", self.serverintf, "up"])
+                utils.check_cmd([constants.BRCTL_BIN, "addif", self.brname, self.serverintf])
+                utils.check_cmd([constants.IP_BIN, "link", "set", self.serverintf, "up"])
             except subprocess.CalledProcessError:
-                logger.exception("Error joining server interface %s to controlnet bridge %s",
+                logger.exception("error joining server interface %s to controlnet bridge %s",
                                  self.serverintf, self.brname)
 
     def detectoldbridge(self):
@@ -103,32 +108,24 @@ class CtrlNet(LxBrNet):
         :return: True if an old bridge was detected, False otherwise
         :rtype: bool
         """
-        retstat, retstr = utils.cmd_output([constants.BRCTL_BIN, "show"])
-        if retstat != 0:
+        status, output = utils.cmd_output([constants.BRCTL_BIN, "show"])
+        if status != 0:
             logger.error("Unable to retrieve list of installed bridges")
-        lines = retstr.split("\n")
-        for line in lines[1:]:
-            cols = line.split("\t")
-            oldbr = cols[0]
-            flds = cols[0].split(".")
-            if len(flds) == 3:
-                if flds[0] == "b" and flds[1] == self.objid:
-                    logger.error(
-                        "Error: An active control net bridge (%s) found. " \
-                        "An older session might still be running. " \
-                        "Stop all sessions and, if needed, delete %s to continue." % \
-                        (oldbr, oldbr)
-                    )
-                    return True
-                    """
-                    # Do this if we want to delete the old bridge
-                    logger.warn("Warning: Old %s bridge found: %s" % (self.objid, oldbr))
-                    try:
-                        check_call([BRCTL_BIN, "delbr", oldbr])
-                    except subprocess.CalledProcessError as e:
-                        logger.exception("Error deleting old bridge %s", oldbr, e)
-                    logger.info("Deleted %s", oldbr)
-                    """
+        else:
+            lines = output.split("\n")
+            for line in lines[1:]:
+                cols = line.split("\t")
+                oldbr = cols[0]
+                flds = cols[0].split(".")
+                if len(flds) == 3:
+                    if flds[0] == "b" and flds[1] == self.objid:
+                        logger.error(
+                            "Error: An active control net bridge (%s) found. "
+                            "An older session might still be running. "
+                            "Stop all sessions and, if needed, delete %s to continue." %
+                            (oldbr, oldbr)
+                        )
+                        return True
         return False
 
     def shutdown(self):
@@ -139,14 +136,14 @@ class CtrlNet(LxBrNet):
         """
         if self.serverintf is not None:
             try:
-                subprocess.check_call([constants.BRCTL_BIN, "delif", self.brname, self.serverintf])
+                utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, self.serverintf])
             except subprocess.CalledProcessError:
-                logger.exception("Error deleting server interface %s to controlnet bridge %s",
+                logger.exception("error deleting server interface %s to controlnet bridge %s",
                                  self.serverintf, self.brname)
 
         if self.updown_script is not None:
             logger.info("interface %s updown script (%s shutdown) called" % (self.brname, self.updown_script))
-            subprocess.check_call([self.updown_script, self.brname, "shutdown"])
+            utils.check_cmd([self.updown_script, self.brname, "shutdown"])
         LxBrNet.shutdown(self)
 
     def all_link_data(self, flags):
@@ -324,7 +321,7 @@ class HubNode(LxBrNet):
         """
         LxBrNet.__init__(self, session, objid, name, start)
         if start:
-            subprocess.check_call([constants.BRCTL_BIN, "setageing", self.brname, "0"])
+            utils.check_cmd([constants.BRCTL_BIN, "setageing", self.brname, "0"])
 
 
 class WlanNode(LxBrNet):
@@ -457,6 +454,8 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         # the following are PyCoreNetIf attributes
         self.transport_type = "raw"
         self.localname = name
+        self.old_up = False
+        self.old_addrs = []
         if start:
             self.startup()
 
@@ -470,7 +469,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         self.savestate()
 
         try:
-            subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "up"])
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
             self.up = True
         except subprocess.CalledProcessError:
             logger.exception("failed to run command: %s link set %s up", constants.IP_BIN, self.localname)
@@ -484,9 +483,14 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         """
         if not self.up:
             return
-        subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "down"])
-        subprocess.check_call([constants.IP_BIN, "addr", "flush", "dev", self.localname])
-        utils.mutecall([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
+
+        try:
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "down"])
+            utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
+            utils.mutecall([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
+        except subprocess.CalledProcessError as e:
+            logger.exception("error shutting down: %s", e.output)
+
         self.up = False
         self.restorestate()
 
@@ -604,7 +608,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         :return: nothing
         """
         if self.up:
-            subprocess.check_call([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            utils.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
         PyCoreNetIf.addaddr(self, addr)
 
     def deladdr(self, addr):
@@ -615,7 +619,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         :return: nothing
         """
         if self.up:
-            subprocess.check_call([constants.IP_BIN, "addr", "del", str(addr), "dev", self.name])
+            utils.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.name])
         PyCoreNetIf.deladdr(self, addr)
 
     def savestate(self):
@@ -627,30 +631,26 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         """
         self.old_up = False
         self.old_addrs = []
-        cmd = [constants.IP_BIN, "addr", "show", "dev", self.localname]
+        args = [constants.IP_BIN, "addr", "show", "dev", self.localname]
         try:
-            tmp = subprocess.Popen(cmd, stdout=subprocess.PIPE)
-        except OSError:
-            logger.exception("Failed to run %s command: %s", constants.IP_BIN, cmd)
-        if tmp.wait():
-            logger.warn("Command failed: %s", cmd)
-            return
-        lines = tmp.stdout.read()
-        tmp.stdout.close()
-        for l in lines.split("\n"):
-            items = l.split()
-            if len(items) < 2:
-                continue
-            if items[1] == "%s:" % self.localname:
-                flags = items[2][1:-1].split(",")
-                if "UP" in flags:
-                    self.old_up = True
-            elif items[0] == "inet":
-                self.old_addrs.append((items[1], items[3]))
-            elif items[0] == "inet6":
-                if items[1][:4] == "fe80":
+            _, output = utils.check_cmd(args)
+            for line in output.split("\n"):
+                items = line.split()
+                if len(items) < 2:
                     continue
-                self.old_addrs.append((items[1], None))
+
+                if items[1] == "%s:" % self.localname:
+                    flags = items[2][1:-1].split(",")
+                    if "UP" in flags:
+                        self.old_up = True
+                elif items[0] == "inet":
+                    self.old_addrs.append((items[1], items[3]))
+                elif items[0] == "inet6":
+                    if items[1][:4] == "fe80":
+                        continue
+                    self.old_addrs.append((items[1], None))
+        except subprocess.CalledProcessError:
+            logger.exception("error during save state")
 
     def restorestate(self):
         """
@@ -660,11 +660,12 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         """
         for addr in self.old_addrs:
             if addr[1] is None:
-                subprocess.check_call([constants.IP_BIN, "addr", "add", addr[0], "dev", self.localname])
+                utils.check_cmd([constants.IP_BIN, "addr", "add", addr[0], "dev", self.localname])
             else:
-                subprocess.check_call([constants.IP_BIN, "addr", "add", addr[0], "brd", addr[1], "dev", self.localname])
+                utils.check_cmd([constants.IP_BIN, "addr", "add", addr[0], "brd", addr[1], "dev", self.localname])
+
         if self.old_up:
-            subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "up"])
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
 
     def setposition(self, x=None, y=None, z=None):
         """

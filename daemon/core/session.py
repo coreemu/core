@@ -429,11 +429,11 @@ class Session(object):
 
         # execute hook file
         try:
-            subprocess.check_call(["/bin/sh", file_name], stdin=open(os.devnull, 'r'),
-                                  stdout=stdout, stderr=stderr, close_fds=True,
-                                  cwd=self.session_dir, env=self.get_environment())
-        except subprocess.CalledProcessError:
-            logger.exception("error running hook '%s'", file_name)
+            args = ["/bin/sh", file_name]
+            subprocess.check_call(args, stdout=stdout, stderr=stderr,
+                                  close_fds=True, cwd=self.session_dir, env=self.get_environment())
+        except (OSError, subprocess.CalledProcessError):
+            logger.exception("error running hook: %s", file_name)
 
     def run_state_hooks(self, state):
         """

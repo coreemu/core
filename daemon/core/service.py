@@ -304,12 +304,12 @@ class CoreServices(ConfigurableManager):
         if use_startup_service and not self.is_startup_service(service):
             return
 
-        for cmd in service.getstartup(node, services):
+        for args in service.getstartup(node, services):
             try:
                 # TODO: this wait=False can be problematic!
-                node.cmd(cmd, wait=False)
+                node.cmd(args, wait=False)
             except:
-                logger.exception("error starting command %s", cmd)
+                logger.exception("error starting command %s", args)
 
     def bootnodecustomservice(self, node, service, services, use_startup_service):
         """
@@ -350,12 +350,12 @@ class CoreServices(ConfigurableManager):
         if use_startup_service and not self.is_startup_service(service):
             return
 
-        for cmd in service._startup:
+        for args in service._startup:
             try:
                 # TODO: this wait=False can be problematic!
-                node.cmd(cmd, wait=False)
+                node.cmd(args, wait=False)
             except:
-                logger.exception("error starting command %s", cmd)
+                logger.exception("error starting command %s", args)
 
     def copyservicefile(self, node, filename, cfg):
         """
@@ -409,10 +409,10 @@ class CoreServices(ConfigurableManager):
         status = 0
         # has validate commands
         if len(validate_cmds) > 0:
-            for cmd in validate_cmds:
-                logger.info("validating service %s using: %s", service._name, cmd)
+            for args in validate_cmds:
+                logger.info("validating service %s using: %s", service._name, args)
                 try:
-                    status, _ = node.check_cmd(cmd)
+                    status, _ = node.check_cmd(args)
                 except subprocess.CalledProcessError:
                     logger.exception("validate command failed")
                     status = -1
@@ -444,12 +444,12 @@ class CoreServices(ConfigurableManager):
             # doesn't have a shutdown command
             status += "0"
         else:
-            for cmd in service._shutdown:
+            for args in service._shutdown:
                 try:
-                    status, _ = node.check_cmd(cmd)
+                    status, _ = node.check_cmd(args)
                     status = str(status)
                 except subprocess.CalledProcessError:
-                    logger.exception("error running stop command %s", cmd)
+                    logger.exception("error running stop command %s", args)
                     # TODO: determine if its ok to just return the bad exit status
                     status = "-1"
         return status
@@ -757,12 +757,12 @@ class CoreServices(ConfigurableManager):
                 else:
                     cmds = s.getstartup(node, services)
                 if len(cmds) > 0:
-                    for cmd in cmds:
+                    for args in cmds:
                         try:
-                            node.check_cmd(cmd)
+                            node.check_cmd(args)
                         except subprocess.CalledProcessError:
-                            logger.exception("error starting command %s", cmd)
-                            fail += "Start %s(%s)," % (s._name, cmd)
+                            logger.exception("error starting command %s", args)
+                            fail += "Start %s(%s)," % (s._name, args)
             if event_type == EventTypes.PAUSE.value:
                 status = self.validatenodeservice(node, s, services)
                 if status != 0:

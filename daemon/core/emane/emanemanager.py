@@ -788,7 +788,7 @@ class EmaneManager(ConfigurableManager):
         the transportdaemon*.xml.
         """
         try:
-            subprocess.check_call(["emanegentransportxml", "platform.xml"], cwd=self.session.session_dir)
+            utils.check_cmd(["emanegentransportxml", "platform.xml"], cwd=self.session.session_dir)
         except subprocess.CalledProcessError:
             logger.exception("error running emanegentransportxml")
 
@@ -845,23 +845,23 @@ class EmaneManager(ConfigurableManager):
         if realtime:
             emanecmd += "-r",
         try:
-            cmd = emanecmd + [os.path.join(path, "platform.xml")]
-            logger.info("Emane.startdaemons() running %s" % str(cmd))
-            subprocess.check_call(cmd, cwd=path)
+            args = emanecmd + [os.path.join(path, "platform.xml")]
+            logger.info("Emane.startdaemons() running %s" % str(args))
+            utils.check_cmd(args, cwd=path)
         except subprocess.CalledProcessError:
             logger.exception("error starting emane")
 
         # start one transport daemon per transportdaemon*.xml file
-        transcmd = ["emanetransportd", "-d", "--logl", loglevel, "-f", os.path.join(path, "emanetransportd.log")]
+        args = ["emanetransportd", "-d", "--logl", loglevel, "-f", os.path.join(path, "emanetransportd.log")]
         if realtime:
-            transcmd += "-r",
+            args += "-r",
         files = os.listdir(path)
         for file in files:
             if file[-3:] == "xml" and file[:15] == "transportdaemon":
-                cmd = transcmd + [os.path.join(path, file)]
+                args = args + [os.path.join(path, file)]
                 try:
-                    logger.info("Emane.startdaemons() running %s" % str(cmd))
-                    subprocess.check_call(cmd, cwd=path)
+                    logger.info("Emane.startdaemons() running %s" % str(args))
+                    utils.check_cmd(args, cwd=path)
                 except subprocess.CalledProcessError:
                     logger.exception("error starting emanetransportd")
 
@@ -910,24 +910,24 @@ class EmaneManager(ConfigurableManager):
                 self.session.add_remove_control_interface(node, eventservicenetidx, remove=False, conf_required=False)
 
             # multicast route is needed for OTA data
-            cmd = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
+            args = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
             try:
-                node.check_cmd(cmd)
+                node.check_cmd(args)
             except subprocess.CalledProcessError:
                 logger.exception("error adding route for OTA data")
 
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
-                cmd = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
+                args = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
                 try:
-                    node.check_cmd(cmd)
+                    node.check_cmd(args)
                 except subprocess.CalledProcessError:
                     logger.exception("error adding route for event data")
 
             try:
-                cmd = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]
-                logger.info("Emane.startdaemons2() running %s" % str(cmd))
-                status, output = node.check_cmd(cmd)
+                args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]
+                logger.info("Emane.startdaemons2() running %s" % str(args))
+                status, output = node.check_cmd(args)
                 logger.info("Emane.startdaemons2() return code %d" % status)
                 logger.info("Emane.startdaemons2() output: %s" % output)
             except subprocess.CalledProcessError:
@@ -939,9 +939,9 @@ class EmaneManager(ConfigurableManager):
         path = self.session.session_dir
         try:
             emanecmd += ["-f", os.path.join(path, "emane.log")]
-            cmd = emanecmd + [os.path.join(path, "platform.xml")]
-            logger.info("Emane.startdaemons2() running %s" % cmd)
-            utils.check_cmd(cmd, cwd=path)
+            args = emanecmd + [os.path.join(path, "platform.xml")]
+            logger.info("Emane.startdaemons2() running %s" % args)
+            utils.check_cmd(args, cwd=path)
         except subprocess.CalledProcessError:
             logger.exception("error starting emane")
 
@@ -951,7 +951,7 @@ class EmaneManager(ConfigurableManager):
         """
         # TODO: we may want to improve this if we had the PIDs from the
         #       specific EMANE daemons that we"ve started
-        cmd = ["killall", "-q", "emane"]
+        args = ["killall", "-q", "emane"]
         stop_emane_on_host = False
         if emane.VERSION > emane.EMANE091:
             for node in self.getnodes():
@@ -960,13 +960,17 @@ class EmaneManager(ConfigurableManager):
                     stop_emane_on_host = True
                     continue
                 if node.up:
-                    node.cmd(cmd, wait=False)
+                    node.cmd(args, wait=False)
                     # TODO: RJ45 node
         else:
             stop_emane_on_host = True
+
         if stop_emane_on_host:
-            subprocess.call(cmd)
-            subprocess.call(["killall", "-q", "emanetransportd"])
+            try:
+                utils.check_cmd(args)
+                utils.check_cmd(["killall", "-q", "emanetransportd"])
+            except subprocess.CalledProcessError:
+                logger.exception("error shutting down emane daemons")
 
     def installnetifs(self, do_netns=True):
         """
@@ -1160,13 +1164,13 @@ class EmaneManager(ConfigurableManager):
         is running, False otherwise.
         """
         status = -1
-        cmd = ["pkill", "-0", "-x", "emane"]
+        args = ["pkill", "-0", "-x", "emane"]
 
         try:
             if emane.VERSION < emane.EMANE092:
-                status = subprocess.check_call(cmd)
+                status = utils.check_cmd(args)
             else:
-                status, _ = node.check_cmd(cmd)
+                status, _ = node.check_cmd(args)
         except subprocess.CalledProcessError:
             logger.exception("error checking if emane is running")
 

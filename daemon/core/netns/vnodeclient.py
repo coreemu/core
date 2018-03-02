@@ -61,41 +61,37 @@ class VnodeClient(object):
         """
         self.cmdchnl.close()
 
-    def cmd(self, cmd, wait=True):
+    def cmd(self, args, wait=True):
         """
         Execute a command on a node and return the status (return code).
 
-        :param list[str]/str cmd: command arguments
+        :param list[str]|str args: command arguments
         :param bool wait: wait for command to end or not
         :return: command status
         :rtype: int
         """
         self._verify_connection()
-        cmd = utils.split_cmd(cmd)
+        args = utils.split_args(args)
 
         # run command, return process when not waiting
-        p = self.cmdchnl.qcmd(cmd)
+        p = self.cmdchnl.qcmd(args)
         if not wait:
             return 0
 
         # wait for and return exit status
-        status = p.wait()
-        if status:
-            logger.warn("cmd exited with status %s: %s", status, cmd)
+        return p.wait()
 
-        return status
-
-    def cmd_output(self, cmd):
+    def cmd_output(self, args):
         """
         Execute a command on a node and return a tuple containing the
         exit status and result string. stderr output
         is folded into the stdout result string.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: command status and combined stdout and stderr output
         :rtype: tuple[int, str]
         """
-        p, stdin, stdout, stderr = self.popen(cmd)
+        p, stdin, stdout, stderr = self.popen(args)
         stdin.close()
         output = stdout.read() + stderr.read()
         stdout.close()
@@ -103,44 +99,44 @@ class VnodeClient(object):
         status = p.wait()
         return status, output.strip()
 
-    def check_cmd(self, cmd):
+    def check_cmd(self, args):
         """
         Run command and return exit status and combined stdout and stderr.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         :raises subprocess.CalledProcessError: when there is a non-zero exit status
         """
-        status, output = self.cmd_output(cmd)
+        status, output = self.cmd_output(args)
         if status:
-            raise subprocess.CalledProcessError(status, cmd, output)
+            raise subprocess.CalledProcessError(status, args, output)
         return status, output.strip()
 
-    def popen(self, cmd):
+    def popen(self, args):
         """
         Execute a popen command against the node.
 
-        :param list[str]/str cmd: command arguments
+        :param list[str]|str args: command arguments
         :return: popen object, stdin, stdout, and stderr
         :rtype: tuple
         """
         self._verify_connection()
-        cmd = utils.split_cmd(cmd)
-        return self.cmdchnl.popen(cmd)
+        args = utils.split_args(args)
+        return self.cmdchnl.popen(args)
 
-    def icmd(self, cmd):
+    def icmd(self, args):
         """
         Execute an icmd against a node.
 
-        :param list[str]/str cmd: command arguments
+        :param list[str]|str args: command arguments
         :return: command result
         :rtype: int
         """
-        cmd = utils.split_cmd(cmd)
-        return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname, "--", *cmd)
+        args = utils.split_args(args)
+        return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname, "--", *args)
 
-    def redircmd(self, infd, outfd, errfd, cmd, wait=True):
+    def redircmd(self, infd, outfd, errfd, args, wait=True):
         """
         Execute a command on a node with standard input, output, and
         error redirected according to the given file descriptors.
@@ -148,7 +144,7 @@ class VnodeClient(object):
         :param infd: stdin file descriptor
         :param outfd: stdout file descriptor
         :param errfd: stderr file descriptor
-        :param list[str]/str cmd: command arguments
+        :param list[str]|str args: command arguments
         :param bool wait: wait flag
         :return: command status
         :rtype: int
@@ -156,15 +152,15 @@ class VnodeClient(object):
         self._verify_connection()
 
         # run command, return process when not waiting
-        cmd = utils.split_cmd(cmd)
-        p = self.cmdchnl.redircmd(infd, outfd, errfd, cmd)
+        args = utils.split_args(args)
+        p = self.cmdchnl.redircmd(infd, outfd, errfd, args)
         if not wait:
             return p
 
         # wait for and return exit status
         status = p.wait()
         if status:
-            logger.warn("cmd exited with status %s: %s", status, cmd)
+            logger.warn("cmd exited with status %s: %s", status, args)
         return status
 
     def term(self, sh="/bin/sh"):
@@ -175,12 +171,12 @@ class VnodeClient(object):
         :return: terminal command result
         :rtype: int
         """
-        cmd = ("xterm", "-ut", "-title", self.name, "-e", VCMD, "-c", self.ctrlchnlname, "--", sh)
+        args = ("xterm", "-ut", "-title", self.name, "-e", VCMD, "-c", self.ctrlchnlname, "--", sh)
         if "SUDO_USER" in os.environ:
-            cmd = ("su", "-s", "/bin/sh", "-c",
-                   "exec " + " ".join(map(lambda x: "'%s'" % x, cmd)),
+            args = ("su", "-s", "/bin/sh", "-c",
+                   "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
                    os.environ["SUDO_USER"])
-        return os.spawnvp(os.P_NOWAIT, cmd[0], cmd)
+        return os.spawnvp(os.P_NOWAIT, args[0], args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -226,8 +222,8 @@ class VnodeClient(object):
             return self._addr[ifname]
 
         interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
-        cmd = [constants.IP_BIN, "addr", "show", "dev", ifname]
-        p, stdin, stdout, stderr = self.popen(cmd)
+        args = [constants.IP_BIN, "addr", "show", "dev", ifname]
+        p, stdin, stdout, stderr = self.popen(args)
         stdin.close()
 
         for line in stdout:
@@ -249,7 +245,7 @@ class VnodeClient(object):
         stderr.close()
         status = p.wait()
         if status:
-            logger.warn("nonzero exist status (%s) for cmd: %s", status, cmd)
+            logger.warn("nonzero exist status (%s) for cmd: %s", status, args)
         if err:
             logger.warn("error output: %s", err)
         self._addr[ifname] = interface
@@ -264,8 +260,8 @@ class VnodeClient(object):
         :rtype: dict
         """
         stats = {}
-        cmd = ["cat", "/proc/net/dev"]
-        p, stdin, stdout, stderr = self.popen(cmd)
+        args = ["cat", "/proc/net/dev"]
+        p, stdin, stdout, stderr = self.popen(args)
         stdin.close()
         # ignore first line
         stdout.readline()
@@ -291,7 +287,7 @@ class VnodeClient(object):
         stderr.close()
         status = p.wait()
         if status:
-            logger.warn("nonzero exist status (%s) for cmd: %s", status, cmd)
+            logger.warn("nonzero exist status (%s) for cmd: %s", status, args)
         if err:
             logger.warn("error output: %s", err)
         if ifname is not None:

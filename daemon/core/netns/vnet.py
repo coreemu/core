@@ -165,30 +165,30 @@ class EbtablesQueue(object):
         :return: nothing
         """
         # save kernel ebtables snapshot to a file
-        cmd = self.ebatomiccmd(["--atomic-save", ])
+        args = self.ebatomiccmd(["--atomic-save", ])
         try:
-            subprocess.check_call(cmd)
+            utils.check_cmd(args)
         except subprocess.CalledProcessError:
-            logger.exception("atomic-save (%s)", cmd)
+            logger.exception("atomic-save (%s)", args)
             # no atomic file, exit
             return
         # modify the table file using queued ebtables commands
         for c in self.cmds:
-            cmd = self.ebatomiccmd(c)
+            args = self.ebatomiccmd(c)
             try:
-                subprocess.check_call(cmd)
+                utils.check_cmd(args)
             except subprocess.CalledProcessError:
-                logger.exception("cmd=%s", cmd)
+                logger.exception("cmd=%s", args)
 
         self.cmds = []
         # commit the table file to the kernel
-        cmd = self.ebatomiccmd(["--atomic-commit", ])
+        args = self.ebatomiccmd(["--atomic-commit", ])
 
         try:
-            subprocess.check_call(cmd)
+            utils.check_cmd(args)
             os.unlink(self.atomic_file)
         except OSError:
-            logger.exception("atomic-commit (%s)", cmd)
+            logger.exception("atomic-commit (%s)", args)
 
     def ebchange(self, wlan):
         """
@@ -241,8 +241,8 @@ def ebtablescmds(call, cmds):
     :return: nothing
     """
     with ebtables_lock:
-        for cmd in cmds:
-            call(cmd)
+        for args in cmds:
+            call(args)
 
 
 class LxBrNet(PyCoreNet):
@@ -281,17 +281,17 @@ class LxBrNet(PyCoreNet):
         :return: nothing
         """
         try:
-            subprocess.check_call([constants.BRCTL_BIN, "addbr", self.brname])
+            utils.check_cmd([constants.BRCTL_BIN, "addbr", self.brname])
         except subprocess.CalledProcessError:
             logger.exception("Error adding bridge")
 
         try:
             # turn off spanning tree protocol and forwarding delay
-            subprocess.check_call([constants.BRCTL_BIN, "stp", self.brname, "off"])
-            subprocess.check_call([constants.BRCTL_BIN, "setfd", self.brname, "0"])
-            subprocess.check_call([constants.IP_BIN, "link", "set", self.brname, "up"])
+            utils.check_cmd([constants.BRCTL_BIN, "stp", self.brname, "off"])
+            utils.check_cmd([constants.BRCTL_BIN, "setfd", self.brname, "0"])
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "up"])
             # create a new ebtables chain for this bridge
-            ebtablescmds(subprocess.check_call, [
+            ebtablescmds(utils.check_cmd, [
                 [constants.EBTABLES_BIN, "-N", self.brname, "-P", self.policy],
                 [constants.EBTABLES_BIN, "-A", "FORWARD", "--logical-in", self.brname, "-j", self.brname]
             ])
@@ -336,8 +336,8 @@ class LxBrNet(PyCoreNet):
         """
         if self.up:
             try:
-                subprocess.check_call([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
-                subprocess.check_call([constants.IP_BIN, "link", "set", netif.localname, "up"])
+                utils.check_cmd([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
+                utils.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "up"])
             except subprocess.CalledProcessError:
                 logger.exception("Error joining interface %s to bridge %s", netif.localname, self.brname)
                 return
@@ -352,7 +352,7 @@ class LxBrNet(PyCoreNet):
         """
         if self.up:
             try:
-                subprocess.check_call([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
+                utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
             except subprocess.CalledProcessError:
                 logger.exception("Error removing interface %s from bridge %s", netif.localname, self.brname)
                 return
@@ -452,14 +452,14 @@ class LxBrNet(PyCoreNet):
             if bw > 0:
                 if self.up:
                     logger.info("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
-                    subprocess.check_call(tc + parent + ["handle", "1:"] + tbf)
+                    utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
                 changed = True
             elif netif.getparam("has_tbf") and bw <= 0:
                 tcd = [] + tc
                 tcd[2] = "delete"
                 if self.up:
-                    subprocess.check_call(tcd + parent)
+                    utils.check_cmd(tcd + parent)
                 netif.setparam("has_tbf", False)
                 # removing the parent removes the child
                 netif.setparam("has_netem", False)
@@ -497,12 +497,12 @@ class LxBrNet(PyCoreNet):
             tc[2] = "delete"
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
-                subprocess.check_call(tc + parent + ["handle", "10:"])
+                utils.check_cmd(tc + parent + ["handle", "10:"])
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
-                subprocess.check_call(tc + parent + ["handle", "10:"] + netem)
+                utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 
     def linknet(self, net):
@@ -535,8 +535,8 @@ class LxBrNet(PyCoreNet):
         if net.up:
             # this is similar to net.attach() but uses netif.name instead
             # of localname
-            subprocess.check_call([constants.BRCTL_BIN, "addif", net.brname, netif.name])
-            subprocess.check_call([constants.IP_BIN, "link", "set", netif.name, "up"])
+            utils.check_cmd([constants.BRCTL_BIN, "addif", net.brname, netif.name])
+            utils.check_cmd([constants.IP_BIN, "link", "set", netif.name, "up"])
         i = net.newifindex()
         net._netif[i] = netif
         with net._linked_lock:
@@ -570,7 +570,7 @@ class LxBrNet(PyCoreNet):
             return
         for addr in addrlist:
             try:
-                subprocess.check_call([constants.IP_BIN, "addr", "add", str(addr), "dev", self.brname])
+                utils.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.brname])
             except subprocess.CalledProcessError:
                 logger.exception("Error adding IP address")
 

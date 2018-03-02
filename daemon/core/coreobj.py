@@ -412,33 +412,33 @@ class PyCoreNode(PyCoreObj):
 
         return common
 
-    def check_cmd(self, cmd):
+    def check_cmd(self, args):
         """
         Runs shell command on node.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: exist status and combined stdout and stderr
         :rtype: tuple[int, str]
         :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         raise NotImplementedError
 
-    def cmd(self, cmd, wait=True):
+    def cmd(self, args, wait=True):
         """
         Runs shell command on node, with option to not wait for a result.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :param bool wait: wait for command to exit, defaults to True
         :return: exit status for command
         :rtype: int
         """
         raise NotImplementedError
 
-    def cmd_output(self, cmd):
+    def cmd_output(self, args):
         """
         Runs shell command on node and get exit status and output.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         """

@@ -55,34 +55,33 @@ class PhysicalNode(PyCoreNode):
 
     def termcmdstring(self, sh="/bin/sh"):
         """
-        The broker will add the appropriate SSH command to open a terminal
-        on this physical node.
+        Create a terminal command string.
+
+        :param str sh: shell to execute command in
+        :return: str
         """
         return sh
 
     def cmd(self, args, wait=True):
         """
-        run a command on the physical node
+        Runs shell command on node, with option to not wait for a result.
+
+        :param list[str]|str args: command to run
+        :param bool wait: wait for command to exit, defaults to True
+        :return: exit status for command
+        :rtype: int
         """
         os.chdir(self.nodedir)
-        status = -1
-
-        try:
-            if wait:
-                # os.spawnlp(os.P_WAIT, args)
-                status = subprocess.call(args)
-            else:
-                # os.spawnlp(os.P_NOWAIT, args)
-                subprocess.Popen(args)
-                status = 0
-        except subprocess.CalledProcessError:
-            logger.exception("cmd exited with status: %s", args)
-
+        status = utils.cmd(args, wait)
         return status
 
     def cmd_output(self, args):
         """
-        run a command on the physical node and get the result
+        Runs shell command on node and get exit status and output.
+
+        :param list[str]|str args: command to run
+        :return: exit status and combined stdout and stderr
+        :rtype: tuple[int, str]
         """
         os.chdir(self.nodedir)
         # in Python 2.7 we can use subprocess.check_output() here
@@ -92,18 +91,18 @@ class PhysicalNode(PyCoreNode):
         status = p.wait()
         return status, stdout.strip()
 
-    def check_cmd(self, cmd):
+    def check_cmd(self, args):
         """
         Runs shell command on node.
 
-        :param list[str]/str cmd: command to run
+        :param list[str]|str args: command to run
         :return: exist status and combined stdout and stderr
         :rtype: tuple[int, str]
         :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
-        status, output = self.cmd_output(cmd)
+        status, output = self.cmd_output(args)
         if status:
-            raise subprocess.CalledProcessError(status, cmd, output)
+            raise subprocess.CalledProcessError(status, args, output)
         return status, output.strip()
 
     def shcmd(self, cmdstr, sh="/bin/sh"):

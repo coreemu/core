@@ -46,9 +46,9 @@ class VEth(PyCoreNetIf):
 
         :return: nothing
         """
-        subprocess.check_call([constants.IP_BIN, "link", "add", "name", self.localname,
-                               "type", "veth", "peer", "name", self.name])
-        subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "up"])
+        utils.check_cmd([constants.IP_BIN, "link", "add", "name", self.localname,
+                         "type", "veth", "peer", "name", self.name])
+        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
         self.up = True
 
     def shutdown(self):
@@ -164,8 +164,8 @@ class TunTap(PyCoreNetIf):
         """
 
         def localdevexists():
-            cmd = (constants.IP_BIN, "link", "show", self.localname)
-            return utils.mutecall(cmd)
+            args = (constants.IP_BIN, "link", "show", self.localname)
+            return utils.mutecall(args)
 
         self.waitfor(localdevexists)
 
@@ -177,8 +177,8 @@ class TunTap(PyCoreNetIf):
         """
 
         def nodedevexists():
-            cmd = [constants.IP_BIN, "link", "show", self.name]
-            return self.node.cmd(cmd)
+            args = [constants.IP_BIN, "link", "show", self.name]
+            return self.node.cmd(args)
 
         count = 0
         while True:
@@ -268,17 +268,17 @@ class GreTap(PyCoreNetIf):
 
         if remoteip is None:
             raise ValueError, "missing remote IP required for GRE TAP device"
-        cmd = ("ip", "link", "add", self.localname, "type", "gretap",
+        args = ("ip", "link", "add", self.localname, "type", "gretap",
                "remote", str(remoteip))
         if localip:
-            cmd += ("local", str(localip))
+            args += ("local", str(localip))
         if ttl:
-            cmd += ("ttl", str(ttl))
+            args += ("ttl", str(ttl))
         if key:
-            cmd += ("key", str(key))
-        subprocess.check_call(cmd)
-        cmd = ("ip", "link", "set", self.localname, "up")
-        subprocess.check_call(cmd)
+            args += ("key", str(key))
+        utils.check_cmd(args)
+        args = ("ip", "link", "set", self.localname, "up")
+        utils.check_cmd(args)
         self.up = True
 
     def shutdown(self):
@@ -288,10 +288,10 @@ class GreTap(PyCoreNetIf):
         :return: nothing
         """
         if self.localname:
-            cmd = ("ip", "link", "set", self.localname, "down")
-            subprocess.check_call(cmd)
-            cmd = ("ip", "link", "del", self.localname)
-            subprocess.check_call(cmd)
+            args = ("ip", "link", "set", self.localname, "down")
+            utils.check_cmd(args)
+            args = ("ip", "link", "del", self.localname)
+            utils.check_cmd(args)
             self.localname = None
 
     def data(self, message_type):

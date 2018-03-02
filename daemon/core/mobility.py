@@ -21,6 +21,7 @@ from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import RegisterTlvs
+from core.misc import utils
 from core.misc.ipaddress import IpAddress
 
 
@@ -1238,10 +1239,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             return
         filename = self.findfile(filename)
         try:
-            subprocess.check_call(
-                ["/bin/sh", filename, typestr],
-                cwd=self.session.sessiondir,
-                env=self.session.get_environment()
-            )
+            args = ["/bin/sh", filename, typestr]
+            utils.check_cmd(args, cwd=self.session.sessiondir, env=self.session.get_environment())
         except subprocess.CalledProcessError:
             logger.exception("Error running script '%s' for WLAN state %s", filename, typestr)
