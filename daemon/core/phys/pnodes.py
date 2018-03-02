@@ -31,27 +31,22 @@ class PhysicalNode(PyCoreNode):
         self.session.services.validatenodeservices(self)
 
     def startup(self):
-        self.lock.acquire()
-        try:
+        with self.lock:
             self.makenodedir()
-            # self.privatedir("/var/run")
-            # self.privatedir("/var/log")
-        except OSError:
-            logger.exception("startup error")
-        finally:
-            self.lock.release()
 
     def shutdown(self):
         if not self.up:
             return
-        self.lock.acquire()
-        while self._mounts:
-            source, target = self._mounts.pop(-1)
-            self.umount(target)
-        for netif in self.netifs():
-            netif.shutdown()
-        self.rmnodedir()
-        self.lock.release()
+
+        with self.lock:
+            while self._mounts:
+                source, target = self._mounts.pop(-1)
+                self.umount(target)
+
+            for netif in self.netifs():
+                netif.shutdown()
+
+            self.rmnodedir()
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -84,10 +79,8 @@ class PhysicalNode(PyCoreNode):
         :rtype: tuple[int, str]
         """
         os.chdir(self.nodedir)
-        # in Python 2.7 we can use subprocess.check_output() here
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        # err will always be None
-        stdout, err = p.communicate()
+        stdout, _ = p.communicate()
         status = p.wait()
         return status, stdout.strip()
 
@@ -115,10 +108,7 @@ class PhysicalNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         ifname = self.ifname(ifindex)
         if self.up:
-            try:
-                self.check_cmd([constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
-            except subprocess.CalledProcessError:
-                logger.exception("error setting MAC address %s", addr)
+            self.check_cmd([constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
 
     def addaddr(self, ifindex, addr):
         """
@@ -168,16 +158,14 @@ class PhysicalNode(PyCoreNode):
         if self.up:
             self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])
 
-    def linkconfig(self, netif, bw=None, delay=None,
-                   loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
         Apply tc queing disciplines using LxBrNet.linkconfig()
         """
         # borrow the tc qdisc commands from LxBrNet.linkconfig()
         linux_bridge = LxBrNet(session=self.session, start=False)
         linux_bridge.up = True
-        linux_bridge.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate,
-                                jitter=jitter, netif2=netif2)
+        linux_bridge.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate, jitter=jitter, netif2=netif2)
         del linux_bridge
 
     def newifindex(self):
@@ -220,27 +208,17 @@ class PhysicalNode(PyCoreNode):
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError, "path not fully qualified: " + path
+            raise ValueError("path not fully qualified: %s" % path)
         hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
-        try:
-            os.mkdir(hostpath)
-        except OSError:
-            logger.exception("error creating directory: %s", hostpath)
-
+        os.mkdir(hostpath)
         self.mount(hostpath, path)
 
     def mount(self, source, target):
         source = os.path.abspath(source)
-        logger.info("mounting %s at %s" % (source, target))
-
-        try:
-            os.makedirs(target)
-            self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
-            self._mounts.append((source, target))
-        except OSError:
-            logger.exception("error making directories")
-        except subprocess.CalledProcessError as e:
-            logger.exception("mounting failed for %s at %s: %s", source, target, e.output)
+        logger.info("mounting %s at %s", source, target)
+        os.makedirs(target)
+        self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
+        self._mounts.append((source, target))
 
     def umount(self, target):
         logger.info("unmounting '%s'" % target)
@@ -253,18 +231,20 @@ class PhysicalNode(PyCoreNode):
         dirname, basename = os.path.split(filename)
         if not basename:
             raise ValueError("no basename for filename: " + filename)
+
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
+
         dirname = dirname.replace("/", ".")
         dirname = os.path.join(self.nodedir, dirname)
         if not os.path.isdir(dirname):
             os.makedirs(dirname, mode=0755)
+
         hostfilename = os.path.join(dirname, basename)
         return open(hostfilename, mode)
 
     def nodefile(self, filename, contents, mode=0644):
-        f = self.opennodefile(filename, "w")
-        f.write(contents)
-        os.chmod(f.name, mode)
-        f.close()
-        logger.info("created nodefile: '%s'; mode: 0%o" % (f.name, mode))
+        with self.opennodefile(filename, "w") as node_file:
+            node_file.write(contents)
+            os.chmod(node_file.name, mode)
+            logger.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
