@@ -927,10 +927,9 @@ class EmaneManager(ConfigurableManager):
             try:
                 args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n),
                                    os.path.join(path, "platform%d.xml" % n)]
-                logger.info("Emane.startdaemons2() running %s" % str(args))
-                status, output = node.check_cmd(args)
-                logger.info("Emane.startdaemons2() return code %d" % status)
-                logger.info("Emane.startdaemons2() output: %s" % output)
+                logger.info("Emane.startdaemons2() running %s", args)
+                output = node.check_cmd(args)
+                logger.info("Emane.startdaemons2() output: %s", output)
             except subprocess.CalledProcessError:
                 logger.exception("error starting emane")
 

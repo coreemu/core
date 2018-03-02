@@ -25,8 +25,8 @@ class CoreDeploymentWriter(object):
     def get_ipv4_addresses(hostname):
         if hostname == 'localhost':
             addr_list = []
-            args = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
-            _, output = utils.check_cmd(args)
+            args = [constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show']
+            output = utils.check_cmd(args)
             for line in output.split(os.linesep):
                 split = line.split()
                 if not split:
@@ -43,12 +43,12 @@ class CoreDeploymentWriter(object):
     def get_interface_names(hostname):
         """
         Uses same methodology of get_ipv4_addresses() to get
-       parallel list of interface names to go with ...
-       """
+        parallel list of interface names to go with ...
+        """
         if hostname == 'localhost':
             iface_list = []
-            args = (constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show')
-            _, output = utils.check_cmd(args)
+            args = [constants.IP_BIN, '-o', '-f', 'inet', 'addr', 'show']
+            output = utils.check_cmd(args)
             for line in output.split(os.linesep):
                 split = line.split()
                 if not split:

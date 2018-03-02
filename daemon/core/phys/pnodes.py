@@ -96,14 +96,14 @@ class PhysicalNode(PyCoreNode):
         Runs shell command on node.
 
         :param list[str]|str args: command to run
-        :return: exist status and combined stdout and stderr
-        :rtype: tuple[int, str]
+        :return: combined stdout and stderr
+        :rtype: str
         :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         status, output = self.cmd_output(args)
         if status:
             raise subprocess.CalledProcessError(status, args, output)
-        return status, output.strip()
+        return output.strip()
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.cmd([sh, "-c", cmdstr])

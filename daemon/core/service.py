@@ -408,11 +408,11 @@ class CoreServices(ConfigurableManager):
 
         status = 0
         # has validate commands
-        if len(validate_cmds) > 0:
+        if validate_cmds:
             for args in validate_cmds:
                 logger.info("validating service %s using: %s", service._name, args)
                 try:
-                    status, _ = node.check_cmd(args)
+                    node.check_cmd(args)
                 except subprocess.CalledProcessError:
                     logger.exception("validate command failed")
                     status = -1
@@ -439,15 +439,11 @@ class CoreServices(ConfigurableManager):
         :return: status for stopping the services
         :rtype: str
         """
-        status = ""
-        if len(service._shutdown) == 0:
-            # doesn't have a shutdown command
-            status += "0"
-        else:
+        status = "0"
+        if service._shutdown:
             for args in service._shutdown:
                 try:
-                    status, _ = node.check_cmd(args)
-                    status = str(status)
+                    node.check_cmd(args)
                 except subprocess.CalledProcessError:
                     logger.exception("error running stop command %s", args)
                     # TODO: determine if its ok to just return the bad exit status

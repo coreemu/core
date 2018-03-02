@@ -389,7 +389,7 @@ class OvsCtrlNet(OvsNet):
         Check if there are old control net bridges and delete them
         """
 
-        _, output = utils.check_cmd([constants.OVS_BIN, "list-br"])
+        output = utils.check_cmd([constants.OVS_BIN, "list-br"])
         output = output.strip()
         if output:
             for line in output.split("\n"):

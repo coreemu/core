@@ -104,14 +104,14 @@ class VnodeClient(object):
         Run command and return exit status and combined stdout and stderr.
 
         :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
+        :return: combined stdout and stderr
+        :rtype: str
         :raises subprocess.CalledProcessError: when there is a non-zero exit status
         """
         status, output = self.cmd_output(args)
         if status != 0:
             raise subprocess.CalledProcessError(status, args, output)
-        return status, output.strip()
+        return output.strip()
 
     def popen(self, args):
         """

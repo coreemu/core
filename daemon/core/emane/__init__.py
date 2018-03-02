@@ -26,20 +26,19 @@ def emane_version():
     VERSION = EMANEUNK
 
     try:
-        status, output = utils.check_cmd(args)
-        if status == 0:
-            if output.startswith("0.7.4"):
-                VERSION = EMANE074
-            elif output.startswith("0.8.1"):
-                VERSION = EMANE081
-            elif output.startswith("0.9.1"):
-                VERSION = EMANE091
-            elif output.startswith("0.9.2"):
-                VERSION = EMANE092
-            elif output.startswith("0.9.3"):
-                VERSION = EMANE093
-            elif output.startswith("1.0.1"):
-                VERSION = EMANE101
+        output = utils.check_cmd(args)
+        if output.startswith("0.7.4"):
+            VERSION = EMANE074
+        elif output.startswith("0.8.1"):
+            VERSION = EMANE081
+        elif output.startswith("0.9.1"):
+            VERSION = EMANE091
+        elif output.startswith("0.9.2"):
+            VERSION = EMANE092
+        elif output.startswith("0.9.3"):
+            VERSION = EMANE093
+        elif output.startswith("1.0.1"):
+            VERSION = EMANE101
     except subprocess.CalledProcessError:
         logger.exception("error checking emane version")
         output = ""

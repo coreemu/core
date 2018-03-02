@@ -650,7 +650,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         self.old_up = False
         self.old_addrs = []
         args = [constants.IP_BIN, "addr", "show", "dev", self.localname]
-        _, output = utils.check_cmd(args)
+        output = utils.check_cmd(args)
         for line in output.split("\n"):
             items = line.split()
             if len(items) < 2:

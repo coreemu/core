@@ -188,7 +188,7 @@ class Core(object):
     def ping_output(self, from_name, to_name):
         from_node = self.nodes[from_name]
         to_ip = str(self.get_ip(to_name))
-        _, output = from_node.check_cmd(["ping", "-i", "0.05", "-c", "3", to_ip])
+        output = from_node.check_cmd(["ping", "-i", "0.05", "-c", "3", to_ip])
         return output
 
     def iperf(self, from_name, to_name):

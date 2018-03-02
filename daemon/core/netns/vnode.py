@@ -98,7 +98,7 @@ class SimpleLxcNode(PyCoreNode):
         env["NODE_NUMBER"] = str(self.objid)
         env["NODE_NAME"] = str(self.name)
 
-        _, output = utils.check_cmd(vnoded, env=env)
+        output = utils.check_cmd(vnoded, env=env)
         self.pid = int(output)
 
         # create vnode client
@@ -187,8 +187,8 @@ class SimpleLxcNode(PyCoreNode):
         Runs shell command on node.
 
         :param list[str]|str args: command to run
-        :return: exist status and combined stdout and stderr
-        :rtype: tuple[int, str]
+        :return: combined stdout and stderr
+        :rtype: str
         :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         return self.client.check_cmd(args)
@@ -284,7 +284,7 @@ class SimpleLxcNode(PyCoreNode):
             if self.up:
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
-                _, output = self.check_cmd(["ip", "link", "show", veth.name])
+                output = self.check_cmd(["ip", "link", "show", veth.name])
                 logger.info("interface command output: %s", output)
                 output = output.split("\n")
                 veth.flow_id = int(output[0].strip().split(":")[0]) + 1

@@ -417,8 +417,8 @@ class PyCoreNode(PyCoreObj):
         Runs shell command on node.
 
         :param list[str]|str args: command to run
-        :return: exist status and combined stdout and stderr
-        :rtype: tuple[int, str]
+        :return: combined stdout and stderr
+        :rtype: str
         :raises subprocess.CalledProcessError: when a non-zero exit status occurs
         """
         raise NotImplementedError

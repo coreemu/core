@@ -211,8 +211,8 @@ def check_cmd(args, **kwargs):
 
     :param list[str]|str args: command arguments
     :param dict kwargs: keyword arguments to pass to subprocess.Popen
-    :return: command status and stdout
-    :rtype: tuple[int, str]
+    :return: combined stdout and stderr
+    :rtype: str
     :raises subprocess.CalledProcessError: when there is a non-zero exit status or the file to execute is not found
     """
     kwargs["stdout"] = subprocess.PIPE
@@ -224,7 +224,7 @@ def check_cmd(args, **kwargs):
         status = p.wait()
         if status != 0:
             raise subprocess.CalledProcessError(status, args, stdout)
-        return status, stdout.strip()
+        return stdout.strip()
     except OSError:
         raise subprocess.CalledProcessError(-1, args)
 
