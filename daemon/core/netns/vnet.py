@@ -4,10 +4,10 @@ Linux Ethernet bridging and ebtables rules.
 """
 
 import os
-import subprocess
 import threading
 import time
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNet
@@ -272,7 +272,7 @@ class LxBrNet(PyCoreNet):
         Linux bridge starup logic.
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         utils.check_cmd([constants.BRCTL_BIN, "addbr", self.brname])
 
@@ -311,8 +311,8 @@ class LxBrNet(PyCoreNet):
                 [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.brname, "-j", self.brname],
                 [constants.EBTABLES_BIN, "-X", self.brname]
             ])
-        except subprocess.CalledProcessError as e:
-            logger.exception("error during shutdown: %s", e.output)
+        except CoreCommandError:
+            logger.exception("error during shutdown")
 
         # removes veth pairs used for bridge-to-bridge connections
         for netif in self.netifs():

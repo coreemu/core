@@ -12,6 +12,7 @@ import sys
 import fcntl
 import resource
 
+from core import CoreCommandError
 from core import logger
 
 DEVNULL = open(os.devnull, "wb")
@@ -181,7 +182,7 @@ def cmd(args, wait=True):
             return 0
         return p.wait()
     except OSError:
-        raise subprocess.CalledProcessError(-1, args)
+        raise CoreCommandError(-1, args)
 
 
 def cmd_output(args):
@@ -192,7 +193,7 @@ def cmd_output(args):
     :param list[str]|str args: command arguments
     :return: command status and stdout
     :rtype: tuple[int, str]
-    :raises subprocess.CalledProcessError: when the file to execute is not found
+    :raises CoreCommandError: when the file to execute is not found
     """
     args = split_args(args)
     try:
@@ -201,7 +202,7 @@ def cmd_output(args):
         status = p.wait()
         return status, stdout.strip()
     except OSError:
-        raise subprocess.CalledProcessError(-1, args)
+        raise CoreCommandError(-1, args)
 
 
 def check_cmd(args, **kwargs):
@@ -213,7 +214,7 @@ def check_cmd(args, **kwargs):
     :param dict kwargs: keyword arguments to pass to subprocess.Popen
     :return: combined stdout and stderr
     :rtype: str
-    :raises subprocess.CalledProcessError: when there is a non-zero exit status or the file to execute is not found
+    :raises CoreCommandError: when there is a non-zero exit status or the file to execute is not found
     """
     kwargs["stdout"] = subprocess.PIPE
     kwargs["stderr"] = subprocess.STDOUT
@@ -223,10 +224,10 @@ def check_cmd(args, **kwargs):
         stdout, _ = p.communicate()
         status = p.wait()
         if status != 0:
-            raise subprocess.CalledProcessError(status, args, stdout)
+            raise CoreCommandError(status, args, stdout)
         return stdout.strip()
     except OSError:
-        raise subprocess.CalledProcessError(-1, args)
+        raise CoreCommandError(-1, args)
 
 
 def hex_dump(s, bytes_per_word=2, words_per_line=8):

@@ -2,9 +2,9 @@
 virtual ethernet classes that implement the interfaces available under Linux.
 """
 
-import subprocess
 import time
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNetIf
@@ -31,7 +31,7 @@ class VEth(PyCoreNetIf):
         :param mtu: interface mtu
         :param net: network
         :param bool start: start flag
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
@@ -45,7 +45,7 @@ class VEth(PyCoreNetIf):
         Interface startup logic.
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         utils.check_cmd([constants.IP_BIN, "link", "add", "name", self.localname,
                          "type", "veth", "peer", "name", self.name])
@@ -64,14 +64,14 @@ class VEth(PyCoreNetIf):
         if self.node:
             try:
                 self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
-            except subprocess.CalledProcessError as e:
-                logger.exception("error shutting down interface: %s", e.output)
+            except CoreCommandError:
+                logger.exception("error shutting down interface")
 
         if self.localname:
             try:
                 utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
-            except subprocess.CalledProcessError as e:
-                logger.exception("error deleting link: %s", e.output)
+            except CoreCommandError:
+                logger.exception("error deleting link")
 
         self.up = False
 
@@ -125,8 +125,8 @@ class TunTap(PyCoreNetIf):
 
         try:
             self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
-        except subprocess.CalledProcessError as e:
-            logger.exception("error shutting down tunnel tap: %s", e.output)
+        except CoreCommandError:
+            logger.exception("error shutting down tunnel tap")
 
         self.up = False
 
@@ -212,7 +212,7 @@ class TunTap(PyCoreNetIf):
         end of the TAP.
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
@@ -254,7 +254,7 @@ class GreTap(PyCoreNetIf):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.session = session
@@ -297,8 +297,8 @@ class GreTap(PyCoreNetIf):
                 utils.check_cmd(args)
                 args = ["ip", "link", "del", self.localname]
                 utils.check_cmd(args)
-            except subprocess.CalledProcessError as e:
-                logger.exception("error during shutdown: %s", e.output)
+            except CoreCommandError:
+                logger.exception("error during shutdown")
 
             self.localname = None
 

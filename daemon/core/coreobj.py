@@ -419,7 +419,7 @@ class PyCoreNode(PyCoreObj):
         :param list[str]|str args: command to run
         :return: combined stdout and stderr
         :rtype: str
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         raise NotImplementedError
 

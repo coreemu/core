@@ -1,5 +1,4 @@
-import subprocess
-
+from core import CoreCommandError
 from core import logger
 from core.misc import utils
 
@@ -39,7 +38,7 @@ def emane_version():
             VERSION = EMANE093
         elif output.startswith("1.0.1"):
             VERSION = EMANE101
-    except subprocess.CalledProcessError:
+    except CoreCommandError:
         logger.exception("error checking emane version")
         output = ""
 

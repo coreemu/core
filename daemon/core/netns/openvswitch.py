@@ -3,11 +3,11 @@ TODO: probably goes away, or implement the usage of "unshare", or docker formal.
 """
 
 import socket
-import subprocess
 import threading
 from socket import AF_INET
 from socket import AF_INET6
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNet
@@ -81,7 +81,7 @@ class OvsNet(PyCoreNet):
         """
 
         :return:
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         utils.check_cmd([constants.OVS_BIN, "add-br", self.bridge_name])
 
@@ -112,8 +112,8 @@ class OvsNet(PyCoreNet):
                 [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name],
                 [constants.EBTABLES_BIN, "-X", self.bridge_name]
             ])
-        except subprocess.CalledProcessError as e:
-            logger.exception("error bringing bridge down and removing it: %s", e.output)
+        except CoreCommandError:
+            logger.exception("error bringing bridge down and removing it")
 
         # removes veth pairs used for bridge-to-bridge connections
         for interface in self.netifs():
@@ -404,16 +404,16 @@ class OvsCtrlNet(OvsNet):
         if self.serverintf:
             try:
                 utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, self.serverintf])
-            except subprocess.CalledProcessError as e:
-                logger.exception("error deleting server interface %s to controlnet bridge %s: %s",
-                                 self.serverintf, self.bridge_name, e.output)
+            except CoreCommandError:
+                logger.exception("error deleting server interface %s to controlnet bridge %s",
+                                 self.serverintf, self.bridge_name)
 
         if self.updown_script:
             try:
                 logger.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
                 utils.check_cmd([self.updown_script, self.bridge_name, "shutdown"])
-            except subprocess.CalledProcessError as e:
-                logger.exception("error during updown script shutdown: %s", e.output)
+            except CoreCommandError:
+                logger.exception("error during updown script shutdown")
 
         OvsNet.shutdown(self)
 

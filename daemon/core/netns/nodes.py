@@ -4,11 +4,11 @@ implementing specific node types.
 """
 
 import socket
-import subprocess
 import threading
 from socket import AF_INET
 from socket import AF_INET6
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNetIf
@@ -68,7 +68,7 @@ class CtrlNet(LxBrNet):
         Startup functionality for the control network.
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         if self.detectoldbridge():
             return
@@ -134,16 +134,15 @@ class CtrlNet(LxBrNet):
         if self.serverintf is not None:
             try:
                 utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, self.serverintf])
-            except subprocess.CalledProcessError as e:
-                logger.exception("error deleting server interface %s from bridge %s: %s",
-                                 self.serverintf, self.brname, e.output)
+            except CoreCommandError:
+                logger.exception("error deleting server interface %s from bridge %s", self.serverintf, self.brname)
 
         if self.updown_script is not None:
             try:
                 logger.info("interface %s updown script (%s shutdown) called", self.brname, self.updown_script)
                 utils.check_cmd([self.updown_script, self.brname, "shutdown"])
-            except subprocess.CalledProcessError as e:
-                logger.exception("error issuing shutdown script shutdown: %s", e.output)
+            except CoreCommandError:
+                logger.exception("error issuing shutdown script shutdown")
 
         LxBrNet.shutdown(self)
 
@@ -328,7 +327,7 @@ class HubNode(LxBrNet):
         :param int objid: node id
         :param str name: node namee
         :param bool start: start flag
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         LxBrNet.__init__(self, session, objid, name, start)
 
@@ -479,7 +478,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         Set the interface in the up state.
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         # interface will also be marked up during net.attach()
         self.savestate()
@@ -500,8 +499,8 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
             utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "down"])
             utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
             utils.check_cmd([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
-        except subprocess.CalledProcessError as e:
-            logger.exception("error shutting down: %s", e.output)
+        except CoreCommandError:
+            logger.exception("error shutting down")
 
         self.up = False
         self.restorestate()
@@ -619,7 +618,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
 
         :param str addr: address to add
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         if self.up:
             utils.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
@@ -632,7 +631,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
 
         :param str addr: address to delete
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         if self.up:
             utils.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.name])
@@ -645,7 +644,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         interface for emulation purposes. TODO: save/restore the PROMISC flag
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         self.old_up = False
         self.old_addrs = []
@@ -672,7 +671,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         Restore the addresses and other interface state after using it.
 
         :return: nothing
-        :raises subprocess.CalledProcessError: when there is a command exception
+        :raises CoreCommandError: when there is a command exception
         """
         for addr in self.old_addrs:
             if addr[1] is None:
@@ -704,7 +703,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
         :param list[str]|str args: command to run
         :return: exist status and combined stdout and stderr
         :rtype: tuple[int, str]
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         raise NotImplementedError
 

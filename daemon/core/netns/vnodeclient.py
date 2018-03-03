@@ -6,10 +6,10 @@ by invoking the vcmd shell command.
 """
 
 import os
-import subprocess
 
 import vcmd
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.misc import utils
@@ -106,11 +106,11 @@ class VnodeClient(object):
         :param list[str]|str args: command to run
         :return: combined stdout and stderr
         :rtype: str
-        :raises subprocess.CalledProcessError: when there is a non-zero exit status
+        :raises core.CoreCommandError: when there is a non-zero exit status
         """
         status, output = self.cmd_output(args)
         if status != 0:
-            raise subprocess.CalledProcessError(status, args, output)
+            raise CoreCommandError(status, args, output)
         return output.strip()
 
     def popen(self, args):

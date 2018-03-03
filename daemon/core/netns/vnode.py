@@ -7,9 +7,9 @@ import random
 import shutil
 import signal
 import string
-import subprocess
 import threading
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNetIf
@@ -189,7 +189,7 @@ class SimpleLxcNode(PyCoreNode):
         :param list[str]|str args: command to run
         :return: combined stdout and stderr
         :rtype: str
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         return self.client.check_cmd(args)
 
@@ -209,14 +209,14 @@ class SimpleLxcNode(PyCoreNode):
         :param str source: source directory to mount
         :param str target: target directory to create
         :return: nothing
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         source = os.path.abspath(source)
         logger.info("mounting %s at %s" % (source, target))
         cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
         status, output = self.client.shcmd_result(cmd)
         if status:
-            raise subprocess.CalledProcessError(status, cmd, output)
+            raise CoreCommandError(status, cmd, output)
         self._mounts.append((source, target))
 
     def umount(self, target):
@@ -229,8 +229,8 @@ class SimpleLxcNode(PyCoreNode):
         logger.info("unmounting: %s", target)
         try:
             self.check_cmd([constants.UMOUNT_BIN, "-n", "-l", target])
-        except subprocess.CalledProcessError as e:
-            logger.exception("error during unmount: %s", e.output)
+        except CoreCommandError:
+            logger.exception("error during unmount")
 
     def newifindex(self):
         """
@@ -339,7 +339,7 @@ class SimpleLxcNode(PyCoreNode):
         :param int ifindex: index of interface to set hardware address for
         :param core.misc.ipaddress.MacAddress addr: hardware address to set
         :return: nothing
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
@@ -372,7 +372,7 @@ class SimpleLxcNode(PyCoreNode):
         :param int ifindex: index of interface to delete address from
         :param str addr: address to delete from interface
         :return: nothing
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         try:
             self._netif[ifindex].deladdr(addr)
@@ -389,7 +389,7 @@ class SimpleLxcNode(PyCoreNode):
         :param int ifindex: index of interface to delete address types from
         :param tuple[str] address_types: address types to delete
         :return: nothing
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         interface_name = self.ifname(ifindex)
         addresses = self.client.getaddr(interface_name, rescan=True)
@@ -488,7 +488,7 @@ class SimpleLxcNode(PyCoreNode):
         :param str srcname: source file name
         :param str filename: file name to add
         :return: nothing
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         logger.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
@@ -496,7 +496,7 @@ class SimpleLxcNode(PyCoreNode):
         cmd = 'mkdir -p "%s" && mv "%s" "%s" && sync' % (directory, srcname, filename)
         status, output = self.client.shcmd_result(cmd)
         if status:
-            raise subprocess.CalledProcessError(status, cmd, output)
+            raise CoreCommandError(status, cmd, output)
 
 
 class LxcNode(SimpleLxcNode):

@@ -6,6 +6,7 @@ import os
 import subprocess
 import threading
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNode
@@ -91,11 +92,11 @@ class PhysicalNode(PyCoreNode):
         :param list[str]|str args: command to run
         :return: combined stdout and stderr
         :rtype: str
-        :raises subprocess.CalledProcessError: when a non-zero exit status occurs
+        :raises CoreCommandError: when a non-zero exit status occurs
         """
         status, output = self.cmd_output(args)
         if status:
-            raise subprocess.CalledProcessError(status, args, output)
+            raise CoreCommandError(status, args, output)
         return output.strip()
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
@@ -224,8 +225,8 @@ class PhysicalNode(PyCoreNode):
         logger.info("unmounting '%s'" % target)
         try:
             self.check_cmd([constants.UMOUNT_BIN, "-l", target])
-        except subprocess.CalledProcessError as e:
-            logger.exception("unmounting failed for %s: %s", target, e.output)
+        except CoreCommandError:
+            logger.exception("unmounting failed for %s", target)
 
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)

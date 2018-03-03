@@ -13,6 +13,7 @@ import threading
 
 import crypt
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNetIf
@@ -263,7 +264,7 @@ class XenNode(PyCoreNode):
                     if self.booted:
                         utils.check_cmd([XM_PATH, "destroy", self.vmname])
                         self.booted = False
-                except (OSError, subprocess.CalledProcessError):
+                except CoreCommandError:
                     # ignore this error too, the VM may have exited already
                     logger.exception("error during shutdown")
 

@@ -6,10 +6,10 @@ The CoreServices class handles configuration messages for sending
 a list of available services to the GUI and for configuring individual
 services.
 """
-import subprocess
 import time
 from itertools import repeat
 
+from core import CoreCommandError
 from core import logger
 from core.conf import Configurable
 from core.conf import ConfigurableManager
@@ -413,7 +413,7 @@ class CoreServices(ConfigurableManager):
                 logger.info("validating service %s using: %s", service._name, args)
                 try:
                     node.check_cmd(args)
-                except subprocess.CalledProcessError:
+                except CoreCommandError:
                     logger.exception("validate command failed")
                     status = -1
 
@@ -444,7 +444,7 @@ class CoreServices(ConfigurableManager):
             for args in service._shutdown:
                 try:
                     node.check_cmd(args)
-                except subprocess.CalledProcessError:
+                except CoreCommandError:
                     logger.exception("error running stop command %s", args)
                     # TODO: determine if its ok to just return the bad exit status
                     status = "-1"
@@ -756,8 +756,8 @@ class CoreServices(ConfigurableManager):
                     for args in cmds:
                         try:
                             node.check_cmd(args)
-                        except subprocess.CalledProcessError:
-                            logger.exception("error starting command %s", args)
+                        except CoreCommandError:
+                            logger.exception("error starting command")
                             fail += "Start %s(%s)," % (s._name, args)
             if event_type == EventTypes.PAUSE.value:
                 status = self.validatenodeservice(node, s, services)

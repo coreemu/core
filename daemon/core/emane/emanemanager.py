@@ -3,10 +3,10 @@ emane.py: definition of an Emane class for implementing configuration control of
 """
 
 import os
-import subprocess
 import threading
 from xml.dom.minidom import parseString
 
+from core import CoreCommandError
 from core import constants
 from core import emane
 from core import logger
@@ -949,7 +949,7 @@ class EmaneManager(ConfigurableManager):
             try:
                 utils.check_cmd(args)
                 utils.check_cmd(["killall", "-q", "emanetransportd"])
-            except subprocess.CalledProcessError:
+            except CoreCommandError:
                 logger.exception("error shutting down emane daemons")
 
     def installnetifs(self, do_netns=True):

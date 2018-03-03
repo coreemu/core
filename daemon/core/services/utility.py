@@ -3,8 +3,8 @@ utility.py: defines miscellaneous utility services.
 """
 
 import os
-import subprocess
 
+from core import CoreCommandError
 from core import constants
 from core.misc import utils
 from core.misc.ipaddress import Ipv4Prefix
@@ -419,7 +419,7 @@ class HttpService(UtilService):
         """
         try:
             status, result = utils.cmd_output(['a2query', '-v'])
-        except subprocess.CalledProcessError:
+        except CoreCommandError:
             status = -1
 
         if status == 0 and result[:3] == '2.4':
