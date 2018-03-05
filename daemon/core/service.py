@@ -292,10 +292,7 @@ class CoreServices(ConfigurableManager):
 
         logger.info("starting service %s (%s)", service._name, service._startindex)
         for directory in service._dirs:
-            try:
-                node.privatedir(directory)
-            except:
-                logger.exception("Error making node %s dir %s", node.name, directory)
+            node.privatedir(directory)
 
         for filename in service.getconfigfilenames(node.objid, services):
             cfg = service.generateconfig(node, filename, services)
@@ -305,11 +302,8 @@ class CoreServices(ConfigurableManager):
             return
 
         for args in service.getstartup(node, services):
-            try:
-                # TODO: this wait=False can be problematic!
-                node.cmd(args, wait=False)
-            except:
-                logger.exception("error starting command %s", args)
+            # TODO: this wait=False can be problematic!
+            node.cmd(args, wait=False)
 
     def bootnodecustomservice(self, node, service, services, use_startup_service):
         """
@@ -322,13 +316,9 @@ class CoreServices(ConfigurableManager):
         :param bool use_startup_service: flag to use startup services or not
         :return: nothing
         """
-        logger.info("starting service(%s) %s (%s)(custom)",
-                    service, service._name, service._startindex)
+        logger.info("starting service(%s) %s (%s)(custom)", service, service._name, service._startindex)
         for directory in service._dirs:
-            try:
-                node.privatedir(directory)
-            except:
-                logger.exception("error making node %s dir %s", node.name, directory)
+            node.privatedir(directory)
 
         logger.info("service configurations: %s", service._configs)
         for i, filename in enumerate(service._configs):
@@ -351,11 +341,8 @@ class CoreServices(ConfigurableManager):
             return
 
         for args in service._startup:
-            try:
-                # TODO: this wait=False can be problematic!
-                node.cmd(args, wait=False)
-            except:
-                logger.exception("error starting command %s", args)
+            # TODO: this wait=False can be problematic!
+            node.cmd(args, wait=False)
 
     def copyservicefile(self, node, filename, cfg):
         """
@@ -776,11 +763,8 @@ class CoreServices(ConfigurableManager):
                         cfg = self.getservicefiledata(s, filename)
                         if cfg is None:
                             cfg = s.generateconfig(node, filename, services)
-                        try:
-                            node.nodefile(filename, cfg)
-                        except:
-                            logger.exception("error in configure file: %s", filename)
-                            fail += "%s," % s._name
+                        
+                        node.nodefile(filename, cfg)
 
         fail_data = ""
         if len(fail) > 0:
