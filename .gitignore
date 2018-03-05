@@ -4,6 +4,7 @@
 .version
 .version.date
 Makefile
+!kernel/**/Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache
@@ -13,7 +14,6 @@ config.h.in
 config.log
 config.status
 configure
-core-*.tar.gz
 debian
 stamp-h1
 
@@ -36,6 +36,7 @@ coverage.xml
 # ignore package files
 *.rpm
 *.deb
+*.tar.gz
 
 # pytest cache files
 .cache
