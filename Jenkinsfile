@@ -6,7 +6,7 @@ pipeline {
         sh './bootstrap.sh'
         sh './configure'
         sh 'make'
-        sh 'make install'
+        sh 'sudo make install'
       }
     }
     stage('test') {
