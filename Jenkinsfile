@@ -4,7 +4,7 @@ pipeline {
     stage('build') {
       steps {
         sh './bootstrap.sh'
-        sh './configure --prefix=/tmp/core_build'
+        sh './configure'
         sh 'make'
         sh 'make install'
       }
