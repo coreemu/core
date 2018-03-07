@@ -18,14 +18,12 @@ SBIN_FILES		=			\
 	sbin/core-cleanup			\
 	sbin/core-daemon			\
 	sbin/core-manage			\
-	sbin/core-xen-cleanup			\
 	sbin/coresendmsg
 
 dist_sbin_SCRIPTS	= $(SBIN_FILES)
 
 CONF_FILES		=			\
-	data/core.conf				\
-	data/xen.conf
+	data/core.conf
 
 coreconfdir		= $(CORE_CONF_DIR)
 dist_coreconf_DATA	= $(CONF_FILES)

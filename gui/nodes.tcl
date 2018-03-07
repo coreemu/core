@@ -26,14 +26,12 @@ array set g_node_types_default {
 	5 {prouter router_green.gif router_green.gif \
 	    {zebra OSPFv2 OSPFv3 IPForward} \
 	    physical {built-in type for physical nodes}}
-	6 {xen xen.gif xen.gif {zebra OSPFv2 OSPFv3 IPForward} \
-	    xen {built-in type for Xen PVM domU router}}
 	7 {OVS lanswitch.gif lanswitch.gif {DefaultRoute SSH OvsService} OVS {} }
 
 }
 
 # possible machine types for nodes
-set MACHINE_TYPES "netns physical xen OVS"
+set MACHINE_TYPES "netns physical OVS"
 
 # array populated from nodes.conf file
 array set g_node_types { }
@@ -65,7 +63,7 @@ proc loadNodesConf { } {
 		set line [list $idx $data]
 	    }
 	}
-	
+
 	# load into array of nodes
 	if { [catch {array set g_node_types $line} e] } {
 	    puts "Error reading $confname line '$node': $e"
@@ -86,13 +84,13 @@ proc checkNodeTypes { fatal } {
 	    puts "error: missing built-in node type '$name'!"
 	    puts "move your ~/.core/nodes.conf file to re-create the defaults"
 	    if { $fatal } {
-		exit 
+		exit
 	    } else {
 		return $name
 	    }
 
 	}
-	
+
     }
     return ""
 }
@@ -187,7 +185,7 @@ proc getNodeTypeServices { type } {
     return ""
 }
 
-# return the machine type (e.g. netns, physical, xen) of the currently selected
+# return the machine type (e.g. netns, physical) of the currently selected
 # node type from the toolbar
 proc getNodeTypeMachineType { type } {
     global MACHINE_TYPES g_node_types
@@ -211,7 +209,7 @@ proc getNodeTypeProfile { type } {
     return ""
 }
 
-# return the machine type (e.g. netns, physical, xen) of the currently selected
+# return the machine type (e.g. netns, physical) of the currently selected
 # node type from the toolbar
 proc getNodeTypeMachineType { type } {
     global MACHINE_TYPES g_node_types
@@ -269,7 +267,7 @@ proc popupNodeProfileConfig { channel node model types values captions bitmap po
     global g_node_types
 
     set opaque_items [split $opaque :]
-    if { [llength $opaque_items] != 2 } { 
+    if { [llength $opaque_items] != 2 } {
 	puts "warning: received unexpected opaque data in conf message!"
 	return
     }
@@ -334,7 +332,7 @@ proc popupNodesConfig {} {
     labelframe $wi.s -borderwidth 0 -text "Node Types"
     listbox $wi.s.nodes -selectmode single -height 5 -width 15 \
 	-yscrollcommand "$wi.s.nodes_scroll set" -exportselection 0
-    scrollbar $wi.s.nodes_scroll -command "$wi.s.nodes yview" 
+    scrollbar $wi.s.nodes_scroll -command "$wi.s.nodes yview"
     pack $wi.s.nodes $wi.s.nodes_scroll -fill y -side left
     pack $wi.s -padx 4 -pady 4 -fill both -side top -expand true
 
@@ -365,9 +363,9 @@ proc popupNodesConfig {} {
     frame $wi.s.edit -borderwidth 4
     frame $wi.s.edit.0
     label $wi.s.edit.0.namelab -text "Name"
-    entry $wi.s.edit.0.name -bg white -width 20 
+    entry $wi.s.edit.0.name -bg white -width 20
     pack $wi.s.edit.0.namelab $wi.s.edit.0.name -side left
-    
+
     frame $wi.s.edit.1
     label $wi.s.edit.1.iconlab -text "Icon"
     entry $wi.s.edit.1.icon -bg white -width 25
@@ -422,7 +420,7 @@ proc popupNodesConfig {} {
     nodesConfigSelect $wi ""
 
 
-    # close button 
+    # close button
     frame $wi.b -borderwidth 0
     button $wi.b.close -text "Close" -command "nodesConfigClose $wi"
     pack $wi.b.close -side right
@@ -461,7 +459,7 @@ proc nodesConfigSelect { wi cmd } {
 
     set selected_idx [$wi.s.nodes curselection]
     if { $selected_idx == "" } { return }
-   
+
     set idx [expr {$selected_idx + 1}]
     if { ![info exists g_node_types($idx)] } { return }
 
@@ -522,7 +520,7 @@ proc nodesConfigImgDialog { wi ctl size } {
     if { [string first $dir $f] == 0 } {
 	# chop off default path of $dir
 	set f [string range $f [string length $dir] end]
-    } 
+    }
     if { $f != "" } {
         $ctl delete 0 end
         $ctl insert 0 $f
@@ -581,7 +579,7 @@ proc nodesConfigHelper { wi cmd } {
 	    set newdata [lreplace $newdata 0 0 $newname]
 	    set newdata [lreplace $newdata 5 5 ""] ;# zero the meta-data
 	    array set g_node_types [list $arridx $newdata]
-	    set newsel [expr {$arridx - 1}] 
+	    set newsel [expr {$arridx - 1}]
 	}
 	save {
 	    nodesConfigSelect $wi save
@@ -591,26 +589,26 @@ proc nodesConfigHelper { wi cmd } {
 	}
 	up -
 	down {
-	    if {$cmd == "up" } { 
+	    if {$cmd == "up" } {
 		if { $arridx < 2 } { return }
-		set newidx [expr {$arridx - 1}] 
-		set newsel [expr {$idx - 1}] 
+		set newidx [expr {$arridx - 1}]
+		set newsel [expr {$idx - 1}]
 	    } else {
 		if { $idx >= [expr {[$ctl size] - 1}]} { return }
 		set newidx [expr {$arridx + 1}]
-		set newsel [expr {$idx + 1}] 
+		set newsel [expr {$idx + 1}]
 	    }
 	    set newentry [lindex [array get g_node_types $arridx] 1]
 	    set oldentry [lindex [array get g_node_types $newidx] 1]
 	    if {$oldentry != ""} {
-		array set g_node_types [list $arridx $oldentry] 
+		array set g_node_types [list $arridx $oldentry]
 	    }
 	    array set g_node_types [list $newidx $newentry]
 	}
     }
 
     nodesConfigRefreshList $wi
-    if { $newsel != "" } { 
+    if { $newsel != "" } {
 	$ctl selection clear 0 end
 	$ctl selection set $newsel
     }
@@ -628,12 +626,12 @@ proc nodesConfigServices { wi services_or_profile } {
     set sock [lindex [getEmulPlugin "*"] 2]
     # node number 0 is sent, but these services are not associated with a node
     if { $services_or_profile == "profile" } {
-	set services_or_profile $g_machine_type ;# address the e.g. "xen" model
+	set services_or_profile $g_machine_type ;# address the model
 	set opaque "$g_machine_type:$g_node_type_services_hint"
     } else {
 	set opaque ""
     }
-    sendConfRequestMessage $sock -1 $services_or_profile 0x1 -1 $opaque 
+    sendConfRequestMessage $sock -1 $services_or_profile 0x1 -1 $opaque
 }
 
 # helper for when close button is pressed

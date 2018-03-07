@@ -309,7 +309,6 @@ AC_CONFIG_FILES([Makefile
 		scripts/Makefile
 		scripts/core-daemon.service
 		scripts/perf/Makefile
-		scripts/xen/Makefile
 		doc/Makefile
 		doc/conf.py
 		doc/man/Makefile

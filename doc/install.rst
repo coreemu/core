@@ -449,9 +449,6 @@ This causes a separate init script to be installed that is tailored towards SUSE
 
 The `zypper` command is used instead of `yum`.
 
-For OpenSUSE/Xen based installations, refer to the `README-Xen` file included
-in the CORE source.
-
 The Quagga routing suite is recommended for routing,
 :ref:`Quagga_Routing_Software` for installation.
 

@@ -45,7 +45,6 @@ from core.mobility import Ns2ScriptedMobility
 from core.netns import nodes
 from core.sdt import Sdt
 from core.service import CoreServices
-from core.xen.xenconfig import XenConfigManager
 from core.xml.xmlsession import save_session_xml
 
 # set default node map
@@ -189,10 +188,6 @@ class Session(object):
         # setup emane
         self.emane = EmaneManager(session=self)
         self.add_config_object(EmaneManager.name, EmaneManager.config_type, self.emane.configure)
-
-        # setup xen
-        self.xen = XenConfigManager(session=self)
-        self.add_config_object(XenConfigManager.name, XenConfigManager.config_type, self.xen.configure)
 
         # setup sdt
         self.sdt = Sdt(session=self)

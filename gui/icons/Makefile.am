@@ -35,7 +35,6 @@ TINY_ICONS =	tiny/button.play.gif \
 		tiny/folder.gif \
 		tiny/cel.gif \
 		tiny/fileopen.gif \
-		tiny/xen.gif \
 		tiny/plot.gif
 
 NORM_ICONS =	normal/gps-diagram.xbm \
@@ -53,8 +52,7 @@ NORM_ICONS =	normal/gps-diagram.xbm \
 		normal/document-properties.gif \
 		normal/thumb-unknown.gif \
 		normal/router_purple.gif normal/router_yellow.gif \
-		normal/ap.gif normal/mdr.gif \
-		normal/xen.gif
+		normal/ap.gif normal/mdr.gif
 
 SVG_ICONS = 	svg/ap.svg \
 		svg/cel.svg \
@@ -71,8 +69,7 @@ SVG_ICONS = 	svg/ap.svg \
 		svg/router_yellow.svg \
 		svg/start.svg \
 		svg/tunnel.svg \
-		svg/vlan.svg \
-		svg/xen.svg
+		svg/vlan.svg
 
 #
 # Icon files (/usr/local/share/core/icons/[tiny,normal,svg])

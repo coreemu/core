@@ -14,7 +14,6 @@
 @datarootdir@/man/man1/core-daemon.1
 @datarootdir@/man/man1/coresendmsg.1
 @datarootdir@/man/man1/core-cleanup.1
-@datarootdir@/man/man1/core-xen-cleanup.1
 @pyprefix@/lib/python2.7/dist-packages
 /etc/init.d
 /etc/logrotate.d

@@ -618,9 +618,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             model = message.get_tlv(NodeTlvs.MODEL.value)
             class_args = {"start": start}
 
-            if node_type == NodeTypes.XEN.value:
-                class_args["model"] = model
-
             if node_type == NodeTypes.RJ45.value and hasattr(
                 self.session.options, "enablerj45") and self.session.options.enablerj45 == "0":
                 class_args["start"] = False
@@ -639,7 +636,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
             # add services to a node, either from its services TLV or
             # through the configured defaults for this node type
-            if node_type in [NodeTypes.DEFAULT.value, NodeTypes.PHYSICAL.value, NodeTypes.XEN.value]:
+            if node_type in [NodeTypes.DEFAULT.value, NodeTypes.PHYSICAL.value]:
                 if model is None:
                     # TODO: default model from conf file?
                     model = "router"

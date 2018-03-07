@@ -202,8 +202,6 @@ class CoreDocumentParser0(object):
             mgr = None
             self.parsenetem(model, obj, kvs)
 
-        elif name[:3] == "xen":
-            mgr = self.session.xen
         # TODO: assign other config managers here
         if mgr:
             mgr.setconfig_keyvalues(nodenum, name, kvs)

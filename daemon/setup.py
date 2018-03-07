@@ -4,10 +4,9 @@ Defines how CORE will be built for installation.
 
 import glob
 import os
-
-from setuptools import setup, find_packages
 from distutils.command.install import install
 
+from setuptools import setup, find_packages
 
 _CORE_DIR = "/etc/core"
 _MAN_DIR = "/usr/local/share/man/man1"
@@ -58,14 +57,12 @@ class CustomInstall(install):
 
 data_files = [
     (_CORE_DIR, [
-        "data/core.conf", 
-        "data/xen.conf",
+        "data/core.conf",
         "data/logging.conf",
     ]),
     (_MAN_DIR, glob_files("../doc/man/**.1")),
 ]
 data_files.extend(recursive_files(_SHARE_DIR, "examples"))
-
 
 setup(
     name="core",
@@ -86,7 +83,6 @@ setup(
         "sbin/core-daemon",
         "sbin/core-manage",
         "sbin/coresendmsg",
-        "sbin/core-xen-cleanup",
     ],
     description="Python components of CORE",
     url="http://www.nrl.navy.mil/itd/ncs/products/core",

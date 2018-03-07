@@ -9,19 +9,14 @@
 
 CLEANFILES	= core-daemon
 
-DISTCLEANFILES	= Makefile.in xen/Makefile xen/Makefile.in
+DISTCLEANFILES	= Makefile.in 
 
 EXTRA_DIST	= core-daemon-init.d \
 		  core-daemon.service.in \
 		  core-daemon-rc.d \
-		  core-daemon-init.d-SUSE \
-		  xen
+		  core-daemon-init.d-SUSE
 
 SUBDIRS		= perf
-
-# clean up dirs included by EXTRA_DIST
-dist-hook:
-	rm -rf $(distdir)/xen/.svn
 
 # install startup scripts based on --with-startup=option configure option
 # init.d (default), systemd, SUSE

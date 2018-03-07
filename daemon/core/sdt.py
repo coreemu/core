@@ -46,11 +46,15 @@ class Sdt(object):
     DEFAULT_ALT = 2500
     # TODO: read in user"s nodes.conf here; below are default node types from the GUI
     DEFAULT_SPRITES = [
-        ("router", "router.gif"), ("host", "host.gif"),
-        ("PC", "pc.gif"), ("mdr", "mdr.gif"),
-        ("prouter", "router_green.gif"), ("xen", "xen.gif"),
-        ("hub", "hub.gif"), ("lanswitch", "lanswitch.gif"),
-        ("wlan", "wlan.gif"), ("rj45", "rj45.gif"),
+        ("router", "router.gif"),
+        ("host", "host.gif"),
+        ("PC", "pc.gif"),
+        ("mdr", "mdr.gif"),
+        ("prouter", "router_green.gif"),
+        ("hub", "hub.gif"),
+        ("lanswitch", "lanswitch.gif"),
+        ("wlan", "wlan.gif"),
+        ("rj45", "rj45.gif"),
         ("tunnel", "tunnel.gif"),
     ]
 
@@ -404,8 +408,7 @@ class Sdt(object):
 
         net = False
         if nodetype == NodeTypes.DEFAULT.value or \
-                nodetype == NodeTypes.PHYSICAL.value or \
-                nodetype == NodeTypes.XEN.value:
+                nodetype == NodeTypes.PHYSICAL.value:
             if model is None:
                 model = "router"
             type = model

@@ -30,7 +30,7 @@ array set g_execRequests { shell "" observer "" }
 # for a simulator, uncomment this line or cut/paste into debugger:
 #  set XSCALE 4.0; set YSCALE 4.0; set XOFFSET 1800; set YOFFSET 300
 
-array set nodetypes { 	0 def 1 phys 2 xen 3 tbd 4 lanswitch 5 hub \
+array set nodetypes { 	0 def 1 phys 2 tbd 3 tbd 4 lanswitch 5 hub \
 			6 wlan 7 rj45 8 tunnel 9 ktunnel 10 emane }
 
 array set regtypes { wl 1 mob 2 util 3 exec 4 gui 5 emul 6 }
@@ -470,7 +470,7 @@ proc apiNodeCreate { node vals_ref } {
     set nodetype $nodetypes($vals(type))
     set nodename $vals(name)
     if { $nodetype == "emane" } { set nodetype "wlan" } ;# special case - EMANE
-    if { $nodetype == "def" || $nodetype == "xen" } { set nodetype "router" }
+    if { $nodetype == "def" } { set nodetype "router" }
     newNode [list $nodetype $node] ;# use node number supplied from API message
     setNodeName $node $nodename
     if { $vals(canv) == "" } {
@@ -509,7 +509,7 @@ proc apiNodeCreate { node vals_ref } {
 
     set model $vals(model)
     if { $model != ""  && $vals(type) < 4} {
-	# set model only for (0 def 1 phys 2 xen 3 tbd) 4 lanswitch
+	# set model only for (0 def 1 phys 2 tbd 3 tbd) 4 lanswitch
 	setNodeModel $node $model
 	if { [lsearch -exact [getNodeTypeNames] $model] == -1 } {
 	    puts "warning: unknown node type '$model' in Node message!"
@@ -2920,7 +2920,6 @@ proc getNodeTypeAPI { node } {
 	jail    { return 0x0 }
 	OVS 	{ return 0x0 }
 	physical { return 0x1 }
-	xen	{ return 0x2 }
 	tbd	{ return 0x3 }
 	lanswitch { return 0x4 }
 	hub	{ return 0x5 }

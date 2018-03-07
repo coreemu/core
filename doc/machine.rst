@@ -22,9 +22,9 @@ netns
 
 The *netns* machine type is the default. This is for nodes that will be
 backed by Linux network namespaces. See :ref:`Linux` for a brief explanation of
-netns. This default machine type is very lightweight, providing a minimum 
+netns. This default machine type is very lightweight, providing a minimum
 amount of
-virtualization in order to emulate a network. 
+virtualization in order to emulate a network.
 Another reason this is designated as the default machine type
 is because this virtualization technology
 typically requires no changes to the kernel; it is available out-of-the-box
@@ -54,7 +54,7 @@ isolated or virtualized environment, but directly on the operating system.
 Physical nodes must be assigned to servers, the same way nodes
 are assigned to emulation servers with :ref:`Distributed_Emulation`.
 The list of available physical nodes currently shares the same dialog box
-and list as the emulation servers, accessed using the *Emulation Servers...* 
+and list as the emulation servers, accessed using the *Emulation Servers...*
 entry from the *Session* menu.
 
 .. index:: GRE tunnels with physical nodes
@@ -65,27 +65,7 @@ is drawn to indicate network tunneling. A GRE tunneling interface will be
 created on the physical node and used to tunnel traffic to and from the
 emulated world.
 
-Double-clicking on a physical node during runtime 
+Double-clicking on a physical node during runtime
 opens a terminal with an SSH shell to that
 node. Users should configure public-key SSH login as done with emulation
 servers.
-
-.. _xen:
-
-xen
-===
-
-.. index:: xen machine type
-
-The *xen* machine type is an experimental new type in CORE for managing
-Xen domUs from within CORE. After further development, 
-it may be documented here.
-
-Current limitations include only supporting ISO-based filesystems, and lack
-of integration with node services, EMANE, and possibly other features of CORE.
-
-There is a :file:`README-Xen` file available in the CORE source that contains
-further instructions for setting up Xen-based nodes.
-
-
-

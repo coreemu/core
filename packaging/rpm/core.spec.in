@@ -147,7 +147,6 @@ fi
 %{_datadir}/%{name}/icons/normal/thumb-unknown.gif
 %{_datadir}/%{name}/icons/normal/tunnel.gif
 %{_datadir}/%{name}/icons/normal/wlan.gif
-%{_datadir}/%{name}/icons/normal/xen.gif
 %dir %{_datadir}/%{name}/icons/svg
 %{_datadir}/%{name}/icons/svg/ap.svg
 %{_datadir}/%{name}/icons/svg/cel.svg
@@ -165,7 +164,6 @@ fi
 %{_datadir}/%{name}/icons/svg/start.svg
 %{_datadir}/%{name}/icons/svg/tunnel.svg
 %{_datadir}/%{name}/icons/svg/vlan.svg
-%{_datadir}/%{name}/icons/svg/xen.svg
 %dir %{_datadir}/%{name}/icons/tiny
 %{_datadir}/%{name}/icons/tiny/ap.gif
 %{_datadir}/%{name}/icons/tiny/arrow.down.gif
@@ -219,7 +217,6 @@ fi
 %{_datadir}/%{name}/icons/tiny/twonode.gif
 %{_datadir}/%{name}/icons/tiny/view-refresh.gif
 %{_datadir}/%{name}/icons/tiny/wlan.gif
-%{_datadir}/%{name}/icons/tiny/xen.gif
 @CORE_LIB_DIR@/initgui.tcl
 @CORE_LIB_DIR@/ipv4.tcl
 @CORE_LIB_DIR@/ipv6.tcl
@@ -259,7 +256,6 @@ fi
 %files daemon
 %config @CORE_CONF_DIR@/core.conf
 %config @CORE_CONF_DIR@/perflogserver.conf
-%config @CORE_CONF_DIR@/xen.conf
 %dir %{_datadir}/%{name}
 %dir %{_datadir}/%{name}/examples
 %{_datadir}/%{name}/examples/controlnet_updown
@@ -308,7 +304,6 @@ fi
 %doc  %{_mandir}/man1/core-daemon.1.gz
 %doc  %{_mandir}/man1/core-manage.1.gz
 %doc  %{_mandir}/man1/coresendmsg.1.gz
-%doc  %{_mandir}/man1/core-xen-cleanup.1.gz
 %doc  %{_mandir}/man1/netns.1.gz
 %doc  %{_mandir}/man1/vcmd.1.gz
 %doc  %{_mandir}/man1/vnoded.1.gz
@@ -393,15 +388,10 @@ fi
 %{python_sitelib}/core/services/utility.py*
 %{python_sitelib}/core/services/xorp.py*
 %{python_sitelib}/core/session.py*
-%dir %{python_sitelib}/core/xen
-%{python_sitelib}/core/xen/__init__.py*
-%{python_sitelib}/core/xen/xenconfig.py*
-%{python_sitelib}/core/xen/xen.py*
 %{_sbindir}/core-cleanup
 %{_sbindir}/core-daemon
 %{_sbindir}/core-manage
 %{_sbindir}/coresendmsg
-%{_sbindir}/core-xen-cleanup
 %{_sbindir}/netns
 %{_sbindir}/vcmd
 %{_sbindir}/vnoded

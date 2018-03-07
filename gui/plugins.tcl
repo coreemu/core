@@ -49,7 +49,7 @@ set plugin_img_folder [image create photo -file "$iconpath/folder.gif"]
 
 array set g_plugin_button_tooltips {
 	add "add a new plugin"
-	edit "edit the selected plugin" 
+	edit "edit the selected plugin"
 	del "remove the selected plugin"
 	conn "connect to this plugin"
 	disc "disconnect from this plugin"
@@ -78,7 +78,7 @@ proc popupPluginsConfig {} {
     labelframe $wi.s -borderwidth 0 -text "Plugins"
     listbox $wi.s.plugins -selectmode single -height 5 -width 50 \
 	-yscrollcommand "$wi.s.plugins_scroll set" -exportselection 0
-    scrollbar $wi.s.plugins_scroll -command "$wi.s.plugins yview" 
+    scrollbar $wi.s.plugins_scroll -command "$wi.s.plugins yview"
     pack $wi.s.plugins $wi.s.plugins_scroll -fill y -side left
     pack $wi.s -padx 4 -pady 4 -fill both -side top -expand true
 
@@ -118,7 +118,7 @@ proc popupPluginsConfig {} {
     bind $wi.s.plugins <<ListboxSelect>> "pluginsConfigSelect $wi"
     pluginsConfigSelect $wi
 
-    # close button 
+    # close button
     frame $wi.b -borderwidth 0
     button $wi.b.save -text "Save" -command "writePluginsConf; destroy $wi"
     button $wi.b.cancel -text "Cancel" -command "destroy $wi"
@@ -216,8 +216,8 @@ proc popupPluginsConfigEdit { parent action } {
 #
 proc popupPluginConfigEditApply { wi selected_idx selected_name } {
     global g_plugins g_plugin_types plugin_config_type plugin_config_autoconn
-   
-    # get values from the dialog 
+
+    # get values from the dialog
     set name "\"[string trim [$wi.c.a.name get]]\""
     set ip   [string trim [$wi.c.b.ip get]]
     set port [string trim [$wi.c.b.port get]]
@@ -243,8 +243,8 @@ proc popupPluginConfigEditApply { wi selected_idx selected_name } {
 	    array unset g_plugins "\"$selected_name\""
 	}
     }
-  
-    # manipulate the g_plugins array 
+
+    # manipulate the g_plugins array
     set plugin_data [list $ip $port $typenum $ac $status $cap $sock]
     array set g_plugins [list $name $plugin_data]
 }
@@ -335,7 +335,7 @@ proc pluginsConfigSelect { wi } {
 	set buttons_state normal
 	set name "\"[$wi.s.plugins get $selected_idx]\""
     }
-    
+
     # enable or disable the editing/control buttons
     if { $name == "\"GUI\"" } {
         # this program is the GUI, you cannot change this connection
@@ -420,7 +420,7 @@ proc popupPluginsCapConfig { wlan parent } {
     set wi .pluginCapConfig
     catch {destroy $wi}
     toplevel $wi
-    wm transient $parent . 
+    wm transient $parent .
     wm title $wi "Available Plugins"
 
     # update dialog
@@ -435,7 +435,7 @@ proc popupPluginsCapConfig { wlan parent } {
     listbox $wi.active.plugins -selectmode single -width 55 -height 5 \
 	-yscrollcommand "$wi.active.scroll set" -exportselection 0
     scrollbar $wi.active.scroll -command "$wi.active.plugins yview"
-    pack $wi.active.plugins -fill both -side left 
+    pack $wi.active.plugins -fill both -side left
     pack $wi.active.scroll -fill y -side left
     pack $wi.active -side top -fill both -expand true -padx 4 -pady 4
 
@@ -462,7 +462,7 @@ proc popupPluginsCapConfig { wlan parent } {
     listbox $wi.avail.plugins -selectmode single -width 55 -height 5 \
 	-yscrollcommand "$wi.avail.scroll set" -exportselection 0
     scrollbar $wi.avail.scroll -command "$wi.avail.plugins yview"
-    pack $wi.avail.plugins -fill both -side left 
+    pack $wi.avail.plugins -fill both -side left
     pack $wi.avail.scroll -fill y -side left
     pack $wi.avail -side top -fill both -expand true -padx 4 -pady 4
 
@@ -472,7 +472,7 @@ proc popupPluginsCapConfig { wlan parent } {
     	"popupPluginsCapConfigHelper $wi up $wlan"
 
     # this reads from the existing wlan config
-    if { $g_cap_in_use == "" } { 
+    if { $g_cap_in_use == "" } {
 	set g_cap_in_use [getCapabilities $wlan "mobmodel"]
     }
 
@@ -525,25 +525,25 @@ proc popupPluginsCapConfigHelper { wi cmd wlan} {
 	set channel [pluginConnect $plugin connect 1]
 	if { $cap == "location" } {
 	    # hack to map location capabilities with canvas size/scale dialog
-	    resizeCanvasPopup 
+	    resizeCanvasPopup
 	    return
 	}
 	if { $channel != -1 && $channel != "" } {
-	    sendConfRequestMessage $channel $wlan $cap $flags $netid $opaque 
+	    sendConfRequestMessage $channel $wlan $cap $flags $netid $opaque
 	}
 	return
     } else { ;# up/down enable/disable button preseed
 	set capstr [$l get $selected_idx]
 	$l delete $selected_idx $selected_idx
 	$l2 insert end $capstr
-	$l2 selection set end 
+	$l2 selection set end
 	# put the capabilities from the active list into the g_cap_in_use list
 	#  this list will be read in wlanConfigDialogHelper when Apply pressed
 	set g_cap_in_use {}
 	set g_cap_in_use_set 1
 	foreach capstr [$wi.active.plugins get 0 end] {
 	    set cap [string trim [lindex [split $capstr -] 1]]
-	    lappend g_cap_in_use $cap	
+	    lappend g_cap_in_use $cap
 	}
     }
 }
@@ -560,7 +560,7 @@ proc configCap { node models } {
     set opaque "" ;# unused
     set channel [pluginConnect $plugin connect 1]
     if { $channel != -1 && $channel != "" } {
-	sendConfRequestMessage $channel $node $models $flags $netid $opaque 
+	sendConfRequestMessage $channel $node $models $flags $netid $opaque
     }
 }
 
@@ -612,7 +612,6 @@ proc capTitle { cap } {
 #  Session options
 #  EMANE options
 #  EMANE model options, per-WLAN/per-interface
-#  node profile (Xen machine type)
 #
 proc popupCapabilityConfig { channel wlan model types values captions bmp possible_values groups } {
     global node_list g_node_type_services_hint g_popupcap_keys g_prefs
@@ -620,7 +619,7 @@ proc popupCapabilityConfig { channel wlan model types values captions bmp possib
     catch {destroy $wi}
     toplevel $wi
     set modelname [capTitle $model]
-    wm transient $wi . 
+    wm transient $wi .
     wm title $wi "$modelname configuration"
 
     array unset g_popupcap_keys ;# hint for supporting key=value w/apply button
@@ -656,7 +655,7 @@ proc popupCapabilityConfig { channel wlan model types values captions bmp possib
 
     if { $customcfg != "" } {
 	set cfg [lindex [lindex $customcfg 2] 1]
-    } else { 
+    } else {
 	set cfg ""
     }
     # session options stored in array, not custom-config
@@ -676,7 +675,7 @@ proc popupCapabilityConfig { channel wlan model types values captions bmp possib
 	set value [lindex $kv 1]
 
 	if { $cfg != "" } { ;# possibly use existing config value
-	    if { $key == "" } { ;# support old "value" format 
+	    if { $key == "" } { ;# support old "value" format
 	        set value [lindex $cfg $n]
 	    } else {
 		set value [getKeyValue $key $cfg $value]
@@ -694,7 +693,7 @@ proc popupCapabilityConfig { channel wlan model types values captions bmp possib
 	set gn [lindex $groupinfo 0]
 	set groupcaption [lindex $groupinfo 1]
 	if { $lastgn != $gn } {
-	    ttk::frame $wi.vals.$gn 
+	    ttk::frame $wi.vals.$gn
 	    $wi.vals add $wi.vals.$gn -text $groupcaption -underline 0
 	    set lastgn $gn
 	}
@@ -889,7 +888,7 @@ proc popupSessionConfig { channel sessionids sessionnames sessionfiles nodecount
     set wi .popupSessionConfig
     catch {destroy $wi}
     toplevel $wi
-    wm transient $wi . 
+    wm transient $wi .
     wm title $wi "CORE Sessions"
 
     ttk::frame $wi.top
@@ -965,7 +964,7 @@ proc popupSessionConfig { channel sessionids sessionnames sessionfiles nodecount
     grid $wi.btn.new $wi.btn.conn $wi.btn.shut $wi.btn.cancel -padx 4 -pady 4
     grid columnconfigure $wi 0 -weight 1
     pack $wi.btn -side bottom -fill x
-    
+
     bind $wi <Key-Return> $conn_cmd
     bind $wi <Key-Escape> $close_cmd
     bind $wi.tree <<TreeviewSelect>> "sessionConfigSelect $wi {$thumbs}"
@@ -1114,7 +1113,7 @@ proc setPluginCapList { plugin caps } {
 	return -1 ;# unknown plugin
     }
     set plugin_data $g_plugins($plugin)
-    set plugin_data [lreplace $plugin_data 5 5 $caps] 
+    set plugin_data [lreplace $plugin_data 5 5 $caps]
     array set g_plugins [list $plugin $plugin_data]
     return 0
 }
@@ -1200,7 +1199,7 @@ proc autoConnectPlugins { } {
 proc pluginConnect { name cmd retry } {
     global g_plugins
     if { $name == "" } { set name \"core-daemon\" }
-    if { ![info exists g_plugins($name)] } { 
+    if { ![info exists g_plugins($name)] } {
 	puts "pluginConnect error: $name does not exist!"
 	return -1
     }
@@ -1223,7 +1222,7 @@ proc pluginConnect { name cmd retry } {
     1 { ;# CORE API
 	if { $cmd == "toggle" } {
 	    if { $snum == 0 } {
-		set cmd connect 
+		set cmd connect
 	    } elseif { $snum == 1 } {
 		set cmd disconnect
 	    }
@@ -1303,7 +1302,7 @@ proc pluginRefresh { plugin } {
 #
 proc pluginChannelClosed { sock } {
     global g_plugins
-    set plugin [pluginByChannel $sock] 
+    set plugin [pluginByChannel $sock]
     if { $plugin == "" } { return } ;# channel not found
     set plugin_data $g_plugins($plugin)
     set plugin_data [lreplace $plugin_data 6 6 -1]; # sock = -1

@@ -28,7 +28,7 @@ ACLOCAL_AMFLAGS 	= -I config
 # extra files to include with distribution tarball
 EXTRA_DIST		= bootstrap.sh LICENSE \
  			  README.md ASSIGNMENT_OF_COPYRIGHT.pdf \
-			  README-Xen Changelog kernel \
+			  Changelog kernel \
 			  python-prefix.py revision.sh \
 			  .version .version.date \
 			  packaging/deb/compat \
