@@ -11,7 +11,9 @@ pipeline {
     }
     stage('test core') {
       steps {
-        sh 'pytest daemon/tests'
+        sh 'pytest daemon/tests/test_core.py'
+        sh 'pytest daemon/tests/test_gui.py'
+        sh 'pytest daemon/tests/test_emane.py'
       }
     }
   }
