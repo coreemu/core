@@ -35,24 +35,24 @@
 # NAME
 #  cfgparse.tcl -- file used for parsing the configuration
 # FUNCTION
-#  This module is used for parsing the configuration, i.e. reading the 
-#  configuration from a file or a string and writing the configuration 
-#  to a file or a string. This module also contains a function for returning 
+#  This module is used for parsing the configuration, i.e. reading the
+#  configuration from a file or a string and writing the configuration
+#  to a file or a string. This module also contains a function for returning
 #  a new ID for nodes, links and canvases.
 #****
 
 #****f* nodecfg.tcl/dumpputs
 # NAME
-#   dumpputs -- puts a string to a file or a string configuration 
+#   dumpputs -- puts a string to a file or a string configuration
 # SYNOPSIS
 #   dumpputs $method $destination $string
 # FUNCTION
-#   Puts a sting to the file or appends the string configuration (used for 
+#   Puts a sting to the file or appends the string configuration (used for
 #   undo functions), the choice depends on the value of method parameter.
 # INPUTS
-#   * method -- method used. Possiable values are file (if saving the string 
+#   * method -- method used. Possiable values are file (if saving the string
 #   to the file) and string (if appending the string configuration)
-#   * dest -- destination used. File_id for files, and string name for string 
+#   * dest -- destination used. File_id for files, and string name for string
 #   configuration
 #   * string -- the string that is inserted to a file or appended to the string
 #   configuartion
@@ -73,7 +73,7 @@ proc dumpputs {method dest string} {
 
 #****f* nodecfg.tcl/dumpCfg
 # NAME
-#   dumpCfg -- puts the current configuraton to a file or a string 
+#   dumpCfg -- puts the current configuraton to a file or a string
 # SYNOPSIS
 #   dumpCfg $method $destination
 # FUNCTION
@@ -81,7 +81,7 @@ proc dumpputs {method dest string} {
 # INPUTS
 #   * method -- used method. Possiable values are file (saving current congif
 #   to the file) and string (saving current config in a string)
-#   * dest -- destination used. File_id for files, and string name for string 
+#   * dest -- destination used. File_id for files, and string name for string
 #   configurations
 #****
 
@@ -95,7 +95,7 @@ proc dumpCfg {method dest} {
 	dumpputs $method $dest "\}"
 	dumpputs $method $dest ""
     }
-    
+
     foreach node $node_list {
 	global $node
 	upvar 0 $node lnode
@@ -129,7 +129,7 @@ proc dumpCfg {method dest} {
 		    }
 		}
 		dumpputs $method $dest "    \}"
-	    } elseif { "[lindex $element 0]" == "ipsec-config" } { 
+	    } elseif { "[lindex $element 0]" == "ipsec-config" } {
 		dumpputs $method $dest "    ipsec-config \{"
 		foreach line [lindex $element 1] {
 		    if { $line != {} } {
@@ -228,24 +228,24 @@ proc dumpGlobalOptions { method dest } {
     global mac_addr_start
 
     dumpputs $method $dest "option global \{"
-    if {$showIfNames == 0} { 
-	dumpputs $method $dest "    interface_names no" 
+    if {$showIfNames == 0} {
+	dumpputs $method $dest "    interface_names no"
     } else {
 	dumpputs $method $dest "    interface_names yes" }
-    if {$showIfIPaddrs == 0} { 
-	dumpputs $method $dest "    ip_addresses no" 
+    if {$showIfIPaddrs == 0} {
+	dumpputs $method $dest "    ip_addresses no"
     } else {
 	dumpputs $method $dest "    ip_addresses yes" }
-    if {$showIfIPv6addrs == 0} { 
-	dumpputs $method $dest "    ipv6_addresses no" 
+    if {$showIfIPv6addrs == 0} {
+	dumpputs $method $dest "    ipv6_addresses no"
     } else {
 	dumpputs $method $dest "    ipv6_addresses yes" }
-    if {$showNodeLabels == 0} { 
-	dumpputs $method $dest "    node_labels no" 
+    if {$showNodeLabels == 0} {
+	dumpputs $method $dest "    node_labels no"
     } else {
 	dumpputs $method $dest "    node_labels yes" }
-    if {$showLinkLabels == 0} { 
-	dumpputs $method $dest "    link_labels no" 
+    if {$showLinkLabels == 0} {
+	dumpputs $method $dest "    link_labels no"
     } else {
 	dumpputs $method $dest "    link_labels yes" }
     if {$showAPI == 0} {
@@ -290,7 +290,7 @@ proc setGlobalOption { field value } {
     global showIfIPaddrs showIfIPv6addrs
     global showBkgImage showGrid showAnnotations
     global showAPI
-    global mac_addr_start 
+    global mac_addr_start
     global g_traffic_start_opt
     global g_view_locked
 
@@ -400,8 +400,8 @@ proc cleanupGUIState {} {
 # SYNOPSIS
 #   loadCfg $cfg
 # FUNCTION
-#   Loads the configuration written in the cfg string to a current 
-#   configuration. 
+#   Loads the configuration written in the cfg string to a current
+#   configuration.
 # INPUTS
 #   * cfg -- string containing the new working configuration.
 #****
@@ -489,7 +489,7 @@ proc loadCfg { cfg } {
 		# consume first two list elements from line
 		set value [lindex $line 1]
 		set line [lreplace $line 0 1]
-    
+
 		if {"$class" == "node"} {
 		    switch -exact -- $field {
 			type {
@@ -561,7 +561,7 @@ proc loadCfg { cfg } {
 			}
 			ipsec-config {
 			    set cfg ""
-		
+
 			    foreach zline [split $value {
 }] {
 				if { [string index "$zline" 0] == "	" } {
@@ -600,7 +600,8 @@ proc loadCfg { cfg } {
 			custom-pre-config-commands {
 			    # Boeing - custom pre config commands
 			    set cfg ""
-			    foreach zline [split $value {}] {
+			    foreach zline [split $value {
+}] {
 				if { [string index "$zline" 0] == "	" } {
 				    set zline [string replace "$zline" 0 0]
 				}
@@ -612,7 +613,8 @@ proc loadCfg { cfg } {
 			custom-post-config-commands {
 			    # Boeing - custom post config commands
 			    set cfg ""
-			    foreach zline [split $value {}] {
+			    foreach zline [split $value {
+}] {
 				if { [string index "$zline" 0] == "	" } {
 				    set zline [string replace "$zline" 0 0]
 				}
@@ -628,7 +630,8 @@ proc loadCfg { cfg } {
 			ine-config {
 			    # Boeing - INE
 			    set cfg ""
-			    foreach zline [split $value {}] {
+			    foreach zline [split $value {
+}] {
 				if { [string index "$zline" 0] == "	" } {
 				    set zline [string replace "$zline" 0 0]
 				}
@@ -682,7 +685,7 @@ proc loadCfg { cfg } {
 		    switch -exact -- $field {
 		  	name {
 			    lappend $object "name $value"
-			}	
+			}
 			height {
 			    lappend $object "height $value"
 			}
@@ -695,10 +698,10 @@ proc loadCfg { cfg } {
 			y {
 			    lappend $object "y $value"
 			}
- 			color {	
+ 			color {
 			    lappend $object "color $value"
-			} 
- 		    } 
+			}
+ 		    }
                 } elseif {"$class" == "link"} {
 		    switch -exact -- $field {
 			nodes {
@@ -863,20 +866,20 @@ proc loadCfg { cfg } {
 
 #****f* nodecfg.tcl/newObjectId
 # NAME
-#   newObjectId -- new object Id 
+#   newObjectId -- new object Id
 # SYNOPSIS
 #   set obj_id [newObjectId $type]
 # FUNCTION
 #   Returns the Id for a new object of the defined type. Supported types
-#   are node, link and canvas. The Id is in the form $mark$number. $mark is the 
+#   are node, link and canvas. The Id is in the form $mark$number. $mark is the
 #   first letter of the given type and $number is the first available number to
-#   that can be used for id. 
+#   that can be used for id.
 # INPUTS
 #   * type -- the type of the new object. Can be node, link or canvas.
 # RESULT
-#   * obj_id -- object Id in the form $mark$number. $mark is the 
+#   * obj_id -- object Id in the form $mark$number. $mark is the
 #   first letter of the given type and $number is the first available number to
-#   that can be used for id. 
+#   that can be used for id.
 #****
 
 proc newObjectId { type } {
@@ -950,7 +953,7 @@ proc loadServersConf { } {
     global CONFDIR exec_servers DEFAULT_API_PORT
     set confname "$CONFDIR/servers.conf"
     if { [catch { set f [open "$confname" r] } ] } {
-	puts "Creating a default $confname" 
+	puts "Creating a default $confname"
 	if { [catch { set f [open "$confname" w+] } ] } {
 	    puts "***Warning: could not create a default $confname file."
 	    return
@@ -1035,7 +1038,7 @@ proc popupPrefs {} {
 	-command "addFileToMrulist \"\""
     pack $wi.dirs.mru.label $wi.dirs.mru.num $wi.dirs.mru.clear -side left
     pack $wi.dirs.mru -side top -anchor w -padx 4 -pady 4
-    
+
     pack $wi.dirs -side top -fill x
 
     #
@@ -1049,7 +1052,7 @@ proc popupPrefs {} {
 	-variable g_prefs(gui_save_size)
     pack $wi.win.win.savepos $wi.win.win.savesiz -side left -anchor w -padx 4
     pack $wi.win.win -side top -anchor w -padx 4 -pady 4
- 
+
     frame $wi.win.a
     checkbutton $wi.win.a.snaptogrid -text "snap to grid" \
 	-variable g_prefs(gui_snap_grid)
@@ -1123,9 +1126,8 @@ proc initDefaultPrefs {} {
     # variable expansions must be done here
     array set g_prefs [list default_conf_path	"$CONFDIR/configs"]
     array set g_prefs [list gui_canvas_refpt	"$DEFAULT_REFPT"]
-    if { $tcl_platform(os) == "FreeBSD" } { set shell "/usr/local/bin/bash"
-    } else { set shell "bash" }
-    array set g_prefs [list shell $shell] 
+    set shell "bash"
+    array set g_prefs [list shell $shell]
     array set g_prefs [list gui_text_editor	[get_text_editor true]]
     array set g_prefs [list gui_term_prog	[get_term_prog true]]
     setDefaultAddrs ipv4

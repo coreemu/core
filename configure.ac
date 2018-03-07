@@ -104,7 +104,6 @@ AC_ARG_ENABLE([daemon],
 AC_SUBST(enable_daemon)
 if test "x$enable_daemon" = "xno"; then
     want_python=no
-    want_bsd=no
     want_linux_netns=no
 fi
 
@@ -211,18 +210,9 @@ if test "x$enable_daemon" = "xyes" ; then
 fi
 
 # Host-specific detection
-want_linux_netns=no
-want_bsd=no
-if test `uname -s` = "FreeBSD"; then
-    want_bsd=yes
-    AC_CHECK_PROGS(gmake)
-    # FreeBSD fix for linking libev port below
-    CFLAGS="$CFLAGS -L/usr/local/lib"
-else
-    want_linux_netns=yes
-fi
+want_linux_netns=yes
+
 if test "x$want_python" = "xno"; then
-    want_bsd=no
     want_linux_netns=no
 fi
 
@@ -283,17 +273,6 @@ if test "x$want_linux_netns" = "xyes"; then
 	AC_MSG_ERROR([Could not locate tc (from iproute package).])
     fi
 fi
-if test "x$want_bsd" = "xyes"; then
-    if test "x$ifconfig_path" = "xno" ; then
-	AC_MSG_ERROR([Could not locate the 'ifconfig' utility.])
-    fi
-    if test "x$ngctl_path" = "xno" ; then
-	AC_MSG_ERROR([Could not locate the 'ngctl' utility.])
-    fi
-    if test "x$vimage_path" = "xno" ; then
-	AC_MSG_ERROR([Could not locate the 'vimage' utility.])
-    fi
-fi
 
 AC_ARG_WITH([startup],
 	    [AS_HELP_STRING([--with-startup=option],
@@ -306,7 +285,6 @@ AC_MSG_RESULT([using startup option $with_startup])
 # Variable substitutions
 AM_CONDITIONAL(WANT_GUI, test x$enable_gui = xyes)
 AM_CONDITIONAL(WANT_DAEMON, test x$enable_daemon = xyes)
-AM_CONDITIONAL(WANT_BSD, test x$want_bsd = xyes)
 AM_CONDITIONAL(WANT_DOCS, test x$want_docs = xyes)
 AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
 AM_CONDITIONAL(WANT_NETNS, test x$want_linux_netns = xyes)
@@ -370,19 +348,15 @@ ${PACKAGE_STRING} Configuration:
 Features to build:
   Python bindings:            ${want_python}
   Linux Namespaces emulation: ${want_linux_netns}
-  FreeBSD Jails emulation:    ${want_bsd}
   Documentation:              ${want_docs}
 
 ------------------------------------------------------------------------"
-if test "x${want_bsd}" = "xyes" ; then
-  # TODO: more sophisticated checks of gmake vs make
-  echo ">>> NOTE: on FreeBSD you should use 'gmake' instead of 'make'
-------------------------------------------------------------------------"
-fi
+
 if test "x${want_linux_netns}" = "xyes" ; then
   echo "On this platform you should run core-gui as a normal user.
 ------------------------------------------------------------------------"
 fi
+
 if test "x${progs_missing}" != "x" ; then
   echo ">>> NOTE: the following programs could not be found:"
   echo "          $progs_missing

@@ -24,15 +24,7 @@ dist-hook:
 	rm -rf $(distdir)/xen/.svn
 
 # install startup scripts based on --with-startup=option configure option
-# FreeBSD, init.d (default), systemd, SUSE
-if WANT_BSD
-startupdir	= /usr/local/etc/rc.d
-startup_SCRIPTS	= core-daemon
-
-core-daemon: core-daemon-rc.d
-	cp $< $@
-else
-
+# init.d (default), systemd, SUSE
 if WANT_INITD
 startupdir	= /etc/init.d
 startup_SCRIPTS	= core-daemon
@@ -50,8 +42,6 @@ startup_SCRIPTS	= core-daemon
 
 core-daemon: core-daemon-init.d-SUSE
 	cp $< $@
-endif
-# endif FreeBSD
 endif
 
 # remove extra scripts and their directories if they are empty

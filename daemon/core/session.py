@@ -933,7 +933,7 @@ class Session(object):
         """
         with self._objects_lock:
             for obj in self.objects.itervalues():
-                # TODO: PyCoreNode is not the type to check, but there are two types, due to bsd and netns
+                # TODO: PyCoreNode is not the type to check
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
                     logger.info("booting node: %s - %s", obj.objid, obj.name)

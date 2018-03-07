@@ -7,16 +7,17 @@
 # Bootstrap the autoconf system.
 #
 
-if [ x$1 = x ]; then		# PASS
+# PASS
+if [ x$1 = x ]; then
   echo "Bootstrapping the autoconf system..."
-# echo "  These autotools programs should be installed for this script to work:"
-# echo "    aclocal, libtoolize, autoheader, automake, autoconf"
   echo "(Messages below about copying and installing files are normal.)"
-elif [ x$1 = xclean ]; then 	# clean - take out the trash
+# clean - take out the trash
+elif [ x$1 = xclean ]; then
   echo "Cleaning up the autoconf mess..."
-  rm -rf autom4te.cache config BSDmakefile 
+  rm -rf autom4te.cache config
   exit 0;
-else				# help text
+# help text
+else
   echo "usage: $0 [clean]"
   echo -n "  Use this script to bootstrap the autoconf build system prior to "
   echo "running the "
@@ -27,15 +28,6 @@ fi
 # try to keep everything nice and tidy in ./config
 if ! [ -d "config" ]; then
   mkdir config
-fi
-
-# on FreeBSD, discourage use of make
-UNAME=`uname`
-if [ x${UNAME} = xFreeBSD ]; then
-	echo "all:" > BSDmakefile
-	echo '	@echo "Please use GNU make instead by typing:"' >> BSDmakefile
-	echo '	@echo "		gmake"' >> BSDmakefile
-	echo '	@echo ""' >> BSDmakefile
 fi
 
 # bootstrapping

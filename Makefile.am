@@ -31,7 +31,6 @@ EXTRA_DIST		= bootstrap.sh LICENSE \
 			  README-Xen Changelog kernel \
 			  python-prefix.py revision.sh \
 			  .version .version.date \
-			  packaging/bsd \
 			  packaging/deb/compat \
 			  packaging/deb/copyright \
 			  packaging/deb/changelog \
@@ -55,7 +54,6 @@ MAINTAINERCLEANFILES =				\
 # don't include svn dirs in source tarball
 dist-hook:
 	rm -rf `find $(distdir)/kernel -name .svn`
-	rm -rf $(distdir)/packaging/bsd/.svn
 
 # build a source RPM
 .PHONY: rpm

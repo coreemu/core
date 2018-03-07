@@ -319,12 +319,6 @@ if __name__ == "__main__":
 
         nodeutils.update_node_map(OVS_NODES)
 
-    # update with BSD based nodes
-    if os.uname()[0] == "FreeBSD":
-        from core.bsd.nodes import BSD_NODES
-
-        nodeutils.update_node_map(BSD_NODES)
-
     # load default services
     services.load()
 

@@ -22,19 +22,19 @@ if {$vtysh == ""} {
 # widget array: name, {config, init, periodic, move}
 #
 array set widgets {
-	"Throughput" 
-	{ widget_thru_config widget_thru_init widget_thru_periodic widget_thru_move } 
+	"Throughput"
+	{ widget_thru_config widget_thru_init widget_thru_periodic widget_thru_move }
 	"Adjacency"
 	{ widget_adjacency_config widget_adjacency_init widget_adjacency_periodic widget_adjacency_move }
 }
-# TODO:   fix CPU Widget; it is disabled because Linux network namespaces and
-#         FreeBSD jails do not have a CPU usage reporting mechanism right now
-#	"CPU" 
+# TODO:   fix CPU Widget; it is disabled because Linux network namespaces
+#         do not have a CPU usage reporting mechanism right now
+#	"CPU"
 #	{ widget_cpu_config widget_cpu_init widget_cpu_periodic widget_cpu_move }
 
 # Common Observer Widget definitions
 set widgets_obs_quagga [subst {
-    5 
+    5
     {{OSPFv2 neighbors} {$vtysh -c {show ip ospf neighbor}}}
 
     6
@@ -46,31 +46,6 @@ set widgets_obs_quagga [subst {
     14
     {{PIM neighbors} {$vtysh -c {show ip pim neighbor}}}
 }]
-
-# Observer Widget definitions for FreeBSD
-array set widgets_obs_bsd $widgets_obs_quagga
-array set widgets_obs_bsd {
-	1
-	{ "processes" "ps ax" }
-	2
-	{ "ifconfig" "ifconfig" }
-	3
-	{ "IPv4 routes" "netstat -f inet -rn" }
-	4
-	{ "IPv6 routes" "netstat -f inet6 -rn" }
-	7
-	{ "IPv4 listening sockets" "sockstat -4l" }
-	8
-	{ "IPv6 listening sockets" "sockstat -6l" }
-	9
-	{ "IPv4 MFC entries" "ifmcstat -f inet" }
-	10
-	{ "IPv6 MFC entries" "ifmcstat -f inet6" }
-	11
-	{ "firewall rules" "ipfw -a list" }
-	12
-	{ "IPsec policies" "setkey -DP" }
-}
 
 # Observer Widget definitions for Linux
 array set widgets_obs_linux $widgets_obs_quagga
@@ -104,17 +79,13 @@ set widget_loop_ID -1
 #
 proc init_default_widgets_obs {} {
     global systype widgets widgets_obs widget_obs last_widgetObserveNode
-    global widgets_obs_bsd widgets_obs_linux
+    global widgets_obs_linux
 
     setSystype
     array unset widgets_obs
-    if { [lindex $systype 0] == "Linux" } {
 	set arrayname widgets_obs_linux
 	# this works, but we will instead reset all indices:
 	#array set widgets_obs [array get widgets_obs_linux]
-    } else {
-	set arrayname widgets_obs_bsd
-    }
 
     # this resets the array indices to be 1, 2, 3, etc.
     set i 1
@@ -142,7 +113,7 @@ proc init_widget_menu {} {
     foreach w [array names widgets] {
 	global enable_$w
         set enable_$w 0
-	# note that a more modular way to break out submenus would be nice here 
+	# note that a more modular way to break out submenus would be nice here
 	if { $w == "Adjacency" } {
 	    widget_adjacency_init_submenu .menubar.widgets
 	    continue
@@ -374,9 +345,9 @@ proc configObsWidgets {} {
     button $wi.c.c3.add -text "new" \
 	-command "configObsWidgetsHelper $wi 1"
     button $wi.c.c3.mod -text "modify" \
-	-command "configObsWidgetsHelper $wi 2" 
+	-command "configObsWidgetsHelper $wi 2"
     button $wi.c.c3.del -text "delete" \
-	-command "configObsWidgetsHelper $wi 3" 
+	-command "configObsWidgetsHelper $wi 3"
     pack $wi.c.c3.del $wi.c.c3.mod $wi.c.c3.add -side right
     pack $wi.c.c3 -fill x -side top
 
@@ -386,7 +357,7 @@ proc configObsWidgets {} {
     frame $wi.s -borderwidth 4
     listbox $wi.s.servers -selectmode single -width 50 \
 	-yscrollcommand "$wi.s.servers_scroll set" -exportselection 0
-    scrollbar $wi.s.servers_scroll -command "$wi.s.servers yview" 
+    scrollbar $wi.s.servers_scroll -command "$wi.s.servers yview"
     pack $wi.s.servers $wi.s.servers_scroll -fill y -side left
     pack $wi.s -fill x -side top
     bind $wi.s.servers <<ListboxSelect>> "selectObsWidgetConf $wi"
@@ -531,7 +502,7 @@ proc selectObsWidgetConf { wi } {
     set selected [$wi.s.servers curselection]
 
     # clear entries
-    $wi.c.c.name delete 0 end 
+    $wi.c.c.name delete 0 end
     $wi.c.c2.cmd delete 0 end
 
     set w [$wi.s.servers get $selected]
@@ -602,23 +573,18 @@ proc widget_thru_config {} {
     checkbutton $wi.tlab.up \
     -text "Include receptions" -variable thruConfig(up)
     pack $wi.tlab.show_thru $wi.tlab.avg $wi.tlab.down \
-    $wi.tlab.up -side top -anchor w -padx 4 
+    $wi.tlab.up -side top -anchor w -padx 4
     pack $wi.tlab -side top
 
     frame $wi.msg -borderwidth 4
     global systype
-    if { [lindex $systype 0] == "FreeBSD" } {
-	set lab1txt "Note: links with no impairments (bw, delay,\netc) "
-	set lab1txt "${lab1txt}will display 0.0 throughput"
-    } else {
 	set lab1txt ""
-    }
     label $wi.msg.lab1 -text $lab1txt
     pack $wi.msg.lab1 -side top -padx 4 -pady 4
     pack $wi.msg -side top
 
     labelframe $wi.hi -padx 4 -pady 4 -text "Link highlighting"
-    
+
     # Threshold (set to zero to disable)
     label $wi.hi.lab1 -text \
     	"Highlight link if throuhgput exceeds this "
@@ -632,7 +598,7 @@ proc widget_thru_config {} {
     scale $wi.hi.threshscale -from 0.0 -to 1000.0 -orient horizontal \
     	-showvalue false -sliderrelief raised -variable thruConfig(thresh)
     pack $wi.hi.threshscale -side top -fill x
-   
+
     frame $wi.hi.w
     label $wi.hi.w.lab3 -text "Highlight link width:"
     spinbox $wi.hi.w.width -bg white -width 8 -textvariable thruConfig(width) \
@@ -649,7 +615,7 @@ proc widget_thru_config {} {
     pack $wi.hi.co.colbtn $wi.hi.co.color $wi.hi.co.lab1 \
     	-side right -padx 4 -pady 4
     pack $wi.hi.co -side top
-    
+
     pack $wi.hi -side top
 
     # OK button at bottom
@@ -748,7 +714,7 @@ proc ngctl_output_to_ifname { line } {
 # Throughput widget periodic procedure
 #
 proc widget_thru_periodic { now } {
-    global systype eid link_list 
+    global systype eid link_list
     global link_thru_stats link_thru_avg_stats link_thru_last_time thruConfig
     global throughput_cache
 
@@ -759,7 +725,7 @@ proc widget_thru_periodic { now } {
     set dt [expr { ($now - $link_thru_last_time)/1000.0 }]
     set link_thru_last_time $now
     if { $dt <= 0.0 } { return }
-    
+
     # keep wireless stats in an array
     array set wireless_stats {}
 
@@ -820,7 +786,7 @@ proc widget_thru_periodic { now } {
         set kbps [expr {$kbps + $kbps_down}]
     }
     #set kbps [expr {$kbps_down + $kbps_up}]
-	
+
 	if { $thruConfig(avg) } {
 	    if { ![info exists link_thru_avg_stats($key)] } {
 		set link_thru_avg_stats($key) $kbps
@@ -831,7 +797,7 @@ proc widget_thru_periodic { now } {
 		set kbps $s
 	    }
 	}
-	set kbps_str [format "%.3f" $kbps] 
+	set kbps_str [format "%.3f" $kbps]
 
 	# wireless link - keep total of wireless throughput for this node
 	#   (supports membership to multiple wlans)
@@ -855,14 +821,14 @@ proc widget_thru_periodic { now } {
 	    }
 	    .c itemconfigure "link && $link" -width $width -fill $color
 	}
-	thruPlotUpdate .c $link $kbps 
+	thruPlotUpdate .c $link $kbps
     }; # end foreach link
 
     # after summing all wireless link bandwidths, go back and perform
     # highlighting and label updating
     foreach node [array names wireless_stats] {
 	set kbps_str [format "%.3f" $wireless_stats($node)]
-    
+
 	# erase any existing circles (otherwise we get duplicates)
 	.c delete -withtag "$node && rangecircles"
 	# wireless circle if exceeding threshold
@@ -897,13 +863,13 @@ proc widget_thru_periodic { now } {
 # helper to convert ng_pipe stats into upstream/downstream bytes
 proc getstats_bytes_netgraph { raw_input } {
     # Rec'd response "getstats" (1) from "e0_n0-n1:":
-    # Args:   { downstream={ FwdOctets=416 FwdFrames=6 } 
+    # Args:   { downstream={ FwdOctets=416 FwdFrames=6 }
     #           upstream={ FwdOctets=416 FwdFrames=6 } }
     set tmp [split $raw_input ":"]
     if { [llength $tmp] != 4 } {
     	return [list 0 0]
     }
-    
+
     set statline [lindex [lindex $tmp 3] 0]
     set down [lindex $statline 1]
     set up [lindex $statline 5]
@@ -952,8 +918,8 @@ proc getstats_bytes_proc { raw_input ifname } {
 		break
 	    }
 	# match the ifname exactly
-	} elseif { [string range $statline 0 $ifname_len] == "$ifname:" } { 
-	    break 
+	} elseif { [string range $statline 0 $ifname_len] == "$ifname:" } {
+	    break
 	}
 	set statline ""
     }
@@ -964,8 +930,8 @@ proc getstats_bytes_proc { raw_input ifname } {
     set stats [lindex $statline 1]
 
     set down_bytes [lindex $stats 0]
-    set up_bytes [lindex $stats 8] 
-    
+    set up_bytes [lindex $stats 8]
+
     if { $down_bytes == "" } { set down_bytes 0 }
     if { $up_bytes == "" } { set up_bytes 0 }
 
@@ -979,43 +945,43 @@ proc widget_thru_move { c node done } {
 
 # Create a new throughput plot.
 proc thruPlot { c link x y height width isresize} {
-    global widgets enable_Throughput thruPlotColor curPlotBgColor  
+    global widgets enable_Throughput thruPlotColor curPlotBgColor
     global plot_list
- 
-    # if thruplot is called from resize, $link will hold full name 
+
+    # if thruplot is called from resize, $link will hold full name
     if { $isresize == true } {
         set g $link
 
         # extract linkname from full path
         regexp {l(.*)thruplot} $g match sub1
         set link "l$sub1"
-    } else {  
-        # if new thruplot is created create full name 
+    } else {
+        # if new thruplot is created create full name
         set g "$c.${link}thruplot"
     }
 
     # update plot_list
-    # Plot info to be stored : 
+    # Plot info to be stored :
     #    - canvas coords
-    #    - size (height, width) 
-    #    - color scheme 
-    #    - linkname 
-    
+    #    - size (height, width)
+    #    - color scheme
+    #    - linkname
+
     # global plot variable that stores all plot info
     global ${link}thruplot
-   
-    # reset global variable 
-    if {[info exists ${link}thruplot]} { unset ${link}thruplot} 
+
+    # reset global variable
+    if {[info exists ${link}thruplot]} { unset ${link}thruplot}
     set ${link}thruplot {}
 
-    lappend ${link}thruplot "name $g" 		
-    lappend ${link}thruplot "height $height" 	
-    lappend ${link}thruplot "width $width"  
-    lappend ${link}thruplot "x $x" 		
-    lappend ${link}thruplot "y $y" 	 
-    
+    lappend ${link}thruplot "name $g"
+    lappend ${link}thruplot "height $height"
+    lappend ${link}thruplot "width $width"
+    lappend ${link}thruplot "x $x"
+    lappend ${link}thruplot "y $y"
 
-    # if not in color dict, add and set to default (blue) 
+
+    # if not in color dict, add and set to default (blue)
     if {[dict exists $thruPlotColor $g] == 0} {
         dict set thruPlotColor $g blue
         set curPlotBgColor "#EEEEFF"
@@ -1025,11 +991,11 @@ proc thruPlot { c link x y height width isresize} {
         thruPlotSetScheme $scheme
 	lappend ${link}thruplot "color $scheme"
     }
-    
-    # add plot to global plot_list 
-    if {[lsearch $plot_list ${link}thruplot] eq -1} { 
+
+    # add plot to global plot_list
+    if {[lsearch $plot_list ${link}thruplot] eq -1} {
         lappend plot_list ${link}thruplot
-    } 
+    }
 
     # set global
     global $g
@@ -1040,7 +1006,7 @@ proc thruPlot { c link x y height width isresize} {
         destroy $g # TODO: support multiple plots for the same link
     }
 
-    canvas $g -height $height -width $width -bg $curPlotBgColor 
+    canvas $g -height $height -width $width -bg $curPlotBgColor
     $c create window $x $y -window $g -tags "thruplot $g"
 
     # set link interface title
@@ -1049,21 +1015,21 @@ proc thruPlot { c link x y height width isresize} {
 
     set if1 [ifcByPeer $lnode1 $lnode2]
     set if2 [ifcByPeer $lnode2 $lnode1]
- 
-    # if too narrow, bring title down 
+
+    # if too narrow, bring title down
     if {$width < 220} {
         $g create text $width 20 -anchor ne -text "$if1@$lnode1 - $if2@$lnode2"
     } else {
         $g create text $width 0 -anchor ne -text "$if1@$lnode1 - $if2@$lnode2"
-    } 
+    }
 
     # bind items
     bind $g <1>  "thruPlotClick $c $g %x %y none"
     bind $g <B1-Motion>  "thruPlotHandleB1Motion $c $g %x %y start"
-    bind $g <3> "thruPlotPopup $g %x %y" 
+    bind $g <3> "thruPlotPopup $g %x %y"
 
-    #DYL trying to update cursor look   
-    bind $g <Motion> "selectmarkEnter $g %x %y" 
+    #DYL trying to update cursor look
+    bind $g <Motion> "selectmarkEnter $g %x %y"
     bind $g <Any-Leave> "selectmarkLeave $c %x %y"
     bind $g <B1-ButtonRelease> "thruPlotHandleRelease $c $g %x %y done"
     #TODO when we are inside the thruplot, the graph hides the cursor
@@ -1085,27 +1051,27 @@ proc thruPlotPopup {g xclick yclick } {
 
     .button3menu delete 0 end
 
-    .button3menu.color delete 0 end 
+    .button3menu.color delete 0 end
     .button3menu add cascade -label "Set Color" -menu .button3menu.color
- 
-    # color red    
-    .button3menu.color add command -label "Red" -command "setThruPlotColor $g red" 
-   
-    # color blue
-    .button3menu.color add command -label "Green" -command "setThruPlotColor $g green" 
 
-    # color green 
+    # color red
+    .button3menu.color add command -label "Red" -command "setThruPlotColor $g red"
+
+    # color blue
+    .button3menu.color add command -label "Green" -command "setThruPlotColor $g green"
+
+    # color green
     .button3menu.color add command -label "Blue" -command "setThruPlotColor $g blue"
 
     # delete
     .button3menu add command -label "Delete" -command "deletePlot $g"
-   
+
     set x [winfo pointerx .]
-    set y [winfo pointery .] 
+    set y [winfo pointery .]
     tk_popup .button3menu $x $y
 }
 
-# remove thruplot 
+# remove thruplot
 proc deletePlot { g } {
     global plot_list
     regexp {.c.(.*thruplot)} $g match plotname
@@ -1119,15 +1085,15 @@ proc deletePlot { g } {
 # Mouse click on a throughput plot.
 # check to see if resize
 proc thruPlotClick { c g x y modifier } {
-    global thruplotResize cursorToResizemode resizemode resizeobj thruPlotDragStart thruPlotCur 
-     
-    set cursorMode [$c cget -cursor] 
-   
+    global thruplotResize cursorToResizemode resizemode resizeobj thruPlotDragStart thruPlotCur
+
+    set cursorMode [$c cget -cursor]
+
     # check if resizeMode
     if {$cursorMode != "left_ptr" && $cursorMode != "crosshair"} {
-        global oldX1 oldY1 oldX2 oldY2 
+        global oldX1 oldY1 oldX2 oldY2
 
-        # save old top left and bottom right points 
+        # save old top left and bottom right points
         set bbox [$c bbox $g]
         set oldX1 [lindex $bbox 0]
         set oldY1 [lindex $bbox 1]
@@ -1135,28 +1101,28 @@ proc thruPlotClick { c g x y modifier } {
         set oldY2 [lindex $bbox 3]
 
         # set resizeobj and resize mode
-        set resizeobj $g 
+        set resizeobj $g
         set resizemode [dict get $cursorToResizemode $cursorMode]
         set thruplotResize true
     } else {
         # update cursor to drag (crosshair)
-        $c configure -cursor crosshair 
-        set thruPlotDragStart true 
-        set thruPlotCur $g 
+        $c configure -cursor crosshair
+        set thruPlotDragStart true
+        set thruPlotCur $g
     }
-    
+
 }
 
-# Must handle either a resize or a drag 
+# Must handle either a resize or a drag
 # The plot canvas gets the B1-Motion event, not the parent canvas
 proc thruPlotHandleB1Motion {c g x y what} {
-    global thruplotResize resizemode resizeobj 
+    global thruplotResize resizemode resizeobj
     set cursorMode [$c cget -cursor]
-    # check if drag (center is clicked) 
+    # check if drag (center is clicked)
     if {($cursorMode == "left_ptr" || $cursorMode == "crosshair") && $thruplotResize == false} {
         thruPlotDrag $c $g $x $y $what false
     } else {
-        # resize was clicked    
+        # resize was clicked
     }
 }
 
@@ -1168,30 +1134,30 @@ proc thruPlotHandleRelease { c g x y what} {
         thruPlotDrag $c $g $x $y $what false
     } else {
         thruPlotRescale $c $g $x $y
-    } 
+    }
 }
 
 # redraw thruplot
 # x y show coords relative to top left corner of thruplot
 proc thruPlotRescale { c g x y } {
-    global thruplotResize resizemode oldX1 oldY1 oldX2 oldY2     
+    global thruplotResize resizemode oldX1 oldY1 oldX2 oldY2
 
     # resize based on resize mode
     switch $resizemode {
         ld {
-           # if the left bot corner is clicked just look at new x set new height 
+           # if the left bot corner is clicked just look at new x set new height
            lassign [calcDimensions [expr {$oldX1 + $x}] $oldY1 $oldX2 [expr {$oldY1 + $y}]] cx cy h w
-           thruPlot $c $g $cx $cy $h $w true 
+           thruPlot $c $g $cx $cy $h $w true
         }
         ru {
            # if the right top corner is clicked just look at new x set new heigth
            lassign [calcDimensions $oldX1 [expr {$oldY1 + $y}] [expr {$oldX1 + $x}] $oldY2] cx cy h w
-           thruPlot $c $g $cx $cy $h $w true 
+           thruPlot $c $g $cx $cy $h $w true
         }
         rd {
-           # if the right bottom corner clicked 
+           # if the right bottom corner clicked
            lassign [calcDimensions $oldX1 $oldY1 [expr {$oldX1 + $x}] [expr {$oldY1 + $y}]] cx cy h w
-           thruPlot $c $g $cx $cy $h $w true 
+           thruPlot $c $g $cx $cy $h $w true
         }
         lu {
            # if the left bottom corner clicked
@@ -1205,44 +1171,44 @@ proc thruPlotRescale { c g x y } {
         }
         l {
             # if the left side is clicked just look at new x
-            lassign [calcDimensions [expr {$oldX1 + $x}] $oldY1 $oldX2 $oldY2] cx cy h w 
-            thruPlot $c $g $cx $cy $h $w true 
+            lassign [calcDimensions [expr {$oldX1 + $x}] $oldY1 $oldX2 $oldY2] cx cy h w
+            thruPlot $c $g $cx $cy $h $w true
         }
         u {
-            # if the top side is click just look at new y 
+            # if the top side is click just look at new y
             lassign [calcDimensions $oldX1 [expr {$oldY1 + $y}] $oldX2 $oldY2] cx cy h w
-            thruPlot $c $g $cx $cy $h $w true 
+            thruPlot $c $g $cx $cy $h $w true
         }
         d {
            # if the top side is click just look at new y
             lassign [calcDimensions $oldX1 $oldY1 $oldX2 [expr {$oldY1 + $y}]] cx cy h w
-            thruPlot $c $g $cx $cy $h $w true 
+            thruPlot $c $g $cx $cy $h $w true
         }
         default {
-            puts "ERROR: should not come here. resize mode is invalid." 
-        } 
+            puts "ERROR: should not come here. resize mode is invalid."
+        }
     }
 
     # rescale is done reset rescale global variables
     set cursor left_ptr
     set thruplotResize false
-    set resizemode false 
+    set resizemode false
 }
 
 # Calculate center, height, width based on top left and bot right corners
 proc calcDimensions { x1 y1 x2 y2 } {
-    set h [expr {$y2 - $y1}] 
+    set h [expr {$y2 - $y1}]
     set w [expr {$x2 - $x1}]
 
     # enforce min size
     if {$h < 100} {
-        set h 100 
+        set h 100
     }
 
     if {$w < 100} {
         set w 100
     }
-    list [expr {$x1 + ($w/2)}] [expr {$y1 + ($h/2)}] $h $w 
+    list [expr {$x1 + ($w/2)}] [expr {$y1 + ($h/2)}] $h $w
 }
 
 # Mouse drag a throughput plot.
@@ -1250,67 +1216,67 @@ proc thruPlotDrag { c g x y what fromCanvas} {
     global thruPlotDragStart thruPlotCur
     global plot_list
     set pad 60
-    set maxjump 500 
+    set maxjump 500
 
     # this fixes a bug when thruplot is off screen
     if {$fromCanvas == true} {
        #puts "handling from canvas"
-       $c coords $thruPlotCur [expr {$x - $pad}] [expr {$y- $pad}] 
-       return 
+       $c coords $thruPlotCur [expr {$x - $pad}] [expr {$y- $pad}]
+       return
     }
 
     if {$thruPlotDragStart == false} {
         if { [expr abs($x)] > $maxjump || [expr abs($y)] > $maxjump} {
             puts "ERROR can not drag too far at one time"
-            return 
-        } 
-    } else {    
+            return
+        }
+    } else {
         set curx [lindex [$c coords $g] 0]
         set cury [lindex [$c coords $g] 1]
 
-        # perform the actual drag 
+        # perform the actual drag
         set newx [expr {$x - $pad + $curx}]
-        set newy [expr {$y- $pad + $cury}] 
-        $c coords $thruPlotCur $newx $newy  
+        set newy [expr {$y- $pad + $cury}]
+        $c coords $thruPlotCur $newx $newy
 
         # save new coords DYL
-        regexp {.c.(l.*thruplot)} $g match name 
-        # global ${name} 
+        regexp {.c.(l.*thruplot)} $g match name
+        # global ${name}
 
         # find and replace x coord
-        updatePlotAttr ${name} "x" $newx 
-        updatePlotAttr ${name} "y" $newy 
+        updatePlotAttr ${name} "x" $newx
+        updatePlotAttr ${name} "y" $newy
 
         set thruPlotDragStart dragging
-    } 
+    }
 }
 
 proc redrawAllThruplots {} {
     global plot_list
 
     foreach tp $plot_list {
-        # extract the following properties from the thruplot : 
+        # extract the following properties from the thruplot :
  	# full path
  	# height, width
 	# x,y coords,
  	# color scheme
    	set fp [getPlotAttr $tp name]
         set height [getPlotAttr $tp height]
-	set width [getPlotAttr $tp width] 
+	set width [getPlotAttr $tp width]
  	set x [getPlotAttr $tp x]
 	set y [getPlotAttr $tp y]
  	set color [getPlotAttr $tp color]
 
-        thruPlot .c $fp $x $y $height $width true 
-    	setThruPlotColor $fp $color 
-    } 
+        thruPlot .c $fp $x $y $height $width true
+    	setThruPlotColor $fp $color
+    }
 }
-# this will update an attribute of the global thruplot variable 
+# this will update an attribute of the global thruplot variable
 proc updatePlotAttr { plot attr val } {
     # puts "updating $attr of ${plot} to $val"
     global ${plot}
 
-    # find and replace attribute 
+    # find and replace attribute
     set i [lsearch [set ${plot}] "$attr *"]
     # puts " found at $i"
     if { $i >= 0 } {
@@ -1320,7 +1286,7 @@ proc updatePlotAttr { plot attr val } {
     }
 }
 
-# this will return an attribute from the plotlist 
+# this will return an attribute from the plotlist
 proc getPlotAttr {plot attr} {
     global ${plot}
 
@@ -1345,7 +1311,7 @@ proc setThruPlotColor { g color} {
     # set global variables that determine color scheme
     thruPlotSetScheme $color
 
-    # update old data 
+    # update old data
     $g itemconfigure "filler" -fill $curPlotFillColor
     $g itemconfigure "line" -fill $curPlotLineColor
     $g configure -bg $curPlotBgColor
@@ -1372,15 +1338,15 @@ proc thruPlotSetScheme { color } {
             set curPlotBgColor "#eeffee"
         }
         default {
-            puts "ERROR: invalid plot color '$color'" 
+            puts "ERROR: invalid plot color '$color'"
         }
-   }  
+   }
 }
 
 # update a throughput plot with a new data point
 proc thruPlotUpdate { c link kbps } {
     set g "$c.${link}thruplot"
-    global $g curPlotLineColor curPlotFillColor curPlotBgColor thruPlotColor thruPlotMaxKBPS 
+    global $g curPlotLineColor curPlotFillColor curPlotBgColor thruPlotColor thruPlotMaxKBPS
 
     # Check if window exists
     if { ![winfo exists $g] } {
@@ -1389,10 +1355,10 @@ proc thruPlotUpdate { c link kbps } {
 
     # lookup scheme for thruplot and set scheme
     set scheme [dict get $thruPlotColor $g]
-    thruPlotSetScheme $scheme  
-    # set bg to scheme 
-    $g configure -bg $curPlotBgColor 
- 
+    thruPlotSetScheme $scheme
+    # set bg to scheme
+    $g configure -bg $curPlotBgColor
+
     set maxx [$g cget -width]
     set maxy [$g cget -height]
     set yscale [thruPlotAutoScale $g $kbps]
@@ -1400,7 +1366,7 @@ proc thruPlotUpdate { c link kbps } {
     # shift graph to the left by dt pixels
     set dt 5.0
     $g move "data" -$dt 0.0
-    
+
     thruPlotDeleteOldData $g $dt
     set last [$g find withtag "data && last"]
 
@@ -1416,8 +1382,8 @@ proc thruPlotUpdate { c link kbps } {
 
     $g create polygon $x1 $y1 $x2 $y2 $x2 $maxy $x1 $maxy \
 	-tags "data filler" -fill $curPlotFillColor -width 2
-    
-    $g create line $x1 $y1 $x2 $y2 -tags "data last line" -fill $curPlotLineColor 
+
+    $g create line $x1 $y1 $x2 $y2 -tags "data last line" -fill $curPlotLineColor
 }
 
 # return the existing y-value scale; if the given value is off the scale,
@@ -1426,21 +1392,21 @@ proc thruPlotAutoScale { g val } {
     set yscale [lindex [$g itemcget "ticks && scalemax" -text] 0]
     global thruPlotMaxKBPS
 
-    # update global max 
+    # update global max
     if { $val > $thruPlotMaxKBPS} {
         set thruPlotMaxKBPS $val
-    } else { 
+    } else {
         set val $thruPlotMaxKBPS
     }
 
-    # default  
+    # default
     if { $yscale == "" || $yscale < 1.0 } {
 	set yscale 10.0
-    } 
+    }
 
     if { $val < $yscale } {
         return $yscale ;# value within bounds of existing scale
-    } 
+    }
 
     set maxy [$g cget -height]
     set newyscale [expr {ceil($val) + 5.0}]
@@ -1519,7 +1485,7 @@ proc thruPlotDrawScale { g max } {
 proc thruPlotDeleteOldData { g dt } {
     foreach i [$g find withtag "data"] {
 	if { [lindex [$g coords $i] 0] < [expr { -2.0 * $dt }] } {
-	    $g delete $i 
+	    $g delete $i
 	}
     }
 }
@@ -1571,7 +1537,7 @@ proc widget_cpu_config {} {
 
 
     labelframe $wi.hi -padx 4 -pady 4 -text "Node highlighting"
-    
+
     # Threshold (set to zero to disable)
     label $wi.hi.lab1 -text "Highlight node if CPU usage exceeds this "
     pack $wi.hi.lab1 -side top -anchor w
@@ -1581,7 +1547,7 @@ proc widget_cpu_config {} {
     label $wi.hi.t.lab2 -text "% CPU"
     pack $wi.hi.t.lab2 $wi.hi.t.thresh $wi.hi.t.lab1 -side right -padx 4 -pady 4
     pack $wi.hi.lab1 $wi.hi.t -side top
-  
+
     # Highlight color/width
     frame $wi.hi.w
     label $wi.hi.w.lab3 -text "radius:"
@@ -1597,7 +1563,7 @@ proc widget_cpu_config {} {
     pack $wi.hi.w.colbtn $wi.hi.w.color $wi.hi.w.lab1 \
     	-side right -padx 4 -pady 4
     pack $wi.hi.w -side top
-    
+
     pack $wi.hi -side top -fill x
 
     # OK button at bottom
@@ -1642,13 +1608,8 @@ proc widget_cpu_init {command} {
 #
 proc widget_cpu_periodic { now } {
     global systype
-
-    if { [lindex $systype 0] == "FreeBSD" } {
-	widget_cpu_periodic_vimage $now
-    } else {
 	puts "warning: the CPU widget is not functional for this platform yet"
 	return
-    }
 }
 
 proc widget_cpu_periodic_vimage { now } {
@@ -1664,10 +1625,10 @@ proc widget_cpu_periodic_vimage { now } {
 
 	set newtext [format "%.2f %%" $cpustats($eid\_$node)]
 	set coords [getCPUcoords $node]
-	set x [lindex $coords 0] 
-	set y [lindex $coords 1] 
-	set basex [lindex $coords 2] 
-	set basey [lindex $coords 3] 
+	set x [lindex $coords 0]
+	set y [lindex $coords 1]
+	set basex [lindex $coords 2]
+	set basey [lindex $coords 3]
 
 	set existing [.c find withtag "cpulabel && $node"]
 	if { [llength $existing] == 0 } { ;# create new label
@@ -1678,7 +1639,7 @@ proc widget_cpu_periodic_vimage { now } {
 	    .c itemconfigure $cpulabel -text $newtext
 	}
 	.c raise $cpulabel
-	# perform highlighting 
+	# perform highlighting
 	set existing [.c find withtag "cpuhi && $node"]
 	if { $cpustats($eid\_$node) >= $cpuConfig(thresh) } {
 	    if { [llength $existing] == 0 } {
@@ -1692,7 +1653,7 @@ proc widget_cpu_periodic_vimage { now } {
 		#.c raise "link && $node"
 		.c raise "node && $node"
 	    }
-	    
+
 	} elseif { [llength $existing] > 0 } {
 	    .c delete $existing
 	}
@@ -1726,7 +1687,7 @@ proc getstats_cpu_vimage { raw_input} {
     if { $numlines <= 4 } {
     	return [list 0 0]
     }
-  
+
     # add node_name/cpu to a list
     set ret {}
     set i 0
@@ -1756,7 +1717,7 @@ proc getstats_cpu_vestat { } {
     global cpu_vestat_history; # remember previous jiffies
     set Hertz 100.0; # from <asm/param.h>, varies per architecture
 
-    # read /proc/vz/vestat    
+    # read /proc/vz/vestat
     if { [catch {set f [open "/proc/vz/vestat" r]} e] } {
 	puts "error opening /proc/vz/vestat: $e"
 	return
@@ -1784,8 +1745,8 @@ proc getstats_cpu_vestat { } {
     array set cpu_vestat_history [list uptime $uptime_now]
     set elapsed [expr {$uptime_now - $uptime_old}]
     if { $elapsed == 0.0 } { set elapsed 1.0 }; # don't divide by zero
-   
-  
+
+
     # add node_name/cpu to a list
     set ret {}
     for { set i 0 } { $i < [llength $lines] } { incr i } {
@@ -1943,7 +1904,7 @@ proc get_router_id {node} {
 	}
     }
     if {[lsearch [getNodeServices $node true] "OLSR"] != -1 } {
-        
+
         set sock [lindex [getEmulPlugin $node] 2]
         set exec_num [newExecCallbackRequest adjacencyrouterid]
         set name [getNodeName $node]
@@ -2008,7 +1969,7 @@ proc widget_adjacency_init {command} {
             set enable_Adjacency_OSPFv3 0
             set enable_Adjacency_OLSR 0
             set adjacency_config(proto) "OLSRv2_proto"
-        } 
+        }
     }
 
     # Initialize
@@ -2017,7 +1978,7 @@ proc widget_adjacency_init {command} {
 	foreach node $node_list { ;# save router-id node pairs for later lookup
             if { [nodeType $node] != "router" } { continue }
 	    if {[lsearch [getNodeServices $node true] "zebra"] < 0 &&
-                [lsearch [getNodeServices $node true] "OLSR"] < 0 && 
+                [lsearch [getNodeServices $node true] "OLSR"] < 0 &&
                 [lsearch [getNodeServices $node true] "OLSRv2"] < 0} {
 		continue
 	    }
@@ -2107,16 +2068,16 @@ proc exec_adjacency_callback { node execnum cmd result status } {
     global g_api_exec_num
     set changed 0
     set c .c
-    
+
     set proto $adjacency_config(proto)
     array set colors $adjacency_config(colors)
     if { $adjacency_config(offset) } { set o 5 } else { set o 0 }
 
-    $c addtag adjdelete withtag "adjline && $node" ;# flag del all adjlines 
+    $c addtag adjdelete withtag "adjline && $node" ;# flag del all adjlines
     set adjs [getadj_from_neighbors $result $proto]
-     
+
     foreach adj $adjs {
-            
+
 	    set peer [lindex $adj 0]
 	    set line [$c find withtag "adjline && $node && $peer"]
 
@@ -2193,7 +2154,7 @@ proc getadj_from_neighbors { raw_input proto } {
             "LOST"    { set state "Down" }
             "MPR"     { set state "Full" }
             "PENDING" { set state "Init" }
-            "INVALID" { set state "Down" } 
+            "INVALID" { set state "Down" }
             }
             lappend ret [list $rtrid $state]
         }
@@ -2205,7 +2166,7 @@ proc getadj_from_neighbors { raw_input proto } {
 #10.0.0.2          1    00:00:06   Init/PointToPoint    00:00:00 eth0[PointToP
 #10.0.0.2          1    00:00:06 Twoway/PointToPoint    00:00:00 eth0[PointToP
 #10.0.0.2          1    00:00:06   Full/PointToPoint    00:00:38 eth0[PointToP
-#10.0.7.2          1 Full/Backup       37.240s 10.0.0.2        eth0:10.0.0.1    
+#10.0.7.2          1 Full/Backup       37.240s 10.0.0.2        eth0:10.0.0.1
     foreach line [split $raw_input "\n"] {
 	set rtrid [string trim [string range $line 0 14]]
 	if { $rtrid == "Neighbor ID" } { continue }
@@ -2284,17 +2245,17 @@ proc widget_adjacency_init_submenu { m } {
     set enable_Adjacency_OSPFv2 0
     $m.adj add checkbutton -label "OSPFv2" -variable enable_Adjacency_OSPFv2 \
         -command "[lindex $widgets(Adjacency) 1] menu2"
-    
+
     global enable_Adjacency_OSPFv3
     set enable_Adjacency_OSPFv3 0
     $m.adj add checkbutton -label "OSPFv3" -variable enable_Adjacency_OSPFv3 \
         -command "[lindex $widgets(Adjacency) 1] menu3"
-    
+
     global enable_Adjacency_OLSR
     set enable_Adjacency_OLSR 0
     $m.adj add checkbutton -label "OLSR" -variable enable_Adjacency_OLSR \
         -command "[lindex $widgets(Adjacency) 1] menu4"
-    
+
     global enable_Adjacency_OLSRv2
     set enable_Adjacency_OLSRv2 0
     $m.adj add checkbutton -label "OLSRv2" -variable enable_Adjacency_OLSRv2 \

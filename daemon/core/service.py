@@ -87,9 +87,7 @@ class CoreServices(ConfigurableManager):
     name = "services"
     config_type = RegisterTlvs.UTILITY.value
 
-    _invalid_custom_names = (
-        'core', 'api', 'bsd', 'emane', 'misc', 'netns', 'phys', 'services', 'xen'
-    )
+    _invalid_custom_names = ('core', 'api', 'emane', 'misc', 'netns', 'phys', 'services', 'xen')
 
     def __init__(self, session):
         """
@@ -763,7 +761,7 @@ class CoreServices(ConfigurableManager):
                         cfg = self.getservicefiledata(s, filename)
                         if cfg is None:
                             cfg = s.generateconfig(node, filename, services)
-                        
+
                         node.nodefile(filename, cfg)
 
         fail_data = ""

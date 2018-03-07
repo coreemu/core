@@ -298,8 +298,7 @@ class OlsrOrg(NrlService):
 #######################################
 ### Linux specific OLSRd extensions ###
 #######################################
-# these parameters are only working on linux at the moment, but might become
-# useful on BSD in the future
+# these parameters are only working on linux at the moment
 
 # SrcIpRoutes tells OLSRd to set the Src flag of host routes to the originator-ip
 # of the node. In addition to this an additional localhost device is created
@@ -516,7 +515,7 @@ LinkQualityFishEye  0
 # - /lib, followed by /usr/lib
 #
 # the examples in this list are for linux, so check if the plugin is
-# available if you use windows/BSD.
+# available if you use windows.
 # each plugin should have a README file in it's lib subfolder
 
 # LoadPlugin "olsrd_txtinfo.dll"
