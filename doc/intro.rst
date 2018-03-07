@@ -63,7 +63,6 @@ command-line tools.
 The system is modular to allow mixing different components. The virtual
 networks component, for example, can be realized with other network
 simulators and emulators, such as ns-3 and EMANE.
-Different types of kernel virtualization are supported.
 Another example is how a session can be designed and started using
 the GUI, and continue to run in "headless" operation with the GUI closed.
 The CORE API is sockets based,
