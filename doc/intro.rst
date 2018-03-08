@@ -111,8 +111,7 @@ Linux network namespaces (also known as netns, LXC, or `Linux containers
 <http://lxc.sourceforge.net/>`_) is the primary virtualization
 technique used by CORE. LXC has been part of the mainline Linux kernel since
 2.6.24. Recent Linux distributions such as Fedora and Ubuntu have
-namespaces-enabled kernels out of the box, so the kernel does not need to be
-patched or recompiled.
+namespaces-enabled kernels out of the box.
 A namespace is created using the ``clone()`` system call. Each namespace has
 its own process environment and private network stack. Network namespaces
 share the same filesystem in CORE.

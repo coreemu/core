@@ -28,7 +28,7 @@ ACLOCAL_AMFLAGS 	= -I config
 # extra files to include with distribution tarball
 EXTRA_DIST		= bootstrap.sh LICENSE \
  			  README.md ASSIGNMENT_OF_COPYRIGHT.pdf \
-			  Changelog kernel \
+			  Changelog \
 			  python-prefix.py revision.sh \
 			  .version .version.date \
 			  packaging/deb/compat \
@@ -50,10 +50,6 @@ DISTCLEANFILES	= aclocal.m4 config.h.in configure Makefile.in config/compile
 MAINTAINERCLEANFILES =				\
 	.version				\
 	.version.date
-
-# don't include svn dirs in source tarball
-dist-hook:
-	rm -rf `find $(distdir)/kernel -name .svn`
 
 # build a source RPM
 .PHONY: rpm

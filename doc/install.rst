@@ -119,36 +119,6 @@ Installing from Packages on Ubuntu
 
 First install the Ubuntu |UBUNTUVERSION| operating system.
 
-.. tip::
-   With Debian or Ubuntu 14.04 (trusty) and newer, you can simply install
-   CORE using the following command::
-
-     sudo apt-get install core-network
-
-   Proceed to the "Install Quagga for routing." line below to install Quagga.
-   The other commands shown in this section apply to binary packages
-   downloaded from the CORE website instead of using the Debian/Ubuntu
-   repositories.
-
-
-.. NOTE::
-   Linux package managers (e.g. `software-center`, `yum`) will take care
-   of installing the dependencies for you when you use the CORE packages.
-   You do not need to manually use these installation lines. You do need
-   to select which Quagga package to use.
-
-
-* **Optional:** install the prerequisite packages (otherwise skip this
-  step and have the package manager install them for you.)
-
-  .. parsed-literal::
-
-      # make sure the system is up to date; you can also use synaptic or
-      #  update-manager instead of apt-get update/dist-upgrade
-      sudo apt-get update
-      sudo apt-get dist-upgrade
-      sudo apt-get install |APTDEPS| |APTDEPS2|
-
 * Install Quagga for routing. If you plan on working with wireless
   networks, we recommend
   installing
