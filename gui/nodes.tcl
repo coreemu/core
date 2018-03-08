@@ -26,7 +26,7 @@ array set g_node_types_default {
 	5 {prouter router_green.gif router_green.gif \
 	    {zebra OSPFv2 OSPFv3 IPForward} \
 	    physical {built-in type for physical nodes}}
-	7 {OVS lanswitch.gif lanswitch.gif {DefaultRoute SSH OvsService} OVS {} }
+	6 {OVS lanswitch.gif lanswitch.gif {DefaultRoute SSH OvsService} OVS {} }
 
 }
 
