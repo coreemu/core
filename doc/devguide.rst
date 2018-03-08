@@ -37,7 +37,6 @@ These are being actively developed as of CORE |version|:
 * *netns* - Python extension modules for Linux Network Namespace support are in :file:`netns`.
 * *ns3* - Python ns3 script support for running CORE.
 * *doc* - Documentation for the manual lives here in reStructuredText format.
-* *packaging* - Control files and script for building CORE packages are here.
 
 .. _The_CORE_API:
 

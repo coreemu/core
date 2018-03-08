@@ -320,11 +320,7 @@ AC_CONFIG_FILES([Makefile
 		netns/Makefile
 		netns/version.h
 		ns3/Makefile
-		ns3/corens3/constants.py
-		packaging/deb/core-daemon.install
-		packaging/deb/core-daemon.prerm
-		packaging/deb/core-gui.install
-		packaging/rpm/core.spec],)
+		ns3/corens3/constants.py],)
 AC_OUTPUT
 
 # Summary text

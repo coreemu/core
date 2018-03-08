@@ -30,17 +30,7 @@ EXTRA_DIST		= bootstrap.sh LICENSE \
  			  README.md ASSIGNMENT_OF_COPYRIGHT.pdf \
 			  Changelog \
 			  python-prefix.py revision.sh \
-			  .version .version.date \
-			  packaging/deb/compat \
-			  packaging/deb/copyright \
-			  packaging/deb/changelog \
-			  packaging/deb/rules \
-			  packaging/deb/control \
-			  packaging/deb/core-daemon.install.in \
-			  packaging/deb/core-daemon.prerm.in \
-			  packaging/deb/core-gui.install.in \
-			  packaging/rpm/core.spec.in \
-			  packaging/rpm/specfiles.sh
+			  .version .version.date
 
 DISTCLEAN_TARGETS	= aclocal.m4 config.h.in
 
@@ -50,25 +40,6 @@ DISTCLEANFILES	= aclocal.m4 config.h.in configure Makefile.in config/compile
 MAINTAINERCLEANFILES =				\
 	.version				\
 	.version.date
-
-# build a source RPM
-.PHONY: rpm
-rpm: dist
-	mkdir -p $(HOME)/rpmbuild/{BUILD,RPMS,SOURCES,SPECS,SRPMS}
-	echo '%_topdir $(HOME)/rpmbuild' > ~/.rpmmacros
-	cp -afv core-@CORE_VERSION@.tar.gz ~/rpmbuild/SOURCES
-	cp -afv packaging/rpm/core.spec ~/rpmbuild/SPECS
-	rpmbuild -bs ~/rpmbuild/SPECS/core.spec
-
-# build a Ubuntu deb package using CDBS
-.PHONY: deb
-deb:
-	rm -rf debian
-	mkdir -p debian
-	cp -vf packaging/deb/* debian/
-	@echo "First create source archive with:  dpkg-source -b core-@CORE_VERSION@"
-	@echo "Then build with:  pbuilder-dist precise i386 build core*.dsc"
-
 
 define fpm-python =
 fpm -s python -t $1 \
