@@ -14,8 +14,6 @@ from core import constants
 from core import logger
 from core.misc import utils
 
-VCMD = os.path.join(constants.CORE_BIN_DIR, "vcmd")
-
 
 class VnodeClient(object):
     """
@@ -134,7 +132,7 @@ class VnodeClient(object):
         :rtype: int
         """
         args = utils.split_args(args)
-        return os.spawnlp(os.P_WAIT, VCMD, VCMD, "-c", self.ctrlchnlname, "--", *args)
+        return os.spawnlp(os.P_WAIT, constants.VCMD_BIN, constants.VCMD_BIN, "-c", self.ctrlchnlname, "--", *args)
 
     def redircmd(self, infd, outfd, errfd, args, wait=True):
         """
@@ -171,7 +169,7 @@ class VnodeClient(object):
         :return: terminal command result
         :rtype: int
         """
-        args = ("xterm", "-ut", "-title", self.name, "-e", VCMD, "-c", self.ctrlchnlname, "--", sh)
+        args = ("xterm", "-ut", "-title", self.name, "-e", constants.VCMD_BIN, "-c", self.ctrlchnlname, "--", sh)
         if "SUDO_USER" in os.environ:
             args = ("su", "-s", "/bin/sh", "-c",
                     "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
@@ -185,7 +183,7 @@ class VnodeClient(object):
         :param str sh: shell to execute command in
         :return: str
         """
-        return "%s -c %s -- %s" % (VCMD, self.ctrlchnlname, sh)
+        return "%s -c %s -- %s" % (constants.VCMD_BIN, self.ctrlchnlname, sh)
 
     def shcmd(self, cmd, sh="/bin/sh"):
         """

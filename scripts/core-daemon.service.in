@@ -5,7 +5,7 @@ After=network.target
 [Service]
 Type=forking
 PIDFile=/var/run/core-daemon.pid
-ExecStart=@PYTHON@ @SBINDIR@/core-daemon -d
+ExecStart=@PYTHON@ @bindir@/core-daemon -d
 TasksMax=infinity
 
 [Install]

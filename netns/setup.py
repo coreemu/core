@@ -3,24 +3,7 @@ Defines how CORE netns will be build for installation.
 """
 
 from setuptools import setup, Extension
-from distutils.command.install import install
 
-
-class CustomInstall(install):
-    user_options = install.user_options + [
-        ("service=", None, "determine which service file to include")
-    ]
-
-    def initialize_options(self):
-        install.initialize_options(self)
-        self.service = "sysv"
-
-    def finalize_options(self):
-        install.finalize_options(self)
-        assert self.service in ("sysv", "systemd"), "must be sysv or systemd"
-
-    def run(self):
-        install.run(self)
 
 netns = Extension(
     "netns",
@@ -58,7 +41,4 @@ setup(
     author_email="core-dev@nrl.navy.mil",
     license="BSD",
     long_description="Extension modules and utilities to support virtual nodes using Linux network namespaces",
-    cmdclass={
-        "install": CustomInstall
-    }
 )

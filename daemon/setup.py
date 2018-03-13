@@ -4,13 +4,13 @@ Defines how CORE will be built for installation.
 
 import glob
 import os
-from distutils.command.install import install
 
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from distutils.core import setup
 
 _CORE_DIR = "/etc/core"
-_MAN_DIR = "/usr/local/share/man/man1"
-_SHARE_DIR = "/usr/local/share/core"
+_MAN_DIR = "share/man/man1"
+_EXAMPLES_DIR = "share/core"
 _SYSV = "/etc/init.d"
 _SYSTEMD = "/etc/systemd/system"
 
@@ -30,31 +30,6 @@ def glob_files(glob_path):
     return glob.glob(glob_path)
 
 
-class CustomInstall(install):
-    user_options = install.user_options + [
-        ("service=", None, "determine which service file to include")
-    ]
-
-    def initialize_options(self):
-        install.initialize_options(self)
-        self.service = "sysv"
-
-    def finalize_options(self):
-        install.finalize_options(self)
-        assert self.service in ("sysv", "systemd"), "must be sysv or systemd"
-
-    def run(self):
-        if self.service == "sysv":
-            self.distribution.data_files.append((
-                _SYSV, ["../scripts/core-daemon"]
-            ))
-        else:
-            self.distribution.data_files.append((
-                _SYSTEMD, ["../scripts/core-daemon.service"]
-            ))
-        install.run(self)
-
-
 data_files = [
     (_CORE_DIR, [
         "data/core.conf",
@@ -62,7 +37,7 @@ data_files = [
     ]),
     (_MAN_DIR, glob_files("../doc/man/**.1")),
 ]
-data_files.extend(recursive_files(_SHARE_DIR, "examples"))
+data_files.extend(recursive_files(_EXAMPLES_DIR, "examples"))
 
 setup(
     name="core",
@@ -90,7 +65,4 @@ setup(
     author_email="core-dev@nrl.navy.mil",
     license="BSD",
     long_description="Python scripts and modules for building virtual emulated networks.",
-    cmdclass={
-        "install": CustomInstall
-    }
 )

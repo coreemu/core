@@ -1,4 +1,0 @@
-recursive-include sbin *.sh *.py
-include data/core.conf
-recursive-include examples/netns *.py *.sh
-recursive-exclude examples/netns *.pyc *.pyo

@@ -86,7 +86,7 @@ class SimpleLxcNode(PyCoreNode):
 
         # create a new namespace for this node using vnoded
         vnoded = [
-            "%s/vnoded" % constants.CORE_BIN_DIR,
+            constants.VNODED_BIN,
             "-v",
             "-c", self.ctrlchnlname,
             "-l", self.ctrlchnlname + ".log",

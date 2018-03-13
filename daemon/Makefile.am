@@ -7,73 +7,17 @@
 # Makefile for building netns components.
 #
 
-SETUPPY		= setup.py
-SETUPPYFLAGS	= -v
+SETUPPY	= setup.py
+SETUPPYFLAGS = -v
 
 if WANT_DOCS
   SUBDIRS = doc
 endif
 
-SBIN_FILES		=			\
-	sbin/core-cleanup			\
-	sbin/core-daemon			\
-	sbin/core-manage			\
-	sbin/coresendmsg
+SCRIPT_FILES := $(notdir $(wildcard sbin/*))
+MAN_FILES := $(notdir $(wildcard ../doc/man/*.1))
 
-dist_sbin_SCRIPTS	= $(SBIN_FILES)
-
-CONF_FILES		=			\
-	data/core.conf
-
-coreconfdir		= $(CORE_CONF_DIR)
-dist_coreconf_DATA	= $(CONF_FILES)
-
-EXAMPLE_FILES		=			\
-	examples/controlnet_updown		\
-	examples/emanemanifest2core.py		\
-	examples/emanemodel2core.py		\
-	examples/findcore.py			\
-	examples/stopsession.py
-
-coreexdir		= $(datadir)/core/examples
-dist_coreex_SCRIPTS	= $(EXAMPLE_FILES)
-
-EXAMPLE_MYSERVICES_FILES =			\
-	examples/myservices/README.txt		\
-	examples/myservices/__init__.py		\
-	examples/myservices/sample.py
-
-coreexmyservicesdir	= $(coreexdir)/myservices
-dist_coreexmyservices_DATA = $(EXAMPLE_MYSERVICES_FILES)
-
-EXAMPLE_NETNS_FILES	=				\
-	examples/netns/basicrange.py			\
-	examples/netns/daemonnodes.py			\
-	examples/netns/distributed.py			\
-	examples/netns/emane80211.py			\
-	examples/netns/howmanynodes.py			\
-	examples/netns/iperf-performance-chain.py	\
-	examples/netns/iperf-performance.sh		\
-	examples/netns/ospfmanetmdrtest.py		\
-	examples/netns/switch.py			\
-	examples/netns/switchtest.py			\
-	examples/netns/twonodes.sh			\
-	examples/netns/wlanemanetests.py		\
-	examples/netns/wlantest.py
-
-coreexnetnsdir		= $(coreexdir)/netns
-dist_coreexnetns_SCRIPTS= $(EXAMPLE_NETNS_FILES)
-
-EXAMPLE_SERVICES_FILES	=			\
-	examples/services/sampleFirewall	\
-	examples/services/sampleIPsec		\
-	examples/services/sampleVPNClient	\
-	examples/services/sampleVPNServer
-
-coreexservicesdir	= $(coreexdir)/services
-dist_coreexservices_DATA= $(EXAMPLE_SERVICES_FILES)
-
-LOGROTATE_DIR		= $(sysconfdir)/logrotate.d
+LOGROTATE_DIR		= $(DESTDIR)/$(sysconfdir)/logrotate.d
 LOGROTATE_FILE		= data/core-daemon.logrotate
 
 # Python package build
@@ -83,47 +27,40 @@ build:
 
 # Python package install
 install-exec-hook:
-	$(MKDIR_P) ${DESTDIR}/${pythondir}
-	$(MKDIR_P) ${DESTDIR}/${pyexecdir}
-	PYTHONPATH=${DESTDIR}/${pythondir} $(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
-		--prefix=${DESTDIR}/${pyprefix} \
-		--install-purelib=${DESTDIR}/${pythondir} \
-		--install-platlib=${DESTDIR}/${pyexecdir}
+	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
+		--root=/$(DESTDIR) \
+		--prefix=$(prefix) \
+		--install-lib=$(pythondir) \
+		--single-version-externally-managed
 
-install-data-local:
-	$(MKDIR_P) $(DESTDIR)$(LOGROTATE_DIR)
-	$(INSTALL_DATA) $(LOGROTATE_FILE) \
-	    $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
+#install-data-local:
+#	$(MKDIR_P) $(DESTDIR)$(LOGROTATE_DIR)
+#	$(INSTALL_DATA) $(LOGROTATE_FILE) \
+#	    $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
 
-uninstall-local:
-	rm -f $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
+#uninstall-local:
+#	rm -f $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
 
 # Python package uninstall
+#rmdir -p $(LOGROTATE_DIR) || true
 uninstall-hook:
-	rm -rf ${pythondir}/core_python-${COREDPY_VERSION}-py${PYTHON_VERSION}.egg-info
-	rm -f ${pythondir}/core_python_netns-1.0-py${PYTHON_VERSION}.egg-info
-	rm -rf ${pythondir}/core
-	rmdir -p $(coreexservicesdir) || true
-	rmdir -p $(coreexnetnsdir) || true
-	rmdir -p $(coreexmyservicesdir) || true
-	rmdir -p $(coreexdir) || true
-	rmdir -p $(coreconfdir) || true
-	rmdir -p $(LOGROTATE_DIR) || true
+	rm -rf $(DESTDIR)/etc/core
+	rm -rf $(DESTDIR)/$(datadir)/core
+	rm -f $(addprefix $(DESTDIR)/$(datadir)/man/man1/, $(MAN_FILES))
+	rm -f $(addprefix $(DESTDIR)/$(bindir)/,$(SCRIPT_FILES))
+	rm -rf $(DESTDIR)/$(pythondir)/core-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
+	rm -rf $(DESTDIR)/$(pythondir)/core
 
 # Python package cleanup
 clean-local:
 	-rm -rf build
 
-# Python RPM package
-rpm:
-	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) bdist_rpm
-
 # because we include entire directories with EXTRA_DIST, we need to clean up
 # the source control files
 dist-hook:
-	rm -rf `find $(distdir)/ -name .svn` `find $(distdir)/ -name '*.pyc'`
+	rm -rf `find $(distdir)/ -name '*.pyc'`
 
 DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST 
 
 # files to include with distribution tarball
-EXTRA_DIST	= $(SETUPPY) MANIFEST.in core doc $(LOGROTATE_FILE)
+EXTRA_DIST = $(SETUPPY) MANIFEST.in core doc $(LOGROTATE_FILE)

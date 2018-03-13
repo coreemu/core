@@ -22,10 +22,10 @@ generate-mans:
 	$(HELP2MAN) --no-info --source CORE $(top_srcdir)/netns/vnoded -o vnoded.1.new
 	$(HELP2MAN) --no-info --source CORE $(top_srcdir)/netns/vcmd -o vcmd.1.new
 	$(HELP2MAN) --no-info --source CORE $(top_srcdir)/netns/netns -o netns.1.new
-	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-daemon -o core-daemon.1.new
-	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/coresendmsg -o coresendmsg.1.new
-	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-cleanup -o core-cleanup.1.new
-	$(HELP2MAN) --version-string=$(CORE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-manage -o core-manage.1.new
+	$(HELP2MAN) --version-string=$(PACKAGE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-daemon -o core-daemon.1.new
+	$(HELP2MAN) --version-string=$(PACKAGE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/coresendmsg -o coresendmsg.1.new
+	$(HELP2MAN) --version-string=$(PACKAGE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-cleanup -o core-cleanup.1.new
+	$(HELP2MAN) --version-string=$(PACKAGE_VERSION) --no-info --source CORE $(top_srcdir)/daemon/sbin/core-manage -o core-manage.1.new
 
 .PHONY: diff
 diff:

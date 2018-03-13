@@ -11,6 +11,6 @@
 #ifndef _VERSION_H_
 #define _VERSION_H_
 
-#define CORE_VERSION "@CORE_VERSION@"
+#define CORE_VERSION "@PACKAGE_VERSION@"
 
 #endif /* _VERSION_H_ */

@@ -17,7 +17,7 @@ dist_hooks_SCRIPTS = perflogstart.sh perflogstop.sh sessiondatacollect.sh \
 		     configuration_hook.sh datacollect_hook.sh
 
 # Files installed to /etc/core/
-perfconfdir=$(sysconfdir)/core
+perfconfdir=$(CORE_CONF_DIR)
 dist_perfconf_DATA = perflogserver.conf
 
 uninstall-hook:

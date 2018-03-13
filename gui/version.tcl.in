@@ -6,5 +6,5 @@
 #
 # define the version number and release date here
 #
-set CORE_VERSION @CORE_VERSION@
-set CORE_VERSION_DATE @CORE_VERSION_DATE@
+set CORE_VERSION @PACKAGE_VERSION@
+set CORE_VERSION_DATE @PACKAGE_DATE@
