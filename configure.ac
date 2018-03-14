@@ -237,21 +237,25 @@ echo \
 "------------------------------------------------------------------------
 ${PACKAGE_STRING} Configuration:
 
+Build:
   Host System Type:           ${host}
   C Compiler and flags:       ${CC} ${CFLAGS}
-  Install prefix:             ${prefix}
-  Exec prefix:		      ${exec_prefix}
-  Build GUI:                  ${enable_gui}
+  Prefix:             	      ${prefix}
+  Exec Prefix:		      ${exec_prefix}
+
+GUI:
   GUI path:                   ${CORE_LIB_DIR}
   GUI config:                 ${CORE_GUI_CONF_DIR}
-  Daemon path:                ${sbindir}
+
+Daemon:
+  Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
   Python modules:             ${pythondir}
   Logs:                       ${CORE_STATE_DIR}/log
 
 Features to build:
-  Python bindings:            ${want_python}
-  Linux Namespaces emulation: ${want_linux_netns}
+  Build GUI:                  ${enable_gui}
+  Build Daemon:		      ${enable_daemon}
   Documentation:              ${want_docs}
 
 ------------------------------------------------------------------------"
