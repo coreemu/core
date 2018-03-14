@@ -99,7 +99,7 @@ if test "x$enable_daemon" = "xyes"; then
   AC_FUNC_REALLOC
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
-  AM_PATH_PYTHON(2.6)
+  AM_PATH_PYTHON(2.7)
 
   AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
   if test "x$brctl_path" = "xno" ; then
