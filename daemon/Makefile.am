@@ -63,4 +63,4 @@ dist-hook:
 DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST 
 
 # files to include with distribution tarball
-EXTRA_DIST = $(SETUPPY) MANIFEST.in core doc $(LOGROTATE_FILE)
+EXTRA_DIST = $(SETUPPY) core doc $(LOGROTATE_FILE)
