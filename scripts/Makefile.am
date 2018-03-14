@@ -9,7 +9,7 @@
 
 CLEANFILES	= core-daemon
 
-DISTCLEANFILES	= Makefile.in 
+DISTCLEANFILES	= Makefile.in core-daemon.service
 
 EXTRA_DIST	= core-daemon-init.d \
 		  core-daemon.service.in \

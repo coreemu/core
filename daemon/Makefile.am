@@ -58,9 +58,23 @@ clean-local:
 # because we include entire directories with EXTRA_DIST, we need to clean up
 # the source control files
 dist-hook:
-	rm -rf `find $(distdir)/ -name '*.pyc'`
+	-rm -rf `find $(distdir)/ -name '*.pyc'`
 
-DISTCLEANFILES	= Makefile.in core/*.pyc MANIFEST 
+distclean-local:
+	-rm -rf core.egg-info
+	
+
+DISTCLEANFILES = Makefile.in
 
 # files to include with distribution tarball
-EXTRA_DIST = $(SETUPPY) core doc $(LOGROTATE_FILE)
+EXTRA_DIST = $(SETUPPY) \
+	     core \
+	     data \
+	     doc/conf.py.in \
+	     examples \
+	     sbin \
+	     tests \
+	     test.py \
+	     setup.cfg \
+	     requirements.txt \
+	     $(LOGROTATE_FILE)

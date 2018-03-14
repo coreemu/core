@@ -13,9 +13,9 @@ SUBDIRS 	= man figures
 # extra cruft to remove
 DISTCLEANFILES	= Makefile.in stamp-vti
 
-rst_files = conf.py  constants.txt credits.rst  ctrlnet.rst devguide.rst  \
+rst_files = conf.py.in  constants.txt credits.rst  ctrlnet.rst devguide.rst  \
 	    emane.rst  index.rst  install.rst  intro.rst  machine.rst  \
-	    ns3.rst  performance.rst  scripting.rst usage.rst
+	    ns3.rst  performance.rst  scripting.rst usage.rst requirements.txt
 
 EXTRA_DIST = $(rst_files)
 

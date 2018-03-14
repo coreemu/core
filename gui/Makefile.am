@@ -30,8 +30,12 @@ dist_coreaddons_DATA = $(ADDONS_FILES)
 coreconfigsdir = $(datadir)/core/examples/configs
 dist_coreconfigs_DATA = $(CONFIG_FILES)
 
+# remove generated file from dist
+dist-hook:
+	-rm -f $(distdir)/version.tcl
+
 # extra cruft to remove
 DISTCLEANFILES = Makefile.in
 
 # files to include in source tarball not included elsewhere
-EXTRA_DIST = addons
+EXTRA_DIST = core-gui.in

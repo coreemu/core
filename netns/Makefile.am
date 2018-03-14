@@ -57,6 +57,9 @@ clean-local: clean-local-check
 clean-local-check:
 	-rm -rf build
 
+distclean-local:
+	-rm -rf core_netns.egg-info
+
 # extra cruft to remove
 DISTCLEANFILES = Makefile.in MANIFEST
 
