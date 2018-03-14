@@ -34,8 +34,6 @@ EXTRA_DIST = bootstrap.sh \
 	     README.md \
 	     ASSIGNMENT_OF_COPYRIGHT.pdf \
 	     Changelog \
-	     python-prefix.py \
-	     revision.sh \
 	     .version \
 	     .version.date
 
