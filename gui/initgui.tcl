@@ -595,11 +595,11 @@ menu .menubar.session -tearoff 1
 #
 menu .menubar.help -tearoff 0
 .menubar.help add command -label "Online manual (www)" -command \
-  "_launchBrowser http://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/"
+  "_launchBrowser https://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/"
 .menubar.help add command -label "CORE website (www)" -command \
-  "_launchBrowser http://www.nrl.navy.mil/itd/ncs/products/core"
+  "_launchBrowser https://www.nrl.navy.mil/itd/ncs/products/core"
 .menubar.help add command -label "Mailing list (www)" -command \
-  "_launchBrowser http://pf.itd.nrl.navy.mil/mailman/listinfo/core-users"
+  "_launchBrowser https://publists.nrl.navy.mil/mailman/listinfo/core-users"
 .menubar.help add command -label "About" -command popupAbout
 
 #
