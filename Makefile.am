@@ -168,3 +168,27 @@ change-files:
 	$(call change-files,gui/core-gui)
 	$(call change-files,scripts/core-daemon.service)
 	$(call change-files,daemon/core/constants.py)
+
+CORE_DOC_HTML = core-html-$(PACKAGE_VERSION)
+CORE_DOC_PDF = core-manual-$(PACKAGE_VERSION)
+CORE_DOC_SRC = core-python-$(PACKAGE_VERSION)
+.PHONY: doc
+doc: doc-clean
+	$(MAKE) -C doc html
+	mv doc/_build/html doc/$(CORE_DOC_HTML)
+	tar -C doc -czf $(CORE_DOC_HTML).tgz $(CORE_DOC_HTML)
+	$(MAKE) -C doc latexpdf
+	mv doc/_build/latex/CORE.pdf $(CORE_DOC_PDF).pdf
+	$(MAKE) -C daemon/doc html
+	mv daemon/doc/_build/html daemon/doc/$(CORE_DOC_SRC)
+	tar -C daemon/doc -czf $(CORE_DOC_SRC).tgz $(CORE_DOC_SRC)
+
+.PHONY: doc-clean
+doc-clean:
+	-rm -rf doc/_build
+	-rm -rf doc/$(CORE_DOC_HTML)
+	-rm -rf daemon/doc/_build
+	-rm -rf daemon/doc/$(CORE_DOC_SRC)
+	-rm -f $(CORE_DOC_HTML).tgz
+	-rm -f $(CORE_DOC_SRC).tgz
+	-rm -f $(CORE_DOC_PDF).pdf

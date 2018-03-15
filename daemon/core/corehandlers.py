@@ -42,16 +42,7 @@ from core.xml.xmlsession import save_session_xml
 
 class CoreRequestHandler(SocketServer.BaseRequestHandler):
     """
-    The SocketServer class uses the RequestHandler class for servicing
-    requests, mainly through the handle() method. The CoreRequestHandler
-    has the following basic flow:
-       1. Client connects and request comes in via handle().
-       2. handle() calls recvmsg() in a loop.
-       3. recvmsg() does a recv() call on the socket performs basic
-          checks that this we received a CoreMessage, returning it.
-       4. The message data is queued using queuemsg().
-       5. The handlerthread() thread pops messages from the queue and uses
-          handlemsg() to invoke the appropriate handler for that message type.
+    The SocketServer class uses the RequestHandler class for servicing requests.
     """
 
     def __init__(self, request, client_address, server):

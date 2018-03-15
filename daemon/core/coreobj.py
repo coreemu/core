@@ -655,8 +655,8 @@ class PyCoreNetIf(object):
         """
         Attach network.
 
-        :param core.coreobj.PyCoreNet net: network to attach to
-        :return:nothing
+        :param core.coreobj.PyCoreNet net: network to attach
+        :return: nothing
         """
         if self.net:
             self.detachnet()

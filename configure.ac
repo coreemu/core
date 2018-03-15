@@ -245,6 +245,8 @@ Daemon:
   Python modules:             ${pythondir}
   Logs:                       ${CORE_STATE_DIR}/log
 
+Startup:		      ${with_startup}
+
 Features to build:
   Build GUI:                  ${enable_gui}
   Build Daemon:		      ${enable_daemon}

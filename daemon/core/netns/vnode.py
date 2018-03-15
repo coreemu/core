@@ -30,13 +30,13 @@ class SimpleLxcNode(PyCoreNode):
     """
     Provides simple lxc functionality for core nodes.
 
-    :type nodedir: str
-    :type ctrlchnlname: str
-    :type client: core.netns.vnodeclient.VnodeClient
-    :type pid: int
-    :type up: bool
-    :type lock: threading.RLock
-    :type _mounts: list[tuple[str, str]]
+    :var nodedir: str
+    :var ctrlchnlname: str
+    :var client: core.netns.vnodeclient.VnodeClient
+    :var pid: int
+    :var up: bool
+    :var lock: threading.RLock
+    :var _mounts: list[tuple[str, str]]
     """
     valid_address_types = {"inet", "inet6", "inet6link"}
 

@@ -26,7 +26,7 @@ EXTRA_DIST = $(rst_files)
 #
 
 # You can set these variables from the command line.
-SPHINXOPTS    =
+SPHINXOPTS    = -q
 SPHINXBUILD   = sphinx-build
 PAPER         =
 BUILDDIR      = _build
