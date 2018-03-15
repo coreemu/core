@@ -14,7 +14,7 @@ if WANT_DOCS
   SUBDIRS = doc
 endif
 
-SCRIPT_FILES := $(notdir $(wildcard sbin/*))
+SCRIPT_FILES := $(notdir $(wildcard scripts/*))
 MAN_FILES := $(notdir $(wildcard ../doc/man/*.1))
 
 LOGROTATE_DIR		= $(DESTDIR)/$(sysconfdir)/logrotate.d
@@ -72,7 +72,7 @@ EXTRA_DIST = $(SETUPPY) \
 	     data \
 	     doc/conf.py.in \
 	     examples \
-	     sbin \
+	     scripts \
 	     tests \
 	     test.py \
 	     setup.cfg \

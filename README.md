@@ -40,7 +40,7 @@ Here is what is installed with 'make install':
 
     /usr/local/bin/core-gui
     /usr/local/bin/core-daemon
-    /usr/local/bin/[vcmd, vnoded, coresendmsg, core-cleanup.sh]
+    /usr/local/bin/[vcmd, vnoded, coresendmsg, core-cleanup]
     /usr/local/lib/core/*
     /usr/local/share/core/*
     /usr/local/lib/python2.6/dist-packages/core/*

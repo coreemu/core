@@ -11,8 +11,6 @@ from distutils.core import setup
 _CORE_DIR = "/etc/core"
 _MAN_DIR = "share/man/man1"
 _EXAMPLES_DIR = "share/core"
-_SYSV = "/etc/init.d"
-_SYSTEMD = "/etc/systemd/system"
 
 
 def recursive_files(data_path, files_path):
@@ -53,12 +51,7 @@ setup(
         "mock",
     ],
     data_files=data_files,
-    scripts=[
-        "sbin/core-cleanup",
-        "sbin/core-daemon",
-        "sbin/core-manage",
-        "sbin/coresendmsg",
-    ],
+    scripts=glob.glob("scripts/*"),
     description="Python components of CORE",
     url="http://www.nrl.navy.mil/itd/ncs/products/core",
     author="Boeing Research & Technology",
