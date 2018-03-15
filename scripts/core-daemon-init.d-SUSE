@@ -117,7 +117,7 @@
 
 # Check for missing binaries (stale symlinks should not happen)
 # Note: Special treatment of stop for LSB conformance
-CORE_BIN=/usr/local/sbin/core-daemon
+CORE_BIN=/usr/local/bin/core-daemon
 test -x $CORE_BIN || { echo "$CORE_BIN not installed"; 
 	if [ "$1" = "stop" ]; then exit 0;
 	else exit 5; fi; }
