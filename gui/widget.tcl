@@ -1,8 +1,3 @@
-#
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 set vtysh_cmd vtysh
 set vtysh_search_path {/usr/bin /usr/local/bin /usr/lib/quagga}
 

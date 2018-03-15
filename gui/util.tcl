@@ -1,8 +1,3 @@
-#
-# Copyright 2005-2014 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 set g_imageFileTypes {{"images" {.gif}} {"images" {.jpg}} {"images" {.png}}
 			{"images" {.bmp}} {"images" {.pcx}} {"images" {.tga}}
 			{"images" {.tif}} {"images" {.ps}} {"images" {.ppm}}

@@ -42,7 +42,7 @@ master_doc = 'index'
 
 # General information about the project.
 project = u'CORE Python modules'
-copyright = u'2017, core-dev'
+copyright = u'2005-2018, core-dev'
 
 # The version info for the project you're documenting, acts as replacement for
 # |version| and |release|, also used in various other places throughout the
@@ -223,7 +223,7 @@ man_pages = [
 epub_title = u'CORE Python'
 epub_author = u'core-dev'
 epub_publisher = u'core-dev'
-epub_copyright = u'2017, core-dev'
+epub_copyright = u'2005-2018, core-dev'
 
 # The language of the text. It defaults to the language option
 # or en if the language is not set.

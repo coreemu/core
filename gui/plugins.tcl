@@ -1,9 +1,4 @@
 #
-# Copyright 2010-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author:	Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
 # Support for managing CORE plugins from the GUI.
 #
 

@@ -1,13 +1,4 @@
 #!/usr/bin/env python
-#
-# CORE
-# Copyright (c)2010-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# authors: Tom Goff <thomas.goff@boeing.com>
-#          Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-
 """
 core-daemon: the CORE daemon is a server process that receives CORE API
 messages and instantiates emulated nodes and networks within the kernel. Various

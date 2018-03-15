@@ -1,11 +1,3 @@
-#
-# CORE API
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author:	Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-
 # version of the API document that is used
 set CORE_API_VERSION 1.23
 

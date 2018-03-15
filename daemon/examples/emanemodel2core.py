@@ -1,11 +1,4 @@
 #!/usr/bin/env python
-#
-# CORE
-# Copyright (c) 2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
 '''
 emanemodel2core.py: scans an EMANE model source file 
  (e.g. emane/models/rfpipe/maclayer/rfpipemaclayer.cc) and outputs Python
@@ -18,13 +11,6 @@ emanemodel2core.py: scans an EMANE model source file
 import os, sys, optparse
 
 MODEL_TEMPLATE_PART1 = """
-#
-# CORE
-# Copyright (c)2013 Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Name <email@company.com>
-#
 '''
 xyz.py: EMANE XYZ model bindings for CORE
 '''

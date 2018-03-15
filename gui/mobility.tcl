@@ -1,8 +1,3 @@
-#
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 # shows the Two-node Tool
 proc popupTwoNodeDialog { } {
     global twonodePID lastTwoNodeHop g_twoNodeSelect g_twoNodeSelectCallback

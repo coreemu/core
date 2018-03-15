@@ -1,9 +1,4 @@
 #
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2004-2008 University of Zagreb, Croatia.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -86,7 +81,7 @@ proc popupAbout {} {
     # version info
     label .about.text1 -text "CORE version $CORE_VERSION ($CORE_VERSION_DATE)" \
     			-foreground #500000 -padx 5 -pady 10
-    label .about.text2 -text "Copyright (c)2005-2013\
+    label .about.text2 -text "Copyright \
     		the Boeing Company. See the LICENSE file included in this\
 		distribution."
     pack .about.text1 -side top -anchor n -padx 4 -pady 4

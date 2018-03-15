@@ -1,9 +1,4 @@
 #
-# Copyright 2007-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2007 Petra Schilhard.
 #
 # Redistribution and use in source and binary forms, with or without

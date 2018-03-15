@@ -1,11 +1,3 @@
-#
-# Copyright (c) 2010-2013 the Boeing Company
-# See the LICENSE file included in this distribution.
-#
-# CORE configure script
-#
-# author:  Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
 #                                               -*- Autoconf -*-
 # Process this file with autoconf to produce a configure script.
 

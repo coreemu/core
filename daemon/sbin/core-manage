@@ -1,11 +1,4 @@
 #!/usr/bin/env python
-#
-# CORE
-# Copyright (c)2014 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author: Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
 """
 core-manage: Helper tool to add, remove, or check for services, models, and
 node types in a CORE installation.

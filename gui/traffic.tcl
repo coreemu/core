@@ -1,8 +1,3 @@
-#
-# Copyright 2011-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 set g_traffic_start_opt 0
 set g_traffic_flows ""
 
