@@ -14,19 +14,18 @@ from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 
 try:
-    from emanesh.events import LocationEvent
+    from emane.events import LocationEvent
 except ImportError:
-    logger.error("error loading emanesh")
+    try:
+        from emanesh.events import LocationEvent
+    except ImportError:
+        logger.info("emane 0.9.1+ not found")
 
 try:
     import emaneeventservice
     import emaneeventlocation
 except ImportError:
-    """
-    Don't require all CORE users to have EMANE libeventservice and its
-    Python bindings installed.
-    """
-    logger.error("error loading emaneeventservice and emaneeventlocation")
+    logger.info("emane < 0.9.1 not found")
 
 
 class EmaneNet(PyCoreNet):

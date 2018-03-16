@@ -29,21 +29,21 @@ from core.misc import utils
 from core.misc.ipaddress import MacAddress
 from core.xml import xmlutils
 
-_PATH = os.path.abspath(os.path.dirname(__file__))
+try:
+    from emane.events import EventService
+    from emane.events import LocationEvent
+except ImportError:
+    try:
+        from emanesh.events import EventService
+        from emanesh.events import LocationEvent
+    except ImportError:
+        logger.info("emane 0.9.1+ not found")
 
-# EMANE 0.7.4/0.8.1
 try:
     import emaneeventservice
     import emaneeventlocation
 except ImportError:
-    logger.error("error importing emaneeventservice and emaneeventlocation")
-
-# EMANE 0.9.1+
-try:
-    from emanesh.events import EventService
-    from emanesh.events import LocationEvent
-except ImportError:
-    logger.error("error importing emanesh")
+    logger.info("emane < 0.9.1 not found")
 
 EMANE_MODELS = [
     EmaneRfPipeModel,
