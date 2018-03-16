@@ -11,7 +11,7 @@ try:
     import emaneeventservice
     import emaneeventcommeffect
 except ImportError:
-    logger.error("error importing emaneeventservice and emaneeventcommeffect")
+    logger.info("emane < 0.9.1 not found")
 
 
 class EmaneCommEffectModel(EmaneModel):
