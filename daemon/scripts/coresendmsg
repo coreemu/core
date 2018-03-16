@@ -98,7 +98,7 @@ def connect_to_session(sock, requested):
     connect to the first one.
     """
     # request the session list
-    tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, "0")
+    tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, "")
     flags = MessageFlags.STRING.value
     smsg = coreapi.CoreSessionMessage.pack(flags, tlvdata)
     sock.sendall(smsg)
@@ -130,9 +130,9 @@ def connect_to_session(sock, requested):
         print "requested session not found!"
         return False
 
-    print "joining session %s..." % session
-    tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER, session)
-    flags = MessageFlags.ADD
+    print "joining session: %s" % session
+    tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session)
+    flags = MessageFlags.ADD.value
     smsg = coreapi.CoreSessionMessage.pack(flags, tlvdata)
     sock.sendall(smsg)
     return True

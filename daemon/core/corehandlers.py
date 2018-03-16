@@ -506,7 +506,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         while True:
             try:
                 message = self.receive_message()
-            except (IOError, EOFError):
+            except EOFError:
+                logger.info("client disconnected")
+                break
+            except IOError:
                 logger.exception("error receiving message")
                 break
 
