@@ -458,7 +458,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
-        logger.info("replies to dispatch: %s", replies)
+        logger.info("dispatching replies")
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -472,12 +472,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 reply_message = "CoreMessage (type %d flags %d length %d)" % (
                     message_type, message_flags, message_length)
 
-            logger.info("reply to %s: \n%s", self.request.getpeername(), reply_message)
+            logger.info("dispatch reply:\n%s", reply_message)
 
             try:
                 self.sendall(reply)
             except IOError:
-                logger.exception("Error sending reply data")
+                logger.exception("error dispatching reply")
 
     def handle(self):
         """
