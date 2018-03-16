@@ -12,7 +12,6 @@ import os
 import signal
 import socket
 import sys
-import threading
 import time
 
 from core import constants
@@ -22,7 +21,6 @@ from core import enumerations
 from core import logger
 from core import services
 from core.api import coreapi
-from core.corehandlers import CoreDatagramRequestHandler
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
 from core.misc import nodeutils
@@ -33,29 +31,13 @@ from core.service import ServiceManager
 DEFAULT_MAXFD = 1024
 
 
-def startudp(core_server, server_address):
-    """
-    Start a thread running a UDP server on the same host,port for connectionless requests.
-
-    :param core.coreserver.CoreServer core_server: core server instance
-    :param tuple[str, int] server_address: server address
-    :return: created core udp server
-    :rtype: core.coreserver.CoreUdpServer
-    """
-    core_server.udpserver = coreserver.CoreUdpServer(server_address, CoreDatagramRequestHandler, core_server)
-    core_server.udpthread = threading.Thread(target=core_server.udpserver.start)
-    core_server.udpthread.daemon = True
-    core_server.udpthread.start()
-    return core_server.udpserver
-
-
 def banner():
     """
     Output the program banner printed to the terminal or log file.
 
     :return: nothing
     """
-    logger.info("CORE daemon v.%s started %s\n" % (constants.COREDPY_VERSION, time.ctime()))
+    logger.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
 
 
 def cored(cfg=None):
@@ -76,11 +58,7 @@ def cored(cfg=None):
         sys.exit(1)
 
     close_onexec(server.fileno())
-    logger.info("main server started, listening on: %s:%s\n" % (host, port))
-
-    udpserver = startudp(server, (host, port))
-    close_onexec(udpserver.fileno())
-
+    logger.info("main server started, listening on: %s:%s", host, port)
     server.serve_forever()
 
 
