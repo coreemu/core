@@ -14,7 +14,7 @@ import time
 from core import coreobj
 from core import logger
 from core.api import coreapi
-from core.coreserver import CoreServer, CoreUdpServer
+from core.coreserver import CoreServer
 from core.data import ConfigData
 from core.data import EventData
 from core.data import NodeData
@@ -86,17 +86,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         utils.close_onexec(request.fileno())
         SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
-
-    def _get_server(self):
-        """
-        Retrieve server to interface with, in cases where the server is a UDP instance.
-
-        :return: core.coreserver.CoreServer
-        """
-        server = self.server
-        if isinstance(server, CoreUdpServer):
-            server = self.server.mainserver
-        return server
 
     def setup(self):
         """
@@ -1128,36 +1117,34 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         """
         replies = []
 
-        server = self._get_server()
-
         # execute a Python script or XML file
         execute_server = message.get_tlv(RegisterTlvs.EXECUTE_SERVER.value)
         if execute_server:
             try:
                 logger.info("executing: %s", execute_server)
                 if message.flags & MessageFlags.STRING.value:
-                    old_session_ids = set(server.get_session_ids())
+                    old_session_ids = set(self.server.get_session_ids())
                 sys.argv = shlex.split(execute_server)
                 file_name = sys.argv[0]
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = server.create_session()
+                    session = self.server.create_session()
                     try:
                         open_session_xml(session, file_name, start=True)
                     except:
                         session.shutdown()
-                        server.remove_session(session)
+                        self.server.remove_session(session)
                         raise
                 else:
                     thread = threading.Thread(
                         target=execfile,
-                        args=(file_name, {"__file__": file_name, "server": server})
+                        args=(file_name, {"__file__": file_name, "server": self.server})
                     )
                     thread.daemon = True
                     thread.start()
                     # allow time for session creation
                     time.sleep(0.25)
                 if message.flags & MessageFlags.STRING.value:
-                    new_session_ids = set(server.get_session_ids())
+                    new_session_ids = set(self.server.get_session_ids())
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
                         sid = new_sid.pop()
@@ -1166,7 +1153,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         logger.info("executed %s with unknown session ID", execute_server)
                         return replies
                     logger.info("checking session %d for RUNTIME state" % sid)
-                    session = server.get_session(session_id=sid)
+                    session = self.server.get_session(session_id=sid)
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
@@ -1200,14 +1187,14 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             # TODO: need to replicate functionality?
             # self.server.set_session_master(self)
             # find the session containing this client and set the session to master
-            for session in server.sessions.itervalues():
+            for session in self.server.sessions.itervalues():
                 if self in session.broker.session_clients:
                     logger.info("setting session to master: %s", session.session_id)
                     session.master = True
                     break
 
             replies.append(self.register())
-            replies.append(server.to_session_message())
+            replies.append(self.server.to_session_message())
 
         return replies
 
@@ -1446,8 +1433,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         node_counts = coreapi.str_to_list(node_count_str)
         logger.info("SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str))
 
-        server = self._get_server()
-
         if message.flags == 0:
             # modify a session
             i = 0
@@ -1456,7 +1441,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 if session_id == 0:
                     session = self.session
                 else:
-                    session = server.get_session(session_id=session_id)
+                    session = self.server.get_session(session_id=session_id)
 
                 if session is None:
                     logger.info("session %s not found", session_id)
@@ -1470,7 +1455,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     session.file_name = files[i]
                 if node_counts is not None:
                     pass
-                    # session.node_count = ncs[i]
                 if thumb is not None:
                     session.set_thumbnail(thumb)
                 if user is not None:
@@ -1479,12 +1463,12 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         else:
             if message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
                 # status request flag: send list of sessions
-                return server.to_session_message(),
+                return self.server.to_session_message(),
 
             # handle ADD or DEL flags
             for session_id in session_ids:
                 session_id = int(session_id)
-                session = server.get_session(session_id=session_id)
+                session = self.server.get_session(session_id=session_id)
 
                 if session is None:
                     logger.info("session %s not found (flags=0x%x)", session_id, message.flags)
@@ -1551,131 +1535,3 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 logger.exception("error sending node emulation id message: %s", node_id)
 
             del self.node_status_request[node_id]
-
-
-class CoreDatagramRequestHandler(CoreRequestHandler):
-    """
-    A child of the CoreRequestHandler class for handling connectionless
-    UDP messages. No new session is created; messages are handled immediately or
-    sometimes queued on existing session handlers.
-    """
-
-    def __init__(self, request, client_address, server):
-        """
-        Create a CoreDatagramRequestHandler instance.
-
-        :param request: request object
-        :param str client_address: client address
-        :param CoreServer server: core server instance
-        """
-        # TODO: decide which messages cannot be handled with connectionless UDP
-        self.message_handlers = {
-            MessageTypes.NODE.value: self.handle_node_message,
-            MessageTypes.LINK.value: self.handle_link_message,
-            MessageTypes.EXECUTE.value: self.handle_execute_message,
-            MessageTypes.REGISTER.value: self.handle_register_message,
-            MessageTypes.CONFIG.value: self.handle_config_message,
-            MessageTypes.FILE.value: self.handle_file_message,
-            MessageTypes.INTERFACE.value: self.handle_interface_message,
-            MessageTypes.EVENT.value: self.handle_event_message,
-            MessageTypes.SESSION.value: self.handle_session_message,
-        }
-        self.node_status_request = {}
-        self.master = False
-        self.session = None
-        SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
-
-    def setup(self):
-        """
-        Client has connected, set up a new connection.
-
-        :return: nothing
-        """
-        logger.info("new UDP connection: %s:%s" % self.client_address)
-
-    def handle(self):
-        """
-        Receive a message.
-
-        :return: nothing
-        """
-        self.receive_message()
-
-    def finish(self):
-        """
-        Handle the finish state of a client.
-
-        :return: nothing
-        """
-        return SocketServer.BaseRequestHandler.finish(self)
-
-    def receive_message(self):
-        """
-        Receive data, parse a CoreMessage and queue it onto an existing
-        session handler"s queue, if available.
-
-        :return: nothing
-        """
-        data = self.request[0]
-        sock = self.request[1]
-
-        header = data[:coreapi.CoreMessage.header_len]
-        if len(header) < coreapi.CoreMessage.header_len:
-            raise IOError("error receiving header (received %d bytes)" % len(header))
-
-        message_type, message_flags, message_len = coreapi.CoreMessage.unpack_header(header)
-        if message_len == 0:
-            logger.warn("received message with no data")
-            return
-
-        if len(data) != coreapi.CoreMessage.header_len + message_len:
-            logger.warn("received message length does not match received data (%s != %s)",
-                        len(data), coreapi.CoreMessage.header_len + message_len)
-            raise IOError
-        else:
-            logger.info("UDP socket received message type=%d len=%d", message_type, message_len)
-
-        try:
-            message_class = coreapi.CLASS_MAP[message_type]
-            message = message_class(message_flags, header, data[coreapi.CoreMessage.header_len:])
-        except KeyError:
-            message = coreapi.CoreMessage(message_flags, header, data[coreapi.CoreMessage.header_len:])
-            message.message_type = message_type
-            logger.warn("unimplemented core message type: %s" % message.type_str())
-            return
-
-        session_ids = message.session_numbers()
-        message.queuedtimes = 0
-
-        if len(session_ids) > 0:
-            for session_id in session_ids:
-                session = self.server.mainserver.get_session(session_id=session_id)
-                if session:
-                    self.session = session
-                    self.handle_message(message)
-                else:
-                    logger.warn("Session %d in %s message not found." % (session_id, message.type_str()))
-        else:
-            # no session specified, find an existing one
-            session = self.server.mainserver.get_session()
-            if session or message.message_type == MessageTypes.REGISTER.value:
-                self.session = session
-                self.handle_message(message)
-            else:
-                logger.warn("No active session, dropping %s message.", message.type_str())
-
-    def queue_message(self, message):
-        """
-        UDP handlers are short-lived and do not have message queues.
-
-        :return: nothing
-        """
-        raise Exception("Unable to queue %s message for later processing using UDP!" % message.type_str())
-
-    def sendall(self, data):
-        """
-        Use sendto() on the connectionless UDP socket.
-
-        :return: nothing
-        """
-        self.request[1].sendto(data, self.client_address)

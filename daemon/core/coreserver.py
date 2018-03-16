@@ -270,32 +270,3 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         with self._sessions_lock:
             for session_id in self.sessions:
                 logger.info(session_id)
-
-
-class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):
-    """
-    UDP server class, manages sessions and spawns request handlers for
-    incoming connections.
-    """
-    daemon_threads = True
-    allow_reuse_address = True
-
-    def __init__(self, server_address, handler_class, main_server):
-        """
-        Server class initialization takes configuration data and calls
-        the SocketServer constructor
-
-        :param tuple[str, int] server_address: server address
-        :param class handler_class: class for handling requests
-        :param main_server: main server to associate with
-        """
-        self.mainserver = main_server
-        SocketServer.UDPServer.__init__(self, server_address, handler_class)
-
-    def start(self):
-        """
-        Thread target to run concurrently with the TCP server.
-
-        :return: nothing
-        """
-        self.serve_forever()
