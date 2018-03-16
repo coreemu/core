@@ -1123,9 +1123,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         if execute_server:
             try:
                 logger.info("executing: %s", execute_server)
+                # assumed to be udp server
                 if not isinstance(self.server, CoreServer):
                     server = self.server.mainserver
-                # assumed to be udp server
                 else:
                     server = self.server
                 if message.flags & MessageFlags.STRING.value:
@@ -1469,8 +1469,13 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 i += 1
         else:
             if message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
+                # assumed to be udp server
+                if not isinstance(self.server, CoreServer):
+                    server = self.server.mainserver
+                else:
+                    server = self.server
                 # status request flag: send list of sessions
-                return self.server.to_session_message(),
+                return server.to_session_message(),
 
             # handle ADD or DEL flags
             for session_id in session_ids:
