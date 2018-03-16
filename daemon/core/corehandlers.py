@@ -1643,7 +1643,6 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
                 session = self.server.mainserver.get_session(session_id=session_id)
                 if session:
                     self.session = session
-                    session.broadcast(self, message)
                     self.handle_message(message)
                 else:
                     logger.warn("Session %d in %s message not found." % (session_id, message.type_str()))
@@ -1652,8 +1651,6 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
             session = self.server.mainserver.get_session()
             if session or message.message_type == MessageTypes.REGISTER.value:
                 self.session = session
-                if session:
-                    session.broadcast(self, message)
                 self.handle_message(message)
             else:
                 logger.warn("No active session, dropping %s message.", message.type_str())
