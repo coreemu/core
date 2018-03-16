@@ -132,7 +132,6 @@ class Session(object):
         self.file_name = None
         self.thumbnail = None
         self.user = None
-        self._state_time = time.time()
         self.event_loop = EventLoop()
 
         # dict of objects: all nodes and nets
@@ -145,6 +144,7 @@ class Session(object):
 
         # TODO: should the default state be definition?
         self.state = EventTypes.NONE.value
+        self._state_time = time.time()
         self._state_file = os.path.join(self.session_dir, "state")
 
         self._hooks = {}

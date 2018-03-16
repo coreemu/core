@@ -1,6 +1,5 @@
 """
-Defines server classes and request handlers for TCP and UDP. Also defined here is a TCP based
-auxiliary server class for supporting externally defined handlers.
+Defines server classes and request handlers for TCP and UDP.
 """
 
 import SocketServer
@@ -271,21 +270,6 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         with self._sessions_lock:
             for session_id in self.sessions:
                 logger.info(session_id)
-
-                # def set_session_master(self, handler):
-                #     """
-                #     Call the setmaster() method for every session. Returns True when
-                #     a session having the given handler was updated.
-                #     """
-                #     found = False
-                #
-                #     with self._sessions_lock:
-                #         for session_id in self.sessions:
-                #             found = self.sessions[session_id].set_master(handler)
-                #             if found is True:
-                #                 break
-                #
-                #     return found
 
 
 class CoreUdpServer(SocketServer.ThreadingMixIn, SocketServer.UDPServer):

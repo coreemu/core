@@ -450,8 +450,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             logger.exception("%s: exception while handling message: %s",
                              threading.currentThread().getName(), message)
 
-    # Added to allow the auxiliary handlers to define a different behavior when replying
-    # to messages from clients
     def dispatch_replies(self, replies, message):
         """
         Dispatch replies by CORE to message msg previously received from the client.
@@ -1125,9 +1123,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         if execute_server:
             try:
                 logger.info("executing: %s", execute_server)
-                # TODO: remove this, unless we want to support udp/aux at any level
-                if not isinstance(self.server, CoreServer):  # CoreUdpServer):
+                if not isinstance(self.server, CoreServer):
                     server = self.server.mainserver
+                # assumed to be udp server
                 else:
                     server = self.server
                 if message.flags & MessageFlags.STRING.value:
@@ -1615,6 +1613,7 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
         header = data[:coreapi.CoreMessage.header_len]
         if len(header) < coreapi.CoreMessage.header_len:
             raise IOError("error receiving header (received %d bytes)" % len(header))
+
         message_type, message_flags, message_len = coreapi.CoreMessage.unpack_header(header)
         if message_len == 0:
             logger.warn("received message with no data")
@@ -1638,7 +1637,6 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
 
         session_ids = message.session_numbers()
         message.queuedtimes = 0
-        # logger.info("UDP message has session numbers: %s" % sids)
 
         if len(session_ids) > 0:
             for session_id in session_ids:
@@ -1675,113 +1673,3 @@ class CoreDatagramRequestHandler(CoreRequestHandler):
         :return: nothing
         """
         self.request[1].sendto(data, self.client_address)
-
-
-class BaseAuxRequestHandler(CoreRequestHandler):
-    """
-    This is the superclass for auxiliary handlers in CORE. A concrete auxiliary handler class
-    must, at a minimum, define the recvmsg(), sendall(), and dispatchreplies() methods.
-    See SockerServer.BaseRequestHandler for parameter details.
-    """
-
-    def __init__(self, request, client_address, server):
-        """
-        Create a BaseAuxRequestHandler instance.
-
-        :param request: request client
-        :param str client_address: client address
-        :param CoreServer server: core server instance
-        """
-        self.message_handlers = {
-            MessageTypes.NODE.value: self.handle_node_message,
-            MessageTypes.LINK.value: self.handle_link_message,
-            MessageTypes.EXECUTE.value: self.handle_execute_message,
-            MessageTypes.REGISTER.value: self.handle_register_message,
-            MessageTypes.CONFIG.value: self.handle_config_message,
-            MessageTypes.FILE.value: self.handle_file_message,
-            MessageTypes.INTERFACE.value: self.handle_interface_message,
-            MessageTypes.EVENT.value: self.handle_event_message,
-            MessageTypes.SESSION.value: self.handle_session_message,
-        }
-        self.handler_threads = []
-        self.node_status_request = {}
-        self.master = False
-        self.session = None
-        SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
-
-    def setup(self):
-        """
-        New client has connected to the auxiliary server.
-
-        :return: nothing
-        """
-        logger.info("new auxiliary server client: %s:%s" % self.client_address)
-
-    def handle(self):
-        """
-        The handler main loop
-
-        :return: nothing
-        """
-        port = self.request.getpeername()[1]
-        self.session = self.server.mainserver.create_session(session_id=port)
-        self.session.connect(self)
-
-        while True:
-            try:
-                messages = self.receive_message()
-                if messages:
-                    for message in messages:
-                        self.handle_message(message)
-            except EOFError:
-                break
-            except IOError:
-                logger.exception("IOError in CoreAuxRequestHandler")
-                break
-
-    def finish(self):
-        """
-        Disconnect the client
-
-        :return: nothing
-        """
-        if self.session:
-            self.remove_session_handlers()
-            self.session.shutdown()
-        return SocketServer.BaseRequestHandler.finish(self)
-
-    def receive_message(self):
-        """
-        Receive data from the client in the supported format. Parse, transform to CORE API format and
-        return transformed messages.
-
-        EXAMPLE:
-        return self.handler.request.recv(siz)
-
-        :return: nothing
-        """
-        raise NotImplemented
-
-    def dispatch_replies(self, replies, message):
-        """
-        Dispatch CORE replies to a previously received message msg from a client.
-        Replies passed to this method follow the CORE API. This method allows transformation to
-        the form supported by the auxiliary handler and within the context of "msg".
-        Add transformation and transmission code here.
-
-        :param list replies: replies to dispatch
-        :param message: message being replied to
-        :return: nothing
-        """
-        raise NotImplemented
-
-    def sendall(self, data):
-        """
-        CORE calls this method when data needs to be asynchronously sent to a client. The data is
-        in CORE API format. This method allows transformation to the required format supported by this
-        handler prior to transmission.
-
-        :param data: data to send
-        :return: nothing
-        """
-        raise NotImplemented
