@@ -426,11 +426,8 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         while not self.done:
-            try:
-                message = self.message_queue.get(timeout=5)
-                self.handle_message(message)
-            except Queue.Empty:
-                logger.debug("timeout getting message")
+            message = self.message_queue.get()
+            self.handle_message(message)
 
     def handle_message(self, message):
         """
