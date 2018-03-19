@@ -2,65 +2,36 @@
 rfpipe.py: EMANE RF-PIPE model for CORE
 """
 
-from core import emane
 from core.emane.emanemodel import EmaneModel
 from core.emane.universal import EmaneUniversalModel
 from core.enumerations import ConfigDataTypes
 
 
 class EmaneRfPipeModel(EmaneModel):
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
-
     # model name
     name = "emane_rfpipe"
-    if emane.VERSION >= emane.EMANE091:
-        xml_path = "/usr/share/emane/xml/models/mac/rfpipe"
-    else:
-        xml_path = "/usr/share/emane/models/rfpipe/xml"
+    xml_path = "/usr/share/emane/xml/models/mac/rfpipe"
 
     # configuration parameters are
     #  ( "name", "type", "default", "possible-value-list", "caption")
     # MAC parameters
     _confmatrix_mac_base = [
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
-         "True,False", "enable promiscuous mode"),
-        ("datarate", ConfigDataTypes.UINT32.value, "1M",
-         "", "data rate (bps)"),
-        ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable traffic flow control"),
-        ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10",
-         "", "number of flow control tokens"),
-        ("pcrcurveuri", ConfigDataTypes.STRING.value,
-         "%s/rfpipepcr.xml" % xml_path,
-         "", "SINR/PCR curve file"),
-    ]
-    _confmatrix_mac_081 = [
-        ("jitter", ConfigDataTypes.FLOAT.value, "0.0",
-         "", "transmission jitter (usec)"),
-        ("delay", ConfigDataTypes.FLOAT.value, "0.0",
-         "", "transmission delay (usec)"),
-        ("transmissioncontrolmap", ConfigDataTypes.STRING.value, "",
-         "", "tx control map (nem:rate:freq:tx_dBm)"),
-        ("enabletighttiming", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable tight timing for pkt delay"),
+        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "True,False", "enable promiscuous mode"),
+        ("datarate", ConfigDataTypes.UINT32.value, "1M", "", "data rate (bps)"),
+        ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable traffic flow control"),
+        ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10", "", "number of flow control tokens"),
+        ("pcrcurveuri", ConfigDataTypes.STRING.value, "%s/rfpipepcr.xml" % xml_path, "", "SINR/PCR curve file"),
     ]
     _confmatrix_mac_091 = [
-        ("jitter", ConfigDataTypes.FLOAT.value, "0.0",
-         "", "transmission jitter (sec)"),
-        ("delay", ConfigDataTypes.FLOAT.value, "0.0",
-         "", "transmission delay (sec)"),
-        ("radiometricenable", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "report radio metrics via R2RI"),
-        ("radiometricreportinterval", ConfigDataTypes.FLOAT.value, "1.0",
-         "", "R2RI radio metric report interval (sec)"),
-        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0",
-         "", "R2RI neighbor table inactivity time (sec)"),
+        ("jitter", ConfigDataTypes.FLOAT.value, "0.0", "", "transmission jitter (sec)"),
+        ("delay", ConfigDataTypes.FLOAT.value, "0.0", "", "transmission delay (sec)"),
+        ("radiometricenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "report radio metrics via R2RI"),
+        ("radiometricreportinterval", ConfigDataTypes.FLOAT.value, "1.0", "",
+         "R2RI radio metric report interval (sec)"),
+        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0", "",
+         "R2RI neighbor table inactivity time (sec)"),
     ]
-    if emane.VERSION >= emane.EMANE091:
-        _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
-    else:
-        _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_081
+    _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_091
 
     # PHY parameters from Universal PHY
     _confmatrix_phy = EmaneUniversalModel.config_matrix
@@ -71,6 +42,9 @@ class EmaneRfPipeModel(EmaneModel):
     config_groups = "RF-PIPE MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % (
         len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(config_matrix))
 
+    def __init__(self, session, object_id=None):
+        EmaneModel.__init__(self, session, object_id)
+
     def buildnemxmlfiles(self, e, ifc):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
@@ -78,10 +52,10 @@ class EmaneRfPipeModel(EmaneModel):
         that file also. Otherwise the WLAN-wide nXXemane_rfpipenem.xml,
         nXXemane_rfpipemac.xml, nXXemane_rfpipephy.xml are used.
         """
-        values = e.getifcconfig(self.object_id, self.name,
-                                self.getdefaultvalues(), ifc)
+        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
         if values is None:
             return
+
         nemdoc = e.xmldoc("nem")
         nem = nemdoc.getElementsByTagName("nem").pop()
         nem.setAttribute("name", "RF-PIPE NEM")
@@ -102,15 +76,9 @@ class EmaneRfPipeModel(EmaneModel):
         mac = macdoc.getElementsByTagName("mac").pop()
         mac.setAttribute("name", "RF-PIPE MAC")
         mac.setAttribute("library", "rfpipemaclayer")
-        if emane.VERSION < emane.EMANE091 and \
-                self.valueof("transmissioncontrolmap", values) is "":
+        if self.valueof("transmissioncontrolmap", values) is "":
             macnames.remove("transmissioncontrolmap")
-        # EMANE 0.7.4 support
-        if emane.VERSION == emane.EMANE074:
-            # convert datarate from bps to kbps
-            i = names.index("datarate")
-            values = list(values)
-            values[i] = self.emane074_fixup(values[i], 1000)
+
         # append MAC options to macdoc
         map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, self.valueof(n, values))), macnames)
         e.xmlwrite(macdoc, self.macxmlname(ifc))

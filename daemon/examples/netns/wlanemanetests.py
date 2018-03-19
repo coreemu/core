@@ -636,7 +636,7 @@ class Experiment(object):
             self.info("%s initial test ping (max 1 second)..." % \
                       self.firstnode.name)
         (status, result) = self.firstnode.cmd_output(["ping", "-q", "-c", "1",
-                                                                 "-w", "1", self.lastaddr])
+                                                      "-w", "1", self.lastaddr])
         if status != 0:
             self.warn("initial ping from %s to %s failed! result:\n%s" % \
                       (self.firstnode.name, self.lastaddr, result))
@@ -705,11 +705,6 @@ def main():
         starttime = datetime.datetime.now()
         exp = Experiment(opt=opt, start=starttime)
         exp.info("Starting wlanemanetests.py tests %s" % starttime.ctime())
-
-        # system sanity checks here
-        emanever, emaneverstr = emane.VERSION, emane.VERSIONSTR
-        if opt.verbose:
-            exp.info("Detected EMANE version %s" % (emaneverstr,))
 
         # bridged
         exp.info("setting up bridged tests 1/2 no link effects")

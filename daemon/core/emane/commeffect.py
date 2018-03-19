@@ -2,22 +2,32 @@
 commeffect.py: EMANE CommEffect model for CORE
 """
 
-from core import emane
 from core import logger
 from core.emane.emanemodel import EmaneModel
 from core.enumerations import ConfigDataTypes
 
 try:
-    import emaneeventservice
-    import emaneeventcommeffect
+    from emanesh.events.commeffectevent import CommEffectEvent
 except ImportError:
-    logger.info("emane < 0.9.1 not found")
+    try:
+        from emane.events.commeffectevent import CommEffectEvent
+    except ImportError:
+        logger.info("emane 0.9.1+ not found")
+
+
+def convert_none(x):
+    """
+    Helper to use 0 for None values.
+    """
+    if type(x) is str:
+        x = float(x)
+    if x is None:
+        return 0
+    else:
+        return int(x)
 
 
 class EmaneCommEffectModel(EmaneModel):
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
-
     # model name
     name = "emane_commeffect"
     # CommEffect parameters
@@ -31,24 +41,18 @@ class EmaneCommEffectModel(EmaneModel):
         ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0",
          "", "receivebufferperiod"),
     ]
-    _confmatrix_shim_081 = [
-        ("defaultconnectivity", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "defaultconnectivity"),
-        ("enabletighttimingmode", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable tight timing mode"),
-    ]
     _confmatrix_shim_091 = [
         ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "0",
          "On,Off", "defaultconnectivity"),
     ]
-    if emane.VERSION >= emane.EMANE091:
-        _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
-    else:
-        _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_081
+    _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
 
     config_matrix = _confmatrix_shim
     # value groupings
     config_groups = "CommEffect SHIM Parameters:1-%d" % len(_confmatrix_shim)
+
+    def __init__(self, session, object_id=None):
+        EmaneModel.__init__(self, session, object_id)
 
     def buildnemxmlfiles(self, e, ifc):
         """
@@ -85,45 +89,35 @@ class EmaneCommEffectModel(EmaneModel):
         nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
         e.xmlwrite(nemdoc, self.nemxmlname(ifc))
 
-    def linkconfig(self, netif, bw=None, delay=None,
-                   loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
         Generate CommEffect events when a Link Message is received having
         link parameters.
         """
-        if emane.VERSION >= emane.EMANE091:
-            raise NotImplementedError("CommEffect linkconfig() not implemented for EMANE 0.9.1+")
-
-        def z(x):
-            """
-            Helper to use 0 for None values.
-            """
-            if type(x) is str:
-                x = float(x)
-            if x is None:
-                return 0
-            else:
-                return int(x)
-
         service = self.session.emane.service
         if service is None:
-            logger.warn("%s: EMANE event service unavailable" % self.name)
+            logger.warn("%s: EMANE event service unavailable", self.name)
             return
+
         if netif is None or netif2 is None:
-            logger.warn("%s: missing NEM information" % self.name)
+            logger.warn("%s: missing NEM information", self.name)
             return
+
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
-        event = emaneeventcommeffect.EventCommEffect(1)
-        index = 0
-        e = self.session.get_object(self.object_id)
-        nemid = e.getnemid(netif)
-        nemid2 = e.getnemid(netif2)
+        event = CommEffectEvent()
+        emane_node = self.session.get_object(self.object_id)
+        nemid = emane_node.getnemid(netif)
+        nemid2 = emane_node.getnemid(netif2)
         mbw = bw
 
-        event.set(index, nemid, 0, z(delay), 0, z(jitter), z(loss),
-                  z(duplicate), long(z(bw)), long(z(mbw)))
-        service.publish(emaneeventcommeffect.EVENT_ID,
-                        emaneeventservice.PLATFORMID_ANY,
-                        nemid2, emaneeventservice.COMPONENTID_ANY,
-                        event.export())
+        event.append(
+            nemid,
+            latency=convert_none(delay),
+            jitter=convert_none(jitter),
+            loss=convert_none(loss),
+            duplicate=convert_none(duplicate),
+            unicast=long(convert_none(bw)),
+            broadcast=long(convert_none(mbw))
+        )
+        service.publish(nemid2, event)

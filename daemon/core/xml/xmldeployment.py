@@ -2,11 +2,11 @@ import os
 import socket
 
 from core import constants
-from core import emane
 from core import logger
 from core.enumerations import NodeTypes
-from core.misc import ipaddress, utils
+from core.misc import ipaddress
 from core.misc import nodeutils
+from core.misc import utils
 from core.netns import nodes
 from core.xml import xmlutils
 
@@ -17,9 +17,6 @@ class CoreDeploymentWriter(object):
         self.root = root
         self.session = session
         self.hostname = socket.gethostname()
-        if emane.VERSION < emane.EMANE092:
-            self.transport = None
-            self.platform = None
 
     @staticmethod
     def get_ipv4_addresses(hostname):
@@ -185,18 +182,8 @@ class CoreDeploymentWriter(object):
 
     def add_emane_interface(self, physical_host, virtual_host, netif, platform_name='p1', transport_name='t1'):
         nemid = netif.net.nemidmap[netif]
-        if emane.VERSION < emane.EMANE092:
-            if self.platform is None:
-                self.platform = \
-                    self.add_platform(physical_host, name=platform_name)
-            platform = self.platform
-            if self.transport is None:
-                self.transport = \
-                    self.add_transport(physical_host, name=transport_name)
-            transport = self.transport
-        else:
-            platform = self.add_platform(virtual_host, name=platform_name)
-            transport = self.add_transport(virtual_host, name=transport_name)
+        platform = self.add_platform(virtual_host, name=platform_name)
+        transport = self.add_transport(virtual_host, name=transport_name)
         nem_name = 'nem%s' % nemid
         nem = self.add_nem(platform, nem_name)
         self.add_parameter(nem, 'nemid', str(nemid))

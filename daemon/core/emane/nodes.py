@@ -4,9 +4,8 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 """
 
-from os import path
+import os
 
-from core import emane
 from core import logger
 from core.coreobj import PyCoreNet
 from core.enumerations import LinkTypes
@@ -20,12 +19,6 @@ except ImportError:
         from emanesh.events import LocationEvent
     except ImportError:
         logger.info("emane 0.9.1+ not found")
-
-try:
-    import emaneeventservice
-    import emaneeventlocation
-except ImportError:
-    logger.info("emane < 0.9.1 not found")
 
 
 class EmaneNet(PyCoreNet):
@@ -125,8 +118,9 @@ class EmaneNode(EmaneNet):
         """
         ret = {}
         if self.model is None:
-            logger.info("warning: EmaneNode %s has no associated model" % self.name)
+            logger.info("warning: EmaneNode %s has no associated model", self.name)
             return ret
+
         for netif in self.netifs():
             # <nem name="NODE-001" definition="rfpipenem.xml">
             nementry = self.model.buildplatformxmlnementry(doc, self, netif)
@@ -145,13 +139,16 @@ class EmaneNode(EmaneNet):
         """
         if self.model is None:
             return
+
         # build XML for overall network (EmaneNode) configs
         self.model.buildnemxmlfiles(emane, ifc=None)
+
         # build XML for specific interface (NEM) configs
         need_virtual = False
         need_raw = False
         vtype = "virtual"
         rtype = "raw"
+
         for netif in self.netifs():
             self.model.buildnemxmlfiles(emane, netif)
             if "virtual" in netif.transport_type:
@@ -160,39 +157,42 @@ class EmaneNode(EmaneNet):
             else:
                 need_raw = True
                 rtype = netif.transport_type
+
         # build transport XML files depending on type of interfaces involved
         if need_virtual:
             self.buildtransportxml(emane, vtype)
+
         if need_raw:
             self.buildtransportxml(emane, rtype)
 
-    def buildtransportxml(self, emane, type):
+    def buildtransportxml(self, emane, transport_type):
         """
         Write a transport XML file for the Virtual or Raw Transport.
         """
         transdoc = emane.xmldoc("transport")
         trans = transdoc.getElementsByTagName("transport").pop()
-        trans.setAttribute("name", "%s Transport" % type.capitalize())
-        trans.setAttribute("library", "trans%s" % type.lower())
+        trans.setAttribute("name", "%s Transport" % transport_type.capitalize())
+        trans.setAttribute("library", "trans%s" % transport_type.lower())
         trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
 
         flowcontrol = False
         names = self.model.getnames()
-        values = emane.getconfig(self.objid, self.model.name,
-                                 self.model.getdefaultvalues())[1]
+        values = emane.getconfig(self.objid, self.model.name, self.model.getdefaultvalues())[1]
+
         if "flowcontrolenable" in names and values:
             i = names.index("flowcontrolenable")
             if self.model.booltooffon(values[i]) == "on":
                 flowcontrol = True
 
-        if "virtual" in type.lower():
-            if path.exists("/dev/net/tun_flowctl"):
+        if "virtual" in transport_type.lower():
+            if os.path.exists("/dev/net/tun_flowctl"):
                 trans.appendChild(emane.xmlparam(transdoc, "devicepath", "/dev/net/tun_flowctl"))
             else:
                 trans.appendChild(emane.xmlparam(transdoc, "devicepath", "/dev/net/tun"))
             if flowcontrol:
                 trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable", "on"))
-        emane.xmlwrite(transdoc, self.transportxmlname(type.lower()))
+
+        emane.xmlwrite(transdoc, self.transportxmlname(transport_type.lower()))
 
     def transportxmlname(self, type):
         """
@@ -247,29 +247,15 @@ class EmaneNode(EmaneNet):
         if nemid is None:
             logger.info("nemid for %s is unknown" % ifname)
             return
-        (lat, long, alt) = self.session.location.getgeo(x, y, z)
-        logger.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)"
-                    "(%.6f,%.6f,%.6f)" % \
-                    (ifname, nemid, x, y, z, lat, long, alt))
-        if emane.VERSION >= emane.EMANE091:
-            event = LocationEvent()
-        else:
-            event = emaneeventlocation.EventLocation(1)
+        lat, long, alt = self.session.location.getgeo(x, y, z)
+        logger.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)", ifname, nemid, x, y, z, lat, long, alt)
+        event = LocationEvent()
+
         # altitude must be an integer or warning is printed
         # unused: yaw, pitch, roll, azimuth, elevation, velocity
         alt = int(round(alt))
-        if emane.VERSION >= emane.EMANE091:
-            event.append(nemid, latitude=lat, longitude=long, altitude=alt)
-            self.session.emane.service.publish(0, event)
-        else:
-            event.set(0, nemid, lat, long, alt)
-            self.session.emane.service.publish(
-                emaneeventlocation.EVENT_ID,
-                emaneeventservice.PLATFORMID_ANY,
-                emaneeventservice.NEMID_ANY,
-                emaneeventservice.COMPONENTID_ANY,
-                event.export()
-            )
+        event.append(nemid, latitude=lat, longitude=long, altitude=alt)
+        self.session.emane.service.publish(0, event)
 
     def setnempositions(self, moved_netifs):
         """
@@ -279,14 +265,12 @@ class EmaneNode(EmaneNet):
         """
         if len(moved_netifs) == 0:
             return
+
         if self.session.emane.service is None:
             logger.info("position service not available")
             return
 
-        if emane.VERSION >= emane.EMANE091:
-            event = LocationEvent()
-        else:
-            event = emaneeventlocation.EventLocation(len(moved_netifs))
+        event = LocationEvent()
         i = 0
         for netif in moved_netifs:
             nemid = self.getnemid(netif)
@@ -294,26 +278,13 @@ class EmaneNode(EmaneNet):
             if nemid is None:
                 logger.info("nemid for %s is unknown" % ifname)
                 continue
-            (x, y, z) = netif.node.getposition()
-            (lat, long, alt) = self.session.location.getgeo(x, y, z)
-            logger.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)"
-                        "(%.6f,%.6f,%.6f)" %
-                        (i, ifname, nemid, x, y, z, lat, long, alt))
+            x, y, z = netif.node.getposition()
+            lat, long, alt = self.session.location.getgeo(x, y, z)
+            logger.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
+                        i, ifname, nemid, x, y, z, lat, long, alt)
             # altitude must be an integer or warning is printed
             alt = int(round(alt))
-            if emane.VERSION >= emane.EMANE091:
-                event.append(nemid, latitude=lat, longitude=long, altitude=alt)
-            else:
-                event.set(i, nemid, lat, long, alt)
+            event.append(nemid, latitude=lat, longitude=long, altitude=alt)
             i += 1
 
-        if emane.VERSION >= emane.EMANE091:
-            self.session.emane.service.publish(0, event)
-        else:
-            self.session.emane.service.publish(
-                emaneeventlocation.EVENT_ID,
-                emaneeventservice.PLATFORMID_ANY,
-                emaneeventservice.NEMID_ANY,
-                emaneeventservice.COMPONENTID_ANY,
-                event.export()
-            )
+        self.session.emane.service.publish(0, event)

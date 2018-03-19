@@ -2,7 +2,6 @@
 Defines Emane Models used within CORE.
 """
 
-from core import emane
 from core import logger
 from core.misc import utils
 from core.mobility import WirelessModel
@@ -47,23 +46,6 @@ class EmaneModel(WirelessModel):
         """
         return cls.configure(session.emane, config_data)
 
-    @classmethod
-    def emane074_fixup(cls, value, div=1.0):
-        """
-        Helper for converting 0.8.1 and newer values to EMANE 0.7.4
-        compatible values.
-        NOTE: This should be removed when support for 0.7.4 has been
-        deprecated.
-        """
-        if div == 0:
-            return "0"
-        if type(value) is not str:
-            return str(value / div)
-        if value.endswith(tuple(cls._prefix.keys())):
-            suffix = value[-1]
-            value = float(value[:-1]) * cls._prefix[suffix]
-        return str(int(value / div))
-
     def buildnemxmlfiles(self, e, ifc):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
@@ -98,22 +80,21 @@ class EmaneModel(WirelessModel):
         """
         ttype = ifc.transport_type
         if not ttype:
-            logger.info("warning: %s interface type unsupported!" % ifc.name)
+            logger.info("warning: %s interface type unsupported!", ifc.name)
             ttype = "raw"
+
         trans = doc.createElement("transport")
         trans.setAttribute("definition", n.transportxmlname(ttype))
-        if emane.VERSION < emane.EMANE092:
-            trans.setAttribute("group", "1")
         param = doc.createElement("param")
         param.setAttribute("name", "device")
+
         if ttype == "raw":
             # raw RJ45 name e.g. "eth0"
             param.setAttribute("value", ifc.name)
         else:
             # virtual TAP name e.g. "n3.0.17"
             param.setAttribute("value", ifc.localname)
-            if emane.VERSION > emane.EMANE091:
-                param.setAttribute("value", ifc.name)
+            param.setAttribute("value", ifc.name)
 
         trans.appendChild(param)
         return trans
@@ -126,12 +107,14 @@ class EmaneModel(WirelessModel):
         """
         emane = self.session.emane
         name = "n%s" % self.object_id
+
         if interface is not None:
             nodenum = interface.node.objid
             # Adamson change - use getifcconfig() to get proper result
             # if emane.getconfig(nodenum, self._name, None)[1] is not None:
             if emane.getifcconfig(nodenum, self.name, None, interface) is not None:
                 name = interface.localname.replace(".", "_")
+
         return "%s%s" % (name, self.name)
 
     def nemxmlname(self, interface=None):
@@ -139,9 +122,8 @@ class EmaneModel(WirelessModel):
         Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
         """
         append = ""
-        if emane.VERSION > emane.EMANE091:
-            if interface and interface.transport_type == "raw":
-                append = "_raw"
+        if interface and interface.transport_type == "raw":
+            append = "_raw"
         return "%snem%s.xml" % (self.basename(interface), append)
 
     def shimxmlname(self, ifc=None):

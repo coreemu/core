@@ -7,9 +7,6 @@ from core.enumerations import ConfigDataTypes
 
 
 class EmaneBypassModel(EmaneModel):
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
-
     name = "emane_bypass"
     config_matrix = [
         ("none", ConfigDataTypes.BOOL.value, "0",
@@ -18,6 +15,9 @@ class EmaneBypassModel(EmaneModel):
 
     # value groupings
     config_groups = "Bypass Parameters:1-1"
+
+    def __init__(self, session, object_id=None):
+        EmaneModel.__init__(self, session, object_id)
 
     def buildnemxmlfiles(self, e, ifc):
         """
