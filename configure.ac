@@ -203,9 +203,6 @@ else
 fi
 
 # Output files
-#gui/core-gui
-#scripts/core-daemon.service
-#daemon/core/constants.py
 AC_CONFIG_FILES([Makefile
 		gui/version.tcl
 		gui/Makefile
