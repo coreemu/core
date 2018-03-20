@@ -76,8 +76,6 @@ class EmaneRfPipeModel(EmaneModel):
         mac = macdoc.getElementsByTagName("mac").pop()
         mac.setAttribute("name", "RF-PIPE MAC")
         mac.setAttribute("library", "rfpipemaclayer")
-        if self.valueof("transmissioncontrolmap", values) is "":
-            macnames.remove("transmissioncontrolmap")
 
         # append MAC options to macdoc
         map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, self.valueof(n, values))), macnames)
