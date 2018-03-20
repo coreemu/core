@@ -20,7 +20,7 @@ CORE_LIB_DIR="\${prefix}/lib/core"
 CORE_CONF_DIR="/etc/core"
 CORE_DATA_DIR="\${datarootdir}/core"
 # TODO: verify there is need to hard set /var
-CORE_STATE_DIR="\${localstatedir}"
+CORE_STATE_DIR="/var"
 
 AC_SUBST(PACKAGE_DATE)
 AC_SUBST(PACKAGE_MAINTAINERS)
