@@ -1022,6 +1022,7 @@ class Session(object):
         :return: control net object
         :rtype: core.netns.nodes.CtrlNet
         """
+        logger.debug("add/remove control net: index(%s) remove(%s) conf_required(%s)", net_index, remove, conf_required)
         prefix_spec_list = self.get_control_net_prefixes()
         prefix_spec = prefix_spec_list[net_index]
         if not prefix_spec:
@@ -1031,6 +1032,7 @@ class Session(object):
             else:
                 control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
                 prefix_spec = control_net_class.DEFAULT_PREFIX_LIST[net_index]
+        logger.debug("prefix spec: %s", prefix_spec)
 
         server_interface = self.get_control_net_server_interfaces()[net_index]
 
