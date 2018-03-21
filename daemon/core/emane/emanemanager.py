@@ -145,7 +145,7 @@ class EmaneManager(ConfigurableManager):
 
         # disabled otachannel for event service
         # only needed for e.g. antennaprofile events xmit by models
-        logger.info("Using %s for event service traffic" % eventdev)
+        logger.info("Using %s for event service traffic", eventdev)
         try:
             self.service = EventService(eventchannel=eventchannel, otachannel=None)
         except EventServiceException:
@@ -238,22 +238,28 @@ class EmaneManager(ConfigurableManager):
         Emane.(SUCCESS, NOT_NEEDED, NOT_READY) in order to delay session
         instantiation.
         """
+        logger.debug("emane setup")
 
         # TODO: drive this from the session object
         with self.session._objects_lock:
             for node in self.session.objects.itervalues():
                 if nodeutils.is_node(node, NodeTypes.EMANE):
+                    logger.debug("adding emane node: id(%s) name(%s)", node.objid, node.name)
                     self.add_node(node)
+
             if not self._emane_nodes:
+                logger.debug("no emane nodes in session")
                 return EmaneManager.NOT_NEEDED
 
         # control network bridge required for EMANE 0.9.2
         # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
         if self.session.master:
-            values = self.getconfig(None, "emane", self.emane_config.getdefaultvalues())[1]
+            values = self.getconfig(None, self.emane_config.name, self.emane_config.getdefaultvalues())[1]
+            logger.debug("emane config default values: %s", values)
             otadev = self.emane_config.valueof("otamanagerdevice", values)
             netidx = self.session.get_control_net_index(otadev)
+            logger.debug("emane ota manager device: index(%s) otadev(%s)", netidx, otadev)
             if netidx < 0:
                 logger.error("EMANE cannot start, check core config. invalid OTA device provided: %s", otadev)
                 return EmaneManager.NOT_READY
@@ -261,8 +267,10 @@ class EmaneManager(ConfigurableManager):
             ctrlnet = self.session.add_remove_control_net(net_index=netidx, remove=False, conf_required=False)
             self.distributedctrlnet(ctrlnet)
             eventdev = self.emane_config.valueof("eventservicedevice", values)
+            logger.debug("emane event service device: eventdev(%s)", eventdev)
             if eventdev != otadev:
                 netidx = self.session.get_control_net_index(eventdev)
+                logger.debug("emane event service device index: %s", netidx)
                 if netidx < 0:
                     logger.error("EMANE cannot start, check core config. invalid event service device: %s", eventdev)
                     return EmaneManager.NOT_READY
@@ -391,7 +399,7 @@ class EmaneManager(ConfigurableManager):
         with self._emane_node_lock:
             if self._emane_nodes:
                 master = self.session.master
-                logger.info("Setup EMANE with master=%s." % master)
+                logger.info("emane check distributed as master: %s.", master)
 
         # we are not the master Emane object, wait for nem id and ports
         if not master:
@@ -535,15 +543,18 @@ class EmaneManager(ConfigurableManager):
         Associate EmaneModel classes with EmaneNode nodes. The model
         configurations are stored in self.configs.
         """
-        for emane_node in self._emane_nodes:
-            self.setnodemodel(emane_node)
+        for key in self._emane_nodes:
+            self.setnodemodel(key)
 
-    def setnodemodel(self, n):
-        emanenode = self._emane_nodes[n]
-        if n not in self.configs:
+    def setnodemodel(self, key):
+        logger.debug("setting emane node model: %s", key)
+        emane_node = self._emane_nodes[key]
+        if key not in self.configs:
+            logger.debug("no emane node model configuration, leaving")
             return False
 
-        for t, v in self.configs[n]:
+        for t, v in self.configs[key]:
+            logger.debug("configuration: key(%s) value(%s)", t, v)
             if t is None:
                 continue
             if t == self.emane_config.name:
@@ -552,7 +563,7 @@ class EmaneManager(ConfigurableManager):
             # only use the first valid EmaneModel
             # convert model name to class (e.g. emane_rfpipe -> EmaneRfPipe)
             cls = self._modelclsmap[t]
-            emanenode.setmodel(cls, v)
+            emane_node.setmodel(cls, v)
             return True
 
         # no model has been configured for this EmaneNode
@@ -777,8 +788,8 @@ class EmaneManager(ConfigurableManager):
             args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n),
                                os.path.join(path, "platform%d.xml" % n)]
             output = node.check_cmd(args)
-            logger.info("emane daemon running: %s", args)
-            logger.info("emane daemon output: %s", output)
+            logger.info("node(%s) emane daemon running: %s", node.name, args)
+            logger.info("node(%s) emane daemon output: %s", node.name, output)
 
         if not run_emane_on_host:
             return
@@ -787,7 +798,7 @@ class EmaneManager(ConfigurableManager):
         emanecmd += ["-f", os.path.join(path, "emane.log")]
         args = emanecmd + [os.path.join(path, "platform.xml")]
         utils.check_cmd(args, cwd=path)
-        logger.info("emane daemon running: %s", args)
+        logger.info("host emane daemon running: %s", args)
 
     def stopdaemons(self):
         """
@@ -908,8 +919,7 @@ class EmaneManager(ConfigurableManager):
         """
         if self.service is None:
             return
-        logger.info("subscribing to EMANE location events (not generating them). (%s)",
-                    threading.currentThread().getName())
+        logger.info("subscribing to EMANE location events. (%s)", threading.currentThread().getName())
         while self.doeventloop is True:
             uuid, seq, events = self.service.nextEvent()
 

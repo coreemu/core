@@ -221,7 +221,7 @@ class EmaneNode(EmaneNet):
             # at this point we register location handlers for generating
             # EMANE location events
             netif.poshook = self.setnemposition
-            (x, y, z) = netif.node.position.get()
+            x, y, z = netif.node.position.get()
             self.setnemposition(netif, x, y, z)
 
     def deinstallnetifs(self):
