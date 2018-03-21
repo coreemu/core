@@ -1014,36 +1014,32 @@ class EmaneGlobalModel(EmaneModel):
     _DEFAULT_DEV = "ctrl0"
 
     name = "emane"
-    _confmatrix_platform_base = [
-        ("otamanagerchannelenable", ConfigDataTypes.BOOL.value, _DEFAULT_OTA, "on,off", "enable OTA Manager channel"),
-        ("otamanagergroup", ConfigDataTypes.STRING.value, "224.1.2.8:45702", "", "OTA Manager group"),
-        ("otamanagerdevice", ConfigDataTypes.STRING.value, _DEFAULT_DEV, "", "OTA Manager device"),
-        ("eventservicegroup", ConfigDataTypes.STRING.value, "224.1.2.8:45703", "", "Event Service group"),
-        ("eventservicedevice", ConfigDataTypes.STRING.value, _DEFAULT_DEV, "", "Event Service device"),
-        ("platform_id_start", ConfigDataTypes.INT32.value, "1", "", "starting Platform ID"),
-    ]
 
-    # defined from 0.9.1
     _confmatrix_platform = [
-        ("controlportendpoint", ConfigDataTypes.STRING.value, "0.0.0.0:47000", "", "Control port address"),
         ("antennaprofilemanifesturi", ConfigDataTypes.STRING.value, "", "", "antenna profile manifest URI"),
-        ("eventservicettl", ConfigDataTypes.INT8.value, "1", "", "Event Service TTL"),
+        ("controlportendpoint", ConfigDataTypes.STRING.value, "0.0.0.0:47000", "", "Control port address"),
+        ("eventservicedevice", ConfigDataTypes.STRING.value, _DEFAULT_DEV, "", "Event Service device"),
+        ("eventservicegroup", ConfigDataTypes.STRING.value, "224.1.2.8:45703", "", "Event Service group"),
+        ("eventservicettl", ConfigDataTypes.UINT8.value, "1", "", "Event Service TTL"),
+        ("otamanagerchannelenable", ConfigDataTypes.BOOL.value, _DEFAULT_OTA, "on,off", "enable OTA Manager channel"),
+        ("otamanagerdevice", ConfigDataTypes.STRING.value, _DEFAULT_DEV, "", "OTA Manager device"),
+        ("otamanagergroup", ConfigDataTypes.STRING.value, "224.1.2.8:45702", "", "OTA Manager group"),
         ("otamanagerloopback", ConfigDataTypes.BOOL.value, "0", "on,off", "Enable OTA multicast loopback"),
-        ("otamanagermtu", ConfigDataTypes.INT32.value, "0", "", "OTA channel MTU in bytes, 0 to disable"),
-        ("otamanagerpartcheckthreshold", ConfigDataTypes.INT16.value, "2", "",
+        ("otamanagermtu", ConfigDataTypes.UINT32.value, "0", "", "OTA channel MTU in bytes, 0 to disable"),
+        ("otamanagerpartcheckthreshold", ConfigDataTypes.UINT16.value, "2", "",
          "Rate in seconds a check is performed to see if any OTA packet part reassembly efforts should be abandoned"),
-        ("otamanagerparttimeoutthreshold", ConfigDataTypes.INT16.value, "5", "",
+        ("otamanagerparttimeoutthreshold", ConfigDataTypes.UINT16.value, "5", "",
          "Threshold in seconds to wait for another OTA packet part for an existing reassembly effort before "
          "abandoning the effort"),
-        ("otamanagerttl", ConfigDataTypes.INT8.value, "1", "", "OTA channel multicast message TTL"),
-        ("stats.event.maxeventcountrows", ConfigDataTypes.INT32.value, "0", "",
+        ("otamanagerttl", ConfigDataTypes.UINT8.value, "1", "", "OTA channel multicast message TTL"),
+        ("stats.event.maxeventcountrows", ConfigDataTypes.UINT32.value, "0", "",
          "Event channel max event count table rows"),
-        ("stats.ota.maxeventcountrows", ConfigDataTypes.INT32.value, "0", "",
+        ("stats.ota.maxeventcountrows", ConfigDataTypes.UINT32.value, "0", "",
          "OTA channel max event count table rows"),
-        ("stats.ota.maxpacketcountrows", ConfigDataTypes.INT32.value, "0", "",
+        ("stats.ota.maxpacketcountrows", ConfigDataTypes.UINT32.value, "0", "",
          "OTA channel max packet count table rows"),
+        ("platform_id_start", ConfigDataTypes.INT32.value, "1", "", "starting Platform ID"),
     ]
-    _confmatrix_platform = _confmatrix_platform_base + _confmatrix_platform
 
     # defined from 0.9.2
     _confmatrix_nem = [

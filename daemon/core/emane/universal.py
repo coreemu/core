@@ -21,23 +21,37 @@ class EmaneUniversalModel(EmaneModel):
     _xmllibrary = "universalphylayer"
 
     # universal PHY parameters
-    _confmatrix_base = [
+    config_matrix = [
         ("bandwidth", ConfigDataTypes.UINT64.value, "1M", "", "rf bandwidth (Hz)"),
-        ("frequency", ConfigDataTypes.UINT64.value, "2.347G", "", "frequency (Hz)"),
-        ("frequencyofinterest", ConfigDataTypes.UINT64.value, "2.347G", "", "frequency of interest (Hz)"),
-        ("subid", ConfigDataTypes.UINT16.value, "1", "", "subid"),
-        ("systemnoisefigure", ConfigDataTypes.FLOAT.value, "4.0", "", "system noise figure (dB)"),
-        ("txpower", ConfigDataTypes.FLOAT.value, "0.0", "", "transmit power (dBm)"),
-    ]
-    _confmatrix_091 = [
+        ("fading.model", ConfigDataTypes.STRING.value, "none", "none,event,nakagami", "Defines fading model"),
+        ("fading.nakagami.distance0", ConfigDataTypes.FLOAT.value, "100.0", "",
+         "Nakagami D0: distance lower bound in meters"),
+        ("fading.nakagami.distance1", ConfigDataTypes.FLOAT.value, "250.0", "",
+         "Nakagami D1: distance upper bound in meters"),
+        ("fading.nakagami.m0", ConfigDataTypes.FLOAT.value, "0.75", "", "Nakagami M0: shape factor for distance < D0"),
+        ("fading.nakagami.m1", ConfigDataTypes.FLOAT.value, "1.0", "",
+         "Nakagami M1: shape factor for distance >= D0 < D1"),
+        ("fading.nakagami.m2", ConfigDataTypes.FLOAT.value, "200.0", "",
+         "Nakagami M2: shape factor for distance >= D1"),
         ("fixedantennagain", ConfigDataTypes.FLOAT.value, "0.0", "", "antenna gain (dBi)"),
         ("fixedantennagainenable", ConfigDataTypes.BOOL.value, "1", "On,Off", "enable fixed antenna gain"),
-        ("noisemode", ConfigDataTypes.STRING.value, "none", "none,all,outofband", "noise processing mode"),
+        ("frequency", ConfigDataTypes.UINT64.value, "2.347G", "", "frequency (Hz)"),
+        ("frequencyofinterest", ConfigDataTypes.UINT64.value, "2.347G", "", "frequency of interest (Hz)"),
         ("noisebinsize", ConfigDataTypes.UINT64.value, "20", "", "noise bin size in microseconds"),
+        ("noisemaxclampenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "Noise max clamp enable"),
+        ("noisemaxmessagepropagation", ConfigDataTypes.UINT64.value, "200000", "",
+         "Noise maximum message propagation in microsecond"),
+        ("noisemaxsegmentduration", ConfigDataTypes.UINT64.value, "1000000", "",
+         "Noise maximum segment duration in microseconds"),
+        ("noisemaxsegmentoffset", ConfigDataTypes.UINT64.value, "300000", "",
+         "Noise maximum segment offset in microseconds"),
+        ("noisemode", ConfigDataTypes.STRING.value, "none", "none,all,outofband", "noise processing mode"),
         ("propagationmodel", ConfigDataTypes.STRING.value, "2ray", "precomputed,2ray,freespace", "path loss mode"),
-        ("fading.model", ConfigDataTypes.STRING.value, "none", "none,event,nakagami", "Defines fading model"),
+        ("subid", ConfigDataTypes.UINT16.value, "1", "", "subid"),
+        ("systemnoisefigure", ConfigDataTypes.FLOAT.value, "4.0", "", "system noise figure (dB)"),
+        ("timesyncthreshold", ConfigDataTypes.UINT64.value, "10000", "", "Time sync threshold"),
+        ("txpower", ConfigDataTypes.FLOAT.value, "0.0", "", "transmit power (dBm)"),
     ]
-    config_matrix = _confmatrix_base + _confmatrix_091
 
     @classmethod
     def getphydoc(cls, e, mac, values, phynames):
