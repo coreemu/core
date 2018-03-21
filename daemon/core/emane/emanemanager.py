@@ -617,8 +617,11 @@ class EmaneManager(ConfigurableManager):
             platform_values[i] = eventdev
 
         # append all platform options (except starting id) to doc
-        map(lambda n: plat.appendChild(self.xmlparam(doc, n, self.emane_config.valueof(n, platform_values))),
-            platform_names)
+        for name in platform_names:
+            value = self.emane_config.valueof(name, platform_values)
+            param = self.xmlparam(doc, name, value)
+            plat.appendChild(param)
+
         return doc
 
     def buildplatformxml(self, ctrlnet):
@@ -1024,6 +1027,21 @@ class EmaneGlobalModel(EmaneModel):
     _confmatrix_platform = [
         ("controlportendpoint", ConfigDataTypes.STRING.value, "0.0.0.0:47000", "", "Control port address"),
         ("antennaprofilemanifesturi", ConfigDataTypes.STRING.value, "", "", "antenna profile manifest URI"),
+        ("eventservicettl", ConfigDataTypes.INT8.value, "1", "", "Event Service TTL"),
+        ("otamanagerloopback", ConfigDataTypes.BOOL.value, "0", "on,off", "Enable OTA multicast loopback"),
+        ("otamanagermtu", ConfigDataTypes.INT32.value, "0", "", "OTA channel MTU in bytes, 0 to disable"),
+        ("otamanagerpartcheckthreshold", ConfigDataTypes.INT16.value, "2", "",
+         "Rate in seconds a check is performed to see if any OTA packet part reassembly efforts should be abandoned"),
+        ("otamanagerparttimeoutthreshold", ConfigDataTypes.INT16.value, "5", "",
+         "Threshold in seconds to wait for another OTA packet part for an existing reassembly effort before "
+         "abandoning the effort"),
+        ("otamanagerttl", ConfigDataTypes.INT8.value, "1", "", "OTA channel multicast message TTL"),
+        ("stats.event.maxeventcountrows", ConfigDataTypes.INT32.value, "0", "",
+         "Event channel max event count table rows"),
+        ("stats.ota.maxeventcountrows", ConfigDataTypes.INT32.value, "0", "",
+         "OTA channel max event count table rows"),
+        ("stats.ota.maxpacketcountrows", ConfigDataTypes.INT32.value, "0", "",
+         "OTA channel max packet count table rows"),
     ]
     _confmatrix_platform = _confmatrix_platform_base + _confmatrix_platform
 
