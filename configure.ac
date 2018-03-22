@@ -15,11 +15,11 @@ AM_INIT_AUTOMAKE([tar-ustar])
 PACKAGE_DATE=m4_esyscmd_s([date +%Y%m%d])
 PACKAGE_VENDOR="CORE Developers"
 PACKAGE_MAINTAINERS="$PACKAGE_VENDOR <$PACKAGE_BUGREPORT>"
+
+# core specific variables
 CORE_LIB_DIR="\${prefix}/lib/core"
-# TODO: hard setting path, until support by setup.py
 CORE_CONF_DIR="/etc/core"
-CORE_DATA_DIR="\${datarootdir}/core"
-# TODO: verify there is need to hard set /var
+CORE_DATA_DIR="\${datadir}/core"
 CORE_STATE_DIR="/var"
 
 AC_SUBST(PACKAGE_DATE)

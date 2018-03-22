@@ -46,7 +46,7 @@ install-exec-hook:
 uninstall-hook:
 	rm -rf $(DESTDIR)/etc/core
 	rm -rf $(DESTDIR)/$(datadir)/core
-	rm -f $(addprefix $(DESTDIR)/$(datadir)/man/man1/, $(MAN_FILES))
+	rm -f $(addprefix $(DESTDIR)/$(datarootdir)/man/man1/, $(MAN_FILES))
 	rm -f $(addprefix $(DESTDIR)/$(bindir)/,$(SCRIPT_FILES))
 	rm -rf $(DESTDIR)/$(pythondir)/core-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
 	rm -rf $(DESTDIR)/$(pythondir)/core
