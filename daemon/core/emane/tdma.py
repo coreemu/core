@@ -8,9 +8,6 @@ from core.enumerations import ConfigDataTypes
 
 
 class EmaneTdmaModel(EmaneModel):
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
-
     # model name
     name = "emane_tdma"
     xml_path = "/usr/share/emane/xml/models/mac/tdmaeventscheduler"
@@ -48,6 +45,9 @@ class EmaneTdmaModel(EmaneModel):
     # value groupings
     config_groups = "TDMA MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % (
         len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(config_matrix))
+
+    def __init__(self, session, object_id=None):
+        EmaneModel.__init__(self, session, object_id)
 
     def buildnemxmlfiles(self, e, ifc):
         """
