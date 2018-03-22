@@ -9,6 +9,7 @@ EMANE091 = 91
 EMANE092 = 92
 EMANE093 = 93
 EMANE101 = 101
+EMANE121 = 121
 
 VERSION = None
 VERSIONSTR = None
@@ -38,6 +39,8 @@ def emane_version():
             VERSION = EMANE093
         elif output.startswith("1.0.1"):
             VERSION = EMANE101
+        elif output.startswith("1.2.1"):
+            VERSION = EMANE121
     except CoreCommandError:
         logger.exception("error checking emane version")
         output = ""
