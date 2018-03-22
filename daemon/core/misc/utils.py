@@ -176,6 +176,7 @@ def cmd(args, wait=True):
     :rtype: int
     """
     args = split_args(args)
+    logger.debug("command: %s", args)
     try:
         p = subprocess.Popen(args)
         if not wait:
@@ -196,6 +197,7 @@ def cmd_output(args):
     :raises CoreCommandError: when the file to execute is not found
     """
     args = split_args(args)
+    logger.debug("command: %s", args)
     try:
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, _ = p.communicate()
@@ -219,6 +221,7 @@ def check_cmd(args, **kwargs):
     kwargs["stdout"] = subprocess.PIPE
     kwargs["stderr"] = subprocess.STDOUT
     args = split_args(args)
+    logger.debug("command: %s", args)
     try:
         p = subprocess.Popen(args, **kwargs)
         stdout, _ = p.communicate()
