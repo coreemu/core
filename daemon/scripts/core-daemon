@@ -8,9 +8,7 @@ message handlers are defined and some support for sending messages.
 import ConfigParser
 import atexit
 import optparse
-import os
 import signal
-import socket
 import sys
 import time
 
@@ -20,15 +18,9 @@ from core import coreserver
 from core import enumerations
 from core import logger
 from core import services
-from core.api import coreapi
-from core.enumerations import MessageFlags
-from core.enumerations import RegisterTlvs
 from core.misc import nodeutils
 from core.misc.utils import close_onexec
-from core.misc.utils import daemonize
 from core.service import ServiceManager
-
-DEFAULT_MAXFD = 1024
 
 
 def banner():
@@ -51,6 +43,7 @@ def cored(cfg=None):
     port = int(cfg["port"])
     if host == "" or host is None:
         host = "localhost"
+
     try:
         server = coreserver.CoreServer((host, port), corehandlers.CoreRequestHandler, cfg)
     except:
@@ -62,7 +55,7 @@ def cored(cfg=None):
     server.serve_forever()
 
 
-# TODO: should sessions and the main core daemon both catch at exist to shutdown independently?
+# TODO: should sessions and the main core daemon both catch exit to shutdown independently?
 def cleanup():
     """
     Runs server shutdown and cleanup when catching an exit signal.
@@ -72,9 +65,6 @@ def cleanup():
     while coreserver.CoreServer.servers:
         server = coreserver.CoreServer.servers.pop()
         server.shutdown()
-
-
-atexit.register(cleanup)
 
 
 def sighandler(signum, stackframe):
@@ -94,43 +84,7 @@ signal.signal(signal.SIGINT, sighandler)
 signal.signal(signal.SIGTERM, sighandler)
 signal.signal(signal.SIGUSR1, sighandler)
 signal.signal(signal.SIGUSR2, sighandler)
-
-
-def logrotate(stdout, stderr, stdoutmode=0644, stderrmode=0644):
-    """
-    Log rotation method.
-
-    :param stdout: stdout
-    :param stderr: stderr
-    :param int stdoutmode: stdout mode
-    :param int stderrmode: stderr mode
-    :return:
-    """
-
-    def reopen(fileno, filename, mode):
-        err = 0
-        fd = -1
-        try:
-            fd = os.open(filename,
-                         os.O_WRONLY | os.O_CREAT | os.O_APPEND, mode)
-            os.dup2(fd, fileno)
-        except OSError as e:
-            err = e.errno
-        finally:
-            if fd >= 0:
-                os.close(fd)
-            return err
-
-    if stdout:
-        err = reopen(1, stdout, stdoutmode)
-    if stderr:
-        if stderr == stdout and not err:
-            try:
-                os.dup2(1, 2)
-            except OSError as e:
-                pass
-        else:
-            reopen(2, stderr, stderrmode)
+atexit.register(cleanup)
 
 
 def get_merged_config(filename):
@@ -142,50 +96,23 @@ def get_merged_config(filename):
     :rtype: dict
     """
     # these are the defaults used in the config file
-    defaults = {"port": "%d" % enumerations.CORE_API_PORT,
-                "listenaddr": "localhost",
-                "pidfile": "%s/run/core-daemon.pid" % constants.CORE_STATE_DIR,
-                "logfile": "%s/log/core-daemon.log" % constants.CORE_STATE_DIR,
-                "xmlfilever": "1.0",
-                "numthreads": "1",
-                "verbose": "False",
-                "daemonize": "False",
-                "debug": "False",
-                "execfile": None,
-                }
+    defaults = {
+        "port": "%d" % enumerations.CORE_API_PORT,
+        "listenaddr": "localhost",
+        "xmlfilever": "1.0",
+        "numthreads": "1",
+    }
 
     usagestr = "usage: %prog [-h] [options] [args]\n\n" + \
                "CORE daemon v.%s instantiates Linux network namespace " \
                "nodes." % constants.COREDPY_VERSION
     parser = optparse.OptionParser(usage=usagestr)
-    parser.add_option("-f", "--configfile", dest="configfile",
-                      type="string",
-                      help="read config from specified file; default = %s" %
-                           filename)
-    parser.add_option("-d", "--daemonize", dest="daemonize",
-                      action="store_true",
-                      help="run in background as daemon; default=%s" % \
-                           defaults["daemonize"])
-    parser.add_option("-e", "--execute", dest="execfile", type="string",
-                      help="execute a Python/XML-based session")
-    parser.add_option("-l", "--logfile", dest="logfile", type="string",
-                      help="log output to specified file; default = %s" %
-                           defaults["logfile"])
+    parser.add_option("-f", "--configfile", dest="configfile", type="string",
+                      help="read config from specified file; default = %s" % filename)
     parser.add_option("-p", "--port", dest="port", type=int,
-                      help="port number to listen on; default = %s" % \
-                           defaults["port"])
-    parser.add_option("-i", "--pidfile", dest="pidfile",
-                      help="filename to write pid to; default = %s" % \
-                           defaults["pidfile"])
+                      help="port number to listen on; default = %s" % defaults["port"])
     parser.add_option("-t", "--numthreads", dest="numthreads", type=int,
-                      help="number of server threads; default = %s" % \
-                           defaults["numthreads"])
-    parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
-                      help="enable verbose logging; default = %s" % \
-                           defaults["verbose"])
-    parser.add_option("-g", "--debug", dest="debug", action="store_true",
-                      help="enable debug logging; default = %s" % \
-                           defaults["debug"])
+                      help="number of server threads; default = %s" % defaults["numthreads"])
 
     # parse command line options
     options, args = parser.parse_args()
@@ -200,19 +127,6 @@ def get_merged_config(filename):
     section = "core-daemon"
     if not cfg.has_section(section):
         cfg.add_section(section)
-    # gracefully support legacy configs (cored.py/cored now core-daemon)
-    if cfg.has_section("cored.py"):
-        for name, val in cfg.items("cored.py"):
-            if name == "pidfile" or name == "logfile":
-                bn = os.path.basename(val).replace("coredpy", "core-daemon")
-                val = os.path.join(os.path.dirname(val), bn)
-            cfg.set(section, name, val)
-    if cfg.has_section("cored"):
-        for name, val in cfg.items("cored"):
-            if name == "pidfile" or name == "logfile":
-                bn = os.path.basename(val).replace("cored", "core-daemon")
-                val = os.path.join(os.path.dirname(val), bn)
-            cfg.set(section, name, val)
 
     # merge command line with config file
     for opt in options.__dict__:
@@ -221,24 +135,6 @@ def get_merged_config(filename):
             cfg.set(section, opt, val.__str__())
 
     return dict(cfg.items(section)), args
-
-
-def exec_file(cfg):
-    """
-    Send a Register Message to execute a new session based on XML or Python script file.
-
-    :param dict cfg: configuration settings
-    :return: 0
-    """
-    filename = cfg["execfile"]
-    logger.info("Telling daemon to execute file: %s...", filename)
-    tlvdata = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, filename)
-    msg = coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlvdata)
-    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
-    # TODO: connect address option
-    sock.connect(("localhost", int(cfg["port"])))
-    sock.sendall(msg)
-    return 0
 
 
 def main():
@@ -260,19 +156,8 @@ def main():
             service_path = service_path.strip()
             ServiceManager.add_services(service_path)
 
-    if cfg["daemonize"] == "True":
-        daemonize(rootdir=None, umask=0, close_fds=False,
-                  stdin=os.devnull,
-                  stdout=cfg["logfile"], stderr=cfg["logfile"],
-                  pidfilename=cfg["pidfile"],
-                  defaultmaxfd=DEFAULT_MAXFD)
-        signal.signal(signal.SIGUSR1, lambda signum, stackframe:
-        logrotate(stdout=cfg["logfile"], stderr=cfg["logfile"]))
-
     banner()
-    if cfg["execfile"]:
-        cfg["execfile"] = os.path.abspath(cfg["execfile"])
-        sys.exit(exec_file(cfg))
+
     try:
         cored(cfg)
     except KeyboardInterrupt:

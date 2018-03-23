@@ -360,8 +360,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         """
         try:
             header = self.request.recv(coreapi.CoreMessage.header_len)
-            if len(header) > 0:
-                logger.debug("received message header: %s", utils.hex_dump(header))
         except IOError as e:
             raise IOError("error receiving header (%s)" % e)
 
@@ -378,7 +376,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         data = ""
         while len(data) < message_len:
             data += self.request.recv(message_len - len(data))
-            logger.debug("received message data: %s" % utils.hex_dump(data))
             if len(data) > message_len:
                 error_message = "received message length does not match received data (%s != %s)" % (
                     len(data), message_len)
@@ -492,7 +489,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         # TODO: hack to associate this handler with this sessions broker for broadcasting
         # TODO: broker needs to be pulled out of session to the server/handler level
         if self.master:
-            logger.info("SESSION SET TO MASTER!")
+            logger.info("session set to master")
             self.session.master = True
         self.session.broker.session_clients.append(self)
 

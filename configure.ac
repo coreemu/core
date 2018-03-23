@@ -15,11 +15,11 @@ AM_INIT_AUTOMAKE([tar-ustar])
 PACKAGE_DATE=m4_esyscmd_s([date +%Y%m%d])
 PACKAGE_VENDOR="CORE Developers"
 PACKAGE_MAINTAINERS="$PACKAGE_VENDOR <$PACKAGE_BUGREPORT>"
+
+# core specific variables
 CORE_LIB_DIR="\${prefix}/lib/core"
-# TODO: hard setting path, until support by setup.py
 CORE_CONF_DIR="/etc/core"
-CORE_DATA_DIR="\${datarootdir}/core"
-# TODO: verify there is need to hard set /var
+CORE_DATA_DIR="\${datadir}/core"
 CORE_STATE_DIR="/var"
 
 AC_SUBST(PACKAGE_DATE)
@@ -194,7 +194,6 @@ AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
 AM_CONDITIONAL(WANT_NETNS, test x$want_linux_netns = xyes)
 AM_CONDITIONAL(WANT_INITD, test x$with_startup = xinitd)
 AM_CONDITIONAL(WANT_SYSTEMD, test x$with_startup = xsystemd)
-AM_CONDITIONAL(WANT_SUSE, test x$with_startup = xsuse)
 
 if test $cross_compiling = no; then
   AM_MISSING_PROG(HELP2MAN, help2man)

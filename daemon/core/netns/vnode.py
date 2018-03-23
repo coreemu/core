@@ -138,8 +138,9 @@ class SimpleLxcNode(PyCoreNode):
         try:
             os.kill(self.pid, signal.SIGTERM)
             os.waitpid(self.pid, 0)
-        except OSError:
-            logger.exception("error killing process")
+        except OSError as e:
+            if e.errno != 10:
+                logger.exception("error killing process")
 
         # remove node directory if present
         try:

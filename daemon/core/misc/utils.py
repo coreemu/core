@@ -10,7 +10,6 @@ import subprocess
 import sys
 
 import fcntl
-import resource
 
 from core import CoreCommandError
 from core import logger
@@ -338,95 +337,6 @@ def sysctl_devname(devname):
     if devname is None:
         return None
     return devname.replace(".", "/")
-
-
-def daemonize(rootdir="/", umask=0, close_fds=False, dontclose=(),
-              stdin=os.devnull, stdout=os.devnull, stderr=os.devnull,
-              stdoutmode=0644, stderrmode=0644, pidfilename=None,
-              defaultmaxfd=1024):
-    """
-    Run the background process as a daemon.
-
-    :param str rootdir: root directory for daemon
-    :param int umask: umask for daemon
-    :param bool close_fds: flag to close file descriptors
-    :param dontclose: dont close options
-    :param stdin: stdin for daemon
-    :param stdout: stdout for daemon
-    :param stderr: stderr for daemon
-    :param int stdoutmode: stdout mode
-    :param int stderrmode: stderr mode
-    :param str pidfilename: pid file name
-    :param int defaultmaxfd: default max file descriptors
-    :return: nothing
-    """
-    if not hasattr(dontclose, "__contains__"):
-        if not isinstance(dontclose, int):
-            raise TypeError("dontclose must be an integer")
-        dontclose = (int(dontclose),)
-    else:
-        for fd in dontclose:
-            if not isinstance(fd, int):
-                raise TypeError("dontclose must contain only integers")
-
-    # redirect stdin
-    if stdin:
-        fd = os.open(stdin, os.O_RDONLY)
-        os.dup2(fd, 0)
-        os.close(fd)
-
-    # redirect stdout
-    if stdout:
-        fd = os.open(stdout, os.O_WRONLY | os.O_CREAT | os.O_APPEND,
-                     stdoutmode)
-        os.dup2(fd, 1)
-        if stdout == stderr:
-            os.dup2(1, 2)
-        os.close(fd)
-
-    # redirect stderr
-    if stderr and (stderr != stdout):
-        fd = os.open(stderr, os.O_WRONLY | os.O_CREAT | os.O_APPEND,
-                     stderrmode)
-        os.dup2(fd, 2)
-        os.close(fd)
-
-    if os.fork():
-        # parent exits
-        os._exit(0)
-
-    os.setsid()
-    pid = os.fork()
-    if pid:
-        if pidfilename:
-            try:
-                f = open(pidfilename, "w")
-                f.write("%s\n" % pid)
-                f.close()
-            except IOError:
-                logger.exception("error writing to file: %s", pidfilename)
-        # parent exits
-        os._exit(0)
-
-    if rootdir:
-        os.chdir(rootdir)
-
-    os.umask(umask)
-    if close_fds:
-        try:
-            maxfd = resource.getrlimit(resource.RLIMIT_NOFILE)[1]
-            if maxfd == resource.RLIM_INFINITY:
-                raise ValueError
-        except:
-            maxfd = defaultmaxfd
-
-        for fd in xrange(3, maxfd):
-            if fd in dontclose:
-                continue
-            try:
-                os.close(fd)
-            except IOError:
-                logger.exception("error closing file descriptor")
 
 
 def load_config(filename, d):
