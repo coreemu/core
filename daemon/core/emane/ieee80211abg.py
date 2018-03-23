@@ -29,7 +29,7 @@ class EmaneIeee80211abgModel(EmaneModel):
         ("mode", ConfigDataTypes.UINT8.value, "0", "0 802.11b (DSSS only),1 802.11b (DSSS only)," +
          "2 802.11a or g (OFDM),3 802.11b/g (DSSS and OFDM)", "mode"),
         ("multicastrate", ConfigDataTypes.UINT8.value, "1", _80211rates, "multicast rate (Mbps)"),
-        ("msdu", ConfigDataTypes.UINT16.value, "65535", "", "MSDU categories"),
+        ("msdu", ConfigDataTypes.UINT16.value, "0:65535 1:65535 2:65535 3:65535", "", "MSDU categories (0-4:size)"),
         ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0", "",
          "R2RI neighbor table inactivity time (sec)"),
         ("neighbortimeout", ConfigDataTypes.FLOAT.value, "30.0", "", "Neighbor timeout in seconds for estimation"),
