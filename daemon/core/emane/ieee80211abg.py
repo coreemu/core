@@ -16,40 +16,34 @@ class EmaneIeee80211abgModel(EmaneModel):
     xml_path = "/usr/share/emane/xml/models/mac/ieee80211abg"
 
     # MAC parameters
-    _confmatrix_mac_base = [
-        ("mode", ConfigDataTypes.UINT8.value, "0", "0 802.11b (DSSS only),1 802.11b (DSSS only)," +
-         "2 802.11a or g (OFDM),3 802.11b/g (DSSS and OFDM)", "mode"),
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable promiscuous mode"),
+    _confmatrix_mac = [
+        ("aifs", ConfigDataTypes.STRING.value, "0:2 1:2 2:2 3:1", "", "arbitration inter frame space (0-4:aifs)"),
+        ("channelactivityestimationtimer", ConfigDataTypes.FLOAT.value, "0.1", "",
+         "Defines channel activity estimation timer in seconds"),
+        ("cwmax", ConfigDataTypes.STRING.value, "0:1024 1:1024 2:64 3:16", "", "max contention window (0-4:maxw)"),
+        ("cwmin", ConfigDataTypes.STRING.value, "0:32 1:32 2:16 3:8", "", "min contention window (0-4:minw)"),
         ("distance", ConfigDataTypes.UINT32.value, "1000", "", "max distance (m)"),
-        ("unicastrate", ConfigDataTypes.UINT8.value, "4", _80211rates, "unicast rate (Mbps)"),
-        ("multicastrate", ConfigDataTypes.UINT8.value, "1", _80211rates, "multicast rate (Mbps)"),
-        ("rtsthreshold", ConfigDataTypes.UINT16.value, "0", "", "RTS threshold (bytes)"),
-        ("pcrcurveuri", ConfigDataTypes.STRING.value, "%s/ieee80211pcr.xml" % xml_path, "", "SINR/PCR curve file"),
+        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable promiscuous mode"),
         ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable traffic flow control"),
         ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10", "", "number of flow control tokens"),
-    ]
-
-    # mac parameters introduced in EMANE 0.8.1
-    # Note: The entry format for category queue parameters (queuesize, aifs, etc) were changed in
-    # EMANE 9.x, but are being preserved for the time being due to space constraints in the
-    # CORE GUI. A conversion function (get9xmacparamequivalent) has been defined to support this.
-    _confmatrix_mac_extended = [
-        ("wmmenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "WiFi Multimedia (WMM)"),
+        ("mode", ConfigDataTypes.UINT8.value, "0", "0 802.11b (DSSS only),1 802.11b (DSSS only)," +
+         "2 802.11a or g (OFDM),3 802.11b/g (DSSS and OFDM)", "mode"),
+        ("multicastrate", ConfigDataTypes.UINT8.value, "1", _80211rates, "multicast rate (Mbps)"),
+        ("msdu", ConfigDataTypes.UINT16.value, "65535", "", "MSDU categories"),
+        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0", "",
+         "R2RI neighbor table inactivity time (sec)"),
+        ("neighbortimeout", ConfigDataTypes.FLOAT.value, "30.0", "", "Neighbor timeout in seconds for estimation"),
+        ("pcrcurveuri", ConfigDataTypes.STRING.value, "%s/ieee80211pcr.xml" % xml_path, "", "SINR/PCR curve file"),
         ("queuesize", ConfigDataTypes.STRING.value, "0:255 1:255 2:255 3:255", "", "queue size (0-4:size)"),
-        ("cwmin", ConfigDataTypes.STRING.value, "0:32 1:32 2:16 3:8", "", "min contention window (0-4:minw)"),
-        ("cwmax", ConfigDataTypes.STRING.value, "0:1024 1:1024 2:64 3:16", "", "max contention window (0-4:maxw)"),
-        ("aifs", ConfigDataTypes.STRING.value, "0:2 1:2 2:2 3:1", "", "arbitration inter frame space (0-4:aifs)"),
-        ("txop", ConfigDataTypes.STRING.value, "0:0 1:0 2:0 3:0", "", "txop (0-4:usec)"),
-        ("retrylimit", ConfigDataTypes.STRING.value, "0:3 1:3 2:3 3:3", "", "retry limit (0-4:numretries)"),
-    ]
-    _confmatrix_mac_091 = [
         ("radiometricenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "report radio metrics via R2RI"),
         ("radiometricreportinterval", ConfigDataTypes.FLOAT.value, "1.0", "",
          "R2RI radio metric report interval (sec)"),
-        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0", "",
-         "R2RI neighbor table inactivity time (sec)"),
+        ("retrylimit", ConfigDataTypes.STRING.value, "0:3 1:3 2:3 3:3", "", "retry limit (0-4:numretries)"),
+        ("rtsthreshold", ConfigDataTypes.UINT16.value, "0", "", "RTS threshold (bytes)"),
+        ("txop", ConfigDataTypes.STRING.value, "0:0 1:0 2:0 3:0", "", "txop (0-4:usec)"),
+        ("unicastrate", ConfigDataTypes.UINT8.value, "4", _80211rates, "unicast rate (Mbps)"),
+        ("wmmenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "WiFi Multimedia (WMM)"),
     ]
-    _confmatrix_mac = _confmatrix_mac_base + _confmatrix_mac_extended + _confmatrix_mac_091
 
     # PHY parameters from Universal PHY
     _confmatrix_phy = EmaneUniversalModel.config_matrix
@@ -120,7 +114,7 @@ class EmaneIeee80211abgModel(EmaneModel):
         nvpairlist = []
         macparmval = self.valueof(macname, values)
 
-        if macname in ["queuesize", "aifs", "cwmin", "cwmax", "txop", "retrylimit"]:
+        if macname in ["queuesize", "aifs", "cwmin", "cwmax", "txop", "retrylimit", "msdu"]:
             for catval in macparmval.split():
                 idx_and_val = catval.split(":")
                 idx = int(idx_and_val[0])
