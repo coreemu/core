@@ -3,7 +3,6 @@ Defines server classes and request handlers for TCP and UDP.
 """
 
 import SocketServer
-import os
 import threading
 import time
 
@@ -71,14 +70,6 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         # shutdown all known sessions
         for session in self.sessions.values():
             session.shutdown()
-
-        # if we are a daemon remove pid file
-        if self.config["daemonize"]:
-            pid_file = self.config["pidfile"]
-            try:
-                os.unlink(pid_file)
-            except OSError:
-                logger.exception("error daemon pid file: %s", pid_file)
 
         # remove server from server list
         CoreServer.remove_server(self)

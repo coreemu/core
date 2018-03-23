@@ -17,9 +17,6 @@ endif
 SCRIPT_FILES := $(notdir $(wildcard scripts/*))
 MAN_FILES := $(notdir $(wildcard ../doc/man/*.1))
 
-LOGROTATE_DIR		= $(DESTDIR)/$(sysconfdir)/logrotate.d
-LOGROTATE_FILE		= data/core-daemon.logrotate
-
 # Python package build
 noinst_SCRIPTS = build
 build:
@@ -33,16 +30,7 @@ install-exec-hook:
 		--install-lib=$(pythondir) \
 		--single-version-externally-managed
 
-#install-data-local:
-#	$(MKDIR_P) $(DESTDIR)$(LOGROTATE_DIR)
-#	$(INSTALL_DATA) $(LOGROTATE_FILE) \
-#	    $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
-
-#uninstall-local:
-#	rm -f $(DESTDIR)$(LOGROTATE_DIR)/`basename $(LOGROTATE_FILE) .logrotate`
-
 # Python package uninstall
-#rmdir -p $(LOGROTATE_DIR) || true
 uninstall-hook:
 	rm -rf $(DESTDIR)/etc/core
 	rm -rf $(DESTDIR)/$(datadir)/core
@@ -62,7 +50,7 @@ dist-hook:
 
 distclean-local:
 	-rm -rf core.egg-info
-	
+
 
 DISTCLEANFILES = Makefile.in
 
@@ -76,5 +64,4 @@ EXTRA_DIST = $(SETUPPY) \
 	     tests \
 	     test.py \
 	     setup.cfg \
-	     requirements.txt \
-	     $(LOGROTATE_FILE)
+	     requirements.txt
