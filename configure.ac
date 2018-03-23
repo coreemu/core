@@ -194,7 +194,6 @@ AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
 AM_CONDITIONAL(WANT_NETNS, test x$want_linux_netns = xyes)
 AM_CONDITIONAL(WANT_INITD, test x$with_startup = xinitd)
 AM_CONDITIONAL(WANT_SYSTEMD, test x$with_startup = xsystemd)
-AM_CONDITIONAL(WANT_SUSE, test x$with_startup = xsuse)
 
 if test $cross_compiling = no; then
   AM_MISSING_PROG(HELP2MAN, help2man)

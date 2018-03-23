@@ -167,6 +167,7 @@ all: change-files
 change-files:
 	$(call change-files,gui/core-gui)
 	$(call change-files,scripts/core-daemon.service)
+	$(call change-files,scripts/core-daemon)
 	$(call change-files,daemon/core/constants.py)
 
 CORE_DOC_HTML = core-html-$(PACKAGE_VERSION)
