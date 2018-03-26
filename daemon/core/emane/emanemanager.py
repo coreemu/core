@@ -85,6 +85,7 @@ class EmaneManager(ConfigurableManager):
         self.emane_config = EmaneGlobalModel(session, None)
         session.broker.handlers.add(self.handledistributed)
         self.service = None
+        self.event_device = None
         self._modelclsmap = {
             self.emane_config.name: self.emane_config
         }
@@ -104,8 +105,11 @@ class EmaneManager(ConfigurableManager):
         """
         Log the installed EMANE version.
         """
-        emane_version = utils.check_cmd(["emane", "--version"])
-        logger.info("using EMANE: %s", emane_version)
+        try:
+            emane_version = utils.check_cmd(["emane", "--version"])
+            logger.info("using EMANE: %s", emane_version)
+        except CoreCommandError:
+            logger.info("emane is not installed")
 
     def deleteeventservice(self):
         if self.service:
@@ -116,6 +120,7 @@ class EmaneManager(ConfigurableManager):
                 if f:
                     f.close()
         self.service = None
+        self.event_device = None
 
     def initeventservice(self, filename=None, shutdown=False):
         """
@@ -130,22 +135,22 @@ class EmaneManager(ConfigurableManager):
         # Get the control network to be used for events
         values = self.getconfig(None, "emane", self.emane_config.getdefaultvalues())[1]
         group, port = self.emane_config.valueof("eventservicegroup", values).split(":")
-        eventdev = self.emane_config.valueof("eventservicedevice", values)
-        eventnetidx = self.session.get_control_net_index(eventdev)
+        self.event_device = self.emane_config.valueof("eventservicedevice", values)
+        eventnetidx = self.session.get_control_net_index(self.event_device)
         if eventnetidx < 0:
-            logger.error("invalid emane event service device provided: %s", eventdev)
+            logger.error("invalid emane event service device provided: %s", self.event_device)
             return False
 
         # make sure the event control network is in place
         eventnet = self.session.add_remove_control_net(net_index=eventnetidx, remove=False, conf_required=False)
         if eventnet is not None:
             # direct EMANE events towards control net bridge
-            eventdev = eventnet.brname
-        eventchannel = (group, int(port), eventdev)
+            self.event_device = eventnet.brname
+        eventchannel = (group, int(port), self.event_device)
 
         # disabled otachannel for event service
         # only needed for e.g. antennaprofile events xmit by models
-        logger.info("Using %s for event service traffic", eventdev)
+        logger.info("using %s for event service traffic", self.event_device)
         try:
             self.service = EventService(eventchannel=eventchannel, otachannel=None)
         except EventServiceException:
@@ -339,6 +344,7 @@ class EmaneManager(ConfigurableManager):
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
                     emane_node.setnemposition(netif, x, y, z)
+                    emane_node.model.post_startup(self, netif)
 
     def reset(self):
         """

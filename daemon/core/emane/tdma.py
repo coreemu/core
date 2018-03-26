@@ -2,18 +2,26 @@
 tdma.py: EMANE TDMA model bindings for CORE
 """
 
+import os
+
+from core import constants
+from core import logger
 from core.emane.emanemodel import EmaneModel
 from core.emane.universal import EmaneUniversalModel
 from core.enumerations import ConfigDataTypes
+from core.misc import utils
 
 
 class EmaneTdmaModel(EmaneModel):
     # model name
     name = "emane_tdma"
     xml_path = "/usr/share/emane/xml/models/mac/tdmaeventscheduler"
+    schedule_name = "schedule"
+    default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
 
     # MAC parameters
     _confmatrix_mac = [
+        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule that will be set"),
         ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "True,False", "enable promiscuous mode"),
         ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable traffic flow control"),
         ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10", "", "number of flow control tokens"),
@@ -49,6 +57,24 @@ class EmaneTdmaModel(EmaneModel):
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
 
+    def post_startup(self, emane_manager, ifc):
+        """
+        Logic to execute after the emane manager is finished with startup.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
+        :param ifc: an interface for the emane node this model is tied to
+        :return: nothing
+        """
+        # get configured schedule
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        schedule = self.valueof(EmaneTdmaModel.schedule_name, values)
+        
+        event_device = emane_manager.event_device
+
+        # initiate tdma schedule
+        logger.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
+        utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])
+
     def buildnemxmlfiles(self, e, ifc):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
@@ -75,15 +101,20 @@ class EmaneTdmaModel(EmaneModel):
         names = list(self.getnames())
         macnames = names[:len(self._confmatrix_mac)]
         phynames = names[len(self._confmatrix_mac):]
-        # make any changes to the mac/phy names here to e.g. exclude them from
-        # the XML output
+
+        # make any changes to the mac/phy names here to e.g. exclude them from the XML output
+        macnames.remove(EmaneTdmaModel.schedule_name)
 
         macdoc = e.xmldoc("mac")
         mac = macdoc.getElementsByTagName("mac").pop()
         mac.setAttribute("name", "TDMA MAC")
         mac.setAttribute("library", "tdmaeventschedulerradiomodel")
         # append MAC options to macdoc
-        map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, self.valueof(n, values))), macnames)
+        for name in macnames:
+            value = self.valueof(name, values)
+            param = e.xmlparam(macdoc, name, value)
+            mac.appendChild(param)
+
         e.xmlwrite(macdoc, self.macxmlname(ifc))
 
         phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
