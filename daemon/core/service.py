@@ -639,7 +639,7 @@ class CoreServices(ConfigurableManager):
         # get the file data
         data = self.getservicefiledata(svc, filename)
         if data is None:
-            data = "%s" % (svc.generateconfig(node, filename, services))
+            data = "%s" % svc.generateconfig(node, filename, services)
         else:
             data = "%s" % data
         filetypestr = "service:%s" % svc._name

@@ -229,12 +229,11 @@ def main():
             continue
 
         tlv_name = tlv_typestr
-        tlv_type = tlv_cls[tlv_name].value
         try:
-            tlv_cls.tlv_type_map[tlv_name]
+            tlv_type = tlv_cls.tlv_type_map[tlv_name]
+            tlvdata += tlv_cls.pack_string(tlv_type.value, tlv_valstr)
         except KeyError:
             usage("Unknown TLV: \"%s\"" % tlv_name)
-        tlvdata += tlv_cls.pack_string(tlv_type, tlv_valstr)
 
     flags = 0
     for f in flagstr.split(","):
