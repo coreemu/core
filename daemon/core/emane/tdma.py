@@ -21,7 +21,7 @@ class EmaneTdmaModel(EmaneModel):
 
     # MAC parameters
     _confmatrix_mac = [
-        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule that will be set"),
+        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file"),
         ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "True,False", "enable promiscuous mode"),
         ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable traffic flow control"),
         ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10", "", "number of flow control tokens"),
