@@ -46,12 +46,11 @@ class EmaneModel(WirelessModel):
         """
         return cls.configure(session.emane, config_data)
 
-    def post_startup(self, emane_manager, ifc):
+    def post_startup(self, emane_manager):
         """
         Logic to execute after the emane manager is finished with startup.
 
         :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
-        :param ifc: an interface for the emane node this model is tied to
         :return: nothing
         """
         logger.info("%s has no post setup tasks: interface(%s)", ifc)

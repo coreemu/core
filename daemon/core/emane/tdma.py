@@ -57,16 +57,17 @@ class EmaneTdmaModel(EmaneModel):
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
 
-    def post_startup(self, emane_manager, ifc):
+    def post_startup(self, emane_manager):
         """
         Logic to execute after the emane manager is finished with startup.
 
         :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
-        :param ifc: an interface for the emane node this model is tied to
         :return: nothing
         """
         # get configured schedule
-        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        values = emane_manager.getconfig(self.object_id, self.name, self.getdefaultvalues())[1]
+        if values is None:
+            return
         schedule = self.valueof(EmaneTdmaModel.schedule_name, values)
         
         event_device = emane_manager.event_device
