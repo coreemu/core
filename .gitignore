@@ -40,3 +40,6 @@ coverage.xml
 
 # pytest cache files
 .cache
+
+# ignore swap files
+*.swp
