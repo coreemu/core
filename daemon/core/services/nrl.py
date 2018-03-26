@@ -126,7 +126,7 @@ class NrlSmf(NrlService):
         servicenames = map(lambda x: x._name, services)
         netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
         if len(netifs) == 0:
-            return ()
+            return ""
 
         if "arouted" in servicenames:
             comments += "# arouted service is enabled\n"
@@ -606,7 +606,7 @@ class MgenActor(NrlService):
         servicenames = map(lambda x: x._name, services)
         netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
         if len(netifs) == 0:
-            return ()
+            return ""
 
         cfg += comments + cmd + " < /dev/null > /dev/null 2>&1 &\n\n"
         return cfg
