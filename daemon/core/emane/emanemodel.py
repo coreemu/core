@@ -53,7 +53,7 @@ class EmaneModel(WirelessModel):
         :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
         :return: nothing
         """
-        logger.info("%s has no post setup tasks: interface(%s)", ifc)
+        logger.info("emane model(%s) has no post setup tasks", self.name)
 
     def buildnemxmlfiles(self, e, ifc):
         """

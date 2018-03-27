@@ -42,7 +42,7 @@ class EmaneCommEffectModel(EmaneModel):
          "", "receivebufferperiod"),
     ]
     _confmatrix_shim_091 = [
-        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "0",
+        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "1",
          "On,Off", "defaultconnectivity"),
     ]
     _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
@@ -110,7 +110,7 @@ class EmaneCommEffectModel(EmaneModel):
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
         mbw = bw
-
+	logger.info("sending comm effect event")
         event.append(
             nemid,
             latency=convert_none(delay),
