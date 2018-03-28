@@ -15,30 +15,18 @@ from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 
 
-def setup_commeffect(session, emane_node):
-    # configure emane to enable default connectivity
-    config_data = ConfigData(
-        node=emane_node.objid,
-        object="emane_commeffect",
-        type=2,
-        data_types=(11,),
-        data_values="defaultconnectivitymode=1"
-    )
-    EmaneCommEffectModel.configure_emane(session, config_data)
-
-
 _EMANE_MODELS = [
-    (EmaneIeee80211abgModel, None),
-    (EmaneRfPipeModel, None),
-    (EmaneBypassModel, None),
-    (EmaneCommEffectModel, setup_commeffect),
-    (EmaneTdmaModel, None),
+    EmaneIeee80211abgModel,
+    EmaneRfPipeModel,
+    EmaneBypassModel,
+    EmaneCommEffectModel,
+    EmaneTdmaModel,
 ]
 
 
 class TestEmane:
-    @pytest.mark.parametrize("model,setup", _EMANE_MODELS)
-    def test_models(self, core, model, setup):
+    @pytest.mark.parametrize("model", _EMANE_MODELS)
+    def test_models(self, core, model):
         """
         Test emane models within a basic network.
 
@@ -53,10 +41,6 @@ class TestEmane:
 
         # set the emane model
         core.set_emane_model(emane_node, model)
-
-        # run setup method, if needed
-        if setup:
-            setup(core.session, emane_node)
 
         # create nodes
         core.create_node("n1", objid=1, position=(150, 150), services=EMANE_SERVICES, model="mdr")
