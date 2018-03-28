@@ -491,7 +491,13 @@ proc wlanConfigDialogHelper { wi target apply } {
     $wi.wl.note add $wi.wl.note.emane -text "EMANE" -underline 0
     set txt "The EMANE emulation system provides more complex wireless radio"
     set txt "$txt emulation\n using pluggable MAC and PHY modules."
+    set txt "$txt Refer to the wiki for configuration option details"
     ttk::label $wi.wl.note.emane.tlab -text $txt
+    ttk::button $wi.wl.note.emane.wiki -text "EMANE Wiki" \
+	-image $plugin_img_edit -compound right \
+	-command \
+	"_launchBrowser https://github.com/adjacentlink/emane/wiki"
+    pack $wi.wl.note.emane.wiki -side top -anchor w -padx 4 -pady 4
     pack $wi.wl.note.emane.tlab -side top -anchor w -padx 4 -pady 4
 
     # models
