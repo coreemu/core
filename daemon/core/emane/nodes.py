@@ -15,10 +15,7 @@ from core.enumerations import RegisterTlvs
 try:
     from emane.events import LocationEvent
 except ImportError:
-    try:
-        from emanesh.events import LocationEvent
-    except ImportError:
-        logger.info("emane 0.9.1+ not found")
+    logger.info("emane 1.2.1 not found")
 
 
 class EmaneNet(PyCoreNet):
@@ -122,26 +119,25 @@ class EmaneNode(EmaneNet):
             return ret
 
         for netif in self.netifs():
-            # <nem name="NODE-001" definition="rfpipenem.xml">
-            nementry = self.model.buildplatformxmlnementry(doc, self, netif)
-            # <transport definition="transvirtual.xml" group="1">
-            #    <param name="device" value="n1.0.158" />
-            # </transport>
-            trans = self.model.buildplatformxmltransportentry(doc, self, netif)
+            nementry = self.model.build_nem_xml(doc, self, netif)
+            trans = self.model.build_transport_xml(doc, self, netif)
             nementry.appendChild(trans)
             ret[netif] = nementry
 
         return ret
 
-    def buildnemxmlfiles(self, emane):
+    def build_xml_files(self, emane_manager):
         """
         Let the configured model build the necessary nem, mac, and phy XMLs.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :return: nothing
         """
         if self.model is None:
             return
 
         # build XML for overall network (EmaneNode) configs
-        self.model.buildnemxmlfiles(emane, ifc=None)
+        self.model.build_xml_files(emane_manager, interface=None)
 
         # build XML for specific interface (NEM) configs
         need_virtual = False
@@ -150,7 +146,7 @@ class EmaneNode(EmaneNet):
         rtype = "raw"
 
         for netif in self.netifs():
-            self.model.buildnemxmlfiles(emane, netif)
+            self.model.build_xml_files(emane_manager, netif)
             if "virtual" in netif.transport_type:
                 need_virtual = True
                 vtype = netif.transport_type
@@ -160,10 +156,10 @@ class EmaneNode(EmaneNet):
 
         # build transport XML files depending on type of interfaces involved
         if need_virtual:
-            self.buildtransportxml(emane, vtype)
+            self.buildtransportxml(emane_manager, vtype)
 
         if need_raw:
-            self.buildtransportxml(emane, rtype)
+            self.buildtransportxml(emane_manager, rtype)
 
     def buildtransportxml(self, emane, transport_type):
         """

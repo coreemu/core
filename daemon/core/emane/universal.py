@@ -13,9 +13,6 @@ class EmaneUniversalModel(EmaneModel):
     not instantiated.
     """
 
-    def __init__(self, session, object_id=None):
-        raise NotImplemented("Cannot use this class directly")
-
     name = "emane_universal"
     _xmlname = "universalphy"
     _xmllibrary = "universalphylayer"
@@ -53,22 +50,38 @@ class EmaneUniversalModel(EmaneModel):
         ("txpower", ConfigDataTypes.FLOAT.value, "0.0", "", "transmit power (dBm)"),
     ]
 
+    def __init__(self, session, object_id=None):
+        raise NotImplemented("Cannot use this class directly")
+
     @classmethod
-    def getphydoc(cls, e, mac, values, phynames):
-        phydoc = e.xmldoc("phy")
-        phy = phydoc.getElementsByTagName("phy").pop()
-        phy.setAttribute("name", cls._xmlname)
+    def get_phy_doc(cls, emane_manager, emane_model, values, phy_names):
+        """
+        Create a phy doc for a model based on the universal model.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param core.emane.emanemodel.EmaneModel emane_model: model to create phy doc for
+        :param tuple values: emane model configuration values
+        :param phy_names: names for phy configuration values
+        :return:
+        """
+        phy_document = emane_manager.xmldoc("phy")
+        phy_element = phy_document.getElementsByTagName("phy").pop()
+        phy_element.setAttribute("name", cls._xmlname)
 
         name = "frequencyofinterest"
-        value = mac.valueof(name, values)
-        frequencies = cls.valuestrtoparamlist(phydoc, name, value)
+        value = emane_model.valueof(name, values)
+        frequencies = cls.value_to_params(phy_document, name, value)
         if frequencies:
-            phynames = list(phynames)
-            phynames.remove("frequencyofinterest")
+            phy_names = list(phy_names)
+            phy_names.remove("frequencyofinterest")
 
         # append all PHY options to phydoc
-        map(lambda n: phy.appendChild(e.xmlparam(phydoc, n, mac.valueof(n, values))), phynames)
-        if frequencies:
-            phy.appendChild(frequencies)
+        for name in phy_names:
+            value = emane_model.valueof(name, values)
+            param = emane_manager.xmlparam(phy_document, name, value)
+            phy_element.appendChild(param)
 
-        return phydoc
+        if frequencies:
+            phy_element.appendChild(frequencies)
+
+        return phy_document

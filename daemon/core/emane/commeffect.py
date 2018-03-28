@@ -9,10 +9,7 @@ from core.enumerations import ConfigDataTypes
 try:
     from emanesh.events.commeffectevent import CommEffectEvent
 except ImportError:
-    try:
-        from emane.events.commeffectevent import CommEffectEvent
-    except ImportError:
-        logger.info("emane 0.9.1+ not found")
+    logger.info("emane 1.2.1 not found")
 
 
 def convert_none(x):
@@ -28,10 +25,9 @@ def convert_none(x):
 
 
 class EmaneCommEffectModel(EmaneModel):
-    # model name
     name = "emane_commeffect"
-    # CommEffect parameters
-    _confmatrix_shim_base = [
+
+    config_matrix = [
         ("filterfile", ConfigDataTypes.STRING.value, "",
          "", "filter file"),
         ("groupid", ConfigDataTypes.UINT32.value, "0",
@@ -40,54 +36,64 @@ class EmaneCommEffectModel(EmaneModel):
          "On,Off", "enable promiscuous mode"),
         ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0",
          "", "receivebufferperiod"),
-    ]
-    _confmatrix_shim_091 = [
         ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "1",
          "On,Off", "defaultconnectivity"),
     ]
-    _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
 
-    config_matrix = _confmatrix_shim
-    # value groupings
-    config_groups = "CommEffect SHIM Parameters:1-%d" % len(_confmatrix_shim)
+    config_groups = "CommEffect SHIM Parameters:1-%d" % len(config_matrix)
 
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
 
-    def buildnemxmlfiles(self, e, ifc):
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem and commeffect XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
         that file also. Otherwise the WLAN-wide
         nXXemane_commeffectnem.xml, nXXemane_commeffectshim.xml are used.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
         """
-        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
         if values is None:
             return
-        shimdoc = e.xmldoc("shim")
-        shim = shimdoc.getElementsByTagName("shim").pop()
+
+        # retrieve xml names
+        nem_name = self.nem_name(interface)
+        shim_name = self.shim_name(interface)
+
+        shim_document = emane_manager.xmldoc("shim")
+        shim = shim_document.getElementsByTagName("shim").pop()
         shim.setAttribute("name", "commeffect SHIM")
         shim.setAttribute("library", "commeffectshim")
 
         names = self.getnames()
-        shimnames = list(names[:len(self._confmatrix_shim)])
-        shimnames.remove("filterfile")
+        shim_names = list(names[:len(self.config_matrix)])
+        shim_names.remove("filterfile")
 
         # append all shim options (except filterfile) to shimdoc
-        map(lambda n: shim.appendChild(e.xmlparam(shimdoc, n, self.valueof(n, values))), shimnames)
+        for name in shim_names:
+            value = self.valueof(name, values)
+            param = emane_manager.xmlparam(shim_document, name, value)
+            shim.appendChild(param)
+
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
         if ff.strip() != "":
-            shim.appendChild(e.xmlparam(shimdoc, "filterfile", ff))
-        e.xmlwrite(shimdoc, self.shimxmlname(ifc))
+            shim.appendChild(emane_manager.xmlparam(shim_document, "filterfile", ff))
+        emane_manager.xmlwrite(shim_document, shim_name)
 
-        nemdoc = e.xmldoc("nem")
-        nem = nemdoc.getElementsByTagName("nem").pop()
-        nem.setAttribute("name", "commeffect NEM")
-        nem.setAttribute("type", "unstructured")
-        e.appendtransporttonem(nemdoc, nem, self.object_id, ifc)
-        nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
-        e.xmlwrite(nemdoc, self.nemxmlname(ifc))
+        nem_document = emane_manager.xmldoc("nem")
+        nem_element = nem_document.getElementsByTagName("nem").pop()
+        nem_element.setAttribute("name", "commeffect NEM")
+        nem_element.setAttribute("type", "unstructured")
+        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+
+        shim_xml = emane_manager.xmlshimdefinition(nem_document, shim_name)
+        nem_element.appendChild(shim_xml)
+        emane_manager.xmlwrite(nem_document, nem_name)
 
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
@@ -110,7 +116,7 @@ class EmaneCommEffectModel(EmaneModel):
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
         mbw = bw
-	logger.info("sending comm effect event")
+        logger.info("sending comm effect event")
         event.append(
             nemid,
             latency=convert_none(delay),

@@ -20,7 +20,7 @@ class EmaneTdmaModel(EmaneModel):
     default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
 
     # MAC parameters
-    _confmatrix_mac = [
+    _config_mac = [
         (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file"),
         ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "True,False", "enable promiscuous mode"),
         ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable traffic flow control"),
@@ -46,13 +46,13 @@ class EmaneTdmaModel(EmaneModel):
     ]
 
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel.config_matrix
+    _config_phy = EmaneUniversalModel.config_matrix
 
-    config_matrix = _confmatrix_mac + _confmatrix_phy
+    config_matrix = _config_mac + _config_phy
 
     # value groupings
     config_groups = "TDMA MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % (
-        len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(config_matrix))
+        len(_config_mac), len(_config_mac) + 1, len(config_matrix))
 
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
@@ -69,54 +69,64 @@ class EmaneTdmaModel(EmaneModel):
         if values is None:
             return
         schedule = self.valueof(EmaneTdmaModel.schedule_name, values)
-        
+
         event_device = emane_manager.event_device
 
         # initiate tdma schedule
         logger.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
         utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])
 
-    def buildnemxmlfiles(self, e, ifc):
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
         that file also. Otherwise the WLAN-wide nXXemane_tdmanem.xml,
         nXXemane_tdmamac.xml, nXXemane_tdmaphy.xml are used.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
         """
-        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
         if values is None:
             return
 
-        nemdoc = e.xmldoc("nem")
-        nem = nemdoc.getElementsByTagName("nem").pop()
-        nem.setAttribute("name", "TDMA NEM")
-        e.appendtransporttonem(nemdoc, nem, self.object_id, ifc)
-        mactag = nemdoc.createElement("mac")
-        mactag.setAttribute("definition", self.macxmlname(ifc))
-        nem.appendChild(mactag)
-        phytag = nemdoc.createElement("phy")
-        phytag.setAttribute("definition", self.phyxmlname(ifc))
-        nem.appendChild(phytag)
-        e.xmlwrite(nemdoc, self.nemxmlname(ifc))
+        # retrieve xml names
+        nem_name = self.nem_name(interface)
+        mac_name = self.mac_name(interface)
+        phy_name = self.phy_name(interface)
+
+        nem_document = emane_manager.xmldoc("nem")
+        nem_element = nem_document.getElementsByTagName("nem").pop()
+        nem_element.setAttribute("name", "TDMA NEM")
+        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+
+        mac_element = nem_document.createElement("mac")
+        mac_element.setAttribute("definition", mac_name)
+        nem_element.appendChild(mac_element)
+
+        phy_element = nem_document.createElement("phy")
+        phy_element.setAttribute("definition", phy_name)
+        nem_element.appendChild(phy_element)
+
+        emane_manager.xmlwrite(nem_document, nem_name)
 
         names = list(self.getnames())
-        macnames = names[:len(self._confmatrix_mac)]
-        phynames = names[len(self._confmatrix_mac):]
+        mac_names = names[:len(self._config_mac)]
+        phy_names = names[len(self._config_mac):]
 
         # make any changes to the mac/phy names here to e.g. exclude them from the XML output
-        macnames.remove(EmaneTdmaModel.schedule_name)
+        mac_names.remove(EmaneTdmaModel.schedule_name)
 
-        macdoc = e.xmldoc("mac")
-        mac = macdoc.getElementsByTagName("mac").pop()
-        mac.setAttribute("name", "TDMA MAC")
-        mac.setAttribute("library", "tdmaeventschedulerradiomodel")
-        # append MAC options to macdoc
-        for name in macnames:
+        mac_document = emane_manager.xmldoc("mac")
+        mac_element = mac_document.getElementsByTagName("mac").pop()
+        mac_element.setAttribute("name", "TDMA MAC")
+        mac_element.setAttribute("library", "tdmaeventschedulerradiomodel")
+        for name in mac_names:
             value = self.valueof(name, values)
-            param = e.xmlparam(macdoc, name, value)
-            mac.appendChild(param)
+            param = emane_manager.xmlparam(mac_document, name, value)
+            mac_element.appendChild(param)
+        emane_manager.xmlwrite(mac_document, mac_name)
 
-        e.xmlwrite(macdoc, self.macxmlname(ifc))
-
-        phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
-        e.xmlwrite(phydoc, self.phyxmlname(ifc))
+        phydoc = EmaneUniversalModel.get_phy_doc(emane_manager, self, values, phy_names)
+        emane_manager.xmlwrite(phydoc, phy_name)

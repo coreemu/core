@@ -33,12 +33,7 @@ try:
     from emane.events import LocationEvent
     from emane.events.eventserviceexception import EventServiceException
 except ImportError:
-    try:
-        from emanesh.events import EventService
-        from emanesh.events import LocationEvent
-        from emanesh.events.eventserviceexception import EventServiceException
-    except ImportError:
-        logger.info("emane 0.9.1+ not found")
+    logger.info("emane 1.2.1 not found")
 
 EMANE_MODELS = [
     EmaneRfPipeModel,
@@ -341,7 +336,7 @@ class EmaneManager(ConfigurableManager):
         with self._emane_node_lock:
             for key in sorted(self._emane_nodes.keys()):
                 emane_node = self._emane_nodes[key]
-		logger.debug("post startup for emane node: %s - %s", emane_node.objid, emane_node.name)
+                logger.debug("post startup for emane node: %s - %s", emane_node.objid, emane_node.name)
                 emane_node.model.post_startup(self)
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
@@ -680,7 +675,7 @@ class EmaneManager(ConfigurableManager):
         """
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            emane_node.buildnemxmlfiles(self)
+            emane_node.build_xml_files(self)
 
     def appendtransporttonem(self, doc, nem, nodenum, ifc=None):
         """
@@ -1061,7 +1056,7 @@ class EmaneGlobalModel(EmaneModel):
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
 
-    def buildnemxmlfiles(self, e, ifc):
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
         """

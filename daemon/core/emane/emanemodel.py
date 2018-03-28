@@ -11,35 +11,14 @@ from core.xml import xmlutils
 class EmaneModel(WirelessModel):
     """
     EMANE models inherit from this parent class, which takes care of
-    handling configuration messages based on the _confmatrix list of
+    handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
-    _prefix = {
-        "y": 1e-24,  # yocto
-        "z": 1e-21,  # zepto
-        "a": 1e-18,  # atto
-        "f": 1e-15,  # femto
-        "p": 1e-12,  # pico
-        "n": 1e-9,  # nano
-        "u": 1e-6,  # micro
-        "m": 1e-3,  # mili
-        "c": 1e-2,  # centi
-        "d": 1e-1,  # deci
-        "k": 1e3,  # kilo
-        "M": 1e6,  # mega
-        "G": 1e9,  # giga
-        "T": 1e12,  # tera
-        "P": 1e15,  # peta
-        "E": 1e18,  # exa
-        "Z": 1e21,  # zetta
-        "Y": 1e24,  # yotta
-    }
 
     @classmethod
     def configure_emane(cls, session, config_data):
         """
-        Handle configuration messages for setting up a model.
-        Pass the Emane object as the manager object.
+        Handle configuration messages for configuring an emane model.
 
         :param core.session.Session session: session to configure emane
         :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
@@ -55,13 +34,17 @@ class EmaneModel(WirelessModel):
         """
         logger.info("emane model(%s) has no post setup tasks", self.name)
 
-    def buildnemxmlfiles(self, e, ifc):
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
         """
         raise NotImplementedError
 
-    def buildplatformxmlnementry(self, doc, n, ifc):
+    def build_nem_xml(self, doc, emane_node, interface):
         """
         Build the NEM definition that goes into the platform.xml file.
 
@@ -71,93 +54,125 @@ class EmaneModel(WirelessModel):
         or per-EmaneNode config (e.g. <nem definition="n1emane_rfpipe.xml" id="1">.
 
         This can be overriden by a model for NEM flexibility; n is the EmaneNode.
+
+            <nem name="NODE-001" definition="rfpipenem.xml">
+
+        :param xml.dom.minidom.Document doc: xml document
+        :param core.emane.nodes.EmaneNode emane_node: emane node to get information from
+        :param interface: interface for the emane node
+        :return: created platform xml
         """
-        nem = doc.createElement("nem")
-        nem.setAttribute("name", ifc.localname)
         # if this netif contains a non-standard (per-interface) config,
         #  then we need to use a more specific xml file here
-        nem.setAttribute("definition", self.nemxmlname(ifc))
+        nem_name = self.nem_name(interface)
+        nem = doc.createElement("nem")
+        nem.setAttribute("name", interface.localname)
+        nem.setAttribute("definition", nem_name)
         return nem
 
-    def buildplatformxmltransportentry(self, doc, n, ifc):
+    def build_transport_xml(self, doc, emane_node, interface):
         """
         Build the transport definition that goes into the platform.xml file.
-        This returns an XML element that will added to the nem definition.
+        This returns an XML element that will be added to the nem definition.
         This default method supports raw and virtual transport types, but may be
-        overriden by a model to support the e.g. pluggable virtual transport.
-        n is the EmaneNode.
-        """
-        ttype = ifc.transport_type
-        if not ttype:
-            logger.info("warning: %s interface type unsupported!", ifc.name)
-            ttype = "raw"
+        overridden by a model to support the e.g. pluggable virtual transport.
 
-        trans = doc.createElement("transport")
-        trans.setAttribute("definition", n.transportxmlname(ttype))
+            <transport definition="transvirtual.xml" group="1">
+               <param name="device" value="n1.0.158" />
+            </transport>
+
+        :param xml.dom.minidom.Document doc: xml document
+        :param core.emane.nodes.EmaneNode emane_node: emane node to get information from
+        :param interface: interface for the emane node
+        :return: created transport xml
+        """
+        transport_type = interface.transport_type
+        if not transport_type:
+            logger.info("warning: %s interface type unsupported!", interface.name)
+            transport_type = "raw"
+        transport_name = emane_node.transportxmlname(transport_type)
+
+        transport = doc.createElement("transport")
+        transport.setAttribute("definition", transport_name)
+
         param = doc.createElement("param")
         param.setAttribute("name", "device")
+        param.setAttribute("value", interface.name)
 
-        if ttype == "raw":
-            # raw RJ45 name e.g. "eth0"
-            param.setAttribute("value", ifc.name)
-        else:
-            # virtual TAP name e.g. "n3.0.17"
-            param.setAttribute("value", ifc.localname)
-            param.setAttribute("value", ifc.name)
+        transport.appendChild(param)
+        return transport
 
-        trans.appendChild(param)
-        return trans
-
-    def basename(self, interface=None):
+    def _basename(self, interface=None):
         """
-        Return the string that other names are based on.
-        If a specific config is stored for a node"s interface, a unique
-        filename is needed; otherwise the name of the EmaneNode is used.
+        Create name that is leveraged for configuration file creation.
+
+        :param interface: interface for this model
+        :return: basename used for file creation
+        :rtype: str
         """
-        emane = self.session.emane
         name = "n%s" % self.object_id
+        emane_manager = self.session.emane
 
-        if interface is not None:
-            nodenum = interface.node.objid
-            # Adamson change - use getifcconfig() to get proper result
-            # if emane.getconfig(nodenum, self._name, None)[1] is not None:
-            if emane.getifcconfig(nodenum, self.name, None, interface) is not None:
+        if interface:
+            node_id = interface.node.objid
+            if emane_manager.getifcconfig(node_id, self.name, None, interface) is not None:
                 name = interface.localname.replace(".", "_")
 
         return "%s%s" % (name, self.name)
 
-    def nemxmlname(self, interface=None):
+    def nem_name(self, interface=None):
         """
         Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
+
+        :param interface: interface for this model
+        :return: nem xml filename
+        :rtype: str
         """
+        basename = self._basename(interface)
         append = ""
         if interface and interface.transport_type == "raw":
             append = "_raw"
-        return "%snem%s.xml" % (self.basename(interface), append)
+        return "%snem%s.xml" % (basename, append)
 
-    def shimxmlname(self, ifc=None):
+    def shim_name(self, interface=None):
         """
         Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
-        """
-        return "%sshim.xml" % self.basename(ifc)
 
-    def macxmlname(self, ifc=None):
+        :param interface: interface for this model
+        :return: shim xml filename
+        :rtype: str
+        """
+        return "%sshim.xml" % self._basename(interface)
+
+    def mac_name(self, interface=None):
         """
         Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
-        """
-        return "%smac.xml" % self.basename(ifc)
 
-    def phyxmlname(self, ifc=None):
+        :param interface: interface for this model
+        :return: mac xml filename
+        :rtype: str
+        """
+        return "%smac.xml" % self._basename(interface)
+
+    def phy_name(self, interface=None):
         """
         Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
+
+        :param interface: interface for this model
+        :return: phy xml filename
+        :rtype: str
         """
-        return "%sphy.xml" % self.basename(ifc)
+        return "%sphy.xml" % self._basename(interface)
 
     def update(self, moved, moved_netifs):
         """
-        invoked from MobilityModel when nodes are moved; this causes
-        EMANE location events to be generated for the nodes in the moved
-        list, making EmaneModels compatible with Ns2ScriptedMobility
+        Invoked from MobilityModel when nodes are moved; this causes
+        emane location events to be generated for the nodes in the moved
+        list, making EmaneModels compatible with Ns2ScriptedMobility.
+
+        :param bool moved: were nodes moved
+        :param list moved_netifs: interfaces that were moved
+        :return:
         """
         try:
             wlan = self.session.get_object(self.object_id)
@@ -168,17 +183,28 @@ class EmaneModel(WirelessModel):
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
         Invoked when a Link Message is received. Default is unimplemented.
+
+        :param core.netns.vif.Veth netif: interface one
+        :param bw: bandwidth to set to
+        :param delay: packet delay to set to
+        :param loss: packet loss to set to
+        :param duplicate: duplicate percentage to set to
+        :param jitter: jitter to set to
+        :param core.netns.vif.Veth netif2: interface two
+        :return: nothing
         """
-        warntxt = "EMANE model %s does not support link " % self.name
-        warntxt += "configuration, dropping Link Message"
-        logger.warn(warntxt)
+        logger.warn("emane model(%s) does not support link configuration", self.name)
 
     @staticmethod
-    def valuestrtoparamlist(dom, name, value):
+    def value_to_params(doc, name, value):
         """
-        Helper to convert a parameter to a paramlist.
-        Returns a an XML paramlist, or None if the value does not expand to
+        Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
         multiple values.
+
+        :param xml.dom.minidom.Document doc: xml document
+        :param name: name of element for params
+        :param str value: value string to convert to tuple
+        :return: xml document with added params or None, when an invalid value has been provided
         """
         try:
             values = utils.make_tuple_fromstr(value, str)
@@ -192,4 +218,4 @@ class EmaneModel(WirelessModel):
         if len(values) < 2:
             return None
 
-        return xmlutils.add_param_list_to_parent(dom, parent=None, name=name, values=values)
+        return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)

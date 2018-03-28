@@ -16,7 +16,7 @@ class EmaneIeee80211abgModel(EmaneModel):
     xml_path = "/usr/share/emane/xml/models/mac/ieee80211abg"
 
     # MAC parameters
-    _confmatrix_mac = [
+    _config_mac = [
         ("aifs", ConfigDataTypes.STRING.value, "0:2 1:2 2:2 3:1", "", "arbitration inter frame space (0-4:aifs)"),
         ("channelactivityestimationtimer", ConfigDataTypes.FLOAT.value, "0.1", "",
          "Defines channel activity estimation timer in seconds"),
@@ -46,58 +46,69 @@ class EmaneIeee80211abgModel(EmaneModel):
     ]
 
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel.config_matrix
+    _config_phy = EmaneUniversalModel.config_matrix
 
-    config_matrix = _confmatrix_mac + _confmatrix_phy
+    config_matrix = _config_mac + _config_phy
     # value groupings
     config_groups = "802.11 MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % (
-        len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(config_matrix))
+        len(_config_mac), len(_config_mac) + 1, len(config_matrix))
 
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
 
-    def buildnemxmlfiles(self, e, ifc):
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
         that file also. Otherwise the WLAN-wide
         nXXemane_ieee80211abgnem.xml, nXXemane_ieee80211abgemac.xml,
         nXXemane_ieee80211abgphy.xml are used.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
         """
-        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
         if values is None:
             return
-        nemdoc = e.xmldoc("nem")
-        nem = nemdoc.getElementsByTagName("nem").pop()
-        nem.setAttribute("name", "ieee80211abg NEM")
-        e.appendtransporttonem(nemdoc, nem, self.object_id, ifc)
-        mactag = nemdoc.createElement("mac")
-        mactag.setAttribute("definition", self.macxmlname(ifc))
-        nem.appendChild(mactag)
-        phytag = nemdoc.createElement("phy")
-        phytag.setAttribute("definition", self.phyxmlname(ifc))
-        nem.appendChild(phytag)
-        e.xmlwrite(nemdoc, self.nemxmlname(ifc))
 
-        macdoc = e.xmldoc("mac")
-        mac = macdoc.getElementsByTagName("mac").pop()
-        mac.setAttribute("name", "ieee80211abg MAC")
-        mac.setAttribute("library", "ieee80211abgmaclayer")
+        # retrieve xml names
+        nem_name = self.nem_name(interface)
+        mac_name = self.mac_name(interface)
+        phy_name = self.phy_name(interface)
+
+        nem_document = emane_manager.xmldoc("nem")
+        nem_element = nem_document.getElementsByTagName("nem").pop()
+        nem_element.setAttribute("name", "ieee80211abg NEM")
+        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+
+        mac_element = nem_document.createElement("mac")
+        mac_element.setAttribute("definition", mac_name)
+        nem_element.appendChild(mac_element)
+
+        phy_element = nem_document.createElement("phy")
+        phy_element.setAttribute("definition", phy_name)
+        nem_element.appendChild(phy_element)
+
+        emane_manager.xmlwrite(nem_document, nem_name)
 
         names = self.getnames()
-        macnames = names[:len(self._confmatrix_mac)]
-        phynames = names[len(self._confmatrix_mac):]
+        mac_names = names[:len(self._config_mac)]
+        phy_names = names[len(self._config_mac):]
 
-        # append all MAC options to macdoc
-        for macname in macnames:
-            mac9xnvpairlist = self.get9xmacparamequivalent(macname, values)
+        mac_document = emane_manager.xmldoc("mac")
+        mac_element = mac_document.getElementsByTagName("mac").pop()
+        mac_element.setAttribute("name", "ieee80211abg MAC")
+        mac_element.setAttribute("library", "ieee80211abgmaclayer")
+        for name in mac_names:
+            mac9xnvpairlist = self.get9xmacparamequivalent(name, values)
             for nvpair in mac9xnvpairlist:
-                mac.appendChild(e.xmlparam(macdoc, nvpair[0], nvpair[1]))
+                param = emane_manager.xmlparam(mac_document, nvpair[0], nvpair[1])
+                mac_element.appendChild(param)
+        emane_manager.xmlwrite(mac_document, mac_name)
 
-        e.xmlwrite(macdoc, self.macxmlname(ifc))
-
-        phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
-        e.xmlwrite(phydoc, self.phyxmlname(ifc))
+        phy_document = EmaneUniversalModel.get_phy_doc(emane_manager, self, values, phy_names)
+        emane_manager.xmlwrite(phy_document, phy_name)
 
     #
     # TEMP HACK: Account for parameter convention change in EMANE 9.x

@@ -15,7 +15,7 @@ class EmaneRfPipeModel(EmaneModel):
     # configuration parameters are
     #  ( "name", "type", "default", "possible-value-list", "caption")
     # MAC parameters
-    _confmatrix_mac = [
+    _config_mac = [
         ("datarate", ConfigDataTypes.UINT64.value, "1M", "", "data rate (bps)"),
         ("delay", ConfigDataTypes.FLOAT.value, "0.0", "", "transmission delay (sec)"),
         ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "True,False", "enable promiscuous mode"),
@@ -31,52 +31,65 @@ class EmaneRfPipeModel(EmaneModel):
     ]
 
     # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel.config_matrix
+    _config_phy = EmaneUniversalModel.config_matrix
 
-    config_matrix = _confmatrix_mac + _confmatrix_phy
+    config_matrix = _config_mac + _config_phy
 
     # value groupings
     config_groups = "RF-PIPE MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % (
-        len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(config_matrix))
+        len(_config_mac), len(_config_mac) + 1, len(config_matrix))
 
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
 
-    def buildnemxmlfiles(self, e, ifc):
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem, mac, and phy XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
         that file also. Otherwise the WLAN-wide nXXemane_rfpipenem.xml,
         nXXemane_rfpipemac.xml, nXXemane_rfpipephy.xml are used.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
         """
-        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
         if values is None:
             return
 
-        nemdoc = e.xmldoc("nem")
-        nem = nemdoc.getElementsByTagName("nem").pop()
-        nem.setAttribute("name", "RF-PIPE NEM")
-        e.appendtransporttonem(nemdoc, nem, self.object_id, ifc)
-        mactag = nemdoc.createElement("mac")
-        mactag.setAttribute("definition", self.macxmlname(ifc))
-        nem.appendChild(mactag)
-        phytag = nemdoc.createElement("phy")
-        phytag.setAttribute("definition", self.phyxmlname(ifc))
-        nem.appendChild(phytag)
-        e.xmlwrite(nemdoc, self.nemxmlname(ifc))
+        # retrieve xml names
+        nem_name = self.nem_name(interface)
+        mac_name = self.mac_name(interface)
+        phy_name = self.phy_name(interface)
+
+        nem_document = emane_manager.xmldoc("nem")
+        nem_element = nem_document.getElementsByTagName("nem").pop()
+        nem_element.setAttribute("name", "RF-PIPE NEM")
+        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+
+        mac_element = nem_document.createElement("mac")
+        mac_element.setAttribute("definition", mac_name)
+        nem_element.appendChild(mac_element)
+
+        phy_element = nem_document.createElement("phy")
+        phy_element.setAttribute("definition", phy_name)
+        nem_element.appendChild(phy_element)
+
+        emane_manager.xmlwrite(nem_document, nem_name)
 
         names = list(self.getnames())
-        macnames = names[:len(self._confmatrix_mac)]
-        phynames = names[len(self._confmatrix_mac):]
+        mac_name = names[:len(self._config_mac)]
+        phy_names = names[len(self._config_mac):]
 
-        macdoc = e.xmldoc("mac")
-        mac = macdoc.getElementsByTagName("mac").pop()
-        mac.setAttribute("name", "RF-PIPE MAC")
-        mac.setAttribute("library", "rfpipemaclayer")
+        mac_document = emane_manager.xmldoc("mac")
+        mac_element = mac_document.getElementsByTagName("mac").pop()
+        mac_element.setAttribute("name", "RF-PIPE MAC")
+        mac_element.setAttribute("library", "rfpipemaclayer")
+        for name in mac_name:
+            value = self.valueof(name, values)
+            param = emane_manager.xmlparam(mac_document, name, value)
+            mac_element.appendChild(param)
+        emane_manager.xmlwrite(mac_document, mac_name)
 
-        # append MAC options to macdoc
-        map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, self.valueof(n, values))), macnames)
-        e.xmlwrite(macdoc, self.macxmlname(ifc))
-
-        phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
-        e.xmlwrite(phydoc, self.phyxmlname(ifc))
+        phy_document = EmaneUniversalModel.get_phy_doc(emane_manager, self, values, phy_names)
+        emane_manager.xmlwrite(phy_document, phy_name)
