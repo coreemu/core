@@ -78,14 +78,14 @@ class EmaneRfPipeModel(EmaneModel):
         emane_manager.xmlwrite(nem_document, nem_name)
 
         names = list(self.getnames())
-        mac_name = names[:len(self._config_mac)]
+        mac_names = names[:len(self._config_mac)]
         phy_names = names[len(self._config_mac):]
 
         mac_document = emane_manager.xmldoc("mac")
         mac_element = mac_document.getElementsByTagName("mac").pop()
         mac_element.setAttribute("name", "RF-PIPE MAC")
         mac_element.setAttribute("library", "rfpipemaclayer")
-        for name in mac_name:
+        for name in mac_names:
             value = self.valueof(name, values)
             param = emane_manager.xmlparam(mac_document, name, value)
             mac_element.appendChild(param)
