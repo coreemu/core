@@ -18,3 +18,10 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     _config_phy = []
     config_matrix = _config_mac + _config_phy
     config_groups = "Bypass Parameters:1-1"
+
+    def create_phy_doc(self, emane_manager, values):
+        phy_document = emane_manager.xmldoc("phy")
+        phy_element = phy_document.getElementsByTagName("phy").pop()
+        phy_element.setAttribute("name", "%s PHY" % self.name)
+        phy_element.setAttribute("library", "bypassphylayer")
+        return phy_document
