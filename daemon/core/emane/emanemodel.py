@@ -3,6 +3,7 @@ Defines Emane Models used within CORE.
 """
 
 from core import logger
+from core.emane.universal import EmaneUniversalModel
 from core.misc import utils
 from core.mobility import WirelessModel
 from core.xml import xmlutils
@@ -14,6 +15,98 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
+    _config_mac = []
+    _config_phy = EmaneUniversalModel.config_matrix
+    library = None
+    config_ignore = set()
+
+    def __init__(self, session, object_id=None):
+        WirelessModel.__init__(self, session, object_id)
+
+    @property
+    def config_matrix(self):
+        return self._config_mac + self._config_phy
+
+    @property
+    def config_groups(self):
+        mac_len = len(self._config_mac)
+        config_len = len(self.config_matrix)
+        return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
+
+    def build_xml_files(self, emane_manager, interface):
+        """
+        Builds xml files for emane. Includes a nem.xml file that points to both mac.xml and phy.xml definitions.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
+        """
+        # retrieve configuration values
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
+        if values is None:
+            return
+
+        # create document and write to disk
+        nem_name = self.nem_name(interface)
+        nem_document = self.create_nem_doc(emane_manager, interface)
+        emane_manager.xmlwrite(nem_document, nem_name)
+
+        # create mac document and write to disk
+        mac_name = self.mac_name(interface)
+        mac_document = self.create_mac_doc(emane_manager, values)
+        if mac_document:
+            emane_manager.xmlwrite(mac_document, mac_name)
+
+        # create phy document and write to disk
+        phy_name = self.phy_name(interface)
+        phy_document = self.create_phy_doc(emane_manager, values)
+        if phy_document:
+            emane_manager.xmlwrite(phy_document, phy_name)
+
+    def create_nem_doc(self, emane_manager, interface):
+        mac_name = self.mac_name(interface)
+        phy_name = self.phy_name(interface)
+
+        nem_document = emane_manager.xmldoc("nem")
+        nem_element = nem_document.getElementsByTagName("nem").pop()
+        nem_element.setAttribute("name", "%s NEM" % self.name)
+        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+
+        mac_element = nem_document.createElement("mac")
+        mac_element.setAttribute("definition", mac_name)
+        nem_element.appendChild(mac_element)
+
+        phy_element = nem_document.createElement("phy")
+        phy_element.setAttribute("definition", phy_name)
+        nem_element.appendChild(phy_element)
+
+        return nem_document
+
+    def create_mac_doc(self, emane_manager, values):
+        names = list(self.getnames())
+        mac_names = names[:len(self._config_mac)]
+
+        mac_document = emane_manager.xmldoc("mac")
+        mac_element = mac_document.getElementsByTagName("mac").pop()
+        mac_element.setAttribute("name", "%s MAC" % self.name)
+
+        if not self.library:
+            raise ValueError("must define emane model library")
+        mac_element.setAttribute("library", self.library)
+
+        for name in mac_names:
+            if name in self.config_ignore:
+                continue
+            value = self.valueof(name, values)
+            param = emane_manager.xmlparam(mac_document, name, value)
+            mac_element.appendChild(param)
+
+        return mac_document
+
+    def create_phy_doc(self, emane_manager, values):
+        names = list(self.getnames())
+        phy_names = names[len(self._config_mac):]
+        return EmaneUniversalModel.get_phy_doc(emane_manager, self, values, phy_names)
 
     @classmethod
     def configure_emane(cls, session, config_data):
@@ -33,16 +126,6 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         logger.info("emane model(%s) has no post setup tasks", self.name)
-
-    def build_xml_files(self, emane_manager, interface):
-        """
-        Build the necessary nem, mac, and phy XMLs in the given path.
-
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :param interface: interface for the emane node
-        :return: nothing
-        """
-        raise NotImplementedError
 
     def build_nem_xml(self, doc, emane_node, interface):
         """

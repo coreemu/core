@@ -28,22 +28,16 @@ class EmaneCommEffectModel(EmaneModel):
     name = "emane_commeffect"
 
     config_matrix = [
-        ("filterfile", ConfigDataTypes.STRING.value, "",
-         "", "filter file"),
-        ("groupid", ConfigDataTypes.UINT32.value, "0",
-         "", "NEM Group ID"),
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable promiscuous mode"),
-        ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0",
-         "", "receivebufferperiod"),
-        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "1",
-         "On,Off", "defaultconnectivity"),
+        ("filterfile", ConfigDataTypes.STRING.value, "", "", "filter file"),
+        ("groupid", ConfigDataTypes.UINT32.value, "0", "", "NEM Group ID"),
+        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable promiscuous mode"),
+        ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0", "", "receivebufferperiod"),
+        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "1", "On,Off", "defaultconnectivity"),
     ]
 
-    config_groups = "CommEffect SHIM Parameters:1-%d" % len(config_matrix)
-
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
+    @property
+    def config_groups(self):
+        return "CommEffect SHIM Parameters:1-%d" % len(self.config_matrix)
 
     def build_xml_files(self, emane_manager, interface):
         """

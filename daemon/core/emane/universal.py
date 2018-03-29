@@ -14,10 +14,10 @@ class EmaneUniversalModel(EmaneModel):
     """
 
     name = "emane_universal"
-    _xmlname = "universalphy"
-    _xmllibrary = "universalphylayer"
 
     # universal PHY parameters
+    _xmlname = "universalphy"
+    _xmllibrary = "universalphylayer"
     config_matrix = [
         ("bandwidth", ConfigDataTypes.UINT64.value, "1M", "", "rf bandwidth (Hz)"),
         ("fading.model", ConfigDataTypes.STRING.value, "none", "none,event,nakagami", "Defines fading model"),
