@@ -7,7 +7,7 @@ from core.emane.emanemodel import EmaneModel
 from core.enumerations import ConfigDataTypes
 
 try:
-    from emanesh.events.commeffectevent import CommEffectEvent
+    from emane.events.commeffectevent import CommEffectEvent
 except ImportError:
     logger.info("emane 1.2.1 not found")
 
