@@ -2,11 +2,11 @@
 ieee80211abg.py: EMANE IEEE 802.11abg model for CORE
 """
 
-from core.emane.emanemodel import EmaneModel
+from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 
 
-class EmaneIeee80211abgModel(EmaneModel):
+class EmaneIeee80211abgModel(emanemodel.EmaneModel):
     # model name
     name = "emane_ieee80211abg"
     library = "ieee80211abgmaclayer"
@@ -44,6 +44,9 @@ class EmaneIeee80211abgModel(EmaneModel):
         ("unicastrate", ConfigDataTypes.UINT8.value, "4", _80211rates, "unicast rate (Mbps)"),
         ("wmmenable", ConfigDataTypes.BOOL.value, "0", "On,Off", "WiFi Multimedia (WMM)"),
     ]
+
+    config_matrix = _config_mac + emanemodel.EmaneModel._config_phy
+    config_groups = emanemodel.create_config_groups(_config_mac, config_matrix)
 
     def create_mac_doc(self, emane_manager, values):
         names = self.getnames()

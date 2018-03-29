@@ -9,9 +9,10 @@ from core.mobility import WirelessModel
 from core.xml import xmlutils
 
 
-def classproperty(_):
-    def __get__(self, _, inst):
-        return self.fget.__get__(None, inst)()
+def create_config_groups(config_mac, config_matrix):
+    mac_len = len(config_mac)
+    config_len = len(config_matrix)
+    return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
 
 
 def value_to_params(doc, name, value):
@@ -129,21 +130,11 @@ class EmaneModel(WirelessModel):
     _config_phy = EmaneUniversalModel.config_matrix
     library = None
     config_ignore = set()
+    config_matrix = _config_mac + _config_phy
+    config_groups = create_config_groups(_config_mac, config_matrix)
 
     def __init__(self, session, object_id=None):
         WirelessModel.__init__(self, session, object_id)
-
-    @classproperty
-    @classmethod
-    def config_matrix(cls):
-        return cls._config_mac + cls._config_phy
-
-    @classproperty
-    @classmethod
-    def config_groups(cls):
-        mac_len = len(cls._config_mac)
-        config_len = len(cls.config_matrix)
-        return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
 
     def build_xml_files(self, emane_manager, interface):
         """

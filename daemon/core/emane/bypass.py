@@ -2,11 +2,11 @@
 EMANE Bypass model for CORE
 """
 
-from core.emane.emanemodel import EmaneModel
+from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 
 
-class EmaneBypassModel(EmaneModel):
+class EmaneBypassModel(emanemodel.EmaneModel):
     name = "emane_bypass"
     library = "bypassmaclayer"
 
@@ -16,7 +16,5 @@ class EmaneBypassModel(EmaneModel):
          "There are no parameters for the bypass model."),
     ]
     _config_phy = []
-
-    @property
-    def config_groups(self):
-        return "Bypass Parameters:1-1"
+    config_matrix = _config_mac + _config_phy
+    config_groups = "Bypass Parameters:1-1"

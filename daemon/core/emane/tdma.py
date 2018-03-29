@@ -6,12 +6,12 @@ import os
 
 from core import constants
 from core import logger
-from core.emane.emanemodel import EmaneModel
+from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 from core.misc import utils
 
 
-class EmaneTdmaModel(EmaneModel):
+class EmaneTdmaModel(emanemodel.EmaneModel):
     # model name
     name = "emane_tdma"
     library = "tdmaeventschedulerradiomodel"
@@ -45,6 +45,9 @@ class EmaneTdmaModel(EmaneModel):
         ("queue.strictdequeueenable", ConfigDataTypes.BOOL.value, "0", "On,Off",
          "enable strict dequeueing to specified queues  only"),
     ]
+
+    config_matrix = _config_mac + emanemodel.EmaneModel._config_phy
+    config_groups = emanemodel.create_config_groups(_config_mac, config_matrix)
 
     def post_startup(self, emane_manager):
         """

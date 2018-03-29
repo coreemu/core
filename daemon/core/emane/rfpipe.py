@@ -2,11 +2,11 @@
 rfpipe.py: EMANE RF-PIPE model for CORE
 """
 
-from core.emane.emanemodel import EmaneModel
+from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 
 
-class EmaneRfPipeModel(EmaneModel):
+class EmaneRfPipeModel(emanemodel.EmaneModel):
     # model name
     name = "emane_rfpipe"
     library = "rfpipemaclayer"
@@ -27,3 +27,6 @@ class EmaneRfPipeModel(EmaneModel):
         ("radiometricreportinterval", ConfigDataTypes.FLOAT.value, "1.0", "",
          "R2RI radio metric report interval (sec)"),
     ]
+
+    config_matrix = _config_mac + emanemodel.EmaneModel._config_phy
+    config_groups = emanemodel.create_config_groups(_config_mac, config_matrix)

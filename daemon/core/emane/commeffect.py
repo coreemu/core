@@ -3,7 +3,7 @@ commeffect.py: EMANE CommEffect model for CORE
 """
 
 from core import logger
-from core.emane.emanemodel import EmaneModel
+from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 
 try:
@@ -24,7 +24,7 @@ def convert_none(x):
         return int(x)
 
 
-class EmaneCommEffectModel(EmaneModel):
+class EmaneCommEffectModel(emanemodel.EmaneModel):
     name = "emane_commeffect"
 
     config_matrix = [
@@ -35,9 +35,7 @@ class EmaneCommEffectModel(EmaneModel):
         ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "1", "On,Off", "defaultconnectivity"),
     ]
 
-    @property
-    def config_groups(self):
-        return "CommEffect SHIM Parameters:1-%d" % len(self.config_matrix)
+    config_groups = "CommEffect SHIM Parameters:1-%d" % len(config_matrix)
 
     def build_xml_files(self, emane_manager, interface):
         """
