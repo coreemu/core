@@ -9,6 +9,36 @@ from core.mobility import WirelessModel
 from core.xml import xmlutils
 
 
+def classproperty(_):
+    def __get__(self, _, inst):
+        return self.fget.__get__(None, inst)()
+
+
+def value_to_params(doc, name, value):
+    """
+    Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
+    multiple values.
+
+    :param xml.dom.minidom.Document doc: xml document
+    :param name: name of element for params
+    :param str value: value string to convert to tuple
+    :return: xml document with added params or None, when an invalid value has been provided
+    """
+    try:
+        values = utils.make_tuple_fromstr(value, str)
+    except SyntaxError:
+        logger.exception("error in value string to param list")
+        return None
+
+    if not hasattr(values, "__iter__"):
+        return None
+
+    if len(values) < 2:
+        return None
+
+    return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
+
+
 class EmaneUniversalModel(object):
     """
     This Univeral PHY model is meant to be imported by other models,
@@ -72,7 +102,7 @@ class EmaneUniversalModel(object):
 
         name = "frequencyofinterest"
         value = emane_model.valueof(name, values)
-        frequencies = cls.value_to_params(phy_document, name, value)
+        frequencies = value_to_params(phy_document, name, value)
         if frequencies:
             phy_names = list(phy_names)
             phy_names.remove("frequencyofinterest")
@@ -103,14 +133,16 @@ class EmaneModel(WirelessModel):
     def __init__(self, session, object_id=None):
         WirelessModel.__init__(self, session, object_id)
 
-    @property
-    def config_matrix(self):
-        return self._config_mac + self._config_phy
+    @classproperty
+    @classmethod
+    def config_matrix(cls):
+        return cls._config_mac + cls._config_phy
 
-    @property
-    def config_groups(self):
-        mac_len = len(self._config_mac)
-        config_len = len(self.config_matrix)
+    @classproperty
+    @classmethod
+    def config_groups(cls):
+        mac_len = len(cls._config_mac)
+        config_len = len(cls.config_matrix)
         return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
 
     def build_xml_files(self, emane_manager, interface):
@@ -357,29 +389,3 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         logger.warn("emane model(%s) does not support link configuration", self.name)
-
-    @staticmethod
-    def value_to_params(doc, name, value):
-        """
-        Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
-        multiple values.
-
-        :param xml.dom.minidom.Document doc: xml document
-        :param name: name of element for params
-        :param str value: value string to convert to tuple
-        :return: xml document with added params or None, when an invalid value has been provided
-        """
-        try:
-            values = utils.make_tuple_fromstr(value, str)
-        except SyntaxError:
-            logger.exception("error in value string to param list")
-            return None
-
-        if not hasattr(values, "__iter__"):
-            return None
-
-        if len(values) < 2:
-            return None
-
-        return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
-
