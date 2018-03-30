@@ -3,8 +3,8 @@ commeffect.py: EMANE CommEffect model for CORE
 """
 
 from core import logger
+from core.emane import emanemanifest
 from core.emane import emanemodel
-from core.enumerations import ConfigDataTypes
 
 try:
     from emane.events.commeffectevent import CommEffectEvent
@@ -27,13 +27,11 @@ def convert_none(x):
 class EmaneCommEffectModel(emanemodel.EmaneModel):
     name = "emane_commeffect"
 
-    config_matrix = [
-        ("filterfile", ConfigDataTypes.STRING.value, "", "", "filter file"),
-        ("groupid", ConfigDataTypes.UINT32.value, "0", "", "NEM Group ID"),
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0", "On,Off", "enable promiscuous mode"),
-        ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0", "", "receivebufferperiod"),
-        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "1", "On,Off", "defaultconnectivity"),
-    ]
+    shim_library = "commeffectshim"
+    shim_xml = "/usr/share/emane/manifest/commeffectshim.xml"
+    shim_defaults = {}
+    config_shim = emanemanifest.parse(shim_xml, shim_defaults)
+    config_matrix = config_shim
 
     config_groups = "CommEffect SHIM Parameters:1-%d" % len(config_matrix)
 
@@ -56,36 +54,36 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         nem_name = self.nem_name(interface)
         shim_name = self.shim_name(interface)
 
-        shim_document = emane_manager.xmldoc("shim")
-        shim = shim_document.getElementsByTagName("shim").pop()
-        shim.setAttribute("name", "commeffect SHIM")
-        shim.setAttribute("library", "commeffectshim")
-
-        names = self.getnames()
-        shim_names = list(names[:len(self.config_matrix)])
-        shim_names.remove("filterfile")
-
-        # append all shim options (except filterfile) to shimdoc
-        for name in shim_names:
-            value = self.valueof(name, values)
-            param = emane_manager.xmlparam(shim_document, name, value)
-            shim.appendChild(param)
-
-        # empty filterfile is not allowed
-        ff = self.valueof("filterfile", values)
-        if ff.strip() != "":
-            shim.appendChild(emane_manager.xmlparam(shim_document, "filterfile", ff))
-        emane_manager.xmlwrite(shim_document, shim_name)
-
         nem_document = emane_manager.xmldoc("nem")
         nem_element = nem_document.getElementsByTagName("nem").pop()
-        nem_element.setAttribute("name", "commeffect NEM")
+        nem_element.setAttribute("name", "%s NEM" % self.name)
         nem_element.setAttribute("type", "unstructured")
         emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
 
         shim_xml = emane_manager.xmlshimdefinition(nem_document, shim_name)
         nem_element.appendChild(shim_xml)
         emane_manager.xmlwrite(nem_document, nem_name)
+
+        names = self.getnames()
+        shim_names = list(names)
+        shim_names.remove("filterfile")
+
+        shim_document = emane_manager.xmldoc("shim")
+        shim_element = shim_document.getElementsByTagName("shim").pop()
+        shim_element.setAttribute("name", "%s SHIM" % self.name)
+        shim_element.setAttribute("library", self.shim_library)
+
+        # append all shim options (except filterfile) to shimdoc
+        for name in shim_names:
+            value = self.valueof(name, values)
+            param = emane_manager.xmlparam(shim_document, name, value)
+            shim_element.appendChild(param)
+
+        # empty filterfile is not allowed
+        ff = self.valueof("filterfile", values)
+        if ff.strip() != "":
+            shim_element.appendChild(emane_manager.xmlparam(shim_document, "filterfile", ff))
+        emane_manager.xmlwrite(shim_document, shim_name)
 
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
