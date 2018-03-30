@@ -9,12 +9,6 @@ from core.mobility import WirelessModel
 from core.xml import xmlutils
 
 
-def create_config_groups(config_mac, config_matrix):
-    mac_len = len(config_mac)
-    config_len = len(config_matrix)
-    return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
-
-
 def value_to_params(doc, name, value):
     """
     Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
@@ -40,17 +34,56 @@ def value_to_params(doc, name, value):
     return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
 
 
+class EmaneModelMetaClass(type):
+    """
+    Hack into making class level properties to streamline emane model creation, until the Configurable class is
+    removed or refactored.
+    """
+
+    @property
+    def config_matrix(cls):
+        """
+        Convenience method for creating the config matrix, allow for a custom override.
+
+        :param EmaneModel cls: emane class
+        :return: config matrix value
+        :rtype: list
+        """
+        if cls.config_matrix_override:
+            return cls.config_matrix_override
+        else:
+            return cls.mac_config + cls.phy_config
+
+    @property
+    def config_groups(cls):
+        """
+        Convenience method for creating the config groups, allow for a custom override.
+
+        :param EmaneModel cls: emane class
+        :return: config groups value
+        :rtype: str
+        """
+        if cls.config_groups_override:
+            return cls.config_groups_override
+        else:
+            mac_len = len(cls.mac_config)
+            config_len = len(cls.config_matrix)
+            return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
+
+
 class EmaneModel(WirelessModel):
     """
     EMANE models inherit from this parent class, which takes care of
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
+    __metaclass__ = EmaneModelMetaClass
+
     # default mac configuration settings
     mac_library = None
     mac_xml = None
     mac_defaults = {}
-    config_mac = []
+    mac_config = []
 
     # default phy configuration settings, using the universal model
     phy_library = None
@@ -60,11 +93,11 @@ class EmaneModel(WirelessModel):
         "propagationmodel": "2ray",
         "noisemode": "none"
     }
-    config_phy = emanemanifest.parse(phy_xml, phy_defaults)
+    phy_config = emanemanifest.parse(phy_xml, phy_defaults)
 
     config_ignore = set()
-    config_matrix = config_mac + config_phy
-    config_groups = create_config_groups(config_mac, config_matrix)
+    config_groups_override = None
+    config_matrix_override = None
 
     def __init__(self, session, object_id=None):
         WirelessModel.__init__(self, session, object_id)
@@ -134,7 +167,7 @@ class EmaneModel(WirelessModel):
         :rtype: xml.dom.minidom.Document
         """
         names = list(self.getnames())
-        mac_names = names[:len(self.config_mac)]
+        mac_names = names[:len(self.mac_config)]
 
         mac_document = emane_manager.xmldoc("mac")
         mac_element = mac_document.getElementsByTagName("mac").pop()
@@ -163,7 +196,7 @@ class EmaneModel(WirelessModel):
         :rtype: xml.dom.minidom.Document
         """
         names = list(self.getnames())
-        phy_names = names[len(self.config_mac):]
+        phy_names = names[len(self.mac_config):]
 
         phy_document = emane_manager.xmldoc("phy")
         phy_element = phy_document.getElementsByTagName("phy").pop()

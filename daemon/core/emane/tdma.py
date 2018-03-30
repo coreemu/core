@@ -22,19 +22,13 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
     mac_defaults = {
         "pcrcurveuri": "/usr/share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
     }
-    config_mac = emanemanifest.parse(mac_xml, mac_defaults)
+    mac_config = emanemanifest.parse(mac_xml, mac_defaults)
 
     # add custom schedule options and ignore it when writing emane xml
     schedule_name = "schedule"
     default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
-    config_mac.insert(0, (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file"))
+    mac_config.insert(0, (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file"))
     config_ignore = {schedule_name}
-
-    # defines overall config
-    config_matrix = config_mac + emanemodel.EmaneModel.config_phy
-
-    # gui display tabs
-    config_groups = emanemodel.create_config_groups(config_mac, config_matrix)
 
     def post_startup(self, emane_manager):
         """

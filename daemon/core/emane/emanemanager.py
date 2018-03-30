@@ -1048,10 +1048,10 @@ class EmaneGlobalModel(EmaneModel):
         ("nem_id_start", ConfigDataTypes.INT32.value, "1", "", "starting NEM ID"),
     ]
 
-    config_matrix = _confmatrix_platform + _confmatrix_nem
-    config_groups = "Platform Attributes:1-%d|NEM Parameters:%d-%d" % \
-                    (len(_confmatrix_platform), len(_confmatrix_platform) + 1,
-                     len(config_matrix))
+    config_matrix_override = _confmatrix_platform + _confmatrix_nem
+    config_groups_override = "Platform Attributes:1-%d|NEM Parameters:%d-%d" % \
+                             (len(_confmatrix_platform), len(_confmatrix_platform) + 1,
+                              len(config_matrix_override))
 
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)

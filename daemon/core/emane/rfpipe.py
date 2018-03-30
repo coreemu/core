@@ -16,10 +16,4 @@ class EmaneRfPipeModel(emanemodel.EmaneModel):
     mac_defaults = {
         "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml",
     }
-    config_mac = emanemanifest.parse(mac_xml, mac_defaults)
-
-    # defines overall config
-    config_matrix = config_mac + emanemodel.EmaneModel.config_phy
-
-    # gui display tabs
-    config_groups = emanemodel.create_config_groups(config_mac, config_matrix)
+    mac_config = emanemanifest.parse(mac_xml, mac_defaults)

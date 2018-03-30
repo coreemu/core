@@ -31,9 +31,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     shim_xml = "/usr/share/emane/manifest/commeffectshim.xml"
     shim_defaults = {}
     config_shim = emanemanifest.parse(shim_xml, shim_defaults)
-    config_matrix = config_shim
 
-    config_groups = "CommEffect SHIM Parameters:1-%d" % len(config_matrix)
+    config_groups_override = "CommEffect SHIM Parameters:1-%d" % len(config_shim)
+    config_matrix_override = config_shim
 
     def build_xml_files(self, emane_manager, interface):
         """
