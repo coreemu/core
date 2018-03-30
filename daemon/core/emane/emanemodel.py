@@ -178,10 +178,16 @@ class EmaneModel(WirelessModel):
         mac_element.setAttribute("library", self.mac_library)
 
         for name in mac_names:
+            # ignore custom configurations
             if name in self.config_ignore:
                 continue
+
+            # check if value is a multi param
             value = self.valueof(name, values)
-            param = emane_manager.xmlparam(mac_document, name, value)
+            param = value_to_params(mac_document, name, value)
+            if not param:
+                param = emane_manager.xmlparam(mac_document, name, value)
+
             mac_element.appendChild(param)
 
         return mac_document
@@ -205,26 +211,19 @@ class EmaneModel(WirelessModel):
         if self.phy_library:
             phy_element.setAttribute("library", self.phy_library)
 
-        # hack to account for config that can contain more than 1 value
-        frequencies = None
-        name = "frequencyofinterest"
-        try:
-            value = self.valueof(name, values)
-            frequencies = value_to_params(phy_document, name, value)
-            if frequencies:
-                phy_names = list(phy_names)
-                phy_names.remove("frequencyofinterest")
-        except ValueError:
-            logger.info("%s is not present in the phy names", name)
-
-        # append all PHY options to phydoc
+        # append all phy options
         for name in phy_names:
-            value = self.valueof(name, values)
-            param = emane_manager.xmlparam(phy_document, name, value)
-            phy_element.appendChild(param)
+            # ignore custom configurations
+            if name in self.config_ignore:
+                continue
 
-        if frequencies:
-            phy_element.appendChild(frequencies)
+            # check if value is a multi param
+            value = self.valueof(name, values)
+            param = value_to_params(phy_document, name, value)
+            if not param:
+                param = emane_manager.xmlparam(phy_document, name, value)
+
+            phy_element.appendChild(param)
 
         return phy_document
 
