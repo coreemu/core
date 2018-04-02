@@ -27,7 +27,10 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
     # add custom schedule options and ignore it when writing emane xml
     schedule_name = "schedule"
     default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
-    mac_config.insert(0, (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file"))
+    mac_config.insert(
+        0,
+        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file (core)")
+    )
     config_ignore = {schedule_name}
 
     def post_startup(self, emane_manager):

@@ -17,6 +17,8 @@ def _type_value(config_type):
     config_type = config_type.upper()
     if config_type == "DOUBLE":
         config_type = "FLOAT"
+    elif config_type == "INETADDR":
+        config_type = "STRING"
     return ConfigDataTypes[config_type].value
 
 

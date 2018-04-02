@@ -11,6 +11,7 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.conf import ConfigurableManager
+from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
@@ -607,7 +608,7 @@ class EmaneManager(ConfigurableManager):
         doc = self.xmldoc("platform")
         plat = doc.getElementsByTagName("platform").pop()
         names = list(self.emane_config.getnames())
-        platform_names = names[:len(self.emane_config._confmatrix_platform)]
+        platform_names = names[:len(self.emane_config.emulator_config)]
         platform_names.remove("platform_id_start")
         platform_values = list(values)
         if otadev:
@@ -1010,48 +1011,30 @@ class EmaneGlobalModel(EmaneModel):
     """
     Global EMANE configuration options.
     """
-
-    # Over-The-Air channel required for EMANE 0.9.2
-    _DEFAULT_OTA = "1"
     _DEFAULT_DEV = "ctrl0"
 
     name = "emane"
 
-    _confmatrix_platform = [
-        ("antennaprofilemanifesturi", ConfigDataTypes.STRING.value, "", "", "antenna profile manifest URI"),
-        ("controlportendpoint", ConfigDataTypes.STRING.value, "0.0.0.0:47000", "", "Control port address"),
-        ("eventservicedevice", ConfigDataTypes.STRING.value, _DEFAULT_DEV, "", "Event Service device"),
-        ("eventservicegroup", ConfigDataTypes.STRING.value, "224.1.2.8:45703", "", "Event Service group"),
-        ("eventservicettl", ConfigDataTypes.UINT8.value, "1", "", "Event Service TTL"),
-        ("otamanagerchannelenable", ConfigDataTypes.BOOL.value, _DEFAULT_OTA, "on,off", "enable OTA Manager channel"),
-        ("otamanagerdevice", ConfigDataTypes.STRING.value, _DEFAULT_DEV, "", "OTA Manager device"),
-        ("otamanagergroup", ConfigDataTypes.STRING.value, "224.1.2.8:45702", "", "OTA Manager group"),
-        ("otamanagerloopback", ConfigDataTypes.BOOL.value, "0", "on,off", "Enable OTA multicast loopback"),
-        ("otamanagermtu", ConfigDataTypes.UINT32.value, "0", "", "OTA channel MTU in bytes, 0 to disable"),
-        ("otamanagerpartcheckthreshold", ConfigDataTypes.UINT16.value, "2", "",
-         "Rate in seconds a check is performed to see if any OTA packet part reassembly efforts should be abandoned"),
-        ("otamanagerparttimeoutthreshold", ConfigDataTypes.UINT16.value, "5", "",
-         "Threshold in seconds to wait for another OTA packet part for an existing reassembly effort before "
-         "abandoning the effort"),
-        ("otamanagerttl", ConfigDataTypes.UINT8.value, "1", "", "OTA channel multicast message TTL"),
-        ("stats.event.maxeventcountrows", ConfigDataTypes.UINT32.value, "0", "",
-         "Event channel max event count table rows"),
-        ("stats.ota.maxeventcountrows", ConfigDataTypes.UINT32.value, "0", "",
-         "OTA channel max event count table rows"),
-        ("stats.ota.maxpacketcountrows", ConfigDataTypes.UINT32.value, "0", "",
-         "OTA channel max packet count table rows"),
-        ("platform_id_start", ConfigDataTypes.INT32.value, "1", "", "starting Platform ID"),
+    emulator_xml = "/usr/share/emane/manifest/nemmanager.xml"
+    emulator_defaults = {
+        "eventservicedevice": _DEFAULT_DEV,
+        "eventservicegroup": "224.1.2.8:45703",
+        "otamanagerdevice": _DEFAULT_DEV,
+        "otamanagergroup": "224.1.2.8:45702"
+    }
+    emulator_config = emanemanifest.parse(emulator_xml, emulator_defaults)
+    emulator_config.insert(
+        0,
+        ("platform_id_start", ConfigDataTypes.INT32.value, "1", "", "Starting Platform ID (core)")
+    )
+
+    nem_config = [
+        ("nem_id_start", ConfigDataTypes.INT32.value, "1", "", "Starting NEM ID (core)"),
     ]
 
-    # defined from 0.9.2
-    _confmatrix_nem = [
-        ("nem_id_start", ConfigDataTypes.INT32.value, "1", "", "starting NEM ID"),
-    ]
-
-    config_matrix_override = _confmatrix_platform + _confmatrix_nem
-    config_groups_override = "Platform Attributes:1-%d|NEM Parameters:%d-%d" % \
-                             (len(_confmatrix_platform), len(_confmatrix_platform) + 1,
-                              len(config_matrix_override))
+    config_matrix_override = emulator_config + nem_config
+    config_groups_override = "Platform Attributes:1-%d|NEM Parameters:%d-%d" % (
+        len(emulator_config), len(emulator_config) + 1, len(config_matrix_override))
 
     def __init__(self, session, object_id=None):
         EmaneModel.__init__(self, session, object_id)
