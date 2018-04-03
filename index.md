@@ -18,7 +18,7 @@ CORE is typically used for network and protocol research, demonstrations, applic
 * [Installation](install.md)
 * [Usage](usage.md)
 * [Scripting](scripting.md)
-* [Machine](machine.md)
+* [Node Types](machine.md)
 * [CTRLNET](ctrlnet.md)
 * [EMANE](emane.md)
 * [NS3](ns3.md)
