@@ -14,6 +14,7 @@ CORE is typically used for network and protocol research, demonstrations, applic
 
 ## Topics
 
+* [Architecture](architecture.md)
 * [Installation](install.md)
 * [Usage](usage.md)
 * [Scripting](scripting.md)
