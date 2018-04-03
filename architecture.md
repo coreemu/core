@@ -14,7 +14,9 @@
   * Can launch terminals for emulated nodes in running scenarios
   * Can save/open scenario files to recreate previous sessions
   * TCL/TK program
-  
+
+![](static/core-architecture.jpg)
+
 ## How Does it Work?
 
 A CORE node is a lightweight virtual machine. The CORE framework runs on Linux. CORE uses Linux network namespace virtualization to build virtual nodes, and ties them together with virtual networks using Linux Ethernet bridging.
