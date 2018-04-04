@@ -1,5 +1,8 @@
 # CORE Control Network
 
+* Table of Contents
+{:toc}
+
 The CORE control network allows the virtual nodes to communicate with their host environment. There are two types: the primary control network and auxiliary control networks.  The primary control network is used mainly for communicating with the virtual nodes from host machines and for master-slave communications in a multi-server distributed environment. Auxiliary control networks have been introduced to for routing namespace hosted emulation software traffic to the test network.
 
 ## Activating the Primary Control Network
