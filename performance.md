@@ -1,5 +1,10 @@
 # CORE Performance
 
+* Table of Contents
+{:toc}
+
+## Overview
+
 The top question about the performance of CORE is often *how many nodes can it handle?* The answer depends on several factors:
 
 * Hardware - the number and speed of processors in the computer, the available processor cache, RAM memory, and front-side bus speed may greatly affect overall performance.
