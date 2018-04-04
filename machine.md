@@ -1,5 +1,10 @@
 # CORE Node Types
 
+* Table of Contents
+{:toc}
+
+## Overview
+
 Different node types can be configured in CORE, and each node type has a *machine type* that indicates how the node will be represented at run time. Different machine types allow for different virtualization options.
 
 ## netns nodes
