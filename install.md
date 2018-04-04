@@ -42,8 +42,7 @@ CORE requires a Linux operating system because it uses virtualization provided b
 
 The CORE GUI requires the X.Org X Window system (X11), or can run over a remote X11 session. For specific Tcl/Tk, Python, and other libraries required to run CORE.
 
-#### *NOTE*
-   CORE *Services* determine what run on each node. You may require other software packages depending on the services you wish to use. For example, the *HTTP* service will require the *apache2* package.
+**NOTE: CORE *Services* determine what run on each node. You may require other software packages depending on the services you wish to use. For example, the *HTTP* service will require the *apache2* package.**
 
 ## Installing from Packages
 
@@ -93,7 +92,7 @@ After running the *core-gui* command, a GUI should appear with a canvas for draw
 
 The commands shown here should be run as root. The *x86_64* architecture is shown in the examples below, replace with *i686* is using a 32-bit architecture.
 
-###### *CentOS 7 Only* in order to install *tkimg* package you must build from source.
+**CentOS 7 Only: in order to install *tkimg* package you must build from source.**
 
 Make sure the system is up to date.
 
@@ -101,7 +100,7 @@ Make sure the system is up to date.
 yum update
 ```
 
-###### *Optional (Fedora 17+)* Fedora 17 and newer have an additional prerequisite providing the required netem kernel modules (otherwise skip this step and have the package manager install it for you.)
+**Optional (Fedora 17+): Fedora 17 and newer have an additional prerequisite providing the required netem kernel modules (otherwise skip this step and have the package manager install it for you.)**
 
 ```shell
 yum install kernel-modules-extra
@@ -177,7 +176,7 @@ To build CORE from source on Ubuntu, first install these development packages. T
 sudo apt-get install
 ```
 
-You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu/core) page. Choose either a stable release version or the development snapshot available in the `nightly_snapshots` directory.
+You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu/core) page. Choose either a stable release version or the development snapshot available in the *nightly_snapshots* directory.
 
 ```shell
 tar xzf core-5.1.tar.gz

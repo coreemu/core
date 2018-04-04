@@ -63,6 +63,15 @@ A symbolic link will fix this:
 sudo ln -s /usr/local/share/emane /usr/share/emane
 ```
  
+## Custom EMANE Models
+
+CORE supports custom developed EMANE models by way of dynamically loading user created python files that represent the model. Custom EMANE models should be placed within the path defined by **emane_models_dir** in the CORE configuration file. This path cannot end in **emane**.
+
+Here is an example model with documentation describing functionality:
+[Example Model](examplemodel.html)
+
+
+
 ## Single PC with EMANE
 
 This section describes running CORE and EMANE on a single machine. This is the default mode of operation when building an EMANE network with CORE. The OTA manager and Event service interface are set to use *ctrl0* and the virtual nodes use the primary control channel for communicating with one another. The primary control channel is automatically activated when a scenario involves EMANE. Using the primary control channel prevents your emulation session from sending multicast traffic on your local network and interfering with other EMANE users.
@@ -99,7 +108,7 @@ Running CORE and EMANE distributed among two or more emulation servers is simila
 
 It is a good idea to maintain separate networks for data (OTA) and control. The control network may be a shared laboratory network, for example, and you do not want multicast traffic on the data network to interfere with other EMANE users. Furthermore, control traffic could interfere with the OTA latency and thoughput and might affect emulation fidelity. The examples described here will use *eth0* as a control interface and *eth1* as a data interface, although using separate interfaces is not strictly required. Note that these interface names refer to interfaces present on the host machine, not virtual interfaces within a node.
 
-##### *IMPORTANT:* If an auxiliary control network is used, an interface on the host has to be assigned to that network.  
+**IMPORTANT: If an auxiliary control network is used, an interface on the host has to be assigned to that network.**
 
 Each machine that will act as an emulation server needs to have CORE and EMANE installed.
 
@@ -111,7 +120,7 @@ Under the *EMANE* tab of the EMANE WLAN, click on the *EMANE options* button. Th
 
 ![](static/distributed-emane-configuration.png)
 
-##### *HINT:*
+**HINT:**
    Here is a quick checklist for distributed emulation with EMANE.
 
    1. Follow the steps outlined for normal CORE.

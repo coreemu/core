@@ -3,7 +3,7 @@
 * Table of Contents
 {:toc}
 
-##### *NOTE:* Support for ns-3 is limited and not currently being developed.
+**NOTE: Support for ns-3 is limited and not currently being developed.**
 
 ## What is ns-3?
 
@@ -76,7 +76,7 @@ session.shutdown()
 
 A CORE/ns-3 Python script will instantiate an Ns3Session, which is a CORE Session having CoreNs3Nodes, an ns-3 MobilityHelper, and a fixed duration. The CoreNs3Node inherits from both the CoreNode and the ns-3 Node classes -- it is a network namespace having an associated simulator object. The CORE TunTap interface is used, represented by a ns-3 TapBridge in *CONFIGURE_LOCAL* mode, where ns-3 creates and configures the tap device. An event is scheduled to install the taps at time 0.
 
-##### *NOTE:* The GUI can be used to run the *ns3wifi.py* and *ns3wifirandomwalk.py* scripts directly. First, *core-daemon* must be stopped and run within the waf root shell. Then the GUI may be run as a normal user, and the *Execute Python Script...* option may be used from the *File* menu. Dragging nodes around in the *ns3wifi.py* example will cause their ns-3 positions to be updated.
+**NOTE: The GUI can be used to run the *ns3wifi.py* and *ns3wifirandomwalk.py* scripts directly. First, *core-daemon* must be stopped and run within the waf root shell. Then the GUI may be run as a normal user, and the *Execute Python Script...* option may be used from the *File* menu. Dragging nodes around in the *ns3wifi.py* example will cause their ns-3 positions to be updated.**
 
 Users may find the files *ns3wimax.py* and *ns3lte.py* in that example directory; those files were similarly configured, but the underlying ns-3 support is not present as of ns-3.16, so they will not work. Specifically, the ns-3 has to be extended to support bridging the Tap device to an LTE and a WiMax device.
 

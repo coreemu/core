@@ -6,7 +6,7 @@ CORE (Common Open Research Emulator) is a tool for building virtual networks. As
 
 CORE is typically used for network and protocol research, demonstrations, application and platform testing, evaluating networking scenarios, security studies, and increasing the size of physical test networks.
 
-#### Key Features
+### Key Features
 * Efficient and scalable
 * Runs applications and protocols without modification
 * Drag and drop GUI

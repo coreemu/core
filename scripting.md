@@ -35,7 +35,7 @@ A good way to learn about the CORE Python modules is via interactive Python. Scr
 
 The CORE Python modules are documented with comments in the code. From an interactive Python shell, you can retrieve online help about the various classes and methods; for example *help(nodes.CoreNode)* or *help(Session)*.
 
-##### *NOTE:* The CORE daemon *core-daemon* manages a list of sessions and allows the GUI to connect and control sessions. Your Python script uses the same CORE modules but runs independently of the daemon. The daemon does not need to be running for your script to work.
+**NOTE: The CORE daemon *core-daemon* manages a list of sessions and allows the GUI to connect and control sessions. Your Python script uses the same CORE modules but runs independently of the daemon. The daemon does not need to be running for your script to work.**
 
 The session created by a Python script may be viewed in the GUI if certain steps are followed. The GUI has a *File Menu*, *Execute Python script...* option for running a script and automatically connecting to it. Once connected, normal GUI interaction is possible, such as moving and double-clicking nodes, activating Widgets, etc.
 

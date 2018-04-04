@@ -17,7 +17,7 @@ On a typical single-CPU Xeon 3.0GHz server machine with 2GB RAM running Linux, w
 
 Because this software is primarily a network emulator, the more appropriate question is *how much network traffic can it handle?* On the same 3.0GHz server described above, running Linux, about 300,000 packets-per-second can be pushed through the system. The number of hops and the size of the packets is less important. The limiting factor is the number of times that the operating system needs to handle a packet. The 300,000 pps figure represents the number of times the system as a whole needed to deal with a packet. As more network hops are added, this increases the number of context switches and decreases the throughput seen on the full length of the network path.
 
-##### *NOTE:* The right question to be asking is *"how much traffic?"*, not *"how many nodes?"*.
+**NOTE: The right question to be asking is *"how much traffic?"*, not *"how many nodes?"*.**
 
 For a more detailed study of performance in CORE, refer to the following publications:
 
