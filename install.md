@@ -1,7 +1,12 @@
 
 # CORE Installation
 
-This chapter describes how to set up a CORE machine. Note that the easiest way to install CORE is using a binary package on Ubuntu or Fedora/CentOS (deb or rpm) using the distribution's package manager to automatically install dependencies.
+* Table of Contents
+{:toc}
+
+# Overview
+
+This section will describe how to set up a CORE machine. Note that the easiest way to install CORE is using a binary package on Ubuntu or Fedora/CentOS (deb or rpm) using the distribution's package manager to automatically install dependencies.
 
 Ubuntu and Fedora/CentOS Linux are the recommended distributions for running CORE. However, these distributions are not strictly required. CORE will likely work on other flavors of Linux as well.
 
