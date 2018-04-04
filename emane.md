@@ -1,6 +1,7 @@
 # CORE/EMANE
 
-This chapter describes running CORE with the EMANE emulator.
+* Table of Contents
+{:toc}
 
 ## What is EMANE?
 
