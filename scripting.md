@@ -1,6 +1,11 @@
 
 # CORE Python Scripting
 
+* Table of Contents
+{:toc}
+
+## Overview
+
 CORE can be used via the GUI or Python scripting. Writing your own Python scripts offers a rich programming environment with complete control over all aspects of the emulation. This chapter provides a brief introduction to scripting. Most of the documentation is available from sample scripts, or online via interactive Python.
 
 The best starting point is the sample scripts that are included with CORE. If you have a CORE source tree, the example script files can be found under *core/daemon/examples/netns/*. When CORE is installed from packages, the example script files will be in */usr/share/core/examples/netns/* (or */usr/local/* prefix when installed from source.) For the most part, the example scripts are self-documenting; see the comments contained within the Python code.
