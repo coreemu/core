@@ -2,6 +2,9 @@
 
 This section contains advanced usage information, intended for developers and others who are comfortable with the command line.
 
+* Table of Contents
+{:toc}
+
 ## Source Code Guide
 
 The CORE source consists of several different programming languages for historical reasons. Current development focuses on the Python modules and daemon. Here is a brief description of the source directories.
