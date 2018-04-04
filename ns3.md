@@ -1,12 +1,13 @@
 # CORE / NS3
 
-##### *NOTE:* Support for ns-3 is limited and not currently being developed.
+* Table of Contents
+{:toc}
 
-This chapter describes running CORE with the [ns-3 network simulator](http://www.nsnam.org).
+##### *NOTE:* Support for ns-3 is limited and not currently being developed.
 
 ## What is ns-3?
 
-ns-3 is a discrete-event network simulator for Internet systems, targeted primarily for research and educational use. By default, ns-3 simulates entire networks, from applications down to channels, and it does so in simulated time, instead of real (wall-clock) time.
+[ns-3 network simulator](http://www.nsnam.org) is a discrete-event network simulator for Internet systems, targeted primarily for research and educational use. By default, ns-3 simulates entire networks, from applications down to channels, and it does so in simulated time, instead of real (wall-clock) time.
 
 CORE can run in conjunction with ns-3 to simulate some types of networks.  CORE network namespace virtual nodes can have virtual TAP interfaces installed using the simulator for communication. The simulator needs to run at wall clock time with the real-time scheduler.  In this type of configuration, the CORE namespaces are used to provide packets to the ns-3 devices and channels. This allows, for example, wireless models developed for ns-3 to be used in an emulation context.
 
