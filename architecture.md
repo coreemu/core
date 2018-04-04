@@ -1,5 +1,8 @@
 # CORE Architecture
 
+* Table of Contents
+{:toc}
+
 ## Main Components
 
 * CORE Daemon
