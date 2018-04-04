@@ -1,7 +1,5 @@
 # CORE Developer's Guide
 
-This section contains advanced usage information, intended for developers and others who are comfortable with the command line.
-
 * Table of Contents
 {:toc}
 
