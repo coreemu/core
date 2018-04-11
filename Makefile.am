@@ -116,7 +116,7 @@ endef
 .PHONY: fpm
 fpm: clean-local-fpm
 	$(MAKE) -C gui install DESTDIR=$(DESTDIR)
-	$(call fpm-gui,rpm,-d "tkimg")
+	$(call fpm-gui,rpm)
 	$(call fpm-gui,deb,-d "libtk-img")
 	$(call fpm-python,rpm,ns3/setup.py)
 	$(call fpm-python,deb,ns3/setup.py)
