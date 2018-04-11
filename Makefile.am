@@ -141,6 +141,7 @@ define change-files =
 $(info creating file $1 from $1.in)
 @$(SED) -e 's,[@]sbindir[@],$(sbindir),g' \
 	-e 's,[@]bindir[@],$(bindir),g' \
+	-e 's,[@]pythondir[@],$(pythondir),g' \
 	-e 's,[@]PYTHON[@],$(PYTHON),g' \
 	-e 's,[@]PACKAGE_VERSION[@],$(PACKAGE_VERSION),g' \
 	-e 's,[@]PACKAGE_DATE[@],$(PACKAGE_DATE),g' \

@@ -20,7 +20,7 @@
 NAME=`basename $0`
 PIDFILE="@CORE_STATE_DIR@/run/$NAME.pid"
 LOG="@CORE_STATE_DIR@/log/$NAME.log"
-CMD="@PYTHON@ @bindir@/$NAME"
+CMD="PYTHON_PATH=@pythondir@ @PYTHON@ @bindir@/$NAME"
 
 get_pid() {
 	cat "$PIDFILE"
@@ -43,7 +43,7 @@ corestart() {
 		echo "unable to start $NAME, see $LOG"
 		exit 1
 	fi
-}	
+}
 
 corestop() {
 	if is_alive; then
@@ -57,7 +57,7 @@ corestop() {
 			echo -n "."
 		done
 		echo
-		
+
 		if is_alive; then
 			echo "not stopped; may still be shutting down"
 			exit 1
@@ -70,12 +70,12 @@ corestop() {
 	else
 		echo "$NAME not running"
 	fi
-}	
+}
 
 corerestart() {
 	corestop
 	corestart
-}	
+}
 
 corestatus() {
 	if is_alive; then
@@ -84,7 +84,7 @@ corestatus() {
 		echo "$NAME is stopped"
 		exit 1
 	fi
-}	
+}
 
 
 case "$1" in
