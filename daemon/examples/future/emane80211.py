@@ -1,0 +1,54 @@
+#!/usr/bin/python -i
+#
+# Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
+
+import datetime
+
+import parser
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.future.coreemu import FutureIpv4Prefix, CoreEmu
+
+
+def example(options):
+    # ip generator for example
+    prefix = FutureIpv4Prefix("10.83.0.0/16")
+
+    # create emulator instance for creating sessions and utility methods
+    coreemu = CoreEmu()
+    session = coreemu.create_session()
+
+    # create emane network node
+    emane_network = session.create_emane_network(
+        model=EmaneIeee80211abgModel,
+        geo_reference=(47.57917, -122.13232, 2.00000)
+    )
+    emane_network.setposition(x=80, y=50)
+
+    # create nodes
+    for i in xrange(options.nodes):
+        node = session.create_emane_node()
+        coreemu.add_interface(emane_network, node, prefix)
+        node.setposition(x=150 * (i + 1), y=150)
+
+    # instantiate session
+    session.instantiate()
+
+    # start a shell on the first node
+    node = session.get_object(2)
+    node.client.term("bash")
+
+    # shutdown session
+    raw_input("press enter to exit...")
+    session.shutdown()
+
+
+def main():
+    options = parser.parse_options("emane80211")
+    start = datetime.datetime.now()
+    print "running emane 80211 example: nodes(%s) time(%s)" % (options.nodes, options.time)
+    example(options)
+    print "elapsed time: %s" % (datetime.datetime.now() - start)
+
+
+if __name__ == "__main__" or __name__ == "__builtin__":
+    main()
