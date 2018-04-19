@@ -1,0 +1,180 @@
+#!/usr/bin/env python
+"""
+core-daemon: the CORE daemon is a server process that receives CORE API
+messages and instantiates emulated nodes and networks within the kernel. Various
+message handlers are defined and some support for sending messages.
+"""
+
+import ConfigParser
+import atexit
+import optparse
+import signal
+import sys
+import time
+
+from core import constants
+from core import coreserver
+from core import enumerations
+from core import logger
+from core import services
+from core.future.futurehandler import FutureHandler
+from core.future.futureserver import FutureServer
+from core.misc import nodeutils
+from core.misc.utils import close_onexec
+from core.service import ServiceManager
+
+
+def banner():
+    """
+    Output the program banner printed to the terminal or log file.
+
+    :return: nothing
+    """
+    logger.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
+
+
+def cored(cfg=None):
+    """
+    Start the CoreServer object and enter the server loop.
+
+    :param dict cfg: core configuration
+    :return: nothing
+    """
+    host = cfg["listenaddr"]
+    port = int(cfg["port"])
+    if host == "" or host is None:
+        host = "localhost"
+
+    try:
+        server = FutureServer((host, port), FutureHandler, cfg)
+    except:
+        logger.exception("error starting main server on:  %s:%s", host, port)
+        sys.exit(1)
+
+    close_onexec(server.fileno())
+    logger.info("main server started, listening on: %s:%s", host, port)
+    server.serve_forever()
+
+
+# TODO: should sessions and the main core daemon both catch exit to shutdown independently?
+def cleanup():
+    """
+    Runs server shutdown and cleanup when catching an exit signal.
+
+    :return: nothing
+    """
+    while coreserver.CoreServer.servers:
+        server = coreserver.CoreServer.servers.pop()
+        server.shutdown()
+
+
+def sighandler(signum, stackframe):
+    """
+    Signal handler when different signals are sent.
+
+    :param int signum: singal number sent
+    :param stackframe: stack frame sent
+    :return: nothing
+    """
+    logger.error("terminated by signal: %s", signum)
+    sys.exit(signum)
+
+
+signal.signal(signal.SIGHUP, sighandler)
+signal.signal(signal.SIGINT, sighandler)
+signal.signal(signal.SIGTERM, sighandler)
+signal.signal(signal.SIGUSR1, sighandler)
+signal.signal(signal.SIGUSR2, sighandler)
+atexit.register(cleanup)
+
+
+def get_merged_config(filename):
+    """
+    Return a configuration after merging config file and command-line arguments.
+
+    :param str filename: file name to merge configuration settings with
+    :return: merged configuration
+    :rtype: dict
+    """
+    # these are the defaults used in the config file
+    defaults = {
+        "port": "%d" % enumerations.CORE_API_PORT,
+        "listenaddr": "localhost",
+        "xmlfilever": "1.0",
+        "numthreads": "1",
+    }
+
+    usagestr = "usage: %prog [-h] [options] [args]\n\n" + \
+               "CORE daemon v.%s instantiates Linux network namespace " \
+               "nodes." % constants.COREDPY_VERSION
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.add_option("-f", "--configfile", dest="configfile", type="string",
+                      help="read config from specified file; default = %s" % filename)
+    parser.add_option("-p", "--port", dest="port", type=int,
+                      help="port number to listen on; default = %s" % defaults["port"])
+    parser.add_option("-t", "--numthreads", dest="numthreads", type=int,
+                      help="number of server threads; default = %s" % defaults["numthreads"])
+
+    # parse command line options
+    options, args = parser.parse_args()
+
+    # read the config file
+    if options.configfile is not None:
+        filename = options.configfile
+    del options.configfile
+    cfg = ConfigParser.SafeConfigParser(defaults)
+    cfg.read(filename)
+
+    section = "core-daemon"
+    if not cfg.has_section(section):
+        cfg.add_section(section)
+
+    # merge command line with config file
+    for opt in options.__dict__:
+        val = options.__dict__[opt]
+        if val is not None:
+            cfg.set(section, opt, val.__str__())
+
+    return dict(cfg.items(section)), args
+
+
+def main():
+    """
+    Main program startup.
+
+    :return: nothing
+    """
+    # get a configuration merged from config file and command-line arguments
+    cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
+    for a in args:
+        logger.error("ignoring command line argument: %s", a)
+
+    # attempt load custom services
+    service_paths = cfg.get("custom_services_dir")
+    logger.debug("custom service paths: %s", service_paths)
+    if service_paths:
+        for service_path in service_paths.split(','):
+            service_path = service_path.strip()
+            ServiceManager.add_services(service_path)
+
+    banner()
+
+    try:
+        cored(cfg)
+    except KeyboardInterrupt:
+        logger.info("keyboard interrupt, stopping core daemon")
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    # configure nodes to use
+    if len(sys.argv) == 2 and sys.argv[1] == "ovs":
+        from core.netns.openvswitch import OVS_NODES
+
+        nodeutils.update_node_map(OVS_NODES)
+
+    # load default services
+    services.load()
+
+    main()
