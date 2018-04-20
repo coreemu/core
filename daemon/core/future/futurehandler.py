@@ -943,7 +943,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                 # configure mobility models for WLAN added during runtime
                 if event_type == EventTypes.INSTANTIATION_STATE.value and nodeutils.is_node(node,
                                                                                             NodeTypes.WIRELESS_LAN):
-                    self.session.mobility.startup(node_ids=(node.objid,))
+                    self.session.start_mobility(node_ids=(node.objid,))
                     return ()
 
                 logger.warn("dropping unhandled Event message with node number")

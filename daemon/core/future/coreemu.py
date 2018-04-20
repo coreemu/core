@@ -70,19 +70,18 @@ def get_interfaces(link_data):
     return interface_one, interface_two
 
 
-def create_interface(node, network, addresses, interface_data):
+def create_interface(node, network, interface_data):
     """
     Create an interface for a node on a network using provided interface data.
 
     :param node: node to create interface for
     :param network: network to associate interface with
-    :param list[str] addresses:
     :param InterfaceData interface_data: interface data
     :return:
     """
     node.newnetif(
         network,
-        addrlist=addresses,
+        addrlist=interface_data.get_addresses(),
         hwaddr=interface_data.mac,
         ifindex=interface_data.id,
         ifname=interface_data.name
@@ -187,7 +186,7 @@ class FutureSession(Session):
                 node_one = None
             else:
                 node_two = None
-        # PhysicalNode connected via GreTap tunnel; uses adoptnetif() below
+        # physical node connected via gre tap tunnel
         elif tunnel:
             if tunnel.remotenum == n1_id:
                 node_one = None
@@ -266,18 +265,12 @@ class FutureSession(Session):
 
                 # node to network
                 if node_one and net_one:
-                    addresses = []
-                    addresses.extend(interface_one_data.get_addresses())
-                    addresses.extend(interface_two_data.get_addresses())
-                    interface = create_interface(node_one, net_one, addresses, interface_one_data)
+                    interface = create_interface(node_one, net_one, interface_one_data)
                     link_config(net_one, interface, link_data)
 
                 # network to node
                 if node_two and net_one:
-                    addresses = []
-                    addresses.extend(interface_one_data.get_addresses())
-                    addresses.extend(interface_two_data.get_addresses())
-                    interface = create_interface(node_two, net_one, addresses, interface_two_data)
+                    interface = create_interface(node_two, net_one, interface_two_data)
                     if not link_data.unidirectional:
                         link_config(net_one, interface, link_data)
 
@@ -295,7 +288,7 @@ class FutureSession(Session):
                         link_config(net_two, interface, link_data, devname=interface.name)
                         interface.swapparams("_params_up")
 
-                # a tunnel was found for the nodes
+                # a tunnel node was found for the nodes
                 addresses = []
                 if not node_one and net_one:
                     addresses.extend(interface_one_data.get_addresses())
@@ -314,14 +307,14 @@ class FutureSession(Session):
                     if addresses:
                         net_two.addrconfig(addresses)
 
-                if not net_one and not net_two and (not node_one or not node_two):
-                    addresses = []
+                # physical node connected with tunnel
+                if not net_one and not net_two and (node_one or node_two):
                     if node_one and nodeutils.is_node(node_one, NodeTypes.PHYSICAL):
-                        addresses.extend(interface_one_data.get_addresses())
+                        addresses = interface_one_data.get_addresses()
                         node_one.adoptnetif(tunnel, link_data.interface1_id, link_data.interface1_mac, addresses)
                         link_config(node_one, tunnel, link_data)
                     elif node_two and nodeutils.is_node(node_two, NodeTypes.PHYSICAL):
-                        addresses.extend(interface_two_data.get_addresses())
+                        addresses = interface_two_data.get_addresses()
                         node_two.adoptnetif(tunnel, link_data.interface2_id, link_data.interface2_mac, addresses)
                         link_config(node_two, tunnel, link_data)
         finally:
@@ -571,6 +564,9 @@ class FutureSession(Session):
             y_position=node.position.y
         )
         self.broadcast_node(node_data)
+
+    def start_mobility(self, node_ids=None):
+        self.mobility.startup(node_ids)
 
     def shutdown(self):
         self.set_state(state=EventTypes.DATACOLLECT_STATE.value, send_event=True)
