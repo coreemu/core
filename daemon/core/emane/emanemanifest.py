@@ -1,10 +1,14 @@
 from core import logger
 from core.enumerations import ConfigDataTypes
 
+manifest = None
 try:
     from emane.shell import manifest
 except ImportError:
-    logger.info("emane 1.2.1 not found")
+    try:
+        from emanesh import manifest
+    except ImportError:
+        logger.warn("compatible emane python bindings not installed")
 
 
 def _type_value(config_type):
@@ -76,6 +80,10 @@ def parse(manifest_path, defaults):
     :return: list of core configuration values
     :rtype: list
     """
+
+    # no results when emane bindings are not present
+    if not manifest:
+        return []
 
     # load configuration file
     manifest_file = manifest.Manifest(manifest_path)

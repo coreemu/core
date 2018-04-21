@@ -16,7 +16,7 @@ class UtilService(CoreService):
     """
     Parent class for utility services.
     """
-    _name = "UtilityProcess"
+    _name = None
     _group = "Utility"
     _depends = ()
     _dirs = ()

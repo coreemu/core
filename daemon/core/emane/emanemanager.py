@@ -34,7 +34,12 @@ try:
     from emane.events import LocationEvent
     from emane.events.eventserviceexception import EventServiceException
 except ImportError:
-    logger.info("emane 1.2.1 not found")
+    try:
+        from emanesh.events import EventService
+        from emanesh.events import LocationEvent
+        from emanesh.events.eventserviceexception import EventServiceException
+    except ImportError:
+        logger.warn("compatible emane python bindings not installed")
 
 EMANE_MODELS = [
     EmaneRfPipeModel,
@@ -76,7 +81,7 @@ class EmaneManager(ConfigurableManager):
         self.transformport = self.session.get_config_item_int("emane_transform_port", 8200)
         self.doeventloop = False
         self.eventmonthread = None
-        self.logversion()
+
         # model for global EMANE configuration options
         self.emane_config = EmaneGlobalModel(session, None)
         session.broker.handlers.add(self.handledistributed)
@@ -86,24 +91,28 @@ class EmaneManager(ConfigurableManager):
             self.emane_config.name: self.emane_config
         }
 
-        # load provided models
-        self.load_models(EMANE_MODELS)
-
-        # load custom models
-        custom_models_path = session.config.get("emane_models_dir")
-        if custom_models_path:
-            emane_models = utils.load_classes(custom_models_path, EmaneModel)
-            self.load_models(emane_models)
-
         self.service = None
+        self.emane_check()
 
-    def logversion(self):
+    def emane_check(self):
         """
-        Log the installed EMANE version.
+        Check if emane is installed and load models.
+
+        :return: nothing
         """
         try:
+            # check for emane
             emane_version = utils.check_cmd(["emane", "--version"])
             logger.info("using EMANE: %s", emane_version)
+
+            # load default emane models
+            self.load_models(EMANE_MODELS)
+
+            # load custom models
+            custom_models_path = self.session.config.get("emane_models_dir")
+            if custom_models_path:
+                emane_models = utils.load_classes(custom_models_path, EmaneModel)
+                self.load_models(emane_models)
         except CoreCommandError:
             logger.info("emane is not installed")
 
