@@ -20,7 +20,7 @@
 NAME=`basename $0`
 PIDFILE="@CORE_STATE_DIR@/run/$NAME.pid"
 LOG="@CORE_STATE_DIR@/log/$NAME.log"
-CMD="PYTHON_PATH=@pythondir@ @PYTHON@ @bindir@/$NAME"
+CMD="PYTHONPATH=@pythondir@ @PYTHON@ @bindir@/$NAME"
 
 get_pid() {
 	cat "$PIDFILE"
