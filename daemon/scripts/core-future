@@ -6,14 +6,11 @@ message handlers are defined and some support for sending messages.
 """
 
 import ConfigParser
-import atexit
 import optparse
-import signal
 import sys
 import time
 
 from core import constants
-from core import coreserver
 from core import enumerations
 from core import logger
 from core import services
@@ -54,38 +51,6 @@ def cored(cfg=None):
     close_onexec(server.fileno())
     logger.info("main server started, listening on: %s:%s", host, port)
     server.serve_forever()
-
-
-# TODO: should sessions and the main core daemon both catch exit to shutdown independently?
-def cleanup():
-    """
-    Runs server shutdown and cleanup when catching an exit signal.
-
-    :return: nothing
-    """
-    while coreserver.CoreServer.servers:
-        server = coreserver.CoreServer.servers.pop()
-        server.shutdown()
-
-
-def sighandler(signum, stackframe):
-    """
-    Signal handler when different signals are sent.
-
-    :param int signum: singal number sent
-    :param stackframe: stack frame sent
-    :return: nothing
-    """
-    logger.error("terminated by signal: %s", signum)
-    sys.exit(signum)
-
-
-signal.signal(signal.SIGHUP, sighandler)
-signal.signal(signal.SIGINT, sighandler)
-signal.signal(signal.SIGTERM, sighandler)
-signal.signal(signal.SIGUSR1, sighandler)
-signal.signal(signal.SIGUSR2, sighandler)
-atexit.register(cleanup)
 
 
 def get_merged_config(filename):

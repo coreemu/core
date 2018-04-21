@@ -1,4 +1,7 @@
+import atexit
 import os
+import signal
+import sys
 
 import core.services
 from core import logger
@@ -14,8 +17,42 @@ from core.xml.xmlparser import core_document_parser
 from core.xml.xmlwriter import core_document_writer
 
 
+def signal_handler(signal_number, _):
+    """
+    Handle signals and force an exit with cleanup.
+
+    :param int signal_number: signal number
+    :param _: ignored
+    :return: nothing
+    """
+    logger.info("caught signal: %s", signal_number)
+    sys.exit(signal_number)
+
+
+signal.signal(signal.SIGHUP, signal_handler)
+signal.signal(signal.SIGINT, signal_handler)
+signal.signal(signal.SIGTERM, signal_handler)
+signal.signal(signal.SIGUSR1, signal_handler)
+signal.signal(signal.SIGUSR2, signal_handler)
+
+
 class InterfaceData(object):
+    """
+    Convenience class for storing interface data.
+    """
+
     def __init__(self, _id, name, mac, ip4, ip4_mask, ip6, ip6_mask):
+        """
+        Creates an InterfaceData object.
+
+        :param int _id:
+        :param str name:
+        :param str mac:
+        :param str ip4:
+        :param int ip4_mask:
+        :param str ip6:
+        :param int ip6_mask:
+        """
         self.id = _id
         self.name = name
         self.mac = mac
@@ -49,6 +86,13 @@ class InterfaceData(object):
 
 
 def get_interfaces(link_data):
+    """
+    Creates interface data objects for the interfaces defined within link data.
+
+    :param core.data.LinkData link_data: data to create interface data from
+    :return: interface one and two data
+    :rtype: tuple[InterfaceData]
+    """
     interface_one = InterfaceData(
         _id=link_data.interface1_id,
         name=link_data.interface1_name,
@@ -77,7 +121,7 @@ def create_interface(node, network, interface_data):
     :param node: node to create interface for
     :param network: network to associate interface with
     :param InterfaceData interface_data: interface data
-    :return:
+    :return: created interface
     """
     node.newnetif(
         network,
@@ -90,6 +134,16 @@ def create_interface(node, network, interface_data):
 
 
 def link_config(network, interface, link_data, devname=None, interface_two=None):
+    """
+    Convenience method for configuring a link,
+
+    :param network: network to configure link for
+    :param interface: interface to configure
+    :param core.data.LinkData link_data: data to configure link with
+    :param str devname: device name, default is None
+    :param interface_two: other interface associated, default is None
+    :return: nothing
+    """
     config = {
         "netif": interface,
         "bw": link_data.bandwidth,
@@ -130,8 +184,8 @@ def is_core_node(node):
 
 
 class IdGen(object):
-    def __init__(self):
-        self.id = 0
+    def __init__(self, _id=0):
+        self.id = _id
 
     def next(self):
         self.id += 1
@@ -148,9 +202,6 @@ class FutureSession(Session):
     def __init__(self, session_id, config=None, persistent=True, mkdir=True):
         super(FutureSession, self).__init__(session_id, config, persistent, mkdir)
 
-        # set master
-        self.master = True
-
         # object management
         self.node_id_gen = IdGen()
 
@@ -164,6 +215,13 @@ class FutureSession(Session):
         }
 
     def link_nodes(self, link_data):
+        """
+        Convenience method for retrieving nodes within link data.
+
+        :param core.data.LinkData link_data: data to retrieve nodes from
+        :return: nodes, network nodes if presetn, and tunnel
+        :rtype: tuple
+        """
         logger.info("link message between node1(%s:%s) and node2(%s:%s)",
                     link_data.node1_id, link_data.interface1_id, link_data.node2_id, link_data.interface2_id)
 
@@ -239,6 +297,14 @@ class FutureSession(Session):
             raise ValueError("no common network found for wireless link/unlink")
 
     def link_add(self, link_data):
+        """
+        Add a link between nodes.
+
+        :param core.data.LinkData link_data: data to create a link with
+        :return: nothing
+        """
+        logger.info("link_data: %s", link_data)
+
         # interface data
         interface_one_data, interface_two_data = get_interfaces(link_data)
 
@@ -324,6 +390,12 @@ class FutureSession(Session):
                 node_two.lock.release()
 
     def link_delete(self, link_data):
+        """
+        Delete a link between nodes.
+
+        :param core.data.LinkData link_data: data to delete link with
+        :return: nothing
+        """
         # interface data
         interface_one_data, interface_two_data = get_interfaces(link_data)
 
@@ -375,6 +447,12 @@ class FutureSession(Session):
                 node_two.lock.release()
 
     def link_update(self, link_data):
+        """
+        Update link information between nodes.
+
+        :param core.data.LinkData link_data: data to update link with
+        :return: nothing
+        """
         # interface data
         interface_one_data, interface_two_data = get_interfaces(link_data)
 
@@ -470,7 +548,10 @@ class FutureSession(Session):
         # determine node id
         node_id = node_data.id
         if not node_id:
-            node_id = self.node_id_gen.next()
+            while True:
+                node_id = self.node_id_gen.next()
+                if node_id not in self.objects:
+                    break
 
         # generate name if not provided
         name = node_data.name
@@ -508,6 +589,12 @@ class FutureSession(Session):
         return node_id
 
     def node_update(self, node_data):
+        """
+        Update node information.
+
+        :param core.data.NodeData node_data: data to update node with
+        :return: nothing
+        """
         try:
             # get node to update
             node = self.get_object(node_data.id)
@@ -522,6 +609,12 @@ class FutureSession(Session):
             logger.error("failure to update node that does not exist: %s", node_data.id)
 
     def node_delete(self, node_id):
+        """
+        Delete a node from the session and check if session should shutdown, if no nodes are left.
+
+        :param int node_id:
+        :return: True if node deleted, False otherwise
+        """
         # delete node and check for session shutdown if a node was removed
         result = self.custom_delete_object(node_id)
         if result:
@@ -529,6 +622,13 @@ class FutureSession(Session):
         return result
 
     def node_set_position(self, node, node_data):
+        """
+        Set position for a node, use lat/lon/alt if needed.
+
+        :param node: node to set position for
+        :param NodeData node_data: data for node
+        :return: nothing
+        """
         # extract location values
         x = node_data.x_position
         y = node_data.y_position
@@ -566,9 +666,20 @@ class FutureSession(Session):
         self.broadcast_node(node_data)
 
     def start_mobility(self, node_ids=None):
+        """
+        Start mobility for the provided node ids.
+
+        :param list[int] node_ids: nodes to start mobility for
+        :return: nothing
+        """
         self.mobility.startup(node_ids)
 
     def shutdown(self):
+        """
+        Shutdown session.
+
+        :return: nothing
+        """
         self.set_state(state=EventTypes.DATACOLLECT_STATE.value, send_event=True)
         self.set_state(state=EventTypes.SHUTDOWN_STATE.value, send_event=True)
         super(FutureSession, self).shutdown()
@@ -589,7 +700,14 @@ class FutureSession(Session):
         return result
 
     def is_active(self):
-        return self.state in {EventTypes.RUNTIME_STATE.value, EventTypes.DATACOLLECT_STATE.value}
+        """
+        Determine if this session is considered to be active. (Runtime or Data collect states)
+
+        :return: True if active, False otherwise
+        """
+        result = self.state in {EventTypes.RUNTIME_STATE.value, EventTypes.DATACOLLECT_STATE.value}
+        logger.info("checking if session is active: %s", result)
+        return result
 
     def open_xml(self, file_name, start=False):
         """
@@ -637,11 +755,31 @@ class FutureSession(Session):
         self.set_hook(state, file_name, source_name, data)
 
     def node_service_file(self, node_id, service_name, file_name, source_name, data):
+        """
+        Add a service file for a node.
+
+        :param int node_id: node to add service file to
+        :param str service_name: service file to add
+        :param str file_name: file name to use
+        :param str source_name: source file
+        :param str data: file data to save
+        :return: nothing
+        """
         # hack to conform with old logic until updated
         service_name = ":%s" % service_name
         self.services.setservicefile(node_id, service_name, file_name, source_name, data)
 
     def node_file(self, node_id, source_name, file_name, data):
+        """
+        Add a file to a node.
+
+        :param int node_id: node to add file to
+        :param str source_name: source file name
+        :param str file_name: file name to add
+        :param str data: file data
+        :return: nothing
+        """
+
         node = self.get_object(node_id)
 
         if source_name is not None:
@@ -650,20 +788,50 @@ class FutureSession(Session):
             node.nodefile(file_name, data)
 
     def clear(self):
+        """
+        Clear all CORE session data. (objects, hooks, broker)
+
+        :return: nothing
+        """
         self.delete_objects()
         self.del_hooks()
         self.broker.reset()
 
     def start_events(self):
+        """
+        Start event loop.
+
+        :return: nothing
+        """
         self.event_loop.run()
 
     def services_event(self, event_data):
+        """
+        Handle a service event.
+
+        :param core.data.EventData event_data: event data to handle
+        :return:
+        """
         self.services.handleevent(event_data)
 
     def mobility_event(self, event_data):
+        """
+        Handle a mobility event.
+
+        :param core.data.EventData event_data: event data to handle
+        :return: nothing
+        """
         self.mobility.handleevent(event_data)
 
     def create_node(self, cls, name=None, model=None):
+        """
+        Create a node
+
+        :param cls:
+        :param name:
+        :param model:
+        :return:
+        """
         object_id = self.node_id_gen.next()
 
         if not name:
@@ -677,6 +845,12 @@ class FutureSession(Session):
         return node
 
     def create_emane_node(self, name=None):
+        """
+        Create an EMANE node for use within an EMANE network.
+
+        :param str name: name to five node
+        :return: CoreNode
+        """
         return self.create_node(cls=CoreNode, name=name, model="mdr")
 
     def create_emane_network(self, model, geo_reference, geo_scale=None, name=None):
@@ -717,25 +891,71 @@ class CoreEmu(object):
     """
 
     def __init__(self, config=None):
+        """
+        Create a CoreEmu object.
+
+        :param dict config: configuration options
+        """
         # configuration
         self.config = config
 
         # session management
-        self.session_id_gen = IdGen()
+        self.session_id_gen = IdGen(_id=59999)
         self.sessions = {}
 
         # load default services
         core.services.load()
 
-    def create_session(self):
-        """
-        Create a new CORE session.
+        # catch exit event
+        atexit.register(self.shutdown)
 
+    def shutdown(self):
+        """
+        Shutdown all CORE session.
+
+        :return: nothing
+        """
+        logger.info("shutting down all session")
+        for session in self.sessions.values():
+            session.shutdown()
+        self.sessions.clear()
+
+    def create_session(self, _id=None, master=False):
+        """
+        Create a new CORE session, set to master if running standalone.
+
+        :param int _id: session id for new session
+        :param bool master: sets session to master
         :return: created session
         :rtype: FutureSession
         """
-        session_id = self.session_id_gen.next()
-        return FutureSession(session_id, config=self.config)
+
+        session_id = _id
+        if not session_id:
+            while True:
+                session_id = self.session_id_gen.next()
+                if session_id not in self.sessions:
+                    break
+
+        session = FutureSession(session_id, config=self.config)
+        logger.info("created session: %s", session_id)
+        if master:
+            session.master = True
+
+        self.sessions[session_id] = session
+        return session
+
+    def delete_session(self, _id):
+        """
+        Deletes a CORE session.
+
+        :param int _id: session id to delete
+        :return: nothing
+        """
+        logger.info("deleting session: %s", _id)
+        session = self.sessions.pop(_id, None)
+        if not session:
+            logger.error("session to delete did not exist: %s", _id)
 
     def set_wireless_model(self, node, model):
         """

@@ -64,6 +64,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         self.message_queue = Queue.Queue()
         self.node_status_request = {}
         self._shutdown_lock = threading.Lock()
+        self._sessions_lock = threading.Lock()
 
         self.handler_threads = []
         num_threads = int(server.config["numthreads"])
@@ -78,6 +79,9 @@ class FutureHandler(SocketServer.BaseRequestHandler):
 
         self.master = False
         self.session = None
+
+        # core emulator
+        self.coreemu = server.coreemu
 
         utils.close_onexec(request.fileno())
         SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
@@ -98,12 +102,21 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logger.info("finishing request handler")
-        self.done = True
-
         logger.info("remaining message queue size: %s", self.message_queue.qsize())
-        # seconds
-        timeout = 10.0
+
+        # give some time for message queue to deplete
+        timeout = 10
+        wait = 0
+        while not self.message_queue.empty():
+            logger.info("waiting for message queue to empty: %s seconds", wait)
+            time.sleep(1)
+            wait += 1
+            if wait == timeout:
+                logger.warn("queue failed to be empty, finishing request handler")
+                break
+
         logger.info("client disconnected: notifying threads")
+        self.done = True
         for thread in self.handler_threads:
             logger.info("waiting for thread: %s", thread.getName())
             thread.join(timeout)
@@ -112,15 +125,83 @@ class FutureHandler(SocketServer.BaseRequestHandler):
 
         logger.info("connection closed: %s", self.client_address)
         if self.session:
-            self.remove_session_handlers()
-
             # remove client from session broker and shutdown if there are no clients
+            self.remove_session_handlers()
             self.session.broker.session_clients.remove(self)
-            if not self.session.broker.session_clients:
-                logger.info("no session clients left, initiating shutdown")
+            if not self.session.broker.session_clients and not self.session.is_active():
+                logger.info("no session clients left and not active, initiating shutdown")
                 self.session.shutdown()
+                self.coreemu.delete_session(self.session.session_id)
 
         return SocketServer.BaseRequestHandler.finish(self)
+
+    def session_message(self, flags=0):
+        """
+        Build CORE API Sessions message based on current session info.
+
+        :param int flags: message flags
+        :return: session message
+        """
+        id_list = []
+        name_list = []
+        file_list = []
+        node_count_list = []
+        date_list = []
+        thumb_list = []
+        num_sessions = 0
+
+        logger.info("creating session message: %s", self.coreemu.sessions.keys())
+
+        with self._sessions_lock:
+            for session_id, session in self.coreemu.sessions.iteritems():
+                num_sessions += 1
+                id_list.append(str(session_id))
+
+                name = session.name
+                if not name:
+                    name = ""
+                name_list.append(name)
+
+                file = session.file_name
+                if not file:
+                    file = ""
+                file_list.append(file)
+
+                node_count_list.append(str(session.get_node_count()))
+
+                date_list.append(time.ctime(session._state_time))
+
+                thumb = session.thumbnail
+                if not thumb:
+                    thumb = ""
+                thumb_list.append(thumb)
+
+        session_ids = "|".join(id_list)
+        names = "|".join(name_list)
+        files = "|".join(file_list)
+        node_counts = "|".join(node_count_list)
+        dates = "|".join(date_list)
+        thumbs = "|".join(thumb_list)
+
+        if num_sessions > 0:
+            tlv_data = ""
+            if len(session_ids) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session_ids)
+            if len(names) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NAME.value, names)
+            if len(files) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.FILE.value, files)
+            if len(node_counts) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NODE_COUNT.value, node_counts)
+            if len(dates) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.DATE.value, dates)
+            if len(thumbs) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.THUMB.value, thumbs)
+            message = coreapi.CoreSessionMessage.pack(flags, tlv_data)
+        else:
+            message = None
+
+        return message
 
     def handle_broadcast_event(self, event_data):
         """
@@ -407,8 +488,11 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         while not self.done:
-            message = self.message_queue.get()
-            self.handle_message(message)
+            try:
+                message = self.message_queue.get(timeout=1)
+                self.handle_message(message)
+            except Queue.Empty:
+                pass
 
     def handle_message(self, message):
         """
@@ -467,6 +551,9 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             except IOError:
                 logger.exception("error dispatching reply")
 
+    def session_shutdown(self, session):
+        self.coreemu.delete_session(session.session_id)
+
     def handle(self):
         """
         Handle a new connection request from a client. Dispatch to the
@@ -478,8 +565,10 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         # use port as session id
         port = self.request.getpeername()[1]
 
-        logger.info("creating new session for client: %s", port)
-        self.session = self.server.create_session(session_id=port)
+        # TODO: add shutdown handler for session
+        self.session = self.coreemu.create_session(port)
+        # self.session.shutdown_handlers.append(self.session_shutdown)
+        logger.info("created new session for client: %s", self.session.session_id)
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
         # TODO: broker needs to be pulled out of session to the server/handler level
@@ -735,22 +824,22 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             try:
                 logger.info("executing: %s", execute_server)
                 if message.flags & MessageFlags.STRING.value:
-                    old_session_ids = set(self.server.get_session_ids())
+                    old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
                 file_name = sys.argv[0]
 
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = self.server.create_session()
+                    session = self.coreemu.create_session()
                     try:
                         session.open_xml(file_name, start=True)
                     except:
                         session.shutdown()
-                        self.server.remove_session(session)
+                        self.coreemu.delete_session(session.session_id)
                         raise
                 else:
                     thread = threading.Thread(
                         target=execfile,
-                        args=(file_name, {"__file__": file_name, "server": self.server})
+                        args=(file_name, {"__file__": file_name, "coreemu": self.coreemu})
                     )
                     thread.daemon = True
                     thread.start()
@@ -758,7 +847,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                     time.sleep(0.25)
 
                 if message.flags & MessageFlags.STRING.value:
-                    new_session_ids = set(self.server.get_session_ids())
+                    new_session_ids = set(self.coreemu.sessions.keys())
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
                         sid = new_sid.pop()
@@ -767,17 +856,17 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                         logger.info("executed %s with unknown session ID", execute_server)
                         return replies
 
-                    logger.info("checking session %d for RUNTIME state" % sid)
-                    session = self.server.get_session(session_id=sid)
+                    logger.info("checking session %d for RUNTIME state", sid)
+                    session = self.coreemu.sessions.get(sid)
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
                     while session.state != EventTypes.RUNTIME_STATE.value:
-                        logger.info("waiting for session %d to enter RUNTIME state" % sid)
+                        logger.info("waiting for session %d to enter RUNTIME state", sid)
                         time.sleep(1)
                         retries -= 1
                         if retries <= 0:
-                            logger.info("session %d did not enter RUNTIME state" % sid)
+                            logger.info("session %d did not enter RUNTIME state", sid)
                             return replies
 
                     tlv_data = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, execute_server)
@@ -800,17 +889,15 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             # register capabilities with the GUI
             self.master = True
 
-            # TODO: need to replicate functionality?
-            # self.server.set_session_master(self)
             # find the session containing this client and set the session to master
-            for session in self.server.sessions.itervalues():
+            for session in self.coreemu.sessions.itervalues():
                 if self in session.broker.session_clients:
                     logger.info("setting session to master: %s", session.session_id)
                     session.master = True
                     break
 
             replies.append(self.register())
-            replies.append(self.server.to_session_message())
+            replies.append(self.session_message())
 
         return replies
 
@@ -1040,7 +1127,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                 if session_id == 0:
                     session = self.session
                 else:
-                    session = self.server.get_session(session_id=session_id)
+                    session = self.coreemu.sessions.get(session_id)
 
                 if session is None:
                     logger.info("session %s not found", session_id)
@@ -1060,12 +1147,12 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                     session.set_user(user)
         elif message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
             # status request flag: send list of sessions
-            return self.server.to_session_message(),
+            return self.session_message(),
         else:
             # handle ADD or DEL flags
             for session_id in session_ids:
                 session_id = int(session_id)
-                session = self.server.get_session(session_id=session_id)
+                session = self.coreemu.sessions.get(session_id)
 
                 if session is None:
                     logger.info("session %s not found (flags=0x%x)", session_id, message.flags)
@@ -1073,12 +1160,14 @@ class FutureHandler(SocketServer.BaseRequestHandler):
 
                 if message.flags & MessageFlags.ADD.value:
                     # connect to the first session that exists
-                    logger.info("request to connect to session %s" % session_id)
+                    logger.info("request to connect to session %s", session_id)
 
                     # remove client from session broker and shutdown if needed
+                    self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
                     if not self.session.broker.session_clients and not self.session.is_active():
                         self.session.shutdown()
+                        self.coreemu.delete_session(self.session.session_id)
 
                     # set session to join
                     self.session = session
