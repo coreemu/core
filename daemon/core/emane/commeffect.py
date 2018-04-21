@@ -9,7 +9,10 @@ from core.emane import emanemodel
 try:
     from emane.events.commeffectevent import CommEffectEvent
 except ImportError:
-    logger.info("emane 1.2.1 not found")
+    try:
+        from emanesh.events.commeffectevent import CommEffectEvent
+    except ImportError:
+        logger.warn("compatible emane python bindings not installed")
 
 
 def convert_none(x):

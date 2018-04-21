@@ -15,7 +15,10 @@ from core.enumerations import RegisterTlvs
 try:
     from emane.events import LocationEvent
 except ImportError:
-    logger.info("emane 1.2.1 not found")
+    try:
+        from emanesh.events import LocationEvent
+    except ImportError:
+        logger.warn("compatible emane python bindings not installed")
 
 
 class EmaneNet(PyCoreNet):
