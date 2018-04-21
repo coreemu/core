@@ -72,6 +72,8 @@ class ServiceManager(object):
         """
         services = utils.load_classes(path, CoreService)
         for service in services:
+            if not service._name:
+                continue
             service.on_load()
             cls.add(service)
 

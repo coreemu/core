@@ -222,7 +222,7 @@ class QuaggaService(CoreService):
     Parent class for Quagga services. Defines properties and methods
     common to Quagga's routing daemons.
     """
-    _name = "QuaggaDaemon"
+    _name = None
     _group = "Quagga"
     _depends = ("zebra",)
     _dirs = ()
