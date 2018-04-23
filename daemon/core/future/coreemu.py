@@ -303,8 +303,6 @@ class FutureSession(Session):
         :param core.data.LinkData link_data: data to create a link with
         :return: nothing
         """
-        logger.info("link_data: %s", link_data)
-
         # interface data
         interface_one_data, interface_two_data = get_interfaces(link_data)
 
@@ -430,6 +428,8 @@ class FutureSession(Session):
                                 interface_two = common_interface_two
                                 break
 
+                    logger.info("deleting link for interfaces interface_one(%s) interface_two(%s)",
+                                interface_one, interface_two)
                     if all([interface_one, interface_two]) and any([interface_one.net, interface_two.net]):
                         if interface_one.net != interface_two.net and all([interface_one.up, interface_two.up]):
                             raise ValueError("no common network found")
@@ -438,8 +438,8 @@ class FutureSession(Session):
                         interface_two.detachnet()
                         if net_one.numnetif() == 0:
                             self.delete_object(net_one.objid)
-                        node_one.delnetif(interface_one_data.id)
-                        node_two.delnetif(interface_two_data.id)
+                        node_one.delnetif(interface_one.netindex)
+                        node_two.delnetif(interface_two.netindex)
         finally:
             if node_one:
                 node_one.lock.release()
@@ -559,6 +559,7 @@ class FutureSession(Session):
             name = "%s%s" % (node_class.__name__, node_id)
 
         # create node
+        logger.info("creating node(%s) id(%s) name(%s) start(%s)", node_class, node_id, name, start)
         node = self.add_object(cls=node_class, objid=node_id, name=name, start=start)
 
         # set node attributes

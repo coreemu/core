@@ -110,7 +110,7 @@ class SimpleLxcNode(PyCoreNode):
         self.check_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
 
         # set hostname for node
-        logger.info("setting hostname: %s" % self.name)
+        logger.info("setting hostname: %s", self.name)
         self.check_cmd(["hostname", self.name])
 
         # mark node as up
@@ -214,7 +214,7 @@ class SimpleLxcNode(PyCoreNode):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         source = os.path.abspath(source)
-        logger.info("mounting %s at %s" % (source, target))
+        logger.info("mounting %s at %s", source, target)
         cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
         status, output = self.client.shcmd_result(cmd)
         if status:
@@ -567,7 +567,6 @@ class LxcNode(SimpleLxcNode):
             finally:
                 self.rmnodedir()
 
-    # TODO: should change how this exception is just swallowed up
     def privatedir(self, path):
         """
         Create a private directory.
