@@ -9,8 +9,8 @@ from core.coreobj import PyCoreNode, PyCoreNet
 from core.data import NodeData
 from core.emane.nodes import EmaneNode
 from core.enumerations import NodeTypes, EventTypes, LinkTypes
+from core.future.futuredata import InterfaceData, LinkOptions
 from core.misc import nodeutils
-from core.misc.ipaddress import Ipv4Prefix
 from core.netns.nodes import CoreNode
 from core.session import Session
 from core.xml.xmlparser import core_document_parser
@@ -36,62 +36,13 @@ signal.signal(signal.SIGUSR1, signal_handler)
 signal.signal(signal.SIGUSR2, signal_handler)
 
 
-class InterfaceData(object):
-    """
-    Convenience class for storing interface data.
-    """
-
-    def __init__(self, _id, name, mac, ip4, ip4_mask, ip6, ip6_mask):
-        """
-        Creates an InterfaceData object.
-
-        :param int _id:
-        :param str name:
-        :param str mac:
-        :param str ip4:
-        :param int ip4_mask:
-        :param str ip6:
-        :param int ip6_mask:
-        """
-        self.id = _id
-        self.name = name
-        self.mac = mac
-        self.ip4 = ip4
-        self.ip4_mask = ip4_mask
-        self.ip6 = ip6
-        self.ip6_mask = ip6_mask
-
-    def has_ip4(self):
-        return all([self.ip4, self.ip4_mask])
-
-    def has_ip6(self):
-        return all([self.ip6, self.ip6_mask])
-
-    def ip4_address(self):
-        if self.has_ip4():
-            return "%s/%s" % (self.ip4, self.ip4_mask)
-        else:
-            return None
-
-    def ip6_address(self):
-        if self.has_ip6():
-            return "%s/%s" % (self.ip6, self.ip6_mask)
-        else:
-            return None
-
-    def get_addresses(self):
-        ip4 = self.ip4_address()
-        ip6 = self.ip6_address()
-        return [i for i in [ip4, ip6] if i]
-
-
 def get_interfaces(link_data):
     """
     Creates interface data objects for the interfaces defined within link data.
 
     :param core.data.LinkData link_data: data to create interface data from
     :return: interface one and two data
-    :rtype: tuple[InterfaceData]
+    :rtype: tuple[core.future.futuredata.InterfaceData]
     """
     interface_one = InterfaceData(
         _id=link_data.interface1_id,
@@ -120,7 +71,7 @@ def create_interface(node, network, interface_data):
 
     :param node: node to create interface for
     :param network: network to associate interface with
-    :param InterfaceData interface_data: interface data
+    :param core.future.futuredata.InterfaceData interface_data: interface data
     :return: created interface
     """
     node.newnetif(
@@ -133,24 +84,24 @@ def create_interface(node, network, interface_data):
     return node.netif(interface_data.id, network)
 
 
-def link_config(network, interface, link_data, devname=None, interface_two=None):
+def link_config(network, interface, link_options, devname=None, interface_two=None):
     """
     Convenience method for configuring a link,
 
     :param network: network to configure link for
     :param interface: interface to configure
-    :param core.data.LinkData link_data: data to configure link with
+    :param core.future.futuredata.LinkOptions link_options: data to configure link with
     :param str devname: device name, default is None
     :param interface_two: other interface associated, default is None
     :return: nothing
     """
     config = {
         "netif": interface,
-        "bw": link_data.bandwidth,
-        "delay": link_data.delay,
-        "loss": link_data.per,
-        "duplicate": link_data.dup,
-        "jitter": link_data.jitter,
+        "bw": link_options.bandwidth,
+        "delay": link_options.delay,
+        "loss": link_options.per,
+        "duplicate": link_options.dup,
+        "jitter": link_options.jitter,
         "netif2": interface_two
     }
 
@@ -192,12 +143,6 @@ class IdGen(object):
         return self.id
 
 
-class FutureIpv4Prefix(Ipv4Prefix):
-    def get_address(self, node_id):
-        address = self.addr(node_id)
-        return "%s/%s" % (address, self.prefixlen)
-
-
 class FutureSession(Session):
     def __init__(self, session_id, config=None, persistent=True, mkdir=True):
         super(FutureSession, self).__init__(session_id, config, persistent, mkdir)
@@ -214,39 +159,37 @@ class FutureSession(Session):
             "host": ("DefaultRoute", "SSH"),
         }
 
-    def link_nodes(self, link_data):
+    def _link_nodes(self, node_one_id, node_two_id):
         """
         Convenience method for retrieving nodes within link data.
 
-        :param core.data.LinkData link_data: data to retrieve nodes from
-        :return: nodes, network nodes if presetn, and tunnel
+        :param int node_one_id: node one id
+        :param int node_two_id: node two id
+        :return: nodes, network nodes if present, and tunnel if present
         :rtype: tuple
         """
-        logger.info("link message between node1(%s:%s) and node2(%s:%s)",
-                    link_data.node1_id, link_data.interface1_id, link_data.node2_id, link_data.interface2_id)
+        logger.info("link message between node1(%s) and node2(%s)", node_one_id, node_two_id)
 
         # values to fill
         net_one = None
         net_two = None
 
         # retrieve node one
-        n1_id = link_data.node1_id
-        n2_id = link_data.node2_id
-        node_one = self.get_object(n1_id)
-        node_two = self.get_object(n2_id)
+        node_one = self.get_object(node_one_id)
+        node_two = self.get_object(node_two_id)
 
         # both node ids are provided
-        tunnel = self.broker.gettunnel(n1_id, n2_id)
+        tunnel = self.broker.gettunnel(node_one_id, node_two_id)
         logger.info("tunnel between nodes: %s", tunnel)
         if nodeutils.is_node(tunnel, NodeTypes.TAP_BRIDGE):
             net_one = tunnel
-            if tunnel.remotenum == n1_id:
+            if tunnel.remotenum == node_one_id:
                 node_one = None
             else:
                 node_two = None
         # physical node connected via gre tap tunnel
         elif tunnel:
-            if tunnel.remotenum == n1_id:
+            if tunnel.remotenum == node_one_id:
                 node_one = None
             else:
                 node_two = None
@@ -296,18 +239,19 @@ class FutureSession(Session):
         else:
             raise ValueError("no common network found for wireless link/unlink")
 
-    def link_add(self, link_data):
+    def add_link(self, node_one_id, node_two_id, interface_one=None, interface_two=None, link_options=LinkOptions()):
         """
         Add a link between nodes.
 
-        :param core.data.LinkData link_data: data to create a link with
-        :return: nothing
+        :param int node_one_id: node one id
+        :param int node_two_id: node two id
+        :param core.future.futuredata.InterfaceData interface_one: node one interface data, defaults to none
+        :param core.future.futuredata.InterfaceData interface_two: node two interface data, defaults to none
+        :param core.future.futuredata.LinkOptions link_options: data for creating link, defaults to no options
+        :return:
         """
-        # interface data
-        interface_one_data, interface_two_data = get_interfaces(link_data)
-
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self.link_nodes(link_data)
+        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
         if node_one:
             node_one.lock.acquire()
@@ -316,7 +260,7 @@ class FutureSession(Session):
 
         try:
             # wireless link
-            if link_data.link_type == LinkTypes.WIRELESS.value:
+            if link_options.type == LinkTypes.WIRELESS:
                 objects = [node_one, node_two, net_one, net_two]
                 self._link_wireless(objects, connect=True)
             # wired link
@@ -329,14 +273,14 @@ class FutureSession(Session):
 
                 # node to network
                 if node_one and net_one:
-                    interface = create_interface(node_one, net_one, interface_one_data)
-                    link_config(net_one, interface, link_data)
+                    interface = create_interface(node_one, net_one, interface_one)
+                    link_config(net_one, interface, link_options)
 
                 # network to node
                 if node_two and net_one:
-                    interface = create_interface(node_two, net_one, interface_two_data)
-                    if not link_data.unidirectional:
-                        link_config(net_one, interface, link_data)
+                    interface = create_interface(node_two, net_one, interface_two)
+                    if not link_options.unidirectional:
+                        link_config(net_one, interface, link_options)
 
                 # network to network
                 if net_one and net_two:
@@ -345,23 +289,23 @@ class FutureSession(Session):
                     else:
                         interface = net_one.linknet(net_two)
 
-                    link_config(net_one, interface, link_data)
+                    link_config(net_one, interface, link_options)
 
-                    if not link_data.unidirectional:
+                    if not link_options.unidirectional:
                         interface.swapparams("_params_up")
-                        link_config(net_two, interface, link_data, devname=interface.name)
+                        link_config(net_two, interface, link_options, devname=interface.name)
                         interface.swapparams("_params_up")
 
                 # a tunnel node was found for the nodes
                 addresses = []
-                if not node_one and net_one:
-                    addresses.extend(interface_one_data.get_addresses())
+                if not node_one and all([net_one, interface_one]):
+                    addresses.extend(interface_one.get_addresses())
 
-                if not node_two and net_two:
-                    addresses.extend(interface_two_data.get_addresses())
+                if not node_two and all([net_two, interface_two]):
+                    addresses.extend(interface_two.get_addresses())
 
                 # tunnel node logic
-                key = link_data.key
+                key = link_options.key
                 if key and nodeutils.is_node(net_one, NodeTypes.TUNNEL):
                     net_one.setkey(key)
                     if addresses:
@@ -374,31 +318,35 @@ class FutureSession(Session):
                 # physical node connected with tunnel
                 if not net_one and not net_two and (node_one or node_two):
                     if node_one and nodeutils.is_node(node_one, NodeTypes.PHYSICAL):
-                        addresses = interface_one_data.get_addresses()
-                        node_one.adoptnetif(tunnel, link_data.interface1_id, link_data.interface1_mac, addresses)
-                        link_config(node_one, tunnel, link_data)
+                        addresses = interface_one.get_addresses()
+                        node_one.adoptnetif(tunnel, interface_one.id, interface_one.mac, addresses)
+                        link_config(node_one, tunnel, link_options)
                     elif node_two and nodeutils.is_node(node_two, NodeTypes.PHYSICAL):
-                        addresses = interface_two_data.get_addresses()
-                        node_two.adoptnetif(tunnel, link_data.interface2_id, link_data.interface2_mac, addresses)
-                        link_config(node_two, tunnel, link_data)
+                        addresses = interface_two.get_addresses()
+                        node_two.adoptnetif(tunnel, interface_two.id, interface_two.mac, addresses)
+                        link_config(node_two, tunnel, link_options)
         finally:
             if node_one:
                 node_one.lock.release()
             if node_two:
                 node_two.lock.release()
 
-    def link_delete(self, link_data):
+    def delete_link(self, node_one_id, node_two_id, interface_one_id, interface_two_id, link_type=LinkTypes.WIRED):
         """
         Delete a link between nodes.
 
-        :param core.data.LinkData link_data: data to delete link with
+        :param int node_one_id: node one id
+        :param int node_two_id: node two id
+        :param int interface_one_id: interface id for node one
+        :param int interface_two_id: interface id for node two
+        :param core.enumerations.LinkTypes link_type: link type to delete
         :return: nothing
         """
         # interface data
-        interface_one_data, interface_two_data = get_interfaces(link_data)
+        # interface_one_data, interface_two_data = get_interfaces(link_data)
 
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self.link_nodes(link_data)
+        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
         if node_one:
             node_one.lock.acquire()
@@ -407,7 +355,7 @@ class FutureSession(Session):
 
         try:
             # wireless link
-            if link_data.link_type == LinkTypes.WIRELESS.value:
+            if link_type == LinkTypes.WIRELESS:
                 objects = [node_one, node_two, net_one, net_two]
                 self._link_wireless(objects, connect=False)
             # wired link
@@ -415,8 +363,8 @@ class FutureSession(Session):
                 if all([node_one, node_two]):
                     # TODO: fix this for the case where ifindex[1,2] are not specified
                     # a wired unlink event, delete the connecting bridge
-                    interface_one = node_one.netif(interface_one_data.id)
-                    interface_two = node_two.netif(interface_two_data.id)
+                    interface_one = node_one.netif(interface_one_id)
+                    interface_two = node_two.netif(interface_two_id)
 
                     # get interfaces from common network, if no network node
                     # otherwise get interfaces between a node and network
@@ -446,18 +394,22 @@ class FutureSession(Session):
             if node_two:
                 node_two.lock.release()
 
-    def link_update(self, link_data):
+    def update_link(self, node_one_id, node_two_id, link_options, interface_one_id=None, interface_two_id=None):
         """
         Update link information between nodes.
 
-        :param core.data.LinkData link_data: data to update link with
+        :param int node_one_id: node one id
+        :param int node_two_id: node two id
+        :param int interface_one_id: interface id for node one
+        :param int interface_two_id: interface id for node two
+        :param core.future.futuredata.LinkOptions link_options: data to update link with
         :return: nothing
         """
         # interface data
-        interface_one_data, interface_two_data = get_interfaces(link_data)
+        # interface_one_data, interface_two_data = get_interfaces(link_data)
 
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self.link_nodes(link_data)
+        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
         if node_one:
             node_one.lock.acquire()
@@ -466,7 +418,7 @@ class FutureSession(Session):
 
         try:
             # wireless link
-            if link_data.link_type == LinkTypes.WIRELESS.value:
+            if link_options.type == LinkTypes.WIRELESS.value:
                 raise ValueError("cannot update wireless link")
             else:
                 if not node_one and not node_two:
@@ -484,37 +436,37 @@ class FutureSession(Session):
 
                         if upstream:
                             interface.swapparams("_params_up")
-                            link_config(net_one, interface, link_data, devname=interface.name)
+                            link_config(net_one, interface, link_options, devname=interface.name)
                             interface.swapparams("_params_up")
                         else:
-                            link_config(net_one, interface, link_data)
+                            link_config(net_one, interface, link_options)
 
-                        if not link_data.unidirectional:
+                        if not link_options.unidirectional:
                             if upstream:
-                                link_config(net_two, interface, link_data)
+                                link_config(net_two, interface, link_options)
                             else:
                                 interface.swapparams("_params_up")
-                                link_config(net_two, interface, link_data, devname=interface.name)
+                                link_config(net_two, interface, link_options, devname=interface.name)
                                 interface.swapparams("_params_up")
                     else:
                         raise ValueError("modify link for unknown nodes")
                 elif not node_one:
                     # node1 = layer 2node, node2 = layer3 node
-                    interface = node_two.netif(interface_two_data.id, net_one)
-                    link_config(net_one, interface, link_data)
+                    interface = node_two.netif(interface_two_id, net_one)
+                    link_config(net_one, interface, link_options)
                 elif not node_two:
                     # node2 = layer 2node, node1 = layer3 node
-                    interface = node_one.netif(interface_one_data.id, net_one)
-                    link_config(net_one, interface, link_data)
+                    interface = node_one.netif(interface_one_id, net_one)
+                    link_config(net_one, interface, link_options)
                 else:
                     common_networks = node_one.commonnets(node_two)
                     for net_one, interface_one, interface_two in common_networks:
-                        if interface_one_data.id and interface_one_data.id != node_one.getifindex(interface_one):
+                        if interface_one_id and interface_one_id != node_one.getifindex(interface_one):
                             continue
 
-                        link_config(net_one, interface_one, link_data, interface_two=interface_two)
-                        if not link_data.unidirectional:
-                            link_config(net_one, interface_two, link_data, interface_two=interface_one)
+                        link_config(net_one, interface_one, link_options, interface_two=interface_two)
+                        if not link_options.unidirectional:
+                            link_config(net_one, interface_two, link_options, interface_two=interface_one)
                     else:
                         raise ValueError("no common network found")
         finally:
@@ -523,30 +475,29 @@ class FutureSession(Session):
             if node_two:
                 node_two.lock.release()
 
-    def node_add(self, node_data):
+    def add_node(self, node_options):
         """
         Add a node to the session, based on the provided node data.
 
-        :param core.data.NodeData node_data: data to create node with
-        :return: nothing
+        :param core.future.futuredata.NodeOptions node_options: data to create node with
+        :return: created node
         """
 
         # retrieve node class for given node type
         try:
-            node_type = NodeTypes(node_data.node_type)
-            node_class = nodeutils.get_node_class(node_type)
+            node_class = nodeutils.get_node_class(node_options.type)
         except KeyError:
-            logger.error("invalid node type to create: %s", node_data.node_type)
+            logger.error("invalid node type to create: %s", node_options.type)
             return None
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
         enable_rj45 = getattr(self.options, "enablerj45", "0") == "1"
-        if node_type == NodeTypes.RJ45 and not enable_rj45:
+        if node_options.type == NodeTypes.RJ45 and not enable_rj45:
             start = False
 
         # determine node id
-        node_id = node_data.id
+        node_id = node_options.id
         if not node_id:
             while True:
                 node_id = self.node_id_gen.next()
@@ -554,7 +505,7 @@ class FutureSession(Session):
                     break
 
         # generate name if not provided
-        name = node_data.name
+        name = node_options.name
         if not name:
             name = "%s%s" % (node_class.__name__, node_id)
 
@@ -563,18 +514,18 @@ class FutureSession(Session):
         node = self.add_object(cls=node_class, objid=node_id, name=name, start=start)
 
         # set node attributes
-        node.type = node_data.model or "router"
-        node.icon = node_data.icon
-        node.canvas = node_data.canvas
-        node.opaque = node_data.opaque
+        node.type = node_options.model or "router"
+        node.icon = node_options.icon
+        node.canvas = node_options.canvas
+        node.opaque = node_options.opaque
 
         # set node position and broadcast it
-        self.node_set_position(node, node_data)
+        self.set_node_position(node, node_options)
 
         # add services to default and physical nodes only
-        services = node_data.services
-        if node_type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
-            logger.info("setting model (%s) with services (%s)", node.type, services)
+        if node_options.type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
+            logger.info("setting model (%s) with services (%s)", node.type, node_options.services)
+            services = "|".join(node_options.services) or None
             self.services.addservicestonode(node, node.type, services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
@@ -586,35 +537,35 @@ class FutureSession(Session):
             # TODO: common method to both Physical and LxcNodes, but not the common PyCoreNode
             node.boot()
 
-        # return node id, in case it was generated
-        return node_id
+        return node
 
-    def node_update(self, node_data):
+    def update_node(self, node_options):
         """
         Update node information.
 
-        :param core.data.NodeData node_data: data to update node with
+        :param core.future.futuredata.NodeOptions node_options: data to update node with
         :return: nothing
         """
         try:
             # get node to update
-            node = self.get_object(node_data.id)
+            node = self.get_object(node_options.id)
 
             # set node position and broadcast it
-            self.node_set_position(node, node_data)
+            self.set_node_position(node, node_options)
 
             # update attributes
-            node.canvas = node_data.canvas
-            node.icon = node_data.icon
+            node.canvas = node_options.canvas
+            node.icon = node_options.icon
         except KeyError:
-            logger.error("failure to update node that does not exist: %s", node_data.id)
+            logger.error("failure to update node that does not exist: %s", node_options.id)
 
-    def node_delete(self, node_id):
+    def delete_node(self, node_id):
         """
         Delete a node from the session and check if session should shutdown, if no nodes are left.
 
         :param int node_id:
         :return: True if node deleted, False otherwise
+        :rtype: bool
         """
         # delete node and check for session shutdown if a node was removed
         result = self.custom_delete_object(node_id)
@@ -622,20 +573,20 @@ class FutureSession(Session):
             self.check_shutdown()
         return result
 
-    def node_set_position(self, node, node_data):
+    def set_node_position(self, node, node_options):
         """
         Set position for a node, use lat/lon/alt if needed.
 
         :param node: node to set position for
-        :param NodeData node_data: data for node
+        :param core.future.futuredata.NodeOptions node_options: data for node
         :return: nothing
         """
         # extract location values
-        x = node_data.x_position
-        y = node_data.y_position
-        lat = node_data.latitude
-        lon = node_data.longitude
-        alt = node_data.altitude
+        x = node_options.x
+        y = node_options.y
+        lat = node_options.lat
+        lon = node_options.lon
+        alt = node_options.alt
 
         # check if we need to generate position from lat/lon/alt
         has_empty_position = all(i is None for i in [x, y])
@@ -741,7 +692,7 @@ class FutureSession(Session):
         doc = core_document_writer(self, version)
         doc.writexml(file_name)
 
-    def hook_add(self, state, file_name, source_name, data):
+    def add_hook(self, state, file_name, source_name, data):
         """
         Store a hook from a received file message.
 
@@ -755,7 +706,7 @@ class FutureSession(Session):
         state = ":%s" % state
         self.set_hook(state, file_name, source_name, data)
 
-    def node_service_file(self, node_id, service_name, file_name, source_name, data):
+    def add_node_service_file(self, node_id, service_name, file_name, source_name, data):
         """
         Add a service file for a node.
 
@@ -770,7 +721,7 @@ class FutureSession(Session):
         service_name = ":%s" % service_name
         self.services.setservicefile(node_id, service_name, file_name, source_name, data)
 
-    def node_file(self, node_id, source_name, file_name, data):
+    def add_node_file(self, node_id, source_name, file_name, data):
         """
         Add a file to a node.
 
@@ -874,16 +825,16 @@ class FutureSession(Session):
         self.set_emane_model(emane_network, model)
         return emane_network
 
-    def set_emane_model(self, emane_node, model):
+    def set_emane_model(self, emane_node, emane_model):
         """
         Set emane model for a given emane node.
 
         :param emane_node: emane node to set model for
-        :param model: emane model to set
+        :param emane_model: emane model to set
         :return: nothing
         """
-        values = list(model.getdefaultvalues())
-        self.emane.setconfig(emane_node.objid, model.name, values)
+        values = list(emane_model.getdefaultvalues())
+        self.emane.setconfig(emane_node.objid, emane_model.name, values)
 
 
 class CoreEmu(object):
@@ -921,7 +872,7 @@ class CoreEmu(object):
             session.shutdown()
         self.sessions.clear()
 
-    def create_session(self, _id=None, master=False):
+    def create_session(self, _id=None, master=True):
         """
         Create a new CORE session, set to master if running standalone.
 
@@ -981,15 +932,16 @@ class CoreEmu(object):
             for common_network, interface_one, interface_two in node.commonnets(network):
                 common_network.link(interface_one, interface_two)
 
-    def add_interface(self, network, node, prefix):
+    def add_interface(self, network, node, prefixes):
         """
         Convenience method for adding an interface with a prefix based on node id.
 
         :param network: network to add interface with
         :param node: node to add interface to
-        :param prefix: prefix to get address from for interface
+        :param core.future.futuredata.IpPrefixes prefixes: to get address from for interface
         :return: created interface
         """
-        address = prefix.get_address(node.objid)
-        interface_index = node.newnetif(network, [address])
+        interface_data = prefixes.create_interface(node)
+        logger.info("adding interface: %s", interface_data.get_addresses())
+        interface_index = node.newnetif(network, interface_data.get_addresses(), ifindex=interface_data.id)
         return node.netif(interface_index)

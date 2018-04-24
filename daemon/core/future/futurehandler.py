@@ -14,10 +14,9 @@ import time
 from core import logger
 from core.api import coreapi
 from core.coreserver import CoreServer
-from core.data import ConfigData, LinkData
+from core.data import ConfigData
 from core.data import EventData
-from core.data import NodeData
-from core.enumerations import ConfigTlvs
+from core.enumerations import ConfigTlvs, LinkTypes
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
 from core.enumerations import ExceptionTlvs
@@ -30,6 +29,7 @@ from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.enumerations import SessionTlvs
+from core.future.futuredata import NodeOptions, LinkOptions, InterfaceData
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
@@ -566,7 +566,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         port = self.request.getpeername()[1]
 
         # TODO: add shutdown handler for session
-        self.session = self.coreemu.create_session(port)
+        self.session = self.coreemu.create_session(port, master=False)
         # self.session.shutdown_handlers.append(self.session_shutdown)
         logger.info("created new session for client: %s", self.session.session_id)
 
@@ -642,44 +642,58 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             logger.warn("ignoring invalid message: add and delete flag both set")
             return ()
 
-        # create node data from message data
-        node_data = NodeData(
-            id=message.get_tlv(NodeTlvs.NUMBER.value),
-            x_position=message.get_tlv(NodeTlvs.X_POSITION.value),
-            y_position=message.get_tlv(NodeTlvs.Y_POSITION.value),
-            canvas=message.get_tlv(NodeTlvs.CANVAS.value),
-            icon=message.get_tlv(NodeTlvs.ICON.value),
-            latitude=message.get_tlv(NodeTlvs.LATITUDE.value),
-            longitude=message.get_tlv(NodeTlvs.LONGITUDE.value),
-            altitude=message.get_tlv(NodeTlvs.ALTITUDE.value),
-            node_type=message.get_tlv(NodeTlvs.TYPE.value),
+        node_type = None
+        node_type_value = message.get_tlv(NodeTlvs.TYPE.value)
+        if node_type_value is not None:
+            node_type = NodeTypes(node_type_value)
+
+        node_options = NodeOptions(
+            _type=node_type,
+            _id=message.get_tlv(NodeTlvs.NUMBER.value),
             name=message.get_tlv(NodeTlvs.NAME.value),
-            model=message.get_tlv(NodeTlvs.MODEL.value),
-            opaque=message.get_tlv(NodeTlvs.OPAQUE.value),
-            services=message.get_tlv(NodeTlvs.SERVICES.value),
+            model=message.get_tlv(NodeTlvs.MODEL.value)
         )
 
+        node_options.set_position(
+            x=message.get_tlv(NodeTlvs.X_POSITION.value),
+            y=message.get_tlv(NodeTlvs.Y_POSITION.value)
+        )
+
+        node_options.set_location(
+            lat=message.get_tlv(NodeTlvs.LATITUDE.value),
+            lon=message.get_tlv(NodeTlvs.LONGITUDE.value),
+            alt=message.get_tlv(NodeTlvs.ALTITUDE.value)
+        )
+
+        node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
+        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
+        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+
+        services = message.get_tlv(NodeTlvs.SERVICES.value)
+        if services:
+            node_options.services = services.split("|")
+
         if message.flags & MessageFlags.ADD.value:
-            node_id = self.session.node_add(node_data)
-            if node_id:
+            node = self.session.add_node(node_options)
+            if node:
                 if message.flags & MessageFlags.STRING.value:
-                    self.node_status_request[node_id] = True
+                    self.node_status_request[node.objid] = True
 
                 if self.session.state == EventTypes.RUNTIME_STATE.value:
-                    self.send_node_emulation_id(node_id)
+                    self.send_node_emulation_id(node.objid)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
-                result = self.session.node_delete(node_data.id)
+                result = self.session.delete_node(node_options.id)
 
                 # if we deleted a node broadcast out its removal
                 if result and message.flags & MessageFlags.STRING.value:
                     tlvdata = ""
-                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_data.id)
+                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_options.id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.node_update(node_data)
+            self.session.update_node(node_options)
 
         return replies
 
@@ -690,47 +704,56 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         :param coreapi.CoreLinkMessage message: link message to handle
         :return: link message replies
         """
-        link_data = LinkData(
-            session=message.get_tlv(LinkTlvs.SESSION.value),
-            link_type=message.get_tlv(LinkTlvs.TYPE.value),
-            node1_id=message.get_tlv(LinkTlvs.N1_NUMBER.value),
-            node2_id=message.get_tlv(LinkTlvs.N2_NUMBER.value),
-            delay=message.get_tlv(LinkTlvs.DELAY.value),
-            bandwidth=message.get_tlv(LinkTlvs.BANDWIDTH.value),
-            per=message.get_tlv(LinkTlvs.PER.value),
-            dup=message.get_tlv(LinkTlvs.DUP.value),
-            jitter=message.get_tlv(LinkTlvs.JITTER.value),
-            mer=message.get_tlv(LinkTlvs.MER.value),
-            burst=message.get_tlv(LinkTlvs.BURST.value),
-            mburst=message.get_tlv(LinkTlvs.MBURST.value),
-            gui_attributes=message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value),
-            unidirectional=message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value),
-            emulation_id=message.get_tlv(LinkTlvs.EMULATION_ID.value),
-            network_id=message.get_tlv(LinkTlvs.NETWORK_ID.value),
-            key=message.get_tlv(LinkTlvs.KEY.value),
-            opaque=message.get_tlv(LinkTlvs.OPAQUE.value),
-            interface1_id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
-            interface1_name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
-            interface1_ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
-            interface1_ip4_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK.value),
-            interface1_mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
-            interface1_ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6.value),
-            interface1_ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
-            interface2_id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
-            interface2_name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
-            interface2_ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
-            interface2_ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value),
-            interface2_mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
-            interface2_ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
-            interface2_ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value),
+        node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
+        node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
+
+        interface_one = InterfaceData(
+            _id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
+            name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
+            mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
+            ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
+            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK.value),
+            ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6.value),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
+        )
+        interface_two = InterfaceData(
+            _id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
+            name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
+            mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
+            ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
+            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value),
+            ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
         )
 
+        link_type = None
+        link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
+        if link_type_value is not None:
+            link_type = LinkTypes(link_type_value)
+
+        link_options = LinkOptions(_type=link_type)
+        link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
+        link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
+        link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
+        link_options.per = message.get_tlv(LinkTlvs.PER.value)
+        link_options.dup = message.get_tlv(LinkTlvs.DUP.value)
+        link_options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
+        link_options.mer = message.get_tlv(LinkTlvs.MER.value)
+        link_options.burst = message.get_tlv(LinkTlvs.BURST.value)
+        link_options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
+        link_options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
+        link_options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
+        link_options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
+        link_options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
+        link_options.key = message.get_tlv(LinkTlvs.KEY.value)
+        link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
+
         if message.flags & MessageFlags.ADD.value:
-            self.session.link_add(link_data)
+            self.session.add_link(node_one_id, node_two_id, interface_one, interface_two, link_options)
         elif message.flags & MessageFlags.DELETE.value:
-            self.session.link_delete(link_data)
+            self.session.delete_link(node_one_id, node_two_id, interface_one.id, interface_two.id)
         else:
-            self.session.link_update(link_data)
+            self.session.update_link(node_one_id, node_two_id, interface_one.id, interface_two.id, link_options)
 
         return ()
 
@@ -829,7 +852,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                 file_name = sys.argv[0]
 
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = self.coreemu.create_session()
+                    session = self.coreemu.create_session(master=False)
                     try:
                         session.open_xml(file_name, start=True)
                     except:
@@ -962,7 +985,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             if file_type is not None:
                 if file_type.startswith("service:"):
                     _, service_name = file_type.split(':')[:2]
-                    self.session.node_service_file(node_num, service_name, file_name, source_name, data)
+                    self.session.add_node_service_file(node_num, service_name, file_name, source_name, data)
                     return ()
                 elif file_type.startswith("hook:"):
                     _, state = file_type.split(':')[:2]
@@ -970,7 +993,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                         logger.error("error setting hook having state '%s'", state)
                         return ()
                     state = int(state)
-                    self.session.hook_add(state, file_name, source_name, data)
+                    self.session.add_hook(state, file_name, source_name, data)
                     return ()
 
             # writing a file to the host

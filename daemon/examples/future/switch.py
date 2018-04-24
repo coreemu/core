@@ -8,13 +8,14 @@
 import datetime
 
 import parser
-from core.future.coreemu import FutureIpv4Prefix, CoreEmu
+from core.future.coreemu import CoreEmu
+from core.future.futuredata import IpPrefixes
 from core.netns.nodes import CoreNode, SwitchNode
 
 
 def example(options):
     # ip generator for example
-    prefix = FutureIpv4Prefix("10.83.0.0/16")
+    prefixes = IpPrefixes("10.83.0.0/16")
 
     # create emulator instance for creating sessions and utility methods
     coreemu = CoreEmu()
@@ -26,7 +27,7 @@ def example(options):
     # create nodes
     for _ in xrange(options.nodes):
         node = session.create_node(cls=CoreNode)
-        coreemu.add_interface(switch_network, node, prefix)
+        coreemu.add_interface(switch_network, node, prefixes)
 
     # instantiate session
     session.instantiate()
@@ -37,13 +38,13 @@ def example(options):
 
     print "starting iperf server on node: %s" % first_node.name
     first_node.cmd(["iperf", "-s", "-D"])
-    address = str(prefix.addr(first_node.objid))
+    address = prefixes.ip4_address(first_node)
     print "node %s connecting to %s" % (last_node.name, address)
     last_node.client.icmd(["iperf", "-t", str(options.time), "-c", address])
     first_node.cmd(["killall", "-9", "iperf"])
 
     # shutdown session
-    session.shutdown()
+    coreemu.shutdown()
 
 
 def main():

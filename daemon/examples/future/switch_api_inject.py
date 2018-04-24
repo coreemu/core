@@ -5,17 +5,13 @@
 # and repeat for minnodes <= n <= maxnodes with a step size of
 # nodestep
 
-import datetime
-
-import parser
-from core.data import NodeData, LinkData
 from core.enumerations import NodeTypes, EventTypes
-from core.future.coreemu import FutureIpv4Prefix, CoreEmu
+from core.future.futuredata import IpPrefixes, NodeOptions
 
 
 def example(nodes):
     # ip generator for example
-    prefix = FutureIpv4Prefix("10.83.0.0/16")
+    prefixes = IpPrefixes("10.83.0.0/16")
 
     # create emulator instance for creating sessions and utility methods
     coreemu = globals()["coreemu"]
@@ -25,24 +21,15 @@ def example(nodes):
     session.set_state(EventTypes.CONFIGURATION_STATE.value)
 
     # create switch network node
-    node_data = NodeData(node_type=NodeTypes.SWITCH.value)
-    switch_id = session.node_add(node_data)
+    node_options = NodeOptions(_type=NodeTypes.SWITCH)
+    switch = session.add_node(node_options)
 
     # create nodes
     for _ in xrange(nodes):
-        node_data = NodeData(node_type=NodeTypes.DEFAULT.value)
-        node_id = session.node_add(node_data)
-        node = session.get_object(node_id)
-        inteface_index = node.newifindex()
-        address = prefix.addr(node_id)
-        link_data = LinkData(
-            node1_id=node_id,
-            node2_id=switch_id,
-            interface1_id=inteface_index,
-            interface1_ip4=str(address),
-            interface1_ip4_mask=prefix.prefixlen,
-        )
-        session.link_add(link_data)
+        node_options = NodeOptions(_type=NodeTypes.DEFAULT.value)
+        node = session.add_node(node_options)
+        interface = prefixes.create_interface(node)
+        session.add_link(node.objid, switch.objid, interface_one=interface)
 
     # instantiate session
     session.instantiate()

@@ -6,12 +6,13 @@ import datetime
 
 import parser
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.future.coreemu import FutureIpv4Prefix, CoreEmu
+from core.future.coreemu import CoreEmu
+from core.future.futuredata import IpPrefixes
 
 
 def example(options):
     # ip generator for example
-    prefix = FutureIpv4Prefix("10.83.0.0/16")
+    prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
     # create emulator instance for creating sessions and utility methods
     coreemu = CoreEmu()
@@ -27,8 +28,8 @@ def example(options):
     # create nodes
     for i in xrange(options.nodes):
         node = session.create_emane_node()
-        coreemu.add_interface(emane_network, node, prefix)
         node.setposition(x=150 * (i + 1), y=150)
+        coreemu.add_interface(emane_network, node, prefixes)
 
     # instantiate session
     session.instantiate()
@@ -39,7 +40,7 @@ def example(options):
 
     # shutdown session
     raw_input("press enter to exit...")
-    session.shutdown()
+    coreemu.shutdown()
 
 
 def main():
