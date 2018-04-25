@@ -20,7 +20,7 @@ def example(options):
     session = coreemu.create_session()
 
     # must be in configuration state for nodes to start, when using "node_add" below
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create emane network node
     emane_network = session.create_emane_network(
@@ -31,7 +31,7 @@ def example(options):
 
     # create nodes
     for i in xrange(options.nodes):
-        node = session.create_emane_node()
+        node = session.create_wireless_node()
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
         session.add_link(node.objid, emane_network.objid, interface_one=interface)

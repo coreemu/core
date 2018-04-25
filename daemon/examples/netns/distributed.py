@@ -69,7 +69,7 @@ def main():
     print "connecting to slave at %s:%d" % (slave, port)
     session.broker.addserver(slave, slave, port)
     session.broker.setupserver(slave)
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
     tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 

@@ -132,7 +132,7 @@ def main():
     session.broker.dorecvloop = False
 
     # Change to configuration state on both machines
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
     tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 

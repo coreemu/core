@@ -18,7 +18,7 @@ def example(nodes):
     session = coreemu.create_session()
 
     # must be in configuration state for nodes to start, when using "node_add" below
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create switch network node
     switch = session.add_node(_type=NodeTypes.SWITCH)

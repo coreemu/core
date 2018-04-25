@@ -128,7 +128,7 @@ class TestGui:
         core.session.broker.dorecvloop = False
 
         # have broker handle a configuration state change
-        core.session.set_state(EventTypes.CONFIGURATION_STATE.value)
+        core.session.set_state(EventTypes.CONFIGURATION_STATE)
         event_message = state_message(EventTypes.CONFIGURATION_STATE)
         core.session.broker.handlerawmsg(event_message)
 

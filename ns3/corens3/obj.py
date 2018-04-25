@@ -386,7 +386,7 @@ class Ns3Session(Session):
                 ns.core.Simulator.Run()
 
         # self.evq.run() # event queue may have WayPointMobility events
-        self.set_state(EventTypes.RUNTIME_STATE.value, send_event=True)
+        self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
         t = threading.Thread(target=runthread)
         t.daemon = True
         t.start()
@@ -454,7 +454,7 @@ class Ns3Session(Session):
         Start a thread that updates CORE nodes based on their ns-3
         positions.
         """
-        self.set_state(EventTypes.INSTANTIATION_STATE.value)
+        self.set_state(EventTypes.INSTANTIATION_STATE)
         self.mobilitythread = threading.Thread(
             target=self.ns3mobilitythread,
             args=(refresh_ms,))

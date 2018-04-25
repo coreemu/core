@@ -300,27 +300,28 @@ class Session(object):
         """
         Set the session's current state.
 
-        :param int state: state to set to
+        :param core.enumerations.EventTypes state: state to set to
         :param send_event: if true, generate core API event messages
         :return: nothing
         """
-        state_name = coreapi.state_name(state)
+        state_value = state.value
+        state_name = state.name
 
-        if self.state == state:
+        if self.state == state_value:
             logger.info("session is already in state: %s, skipping change", state_name)
             return
 
-        self.state = state
+        self.state = state_value
         self._state_time = time.time()
         logger.info("changing session %s to state %s(%s) at %s",
-                    self.session_id, state, state_name, self._state_time)
+                    self.session_id, state_value, state_name, self._state_time)
 
-        self.write_state(state)
-        self.run_hooks(state)
-        self.run_state_hooks(state)
+        self.write_state(state_value)
+        self.run_hooks(state_value)
+        self.run_state_hooks(state_value)
 
         if send_event:
-            event_data = EventData(event_type=state, time="%s" % time.time())
+            event_data = EventData(event_type=state_value, time="%s" % time.time())
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -868,7 +869,7 @@ class Session(object):
 
         # start event loop and set to runtime
         self.event_loop.run()
-        self.set_state(EventTypes.RUNTIME_STATE.value, send_event=True)
+        self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
 
     def data_collect(self):
         """
@@ -908,7 +909,7 @@ class Session(object):
         shutdown = False
         if node_count == 0:
             shutdown = True
-            self.set_state(state=EventTypes.SHUTDOWN_STATE.value)
+            self.set_state(EventTypes.SHUTDOWN_STATE)
 
         return shutdown
 

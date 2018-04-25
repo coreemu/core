@@ -1,5 +1,5 @@
 """
-Defines server classes and request handlers for TCP and UDP.
+Defines core server for handling TCP connections.
 """
 
 import SocketServer
@@ -7,7 +7,7 @@ import SocketServer
 from core.future.coreemu import CoreEmu
 
 
-class FutureServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     """
     TCP server class, manages sessions and spawns request handlers for
     incoming connections.
@@ -28,13 +28,3 @@ class FutureServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         self.coreemu = CoreEmu(config)
         self.config = config
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
-
-    def shutdown(self):
-        """
-        Shutdown the server, all known sessions, and remove server from known servers set.
-
-        :return: nothing
-        """
-        # shutdown all known sessions
-        for session in self.coreemu.sessions.itervalues():
-            session.shutdown()

@@ -11,13 +11,10 @@ import sys
 import threading
 import time
 
-from core import coreobj
 from core import logger
 from core.api import coreapi
-from core.coreserver import CoreServer
 from core.data import ConfigData
 from core.data import EventData
-from core.data import NodeData
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
@@ -32,15 +29,15 @@ from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.enumerations import SessionTlvs
+from core.future.futuredata import InterfaceData
+from core.future.futuredata import LinkOptions
+from core.future.futuredata import NodeOptions
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
-from core.netns import nodes
-from core.xml.xmlsession import open_session_xml
-from core.xml.xmlsession import save_session_xml
 
 
-class CoreRequestHandler(SocketServer.BaseRequestHandler):
+class CoreHandler(SocketServer.BaseRequestHandler):
     """
     The SocketServer class uses the RequestHandler class for servicing requests.
     """
@@ -69,6 +66,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         self.message_queue = Queue.Queue()
         self.node_status_request = {}
         self._shutdown_lock = threading.Lock()
+        self._sessions_lock = threading.Lock()
 
         self.handler_threads = []
         num_threads = int(server.config["numthreads"])
@@ -83,6 +81,9 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         self.master = False
         self.session = None
+
+        # core emulator
+        self.coreemu = server.coreemu
 
         utils.close_onexec(request.fileno())
         SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
@@ -103,12 +104,21 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logger.info("finishing request handler")
-        self.done = True
-
         logger.info("remaining message queue size: %s", self.message_queue.qsize())
-        # seconds
-        timeout = 10.0
+
+        # give some time for message queue to deplete
+        timeout = 10
+        wait = 0
+        while not self.message_queue.empty():
+            logger.info("waiting for message queue to empty: %s seconds", wait)
+            time.sleep(1)
+            wait += 1
+            if wait == timeout:
+                logger.warn("queue failed to be empty, finishing request handler")
+                break
+
         logger.info("client disconnected: notifying threads")
+        self.done = True
         for thread in self.handler_threads:
             logger.info("waiting for thread: %s", thread.getName())
             thread.join(timeout)
@@ -117,15 +127,82 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
         logger.info("connection closed: %s", self.client_address)
         if self.session:
-            self.remove_session_handlers()
-
             # remove client from session broker and shutdown if there are no clients
+            self.remove_session_handlers()
             self.session.broker.session_clients.remove(self)
-            if not self.session.broker.session_clients:
-                logger.info("no session clients left, initiating shutdown")
-                self.session.shutdown()
+            if not self.session.broker.session_clients and not self.session.is_active():
+                logger.info("no session clients left and not active, initiating shutdown")
+                self.coreemu.delete_session(self.session.session_id)
 
         return SocketServer.BaseRequestHandler.finish(self)
+
+    def session_message(self, flags=0):
+        """
+        Build CORE API Sessions message based on current session info.
+
+        :param int flags: message flags
+        :return: session message
+        """
+        id_list = []
+        name_list = []
+        file_list = []
+        node_count_list = []
+        date_list = []
+        thumb_list = []
+        num_sessions = 0
+
+        logger.info("creating session message: %s", self.coreemu.sessions.keys())
+
+        with self._sessions_lock:
+            for session_id, session in self.coreemu.sessions.iteritems():
+                num_sessions += 1
+                id_list.append(str(session_id))
+
+                name = session.name
+                if not name:
+                    name = ""
+                name_list.append(name)
+
+                file = session.file_name
+                if not file:
+                    file = ""
+                file_list.append(file)
+
+                node_count_list.append(str(session.get_node_count()))
+
+                date_list.append(time.ctime(session._state_time))
+
+                thumb = session.thumbnail
+                if not thumb:
+                    thumb = ""
+                thumb_list.append(thumb)
+
+        session_ids = "|".join(id_list)
+        names = "|".join(name_list)
+        files = "|".join(file_list)
+        node_counts = "|".join(node_count_list)
+        dates = "|".join(date_list)
+        thumbs = "|".join(thumb_list)
+
+        if num_sessions > 0:
+            tlv_data = ""
+            if len(session_ids) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session_ids)
+            if len(names) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NAME.value, names)
+            if len(files) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.FILE.value, files)
+            if len(node_counts) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NODE_COUNT.value, node_counts)
+            if len(dates) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.DATE.value, dates)
+            if len(thumbs) > 0:
+                tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.THUMB.value, thumbs)
+            message = coreapi.CoreSessionMessage.pack(flags, tlv_data)
+        else:
+            message = None
+
+        return message
 
     def handle_broadcast_event(self, event_data):
         """
@@ -412,8 +489,11 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         while not self.done:
-            message = self.message_queue.get()
-            self.handle_message(message)
+            try:
+                message = self.message_queue.get(timeout=1)
+                self.handle_message(message)
+            except Queue.Empty:
+                pass
 
     def handle_message(self, message):
         """
@@ -483,8 +563,10 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         # use port as session id
         port = self.request.getpeername()[1]
 
-        logger.info("creating new session for client: %s", port)
-        self.session = self.server.create_session(session_id=port)
+        # TODO: add shutdown handler for session
+        self.session = self.coreemu.create_session(port, master=False)
+        # self.session.shutdown_handlers.append(self.session_shutdown)
+        logger.info("created new session for client: %s", self.session.session_id)
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
         # TODO: broker needs to be pulled out of session to the server/handler level
@@ -498,7 +580,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         self.add_session_handlers()
 
         # set initial session state
-        self.session.set_state(state=EventTypes.DEFINITION_STATE.value)
+        self.session.set_state(EventTypes.DEFINITION_STATE)
 
         while True:
             try:
@@ -558,121 +640,58 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             logger.warn("ignoring invalid message: add and delete flag both set")
             return ()
 
-        node_id = message.tlv_data[NodeTlvs.NUMBER.value]
-        x_position = message.get_tlv(NodeTlvs.X_POSITION.value)
-        y_position = message.get_tlv(NodeTlvs.Y_POSITION.value)
-        canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        icon = message.get_tlv(NodeTlvs.ICON.value)
-        lat = message.get_tlv(NodeTlvs.LATITUDE.value)
-        lng = message.get_tlv(NodeTlvs.LONGITUDE.value)
-        alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
+        node_type = None
+        node_type_value = message.get_tlv(NodeTlvs.TYPE.value)
+        if node_type_value is not None:
+            node_type = NodeTypes(node_type_value)
 
-        if x_position is None and y_position is None and \
-                lat is not None and lng is not None and alt is not None:
-            x, y, z = self.session.location.getxyz(float(lat), float(lng), float(alt))
-            x_position = int(x)
-            y_position = int(y)
+        node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
-            # GUI can"t handle lat/long, so generate another X/Y position message
-            node_data = NodeData(
-                id=node_id,
-                x_position=x_position,
-                y_position=y_position
-            )
+        node_options = NodeOptions(
+            name=message.get_tlv(NodeTlvs.NAME.value),
+            model=message.get_tlv(NodeTlvs.MODEL.value)
+        )
 
-            self.session.broadcast_node(node_data)
+        node_options.set_position(
+            x=message.get_tlv(NodeTlvs.X_POSITION.value),
+            y=message.get_tlv(NodeTlvs.Y_POSITION.value)
+        )
+
+        node_options.set_location(
+            lat=message.get_tlv(NodeTlvs.LATITUDE.value),
+            lon=message.get_tlv(NodeTlvs.LONGITUDE.value),
+            alt=message.get_tlv(NodeTlvs.ALTITUDE.value)
+        )
+
+        node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
+        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
+        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+
+        services = message.get_tlv(NodeTlvs.SERVICES.value)
+        if services:
+            node_options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node_type = message.tlv_data[NodeTlvs.TYPE.value]
-            try:
-                node_class = nodeutils.get_node_class(NodeTypes(node_type))
-            except KeyError:
-                try:
-                    node_type_str = " (%s)" % NodeTypes(node_type).name
-                except KeyError:
-                    node_type_str = ""
-
-                logger.warn("warning: unimplemented node type: %s%s" % (node_type, node_type_str))
-                return ()
-
-            start = False
-            if self.session.state > EventTypes.DEFINITION_STATE.value:
-                start = True
-
-            node_name = message.tlv_data[NodeTlvs.NAME.value]
-            model = message.get_tlv(NodeTlvs.MODEL.value)
-            class_args = {"start": start}
-
-            if node_type == NodeTypes.RJ45.value and hasattr(
-                self.session.options, "enablerj45") and self.session.options.enablerj45 == "0":
-                class_args["start"] = False
-
-            # this instantiates an object of class nodecls, creating the node or network
-            node = self.session.add_object(cls=node_class, objid=node_id, name=node_name, **class_args)
-            if x_position is not None and y_position is not None:
-                node.setposition(x_position, y_position, None)
-            if canvas is not None:
-                node.canvas = canvas
-            if icon is not None:
-                node.icon = icon
-            opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
-            if opaque is not None:
-                node.opaque = opaque
-
-            # add services to a node, either from its services TLV or
-            # through the configured defaults for this node type
-            if node_type in [NodeTypes.DEFAULT.value, NodeTypes.PHYSICAL.value]:
-                if model is None:
-                    # TODO: default model from conf file?
-                    model = "router"
-                node.type = model
-                services_str = message.get_tlv(NodeTlvs.SERVICES.value)
-                logger.info("setting model (%s) with services (%s)", model, services_str)
-                self.session.services.addservicestonode(node, model, services_str)
-
-            # boot nodes if they are added after runtime (like
-            # session.bootnodes())
-            if self.session.state == EventTypes.RUNTIME_STATE.value:
-                if isinstance(node, nodes.PyCoreNode) and not nodeutils.is_node(node, NodeTypes.RJ45):
-                    self.session.write_objects()
-                    self.session.add_remove_control_interface(node=node, remove=False)
-                    node.boot()
-
+            node = self.session.add_node(node_type, node_id, node_options)
+            if node:
                 if message.flags & MessageFlags.STRING.value:
-                    self.node_status_request[node_id] = True
-                    self.send_node_emulation_id(node_id)
-            elif message.flags & MessageFlags.STRING.value:
-                self.node_status_request[node_id] = True
+                    self.node_status_request[node.objid] = True
 
+                if self.session.state == EventTypes.RUNTIME_STATE.value:
+                    self.send_node_emulation_id(node.objid)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
-                self.session.delete_object(node_id)
+                result = self.session.delete_node(node_id)
 
-                if message.flags & MessageFlags.STRING.value:
+                # if we deleted a node broadcast out its removal
+                if result and message.flags & MessageFlags.STRING.value:
                     tlvdata = ""
                     tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
-
-                if self.session.check_shutdown():
-                    tlvdata = ""
-                    tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, self.session.state)
-                    replies.append(coreapi.CoreEventMessage.pack(0, tlvdata))
-        # Node modify message (no add/del flag)
+        # node update
         else:
-            try:
-                node = self.session.get_object(node_id)
-
-                if x_position is not None and y_position is not None:
-                    node.setposition(x_position, y_position, None)
-
-                if canvas is not None:
-                    node.canvas = canvas
-
-                if icon is not None:
-                    node.icon = icon
-            except KeyError:
-                logger.exception("ignoring node message: unknown node number %s", node_id)
+            self.session.update_node(node_id, node_options)
 
         return replies
 
@@ -683,350 +702,56 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :param coreapi.CoreLinkMessage message: link message to handle
         :return: link message replies
         """
-        # get node classes
-        ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
+        node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
+        node_two_id = message.get_tlv(LinkTlvs.N2_NUMBER.value)
 
-        node_num1 = message.get_tlv(LinkTlvs.N1_NUMBER.value)
-        interface_index1 = message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value)
-        ipv41 = message.get_tlv(LinkTlvs.INTERFACE1_IP4.value)
-        ipv4_mask1 = message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK.value)
-        mac1 = message.get_tlv(LinkTlvs.INTERFACE1_MAC.value)
-        ipv61 = message.get_tlv(LinkTlvs.INTERFACE1_IP6.value)
-        ipv6_mask1 = message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value)
-        interface_name1 = message.get_tlv(LinkTlvs.INTERFACE1_NAME.value)
+        interface_one = InterfaceData(
+            _id=message.get_tlv(LinkTlvs.INTERFACE1_NUMBER.value),
+            name=message.get_tlv(LinkTlvs.INTERFACE1_NAME.value),
+            mac=message.get_tlv(LinkTlvs.INTERFACE1_MAC.value),
+            ip4=message.get_tlv(LinkTlvs.INTERFACE1_IP4.value),
+            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP4_MASK.value),
+            ip6=message.get_tlv(LinkTlvs.INTERFACE1_IP6.value),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
+        )
+        interface_two = InterfaceData(
+            _id=message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value),
+            name=message.get_tlv(LinkTlvs.INTERFACE2_NAME.value),
+            mac=message.get_tlv(LinkTlvs.INTERFACE2_MAC.value),
+            ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
+            ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value),
+            ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
+        )
 
-        node_num2 = message.get_tlv(LinkTlvs.N2_NUMBER.value)
-        interface_index2 = message.get_tlv(LinkTlvs.INTERFACE2_NUMBER.value)
-        ipv42 = message.get_tlv(LinkTlvs.INTERFACE2_IP4.value)
-        ipv4_mask2 = message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value)
-        mac2 = message.get_tlv(LinkTlvs.INTERFACE2_MAC.value)
-        ipv62 = message.get_tlv(LinkTlvs.INTERFACE2_IP6.value)
-        ipv6_mask2 = message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value)
-        interface_name2 = message.get_tlv(LinkTlvs.INTERFACE2_NAME.value)
+        link_type = None
+        link_type_value = message.get_tlv(LinkTlvs.TYPE.value)
+        if link_type_value is not None:
+            link_type = LinkTypes(link_type_value)
 
-        node1 = None
-        node2 = None
-        net = None
-        net2 = None
+        link_options = LinkOptions(_type=link_type)
+        link_options.delay = message.get_tlv(LinkTlvs.DELAY.value)
+        link_options.bandwidth = message.get_tlv(LinkTlvs.BANDWIDTH.value)
+        link_options.session = message.get_tlv(LinkTlvs.SESSION.value)
+        link_options.per = message.get_tlv(LinkTlvs.PER.value)
+        link_options.dup = message.get_tlv(LinkTlvs.DUP.value)
+        link_options.jitter = message.get_tlv(LinkTlvs.JITTER.value)
+        link_options.mer = message.get_tlv(LinkTlvs.MER.value)
+        link_options.burst = message.get_tlv(LinkTlvs.BURST.value)
+        link_options.mburst = message.get_tlv(LinkTlvs.MBURST.value)
+        link_options.gui_attributes = message.get_tlv(LinkTlvs.GUI_ATTRIBUTES.value)
+        link_options.unidirectional = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
+        link_options.emulation_id = message.get_tlv(LinkTlvs.EMULATION_ID.value)
+        link_options.network_id = message.get_tlv(LinkTlvs.NETWORK_ID.value)
+        link_options.key = message.get_tlv(LinkTlvs.KEY.value)
+        link_options.opaque = message.get_tlv(LinkTlvs.OPAQUE.value)
 
-        unidirectional_value = message.get_tlv(LinkTlvs.UNIDIRECTIONAL.value)
-        if unidirectional_value == 1:
-            unidirectional = True
+        if message.flags & MessageFlags.ADD.value:
+            self.session.add_link(node_one_id, node_two_id, interface_one, interface_two, link_options)
+        elif message.flags & MessageFlags.DELETE.value:
+            self.session.delete_link(node_one_id, node_two_id, interface_one.id, interface_two.id)
         else:
-            unidirectional = False
-
-        # one of the nodes may exist on a remote server
-        logger.info("link message between node1(%s:%s) and node2(%s:%s)",
-                    node_num1, interface_index1, node_num2, interface_index2)
-        if node_num1 is not None and node_num2 is not None:
-            tunnel = self.session.broker.gettunnel(node_num1, node_num2)
-            logger.info("tunnel between nodes: %s", tunnel)
-            if isinstance(tunnel, coreobj.PyCoreNet):
-                net = tunnel
-                if tunnel.remotenum == node_num1:
-                    node_num1 = None
-                else:
-                    node_num2 = None
-            # PhysicalNode connected via GreTap tunnel; uses adoptnetif() below
-            elif tunnel is not None:
-                if tunnel.remotenum == node_num1:
-                    node_num1 = None
-                else:
-                    node_num2 = None
-
-        if node_num1 is not None:
-            try:
-                n = self.session.get_object(node_num1)
-            except KeyError:
-                # XXX wait and queue this message to try again later
-                # XXX maybe this should be done differently
-                time.sleep(0.125)
-                self.queue_message(message)
-                return ()
-            if isinstance(n, nodes.PyCoreNode):
-                node1 = n
-            elif isinstance(n, coreobj.PyCoreNet):
-                if net is None:
-                    net = n
-                else:
-                    net2 = n
-            else:
-                raise ValueError("unexpected object class: %s" % n)
-
-        if node_num2 is not None:
-            try:
-                n = self.session.get_object(node_num2)
-            except KeyError:
-                # XXX wait and queue this message to try again later
-                # XXX maybe this should be done differently
-                time.sleep(0.125)
-                self.queue_message(message)
-                return ()
-            if isinstance(n, nodes.PyCoreNode):
-                node2 = n
-            elif isinstance(n, coreobj.PyCoreNet):
-                if net is None:
-                    net = n
-                else:
-                    net2 = n
-            else:
-                raise ValueError("unexpected object class: %s" % n)
-
-        link_msg_type = message.get_tlv(LinkTlvs.TYPE.value)
-
-        if node1:
-            node1.lock.acquire()
-        if node2:
-            node2.lock.acquire()
-
-        try:
-            if link_msg_type == LinkTypes.WIRELESS.value:
-                """
-                Wireless link/unlink event
-                """
-                numwlan = 0
-                objs = [node1, node2, net, net2]
-                objs = filter(lambda (x): x is not None, objs)
-                if len(objs) < 2:
-                    raise ValueError("wireless link/unlink message between unknown objects")
-
-                nets = objs[0].commonnets(objs[1])
-                for netcommon, netif1, netif2 in nets:
-                    if not nodeutils.is_node(netcommon, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
-                        continue
-                    if message.flags & MessageFlags.ADD.value:
-                        netcommon.link(netif1, netif2)
-                    elif message.flags & MessageFlags.DELETE.value:
-                        netcommon.unlink(netif1, netif2)
-                    else:
-                        raise ValueError("invalid flags for wireless link/unlink message")
-                    numwlan += 1
-                if numwlan == 0:
-                    raise ValueError("no common network found for wireless link/unlink")
-
-            elif message.flags & MessageFlags.ADD.value:
-                """
-                Add a new link.
-                """
-                start = False
-                if self.session.state > EventTypes.DEFINITION_STATE.value:
-                    start = True
-
-                if node1 and node2 and not net:
-                    # a new wired link
-                    net = self.session.add_object(cls=ptp_class, start=start)
-
-                bw = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-                delay = message.get_tlv(LinkTlvs.DELAY.value)
-                loss = message.get_tlv(LinkTlvs.PER.value)
-                duplicate = message.get_tlv(LinkTlvs.DUP.value)
-                jitter = message.get_tlv(LinkTlvs.JITTER.value)
-                key = message.get_tlv(LinkTlvs.KEY.value)
-
-                netaddrlist = []
-                if node1 and net:
-                    addrlist = []
-                    if ipv41 is not None and ipv4_mask1 is not None:
-                        addrlist.append("%s/%s" % (ipv41, ipv4_mask1))
-                    if ipv61 is not None and ipv6_mask1 is not None:
-                        addrlist.append("%s/%s" % (ipv61, ipv6_mask1))
-                    if ipv42 is not None and ipv4_mask2 is not None:
-                        netaddrlist.append("%s/%s" % (ipv42, ipv4_mask2))
-                    if ipv62 is not None and ipv6_mask2 is not None:
-                        netaddrlist.append("%s/%s" % (ipv62, ipv6_mask2))
-                    interface_index1 = node1.newnetif(
-                        net, addrlist=addrlist,
-                        hwaddr=mac1, ifindex=interface_index1, ifname=interface_name1
-                    )
-                    net.linkconfig(
-                        node1.netif(interface_index1, net), bw=bw,
-                        delay=delay, loss=loss,
-                        duplicate=duplicate, jitter=jitter
-                    )
-                if node1 is None and net:
-                    if ipv41 is not None and ipv4_mask1 is not None:
-                        netaddrlist.append("%s/%s" % (ipv41, ipv4_mask1))
-                        # don"t add this address again if node2 and net
-                        ipv41 = None
-                    if ipv61 is not None and ipv6_mask1 is not None:
-                        netaddrlist.append("%s/%s" % (ipv61, ipv6_mask1))
-                        # don"t add this address again if node2 and net
-                        ipv61 = None
-                if node2 and net:
-                    addrlist = []
-                    if ipv42 is not None and ipv4_mask2 is not None:
-                        addrlist.append("%s/%s" % (ipv42, ipv4_mask2))
-                    if ipv62 is not None and ipv6_mask2 is not None:
-                        addrlist.append("%s/%s" % (ipv62, ipv6_mask2))
-                    if ipv41 is not None and ipv4_mask1 is not None:
-                        netaddrlist.append("%s/%s" % (ipv41, ipv4_mask1))
-                    if ipv61 is not None and ipv6_mask1 is not None:
-                        netaddrlist.append("%s/%s" % (ipv61, ipv6_mask1))
-                    interface_index2 = node2.newnetif(
-                        net, addrlist=addrlist,
-                        hwaddr=mac2, ifindex=interface_index2, ifname=interface_name2
-                    )
-                    if not unidirectional:
-                        net.linkconfig(
-                            node2.netif(interface_index2, net), bw=bw,
-                            delay=delay, loss=loss,
-                            duplicate=duplicate, jitter=jitter
-                        )
-                if node2 is None and net2:
-                    if ipv42 is not None and ipv4_mask2 is not None:
-                        netaddrlist.append("%s/%s" % (ipv42, ipv4_mask2))
-                    if ipv62 is not None and ipv6_mask2 is not None:
-                        netaddrlist.append("%s/%s" % (ipv62, ipv6_mask2))
-
-                # tunnel node finalized with this link message
-                if key and nodeutils.is_node(net, NodeTypes.TUNNEL):
-                    net.setkey(key)
-                    if len(netaddrlist) > 0:
-                        net.addrconfig(netaddrlist)
-                if key and nodeutils.is_node(net2, NodeTypes.TUNNEL):
-                    net2.setkey(key)
-                    if len(netaddrlist) > 0:
-                        net2.addrconfig(netaddrlist)
-
-                if net and net2:
-                    # two layer-2 networks linked together
-                    if nodeutils.is_node(net2, NodeTypes.RJ45):
-                        # RJ45 nodes have different linknet()
-                        netif = net2.linknet(net)
-                    else:
-                        netif = net.linknet(net2)
-                    net.linkconfig(netif, bw=bw, delay=delay, loss=loss,
-                                   duplicate=duplicate, jitter=jitter)
-                    if not unidirectional:
-                        netif.swapparams("_params_up")
-                        net2.linkconfig(netif, bw=bw, delay=delay, loss=loss,
-                                        duplicate=duplicate, jitter=jitter,
-                                        devname=netif.name)
-                        netif.swapparams("_params_up")
-                elif net is None and net2 is None and (node1 is None or node2 is None):
-                    # apply address/parameters to PhysicalNodes
-                    fx = (bw, delay, loss, duplicate, jitter)
-                    addrlist = []
-                    if node1 and nodeutils.is_node(node1, NodeTypes.PHYSICAL):
-                        if ipv41 is not None and ipv4_mask1 is not None:
-                            addrlist.append("%s/%s" % (ipv41, ipv4_mask1))
-                        if ipv61 is not None and ipv6_mask1 is not None:
-                            addrlist.append("%s/%s" % (ipv61, ipv6_mask1))
-                        node1.adoptnetif(tunnel, interface_index1, mac1, addrlist)
-                        node1.linkconfig(tunnel, bw, delay, loss, duplicate, jitter)
-                    elif node2 and nodeutils.is_node(node2, NodeTypes.PHYSICAL):
-                        if ipv42 is not None and ipv4_mask2 is not None:
-                            addrlist.append("%s/%s" % (ipv42, ipv4_mask2))
-                        if ipv62 is not None and ipv6_mask2 is not None:
-                            addrlist.append("%s/%s" % (ipv62, ipv6_mask2))
-                        node2.adoptnetif(tunnel, interface_index2, mac2, addrlist)
-                        node2.linkconfig(tunnel, bw, delay, loss, duplicate, jitter)
-            # delete a link
-            elif message.flags & MessageFlags.DELETE.value:
-                """
-                Remove a link.
-                """
-                if node1 and node2:
-                    # TODO: fix this for the case where ifindex[1,2] are not specified
-                    # a wired unlink event, delete the connecting bridge
-                    netif1 = node1.netif(interface_index1)
-                    netif2 = node2.netif(interface_index2)
-                    if netif1 is None and netif2 is None:
-                        nets = node1.commonnets(node2)
-                        for netcommon, tmp1, tmp2 in nets:
-                            if (net and netcommon == net) or net is None:
-                                netif1 = tmp1
-                                netif2 = tmp2
-                                break
-
-                    if all([netif1, netif2]) and any([netif1.net, netif2.net]):
-                        if netif1.net != netif2.net and all([netif1.up, netif2.up]):
-                            raise ValueError("no common network found")
-                        net = netif1.net
-                        netif1.detachnet()
-                        netif2.detachnet()
-                        if net.numnetif() == 0:
-                            self.session.delete_object(net.objid)
-                        node1.delnetif(interface_index1)
-                        node2.delnetif(interface_index2)
-            else:
-                """
-                Modify a link.
-                """
-                bw = message.get_tlv(LinkTlvs.BANDWIDTH.value)
-                delay = message.get_tlv(LinkTlvs.DELAY.value)
-                loss = message.get_tlv(LinkTlvs.PER.value)
-                duplicate = message.get_tlv(LinkTlvs.DUP.value)
-                jitter = message.get_tlv(LinkTlvs.JITTER.value)
-                numnet = 0
-                # TODO: clean up all this logic. Having the add flag or not
-                #       should use the same code block.
-                if node1 is None and node2 is None:
-                    if net and net2:
-                        # modify link between nets
-                        netif = net.getlinknetif(net2)
-                        upstream = False
-                        if netif is None:
-                            upstream = True
-                            netif = net2.getlinknetif(net)
-                        if netif is None:
-                            raise ValueError("modify unknown link between nets")
-                        if upstream:
-                            netif.swapparams("_params_up")
-                            net.linkconfig(netif, bw=bw, delay=delay,
-                                           loss=loss, duplicate=duplicate,
-                                           jitter=jitter, devname=netif.name)
-                            netif.swapparams("_params_up")
-                        else:
-                            net.linkconfig(netif, bw=bw, delay=delay,
-                                           loss=loss, duplicate=duplicate,
-                                           jitter=jitter)
-                        if not unidirectional:
-                            if upstream:
-                                net2.linkconfig(netif, bw=bw, delay=delay,
-                                                loss=loss,
-                                                duplicate=duplicate,
-                                                jitter=jitter)
-                            else:
-                                netif.swapparams("_params_up")
-                                net2.linkconfig(netif, bw=bw, delay=delay,
-                                                loss=loss,
-                                                duplicate=duplicate,
-                                                jitter=jitter,
-                                                devname=netif.name)
-                                netif.swapparams("_params_up")
-                    else:
-                        raise ValueError("modify link for unknown nodes")
-                elif node1 is None:
-                    # node1 = layer 2node, node2 = layer3 node
-                    net.linkconfig(node2.netif(interface_index2, net), bw=bw,
-                                   delay=delay, loss=loss,
-                                   duplicate=duplicate, jitter=jitter)
-                elif node2 is None:
-                    # node2 = layer 2node, node1 = layer3 node
-                    net.linkconfig(node1.netif(interface_index1, net), bw=bw,
-                                   delay=delay, loss=loss,
-                                   duplicate=duplicate, jitter=jitter)
-                else:
-                    nets = node1.commonnets(node2)
-                    for net, netif1, netif2 in nets:
-                        if interface_index1 is not None and interface_index1 != node1.getifindex(netif1):
-                            continue
-                        net.linkconfig(netif1, bw=bw, delay=delay,
-                                       loss=loss, duplicate=duplicate,
-                                       jitter=jitter, netif2=netif2)
-                        if not unidirectional:
-                            net.linkconfig(netif2, bw=bw, delay=delay,
-                                           loss=loss, duplicate=duplicate,
-                                           jitter=jitter, netif2=netif1)
-                        numnet += 1
-                    if numnet == 0:
-                        raise ValueError("no common network found")
-        finally:
-            if node1:
-                node1.lock.release()
-            if node2:
-                node2.lock.release()
+            self.session.update_link(node_one_id, node_two_id, interface_one.id, interface_two.id, link_options)
 
         return ()
 
@@ -1120,28 +845,29 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             try:
                 logger.info("executing: %s", execute_server)
                 if message.flags & MessageFlags.STRING.value:
-                    old_session_ids = set(self.server.get_session_ids())
+                    old_session_ids = set(self.coreemu.sessions.keys())
                 sys.argv = shlex.split(execute_server)
                 file_name = sys.argv[0]
+
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = self.server.create_session()
+                    session = self.coreemu.create_session(master=False)
                     try:
-                        open_session_xml(session, file_name, start=True)
+                        session.open_xml(file_name, start=True)
                     except:
-                        session.shutdown()
-                        self.server.remove_session(session)
+                        self.coreemu.delete_session(session.session_id)
                         raise
                 else:
                     thread = threading.Thread(
                         target=execfile,
-                        args=(file_name, {"__file__": file_name, "server": self.server})
+                        args=(file_name, {"__file__": file_name, "coreemu": self.coreemu})
                     )
                     thread.daemon = True
                     thread.start()
                     # allow time for session creation
                     time.sleep(0.25)
+
                 if message.flags & MessageFlags.STRING.value:
-                    new_session_ids = set(self.server.get_session_ids())
+                    new_session_ids = set(self.coreemu.sessions.keys())
                     new_sid = new_session_ids.difference(old_session_ids)
                     try:
                         sid = new_sid.pop()
@@ -1149,18 +875,20 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     except KeyError:
                         logger.info("executed %s with unknown session ID", execute_server)
                         return replies
-                    logger.info("checking session %d for RUNTIME state" % sid)
-                    session = self.server.get_session(session_id=sid)
+
+                    logger.info("checking session %d for RUNTIME state", sid)
+                    session = self.coreemu.sessions.get(sid)
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
                     while session.state != EventTypes.RUNTIME_STATE.value:
-                        logger.info("waiting for session %d to enter RUNTIME state" % sid)
+                        logger.info("waiting for session %d to enter RUNTIME state", sid)
                         time.sleep(1)
                         retries -= 1
                         if retries <= 0:
-                            logger.info("session %d did not enter RUNTIME state" % sid)
+                            logger.info("session %d did not enter RUNTIME state", sid)
                             return replies
+
                     tlv_data = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, execute_server)
                     tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.SESSION.value, "%s" % sid)
                     message = coreapi.CoreRegMessage.pack(0, tlv_data)
@@ -1181,17 +909,15 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             # register capabilities with the GUI
             self.master = True
 
-            # TODO: need to replicate functionality?
-            # self.server.set_session_master(self)
             # find the session containing this client and set the session to master
-            for session in self.server.sessions.itervalues():
+            for session in self.coreemu.sessions.itervalues():
                 if self in session.broker.session_clients:
                     logger.info("setting session to master: %s", session.session_id)
                     session.master = True
                     break
 
             replies.append(self.register())
-            replies.append(self.server.to_session_message())
+            replies.append(self.session_message())
 
         return replies
 
@@ -1236,7 +962,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
-            node_num = message.get_tlv(NodeTlvs.NUMBER.value)
+            node_num = message.get_tlv(FileTlvs.NUMBER.value)
             file_name = message.get_tlv(FileTlvs.NAME.value)
             file_type = message.get_tlv(FileTlvs.TYPE.value)
             source_name = message.get_tlv(FileTlvs.SOURCE_NAME.value)
@@ -1254,11 +980,17 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             # some File Messages store custom files in services,
             # prior to node creation
             if file_type is not None:
-                if file_type[:8] == "service:":
-                    self.session.services.setservicefile(node_num, file_type, file_name, source_name, data)
+                if file_type.startswith("service:"):
+                    _, service_name = file_type.split(':')[:2]
+                    self.session.add_node_service_file(node_num, service_name, file_name, source_name, data)
                     return ()
-                elif file_type[:5] == "hook:":
-                    self.session.set_hook(file_type, file_name, source_name, data)
+                elif file_type.startswith("hook:"):
+                    _, state = file_type.split(':')[:2]
+                    if not state.isdigit():
+                        logger.error("error setting hook having state '%s'", state)
+                        return ()
+                    state = int(state)
+                    self.session.add_hook(state, file_name, source_name, data)
                     return ()
 
             # writing a file to the host
@@ -1270,19 +1002,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                         open_file.write(data)
                 return ()
 
-            try:
-                node = self.session.get_object(node_num)
-                if source_name is not None:
-                    node.addfile(source_name, file_name)
-                elif data is not None:
-                    node.nodefile(file_name, data)
-            except KeyError:
-                # XXX wait and queue this message to try again later
-                # XXX maybe this should be done differently
-                logger.warn("File message for %s for node number %s queued." % (file_name, node_num))
-                time.sleep(0.125)
-                self.queue_message(message)
-                return ()
+            self.session.node_add_file(node_num, source_name, file_name, data)
         else:
             raise NotImplementedError
 
@@ -1314,13 +1034,13 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             session=message.get_tlv(EventTlvs.SESSION.value)
         )
 
-        event_type = event_data.event_type
-        if event_type is None:
+        if event_data.event_type is None:
             raise NotImplementedError("Event message missing event type")
+        event_type = EventTypes(event_data.event_type)
         node_id = event_data.node
 
-        logger.info("EVENT %d: %s at %s", event_type, EventTypes(event_type).name, time.ctime())
-        if event_type <= EventTypes.SHUTDOWN_STATE.value:
+        logger.info("EVENT %s at %s", event_type.name, time.ctime())
+        if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
                 try:
                     node = self.session.get_object(node_id)
@@ -1328,21 +1048,18 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     raise KeyError("Event message for unknown node %d" % node_id)
 
                 # configure mobility models for WLAN added during runtime
-                if event_type == EventTypes.INSTANTIATION_STATE.value and nodeutils.is_node(node,
-                                                                                            NodeTypes.WIRELESS_LAN):
-                    self.session.mobility.startup(node_ids=(node.objid,))
+                if event_type == EventTypes.INSTANTIATION_STATE and nodeutils.is_node(node, NodeTypes.WIRELESS_LAN):
+                    self.session.start_mobility(node_ids=(node.objid,))
                     return ()
 
                 logger.warn("dropping unhandled Event message with node number")
                 return ()
-            self.session.set_state(state=event_type)
+            self.session.set_state(event_type)
 
-        if event_type == EventTypes.DEFINITION_STATE.value:
+        if event_type == EventTypes.DEFINITION_STATE:
             # clear all session objects in order to receive new definitions
-            self.session.delete_objects()
-            self.session.del_hooks()
-            self.session.broker.reset()
-        elif event_type == EventTypes.INSTANTIATION_STATE.value:
+            self.session.clear()
+        elif event_type == EventTypes.INSTANTIATION_STATE:
             if len(self.handler_threads) > 1:
                 # TODO: sync handler threads here before continuing
                 time.sleep(2.0)  # XXX
@@ -1352,49 +1069,41 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             # after booting nodes attempt to send emulation id for nodes waiting on status
             for obj in self.session.objects.itervalues():
                 self.send_node_emulation_id(obj.objid)
-        elif event_type == EventTypes.RUNTIME_STATE.value:
+        elif event_type == EventTypes.RUNTIME_STATE:
             if self.session.master:
                 logger.warn("Unexpected event message: RUNTIME state received at session master")
             else:
                 # master event queue is started in session.checkruntime()
-                self.session.event_loop.run()
-        elif event_type == EventTypes.DATACOLLECT_STATE.value:
+                self.session.start_events()
+        elif event_type == EventTypes.DATACOLLECT_STATE:
             self.session.data_collect()
-        elif event_type == EventTypes.SHUTDOWN_STATE.value:
+        elif event_type == EventTypes.SHUTDOWN_STATE:
             if self.session.master:
                 logger.warn("Unexpected event message: SHUTDOWN state received at session master")
-        elif event_type in (EventTypes.START.value, EventTypes.STOP.value,
-                            EventTypes.RESTART.value,
-                            EventTypes.PAUSE.value,
-                            EventTypes.RECONFIGURE.value):
+        elif event_type in {EventTypes.START, EventTypes.STOP, EventTypes.RESTART, EventTypes.PAUSE,
+                            EventTypes.RECONFIGURE}:
             handled = False
             name = event_data.name
             if name:
                 # TODO: register system for event message handlers,
                 # like confobjs
                 if name.startswith("service:"):
-                    self.session.services.handleevent(event_data)
+                    self.session.services_event(event_data)
                     handled = True
                 elif name.startswith("mobility:"):
-                    self.session.mobility.handleevent(event_data)
+                    self.session.mobility_event(event_data)
                     handled = True
             if not handled:
-                logger.warn("Unhandled event message: event type %s (%s)",
-                            event_type, coreapi.state_name(event_type))
-        elif event_type == EventTypes.FILE_OPEN.value:
-            self.session.delete_objects()
-            self.session.del_hooks()
-            self.session.broker.reset()
+                logger.warn("Unhandled event message: event type %s ", event_type.name)
+        elif event_type == EventTypes.FILE_OPEN:
             filename = event_data.name
-            open_session_xml(self.session, filename)
-
-            # trigger session to send out messages out itself
+            self.session.open_xml(filename, start=False)
             self.session.send_objects()
             return ()
-        elif event_type == EventTypes.FILE_SAVE.value:
+        elif event_type == EventTypes.FILE_SAVE:
             filename = event_data.name
-            save_session_xml(self.session, filename, self.session.config["xmlfilever"])
-        elif event_type == EventTypes.SCHEDULED.value:
+            self.session.save_xml(filename, self.session.config["xmlfilever"])
+        elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
             node = event_data.node
             name = event_data.name
@@ -1407,7 +1116,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
             else:
                 raise NotImplementedError
         else:
-            logger.warn("Unhandled event message: event type %d", event_type)
+            logger.warn("Unhandled event message: event type %s", event_type)
 
         return ()
 
@@ -1419,53 +1128,47 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
         :return: reply messages
         """
         session_id_str = message.get_tlv(SessionTlvs.NUMBER.value)
+        session_ids = coreapi.str_to_list(session_id_str)
         name_str = message.get_tlv(SessionTlvs.NAME.value)
+        names = coreapi.str_to_list(name_str)
         file_str = message.get_tlv(SessionTlvs.FILE.value)
-        node_count_str = message.get_tlv(SessionTlvs.NODE_COUNT.value)
+        files = coreapi.str_to_list(file_str)
         thumb = message.get_tlv(SessionTlvs.THUMB.value)
         user = message.get_tlv(SessionTlvs.USER.value)
-        session_ids = coreapi.str_to_list(session_id_str)
-        names = coreapi.str_to_list(name_str)
-        files = coreapi.str_to_list(file_str)
-        node_counts = coreapi.str_to_list(node_count_str)
         logger.info("SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str))
 
         if message.flags == 0:
-            # modify a session
-            i = 0
-            for session_id in session_ids:
+            for index, session_id in enumerate(session_ids):
                 session_id = int(session_id)
                 if session_id == 0:
                     session = self.session
                 else:
-                    session = self.server.get_session(session_id=session_id)
+                    session = self.coreemu.sessions.get(session_id)
 
                 if session is None:
                     logger.info("session %s not found", session_id)
-                    i += 1
                     continue
 
                 logger.info("request to modify to session %s", session.session_id)
                 if names is not None:
-                    session.name = names[i]
-                if files is not None:
-                    session.file_name = files[i]
-                if node_counts is not None:
-                    pass
-                if thumb is not None:
-                    session.set_thumbnail(thumb)
-                if user is not None:
-                    session.set_user(user)
-                i += 1
-        else:
-            if message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
-                # status request flag: send list of sessions
-                return self.server.to_session_message(),
+                    session.name = names[index]
 
+                if files is not None:
+                    session.file_name = files[index]
+
+                if thumb:
+                    session.set_thumbnail(thumb)
+
+                if user:
+                    session.set_user(user)
+        elif message.flags & MessageFlags.STRING.value and not message.flags & MessageFlags.ADD.value:
+            # status request flag: send list of sessions
+            return self.session_message(),
+        else:
             # handle ADD or DEL flags
             for session_id in session_ids:
                 session_id = int(session_id)
-                session = self.server.get_session(session_id=session_id)
+                session = self.coreemu.sessions.get(session_id)
 
                 if session is None:
                     logger.info("session %s not found (flags=0x%x)", session_id, message.flags)
@@ -1473,17 +1176,13 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
 
                 if message.flags & MessageFlags.ADD.value:
                     # connect to the first session that exists
-                    logger.info("request to connect to session %s" % session_id)
+                    logger.info("request to connect to session %s", session_id)
 
                     # remove client from session broker and shutdown if needed
+                    self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
-                    active_states = [
-                        EventTypes.RUNTIME_STATE.value,
-                        EventTypes.RUNTIME_STATE.value,
-                        EventTypes.DATACOLLECT_STATE.value
-                    ]
-                    if not self.session.broker.session_clients and self.session.state not in active_states:
-                        self.session.shutdown()
+                    if not self.session.broker.session_clients and not self.session.is_active():
+                        self.coreemu.delete_session(self.session.session_id)
 
                     # set session to join
                     self.session = session
@@ -1497,7 +1196,7 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                     logger.info("adding session broadcast handlers")
                     self.add_session_handlers()
 
-                    if user is not None:
+                    if user:
                         self.session.set_user(user)
 
                     if message.flags & MessageFlags.STRING.value:
@@ -1505,8 +1204,6 @@ class CoreRequestHandler(SocketServer.BaseRequestHandler):
                 elif message.flags & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
                     logger.info("request to terminate session %s" % session_id)
-                    session.set_state(state=EventTypes.DATACOLLECT_STATE.value, send_event=True)
-                    session.set_state(state=EventTypes.SHUTDOWN_STATE.value, send_event=True)
                     session.shutdown()
                 else:
                     logger.warn("unhandled session flags for session %s", session_id)

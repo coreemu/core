@@ -23,11 +23,11 @@ def example(options):
     session = coreemu.create_session()
 
     # must be in configuration state for nodes to start, when using "node_add" below
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create wlan network node
     wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-    coreemu.set_wireless_model(wlan, BasicRangeModel)
+    session.set_wireless_model(wlan, BasicRangeModel)
 
     # create nodes
     wireless_nodes = []
@@ -38,7 +38,7 @@ def example(options):
         wireless_nodes.append(node)
 
     # link all created nodes with the wireless network
-    coreemu.wireless_link_all(wlan, wireless_nodes)
+    session.wireless_link_all(wlan, wireless_nodes)
 
     # instantiate session
     session.instantiate()

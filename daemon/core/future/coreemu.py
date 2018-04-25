@@ -195,6 +195,9 @@ class FutureSession(Session):
             raise ValueError("wireless link failure: %s", objects)
         logger.info("handling wireless linking objects(%) connect(%s)", objects, connect)
         common_networks = objects[0].commonnets(objects[1])
+        if not common_networks:
+            raise ValueError("no common network found for wireless link/unlink")
+
         for common_network, interface_one, interface_two in common_networks:
             if not nodeutils.is_node(common_network, [NodeTypes.WIRELESS_LAN, NodeTypes.EMANE]):
                 logger.info("skipping common network that is not wireless/emane: %s", common_network)
@@ -205,8 +208,6 @@ class FutureSession(Session):
                 common_network.link(interface_one, interface_two)
             else:
                 common_network.unlink(interface_one, interface_two)
-        else:
-            raise ValueError("no common network found for wireless link/unlink")
 
     def add_link(self, node_one_id, node_two_id, interface_one=None, interface_two=None, link_options=LinkOptions()):
         """
@@ -429,15 +430,17 @@ class FutureSession(Session):
                     link_config(net_one, interface, link_options)
                 else:
                     common_networks = node_one.commonnets(node_two)
+                    if not common_networks:
+                        raise ValueError("no common network found")
+
                     for net_one, interface_one, interface_two in common_networks:
-                        if interface_one_id and interface_one_id != node_one.getifindex(interface_one):
+                        if interface_one_id is not None and interface_one_id != node_one.getifindex(interface_one):
                             continue
 
                         link_config(net_one, interface_one, link_options, interface_two=interface_two)
                         if not link_options.unidirectional:
                             link_config(net_one, interface_two, link_options, interface_two=interface_one)
-                    else:
-                        raise ValueError("no common network found")
+
         finally:
             if node_one:
                 node_one.lock.release()
@@ -610,8 +613,8 @@ class FutureSession(Session):
 
         :return: nothing
         """
-        self.set_state(state=EventTypes.DATACOLLECT_STATE.value, send_event=True)
-        self.set_state(state=EventTypes.SHUTDOWN_STATE.value, send_event=True)
+        self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
+        self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         super(FutureSession, self).shutdown()
 
     def custom_delete_object(self, object_id):
@@ -753,9 +756,9 @@ class FutureSession(Session):
         """
         self.mobility.handleevent(event_data)
 
-    def create_emane_node(self, _id=None, node_options=NodeOptions()):
+    def create_wireless_node(self, _id=None, node_options=NodeOptions()):
         """
-        Create an EMANE node for use within an EMANE network.
+        Create a wireless node for use within an wireless/EMANE networks.
 
         :param int _id: int for node, defaults to None and will be generated
         :param core.future.futuredata.NodeOptions node_options: options for emane node, model will always be "mdr"
@@ -795,6 +798,29 @@ class FutureSession(Session):
         """
         values = list(emane_model.getdefaultvalues())
         self.emane.setconfig(emane_node.objid, emane_model.name, values)
+
+    def set_wireless_model(self, node, model):
+        """
+        Convenience method for setting a wireless model.
+
+        :param node: node to set wireless model for
+        :param core.mobility.WirelessModel model: wireless model to set node to
+        :return: nothing
+        """
+        values = list(model.getdefaultvalues())
+        node.setmodel(model, values)
+
+    def wireless_link_all(self, network, nodes):
+        """
+        Link all nodes to the provided wireless network.
+
+        :param network: wireless network to link nodes to
+        :param nodes: nodes to link to wireless network
+        :return: nothing
+        """
+        for node in nodes:
+            for common_network, interface_one, interface_two in node.commonnets(network):
+                common_network.link(interface_one, interface_two)
 
 
 class CoreEmu(object):
@@ -876,26 +902,3 @@ class CoreEmu(object):
             logger.error("session to delete did not exist: %s", _id)
 
         return result
-
-    def set_wireless_model(self, node, model):
-        """
-        Convenience method for setting a wireless model.
-
-        :param node: node to set wireless model for
-        :param core.mobility.WirelessModel model: wireless model to set node to
-        :return: nothing
-        """
-        values = list(model.getdefaultvalues())
-        node.setmodel(model, values)
-
-    def wireless_link_all(self, network, nodes):
-        """
-        Link all nodes to the provided wireless network.
-
-        :param network: wireless network to link nodes to
-        :param nodes: nodes to link to wireless network
-        :return: nothing
-        """
-        for node in nodes:
-            for common_network, interface_one, interface_two in node.commonnets(network):
-                common_network.link(interface_one, interface_two)
