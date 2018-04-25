@@ -7,18 +7,14 @@ class NodeOptions(object):
     Options for creating and updating nodes within core.
     """
 
-    def __init__(self, _type=None, _id=None, name=None, model=None):
+    def __init__(self, name=None, model="router"):
         """
         Create a NodeOptions object.
 
-        :param core.enumerations.NodeType _type: type of node to create
-        :param int _id: id for node being created, defaults to generated id
         :param str name: name of node, defaults to node class name postfix with its id
-        :param str model: model to use for this node, defines services
+        :param str model: model to use for this node, defines services, defaults to "router"
         """
-        self.id = _id
         self.name = name
-        self.type = _type
         self.model = model
         self.canvas = None
         self.icon = None

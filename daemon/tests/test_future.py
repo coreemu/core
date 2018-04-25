@@ -23,6 +23,8 @@ def future_session():
     coreemu.shutdown()
 
 
+IP4_PREFIX = "10.83.0.0/16"
+
 MODELS = [
     "router",
     "host",
@@ -41,10 +43,10 @@ class TestFuture:
     @pytest.mark.parametrize("model", MODELS)
     def test_node_add(self, future_session, model):
         # given
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT, model=model)
+        node_options = NodeOptions(model=model)
 
         # when
-        node = future_session.add_node(node_options)
+        node = future_session.add_node(node_options=node_options)
 
         # give time for node services to boot
         time.sleep(1)
@@ -59,14 +61,13 @@ class TestFuture:
 
     def test_node_update(self, future_session):
         # given
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node = future_session.add_node(node_options)
+        node = future_session.add_node()
         position_value = 100
-        update_options = NodeOptions(_id=node.objid)
+        update_options = NodeOptions()
         update_options.set_position(x=position_value, y=position_value)
 
         # when
-        future_session.update_node(update_options)
+        future_session.update_node(node.objid, update_options)
 
         # then
         assert node.position.x == position_value
@@ -74,8 +75,7 @@ class TestFuture:
 
     def test_node_delete(self, future_session):
         # given
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node = future_session.add_node(node_options)
+        node = future_session.add_node()
 
         # when
         future_session.delete_node(node.objid)
@@ -87,10 +87,9 @@ class TestFuture:
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, future_session, net_type):
         # given
-        node_options = NodeOptions(_type=net_type)
 
         # when
-        node = future_session.add_node(node_options)
+        node = future_session.add_node(_type=net_type)
 
         # then
         assert node
@@ -99,10 +98,9 @@ class TestFuture:
 
     def test_ptp(self, future_session):
         # given
-        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node_one = future_session.add_node(node_options)
-        node_two = future_session.add_node(node_options)
+        prefixes = IpPrefixes(ip4_prefix=IP4_PREFIX)
+        node_one = future_session.add_node()
+        node_two = future_session.add_node()
         interface_one = prefixes.create_interface(node_one)
         inteface_two = prefixes.create_interface(node_two)
 
@@ -115,11 +113,9 @@ class TestFuture:
 
     def test_node_to_net(self, future_session):
         # given
-        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node_one = future_session.add_node(node_options)
-        node_options = NodeOptions(_type=NodeTypes.SWITCH)
-        node_two = future_session.add_node(node_options)
+        prefixes = IpPrefixes(ip4_prefix=IP4_PREFIX)
+        node_one = future_session.add_node()
+        node_two = future_session.add_node(_type=NodeTypes.SWITCH)
         interface_one = prefixes.create_interface(node_one)
 
         # when
@@ -131,12 +127,9 @@ class TestFuture:
 
     def test_net_to_node(self, future_session):
         # given
-        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-
-        node_options = NodeOptions(_type=NodeTypes.SWITCH)
-        node_one = future_session.add_node(node_options)
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node_two = future_session.add_node(node_options)
+        prefixes = IpPrefixes(ip4_prefix=IP4_PREFIX)
+        node_one = future_session.add_node(_type=NodeTypes.SWITCH)
+        node_two = future_session.add_node()
         interface_two = prefixes.create_interface(node_two)
 
         # when
@@ -148,10 +141,8 @@ class TestFuture:
 
     def test_net_to_net(self, future_session):
         # given
-        node_options = NodeOptions(_type=NodeTypes.SWITCH)
-        node_one = future_session.add_node(node_options)
-        node_options = NodeOptions(_type=NodeTypes.SWITCH)
-        node_two = future_session.add_node(node_options)
+        node_one = future_session.add_node(_type=NodeTypes.SWITCH)
+        node_two = future_session.add_node(_type=NodeTypes.SWITCH)
 
         # when
         future_session.add_link(node_one.objid, node_two.objid)
@@ -161,11 +152,9 @@ class TestFuture:
 
     def test_link_update(self, future_session):
         # given
-        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node_one = future_session.add_node(node_options)
-        node_options = NodeOptions(_type=NodeTypes.SWITCH)
-        node_two = future_session.add_node(node_options)
+        prefixes = IpPrefixes(ip4_prefix=IP4_PREFIX)
+        node_one = future_session.add_node()
+        node_two = future_session.add_node(_type=NodeTypes.SWITCH)
         interface_one = prefixes.create_interface(node_one)
         future_session.add_link(node_one.objid, node_two.objid, interface_one)
         interface = node_one.netif(interface_one.id)
@@ -193,10 +182,9 @@ class TestFuture:
 
     def test_link_delete(self, future_session):
         # given
-        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node_one = future_session.add_node(node_options)
-        node_two = future_session.add_node(node_options)
+        prefixes = IpPrefixes(ip4_prefix=IP4_PREFIX)
+        node_one = future_session.add_node()
+        node_two = future_session.add_node()
         interface_one = prefixes.create_interface(node_one)
         interface_two = prefixes.create_interface(node_two)
         future_session.add_link(node_one.objid, node_two.objid, interface_one, interface_two)

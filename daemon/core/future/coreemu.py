@@ -7,11 +7,9 @@ import core.services
 from core import logger
 from core.coreobj import PyCoreNode, PyCoreNet
 from core.data import NodeData
-from core.emane.nodes import EmaneNode
 from core.enumerations import NodeTypes, EventTypes, LinkTypes
-from core.future.futuredata import InterfaceData, LinkOptions
+from core.future.futuredata import InterfaceData, LinkOptions, NodeOptions
 from core.misc import nodeutils
-from core.netns.nodes import CoreNode
 from core.session import Session
 from core.xml.xmlparser import core_document_parser
 from core.xml.xmlwriter import core_document_writer
@@ -475,46 +473,47 @@ class FutureSession(Session):
             if node_two:
                 node_two.lock.release()
 
-    def add_node(self, node_options):
+    def add_node(self, _type=NodeTypes.DEFAULT, _id=None, node_options=NodeOptions()):
         """
         Add a node to the session, based on the provided node data.
 
+        :param core.enumerations.NodeTypes _type: type of node to create
+        :param int _id: id for node, defaults to None for generated id
         :param core.future.futuredata.NodeOptions node_options: data to create node with
         :return: created node
         """
 
         # retrieve node class for given node type
         try:
-            node_class = nodeutils.get_node_class(node_options.type)
+            node_class = nodeutils.get_node_class(_type)
         except KeyError:
-            logger.error("invalid node type to create: %s", node_options.type)
+            logger.error("invalid node type to create: %s", _type)
             return None
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
         enable_rj45 = getattr(self.options, "enablerj45", "0") == "1"
-        if node_options.type == NodeTypes.RJ45 and not enable_rj45:
+        if _type == NodeTypes.RJ45 and not enable_rj45:
             start = False
 
         # determine node id
-        node_id = node_options.id
-        if not node_id:
+        if not _id:
             while True:
-                node_id = self.node_id_gen.next()
-                if node_id not in self.objects:
+                _id = self.node_id_gen.next()
+                if _id not in self.objects:
                     break
 
         # generate name if not provided
         name = node_options.name
         if not name:
-            name = "%s%s" % (node_class.__name__, node_id)
+            name = "%s%s" % (node_class.__name__, _id)
 
         # create node
-        logger.info("creating node(%s) id(%s) name(%s) start(%s)", node_class, node_id, name, start)
-        node = self.add_object(cls=node_class, objid=node_id, name=name, start=start)
+        logger.info("creating node(%s) id(%s) name(%s) start(%s)", node_class, _id, name, start)
+        node = self.add_object(cls=node_class, objid=_id, name=name, start=start)
 
         # set node attributes
-        node.type = node_options.model or "router"
+        node.type = node_options.model
         node.icon = node_options.icon
         node.canvas = node_options.canvas
         node.opaque = node_options.opaque
@@ -523,7 +522,7 @@ class FutureSession(Session):
         self.set_node_position(node, node_options)
 
         # add services to default and physical nodes only
-        if node_options.type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
+        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             logger.info("setting model (%s) with services (%s)", node.type, node_options.services)
             services = "|".join(node_options.services) or None
             self.services.addservicestonode(node, node.type, services)
@@ -539,16 +538,19 @@ class FutureSession(Session):
 
         return node
 
-    def update_node(self, node_options):
+    def update_node(self, node_id, node_options):
         """
         Update node information.
 
+        :param int node_id: id of node to update
         :param core.future.futuredata.NodeOptions node_options: data to update node with
-        :return: nothing
+        :return: True if node updated, False otherwise
+        :rtype: bool
         """
+        result = False
         try:
             # get node to update
-            node = self.get_object(node_options.id)
+            node = self.get_object(node_id)
 
             # set node position and broadcast it
             self.set_node_position(node, node_options)
@@ -556,14 +558,19 @@ class FutureSession(Session):
             # update attributes
             node.canvas = node_options.canvas
             node.icon = node_options.icon
+
+            # set node as updated successfully
+            result = True
         except KeyError:
             logger.error("failure to update node that does not exist: %s", node_options.id)
+
+        return result
 
     def delete_node(self, node_id):
         """
         Delete a node from the session and check if session should shutdown, if no nodes are left.
 
-        :param int node_id:
+        :param int node_id: id of node to delete
         :return: True if node deleted, False otherwise
         :rtype: bool
         """
@@ -796,23 +803,26 @@ class FutureSession(Session):
 
         return node
 
-    def create_emane_node(self, name=None):
+    def create_emane_node(self, _id=None, node_options=NodeOptions()):
         """
         Create an EMANE node for use within an EMANE network.
 
-        :param str name: name to five node
-        :return: CoreNode
+        :param int _id: int for node, defaults to None and will be generated
+        :param core.future.futuredata.NodeOptions node_options: options for emane node, model will always be "mdr"
+        :return: new emane node
+        :rtype: core.netns.nodes.CoreNode
         """
-        return self.create_node(cls=CoreNode, name=name, model="mdr")
+        node_options.model = "mdr"
+        return self.add_node(_type=NodeTypes.DEFAULT, _id=_id, node_options=node_options)
 
-    def create_emane_network(self, model, geo_reference, geo_scale=None, name=None):
+    def create_emane_network(self, model, geo_reference, geo_scale=None, node_options=NodeOptions()):
         """
         Convenience method for creating an emane network.
 
         :param model: emane model to use for emane network
         :param geo_reference: geo reference point to use for emane node locations
         :param geo_scale: geo scale to use for emane node locations, defaults to 1.0
-        :param name: name for emane network, defaults to node class name
+        :param core.future.futuredata.NodeOptions node_options: options for emane node being created
         :return: create emane network
         """
         # required to be set for emane to function properly
@@ -821,7 +831,7 @@ class FutureSession(Session):
             self.location.refscale = geo_scale
 
         # create and return network
-        emane_network = self.create_node(cls=EmaneNode, name=name)
+        emane_network = self.add_node(_type=NodeTypes.EMANE, node_options=node_options)
         self.set_emane_model(emane_network, model)
         return emane_network
 

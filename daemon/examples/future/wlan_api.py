@@ -8,10 +8,10 @@
 import datetime
 
 import parser
+from core.enumerations import NodeTypes, EventTypes
 from core.future.coreemu import CoreEmu
 from core.future.futuredata import IpPrefixes
 from core.mobility import BasicRangeModel
-from core.netns.nodes import WlanNode, CoreNode
 
 
 def example(options):
@@ -22,19 +22,23 @@ def example(options):
     coreemu = CoreEmu()
     session = coreemu.create_session()
 
+    # must be in configuration state for nodes to start, when using "node_add" below
+    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+
     # create wlan network node
-    wlan_network = session.create_node(cls=WlanNode)
-    coreemu.set_wireless_model(wlan_network, BasicRangeModel)
+    wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+    coreemu.set_wireless_model(wlan, BasicRangeModel)
 
     # create nodes
     wireless_nodes = []
     for _ in xrange(options.nodes):
-        node = session.create_node(cls=CoreNode)
-        coreemu.add_interface(wlan_network, node, prefixes)
+        node = session.add_node()
+        interface = prefixes.create_interface(node)
+        session.add_link(node.objid, wlan.objid, interface_one=interface)
         wireless_nodes.append(node)
 
     # link all created nodes with the wireless network
-    coreemu.wireless_link_all(wlan_network, wireless_nodes)
+    coreemu.wireless_link_all(wlan, wireless_nodes)
 
     # instantiate session
     session.instantiate()

@@ -10,7 +10,7 @@ import datetime
 import parser
 from core.enumerations import NodeTypes, EventTypes
 from core.future.coreemu import CoreEmu
-from core.future.futuredata import IpPrefixes, NodeOptions
+from core.future.futuredata import IpPrefixes
 
 
 def example(options):
@@ -25,13 +25,11 @@ def example(options):
     session.set_state(EventTypes.CONFIGURATION_STATE.value)
 
     # create switch network node
-    node_options = NodeOptions(_type=NodeTypes.SWITCH)
-    switch = session.add_node(node_options)
+    switch = session.add_node(_type=NodeTypes.SWITCH)
 
     # create nodes
     for _ in xrange(options.nodes):
-        node_options = NodeOptions(_type=NodeTypes.DEFAULT)
-        node = session.add_node(node_options)
+        node = session.add_node()
         interface = prefixes.create_interface(node)
         session.add_link(node.objid, switch.objid, interface_one=interface)
 

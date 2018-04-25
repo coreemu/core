@@ -647,9 +647,9 @@ class FutureHandler(SocketServer.BaseRequestHandler):
         if node_type_value is not None:
             node_type = NodeTypes(node_type_value)
 
+        node_id = message.get_tlv(NodeTlvs.NUMBER.value)
+
         node_options = NodeOptions(
-            _type=node_type,
-            _id=message.get_tlv(NodeTlvs.NUMBER.value),
             name=message.get_tlv(NodeTlvs.NAME.value),
             model=message.get_tlv(NodeTlvs.MODEL.value)
         )
@@ -674,7 +674,7 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             node_options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_options)
+            node = self.session.add_node(node_type, node_id, node_options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.objid] = True
@@ -683,17 +683,17 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                     self.send_node_emulation_id(node.objid)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
-                result = self.session.delete_node(node_options.id)
+                result = self.session.delete_node(node_id)
 
                 # if we deleted a node broadcast out its removal
                 if result and message.flags & MessageFlags.STRING.value:
                     tlvdata = ""
-                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_options.id)
+                    tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.update_node(node_options)
+            self.session.update_node(node_id, node_options)
 
         return replies
 

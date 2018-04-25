@@ -6,6 +6,7 @@ import datetime
 
 import parser
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.enumerations import EventTypes
 from core.future.coreemu import CoreEmu
 from core.future.futuredata import IpPrefixes
 
@@ -18,6 +19,9 @@ def example(options):
     coreemu = CoreEmu()
     session = coreemu.create_session()
 
+    # must be in configuration state for nodes to start, when using "node_add" below
+    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+
     # create emane network node
     emane_network = session.create_emane_network(
         model=EmaneIeee80211abgModel,
@@ -29,7 +33,8 @@ def example(options):
     for i in xrange(options.nodes):
         node = session.create_emane_node()
         node.setposition(x=150 * (i + 1), y=150)
-        coreemu.add_interface(emane_network, node, prefixes)
+        interface = prefixes.create_interface(node)
+        session.add_link(node.objid, emane_network.objid, interface_one=interface)
 
     # instantiate session
     session.instantiate()
