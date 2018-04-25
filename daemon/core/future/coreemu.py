@@ -8,7 +8,7 @@ from core import logger
 from core.coreobj import PyCoreNode, PyCoreNet
 from core.data import NodeData
 from core.enumerations import NodeTypes, EventTypes, LinkTypes
-from core.future.futuredata import InterfaceData, LinkOptions, NodeOptions
+from core.future.futuredata import LinkOptions, NodeOptions
 from core.misc import nodeutils
 from core.session import Session
 from core.xml.xmlparser import core_document_parser
@@ -32,35 +32,6 @@ signal.signal(signal.SIGINT, signal_handler)
 signal.signal(signal.SIGTERM, signal_handler)
 signal.signal(signal.SIGUSR1, signal_handler)
 signal.signal(signal.SIGUSR2, signal_handler)
-
-
-def get_interfaces(link_data):
-    """
-    Creates interface data objects for the interfaces defined within link data.
-
-    :param core.data.LinkData link_data: data to create interface data from
-    :return: interface one and two data
-    :rtype: tuple[core.future.futuredata.InterfaceData]
-    """
-    interface_one = InterfaceData(
-        _id=link_data.interface1_id,
-        name=link_data.interface1_name,
-        mac=link_data.interface1_mac,
-        ip4=link_data.interface1_ip4,
-        ip4_mask=link_data.interface1_ip4_mask,
-        ip6=link_data.interface1_ip6,
-        ip6_mask=link_data.interface1_ip6_mask,
-    )
-    interface_two = InterfaceData(
-        _id=link_data.interface2_id,
-        name=link_data.interface2_name,
-        mac=link_data.interface2_mac,
-        ip4=link_data.interface2_ip4,
-        ip4_mask=link_data.interface2_ip4_mask,
-        ip6=link_data.interface2_ip6,
-        ip6_mask=link_data.interface2_ip6_mask,
-    )
-    return interface_one, interface_two
 
 
 def create_interface(node, network, interface_data):
@@ -782,27 +753,6 @@ class FutureSession(Session):
         """
         self.mobility.handleevent(event_data)
 
-    def create_node(self, cls, name=None, model=None):
-        """
-        Create a node
-
-        :param cls:
-        :param name:
-        :param model:
-        :return:
-        """
-        object_id = self.node_id_gen.next()
-
-        if not name:
-            name = "%s%s" % (cls.__name__, object_id)
-
-        node = self.add_object(cls=cls, name=name, objid=object_id)
-        node.type = model
-        if node.type:
-            self.services.addservicestonode(node, node.type, services_str=None)
-
-        return node
-
     def create_emane_node(self, _id=None, node_options=NodeOptions()):
         """
         Create an EMANE node for use within an EMANE network.
@@ -909,15 +859,23 @@ class CoreEmu(object):
 
     def delete_session(self, _id):
         """
-        Deletes a CORE session.
+        Shutdown and delete a CORE session.
 
         :param int _id: session id to delete
-        :return: nothing
+        :return: True if deleted, False otherwise
+        :rtype: bool
         """
         logger.info("deleting session: %s", _id)
         session = self.sessions.pop(_id, None)
-        if not session:
+        result = False
+        if session:
+            logger.info("shutting session down: %s", _id)
+            session.shutdown()
+            result = True
+        else:
             logger.error("session to delete did not exist: %s", _id)
+
+        return result
 
     def set_wireless_model(self, node, model):
         """
@@ -941,17 +899,3 @@ class CoreEmu(object):
         for node in nodes:
             for common_network, interface_one, interface_two in node.commonnets(network):
                 common_network.link(interface_one, interface_two)
-
-    def add_interface(self, network, node, prefixes):
-        """
-        Convenience method for adding an interface with a prefix based on node id.
-
-        :param network: network to add interface with
-        :param node: node to add interface to
-        :param core.future.futuredata.IpPrefixes prefixes: to get address from for interface
-        :return: created interface
-        """
-        interface_data = prefixes.create_interface(node)
-        logger.info("adding interface: %s", interface_data.get_addresses())
-        interface_index = node.newnetif(network, interface_data.get_addresses(), ifindex=interface_data.id)
-        return node.netif(interface_index)

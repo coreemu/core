@@ -130,7 +130,6 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             self.session.broker.session_clients.remove(self)
             if not self.session.broker.session_clients and not self.session.is_active():
                 logger.info("no session clients left and not active, initiating shutdown")
-                self.session.shutdown()
                 self.coreemu.delete_session(self.session.session_id)
 
         return SocketServer.BaseRequestHandler.finish(self)
@@ -551,9 +550,6 @@ class FutureHandler(SocketServer.BaseRequestHandler):
             except IOError:
                 logger.exception("error dispatching reply")
 
-    def session_shutdown(self, session):
-        self.coreemu.delete_session(session.session_id)
-
     def handle(self):
         """
         Handle a new connection request from a client. Dispatch to the
@@ -856,7 +852,6 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                     try:
                         session.open_xml(file_name, start=True)
                     except:
-                        session.shutdown()
                         self.coreemu.delete_session(session.session_id)
                         raise
                 else:
@@ -1189,7 +1184,6 @@ class FutureHandler(SocketServer.BaseRequestHandler):
                     self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
                     if not self.session.broker.session_clients and not self.session.is_active():
-                        self.session.shutdown()
                         self.coreemu.delete_session(self.session.session_id)
 
                     # set session to join
