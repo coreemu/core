@@ -105,7 +105,7 @@ def main():
     start = datetime.datetime.now()
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
-    session = Session(1, persistent=True)
+    session = Session(1)
     if "server" in globals():
         server.addsession(session)
 
@@ -125,7 +125,6 @@ def main():
 
     # Set the local session id to match the port.
     # Not necessary but seems neater.
-    # session.sessionid = session.broker.getserver("localhost")[2].getsockname()[1]
     session.broker.setupserver(daemon)
 
     # We do not want the recvloop running as we will deal ourselves

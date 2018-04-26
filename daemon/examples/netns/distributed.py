@@ -55,7 +55,7 @@ def main():
     start = datetime.datetime.now()
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
-    session = Session(1, persistent=True)
+    session = Session(1)
     if 'server' in globals():
         server.addsession(session)
 

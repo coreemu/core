@@ -113,8 +113,8 @@ class IdGen(object):
 
 
 class FutureSession(Session):
-    def __init__(self, session_id, config=None, persistent=True, mkdir=True):
-        super(FutureSession, self).__init__(session_id, config, persistent, mkdir)
+    def __init__(self, session_id, config=None, mkdir=True):
+        super(FutureSession, self).__init__(session_id, config, mkdir)
 
         # object management
         self.node_id_gen = IdGen()

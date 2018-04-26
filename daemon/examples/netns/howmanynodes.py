@@ -106,7 +106,7 @@ def main():
         parser.print_help()
         sys.exit(err)
 
-    (options, args) = parser.parse_args()
+    options, args = parser.parse_args()
 
     for a in args:
         sys.stderr.write("ignoring command line argument: %s\n" % a)
@@ -117,8 +117,7 @@ def main():
     print "Testing how many network namespace nodes this machine can create."
     print " - %s" % linuxversion()
     mem = memfree()
-    print " - %.02f GB total memory (%.02f GB swap)" % \
-          (mem["total"] / GBD, mem["stotal"] / GBD)
+    print " - %.02f GB total memory (%.02f GB swap)" % (mem["total"] / GBD, mem["stotal"] / GBD)
     print " - using IPv4 network prefix %s" % prefix
     print " - using wait time of %s" % options.waittime
     print " - using %d nodes per bridge" % options.bridges
@@ -135,7 +134,7 @@ def main():
         lfp.write("# numnodes,%s\n" % ",".join(MEMKEYS))
         lfp.flush()
 
-    session = Session(1, persistent=True)
+    session = Session(1)
     switch = session.add_object(cls=nodes.SwitchNode)
     switchlist.append(switch)
     print "Added bridge %s (%d)." % (switch.brname, len(switchlist))
@@ -146,15 +145,14 @@ def main():
         i += 1
         # optionally add a bridge (options.bridges nodes per bridge)
         try:
-            if options.bridges > 0 and switch.numnetif() >= options.bridges:
+            if 0 < options.bridges <= switch.numnetif():
                 switch = session.add_object(cls=nodes.SwitchNode)
                 switchlist.append(switch)
-                print "\nAdded bridge %s (%d) for node %d." % \
-                      (switch.brname, len(switchlist), i)
+                print "\nAdded bridge %s (%d) for node %d." % (switch.brname, len(switchlist), i)
         except Exception, e:
-            print "At %d bridges (%d nodes) caught exception:\n%s\n" % \
-                  (len(switchlist), i - 1, e)
+            print "At %d bridges (%d nodes) caught exception:\n%s\n" % (len(switchlist), i - 1, e)
             break
+
         # create a node
         try:
             n = session.add_object(cls=nodes.LxcNode, name="n%d" % i)

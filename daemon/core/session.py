@@ -3,7 +3,6 @@ session.py: defines the Session class used by the core-daemon daemon program
 that manages a CORE session.
 """
 
-import atexit
 import os
 import pprint
 import random
@@ -52,68 +51,17 @@ node_map = nodemaps.NODES
 nodeutils.set_node_map(node_map)
 
 
-class SessionManager(object):
-    """
-    Manages currently known sessions.
-    """
-    sessions = set()
-    session_lock = threading.Lock()
-
-    @classmethod
-    def add(cls, session):
-        """
-        Add a session to the manager.
-
-        :param Session session: session to add
-        :return: nothing
-        """
-        with cls.session_lock:
-            logger.info("adding session to manager: %s", session.session_id)
-            cls.sessions.add(session)
-
-    @classmethod
-    def remove(cls, session):
-        """
-        Remove session from the manager.
-
-        :param Session session: session to remove
-        :return: nothing
-        """
-        with cls.session_lock:
-            logger.info("removing session from manager: %s", session.session_id)
-            if session in cls.sessions:
-                cls.sessions.remove(session)
-            else:
-                logger.info("session was already removed: %s", session.session_id)
-
-    @classmethod
-    def on_exit(cls):
-        """
-        Method used to shutdown all currently known sessions, in case of unexpected exit.
-
-        :return: nothing
-        """
-        logger.info("caught program exit, shutting down all known sessions")
-        while cls.sessions:
-            with cls.session_lock:
-                session = cls.sessions.pop()
-            logger.error("WARNING: automatically shutting down non-persistent session %s - %s",
-                         session.session_id, session.name)
-            session.shutdown()
-
-
 class Session(object):
     """
     CORE session manager.
     """
 
-    def __init__(self, session_id, config=None, persistent=False, mkdir=True):
+    def __init__(self, session_id, config=None, mkdir=True):
         """
         Create a Session instance.
 
         :param int session_id: session id
         :param dict config: session configuration
-        :param bool persistent: flag is session is considered persistent
         :param bool mkdir: flag to determine if a directory should be made
         """
         self.session_id = session_id
@@ -151,9 +99,6 @@ class Session(object):
         self._state_hooks = {}
 
         self.add_state_hook(state=EventTypes.RUNTIME_STATE.value, hook=self.runtime_state_hook)
-
-        if not persistent:
-            SessionManager.add(self)
 
         self.master = False
 
@@ -226,9 +171,6 @@ class Session(object):
         # call session shutdown handlers
         for handler in self.shutdown_handlers:
             handler(self)
-
-        # remove this session from the manager
-        SessionManager.remove(self)
 
     def broadcast_event(self, event_data):
         """
@@ -1514,7 +1456,3 @@ class SessionMetaData(ConfigurableManager):
         :return: configuration items iterator
         """
         return self.configs.iteritems()
-
-
-# configure the program exit function to run
-atexit.register(SessionManager.on_exit)
