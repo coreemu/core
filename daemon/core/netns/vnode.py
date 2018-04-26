@@ -2,6 +2,7 @@
 PyCoreNode and LxcNode classes that implement the network namespac virtual node.
 """
 
+import errno
 import os
 import random
 import shutil
@@ -145,10 +146,11 @@ class SimpleLxcNode(PyCoreNode):
 
         # remove node directory if present
         try:
-            if os.path.exists(self.ctrlchnlname):
-                os.unlink(self.ctrlchnlname)
-        except OSError:
-            logger.exception("error removing node directory")
+            os.unlink(self.ctrlchnlname)
+        except OSError as e:
+            # no such file or directory
+            if e.errno != errno.ENOENT:
+                logger.exception("error removing node directory")
 
         # clear interface data, close client, and mark self and not up
         self._netif.clear()
