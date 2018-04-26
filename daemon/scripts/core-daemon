@@ -13,7 +13,6 @@ import time
 from core import constants
 from core import enumerations
 from core import logger
-from core import services
 from core.legacy.corehandler import CoreHandler
 from core.legacy.coreserver import CoreServer
 from core.misc import nodeutils
@@ -138,8 +137,5 @@ if __name__ == "__main__":
         from core.netns.openvswitch import OVS_NODES
 
         nodeutils.update_node_map(OVS_NODES)
-
-    # load default services
-    services.load()
 
     main()

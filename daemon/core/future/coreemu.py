@@ -487,7 +487,6 @@ class FutureSession(Session):
         node = self.add_object(cls=node_class, objid=_id, name=name, start=start)
 
         # set node attributes
-        node.type = node_options.model
         node.icon = node_options.icon
         node.canvas = node_options.canvas
         node.opaque = node_options.opaque
@@ -497,6 +496,8 @@ class FutureSession(Session):
 
         # add services to default and physical nodes only
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
+            node.type = node_options.model
+            logger.debug("set node type: %s", node.type)
             logger.info("setting model (%s) with services (%s)", node.type, node_options.services)
             services = "|".join(node_options.services) or None
             self.services.addservicestonode(node, node.type, services)

@@ -1152,11 +1152,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :rtype: int
         """
         nodenum = int(nodenum)
-        try:
-            return self.nodemap[nodenum]
-        except KeyError:
-            logger.exception("error finding value in node map, ignored and returns node id")
-            return nodenum
+        return self.nodemap.get(nodenum, nodenum)
 
     def startup(self):
         """

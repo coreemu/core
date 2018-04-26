@@ -213,7 +213,7 @@ class ScenarioPlan(XmlElement):
         self.setAttribute('xmlns:CORE', 'coreSpecific')
         self.setAttribute('compiled', 'true')
 
-        self.all_channel_members = dict()
+        self.all_channel_members = {}
         self.last_network_id = 0
         self.addNetworks()
         self.addDevices()
@@ -795,26 +795,23 @@ class InterfaceElement(NamedXmlElement):
         """
         Add a reference to the channel that uses this interface
         """
-        try:
-            cm = self.scenPlan.all_channel_members[self.id]
-            if cm is not None:
-                ch = cm.base_element.parentNode
-                if ch is not None:
-                    net = ch.parentNode
-                    if net is not None:
-                        MemberElement(self.scenPlan,
-                                      self,
-                                      referenced_type=MembType.CHANNEL,
-                                      referenced_id=ch.getAttribute("id"),
-                                      index=int(cm.getAttribute("index")))
-                        MemberElement(self.scenPlan,
-                                      self,
-                                      referenced_type=MembType.NETWORK,
-                                      referenced_id=net.getAttribute("id"))
-        except KeyError:
-            # Not an error. This occurs when an interface belongs to a switch
-            #  or a hub within a network and the channel is yet to be defined
-            logger.exception("noted as not an error, add channel reference error")
+        # cm is None when an interface belongs to a switch
+        #  or a hub within a network and the channel is yet to be defined
+        cm = self.scenPlan.all_channel_members.get(self.id)
+        if cm is not None:
+            ch = cm.base_element.parentNode
+            if ch is not None:
+                net = ch.parentNode
+                if net is not None:
+                    MemberElement(self.scenPlan,
+                                  self,
+                                  referenced_type=MembType.CHANNEL,
+                                  referenced_id=ch.getAttribute("id"),
+                                  index=int(cm.getAttribute("index")))
+                    MemberElement(self.scenPlan,
+                                  self,
+                                  referenced_type=MembType.NETWORK,
+                                  referenced_id=net.getAttribute("id"))
 
     def addAddresses(self, interface_object):
         """

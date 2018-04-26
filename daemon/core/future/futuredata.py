@@ -12,7 +12,7 @@ class NodeOptions(object):
         Create a NodeOptions object.
 
         :param str name: name of node, defaults to node class name postfix with its id
-        :param str model: model to use for this node, defines services, defaults to "router"
+        :param str model: defines services for default and physical nodes, defaults to "router"
         """
         self.name = name
         self.model = model
