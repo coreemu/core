@@ -15,7 +15,6 @@ from core import enumerations
 from core import logger
 from core.legacy.corehandler import CoreHandler
 from core.legacy.coreserver import CoreServer
-from core.misc import nodeutils
 from core.misc.utils import close_onexec
 from core.service import ServiceManager
 
@@ -29,11 +28,12 @@ def banner():
     logger.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
 
 
-def cored(cfg=None):
+def cored(cfg, use_ovs):
     """
     Start the CoreServer object and enter the server loop.
 
     :param dict cfg: core configuration
+    :param bool use_ovs: flag to determine if ovs nodes should be used
     :return: nothing
     """
     host = cfg["listenaddr"]
@@ -43,6 +43,9 @@ def cored(cfg=None):
 
     try:
         server = CoreServer((host, port), CoreHandler, cfg)
+        if use_ovs:
+            from core.netns.openvswitch import OVS_NODES
+            server.coreemu.update_nodes(OVS_NODES)
     except:
         logger.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
@@ -123,8 +126,11 @@ def main():
 
     banner()
 
+    # check if ovs flag was provided
+    use_ovs = len(sys.argv) == 2 and sys.argv[1] == "ovs"
+
     try:
-        cored(cfg)
+        cored(cfg, use_ovs)
     except KeyboardInterrupt:
         logger.info("keyboard interrupt, stopping core daemon")
 
@@ -132,10 +138,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    if len(sys.argv) == 2 and sys.argv[1] == "ovs":
-        from core.netns.openvswitch import OVS_NODES
-
-        nodeutils.update_node_map(OVS_NODES)
-
     main()

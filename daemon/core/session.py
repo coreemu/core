@@ -33,7 +33,6 @@ from core.enumerations import MessageFlags
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.location import CoreLocation
-from core.misc import nodemaps
 from core.misc import nodeutils
 from core.misc import utils
 from core.misc.event import EventLoop
@@ -45,10 +44,6 @@ from core.netns import nodes
 from core.sdt import Sdt
 from core.service import CoreServices
 from core.xml.xmlsession import save_session_xml
-
-# set default node map
-node_map = nodemaps.NODES
-nodeutils.set_node_map(node_map)
 
 
 class Session(object):

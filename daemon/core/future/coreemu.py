@@ -5,10 +5,15 @@ import sys
 
 import core.services
 from core import logger
-from core.coreobj import PyCoreNode, PyCoreNet
+from core.coreobj import PyCoreNet
+from core.coreobj import PyCoreNode
 from core.data import NodeData
-from core.enumerations import NodeTypes, EventTypes, LinkTypes
-from core.future.futuredata import LinkOptions, NodeOptions
+from core.enumerations import EventTypes
+from core.enumerations import LinkTypes
+from core.enumerations import NodeTypes
+from core.future.futuredata import LinkOptions
+from core.future.futuredata import NodeOptions
+from core.misc import nodemaps
 from core.misc import nodeutils
 from core.session import Session
 from core.xml.xmlparser import core_document_parser
@@ -842,11 +847,25 @@ class CoreEmu(object):
         self.session_id_gen = IdGen(_id=59999)
         self.sessions = {}
 
+        # set default nodes
+        # set default node map
+        node_map = nodemaps.NODES
+        nodeutils.set_node_map(node_map)
+
         # load default services
         core.services.load()
 
         # catch exit event
         atexit.register(self.shutdown)
+
+    def update_nodes(self, node_map):
+        """
+        Updates node map used by core.
+
+        :param dict node_map: node map to update existing node map with
+        :return: nothing
+        """
+        nodeutils.update_node_map(node_map)
 
     def shutdown(self):
         """
