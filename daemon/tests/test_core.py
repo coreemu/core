@@ -5,7 +5,6 @@ Unit tests for testing basic CORE networks.
 import os
 import stat
 import threading
-import time
 from xml.etree import ElementTree
 
 import pytest
@@ -247,7 +246,7 @@ class TestCore:
         node_one.delnetif(0)
         assert not node_one.netif(0)
 
-    def test_wlan_good(self, session, ip_prefixes):
+    def test_wlan_ping(self, session, ip_prefixes):
         """
         Test basic wlan network.
 
@@ -279,46 +278,6 @@ class TestCore:
         # ping n2 from n1 and assert success
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
-
-    def test_wlan_bad(self, session, ip_prefixes):
-        """
-        Test basic wlan network with leveraging basic range model.
-
-        :param core.future.coreemu.FutureSession session: session for test
-        :param ip_prefixes: generates ip addresses for nodes
-        """
-
-        # create wlan
-        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        session.set_wireless_model(wlan_node, BasicRangeModel)
-
-        # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(0, 0)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_two = session.create_wireless_node(node_options=node_options)
-
-        # link nodes
-        for node in [node_one, node_two]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, wlan_node.objid, interface_one=interface)
-
-        # link nodes in wlan
-        session.wireless_link_all(wlan_node, [node_one, node_two])
-
-        # instantiate session
-        session.instantiate()
-
-        # move node two out of range, default range check is 275
-        time.sleep(5)
-        update_options = NodeOptions()
-        update_options.set_position(500, 500)
-        session.update_node(node_two.objid, update_options)
-
-        # ping n2 from n1 and assert failure
-        time.sleep(5)
-        status = ping(node_one, node_two, ip_prefixes)
-        assert status
 
     def test_mobility(self, session, ip_prefixes):
         """
