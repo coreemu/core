@@ -40,7 +40,7 @@ def pack_values(clazz, packers):
             value = transformer(value)
 
         # pack and add to existing data
-        logger.info("packing: %s - %s", tlv_type, value)
+        logger.debug("packing: %s - %s", tlv_type, value)
         data += clazz.pack(tlv_type.value, value)
 
     return data

@@ -168,8 +168,7 @@ class EmaneManager(ConfigurableManager):
         load EMANE models and make them available.
         """
         for emane_model in emane_models:
-            logger.info("loading emane model: (%s) %s - %s",
-                        emane_model, emane_model.name, RegisterTlvs(emane_model.config_type))
+            logger.info("loading emane model: %s", emane_model.__name__)
             self._modelclsmap[emane_model.name] = emane_model
             self.session.add_config_object(emane_model.name, emane_model.config_type, emane_model.configure_emane)
 

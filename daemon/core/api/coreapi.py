@@ -10,7 +10,6 @@ import struct
 
 from enum import Enum
 
-from core import logger
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
@@ -275,7 +274,6 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
-        logger.info("getting new ipv4 address for: %s", value)
         return IpAddress(af=socket.AF_INET, address=value)
 
 

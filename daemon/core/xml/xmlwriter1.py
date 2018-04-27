@@ -77,7 +77,7 @@ class CoreDocumentWriter1(Document):
         objects from the given session.
         """
         Document.__init__(self)
-        logger.info('Exporting to NMF XML version 1.0')
+        logger.debug('Exporting to NMF XML version 1.0')
         with session._objects_lock:
             self.scenarioPlan = ScenarioPlan(self, session)
             if session.state == EventTypes.RUNTIME_STATE.value:

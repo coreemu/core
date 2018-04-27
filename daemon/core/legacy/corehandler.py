@@ -73,7 +73,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         if num_threads < 1:
             raise ValueError("invalid number of threads: %s" % num_threads)
 
-        logger.info("launching core server handler threads: %s", num_threads)
+        logger.debug("launching core server handler threads: %s", num_threads)
         for _ in xrange(num_threads):
             thread = threading.Thread(target=self.handler_thread)
             self.handler_threads.append(thread)
@@ -94,7 +94,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         :return: nothing
         """
-        logger.info("new TCP connection: %s", self.client_address)
+        logger.debug("new TCP connection: %s", self.client_address)
 
     def finish(self):
         """
@@ -103,14 +103,14 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         :return: nothing
         """
-        logger.info("finishing request handler")
-        logger.info("remaining message queue size: %s", self.message_queue.qsize())
+        logger.debug("finishing request handler")
+        logger.debug("remaining message queue size: %s", self.message_queue.qsize())
 
         # give some time for message queue to deplete
         timeout = 10
         wait = 0
         while not self.message_queue.empty():
-            logger.info("waiting for message queue to empty: %s seconds", wait)
+            logger.debug("waiting for message queue to empty: %s seconds", wait)
             time.sleep(1)
             wait += 1
             if wait == timeout:
@@ -150,8 +150,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         date_list = []
         thumb_list = []
         num_sessions = 0
-
-        logger.info("creating session message: %s", self.coreemu.sessions.keys())
 
         with self._sessions_lock:
             for session_id, session in self.coreemu.sessions.iteritems():
@@ -211,7 +209,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param core.data.EventData event_data: event data to handle
         :return: nothing
         """
-        logger.info("handling broadcast event: %s", event_data)
+        logger.debug("handling broadcast event: %s", event_data)
 
         tlv_data = structutils.pack_values(coreapi.CoreEventTlv, [
             (EventTlvs.NODE, event_data.node),
@@ -235,7 +233,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param core.data.FileData file_data: file data to handle
         :return: nothing
         """
-        logger.info("handling broadcast file: %s", file_data)
+        logger.debug("handling broadcast file: %s", file_data)
 
         tlv_data = structutils.pack_values(coreapi.CoreFileTlv, [
             (FileTlvs.NODE, file_data.node),
@@ -262,7 +260,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param core.data.ConfigData config_data: config data to handle
         :return: nothing
         """
-        logger.info("handling broadcast config: %s", config_data)
+        logger.debug("handling broadcast config: %s", config_data)
 
         tlv_data = structutils.pack_values(coreapi.CoreConfigTlv, [
             (ConfigTlvs.NODE, config_data.node),
@@ -293,7 +291,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param core.data.ExceptionData exception_data: exception data to handle
         :return: nothing
         """
-        logger.info("handling broadcast exception: %s", exception_data)
+        logger.debug("handling broadcast exception: %s", exception_data)
         tlv_data = structutils.pack_values(coreapi.CoreExceptionTlv, [
             (ExceptionTlvs.NODE, exception_data.node),
             (ExceptionTlvs.SESSION, exception_data.session),
@@ -316,7 +314,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param core.data.NodeData node_data: node data to handle
         :return: nothing
         """
-        logger.info("handling broadcast node: %s", node_data)
+        logger.debug("handling broadcast node: %s", node_data)
 
         tlv_data = structutils.pack_values(coreapi.CoreNodeTlv, [
             (NodeTlvs.NUMBER, node_data.id),
@@ -354,7 +352,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param core.data.LinkData link_data: link data to handle
         :return: nothing
         """
-        logger.info("handling broadcast link: %s", link_data)
+        logger.debug("handling broadcast link: %s", link_data)
 
         tlv_data = structutils.pack_values(coreapi.CoreLinkTlv, [
             (LinkTlvs.N1_NUMBER, link_data.node1_id),
@@ -476,8 +474,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param message: message to queue
         :return: nothing
         """
-        logger.info("queueing msg (queuedtimes = %s): type %s",
-                    message.queuedtimes, MessageTypes(message.message_type))
+        logger.debug("queueing msg (queuedtimes = %s): type %s", message.queuedtimes, MessageTypes(
+            message.message_type))
         self.message_queue.put(message)
 
     def handler_thread(self):
@@ -504,13 +502,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         if self.session and self.session.broker.handle_message(message):
-            logger.info("message not being handled locally")
+            logger.debug("message not being handled locally")
             return
 
-        logger.info("%s handling message:\n%s", threading.currentThread().getName(), message)
+        logger.debug("%s handling message:\n%s", threading.currentThread().getName(), message)
 
         if message.message_type not in self.message_handlers:
-            logger.warn("no handler for message type: %s", message.type_str())
+            logger.error("no handler for message type: %s", message.type_str())
             return
 
         message_handler = self.message_handlers[message.message_type]
@@ -520,8 +518,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             replies = message_handler(message)
             self.dispatch_replies(replies, message)
         except:
-            logger.exception("%s: exception while handling message: %s",
-                             threading.currentThread().getName(), message)
+            logger.exception("%s: exception while handling message: %s", threading.currentThread().getName(), message)
 
     def dispatch_replies(self, replies, message):
         """
@@ -531,7 +528,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
-        logger.info("dispatching replies")
+        logger.debug("dispatching replies")
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -545,7 +542,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 reply_message = "CoreMessage (type %d flags %d length %d)" % (
                     message_type, message_flags, message_length)
 
-            logger.info("dispatch reply:\n%s", reply_message)
+            logger.debug("dispatch reply:\n%s", reply_message)
 
             try:
                 self.sendall(reply)
@@ -566,17 +563,16 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # TODO: add shutdown handler for session
         self.session = self.coreemu.create_session(port, master=False)
         # self.session.shutdown_handlers.append(self.session_shutdown)
-        logger.info("created new session for client: %s", self.session.session_id)
+        logger.debug("created new session for client: %s", self.session.session_id)
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
         # TODO: broker needs to be pulled out of session to the server/handler level
         if self.master:
-            logger.info("session set to master")
+            logger.debug("session set to master")
             self.session.master = True
         self.session.broker.session_clients.append(self)
 
         # add handlers for various data
-        logger.info("adding session broadcast handlers")
         self.add_session_handlers()
 
         # set initial session state
@@ -607,11 +603,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 if client == self:
                     continue
 
-                logger.info("BROADCAST TO OTHER CLIENT: %s", client)
+                logger.debug("BROADCAST TO OTHER CLIENT: %s", client)
                 client.sendall(message.raw_message)
 
     def add_session_handlers(self):
-        logger.info("adding session broadcast handlers")
+        logger.debug("adding session broadcast handlers")
         self.session.event_handlers.append(self.handle_broadcast_event)
         self.session.exception_handlers.append(self.handle_broadcast_exception)
         self.session.node_handlers.append(self.handle_broadcast_node)
@@ -620,7 +616,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         self.session.config_handlers.append(self.handle_broadcast_config)
 
     def remove_session_handlers(self):
-        logger.info("removing session broadcast handlers")
+        logger.debug("removing session broadcast handlers")
         self.session.event_handlers.remove(self.handle_broadcast_event)
         self.session.exception_handlers.remove(self.handle_broadcast_exception)
         self.session.node_handlers.remove(self.handle_broadcast_node)
@@ -876,17 +872,17 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                         logger.info("executed %s with unknown session ID", execute_server)
                         return replies
 
-                    logger.info("checking session %d for RUNTIME state", sid)
+                    logger.debug("checking session %d for RUNTIME state", sid)
                     session = self.coreemu.sessions.get(sid)
                     retries = 10
                     # wait for session to enter RUNTIME state, to prevent GUI from
                     # connecting while nodes are still being instantiated
                     while session.state != EventTypes.RUNTIME_STATE.value:
-                        logger.info("waiting for session %d to enter RUNTIME state", sid)
+                        logger.debug("waiting for session %d to enter RUNTIME state", sid)
                         time.sleep(1)
                         retries -= 1
                         if retries <= 0:
-                            logger.info("session %d did not enter RUNTIME state", sid)
+                            logger.debug("session %d did not enter RUNTIME state", sid)
                             return replies
 
                     tlv_data = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, execute_server)
@@ -904,7 +900,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         gui = message.get_tlv(RegisterTlvs.GUI.value)
         if gui is None:
-            logger.info("ignoring Register message")
+            logger.debug("ignoring Register message")
         else:
             # register capabilities with the GUI
             self.master = True
@@ -912,7 +908,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             # find the session containing this client and set the session to master
             for session in self.coreemu.sessions.itervalues():
                 if self in session.broker.session_clients:
-                    logger.info("setting session to master: %s", session.session_id)
+                    logger.debug("setting session to master: %s", session.session_id)
                     session.master = True
                     break
 
@@ -944,7 +940,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             network_id=message.get_tlv(ConfigTlvs.NETWORK_ID.value),
             opaque=message.get_tlv(ConfigTlvs.OPAQUE.value)
         )
-        logger.info("Configuration message for %s node %s", config_data.object, config_data.node)
+        logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
 
         # dispatch to any registered callback for this object type
         replies = self.session.config_object(config_data)
@@ -1039,7 +1035,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         event_type = EventTypes(event_data.event_type)
         node_id = event_data.node
 
-        logger.info("EVENT %s at %s", event_type.name, time.ctime())
+        logger.debug("handling event %s at %s", event_type.name, time.ctime())
         if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
                 try:
@@ -1116,7 +1112,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             else:
                 raise NotImplementedError
         else:
-            logger.warn("Unhandled event message: event type %s", event_type)
+            logger.warn("unhandled event message: event type %s", event_type)
 
         return ()
 
@@ -1135,7 +1131,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         files = coreapi.str_to_list(file_str)
         thumb = message.get_tlv(SessionTlvs.THUMB.value)
         user = message.get_tlv(SessionTlvs.USER.value)
-        logger.info("SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str))
+        logger.debug("SESSION message flags=0x%x sessions=%s" % (message.flags, session_id_str))
 
         if message.flags == 0:
             for index, session_id in enumerate(session_ids):
@@ -1146,10 +1142,10 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     session = self.coreemu.sessions.get(session_id)
 
                 if session is None:
-                    logger.info("session %s not found", session_id)
+                    logger.warn("session %s not found", session_id)
                     continue
 
-                logger.info("request to modify to session %s", session.session_id)
+                logger.info("request to modify to session: %s", session.session_id)
                 if names is not None:
                     session.name = names[index]
 

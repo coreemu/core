@@ -107,11 +107,11 @@ class SimpleLxcNode(PyCoreNode):
         self.client = vnodeclient.VnodeClient(self.name, self.ctrlchnlname)
 
         # bring up the loopback interface
-        logger.info("bringing up loopback interface")
+        logger.debug("bringing up loopback interface")
         self.check_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
 
         # set hostname for node
-        logger.info("setting hostname: %s", self.name)
+        logger.debug("setting hostname: %s", self.name)
         self.check_cmd(["hostname", self.name])
 
         # mark node as up
@@ -216,7 +216,7 @@ class SimpleLxcNode(PyCoreNode):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         source = os.path.abspath(source)
-        logger.info("mounting %s at %s", source, target)
+        logger.info("node(%s) mounting: %s at %s", self.name, source, target)
         cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
         status, output = self.client.shcmd_result(cmd)
         if status:
@@ -230,7 +230,7 @@ class SimpleLxcNode(PyCoreNode):
         :param str target: target directory to unmount
         :return: nothing
         """
-        logger.info("unmounting: %s", target)
+        logger.info("node(%s) unmounting: %s", self.name, target)
         try:
             self.check_cmd([constants.UMOUNT_BIN, "-n", "-l", target])
         except CoreCommandError:
@@ -289,12 +289,12 @@ class SimpleLxcNode(PyCoreNode):
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
                 output = self.check_cmd(["ip", "link", "show", veth.name])
-                logger.info("interface command output: %s", output)
+                logger.debug("interface command output: %s", output)
                 output = output.split("\n")
                 veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-                logger.info("interface flow index: %s - %s", veth.name, veth.flow_id)
+                logger.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
                 veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
-                logger.info("interface mac: %s - %s", veth.name, veth.hwaddr)
+                logger.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
                 self.addnetif(veth, ifindex)
@@ -625,7 +625,7 @@ class LxcNode(SimpleLxcNode):
         with self.opennodefile(filename, "w") as open_file:
             open_file.write(contents)
             os.chmod(open_file.name, mode)
-            logger.info("created nodefile: %s; mode: 0%o", open_file.name, mode)
+            logger.info("node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode)
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -641,4 +641,4 @@ class LxcNode(SimpleLxcNode):
         shutil.copy2(srcfilename, hostfilename)
         if mode is not None:
             os.chmod(hostfilename, mode)
-        logger.info("copied nodefile: %s; mode: %s", hostfilename, mode)
+        logger.info("node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode)

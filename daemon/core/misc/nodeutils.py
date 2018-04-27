@@ -2,8 +2,6 @@
 Serves as a global point for storing and retrieving node types needed during simulation.
 """
 
-import pprint
-
 from core import logger
 
 _NODE_MAP = None
@@ -11,8 +9,11 @@ _NODE_MAP = None
 
 def _log_map():
     global _NODE_MAP
-    print_map = reduce(lambda x, y: _convert_map(x, y), _NODE_MAP.items(), {})
-    logger.info("node class map: \n%s", pprint.pformat(print_map, indent=4))
+    for key, value in _NODE_MAP.iteritems():
+        name = None
+        if value:
+            name = value.__name__
+        logger.info("node type (%s) - class (%s)", key.name, name)
 
 
 def _convert_map(x, y):

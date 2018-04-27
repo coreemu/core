@@ -51,7 +51,7 @@ def cored(cfg, use_ovs):
         sys.exit(1)
 
     close_onexec(server.fileno())
-    logger.info("main server started, listening on: %s:%s", host, port)
+    logger.debug("main server started, listening on: %s:%s", host, port)
     server.serve_forever()
 
 

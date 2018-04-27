@@ -90,7 +90,7 @@ def run_cmd(node, exec_cmd):
         message_data = server.sock.recv(message_length)
 
         # If we get the right response return the results
-        print "received response message: %s" % MessageTypes(message_type)
+        print "received response message: %s" % message_type
         if message_type == MessageTypes.EXECUTE.value:
             message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
             result = message.get_tlv(ExecuteTlvs.RESULT.value)

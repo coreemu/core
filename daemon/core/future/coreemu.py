@@ -142,7 +142,7 @@ class FutureSession(Session):
         :return: nodes, network nodes if present, and tunnel if present
         :rtype: tuple
         """
-        logger.info("link message between node1(%s) and node2(%s)", node_one_id, node_two_id)
+        logger.debug("link message between node1(%s) and node2(%s)", node_one_id, node_two_id)
 
         # values to fill
         net_one = None
@@ -154,7 +154,7 @@ class FutureSession(Session):
 
         # both node ids are provided
         tunnel = self.broker.gettunnel(node_one_id, node_two_id)
-        logger.info("tunnel between nodes: %s", tunnel)
+        logger.debug("tunnel between nodes: %s", tunnel)
         if nodeutils.is_node(tunnel, NodeTypes.TAP_BRIDGE):
             net_one = tunnel
             if tunnel.remotenum == node_one_id:
@@ -182,8 +182,8 @@ class FutureSession(Session):
                 net_two = node_two
             node_two = None
 
-        logger.info("link node types n1(%s) n2(%s) net1(%s) net2(%s) tunnel(%s)",
-                    node_one, node_two, net_one, net_two, tunnel)
+        logger.debug("link node types n1(%s) n2(%s) net1(%s) net2(%s) tunnel(%s)",
+                     node_one, node_two, net_one, net_two, tunnel)
         return node_one, node_two, net_one, net_two, tunnel
 
     # TODO: this doesn't appear to ever be used, EMANE or basic wireless range
@@ -198,7 +198,7 @@ class FutureSession(Session):
         objects = [x for x in objects if x]
         if len(objects) < 2:
             raise ValueError("wireless link failure: %s", objects)
-        logger.info("handling wireless linking objects(%) connect(%s)", objects, connect)
+        logger.debug("handling wireless linking objects(%) connect(%s)", objects, connect)
         common_networks = objects[0].commonnets(objects[1])
         if not common_networks:
             raise ValueError("no common network found for wireless link/unlink")
@@ -242,23 +242,27 @@ class FutureSession(Session):
             else:
                 # 2 nodes being linked, ptp network
                 if all([node_one, node_two]) and not net_one:
+                    logger.info("adding link for peer to peer nodes: %s - %s", node_one.name, node_two.name)
                     ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
                     start = self.state > EventTypes.DEFINITION_STATE.value
                     net_one = self.add_object(cls=ptp_class, start=start)
 
                 # node to network
                 if node_one and net_one:
+                    logger.info("adding link from node to network: %s - %s", node_one.name, net_one.name)
                     interface = create_interface(node_one, net_one, interface_one)
                     link_config(net_one, interface, link_options)
 
                 # network to node
                 if node_two and net_one:
+                    logger.info("adding link from network to node: %s - %s", node_two.name, net_one.name)
                     interface = create_interface(node_two, net_one, interface_two)
                     if not link_options.unidirectional:
                         link_config(net_one, interface, link_options)
 
                 # network to network
                 if net_one and net_two:
+                    logger.info("adding link from network to network: %s", net_one.name, net_two.name)
                     if nodeutils.is_node(net_two, NodeTypes.RJ45):
                         interface = net_two.linknet(net_one)
                     else:
@@ -282,10 +286,12 @@ class FutureSession(Session):
                 # tunnel node logic
                 key = link_options.key
                 if key and nodeutils.is_node(net_one, NodeTypes.TUNNEL):
+                    logger.info("setting tunnel key for: %s", net_one.name)
                     net_one.setkey(key)
                     if addresses:
                         net_one.addrconfig(addresses)
                 if key and nodeutils.is_node(net_two, NodeTypes.TUNNEL):
+                    logger.info("setting tunnel key for: %s", net_two.name)
                     net_two.setkey(key)
                     if addresses:
                         net_two.addrconfig(addresses)
@@ -293,10 +299,12 @@ class FutureSession(Session):
                 # physical node connected with tunnel
                 if not net_one and not net_two and (node_one or node_two):
                     if node_one and nodeutils.is_node(node_one, NodeTypes.PHYSICAL):
+                        logger.info("adding link for physical node: %s", node_one.name)
                         addresses = interface_one.get_addresses()
                         node_one.adoptnetif(tunnel, interface_one.id, interface_one.mac, addresses)
                         link_config(node_one, tunnel, link_options)
                     elif node_two and nodeutils.is_node(node_two, NodeTypes.PHYSICAL):
+                        logger.info("adding link for physical node: %s", node_two.name)
                         addresses = interface_two.get_addresses()
                         node_two.adoptnetif(tunnel, interface_two.id, interface_two.mac, addresses)
                         link_config(node_two, tunnel, link_options)
@@ -351,11 +359,12 @@ class FutureSession(Session):
                                 interface_two = common_interface_two
                                 break
 
-                    logger.info("deleting link for interfaces interface_one(%s) interface_two(%s)",
-                                interface_one, interface_two)
                     if all([interface_one, interface_two]) and any([interface_one.net, interface_two.net]):
                         if interface_one.net != interface_two.net and all([interface_one.up, interface_two.up]):
                             raise ValueError("no common network found")
+
+                        logger.info("deleting link node(%s):interface(%s) node(%s):interface(%s)",
+                                    node_one.name, interface_one.name, node_two.name, interface_two.name)
                         net_one = interface_one.net
                         interface_one.detachnet()
                         interface_two.detachnet()
@@ -488,7 +497,7 @@ class FutureSession(Session):
             name = "%s%s" % (node_class.__name__, _id)
 
         # create node
-        logger.info("creating node(%s) id(%s) name(%s) start(%s)", node_class, _id, name, start)
+        logger.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
         node = self.add_object(cls=node_class, objid=_id, name=name, start=start)
 
         # set node attributes
@@ -503,7 +512,6 @@ class FutureSession(Session):
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             node.type = node_options.model
             logger.debug("set node type: %s", node.type)
-            logger.info("setting model (%s) with services (%s)", node.type, node_options.services)
             services = "|".join(node_options.services) or None
             self.services.addservicestonode(node, node.type, services)
 
@@ -874,9 +882,10 @@ class CoreEmu(object):
         :return: nothing
         """
         logger.info("shutting down all session")
-        for session in self.sessions.values():
-            session.shutdown()
+        sessions = self.sessions.copy()
         self.sessions.clear()
+        for session in sessions.itervalues():
+            session.shutdown()
 
     def create_session(self, _id=None, master=True):
         """

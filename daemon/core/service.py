@@ -44,7 +44,7 @@ class ServiceManager(object):
                 insert = index + 1
                 break
 
-        logger.info("loading service: %s - %s: %s", insert, service, service._name)
+        logger.info("loading service: %s", service.__name__)
         cls.services.insert(insert, service)
 
     @classmethod
@@ -89,7 +89,7 @@ class CoreServices(ConfigurableManager):
     name = "services"
     config_type = RegisterTlvs.UTILITY.value
 
-    _invalid_custom_names = ('core', 'api', 'emane', 'misc', 'netns', 'phys', 'services')
+    _invalid_custom_names = ("core", "api", "emane", "misc", "netns", "phys", "services")
 
     def __init__(self, session):
         """
@@ -200,21 +200,21 @@ class CoreServices(ConfigurableManager):
         :return: nothing
         """
         if services_str is not None:
-            logger.info("setting node specific services: %s", services_str)
+            logger.info("setting custom services for node(%s)", node.name)
             services = services_str.split("|")
             for name in services:
                 s = ServiceManager.get(name)
                 if s is None:
                     logger.warn("configured service %s for node %s is unknown", name, node.name)
                     continue
-                logger.info("adding configured service %s to node %s", s._name, node.name)
+                logger.info("adding service to node(%s): %s", node.name, s._name)
                 s = self.getcustomservice(node.objid, s)
                 node.addservice(s)
         else:
-            logger.info("setting default services for node (%s) type (%s)", node.objid, nodetype)
+            logger.info("setting default services for node(%s) type (%s)", node.name, nodetype)
             services = self.getdefaultservices(nodetype)
             for s in services:
-                logger.info("adding default service %s to node %s", s._name, node.name)
+                logger.info("adding service to node(%s): %s", node.name, s._name)
                 s = self.getcustomservice(node.objid, s)
                 node.addservice(s)
 
@@ -290,7 +290,7 @@ class CoreServices(ConfigurableManager):
             self.bootnodecustomservice(node, service, services, use_startup_service)
             return
 
-        logger.info("starting service %s (%s)", service._name, service._startindex)
+        logger.info("starting node(%s) service: %s (%s)", node.name, service._name, service._startindex)
         for directory in service._dirs:
             node.privatedir(directory)
 
@@ -386,8 +386,7 @@ class CoreServices(ConfigurableManager):
         :return: service validation status
         :rtype: int
         """
-        logger.info("validating service for node (%s - %s): %s (%s)",
-                    node.objid, node.name, service._name, service._startindex)
+        logger.info("validating service for node (%s): %s (%s)", node.name, service._name, service._startindex)
         if service._custom:
             validate_cmds = service._validate
         else:
@@ -452,7 +451,7 @@ class CoreServices(ConfigurableManager):
         session_id = config_data.session
         opaque = config_data.opaque
 
-        logger.info("configuration request: node(%s) session(%s) opaque(%s)", node_id, session_id, opaque)
+        logger.debug("configuration request: node(%s) session(%s) opaque(%s)", node_id, session_id, opaque)
 
         # send back a list of available services
         if opaque is None:
@@ -545,7 +544,7 @@ class CoreServices(ConfigurableManager):
                 return None
             key = values.pop(0)
             self.defaultservices[key] = values
-            logger.info("default services for type %s set to %s" % (key, values))
+            logger.debug("default services for type %s set to %s", key, values)
         else:
             # store service customized config in self.customservices[]
             if node_id is None:

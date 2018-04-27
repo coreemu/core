@@ -370,13 +370,13 @@ def load_classes(path, clazz):
     :return: list of classes loaded
     """
     # validate path exists
-    logger.info("attempting to load modules from path: %s", path)
+    logger.debug("attempting to load modules from path: %s", path)
     if not os.path.isdir(path):
         logger.warn("invalid custom module directory specified" ": %s" % path)
     # check if path is in sys.path
     parent_path = os.path.dirname(path)
     if parent_path not in sys.path:
-        logger.info("adding parent path to allow imports: %s", parent_path)
+        logger.debug("adding parent path to allow imports: %s", parent_path)
         sys.path.append(parent_path)
 
     # retrieve potential service modules, and filter out invalid modules
@@ -389,7 +389,7 @@ def load_classes(path, clazz):
     classes = []
     for module_name in module_names:
         import_statement = "%s.%s" % (base_module, module_name)
-        logger.info("importing custom module: %s", import_statement)
+        logger.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)
             members = inspect.getmembers(module, lambda x: _is_class(module, x, clazz))

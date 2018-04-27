@@ -63,7 +63,7 @@ class CoreLocation(ConfigurableManager):
         values = config_data.data_values
 
         if values is None:
-            logger.info("location data missing")
+            logger.warn("location data missing")
             return None
         values = values.split('|')
 

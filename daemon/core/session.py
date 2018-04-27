@@ -245,13 +245,12 @@ class Session(object):
         state_name = state.name
 
         if self.state == state_value:
-            logger.info("session is already in state: %s, skipping change", state_name)
+            logger.info("session(%s) is already in state: %s, skipping change", self.session_id, state_name)
             return
 
         self.state = state_value
         self._state_time = time.time()
-        logger.info("changing session %s to state %s(%s) at %s",
-                    self.session_id, state_value, state_name, self._state_time)
+        logger.info("changing session(%s) to state %s", self.session_id, state_name)
 
         self.write_state(state_value)
         self.run_hooks(state_value)
@@ -462,7 +461,7 @@ class Session(object):
             try:
                 utils.load_config(environment_user_file, env)
             except IOError:
-                logger.info("error reading user core environment settings file: %s", environment_user_file)
+                logger.debug("user core environment settings file not present: %s", environment_user_file)
 
         return env
 
@@ -610,7 +609,7 @@ class Session(object):
         :return: nothing
         """
         register_tlv = RegisterTlvs(object_type)
-        logger.info("adding config object callback: %s - %s", name, register_tlv)
+        logger.debug("adding config object callback: %s - %s", name, register_tlv)
         with self._config_objects_lock:
             self.config_objects[name] = (object_type, callback)
 
@@ -624,8 +623,9 @@ class Session(object):
         :rtype: list
         """
         name = config_data.object
-        logger.info("session(%s): handling config message(%s): \n%s",
-                    self.session_id, name, config_data)
+        logger.info("session(%s) setting config(%s)", self.session_id, name)
+        for key, value in config_data.__dict__.iteritems():
+            logger.debug("%s = %s", key, value)
 
         replies = []
 
@@ -795,7 +795,8 @@ class Session(object):
         # this is called from instantiate() after receiving an event message
         # for the instantiation state, and from the broker when distributed
         # nodes have been started
-        logger.info("checking runtime: %s", self.state)
+        logger.info("session(%s) checking if not in runtime state, current state: %s", self.session_id,
+                    coreapi.state_name(self.state))
         if self.state == EventTypes.RUNTIME_STATE.value:
             logger.info("valid runtime state found, returning")
             return
@@ -841,7 +842,7 @@ class Session(object):
         and links remain.
         """
         node_count = self.get_node_count()
-        logger.info("checking shutdown for session %d: %d nodes remaining", self.session_id, node_count)
+        logger.info("session(%s) checking shutdown: %s nodes remaining", self.session_id, node_count)
 
         shutdown = False
         if node_count == 0:
@@ -869,7 +870,7 @@ class Session(object):
                 # TODO: PyCoreNode is not the type to check
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
-                    logger.info("booting node: %s - %s", obj.objid, obj.name)
+                    logger.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
                     obj.boot()
 

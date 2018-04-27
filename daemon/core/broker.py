@@ -158,7 +158,7 @@ class CoreBroker(ConfigurableManager):
         """
         Reset to initial state.
         """
-        logger.info("broker reset")
+        logger.info("clearing state")
         self.nodemap_lock.acquire()
         self.nodemap.clear()
         for server, count in self.nodecounts.iteritems():
@@ -302,7 +302,7 @@ class CoreBroker(ConfigurableManager):
                 server.close()
                 del self.servers[name]
 
-            logger.info("adding server: %s @ %s:%s" % (name, host, port))
+            logger.info("adding broker server(%s): %s:%s" % (name, host, port))
             server = CoreDistributedServer(name, host, port)
             if host is not None and port is not None:
                 try:
@@ -432,7 +432,7 @@ class CoreBroker(ConfigurableManager):
         Add GreTaps between network devices on different machines.
         The GreTapBridge is not used since that would add an extra bridge.
         """
-        logger.info("adding network tunnels for nodes: %s", self.network_nodes)
+        logger.debug("adding network tunnels for nodes: %s", self.network_nodes)
         for n in self.network_nodes:
             self.addnettunnel(n)
 
@@ -531,7 +531,7 @@ class CoreBroker(ConfigurableManager):
         :return: gre tap between nodes or none
         """
         key = self.tunnelkey(n1num, n2num)
-        logger.info("checking for tunnel(%s) in: %s", key, self.tunnels.keys())
+        logger.debug("checking for tunnel(%s) in: %s", key, self.tunnels.keys())
         if key in self.tunnels.keys():
             return self.tunnels[key]
         else:
@@ -709,8 +709,6 @@ class CoreBroker(ConfigurableManager):
         if message.message_type == MessageTypes.LINK.value:
             # prepare a server list from two node numbers in link message
             handle_locally, servers, message = self.handlelinkmsg(message)
-            logger.info("broker handle link message: %s - %s", handle_locally,
-                        map(lambda x: "%s:%s" % (x.host, x.port), servers))
         elif len(servers) == 0:
             # check for servers based on node numbers in all messages but link
             nn = message.node_numbers()
@@ -868,7 +866,7 @@ class CoreBroker(ConfigurableManager):
 
         # determine link message destination using non-network nodes
         nn = message.node_numbers()
-        logger.info("checking link nodes (%s) with network nodes (%s)", nn, self.network_nodes)
+        logger.debug("checking link nodes (%s) with network nodes (%s)", nn, self.network_nodes)
         if nn[0] in self.network_nodes:
             if nn[1] in self.network_nodes:
                 # two network nodes linked together - prevent loops caused by
@@ -879,11 +877,11 @@ class CoreBroker(ConfigurableManager):
         elif nn[1] in self.network_nodes:
             servers = self.getserversbynode(nn[0])
         else:
-            logger.info("link nodes are not network nodes")
+            logger.debug("link nodes are not network nodes")
             servers1 = self.getserversbynode(nn[0])
-            logger.info("servers for node(%s): %s", nn[0], servers1)
+            logger.debug("servers for node(%s): %s", nn[0], servers1)
             servers2 = self.getserversbynode(nn[1])
-            logger.info("servers for node(%s): %s", nn[1], servers2)
+            logger.debug("servers for node(%s): %s", nn[1], servers2)
             # nodes are on two different servers, build tunnels as needed
             if servers1 != servers2:
                 localn = None
@@ -912,7 +910,7 @@ class CoreBroker(ConfigurableManager):
                 if host is None:
                     host = self.getlinkendpoint(message, localn == nn[0])
 
-                logger.info("handle locally(%s) and local node(%s)", handle_locally, localn)
+                logger.debug("handle locally(%s) and local node(%s)", handle_locally, localn)
                 if localn is None:
                     message = self.addlinkendpoints(message, servers1, servers2)
                 elif message.flags & MessageFlags.ADD.value:
