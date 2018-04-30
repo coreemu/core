@@ -52,6 +52,19 @@ def set_node_map(node_map):
     _log_map()
 
 
+def get_node_type(node_class):
+    """
+    Retrieve the node type given a node class.
+
+    :param class node_class: node class to get type for
+    :return: node type
+    :rtype: core.enumerations.NodeTypes
+    """
+    global _NODE_MAP
+    node_type_map = {v: k for k, v in _NODE_MAP.iteritems()}
+    return node_type_map.get(node_class)
+
+
 def get_node_class(node_type):
     """
     Retrieve the node class for a given node type.
