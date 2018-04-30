@@ -1163,5 +1163,5 @@ class CoreBroker(ConfigurableManager):
         control_nets = map(lambda x: "%s:%s" % (x[0], x[1]), zip(servers, control_nets))
         values[index] = "controlnet=%s" % (" ".join(control_nets))
         values_str = "|".join(values)
-        message.tlvdata[ConfigTlvs.VALUES.value] = values_str
+        message.tlv_data[ConfigTlvs.VALUES.value] = values_str
         message.repack()

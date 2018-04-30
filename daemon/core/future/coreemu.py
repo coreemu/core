@@ -856,7 +856,6 @@ class CoreEmu(object):
         self.sessions = {}
 
         # set default nodes
-        # set default node map
         node_map = nodemaps.NODES
         nodeutils.set_node_map(node_map)
 
