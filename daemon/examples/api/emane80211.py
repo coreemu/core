@@ -6,9 +6,9 @@ import datetime
 
 import parser
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emulator.coreemu import CoreEmu
+from core.emulator.emudata import IpPrefixes
 from core.enumerations import EventTypes
-from core.future.coreemu import CoreEmu
-from core.future.futuredata import IpPrefixes
 
 
 def example(options):

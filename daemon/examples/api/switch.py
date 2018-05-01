@@ -8,9 +8,9 @@
 import datetime
 
 import parser
+from core.emulator.coreemu import CoreEmu
+from core.emulator.emudata import IpPrefixes
 from core.enumerations import NodeTypes, EventTypes
-from core.future.coreemu import CoreEmu
-from core.future.futuredata import IpPrefixes
 
 
 def example(options):

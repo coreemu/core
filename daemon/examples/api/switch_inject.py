@@ -5,8 +5,8 @@
 # and repeat for minnodes <= n <= maxnodes with a step size of
 # nodestep
 
+from core.emulator.emudata import IpPrefixes
 from core.enumerations import NodeTypes, EventTypes
-from core.future.futuredata import IpPrefixes
 
 
 def example(nodes):

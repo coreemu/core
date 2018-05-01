@@ -105,7 +105,7 @@ class TestGui:
         """
         Test session broker creation.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param cored: cored daemon server to test with
         """
 

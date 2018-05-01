@@ -13,8 +13,8 @@ import time
 from core import constants
 from core import enumerations
 from core import logger
-from core.legacy.corehandler import CoreHandler
-from core.legacy.coreserver import CoreServer
+from core.corehandlers import CoreHandler
+from core.coreserver import CoreServer
 from core.misc.utils import close_onexec
 from core.service import ServiceManager
 

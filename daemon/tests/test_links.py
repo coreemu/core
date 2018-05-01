@@ -1,5 +1,5 @@
+from core.emulator.emudata import LinkOptions
 from core.enumerations import NodeTypes
-from core.future.futuredata import LinkOptions
 from core.misc import utils
 
 
@@ -138,7 +138,7 @@ class TestLinks:
         """
         Test ptp node network with modifying link bandwidth.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
 
@@ -169,7 +169,7 @@ class TestLinks:
         """
         Test ptp node network with modifying link packet loss.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
 
@@ -200,7 +200,7 @@ class TestLinks:
         """
         Test ptp node network with modifying link packet delay.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
 
@@ -232,7 +232,7 @@ class TestLinks:
         """
         Test ptp node network with modifying link packet jitter.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
 

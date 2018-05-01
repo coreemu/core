@@ -8,11 +8,11 @@ from core import logger
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreNode
 from core.data import NodeData
+from core.emulator.emudata import LinkOptions
+from core.emulator.emudata import NodeOptions
 from core.enumerations import EventTypes
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
-from core.future.futuredata import LinkOptions
-from core.future.futuredata import NodeOptions
 from core.misc import nodemaps
 from core.misc import nodeutils
 from core.session import Session
@@ -45,7 +45,7 @@ def create_interface(node, network, interface_data):
 
     :param node: node to create interface for
     :param network: network to associate interface with
-    :param core.future.futuredata.InterfaceData interface_data: interface data
+    :param core.emulator.emudata.InterfaceData interface_data: interface data
     :return: created interface
     """
     node.newnetif(
@@ -64,7 +64,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
 
     :param network: network to configure link for
     :param interface: interface to configure
-    :param core.future.futuredata.LinkOptions link_options: data to configure link with
+    :param core.emulator.emudata.LinkOptions link_options: data to configure link with
     :param str devname: device name, default is None
     :param interface_two: other interface associated, default is None
     :return: nothing
@@ -117,9 +117,9 @@ class IdGen(object):
         return self.id
 
 
-class FutureSession(Session):
+class EmuSession(Session):
     def __init__(self, session_id, config=None, mkdir=True):
-        super(FutureSession, self).__init__(session_id, config, mkdir)
+        super(EmuSession, self).__init__(session_id, config, mkdir)
 
         # object management
         self.node_id_gen = IdGen()
@@ -220,9 +220,9 @@ class FutureSession(Session):
 
         :param int node_one_id: node one id
         :param int node_two_id: node two id
-        :param core.future.futuredata.InterfaceData interface_one: node one interface data, defaults to none
-        :param core.future.futuredata.InterfaceData interface_two: node two interface data, defaults to none
-        :param core.future.futuredata.LinkOptions link_options: data for creating link, defaults to no options
+        :param core.emulator.emudata.InterfaceData interface_one: node one interface data, defaults to none
+        :param core.emulator.emudata.InterfaceData interface_two: node two interface data, defaults to none
+        :param core.emulator.emudata.LinkOptions link_options: data for creating link, defaults to no options
         :return:
         """
         # get node objects identified by link data
@@ -386,7 +386,7 @@ class FutureSession(Session):
         :param int node_two_id: node two id
         :param int interface_one_id: interface id for node one
         :param int interface_two_id: interface id for node two
-        :param core.future.futuredata.LinkOptions link_options: data to update link with
+        :param core.emulator.emudata.LinkOptions link_options: data to update link with
         :return: nothing
         """
         # interface data
@@ -467,7 +467,7 @@ class FutureSession(Session):
 
         :param core.enumerations.NodeTypes _type: type of node to create
         :param int _id: id for node, defaults to None for generated id
-        :param core.future.futuredata.NodeOptions node_options: data to create node with
+        :param core.emulator.emudata.NodeOptions node_options: data to create node with
         :return: created node
         """
 
@@ -531,7 +531,7 @@ class FutureSession(Session):
         Update node information.
 
         :param int node_id: id of node to update
-        :param core.future.futuredata.NodeOptions node_options: data to update node with
+        :param core.emulator.emudata.NodeOptions node_options: data to update node with
         :return: True if node updated, False otherwise
         :rtype: bool
         """
@@ -573,7 +573,7 @@ class FutureSession(Session):
         Set position for a node, use lat/lon/alt if needed.
 
         :param node: node to set position for
-        :param core.future.futuredata.NodeOptions node_options: data for node
+        :param core.emulator.emudata.NodeOptions node_options: data for node
         :return: nothing
         """
         # extract location values
@@ -627,9 +627,10 @@ class FutureSession(Session):
 
         :return: nothing
         """
+        logger.info("session(%s) shutting down", self.session_id)
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
-        super(FutureSession, self).shutdown()
+        super(EmuSession, self).shutdown()
 
     def custom_delete_object(self, object_id):
         """
@@ -653,7 +654,7 @@ class FutureSession(Session):
         :return: True if active, False otherwise
         """
         result = self.state in {EventTypes.RUNTIME_STATE.value, EventTypes.DATACOLLECT_STATE.value}
-        logger.info("checking if session is active: %s", result)
+        logger.info("session(%s) checking if active: %s", self.session_id, result)
         return result
 
     def open_xml(self, file_name, start=False):
@@ -775,7 +776,7 @@ class FutureSession(Session):
         Create a wireless node for use within an wireless/EMANE networks.
 
         :param int _id: int for node, defaults to None and will be generated
-        :param core.future.futuredata.NodeOptions node_options: options for emane node, model will always be "mdr"
+        :param core.emulator.emudata.NodeOptions node_options: options for emane node, model will always be "mdr"
         :return: new emane node
         :rtype: core.netns.nodes.CoreNode
         """
@@ -789,7 +790,7 @@ class FutureSession(Session):
         :param model: emane model to use for emane network
         :param geo_reference: geo reference point to use for emane node locations
         :param geo_scale: geo scale to use for emane node locations, defaults to 1.0
-        :param core.future.futuredata.NodeOptions node_options: options for emane node being created
+        :param core.emulator.emudata.NodeOptions node_options: options for emane node being created
         :return: create emane network
         """
         # required to be set for emane to function properly
@@ -880,7 +881,7 @@ class CoreEmu(object):
 
         :return: nothing
         """
-        logger.info("shutting down all session")
+        logger.info("shutting down all sessions")
         sessions = self.sessions.copy()
         self.sessions.clear()
         for session in sessions.itervalues():
@@ -893,7 +894,7 @@ class CoreEmu(object):
         :param int _id: session id for new session
         :param bool master: sets session to master
         :return: created session
-        :rtype: FutureSession
+        :rtype: EmuSession
         """
 
         session_id = _id
@@ -903,7 +904,7 @@ class CoreEmu(object):
                 if session_id not in self.sessions:
                     break
 
-        session = FutureSession(session_id, config=self.config)
+        session = EmuSession(session_id, config=self.config)
         logger.info("created session: %s", session_id)
         if master:
             session.master = True

@@ -3,8 +3,8 @@ import time
 
 import pytest
 
+from core.emulator.emudata import NodeOptions
 from core.enumerations import NodeTypes
-from core.future.futuredata import NodeOptions
 from core.misc import utils
 
 MODELS = [
