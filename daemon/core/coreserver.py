@@ -4,7 +4,7 @@ Defines core server for handling TCP connections.
 
 import SocketServer
 
-from core.future.coreemu import CoreEmu
+from core.emulator.coreemu import CoreEmu
 
 
 class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):

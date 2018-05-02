@@ -11,8 +11,8 @@ import pytest
 from mock import MagicMock
 
 from core.data import ConfigData
+from core.emulator.emudata import NodeOptions
 from core.enumerations import MessageFlags, NodeTypes
-from core.future.futuredata import NodeOptions
 from core.mobility import BasicRangeModel
 from core.netns.vnodeclient import VnodeClient
 from core.service import ServiceManager
@@ -250,7 +250,7 @@ class TestCore:
         """
         Test basic wlan network.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
 
@@ -283,7 +283,7 @@ class TestCore:
         """
         Test basic wlan network.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
 

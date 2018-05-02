@@ -891,6 +891,10 @@ def get_endpoint(network_object, interface_object):
     ep = None
     l2devport = None
 
+    # skip if either are none
+    if not network_object or not interface_object:
+        return ep
+
     # if ifcObj references an interface of a node and is part of this network
     if interface_object.net.objid == network_object.objid and hasattr(interface_object,
                                                                       'node') and interface_object.node:
@@ -957,7 +961,7 @@ def get_endpoints(network_object):
             if ep is not None:
                 endpoints.append(ep)
         except:
-            logger.exception("error geting endpoints, was skipped before")
+            logger.debug("error geting endpoints, was skipped before")
 
     return endpoints
 

@@ -1,5 +1,4 @@
-CORE
-====
+# CORE
 
 CORE: Common Open Research Emulator
 
@@ -7,24 +6,39 @@ Copyright (c)2005-2018 the Boeing Company.
 
 See the LICENSE file included in this distribution.
 
-About
------
+## About
 
-CORE is a tool for emulating networks using a GUI or Python scripts. The CORE
-project site (1) is a good source of introductory information, with a manual,
-screenshots, and demos about this software. The GitHub project (2) hosts the
-source repos, wiki, and bug tracker. There is a deprecated
-Google Code page (3) with the old wiki, blog, bug tracker, and quickstart guide.
+The Common Open Research Emulator (CORE) is a tool for emulating
+networks on one or more machines. You can connect these emulated
+networks to live networks. CORE consists of a GUI for drawing
+topologies of lightweight virtual machines, and Python modules for
+scripting network emulation.
 
-1. http://www.nrl.navy.mil/itd/ncs/products/core
-1. https://github.com/coreemu/core
-1. http://code.google.com/p/coreemu/
-1. [Official Documentation](https://downloads.pf.itd.nrl.navy.mil/docs/core/core-html/index.html)
+## Documentation and Examples
 
-Building CORE
--------------
+* Documentation hosted on GitHub
+  * http://coreemu.github.io/core/
+* Basic Script Examples
+  * [Examples](daemon/examples/api)
+* Custom Service Example
+  * [sample.py](daemon/examples/myservices/sample.py)
+* Custom Emane Model Example
+  * [examplemodel.py](daemon/examples/myemane/examplemodel.py)
 
-To build this software you should use:
+## Support
+
+We are leveraging Discord for persistent chat rooms, voice chat, and
+GitHub integration. This allows for more dynamic conversations and the
+capability to respond faster. Feel free to join us at the link below.
+https://discord.gg/AKd7kmP
+
+You can also get help with questions, comments, or trouble, by using
+the CORE mailing lists:
+
+* [core-users](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users) for general comments and questions
+* [core-dev](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev) for bugs, compile errors, and other development issues
+
+## Building CORE
 
 ```shell
 ./bootstrap.sh
@@ -33,42 +47,19 @@ make
 sudo make install
 ```
 
-Note: You may need to pass the proxy settings to sudo make install:
-    sudo make install HTTP_PROXY=<proxy>
-
-Here is what is installed with 'make install':
-
-    /usr/local/bin/core-gui
-    /usr/local/bin/core-daemon
-    /usr/local/bin/[vcmd, vnoded, coresendmsg, core-cleanup]
-    /usr/local/lib/core/*
-    /usr/local/share/core/*
-    /usr/local/lib/python2.6/dist-packages/core/*
-    /usr/local/lib/python2.6/dist-packages/[netns,vcmd].so
-    /etc/core/*
-    /etc/init.d/core
-
-See the manual for the software required for building CORE.
-
 Building Documentation
 ----------------------
-
-Being able to build documentation depends on help2man being installed.
-
-Once that has been done you can run the following commands:
 
 ```shell
 ./bootstrap.sh
 ./configure
-make html
+make doc
 ```
 
 Building Packages
 -----------------
 
-Install fpm
-
-    http://fpm.readthedocs.io/en/latest/installing.html
+Install fpm: http://fpm.readthedocs.io/en/latest/installing.html
 
 Build package commands, DESTDIR is used for gui packaging only
 
@@ -83,8 +74,12 @@ make fpm DESTDIR=/tmp/core-gui
 This will produce:
 
 * CORE GUI rpm/deb files
+  * core-gui_$VERSION_$ARCH
 * CORE ns3 rpm/deb files
+  * python-core-ns3_$VERSION_$ARCH
 * CORE python rpm/deb files for SysV and systemd service types
+  * python-core-sysv_$VERSION_$ARCH
+  * python-core-systemd_$VERSION_$ARCH
 
 Running CORE
 ------------
@@ -92,7 +87,10 @@ Running CORE
 First start the CORE services:
 
 ```shell
-sudo /etc/init.d/core-daemon start
+# sysv
+sudo service core-daemon start
+# systemd
+sudo systemctl start core-daemon
 ```
 
 This automatically runs the core-daemon program.
@@ -103,12 +101,3 @@ core-gui
 ```
 
 This launches the CORE GUI. You do not need to run the GUI as root.
-
-
-Support
--------
-
-If you have questions, comments, or trouble, please use the CORE mailing lists:
-
-- [core-users](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users) for general comments and questions
-- [core-dev](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev) for bugs, compile errors, and other development issues

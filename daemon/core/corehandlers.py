@@ -15,6 +15,9 @@ from core import logger
 from core.api import coreapi
 from core.data import ConfigData
 from core.data import EventData
+from core.emulator.emudata import InterfaceData
+from core.emulator.emudata import LinkOptions
+from core.emulator.emudata import NodeOptions
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
@@ -29,9 +32,6 @@ from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.enumerations import SessionTlvs
-from core.future.futuredata import InterfaceData
-from core.future.futuredata import LinkOptions
-from core.future.futuredata import NodeOptions
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils

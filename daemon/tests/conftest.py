@@ -13,6 +13,10 @@ from core.api.coreapi import CoreEventMessage
 from core.api.coreapi import CoreExecMessage
 from core.api.coreapi import CoreLinkMessage
 from core.api.coreapi import CoreNodeMessage
+from core.corehandlers import CoreHandler
+from core.coreserver import CoreServer
+from core.emulator.coreemu import CoreEmu
+from core.emulator.emudata import IpPrefixes
 from core.enumerations import CORE_API_PORT
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
@@ -23,10 +27,6 @@ from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
-from core.future.coreemu import CoreEmu
-from core.future.futuredata import IpPrefixes
-from core.legacy.corehandler import CoreHandler
-from core.legacy.coreserver import CoreServer
 from core.misc import ipaddress
 from core.misc.ipaddress import MacAddress
 

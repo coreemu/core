@@ -13,8 +13,8 @@ import time
 from core import constants
 from core import enumerations
 from core import logger
-from core.legacy.corehandler import CoreHandler
-from core.legacy.coreserver import CoreServer
+from core.corehandlers import CoreHandler
+from core.coreserver import CoreServer
 from core.misc.utils import close_onexec
 from core.service import ServiceManager
 
@@ -51,7 +51,7 @@ def cored(cfg, use_ovs):
         sys.exit(1)
 
     close_onexec(server.fileno())
-    logger.debug("main server started, listening on: %s:%s", host, port)
+    logger.info("server started, listening on: %s:%s", host, port)
     server.serve_forever()
 
 

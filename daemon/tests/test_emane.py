@@ -10,7 +10,7 @@ from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.future.futuredata import NodeOptions
+from core.emulator.emudata import NodeOptions
 
 _EMANE_MODELS = [
     EmaneIeee80211abgModel,
@@ -27,7 +27,7 @@ class TestEmane:
         """
         Test emane models within a basic network.
 
-        :param core.future.coreemu.FutureSession session: session for test
+        :param core.emulator.coreemu.EmuSession session: session for test
         :param model: emane model to test
         :param ip_prefixes: generates ip addresses for nodes
         """

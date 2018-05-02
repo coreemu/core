@@ -1,5 +1,7 @@
 from core.enumerations import LinkTypes
-from core.misc.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+from core.misc.ipaddress import Ipv4Prefix
+from core.misc.ipaddress import Ipv6Prefix
+from core.misc.ipaddress import MacAddress
 
 
 class NodeOptions(object):
