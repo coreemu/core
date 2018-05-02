@@ -3,9 +3,13 @@ from flask import jsonify
 from flask import request
 
 from core import logger
-from core.enumerations import EventTypes, NodeTypes, LinkTypes
-from core.future.coreemu import CoreEmu
-from core.future.futuredata import NodeOptions, LinkOptions, InterfaceData
+from core.emulator.coreemu import CoreEmu
+from core.emulator.emudata import InterfaceData
+from core.emulator.emudata import LinkOptions
+from core.emulator.emudata import NodeOptions
+from core.enumerations import EventTypes
+from core.enumerations import LinkTypes
+from core.enumerations import NodeTypes
 from core.misc import nodeutils
 
 app = Flask(__name__)
