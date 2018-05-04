@@ -1,9 +1,7 @@
-import os
-
 from flask import Flask
 from flask import jsonify
-from flask import request
 from flask import render_template
+from flask import request
 from flask_socketio import SocketIO
 from flask_socketio import emit
 
@@ -17,10 +15,7 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
 
-_TEMPLATE_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), "templates")
-logger.info("template folder: %s", _TEMPLATE_PATH)
-
-app = Flask(__name__, template_folder=_TEMPLATE_PATH)
+app = Flask(__name__)
 app.config["SECRET_KEY"] = "core"
 socketio = SocketIO(app)
 
@@ -329,6 +324,5 @@ def get_node_links(session_id, node_id):
     return jsonify(links=links)
 
 
-def start():
-    socketio.run(app, host="0.0.0.0")
-    # app.run(host="0.0.0.0")
+if __name__ == "__main__":
+    socketio.run(app, host="0.0.0.0", debug=True)

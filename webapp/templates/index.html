@@ -1,0 +1,149 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>CORE</title>
+    <link rel="stylesheet" type="text/css" href="static/bootstrap.min.css">
+    <link rel="stylesheet" type="text/css" href="static/vis.min.css">
+    <link rel="stylesheet" type="text/css" href="static/core.css">
+</head>
+<body>
+<div class="container-fluid d-flex flex-column p-0">
+    <nav class="navbar navbar-expand navbar-dark bg-info mb-2">
+        <span class="navbar-brand mb-0 h1">CORE</span>
+        <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nb-content"
+                aria-controls="nb-content" aria-expanded="false" aria-label="Toggle navigation">
+            <span class="navbar-toggler-icon"></span>
+        </button>
+
+        <div class="collapse navbar-collapse" id="nb-content">
+            <ul class="navbar-nav mr-auto">
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="nb-file" role="button" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false">
+                        File
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="nb-file">
+                        <a class="dropdown-item" href="#">Open File</a>
+                        <a class="dropdown-item" href="#">Save File</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="nb-session" role="button" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false">
+                        Sessions
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="nb-session">
+                        <a class="dropdown-item" href="#" data-toggle="modal" data-target="#sessions-modal">View</a>
+                    </div>
+                </li>
+
+                <li class="nav-item dropdown">
+                    <a class="nav-link dropdown-toggle" href="#" id="nb-help" role="button" data-toggle="dropdown"
+                       aria-haspopup="true" aria-expanded="false">
+                        Help
+                    </a>
+                    <div class="dropdown-menu" aria-labelledby="nb-help">
+                        <a class="dropdown-item" href="https://github.com/coreemu/core">GitHub</a>
+                        <a class="dropdown-item" href="http://coreemu.github.io/core/">Documentation</a>
+                    </div>
+                </li>
+            </ul>
+
+            <span class="navbar-text border rounded border-white p-2 mr-3">Session #</span>
+            <span class="navbar-text border rounded border-white p-2">Node: Default</span>
+        </div>
+    </nav>
+
+    <div class="row col">
+        <div class="col-2 col-xl-1">
+            <div class="btn-group-vertical w-100" role="group" aria-label="Side Menu">
+                <button type="button" class="btn btn-secondary">Select</button>
+                <button type="button" class="btn btn-secondary">Start</button>
+                <button id="link-button" type="button" class="btn btn-secondary" data-toggle="button">Link Mode</button>
+                <div class="btn-group dropright node-buttons" role="group">
+                    <button id="menu-nodes" type="button" class="btn btn-secondary dropdown-toggle"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Nodes
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="menu-nodes">
+                        <a class="dropdown-item" href="#" data-node="0" data-model="router">Router</a>
+                        <a class="dropdown-item" href="#" data-node="0" data-model="host">Host</a>
+                        <a class="dropdown-item" href="#" data-node="0" data-model="PC">PC</a>
+                        <a class="dropdown-item" href="#" data-node="0" data-model="mdr">MDR</a>
+                    </div>
+                </div>
+                <div class="btn-group dropright node-buttons" role="group">
+                    <button id="menu-devices" type="button" class="btn btn-secondary dropdown-toggle"
+                            data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                        Devices
+                    </button>
+                    <div class="dropdown-menu" aria-labelledby="menu-devices">
+                        <a class="dropdown-item" href="#" data-node="5">Hub</a>
+                        <a class="dropdown-item" href="#" data-node="4">Switch</a>
+                        <a class="dropdown-item" href="#" data-node="6">WLAN</a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div id="core-network" class="col">
+        </div>
+    </div>
+
+    {% include 'sessions_modal.html' %}
+</div>
+
+<script src="static/jquery-3.3.1.min.js"></script>
+<script src="static/popper.min.js"></script>
+<script src="static/bootstrap.min.js"></script>
+<script src="static/vis.min.js"></script>
+<script src="static/socket.io.js"></script>
+<script src="static/corerest.js"></script>
+<script src="static/corenetwork.js"></script>
+
+<script>
+    const core = new CoreRest();
+    core.sessions(function (response) {
+        console.log('session response: ', response);
+    });
+
+    const coreNetwork = new CoreNetwork('core-network');
+
+    const $linkButton = $('#link-button');
+    $linkButton.click(function () {
+        const linkMode = !$(this).hasClass('active');
+        coreNetwork.linkMode(linkMode);
+        $(this).blur();
+    });
+
+    const $nodeButtons = $('.node-buttons a');
+    $nodeButtons.click(function () {
+        const $this = $(this);
+        const nodeType = $this.data('node');
+        const model = $this.data('model');
+        console.log('node creation: ', nodeType, model);
+        console.log('clicked: ', this);
+        coreNetwork.setNodeMode(nodeType, model);
+    });
+
+    console.log('connecting to ws');
+    const ws = io.connect();
+    ws.on('connection', function () {
+        console.log('connected!');
+    });
+    ws.on('error', function (error) {
+        console.log(error);
+    });
+
+    ws.on('info', function (data) {
+        console.log(data.message);
+    });
+
+    ws.on('node', function (data) {
+        console.log(data);
+    });
+</script>
+</body>
+</html>

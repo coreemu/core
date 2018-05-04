@@ -1,0 +1,15 @@
+.container-fluid {
+    height: 100vh;
+}
+
+.navbar-text {
+    color: #17a2b8 !important;
+    background-color: #fff;
+    font-weight: bold;
+}
+
+.vis-network {
+    background-color: #f8f9fa !important;
+    border: 1px solid #dee2e6;
+    border-radius: 10px;
+}
