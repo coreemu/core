@@ -1,3 +1,8 @@
+import os
+
+from functools import wraps
+from threading import Lock
+
 from flask import Flask
 from flask import jsonify
 from flask import render_template
@@ -7,19 +12,33 @@ from flask_socketio import emit
 
 from core import logger
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import InterfaceData
+from core.emulator.emudata import InterfaceData, IpPrefixes
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
 from core.enumerations import EventTypes
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
+from core.misc.ipaddress import Ipv4Prefix, Ipv6Prefix
+
+CORE_LOCK = Lock()
 
 app = Flask(__name__)
 app.config["SECRET_KEY"] = "core"
 socketio = SocketIO(app)
 
 coreemu = CoreEmu()
+
+
+def synchronized(function):
+    global CORE_LOCK
+
+    @wraps(function)
+    def wrapper(*args, **kwargs):
+        with CORE_LOCK:
+            return function(*args, **kwargs)
+
+    return wrapper
 
 
 def link_data_str(link, key):
@@ -53,29 +72,53 @@ def home():
     return render_template('index.html')
 
 
+@app.route("/ips", methods=["POST"])
+def get_ips():
+    data = request.get_json() or {}
+    node_id = data["id"]
+    node_id = int(node_id)
+
+    ip4_prefix = data.get("ip4")
+    ip6_prefix = data.get("ip6")
+
+    ip4_prefixes = Ipv4Prefix(ip4_prefix)
+    ip6_prefixes = Ipv6Prefix(ip6_prefix)
+
+    return jsonify(
+        ip4=str(ip4_prefixes.addr(node_id)),
+        ip4mask=ip4_prefixes.prefixlen,
+        ip6=str(ip6_prefixes.addr(node_id)),
+        ip6mask=ip6_prefixes.prefixlen
+    )
+
+
 @app.route("/sessions")
 def get_sessions():
     sessions = []
     for session in coreemu.sessions.itervalues():
         sessions.append({
             "id": session.session_id,
+            "state": session.state,
             "nodes": session.get_node_count()
         })
     return jsonify(sessions=sessions)
 
 
 @app.route("/sessions", methods=["POST"])
+@synchronized
 def create_session():
     session = coreemu.create_session()
     session.set_state(EventTypes.CONFIGURATION_STATE)
     response_data = jsonify(
         id=session.session_id,
+        state=session.state,
         url="/sessions/%s" % session.session_id
     )
     return response_data, 201
 
 
 @app.route("/sessions/<int:session_id>", methods=["DELETE"])
+@synchronized
 def delete_session(session_id):
     result = coreemu.delete_session(session_id)
     if result:
@@ -96,6 +139,7 @@ def get_session(session_id):
             "id": node.objid,
             "name": node.name,
             "type": nodeutils.get_node_type(node.__class__).value,
+            "model": getattr(node, "type", None),
             "position": {
                 "x": node.position.x,
                 "y": node.position.y,
@@ -112,12 +156,14 @@ def get_session(session_id):
 
 
 @app.route("/sessions/<int:session_id>/nodes", methods=["POST"])
+@synchronized
 def create_node(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
 
     data = request.get_json() or {}
+    node_id = data.get("id")
     node_type = data.get("type", NodeTypes.DEFAULT.value)
     node_type = NodeTypes(node_type)
     logger.info("creating node: %s - %s", node_type.name, data)
@@ -130,7 +176,7 @@ def create_node(session_id):
     node_options.opaque = data.get("opaque")
     node_options.set_position(data.get("x"), data.get("y"))
     node_options.set_location(data.get("lat"), data.get("lon"), data.get("alt"))
-    node = session.add_node(_type=node_type, node_options=node_options)
+    node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
     return jsonify(
         id=node.objid,
         url="/sessions/%s/nodes/%s" % (session_id, node.objid)
@@ -174,6 +220,7 @@ def get_node(session_id, node_id):
 
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>", methods=["DELETE"])
+@synchronized
 def delete_node(session_id, node_id):
     session = coreemu.sessions.get(session_id)
     if not session:
@@ -193,6 +240,7 @@ def delete_node(session_id, node_id):
 
 
 @app.route("/sessions/<int:session_id>/state", methods=["PUT"])
+@synchronized
 def set_session_state(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
@@ -204,6 +252,9 @@ def set_session_state(session_id):
         session.set_state(state)
 
         if state == EventTypes.INSTANTIATION_STATE:
+            # create session directory if it does not exist
+            if not os.path.exists(session.session_dir):
+                os.mkdir(session.session_dir)
             session.instantiate()
         elif state == EventTypes.SHUTDOWN_STATE:
             session.shutdown()
@@ -218,6 +269,7 @@ def set_session_state(session_id):
 
 
 @app.route("/sessions/<int:session_id>/links", methods=["POST"])
+@synchronized
 def add_link(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
@@ -282,6 +334,7 @@ def add_link(session_id):
 
 
 @app.route("/sessions/<int:session_id>/links", methods=["DELETE"])
+@synchronized
 def delete_link(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:

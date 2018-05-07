@@ -320,7 +320,9 @@ class IpPrefix(object):
 
         addr = ""
         prefix_endpoint = -1
+        print "stop condition: %s" % (-(self.addrlen >> 3) - 1)
         for i in xrange(-1, -(self.addrlen >> 3) - 1, -1):
+            print "i: %s" % i
             prefix_endpoint = i
             addr = chr(ord(self.prefix[i]) | (tmp & 0xff)) + addr
             tmp >>= 8

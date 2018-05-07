@@ -9,8 +9,11 @@
 </head>
 <body>
 <div class="container-fluid d-flex flex-column p-0">
-    <nav class="navbar navbar-expand navbar-dark bg-info mb-2">
-        <span class="navbar-brand mb-0 h1">CORE</span>
+    <nav class="navbar navbar-expand navbar-dark bg-dark mb-2">
+        <div class="navbar-brand mb-0 h1">
+            <img src="static/core-icon.png" />
+            <span>CORE</span>
+        </div>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nb-content"
                 aria-controls="nb-content" aria-expanded="false" aria-label="Toggle navigation">
             <span class="navbar-toggler-icon"></span>
@@ -51,16 +54,15 @@
                 </li>
             </ul>
 
-            <span class="navbar-text border rounded border-white p-2 mr-3">Session #</span>
-            <span class="navbar-text border rounded border-white p-2">Node: Default</span>
+            <span id="session-id" class="navbar-text p-2 mr-3">Session #</span>
+            <span id="node-display" class="navbar-text p-2">Node: Default</span>
         </div>
     </nav>
 
     <div class="row col">
         <div class="col-2 col-xl-1">
             <div class="btn-group-vertical w-100" role="group" aria-label="Side Menu">
-                <button type="button" class="btn btn-secondary">Select</button>
-                <button type="button" class="btn btn-secondary">Start</button>
+                <button id="run-button" type="button" class="btn btn-success">Start</button>
                 <button id="link-button" type="button" class="btn btn-secondary" data-toggle="button">Link Mode</button>
                 <div class="btn-group dropright node-buttons" role="group">
                     <button id="menu-nodes" type="button" class="btn btn-secondary dropdown-toggle"
@@ -100,25 +102,85 @@
 <script src="static/bootstrap.min.js"></script>
 <script src="static/vis.min.js"></script>
 <script src="static/socket.io.js"></script>
+<script src="static/coreip.js"></script>
 <script src="static/corerest.js"></script>
 <script src="static/corenetwork.js"></script>
 
 <script>
-    const core = new CoreRest();
-    core.sessions(function (response) {
-        console.log('session response: ', response);
-    });
-
-    const coreNetwork = new CoreNetwork('core-network');
-
     const $linkButton = $('#link-button');
+    const $nodeButtons = $('.node-buttons a');
+    const $sessionId = $('#session-id');
+    const $nodeDisplay = $('#node-display');
+    const $sessionsModel = $('#sessions-modal');
+    const $sessionsTable = $('#sessions-table');
+    const $runButton = $('#run-button');
+
+    function setRunButton(start) {
+        const $runButton = $('#run-button');
+        $runButton.removeClass('btn-danger btn-success');
+        if (start) {
+            $runButton.text('Start');
+            $runButton.addClass('btn-success');
+        } else {
+            $runButton.text('Stop');
+            $runButton.addClass('btn-danger');
+        }
+    }
+
+    // initial core setup
+    const coreRest = new CoreRest();
+    coreRest.retrieveSession()
+            .then(function (session) {
+                console.log('get session: ', session);
+                $sessionId.text(`Session: ${session.id}`);
+                if (session.state === SessionStates.runtime) {
+                    setRunButton(false);
+                }
+
+                return coreRest.getSession();
+            })
+            .then(function(response) {
+                console.log('session: ', response);
+                const nodes = response.nodes;
+                coreNetwork.joinedSessions(nodes);
+            })
+            .catch(function (err) {
+                console.log('get session error: ', err);
+            });
+
+    const coreNetwork = new CoreNetwork('core-network', coreRest);
+
+    // page interactions
     $linkButton.click(function () {
         const linkMode = !$(this).hasClass('active');
         coreNetwork.linkMode(linkMode);
         $(this).blur();
     });
 
-    const $nodeButtons = $('.node-buttons a');
+    $runButton.click(function () {
+        const $this = $(this);
+        const start = $this.text() === 'Start';
+        if (start) {
+            coreNetwork.start()
+                    .then(function() {
+                        setRunButton(false);
+                    })
+                    .catch(function(err) {
+                        console.log('start error: ', err);
+                    });
+        } else {
+            coreRest.shutdownSession()
+                    .then(function (response) {
+                        console.log('shutdown session: ', response);
+                        setRunButton(true);
+                    })
+                    .catch(function (err) {
+                        console.log('shutdown error: ', err);
+                    });
+        }
+    });
+
+    $nodeDisplay.text(`Node: ${coreNetwork.nodeModel}`);
     $nodeButtons.click(function () {
         const $this = $(this);
         const nodeType = $this.data('node');
@@ -126,6 +188,35 @@
         console.log('node creation: ', nodeType, model);
         console.log('clicked: ', this);
         coreNetwork.setNodeMode(nodeType, model);
+        const currentType = getNodeType(coreNetwork.nodeType);
+        const defaultType = getNodeType(0);
+        let nodeDisplay = currentType.display;
+        if (currentType.display === defaultType.display) {
+            nodeDisplay = coreNetwork.nodeModel;
+        }
+        $nodeDisplay.text(`Node: ${nodeDisplay}`);
+    });
+
+    // show sessions
+    $sessionsModel.on('shown.bs.modal', function () {
+        console.log('show sessions');
+        $sessionsTable.find('tbody tr').remove();
+        coreRest.getSessions()
+                .then(function (response) {
+                    const sessions = response.sessions;
+                    for (let session of sessions) {
+                        console.log('show sessions: ', session);
+                        const $idCell = $('<th>', {scope: 'row', text: session.id});
+                        const $nodeCell = $('<td>', {text: session.nodes});
+                        const stateName = coreRest.getStateName(session.state);
+                        const $stateCell = $('<td>', {text: stateName});
+                        const $row = $('<tr>').append([$idCell, $nodeCell, $stateCell]);
+                        $sessionsTable.find('tbody').append($row);
+                    }
+                })
+                .catch(function (err) {
+                    console.log('error getting sessions: ', err);
+                });
     });
 
     console.log('connecting to ws');
