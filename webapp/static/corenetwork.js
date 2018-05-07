@@ -1,6 +1,7 @@
 const Ip4Prefix = '10.0.0.1/24';
 const Ip6Prefix = '2001::/64';
 
+const DefaultNode = 0;
 const PtpNode = 12;
 const NodeTypes = {
     // default router
@@ -195,23 +196,29 @@ class CoreNetwork {
         const toNode = this.nodes.get(linkData.node2_id).coreNode;
         const linkId = `${fromNode.id}-${toNode.id}`;
 
-        const interfaceOne = {
-            id: linkData.interface1_id,
-            ip4: linkData.interface1_ip4,
-            ip4mask: linkData.interface1_ip4_mask,
-            ip6: linkData.interface1_ip6,
-            ip6mask: linkData.interface1_ip6_mask
-        };
-        fromNode.interfaces[linkData.interface1_id] = interfaceOne;
+        let interfaceOne = null;
+        if (linkData.interface1_id !== null) {
+            interfaceOne = {
+                id: linkData.interface1_id,
+                ip4: linkData.interface1_ip4,
+                ip4mask: linkData.interface1_ip4_mask,
+                ip6: linkData.interface1_ip6,
+                ip6mask: linkData.interface1_ip6_mask
+            };
+            fromNode.interfaces[linkData.interface1_id] = interfaceOne;
+        }
 
-        const interfaceTwo = {
-            id: linkData.interface2_id,
-            ip4: linkData.interface2_ip4,
-            ip4mask: linkData.interface2_ip4_mask,
-            ip6: linkData.interface2_ip6,
-            ip6mask: linkData.interface2_ip6_mask
-        };
-        toNode.interfaces[linkData.interface2_id] = interfaceTwo;
+        let interfaceTwo = null;
+        if (linkData.interface2_id !== null) {
+            interfaceTwo = {
+                id: linkData.interface2_id,
+                ip4: linkData.interface2_ip4,
+                ip4mask: linkData.interface2_ip4_mask,
+                ip6: linkData.interface2_ip6,
+                ip6mask: linkData.interface2_ip6_mask
+            };
+            toNode.interfaces[linkData.interface2_id] = interfaceTwo;
+        }
 
         this.links[linkId] = {
             node_one: fromNode.id,
@@ -220,7 +227,7 @@ class CoreNetwork {
             interface_two: interfaceTwo
         };
 
-        const edge = {from: fromNode.id, to: toNode.id};
+        const edge = {from: fromNode.id, to: toNode.id, recreated: true};
         this.edges.add(edge);
     }
 
@@ -257,6 +264,12 @@ class CoreNetwork {
     addEdge(_, properties) {
         const edgeId = properties.items[0];
         const edge = this.edges.get(edgeId);
+        if (edge.recreated) {
+            console.log('ignoring recreated edge');
+            setTimeout(() => this.network.addEdgeMode(), 250);
+            return;
+        }
+
         console.log('added edge: ', edgeId, edge);
         if (edge.from === edge.to) {
             console.log('removing cyclic edge');
@@ -274,35 +287,40 @@ class CoreNetwork {
                 console.log('create link error: ', err);
             });
 
-        // keep edge mode enabled
         setTimeout(() => this.network.addEdgeMode(), 250);
     }
 
     async addEdgeLink(edge, fromNode, toNode) {
-        const fromIps = await this.coreRest.getNodeIps(fromNode.id, Ip4Prefix, Ip6Prefix);
-        const toIps = await this.coreRest.getNodeIps(toNode.id, Ip4Prefix, Ip6Prefix);
-        console.log('link ips: ', fromIps, toIps);
-
         const linkId = `${fromNode.id}-${toNode.id}`;
-        const interfaceOneId =Object.keys(fromNode.interfaces).length;
-        const interfaceOne = {
-            id: interfaceOneId,
-            ip4: fromIps.ip4,
-            ip4mask: fromIps.ip4mask,
-            ip6: fromIps.ip6,
-            ip6mask: fromIps.ip6mask
-        };
-        fromNode.interfaces[interfaceOneId] = interfaceOne;
+        let interfaceOne = null;
+        if (fromNode.type === DefaultNode) {
+            const fromIps = await this.coreRest.getNodeIps(fromNode.id, Ip4Prefix, Ip6Prefix);
+            console.log('from ips: ', fromIps);
+            const interfaceOneId = Object.keys(fromNode.interfaces).length;
+            interfaceOne = {
+                id: interfaceOneId,
+                ip4: fromIps.ip4,
+                ip4mask: fromIps.ip4mask,
+                ip6: fromIps.ip6,
+                ip6mask: fromIps.ip6mask
+            };
+            fromNode.interfaces[interfaceOneId] = interfaceOne;
+        }
 
-        const interfaceTwoId = Object.keys(toNode.interfaces).length;
-        const interfaceTwo = {
-            id: interfaceTwoId,
-            ip4: toIps.ip4,
-            ip4mask: toIps.ip4mask,
-            ip6: toIps.ip6,
-            ip6mask: toIps.ip6mask
-        };
-        toNode.interfaces[interfaceTwoId] = interfaceTwo;
+        let interfaceTwo = null;
+        if (toNode.type === DefaultNode) {
+            const toIps = await this.coreRest.getNodeIps(toNode.id, Ip4Prefix, Ip6Prefix);
+            console.log('to ips: ', toIps);
+            const interfaceTwoId = Object.keys(toNode.interfaces).length;
+            interfaceTwo = {
+                id: interfaceTwoId,
+                ip4: toIps.ip4,
+                ip4mask: toIps.ip4mask,
+                ip6: toIps.ip6,
+                ip6mask: toIps.ip6mask
+            };
+            toNode.interfaces[interfaceTwoId] = interfaceTwo;
+        }
 
         this.links[linkId] = {
             node_one: fromNode.id,
