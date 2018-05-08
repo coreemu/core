@@ -60,7 +60,7 @@
     </nav>
 
     <div class="row col">
-        <div class="col-2 col-xl-1">
+        <div class="col-2 col-xl-2">
             <div class="btn-group-vertical w-100" role="group" aria-label="Side Menu">
                 <button id="run-button" type="button" class="btn btn-success">Start</button>
                 <button id="link-button" type="button" class="btn btn-secondary" data-toggle="button">Link Mode</button>
@@ -86,6 +86,16 @@
                         <a class="dropdown-item" href="#" data-node="4">Switch</a>
                         <a class="dropdown-item" href="#" data-node="6">WLAN</a>
                     </div>
+                </div>
+            </div>
+
+            <div id="info-card" class="card text-white bg-dark mt-3 invisible">
+                <div id="info-card-header" class="card-header">Selected Title</div>
+                <div class="card-body p-0">
+                    <table id="info-card-table" class="table mb-0">
+                        <tbody>
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>
@@ -114,6 +124,9 @@
     const $sessionsModel = $('#sessions-modal');
     const $sessionsTable = $('#sessions-table');
     const $runButton = $('#run-button');
+    const $infoCard = $('#info-card');
+    const $infoCardTable = $('#info-card-table');
+    const $infoCardHeader = $('#info-card-header');
 
     // initial core setup
     const coreRest = new CoreRest();
@@ -153,6 +166,62 @@
             coreNetwork.linkMode(false);
         }
     }
+
+    function addInfoTable(name, value) {
+        if (value) {
+            let $nameCell = $('<td>', {text: name});
+            let $valueCell = $('<td>', {text: value});
+            const $row = $('<tr>').append([$nameCell, $valueCell]);
+            $infoCardTable.find('tbody').append($row);
+        }
+    }
+
+    // handle network clicks
+    coreNetwork.network.on('click', function(properties) {
+        console.log('click properties: ', properties);
+
+        $infoCard.removeClass('visible invisible');
+        if (properties.nodes.length === 1) {
+            const nodeId = properties.nodes[0];
+            const node = coreNetwork.nodes.get(nodeId).coreNode;
+            $infoCardHeader.text(node.name);
+            $infoCard.addClass('visible');
+            $infoCardTable.find('tbody tr').remove();
+            addInfoTable('Name', node.name);
+            addInfoTable('Model', node.model);
+            addInfoTable('X', node.x);
+            addInfoTable('Y', node.y);
+        } else if (properties.edges.length === 1) {
+            const edgeId = properties.edges[0];
+            const edge = coreNetwork.edges.get(edgeId);
+            console.log('clicked edge: ', edge);
+            $infoCard.addClass('visible');
+            $infoCardHeader.text('Edge');
+            $infoCardTable.find('tbody tr').remove();
+            addInfoTable('Source', edge.nodeOne);
+            const interfaceOne = edge.interfaceOne;
+            if (interfaceOne) {
+                if (interfaceOne.ip4) {
+                    addInfoTable('IP4', `${interfaceOne.ip4}/${interfaceOne.ip4mask}`);
+                }
+                if (interfaceOne.ip6) {
+                    addInfoTable('IP6', `${interfaceOne.ip6}/${interfaceOne.ip6mask}`);
+                }
+            }
+            addInfoTable('Destination', edge.nodeTwo);
+            const interfaceTwo = edge.interfaceTwo;
+            if (interfaceTwo) {
+                if (interfaceTwo.ip4) {
+                    addInfoTable('IP4', `${interfaceTwo.ip4}/${interfaceTwo.ip4mask}`);
+                }
+                if (interfaceTwo.ip6) {
+                    addInfoTable('IP6', `${interfaceTwo.ip6}/${interfaceTwo.ip6mask}`);
+                }
+            }
+        } else {
+            $infoCard.addClass('invisible');
+        }
+    });
 
     // page interactions
     $linkButton.click(function () {

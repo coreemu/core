@@ -113,6 +113,16 @@ class CoreNode {
     }
 }
 
+function setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo) {
+    edge.core = linkId;
+    edge.label = 'from: name\nto: name';
+    edge.title = 'from: name\nto: name';
+    edge.nodeOne = fromNode.name;
+    edge.interfaceOne = interfaceOne;
+    edge.nodeTwo = toNode.name;
+    edge.interfaceTwo = interfaceTwo;
+}
+
 class CoreNetwork {
     constructor(elementId, coreRest) {
         this.coreRest = coreRest;
@@ -250,13 +260,11 @@ class CoreNetwork {
         };
 
         const edge = {
-            id: linkId,
-            from: fromNode.id,
-            to: toNode.id,
             recreated: true,
-            label: 'from: name\nto: name',
-            title: 'from: name\nto: name'
+            from: fromNode.id,
+            to: toNode.id
         };
+        setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo);
         this.edges.add(edge);
     }
 
@@ -366,9 +374,7 @@ class CoreNetwork {
             interface_two: interfaceTwo
         };
 
-        edge.id = linkId;
-        edge.label = 'from: name\nto: name';
-        edge.title = 'from: name\nto: name';
+        setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo);
         this.edges.update(edge);
     }
 
