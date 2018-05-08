@@ -115,28 +115,15 @@
     const $sessionsTable = $('#sessions-table');
     const $runButton = $('#run-button');
 
-    function setRunButton(start) {
-        const $runButton = $('#run-button');
-        $runButton.removeClass('btn-danger btn-success');
-        if (start) {
-            $runButton.text('Start');
-            $runButton.addClass('btn-success');
-        } else {
-            $runButton.text('Stop');
-            $runButton.addClass('btn-danger');
-        }
-    }
-
     // initial core setup
     const coreRest = new CoreRest();
+    const coreNetwork = new CoreNetwork('core-network', coreRest);
     coreRest.retrieveSession()
             .then(function (session) {
                 console.log('get session: ', session);
                 $sessionId.text(`Session: ${session.id}`);
-                if (session.state === SessionStates.runtime) {
-                    setRunButton(false);
-                }
-
+                const isStartEnabled = session.state !== SessionStates.runtime;
+                setRunButton(isStartEnabled);
                 return coreRest.getSession();
             })
             .then(function(response) {
@@ -148,7 +135,24 @@
                 console.log('get session error: ', err);
             });
 
-    const coreNetwork = new CoreNetwork('core-network', coreRest);
+    function setRunButton(start) {
+        console.log('set run button: ', start);
+        const $runButton = $('#run-button');
+        $runButton.removeClass('btn-danger btn-success');
+        if (start) {
+            $runButton.text('Start');
+            $runButton.addClass('btn-success');
+            $linkButton.removeAttr('disabled');
+            coreNetwork.enableNodeCreation(true);
+        } else {
+            $runButton.text('Stop');
+            $runButton.addClass('btn-danger');
+            $linkButton.removeClass('active');
+            $linkButton.attr('disabled', 'disabled');
+            coreNetwork.enableNodeCreation(false);
+            coreNetwork.linkMode(false);
+        }
+    }
 
     // page interactions
     $linkButton.click(function () {

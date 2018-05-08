@@ -148,6 +148,12 @@ class CoreNetwork {
         this.network = new vis.Network(this.container, this.networkData, this.networkOptions);
         this.network.on('doubleClick', this.addNode.bind(this));
         this.edges.on('add', this.addEdge.bind(this));
+        this.nodesEnabled = false;
+    }
+
+    enableNodeCreation(enabled) {
+        console.log('node created enabled: ', enabled);
+        this.nodesEnabled = enabled;
     }
 
     getCoreNodes() {
@@ -172,11 +178,14 @@ class CoreNetwork {
 
     joinedSessions(nodes) {
         const self = this;
+        const nodeIds = [0];
+
         for (let node of nodes) {
             if (node.type === CoreNodeHelper.ptpNode) {
                 continue;
             }
 
+            nodeIds.push(node.id);
             this.addCoreNode(node);
         }
 
@@ -198,9 +207,7 @@ class CoreNetwork {
         }
 
         if (nodes.length) {
-            this.nodeId = Math.max.apply(Math, nodes.map(function (node) {
-                return node.id
-            }));
+            this.nodeId = Math.max.apply(Math, nodeIds) || 0;
         } else {
             this.nodeId = 0;
         }
@@ -243,14 +250,12 @@ class CoreNetwork {
         };
 
         const edge = {
+            id: linkId,
             from: fromNode.id,
             to: toNode.id,
             recreated: true,
             label: 'from: name\nto: name',
-            title: 'this is a title',
-            font: {
-                //background: '#fff'
-            }
+            title: 'from: name\nto: name'
         };
         this.edges.add(edge);
     }
@@ -272,17 +277,24 @@ class CoreNetwork {
     }
 
     addNode(properties) {
-        console.log('add node event: ', properties);
-        if (properties.nodes.length === 0) {
-            const {x, y} = properties.pointer.canvas;
-            const nodeId = this.nextNodeId();
-            const nodeDisplay = CoreNodeHelper.getDisplay(this.nodeType);
-            const name = `${nodeDisplay.name}${nodeId}`;
-            const coreNode = new CoreNode(nodeId, this.nodeType, name, x, y);
-            coreNode.model = this.nodeModel;
-            this.nodes.add(coreNode.getNetworkNode());
-            console.log('added node: ', coreNode.getNetworkNode());
+        if (!this.nodesEnabled) {
+            console.log('node creation disabled');
+            return;
         }
+
+        console.log('add node event: ', properties);
+        if (properties.nodes.length !== 0) {
+            return;
+        }
+
+        const {x, y} = properties.pointer.canvas;
+        const nodeId = this.nextNodeId();
+        const nodeDisplay = CoreNodeHelper.getDisplay(this.nodeType);
+        const name = `${nodeDisplay.name}${nodeId}`;
+        const coreNode = new CoreNode(nodeId, this.nodeType, name, x, y);
+        coreNode.model = this.nodeModel;
+        this.nodes.add(coreNode.getNetworkNode());
+        console.log('added node: ', coreNode.getNetworkNode());
     }
 
     addEdge(_, properties) {
@@ -354,8 +366,9 @@ class CoreNetwork {
             interface_two: interfaceTwo
         };
 
-        edge.label = 'this is a label';
-        edge.title = 'this is a title';
+        edge.id = linkId;
+        edge.label = 'from: name\nto: name';
+        edge.title = 'from: name\nto: name';
         this.edges.update(edge);
     }
 
