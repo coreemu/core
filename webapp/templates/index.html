@@ -188,8 +188,8 @@
         console.log('node creation: ', nodeType, model);
         console.log('clicked: ', this);
         coreNetwork.setNodeMode(nodeType, model);
-        const currentType = getNodeType(coreNetwork.nodeType);
-        const defaultType = getNodeType(0);
+        const currentType = CoreNodeHelper.getDisplay(coreNetwork.nodeType);
+        const defaultType = CoreNodeHelper.getDisplay(CoreNodeHelper.defaultNode);
         let nodeDisplay = currentType.display;
         if (currentType.display === defaultType.display) {
             nodeDisplay = coreNetwork.nodeModel;

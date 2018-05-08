@@ -1,48 +1,67 @@
 const Ip4Prefix = '10.0.0.1/24';
 const Ip6Prefix = '2001::/64';
 
-const DefaultNode = 0;
-const PtpNode = 12;
-const NodeTypes = {
-    // default router
-    0: {
-        name: 'node',
-        display: 'Default'
-    },
-    // switch
-    4: {
-        name: 'switch',
-        display: 'Switch'
-    },
-    // hub
-    5: {
-        name: 'hub',
-        display: 'Hub'
-    },
-    // wlan
-    6: {
-        name: 'wlan',
-        display: 'WLAN'
-    },
-    12: {
-        name: 'ptp',
-        display: 'PTP'
+
+class NodeHelper {
+    constructor() {
+        this.displays = {
+            // default router
+            0: {
+                name: 'node',
+                display: 'Default'
+            },
+            // switch
+            4: {
+                name: 'switch',
+                display: 'Switch'
+            },
+            // hub
+            5: {
+                name: 'hub',
+                display: 'Hub'
+            },
+            // wlan
+            6: {
+                name: 'wlan',
+                display: 'WLAN'
+            },
+            12: {
+                name: 'ptp',
+                display: 'PTP'
+            }
+        };
+
+        this.icons = {
+            router: 'static/router.svg',
+            host: 'static/host.gif',
+            PC: 'static/pc.gif',
+            mdr: 'static/mdr.svg',
+            switch: 'static/lanswitch.svg',
+            hub: 'static/hub.svg',
+            wlan: 'static/wlan.gif'
+        };
+
+        this.defaultNode = 0;
+        this.ptpNode = 12;
     }
-};
 
-function getNodeType(nodeType) {
-    return NodeTypes[nodeType];
+    isNetworkNode(node) {
+        return [4, 5, 6, 12].includes(node.type);
+    }
+
+    getDisplay(nodeType) {
+        return this.displays[nodeType];
+    }
+
+    getIcon(node) {
+        let iconName = this.getDisplay(node.type).name;
+        if (node.type === 0) {
+            iconName = node.model;
+        }
+        return this.icons[iconName];
+    }
 }
-
-const NodeIcons = {
-    router: 'static/router.svg',
-    host: 'static/host.gif',
-    PC: 'static/pc.gif',
-    mdr: 'static/mdr.svg',
-    switch: 'static/lanswitch.svg',
-    hub: 'static/hub.svg',
-    wlan: 'static/wlan.gif'
-};
+const CoreNodeHelper = new NodeHelper();
 
 class CoreNode {
     constructor(id, type, name, x, y) {
@@ -60,16 +79,12 @@ class CoreNode {
         this.lon = null;
         this.alt = null;
         this.emulation_id = null;
-        this.emulation_server = null
+        this.emulation_server = null;
         this.interfaces = {};
     }
 
     getNetworkNode() {
-        let iconName = getNodeType(this.type).name;
-        if (this.type === 0) {
-            iconName = this.model;
-        }
-        const icon = NodeIcons[iconName];
+        const icon = CoreNodeHelper.getIcon(this);
 
         return {
             id: this.id,
@@ -158,7 +173,7 @@ class CoreNetwork {
     joinedSessions(nodes) {
         const self = this;
         for (let node of nodes) {
-            if (node.type === PtpNode) {
+            if (node.type === CoreNodeHelper.ptpNode) {
                 continue;
             }
 
@@ -166,7 +181,7 @@ class CoreNetwork {
         }
 
         for (let node of nodes) {
-            if (![4, 5, 6, 12].includes(node.type)) {
+            if (!CoreNodeHelper.isNetworkNode(node)) {
                 continue;
             }
 
@@ -227,7 +242,16 @@ class CoreNetwork {
             interface_two: interfaceTwo
         };
 
-        const edge = {from: fromNode.id, to: toNode.id, recreated: true};
+        const edge = {
+            from: fromNode.id,
+            to: toNode.id,
+            recreated: true,
+            label: 'from: name\nto: name',
+            title: 'this is a title',
+            font: {
+                //background: '#fff'
+            }
+        };
         this.edges.add(edge);
     }
 
@@ -252,8 +276,8 @@ class CoreNetwork {
         if (properties.nodes.length === 0) {
             const {x, y} = properties.pointer.canvas;
             const nodeId = this.nextNodeId();
-            const nodeTypeData = getNodeType(this.nodeType);
-            const name = `${nodeTypeData.name}${nodeId}`;
+            const nodeDisplay = CoreNodeHelper.getDisplay(this.nodeType);
+            const name = `${nodeDisplay.name}${nodeId}`;
             const coreNode = new CoreNode(nodeId, this.nodeType, name, x, y);
             coreNode.model = this.nodeModel;
             this.nodes.add(coreNode.getNetworkNode());
@@ -266,7 +290,6 @@ class CoreNetwork {
         const edge = this.edges.get(edgeId);
         if (edge.recreated) {
             console.log('ignoring recreated edge');
-            setTimeout(() => this.network.addEdgeMode(), 250);
             return;
         }
 
@@ -274,6 +297,8 @@ class CoreNetwork {
         if (edge.from === edge.to) {
             console.log('removing cyclic edge');
             this.edges.remove(edge.id);
+            setTimeout(() => this.network.addEdgeMode(), 250);
+            return;
         }
 
         const fromNode = this.nodes.get(edge.from).coreNode;
@@ -293,7 +318,7 @@ class CoreNetwork {
     async addEdgeLink(edge, fromNode, toNode) {
         const linkId = `${fromNode.id}-${toNode.id}`;
         let interfaceOne = null;
-        if (fromNode.type === DefaultNode) {
+        if (fromNode.type === CoreNodeHelper.defaultNode) {
             const fromIps = await this.coreRest.getNodeIps(fromNode.id, Ip4Prefix, Ip6Prefix);
             console.log('from ips: ', fromIps);
             const interfaceOneId = Object.keys(fromNode.interfaces).length;
@@ -308,7 +333,7 @@ class CoreNetwork {
         }
 
         let interfaceTwo = null;
-        if (toNode.type === DefaultNode) {
+        if (toNode.type === CoreNodeHelper.defaultNode) {
             const toIps = await this.coreRest.getNodeIps(toNode.id, Ip4Prefix, Ip6Prefix);
             console.log('to ips: ', toIps);
             const interfaceTwoId = Object.keys(toNode.interfaces).length;
@@ -328,6 +353,10 @@ class CoreNetwork {
             interface_one: interfaceOne,
             interface_two: interfaceTwo
         };
+
+        edge.label = 'this is a label';
+        edge.title = 'this is a title';
+        this.edges.update(edge);
     }
 
     linkMode(enabled) {
