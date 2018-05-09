@@ -107,9 +107,20 @@
         <div id="core-network" class="col">
         </div>
     </div>
-
-    {% include 'sessions_modal.html' %}
 </div>
+
+{% include 'sessions_modal.html' %}
+{% include 'nodeedit_modal.html' %}
+{% include 'linkedit_modal.html' %}
+
+<ul id="node-context" class="list-group invisible context">
+    <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</a>
+    <a class="list-group-item list-group-item-action" href="#" data-option="services">Services</a>
+</ul>
+
+<ul id="edge-context" class="list-group invisible context">
+    <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Link</a>
+</ul>
 
 <script src="static/jquery-3.3.1.min.js"></script>
 <script src="static/popper.min.js"></script>
@@ -125,7 +136,7 @@
     const $nodeButtons = $('.node-buttons a');
     const $sessionId = $('#session-id');
     const $nodeDisplay = $('#node-display');
-    const $sessionsModel = $('#sessions-modal');
+    const $sessionsModal = $('#sessions-modal');
     const $sessionsTable = $('#sessions-table');
     const $runButton = $('#run-button');
     const $infoCard = $('#info-card');
@@ -133,6 +144,12 @@
     const $infoCardHeader = $('#info-card-header');
     const $nodeSelect = $('#node-select');
     const $newSessionButton = $('#new-session-button');
+    const $nodeContext = $('#node-context');
+    const $edgeContext = $('#edge-context');
+    const $nodeEditModal = $('#nodeedit-modal');
+    const $nodeEditButton = $('#nodeedit-button');
+    const $linkEditModal = $('#linkedit-modal');
+    const $linkEditButton = $('#linkedit-button');
 
     // initial core setup
     const coreRest = new CoreRest();
@@ -180,6 +197,8 @@
     // handle network clicks
     coreNetwork.network.on('click', function(properties) {
         console.log('click properties: ', properties);
+        $nodeContext.addClass('invisible');
+        $edgeContext.addClass('invisible');
 
         $infoCard.removeClass('visible invisible');
         if (properties.nodes.length === 1) {
@@ -235,6 +254,77 @@
         }
     });
 
+    coreNetwork.network.on('oncontext', function(properties) {
+        console.log('context event: ', properties);
+        properties.event.preventDefault();
+        $nodeContext.addClass('invisible');
+        $edgeContext.addClass('invisible');
+
+        const location = properties.pointer.DOM;
+        const x = properties.event.pageX;
+        const y = properties.event.pageY;
+
+        const nodeId = coreNetwork.network.getNodeAt(location);
+        if (nodeId) {
+            const node = coreNetwork.nodes.get(nodeId);
+            console.log('context node: ', node);
+            $nodeContext.data('node', nodeId);
+            $nodeContext.css({
+                position: 'absolute',
+                left: x,
+                top: y
+            });
+            $nodeContext.removeClass('invisible');
+        } else {
+            const edgeId = coreNetwork.network.getEdgeAt(location);
+            if (edgeId) {
+                const edge = coreNetwork.edges.get(edgeId);
+                console.log('context edge: ', edge);
+                $edgeContext.data('edge', edgeId);
+                $edgeContext.css({
+                    position: 'absolute',
+                    left: x,
+                    top: y
+                });
+                $edgeContext.removeClass('invisible');
+            }
+        }
+    });
+
+    $nodeContext.click(function(event) {
+        $nodeContext.addClass('invisible');
+        console.log('node context click: ', event);
+        const nodeId = $nodeContext.data('node');
+        const node = coreNetwork.nodes.get(nodeId).coreNode;
+        const $target = $(event.target);
+        const option = $target.data('option');
+        console.log('node context: ', nodeId, option);
+        if (option === 'edit') {
+            $nodeEditModal.find('.modal-title').text(`Edit Node: ${node.name}`);
+            $nodeEditModal.find('#node-name').val(node.name);
+            $nodeEditModal.modal('show');
+        }
+    });
+
+    $nodeEditButton.click(function() {
+        const $form = $nodeEditModal.find('form');
+        console.log('form data: ', $form.serialize());
+    });
+
+    $edgeContext.click(function(event) {
+        $edgeContext.addClass('invisible');
+        console.log('edge context click: ', event);
+        const edgeId = $edgeContext.data('edge');
+        const edge = coreNetwork.edges.get(edgeId);
+        const $target = $(event.target);
+        const option = $target.data('option');
+        console.log('edge context: ', edgeId, option);
+        if (option === 'edit') {
+            $linkEditModal.find('.modal-title').text('Edit Edge');
+            $linkEditModal.modal('show');
+        }
+    });
+
     $newSessionButton.click(function() {
         coreNetwork.newSession()
                 .then(function(session) {
@@ -254,7 +344,7 @@
             coreNetwork.joinSession(sessionId)
                     .then(function(session) {
                         joinSession(session);
-                        $sessionsModel.modal('hide');
+                        $sessionsModal.modal('hide');
                     })
                     .catch(function(err) {
                        console.log('join session error: ', err);
@@ -291,7 +381,6 @@
         }
     });
 
-    //$nodeDisplay.text(`Node: ${coreNetwork.nodeModel}`);
     $nodeButtons.click(function () {
         const $this = $(this);
         const nodeType = $this.data('node');
@@ -310,7 +399,7 @@
     });
 
     // show sessions
-    $sessionsModel.on('shown.bs.modal', function () {
+    $sessionsModal.on('shown.bs.modal', function () {
         console.log('show sessions');
         $sessionsTable.find('tbody tr').remove();
         coreRest.getSessions()

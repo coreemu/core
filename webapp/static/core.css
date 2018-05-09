@@ -26,3 +26,7 @@
     border: 1px solid #dee2e6;
     border-radius: 10px;
 }
+
+.context .list-group-item {
+    padding: .5rem 1.25rem;
+}

@@ -33,12 +33,12 @@ class NodeHelper {
 
         this.icons = {
             router: 'static/router.svg',
-            host: 'static/host.gif',
+            host: 'static/host.svg',
             PC: 'static/pc.gif',
             mdr: 'static/mdr.svg',
             switch: 'static/lanswitch.svg',
             hub: 'static/hub.svg',
-            wlan: 'static/wlan.gif'
+            wlan: 'static/wlan.svg'
         };
 
         this.defaultNode = 0;
@@ -155,7 +155,6 @@ class CoreNetwork {
         };
         this.network = new vis.Network(this.container, this.networkData, this.networkOptions);
         this.network.on('doubleClick', this.addNode.bind(this));
-        this.network.on('oncontext', this.onContext.bind(this));
         this.edges.on('add', this.addEdge.bind(this));
         this.nodesEnabled = false;
     }
@@ -313,25 +312,6 @@ class CoreNetwork {
         }
 
         return await coreRest.setSessionState(SessionStates.instantiation);
-    }
-
-    onContext(properties) {
-        console.log('context event: ', properties);
-        properties.event.preventDefault();
-
-        const location = properties.pointer.DOM;
-        const nodeId = this.network.getNodeAt(location);
-        if (nodeId) {
-            const node = this.nodes.get(nodeId);
-            console.log('context node: ', node);
-
-        } else {
-            const edgeId = this.network.getEdgeAt(location);
-            if (edgeId) {
-                const edge = this.edges.get(edgeId);
-                console.log('context edge: ', edge);
-            }
-        }
     }
 
     addNode(properties) {
