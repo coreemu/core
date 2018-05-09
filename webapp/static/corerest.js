@@ -92,15 +92,14 @@ class CoreRest {
         const session = {id: 0, state: 0};
 
         if (sessions.length) {
-            this.currentSession = sessions[0].id;
+            session.id = sessions[0].id;
             session.state = sessions[0].state;
         } else {
             response = await this.createSession();
-            this.currentSession = response.id;
+            session.id = response.id;
             session.state = response.state;
         }
 
-        session.id = this.currentSession;
         return session;
     }
 }

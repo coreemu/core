@@ -163,10 +163,22 @@ class CoreNetwork {
     async initialSession() {
         const session = await this.coreRest.retrieveSession();
         console.log('retrieved session: ', session);
-        const response = await coreRest.getSession();
-        console.log('session info: ', response);
-        this.joinedSessionNodes(response.nodes);
+        await this.joinSession(session.id);
         return session;
+    }
+
+    async newSession() {
+        const session = await this.coreRest.createSession();
+        this.coreRest.currentSession = session.id;
+        this.reset();
+        return session;
+    }
+
+    reset() {
+        this.nodeId = 0;
+        this.nodes.clear();
+        this.edges.clear();
+        this.links = {};
     }
 
     enableNodeCreation(enabled) {
@@ -194,7 +206,13 @@ class CoreNetwork {
         return this.nodeId;
     }
 
-    joinedSessionNodes(nodes) {
+    async joinSession(sessionId) {
+        this.reset();
+        this.coreRest.currentSession = sessionId;
+        const session = await coreRest.getSession();
+        console.log('session info: ', session);
+        const nodes = session.nodes;
+
         const self = this;
         const nodeIds = [0];
 
@@ -229,6 +247,11 @@ class CoreNetwork {
         } else {
             this.nodeId = 0;
         }
+
+        return {
+            id: sessionId,
+            state: session.state
+        };
     }
 
     createEdgeFromLink(linkData) {

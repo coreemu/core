@@ -147,10 +147,9 @@ def get_session(session_id):
             },
             "url": "/sessions/%s/nodes/%s" % (session_id, node.objid)
         })
-    state = EventTypes(session.state)
 
     return jsonify(
-        state=state.name,
+        state=session.state,
         nodes=nodes
     )
 

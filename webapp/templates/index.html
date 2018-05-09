@@ -38,6 +38,7 @@
                         Sessions
                     </a>
                     <div class="dropdown-menu" aria-labelledby="nb-session">
+                        <a id="new-session-button" class="dropdown-item" href="#">New</a>
                         <a class="dropdown-item" href="#" data-toggle="modal" data-target="#sessions-modal">View</a>
                     </div>
                 </li>
@@ -131,15 +132,14 @@
     const $infoCardTable = $('#info-card-table');
     const $infoCardHeader = $('#info-card-header');
     const $nodeSelect = $('#node-select');
+    const $newSessionButton = $('#new-session-button');
 
     // initial core setup
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
     coreNetwork.initialSession()
             .then(function(session) {
-                $sessionId.text(`Session: ${session.id}`);
-                const isStartEnabled = session.state !== SessionStates.runtime;
-                setRunButton(isStartEnabled);
+                joinSession(session);
             })
             .catch(function (err) {
                 console.log('initial session error: ', err);
@@ -165,12 +165,16 @@
     }
 
     function addInfoTable(name, value) {
-        if (value) {
-            let $nameCell = $('<td>', {text: name});
-            let $valueCell = $('<td>', {text: value});
-            const $row = $('<tr>').append([$nameCell, $valueCell]);
-            $infoCardTable.find('tbody').append($row);
-        }
+        let $nameCell = $('<td>', {text: name});
+        let $valueCell = $('<td>', {text: value});
+        const $row = $('<tr>').append([$nameCell, $valueCell]);
+        $infoCardTable.find('tbody').append($row);
+    }
+
+    function joinSession(session) {
+        $sessionId.text(`Session: ${session.id}`);
+        const isStartEnabled = session.state !== SessionStates.runtime;
+        setRunButton(isStartEnabled);
     }
 
     // handle network clicks
@@ -188,6 +192,17 @@
             addInfoTable('Model', node.model);
             addInfoTable('X', node.x);
             addInfoTable('Y', node.y);
+            for (let interfaceId in node.interfaces) {
+                const interface = node.interfaces[interfaceId];
+                console.log('node interface: ', interface);
+                addInfoTable('Interface', `eth${interface.id}`);
+                if (interface.ip4) {
+                    addInfoTable('IP4', `${interface.ip4}/${interface.ip4mask}`);
+                }
+                if (interface.ip6) {
+                    addInfoTable('IP6', `${interface.ip6}/${interface.ip6mask}`);
+                }
+            }
         } else if (properties.edges.length === 1) {
             const edgeId = properties.edges[0];
             const edge = coreNetwork.edges.get(edgeId);
@@ -195,7 +210,7 @@
             $infoCard.addClass('visible');
             $infoCardHeader.text('Edge');
             $infoCardTable.find('tbody tr').remove();
-            addInfoTable('Source', edge.nodeOne);
+            addInfoTable(edge.nodeOne, null);
             const interfaceOne = edge.interfaceOne;
             if (interfaceOne) {
                 if (interfaceOne.ip4) {
@@ -205,7 +220,7 @@
                     addInfoTable('IP6', `${interfaceOne.ip6}/${interfaceOne.ip6mask}`);
                 }
             }
-            addInfoTable('Destination', edge.nodeTwo);
+            addInfoTable(edge.nodeTwo, null);
             const interfaceTwo = edge.interfaceTwo;
             if (interfaceTwo) {
                 if (interfaceTwo.ip4) {
@@ -220,7 +235,33 @@
         }
     });
 
-    // page interactions
+    $newSessionButton.click(function() {
+        coreNetwork.newSession()
+                .then(function(session) {
+                    joinSession(session);
+                })
+                .catch(function(err) {
+                   console.log('error creating new session: ', err);
+                });
+    });
+
+    $sessionsTable.on('click', 'td', function(event) {
+        const sessionId = $(this).parent('tr').data('session');
+        console.log('clicked session to join: ', sessionId);
+        if (sessionId === coreRest.currentSession) {
+            console.log('same session, not changing');
+        } else {
+            coreNetwork.joinSession(sessionId)
+                    .then(function(session) {
+                        joinSession(session);
+                        $sessionsModel.modal('hide');
+                    })
+                    .catch(function(err) {
+                       console.log('join session error: ', err);
+                    });
+        }
+    });
+
     $linkButton.click(function () {
         const linkMode = !$(this).hasClass('active');
         coreNetwork.linkMode(linkMode);
@@ -277,11 +318,12 @@
                     const sessions = response.sessions;
                     for (let session of sessions) {
                         console.log('show sessions: ', session);
-                        const $idCell = $('<th>', {scope: 'row', text: session.id});
+                        const $idCell = $('<td>', {text: session.id});
                         const $nodeCell = $('<td>', {text: session.nodes});
                         const stateName = coreRest.getStateName(session.state);
                         const $stateCell = $('<td>', {text: stateName});
-                        const $row = $('<tr>').append([$idCell, $nodeCell, $stateCell]);
+                        const $row = $('<tr>', {class: 'session-join', 'data-session': session.id});
+                        $row.append([$idCell, $nodeCell, $stateCell]);
                         $sessionsTable.find('tbody').append($row);
                     }
                 })
