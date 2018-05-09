@@ -115,8 +115,6 @@ class CoreNode {
 
 function setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo) {
     edge.core = linkId;
-    edge.label = 'from: name\nto: name';
-    edge.title = 'from: name\nto: name';
     edge.nodeOne = fromNode.name;
     edge.interfaceOne = interfaceOne;
     edge.nodeTwo = toNode.name;
@@ -157,8 +155,18 @@ class CoreNetwork {
         };
         this.network = new vis.Network(this.container, this.networkData, this.networkOptions);
         this.network.on('doubleClick', this.addNode.bind(this));
+        this.network.on('oncontext', this.onContext.bind(this));
         this.edges.on('add', this.addEdge.bind(this));
         this.nodesEnabled = false;
+    }
+
+    async initialSession() {
+        const session = await this.coreRest.retrieveSession();
+        console.log('retrieved session: ', session);
+        const response = await coreRest.getSession();
+        console.log('session info: ', response);
+        this.joinedSessionNodes(response.nodes);
+        return session;
     }
 
     enableNodeCreation(enabled) {
@@ -186,7 +194,7 @@ class CoreNetwork {
         return this.nodeId;
     }
 
-    joinedSessions(nodes) {
+    joinedSessionNodes(nodes) {
         const self = this;
         const nodeIds = [0];
 
@@ -282,6 +290,25 @@ class CoreNetwork {
         }
 
         return await coreRest.setSessionState(SessionStates.instantiation);
+    }
+
+    onContext(properties) {
+        console.log('context event: ', properties);
+        properties.event.preventDefault();
+
+        const location = properties.pointer.DOM;
+        const nodeId = this.network.getNodeAt(location);
+        if (nodeId) {
+            const node = this.nodes.get(nodeId);
+            console.log('context node: ', node);
+
+        } else {
+            const edgeId = this.network.getEdgeAt(location);
+            if (edgeId) {
+                const edge = this.edges.get(edgeId);
+                console.log('context edge: ', edge);
+            }
+        }
     }
 
     addNode(properties) {

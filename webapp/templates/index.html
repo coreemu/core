@@ -55,12 +55,15 @@
             </ul>
 
             <span id="session-id" class="navbar-text p-2 mr-3">Session #</span>
-            <span id="node-display" class="navbar-text p-2">Node: Default</span>
+            <div>
+                <span id="node-display" class="navbar-text p-2">Create:</span>
+                <img id="node-select" src="static/router.svg" />
+            </div>
         </div>
     </nav>
 
     <div class="row col">
-        <div class="col-2 col-xl-2">
+        <div class="col-3 col-xl-2">
             <div class="btn-group-vertical w-100" role="group" aria-label="Side Menu">
                 <button id="run-button" type="button" class="btn btn-success">Start</button>
                 <button id="link-button" type="button" class="btn btn-secondary" data-toggle="button">Link Mode</button>
@@ -127,25 +130,19 @@
     const $infoCard = $('#info-card');
     const $infoCardTable = $('#info-card-table');
     const $infoCardHeader = $('#info-card-header');
+    const $nodeSelect = $('#node-select');
 
     // initial core setup
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
-    coreRest.retrieveSession()
-            .then(function (session) {
-                console.log('get session: ', session);
+    coreNetwork.initialSession()
+            .then(function(session) {
                 $sessionId.text(`Session: ${session.id}`);
                 const isStartEnabled = session.state !== SessionStates.runtime;
                 setRunButton(isStartEnabled);
-                return coreRest.getSession();
-            })
-            .then(function(response) {
-                console.log('session: ', response);
-                const nodes = response.nodes;
-                coreNetwork.joinedSessions(nodes);
             })
             .catch(function (err) {
-                console.log('get session error: ', err);
+                console.log('initial session error: ', err);
             });
 
     function setRunButton(start) {
@@ -253,7 +250,7 @@
         }
     });
 
-    $nodeDisplay.text(`Node: ${coreNetwork.nodeModel}`);
+    //$nodeDisplay.text(`Node: ${coreNetwork.nodeModel}`);
     $nodeButtons.click(function () {
         const $this = $(this);
         const nodeType = $this.data('node');
@@ -263,11 +260,12 @@
         coreNetwork.setNodeMode(nodeType, model);
         const currentType = CoreNodeHelper.getDisplay(coreNetwork.nodeType);
         const defaultType = CoreNodeHelper.getDisplay(CoreNodeHelper.defaultNode);
-        let nodeDisplay = currentType.display;
+        let nodeName = currentType.name;
         if (currentType.display === defaultType.display) {
-            nodeDisplay = coreNetwork.nodeModel;
+            nodeName = coreNetwork.nodeModel;
         }
-        $nodeDisplay.text(`Node: ${nodeDisplay}`);
+        const icon = CoreNodeHelper.icons[nodeName];
+        $nodeSelect.attr('src', icon);
     });
 
     // show sessions
