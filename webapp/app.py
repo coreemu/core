@@ -182,6 +182,37 @@ def create_node(session_id):
     ), 201
 
 
+@app.route("/sessions/<int:session_id>/nodes/<node_id>", methods=["PUT"])
+@synchronized
+def edit_node(session_id, node_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+    node = session.objects.get(node_id)
+    if not node:
+        return jsonify(error="node does not exist"), 404
+
+    data = request.get_json() or {}
+
+    node_options = NodeOptions()
+    x = data.get("x")
+    y = data.get("y")
+    node_options.set_position(x, y)
+    lat = data.get("lat")
+    lon = data.get("lon")
+    alt = data.get("alt")
+    node_options.set_location(lat, lon, alt)
+
+    result = session.update_node(node_id, node_options)
+    if result:
+        return jsonify()
+    else:
+        return jsonify(error="error during node edit"), 404
+
+
 @app.route("/sessions/<int:session_id>/nodes/<node_id>")
 def get_node(session_id, node_id):
     session = coreemu.sessions.get(session_id)

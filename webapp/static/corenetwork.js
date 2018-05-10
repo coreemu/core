@@ -155,6 +155,7 @@ class CoreNetwork {
         };
         this.network = new vis.Network(this.container, this.networkData, this.networkOptions);
         this.network.on('doubleClick', this.addNode.bind(this));
+        this.network.on('dragEnd', this.dragEnd.bind(this));
         this.edges.on('add', this.addEdge.bind(this));
         this.nodesEnabled = false;
     }
@@ -171,6 +172,25 @@ class CoreNetwork {
         this.coreRest.currentSession = session.id;
         this.reset();
         return session;
+    }
+
+    getCoreNode(nodeId) {
+        return this.nodes.get(nodeId).coreNode;
+    }
+
+    async dragEnd(properties) {
+        console.log('drag end properties: ', properties);
+        if (properties.nodes.length == 1) {
+            const nodeId = properties.nodes[0];
+            const networkNode = this.nodes.get(nodeId);
+            const coreNode = networkNode.coreNode;
+            coreNode.x = properties.pointer.canvas.x;
+            coreNode.y = properties.pointer.canvas.y;
+            if (await this.coreRest.isRunning()) {
+                console.log('updated core node location: ', coreNode.x, coreNode.y);
+                await this.coreRest.editNode(coreNode);
+            }
+        }
     }
 
     reset() {

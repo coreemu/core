@@ -69,6 +69,14 @@ class CoreRest {
         return await postJson(`/sessions/${this.currentSession}/nodes`, node);
     }
 
+    async editNode(node) {
+        return await putJson(`/sessions/${this.currentSession}/nodes/${node.id}`, {
+            id: node.id,
+            x: node.x,
+            y: node.y
+        });
+    }
+
     async createLink(link) {
         return await postJson(`/sessions/${this.currentSession}/links`, link);
     }
@@ -101,5 +109,10 @@ class CoreRest {
         }
 
         return session;
+    }
+
+    async isRunning() {
+        const session = await this.getSession();
+        return session.state === SessionStates.runtime;
     }
 }
