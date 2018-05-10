@@ -113,12 +113,22 @@ class CoreNode {
     }
 }
 
-function setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo) {
-    edge.core = linkId;
-    edge.nodeOne = fromNode.name;
-    edge.interfaceOne = interfaceOne;
-    edge.nodeTwo = toNode.name;
-    edge.interfaceTwo = interfaceTwo;
+class CoreLink {
+    constructor(nodeOne, nodeTwo, interfaceOne, interfaceTwo) {
+        this.nodeOne = nodeOne;
+        this.nodeTwo = nodeTwo;
+        this.interfaceOne = interfaceOne;
+        this.interfaceTwo = interfaceTwo;
+    }
+
+    json() {
+        return {
+            node_one: this.nodeOne,
+            node_two: this.nodeTwo,
+            interface_one: this.interfaceOne,
+            interface_two: this.interfaceTwo
+        }
+    }
 }
 
 class CoreNetwork {
@@ -250,13 +260,13 @@ class CoreNetwork {
             }
 
             this.coreRest.getLinks(node.id)
-                .then(function(response) {
+                .then(function (response) {
                     console.log('link response: ', response);
                     for (let linkData of response.links) {
                         self.createEdgeFromLink(linkData);
                     }
                 })
-                .catch(function(err) {
+                .catch(function (err) {
                     console.log('get link error: ', err);
                 });
         }
@@ -302,19 +312,16 @@ class CoreNetwork {
             toNode.interfaces[linkData.interface2_id] = interfaceTwo;
         }
 
-        this.links[linkId] = {
-            node_one: fromNode.id,
-            node_two: toNode.id,
-            interface_one: interfaceOne,
-            interface_two: interfaceTwo
-        };
+        const link = new CoreLink(fromNode.id, toNode.id, interfaceOne, interfaceTwo);
+        this.links[linkId] = link;
 
         const edge = {
             recreated: true,
             from: fromNode.id,
-            to: toNode.id
+            to: toNode.id,
+            linkId: linkId,
+            link
         };
-        setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo);
         this.edges.add(edge);
     }
 
@@ -327,7 +334,7 @@ class CoreNetwork {
 
         for (let linkId in this.links) {
             const link = this.links[linkId];
-            const response = await coreRest.createLink(link);
+            const response = await coreRest.createLink(link.json());
             console.log('created link: ', response);
         }
 
@@ -375,10 +382,10 @@ class CoreNetwork {
         const toNode = this.nodes.get(edge.to).coreNode;
 
         this.addEdgeLink(edge, fromNode, toNode)
-            .then(function() {
+            .then(function () {
                 console.log('create edge link success!');
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.log('create link error: ', err);
             });
 
@@ -417,14 +424,10 @@ class CoreNetwork {
             toNode.interfaces[interfaceTwoId] = interfaceTwo;
         }
 
-        this.links[linkId] = {
-            node_one: fromNode.id,
-            node_two: toNode.id,
-            interface_one: interfaceOne,
-            interface_two: interfaceTwo
-        };
-
-        setEdgeData(edge, linkId, fromNode, toNode, interfaceOne, interfaceTwo);
+        const link = new CoreLink(fromNode.id, toNode.id, interfaceOne, interfaceTwo);
+        this.links[linkId] = link;
+        edge.linkId = linkId;
+        edge.link = link;
         this.edges.update(edge);
     }
 

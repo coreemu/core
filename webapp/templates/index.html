@@ -225,12 +225,13 @@
         } else if (properties.edges.length === 1) {
             const edgeId = properties.edges[0];
             const edge = coreNetwork.edges.get(edgeId);
-            console.log('clicked edge: ', edge);
+            const link = edge.link;
+            console.log('clicked edge: ', link);
             $infoCard.addClass('visible');
             $infoCardHeader.text('Edge');
             $infoCardTable.find('tbody tr').remove();
-            addInfoTable(edge.nodeOne, null);
-            const interfaceOne = edge.interfaceOne;
+            addInfoTable(link.nodeOne, null);
+            const interfaceOne = link.interfaceOne;
             if (interfaceOne) {
                 if (interfaceOne.ip4) {
                     addInfoTable('IP4', `${interfaceOne.ip4}/${interfaceOne.ip4mask}`);
@@ -239,8 +240,8 @@
                     addInfoTable('IP6', `${interfaceOne.ip6}/${interfaceOne.ip6mask}`);
                 }
             }
-            addInfoTable(edge.nodeTwo, null);
-            const interfaceTwo = edge.interfaceTwo;
+            addInfoTable(link.nodeTwo, null);
+            const interfaceTwo = link.interfaceTwo;
             if (interfaceTwo) {
                 if (interfaceTwo.ip4) {
                     addInfoTable('IP4', `${interfaceTwo.ip4}/${interfaceTwo.ip4mask}`);
