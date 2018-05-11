@@ -83,6 +83,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
     if not nodeutils.is_node(network, [NodeTypes.EMANE, NodeTypes.PHYSICAL]):
         config["devname"] = devname
 
+    logger.info("configuring link for network(%s): %s", network.name, config)
     network.linkconfig(**config)
 
 

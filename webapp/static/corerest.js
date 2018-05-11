@@ -81,6 +81,10 @@ class CoreRest {
         return await postJson(`/sessions/${this.currentSession}/links`, link);
     }
 
+    async editLink(link) {
+        return await putJson(`/sessions/${this.currentSession}/links`, link);
+    }
+
     async getLinks(nodeId) {
         return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/links`)
     }

@@ -119,6 +119,11 @@ class CoreLink {
         this.nodeTwo = nodeTwo;
         this.interfaceOne = interfaceOne;
         this.interfaceTwo = interfaceTwo;
+        this.bandwidth = null;
+        this.delay = null;
+        this.loss = null;
+        this.duplicate = null;
+        this.jitter = null;
     }
 
     json() {
@@ -126,7 +131,14 @@ class CoreLink {
             node_one: this.nodeOne,
             node_two: this.nodeTwo,
             interface_one: this.interfaceOne,
-            interface_two: this.interfaceTwo
+            interface_two: this.interfaceTwo,
+            options: {
+                bandwidth: this.bandwidth,
+                delay: this.delay,
+                per: this.loss,
+                dup: this.duplicate,
+                jitter: this.jitter
+            }
         }
     }
 }
@@ -313,6 +325,11 @@ class CoreNetwork {
         }
 
         const link = new CoreLink(fromNode.id, toNode.id, interfaceOne, interfaceTwo);
+        link.bandwidth = linkData.bandwidth;
+        link.delay = linkData.delay;
+        link.duplicate = linkData.dup;
+        link.loss = linkData.per;
+        link.jitter = linkData.jitter;
         this.links[linkId] = link;
 
         const edge = {

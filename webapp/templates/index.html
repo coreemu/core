@@ -11,7 +11,7 @@
 <div class="container-fluid d-flex flex-column p-0">
     <nav class="navbar navbar-expand navbar-dark bg-dark mb-2">
         <div class="navbar-brand mb-0 h1">
-            <img src="static/core-icon.png" />
+            <img src="static/core-icon.png"/>
             <span>CORE</span>
         </div>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#nb-content"
@@ -58,7 +58,7 @@
             <span id="session-id" class="navbar-text p-2 mr-3">Session #</span>
             <div>
                 <span id="node-display" class="navbar-text p-2">Create:</span>
-                <img id="node-select" src="static/router.svg" />
+                <img id="node-select" src="static/router.svg"/>
             </div>
         </div>
     </nav>
@@ -113,12 +113,12 @@
 {% include 'nodeedit_modal.html' %}
 {% include 'linkedit_modal.html' %}
 
-<ul id="node-context" class="list-group invisible context">
+<ul id="node-context" class="list-group context d-none">
     <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</a>
     <a class="list-group-item list-group-item-action" href="#" data-option="services">Services</a>
 </ul>
 
-<ul id="edge-context" class="list-group invisible context">
+<ul id="edge-context" class="list-group context d-none">
     <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Link</a>
 </ul>
 
@@ -155,7 +155,7 @@
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
     coreNetwork.initialSession()
-            .then(function(session) {
+            .then(function (session) {
                 joinSession(session);
             })
             .catch(function (err) {
@@ -195,19 +195,18 @@
     }
 
     // handle network clicks
-    coreNetwork.network.on('click', function(properties) {
+    coreNetwork.network.on('click', function (properties) {
         console.log('click properties: ', properties);
-        $nodeContext.addClass('invisible');
-        $edgeContext.addClass('invisible');
+        $nodeContext.addClass('d-none');
+        $edgeContext.addClass('d-none');
 
         $infoCard.removeClass('visible invisible');
         if (properties.nodes.length === 1) {
             const nodeId = properties.nodes[0];
-            const node = coreNetwork.nodes.get(nodeId).coreNode;
+            const node = coreNetwork.getCoreNode(nodeId);
             $infoCardHeader.text(node.name);
             $infoCard.addClass('visible');
             $infoCardTable.find('tbody tr').remove();
-            addInfoTable('Name', node.name);
             addInfoTable('Model', node.model);
             addInfoTable('X', node.x);
             addInfoTable('Y', node.y);
@@ -226,13 +225,16 @@
             const edgeId = properties.edges[0];
             const edge = coreNetwork.edges.get(edgeId);
             const link = edge.link;
+            const nodeOne = coreNetwork.getCoreNode(link.nodeOne);
+            const nodeTwo = coreNetwork.getCoreNode(link.nodeTwo);
             console.log('clicked edge: ', link);
             $infoCard.addClass('visible');
             $infoCardHeader.text('Edge');
             $infoCardTable.find('tbody tr').remove();
-            addInfoTable(link.nodeOne, null);
+            addInfoTable(nodeOne.name, null);
             const interfaceOne = link.interfaceOne;
             if (interfaceOne) {
+                addInfoTable('Interface', `eth${interfaceOne.id}`);
                 if (interfaceOne.ip4) {
                     addInfoTable('IP4', `${interfaceOne.ip4}/${interfaceOne.ip4mask}`);
                 }
@@ -240,9 +242,10 @@
                     addInfoTable('IP6', `${interfaceOne.ip6}/${interfaceOne.ip6mask}`);
                 }
             }
-            addInfoTable(link.nodeTwo, null);
+            addInfoTable(nodeTwo.name, null);
             const interfaceTwo = link.interfaceTwo;
             if (interfaceTwo) {
+                addInfoTable('Interface', `eth${interfaceTwo.id}`);
                 if (interfaceTwo.ip4) {
                     addInfoTable('IP4', `${interfaceTwo.ip4}/${interfaceTwo.ip4mask}`);
                 }
@@ -250,16 +253,21 @@
                     addInfoTable('IP6', `${interfaceTwo.ip6}/${interfaceTwo.ip6mask}`);
                 }
             }
+            addInfoTable('Bandwidth', edge.link.bandwidth);
+            addInfoTable('Delay', edge.link.delay);
+            addInfoTable('Duplicate', edge.link.duplicate);
+            addInfoTable('Loss', edge.link.loss);
+            addInfoTable('Jitter', edge.link.jitter);
         } else {
             $infoCard.addClass('invisible');
         }
     });
 
-    coreNetwork.network.on('oncontext', function(properties) {
+    coreNetwork.network.on('oncontext', function (properties) {
         console.log('context event: ', properties);
         properties.event.preventDefault();
-        $nodeContext.addClass('invisible');
-        $edgeContext.addClass('invisible');
+        $nodeContext.addClass('d-none');
+        $edgeContext.addClass('d-none');
 
         const location = properties.pointer.DOM;
         const x = properties.event.pageX;
@@ -275,7 +283,7 @@
                 left: x,
                 top: y
             });
-            $nodeContext.removeClass('invisible');
+            $nodeContext.removeClass('d-none');
         } else {
             const edgeId = coreNetwork.network.getEdgeAt(location);
             if (edgeId) {
@@ -287,13 +295,13 @@
                     left: x,
                     top: y
                 });
-                $edgeContext.removeClass('invisible');
+                $edgeContext.removeClass('d-none');
             }
         }
     });
 
-    $nodeContext.click(function(event) {
-        $nodeContext.addClass('invisible');
+    $nodeContext.click(function (event) {
+        $nodeContext.addClass('d-none');
         console.log('node context click: ', event);
         const nodeId = $nodeContext.data('node');
         const node = coreNetwork.nodes.get(nodeId).coreNode;
@@ -307,48 +315,100 @@
         }
     });
 
-    $nodeEditButton.click(function() {
+    $nodeEditButton.click(function () {
         const $form = $nodeEditModal.find('form');
-        console.log('form data: ', $form.serialize());
+        console.log('node edit data: ', $form.serialize());
     });
 
-    $edgeContext.click(function(event) {
-        $edgeContext.addClass('invisible');
+    $edgeContext.click(function (event) {
+        $edgeContext.addClass('d-none');
         console.log('edge context click: ', event);
         const edgeId = $edgeContext.data('edge');
         const edge = coreNetwork.edges.get(edgeId);
+        const link = edge.link;
         const $target = $(event.target);
         const option = $target.data('option');
         console.log('edge context: ', edgeId, option);
         if (option === 'edit') {
+            // populate form with current link data
+            $linkEditModal.data('link', edgeId);
+            $linkEditModal.find('#link-bandwidth').val(link.bandwidth);
+            $linkEditModal.find('#link-delay').val(link.delay);
+            $linkEditModal.find('#link-per').val(link.loss);
+            $linkEditModal.find('#link-dup').val(link.duplicate);
+            $linkEditModal.find('#link-jitter').val(link.jitter);
+
+            // set modal name and show
             $linkEditModal.find('.modal-title').text('Edit Edge');
             $linkEditModal.modal('show');
         }
     });
 
-    $newSessionButton.click(function() {
+    $linkEditButton.click(function () {
+        const $form = $linkEditModal.find('form');
+        const formData = {};
+        $form.serializeArray().map(function (x) {
+            let value = x.value;
+            if (value === '') {
+                value = null;
+            } else if (!isNaN(value)) {
+                value = parseInt(value);
+            }
+            formData[x.name] = value;
+        });
+        console.log('link edit data: ', formData);
+        const edgeId = $linkEditModal.data('link');
+        const edge = coreNetwork.edges.get(edgeId);
+        const link = edge.link;
+
+        link.bandwidth = formData.bandwidth;
+        link.delay = formData.delay;
+        link.duplicate = formData.duplicate;
+        link.loss = formData.loss;
+        link.jitter = formData.jitter;
+
+        coreRest.isRunning()
+                .then(function (isRunning) {
+                    if (isRunning) {
+                        const linkEdit = link.json();
+                        linkEdit.interface_one = linkEdit.interface_one.id;
+                        linkEdit.interface_two = linkEdit.interface_two.id;
+                        return coreRest.editLink(linkEdit);
+                    }
+                })
+                .then(function (response) {
+                    console.log('link edit success');
+                })
+                .catch(function (err) {
+                    console.log('error editing link: ', err);
+                });
+
+        $linkEditModal.modal('hide');
+    });
+
+    $newSessionButton.click(function () {
         coreNetwork.newSession()
-                .then(function(session) {
+                .then(function (session) {
                     joinSession(session);
                 })
-                .catch(function(err) {
-                   console.log('error creating new session: ', err);
+                .catch(function (err) {
+                    console.log('error creating new session: ', err);
                 });
     });
 
-    $sessionsTable.on('click', 'td', function(event) {
+    $sessionsTable.on('click', 'td', function (event) {
         const sessionId = $(this).parent('tr').data('session');
         console.log('clicked session to join: ', sessionId);
         if (sessionId === coreRest.currentSession) {
             console.log('same session, not changing');
         } else {
             coreNetwork.joinSession(sessionId)
-                    .then(function(session) {
+                    .then(function (session) {
                         joinSession(session);
                         $sessionsModal.modal('hide');
                     })
-                    .catch(function(err) {
-                       console.log('join session error: ', err);
+                    .catch(function (err) {
+                        console.log('join session error: ', err);
                     });
         }
     });
@@ -364,10 +424,10 @@
         const start = $this.text() === 'Start';
         if (start) {
             coreNetwork.start()
-                    .then(function() {
+                    .then(function () {
                         setRunButton(false);
                     })
-                    .catch(function(err) {
+                    .catch(function (err) {
                         console.log('start error: ', err);
                     });
         } else {

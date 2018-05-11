@@ -1,5 +1,4 @@
 import os
-
 from functools import wraps
 from threading import Lock
 
@@ -12,7 +11,7 @@ from flask_socketio import emit
 
 from core import logger
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import InterfaceData, IpPrefixes
+from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
 from core.enumerations import EventTypes
@@ -357,9 +356,41 @@ def add_link(session_id):
         link_options.key = options_data.get("key")
         link_options.opaque = options_data.get("opaque")
 
-    link_options = LinkOptions()
     session.add_link(node_one, node_two, interface_one, interface_two, link_options=link_options)
+    return jsonify(), 201
 
+
+@app.route("/sessions/<int:session_id>/links", methods=["PUT"])
+@synchronized
+def edit_link(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    data = request.get_json()
+
+    node_one = data.get("node_one")
+    node_two = data.get("node_two")
+    interface_one = data.get("interface_one")
+    interface_two = data.get("interface_two")
+
+    options_data = data.get("options")
+    link_options = LinkOptions()
+    if options_data:
+        link_options.delay = options_data.get("delay")
+        link_options.bandwidth = options_data.get("bandwidth")
+        link_options.session = options_data.get("session")
+        link_options.per = options_data.get("per")
+        link_options.dup = options_data.get("dup")
+        link_options.jitter = options_data.get("jitter")
+        link_options.mer = options_data.get("mer")
+        link_options.burst = options_data.get("burst")
+        link_options.mburst = options_data.get("mburst")
+        link_options.unidirectional = options_data.get("unidirectional")
+        link_options.key = options_data.get("key")
+        link_options.opaque = options_data.get("opaque")
+
+    session.update_link(node_one, node_two, link_options, interface_one, interface_two)
     return jsonify(), 201
 
 
