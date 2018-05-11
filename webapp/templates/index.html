@@ -151,6 +151,20 @@
     const $linkEditModal = $('#linkedit-modal');
     const $linkEditButton = $('#linkedit-button');
 
+    function formToJson($form) {
+        const formData = {};
+        $form.serializeArray().map(function (x) {
+            let value = x.value;
+            if (value === '') {
+                value = null;
+            } else if (!isNaN(value)) {
+                value = parseInt(value);
+            }
+            formData[x.name] = value;
+        });
+        return formData;
+    }
+
     // initial core setup
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
@@ -309,6 +323,7 @@
         const option = $target.data('option');
         console.log('node context: ', nodeId, option);
         if (option === 'edit') {
+            $nodeEditModal.data('node', nodeId);
             $nodeEditModal.find('.modal-title').text(`Edit Node: ${node.name}`);
             $nodeEditModal.find('#node-name').val(node.name);
             $nodeEditModal.modal('show');
@@ -317,7 +332,16 @@
 
     $nodeEditButton.click(function () {
         const $form = $nodeEditModal.find('form');
-        console.log('node edit data: ', $form.serialize());
+        const formData = formToJson($form);
+        console.log('node edit data: ', formData);
+        const nodeId = $nodeEditModal.data('node');
+        const node = coreNetwork.nodes.get(nodeId);
+        if (formData.name) {
+            node.label = formData.name;
+            node.coreNode.name = formData.name;
+            coreNetwork.nodes.update(node);
+        }
+        $nodeEditModal.modal('hide');
     });
 
     $edgeContext.click(function (event) {
