@@ -108,7 +108,8 @@ class CoreNode {
             y: this.y,
             lat: this.lat,
             lon: this.lon,
-            alt: this.alt
+            alt: this.alt,
+            services: this.services
         }
     }
 }

@@ -10,6 +10,7 @@ from flask_socketio import SocketIO
 from flask_socketio import emit
 
 from core import logger
+from core.data import ConfigData
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
@@ -172,6 +173,7 @@ def create_node(session_id):
     )
     node_options.icon = data.get("icon")
     node_options.opaque = data.get("opaque")
+    node_options.services = data.get("services", [])
     node_options.set_position(data.get("x"), data.get("y"))
     node_options.set_location(data.get("lat"), data.get("lon"), data.get("alt"))
     node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
@@ -266,6 +268,37 @@ def delete_node(session_id, node_id):
         return jsonify()
     else:
         return jsonify(error="failure to delete node"), 404
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services")
+def node_services(session_id, node_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    config_data = ConfigData(
+        node=node_id,
+        object="services",
+        type=1,
+    )
+    logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
+
+    # dispatch to any registered callback for this object type
+    replies = session.config_object(config_data)
+    if len(replies) != 1:
+        return jsonify(error="failure getting node services"), 404
+
+    service_data = replies[0]
+    names = service_data.captions.split("|")
+    services = {}
+    for group in service_data.groups.split("|"):
+        group = group.split(":")
+        group_name = group[0]
+        group_start, group_stop = [int(x) for x in group[1].split("-")]
+        group_start -= 1
+        services[group_name] = names[group_start:group_stop]
+
+    return jsonify(services)
 
 
 @app.route("/sessions/<int:session_id>/state", methods=["PUT"])

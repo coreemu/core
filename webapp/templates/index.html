@@ -112,6 +112,7 @@
 {% include 'sessions_modal.html' %}
 {% include 'nodeedit_modal.html' %}
 {% include 'linkedit_modal.html' %}
+{% include 'services_modal.html' %}
 
 <ul id="node-context" class="list-group context d-none">
     <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</a>
@@ -130,6 +131,7 @@
 <script src="static/coreip.js"></script>
 <script src="static/corerest.js"></script>
 <script src="static/corenetwork.js"></script>
+<script src="static/coreui.js"></script>
 
 <script>
     const $linkButton = $('#link-button');
@@ -165,9 +167,11 @@
         return formData;
     }
 
-    // initial core setup
+    // core setup
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
+    const servicesModal = new ServicesModal(coreRest, coreNetwork);
+
     coreNetwork.initialSession()
             .then(function (session) {
                 joinSession(session);
@@ -327,6 +331,11 @@
             $nodeEditModal.find('.modal-title').text(`Edit Node: ${node.name}`);
             $nodeEditModal.find('#node-name').val(node.name);
             $nodeEditModal.modal('show');
+        } else if (option === 'services') {
+            servicesModal.show(nodeId)
+                    .catch(function(err) {
+                        console.log('error showing services modal: ', err);
+                    });
         }
     });
 

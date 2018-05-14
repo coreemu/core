@@ -512,8 +512,8 @@ class EmuSession(Session):
         # add services to default and physical nodes only
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             node.type = node_options.model
-            logger.debug("set node type: %s", node.type)
             services = "|".join(node_options.services) or None
+            logger.debug("set node type: %s - services(%s)", node.type, services)
             self.services.addservicestonode(node, node.type, services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes

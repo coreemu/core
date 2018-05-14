@@ -89,6 +89,10 @@ class CoreRest {
         return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/links`)
     }
 
+    async getServices(nodeId) {
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/services`)
+    }
+
     async getNodeIps(nodeId, ip4Prefix, ip6Prefix) {
         return await postJson('/ips', {
             id: nodeId,
