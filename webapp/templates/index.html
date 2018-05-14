@@ -114,14 +114,15 @@
 {% include 'linkedit_modal.html' %}
 {% include 'services_modal.html' %}
 
-<ul id="node-context" class="list-group context d-none">
-    <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</a>
-    <a class="list-group-item list-group-item-action" href="#" data-option="services">Services</a>
-</ul>
+<div id="node-context" class="list-group context d-none">
+    <button type="button" class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</button>
+    <button type="button" class="list-group-item list-group-item-action" href="#" data-option="services">Services</button>
+    <button type="button" class="list-group-item list-group-item-action" href="#" data-option="delete">Delete</button>
+</div>
 
-<ul id="edge-context" class="list-group context d-none">
-    <a class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Link</a>
-</ul>
+<div id="edge-context" class="list-group context d-none">
+    <button type="button" class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Link</button>
+</div>
 
 <script src="static/jquery-3.3.1.min.js"></script>
 <script src="static/popper.min.js"></script>
@@ -162,7 +163,7 @@
     const servicesModal = new ServicesModal(coreRest, coreNetwork);
     const sessionsModal = new SessionsModal(coreRest, coreNetwork, joinSession);
     const nodeEditModal = new NodeEditModal(coreNetwork);
-    const nodeContext = new NodeContext(coreNetwork, nodeEditModal, servicesModal);
+    const nodeContext = new NodeContext(coreNetwork, coreRest, nodeEditModal, servicesModal);
     const edgeEditModal = new EdgeEditModal(coreNetwork, coreRest);
     const edgeContext = new EdgeContext(coreNetwork, edgeEditModal);
     const infoPanel = new InfoPanel(coreNetwork);
@@ -183,13 +184,11 @@
             $runButton.text('Start');
             $runButton.addClass('btn-success');
             $linkButton.removeAttr('disabled');
-            coreNetwork.enableNodeCreation(true);
         } else {
             $runButton.text('Stop');
             $runButton.addClass('btn-danger');
             $linkButton.removeClass('active');
             $linkButton.attr('disabled', 'disabled');
-            coreNetwork.enableNodeCreation(false);
             coreNetwork.linkMode(false);
         }
     }

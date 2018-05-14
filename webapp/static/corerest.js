@@ -77,6 +77,10 @@ class CoreRest {
         });
     }
 
+    async nodeTerminal(nodeId) {
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/terminal`);
+    }
+
     async createLink(link) {
         return await postJson(`/sessions/${this.currentSession}/links`, link);
     }

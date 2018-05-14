@@ -37,6 +37,8 @@ class ServicesModal {
         this.$servicesList.html('');
         this.serviceOptions.clear();
 
+        this.$servicesModal.find('.modal-title').text(`Services: ${this.node.name}`);
+
         for (let group in this.serviceGroups) {
             const $option = $('<option>', {value: group, text: group});
             this.$serviceGroup.append($option);
@@ -149,24 +151,38 @@ class SessionsModal {
 }
 
 class NodeContext {
-    constructor(coreNetwork, nodeEditModal, servicesModal) {
+    constructor(coreNetwork, coreRest, nodeEditModal, servicesModal) {
         this.coreNetwork = coreNetwork;
+        this.coreRest = coreRest;
         this.nodeEditModal = nodeEditModal;
         this.servicesModal = servicesModal;
         this.$nodeContext = $('#node-context');
+        this.$deleteButton = this.$nodeContext.find('button[data-option="delete"]');
         this.onClick();
     }
 
     show(nodeId, x, y) {
         const node = this.coreNetwork.nodes.get(nodeId);
         console.log('context node: ', node);
-        this.$nodeContext.data('node', nodeId);
-        this.$nodeContext.css({
-            position: 'absolute',
-            left: x,
-            top: y
-        });
-        this.$nodeContext.removeClass('d-none');
+        this.coreRest.isRunning()
+            .then(isRunning => {
+                if (isRunning) {
+                    this.$deleteButton.attr('disabled', 'disabled');
+                } else {
+                    this.$deleteButton.removeAttr('disabled');
+                }
+
+                this.$nodeContext.data('node', nodeId);
+                this.$nodeContext.css({
+                    position: 'absolute',
+                    left: x,
+                    top: y
+                });
+                this.$nodeContext.removeClass('d-none');
+            })
+            .catch(function(err) {
+                console.log('error checking is session is running: ', err);
+            });
     }
 
     hide() {
@@ -182,13 +198,19 @@ class NodeContext {
             const $target = $(event.target);
             const option = $target.data('option');
             console.log('node context: ', nodeId, option);
-            if (option === 'edit') {
-                self.nodeEditModal.show(nodeId);
-            } else if (option === 'services') {
-                self.servicesModal.show(nodeId)
-                    .catch(function (err) {
-                        console.log('error showing services modal: ', err);
-                    });
+            switch (option) {
+                case 'edit':
+                    self.nodeEditModal.show(nodeId);
+                    break;
+                case 'services':
+                    self.servicesModal.show(nodeId)
+                        .catch(function (err) {
+                            console.log('error showing services modal: ', err);
+                        });
+                    break;
+                case 'delete':
+                    self.coreNetwork.deleteNode(nodeId);
+                    break;
             }
         });
     }

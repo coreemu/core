@@ -177,10 +177,9 @@ class CoreNetwork {
             }
         };
         this.network = new vis.Network(this.container, this.networkData, this.networkOptions);
-        this.network.on('doubleClick', this.addNode.bind(this));
+        this.network.on('doubleClick', this.doubleClick.bind(this));
         this.network.on('dragEnd', this.dragEnd.bind(this));
         this.edges.on('add', this.addEdge.bind(this));
-        this.nodesEnabled = false;
     }
 
     async initialSession() {
@@ -195,6 +194,29 @@ class CoreNetwork {
         this.coreRest.currentSession = session.id;
         this.reset();
         return session;
+    }
+
+    deleteNode(nodeId) {
+        // remove node from graph
+        this.nodes.remove(nodeId);
+
+        // remove node links
+        const edges = this.edges.get();
+        for (let edge of edges) {
+            const link = edge.link;
+
+            if (edge.from === nodeId) {
+                this.edges.remove(edge);
+                const otherNode = this.getCoreNode(edge.to);
+                delete otherNode.interfaces[link.interfaceTwo.id];
+                delete this.links[edge.linkId]
+            } else if (edge.to === nodeId) {
+                this.edges.remove(edge);
+                const otherNode = this.getCoreNode(edge.from);
+                delete otherNode.interfaces[link.interfaceOne.id];
+                delete this.links[edge.linkId]
+            }
+        }
     }
 
     getCoreNode(nodeId) {
@@ -221,11 +243,6 @@ class CoreNetwork {
         this.nodes.clear();
         this.edges.clear();
         this.links = {};
-    }
-
-    enableNodeCreation(enabled) {
-        console.log('node created enabled: ', enabled);
-        this.nodesEnabled = enabled;
     }
 
     getCoreNodes() {
@@ -359,9 +376,19 @@ class CoreNetwork {
         return await coreRest.setSessionState(SessionStates.instantiation);
     }
 
-    addNode(properties) {
-        if (!this.nodesEnabled) {
-            console.log('node creation disabled');
+    async doubleClick(properties) {
+        const isRunning = await this.coreRest.isRunning();
+
+        // check for terminal interaction
+        if (isRunning && properties.nodes.length === 1) {
+            const nodeId = properties.nodes[0];
+            await this.coreRest.nodeTerminal(nodeId);
+            console.log('launched node terminal: ', nodeId);
+            return;
+        }
+
+        if (isRunning) {
+            console.log('node creation disabled, while running');
             return;
         }
 

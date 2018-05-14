@@ -250,6 +250,23 @@ def get_node(session_id, node_id):
     )
 
 
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/terminal")
+def node_terminal(session_id, node_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+    node = session.objects.get(node_id)
+    if not node:
+        return jsonify(error="node does not exist"), 404
+
+    node.client.term("bash")
+
+    return jsonify()
+
+
 @app.route("/sessions/<int:session_id>/nodes/<node_id>", methods=["DELETE"])
 @synchronized
 def delete_node(session_id, node_id):
