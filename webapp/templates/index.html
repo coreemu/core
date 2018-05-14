@@ -138,20 +138,9 @@
     const $nodeButtons = $('.node-buttons a');
     const $sessionId = $('#session-id');
     const $nodeDisplay = $('#node-display');
-    const $sessionsModal = $('#sessions-modal');
-    const $sessionsTable = $('#sessions-table');
     const $runButton = $('#run-button');
-    const $infoCard = $('#info-card');
-    const $infoCardTable = $('#info-card-table');
-    const $infoCardHeader = $('#info-card-header');
     const $nodeSelect = $('#node-select');
     const $newSessionButton = $('#new-session-button');
-    const $nodeContext = $('#node-context');
-    const $edgeContext = $('#edge-context');
-    const $nodeEditModal = $('#nodeedit-modal');
-    const $nodeEditButton = $('#nodeedit-button');
-    const $linkEditModal = $('#linkedit-modal');
-    const $linkEditButton = $('#linkedit-button');
 
     function formToJson($form) {
         const formData = {};
@@ -171,6 +160,12 @@
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
     const servicesModal = new ServicesModal(coreRest, coreNetwork);
+    const sessionsModal = new SessionsModal(coreRest, coreNetwork, joinSession);
+    const nodeEditModal = new NodeEditModal(coreNetwork);
+    const nodeContext = new NodeContext(coreNetwork, nodeEditModal, servicesModal);
+    const edgeEditModal = new EdgeEditModal(coreNetwork, coreRest);
+    const edgeContext = new EdgeContext(coreNetwork, edgeEditModal);
+    const infoPanel = new InfoPanel(coreNetwork);
 
     coreNetwork.initialSession()
             .then(function (session) {
@@ -199,13 +194,6 @@
         }
     }
 
-    function addInfoTable(name, value) {
-        let $nameCell = $('<td>', {text: name});
-        let $valueCell = $('<td>', {text: value});
-        const $row = $('<tr>').append([$nameCell, $valueCell]);
-        $infoCardTable.find('tbody').append($row);
-    }
-
     function joinSession(session) {
         $sessionId.text(`Session: ${session.id}`);
         const isStartEnabled = session.state !== SessionStates.runtime;
@@ -215,77 +203,25 @@
     // handle network clicks
     coreNetwork.network.on('click', function (properties) {
         console.log('click properties: ', properties);
-        $nodeContext.addClass('d-none');
-        $edgeContext.addClass('d-none');
+        nodeContext.hide();
+        edgeContext.hide();
 
-        $infoCard.removeClass('visible invisible');
         if (properties.nodes.length === 1) {
             const nodeId = properties.nodes[0];
-            const node = coreNetwork.getCoreNode(nodeId);
-            $infoCardHeader.text(node.name);
-            $infoCard.addClass('visible');
-            $infoCardTable.find('tbody tr').remove();
-            addInfoTable('Model', node.model);
-            addInfoTable('X', node.x);
-            addInfoTable('Y', node.y);
-            for (let interfaceId in node.interfaces) {
-                const interface = node.interfaces[interfaceId];
-                console.log('node interface: ', interface);
-                addInfoTable('Interface', `eth${interface.id}`);
-                if (interface.ip4) {
-                    addInfoTable('IP4', `${interface.ip4}/${interface.ip4mask}`);
-                }
-                if (interface.ip6) {
-                    addInfoTable('IP6', `${interface.ip6}/${interface.ip6mask}`);
-                }
-            }
+            infoPanel.showNode(nodeId);
         } else if (properties.edges.length === 1) {
             const edgeId = properties.edges[0];
-            const edge = coreNetwork.edges.get(edgeId);
-            const link = edge.link;
-            const nodeOne = coreNetwork.getCoreNode(link.nodeOne);
-            const nodeTwo = coreNetwork.getCoreNode(link.nodeTwo);
-            console.log('clicked edge: ', link);
-            $infoCard.addClass('visible');
-            $infoCardHeader.text('Edge');
-            $infoCardTable.find('tbody tr').remove();
-            addInfoTable(nodeOne.name, null);
-            const interfaceOne = link.interfaceOne;
-            if (interfaceOne) {
-                addInfoTable('Interface', `eth${interfaceOne.id}`);
-                if (interfaceOne.ip4) {
-                    addInfoTable('IP4', `${interfaceOne.ip4}/${interfaceOne.ip4mask}`);
-                }
-                if (interfaceOne.ip6) {
-                    addInfoTable('IP6', `${interfaceOne.ip6}/${interfaceOne.ip6mask}`);
-                }
-            }
-            addInfoTable(nodeTwo.name, null);
-            const interfaceTwo = link.interfaceTwo;
-            if (interfaceTwo) {
-                addInfoTable('Interface', `eth${interfaceTwo.id}`);
-                if (interfaceTwo.ip4) {
-                    addInfoTable('IP4', `${interfaceTwo.ip4}/${interfaceTwo.ip4mask}`);
-                }
-                if (interfaceTwo.ip6) {
-                    addInfoTable('IP6', `${interfaceTwo.ip6}/${interfaceTwo.ip6mask}`);
-                }
-            }
-            addInfoTable('Bandwidth', edge.link.bandwidth);
-            addInfoTable('Delay', edge.link.delay);
-            addInfoTable('Duplicate', edge.link.duplicate);
-            addInfoTable('Loss', edge.link.loss);
-            addInfoTable('Jitter', edge.link.jitter);
+            infoPanel.showEdge(edgeId);
         } else {
-            $infoCard.addClass('invisible');
+            infoPanel.hide();
         }
     });
 
     coreNetwork.network.on('oncontext', function (properties) {
         console.log('context event: ', properties);
         properties.event.preventDefault();
-        $nodeContext.addClass('d-none');
-        $edgeContext.addClass('d-none');
+        nodeContext.hide();
+        edgeContext.hide();
 
         const location = properties.pointer.DOM;
         const x = properties.event.pageX;
@@ -293,130 +229,13 @@
 
         const nodeId = coreNetwork.network.getNodeAt(location);
         if (nodeId) {
-            const node = coreNetwork.nodes.get(nodeId);
-            console.log('context node: ', node);
-            $nodeContext.data('node', nodeId);
-            $nodeContext.css({
-                position: 'absolute',
-                left: x,
-                top: y
-            });
-            $nodeContext.removeClass('d-none');
+            nodeContext.show(nodeId, x, y);
         } else {
             const edgeId = coreNetwork.network.getEdgeAt(location);
             if (edgeId) {
-                const edge = coreNetwork.edges.get(edgeId);
-                console.log('context edge: ', edge);
-                $edgeContext.data('edge', edgeId);
-                $edgeContext.css({
-                    position: 'absolute',
-                    left: x,
-                    top: y
-                });
-                $edgeContext.removeClass('d-none');
+                edgeContext.show(edgeId, x, y);
             }
         }
-    });
-
-    $nodeContext.click(function (event) {
-        $nodeContext.addClass('d-none');
-        console.log('node context click: ', event);
-        const nodeId = $nodeContext.data('node');
-        const node = coreNetwork.nodes.get(nodeId).coreNode;
-        const $target = $(event.target);
-        const option = $target.data('option');
-        console.log('node context: ', nodeId, option);
-        if (option === 'edit') {
-            $nodeEditModal.data('node', nodeId);
-            $nodeEditModal.find('.modal-title').text(`Edit Node: ${node.name}`);
-            $nodeEditModal.find('#node-name').val(node.name);
-            $nodeEditModal.modal('show');
-        } else if (option === 'services') {
-            servicesModal.show(nodeId)
-                    .catch(function(err) {
-                        console.log('error showing services modal: ', err);
-                    });
-        }
-    });
-
-    $nodeEditButton.click(function () {
-        const $form = $nodeEditModal.find('form');
-        const formData = formToJson($form);
-        console.log('node edit data: ', formData);
-        const nodeId = $nodeEditModal.data('node');
-        const node = coreNetwork.nodes.get(nodeId);
-        if (formData.name) {
-            node.label = formData.name;
-            node.coreNode.name = formData.name;
-            coreNetwork.nodes.update(node);
-        }
-        $nodeEditModal.modal('hide');
-    });
-
-    $edgeContext.click(function (event) {
-        $edgeContext.addClass('d-none');
-        console.log('edge context click: ', event);
-        const edgeId = $edgeContext.data('edge');
-        const edge = coreNetwork.edges.get(edgeId);
-        const link = edge.link;
-        const $target = $(event.target);
-        const option = $target.data('option');
-        console.log('edge context: ', edgeId, option);
-        if (option === 'edit') {
-            // populate form with current link data
-            $linkEditModal.data('link', edgeId);
-            $linkEditModal.find('#link-bandwidth').val(link.bandwidth);
-            $linkEditModal.find('#link-delay').val(link.delay);
-            $linkEditModal.find('#link-per').val(link.loss);
-            $linkEditModal.find('#link-dup').val(link.duplicate);
-            $linkEditModal.find('#link-jitter').val(link.jitter);
-
-            // set modal name and show
-            $linkEditModal.find('.modal-title').text('Edit Edge');
-            $linkEditModal.modal('show');
-        }
-    });
-
-    $linkEditButton.click(function () {
-        const $form = $linkEditModal.find('form');
-        const formData = {};
-        $form.serializeArray().map(function (x) {
-            let value = x.value;
-            if (value === '') {
-                value = null;
-            } else if (!isNaN(value)) {
-                value = parseInt(value);
-            }
-            formData[x.name] = value;
-        });
-        console.log('link edit data: ', formData);
-        const edgeId = $linkEditModal.data('link');
-        const edge = coreNetwork.edges.get(edgeId);
-        const link = edge.link;
-
-        link.bandwidth = formData.bandwidth;
-        link.delay = formData.delay;
-        link.duplicate = formData.duplicate;
-        link.loss = formData.loss;
-        link.jitter = formData.jitter;
-
-        coreRest.isRunning()
-                .then(function (isRunning) {
-                    if (isRunning) {
-                        const linkEdit = link.json();
-                        linkEdit.interface_one = linkEdit.interface_one.id;
-                        linkEdit.interface_two = linkEdit.interface_two.id;
-                        return coreRest.editLink(linkEdit);
-                    }
-                })
-                .then(function (response) {
-                    console.log('link edit success');
-                })
-                .catch(function (err) {
-                    console.log('error editing link: ', err);
-                });
-
-        $linkEditModal.modal('hide');
     });
 
     $newSessionButton.click(function () {
@@ -427,23 +246,6 @@
                 .catch(function (err) {
                     console.log('error creating new session: ', err);
                 });
-    });
-
-    $sessionsTable.on('click', 'td', function (event) {
-        const sessionId = $(this).parent('tr').data('session');
-        console.log('clicked session to join: ', sessionId);
-        if (sessionId === coreRest.currentSession) {
-            console.log('same session, not changing');
-        } else {
-            coreNetwork.joinSession(sessionId)
-                    .then(function (session) {
-                        joinSession(session);
-                        $sessionsModal.modal('hide');
-                    })
-                    .catch(function (err) {
-                        console.log('join session error: ', err);
-                    });
-        }
     });
 
     $linkButton.click(function () {
@@ -490,29 +292,6 @@
         }
         const icon = CoreNodeHelper.icons[nodeName];
         $nodeSelect.attr('src', icon);
-    });
-
-    // show sessions
-    $sessionsModal.on('shown.bs.modal', function () {
-        console.log('show sessions');
-        $sessionsTable.find('tbody tr').remove();
-        coreRest.getSessions()
-                .then(function (response) {
-                    const sessions = response.sessions;
-                    for (let session of sessions) {
-                        console.log('show sessions: ', session);
-                        const $idCell = $('<td>', {text: session.id});
-                        const $nodeCell = $('<td>', {text: session.nodes});
-                        const stateName = coreRest.getStateName(session.state);
-                        const $stateCell = $('<td>', {text: stateName});
-                        const $row = $('<tr>', {class: 'session-join', 'data-session': session.id});
-                        $row.append([$idCell, $nodeCell, $stateCell]);
-                        $sessionsTable.find('tbody').append($row);
-                    }
-                })
-                .catch(function (err) {
-                    console.log('error getting sessions: ', err);
-                });
     });
 
     console.log('connecting to ws');
