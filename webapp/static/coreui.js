@@ -174,74 +174,64 @@ class NodeContext {
         this.nodeEditModal = nodeEditModal;
         this.servicesModal = servicesModal;
         this.$nodeContext = $('#node-context');
+        this.$nodeContext.click(this.onClick.bind(this));
         this.$linkRfButton = $('#node-linkrf-button');
         this.$deleteButton = $('#node-delete-button');
-        this.onClick();
     }
 
-    show(nodeId, x, y) {
+    async show(nodeId, x, y) {
         const node = this.coreNetwork.getCoreNode(nodeId);
         console.log('context node: ', node);
-        this.coreRest.isRunning()
-            .then(isRunning => {
-                if (isRunning) {
-                    this.$deleteButton.attr('disabled', 'disabled');
-                } else {
-                    this.$deleteButton.removeAttr('disabled');
-                }
+        if (await this.coreRest.isRunning()) {
+            this.$deleteButton.attr('disabled', 'disabled');
+        } else {
+            this.$deleteButton.removeAttr('disabled');
+        }
 
-                console.log('node type: ', node.type);
-                if (node.type === CoreNodeHelper.wlanNode) {
-                    this.$linkRfButton.removeClass('d-none');
-                } else {
-                    this.$linkRfButton.addClass('d-none');
-                }
+        console.log('node type: ', node.type);
+        if (node.type === CoreNodeHelper.wlanNode) {
+            this.$linkRfButton.removeClass('d-none');
+        } else {
+            this.$linkRfButton.addClass('d-none');
+        }
 
-                this.$nodeContext.data('node', nodeId);
-                this.$nodeContext.css({
-                    position: 'absolute',
-                    left: x,
-                    top: y
-                });
-                this.$nodeContext.removeClass('d-none');
-            })
-            .catch(function (err) {
-                console.log('error checking is session is running: ', err);
-            });
+        this.$nodeContext.data('node', nodeId);
+        this.$nodeContext.css({
+            position: 'absolute',
+            left: x,
+            top: y
+        });
+        this.$nodeContext.removeClass('d-none');
     }
 
     hide() {
         this.$nodeContext.addClass('d-none');
     }
 
-    onClick() {
-        const self = this;
-        this.$nodeContext.click(function (event) {
-            self.$nodeContext.addClass('d-none');
-            console.log('node context click: ', event);
-            const nodeId = self.$nodeContext.data('node');
-            const $target = $(event.target);
-            const option = $target.data('option');
-            console.log('node context: ', nodeId, option);
-            switch (option) {
-                case 'edit':
-                    self.nodeEditModal.show(nodeId);
-                    break;
-                case 'services':
-                    self.servicesModal.show(nodeId)
-                        .catch(function (err) {
-                            console.log('error showing services modal: ', err);
-                        });
-                    break;
-                case 'linkrf':
-                    console.log('linking all routers');
-                    self.coreNetwork.linkAllRouters(nodeId);
-                    break;
-                case 'delete':
-                    self.coreNetwork.deleteNode(nodeId);
-                    break;
-            }
-        });
+    async onClick(event) {
+        this.$nodeContext.addClass('d-none');
+        console.log('node context click: ', event);
+        const nodeId = this.$nodeContext.data('node');
+        const $target = $(event.target);
+        const option = $target.data('option');
+        console.log('node context: ', nodeId, option);
+        switch (option) {
+            case 'edit':
+                this.nodeEditModal.show(nodeId);
+                break;
+            case 'services':
+                await this.servicesModal.show(nodeId);
+                break;
+            case 'linkrf':
+                console.log('linking all routers');
+                this.coreNetwork.linkAllRouters(nodeId);
+                break;
+            case 'delete':
+                this.coreNetwork.deleteNode(nodeId);
+                break;
+        }
+
+        return false;
     }
 }
 

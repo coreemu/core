@@ -245,7 +245,10 @@
 
         const nodeId = coreNetwork.network.getNodeAt(location);
         if (nodeId) {
-            nodeContext.show(nodeId, x, y);
+            nodeContext.show(nodeId, x, y)
+                    .catch(function(err) {
+                        console.log('error showing node context: ', err);
+                    });
         } else {
             const edgeId = coreNetwork.network.getEdgeAt(location);
             if (edgeId) {
