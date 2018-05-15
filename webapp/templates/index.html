@@ -28,8 +28,10 @@
                         File
                     </a>
                     <div class="dropdown-menu" aria-labelledby="nb-file">
-                        <a class="dropdown-item" href="#">Open File</a>
-                        <a class="dropdown-item" href="#">Save File</a>
+                        <label class="dropdown-item btn btn-default">
+                            Open Session <input id="session-open" type="file" hidden>
+                        </label>
+                        <a id="session-save-button" class="dropdown-item" href="#">Save Session</a>
                     </div>
                 </li>
 
@@ -118,11 +120,14 @@
 <div id="node-context" class="list-group context d-none">
     <button type="button" class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</button>
     <button id="node-linkrf-button" type="button" class="list-group-item list-group-item-action d-none" href="#"
-            data-option="linkrf">Link All Routers</button>
+            data-option="linkrf">Link All Routers
+    </button>
     <button type="button" class="list-group-item list-group-item-action" href="#"
-            data-option="services">Services</button>
+            data-option="services">Services
+    </button>
     <button id="node-delete-button" type="button" class="list-group-item list-group-item-action" href="#"
-            data-option="delete">Delete</button>
+            data-option="delete">Delete
+    </button>
 </div>
 
 <div id="edge-context" class="list-group context d-none">
@@ -148,6 +153,8 @@
     const $runButton = $('#run-button');
     const $nodeSelect = $('#node-select');
     const $newSessionButton = $('#new-session-button');
+    const $sessionSaveButton = $('#session-save-button');
+    const $sessionOpen = $('#session-open');
 
     function formToJson($form) {
         const formData = {};
@@ -203,6 +210,8 @@
         $sessionId.text(`Session: ${session.id}`);
         const isStartEnabled = session.state !== SessionStates.runtime;
         setRunButton(isStartEnabled);
+        $sessionSaveButton.attr('href', `/sessions/${session.id}/xml`);
+        $sessionSaveButton.attr('download', true);
     }
 
     // handle network clicks
@@ -297,6 +306,29 @@
         }
         const icon = CoreNodeHelper.icons[nodeName];
         $nodeSelect.attr('src', icon);
+    });
+
+    $sessionOpen.change(function (event) {
+        const file = event.target.files[0];
+        console.log('session open: ', file);
+        const uri = `/sessions/xml`;
+        const request = new XMLHttpRequest();
+        const formData = new FormData();
+        request.open('POST', uri, true);
+        request.onreadystatechange = function () {
+            if (request.readyState == 4 && request.status == 200) {
+                const response = JSON.parse(request.responseText);
+                coreNetwork.joinSession(response.id)
+                        .then(function (session) {
+                            joinSession(session);
+                        })
+                        .catch(function (err) {
+                            console.log('join open session error: ', err);
+                        });
+            }
+        };
+        formData.append('session', file);
+        request.send(formData);
     });
 
     console.log('connecting to ws');

@@ -1,4 +1,5 @@
 import os
+import tempfile
 from functools import wraps
 from threading import Lock
 
@@ -6,6 +7,7 @@ from flask import Flask
 from flask import jsonify
 from flask import render_template
 from flask import request
+from flask import send_file
 from flask_socketio import SocketIO
 from flask_socketio import emit
 
@@ -90,6 +92,38 @@ def get_ips():
         ip6=str(ip6_prefixes.addr(node_id)),
         ip6mask=ip6_prefixes.prefixlen
     )
+
+
+@app.route("/sessions/<int:session_id>/xml")
+def save_xml(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    _, temp_path = tempfile.mkstemp()
+    session.save_xml(temp_path, "1.0")
+    return send_file(
+        temp_path,
+        as_attachment=True,
+        attachment_filename="session-%s.xml" % session_id
+    )
+
+
+@app.route("/sessions/xml", methods=["POST"])
+def open_xml():
+    session = coreemu.create_session()
+    logger.info("open xml: %s", request.files)
+    _, temp_path = tempfile.mkstemp()
+    session_file = request.files['session']
+    session_file.save(temp_path)
+
+    try:
+        session.open_xml(temp_path, start=True)
+        return jsonify(id=session.session_id)
+    except:
+        logger.exception("error opening session file")
+        coreemu.delete_session(session.session_id)
+        return jsonify(error="error opening session file"), 404
 
 
 @app.route("/sessions")
