@@ -157,12 +157,13 @@ class NodeContext {
         this.nodeEditModal = nodeEditModal;
         this.servicesModal = servicesModal;
         this.$nodeContext = $('#node-context');
-        this.$deleteButton = this.$nodeContext.find('button[data-option="delete"]');
+        this.$linkRfButton = $('#node-linkrf-button');
+        this.$deleteButton = $('#node-delete-button');
         this.onClick();
     }
 
     show(nodeId, x, y) {
-        const node = this.coreNetwork.nodes.get(nodeId);
+        const node = this.coreNetwork.getCoreNode(nodeId);
         console.log('context node: ', node);
         this.coreRest.isRunning()
             .then(isRunning => {
@@ -170,6 +171,13 @@ class NodeContext {
                     this.$deleteButton.attr('disabled', 'disabled');
                 } else {
                     this.$deleteButton.removeAttr('disabled');
+                }
+
+                console.log('node type: ', node.type);
+                if (node.type === CoreNodeHelper.wlanNode) {
+                    this.$linkRfButton.removeClass('d-none');
+                } else {
+                    this.$linkRfButton.addClass('d-none');
                 }
 
                 this.$nodeContext.data('node', nodeId);

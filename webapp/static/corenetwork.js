@@ -43,6 +43,7 @@ class NodeHelper {
 
         this.defaultNode = 0;
         this.ptpNode = 12;
+        this.wlanNode = 6;
     }
 
     isNetworkNode(node) {
@@ -198,6 +199,7 @@ class CoreNetwork {
 
     deleteNode(nodeId) {
         // remove node from graph
+        this.nodeId = nodeId - 1;
         this.nodes.remove(nodeId);
 
         // remove node links
@@ -262,6 +264,13 @@ class CoreNetwork {
 
     nextNodeId() {
         this.nodeId += 1;
+        while (true) {
+            const node = this.nodes.get(this.nodeId);
+            if (node === null) {
+                break;
+            }
+            this.nodeId += 1;
+        }
         return this.nodeId;
     }
 
