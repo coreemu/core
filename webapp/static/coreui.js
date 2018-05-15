@@ -216,6 +216,10 @@ class NodeContext {
                             console.log('error showing services modal: ', err);
                         });
                     break;
+                case 'linkrf':
+                    console.log('linking all routers');
+                    self.coreNetwork.linkAllRouters(nodeId);
+                    break;
                 case 'delete':
                     self.coreNetwork.deleteNode(nodeId);
                     break;
@@ -428,14 +432,14 @@ class InfoPanel {
         this.$infoCard.addClass('visible');
         this.$infoCardHeader.text('Edge');
         this.$infoCardTable.find('tbody tr').remove();
-        this.addInfoTable(nodeOne.name, null);
         const interfaceOne = link.interfaceOne;
         if (interfaceOne) {
+            this.addInfoTable(nodeOne.name, null);
             this.addInterfaceInfo(interfaceOne);
         }
-        this.addInfoTable(nodeTwo.name, null);
         const interfaceTwo = link.interfaceTwo;
         if (interfaceTwo) {
+            this.addInfoTable(nodeTwo.name, null);
             this.addInterfaceInfo(interfaceTwo);
         }
         this.addInfoTable('Bandwidth', edge.link.bandwidth);

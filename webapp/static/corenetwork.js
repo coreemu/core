@@ -416,22 +416,67 @@ class CoreNetwork {
         console.log('added node: ', coreNode.getNetworkNode());
     }
 
+    linkAllRouters(nodeId) {
+        const toNode = this.getCoreNode(nodeId);
+        const routerNodes = this.nodes.get({filter: node => {
+            return node.coreNode.model === 'mdr';
+        }});
+        console.log('router nodes: ', routerNodes);
+        for (let fromNode of routerNodes) {
+            if (this.edgeExists(fromNode.id, toNode.id)) {
+                console.log('ignoring router link that already exists');
+                continue;
+            }
+
+            const edge = {
+                from: fromNode.id,
+                to: toNode.id
+            };
+            this.addEdgeLink(edge, fromNode.coreNode, toNode)
+                .catch(err => console.log('add edge link error: ', err));
+        }
+    }
+
+    edgeExists(fromId, toId) {
+        console.log('checking if edge exists: ', fromId, toId);
+        console.log('links: ', this.links);
+        const idOne = `${fromId}-${toId}`;
+        const idTwo = `${toId}-${fromId}`;
+        let exists = idOne in this.links;
+        exists = exists || idTwo in this.links;
+        return exists;
+    }
+
+    enableEdgeMode() {
+        setTimeout(() => this.network.addEdgeMode(), 250);
+    }
+
     addEdge(_, properties) {
         const edgeId = properties.items[0];
         const edge = this.edges.get(edgeId);
+
+        // ignore edges being recreated
         if (edge.recreated) {
             console.log('ignoring recreated edge');
             return;
         }
 
-        console.log('added edge: ', edgeId, edge);
+        // ignore cycles
         if (edge.from === edge.to) {
             console.log('removing cyclic edge');
             this.edges.remove(edge.id);
-            setTimeout(() => this.network.addEdgeMode(), 250);
+            this.enableEdgeMode();
             return;
         }
 
+        // ignore edges that already exist between nodes
+        if (this.edgeExists(edge.from, edge.to)) {
+            console.log('edge already exists');
+            this.enableEdgeMode();
+            return false;
+        }
+
+        console.log('added edge: ', edgeId, edge);
         const fromNode = this.nodes.get(edge.from).coreNode;
         const toNode = this.nodes.get(edge.to).coreNode;
 
@@ -443,7 +488,7 @@ class CoreNetwork {
                 console.log('create link error: ', err);
             });
 
-        setTimeout(() => this.network.addEdgeMode(), 250);
+        this.enableEdgeMode();
     }
 
     async addEdgeLink(edge, fromNode, toNode) {
