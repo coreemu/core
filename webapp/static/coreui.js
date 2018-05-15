@@ -379,6 +379,30 @@ class InfoPanel {
         this.$infoCard = $('#info-card');
         this.$infoCardTable = $('#info-card-table');
         this.$infoCardHeader = $('#info-card-header');
+        this.coreNetwork.nodes.on('remove', this.onNodeDelete.bind(this));
+        this.coreNetwork.edges.on('remove', this.onEdgeDelete.bind(this));
+    }
+
+    onNodeDelete(_, properties) {
+        if (properties.items.length !== 1) {
+            return;
+        }
+
+        const nodeId = properties.items[0];
+        if (nodeId === this.$infoCard.data('node')) {
+            this.hide();
+        }
+    }
+
+    onEdgeDelete(_, properties) {
+        if (properties.items.length !== 1) {
+            return;
+        }
+
+        const edgeId = properties.items[0];
+        if (edgeId === this.$infoCard.data('edge')) {
+            this.hide();
+        }
     }
 
     addInfoTable(name, value) {
@@ -410,6 +434,7 @@ class InfoPanel {
 
     showNode(nodeId) {
         const node = coreNetwork.getCoreNode(nodeId);
+        this.$infoCard.data('node', nodeId);
         this.$infoCardHeader.text(node.name);
         this.$infoCardTable.find('tbody tr').remove();
         this.addInfoTable('Model', node.model);
@@ -429,6 +454,7 @@ class InfoPanel {
         const nodeOne = coreNetwork.getCoreNode(link.nodeOne);
         const nodeTwo = coreNetwork.getCoreNode(link.nodeTwo);
         console.log('clicked edge: ', link);
+        this.$infoCard.data('edge', edgeId);
         this.$infoCard.addClass('visible');
         this.$infoCardHeader.text('Edge');
         this.$infoCardTable.find('tbody tr').remove();

@@ -316,6 +316,8 @@ class CoreNetwork {
             this.nodeId = 0;
         }
 
+        this.network.fit();
+
         return {
             id: sessionId,
             state: session.state
