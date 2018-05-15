@@ -179,6 +179,7 @@ def get_session(session_id):
                 "y": node.position.y,
                 "z": node.position.z
             },
+            "services": [x._name for x in node.services],
             "url": "/sessions/%s/nodes/%s" % (session_id, node.objid)
         })
 
@@ -278,6 +279,7 @@ def get_node(session_id, node_id):
     return jsonify(
         name=node.name,
         type=nodeutils.get_node_type(node.__class__).value,
+        services=[x._name for x in node.services],
         model=node.type,
         interfaces=interfaces,
         linksurl="/sessions/%s/nodes/%s/links" % (session_id, node.objid)

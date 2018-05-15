@@ -259,6 +259,7 @@ class CoreNetwork {
         const position = node.position;
         const coreNode = new CoreNode(node.id, node.type, node.name, position.x, position.y);
         coreNode.model = node.model;
+        coreNode.services = node.services;
         this.nodes.add(coreNode.getNetworkNode());
     }
 
