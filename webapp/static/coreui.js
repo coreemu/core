@@ -1,7 +1,27 @@
+class ServiceModal {
+    constructor(coreRest) {
+        this.coreRest = coreRest;
+        this.$modal = $('#service-modal');
+        this.$title = this.$modal.find('.modal-title');
+        this.$button = $('#service-button');
+        this.$button.click(this.onClick.bind(this));
+    }
+
+    async show(service) {
+        this.$title.text(`Edit ${service}`);
+        this.$modal.modal('show');
+    }
+
+    async onClick() {
+
+    }
+}
+
 class ServicesModal {
-    constructor(coreRest, coreNetwork) {
+    constructor(coreRest, coreNetwork, serviceModal) {
         this.coreRest = coreRest;
         this.coreNetwork = coreNetwork;
+        this.serviceModal = serviceModal;
         this.$servicesModal = $('#services-modal');
         this.$servicesForm = this.$servicesModal.find('form');
         this.$serviceGroup = $('#service-group');
@@ -21,6 +41,17 @@ class ServicesModal {
         this.$currentGroup = null;
         this.groupChange();
         this.saveClicked();
+        this.$servicesModal.on('click', '.service-button', this.editService.bind(this));
+    }
+
+    editService(event) {
+        //event.preventDefault();
+        const $target = $(event.target);
+        const service = $target.parent().parent().find('label').text();
+        console.log('edit service: ', service);
+        this.$servicesModal.modal('hide');
+        this.serviceModal.show(service);
+        return false;
     }
 
     async show(nodeId) {
@@ -50,7 +81,10 @@ class ServicesModal {
             this.$servicesList.append($formGroup);
             for (let service of services) {
                 const checked = this.nodeDefaults.has(service);
-                const $formCheck = $('<div>', {class: 'form-check'});
+                const $row = $('<div>', {class: 'row mb-1'});
+                const $button = $('<div>', {class: 'col-1'})
+                    .append($('<a>', {text: 'Edit', href: '#', class: 'btn btn-primary btn-sm service-button'}));
+                const $formCheck = $('<div>', {class: 'form-check col'});
                 const $input = $('<input>', {
                     class: 'form-check-input',
                     type: 'checkbox',
@@ -59,9 +93,9 @@ class ServicesModal {
                     checked
                 });
                 const $label = $('<label>', {class: 'form-check-label', text: service});
-                $formCheck.append($input);
-                $formCheck.append($label);
-                $formGroup.append($formCheck);
+                $formCheck.append([$input, $label]);
+                $row.append([$button, $formCheck]);
+                $formGroup.append($row);
             }
         }
 
@@ -98,55 +132,39 @@ class SessionsModal {
         this.coreRest = coreRest;
         this.coreNetwork = coreNetwork;
         this.onJoin = onJoin;
-        this.$sessionsModal = $('#sessions-modal');
-        this.$sessionsTable = $('#sessions-table');
-        this.onShow();
-        this.onClick();
+        this.$modal = $('#sessions-modal');
+        this.$modal.on('shown.bs.modal', this.onShow.bind(this));
+        this.$table = $('#sessions-table');
+        this.$table.on('click', 'td', this.onClick.bind(this));
     }
 
-    onClick() {
-        const self = this;
-        this.$sessionsTable.on('click', 'td', function (event) {
-            const sessionId = $(this).parent('tr').data('session');
-            console.log('clicked session to join: ', sessionId);
-            if (sessionId === self.coreRest.currentSession) {
-                console.log('same session, not changing');
-            } else {
-                self.coreNetwork.joinSession(sessionId)
-                    .then(function (session) {
-                        self.onJoin(session);
-                        self.$sessionsModal.modal('hide');
-                    })
-                    .catch(function (err) {
-                        console.log('join session error: ', err);
-                    });
-            }
-        });
+    async onClick(event) {
+        const sessionId = $(event.target).parent('tr').data('session');
+        console.log('clicked session to join: ', sessionId);
+        if (sessionId === this.coreRest.currentSession) {
+            console.log('same session, not changing');
+        } else {
+            const session = await this.coreNetwork.joinSession(sessionId);
+            this.onJoin(session);
+            this.$modal.modal('hide');
+        }
     }
 
-    onShow() {
-        const self = this;
-        this.$sessionsModal.on('shown.bs.modal', function () {
-            console.log('show sessions');
-            self.$sessionsTable.find('tbody tr').remove();
-            self.coreRest.getSessions()
-                .then(function (response) {
-                    const sessions = response.sessions;
-                    for (let session of sessions) {
-                        console.log('show sessions: ', session);
-                        const $idCell = $('<td>', {text: session.id});
-                        const $nodeCell = $('<td>', {text: session.nodes});
-                        const stateName = self.coreRest.getStateName(session.state);
-                        const $stateCell = $('<td>', {text: stateName});
-                        const $row = $('<tr>', {class: 'session-join', 'data-session': session.id});
-                        $row.append([$idCell, $nodeCell, $stateCell]);
-                        self.$sessionsTable.find('tbody').append($row);
-                    }
-                })
-                .catch(function (err) {
-                    console.log('error getting sessions: ', err);
-                });
-        });
+    async onShow() {
+        console.log('show sessions');
+        this.$table.find('tbody tr').remove();
+        const response = await this.coreRest.getSessions();
+        const sessions = response.sessions;
+        for (let session of sessions) {
+            console.log('show sessions: ', session);
+            const $idCell = $('<td>', {text: session.id});
+            const $nodeCell = $('<td>', {text: session.nodes});
+            const stateName = this.coreRest.getStateName(session.state);
+            const $stateCell = $('<td>', {text: stateName});
+            const $row = $('<tr>', {class: 'session-join', 'data-session': session.id});
+            $row.append([$idCell, $nodeCell, $stateCell]);
+            this.$table.find('tbody').append($row);
+        }
     }
 }
 
@@ -188,7 +206,7 @@ class NodeContext {
                 });
                 this.$nodeContext.removeClass('d-none');
             })
-            .catch(function(err) {
+            .catch(function (err) {
                 console.log('error checking is session is running: ', err);
             });
     }

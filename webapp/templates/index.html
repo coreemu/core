@@ -115,6 +115,7 @@
 {% include 'sessions_modal.html' %}
 {% include 'nodeedit_modal.html' %}
 {% include 'linkedit_modal.html' %}
+{% include 'service_modal.html' %}
 {% include 'services_modal.html' %}
 
 <div id="node-context" class="list-group context d-none">
@@ -173,7 +174,8 @@
     // core setup
     const coreRest = new CoreRest();
     const coreNetwork = new CoreNetwork('core-network', coreRest);
-    const servicesModal = new ServicesModal(coreRest, coreNetwork);
+    const serviceModal = new ServiceModal(coreRest);
+    const servicesModal = new ServicesModal(coreRest, coreNetwork, serviceModal);
     const sessionsModal = new SessionsModal(coreRest, coreNetwork, joinSession);
     const nodeEditModal = new NodeEditModal(coreNetwork);
     const nodeContext = new NodeContext(coreNetwork, coreRest, nodeEditModal, servicesModal);
