@@ -169,6 +169,7 @@ def get_session(session_id):
 
     nodes = []
     for node in session.objects.itervalues():
+        services = [x._name for x in getattr(node, "services", [])]
         nodes.append({
             "id": node.objid,
             "name": node.name,
@@ -179,7 +180,7 @@ def get_session(session_id):
                 "y": node.position.y,
                 "z": node.position.z
             },
-            "services": [x._name for x in node.services],
+            "services": services,
             "url": "/sessions/%s/nodes/%s" % (session_id, node.objid)
         })
 
@@ -276,10 +277,11 @@ def get_node(session_id, node_id):
             "flowid": interface.flow_id
         })
 
+    services = [x._name for x in getattr(node, "services", [])]
     return jsonify(
         name=node.name,
         type=nodeutils.get_node_type(node.__class__).value,
-        services=[x._name for x in node.services],
+        services=services,
         model=node.type,
         interfaces=interfaces,
         linksurl="/sessions/%s/nodes/%s/links" % (session_id, node.objid)

@@ -173,8 +173,8 @@ class NodeContext {
         this.coreRest = coreRest;
         this.nodeEditModal = nodeEditModal;
         this.servicesModal = servicesModal;
-        this.$nodeContext = $('#node-context');
-        this.$nodeContext.click(this.onClick.bind(this));
+        this.$context = $('#node-context');
+        this.$context.click(this.onClick.bind(this));
         this.$linkRfButton = $('#node-linkrf-button');
         this.$deleteButton = $('#node-delete-button');
     }
@@ -195,23 +195,23 @@ class NodeContext {
             this.$linkRfButton.addClass('d-none');
         }
 
-        this.$nodeContext.data('node', nodeId);
-        this.$nodeContext.css({
+        this.$context.data('node', nodeId);
+        this.$context.css({
             position: 'absolute',
             left: x,
             top: y
         });
-        this.$nodeContext.removeClass('d-none');
+        this.$context.removeClass('d-none');
     }
 
     hide() {
-        this.$nodeContext.addClass('d-none');
+        this.$context.addClass('d-none');
     }
 
     async onClick(event) {
-        this.$nodeContext.addClass('d-none');
+        this.$context.addClass('d-none');
         console.log('node context click: ', event);
-        const nodeId = this.$nodeContext.data('node');
+        const nodeId = this.$context.data('node');
         const $target = $(event.target);
         const option = $target.data('option');
         console.log('node context: ', nodeId, option);
@@ -238,34 +238,31 @@ class NodeContext {
 class NodeEditModal {
     constructor(coreNetwork) {
         this.coreNetwork = coreNetwork;
-        this.$nodeEditModal = $('#nodeedit-modal');
-        this.$nodeEditButton = $('#nodeedit-button');
-        this.onClick();
+        this.$modal = $('#nodeedit-modal');
+        this.$editButton = $('#nodeedit-button');
+        this.$editButton.click(this.onClick.bind(this));
     }
 
     show(nodeId) {
         const node = this.coreNetwork.getCoreNode(nodeId);
-        this.$nodeEditModal.data('node', nodeId);
-        this.$nodeEditModal.find('.modal-title').text(`Edit Node: ${node.name}`);
-        this.$nodeEditModal.find('#node-name').val(node.name);
-        this.$nodeEditModal.modal('show');
+        this.$modal.data('node', nodeId);
+        this.$modal.find('.modal-title').text(`Edit Node: ${node.name}`);
+        this.$modal.find('#node-name').val(node.name);
+        this.$modal.modal('show');
     }
 
     onClick() {
-        const self = this;
-        this.$nodeEditButton.click(function () {
-            const $form = self.$nodeEditModal.find('form');
-            const formData = formToJson($form);
-            console.log('node edit data: ', formData);
-            const nodeId = self.$nodeEditModal.data('node');
-            const node = self.coreNetwork.nodes.get(nodeId);
-            if (formData.name) {
-                node.label = formData.name;
-                node.coreNode.name = formData.name;
-                self.coreNetwork.nodes.update(node);
-            }
-            self.$nodeEditModal.modal('hide');
-        });
+        const $form = this.$modal.find('form');
+        const formData = formToJson($form);
+        console.log('node edit data: ', formData);
+        const nodeId = this.$modal.data('node');
+        const node = this.coreNetwork.nodes.get(nodeId);
+        if (formData.name) {
+            node.label = formData.name;
+            node.coreNode.name = formData.name;
+            this.coreNetwork.nodes.update(node);
+        }
+        this.$modal.modal('hide');
     }
 }
 
@@ -273,39 +270,36 @@ class EdgeContext {
     constructor(coreNetwork, edgeEditModal) {
         this.coreNetwork = coreNetwork;
         this.edgeEditModal = edgeEditModal;
-        this.$edgeContext = $('#edge-context');
-        this.onClick();
+        this.$context = $('#edge-context');
+        this.$context.click(this.onClick.bind(this));
     }
 
     show(edgeId, x, y) {
         const edge = this.coreNetwork.edges.get(edgeId);
         console.log('context edge: ', edge);
-        this.$edgeContext.data('edge', edgeId);
-        this.$edgeContext.css({
+        this.$context.data('edge', edgeId);
+        this.$context.css({
             position: 'absolute',
             left: x,
             top: y
         });
-        this.$edgeContext.removeClass('d-none');
+        this.$context.removeClass('d-none');
     }
 
     hide() {
-        this.$edgeContext.addClass('d-none');
+        this.$context.addClass('d-none');
     }
 
-    onClick() {
-        const self = this;
-        this.$edgeContext.click(function (event) {
-            self.$edgeContext.addClass('d-none');
-            console.log('edge context click: ', event);
-            const edgeId = self.$edgeContext.data('edge');
-            const $target = $(event.target);
-            const option = $target.data('option');
-            console.log('edge context: ', edgeId, option);
-            if (option === 'edit') {
-                self.edgeEditModal.show(edgeId);
-            }
-        });
+    onClick(event) {
+        this.$context.addClass('d-none');
+        console.log('edge context click: ', event);
+        const edgeId = this.$context.data('edge');
+        const $target = $(event.target);
+        const option = $target.data('option');
+        console.log('edge context: ', edgeId, option);
+        if (option === 'edit') {
+            this.edgeEditModal.show(edgeId);
+        }
     }
 }
 
@@ -313,70 +307,59 @@ class EdgeEditModal {
     constructor(coreNetwork, coreRest) {
         this.coreNetwork = coreNetwork;
         this.coreRest = coreRest;
-        this.$linkEditButton = $('#linkedit-button');
-        this.$linkEditModal = $('#linkedit-modal');
-        this.onClick();
+        this.$modal = $('#linkedit-modal');
+        this.$editButton = $('#linkedit-button');
+        this.$editButton.click(this.onClick.bind(this));
     }
 
     show(edgeId) {
         // populate form with current link data
         const edge = this.coreNetwork.edges.get(edgeId);
         const link = edge.link;
-        this.$linkEditModal.data('link', edgeId);
-        this.$linkEditModal.find('#link-bandwidth').val(link.bandwidth);
-        this.$linkEditModal.find('#link-delay').val(link.delay);
-        this.$linkEditModal.find('#link-per').val(link.loss);
-        this.$linkEditModal.find('#link-dup').val(link.duplicate);
-        this.$linkEditModal.find('#link-jitter').val(link.jitter);
+        this.$modal.data('link', edgeId);
+        this.$modal.find('#link-bandwidth').val(link.bandwidth);
+        this.$modal.find('#link-delay').val(link.delay);
+        this.$modal.find('#link-per').val(link.loss);
+        this.$modal.find('#link-dup').val(link.duplicate);
+        this.$modal.find('#link-jitter').val(link.jitter);
 
         // set modal name and show
-        this.$linkEditModal.find('.modal-title').text('Edit Edge');
-        this.$linkEditModal.modal('show');
+        this.$modal.find('.modal-title').text('Edit Edge');
+        this.$modal.modal('show');
     }
 
-    onClick() {
-        const self = this;
-        this.$linkEditButton.click(function () {
-            const $form = self.$linkEditModal.find('form');
-            const formData = {};
-            $form.serializeArray().map(function (x) {
-                let value = x.value;
-                if (value === '') {
-                    value = null;
-                } else if (!isNaN(value)) {
-                    value = parseInt(value);
-                }
-                formData[x.name] = value;
-            });
-            console.log('link edit data: ', formData);
-            const edgeId = self.$linkEditModal.data('link');
-            const edge = self.coreNetwork.edges.get(edgeId);
-            const link = edge.link;
-
-            link.bandwidth = formData.bandwidth;
-            link.delay = formData.delay;
-            link.duplicate = formData.duplicate;
-            link.loss = formData.loss;
-            link.jitter = formData.jitter;
-
-            coreRest.isRunning()
-                .then(function (isRunning) {
-                    if (isRunning) {
-                        const linkEdit = link.json();
-                        linkEdit.interface_one = linkEdit.interface_one.id;
-                        linkEdit.interface_two = linkEdit.interface_two.id;
-                        return self.coreRest.editLink(linkEdit);
-                    }
-                })
-                .then(function (response) {
-                    console.log('link edit success');
-                })
-                .catch(function (err) {
-                    console.log('error editing link: ', err);
-                });
-
-            self.$linkEditModal.modal('hide');
+    async onClick(event) {
+        const $form = this.$modal.find('form');
+        const formData = {};
+        $form.serializeArray().map(function (x) {
+            let value = x.value;
+            if (value === '') {
+                value = null;
+            } else if (!isNaN(value)) {
+                value = parseInt(value);
+            }
+            formData[x.name] = value;
         });
+        console.log('link edit data: ', formData);
+        const edgeId = this.$modal.data('link');
+        const edge = this.coreNetwork.edges.get(edgeId);
+        const link = edge.link;
+
+        link.bandwidth = formData.bandwidth;
+        link.delay = formData.delay;
+        link.duplicate = formData.duplicate;
+        link.loss = formData.loss;
+        link.jitter = formData.jitter;
+
+        if (await coreRest.isRunning()) {
+            const linkEdit = link.json();
+            linkEdit.interface_one = linkEdit.interface_one.id;
+            linkEdit.interface_two = linkEdit.interface_two.id;
+            await this.coreRest.editLink(linkEdit);
+            console.log('link edit success');
+        }
+
+        this.$modal.modal('hide');
     }
 }
 
