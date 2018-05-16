@@ -177,6 +177,7 @@ class CoreNetwork {
         this.nodes = new vis.DataSet();
         this.edges = new vis.DataSet();
         this.links = {};
+        this.emaneModels = [];
         this.networkData = {
             nodes: this.nodes,
             edges: this.edges
@@ -216,6 +217,7 @@ class CoreNetwork {
         const session = await this.coreRest.createSession();
         this.coreRest.currentSession = session.id;
         this.reset();
+        this.setEmaneModels();
         toastr.success(`Created ${session.id}`, 'Session');
         return session;
     }
@@ -299,16 +301,21 @@ class CoreNetwork {
         return this.nodeId;
     }
 
+    async setEmaneModels() {
+        const response = await this.coreRest.getEmaneModels();
+        console.log('emane models: ', response);
+        this.emaneModels = response.models;
+    }
+
     async joinSession(sessionId) {
         this.reset();
         this.coreRest.currentSession = sessionId;
-        const session = await coreRest.getSession();
+        const session = await this.coreRest.getSession();
         console.log('session info: ', session);
+        await this.setEmaneModels();
+
         const nodes = session.nodes;
-
-        const self = this;
         const nodeIds = [0];
-
         for (let node of nodes) {
             if (CoreNodeHelper.isSkipNode(node)) {
                 continue;
@@ -323,16 +330,11 @@ class CoreNetwork {
                 continue;
             }
 
-            this.coreRest.getLinks(node.id)
-                .then(function (response) {
-                    console.log('link response: ', response);
-                    for (let linkData of response.links) {
-                        self.createEdgeFromLink(linkData);
-                    }
-                })
-                .catch(function (err) {
-                    console.log('get link error: ', err);
-                });
+            const response = await this.coreRest.getLinks(node.id);
+            console.log('link response: ', response);
+            for (let linkData of response.links) {
+                this.createEdgeFromLink(linkData);
+            }
         }
 
         if (nodes.length) {
@@ -441,6 +443,9 @@ class CoreNetwork {
         const name = `${nodeDisplay.name}${nodeId}`;
         const coreNode = new CoreNode(nodeId, this.nodeType, name, x, y);
         coreNode.model = this.nodeModel;
+        if (coreNode.type === CoreNodeHelper.emaneNode && this.emaneModels.length) {
+            coreNode.emane = this.emaneModels[0];
+        }
         this.nodes.add(coreNode.getNetworkNode());
         console.log('added node: ', coreNode.getNetworkNode());
     }

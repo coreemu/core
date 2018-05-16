@@ -273,10 +273,8 @@ class NodeEditModal {
 
         this.$formCustom.html('');
         if (node.type === CoreNodeHelper.emaneNode) {
-            const response = await this.coreRest.getEmaneModels();
             this.$formCustom.append($('<label>', {class: 'form-label', text: 'EMANE Model'}));
-            console.log('emane models: ', response);
-            for (let model of response.models) {
+            for (let model of this.coreNetwork.emaneModels) {
                 const checked = node.emane === model;
                 const label = model.split('_')[1];
                 const $radio = createRadio('emane', model, label, checked);
