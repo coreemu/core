@@ -143,6 +143,11 @@ def get_sessions():
 def create_session():
     session = coreemu.create_session()
     session.set_state(EventTypes.CONFIGURATION_STATE)
+
+    # set session location
+    session.location.setrefgeo(47.57917, -122.13232, 2.0)
+    session.location.refscale = 150.0
+
     response_data = jsonify(
         id=session.session_id,
         state=session.state,
@@ -169,6 +174,10 @@ def get_session(session_id):
 
     nodes = []
     for node in session.objects.itervalues():
+        emane_model = None
+        if nodeutils.is_node(node, NodeTypes.EMANE):
+            emane_model = node.model.name
+
         services = [x._name for x in getattr(node, "services", [])]
         nodes.append({
             "id": node.objid,
@@ -181,6 +190,7 @@ def get_session(session_id):
                 "z": node.position.z
             },
             "services": services,
+            "emane": emane_model,
             "url": "/sessions/%s/nodes/%s" % (session_id, node.objid)
         })
 
@@ -188,6 +198,21 @@ def get_session(session_id):
         state=session.state,
         nodes=nodes
     )
+
+
+@app.route("/sessions/<int:session_id>/emane")
+def get_emane_models(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    models = []
+    for model in session.emane._modelclsmap.keys():
+        if len(model.split("_")) != 2:
+            continue
+        models.append(model)
+
+    return jsonify(models=models)
 
 
 @app.route("/sessions/<int:session_id>/nodes", methods=["POST"])
@@ -213,6 +238,17 @@ def create_node(session_id):
     node_options.set_position(data.get("x"), data.get("y"))
     node_options.set_location(data.get("lat"), data.get("lon"), data.get("alt"))
     node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
+
+    # configure emane if provided
+    emane_model = data.get("emane")
+    if emane_model:
+        config_data = ConfigData(
+            node=node_id,
+            object=emane_model,
+            type=2
+        )
+        session.config_object(config_data)
+
     return jsonify(
         id=node.objid,
         url="/sessions/%s/nodes/%s" % (session_id, node.objid)
@@ -278,10 +314,16 @@ def get_node(session_id, node_id):
         })
 
     services = [x._name for x in getattr(node, "services", [])]
+
+    emane_model = None
+    if nodeutils.is_node(node, NodeTypes.EMANE):
+        emane_model = node.model.name
+
     return jsonify(
         name=node.name,
         type=nodeutils.get_node_type(node.__class__).value,
         services=services,
+        emane=emane_model,
         model=node.type,
         interfaces=interfaces,
         linksurl="/sessions/%s/nodes/%s/links" % (session_id, node.objid)

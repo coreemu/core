@@ -92,6 +92,7 @@
                         <a class="dropdown-item" href="#" data-node="5">Hub</a>
                         <a class="dropdown-item" href="#" data-node="4">Switch</a>
                         <a class="dropdown-item" href="#" data-node="6">WLAN</a>
+                        <a class="dropdown-item" href="#" data-node="10">EMANE</a>
                     </div>
                 </div>
             </div>
@@ -119,20 +120,18 @@
 {% include 'services_modal.html' %}
 
 <div id="node-context" class="list-group context d-none">
-    <button type="button" class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Node</button>
-    <button id="node-linkrf-button" type="button" class="list-group-item list-group-item-action d-none" href="#"
+    <button type="button" class="list-group-item list-group-item-action" data-option="edit">Edit Node</button>
+    <button id="node-linkrf-button" type="button" class="list-group-item list-group-item-action d-none"
             data-option="linkrf">Link All Routers
     </button>
-    <button type="button" class="list-group-item list-group-item-action" href="#"
-            data-option="services">Services
-    </button>
-    <button id="node-delete-button" type="button" class="list-group-item list-group-item-action" href="#"
-            data-option="delete">Delete
+    <button type="button" class="list-group-item list-group-item-action" data-option="services">Services</button>
+    <button id="node-delete-button" type="button" class="list-group-item list-group-item-action" data-option="delete">
+        Delete
     </button>
 </div>
 
 <div id="edge-context" class="list-group context d-none">
-    <button type="button" class="list-group-item list-group-item-action" href="#" data-option="edit">Edit Link</button>
+    <button type="button" class="list-group-item list-group-item-action" data-option="edit">Edit Link</button>
 </div>
 
 <script src="static/jquery-3.3.1.min.js"></script>
@@ -147,6 +146,11 @@
 <script src="static/coreui.js"></script>
 
 <script>
+    // configure global toastr
+    console.log(toastr.options);
+    toastr.options.timeOut = 2000;
+    toastr.options.positionClass = 'toast-bottom-right';
+
     const $linkButton = $('#link-button');
     const $nodeButtons = $('.node-buttons a');
     const $sessionId = $('#session-id');
@@ -177,7 +181,7 @@
     const serviceModal = new ServiceModal(coreRest);
     const servicesModal = new ServicesModal(coreRest, coreNetwork, serviceModal);
     const sessionsModal = new SessionsModal(coreRest, coreNetwork, joinSession);
-    const nodeEditModal = new NodeEditModal(coreNetwork);
+    const nodeEditModal = new NodeEditModal(coreNetwork, coreRest);
     const nodeContext = new NodeContext(coreNetwork, coreRest, nodeEditModal, servicesModal);
     const edgeEditModal = new EdgeEditModal(coreNetwork, coreRest);
     const edgeContext = new EdgeContext(coreNetwork, edgeEditModal);

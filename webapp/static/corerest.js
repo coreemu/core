@@ -62,7 +62,11 @@ class CoreRest {
     }
 
     async setSessionState(state) {
-        return await putJson(`/sessions/${this.currentSession}/state`, {state})
+        return await putJson(`/sessions/${this.currentSession}/state`, {state});
+    }
+
+    async getEmaneModels() {
+        return await $.getJSON(`/sessions/${this.currentSession}/emane`);
     }
 
     async createNode(node) {

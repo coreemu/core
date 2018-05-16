@@ -1,3 +1,32 @@
+function createRadio(name, value, label, checked = false) {
+    const $formCheck = $('<div>', {class: 'form-check'});
+    const $input = $('<input>', {
+        class: 'form-check-input',
+        type: 'radio',
+        name: name,
+        checked,
+        value
+    });
+    const $label = $('<label>', {class: 'form-check-label', text: label});
+    $formCheck.append([$input, $label]);
+    return $formCheck;
+}
+
+function createCheckbox(name, value, label, checked = false) {
+    const $formCheck = $('<div>', {class: 'form-check col'});
+    const $input = $('<input>', {
+        class: 'form-check-input',
+        type: 'checkbox',
+        value,
+        name,
+        checked
+    });
+    const $label = $('<label>', {class: 'form-check-label', text: label});
+    $formCheck.append([$input, $label]);
+    return $formCheck;
+}
+
+
 class ServiceModal {
     constructor(coreRest) {
         this.coreRest = coreRest;
@@ -45,7 +74,6 @@ class ServicesModal {
     }
 
     editService(event) {
-        //event.preventDefault();
         const $target = $(event.target);
         const service = $target.parent().parent().find('label').text();
         console.log('edit service: ', service);
@@ -89,17 +117,8 @@ class ServicesModal {
                 const $row = $('<div>', {class: 'row mb-1'});
                 const $button = $('<div>', {class: 'col-1'})
                     .append($('<a>', {text: 'Edit', href: '#', class: 'btn btn-primary btn-sm service-button'}));
-                const $formCheck = $('<div>', {class: 'form-check col'});
-                const $input = $('<input>', {
-                    class: 'form-check-input',
-                    type: 'checkbox',
-                    value: service,
-                    name: service,
-                    checked
-                });
-                const $label = $('<label>', {class: 'form-check-label', text: service});
-                $formCheck.append([$input, $label]);
-                $row.append([$button, $formCheck]);
+                const $checkbox = createCheckbox(service, service, service, checked);
+                $row.append([$button, $checkbox]);
                 $formGroup.append($row);
             }
         }
@@ -189,7 +208,7 @@ class NodeContext {
         }
 
         console.log('node type: ', node.type);
-        if (node.type === CoreNodeHelper.wlanNode) {
+        if (node.type === CoreNodeHelper.emaneNode || node.type === CoreNodeHelper.wlanNode) {
             this.$linkRfButton.removeClass('d-none');
         } else {
             this.$linkRfButton.addClass('d-none');
@@ -217,7 +236,7 @@ class NodeContext {
         console.log('node context: ', nodeId, option);
         switch (option) {
             case 'edit':
-                this.nodeEditModal.show(nodeId);
+                await this.nodeEditModal.show(nodeId);
                 break;
             case 'services':
                 await this.servicesModal.show(nodeId);
@@ -236,18 +255,35 @@ class NodeContext {
 }
 
 class NodeEditModal {
-    constructor(coreNetwork) {
+    constructor(coreNetwork, coreRest) {
         this.coreNetwork = coreNetwork;
+        this.coreRest = coreRest;
         this.$modal = $('#nodeedit-modal');
+        this.$form = this.$modal.find('form');
+        this.$formCustom = $('#nodeedit-custom');
         this.$editButton = $('#nodeedit-button');
         this.$editButton.click(this.onClick.bind(this));
     }
 
-    show(nodeId) {
+    async show(nodeId) {
         const node = this.coreNetwork.getCoreNode(nodeId);
         this.$modal.data('node', nodeId);
         this.$modal.find('.modal-title').text(`Edit Node: ${node.name}`);
         this.$modal.find('#node-name').val(node.name);
+
+        this.$formCustom.html('');
+        if (node.type === CoreNodeHelper.emaneNode) {
+            const response = await this.coreRest.getEmaneModels();
+            this.$formCustom.append($('<label>', {class: 'form-label', text: 'EMANE Model'}));
+            console.log('emane models: ', response);
+            for (let model of response.models) {
+                const checked = node.emane === model;
+                const label = model.split('_')[1];
+                const $radio = createRadio('emane', model, label, checked);
+                this.$formCustom.append($radio);
+            }
+        }
+
         this.$modal.modal('show');
     }
 
@@ -262,6 +298,11 @@ class NodeEditModal {
             node.coreNode.name = formData.name;
             this.coreNetwork.nodes.update(node);
         }
+
+        if (formData.emane !== undefined) {
+            node.coreNode.emane = formData.emane;
+        }
+
         this.$modal.modal('hide');
     }
 }
@@ -427,7 +468,12 @@ class InfoPanel {
         this.$infoCard.data('node', nodeId);
         this.$infoCardHeader.text(node.name);
         this.$infoCardTable.find('tbody tr').remove();
-        this.addInfoTable('Model', node.model);
+        if (node.model) {
+            this.addInfoTable('Model', node.model);
+        }
+        if (node.emane) {
+            this.addInfoTable('EMANE', node.emane);
+        }
         this.addInfoTable('X', node.x);
         this.addInfoTable('Y', node.y);
         for (let interfaceId in node.interfaces) {

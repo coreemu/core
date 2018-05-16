@@ -25,6 +25,12 @@ class NodeHelper {
                 name: 'wlan',
                 display: 'WLAN'
             },
+            // emane
+            10: {
+                name: 'emane',
+                display: 'EMANE'
+            },
+            // ptp
             12: {
                 name: 'ptp',
                 display: 'PTP'
@@ -38,16 +44,31 @@ class NodeHelper {
             mdr: 'static/mdr.svg',
             switch: 'static/lanswitch.svg',
             hub: 'static/hub.svg',
-            wlan: 'static/wlan.svg'
+            wlan: 'static/wlan.svg',
+            emane: 'static/wlan.svg'
         };
 
         this.defaultNode = 0;
-        this.ptpNode = 12;
+        this.switchNode = 4;
+        this.hubNode = 5;
         this.wlanNode = 6;
+        this.emaneNode = 10;
+        this.ptpNode = 12;
+        this.controlNet = 13;
     }
 
     isNetworkNode(node) {
-        return [4, 5, 6, 12].includes(node.type);
+        return [
+            this.switchNode,
+            this.hubNode,
+            this.wlanNode,
+            this.emaneNode,
+            this.ptpNode
+        ].includes(node.type);
+    }
+
+    isSkipNode(node) {
+        return [CoreNodeHelper.ptpNode, CoreNodeHelper.controlNet].includes(node.type);
     }
 
     getDisplay(nodeType) {
@@ -82,6 +103,7 @@ class CoreNode {
         this.emulation_id = null;
         this.emulation_server = null;
         this.interfaces = {};
+        this.emane = null;
     }
 
     getNetworkNode() {
@@ -93,7 +115,6 @@ class CoreNode {
             y: this.y,
             label: this.name,
             coreNode: this,
-            //color: '#FFF',
             shape: 'image',
             image: icon
         };
@@ -110,7 +131,8 @@ class CoreNode {
             lat: this.lat,
             lon: this.lon,
             alt: this.alt,
-            services: this.services
+            services: this.services,
+            emane: this.emane
         }
     }
 }
@@ -194,6 +216,7 @@ class CoreNetwork {
         const session = await this.coreRest.createSession();
         this.coreRest.currentSession = session.id;
         this.reset();
+        toastr.success(`Created ${session.id}`, 'Session');
         return session;
     }
 
@@ -260,6 +283,7 @@ class CoreNetwork {
         const coreNode = new CoreNode(node.id, node.type, node.name, position.x, position.y);
         coreNode.model = node.model;
         coreNode.services = node.services;
+        coreNode.emane = node.emane;
         this.nodes.add(coreNode.getNetworkNode());
     }
 
@@ -286,7 +310,7 @@ class CoreNetwork {
         const nodeIds = [0];
 
         for (let node of nodes) {
-            if (node.type === CoreNodeHelper.ptpNode) {
+            if (CoreNodeHelper.isSkipNode(node)) {
                 continue;
             }
 
@@ -318,6 +342,8 @@ class CoreNetwork {
         }
 
         this.network.fit();
+
+        toastr.success(`Joined ${sessionId}`, 'Session');
 
         return {
             id: sessionId,
