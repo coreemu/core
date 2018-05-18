@@ -30,3 +30,12 @@
 .context .list-group-item {
     padding: .5rem 1.25rem;
 }
+
+#config-modal {
+    overflow-y: initial !important;
+}
+
+#config-modal .modal-body {
+    height: calc(100vh - 200px);
+    overflow-y: auto;
+}

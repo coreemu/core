@@ -118,6 +118,7 @@
 {% include 'linkedit_modal.html' %}
 {% include 'service_modal.html' %}
 {% include 'services_modal.html' %}
+{% include 'config_modal.html' %}
 
 <div id="node-context" class="list-group context d-none">
     <button type="button" class="list-group-item list-group-item-action" data-option="edit">Edit Node</button>
@@ -186,6 +187,7 @@
     const edgeEditModal = new EdgeEditModal(coreNetwork, coreRest);
     const edgeContext = new EdgeContext(coreNetwork, edgeEditModal);
     const infoPanel = new InfoPanel(coreNetwork);
+    const configModal = new ConfigModel(coreRest);
 
     coreNetwork.initialSession()
             .then(function (session) {

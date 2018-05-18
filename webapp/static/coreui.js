@@ -26,6 +26,114 @@ function createCheckbox(name, value, label, checked = false) {
     return $formCheck;
 }
 
+function createTextbox(name, label, value) {
+    const $formGroup = $('<div>', {class: 'form-group'});
+    const $label = $('<label>', {text: label});
+    const $input = $('<input>', {type: 'text', class: 'form-control', name, value});
+    $formGroup.append([$label, $input]);
+    return $formGroup;
+}
+
+function createTabHeader(id, label, active) {
+    let classes = 'nav-link';
+    if (active) {
+        classes += ' active';
+    }
+    const $li = $('<li>', {class: 'nav-item'});
+    const $a = $('<a>', {class: classes, 'data-toggle': 'tab', href: `#${id}`, role: 'tab', text: label});
+    $li.append($a);
+    return $li;
+}
+
+function createTabPane(id, active) {
+    let classes = 'tab-pane fade';
+    if (active) {
+        classes += ' show active';
+    }
+
+    return $('<div>', {class: classes, role: 'tabpanel', id});
+}
+
+
+class ConfigModel {
+    constructor(coreRest) {
+        this.coreRest = coreRest;
+        this.$modal = $('#config-modal');
+        this.$title = this.$modal.find('.modal-title');
+        this.$tabHeaders = this.$modal.find('.nav-tabs');
+        this.$tabContent = this.$modal.find('.tab-content');
+        this.$form = this.$modal.find('form');
+        this.$saveButton = $('#config-button');
+        this.$saveButton.click(this.onClick.bind(this));
+        this.$nodeEditModal = $('#nodeedit-modal');
+        this.$nodeEditModal.on('click', '#emane-options', this.emaneOptionsClick.bind(this));
+        this.$nodeEditModal.on('click', '#emane-model-options', this.emaneModelOptionsClick.bind(this));
+    }
+
+    async onClick() {
+        const nodeId = this.$nodeEditModal.data('node');
+        const configType = this.$modal.data('type');
+        console.log('config save clicked: ', nodeId, configType);
+        const configs = [];
+        for (let input of this.$form.find('input')) {
+            const $input = $(input);
+            const name = $input.attr('name');
+            const dataType = $input.parent().data('type');
+            const value = $input.val();
+            configs.push({name, value, type: dataType});
+        }
+        console.log('config data: ', configs);
+        await this.coreRest.setConfig({
+            name: configType,
+            node: nodeId,
+            values: configs
+        });
+        this.$modal.modal('hide');
+    }
+
+    async emaneOptionsClick(event) {
+        this.$nodeEditModal.modal('hide');
+        const nodeId = this.$nodeEditModal.data('node');
+        this.$modal.data('type', 'emane');
+        this.$title.text('EMANE Options');
+        const config = await this.coreRest.getEmaneOptions(nodeId);
+        console.log('emane options clicked: ', config);
+        this.$tabHeaders.html('');
+        this.$tabContent.html('');
+        let initialTab = true;
+        for (let group of config.groups) {
+            let active = false;
+            if (initialTab) {
+                initialTab = false;
+                active = true;
+            }
+
+            console.log('option group: ', group.name);
+            const tabId = group.name.toLocaleLowerCase().split(" ").join("-");
+            console.log('tab id: ', tabId);
+            const $tabHeader = createTabHeader(tabId, group.name, active);
+            this.$tabHeaders.append($tabHeader);
+            const $tabPane = createTabPane(tabId, active);
+            this.$tabContent.append($tabPane);
+            for (let option of group.options) {
+                const $textbox = createTextbox(option.name, option.label, option.value);
+                $textbox.data('type', option.type);
+                $tabPane.append($textbox);
+            }
+        }
+        this.$modal.modal('show');
+        return false;
+    }
+
+    async emaneModelOptionsClick(event) {
+        this.$nodeEditModal.modal('hide');
+        this.$title.text('EMANE Model Options');
+        console.log('emane model clicked');
+        this.$modal.modal('show');
+        return false;
+    }
+}
+
 
 class ServiceModal {
     constructor(coreRest) {
@@ -274,6 +382,27 @@ class NodeEditModal {
         this.$formCustom.html('');
         if (node.type === CoreNodeHelper.emaneNode) {
             this.$formCustom.append($('<label>', {class: 'form-label', text: 'EMANE Model'}));
+            // add buttons for editing emane and model options
+            const $formRow = $('<div>', {class: 'row'});
+            const $emaneButton = $('<div>', {class: 'col'}).append(
+                $('<a>', {
+                        id: 'emane-options',
+                        href: '#',
+                        class: 'btn btn-primary btn-sm w-100',
+                        text: 'EMANE Options'
+                    }
+                ));
+            const $modelButton = $('<div>', {class: 'col'}).append(
+                $('<a>', {
+                        id: 'emane-model-options',
+                        href: '#',
+                        class: 'btn btn-primary btn-sm w-100',
+                        text: 'Model Options'
+                    }
+                ));
+            $formRow.append([$emaneButton, $modelButton]);
+            this.$formCustom.append($formRow);
+
             for (let model of this.coreNetwork.emaneModels) {
                 const checked = node.emane === model;
                 const label = model.split('_')[1];

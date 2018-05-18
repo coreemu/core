@@ -66,7 +66,15 @@ class CoreRest {
     }
 
     async getEmaneModels() {
-        return await $.getJSON(`/sessions/${this.currentSession}/emane`);
+        return await $.getJSON(`/sessions/${this.currentSession}/emane/models`);
+    }
+
+    async getEmaneOptions(nodeId) {
+        return await $.getJSON(`/sessions/${this.currentSession}/emane/options`, {node: nodeId});
+    }
+
+    async setConfig(config) {
+        return await putJson(`/sessions/${this.currentSession}/config`, config);
     }
 
     async createNode(node) {

@@ -17,7 +17,7 @@ from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import EventTypes
+from core.enumerations import EventTypes, ConfigFlags
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
@@ -200,7 +200,33 @@ def get_session(session_id):
     )
 
 
-@app.route("/sessions/<int:session_id>/emane")
+@app.route("/sessions/<int:session_id>/config", methods=["PUT"])
+@synchronized
+def set_config(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    data = request.get_json() or {}
+    name = data["name"]
+    node_id = data.get("node")
+    values = data["values"]
+    data_types = [value["type"] for value in values]
+    data_values = "|".join(["%s=%s" % (value["name"], value["value"]) for value in values])
+
+    config_data = ConfigData(
+        node=node_id,
+        object=name,
+        type=ConfigFlags.NONE.value,
+        data_types=tuple(data_types),
+        data_values=data_values
+    )
+    logger.info("setting config: %s", config_data)
+    session.config_object(config_data)
+    return jsonify()
+
+
+@app.route("/sessions/<int:session_id>/emane/models")
 def get_emane_models(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
@@ -213,6 +239,69 @@ def get_emane_models(session_id):
         models.append(model)
 
     return jsonify(models=models)
+
+
+@app.route("/sessions/<int:session_id>/emane/options")
+def get_emane_options(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    node_id = request.args.get("node")
+    if node_id.isdigit():
+        node_id = int(node_id)
+
+    config_data = ConfigData(
+        node=node_id,
+        object="emane",
+        type=ConfigFlags.REQUEST.value
+    )
+    replies = session.config_object(config_data)
+    if len(replies) != 1:
+        return jsonify(error="failure getting emane options"), 404
+    config_groups = replies[0]
+
+    captions = config_groups.captions.split("|")
+    data_values = config_groups.data_values.split("|")
+    possible_values = config_groups.possible_values.split("|")
+    groups = config_groups.groups.split("|")
+
+    emane_options = []
+    for i, data_type in enumerate(config_groups.data_types):
+        data_value = data_values[i].split("=")
+        value = None
+        name = data_value[0]
+        if len(data_value) == 2:
+            value = data_value[1]
+
+        possible_value = possible_values[i]
+        select = None
+        if possible_value:
+            select = possible_value.split(",")
+
+        label = captions[i]
+
+        emane_option = {
+            "label": label,
+            "name": name,
+            "value": value,
+            "type": data_type,
+            "select": select
+        }
+        emane_options.append(emane_option)
+
+    config_groups = []
+    for group in groups:
+        name, indexes = group.split(":")
+        indexes = [int(x) for x in indexes.split("-")]
+        start = indexes[0] - 1
+        stop = indexes[1]
+        config_groups.append({
+            "name": name,
+            "options": emane_options[start: stop]
+        })
+
+    return jsonify(groups=config_groups)
 
 
 @app.route("/sessions/<int:session_id>/nodes", methods=["POST"])
