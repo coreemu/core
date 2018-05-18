@@ -413,6 +413,84 @@ class NodeEditModal {
         this.$editButton.click(this.onClick.bind(this));
     }
 
+    addEmaneOptions(node) {
+        this.$formCustom.append($('<label>', {class: 'form-label', text: 'EMANE Model'}));
+        // add buttons for editing emane and model options
+        const $formRow = $('<div>', {class: 'row'});
+        const $emaneButton = $('<div>', {class: 'col'}).append(
+            $('<a>', {
+                    id: 'emane-options',
+                    href: '#',
+                    class: 'btn btn-primary btn-sm w-100',
+                    text: 'EMANE Options'
+                }
+            ));
+        const $modelButton = $('<div>', {class: 'col'}).append(
+            $('<a>', {
+                    id: 'emane-model-options',
+                    href: '#',
+                    class: 'btn btn-primary btn-sm w-100',
+                    text: 'Model Options'
+                }
+            ));
+        $formRow.append([$emaneButton, $modelButton]);
+        this.$formCustom.append($formRow);
+
+        for (let model of this.coreNetwork.emaneModels) {
+            const checked = node.emane === model;
+            const label = model.split('_')[1];
+            const $radio = createRadio('emane', model, label, checked);
+            this.$formCustom.append($radio);
+        }
+    }
+
+    addInterfaceOptions(node) {
+        for (let interfaceId in node.interfaces) {
+            const nodeInterface = node.interfaces[interfaceId];
+            console.log('node interface: ', nodeInterface);
+            let $label = $('<label>', {text: `eth${interfaceId}`});
+            this.$formCustom.append($label);
+
+            let $inputGroup = $('<div>', {class: 'input-group mb-1'});
+            const $ip4Label = $('<div>', {class: 'input-group-prepend'}).append(
+                $('<span>', {class: 'input-group-text', text: 'IP4'})
+            );
+            const $ip4 = $('<input>', {
+                class: 'form-control',
+                type: 'text',
+                name: `interface-${interfaceId}-ip4`,
+                value: nodeInterface.ip4
+            });
+            const $ip4Mask = $('<input>', {
+                class: 'form-control',
+                type: 'text',
+                name: `interface-${interfaceId}-ip4mask`,
+                value: nodeInterface.ip4mask
+            });
+            $inputGroup.append([$ip4Label, $ip4, $ip4Mask]);
+            this.$formCustom.append($inputGroup);
+
+            $inputGroup = $('<div>', {class: 'input-group'});
+            const $ip6Label = $('<div>', {class: 'input-group-prepend'}).append(
+                $('<span>', {class: 'input-group-text', text: 'IP6'})
+            );
+            const $ip6 = $('<input>', {
+                class: 'form-control',
+                type: 'text',
+                name: `interface-${interfaceId}-ip6`,
+                value: nodeInterface.ip6
+            });
+            const $ip6Mask = $('<input>', {
+                class: 'form-control',
+                type: 'text',
+                name: `interface-${interfaceId}-ip6mask`,
+                value: nodeInterface.ip6mask
+            });
+            $inputGroup.append([$ip6Label, $ip6, $ip6Mask]);
+            this.$formCustom.append($inputGroup);
+        }
+    }
+
     async show(nodeId) {
         const node = this.coreNetwork.getCoreNode(nodeId);
         this.$modal.data('node', nodeId);
@@ -420,35 +498,13 @@ class NodeEditModal {
         this.$modal.find('#node-name').val(node.name);
 
         this.$formCustom.html('');
-        if (node.type === CoreNodeHelper.emaneNode) {
-            this.$formCustom.append($('<label>', {class: 'form-label', text: 'EMANE Model'}));
-            // add buttons for editing emane and model options
-            const $formRow = $('<div>', {class: 'row'});
-            const $emaneButton = $('<div>', {class: 'col'}).append(
-                $('<a>', {
-                        id: 'emane-options',
-                        href: '#',
-                        class: 'btn btn-primary btn-sm w-100',
-                        text: 'EMANE Options'
-                    }
-                ));
-            const $modelButton = $('<div>', {class: 'col'}).append(
-                $('<a>', {
-                        id: 'emane-model-options',
-                        href: '#',
-                        class: 'btn btn-primary btn-sm w-100',
-                        text: 'Model Options'
-                    }
-                ));
-            $formRow.append([$emaneButton, $modelButton]);
-            this.$formCustom.append($formRow);
 
-            for (let model of this.coreNetwork.emaneModels) {
-                const checked = node.emane === model;
-                const label = model.split('_')[1];
-                const $radio = createRadio('emane', model, label, checked);
-                this.$formCustom.append($radio);
-            }
+        // add interface edit
+        this.addInterfaceOptions(node);
+
+        // add emane edit
+        if (node.type === CoreNodeHelper.emaneNode) {
+            this.addEmaneOptions(node);
         }
 
         this.$modal.modal('show');
@@ -464,6 +520,17 @@ class NodeEditModal {
             node.label = formData.name;
             node.coreNode.name = formData.name;
             this.coreNetwork.nodes.update(node);
+        }
+
+        // deal with interface data
+        const interfaceKeys = Object.keys(formData)
+            .filter(key => key.startsWith('interface'));
+        for (let interfaceKey of interfaceKeys) {
+            const value = formData[interfaceKey];
+            const interfaceValues = interfaceKey.split('-');
+            const interfaceId = interfaceValues[1];
+            const field = interfaceValues[2];
+            node.coreNode.interfaces[interfaceId][field] = value;
         }
 
         if (formData.emane !== undefined) {
