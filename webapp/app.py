@@ -226,23 +226,8 @@ def set_config(session_id):
     return jsonify()
 
 
-@app.route("/sessions/<int:session_id>/emane/models")
-def get_emane_models(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    models = []
-    for model in session.emane._modelclsmap.keys():
-        if len(model.split("_")) != 2:
-            continue
-        models.append(model)
-
-    return jsonify(models=models)
-
-
-@app.route("/sessions/<int:session_id>/emane/options")
-def get_emane_options(session_id):
+@app.route("/sessions/<int:session_id>/config")
+def get_config(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
@@ -251,14 +236,16 @@ def get_emane_options(session_id):
     if node_id.isdigit():
         node_id = int(node_id)
 
+    name = request.args["name"]
+
     config_data = ConfigData(
         node=node_id,
-        object="emane",
+        object=name,
         type=ConfigFlags.REQUEST.value
     )
     replies = session.config_object(config_data)
     if len(replies) != 1:
-        return jsonify(error="failure getting emane options"), 404
+        return jsonify(error="failure getting config options"), 404
     config_groups = replies[0]
 
     captions = config_groups.captions.split("|")
@@ -266,7 +253,7 @@ def get_emane_options(session_id):
     possible_values = config_groups.possible_values.split("|")
     groups = config_groups.groups.split("|")
 
-    emane_options = []
+    config_options = []
     for i, data_type in enumerate(config_groups.data_types):
         data_value = data_values[i].split("=")
         value = None
@@ -281,14 +268,14 @@ def get_emane_options(session_id):
 
         label = captions[i]
 
-        emane_option = {
+        config_option = {
             "label": label,
             "name": name,
             "value": value,
             "type": data_type,
             "select": select
         }
-        emane_options.append(emane_option)
+        config_options.append(config_option)
 
     config_groups = []
     for group in groups:
@@ -298,10 +285,25 @@ def get_emane_options(session_id):
         stop = indexes[1]
         config_groups.append({
             "name": name,
-            "options": emane_options[start: stop]
+            "options": config_options[start: stop]
         })
 
     return jsonify(groups=config_groups)
+
+
+@app.route("/sessions/<int:session_id>/emane/models")
+def get_emane_models(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    models = []
+    for model in session.emane._modelclsmap.keys():
+        if len(model.split("_")) != 2:
+            continue
+        models.append(model)
+
+    return jsonify(models=models)
 
 
 @app.route("/sessions/<int:session_id>/nodes", methods=["POST"])

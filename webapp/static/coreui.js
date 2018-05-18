@@ -96,7 +96,7 @@ class ConfigModel {
         const nodeId = this.$nodeEditModal.data('node');
         this.$modal.data('type', 'emane');
         this.$title.text('EMANE Options');
-        const config = await this.coreRest.getEmaneOptions(nodeId);
+        const config = await this.coreRest.getConfig({node: nodeId, name: 'emane'});
         console.log('emane options clicked: ', config);
         this.$tabHeaders.html('');
         this.$tabContent.html('');
