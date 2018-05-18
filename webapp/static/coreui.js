@@ -91,13 +91,7 @@ class ConfigModel {
         this.$modal.modal('hide');
     }
 
-    async emaneOptionsClick(event) {
-        this.$nodeEditModal.modal('hide');
-        const nodeId = this.$nodeEditModal.data('node');
-        this.$modal.data('type', 'emane');
-        this.$title.text('EMANE Options');
-        const config = await this.coreRest.getConfig({node: nodeId, name: 'emane'});
-        console.log('emane options clicked: ', config);
+    showConfig(config) {
         this.$tabHeaders.html('');
         this.$tabContent.html('');
         let initialTab = true;
@@ -122,14 +116,30 @@ class ConfigModel {
             }
         }
         this.$modal.modal('show');
+    }
+
+    async emaneOptionsClick(event) {
+        this.$nodeEditModal.modal('hide');
+        const nodeId = this.$nodeEditModal.data('node');
+        const configName = 'emane';
+        this.$modal.data('type', configName);
+        this.$title.text('EMANE Options');
+        const config = await this.coreRest.getConfig({node: nodeId, name: configName});
+        console.log('emane options clicked: ', config);
+        this.showConfig(config);
         return false;
     }
 
     async emaneModelOptionsClick(event) {
         this.$nodeEditModal.modal('hide');
+        const nodeId = this.$nodeEditModal.data('node');
+        const configName = this.$nodeEditModal.find('input[name=emane]:checked').val();
+        this.$modal.data('type', configName);
         this.$title.text('EMANE Model Options');
-        console.log('emane model clicked');
-        this.$modal.modal('show');
+        console.log('emane model clicked: ', configName);
+        const config = await this.coreRest.getConfig({node: nodeId, name: configName});
+        console.log('emane model options clicked: ', config);
+        this.showConfig(config);
         return false;
     }
 }
