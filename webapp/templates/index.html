@@ -181,7 +181,7 @@
     const coreNetwork = new CoreNetwork('core-network', coreRest);
     const serviceModal = new ServiceModal(coreRest);
     const servicesModal = new ServicesModal(coreRest, coreNetwork, serviceModal);
-    const sessionsModal = new SessionsModal(coreRest, coreNetwork, joinSession);
+    const sessionsModal = new SessionsModal(coreRest, coreNetwork, joinSession, initialSetup);
     const nodeEditModal = new NodeEditModal(coreNetwork, coreRest);
     const nodeContext = new NodeContext(coreNetwork, coreRest, nodeEditModal, servicesModal);
     const edgeEditModal = new EdgeEditModal(coreNetwork, coreRest);
@@ -189,13 +189,15 @@
     const infoPanel = new InfoPanel(coreNetwork);
     const configModal = new ConfigModel(coreRest);
 
-    coreNetwork.initialSession()
-            .then(function (session) {
-                joinSession(session);
-            })
-            .catch(function (err) {
-                console.log('initial session error: ', err);
-            });
+    function initialSetup() {
+        coreNetwork.initialSession()
+                .then(function (session) {
+                    joinSession(session);
+                })
+                .catch(function (err) {
+                    console.log('initial session error: ', err);
+                });
+    }
 
     function setRunButton(start) {
         console.log('set run button: ', start);
@@ -221,6 +223,8 @@
         $sessionSaveButton.attr('href', `/sessions/${session.id}/xml`);
         $sessionSaveButton.attr('download', true);
     }
+
+    initialSetup();
 
     // handle network clicks
     coreNetwork.network.on('click', function (properties) {
@@ -252,7 +256,7 @@
         const nodeId = coreNetwork.network.getNodeAt(location);
         if (nodeId) {
             nodeContext.show(nodeId, x, y)
-                    .catch(function(err) {
+                    .catch(function (err) {
                         console.log('error showing node context: ', err);
                     });
         } else {

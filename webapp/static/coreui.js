@@ -264,30 +264,59 @@ class ServicesModal {
 }
 
 class SessionsModal {
-    constructor(coreRest, coreNetwork, onJoin) {
+    constructor(coreRest, coreNetwork, onJoin, deleteCurrent) {
         this.coreRest = coreRest;
         this.coreNetwork = coreNetwork;
         this.onJoin = onJoin;
+        this.deleteCurrent = deleteCurrent;
         this.$modal = $('#sessions-modal');
         this.$modal.on('shown.bs.modal', this.onShow.bind(this));
         this.$table = $('#sessions-table');
-        this.$table.on('click', 'td', this.onClick.bind(this));
+        this.$table.on('click', 'tbody tr', this.sessionClick.bind(this));
+        this.$joinButton = $('#session-join');
+        this.$joinButton.click(this.joinClicked.bind(this));
+        this.$deleteButton = $('#session-delete');
+        this.$deleteButton.click(this.deleteClicked.bind(this));
+        this.selectedSession = null;
     }
 
-    async onClick(event) {
-        const sessionId = $(event.target).parent('tr').data('session');
-        console.log('clicked session to join: ', sessionId);
-        if (sessionId === this.coreRest.currentSession) {
+    async joinClicked() {
+        console.log('joining session: ', this.selectedSession);
+        if (this.selectedSession === this.coreRest.currentSession) {
             console.log('same session, not changing');
         } else {
-            const session = await this.coreNetwork.joinSession(sessionId);
+            const session = await this.coreNetwork.joinSession(this.selectedSession);
             this.onJoin(session);
-            this.$modal.modal('hide');
         }
+        this.$modal.modal('hide');
+        return false;
+    }
+
+    async deleteClicked(event) {
+        console.log('deleting session: ', this.selectedSession);
+        await this.coreRest.deleteSession(this.selectedSession);
+        if (this.selectedSession === this.coreRest.currentSession) {
+            this.deleteCurrent();
+        }
+        this.$modal.modal('hide');
+        return false;
+    }
+
+    async sessionClick(event) {
+        this.$table.find('tr').removeClass('table-active');
+        console.log('event: ', event);
+        const $row = $(event.currentTarget);
+        $row.addClass('table-active');
+        this.selectedSession = $row.data('session');
+        this.$joinButton.removeAttr('disabled');
+        this.$deleteButton.removeAttr('disabled');
+        console.log('selected session: ', this.selectedSession);
     }
 
     async onShow() {
         console.log('show sessions');
+        this.$joinButton.attr('disabled', 'disabled');
+        this.$deleteButton.attr('disabled', 'disabled');
         this.$table.find('tbody tr').remove();
         const response = await this.coreRest.getSessions();
         const sessions = response.sessions;
@@ -297,7 +326,8 @@ class SessionsModal {
             const $nodeCell = $('<td>', {text: session.nodes});
             const stateName = this.coreRest.getStateName(session.state);
             const $stateCell = $('<td>', {text: stateName});
-            const $row = $('<tr>', {class: 'session-join', 'data-session': session.id});
+            const $row = $('<tr>', {class: 'session-join'});
+            $row.data('session', session.id);
             $row.append([$idCell, $nodeCell, $stateCell]);
             this.$table.find('tbody').append($row);
         }

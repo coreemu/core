@@ -36,6 +36,11 @@ async function putJson(url, data) {
     return await sendJson(url, data, 'PUT');
 }
 
+async function deleteJson(url, data) {
+    console.log('DELETE: ', url);
+    return await sendJson(url, data, 'DELETE');
+}
+
 class CoreRest {
     constructor() {
         this.currentSession = null;
@@ -63,6 +68,10 @@ class CoreRest {
 
     async setSessionState(state) {
         return await putJson(`/sessions/${this.currentSession}/state`, {state});
+    }
+
+    async deleteSession(sessionId) {
+        return await deleteJson(`/sessions/${sessionId}`);
     }
 
     async getEmaneModels() {
