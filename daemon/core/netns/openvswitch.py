@@ -248,10 +248,10 @@ class OvsNet(PyCoreNet):
         if jitter is not None:
             netem += ["%sus" % jitter, "25%"]
 
-        if loss is not None:
+        if loss is not None and loss > 0:
             netem += ["loss", "%s%%" % min(loss, 100)]
 
-        if duplicate is not None:
+        if duplicate is not None and duplicate > 0:
             netem += ["duplicate", "%s%%" % min(duplicate, 100)]
 
         if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
