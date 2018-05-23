@@ -47,7 +47,7 @@ ns-3 Scripting
 Currently, ns-3 is supported by writing
 :ref:`Python scripts <Python_Scripting>`, but not through
 drag-and-drop actions within the GUI.
-If you have a copy of the CORE source, look under :file:`core/daemon/ns3/examples/` for example scripts; a CORE installation package puts these under
+If you have a copy of the CORE source, look under :file:`ns3/examples/` for example scripts; a CORE installation package puts these under
 :file:`/usr/share/core/examples/corens3`.
 
 To run these scripts, install CORE so the CORE Python libraries are accessible,
@@ -168,8 +168,8 @@ a constant-rate 802.11a-based ad hoc network, using a lot of ns-3 defaults.
 However, programs may be written with a blend of ns-3 API and CORE Python
 API calls.  This section examines some of the fundamental objects in
 the CORE ns-3 support.  Source code can be found in 
-:file:`daemon/ns3/corens3/obj.py` and example
-code in :file:`daemon/ns3/corens3/examples/`.
+:file:`ns3/corens3/obj.py` and example
+code in :file:`ns3/corens3/examples/`.
 
 Ns3Session
 ----------

@@ -1,12 +1,7 @@
-#
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 # shows the Two-node Tool
 proc popupTwoNodeDialog { } {
     global twonodePID lastTwoNodeHop g_twoNodeSelect g_twoNodeSelectCallback
-    
+
     markerOptions off
     set wi .twonodetool
     catch {destroy $wi}
@@ -61,7 +56,7 @@ proc popupTwoNodeDialog { } {
 
     # buttons on the bottom
     frame $wi.butt -borderwidth 6
-    button $wi.butt.run -text "Run" -command "runTwoNodeCommand $wi" 
+    button $wi.butt.run -text "Run" -command "runTwoNodeCommand $wi"
     button $wi.butt.cancel -text "Clear" -command "clearTwoNodeDialog $wi 0"
     button $wi.butt.close -text "Close" -command "clearTwoNodeDialog $wi 1"
     pack $wi.butt.run $wi.butt.cancel $wi.butt.close -side left
@@ -83,11 +78,7 @@ proc clearTwoNodeDialog { wi done} {
 	set emul [getEmulPlugin $node]
 	set emulation_type [lindex $emul 1]
 	    catch {
-		if { $os == "FreeBSD" } {
-		    exec sudo kill -9 $twonodePID 2> /dev/null
-		} else {
-		    exec kill -9 $twonodePID 2> /dev/null
-		}
+        exec kill -9 $twonodePID 2> /dev/null
 	    }
 	set twonodePID 0
     }
@@ -318,11 +309,11 @@ proc drawTwoNodeLine { node line type } {
     # search for hops matching this nexthop address
     set hops [findNextHops $lastTwoNodeHop $nexthop ""]
     if {[llength $hops] == 0} {
-    	puts "Couldn't highlight next hop: $nexthop"; 
+    	puts "Couldn't highlight next hop: $nexthop";
 	return
     }
 
-    # highlight the path 
+    # highlight the path
     set a $lastTwoNodeHop
     foreach b $hops {
 	highlightLink $a $b
@@ -372,7 +363,7 @@ proc nodeHasAddr { node addr } {
 	if { $nodeaddr == $addr } {
 	    return 1
 	}
-    }	
+    }
     return 0
 }
 
@@ -429,7 +420,7 @@ proc clearLinkHighlights { } {
 # Boeing: shows the Two-node Tool
 proc popupRunDialog { } {
     global node_list activetool systype
-   
+
     set activetool select
     markerOptions off
     set wi .runtool
@@ -489,7 +480,7 @@ proc popupRunDialog { } {
 
     # buttons on the bottom
     frame $wi.butt -borderwidth 6
-    button $wi.butt.run -text "Run" -command "runToolCommand $wi \"\"" 
+    button $wi.butt.run -text "Run" -command "runToolCommand $wi \"\""
     button $wi.butt.close -text "Close" -command "destroy $wi"
     pack $wi.butt.run $wi.butt.close -side left
     pack $wi.butt -side bottom
@@ -504,7 +495,7 @@ proc runToolCommand { wi node } {
     if { ![winfo exists $wi] } { return }; # user has closed window
 
     # start running commands
-    if { $node == "" } { 
+    if { $node == "" } {
 	$wi.results.text delete 1.0 end
 	set selected [$wi.n.nodes.nodes curselection]
 	if { [llength $selected] == 0 } {
@@ -518,8 +509,8 @@ proc runToolCommand { wi node } {
 
     set next ""
     set getnext 0
-    foreach i [$wi.n.nodes.nodes curselection] { ;# find the next node 
-        set n [lindex $node_list $i] 
+    foreach i [$wi.n.nodes.nodes curselection] { ;# find the next node
+        set n [lindex $node_list $i]
 	if {$n == $node } {
 	    set getnext 1
 	} elseif { $getnext == 1 } {
@@ -553,7 +544,7 @@ proc runToolCommand { wi node } {
 # callback after receiving exec message response
 proc exec_runtool_callback { node execnum cmd result status } {
     set wi .runtool
-    
+
     if { ![winfo exists $wi] } { return }; # user has closed window
 
     $wi.results.text insert end "> $node > $cmd:\n"

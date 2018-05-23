@@ -1,11 +1,3 @@
-#
-# CORE API
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author:	Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-
 # version of the API document that is used
 set CORE_API_VERSION 1.23
 
@@ -30,7 +22,7 @@ array set g_execRequests { shell "" observer "" }
 # for a simulator, uncomment this line or cut/paste into debugger:
 #  set XSCALE 4.0; set YSCALE 4.0; set XOFFSET 1800; set YOFFSET 300
 
-array set nodetypes { 	0 def 1 phys 2 xen 3 tbd 4 lanswitch 5 hub \
+array set nodetypes { 	0 def 1 phys 2 tbd 3 tbd 4 lanswitch 5 hub \
 			6 wlan 7 rj45 8 tunnel 9 ktunnel 10 emane }
 
 array set regtypes { wl 1 mob 2 util 3 exec 4 gui 5 emul 6 }
@@ -135,7 +127,7 @@ proc receiveMessage { channel } {
 
 #
 # Open an API socket to the specified server:port, prompt user for retry
-# if specified; set the readable file event and parameters; 
+# if specified; set the readable file event and parameters;
 # returns the channel name or -1 on error.
 #
 proc openAPIChannel { server port retry } {
@@ -186,7 +178,7 @@ proc openAPIChannel { server port retry } {
 
     # now we have a valid socket, set up encoding and receive event
     fconfigure $s -blocking 0 -encoding binary -translation { binary binary } \
-		   -buffering full -buffersize 4096 
+		   -buffering full -buffersize 4096
     fileevent $s readable [list receiveMessage $s]
     return $s
 }
@@ -299,7 +291,7 @@ proc parseNodeMessage { data len flags } {
 	# verbose debugging
 	#puts "tlv type=$type length=$length pad=$pad current=$current"
 	incr current 2
-	
+
 	if {![info exists typenames($type)] } { ;# unknown TLV type
 	    if { $prmsg } { puts -nonewline "unknown=$type," }
 	    incr current $length
@@ -352,11 +344,11 @@ proc parseNodeMessage { data len flags } {
     } else {
 	set exists true
     }
-    
+
     if { $vals(name) == "" } {; # make sure there is a node name
 	set name $node
 	if { $exists } { set name [getNodeName $node] }
-	array set vals [list name $name] 
+	array set vals [list name $name]
     }
     if { $exists } {
 	if { $flags == 1 } {
@@ -384,9 +376,7 @@ proc parseNodeMessage { data len flags } {
 
     set wlans_needing_update { }
     if { $vals(emuid) != -1 } {
-	# For Linux (FreeBSD populates ngnodeidmap in l3node.instantiate/
-	#  buildInterface when the netgraph ID is known)
-	# populate ngnodeidmap for later use with wireless; it is treated as
+	# For Linux populate ngnodeidmap for later use with wireless; it is treated as
 	# a hex value string (without the leading "0x")
 	global ngnodeidmap
 	foreach wlan [findWlanNodes $node] {
@@ -472,7 +462,7 @@ proc apiNodeCreate { node vals_ref } {
     set nodetype $nodetypes($vals(type))
     set nodename $vals(name)
     if { $nodetype == "emane" } { set nodetype "wlan" } ;# special case - EMANE
-    if { $nodetype == "def" || $nodetype == "xen" } { set nodetype "router" }
+    if { $nodetype == "def" } { set nodetype "router" }
     newNode [list $nodetype $node] ;# use node number supplied from API message
     setNodeName $node $nodename
     if { $vals(canv) == "" } {
@@ -484,7 +474,7 @@ proc apiNodeCreate { node vals_ref } {
 	    return
 	}
 	set canv "c$canv"
-	if { [lsearch $canvas_list $canv] < 0 && $canv == "c0" } { 
+	if { [lsearch $canvas_list $canv] < 0 && $canv == "c0" } {
 	    # special case -- support old imn files with Canvas0
 	    global $canv
 	    lappend canvas_list $canv
@@ -511,7 +501,7 @@ proc apiNodeCreate { node vals_ref } {
 
     set model $vals(model)
     if { $model != ""  && $vals(type) < 4} {
-	# set model only for (0 def 1 phys 2 xen 3 tbd) 4 lanswitch
+	# set model only for (0 def 1 phys 2 tbd 3 tbd) 4 lanswitch
 	setNodeModel $node $model
 	if { [lsearch -exact [getNodeTypeNames] $model] == -1 } {
 	    puts "warning: unknown node type '$model' in Node message!"
@@ -787,12 +777,12 @@ proc apiLinkAddModify { node1 node2 vals_ref add } {
 	updateLinkGuiAttr $wired_link $vals(guiattr)
 	return
     # if add flag is set and a wired link already exists, assume wlan linkage
-    # special case: rj45  model=1 means link via wireless 
+    # special case: rj45  model=1 means link via wireless
     } elseif {[nodeType $node1] == "rj45" || [nodeType $node2] == "rj45"} {
 	if { [nodeType $node1] == "rj45" } {
 	    set rj45node $node1; set othernode $node2;
 	} else { set rj45node $node2; set othernode $node1; }
-	if { [netconfFetchSection $rj45node model] == 1 } { 
+	if { [netconfFetchSection $rj45node model] == 1 } {
 	    set wlan [findWlanNodes $othernode]
 	    if {$wlan != ""} {newGUILink $wlan $rj45node};# link rj4node to wlan
 	}
@@ -1034,7 +1024,7 @@ proc parseRegMessage { data len flags channel } {
 		# TLV header
 		if { [binary scan $data @${current}cc type length] != 2 } {
 		    puts "TLV header error"
-		    break 
+		    break
 		}
 		set length [expr {$length & 0xFF}]; # convert signed to unsigned
 		if { $length == 0 } {
@@ -1078,9 +1068,9 @@ proc parseRegMessage { data len flags channel } {
     if { $session != "" } {
 	# The channel passed to here is soon after discarded for
 	# sessions that are started from XML or Python scripts. This causes
-	# an exception in the GUI when responding back to daemon if the 
-	# response is sent after the channel has been destroyed. Setting 
-	# the channel to -1 basically disables the GUI response to the daemon, 
+	# an exception in the GUI when responding back to daemon if the
+	# response is sent after the channel has been destroyed. Setting
+	# the channel to -1 basically disables the GUI response to the daemon,
 	# but it turns out the daemon does not need the response anyway.
 	set channel -1
 	# assume session string only contains one session number
@@ -1432,7 +1422,7 @@ proc parseEventMessage { data len flags channel } {
 	    2 {
 		incr current $pad
 		binary scan $data @${current}I eventtype
-		if { $prmsg == 1} { 
+		if { $prmsg == 1} {
 		    set typestr ""
 		    foreach t [array names eventtypes] {
 			if { $eventtypes($t) == $eventtype } {
@@ -1493,7 +1483,7 @@ proc parseEventMessage { data len flags channel } {
 	set name [lindex [getEmulPlugin "*"] 0]
 	if { [getAssignedRemoteServers] == "" } {
 	    # start a new session if not distributed
-	    #   otherwise we need to allow time for node delete messages 
+	    #   otherwise we need to allow time for node delete messages
 	    #   from other servers
 	    pluginConnect $name disconnect 1
 	    pluginConnect $name connect 1
@@ -1529,7 +1519,7 @@ proc parseSessionMessage { data len flags channel } {
 	set typelength [parseTLVHeader $data current]
 	set type [lindex $typelength 0]
 	set length [lindex $typelength 1]
-	if { $length == 0 || $length == "" } { 
+	if { $length == 0 || $length == "" } {
 	    puts "warning: zero-length TLV, discarding remainder of message!"
 	    break
 	}
@@ -1737,7 +1727,7 @@ proc sendNodePosMessage { channel node nodeid x y wlanid force } {
     if {$wlanid > -1} { incr len 8 }
     if {$force == 1 } { set crit 0x4 } else { set crit 0x0 }
     #puts "sending [expr $len+4] bytes: $nodeid $x $y $wlanid"
-    if { $prmsg == 1 } { 
+    if { $prmsg == 1 } {
 	puts -nonewline ">NODE(flags=$crit,$node,x=$x,y=$y" }
     set msg [binary format ccSc2sIc2Sc2S \
 			1 $crit $len \
@@ -1805,8 +1795,8 @@ proc sendNodeAddMessage { channel node } {
     } else {
 	set canv ""
     }
-    
-    # services 
+
+    # services
     set svc [getNodeServices $node false]
     set svc [join $svc "|"]
     set svc_len [string length $svc]
@@ -1854,7 +1844,7 @@ proc sendNodeAddMessage { channel node } {
 	set mac [join [split $macstr ":"] ""]
 	puts -nonewline $channel [binary format c2x2W {0x5 8} 0x$mac]
     }
-    
+
     # IPv6 address
     if { $ipv6 != 0 } {
 	if { $prmsg == 1 } { puts -nonewline "$ipv6str," }
@@ -1943,7 +1933,7 @@ proc sendNodeDelMessage { channel node } {
 proc sendLinkMessage { channel link type {sendboth true} } {
     global showAPI
     set prmsg $showAPI
-    
+
     set node1 [lindex [linkPeers $link] 0]
     set node2 [lindex [linkPeers $link] 1]
     set if1 [ifcByPeer $node1 $node2]; set if2 [ifcByPeer $node2 $node1]
@@ -2207,7 +2197,7 @@ proc getIfcAddrs { node ifc ipv4p ipv6p macp ipv4maskp ipv6maskp lenp } {
 
     # IPv4 address
     set ipv4str [getIfcIPv4addr $node $ifc]
-    if {$ipv4str != ""} { 
+    if {$ipv4str != ""} {
 	set ipv4 [lindex [split $ipv4str /] 0]
 	if { [info exists ipv4mask ] } {
 	    set ipv4mask [lindex [split $ipv4str / ] 1]
@@ -2222,7 +2212,7 @@ proc getIfcAddrs { node ifc ipv4p ipv6p macp ipv4maskp ipv6maskp lenp } {
 
     # IPv6 address
     set ipv6str [getIfcIPv6addr $node $ifc]
-    if {$ipv6str != ""} { 
+    if {$ipv6str != ""} {
 	set ipv6 [lindex [split $ipv6str /] 0]
 	if { [info exists ipv6mask ] } {
 	    set ipv6mask [lindex [split $ipv6str / ] 1]
@@ -2248,7 +2238,7 @@ proc getIfcAddrs { node ifc ipv4p ipv6p macp ipv4maskp ipv6maskp lenp } {
 
 #
 # Register Message: (registration types)
-# This is a simple Register Message, types is an array of 
+# This is a simple Register Message, types is an array of
 #  <module TLV, string> tuples.
 proc sendRegMessage { channel flags types_list } {
     global showAPI regtypes
@@ -2361,7 +2351,7 @@ proc sendConfRequestMessage { channel node model flags netid opaque } {
         set msg4 [binary format c2sI {0x23 4} 0 0x$netid ]
     }
 
-    #catch {puts -nonewline $channel $msg1$model$model_pad$msg2$msg3$msg4$msg5} 
+    #catch {puts -nonewline $channel $msg1$model$model_pad$msg2$msg3$msg4$msg5}
     puts -nonewline $channel $msg1$msg1b$msg1c$model$model_pad$msg2$msg3$msg4
     if { $opaque_len > 0 } { puts -nonewline $channel $msgop }
 
@@ -2436,7 +2426,7 @@ proc sendConfReplyMessage { channel node model types values opaque } {
     # session number
     set msg3 ""
     if { $session != "" } {
-	incr len [expr {2 + $session_len + $session_pad_len }] 
+	incr len [expr {2 + $session_len + $session_pad_len }]
         set msg3 [binary format cc 0x0A $session_len]
 	set msg3 $msg3$session$session_pad
     }
@@ -2472,7 +2462,7 @@ proc sendEventMessage { channel type nodenum name data flags } {
     set data_pad_len [pad_32bit $data_len]
     if { $data_len > 0 } { incr len [expr {2 + $data_len + $data_pad_len}] }
 
-    if { $prmsg == 1 } { 
+    if { $prmsg == 1 } {
 	puts -nonewline ">EVENT(flags=$flags," }
     set msg [binary format ccS 8 $flags $len ] ;# message header
 
@@ -2481,7 +2471,7 @@ proc sendEventMessage { channel type nodenum name data flags } {
 	if { $prmsg == 1 } { puts -nonewline "node=$nodenum," }
 	set msg2 [binary format c2sI {0x01 4} 0 $nodenum]
     }
-    if { $prmsg == 1} { 
+    if { $prmsg == 1} {
 	set typestr ""
 	foreach t [array names eventtypes] {
 	    if { $eventtypes($t) == $type } { set typestr "-$t"; break }
@@ -2513,7 +2503,7 @@ proc sendEventMessage { channel type nodenum name data flags } {
 
 
 #  deploy working configuration using CORE API
-#   Deploys a current working configuration. It creates all the 
+#   Deploys a current working configuration. It creates all the
 #   nodes and link as defined in configuration file.
 proc deployCfgAPI { sock } {
     global eid
@@ -2546,13 +2536,13 @@ proc deployCfgAPI { sock } {
 
     sendSessionProperties $sock
 
-    # this tells the CORE services that we are starting to send 
+    # this tells the CORE services that we are starting to send
     # configuration data
     # clear any existing config
     sendEventMessage $sock $eventtypes(definition_state) -1 "" "" 0
     # inform CORE services about emulation servers, hook scripts, canvas info,
     #  and services
-    sendEventMessage $sock $eventtypes(configuration_state) -1 "" "" 0 
+    sendEventMessage $sock $eventtypes(configuration_state) -1 "" "" 0
     sendEmulationServerInfo $sock 0
     sendSessionOptions $sock
     sendHooks $sock
@@ -2567,7 +2557,7 @@ proc deployCfgAPI { sock } {
 	set type [nodeType $node]
 	set name [getNodeName $node]
 	if { $type == "pseudo" } { continue }
-	
+
 	statgraph inc 1
 	statline "Creating node $name"
 	if { [[typemodel $node].layer] == "NETWORK" } {
@@ -2611,7 +2601,7 @@ proc deployCfgAPI { sock } {
     # status bar graph
     statgraph off 0
     statline "Network topology instantiated in [expr [clock seconds] - $t_start] seconds ([llength $node_list] nodes and [llength $link_list] links)."
-   
+
     # TODO: turn on tcpdump if enabled; customPostConfigCommands;
     #       addons 4 deployCfgHook
 
@@ -2628,8 +2618,8 @@ proc deployCfgAPI { sock } {
     sendTrafficScripts $sock
 
     # tell the CORE services that we are ready to instantiate
-    sendEventMessage $sock $eventtypes(instantiation_state) -1 "" "" 0 
-    
+    sendEventMessage $sock $eventtypes(instantiation_state) -1 "" "" 0
+
     set deployCfgAPI_lock 0 ;# unlock
 
     statline "Network topology instantiated in [expr [clock seconds] - $t_start] seconds ([llength $node_list] nodes and [llength $link_list] links)."
@@ -2651,7 +2641,7 @@ proc shutdownSession {} {
     set plugin [lindex [getEmulPlugin "*"] 0]
     set sock [pluginConnect $plugin connect true]
 
-    sendEventMessage $sock $eventtypes(datacollect_state) -1 "" "" 0 
+    sendEventMessage $sock $eventtypes(datacollect_state) -1 "" "" 0
 
     # shut down all links
     foreach link $link_list {
@@ -2712,7 +2702,7 @@ proc sendNodeTypeInfo { sock reset } {
 	sendConfRequestMessage $sock -1 "all" 0x3 -1 ""
 	return
     }
-    # build a list of node types in use 
+    # build a list of node types in use
     set typesinuse ""
     foreach node $node_list {
 	set type [nodeType $node]
@@ -2922,7 +2912,6 @@ proc getNodeTypeAPI { node } {
 	jail    { return 0x0 }
 	OVS 	{ return 0x0 }
 	physical { return 0x1 }
-	xen	{ return 0x2 }
 	tbd	{ return 0x3 }
 	lanswitch { return 0x4 }
 	hub	{ return 0x5 }
@@ -2974,7 +2963,7 @@ proc sendFileMessage { channel node type f sf data data_len } {
     set prmsg $showAPI
 
     set node_num [string range $node 1 end]
-    
+
     set f_len [string length $f]
     set f_pad_len [pad_32bit $f_len]
     set f_pad [binary format x$f_pad_len]
@@ -3013,7 +3002,7 @@ proc sendFileMessage { channel node type f sf data data_len } {
     if { $prmsg == 1 } {
 	puts -nonewline ">FILE(flags=$flags,$node,f=$f,"
 	if { $type != "" } { puts -nonewline "type=$type," }
-	if { $sf != "" } {	puts "src=$sf)" 
+	if { $sf != "" } {	puts "src=$sf)"
 	} else {		puts "data=($data_len))" }
     }
 
@@ -3077,7 +3066,7 @@ proc sendSessionMessage { channel flags num name sfile nodecount tf user } {
     set user_pad_len [pad_32bit $user_len]
     if { $user_len > 0 } { incr len [expr { 2 + $user_len + $user_pad_len }] }
 
-    if { $prmsg == 1 } { 
+    if { $prmsg == 1 } {
 	puts -nonewline ">SESSION(flags=$flags" }
     set msgh [binary format ccS 0x09 $flags $len ] ;# message header
 
@@ -3089,7 +3078,7 @@ proc sendSessionMessage { channel flags num name sfile nodecount tf user } {
     set msg2 ""
     if { $name_len > 0 } {
 	if { $prmsg == 1 } { puts -nonewline ",name=$name" }
-	# TODO: name_len > 255 
+	# TODO: name_len > 255
 	set name_hdr [binary format cc 0x02 $name_len]
 	set name_pad [binary format x$name_pad_len]
 	set msg2 "$name_hdr$name$name_pad"
@@ -3097,7 +3086,7 @@ proc sendSessionMessage { channel flags num name sfile nodecount tf user } {
     set msg3 ""
     if { $sfile_len > 0 } {
 	if { $prmsg == 1 } { puts -nonewline ",file=$sfile" }
-	# TODO: sfile_len > 255 
+	# TODO: sfile_len > 255
 	set sfile_hdr [binary format cc 0x03 $sfile_len]
 	set sfile_pad [binary format x$sfile_pad_len]
 	set msg3 "$sfile_hdr$sfile$sfile_pad"
@@ -3150,11 +3139,11 @@ proc xmlFileLoadSave { cmd name } {
     # inform daemon about nodes and links when saving in edit mode
     if { $cmd == "save" && $oper_mode != "exec" } {
 	sendSessionProperties $sock
-	# this tells the CORE services that we are starting to send 
+	# this tells the CORE services that we are starting to send
 	# configuration data
 	# clear any existing config
 	sendEventMessage $sock $eventtypes(definition_state) -1 "" "" 0
-	sendEventMessage $sock $eventtypes(configuration_state) -1 "" "" 0 
+	sendEventMessage $sock $eventtypes(configuration_state) -1 "" "" 0
 	sendEmulationServerInfo $sock 0
 	sendSessionOptions $sock
 	sendHooks $sock
@@ -3246,7 +3235,7 @@ proc buildStringTLV { type data len_ref } {
     }
 
     if { $data_len > 255 } {
-	set hdr [binary format ccS $type 0 $data_len] 
+	set hdr [binary format ccS $type 0 $data_len]
 	set hdr_len 4
     } else {
 	set hdr [binary format cc $type $data_len]
@@ -3274,7 +3263,7 @@ proc pad_32bit { len } {
 
 proc macToString { mac_num } {
     set mac_bytes ""
-    # convert 64-bit integer into 12-digit hex string 
+    # convert 64-bit integer into 12-digit hex string
     set mac_num 0x[format "%.12lx" $mac_num]
     while { $mac_num > 0 } {
 	# append 8-bit hex number to list
@@ -3295,7 +3284,7 @@ proc macToString { mac_num } {
     set r {}
     set i [llength $mac_bytes]
     while { $i > 0 } { lappend r [lindex $mac_bytes [incr i -1]] }
-    
+
     return [join $r :]
 }
 

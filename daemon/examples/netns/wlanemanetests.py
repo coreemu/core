@@ -41,7 +41,7 @@ from core import emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
-from core.misc import ipaddress, nodemaps, nodeutils
+from core.misc import ipaddress
 from core.netns import nodes
 from core.session import Session
 
@@ -131,7 +131,7 @@ class Cmd(object):
 
     def open(self):
         """ Exceute call to node.popen(). """
-        self.id, self.stdin, self.out, self.err = self.node.popen(self.args)
+        self.id, self.stdin, self.out, self.err = self.node.client.popen(self.args)
 
     def parse(self):
         """ This method is overloaded by child classes and should return some
@@ -166,7 +166,7 @@ class ClientServerCmd(Cmd):
         self.client_open()  # client
         status = self.client_id.wait()
         # stop the server
-        self.node.cmdresult(["killall", self.args[0]])
+        self.node.cmd_output(["killall", self.args[0]])
         r = self.parse()
         self.cleanup()
         return r
@@ -174,7 +174,7 @@ class ClientServerCmd(Cmd):
     def client_open(self):
         """ Exceute call to client_node.popen(). """
         self.client_id, self.client_stdin, self.client_out, self.client_err = \
-            self.client_node.popen(self.client_args)
+            self.client_node.client.popen(self.client_args)
 
     def parse(self):
         """ This method is overloaded by child classes and should return some
@@ -207,7 +207,7 @@ class PingCmd(Cmd):
     def run(self):
         if self.verbose:
             self.info("%s initial test ping (max 1 second)..." % self.node.name)
-        (status, result) = self.node.cmdresult(["ping", "-q", "-c", "1", "-w", "1", self.addr])
+        (status, result) = self.node.cmd_output(["ping", "-q", "-c", "1", "-w", "1", self.addr])
         if status != 0:
             self.warn("initial ping from %s to %s failed! result:\n%s" %
                       (self.node.name, self.addr, result))
@@ -226,7 +226,7 @@ class PingCmd(Cmd):
             stats = stats_str.split("/")
             avg_latency = float(stats[1])
             mdev = float(stats[3].split(" ")[0])
-        except Exception, e:
+        except:
             self.warn("ping parsing exception: %s" % e)
         return avg_latency, mdev
 
@@ -487,13 +487,13 @@ class Experiment(object):
         if i > 1:
             neigh_left = "%s" % prefix.addr(i - 1)
             cmd = routecmd + [neigh_left, "dev", node.netif(0).name]
-            (status, result) = node.cmdresult(cmd)
+            (status, result) = node.cmd_output(cmd)
             if status != 0:
                 self.warn("failed to add interface route: %s" % cmd)
         if i < numnodes:
             neigh_right = "%s" % prefix.addr(i + 1)
             cmd = routecmd + [neigh_right, "dev", node.netif(0).name]
-            (status, result) = node.cmdresult(cmd)
+            (status, result) = node.cmd_output(cmd)
             if status != 0:
                 self.warn("failed to add interface route: %s" % cmd)
 
@@ -507,7 +507,7 @@ class Experiment(object):
             else:
                 gw = neigh_right
             cmd = routecmd + [addr, "via", gw]
-            (status, result) = node.cmdresult(cmd)
+            (status, result) = node.cmd_output(cmd)
             if status != 0:
                 self.warn("failed to add route: %s" % cmd)
 
@@ -635,8 +635,8 @@ class Experiment(object):
         if self.verbose:
             self.info("%s initial test ping (max 1 second)..." % \
                       self.firstnode.name)
-        (status, result) = self.firstnode.cmdresult(["ping", "-q", "-c", "1",
-                                                     "-w", "1", self.lastaddr])
+        (status, result) = self.firstnode.cmd_output(["ping", "-q", "-c", "1",
+                                                      "-w", "1", self.lastaddr])
         if status != 0:
             self.warn("initial ping from %s to %s failed! result:\n%s" % \
                       (self.firstnode.name, self.lastaddr, result))
@@ -705,11 +705,6 @@ def main():
         starttime = datetime.datetime.now()
         exp = Experiment(opt=opt, start=starttime)
         exp.info("Starting wlanemanetests.py tests %s" % starttime.ctime())
-
-        # system sanity checks here
-        emanever, emaneverstr = emane.VERSION, emane.VERSIONSTR
-        if opt.verbose:
-            exp.info("Detected EMANE version %s" % (emaneverstr,))
 
         # bridged
         exp.info("setting up bridged tests 1/2 no link effects")
@@ -851,8 +846,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

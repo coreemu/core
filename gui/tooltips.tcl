@@ -1,8 +1,3 @@
-#
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 array set left_tooltips {
 	select	"selection tool"
 	start	"start the session"

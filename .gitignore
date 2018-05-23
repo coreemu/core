@@ -4,6 +4,7 @@
 .version
 .version.date
 Makefile
+!kernel/**/Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache
@@ -13,9 +14,11 @@ config.h.in
 config.log
 config.status
 configure
-core-*.tar.gz
 debian
 stamp-h1
+
+# python build directory
+dist
 
 # intellij
 *.iml
@@ -26,3 +29,17 @@ stamp-h1
 
 # ignore test coverage files
 coverage.xml
+
+# python files
+*.egg-info
+
+# ignore package files
+*.rpm
+*.deb
+*.tar.gz
+
+# pytest cache files
+.cache
+
+# ignore swap files
+*.swp

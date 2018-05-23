@@ -1,9 +1,4 @@
 #
-# Copyright 2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-# author:	Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
 # This is a separate "addons" file because it is closely tied to Python
 # service definition for the IPsec service.
 #

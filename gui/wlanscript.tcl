@@ -1,9 +1,4 @@
 #
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # run a scengen mobility script
 proc wlanRunMobilityScript { wlan } {
     global DEFAULT_SCRIPT_MODEL

@@ -8,13 +8,11 @@ from core.enumerations import NodeTypes
 from core.netns import nodes
 from core.netns.vnet import GreTapBridge
 from core.phys import pnodes
-from core.xen import xen
 
 # legacy core nodes, that leverage linux bridges
 NODES = {
     NodeTypes.DEFAULT: nodes.CoreNode,
     NodeTypes.PHYSICAL: pnodes.PhysicalNode,
-    NodeTypes.XEN: xen.XenNode,
     NodeTypes.TBD: None,
     NodeTypes.SWITCH: nodes.SwitchNode,
     NodeTypes.HUB: nodes.HubNode,

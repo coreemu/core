@@ -37,9 +37,9 @@ class Position(object):
         """
         Returns True if the position has actually changed.
 
-        :param x: x position
-        :param y: y position
-        :param z: z position
+        :param float x: x position
+        :param float y: y position
+        :param float z: z position
         :return: True if position changed, False otherwise
         :rtype: bool
         """
@@ -113,9 +113,9 @@ class PyCoreObj(object):
         """
         Set the (x,y,z) position of the object.
 
-        :param x: x position
-        :param y: y position
-        :param z: z position
+        :param float x: x position
+        :param float y: y position
+        :param float z: z position
         :return: True if position changed, False otherwise
         :rtype: bool
         """
@@ -323,7 +323,7 @@ class PyCoreNode(PyCoreObj):
         if ifindex in self._netif:
             raise ValueError("ifindex %s already exists" % ifindex)
         self._netif[ifindex] = netif
-        # TODO: this hould have probably been set ahead, seems bad to me, check for failure and fix
+        # TODO: this should have probably been set ahead, seems bad to me, check for failure and fix
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
@@ -412,12 +412,69 @@ class PyCoreNode(PyCoreObj):
 
         return common
 
+    def check_cmd(self, args):
+        """
+        Runs shell command on node.
+
+        :param list[str]|str args: command to run
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        raise NotImplementedError
+
+    def cmd(self, args, wait=True):
+        """
+        Runs shell command on node, with option to not wait for a result.
+
+        :param list[str]|str args: command to run
+        :param bool wait: wait for command to exit, defaults to True
+        :return: exit status for command
+        :rtype: int
+        """
+        raise NotImplementedError
+
+    def cmd_output(self, args):
+        """
+        Runs shell command on node and get exit status and output.
+
+        :param list[str]|str args: command to run
+        :return: exit status and combined stdout and stderr
+        :rtype: tuple[int, str]
+        """
+        raise NotImplementedError
+
+    def termcmdstring(self, sh):
+        """
+        Create a terminal command string.
+
+        :param str sh: shell to execute command in
+        :return: str
+        """
+        raise NotImplementedError
+
 
 class PyCoreNet(PyCoreObj):
     """
     Base class for networks
     """
     linktype = LinkTypes.WIRED.value
+
+    def startup(self):
+        """
+        Each object implements its own startup method.
+
+        :return: nothing
+        """
+        raise NotImplementedError
+
+    def shutdown(self):
+        """
+        Each object implements its own shutdown method.
+
+        :return: nothing
+        """
+        raise NotImplementedError
 
     def __init__(self, session, objid, name, start=True):
         """
@@ -556,7 +613,7 @@ class PyCoreNetIf(object):
         """
         Creates a PyCoreNetIf instance.
 
-        :param node: node for interface
+        :param core.coreobj.PyCoreNode node: node for interface
         :param str name: interface name
         :param mtu: mtu value
         """
@@ -598,8 +655,8 @@ class PyCoreNetIf(object):
         """
         Attach network.
 
-        :param core.coreobj.PyCoreNet net: network to attach to
-        :return:nothing
+        :param core.coreobj.PyCoreNet net: network to attach
+        :return: nothing
         """
         if self.net:
             self.detachnet()

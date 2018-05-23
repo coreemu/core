@@ -69,7 +69,6 @@ class NodeTypes(Enum):
     """
     DEFAULT = 0
     PHYSICAL = 1
-    XEN = 2
     TBD = 3
     SWITCH = 4
     HUB = 5

@@ -77,7 +77,7 @@ class CoreDocumentWriter1(Document):
         objects from the given session.
         """
         Document.__init__(self)
-        logger.info('Exporting to NMF XML version 1.0')
+        logger.debug('Exporting to NMF XML version 1.0')
         with session._objects_lock:
             self.scenarioPlan = ScenarioPlan(self, session)
             if session.state == EventTypes.RUNTIME_STATE.value:
@@ -213,7 +213,7 @@ class ScenarioPlan(XmlElement):
         self.setAttribute('xmlns:CORE', 'coreSpecific')
         self.setAttribute('compiled', 'true')
 
-        self.all_channel_members = dict()
+        self.all_channel_members = {}
         self.last_network_id = 0
         self.addNetworks()
         self.addDevices()
@@ -795,26 +795,23 @@ class InterfaceElement(NamedXmlElement):
         """
         Add a reference to the channel that uses this interface
         """
-        try:
-            cm = self.scenPlan.all_channel_members[self.id]
-            if cm is not None:
-                ch = cm.base_element.parentNode
-                if ch is not None:
-                    net = ch.parentNode
-                    if net is not None:
-                        MemberElement(self.scenPlan,
-                                      self,
-                                      referenced_type=MembType.CHANNEL,
-                                      referenced_id=ch.getAttribute("id"),
-                                      index=int(cm.getAttribute("index")))
-                        MemberElement(self.scenPlan,
-                                      self,
-                                      referenced_type=MembType.NETWORK,
-                                      referenced_id=net.getAttribute("id"))
-        except KeyError:
-            # Not an error. This occurs when an interface belongs to a switch
-            #  or a hub within a network and the channel is yet to be defined
-            logger.exception("noted as not an error, add channel reference error")
+        # cm is None when an interface belongs to a switch
+        #  or a hub within a network and the channel is yet to be defined
+        cm = self.scenPlan.all_channel_members.get(self.id)
+        if cm is not None:
+            ch = cm.base_element.parentNode
+            if ch is not None:
+                net = ch.parentNode
+                if net is not None:
+                    MemberElement(self.scenPlan,
+                                  self,
+                                  referenced_type=MembType.CHANNEL,
+                                  referenced_id=ch.getAttribute("id"),
+                                  index=int(cm.getAttribute("index")))
+                    MemberElement(self.scenPlan,
+                                  self,
+                                  referenced_type=MembType.NETWORK,
+                                  referenced_id=net.getAttribute("id"))
 
     def addAddresses(self, interface_object):
         """
@@ -894,6 +891,10 @@ def get_endpoint(network_object, interface_object):
     ep = None
     l2devport = None
 
+    # skip if either are none
+    if not network_object or not interface_object:
+        return ep
+
     # if ifcObj references an interface of a node and is part of this network
     if interface_object.net.objid == network_object.objid and hasattr(interface_object,
                                                                       'node') and interface_object.node:
@@ -960,7 +961,7 @@ def get_endpoints(network_object):
             if ep is not None:
                 endpoints.append(ep)
         except:
-            logger.exception("error geting endpoints, was skipped before")
+            logger.debug("error geting endpoints, was skipped before")
 
     return endpoints
 

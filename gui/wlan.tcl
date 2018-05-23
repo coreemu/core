@@ -1,9 +1,4 @@
 #
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2005-2008 University of Zagreb, Croatia.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -73,7 +68,7 @@ proc findWlanNodes { peer } {
 #
 # Returns 1 if the given interface is wireless
 proc isIfcWireless { node ifc } {
-    if { $ifc == "wireless" } { 
+    if { $ifc == "wireless" } {
 	# wireless peudo-interface
 	return false
     }
@@ -107,7 +102,7 @@ proc clearWlanLinks { wlan } {
 proc updateRangeCircles { wlan range } {
     global .c zoom g_selected_model
     set c .c
-   
+
     set radius [expr {$zoom * $range/2}]
     $c delete -withtag rangecircles
     if { $radius == 0 } {
@@ -176,7 +171,7 @@ proc getWlanColor { wlan } {
 		if {[nodeType $node] != "wlan"} {
 			continue
 		}
-		if {$node == $wlan} { 
+		if {$node == $wlan} {
 			return [lindex $wlanLinkColors $colornum]
 		}
 		incr colornum
@@ -185,7 +180,7 @@ proc getWlanColor { wlan } {
 	# default color
 	return [lindex $wlanLinkColors 0]
 }
- 
+
 # move a node given incremental coordinates
 # dx dy should be adjusted for zoom
 proc moveNodeIncr { c node dx dy } {
@@ -394,7 +389,7 @@ proc wlanConfigDialogHelper { wi target apply } {
 
     # use default model/values when none configured for this node
     if { $mobmodel == "" } {
-	set mobmodel $DEFAULT_WLAN_MODEL 
+	set mobmodel $DEFAULT_WLAN_MODEL
 	set vals $DEFAULT_WLAN_MODEL_VALS
     # look for customized range/bw/jitter/delay/per
     } else {
@@ -478,7 +473,7 @@ proc wlanConfigDialogHelper { wi target apply } {
 	-side left -padx 4 -pady 4
     pack $de -side top -anchor w -padx 4 -pady 4
 
-    # jitter frame 
+    # jitter frame
     set jt $wi.wl.note.basic.jt
     ttk::frame $jt
     ttk::label $jt.label1 -anchor w -text "Jitter (us):"
@@ -496,7 +491,13 @@ proc wlanConfigDialogHelper { wi target apply } {
     $wi.wl.note add $wi.wl.note.emane -text "EMANE" -underline 0
     set txt "The EMANE emulation system provides more complex wireless radio"
     set txt "$txt emulation\n using pluggable MAC and PHY modules."
+    set txt "$txt Refer to the wiki for configuration option details"
     ttk::label $wi.wl.note.emane.tlab -text $txt
+    ttk::button $wi.wl.note.emane.wiki -text "EMANE Wiki" \
+	-image $plugin_img_edit -compound right \
+	-command \
+	"_launchBrowser https://github.com/adjacentlink/emane/wiki"
+    pack $wi.wl.note.emane.wiki -side top -anchor w -padx 4 -pady 4
     pack $wi.wl.note.emane.tlab -side top -anchor w -padx 4 -pady 4
 
     # models
@@ -527,7 +528,7 @@ proc wlanConfigDialogHelper { wi target apply } {
     }
     if { ! $have_emane_models } {
 	# show connection dialog box to indicate why there are no EMANE models
-	$mod.none configure -text "none - connection to CORE daemon required!" \
+	$mod.none configure -text "Please install EMANE" \
 		-width "45"
 	after 500 {
 	    update ;# allow dialog layout, otherwise strange results
@@ -607,16 +608,16 @@ proc wlanConfigDialogHelper { wi target apply } {
     set cmd "linkSelectedNodes $target"
     button $wi.bottom.memb -text "Choose WLAN members" \
 	-command "popupSelectNodes \"$msg\" \"\" {$cmd}"
-    
+
     # layout items
-    
+
     pack $wi.bottom.ipv4.addrl $wi.bottom.ipv4.addrv -side left
     pack $wi.bottom.ipv4 -side top -anchor w
     pack $wi.bottom.ipv6.addrl $wi.bottom.ipv6.addrv -side left
     pack $wi.bottom.ipv6 -side top -anchor w
     pack $wi.bottom.script $wi.bottom.linkall $wi.bottom.memb \
 	-side left -anchor center
-    
+
     pack $wi.bottom -side top -anchor w
 }
 

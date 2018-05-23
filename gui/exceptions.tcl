@@ -1,8 +1,3 @@
-#
-# Copyright 2011-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 array set g_exceptions {}
 global execMode
 if { $execMode == "interactive" } {

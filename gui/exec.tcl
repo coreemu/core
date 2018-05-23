@@ -1,9 +1,4 @@
 #
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2004-2008 University of Zagreb, Croatia.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -38,10 +33,10 @@
 # SYNOPSIS
 #   set result [nexec $args]
 # FUNCTION
-#   Executes the sting given in args variable. The sting is not executed 
+#   Executes the sting given in args variable. The sting is not executed
 #   if IMUNES is running in editor only mode. Execution of a string can
 #   be local or remote. If socket can not be opened in try of a remote
-#   execution, mode is switched to editor only mode. 
+#   execution, mode is switched to editor only mode.
 # INPUTS
 #   * args -- the string that should be executed localy or remotely.
 # RESULT
@@ -80,7 +75,7 @@ proc acquireOperModeLock { mode } {
 	if { $mode == "exec" } {
 	    set choice [tk_messageBox -type yesno -default no -icon warning \
 			-message "You have selected to start the session while the previous one is still shutting down. Are you sure you want to interrupt the shutdown? (not recommended)"]
-	    if { $choice == "no" } { 
+	    if { $choice == "no" } {
 		set activetool select
 		return; # return and allow previous setOperMode to finish...
 	    }
@@ -88,7 +83,7 @@ proc acquireOperModeLock { mode } {
 	} elseif { $setOperMode_lock } { ;# mode == "edit"
 	    set choice [tk_messageBox -type yesno -default no -icon warning \
 			-message "You are trying to stop the session while it is still starting. Are you sure you want to interrupt the startup? (not recommeded)"]
-	    if { $choice == "no" } { 
+	    if { $choice == "no" } {
 		set activetool select
 		return; # return and allow previous setOperMode to finish...
 	    }
@@ -155,7 +150,7 @@ proc drawToolbar { mode } {
 	    # add buttons when in edit mode
 	    set imgf "$CORE_DATA_DIR/icons/tiny/$b.gif"
 	    set image [image create photo -file $imgf]
-	    catch { 
+	    catch {
 	    radiobutton .left.$b -indicatoron 0 \
 		-variable activetool -value $b -selectcolor $defSelectionColor \
 		-width 32 -height 32 -image $image \
@@ -163,7 +158,7 @@ proc drawToolbar { mode } {
 	        leftToolTip $b .left
 	    	pack .left.$b -side top
 	    }
-	}    
+	}
     }
     # popup toolbar buttons have submenus
     set buttons {routers hubs bgobjs}
@@ -192,7 +187,7 @@ proc drawToolbar { mode } {
 	    			-borderwidth 1 -tearoff 0]
 	    # create the child menutbuttons
 	    drawToolbarSubmenu $b $menubuttons
-	    # tooltips for parent and submenu items 
+	    # tooltips for parent and submenu items
 	    leftToolTip $b .left
 	    bind $buttonmenu <<MenuSelect>> {leftToolTipSubMenu %W}
  	    bind $buttonmenu <Leave> {
@@ -206,7 +201,7 @@ proc drawToolbar { mode } {
 	}
     }
 
-    # 
+    #
     # Exec mode button bar
     #
     if { "$mode" == "edit" } {
@@ -267,7 +262,7 @@ proc drawToolbarSubmenu { b menubuttons } {
 	$buttonmenu add command -image $img -columnbreak 1  \
 		-command "popupMenuChoose $b $menubutton $imgf"
     }
-    # add an edit button to the end of the row 
+    # add an edit button to the end of the row
     if { $b == "routers" } {
 	set imgf "$CORE_DATA_DIR/icons/normal/document-properties.gif"
 	set img [createImageButton $imgf 0]
@@ -279,7 +274,7 @@ proc drawToolbarSubmenu { b menubuttons } {
 proc setSessionStartStopMenu { mode } {
     if { $mode == "exec" } {
 	catch   {.menubar.session entryconfigure "Start" \
-		-label "Stop" -command "startStopButton edit"} 
+		-label "Stop" -command "startStopButton edit"}
     } else {
 	catch  {.menubar.session entryconfigure "Stop" \
 	   	-label "Start" -command "startStopButton exec"}
@@ -339,8 +334,8 @@ proc startStopButton { mode } {
 #   Sets imunes operating mode to the value of the parameter mode.
 #   The mode can be set only to edit or exec.
 #   When changing the mode to exec all the emulation interfaces are
-#   checked (if they are nonexistent the message is displayed, and 
-#   mode is not changed), all the required buttons are disabled 
+#   checked (if they are nonexistent the message is displayed, and
+#   mode is not changed), all the required buttons are disabled
 #  (except the simulation/Terminate button, that is enabled) and
 #   procedure deployCfg is called.
 #   When changing the mode to edit, all required buttons are enabled
@@ -387,7 +382,7 @@ proc setOperMode { mode { type "" } } {
 
     #
     # Start/stop the emulation
-    # 
+    #
     ### start button is pressed
     if { "$mode" == "exec" } {
 	rearrange_off
@@ -395,11 +390,11 @@ proc setOperMode { mode { type "" } } {
 	resetAllNodeCoords save
 	clearExceptions "" ""
 	throwCEL true
-	    
-	# Bind left mouse click to displaying the CPU usage in 
+
+	# Bind left mouse click to displaying the CPU usage in
 	# a graph format
 	bind .bottom.cpu_load <1> {manageCPUwindow %X %Y 1}
-    
+
 	monitor_loop
         set plugin [lindex [getEmulPlugin "*"] 0]
         set emul_sock [pluginConnect $plugin connect false]
@@ -422,7 +417,7 @@ proc setOperMode { mode { type "" } } {
 	clearWlanLinks ""
 	widgets_stop
 	set oper_mode edit
-	    
+
 	# Bind left mouse click to clearing the CPU graph
 	bind .bottom.cpu_load <1> {manageCPUwindow %X %Y 0}
 	manageCPUwindow %X %Y 0
@@ -438,7 +433,7 @@ proc setOperMode { mode { type "" } } {
 # SYNOPSIS
 #   statline $line
 # FUNCTION
-#   Sets the string of the status line. If the execution mode is 
+#   Sets the string of the status line. If the execution mode is
 #   set to batch the line is just printed on the standard output.
 # INPUTS
 #   * line -- line to be displayed
@@ -475,15 +470,15 @@ proc getNextMac {} {
 #   monitor_loop
 # FUNCTION
 #   Calculates the usage of cpu, mbuffers and mbuf clusters.
-#   The results are displayed in status line and updated 
+#   The results are displayed in status line and updated
 #   every two seconds.
 #****
 proc monitor_loop {} {
     global oper_mode systype
     global server_cpuusage
-    global exec_servers 
+    global exec_servers
 
-	
+
     if {$oper_mode != "exec"} {
 	.bottom.cpu_load config -text ""
 	.bottom.mbuf config -text ""
@@ -492,7 +487,7 @@ proc monitor_loop {} {
 
     if { [lindex $systype 0] == "Linux" } {
 	set cpuusage [getCPUUsage]
-	    
+
 	#TODO: get the cpu usage on all the assigned server
 	# store usage history for each server stored in an array list
 	set assigned_servers [getAssignedRemoteServers]
@@ -509,22 +504,22 @@ proc monitor_loop {} {
 		# TODO: receive CPU usage from other servers
 		set cpuusageforserver 0
 	    }
-		    
+
 	    # append the latest cpu value to the end of list and
 	    # only keep and display the last 20 values for each server
-	    set server_cpuusage($ip) [lappend server_cpuusage($ip) $cpuusageforserver]		
+	    set server_cpuusage($ip) [lappend server_cpuusage($ip) $cpuusageforserver]
 	    if { [llength $server_cpuusage($ip)] > 20 } {
 		set server_cpuusage($ip) [lreplace $server_cpuusage($ip) 0 0]
-	    }		
+	    }
 	}
-	    
-	    
+
+
 	#plot the usage data if cpu windows already opened
 	# for all servers
 	if { [winfo exists .cpu]} {
 	    plotCPUusage
 	}
-    	    
+
 	set cputxt "CPU [lindex $cpuusage 0]% ("
 	set cpuusage [lreplace $cpuusage 0 0]
 	for { set n 0 } { $n < [llength $cpuusage] } { incr n } {
@@ -544,13 +539,8 @@ proc monitor_loop {} {
 	return
     }
 
-    if { $systype == "FreeBSD 4.11-RELEASE" } {
-    	set defaultname "default"
-	set cpun 3
-    } else {
-        set defaultname "."
+    set defaultname "."
 	set cpun 4
-    }
 
     # CPU usage from `vimage -l`
     set vimagetext [nexec localnode vimage -l $defaultname | xargs]
@@ -578,7 +568,7 @@ proc monitor_loop {} {
 # SYNOPSIS
 #   execSetLinkParams $eid $link
 # FUNCTION
-#   Sets the link parameters during execution. 
+#   Sets the link parameters during execution.
 #   All the parameters are set at the same time.
 # INPUTS
 #   eid -- experiment id
@@ -649,7 +639,7 @@ proc createImageButton { imgf style } {
 	}
     }
     return $img
-    
+
 }
 
 # Boeing: status bar graph
@@ -689,7 +679,7 @@ proc statgraph { cmd n } {
 	}
     }
 }
-    
+
 proc popupConnectMessage { dst } {
     global CORE_DATA_DIR execMode
 
@@ -751,21 +741,21 @@ proc manageCPUwindow {xpos ypos start} {
 
     global exec_servers
     global server_cpuusage
-	
+
     if {$start == 1} {
-	if { ![winfo exists .cpu]} {    
+	if { ![winfo exists .cpu]} {
             toplevel .cpu
 	    wm geometry .cpu 200x210+$xpos+$ypos
 	    wm resizable .cpu 0 0
-	    wm title .cpu "CPU Usage"				
-	    canvas .cpu.graph -width 200 -height 210		
+	    wm title .cpu "CPU Usage"
+	    canvas .cpu.graph -width 200 -height 210
 	    pack .cpu.graph
-	}	    	    	    
+	}
     } else {
 	if { [winfo exists .cpu]} {
 	    destroy .cpu
 	    set assigned_servers [getAssignedRemoteServers]
-		
+
 	    for {set i 0} {$i <= [llength $assigned_servers]} {incr i} {
 		if {$i == [llength $assigned_servers]} {
 		    set ip [getMyIP]
@@ -774,7 +764,7 @@ proc manageCPUwindow {xpos ypos start} {
 		    set srv [array get exec_servers $server]
 		    if { $srv == "" } { continue }
 		    set ip [lindex $srv 0]
-		}	
+		}
 		set server_cpuusage($ip) [lreplace $server_cpuusage($ip) 0 end]
 	    }
 	}
@@ -800,24 +790,24 @@ proc plotCPUusage { } {
     global cpu_palettes
     global exec_servers
     global server_cpuusage
-		
-    .cpu.graph delete "all"	
+
+    .cpu.graph delete "all"
     .cpu.graph create line 0 100 200 100 -width 2
     .cpu.graph create line 0 80 200 80 -width 1
     .cpu.graph create line 0 60 200 60 -width 1
     .cpu.graph create line 0 40 200 40 -width 1
     .cpu.graph create line 0 20 200 20 -width 1
     .cpu.graph create line 0 0 200 0 -width 1
-	
+
     .cpu.graph create line 40 0 40 100 -width 1
     .cpu.graph create line 80 0 80 100 -width 1
     .cpu.graph create line 120 0 120 100 -width 1
     .cpu.graph create line 160 0 160 100 -width 1
     .cpu.graph create line 200 0 200 100 -width 1
 
-    # for each server create a plot of cpu usage								
-    set assigned_servers [getAssignedRemoteServers]	
-    for {set i 0} {$i <= [llength $assigned_servers]} {incr i} {	    
+    # for each server create a plot of cpu usage
+    set assigned_servers [getAssignedRemoteServers]
+    for {set i 0} {$i <= [llength $assigned_servers]} {incr i} {
 	if {$i == [llength $assigned_servers]} {
 	    set ip [getMyIP]
 	} else {
@@ -826,9 +816,9 @@ proc plotCPUusage { } {
             if { $srv == "" } { continue }
             set ip [lindex $srv 0]
 	}
-		
+
 	#need to add multiple cpuusgaehistory (array)
-	for { set n 1 } { $n < [llength $server_cpuusage($ip)] } { incr n } {	    		    
+	for { set n 1 } { $n < [llength $server_cpuusage($ip)] } { incr n } {
 	    set prevn [expr {$n - 1}]
 	    set x1 [expr {$prevn * 10}]
 	    set y1 [expr {100 - [lindex $server_cpuusage($ip) $prevn]}]
@@ -840,15 +830,15 @@ proc plotCPUusage { } {
 		    .cpu.graph create line $x1 $y1 $x2 $y2 -fill [lindex $cpu_palettes end]
 
 		}
-	    #debug    
-	    #puts " cpu $x1 $y1 $x2 $y2"		
+	    #debug
+	    #puts " cpu $x1 $y1 $x2 $y2"
 	}
-				
+
 	#for each server create a legend (limited to 8)
 	set legendtext $ip
 	append legendtext " " [lindex $server_cpuusage($ip) end] "%"
-		
-	set legendy [expr {($i * 10) + 120}] 
+
+	set legendy [expr {($i * 10) + 120}]
 	set legendx 10
 	if {$i < [llength $cpu_palettes]} {
 	    .cpu.graph create rectangle $legendx $legendy \
@@ -864,9 +854,9 @@ proc plotCPUusage { } {
 	    .cpu.graph create text [expr {$legendx + 15}] [expr {$legendy + 4}]\
 		-text $legendtext -fill [lindex $cpu_palettes end] \
 		-anchor w -justify left
-		
+
 	}
-	    
+
     }
 }
 

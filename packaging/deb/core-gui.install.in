@@ -1,9 +1,0 @@
-#! /usr/bin/dh-exec
-@BINDIR@/core-gui
-@CORE_LIB_DIR@
-@CORE_DATA_DIR@/icons
-@CORE_DATA_DIR@/examples/configs
-@datarootdir@/pixmaps
-@datarootdir@/applications
-# ATmandirAT is expanding to ${datarootdir}/man
-@datarootdir@/man/man1/core-gui.1

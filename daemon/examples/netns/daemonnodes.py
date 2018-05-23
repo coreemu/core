@@ -25,7 +25,7 @@ from core.enumerations import LinkTlvs
 from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.netns import nodes
 
 # declare classes for use with Broker
@@ -105,7 +105,7 @@ def main():
     start = datetime.datetime.now()
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
-    session = Session(1, persistent=True)
+    session = Session(1)
     if "server" in globals():
         server.addsession(session)
 
@@ -125,14 +125,13 @@ def main():
 
     # Set the local session id to match the port.
     # Not necessary but seems neater.
-    # session.sessionid = session.broker.getserver("localhost")[2].getsockname()[1]
     session.broker.setupserver(daemon)
 
     # We do not want the recvloop running as we will deal ourselves
     session.broker.dorecvloop = False
 
     # Change to configuration state on both machines
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
     tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
@@ -187,8 +186,4 @@ def main():
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

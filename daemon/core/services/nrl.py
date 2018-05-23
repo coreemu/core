@@ -13,7 +13,7 @@ class NrlService(CoreService):
     Parent class for NRL services. Defines properties and methods
     common to NRL's routing daemons.
     """""
-    _name = "Protean"
+    _name = None
     _group = "ProtoSvc"
     _depends = ()
     _dirs = ()
@@ -57,7 +57,7 @@ class MgenSinkService(NrlService):
     def generateconfig(cls, node, filename, services):
         cfg = "0.0 LISTEN UDP 5000\n"
         for ifc in node.netifs():
-            name = utils.sysctldevname(ifc.name)
+            name = utils.sysctl_devname(ifc.name)
             cfg += "0.0 Join 224.225.1.2 INTERFACE %s\n" % name
         return cfg
 
@@ -126,7 +126,7 @@ class NrlSmf(NrlService):
         servicenames = map(lambda x: x._name, services)
         netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
         if len(netifs) == 0:
-            return ()
+            return ""
 
         if "arouted" in servicenames:
             comments += "# arouted service is enabled\n"
@@ -298,8 +298,7 @@ class OlsrOrg(NrlService):
 #######################################
 ### Linux specific OLSRd extensions ###
 #######################################
-# these parameters are only working on linux at the moment, but might become
-# useful on BSD in the future
+# these parameters are only working on linux at the moment
 
 # SrcIpRoutes tells OLSRd to set the Src flag of host routes to the originator-ip
 # of the node. In addition to this an additional localhost device is created
@@ -516,7 +515,7 @@ LinkQualityFishEye  0
 # - /lib, followed by /usr/lib
 #
 # the examples in this list are for linux, so check if the plugin is
-# available if you use windows/BSD.
+# available if you use windows.
 # each plugin should have a README file in it's lib subfolder
 
 # LoadPlugin "olsrd_txtinfo.dll"
@@ -607,7 +606,7 @@ class MgenActor(NrlService):
         servicenames = map(lambda x: x._name, services)
         netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
         if len(netifs) == 0:
-            return ()
+            return ""
 
         cfg += comments + cmd + " < /dev/null > /dev/null 2>&1 &\n\n"
         return cfg

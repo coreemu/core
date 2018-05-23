@@ -6,7 +6,7 @@ import threading
 
 from core.api import coreapi, dataconversion
 from core.api.coreapi import CoreExecuteTlv
-from core.enumerations import CORE_API_PORT
+from core.enumerations import CORE_API_PORT, NodeTypes
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
 from core.enumerations import ExecuteTlvs
@@ -15,7 +15,6 @@ from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
 from core.misc import ipaddress
-from core.netns.nodes import SwitchNode
 
 
 def command_message(node, command):
@@ -91,7 +90,7 @@ def run_cmd(node, exec_cmd):
         message_data = server.sock.recv(message_length)
 
         # If we get the right response return the results
-        print "received response message: %s" % MessageTypes(message_type)
+        print "received response message: %s" % message_type
         if message_type == MessageTypes.EXECUTE.value:
             message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
             result = message.get_tlv(ExecuteTlvs.RESULT.value)
@@ -102,11 +101,12 @@ def run_cmd(node, exec_cmd):
 
 
 class TestGui:
-    def test_broker(self, core, cored):
+    def test_broker(self, session, cored):
         """
         Test session broker creation.
 
-        :param conftest.Core core: core fixture to test with
+        :param core.emulator.coreemu.EmuSession session: session for test
+        :param cored: cored daemon server to test with
         """
 
         # set core daemon to run in the background
@@ -119,54 +119,52 @@ class TestGui:
         daemon = "localhost"
 
         # add server
-        core.session.broker.addserver(daemon, "127.0.0.1", CORE_API_PORT)
+        session.broker.addserver(daemon, "127.0.0.1", CORE_API_PORT)
 
         # setup server
-        core.session.broker.setupserver(daemon)
+        session.broker.setupserver(daemon)
 
         # do not want the recvloop running as we will deal ourselves
-        core.session.broker.dorecvloop = False
+        session.broker.dorecvloop = False
 
         # have broker handle a configuration state change
-        core.session.set_state(EventTypes.CONFIGURATION_STATE.value)
+        session.set_state(EventTypes.CONFIGURATION_STATE)
         event_message = state_message(EventTypes.CONFIGURATION_STATE)
-        core.session.broker.handlerawmsg(event_message)
+        session.broker.handlerawmsg(event_message)
 
         # create a switch node
-        switch = core.session.add_object(cls=SwitchNode, name="switch", start=False)
+        switch = session.add_node(_type=NodeTypes.SWITCH)
         switch.setposition(x=80, y=50)
         switch.server = daemon
 
         # retrieve switch data representation, create a switch message for broker to handle
         switch_data = switch.data(MessageFlags.ADD.value)
         switch_message = dataconversion.convert_node(switch_data)
-        core.session.broker.handlerawmsg(switch_message)
+        session.broker.handlerawmsg(switch_message)
 
         # create node one
-        core.create_node("n1")
-        node_one = core.get_node("n1")
+        node_one = session.add_node()
         node_one.server = daemon
 
         # create node two
-        core.create_node("n2")
-        node_two = core.get_node("n2")
+        node_two = session.add_node()
         node_two.server = daemon
 
         # create node messages for the broker to handle
         for node in [node_one, node_two]:
             node_data = node.data(MessageFlags.ADD.value)
             node_message = dataconversion.convert_node(node_data)
-            core.session.broker.handlerawmsg(node_message)
+            session.broker.handlerawmsg(node_message)
 
         # create links to switch from nodes for broker to handle
         for index, node in enumerate([node_one, node_two], start=1):
             ip4_address = prefix.addr(index)
             link_message = switch_link_message(switch, node, ip4_address, prefix.prefixlen)
-            core.session.broker.handlerawmsg(link_message)
+            session.broker.handlerawmsg(link_message)
 
         # change session to instantiation state
         event_message = state_message(EventTypes.INSTANTIATION_STATE)
-        core.session.broker.handlerawmsg(event_message)
+        session.broker.handlerawmsg(event_message)
 
         # Get the ip or last node and ping it from the first
         output, status = run_cmd(node_one, "ip -4 -o addr show dev eth0")

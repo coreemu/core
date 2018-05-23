@@ -1,9 +1,4 @@
 #
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2004-2008 University of Zagreb, Croatia.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -35,11 +30,11 @@
 # NAME
 #  linkcfg.tcl -- file used for manipultaion with links in IMUNES
 # FUNCTION
-#  This module is used to define all the actions used for configuring 
-#  links in IMUNES. 
+#  This module is used to define all the actions used for configuring
+#  links in IMUNES.
 #
 # NOTES
-# 
+#
 # linkPeers { link_id }
 #	Returns node_ids of link endpoints
 #
@@ -53,7 +48,7 @@
 #	... in bits per second
 #
 # getLinkBandwidthString { link_id }
-#	... as string 
+#	... as string
 #
 # getLinkDelay { link_id }
 #	... in microseconds
@@ -83,7 +78,7 @@
 # INPUTS
 #   * link_id -- link id
 # RESULT
-#   * link_peers -- returns nodes_ids of a link endpoints 
+#   * link_peers -- returns nodes_ids of a link endpoints
 #     in a list {node1_id node2_id}
 #****
 
@@ -100,14 +95,14 @@ proc linkPeers { link } {
 # SYNOPSIS
 #   set link_id [linkByPeers $node1_id $node2_id]
 # FUNCTION
-#   Returns link_id whose peers are node1 and node2. 
+#   Returns link_id whose peers are node1 and node2.
 #   The order of input nodes is irrelevant.
 # INPUTS
 #   * node1_id -- node id of the first node
 #   * node2_id -- node id of the second node
 # RESULT
-#   * link_id -- returns id of a link connecting endpoints 
-#     node1_id node2_id. 
+#   * link_id -- returns id of a link connecting endpoints
+#     node1_id node2_id.
 #****
 
 proc linkByPeers { node1 node2 } {
@@ -144,7 +139,7 @@ proc linkByPeersMirror { node1 node2 } {
 #   removeLink $link_id
 # FUNCTION
 #   Removes the link and related entries in peering node's configs.
-#   Updates the default route for peer nodes. 
+#   Updates the default route for peer nodes.
 # INPUTS
 #   * link_id -- link id
 #****
@@ -199,7 +194,7 @@ proc getLinkBandwidth { link {dir "down"} } {
 # INPUTS
 #   * link_id -- link id
 # RESULT
-#   * bandwidth_str -- The value of link bandwidth formated in a sting 
+#   * bandwidth_str -- The value of link bandwidth formated in a sting
 #     containing a measure unit.
 #****
 
@@ -332,7 +327,7 @@ proc getLinkDelay { link {dir "down"} } {
 # INPUTS
 #   * link_id -- link id
 # RESULT
-#   * delay -- The value of link delay formated in a string 
+#   * delay -- The value of link delay formated in a string
 #     containing a measure unit.
 #****
 
@@ -437,7 +432,7 @@ proc getLinkBERString { link } {
     if { $ber != "" } {
 	set berstr "$berstr$ber%"
     }
-    if { $berup != "" } { 
+    if { $berup != "" } {
 	set berstr "$berstr / $berup%"
     }
     return $berstr
@@ -472,7 +467,7 @@ proc setLinkBER { link value } {
 
 #****f* linkcfg.tcl/getLinkDup
 # NAME
-#   getLinkDup -- get link packet duplicate value 
+#   getLinkDup -- get link packet duplicate value
 # SYNOPSIS
 #   set duplicate [getLinkDup $link_id]
 # FUNCTION
@@ -508,7 +503,7 @@ proc getLinkDupString { link } {
 
 #****f* linkcfg.tcl/setLinkDup
 # NAME
-#   setLinkDup -- set link packet duplicate value 
+#   setLinkDup -- set link packet duplicate value
 # SYNOPSIS
 #   setLinkDup $link_id $value
 # FUNCTION
@@ -547,7 +542,7 @@ proc isLinkUni { link } {
 
 #****f* linkcfg.tcl/getLinkMirror
 # NAME
-#   getLinkMirror -- get link's mirror link 
+#   getLinkMirror -- get link's mirror link
 # SYNOPSIS
 #   set mirror_link_id [getLinkMirror $link_id]
 # FUNCTION
@@ -569,7 +564,7 @@ proc getLinkMirror { link } {
 
 #****f* linkcfg.tcl/setLinkMirror
 # NAME
-#   setLinkMirror -- set link's mirror link 
+#   setLinkMirror -- set link's mirror link
 # SYNOPSIS
 #   setLinkMirror $link_id $mirror_link_id
 # FUNCTION
@@ -599,7 +594,7 @@ proc setLinkMirror { link value } {
 # SYNOPSIS
 #   set nodes [splitLink  $link_id $nodetype]
 # FUNCTION
-#   Splits the link in two parts. Each part of the split link is one 
+#   Splits the link in two parts. Each part of the split link is one
 #   pseudo link.
 # INPUTS
 #   * link_id -- link id
@@ -674,7 +669,7 @@ proc splitLink { link nodetype } {
 # SYNOPSIS
 #   set new_link_id [mergeLink  $link_id]
 # FUNCTION
-#   Rebuilts a link from two pseudo link. 
+#   Rebuilts a link from two pseudo link.
 # INPUTS
 #   * link_id -- pseudo link id
 # RESULT
@@ -754,11 +749,11 @@ proc newLink { lnode1 lnode2 } {
     global systype
     if { ([nodeType $lnode1] == "lanswitch" ||[nodeType $lnode1] == "OVS") && \
 	[nodeType $lnode2] != "router" && \
-	([nodeType $lnode2] != "lanswitch" || [nodeType $lnode2] != "OVS") } { 
+	([nodeType $lnode2] != "lanswitch" || [nodeType $lnode2] != "OVS") } {
 		set regular no }
     if { ([nodeType $lnode2] == "lanswitch" || [nodeType $lnode2] == "OVS") && \
 	[nodeType $lnode1] != "router" && \
-	([nodeType $lnode1] != "lanswitch" || [nodeType $lnode1] != "OVS" )} { 
+	([nodeType $lnode1] != "lanswitch" || [nodeType $lnode1] != "OVS" )} {
 		#Khaled: puts "connecting '$lnode1' (type: '[nodeType $lnode1]') to '$lnode2' (type: '[nodeType $lnode2]') "
 		set regular no }
     if { [nodeType $lnode1] == "hub" && \
@@ -839,15 +834,11 @@ proc newLink { lnode1 lnode2 } {
 	if { [string range $model 0 6] == "coreapi" } {
 	    set delay 0; # delay controlled by wireless module
 	} elseif {$delay != ""} {
-	    if { [lindex $systype 0] == "FreeBSD" } {
-		lappend $link "delay [expr $delay/2]"
-	    } else {
 		lappend $link "delay $delay"
-	    }
-	} 
+	}
 	# Exclude OVS from network layer nodes IP address asignments
 	if { ([[typemodel $lnode2].layer] == "NETWORK") && ([nodeType $lnode2] != "OVS")  } {
-	    
+
 	    #Khaled: puts "Assigning '$lnode2' (type: '[nodeType $lnode2]') an automatic IP address"
 
 	    if { $ipv4_addr2 == "" } { autoIPv4addr $lnode2 $ifname2 }
@@ -872,7 +863,7 @@ proc newLink { lnode1 lnode2 } {
     if { [nodeType $lnode2] != "pseudo" &&
 	 [nodeType $lnode1] != "wlan" &&
 	([[typemodel $lnode1].layer] == "NETWORK" && [nodeType $lnode1] != "OVS")  } {
-	
+
 	if { $ipv4_addr1 == "" && $do_auto_addressing } {
             autoIPv4addr $lnode1 $ifname1
 	}
@@ -884,16 +875,16 @@ proc newLink { lnode1 lnode2 } {
     if { [nodeType $lnode1] != "pseudo" &&
 	 [nodeType $lnode1] != "wlan" &&
 	([[typemodel $lnode2].layer] == "NETWORK" && [nodeType $lnode2] != "OVS")  } {
-	
+
 	if { $ipv4_addr2 == "" && $do_auto_addressing } {
-	    autoIPv4addr $lnode2 $ifname2 
+	    autoIPv4addr $lnode2 $ifname2
 	}
 	if { $ipv6_addr2 == "" && $do_auto_addressing } {
 	    autoIPv6addr $lnode2 $ifname2
 	}
     }
 
-    # tunnel address based on its name 
+    # tunnel address based on its name
     if { [nodeType $lnode1] == "tunnel" } {
 	set ipaddr "[getNodeName $lnode1]/24"
 	setIfcIPv4addr $lnode1 e0 $ipaddr
@@ -914,7 +905,7 @@ proc newLink { lnode1 lnode2 } {
 # FUNCTION
 #   Returns the link id of the link connecting the node's interface
 # INPUTS
-#   * node_id -- node id 
+#   * node_id -- node id
 #   * ifc -- interface
 # RESULT
 #   * link_id -- link id.
@@ -1021,7 +1012,7 @@ proc updateLinkGuiAttr { link attr } {
 	    }
 	    color {
 		setLinkColor $link $value
-		.c itemconfigure "link && $link" -fill [getLinkColor $link] 
+		.c itemconfigure "link && $link" -fill [getLinkColor $link]
 	    }
 	    dash {
 		.c itemconfigure "link && $link" -dash $value

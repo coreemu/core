@@ -47,7 +47,7 @@ Here are the basic elements of a CORE Python script:
   node1.newnetif(hub1, ["10.0.0.1/24"])
   node2.newnetif(hub1, ["10.0.0.2/24"])
 
-  node1.icmd(["ping", "-c", "5", "10.0.0.2"])
+  node1.vnodeclient.icmd(["ping", "-c", "5", "10.0.0.2"])
   session.shutdown()
 
 
@@ -64,18 +64,6 @@ The CORE Python modules are documented with comments in the code. From an
 interactive Python shell, you can retrieve online help about the various
 classes and methods; for example *help(nodes.CoreNode)* or
 *help(Session)*.
-
-An interactive development environment (IDE) is available for browsing
-the CORE source, the
-`Eric Python IDE <http://eric-ide.python-projects.org/index.html>`_.
-CORE has a project file that can be opened by Eric, in the source under
-:file:`core/daemon/CORE.e4p`.
-This IDE
-has a class browser for viewing a tree of classes and methods. It features
-syntax highlighting, auto-completion, indenting, and more. One feature that
-is helpful with learning the CORE Python modules is the ability to generate
-class diagrams; right-click on a class, choose *Diagrams*, and
-*Class Diagram*.
 
 .. index:: daemon versus script
 .. index:: script versus daemon

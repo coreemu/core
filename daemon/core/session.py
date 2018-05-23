@@ -3,11 +3,9 @@ session.py: defines the Session class used by the core-daemon daemon program
 that manages a CORE session.
 """
 
-import atexit
 import os
 import pprint
 import random
-import shlex
 import shutil
 import subprocess
 import tempfile
@@ -45,58 +43,7 @@ from core.mobility import Ns2ScriptedMobility
 from core.netns import nodes
 from core.sdt import Sdt
 from core.service import CoreServices
-from core.xen.xenconfig import XenConfigManager
 from core.xml.xmlsession import save_session_xml
-
-
-class SessionManager(object):
-    """
-    Manages currently known sessions.
-    """
-    sessions = set()
-    session_lock = threading.Lock()
-
-    @classmethod
-    def add(cls, session):
-        """
-        Add a session to the manager.
-
-        :param Session session: session to add
-        :return: nothing
-        """
-        with cls.session_lock:
-            logger.info("adding session to manager: %s", session.session_id)
-            cls.sessions.add(session)
-
-    @classmethod
-    def remove(cls, session):
-        """
-        Remove session from the manager.
-
-        :param Session session: session to remove
-        :return: nothing
-        """
-        with cls.session_lock:
-            logger.info("removing session from manager: %s", session.session_id)
-            if session in cls.sessions:
-                cls.sessions.remove(session)
-            else:
-                logger.info("session was already removed: %s", session.session_id)
-
-    @classmethod
-    def on_exit(cls):
-        """
-        Method used to shutdown all currently known sessions, in case of unexpected exit.
-
-        :return: nothing
-        """
-        logger.info("caught program exit, shutting down all known sessions")
-        while cls.sessions:
-            with cls.session_lock:
-                session = cls.sessions.pop()
-            logger.error("WARNING: automatically shutting down non-persistent session %s - %s",
-                         session.session_id, session.name)
-            session.shutdown()
 
 
 class Session(object):
@@ -104,13 +51,12 @@ class Session(object):
     CORE session manager.
     """
 
-    def __init__(self, session_id, config=None, persistent=False, mkdir=True):
+    def __init__(self, session_id, config=None, mkdir=True):
         """
         Create a Session instance.
 
         :param int session_id: session id
         :param dict config: session configuration
-        :param bool persistent: flag is session is considered persistent
         :param bool mkdir: flag to determine if a directory should be made
         """
         self.session_id = session_id
@@ -129,7 +75,6 @@ class Session(object):
         self.file_name = None
         self.thumbnail = None
         self.user = None
-        self._state_time = time.time()
         self.event_loop = EventLoop()
 
         # dict of objects: all nodes and nets
@@ -142,15 +87,13 @@ class Session(object):
 
         # TODO: should the default state be definition?
         self.state = EventTypes.NONE.value
+        self._state_time = time.time()
         self._state_file = os.path.join(self.session_dir, "state")
 
         self._hooks = {}
         self._state_hooks = {}
 
         self.add_state_hook(state=EventTypes.RUNTIME_STATE.value, hook=self.runtime_state_hook)
-
-        if not persistent:
-            SessionManager.add(self)
 
         self.master = False
 
@@ -185,10 +128,6 @@ class Session(object):
         # setup emane
         self.emane = EmaneManager(session=self)
         self.add_config_object(EmaneManager.name, EmaneManager.config_type, self.emane.configure)
-
-        # setup xen
-        self.xen = XenConfigManager(session=self)
-        self.add_config_object(XenConfigManager.name, XenConfigManager.config_type, self.xen.configure)
 
         # setup sdt
         self.sdt = Sdt(session=self)
@@ -227,9 +166,6 @@ class Session(object):
         # call session shutdown handlers
         for handler in self.shutdown_handlers:
             handler(self)
-
-        # remove this session from the manager
-        SessionManager.remove(self)
 
     def broadcast_event(self, event_data):
         """
@@ -301,27 +237,27 @@ class Session(object):
         """
         Set the session's current state.
 
-        :param int state: state to set to
+        :param core.enumerations.EventTypes state: state to set to
         :param send_event: if true, generate core API event messages
         :return: nothing
         """
-        state_name = coreapi.state_name(state)
+        state_value = state.value
+        state_name = state.name
 
-        if self.state == state:
-            logger.info("session is already in state: %s, skipping change", state_name)
+        if self.state == state_value:
+            logger.info("session(%s) is already in state: %s, skipping change", self.session_id, state_name)
             return
 
-        self.state = state
+        self.state = state_value
         self._state_time = time.time()
-        logger.info("changing session %s to state %s(%s) at %s",
-                    self.session_id, state, state_name, self._state_time)
+        logger.info("changing session(%s) to state %s", self.session_id, state_name)
 
-        self.write_state(state)
-        self.run_hooks(state)
-        self.run_state_hooks(state)
+        self.write_state(state_value)
+        self.run_hooks(state_value)
+        self.run_state_hooks(state_value)
 
         if send_event:
-            event_data = EventData(event_type=state, time="%s" % time.time())
+            event_data = EventData(event_type=state_value, time="%s" % time.time())
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -424,11 +360,11 @@ class Session(object):
 
         # execute hook file
         try:
-            subprocess.check_call(["/bin/sh", file_name], stdin=open(os.devnull, 'r'),
-                                  stdout=stdout, stderr=stderr, close_fds=True,
-                                  cwd=self.session_dir, env=self.get_environment())
-        except subprocess.CalledProcessError:
-            logger.exception("error running hook '%s'", file_name)
+            args = ["/bin/sh", file_name]
+            subprocess.check_call(args, stdout=stdout, stderr=stderr,
+                                  close_fds=True, cwd=self.session_dir, env=self.get_environment())
+        except (OSError, subprocess.CalledProcessError):
+            logger.exception("error running hook: %s", file_name)
 
     def run_state_hooks(self, state):
         """
@@ -515,17 +451,17 @@ class Session(object):
         environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
         try:
             if os.path.isfile(environment_config_file):
-                utils.readfileintodict(environment_config_file, env)
+                utils.load_config(environment_config_file, env)
         except IOError:
-            logger.exception("error reading environment configuration file: %s", environment_config_file)
+            logger.warn("environment configuration file does not exist: %s", environment_config_file)
 
         # attempt to read and add user environment file
         if self.user:
             environment_user_file = os.path.join("/home", self.user, ".core", "environment")
             try:
-                utils.readfileintodict(environment_user_file, env)
+                utils.load_config(environment_user_file, env)
             except IOError:
-                logger.exception("error reading user core environment settings file: %s", environment_user_file)
+                logger.debug("user core environment settings file not present: %s", environment_user_file)
 
         return env
 
@@ -604,6 +540,7 @@ class Session(object):
 
         :param int object_id: object id to retrieve
         :return: object for the given id
+        :rtype: core.coreobj.PyCoreNode
         """
         if object_id not in self.objects:
             raise KeyError("unknown object id %s" % object_id)
@@ -672,7 +609,7 @@ class Session(object):
         :return: nothing
         """
         register_tlv = RegisterTlvs(object_type)
-        logger.info("adding config object callback: %s - %s", name, register_tlv)
+        logger.debug("adding config object callback: %s - %s", name, register_tlv)
         with self._config_objects_lock:
             self.config_objects[name] = (object_type, callback)
 
@@ -686,8 +623,9 @@ class Session(object):
         :rtype: list
         """
         name = config_data.object
-        logger.info("session(%s): handling config message(%s): \n%s",
-                    self.session_id, name, config_data)
+        logger.info("session(%s) setting config(%s)", self.session_id, name)
+        for key, value in config_data.__dict__.iteritems():
+            logger.debug("%s = %s", key, value)
 
         replies = []
 
@@ -857,7 +795,8 @@ class Session(object):
         # this is called from instantiate() after receiving an event message
         # for the instantiation state, and from the broker when distributed
         # nodes have been started
-        logger.info("checking runtime: %s", self.state)
+        logger.info("session(%s) checking if not in runtime state, current state: %s", self.session_id,
+                    coreapi.state_name(self.state))
         if self.state == EventTypes.RUNTIME_STATE.value:
             logger.info("valid runtime state found, returning")
             return
@@ -868,7 +807,7 @@ class Session(object):
 
         # start event loop and set to runtime
         self.event_loop.run()
-        self.set_state(EventTypes.RUNTIME_STATE.value, send_event=True)
+        self.set_state(EventTypes.RUNTIME_STATE, send_event=True)
 
     def data_collect(self):
         """
@@ -903,12 +842,12 @@ class Session(object):
         and links remain.
         """
         node_count = self.get_node_count()
-        logger.info("checking shutdown for session %d: %d nodes remaining", self.session_id, node_count)
+        logger.info("session(%s) checking shutdown: %s nodes remaining", self.session_id, node_count)
 
         shutdown = False
         if node_count == 0:
             shutdown = True
-            self.set_state(state=EventTypes.SHUTDOWN_STATE.value)
+            self.set_state(EventTypes.SHUTDOWN_STATE)
 
         return shutdown
 
@@ -928,10 +867,10 @@ class Session(object):
         """
         with self._objects_lock:
             for obj in self.objects.itervalues():
-                # TODO: PyCoreNode is not the type to check, but there are two types, due to bsd and netns
+                # TODO: PyCoreNode is not the type to check
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
-                    logger.info("booting node: %s - %s", obj.objid, obj.name)
+                    logger.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
                     obj.boot()
 
@@ -1022,6 +961,7 @@ class Session(object):
         :return: control net object
         :rtype: core.netns.nodes.CtrlNet
         """
+        logger.debug("add/remove control net: index(%s) remove(%s) conf_required(%s)", net_index, remove, conf_required)
         prefix_spec_list = self.get_control_net_prefixes()
         prefix_spec = prefix_spec_list[net_index]
         if not prefix_spec:
@@ -1031,6 +971,7 @@ class Session(object):
             else:
                 control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
                 prefix_spec = control_net_class.DEFAULT_PREFIX_LIST[net_index]
+        logger.debug("prefix spec: %s", prefix_spec)
 
         server_interface = self.get_control_net_server_interfaces()[net_index]
 
@@ -1183,7 +1124,7 @@ class Session(object):
         header = "CORE session %s host entries" % self.session_id
         if remove:
             logger.info("Removing /etc/hosts file entries.")
-            utils.filedemunge("/etc/hosts", header)
+            utils.file_demunge("/etc/hosts", header)
             return
 
         entries = []
@@ -1194,7 +1135,7 @@ class Session(object):
 
         logger.info("Adding %d /etc/hosts file entries." % len(entries))
 
-        utils.filemunge("/etc/hosts", header, "\n".join(entries) + "\n")
+        utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
     def runtime(self):
         """
@@ -1232,13 +1173,14 @@ class Session(object):
             name = ""
         logger.info("scheduled event %s at time %s data=%s", name, event_time + current_time, data)
 
+    # TODO: if data is None, this blows up, but this ties into how event functions are ran, need to clean that up
     def run_event(self, node_id=None, name=None, data=None):
         """
         Run a scheduled event, executing commands in the data string.
 
         :param int node_id: node id to run event
         :param str name: event name
-        :param data: event data
+        :param str data: event data
         :return: nothing
         """
         now = self.runtime()
@@ -1246,12 +1188,11 @@ class Session(object):
             name = ""
 
         logger.info("running event %s at time %s cmd=%s" % (name, now, data))
-        commands = shlex.split(data)
         if not node_id:
-            utils.mutedetach(commands)
+            utils.mute_detach(data)
         else:
             node = self.get_object(node_id)
-            node.cmd(commands, wait=False)
+            node.cmd(data, wait=False)
 
     def send_objects(self):
         """
@@ -1511,7 +1452,3 @@ class SessionMetaData(ConfigurableManager):
         :return: configuration items iterator
         """
         return self.configs.iteritems()
-
-
-# configure the program exit function to run
-atexit.register(SessionManager.on_exit)
