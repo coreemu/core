@@ -17,7 +17,7 @@ from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import EventTypes, ConfigFlags
+from core.enumerations import EventTypes, ConfigFlags, ConfigDataTypes
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
@@ -30,6 +30,13 @@ app.config["SECRET_KEY"] = "core"
 socketio = SocketIO(app)
 
 coreemu = CoreEmu()
+
+
+def custom_service_values(service):
+    valmap = [service._dirs, service._configs, service._startindex, service._startup,
+              service._shutdown, service._validate, service._meta, service._starttime]
+    vals = map(lambda a, b: "%s=%s" % (a, str(b)), service.keys, valmap)
+    return "|".join(vals)
 
 
 def synchronized(function):
@@ -142,7 +149,7 @@ def get_sessions():
 @synchronized
 def create_session():
     session = coreemu.create_session()
-    session.set_state(EventTypes.CONFIGURATION_STATE)
+    session.set_state(EventTypes.DEFINITION_STATE)
 
     # set session location
     session.location.setrefgeo(47.57917, -122.13232, 2.0)
@@ -340,6 +347,9 @@ def create_node(session_id):
         )
         session.config_object(config_data)
 
+    logger.info("custom services: %s", session.services.customservices)
+    for service in node.services:
+        logger.info("node services: %s - %s", service._name, service._custom)
     return jsonify(
         id=node.objid,
         url="/sessions/%s/nodes/%s" % (session_id, node.objid)
@@ -459,15 +469,18 @@ def delete_node(session_id, node_id):
 
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services")
-def node_services(session_id, node_id):
+def get_node_services(session_id, node_id):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
 
+    if node_id.isdigit():
+        node_id = int(node_id)
+
     config_data = ConfigData(
         node=node_id,
         object="services",
-        type=1,
+        type=ConfigFlags.REQUEST.value,
     )
     logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
 
@@ -487,6 +500,148 @@ def node_services(session_id, node_id):
         services[group_name] = names[group_start:group_stop]
 
     return jsonify(services)
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>")
+def get_node_service(session_id, node_id, service):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+
+    config_data = ConfigData(
+        node=node_id,
+        object="services",
+        opaque="service:%s" % service,
+        type=ConfigFlags.REQUEST.value,
+    )
+    logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
+
+    # dispatch to any registered callback for this object type
+    replies = session.config_object(config_data)
+    if len(replies) != 1:
+        return jsonify(error="failure getting node services"), 404
+    response = replies[0]
+    data_values = response.data_values
+
+    # check if this is a custom service, since core cant currently handle this right
+    node_services, _ = session.services.servicesfromopaque("service:%s" % service, node_id)
+    node_service = node_services[0]
+    if node_service._custom:
+        data_values = custom_service_values(node_service)
+
+    data_values = data_values.split("|")
+    service_config = {}
+    for data_value in data_values:
+        name, value = data_value.split("=")
+        if value.startswith("("):
+            value = value.strip("()").split(",")
+            value = [x.strip(" '") for x in value if x]
+        service_config[name] = value
+
+    return jsonify(service_config)
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>", methods=["PUT"])
+def set_node_service(session_id, node_id, service):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+    node = session.objects.get(node_id)
+    if not node:
+        return jsonify(error="node does not exist"), 404
+
+    data = request.get_json() or {}
+
+    data_types = list()
+    data_values = list()
+    data_types.append(ConfigDataTypes.STRING.value)
+    data_values.append("startidx=%s" % data["index"])
+    index = data["time"]
+    if index:
+        data_types.append(ConfigDataTypes.STRING.value)
+        data_values.append("starttime=%s" % index)
+    startup = create_tuple_str(data["startup"])
+    if startup:
+        data_types.append(ConfigDataTypes.STRING.value)
+        data_values.append("cmdup=%s" % startup)
+    shutdown = create_tuple_str(data["shutdown"])
+    if shutdown:
+        data_types.append(ConfigDataTypes.STRING.value)
+        data_values.append("cmddown=%s" % shutdown)
+    validate = create_tuple_str(data["validate"])
+    if validate:
+        data_types.append(ConfigDataTypes.STRING.value)
+        data_values.append("cmdval=%s" % validate)
+    data_values = "|".join(data_values)
+    logger.info("service types: %s", data_types)
+    logger.info("service values: %s", data_values)
+
+    config_data = ConfigData(
+        node=node_id,
+        object="services",
+        opaque="service:%s" % service,
+        type=ConfigFlags.NONE.value,
+        data_types=data_types,
+        data_values=data_values
+    )
+    session.config_object(config_data)
+    logger.info("custom services: %s", session.services.customservices)
+    return jsonify()
+
+
+def create_tuple_str(data):
+    if not data:
+        return None
+    data = data.strip()
+
+    output = "("
+    for line in data.split("\n"):
+        output += "'%s'," % line.strip()
+    output += ")"
+    return output
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>/file")
+def get_node_service_file(session_id, node_id, service):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+    node = session.objects.get(node_id)
+    if not node:
+        return jsonify(error="node does not exist"), 404
+
+    service_file = request.args["file"]
+    services, _ = session.services.servicesfromopaque("service:%s" % service, node_id)
+    file_data = session.services.getservicefile(services, node, service_file)
+    return jsonify(file_data.data)
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>/file", methods=["PUT"])
+def set_node_service_file(session_id, node_id, service):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+    node = session.objects.get(node_id)
+    if not node:
+        return jsonify(error="node does not exist"), 404
+
+    data = request.get_json() or {}
+    file_name = data["name"]
+    data = data["data"]
+    session.add_node_service_file(node_id, service, file_name, None, data)
+    return jsonify()
 
 
 @app.route("/sessions/<int:session_id>/state", methods=["PUT"])

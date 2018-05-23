@@ -86,6 +86,10 @@ class CoreRest {
         return await putJson(`/sessions/${this.currentSession}/config`, config);
     }
 
+    async getNode(nodeId) {
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}`);
+    }
+
     async createNode(node) {
         return await postJson(`/sessions/${this.currentSession}/nodes`, node);
     }
@@ -111,11 +115,31 @@ class CoreRest {
     }
 
     async getLinks(nodeId) {
-        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/links`)
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/links`);
     }
 
     async getServices(nodeId) {
-        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/services`)
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/services`);
+    }
+
+    async getService(nodeId, service) {
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/services/${service}`);
+    }
+
+    async setService(nodeId, service, data) {
+        return await putJson(`/sessions/${this.currentSession}/nodes/${nodeId}/services/${service}`, data);
+    }
+
+    async getServiceFile(nodeId, service, serviceFile) {
+        return await $.getJSON(`/sessions/${this.currentSession}/nodes/${nodeId}/services/${service}/file`,
+            {file: serviceFile});
+    }
+
+    async setServiceFile(nodeId, service, serviceFile, data) {
+        return await putJson(`/sessions/${this.currentSession}/nodes/${nodeId}/services/${service}/file`, {
+            name: serviceFile,
+            data
+        });
     }
 
     async getNodeIps(nodeId, ip4Prefix, ip6Prefix) {

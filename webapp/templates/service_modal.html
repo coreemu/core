@@ -8,7 +8,65 @@
                 </button>
             </div>
             <div class="modal-body">
+                <ul class="nav nav-tabs mb-2">
+                    <li class="nav-item">
+                        <a class="nav-link active" data-toggle="tab" href="#service-files" role="tab"
+                           aria-selected="true">
+                            Files
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" data-toggle="tab" href="#service-lifecycle" role="tab"
+                           aria-selected="true">
+                            Lifecycle
+                        </a>
+                    </li>
+                </ul>
+
                 <form>
+                    <div class="tab-content">
+                        <div class="tab-pane fade show active" id="service-files" role="tabpanel">
+                            <div class="form-group">
+                                <label>File Name</label>
+                                <select name="file" class="form-control">
+                                </select>
+                            </div>
+
+                            <div class="form-group">
+                                <label>File Content</label>
+                                <textarea name="filecontent" class="form-control file-content" rows="15"></textarea>
+                            </div>
+                        </div>
+
+                        <div class="tab-pane fade" id="service-lifecycle" role="tabpanel">
+                            <div class="form-row">
+                                <div class="form-group col">
+                                    <label>Startup Index</label>
+                                    <input name="index" class="form-control" type="text" required>
+                                </div>
+
+                                <div class="form-group col">
+                                    <label>Startup Time</label>
+                                    <input name="time" class="form-control" type="text">
+                                </div>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Startup</label>
+                                <textarea name="startup" class="form-control file-content" rows="3"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Shutdown</label>
+                                <textarea name="shutdown" class="form-control file-content" rows="3"></textarea>
+                            </div>
+
+                            <div class="form-group">
+                                <label>Validate</label>
+                                <textarea name="validate" class="form-control file-content" rows="3"></textarea>
+                            </div>
+                        </div>
+                    </div>
                 </form>
             </div>
             <div class="modal-footer">

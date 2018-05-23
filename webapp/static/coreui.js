@@ -149,18 +149,88 @@ class ServiceModal {
     constructor(coreRest) {
         this.coreRest = coreRest;
         this.$modal = $('#service-modal');
+        this.$form = this.$modal.find('form');
+        this.$files = this.$modal.find('select[name=file]');
+        this.$files.change(this.fileChange.bind(this));
+        this.$fileContent = this.$modal.find('textarea[name=filecontent]');
+        this.$startIndex = this.$modal.find('input[name=index]');
+        this.$startTime = this.$modal.find('input[name=time]');
+        this.$startup = this.$modal.find('textarea[name=startup]');
+        this.$shutdown = this.$modal.find('textarea[name=shutdown]');
+        this.$validate = this.$modal.find('textarea[name=validate]');
         this.$title = this.$modal.find('.modal-title');
         this.$saveButton = $('#service-button');
-        this.$saveButton.click(this.onClick.bind(this));
+        this.$saveButton.click(this.saveClicked.bind(this));
+        this.node = null;
+        this.service = null;
     }
 
-    async show(service) {
+    async fileChange(event) {
+        const currentFile = this.$files.val();
+        console.log('current file: ', currentFile);
+        if (currentFile) {
+            const fileData = await this.coreRest.getServiceFile(this.node.id, this.service, currentFile);
+            this.$fileContent.val(fileData);
+        }
+    }
+
+    async show(node, service) {
+        this.node = node;
+        this.service = service;
         this.$title.text(`Edit ${service}`);
-        this.$modal.modal('show');
+
+        try {
+            await this.coreRest.getNode(node.id);
+        } catch (err) {
+            console.log('node does not exist, creating for editing services');
+            await this.coreRest.createNode(node);
+        }
+
+        try {
+            const response = await this.coreRest.getService(node.id, service);
+            console.log('service data: ', response);
+            this.$files.html('');
+            for (let fileName of response.files) {
+                const $option = $('<option>', {value: fileName, text: fileName});
+                this.$files.append($option);
+            }
+
+            this.$fileContent.val('');
+            this.$files.change();
+            this.$startIndex.val(response.startidx);
+            this.$startTime.val(response.starttime);
+            this.$startup.val(response.cmdup.join('\n'));
+            this.$shutdown.val(response.cmddown.join('\n'));
+            this.$validate.val(response.cmdval.join('\n'));
+
+            this.$modal.modal('show');
+        } catch (err) {
+            console.log('error getting service data: ', err);
+            toastr.error('Get service error', 'Internal Error');
+        }
     }
 
-    async onClick() {
+    async saveClicked() {
+        const formData = formToJson(this.$form);
+        console.log('saved service data: ', formData);
 
+        // update current service file data
+        try {
+            await this.coreRest.setServiceFile(this.node.id, this.service, formData.file, formData.filecontent);
+        } catch (err) {
+            console.log('error saving service file data: ', err);
+        }
+
+        // update all other service settings
+        delete formData.file;
+        delete formData.filecontent;
+        try {
+            await this.coreRest.setService(this.node.id, this.service, formData);
+        } catch (err) {
+            console.log('error saving service data: ', err);
+        }
+
+        this.$modal.modal('hide');
     }
 }
 
@@ -196,7 +266,7 @@ class ServicesModal {
         const service = $target.parent().parent().find('label').text();
         console.log('edit service: ', service);
         this.$modal.modal('hide');
-        this.serviceModal.show(service);
+        this.serviceModal.show(this.node, service);
         return false;
     }
 

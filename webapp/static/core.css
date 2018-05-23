@@ -31,11 +31,18 @@
     padding: .5rem 1.25rem;
 }
 
-#config-modal {
+.modal {
     overflow-y: initial !important;
 }
 
-#config-modal .modal-body {
+.modal-body {
     height: calc(100vh - 200px);
     overflow-y: auto;
+}
+
+.file-content {
+    background-color: #000 !important;
+    color: #00ff26 !important;
+    font-size: small;
+    font-family: monospace;
 }

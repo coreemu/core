@@ -401,6 +401,10 @@ class CoreNetwork {
     }
 
     async start() {
+        // clear current session and set for nodes to start
+        await coreRest.setSessionState(SessionStates.definition);
+        await coreRest.setSessionState(SessionStates.configuration);
+
         const nodes = coreNetwork.getCoreNodes();
         for (let node of nodes) {
             const response = await coreRest.createNode(node);
