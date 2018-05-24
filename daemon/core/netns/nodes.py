@@ -317,13 +317,34 @@ class DockerNetNode(PyCoreNet):
 
     apitype = NodeTypes.DOCKER_NET.value
 
-    def __init__(self, session, objid=None, name=None, start=True):
-        super(DockerNetNode, self).__init__(session, objid, name, start)
+    def __init__(self, session, objid=None, name=None, start=True, docker_name=None):
         if constants.DOCKER_BIN is None:
             raise ValueError("Docker needs to be installed.")
-        # TODO: Check if the docker network already exists
+        super(DockerNetNode, self).__init__(session, objid, name, start)
+        if docker_name is None:
+            docker_name = name
+        self.docker_name = docker_name
+
+        status, = utils.cmd_output([constants.DOCKER_BIN, "network", "inspect", self.docker_name])
+        if status == 0:
+            # The network already exists
+            self.existing = True
+        else:
+            utils.check_cmd([constants.DOCKER_BIN, "network", "create", self.docker_name])
+            self.existing = False
         if start:
             self.startup()
+
+        self.brname = None
+        network_gateway = utils.check_cmd(["docker", "inspect", "-f", "'{{range .IPAM.Config}}{{.Gateway}}{{end}}'",
+                                           self.docker_name])
+        addresses = utils.check_cmd([constants.IP_BIN, "-br", "a"])
+        for address in addresses.splitlines():
+            if network_gateway in address:
+                self.brname = address.split()[0]
+
+        if self.brname is None:
+            raise ValueError("Failed to find the docker bridge name")
 
     def startup(self):
         # TODO: Create the network (or should this be in startup?)
