@@ -319,7 +319,8 @@ class DockerNetNode(PyCoreNet):
 
     def __init__(self, session, objid=None, name=None, start=True):
         super(DockerNetNode, self).__init__(session, objid, name, start)
-        # TODO: Check is docker is installed
+        if constants.DOCKER_BIN is None:
+            raise ValueError("Docker needs to be installed.")
         # TODO: Check if the docker network already exists
         if start:
             self.startup()
