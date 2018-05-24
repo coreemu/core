@@ -11,7 +11,7 @@ from socket import AF_INET6
 from core import CoreCommandError
 from core import constants
 from core import logger
-from core.coreobj import PyCoreNetIf
+from core.coreobj import PyCoreNetIf, PyCoreNet
 from core.coreobj import PyCoreNode
 from core.coreobj import PyCoreObj
 from core.data import LinkData
@@ -308,6 +308,40 @@ class SwitchNode(LxBrNet):
     apitype = NodeTypes.SWITCH.value
     policy = "ACCEPT"
     type = "lanswitch"
+
+
+class DockerNetNode(PyCoreNet):
+    """
+    Provides Docker Network functionality within a core node.
+    """
+
+    apitype = NodeTypes.DOCKER_NET.value
+
+    def __init__(self, session, objid=None, name=None, start=True):
+        super(DockerNetNode, self).__init__(session, objid, name, start)
+        # TODO: Check is docker is installed
+        # TODO: Check if the docker network already exists
+        if start:
+            self.startup()
+
+    def startup(self):
+        # TODO: Create the network (or should this be in startup?)
+        print self
+        pass
+
+    def shutdown(self):
+        # TODO: Remove the network if it was created by us
+        print self
+        pass
+
+    def attach(self, netif):
+        super(DockerNetNode, self).attach(netif)
+        # TODO: Attach the veth to the docker bridge
+        print "I do nothing"
+
+    def detach(self, netif):
+        super(DockerNetNode, self).detach(netif)
+        # TODO: Detach the veth to the docker bridge
 
 
 class HubNode(LxBrNet):

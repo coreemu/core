@@ -27,9 +27,9 @@ def example(options):
 
     node1 = session.add_object(cls=nodes.CoreNode, name="n1")
     node2 = session.add_object(cls=nodes.CoreNode, name="n2")
-    hub1 = session.add_object(cls=nodes.HubNode, name="hub1")
-    node1.newnetif(hub1, ["10.0.0.1/24"])
-    node2.newnetif(hub1, ["10.0.0.2/24"])
+    dock1 = session.add_object(cls=nodes.DockerNetNode, name="docker1")
+    node1.newnetif(dock1, ["10.0.0.1/24"])
+    node2.newnetif(dock1, ["10.0.0.2/24"])
 
     node1.client.icmd(["ping", "-c", "5", "10.0.0.2"])
 
