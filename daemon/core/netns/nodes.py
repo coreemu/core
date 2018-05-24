@@ -325,7 +325,7 @@ class DockerNetNode(PyCoreNet):
             docker_name = name
         self.docker_name = docker_name
 
-        status, = utils.cmd_output([constants.DOCKER_BIN, "network", "inspect", self.docker_name])
+        status, response = utils.cmd_output([constants.DOCKER_BIN, "network", "inspect", self.docker_name])
         if status == 0:
             # The network already exists
             self.existing = True
