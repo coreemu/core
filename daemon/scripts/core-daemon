@@ -7,6 +7,7 @@ message handlers are defined and some support for sending messages.
 
 import ConfigParser
 import optparse
+import os
 import sys
 import time
 
@@ -111,6 +112,9 @@ def main():
 
     :return: nothing
     """
+    # set umask to 0
+    os.umask(0)
+
     # get a configuration merged from config file and command-line arguments
     cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     for a in args:
