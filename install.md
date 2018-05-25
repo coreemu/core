@@ -40,6 +40,17 @@ Any computer capable of running Linux should be able to run CORE. Since the phys
 
 CORE requires a Linux operating system because it uses virtualization provided by the kernel. It does not run on Windows or Mac OS X operating systems (unless it is running within a virtual machine guest.) The virtualization technology that CORE currently uses is Linux network namespaces.
 
+For Debian based installations
+````shell
+sudo apt-get install bash bridge-utils ebtables \
+  iproute libev-dev python tcl8.5 tk8.5 libtk-img \
+  autoconf automake gcc libev-dev make python-dev \
+  python-pip libreadline-dev pkg-config imagemagick \
+  python-sphinx python-setuptools help2man
+  
+  sudo pip install --upgrade pip enum34
+````
+
 The CORE GUI requires the X.Org X Window system (X11), or can run over a remote X11 session. For specific Tcl/Tk, Python, and other libraries required to run CORE.
 
 **NOTE: CORE *Services* determine what run on each node. You may require other software packages depending on the services you wish to use. For example, the *HTTP* service will require the *apache2* package.**
