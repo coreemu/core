@@ -36,7 +36,7 @@ AC_ARG_WITH([guiconfdir],
 	    [AS_HELP_STRING([--with-guiconfdir=dir],
 			    [specify GUI configuration directory])],
 	    [CORE_GUI_CONF_DIR="$with_guiconfdir"],
-	    [CORE_GUI_CONF_DIR="\${HOME}/.core"])
+	    [CORE_GUI_CONF_DIR="\$\${HOME}/.core"])
 AC_SUBST(CORE_GUI_CONF_DIR)
 AC_ARG_ENABLE([gui],
 	       [AS_HELP_STRING([--enable-gui[=ARG]],
