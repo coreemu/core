@@ -6,6 +6,7 @@
 # nodestep
 
 import datetime
+import time
 
 import parser
 from core.emulator.coreemu import CoreEmu
@@ -15,7 +16,7 @@ from core.netns import nodes
 from core.misc import utils
 
 
-def example():
+def main():
     # ip generator for example
     prefixes = IpPrefixes(ip4_prefix="10.0.0.0/16")
     docker_net = "docker1"
@@ -35,23 +36,24 @@ def example():
     docker_id = utils.check_cmd(["docker", "run", "-d", "--net="+docker_net, "--ip="+str(prefixes.ip4.min_addr() + 1),
                     "nginx"])
 
+    # Give docker time to come to life. First run it may download images and this will not be long enough.
+    time.sleep(5)
+
     print "Going to request web with no network effects"
     start = datetime.datetime.now()
     node1.client.icmd(["wget", "-O", "-", str(prefixes.ip4.min_addr() + 1)])
     print "elapsed time: %s" % (datetime.datetime.now() - start)
 
-    print "Going to request web with no network effects"
+    # TODO: Have not yet implemented linkconfig for docker network
+    time.sleep(5)
+
+    print "Going to request web with network effects"
     start = datetime.datetime.now()
     node1.client.icmd(["wget", "-O", "-", str(prefixes.ip4.min_addr() + 1)])
     print "elapsed time: %s" % (datetime.datetime.now() - start)
 
     utils.check_cmd(["docker", "rm", "-f", docker_id])
     coreemu.shutdown()
-
-
-def main():
-
-    example()
 
 
 if __name__ == "__main__":

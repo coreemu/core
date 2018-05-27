@@ -23,6 +23,7 @@ from core.misc import utils
 from core.netns.vnet import GreTapBridge
 from core.netns.vnet import LxBrNet
 from core.netns.vnode import LxcNode
+from core.netns.docker import DrBrNet
 
 
 class CtrlNet(LxBrNet):
@@ -310,92 +311,12 @@ class SwitchNode(LxBrNet):
     type = "lanswitch"
 
 
-class DockerNetNode(PyCoreNet):
+class DockerNetNode(DrBrNet):
     """
-    Provides Docker Network functionality within a core node.
-    """
+        Provides Docker Network functionality within a core node.
+        """
 
     apitype = NodeTypes.DOCKER_NET.value
-
-    def __init__(self, session, objid=None, name=None, start=True, docker_name=None, subnet=None, gateway=None):
-        if constants.DOCKER_BIN is None:
-            raise ValueError("Docker needs to be installed.")
-        super(DockerNetNode, self).__init__(session, objid, name, start)
-        if docker_name is None:
-            docker_name = name
-        self.docker_name = docker_name
-
-        # Lets check if a docker network exists with that name
-        status, _ = utils.cmd_output([constants.DOCKER_BIN, "network", "inspect", self.docker_name])
-        if status == 0:
-            # The network already exists
-            self.existing = True
-        else:
-            # Create the network
-            create_cmd = [constants.DOCKER_BIN, "network", "create"]
-            if subnet is not None:
-                if gateway is None:
-                    gateway = str(ipaddress.Ipv4Prefix(subnet).min_addr())
-                create_cmd += ["--subnet", subnet, "--gateway", gateway]
-            utils.check_cmd(create_cmd + [self.docker_name])
-            self.existing = False
-        if start:
-            self.startup()
-
-        self.brname = None
-
-        # We find the actual bridge name by getting the gateway and matching it to the bridge
-        # The bridge names are usually named by the br_<DOCKER iD> but can be set manually
-        # through docker so this way should catch both.
-        network_gateway = utils.check_cmd(["docker", "inspect", "-f", "'{{range .IPAM.Config}}{{.Gateway}}{{end}}'",
-                                           self.docker_name])
-        network_gateway = network_gateway.replace('\'', '')
-        addresses = utils.check_cmd([constants.IP_BIN, "-br", "a"])
-        for address in addresses.splitlines():
-            if network_gateway in address:
-                self.brname = address.split()[0]
-                break
-
-        if self.brname is None:
-            raise ValueError("Failed to find the docker bridge name")
-
-    def startup(self):
-        # TODO: Create the network here ?
-        self.up = True
-
-    def shutdown(self):
-        if not self.existing:
-            status, _ = utils.cmd_output([constants.DOCKER_BIN, "network", "rm", self.docker_name])
-            if status <> 0:
-                logger.warn("Could not remove network probably has containers attached.")
-
-        # removes veth pairs used for bridge-to-bridge connections
-        for netif in self.netifs():
-            netif.shutdown()
-
-        self._netif.clear()
-        self._linked.clear()
-        del self.session
-        self.up = False
-
-    def attach(self, netif):
-        if self.up:
-            utils.check_cmd([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
-            utils.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "up"])
-
-        PyCoreNet.attach(self, netif)
-
-    def detach(self, netif):
-        """
-        Detach a network interface.
-
-        :param core.netns.vif.Veth netif: network interface to detach
-        :return: nothing
-        """
-        if self.up:
-            utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
-
-        PyCoreNet.detach(self, netif)
 
 
 class HubNode(LxBrNet):
