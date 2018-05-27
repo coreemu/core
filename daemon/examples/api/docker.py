@@ -45,7 +45,7 @@ def main():
     print "Giving 5 seconds for nginx container to start"
     time.sleep(5)
 
-    # We download
+    # We download at various bandwidths
     for i in [100, 10, 1]:
         dock1.linkconfig(node1.netif(node1_net, dock1), bw=(i * 1024 * 1024))
         print "Setting bandwidth to {}Mbps".format(i)
