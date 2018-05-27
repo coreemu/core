@@ -29,10 +29,8 @@ def main():
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     node1 = session.add_object(cls=nodes.CoreNode, name="n1")
-    node2 = session.add_object(cls=nodes.CoreNode, name="n2")
     dock1 = session.add_object(cls=nodes.DockerNetNode, name=docker_net, subnet=str(prefixes.ip4))
     node1_net = node1.newnetif(dock1, prefixes.create_interface(node1).ip4_address())
-    node2.newnetif(dock1, prefixes.create_interface(node2).ip4_address())
 
     # Make a 1MB binary file which we will download
     with open(os.path.join(session.session_dir, "largeFile"), 'wb') as fout:
