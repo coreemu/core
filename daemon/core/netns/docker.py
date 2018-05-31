@@ -43,7 +43,7 @@ class DrBrNet(LxBrNet):
             self.existing = True
         else:
             # Create the network
-            create_cmd = [constants.DOCKER_BIN, "network", "create"]
+            create_cmd = [constants.DOCKER_BIN, "network", "create", "--internal"]
             if subnet is not None:
                 if gateway is None:
                     gateway = str(ipaddress.Ipv4Prefix(subnet).min_addr())
