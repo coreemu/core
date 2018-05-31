@@ -849,6 +849,9 @@ class CoreEmu(object):
 
         :param dict config: configuration options
         """
+        # set umask 0
+        os.umask(0)
+        
         # configuration
         self.config = config
 
