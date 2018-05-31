@@ -28,9 +28,11 @@ def main():
     # must be in configuration state for nodes to start, when using "node_add" below
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
-    node1 = session.add_object(cls=nodes.CoreNode, name="n1")
-    dock1 = session.add_object(cls=nodes.DockerNetNode, name=docker_net, subnet=str(prefixes.ip4))
-    node1_net = node1.newnetif(dock1, prefixes.create_interface(node1).ip4_address())
+    node1 = session.add_object(cls=nodes.CoreNode, name="n1", objid=11)
+    switch1 = session.add_object(cls=nodes.SwitchNode, name="s1", objid=12)
+    dock1 = session.add_object(cls=nodes.DockerNetNode, name=docker_net, subnet=str(prefixes.ip4), objid=13)
+    switch1.linknet(dock1)
+    node1_net = node1.newnetif(switch1, prefixes.create_interface(node1).ip4_address())
 
     # Make a 1MB binary file which we will download
     with open(os.path.join(session.session_dir, "largeFile"), 'wb') as fout:
@@ -45,10 +47,10 @@ def main():
 
     # We download at various bandwidths
     for i in [100, 10, 1]:
-        dock1.linkconfig(node1.netif(node1_net, dock1), bw=(i * 1024 * 1024))
+        dock1.linkconfig(node1.netif(node1_net, switch1), bw=(i * 1024 * 1024))
         print "Setting bandwidth to {}Mbps".format(i)
         start = datetime.datetime.now()
-        status, output =  node1.client.cmd_output(["wget", str(prefixes.ip4.min_addr() + 1) + "/largeFile"])
+        status, output = node1.client.cmd_output(["wget", str(prefixes.ip4.min_addr() + 1) + "/largeFile"])
         # Show the last line with the throughput
         print output.splitlines()[-1]
         node1.client.cmd_output(["rm", "largeFile"])
