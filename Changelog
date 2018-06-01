@@ -1,17 +1,34 @@
-2018-XX-XX CORE 5.1
+2018-05-22 CORE 5.1
   * DAEMON:
+   - removed and cleared out code that is either legacy or no longer supported (Xen, BSD, Kernel patching, RPM/DEB specific files)
    - default nodes are now set in the node map
    - moved ns3 and netns directories to the top of the repo
    - changes to make use of fpm as the tool for building packages
    - removed usage of logzero to avoid dependency issues for built packages
    - removed daemon addons directory
+   - added CoreEmu to core.emulator.coreemu to help begin serving as the basis for a more formal API for scripting and creating new external APIs out of
+   - cleaned up logging, moved more logging to DEBUG from INFO, tried to mold INFO message to be more simple and informative
+   - EMANE 1.0.1-1.21 supported
+   - updates to leverage EMANE python bindings for dynamically parsing phy/mac manifest files
+   - example custom EMANE model lives under /usr/share/core/examples/myemane/examplemodel.py
+   - EMANE TDMA model now supports an option to start a TDMA schedule when running
+   - fixed issues with coresendmsg script due to code refactoring
+   - added make target for generating documentation "make doc"
+   - Python 2.7+ is now required
+   - ns3 is no longer bundled by default, but will be produced as a separate package for installation
+  * GUI
+   - updated broken help links in GUI Help->About
+  * Packaging
+   - fixed PYTHON_PATH to PYTHONPATH in sysv script
+   - added make command to leverage FPM as the tool for creating deb/rpm packages going forward, there is documentation within README.md to try it out
   * TEST:
    - fixed some broken tests
+   - new test cases based on CoreEmu usage
   * BUGFIXES:
    - #142 - duplication of custom services
    - #136 - sphinx-apidoc command not found
    - #137 - make command fails when using distclean
-
+   
 2017-09-01 CORE 5.0
   * DEVELOPMENT:
     - support for editorconfig to help standardize development across IDEs, from the defined configuration file

@@ -378,7 +378,7 @@ class EmuSession(Session):
             if node_two:
                 node_two.lock.release()
 
-    def update_link(self, node_one_id, node_two_id, link_options, interface_one_id=None, interface_two_id=None):
+    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None, link_options=LinkOptions()):
         """
         Update link information between nodes.
 
@@ -849,6 +849,9 @@ class CoreEmu(object):
 
         :param dict config: configuration options
         """
+        # set umask 0
+        os.umask(0)
+        
         # configuration
         self.config = config
 

@@ -1,0 +1,357 @@
+#!/usr/bin/env python
+#
+# CORE
+# Copyright (c)2010-2013 the Boeing Company.
+# See the LICENSE file included in this distribution.
+#
+# authors: Tom Goff <thomas.goff@boeing.com>
+#          Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
+#
+
+"""
+core-daemon: the CORE daemon is a server process that receives CORE API
+messages and instantiates emulated nodes and networks within the kernel. Various
+message handlers are defined and some support for sending messages.
+"""
+
+import ConfigParser
+import atexit
+import importlib
+import optparse
+import os
+import signal
+import socket
+import sys
+import threading
+import time
+
+from pkg_resources import require
+require("core_python", "corens3_python", "core_python_netns")
+
+from core import constants
+from core import corehandlers
+from core import coreserver
+from core import enumerations
+from core import logger
+from core import services
+from core.api import coreapi
+from core.corehandlers import CoreDatagramRequestHandler
+from core.enumerations import MessageFlags
+from core.enumerations import RegisterTlvs
+from core.misc import nodemaps
+from core.misc import nodeutils
+from core.misc.utils import closeonexec
+from core.misc.utils import daemonize
+
+DEFAULT_MAXFD = 1024
+
+
+def startudp(core_server, server_address):
+    """
+    Start a thread running a UDP server on the same host,port for connectionless requests.
+
+    :param core.coreserver.CoreServer core_server: core server instance
+    :param tuple[str, int] server_address: server address
+    :return: created core udp server
+    :rtype: core.coreserver.CoreUdpServer
+    """
+    core_server.udpserver = coreserver.CoreUdpServer(server_address, CoreDatagramRequestHandler, core_server)
+    core_server.udpthread = threading.Thread(target=core_server.udpserver.start)
+    core_server.udpthread.daemon = True
+    core_server.udpthread.start()
+    return core_server.udpserver
+
+
+def startaux(core_server, aux_address, aux_handler):
+    """
+    Start a thread running an auxiliary TCP server on the given address.
+    This server will communicate with client requests using a handler
+    using the aux_handler class. The aux_handler can provide an alternative
+    API to CORE.
+
+    :param core.coreserver.CoreServer core_server: core server instance
+    :param tuple[str, int] aux_address: auxiliary server address
+    :param str aux_handler: auxiliary handler string to import
+    :return: auxiliary server
+    """
+    handlermodname, dot, handlerclassname = aux_handler.rpartition(".")
+    handlermod = importlib.import_module(handlermodname)
+    handlerclass = getattr(handlermod, handlerclassname)
+    core_server.auxserver = coreserver.CoreAuxServer(aux_address, handlerclass, core_server)
+    core_server.auxthread = threading.Thread(target=core_server.auxserver.start)
+    core_server.auxthread.daemon = True
+    core_server.auxthread.start()
+    return core_server.auxserver
+
+
+def banner():
+    """
+    Output the program banner printed to the terminal or log file.
+
+    :return: nothing
+    """
+    logger.info("CORE daemon v.%s started %s\n" % (constants.COREDPY_VERSION, time.ctime()))
+
+
+def cored(cfg=None):
+    """
+    Start the CoreServer object and enter the server loop.
+
+    :param dict cfg: core configuration
+    :return: nothing
+    """
+    host = cfg["listenaddr"]
+    port = int(cfg["port"])
+    if host == "" or host is None:
+        host = "localhost"
+    try:
+        server = coreserver.CoreServer((host, port), corehandlers.CoreRequestHandler, cfg)
+    except:
+        logger.exception("error starting main server on:  %s:%s", host, port)
+        sys.exit(1)
+
+    closeonexec(server.fileno())
+    logger.info("main server started, listening on: %s:%s\n" % (host, port))
+
+    udpserver = startudp(server, (host, port))
+    closeonexec(udpserver.fileno())
+
+    auxreqhandler = cfg["aux_request_handler"]
+    if auxreqhandler:
+        handler, auxport = auxreqhandler.rsplit(":")
+        auxserver = startaux(server, (host, int(auxport)), handler)
+        closeonexec(auxserver.fileno())
+
+    server.serve_forever()
+
+
+# TODO: should sessions and the main core daemon both catch at exist to shutdown independently?
+def cleanup():
+    """
+    Runs server shutdown and cleanup when catching an exit signal.
+
+    :return: nothing
+    """
+    while coreserver.CoreServer.servers:
+        server = coreserver.CoreServer.servers.pop()
+        server.shutdown()
+
+
+atexit.register(cleanup)
+
+
+def sighandler(signum, stackframe):
+    """
+    Signal handler when different signals are sent.
+
+    :param int signum: singal number sent
+    :param stackframe: stack frame sent
+    :return: nothing
+    """
+    logger.error("terminated by signal: %s", signum)
+    sys.exit(signum)
+
+
+signal.signal(signal.SIGHUP, sighandler)
+signal.signal(signal.SIGINT, sighandler)
+signal.signal(signal.SIGTERM, sighandler)
+signal.signal(signal.SIGUSR1, sighandler)
+signal.signal(signal.SIGUSR2, sighandler)
+
+
+def logrotate(stdout, stderr, stdoutmode=0644, stderrmode=0644):
+    """
+    Log rotation method.
+
+    :param stdout: stdout
+    :param stderr: stderr
+    :param int stdoutmode: stdout mode
+    :param int stderrmode: stderr mode
+    :return:
+    """
+
+    def reopen(fileno, filename, mode):
+        err = 0
+        fd = -1
+        try:
+            fd = os.open(filename,
+                         os.O_WRONLY | os.O_CREAT | os.O_APPEND, mode)
+            os.dup2(fd, fileno)
+        except OSError as e:
+            err = e.errno
+        finally:
+            if fd >= 0:
+                os.close(fd)
+            return err
+
+    if stdout:
+        err = reopen(1, stdout, stdoutmode)
+    if stderr:
+        if stderr == stdout and not err:
+            try:
+                os.dup2(1, 2)
+            except OSError as e:
+                pass
+        else:
+            reopen(2, stderr, stderrmode)
+
+
+def get_merged_config(filename):
+    """
+    Return a configuration after merging config file and command-line arguments.
+
+    :param str filename: file name to merge configuration settings with
+    :return: merged configuration
+    :rtype: dict
+    """
+    # these are the defaults used in the config file
+    defaults = {"port": "%d" % enumerations.CORE_API_PORT,
+                "listenaddr": "localhost",
+                "pidfile": "%s/run/core-daemon.pid" % constants.CORE_STATE_DIR,
+                "logfile": "%s/log/core-daemon.log" % constants.CORE_STATE_DIR,
+                "xmlfilever": "1.0",
+                "numthreads": "1",
+                "verbose": "False",
+                "daemonize": "False",
+                "debug": "False",
+                "execfile": None,
+                "aux_request_handler": None,
+                }
+
+    usagestr = "usage: %prog [-h] [options] [args]\n\n" + \
+               "CORE daemon v.%s instantiates Linux network namespace " \
+               "nodes." % constants.COREDPY_VERSION
+    parser = optparse.OptionParser(usage=usagestr)
+    parser.add_option("-f", "--configfile", dest="configfile",
+                      type="string",
+                      help="read config from specified file; default = %s" %
+                           filename)
+    parser.add_option("-d", "--daemonize", dest="daemonize",
+                      action="store_true",
+                      help="run in background as daemon; default=%s" % \
+                           defaults["daemonize"])
+    parser.add_option("-e", "--execute", dest="execfile", type="string",
+                      help="execute a Python/XML-based session")
+    parser.add_option("-l", "--logfile", dest="logfile", type="string",
+                      help="log output to specified file; default = %s" %
+                           defaults["logfile"])
+    parser.add_option("-p", "--port", dest="port", type=int,
+                      help="port number to listen on; default = %s" % \
+                           defaults["port"])
+    parser.add_option("-i", "--pidfile", dest="pidfile",
+                      help="filename to write pid to; default = %s" % \
+                           defaults["pidfile"])
+    parser.add_option("-t", "--numthreads", dest="numthreads", type=int,
+                      help="number of server threads; default = %s" % \
+                           defaults["numthreads"])
+    parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
+                      help="enable verbose logging; default = %s" % \
+                           defaults["verbose"])
+    parser.add_option("-g", "--debug", dest="debug", action="store_true",
+                      help="enable debug logging; default = %s" % \
+                           defaults["debug"])
+
+    # parse command line options
+    options, args = parser.parse_args()
+
+    # read the config file
+    if options.configfile is not None:
+        filename = options.configfile
+    del options.configfile
+    cfg = ConfigParser.SafeConfigParser(defaults)
+    cfg.read(filename)
+
+    section = "core-daemon"
+    if not cfg.has_section(section):
+        cfg.add_section(section)
+    # gracefully support legacy configs (cored.py/cored now core-daemon)
+    if cfg.has_section("cored.py"):
+        for name, val in cfg.items("cored.py"):
+            if name == "pidfile" or name == "logfile":
+                bn = os.path.basename(val).replace("coredpy", "core-daemon")
+                val = os.path.join(os.path.dirname(val), bn)
+            cfg.set(section, name, val)
+    if cfg.has_section("cored"):
+        for name, val in cfg.items("cored"):
+            if name == "pidfile" or name == "logfile":
+                bn = os.path.basename(val).replace("cored", "core-daemon")
+                val = os.path.join(os.path.dirname(val), bn)
+            cfg.set(section, name, val)
+
+    # merge command line with config file
+    for opt in options.__dict__:
+        val = options.__dict__[opt]
+        if val is not None:
+            cfg.set(section, opt, val.__str__())
+
+    return dict(cfg.items(section)), args
+
+
+def exec_file(cfg):
+    """
+    Send a Register Message to execute a new session based on XML or Python script file.
+
+    :param dict cfg: configuration settings
+    :return: 0
+    """
+    filename = cfg["execfile"]
+    logger.info("Telling daemon to execute file: %s...", filename)
+    tlvdata = coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, filename)
+    msg = coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlvdata)
+    sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
+    # TODO: connect address option
+    sock.connect(("localhost", int(cfg["port"])))
+    sock.sendall(msg)
+    return 0
+
+
+def main():
+    """
+    Main program startup.
+
+    :return: nothing
+    """
+    # get a configuration merged from config file and command-line arguments
+    cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
+    for a in args:
+        logger.error("ignoring command line argument: %s", a)
+
+    if cfg["daemonize"] == "True":
+        daemonize(rootdir=None, umask=0, close_fds=False,
+                  stdin=os.devnull,
+                  stdout=cfg["logfile"], stderr=cfg["logfile"],
+                  pidfilename=cfg["pidfile"],
+                  defaultmaxfd=DEFAULT_MAXFD)
+        signal.signal(signal.SIGUSR1, lambda signum, stackframe:
+        logrotate(stdout=cfg["logfile"], stderr=cfg["logfile"]))
+
+    banner()
+    if cfg["execfile"]:
+        cfg["execfile"] = os.path.abspath(cfg["execfile"])
+        sys.exit(exec_file(cfg))
+    try:
+        cored(cfg)
+    except KeyboardInterrupt:
+        logger.info("keyboard interrupt, stopping core daemon")
+
+    sys.exit(0)
+
+
+if __name__ == "__main__":
+    # configure nodes to use
+    node_map = nodemaps.NODES
+    if len(sys.argv) == 2 and sys.argv[1] == "ovs":
+        from core.netns.openvswitch import OVS_NODES
+        node_map.update(OVS_NODES)
+
+    # update with BSD based nodes
+    if os.uname()[0] == "FreeBSD":
+        from core.bsd.nodes import BSD_NODES
+        node_map.update(BSD_NODES)
+
+    nodeutils.set_node_map(node_map)
+
+    # load default services
+    services.load()
+
+    main()

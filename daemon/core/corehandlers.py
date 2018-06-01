@@ -958,7 +958,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
-            node_num = message.get_tlv(FileTlvs.NUMBER.value)
+            node_num = message.get_tlv(FileTlvs.NODE.value)
             file_name = message.get_tlv(FileTlvs.NAME.value)
             file_type = message.get_tlv(FileTlvs.TYPE.value)
             source_name = message.get_tlv(FileTlvs.SOURCE_NAME.value)
