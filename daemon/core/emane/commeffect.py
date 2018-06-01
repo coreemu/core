@@ -2,128 +2,121 @@
 commeffect.py: EMANE CommEffect model for CORE
 """
 
-from core import emane
 from core import logger
-from core.emane.emanemodel import EmaneModel
-from core.enumerations import ConfigDataTypes
+from core.emane import emanemanifest
+from core.emane import emanemodel
 
 try:
-    import emaneeventservice
-    import emaneeventcommeffect
+    from emane.events.commeffectevent import CommEffectEvent
 except ImportError:
-    logger.error("error importing emaneeventservice and emaneeventcommeffect")
+    try:
+        from emanesh.events.commeffectevent import CommEffectEvent
+    except ImportError:
+        logger.warn("compatible emane python bindings not installed")
 
 
-class EmaneCommEffectModel(EmaneModel):
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
-
-    # model name
-    name = "emane_commeffect"
-    # CommEffect parameters
-    _confmatrix_shim_base = [
-        ("filterfile", ConfigDataTypes.STRING.value, "",
-         "", "filter file"),
-        ("groupid", ConfigDataTypes.UINT32.value, "0",
-         "", "NEM Group ID"),
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable promiscuous mode"),
-        ("receivebufferperiod", ConfigDataTypes.FLOAT.value, "1.0",
-         "", "receivebufferperiod"),
-    ]
-    _confmatrix_shim_081 = [
-        ("defaultconnectivity", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "defaultconnectivity"),
-        ("enabletighttimingmode", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable tight timing mode"),
-    ]
-    _confmatrix_shim_091 = [
-        ("defaultconnectivitymode", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "defaultconnectivity"),
-    ]
-    if emane.VERSION >= emane.EMANE091:
-        _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_091
+def convert_none(x):
+    """
+    Helper to use 0 for None values.
+    """
+    if type(x) is str:
+        x = float(x)
+    if x is None:
+        return 0
     else:
-        _confmatrix_shim = _confmatrix_shim_base + _confmatrix_shim_081
+        return int(x)
 
-    config_matrix = _confmatrix_shim
-    # value groupings
-    config_groups = "CommEffect SHIM Parameters:1-%d" % len(_confmatrix_shim)
 
-    def buildnemxmlfiles(self, e, ifc):
+class EmaneCommEffectModel(emanemodel.EmaneModel):
+    name = "emane_commeffect"
+
+    shim_library = "commeffectshim"
+    shim_xml = "/usr/share/emane/manifest/commeffectshim.xml"
+    shim_defaults = {}
+    config_shim = emanemanifest.parse(shim_xml, shim_defaults)
+
+    config_groups_override = "CommEffect SHIM Parameters:1-%d" % len(config_shim)
+    config_matrix_override = config_shim
+
+    def build_xml_files(self, emane_manager, interface):
         """
         Build the necessary nem and commeffect XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
         that file also. Otherwise the WLAN-wide
         nXXemane_commeffectnem.xml, nXXemane_commeffectshim.xml are used.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
+        :return: nothing
         """
-        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
         if values is None:
             return
-        shimdoc = e.xmldoc("shim")
-        shim = shimdoc.getElementsByTagName("shim").pop()
-        shim.setAttribute("name", "commeffect SHIM")
-        shim.setAttribute("library", "commeffectshim")
+
+        # retrieve xml names
+        nem_name = self.nem_name(interface)
+        shim_name = self.shim_name(interface)
+
+        nem_document = emane_manager.xmldoc("nem")
+        nem_element = nem_document.getElementsByTagName("nem").pop()
+        nem_element.setAttribute("name", "%s NEM" % self.name)
+        nem_element.setAttribute("type", "unstructured")
+        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+
+        shim_xml = emane_manager.xmlshimdefinition(nem_document, shim_name)
+        nem_element.appendChild(shim_xml)
+        emane_manager.xmlwrite(nem_document, nem_name)
 
         names = self.getnames()
-        shimnames = list(names[:len(self._confmatrix_shim)])
-        shimnames.remove("filterfile")
+        shim_names = list(names)
+        shim_names.remove("filterfile")
+
+        shim_document = emane_manager.xmldoc("shim")
+        shim_element = shim_document.getElementsByTagName("shim").pop()
+        shim_element.setAttribute("name", "%s SHIM" % self.name)
+        shim_element.setAttribute("library", self.shim_library)
 
         # append all shim options (except filterfile) to shimdoc
-        map(lambda n: shim.appendChild(e.xmlparam(shimdoc, n, self.valueof(n, values))), shimnames)
+        for name in shim_names:
+            value = self.valueof(name, values)
+            param = emane_manager.xmlparam(shim_document, name, value)
+            shim_element.appendChild(param)
+
         # empty filterfile is not allowed
         ff = self.valueof("filterfile", values)
         if ff.strip() != "":
-            shim.appendChild(e.xmlparam(shimdoc, "filterfile", ff))
-        e.xmlwrite(shimdoc, self.shimxmlname(ifc))
+            shim_element.appendChild(emane_manager.xmlparam(shim_document, "filterfile", ff))
+        emane_manager.xmlwrite(shim_document, shim_name)
 
-        nemdoc = e.xmldoc("nem")
-        nem = nemdoc.getElementsByTagName("nem").pop()
-        nem.setAttribute("name", "commeffect NEM")
-        nem.setAttribute("type", "unstructured")
-        e.appendtransporttonem(nemdoc, nem, self.object_id, ifc)
-        nem.appendChild(e.xmlshimdefinition(nemdoc, self.shimxmlname(ifc)))
-        e.xmlwrite(nemdoc, self.nemxmlname(ifc))
-
-    def linkconfig(self, netif, bw=None, delay=None,
-                   loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
         Generate CommEffect events when a Link Message is received having
         link parameters.
         """
-        if emane.VERSION >= emane.EMANE091:
-            raise NotImplementedError("CommEffect linkconfig() not implemented for EMANE 0.9.1+")
-
-        def z(x):
-            """
-            Helper to use 0 for None values.
-            """
-            if type(x) is str:
-                x = float(x)
-            if x is None:
-                return 0
-            else:
-                return int(x)
-
         service = self.session.emane.service
         if service is None:
-            logger.warn("%s: EMANE event service unavailable" % self.name)
+            logger.warn("%s: EMANE event service unavailable", self.name)
             return
+
         if netif is None or netif2 is None:
-            logger.warn("%s: missing NEM information" % self.name)
+            logger.warn("%s: missing NEM information", self.name)
             return
+
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
-        event = emaneeventcommeffect.EventCommEffect(1)
-        index = 0
-        e = self.session.get_object(self.object_id)
-        nemid = e.getnemid(netif)
-        nemid2 = e.getnemid(netif2)
+        event = CommEffectEvent()
+        emane_node = self.session.get_object(self.object_id)
+        nemid = emane_node.getnemid(netif)
+        nemid2 = emane_node.getnemid(netif2)
         mbw = bw
-
-        event.set(index, nemid, 0, z(delay), 0, z(jitter), z(loss),
-                  z(duplicate), long(z(bw)), long(z(mbw)))
-        service.publish(emaneeventcommeffect.EVENT_ID,
-                        emaneeventservice.PLATFORMID_ANY,
-                        nemid2, emaneeventservice.COMPONENTID_ANY,
-                        event.export())
+        logger.info("sending comm effect event")
+        event.append(
+            nemid,
+            latency=convert_none(delay),
+            jitter=convert_none(jitter),
+            loss=convert_none(loss),
+            duplicate=convert_none(duplicate),
+            unicast=long(convert_none(bw)),
+            broadcast=long(convert_none(mbw))
+        )
+        service.publish(nemid2, event)

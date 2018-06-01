@@ -1,10 +1,5 @@
 #!/bin/sh
 #
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2004-2008 University of Zagreb, Croatia.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -54,7 +49,7 @@ case $1 in
     exit 0
     ;; 
 -v | --version) 
-    exec echo "`basename $0` version @CORE_VERSION@ (@CORE_VERSION_DATE@)"
+    exec echo "`basename $0` version @PACKAGE_VERSION@ (@PACKAGE_DATE@)"
     exit 0
     ;; 
 esac
@@ -63,7 +58,7 @@ SHELL=/bin/sh
 export SHELL
 
 export LIBDIR="@CORE_LIB_DIR@"
-export SBINDIR="@SBINDIR@"
+export SBINDIR="@sbindir@"
 # eval is used here to expand "~" to user's home dir
 if [ x$CONFDIR = x ]; then export CONFDIR=`eval "echo @CORE_GUI_CONF_DIR@"` ; fi
 export CORE_STATE_DIR="@CORE_STATE_DIR@"
@@ -87,6 +82,12 @@ init_conf_dir() {
 	echo "error making directory $CONFDIR/myservices!";
     else
 	cp -a $CORE_DATA_DIR/examples/myservices/* $CONFDIR/myservices/
+    fi
+    mkdir -p $CONFDIR/myemane
+    if [ $? != 0 ]; then
+	echo "error making directory $CONFDIR/myemane!";
+    else
+	cp -a $CORE_DATA_DIR/examples/myemane/* $CONFDIR/myemane/
     fi
 }
 

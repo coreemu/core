@@ -2,9 +2,9 @@
 virtual ethernet classes that implement the interfaces available under Linux.
 """
 
-import subprocess
 import time
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNetIf
@@ -25,13 +25,13 @@ class VEth(PyCoreNetIf):
         """
         Creates a VEth instance.
 
-        :param core.netns.nodes.CoreNode node: related core node
+        :param core.netns.vnode.SimpleLxcNode node: related core node
         :param str name: interface name
         :param str localname: interface local name
         :param mtu: interface mtu
         :param net: network
         :param bool start: start flag
-        :return:
+        :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
@@ -45,10 +45,11 @@ class VEth(PyCoreNetIf):
         Interface startup logic.
 
         :return: nothing
+        :raises CoreCommandError: when there is a command exception
         """
-        subprocess.check_call([constants.IP_BIN, "link", "add", "name", self.localname,
-                               "type", "veth", "peer", "name", self.name])
-        subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "up"])
+        utils.check_cmd([constants.IP_BIN, "link", "add", "name", self.localname,
+                         "type", "veth", "peer", "name", self.name])
+        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
         self.up = True
 
     def shutdown(self):
@@ -59,10 +60,19 @@ class VEth(PyCoreNetIf):
         """
         if not self.up:
             return
+
         if self.node:
-            self.node.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            try:
+                self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            except CoreCommandError:
+                logger.exception("error shutting down interface")
+
         if self.localname:
-            utils.mutedetach([constants.IP_BIN, "link", "delete", self.localname])
+            try:
+                utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
+            except CoreCommandError:
+                logger.exception("error deleting link")
+
         self.up = False
 
 
@@ -76,7 +86,7 @@ class TunTap(PyCoreNetIf):
         """
         Create a TunTap instance.
 
-        :param core.netns.nodes.CoreNode node: related core node
+        :param core.netns.vnode.SimpleLxcNode node: related core node
         :param str name: interface name
         :param str localname: local interface name
         :param mtu: interface mtu
@@ -98,10 +108,10 @@ class TunTap(PyCoreNetIf):
         """
         # TODO: more sophisticated TAP creation here
         #   Debian does not support -p (tap) option, RedHat does.
-        # For now, this is disabled to allow the TAP to be created by another
-        # system (e.g. EMANE"s emanetransportd)
-        # check_call(["tunctl", "-t", self.name])
-        # self.install()
+        #   For now, this is disabled to allow the TAP to be created by another
+        #   system (e.g. EMANE"s emanetransportd)
+        #   check_call(["tunctl", "-t", self.name])
+        #   self.install()
         self.up = True
 
     def shutdown(self):
@@ -112,9 +122,12 @@ class TunTap(PyCoreNetIf):
         """
         if not self.up:
             return
-        self.node.cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
-        # if self.name:
-        #    mutedetach(["tunctl", "-d", self.localname])
+
+        try:
+            self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+        except CoreCommandError:
+            logger.exception("error shutting down tunnel tap")
+
         self.up = False
 
     def waitfor(self, func, attempts=10, maxretrydelay=0.25):
@@ -124,26 +137,29 @@ class TunTap(PyCoreNetIf):
         :param func: function to wait for a result of zero
         :param int attempts: number of attempts to wait for a zero result
         :param float maxretrydelay: maximum retry delay
-        :return: nothing
+        :return: True if wait succeeded, False otherwise
+        :rtype: bool
         """
         delay = 0.01
+        result = False
         for i in xrange(1, attempts + 1):
             r = func()
             if r == 0:
-                return
+                result = True
+                break
             msg = "attempt %s failed with nonzero exit status %s" % (i, r)
             if i < attempts + 1:
                 msg += ", retrying..."
                 logger.info(msg)
                 time.sleep(delay)
-                delay = delay + delay
+                delay += delay
                 if delay > maxretrydelay:
                     delay = maxretrydelay
             else:
                 msg += ", giving up"
                 logger.info(msg)
 
-        raise RuntimeError("command failed after %s attempts" % attempts)
+        return result
 
     def waitfordevicelocal(self):
         """
@@ -155,8 +171,8 @@ class TunTap(PyCoreNetIf):
         """
 
         def localdevexists():
-            cmd = (constants.IP_BIN, "link", "show", self.localname)
-            return utils.mutecall(cmd)
+            args = [constants.IP_BIN, "link", "show", self.localname]
+            return utils.cmd(args)
 
         self.waitfor(localdevexists)
 
@@ -168,23 +184,25 @@ class TunTap(PyCoreNetIf):
         """
 
         def nodedevexists():
-            cmd = (constants.IP_BIN, "link", "show", self.name)
-            return self.node.cmd(cmd)
+            args = [constants.IP_BIN, "link", "show", self.name]
+            return self.node.cmd(args)
 
         count = 0
         while True:
-            try:
-                self.waitfor(nodedevexists)
+            result = self.waitfor(nodedevexists)
+            if result:
                 break
-            except RuntimeError as e:
-                # check if this is an EMANE interface; if so, continue
-                # waiting if EMANE is still running
-                # TODO: remove emane code
-                if count < 5 and nodeutils.is_node(self.net, NodeTypes.EMANE) and \
-                        self.node.session.emane.emanerunning(self.node):
-                    count += 1
-                else:
-                    raise e
+
+            # check if this is an EMANE interface; if so, continue
+            # waiting if EMANE is still running
+            # TODO: remove emane code
+            should_retry = count < 5
+            is_emane_node = nodeutils.is_node(self.net, NodeTypes.EMANE)
+            is_emane_running = self.node.session.emane.emanerunning(self.node)
+            if all([should_retry, is_emane_node, is_emane_running]):
+                count += 1
+            else:
+                raise RuntimeError("node device failed to exist")
 
     def install(self):
         """
@@ -194,20 +212,13 @@ class TunTap(PyCoreNetIf):
         end of the TAP.
 
         :return: nothing
+        :raises CoreCommandError: when there is a command exception
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
-
-        try:
-            subprocess.check_call([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
-        except subprocess.CalledProcessError:
-            msg = "error installing TAP interface %s, command:" % self.localname
-            msg += "ip link set %s netns %s" % (self.localname, netns)
-            logger.exception(msg)
-            return
-
-        self.node.cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
-        self.node.cmd([constants.IP_BIN, "link", "set", self.name, "up"])
+        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
+        self.node.check_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
+        self.node.check_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
         """
@@ -217,7 +228,7 @@ class TunTap(PyCoreNetIf):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            self.node.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
 
 
 class GreTap(PyCoreNetIf):
@@ -233,7 +244,7 @@ class GreTap(PyCoreNetIf):
         """
         Creates a GreTap instance.
 
-        :param core.netns.nodes.CoreNode node: related core node
+        :param core.netns.vnode.SimpleLxcNode node: related core node
         :param str name: interface name
         :param core.session.Session session: core session instance
         :param mtu: interface mtu
@@ -243,6 +254,7 @@ class GreTap(PyCoreNetIf):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
+        :raises CoreCommandError: when there is a command exception
         """
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.session = session
@@ -260,17 +272,17 @@ class GreTap(PyCoreNetIf):
 
         if remoteip is None:
             raise ValueError, "missing remote IP required for GRE TAP device"
-        cmd = ("ip", "link", "add", self.localname, "type", "gretap",
-               "remote", str(remoteip))
+        args = ["ip", "link", "add", self.localname, "type", "gretap",
+                "remote", str(remoteip)]
         if localip:
-            cmd += ("local", str(localip))
+            args += ["local", str(localip)]
         if ttl:
-            cmd += ("ttl", str(ttl))
+            args += ["ttl", str(ttl)]
         if key:
-            cmd += ("key", str(key))
-        subprocess.check_call(cmd)
-        cmd = ("ip", "link", "set", self.localname, "up")
-        subprocess.check_call(cmd)
+            args += ["key", str(key)]
+        utils.check_cmd(args)
+        args = ["ip", "link", "set", self.localname, "up"]
+        utils.check_cmd(args)
         self.up = True
 
     def shutdown(self):
@@ -280,10 +292,14 @@ class GreTap(PyCoreNetIf):
         :return: nothing
         """
         if self.localname:
-            cmd = ("ip", "link", "set", self.localname, "down")
-            subprocess.check_call(cmd)
-            cmd = ("ip", "link", "del", self.localname)
-            subprocess.check_call(cmd)
+            try:
+                args = ["ip", "link", "set", self.localname, "down"]
+                utils.check_cmd(args)
+                args = ["ip", "link", "del", self.localname]
+                utils.check_cmd(args)
+            except CoreCommandError:
+                logger.exception("error during shutdown")
+
             self.localname = None
 
     def data(self, message_type):

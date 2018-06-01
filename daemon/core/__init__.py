@@ -1,9 +1,24 @@
-import logzero
+import json
+import logging
+import logging.config
+import os
+import subprocess
 
-# configure custom format with function name
-_format_template = "%(color)s[%(levelname)1.1s %(asctime)s %(module)s:%(funcName)s:" \
-                   "%(lineno)d]%(end_color)s %(message)s"
-_formatter = logzero.LogFormatter(fmt=_format_template)
-logzero.formatter(_formatter)
+from core import constants
 
-logger = logzero.logger
+# setup logging
+log_config_path = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
+with open(log_config_path, "r") as log_config_file:
+    log_config = json.load(log_config_file)
+    logging.config.dictConfig(log_config)
+
+logger = logging.getLogger()
+
+
+class CoreCommandError(subprocess.CalledProcessError):
+    """
+    Used when encountering internal CORE command errors.
+    """
+
+    def __str__(self):
+        return "Command(%s), Status(%s):\n%s" % (self.cmd, self.returncode, self.output)

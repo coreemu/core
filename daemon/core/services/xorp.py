@@ -74,7 +74,7 @@ class XorpService(CoreService):
     Parent class for XORP services. Defines properties and methods
     common to XORP's routing daemons.
     """
-    _name = "XorpDaemon"
+    _name = None
     _group = "XORP"
     _depends = ("xorp_rtrmgr",)
     _dirs = ()

@@ -16,7 +16,7 @@ import sys
 from core import constants
 from core.api import coreapi, dataconversion
 from core.enumerations import CORE_API_PORT, EventTypes, EventTlvs, LinkTlvs, LinkTypes, MessageFlags
-from core.misc import ipaddress, nodeutils, nodemaps
+from core.misc import ipaddress
 from core.netns import nodes
 from core.session import Session
 
@@ -55,7 +55,7 @@ def main():
     start = datetime.datetime.now()
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
-    session = Session(1, persistent=True)
+    session = Session(1)
     if 'server' in globals():
         server.addsession(session)
 
@@ -69,7 +69,7 @@ def main():
     print "connecting to slave at %s:%d" % (slave, port)
     session.broker.addserver(slave, slave, port)
     session.broker.setupserver(slave)
-    session.set_state(EventTypes.CONFIGURATION_STATE.value)
+    session.set_state(EventTypes.CONFIGURATION_STATE)
     tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
@@ -116,7 +116,7 @@ def main():
     session.broker.handlerawmsg(msg)
 
     # start a shell on node 1
-    n[1].term("bash")
+    n[1].client.term("bash")
 
     print "elapsed time: %s" % (datetime.datetime.now() - start)
     print "To stop this session, use the 'core-cleanup' script on this server"
@@ -124,8 +124,4 @@ def main():
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     main()

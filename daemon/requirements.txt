@@ -1,7 +1,4 @@
 enum34==1.1.6
-logzero==1.3.0
-grpcio==1.0.0
-grpcio-tools==1.0.0
 mock==1.3.0
 pycco==0.5.1
 pytest==3.0.7

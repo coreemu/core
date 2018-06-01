@@ -2,7 +2,7 @@ comments {
 Kitchen Sink
 ============
 
-Contains every type of node available in CORE, except for the Xen and physical (prouter)
+Contains every type of node available in CORE, except for physical (prouter)
 machine types, and nodes distributed on other emulation servers.
 
 To get the RJ45 node to work, a test0 interface should first be created like this:

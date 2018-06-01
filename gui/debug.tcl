@@ -1,11 +1,3 @@
-#
-# CORE Debugger
-# Copyright 2005-2013 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-#  author:       Jeff Ahrenholz <jeffrey.m.ahrenholz@boeing.com>
-#
-
 .menubar.tools add command -label "Debugger..." -command popupDebugger
 
 set g_last_debug_cmd "puts \"Hello world\""

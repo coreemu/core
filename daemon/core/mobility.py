@@ -5,7 +5,6 @@ mobility.py: mobility helpers for moving nodes and calculating wireless range.
 import heapq
 import math
 import os
-import subprocess
 import threading
 import time
 
@@ -21,6 +20,7 @@ from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
 from core.enumerations import NodeTlvs
 from core.enumerations import RegisterTlvs
+from core.misc import utils
 from core.misc.ipaddress import IpAddress
 
 
@@ -525,8 +525,8 @@ class BasicRangeModel(WirelessModel):
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
 
-            logger.info("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
-                        a.name, b.name, linked, d, self.range)
+            logger.debug("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
+                         a.name, b.name, linked, d, self.range)
             if d > self.range:
                 if linked:
                     logger.info("was linked, unlinking")
@@ -1152,11 +1152,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :rtype: int
         """
         nodenum = int(nodenum)
-        try:
-            return self.nodemap[nodenum]
-        except KeyError:
-            logger.exception("error finding value in node map, ignored and returns node id")
-            return nodenum
+        return self.nodemap.get(nodenum, nodenum)
 
     def startup(self):
         """
@@ -1237,11 +1233,5 @@ class Ns2ScriptedMobility(WayPointMobility):
         if filename is None or filename == '':
             return
         filename = self.findfile(filename)
-        try:
-            subprocess.check_call(
-                ["/bin/sh", filename, typestr],
-                cwd=self.session.sessiondir,
-                env=self.session.get_environment()
-            )
-        except subprocess.CalledProcessError:
-            logger.exception("Error running script '%s' for WLAN state %s", filename, typestr)
+        args = ["/bin/sh", filename, typestr]
+        utils.check_cmd(args, cwd=self.session.sessiondir, env=self.session.get_environment())

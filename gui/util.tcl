@@ -1,22 +1,16 @@
-#
-# Copyright 2005-2014 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
 set g_imageFileTypes {{"images" {.gif}} {"images" {.jpg}} {"images" {.png}}
 			{"images" {.bmp}} {"images" {.pcx}} {"images" {.tga}}
 			{"images" {.tif}} {"images" {.ps}} {"images" {.ppm}}
 			{"images" {.xbm}} {"All files"  {*}   }}
 
 global execMode
-if { $execMode == "interactive"} { 
+if { $execMode == "interactive"} {
     if { [catch { package require Img }] } {
 	puts "warning: Tcl/Tk Img package not found"
 	puts "  Thumbnails and other image types (JPG, PNG, etc.) will not be supported."
 	puts "  Please install it with:"
 	puts "    yum install tkimg   (RedHat/Fedora)"
-	puts "    sudo apt-get install libtk-img   (Debian/Ubuntu)"
-	puts "    pkg_add -r libimg   (FreeBSD)\n"
+	puts "    sudo apt-get install libtk-img   (Debian/Ubuntu)\n"
 	set g_imageFileTypes {{"images" {.gif}} {"All files" {*} }}
     }
 }
@@ -51,7 +45,7 @@ proc checkOS {} {
 	set machine [exec uname -m]
 	set kernel [exec uname -v]
 
-        set x11 0  
+        set x11 0
   	catch { set x11 [winfo server .c] }
 
 	set os_ident "$os_name $os_ver"
@@ -203,7 +197,7 @@ proc upgradeNetworkConfigToServices { } {
 	    puts "updating Quagga services on node $node"
 	} ;# end quagga services
 	#
-	# convert static model to router 
+	# convert static model to router
 	#
 	if { [getNodeModel $node] == "static" } {
 	    setNodeModel $node "router"
@@ -223,7 +217,7 @@ proc upgradeNetworkConfigToServices { } {
 	    setCustomConfig $node "service:UserDefined" "UserDefined" \
 	    	$statvals 0
             setCustomConfig $node "service:UserDefined:$cfgname" $cfgname $cfg 0
-	    set services [getNodeServices $node true] 
+	    set services [getNodeServices $node true]
 	    lappend services "UserDefined"
             setNodeServices $node $services
 	    puts "adding user-defined static routing service on node $node"
@@ -240,7 +234,7 @@ proc getCPUUsage { } {
     }
 
     array set cpu {}
-   
+
     while { [ gets $f line ] >= 0 } {
 	set cpun [lindex $line 0]
 	set user [lindex $line 1]; set nice [lindex $line 2]
@@ -264,14 +258,14 @@ proc getCPUUsage { } {
 
 	set usage_time [expr {($u-$lu) + ($n-$ln) + ($s-$ls)}]
 	set total_time [expr {$usage_time + ($i-$li)}]
-	if { $total_time <= 0 } { 
+	if { $total_time <= 0 } {
 	    set cpuusage "" ;# avoid div by zero
  	} else {
 	    set cpuusage [expr { 100 * $usage_time / $total_time }]
 	}
 	lappend cpuusages $cpuusage
     }
-    return $cpuusages 
+    return $cpuusages
 }
 
 # Node selection dialog display given message 'msg' with initial node selection
@@ -294,7 +288,7 @@ proc popupSelectNodes { msg initsel callback } {
     listbox $wi.nodes.fr.nodelist -width 40 \
     	-listvariable node_list -yscrollcommand "$wi.nodes.fr.scroll set" \
 	-activestyle dotbox -selectmode extended
-    scrollbar $wi.nodes.fr.scroll -command "$wi.nodes.fr.nodelist yview" 
+    scrollbar $wi.nodes.fr.scroll -command "$wi.nodes.fr.nodelist yview"
     pack $wi.nodes.fr.nodelist -fill both -expand true -side left
     pack $wi.nodes.fr.scroll -fill y -expand true -side left
     pack $wi.nodes.label $wi.nodes.fr -side top -padx 4 -pady 4 \
@@ -352,7 +346,7 @@ proc popupRenumberNodes { } {
     listbox $wi.nodes.left.fr.from -selectmode single -width 20 \
     	-listvariable node_list -yscrollcommand "$wi.nodes.left.fr.scroll set" \
 	-activestyle dotbox
-    scrollbar $wi.nodes.left.fr.scroll -command "$wi.nodes.left.fr.from yview" 
+    scrollbar $wi.nodes.left.fr.scroll -command "$wi.nodes.left.fr.from yview"
     pack $wi.nodes.left.fr.from $wi.nodes.left.fr.scroll -fill y -side left
     pack $wi.nodes.left.label $wi.nodes.left.fr -side top -padx 4 -pady 4 \
 	-anchor w
@@ -487,24 +481,16 @@ proc addStaticRoutesToConfig { node cfg_ref } {
     upvar 1 $cfg_ref cfg
 
     foreach statrte [getStatIPv4routes $node] {
-    	if {[lindex $systype 0] == "Linux" } { ;# Linux
 	    set net [lindex [split $statrte] 0]
 	    set gw [lindex [split $statrte] 1]
 	    lappend cfg "/sbin/ip -4 route add $net via $gw"
-	} else { ;# FreeBSD
-	    lappend cfg "route -q add -inet $statrte"
-	}
     }
 
     foreach statrte [getStatIPv6routes $node] {
-    	if { [lindex $systype 0] == "Linux" } { ;# Linux
 	    set net [lindex [split $statrte] 0]
 	    set gw [lindex [split $statrte] 1]
 	    if { $net == "::/0" } { set net "default" }
 	    lappend cfg "/sbin/ip -6 route add $net via $gw"
-	} else { ;# FreeBSD
-	    lappend cfg "route -q add -inet6 $statrte"
-	}
     }
 
 }
@@ -514,11 +500,7 @@ proc getServiceStartString { } {
 
     setSystype
 
-    if { [lindex $systype 0] == "Linux" } { ;# Linux
 	return "/etc/init.d/core-daemon start"
-    } else { ;# FreeBSD
-	return "/usr/local/etc/rc.d/core onestart"
-    }
 }
 
 proc popupBuildHostsFile { } {
@@ -540,7 +522,7 @@ proc popupBuildHostsFile { } {
     pack $wi.top.help -side top -fill both -expand true
     pack $wi.top -padx 4 -pady 4 -side top
 
-    # text box 
+    # text box
     frame $wi.mid
     text $wi.mid.hosts -relief sunken -bd 2 \
 	-yscrollcommand "$wi.mid.scroll set" -setgrid 1 -height 30 -undo 1 \
@@ -585,7 +567,7 @@ proc popupBuildHostsFile { } {
         set wi .buildhostsdialog
 	set hosts [string trim [$wi.mid.hosts get 0.0 end]]
 	set filename [$wi.fil.filename get]
-	set fileId [open $filename a] 
+	set fileId [open $filename a]
         puts $fileId $hosts
 	close $fileId
 	destroy $wi
@@ -707,7 +689,7 @@ proc addressConfigHelper { wi fam cmd } {
     }
 }
 
-# set the default addresses for automatic allocation in the g_prefs array 
+# set the default addresses for automatic allocation in the g_prefs array
 # for the given address family
 proc setDefaultAddrs { fam } {
     global g_prefs
@@ -737,8 +719,8 @@ proc popupMacAddressConfig { } {
     frame $wi.top
     set helptext "MAC addresses are automatically assigned starting with\n"
     set helptext "$helptext 00:00:00:aa:00:nn, where nn starts with the below"
-    set helptext "$helptext value.\n You should change this value when tunneling" 
-    set helptext "$helptext between \nemulations to prevent MAC address conflicts." 
+    set helptext "$helptext value.\n You should change this value when tunneling"
+    set helptext "$helptext between \nemulations to prevent MAC address conflicts."
 
     label $wi.top.help -text $helptext
     pack $wi.top.help -side top -fill both -expand true
@@ -863,7 +845,7 @@ proc _launchBrowser url {
 
 # helper for registering a callback with a tk_optionMenu variable, when a user
 # clicks on the menu and changes the value; if the global variable var is
-# cleared, this callback is cancelled 
+# cleared, this callback is cancelled
 # NOTE: when closing the window that calls this, ensure that var is cleared
 proc tkOptionMenuCallback { ctl var cb args } {
     if { ![winfo exists $ctl] } { return }
@@ -1094,7 +1076,7 @@ proc get_text_editor { want_default } {
 	if { $want_default } {
 	    return "EDITOR"
 	} else {
-	    return $ed 
+	    return $ed
 	}
     }
     # return the first installed editor from EDITORS global
@@ -1203,7 +1185,7 @@ proc delAddrsFromNodes { fam nodes } {
 # fix for Tcl/Tk 8.5.8 and lower which doesn't have ttk::spinbox
 #    set spinbox [getspinbox]
 #    $spinbox $var -justify right -width 10 ...
-# 
+#
 proc getspinbox {} {
     if { [info command ttk::spinbox] == "" } {
 	return spinbox
@@ -1308,7 +1290,7 @@ proc findButton { w } {
     if { $first == "" } {
 	$tree insert {} end -id none -values [list "" "" "" "no results found"]
     } else {
-	$tree selection set $first 
+	$tree selection set $first
     }
 
     . config -cursor left_ptr

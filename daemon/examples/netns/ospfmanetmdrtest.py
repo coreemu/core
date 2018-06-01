@@ -16,8 +16,9 @@ import time
 from string import Template
 
 from core.constants import QUAGGA_STATE_DIR
-from core.misc import ipaddress, nodeutils, nodemaps
-from core.misc.utils import mutecall
+
+from core.misc import ipaddress
+from core.misc.utils import check_cmd
 from core.netns import nodes
 
 # this is the /etc/core/core.conf default
@@ -32,8 +33,7 @@ try:
         if os.path.exists(os.path.join(p, "zebra")):
             quagga_path = p
             break
-    mutecall([os.path.join(quagga_path, "zebra"),
-              "-u", "root", "-g", "root", "-v"])
+    check_cmd([os.path.join(quagga_path, "zebra"), "-u", "root", "-g", "root", "-v"])
 except OSError:
     sys.stderr.write("ERROR: running zebra failed\n")
     sys.exit(1)
@@ -385,8 +385,7 @@ class Cmd:
 
     def open(self):
         """ Exceute call to node.popen(). """
-        self.id, self.stdin, self.out, self.err = \
-            self.node.popen(self.args)
+        self.id, self.stdin, self.out, self.err = self.node.client.popen(self.args)
 
     def parse(self):
         """ This method is overloaded by child classes and should return some
@@ -409,7 +408,7 @@ class VtyshCmd(Cmd):
 
     def open(self):
         args = ("vtysh", "-c", self.args)
-        self.id, self.stdin, self.out, self.err = self.node.popen(args)
+        self.id, self.stdin, self.out, self.err = self.node.client.popen(args)
 
 
 class Ospf6NeighState(VtyshCmd):
@@ -602,8 +601,4 @@ def main():
 
 
 if __name__ == "__main__":
-    # configure nodes to use
-    node_map = nodemaps.NODES
-    nodeutils.set_node_map(node_map)
-
     me = main()

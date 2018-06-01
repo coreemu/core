@@ -86,11 +86,7 @@ node n2 {
 	HN=`hostname`
 	SCRIPTDIR=$SESSION_DIR
 	LOGDIR=/var/log
-	
-	if [ `uname` = "FreeBSD" ]; then
-	  SCRIPTDIR=/tmp/e0_$HN
-	  LOGDIR=$SCRIPTDIR
-	fi
+
 	cd $SCRIPTDIR
 	(
 	cat << 'EOF'

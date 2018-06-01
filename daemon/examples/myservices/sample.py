@@ -1,8 +1,3 @@
-#
-# CORE
-# Copyright (c)2010-2012 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
 """
 Sample user-defined service.
 """

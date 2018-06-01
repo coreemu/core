@@ -202,8 +202,6 @@ class CoreDocumentParser0(object):
             mgr = None
             self.parsenetem(model, obj, kvs)
 
-        elif name[:3] == "xen":
-            mgr = self.session.xen
         # TODO: assign other config managers here
         if mgr:
             mgr.setconfig_keyvalues(nodenum, name, kvs)
@@ -252,7 +250,7 @@ class CoreDocumentParser0(object):
             geo.append(a)
         location.setrefgeo(geo[0], geo[1], geo[2])
         scale = origin.getAttribute("scale100")
-        if scale is not None:
+        if scale is not None and scale:
             location.refscale = float(scale)
         point = xmlutils.get_one_element(origin, "point")
         if point is not None and point.firstChild is not None:

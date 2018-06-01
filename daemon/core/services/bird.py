@@ -90,7 +90,7 @@ class BirdService(CoreService):
     common to Bird's routing daemons.
     """
 
-    _name = "BirdDaemon"
+    _name = None
     _group = "BIRD"
     _depends = ("bird",)
     _dirs = ()

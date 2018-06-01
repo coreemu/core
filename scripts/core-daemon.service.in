@@ -3,9 +3,8 @@ Description=Common Open Research Emulator Service
 After=network.target
 
 [Service]
-Type=forking
-PIDFile=/var/run/core-daemon.pid
-ExecStart=@PYTHON@ @SBINDIR@/core-daemon -d
+Type=simple
+ExecStart=@PYTHON@ @bindir@/core-daemon
 TasksMax=infinity
 
 [Install]

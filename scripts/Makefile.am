@@ -9,49 +9,21 @@
 
 CLEANFILES	= core-daemon
 
-DISTCLEANFILES	= Makefile.in xen/Makefile xen/Makefile.in
+DISTCLEANFILES	= Makefile.in core-daemon.service core-daemon
 
-EXTRA_DIST	= core-daemon-init.d \
-		  core-daemon.service.in \
-		  core-daemon-rc.d \
-		  core-daemon-init.d-SUSE \
-		  xen
+EXTRA_DIST	= core-daemon.in core-daemon.service.in
 
 SUBDIRS		= perf
 
-# clean up dirs included by EXTRA_DIST
-dist-hook:
-	rm -rf $(distdir)/xen/.svn
-
 # install startup scripts based on --with-startup=option configure option
-# FreeBSD, init.d (default), systemd, SUSE
-if WANT_BSD
-startupdir	= /usr/local/etc/rc.d
-startup_SCRIPTS	= core-daemon
-
-core-daemon: core-daemon-rc.d
-	cp $< $@
-else
-
+# init.d (default), systemd
 if WANT_INITD
 startupdir	= /etc/init.d
 startup_SCRIPTS	= core-daemon
-
-core-daemon: core-daemon-init.d
-	cp $< $@
 endif
 if WANT_SYSTEMD
 startupdir	= /etc/systemd/system
 startup_SCRIPTS	= core-daemon.service
-endif
-if WANT_SUSE
-startupdir	= /etc/init.d
-startup_SCRIPTS	= core-daemon
-
-core-daemon: core-daemon-init.d-SUSE
-	cp $< $@
-endif
-# endif FreeBSD
 endif
 
 # remove extra scripts and their directories if they are empty

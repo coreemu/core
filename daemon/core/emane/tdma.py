@@ -2,97 +2,52 @@
 tdma.py: EMANE TDMA model bindings for CORE
 """
 
-from core import emane
+import os
+
+from core import constants
 from core import logger
-from core.emane.emanemodel import EmaneModel
-from core.emane.universal import EmaneUniversalModel
+from core.emane import emanemanifest
+from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
+from core.misc import utils
 
 
-class EmaneTdmaModel(EmaneModel):
-    def __init__(self, session, object_id=None):
-        EmaneModel.__init__(self, session, object_id)
-
+class EmaneTdmaModel(emanemodel.EmaneModel):
     # model name
     name = "emane_tdma"
-    xml_path = "/usr/share/emane/xml/models/mac/tdmaeventscheduler"
-    if emane.VERSION < emane.EMANE101:
-        logger.error("EMANE TDMA requires EMANE 1.0.1 or greater")
 
-    # MAC parameters
-    _confmatrix_mac = [
-        ("enablepromiscuousmode", ConfigDataTypes.BOOL.value, "0",
-         "True,False", "enable promiscuous mode"),
-        ("flowcontrolenable", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable traffic flow control"),
-        ("flowcontroltokens", ConfigDataTypes.UINT16.value, "10",
-         "", "number of flow control tokens"),
-        ("fragmentcheckthreshold", ConfigDataTypes.UINT16.value, "2",
-         "", "rate in seconds for check if fragment reassembly efforts should be abandoned"),
-        ("fragmenttimeoutthreshold", ConfigDataTypes.UINT16.value, "5",
-         "", "threshold in seconds to wait for another packet fragment for reassembly"),
-        ("neighbormetricdeletetime", ConfigDataTypes.FLOAT.value, "60.0",
-         "", "neighbor RF reception timeout for removal from neighbor table (sec)"),
-        ("neighbormetricupdateinterval", ConfigDataTypes.FLOAT.value, "1.0",
-         "", "neighbor table update interval (sec)"),
-        ("pcrcurveuri", ConfigDataTypes.STRING.value, "%s/tdmabasemodelpcr.xml" % xml_path,
-         "", "SINR/PCR curve file"),
-        ("queue.aggregationenable", ConfigDataTypes.BOOL.value, "1",
-         "On,Off", "enable transmit packet aggregation"),
-        ("queue.aggregationslotthreshold", ConfigDataTypes.FLOAT.value, "90.0",
-         "", "percentage of a slot that must be filled in order to conclude aggregation"),
-        ("queue.depth", ConfigDataTypes.UINT16.value, "256",
-         "", "size of the per service class downstream packet queues (packets)"),
-        ("queue.fragmentationenable", ConfigDataTypes.BOOL.value, "1",
-         "On,Off", "enable packet fragmentation (over multiple slots)"),
-        ("queue.strictdequeueenable", ConfigDataTypes.BOOL.value, "0",
-         "On,Off", "enable strict dequeueing to specified queues  only"),
-    ]
+    # mac configuration
+    mac_library = "tdmaeventschedulerradiomodel"
+    mac_xml = "/usr/share/emane/manifest/tdmaeventschedulerradiomodel.xml"
+    mac_defaults = {
+        "pcrcurveuri": "/usr/share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
+    }
+    mac_config = emanemanifest.parse(mac_xml, mac_defaults)
 
-    # PHY parameters from Universal PHY
-    _confmatrix_phy = EmaneUniversalModel.config_matrix
+    # add custom schedule options and ignore it when writing emane xml
+    schedule_name = "schedule"
+    default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
+    mac_config.insert(
+        0,
+        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file (core)")
+    )
+    config_ignore = {schedule_name}
 
-    config_matrix = _confmatrix_mac + _confmatrix_phy
-
-    # value groupings
-    config_groups = "TDMA MAC Parameters:1-%d|Universal PHY Parameters:%d-%d" % (
-        len(_confmatrix_mac), len(_confmatrix_mac) + 1, len(config_matrix))
-
-    def buildnemxmlfiles(self, e, ifc):
+    def post_startup(self, emane_manager):
         """
-        Build the necessary nem, mac, and phy XMLs in the given path.
-        If an individual NEM has a nonstandard config, we need to build
-        that file also. Otherwise the WLAN-wide nXXemane_tdmanem.xml,
-        nXXemane_tdmamac.xml, nXXemane_tdmaphy.xml are used.
+        Logic to execute after the emane manager is finished with startup.
+
+        :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
+        :return: nothing
         """
-        values = e.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), ifc)
+        # get configured schedule
+        values = emane_manager.getconfig(self.object_id, self.name, self.getdefaultvalues())[1]
         if values is None:
             return
-        nemdoc = e.xmldoc("nem")
-        nem = nemdoc.getElementsByTagName("nem").pop()
-        nem.setAttribute("name", "TDMA NEM")
-        e.appendtransporttonem(nemdoc, nem, self.object_id, ifc)
-        mactag = nemdoc.createElement("mac")
-        mactag.setAttribute("definition", self.macxmlname(ifc))
-        nem.appendChild(mactag)
-        phytag = nemdoc.createElement("phy")
-        phytag.setAttribute("definition", self.phyxmlname(ifc))
-        nem.appendChild(phytag)
-        e.xmlwrite(nemdoc, self.nemxmlname(ifc))
+        schedule = self.valueof(self.schedule_name, values)
 
-        names = list(self.getnames())
-        macnames = names[:len(self._confmatrix_mac)]
-        phynames = names[len(self._confmatrix_mac):]
-        # make any changes to the mac/phy names here to e.g. exclude them from
-        # the XML output
+        event_device = emane_manager.event_device
 
-        macdoc = e.xmldoc("mac")
-        mac = macdoc.getElementsByTagName("mac").pop()
-        mac.setAttribute("name", "TDMA MAC")
-        mac.setAttribute("library", "tdmaeventschedulerradiomodel")
-        # append MAC options to macdoc
-        map(lambda n: mac.appendChild(e.xmlparam(macdoc, n, self.valueof(n, values))), macnames)
-        e.xmlwrite(macdoc, self.macxmlname(ifc))
-
-        phydoc = EmaneUniversalModel.getphydoc(e, self, values, phynames)
-        e.xmlwrite(phydoc, self.phyxmlname(ifc))
+        # initiate tdma schedule
+        logger.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
+        utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])

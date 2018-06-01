@@ -204,8 +204,6 @@ class CoreDocumentParser1(object):
             mgr = self.session.mobility
         elif model_name.startswith('emane'):
             mgr = self.session.emane
-        elif model_name.startswith('xen'):
-            mgr = self.session.xen
         else:
             # TODO: any other config managers?
             raise NotImplementedError
@@ -685,8 +683,6 @@ class CoreDocumentParser1(object):
             'host': 'host.gif',
             'PC': 'pc.gif',
             'mdr': 'mdr.gif',
-            # 'prouter': 'router_green.gif',
-            # 'xen': 'xen.gif'
         }
         icon_set = False
         for child in xmlutils.iter_children_with_name(element, 'CORE:presentation'):

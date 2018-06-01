@@ -212,7 +212,7 @@ class ConfigurableManager(object):
         :return: nothing
         """
         if conftype not in self._modelclsmap:
-            logger.warn("Unknown model type '%s'" % conftype)
+            logger.warn("unknown model type '%s'", conftype)
             return
         model = self._modelclsmap[conftype]
         keys = model.getnames()
@@ -220,8 +220,7 @@ class ConfigurableManager(object):
         values = list(model.getdefaultvalues())
         for key, value in keyvalues:
             if key not in keys:
-                logger.warn("Skipping unknown configuration key for %s: '%s'" % \
-                            (conftype, key))
+                logger.warn("Skipping unknown configuration key for %s: '%s'", conftype, key)
                 continue
             i = keys.index(key)
             values[i] = value
@@ -327,7 +326,7 @@ class Configurable(object):
         if interface_id is not None:
             node_id = node_id * 1000 + interface_id
 
-        logger.info("received configure message for %s nodenum:%s", cls.name, str(node_id))
+        logger.debug("received configure message for %s nodenum:%s", cls.name, str(node_id))
         if config_type == ConfigFlags.REQUEST.value:
             logger.info("replying to configure request for %s model", cls.name)
             # when object name is "all", the reply to this request may be None

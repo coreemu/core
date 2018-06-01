@@ -1,9 +1,4 @@
 #
-# Copyright 2005-2014 the Boeing Company.
-# See the LICENSE file included in this distribution.
-#
-
-#
 # Copyright 2004-2008 University of Zagreb, Croatia.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -36,41 +31,41 @@
 # NAME
 #  filemgmt.tcl -- file used for manipulation with files
 # FUNCTION
-#  This module is used for all file manipulations. In this file 
+#  This module is used for all file manipulations. In this file
 #  a file is read, a new file opened or existing file saved.
 # NOTES
 # variables:
-# 
+#
 # currentFile
 #    relative or absolute path to the current configuration file
-# 
+#
 # fileTypes
-#    types that will be displayed when opening new file 
+#    types that will be displayed when opening new file
 #
 # procedures used for loading and storing the configuration file:
 #
-# newFile 
+# newFile
 #   - creates an empty project
 #
 # openFile {filename}
 #   - loads configuration from filename
 #
-# saveFile {selectedFile} 
-#   - saves current configuration to a file named selectedFile 
+# saveFile {selectedFile}
+#   - saves current configuration to a file named selectedFile
 #     unless the file name is an empty string
 #
 # fileOpenStartUp
 #   - opens the file named as command line argument
-# 
+#
 # fileNewDialogBox
-#   - opens message box to optionally save the changes 
+#   - opens message box to optionally save the changes
 #
 # fileOpenDialogBox
 #   - opens dialog box for selecting a file to open
 #
 # fileSaveDialogBox
 #   - opens dialog box for saving a file under new name if there is no
-#     current file 
+#     current file
 #****
 
 set currentFile ""
@@ -103,11 +98,6 @@ proc newFile {} {
     set g_view_locked 0
 
     # flush daemon configuration
-    if { [llength [findWlanNodes ""]] > 0 } {
-	if { [lindex $systype 0] == "FreeBSD" } {
-	    catch { exec ngctl config wlan_ctl: flush=all }
-	}
-    }
     loadCfg ""
     resetGlobalVars newfile
     set curcanvas [lindex $canvas_list 0]
@@ -143,7 +133,7 @@ proc newFile {} {
 #   Loads the configuration from the file named $filename.
 #****
 proc openFile { filename } {
-    global currentFile 
+    global currentFile
     global undolog activetool
     global canvas_list curcanvas systype
     global changed
@@ -190,11 +180,6 @@ proc openFile { filename } {
     }
 
     # flush daemon configuration
-    if { [llength [findWlanNodes ""]] > 0 } {
-	if { [lindex $systype 0] == "FreeBSD" } {
-	    catch { exec ngctl config wlan_ctl: flush=all }
-	}
-    }
     set cfg ""
     if { [catch { set fileId [open $currentFile r] } err] } {
 	puts "error opening file $currentFile: $err"
@@ -209,7 +194,7 @@ proc openFile { filename } {
 
     loadCfg $cfg
     switchCanvas none
-    set undolog(0) $cfg 
+    set undolog(0) $cfg
     set activetool select
 
     # remember opened files
@@ -236,11 +221,11 @@ proc resetGlobalVars { reason } {
 # FUNCTION
 #   Loads the current configuration into the selectedFile file.
 # INPUTS
-#   * selectedFile -- the name of the file where current 
+#   * selectedFile -- the name of the file where current
 #   configuration is saved.
 #****
 proc saveFile { selectedFile } {
-    global currentFile 
+    global currentFile
     global changed
 
     if { $selectedFile == ""} {
@@ -275,7 +260,7 @@ proc saveFile { selectedFile } {
 # SYNOPSIS
 #   fileOpenStartUp
 # FUNCTION
-#   Loads configuration from batch input file to the current 
+#   Loads configuration from batch input file to the current
 #   configuration.
 #****
 proc fileOpenStartUp {} {
@@ -310,7 +295,7 @@ proc fileNewDialogBox {} {
     if  {$changed != 0 } {
 	set choice [promptForSave]
     }
-    
+
     if { $choice != "cancel"} {
 	newFile
     }
@@ -370,7 +355,7 @@ proc fileSaveDialogBox { prompt } {
 	set ft [lreplace $ft 0 0]
 	set ft [linsert $ft 1 $imn]
     }
-   
+
     set dir ""
     # use default conf file path upon first run
     if { $fileDialogBox_initial == 0} {
@@ -450,7 +435,7 @@ proc loadDotFile {} {
     set isfile 0
     if {[catch {set dotfile [open "$CONFDIR/prefs.conf" r]} ]} return
     close $dotfile
- 
+
     if {[catch { source "$CONFDIR/prefs.conf" }]} {
 	puts "The $CONFDIR/prefs.conf preferences file is invalid, ignoring it."
 	#file delete "~/.core"
@@ -468,7 +453,7 @@ proc savePrefsFile { } {
 
     # header
     puts $dotfile "# CORE ${CORE_VERSION} GUI preference file"
- 
+
     # save the most-recently-used file list
     puts $dotfile "set g_mrulist \"$g_mrulist\""
 
@@ -550,10 +535,6 @@ proc exit {} {
     if { [popupStopSessionPrompt]=="cancel" } {
 	return
     }
-    # Flush daemon configuration
-    if { [lindex $systype 0] == "FreeBSD" } {
-	catch { exec ngctl config wlan_ctl: flush=all }
-    }
     # Prompt for save if file was changed
     if  { $changed != 0 && [promptForSave] == "cancel" } {
 	return
@@ -579,7 +560,7 @@ proc exit {} {
 
     # save user preferences
     savePrefsFile
-    
+
     exit.real
 }
 

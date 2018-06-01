@@ -11,7 +11,7 @@ class SdnService(CoreService):
     """
     Parent class for SDN services.
     """
-    _name = "SdnProcess"
+    _name = None
     _group = "SDN"
     _depends = ()
     _dirs = ()

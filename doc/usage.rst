@@ -11,9 +11,9 @@ Using the CORE GUI
 
 .. index:: how to use CORE
 
-CORE can be used via the GUI or :ref:`Python_Scripting`. 
-A typical emulation workflow is outlined in :ref:`emulation-workflow`. 
-Often the GUI is used to draw nodes and network devices on the canvas. 
+CORE can be used via the GUI or :ref:`Python_Scripting`.
+A typical emulation workflow is outlined in :ref:`emulation-workflow`.
+Often the GUI is used to draw nodes and network devices on the canvas.
 A Python script could also be written, that imports the CORE Python module, to configure and instantiate nodes and networks. This chapter primarily covers usage of the CORE GUI.
 
 .. _emulation-workflow:
@@ -24,7 +24,7 @@ A Python script could also be written, that imports the CORE Python module, to c
 
    Emulation Workflow
 
-CORE can be customized to perform any action at each phase depicted in :ref:`emulation-workflow`. See the *Hooks...* entry on the 
+CORE can be customized to perform any action at each phase depicted in :ref:`emulation-workflow`. See the *Hooks...* entry on the
 :ref:`Session_Menu`
 for details about when these session states are reached.
 
@@ -43,13 +43,13 @@ mode.  Nodes are drawn on a blank canvas using the toolbar on the left and
 configured from right-click menus or by double-clicking them. The GUI does not
 need to be run as root.
 
-Once editing is complete, pressing the green `Start` button (or choosing `Execute` from the `Session` menu) instantiates the topology within the FreeBSD kernel and enters Execute mode. In execute mode, the user can interact with the running emulated machines by double-clicking or right-clicking on them. The editing toolbar disappears and is replaced by an execute toolbar, which provides tools while running the emulation. Pressing the red `Stop` button  (or choosing `Terminate` from the `Session` menu) will destroy the running emulation and return CORE to Edit mode.
+Once editing is complete, pressing the green `Start` button (or choosing `Execute` from the `Session` menu) instantiates the topology within the Linux kernel and enters Execute mode. In execute mode, the user can interact with the running emulated machines by double-clicking or right-clicking on them. The editing toolbar disappears and is replaced by an execute toolbar, which provides tools while running the emulation. Pressing the red `Stop` button  (or choosing `Terminate` from the `Session` menu) will destroy the running emulation and return CORE to Edit mode.
 
 CORE can be started directly in Execute mode by specifying ``--start`` and a topology file on the command line:
 ::
 
           core-gui --start ~/.core/configs/myfile.imn
-  
+
 
 Once the emulation is running, the GUI can be closed, and a prompt will appear asking if the emulation should be terminated. The emulation may be left running and the GUI can reconnect to an existing session at a later time.
 
@@ -62,8 +62,8 @@ There is also a **Batch** mode where CORE runs without the GUI and will instanti
 ::
 
           core-gui --batch ~/.core/configs/myfile.imn
-  
-A session running in batch mode can be accessed using the ``vcmd`` command (or ``vimage`` on FreeBSD), or the GUI can connect to the session.
+
+A session running in batch mode can be accessed using the ``vcmd`` command, or the GUI can connect to the session.
 
 .. index:: closebatch
 
@@ -76,12 +76,12 @@ The session number is printed in the terminal when batch mode is started. This s
    If you forget the session number, you can always start the CORE GUI and use :ref:`Session_Menu` CORE sessions dialog box.
 
 .. NOTE::
-   It is quite easy to have overlapping sessions when running in batch mode. This may become a problem when control networks are employed in these sessions as there could be addressing conflicts. See :ref:`Control_Network` for remedies. 
- 
+   It is quite easy to have overlapping sessions when running in batch mode. This may become a problem when control networks are employed in these sessions as there could be addressing conflicts. See :ref:`Control_Network` for remedies.
+
 
 .. NOTE::
    If you like to use batch mode, consider writing a
-   CORE :ref:`Python script <Python_Scripting>` directly. 
+   CORE :ref:`Python script <Python_Scripting>` directly.
    This enables access to the full power of the Python API.
    The :ref:`File_Menu` has a basic `Export Python Script` option for getting
    started with a GUI-designed topology.
@@ -92,8 +92,7 @@ The session number is printed in the terminal when batch mode is started. This s
 
 .. index:: root privileges
 
-The GUI can be run as a normal user on Linux. For FreeBSD, the GUI should be run
-as root in order to start an emulation.
+The GUI can be run as a normal user on Linux.
 
 .. index:: port number
 
@@ -204,7 +203,7 @@ sub-menus, which appear when you click on their group icon.
     wireless nodes based on the distance between them
 
   * |rj45| *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can
-    be linked to real physical interfaces on the Linux or FreeBSD machine;
+    be linked to real physical interfaces;
     using this tool, real networks and devices can be physically connected to
     the live-running emulation (:ref:`RJ45_Tool`)
 
@@ -330,7 +329,7 @@ File Menu
 
 The File menu contains options for manipulating the :file:`.imn`
 :ref:`Configuration_Files`. Generally, these menu items should not be used in
-Execute mode (:ref:`Modes_of_Operation`.) 
+Execute mode (:ref:`Modes_of_Operation`.)
 
 .. index:: New
 
@@ -340,7 +339,7 @@ Execute mode (:ref:`Modes_of_Operation`.)
 
 * *Open* - invokes the File Open dialog box for selecting a new :file:`.imn`
   or XML file to open. You can change the default path used for this dialog
-  in the :ref:`Preferences` Dialog. 
+  in the :ref:`Preferences` Dialog.
 
 .. index:: Save
 
@@ -349,16 +348,16 @@ Execute mode (:ref:`Modes_of_Operation`.)
 
 .. index:: Save As XML
 
-* *Save As XML* - invokes the Save As dialog box for selecting a new 
+* *Save As XML* - invokes the Save As dialog box for selecting a new
   :file:`.xml` file for saving the current configuration in the XML file.
-  See :ref:`Configuration_Files`. 
+  See :ref:`Configuration_Files`.
 
 .. index:: Save As imn
 
 * *Save As imn* - invokes the Save As dialog box for selecting a new
   :file:`.imn`
   topology file for saving the current configuration. Files are saved in the
-  *IMUNES network configuration* file format described in 
+  *IMUNES network configuration* file format described in
   :ref:`Configuration_Files`.
 
 .. index:: Export Python script
@@ -376,7 +375,7 @@ Execute mode (:ref:`Modes_of_Operation`.)
 .. index:: Execute Python script with options
 
 * *Execute Python script with options* - invokes a File Open dialog box for selecting a
-  Python script to run and automatically connect to. After a selection is made, 
+  Python script to run and automatically connect to. After a selection is made,
   a Python Script Options dialog box is invoked to allow for command-line options to be added.
   The Python script must create a new CORE Session and add this session to the daemon's list of sessions
   in order for this to work; see :ref:`Python_Scripting`.
@@ -386,7 +385,7 @@ Execute mode (:ref:`Modes_of_Operation`.)
 * *Open current file in editor* - this opens the current topology file in the
   ``vim`` text editor. First you need to save the file. Once the file has been
   edited with a text editor, you will need to reload the file to see your
-  changes. The text editor can be changed from the :ref:`Preferences` Dialog. 
+  changes. The text editor can be changed from the :ref:`Preferences` Dialog.
 
 .. index:: Print
 .. index:: printing
@@ -434,7 +433,7 @@ Edit Menu
 * *Cut*, *Copy*, *Paste* - used to cut, copy, and paste a selection. When nodes
   are pasted, their node numbers are automatically incremented, and existing
   links are preserved with new IP addresses assigned. Services and their
-  customizations are copied to the new node, but care should be taken as 
+  customizations are copied to the new node, but care should be taken as
   node IP addresses have changed with possibly old addresses remaining in any
   custom service configurations. Annotations may also be copied and pasted.
 
@@ -503,7 +502,7 @@ The canvas menu provides commands for adding, removing, changing, and switching 
   altitude reference point used to convert between geographic and Cartesian
   coordinate systems. By clicking the *Save as default* option, all new
   canvases will be created with these properties. The default canvas size can
-  also be changed in the :ref:`Preferences` dialog box.  
+  also be changed in the :ref:`Preferences` dialog box.
 
 * *Wallpaper...* - used for setting the canvas background image,
   :ref:`Customizing_your_Topology's_Look`.
@@ -538,12 +537,12 @@ canvas.
 .. index:: hide nodes
 
 * *Show hidden nodes* - reveal nodes that have been hidden. Nodes are hidden by
-  selecting one or more nodes, right-clicking one and choosing *hide*. 
+  selecting one or more nodes, right-clicking one and choosing *hide*.
 
 .. index:: locked view
 
 * *Locked* - toggles locked view; when the view is locked, nodes cannot be
-  moved around on the canvas with the mouse. This could be useful when 
+  moved around on the canvas with the mouse. This could be useful when
   sharing the topology with someone and you do not expect them to change
   things.
 
@@ -585,7 +584,7 @@ The tools menu lists different utility functions.
 .. index:: autorearrange selected
 
 * *Autorearrange selected* - automatically arranges the selected nodes on the
-  canvas. 
+  canvas.
 
 .. index:: align to grid
 
@@ -710,7 +709,7 @@ Here are some standard widgets:
   routing protocols. A line is drawn from each router halfway to the router ID
   of an adjacent router. The color of the line is based on the OSPF adjacency
   state such as Two-way or Full. To learn about the different colors, see the
-  *Configure Adjacency...* menu item. The :file:`vtysh` command is used to 
+  *Configure Adjacency...* menu item. The :file:`vtysh` command is used to
   dump OSPF neighbor information.
   Only half of the line is drawn because each
   router may be in a different adjacency state with respect to the other.
@@ -724,11 +723,7 @@ Here are some standard widgets:
   link. If the throughput exceeds a certain threshold, the link will become
   highlighted. For wireless nodes which broadcast data to all nodes in range,
   the throughput rate is displayed next to the node and the node will become
-  circled if the threshold is exceeded. *Note: under FreeBSD, the
-  Throughput Widget will
-  display "0.0 kbps" on all links that have no configured link effects, because
-  of the way link statistics are counted; to fix this, add a small delay or a
-  bandwidth limit to each link.*
+  circled if the threshold is exceeded.
 
 .. _Observer_Widgets:
 
@@ -810,7 +805,7 @@ and options.
   of configured hooks, and buttons on the bottom left allow adding, editing,
   and removing hook scripts. The new or edit button will open a hook script
   editing window.  A hook script is a shell script invoked on the host (not
-  within a virtual node). 
+  within a virtual node).
 
   The script is started at the session state specified in the drop down:
 
@@ -818,14 +813,14 @@ and options.
 
   * *configuration* - when the user presses the *Start* button, node, link, and
     other configuration data is sent to the backend. This state is also
-    reached when the user customizes a service.  
+    reached when the user customizes a service.
 
   * *instantiation* - after
-    configuration data has been sent, just before the nodes are created.  
+    configuration data has been sent, just before the nodes are created.
 
   * *runtime* - all nodes and networks have been
-    built and are running. (This is the same state at which 
-    the previously-named *global experiment script* was run.) 
+    built and are running. (This is the same state at which
+    the previously-named *global experiment script* was run.)
 
   * *datacollect* - the user has pressed the
     *Stop* button, but before services have been stopped and nodes have been
@@ -837,18 +832,18 @@ and options.
 * *Reset node positions* - if you have moved nodes around
   using the mouse or by using a mobility module, choosing this item will reset
   all nodes to their original position on the canvas. The node locations are
-  remembered when you first press the Start button. 
+  remembered when you first press the Start button.
 
 * *Emulation servers...* - invokes the CORE emulation
   servers dialog for configuring :ref:`Distributed_Emulation`.
 
-* *Change Sessions...* - invokes the Sessions dialog for switching between 
+* *Change Sessions...* - invokes the Sessions dialog for switching between
   different
   running sessions. This dialog is presented during startup when one or
   more sessions are already running.
 
 * *Options...* - presents per-session options, such as the IPv4 prefix to be
-  used, if any, for a control network 
+  used, if any, for a control network
   (see :ref:`Communicating_with_the_Host_Machine`); the ability to preserve
   the session directory; and an on/off switch for SDT3D support.
 
@@ -871,7 +866,7 @@ Connecting with Physical Networks
 
 CORE's emulated networks run in real time, so they can be connected to live
 physical networks. The RJ45 tool and the Tunnel tool help with connecting to
-the real world. These tools are available from the *Link-layer nodes* menu. 
+the real world. These tools are available from the *Link-layer nodes* menu.
 
 When connecting two or more CORE emulations together, MAC address collisions
 should be avoided. CORE automatically assigns MAC addresses to interfaces when
@@ -893,7 +888,7 @@ with the CORE nodes in real time.
 The main drawback is that one physical interface is required for each
 connection. When the physical interface is assigned to CORE, it may not be used
 for anything else. Another consideration is that the computer or network that
-you are connecting to must be co-located with the CORE machine. 
+you are connecting to must be co-located with the CORE machine.
 
 To place an RJ45 connection, click on the *Link-layer nodes* toolbar and select
 the *RJ45 Tool* from the submenu. Click on the canvas near the node you want to
@@ -904,8 +899,8 @@ physical interface. A list of available interfaces will be shown, and one may
 be selected by double-clicking its name in the list, or an interface name may
 be entered into the text box.
 
-.. NOTE:: 
-   When you press the Start button to instantiate your topology, the 
+.. NOTE::
+   When you press the Start button to instantiate your topology, the
    interface assigned to the RJ45 will be connected to the CORE topology. The
    interface can no longer be used by the system. For example, if there was an
    IP address assigned to the physical interface before execution, the address
@@ -925,7 +920,7 @@ physical ports are available, but the (e.g. switching) hardware connected to
 the physical port must support the VLAN tagging, and the available bandwidth
 will be shared.
 
-You need to create separate VLAN virtual devices on the Linux or FreeBSD host,
+You need to create separate VLAN virtual devices on the Linux host,
 and then assign these devices to RJ45 nodes inside of CORE. The VLANning is
 actually performed outside of CORE, so when the CORE emulated node receives a
 packet, the VLAN tag will already be removed.
@@ -953,15 +948,15 @@ Tunneling can be helpful when the number of physical interfaces is limited or
 when the peer is located on a different network. Also a physical interface does
 not need to be dedicated to CORE as with the RJ45 tool.
 
-The peer GRE tunnel endpoint may be another CORE machine or a (Linux, FreeBSD,
-etc.) host that supports GRE tunneling. When placing a Tunnel node, initially
+The peer GRE tunnel endpoint may be another CORE machine or another
+host that supports GRE tunneling. When placing a Tunnel node, initially
 the node will display "UNASSIGNED". This text should be replaced with the IP
 address of the tunnel peer. This is the IP address of the other CORE machine or
 physical machine, not an IP address of another virtual node.
 
 .. NOTE::
    Be aware of possible MTU issues with GRE devices. The *gretap* device
-   has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the 
+   has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the
    bridge's MTU
    becomes 1,458 bytes. The Linux bridge will not perform fragmentation for
    large packets if other bridge ports have a higher MTU such as 1,500 bytes.
@@ -977,7 +972,7 @@ used.
 .. index:: ip link command
 
 Here are example commands for building the other end of a tunnel on a Linux
-machine. In this example, a router in CORE has the virtual address 
+machine. In this example, a router in CORE has the virtual address
 ``10.0.0.1/24`` and the CORE host machine has the (real) address
 ``198.51.100.34/24``.  The Linux box
 that will connect with the CORE machine is reachable over the (real) network
@@ -989,7 +984,7 @@ an address from the subnet of the virtual router node,
 ``10.0.0.2/24``.
 
   ::
-    
+
       # these commands are run on the tunnel peer
       sudo ip link add gt0 type gretap remote 198.51.100.34 local 198.51.100.76 key 1
       sudo ip addr add 10.0.0.2/24 dev gt0
@@ -1053,7 +1048,7 @@ the node, and SSH with X11 forwarding can be used from the host to the node:
     ssh -X 172.16.0.5 xclock
 
 Note that the :file:`coresendmsg` utility can be used for a node to send
-messages to the CORE daemon running on the host (if the ``listenaddr = 0.0.0.0`` 
+messages to the CORE daemon running on the host (if the ``listenaddr = 0.0.0.0``
 is set in the :file:`/etc/core/core.conf` file) to interact with the running
 emulation. For example, a node may move itself or other nodes, or change
 its icon based on some node state.
@@ -1108,7 +1103,7 @@ Wired Networks
 
 Wired networks are created using the *Link Tool* to draw a link between two
 nodes. This automatically draws a red line representing an Ethernet link and
-creates new interfaces on network-layer nodes. 
+creates new interfaces on network-layer nodes.
 
 .. index:: link configuration
 
@@ -1124,12 +1119,11 @@ link, affecting its display.
 .. index:: lanswitch
 
 Link-layer nodes are provided for modeling wired networks. These do not create
-a separate network stack when instantiated, but are implemented using bridging
-(Linux) or Netgraph nodes (FreeBSD). These are the hub, switch, and wireless
-LAN nodes. The hub copies each packet from the incoming link to every connected
-link, while the switch behaves more like an Ethernet switch and keeps track of
-the Ethernet address of the connected peer, forwarding unicast traffic only to
-the appropriate ports.
+a separate network stack when instantiated, but are implemented using Linux bridging.
+These are the hub, switch, and wireless LAN nodes. The hub copies each packet from
+the incoming link to every connected link, while the switch behaves more like an
+Ethernet switch and keeps track of the Ethernet address of the connected peer,
+forwarding unicast traffic only to the appropriate ports.
 
 The wireless LAN (WLAN) is covered in the next section.
 
@@ -1158,13 +1152,13 @@ on platform. See the table below for a brief overview of wireless model types.
 ============= ===================== ======== ==================================================================
 Model Type    Supported Platform(s) Fidelity Description
 ============= ===================== ======== ==================================================================
-Basic on/off  Linux, FreeBSD        Low      Linux Ethernet bridging with ebtables (Linux) or ng_wlan (FreeBSD)
+Basic on/off  Linux                 Low      Linux Ethernet bridging with ebtables
 EMANE Plug-in Linux                 High     TAP device connected to EMANE emulator with pluggable MAC and PHY radio types
 ============= ===================== ======== ==================================================================
 
 
 To quickly build a wireless network, you can first place several router nodes
-onto the canvas. If you have the 
+onto the canvas. If you have the
 :ref:`Quagga MDR software <Quagga_Routing_Software>` installed, it is
 recommended that you use the *mdr* node type for reduced routing overhead. Next
 choose the *wireless LAN* from the *Link-layer nodes* submenu. First set the
@@ -1198,8 +1192,6 @@ dragging them, and wireless links will be dynamically made or broken.
 The *EMANE* tab lists available EMANE models to use for wireless networking.
 See the :ref:`EMANE` chapter for details on using EMANE.
 
-On FreeBSD, the WLAN node is realized using the *ng_wlan* Netgraph node.
-
 .. _Mobility_Scripting:
 
 Mobility Scripting
@@ -1213,7 +1205,7 @@ Mobility Scripting
 
 .. index:: mobility scripting
 
-CORE has a few ways to script mobility. 
+CORE has a few ways to script mobility.
 
 * ns-2 script - the script specifies either absolute positions
   or waypoints with a velocity. Locations are given with Cartesian coordinates.
@@ -1226,7 +1218,7 @@ CORE has a few ways to script mobility.
 
 For the first method, you can create a mobility script using a text
 editor, or using a tool such as `BonnMotion <http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/>`_,  and associate the script with one of the wireless
-using the WLAN configuration dialog box. Click the *ns-2 mobility script...* 
+using the WLAN configuration dialog box. Click the *ns-2 mobility script...*
 button, and set the *mobility script file* field in the resulting *ns2script*
 configuration dialog.
 
@@ -1254,11 +1246,11 @@ The format of an ns-2 mobility script looks like:
   $node_(2) set Y_ 240.0
   $node_(2) set Z_ 0.00
   $ns_ at 1.00 "$node_(2) setdest 130.0 280.0 15.0"
-  
+
 
 The first three lines set an initial position for node 2. The last line in the
 above example causes node 2 to move towards the destination `(130, 280)` at
-speed `15`. All units are screen coordinates, with speed in units per second.  
+speed `15`. All units are screen coordinates, with speed in units per second.
 The
 total script time is learned after all nodes have reached their waypoints.
 Initially, the time slider in the mobility script dialog will not be
@@ -1305,13 +1297,12 @@ Distributed Emulation
 A large emulation scenario can be deployed on multiple emulation servers and
 controlled by a single GUI. The GUI, representing the entire topology, can be
 run on one of the emulation servers or on a separate machine. Emulations can be
-distributed on Linux, while tunneling support has not been added yet for
-FreeBSD.
+distributed on Linux.
 
 Each machine that will act as an emulation server needs to have CORE installed.
 It is not important to have the GUI component but the CORE Python daemon
 :file:`core-daemon` needs to be installed.  Set the ``listenaddr`` line in the
-:file:`/etc/core/core.conf` configuration file so that the CORE Python 
+:file:`/etc/core/core.conf` configuration file so that the CORE Python
 daemon will respond to commands from other servers:
 ::
 
@@ -1320,7 +1311,7 @@ daemon will respond to commands from other servers:
   pidfile = /var/run/core-daemon.pid
   logfile = /var/log/core-daemon.log
   listenaddr = 0.0.0.0
-  
+
 
 The ``listenaddr`` should be set to the address of the interface that should
 receive CORE API control commands from the other servers; setting ``listenaddr
@@ -1356,19 +1347,19 @@ Servers are configured by choosing *Emulation servers...* from the *Session*
 menu. Servers parameters are configured in the list below and stored in a
 *servers.conf* file for use in different scenarios. The IP address and port of
 the server must be specified. The name of each server will be saved in the
-topology file as each node's location. 
+topology file as each node's location.
 
 .. NOTE::
    The server that the GUI connects with
-   is referred to as the master server. 
+   is referred to as the master server.
 
 
 The user needs to assign nodes to emulation servers in the scenario. Making no
-assignment means the node will be emulated on the master  server 
-In the configuration window of every node, a drop-down box located between 
-the *Node name* and the *Image* button will select the name of the emulation 
-server. By default, this menu shows *(none)*, indicating that the node will 
-be emulated locally on the master. When entering Execute mode, the CORE GUI 
+assignment means the node will be emulated on the master  server
+In the configuration window of every node, a drop-down box located between
+the *Node name* and the *Image* button will select the name of the emulation
+server. By default, this menu shows *(none)*, indicating that the node will
+be emulated locally on the master. When entering Execute mode, the CORE GUI
 will deploy the node on its assigned emulation server.
 
 Another way to assign emulation servers is to select one or more nodes using
@@ -1395,7 +1386,7 @@ If there is a link between two nodes residing on different servers, the GUI
 will draw the link with a dashed line, and automatically create necessary
 tunnels between the nodes when executed. Care should be taken to arrange the
 topology such that the number of tunnels is minimized. The tunnels carry data
-between servers to connect nodes as specified in the topology. 
+between servers to connect nodes as specified in the topology.
 These tunnels are created using GRE tunneling, similar to the
 :ref:`Tunnel_Tool`.
 
@@ -1445,7 +1436,6 @@ Default Services and Node Types
 
 Here are the default node types and their services:
 
-.. index:: Xen
 .. index:: physical nodes
 
 * *router* - zebra, OSFPv2, OSPFv3, and IPForward services for IGP
@@ -1459,10 +1449,6 @@ Here are the default node types and their services:
 * *prouter* - a physical router, having the same default services as the
   *router* node type; for incorporating Linux testbed machines into an
   emulation, the :ref:`Machine_Types` is set to :ref:`physical`.
-* *xen* - a Xen-based router, having the same default services as the
-  *router* node type; for incorporating Xen domUs into an emulation, the
-  :ref:`Machine_Types` is set to :ref:`xen`, and different *profiles* are
-  available.
 
 Configuration files can be automatically generated by each service. For
 example, CORE automatically generates routing protocol configuration for the
@@ -1561,7 +1547,7 @@ service. Generally they send a kill signal to the running process using the
 *kill* or *killall* commands. If the service does not terminate
 the running processes using a shutdown command, the processes will be killed
 when the *vnoded* daemon is terminated (with *kill -9*) and
-the namespace destroyed. It is a good practice to 
+the namespace destroyed. It is a good practice to
 specify shutdown commands, which will allow for proper process termination, and
 for run-time control of stopping and restarting services.
 
@@ -1606,7 +1592,7 @@ in the :file:`/etc/core/core.conf` configuration file. A sample is provided in
 the :file:`myservices/` directory.
 
 .. NOTE::
-   The directory name used in `custom_services_dir` should be unique and 
+   The directory name used in `custom_services_dir` should be unique and
    should not correspond to
    any existing Python module name. For example, don't use the name `subprocess`
    or `services`.
@@ -1641,7 +1627,7 @@ create a bridge or namespace, or the failure to launch EMANE processes for an
 EMANE-based network.
 
 Clicking on an exception displays details for that
-exception. If a node number is specified, that node is highlighted on the 
+exception. If a node number is specified, that node is highlighted on the
 canvas when the exception is selected. The exception source is a text string
 to help trace where the exception occurred; "service:UserDefined" for example,
 would appear for a failed validation command with the UserDefined service.
@@ -1654,7 +1640,7 @@ list and for viewing the CORE daemon and node log files.
 .. index:: CEL batch mode
 
 .. NOTE::
-   In batch mode, exceptions received from the CORE daemon are displayed on 
+   In batch mode, exceptions received from the CORE daemon are displayed on
    the console.
 
 .. _Configuration_Files:
@@ -1668,16 +1654,16 @@ Configuration Files
 
 Configurations are saved to :file:`xml` or :file:`.imn` topology files using
 the *File* menu. You
-can easily edit these files with a text editor.  
+can easily edit these files with a text editor.
 Any time you edit the topology
 file, you will need to stop the emulation if it were running and reload the
 file.
 
-The :file:`.xml` `file schema is specified by NRL <http://www.nrl.navy.mil/itd/ncs/products/mnmtools>`_ and there are two versions to date: 
-version 0.0  and version 1.0, 
-with 1.0 as the current default. CORE can open either XML version. However, the 
-xmlfilever line in :file:`/etc/core/core.conf` controls the version of the XML file 
-that CORE will create.  
+The :file:`.xml` `file schema is specified by NRL <http://www.nrl.navy.mil/itd/ncs/products/mnmtools>`_ and there are two versions to date:
+version 0.0  and version 1.0,
+with 1.0 as the current default. CORE can open either XML version. However, the
+xmlfilever line in :file:`/etc/core/core.conf` controls the version of the XML file
+that CORE will create.
 
 .. index:: Scenario Plan XML
 
@@ -1685,7 +1671,7 @@ In version 1.0, the XML file is also referred to as the Scenario Plan. The Scena
 made up of the following:
 
 
-* `Network Plan` - describes nodes, hosts, interfaces, and the networks to 
+* `Network Plan` - describes nodes, hosts, interfaces, and the networks to
   which they belong.
 * `Motion Plan` - describes position and motion patterns for nodes in an
   emulation.
@@ -1694,7 +1680,7 @@ made up of the following:
 * `Visualization Plan` - meta-data that is not part of the NRL XML schema but
   used only by CORE. For example, GUI options, canvas and annotation info, etc.
   are contained here.
-* `Test Bed Mappings` - describes mappings of nodes, interfaces and EMANE modules in the scenario to 
+* `Test Bed Mappings` - describes mappings of nodes, interfaces and EMANE modules in the scenario to
   test bed hardware.
   CORE includes Test Bed Mappings in XML files that are saved while the scenario is running.
 
@@ -1710,7 +1696,7 @@ indentation is one tab character.
 .. tip::
    There are several topology examples included with CORE in
    the :file:`configs/` directory.
-   This directory can be found in :file:`~/.core/configs`, or 
+   This directory can be found in :file:`~/.core/configs`, or
    installed to the filesystem
    under :file:`/usr[/local]/share/examples/configs`.
 

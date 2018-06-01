@@ -4,10 +4,10 @@ Linux Ethernet bridging and ebtables rules.
 """
 
 import os
-import subprocess
 import threading
 import time
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNet
@@ -59,11 +59,12 @@ class EbtablesQueue(object):
 
         :return: nothing
         """
-        self.updatelock.acquire()
-        self.last_update_time[wlan] = time.time()
-        self.updatelock.release()
+        with self.updatelock:
+            self.last_update_time[wlan] = time.time()
+
         if self.doupdateloop:
             return
+
         self.doupdateloop = True
         self.updatethread = threading.Thread(target=self.updateloop)
         self.updatethread.daemon = True
@@ -75,15 +76,15 @@ class EbtablesQueue(object):
 
         :return: nothing
         """
-        self.updatelock.acquire()
-        try:
-            del self.last_update_time[wlan]
-        except KeyError:
-            logger.exception("error deleting last update time for wlan, ignored before: %s", wlan)
+        with self.updatelock:
+            try:
+                del self.last_update_time[wlan]
+            except KeyError:
+                logger.exception("error deleting last update time for wlan, ignored before: %s", wlan)
 
-        self.updatelock.release()
         if len(self.last_update_time) > 0:
             return
+
         self.doupdateloop = False
         if self.updatethread:
             self.updatethread.join()
@@ -137,25 +138,26 @@ class EbtablesQueue(object):
         :return: nothing
         """
         while self.doupdateloop:
-            self.updatelock.acquire()
-            for wlan in self.updates:
-                """
-                Check if wlan is from a previously closed session. Because of the
-                rate limiting scheme employed here, this may happen if a new session
-                is started soon after closing a previous session.
-                """
-                try:
-                    wlan.session
-                except:
-                    # Just mark as updated to remove from self.updates.
-                    self.updated(wlan)
-                    continue
-                if self.lastupdate(wlan) > self.rate:
-                    self.buildcmds(wlan)
-                    # print "ebtables commit %d rules" % len(self.cmds)
-                    self.ebcommit(wlan)
-                    self.updated(wlan)
-            self.updatelock.release()
+            with self.updatelock:
+                for wlan in self.updates:
+                    """
+                    Check if wlan is from a previously closed session. Because of the
+                    rate limiting scheme employed here, this may happen if a new session
+                    is started soon after closing a previous session.
+                    """
+                    # TODO: if these are WlanNodes, this will never throw an exception
+                    try:
+                        wlan.session
+                    except:
+                        # Just mark as updated to remove from self.updates.
+                        self.updated(wlan)
+                        continue
+
+                    if self.lastupdate(wlan) > self.rate:
+                        self.buildcmds(wlan)
+                        self.ebcommit(wlan)
+                        self.updated(wlan)
+
             time.sleep(self.rate)
 
     def ebcommit(self, wlan):
@@ -165,30 +167,23 @@ class EbtablesQueue(object):
         :return: nothing
         """
         # save kernel ebtables snapshot to a file
-        cmd = self.ebatomiccmd(["--atomic-save", ])
-        try:
-            subprocess.check_call(cmd)
-        except subprocess.CalledProcessError:
-            logger.exception("atomic-save (%s)", cmd)
-            # no atomic file, exit
-            return
+        args = self.ebatomiccmd(["--atomic-save", ])
+        utils.check_cmd(args)
+
         # modify the table file using queued ebtables commands
         for c in self.cmds:
-            cmd = self.ebatomiccmd(c)
-            try:
-                subprocess.check_call(cmd)
-            except subprocess.CalledProcessError:
-                logger.exception("cmd=%s", cmd)
-
+            args = self.ebatomiccmd(c)
+            utils.check_cmd(args)
         self.cmds = []
+
         # commit the table file to the kernel
-        cmd = self.ebatomiccmd(["--atomic-commit", ])
+        args = self.ebatomiccmd(["--atomic-commit", ])
+        utils.check_cmd(args)
 
         try:
-            subprocess.check_call(cmd)
             os.unlink(self.atomic_file)
         except OSError:
-            logger.exception("atomic-commit (%s)", cmd)
+            logger.exception("error removing atomic file: %s", self.atomic_file)
 
     def ebchange(self, wlan):
         """
@@ -197,10 +192,9 @@ class EbtablesQueue(object):
 
         :return: nothing
         """
-        self.updatelock.acquire()
-        if wlan not in self.updates:
-            self.updates.append(wlan)
-        self.updatelock.release()
+        with self.updatelock:
+            if wlan not in self.updates:
+                self.updates.append(wlan)
 
     def buildcmds(self, wlan):
         """
@@ -208,23 +202,22 @@ class EbtablesQueue(object):
 
         :return: nothing
         """
-        wlan._linked_lock.acquire()
-        # flush the chain
-        self.cmds.extend([["-F", wlan.brname], ])
-        # rebuild the chain
-        for netif1, v in wlan._linked.items():
-            for netif2, linked in v.items():
-                if wlan.policy == "DROP" and linked:
-                    self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
-                                       "-o", netif2.localname, "-j", "ACCEPT"],
-                                      ["-A", wlan.brname, "-o", netif1.localname,
-                                       "-i", netif2.localname, "-j", "ACCEPT"]])
-                elif wlan.policy == "ACCEPT" and not linked:
-                    self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
-                                       "-o", netif2.localname, "-j", "DROP"],
-                                      ["-A", wlan.brname, "-o", netif1.localname,
-                                       "-i", netif2.localname, "-j", "DROP"]])
-        wlan._linked_lock.release()
+        with wlan._linked_lock:
+            # flush the chain
+            self.cmds.extend([["-F", wlan.brname], ])
+            # rebuild the chain
+            for netif1, v in wlan._linked.items():
+                for netif2, linked in v.items():
+                    if wlan.policy == "DROP" and linked:
+                        self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
+                                           "-o", netif2.localname, "-j", "ACCEPT"],
+                                          ["-A", wlan.brname, "-o", netif1.localname,
+                                           "-i", netif2.localname, "-j", "ACCEPT"]])
+                    elif wlan.policy == "ACCEPT" and not linked:
+                        self.cmds.extend([["-A", wlan.brname, "-i", netif1.localname,
+                                           "-o", netif2.localname, "-j", "DROP"],
+                                          ["-A", wlan.brname, "-o", netif1.localname,
+                                           "-i", netif2.localname, "-j", "DROP"]])
 
 
 # a global object because all WLANs share the same queue
@@ -241,8 +234,8 @@ def ebtablescmds(call, cmds):
     :return: nothing
     """
     with ebtables_lock:
-        for cmd in cmds:
-            call(cmd)
+        for args in cmds:
+            call(args)
 
 
 class LxBrNet(PyCoreNet):
@@ -279,28 +272,24 @@ class LxBrNet(PyCoreNet):
         Linux bridge starup logic.
 
         :return: nothing
+        :raises CoreCommandError: when there is a command exception
         """
-        try:
-            subprocess.check_call([constants.BRCTL_BIN, "addbr", self.brname])
-        except subprocess.CalledProcessError:
-            logger.exception("Error adding bridge")
+        utils.check_cmd([constants.BRCTL_BIN, "addbr", self.brname])
 
-        try:
-            # turn off spanning tree protocol and forwarding delay
-            subprocess.check_call([constants.BRCTL_BIN, "stp", self.brname, "off"])
-            subprocess.check_call([constants.BRCTL_BIN, "setfd", self.brname, "0"])
-            subprocess.check_call([constants.IP_BIN, "link", "set", self.brname, "up"])
-            # create a new ebtables chain for this bridge
-            ebtablescmds(subprocess.check_call, [
-                [constants.EBTABLES_BIN, "-N", self.brname, "-P", self.policy],
-                [constants.EBTABLES_BIN, "-A", "FORWARD", "--logical-in", self.brname, "-j", self.brname]
-            ])
-            # turn off multicast snooping so mcast forwarding occurs w/o IGMP joins
-            snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % self.brname
-            if os.path.exists(snoop):
-                open(snoop, "w").write("0")
-        except subprocess.CalledProcessError:
-            logger.exception("Error setting bridge parameters")
+        # turn off spanning tree protocol and forwarding delay
+        utils.check_cmd([constants.BRCTL_BIN, "stp", self.brname, "off"])
+        utils.check_cmd([constants.BRCTL_BIN, "setfd", self.brname, "0"])
+        utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "up"])
+        # create a new ebtables chain for this bridge
+        ebtablescmds(utils.check_cmd, [
+            [constants.EBTABLES_BIN, "-N", self.brname, "-P", self.policy],
+            [constants.EBTABLES_BIN, "-A", "FORWARD", "--logical-in", self.brname, "-j", self.brname]
+        ])
+        # turn off multicast snooping so mcast forwarding occurs w/o IGMP joins
+        snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % self.brname
+        if os.path.exists(snoop):
+            with open(snoop, "w") as snoop_file:
+                snoop_file.write("0")
 
         self.up = True
 
@@ -312,35 +301,40 @@ class LxBrNet(PyCoreNet):
         """
         if not self.up:
             return
+
         ebq.stopupdateloop(self)
-        utils.mutecall([constants.IP_BIN, "link", "set", self.brname, "down"])
-        utils.mutecall([constants.BRCTL_BIN, "delbr", self.brname])
-        ebtablescmds(utils.mutecall, [
-            [constants.EBTABLES_BIN, "-D", "FORWARD",
-             "--logical-in", self.brname, "-j", self.brname],
-            [constants.EBTABLES_BIN, "-X", self.brname]])
+
+        try:
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "down"])
+            utils.check_cmd([constants.BRCTL_BIN, "delbr", self.brname])
+            ebtablescmds(utils.check_cmd, [
+                [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.brname, "-j", self.brname],
+                [constants.EBTABLES_BIN, "-X", self.brname]
+            ])
+        except CoreCommandError:
+            logger.exception("error during shutdown")
+
+        # removes veth pairs used for bridge-to-bridge connections
         for netif in self.netifs():
-            # removes veth pairs used for bridge-to-bridge connections
             netif.shutdown()
+
         self._netif.clear()
         self._linked.clear()
         del self.session
         self.up = False
 
+    # TODO: this depends on a subtype with localname defined, seems like the wrong place for this to live
     def attach(self, netif):
         """
         Attach a network interface.
 
-        :param core.netns.vif.VEth netif: network interface to attach
+        :param core.netns.vnode.VEth netif: network interface to attach
         :return: nothing
         """
         if self.up:
-            try:
-                subprocess.check_call([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
-                subprocess.check_call([constants.IP_BIN, "link", "set", netif.localname, "up"])
-            except subprocess.CalledProcessError:
-                logger.exception("Error joining interface %s to bridge %s", netif.localname, self.brname)
-                return
+            utils.check_cmd([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
+            utils.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "up"])
+
         PyCoreNet.attach(self, netif)
 
     def detach(self, netif):
@@ -351,11 +345,8 @@ class LxBrNet(PyCoreNet):
         :return: nothing
         """
         if self.up:
-            try:
-                subprocess.check_call([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
-            except subprocess.CalledProcessError:
-                logger.exception("Error removing interface %s from bridge %s", netif.localname, self.brname)
-                return
+            utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
+
         PyCoreNet.detach(self, netif)
 
     def linked(self, netif1, netif2):
@@ -396,12 +387,11 @@ class LxBrNet(PyCoreNet):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        self._linked_lock.acquire()
-        if not self.linked(netif1, netif2):
-            self._linked_lock.release()
-            return
-        self._linked[netif1][netif2] = False
-        self._linked_lock.release()
+        with self._linked_lock:
+            if not self.linked(netif1, netif2):
+                return
+            self._linked[netif1][netif2] = False
+
         ebq.ebchange(self)
 
     def link(self, netif1, netif2):
@@ -413,12 +403,11 @@ class LxBrNet(PyCoreNet):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        self._linked_lock.acquire()
-        if self.linked(netif1, netif2):
-            self._linked_lock.release()
-            return
-        self._linked[netif1][netif2] = True
-        self._linked_lock.release()
+        with self._linked_lock:
+            if self.linked(netif1, netif2):
+                return
+            self._linked[netif1][netif2] = True
+
         ebq.ebchange(self)
 
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None,
@@ -452,14 +441,14 @@ class LxBrNet(PyCoreNet):
             if bw > 0:
                 if self.up:
                     logger.info("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
-                    subprocess.check_call(tc + parent + ["handle", "1:"] + tbf)
+                    utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
                 changed = True
             elif netif.getparam("has_tbf") and bw <= 0:
                 tcd = [] + tc
                 tcd[2] = "delete"
                 if self.up:
-                    subprocess.check_call(tcd + parent)
+                    utils.check_cmd(tcd + parent)
                 netif.setparam("has_tbf", False)
                 # removing the parent removes the child
                 netif.setparam("has_netem", False)
@@ -497,12 +486,12 @@ class LxBrNet(PyCoreNet):
             tc[2] = "delete"
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
-                subprocess.check_call(tc + parent + ["handle", "10:"])
+                utils.check_cmd(tc + parent + ["handle", "10:"])
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
-                subprocess.check_call(tc + parent + ["handle", "10:"] + netem)
+                utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 
     def linknet(self, net):
@@ -519,24 +508,27 @@ class LxBrNet(PyCoreNet):
             self_objid = "%x" % self.objid
         except TypeError:
             self_objid = "%s" % self.objid
+
         try:
             net_objid = "%x" % net.objid
         except TypeError:
             net_objid = "%s" % net.objid
+
         localname = "veth%s.%s.%s" % (self_objid, net_objid, sessionid)
         if len(localname) >= 16:
             raise ValueError("interface local name %s too long" % localname)
+
         name = "veth%s.%s.%s" % (net_objid, self_objid, sessionid)
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
-        netif = VEth(node=None, name=name, localname=localname,
-                     mtu=1500, net=self, start=self.up)
+
+        netif = VEth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
         self.attach(netif)
         if net.up:
             # this is similar to net.attach() but uses netif.name instead
             # of localname
-            subprocess.check_call([constants.BRCTL_BIN, "addif", net.brname, netif.name])
-            subprocess.check_call([constants.IP_BIN, "link", "set", netif.name, "up"])
+            utils.check_cmd([constants.BRCTL_BIN, "addif", net.brname, netif.name])
+            utils.check_cmd([constants.IP_BIN, "link", "set", netif.name, "up"])
         i = net.newifindex()
         net._netif[i] = netif
         with net._linked_lock:
@@ -557,6 +549,7 @@ class LxBrNet(PyCoreNet):
         for netif in self.netifs():
             if hasattr(netif, "othernet") and netif.othernet == net:
                 return netif
+
         return None
 
     def addrconfig(self, addrlist):
@@ -568,11 +561,9 @@ class LxBrNet(PyCoreNet):
         """
         if not self.up:
             return
+
         for addr in addrlist:
-            try:
-                subprocess.check_call([constants.IP_BIN, "addr", "add", str(addr), "dev", self.brname])
-            except subprocess.CalledProcessError:
-                logger.exception("Error adding IP address")
+            utils.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.brname])
 
 
 class GreTapBridge(LxBrNet):
@@ -609,8 +600,8 @@ class GreTapBridge(LxBrNet):
         if remoteip is None:
             self.gretap = None
         else:
-            self.gretap = GreTap(node=self, name=None, session=session, remoteip=remoteip,
-                                 objid=None, localip=localip, ttl=ttl, key=self.grekey)
+            self.gretap = GreTap(node=self, session=session, remoteip=remoteip,
+                                 localip=localip, ttl=ttl, key=self.grekey)
         if start:
             self.startup()
 
@@ -652,7 +643,7 @@ class GreTapBridge(LxBrNet):
         localip = None
         if len(addrlist) > 1:
             localip = addrlist[1].split("/")[0]
-        self.gretap = GreTap(session=self.session, remoteip=remoteip, objid=None, name=None,
+        self.gretap = GreTap(session=self.session, remoteip=remoteip,
                              localip=localip, ttl=self.ttl, key=self.grekey)
         self.attach(self.gretap)
 

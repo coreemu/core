@@ -6,6 +6,7 @@ import os
 import subprocess
 import threading
 
+from core import CoreCommandError
 from core import constants
 from core import logger
 from core.coreobj import PyCoreNode
@@ -31,63 +32,72 @@ class PhysicalNode(PyCoreNode):
         self.session.services.validatenodeservices(self)
 
     def startup(self):
-        self.lock.acquire()
-        try:
+        with self.lock:
             self.makenodedir()
-            # self.privatedir("/var/run")
-            # self.privatedir("/var/log")
-        except OSError:
-            logger.exception("startup error")
-        finally:
-            self.lock.release()
 
     def shutdown(self):
         if not self.up:
             return
-        self.lock.acquire()
-        while self._mounts:
-            source, target = self._mounts.pop(-1)
-            self.umount(target)
-        for netif in self.netifs():
-            netif.shutdown()
-        self.rmnodedir()
-        self.lock.release()
+
+        with self.lock:
+            while self._mounts:
+                source, target = self._mounts.pop(-1)
+                self.umount(target)
+
+            for netif in self.netifs():
+                netif.shutdown()
+
+            self.rmnodedir()
 
     def termcmdstring(self, sh="/bin/sh"):
         """
-        The broker will add the appropriate SSH command to open a terminal
-        on this physical node.
+        Create a terminal command string.
+
+        :param str sh: shell to execute command in
+        :return: str
         """
         return sh
 
     def cmd(self, args, wait=True):
         """
-        run a command on the physical node
-        """
-        os.chdir(self.nodedir)
-        try:
-            if wait:
-                # os.spawnlp(os.P_WAIT, args)
-                subprocess.call(args)
-            else:
-                # os.spawnlp(os.P_NOWAIT, args)
-                subprocess.Popen(args)
-        except subprocess.CalledProcessError:
-            logger.exception("cmd exited with status: %s", str(args))
+        Runs shell command on node, with option to not wait for a result.
 
-    def cmdresult(self, args):
-        """
-        run a command on the physical node and get the result
+        :param list[str]|str args: command to run
+        :param bool wait: wait for command to exit, defaults to True
+        :return: exit status for command
+        :rtype: int
         """
         os.chdir(self.nodedir)
-        # in Python 2.7 we can use subprocess.check_output() here
-        tmp = subprocess.Popen(args, stdin=open(os.devnull, 'r'),
-                               stdout=subprocess.PIPE,
-                               stderr=subprocess.STDOUT)
-        # err will always be None
-        result, err = tmp.communicate()
-        status = tmp.wait()
-        return status, result
+        status = utils.cmd(args, wait)
+        return status
+
+    def cmd_output(self, args):
+        """
+        Runs shell command on node and get exit status and output.
+
+        :param list[str]|str args: command to run
+        :return: exit status and combined stdout and stderr
+        :rtype: tuple[int, str]
+        """
+        os.chdir(self.nodedir)
+        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        stdout, _ = p.communicate()
+        status = p.wait()
+        return status, stdout.strip()
+
+    def check_cmd(self, args):
+        """
+        Runs shell command on node.
+
+        :param list[str]|str args: command to run
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        status, output = self.cmd_output(args)
+        if status:
+            raise CoreCommandError(status, args, output)
+        return output.strip()
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.cmd([sh, "-c", cmdstr])
@@ -99,17 +109,14 @@ class PhysicalNode(PyCoreNode):
         self._netif[ifindex].sethwaddr(addr)
         ifname = self.ifname(ifindex)
         if self.up:
-            (status, result) = self.cmdresult(
-                [constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
-            if status:
-                logger.error("error setting MAC address %s", str(addr))
+            self.check_cmd([constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
 
     def addaddr(self, ifindex, addr):
         """
         same as SimpleLxcNode.addaddr()
         """
         if self.up:
-            self.cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)])
+            self.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)])
 
         self._netif[ifindex].addaddr(addr)
 
@@ -123,7 +130,7 @@ class PhysicalNode(PyCoreNode):
             logger.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         """
@@ -135,28 +142,31 @@ class PhysicalNode(PyCoreNode):
         netif.name = "gt%d" % ifindex
         netif.node = self
         self.addnetif(netif, ifindex)
+
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
-            self.cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "down"])
-            self.cmd([constants.IP_BIN, "link", "set", netif.localname, "name", netif.name])
+            self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "down"])
+            self.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "name", netif.name])
+
         netif.localname = netif.name
+
         if hwaddr:
             self.sethwaddr(ifindex, hwaddr)
-        for addr in utils.maketuple(addrlist):
-            self.addaddr(ifindex, addr)
-        if self.up:
-            self.cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])
 
-    def linkconfig(self, netif, bw=None, delay=None,
-                   loss=None, duplicate=None, jitter=None, netif2=None):
+        for addr in utils.make_tuple(addrlist):
+            self.addaddr(ifindex, addr)
+
+        if self.up:
+            self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])
+
+    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
         Apply tc queing disciplines using LxBrNet.linkconfig()
         """
         # borrow the tc qdisc commands from LxBrNet.linkconfig()
         linux_bridge = LxBrNet(session=self.session, start=False)
         linux_bridge.up = True
-        linux_bridge.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate,
-                                jitter=jitter, netif2=netif2)
+        linux_bridge.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate, jitter=jitter, netif2=netif2)
         del linux_bridge
 
     def newifindex(self):
@@ -199,51 +209,43 @@ class PhysicalNode(PyCoreNode):
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError, "path not fully qualified: " + path
+            raise ValueError("path not fully qualified: %s" % path)
         hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
-        try:
-            os.mkdir(hostpath)
-        except OSError:
-            logger.exception("error creating directory: %s", hostpath)
-
+        os.mkdir(hostpath)
         self.mount(hostpath, path)
 
     def mount(self, source, target):
         source = os.path.abspath(source)
-        logger.info("mounting %s at %s" % (source, target))
-
-        try:
-            os.makedirs(target)
-            self.cmd([constants.MOUNT_BIN, "--bind", source, target])
-            self._mounts.append((source, target))
-        except OSError:
-            logger.exception("error making directories")
-        except:
-            logger.exception("mounting failed for %s at %s", source, target)
+        logger.info("mounting %s at %s", source, target)
+        os.makedirs(target)
+        self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
+        self._mounts.append((source, target))
 
     def umount(self, target):
         logger.info("unmounting '%s'" % target)
         try:
-            self.cmd([constants.UMOUNT_BIN, "-l", target])
-        except:
+            self.check_cmd([constants.UMOUNT_BIN, "-l", target])
+        except CoreCommandError:
             logger.exception("unmounting failed for %s", target)
 
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
         if not basename:
             raise ValueError("no basename for filename: " + filename)
+
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
+
         dirname = dirname.replace("/", ".")
         dirname = os.path.join(self.nodedir, dirname)
         if not os.path.isdir(dirname):
             os.makedirs(dirname, mode=0755)
+
         hostfilename = os.path.join(dirname, basename)
         return open(hostfilename, mode)
 
     def nodefile(self, filename, contents, mode=0644):
-        f = self.opennodefile(filename, "w")
-        f.write(contents)
-        os.chmod(f.name, mode)
-        f.close()
-        logger.info("created nodefile: '%s'; mode: 0%o" % (f.name, mode))
+        with self.opennodefile(filename, "w") as node_file:
+            node_file.write(contents)
+            os.chmod(node_file.name, mode)
+            logger.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
