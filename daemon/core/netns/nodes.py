@@ -398,12 +398,12 @@ class WlanNode(LxBrNet):
         elif model.config_type == RegisterTlvs.MOBILITY.value:
             self.mobility = model(session=self.session, object_id=self.objid, values=config)
 
-    def updatemodel(self, model_name, values):
+    def updatemodel(self, model_name, config):
         """
         Allow for model updates during runtime (similar to setmodel().)
 
-        :param model_name: model name to update
-        :param values: values to update model with
+        :param str model_name: model name to update
+        :param dict config: values to update model with
         :return: nothing
         """
         logger.info("updating model %s" % model_name)
@@ -412,14 +412,14 @@ class WlanNode(LxBrNet):
 
         model = self.model
         if model.config_type == RegisterTlvs.WIRELESS.value:
-            if not model.updateconfig(values):
+            if not model.updateconfig(config):
                 return
 
             if self.model.position_callback:
                 for netif in self.netifs():
                     netif.poshook = self.model.position_callback
                     if netif.node is not None:
-                        (x, y, z) = netif.node.position.get()
+                        x, y, z = netif.node.position.get()
                         netif.poshook(netif, x, y, z)
 
             self.model.setlinkparams()

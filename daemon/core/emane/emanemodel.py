@@ -34,51 +34,12 @@ def value_to_params(doc, name, value):
     return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
 
 
-class EmaneModelMetaClass(type):
-    """
-    Hack into making class level properties to streamline emane model creation, until the Configurable class is
-    removed or refactored.
-    """
-
-    @property
-    def config_matrix(cls):
-        """
-        Convenience method for creating the config matrix, allow for a custom override.
-
-        :param EmaneModel cls: emane class
-        :return: config matrix value
-        :rtype: list
-        """
-        if cls.config_matrix_override:
-            return cls.config_matrix_override
-        else:
-            return cls.mac_config + cls.phy_config
-
-    @property
-    def config_groups(cls):
-        """
-        Convenience method for creating the config groups, allow for a custom override.
-
-        :param EmaneModel cls: emane class
-        :return: config groups value
-        :rtype: str
-        """
-        if cls.config_groups_override:
-            return cls.config_groups_override
-        else:
-            mac_len = len(cls.mac_config)
-            config_len = len(cls.config_matrix)
-            return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
-
-
 class EmaneModel(WirelessModel):
     """
     EMANE models inherit from this parent class, which takes care of
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
-    __metaclass__ = EmaneModelMetaClass
-
     # default mac configuration settings
     mac_library = None
     mac_xml = None
@@ -97,10 +58,20 @@ class EmaneModel(WirelessModel):
 
     config_ignore = set()
     config_groups_override = None
-    config_matrix_override = None
+    configurations_override = None
+
+    @classmethod
+    def configurations(cls):
+        return cls.mac_config + cls.phy_config
+
+    @classmethod
+    def config_groups(cls):
+        mac_len = len(cls.mac_config)
+        config_len = len(cls.configurations())
+        return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
 
     def __init__(self, session, object_id=None):
-        WirelessModel.__init__(self, session, object_id)
+        super(EmaneModel, self).__init__(session, object_id)
 
     def build_xml_files(self, emane_manager, interface):
         """
@@ -111,8 +82,8 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         # retrieve configuration values
-        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
-        if values is None:
+        config = emane_manager.getifcconfig(self.object_id, self.name, self.default_values(), interface)
+        if not config:
             return
 
         # create document and write to disk
@@ -122,12 +93,12 @@ class EmaneModel(WirelessModel):
 
         # create mac document and write to disk
         mac_name = self.mac_name(interface)
-        mac_document = self.create_mac_doc(emane_manager, values)
+        mac_document = self.create_mac_doc(emane_manager, config)
         emane_manager.xmlwrite(mac_document, mac_name)
 
         # create phy document and write to disk
         phy_name = self.phy_name(interface)
-        phy_document = self.create_phy_doc(emane_manager, values)
+        phy_document = self.create_phy_doc(emane_manager, config)
         emane_manager.xmlwrite(phy_document, phy_name)
 
     def create_nem_doc(self, emane_manager, interface):
@@ -157,18 +128,15 @@ class EmaneModel(WirelessModel):
 
         return nem_document
 
-    def create_mac_doc(self, emane_manager, values):
+    def create_mac_doc(self, emane_manager, config):
         """
         Create the mac xml document.
 
         :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :param tuple values: all current configuration values, mac + phy
+        :param dict config: all current configuration values, mac + phy
         :return: nem document
         :rtype: xml.dom.minidom.Document
         """
-        names = list(self.getnames())
-        mac_names = names[:len(self.mac_config)]
-
         mac_document = emane_manager.xmldoc("mac")
         mac_element = mac_document.getElementsByTagName("mac").pop()
         mac_element.setAttribute("name", "%s MAC" % self.name)
@@ -177,13 +145,14 @@ class EmaneModel(WirelessModel):
             raise ValueError("must define emane model library")
         mac_element.setAttribute("library", self.mac_library)
 
-        for name in mac_names:
+        for mac_configuration in self.mac_config:
             # ignore custom configurations
+            name = mac_configuration.id
             if name in self.config_ignore:
                 continue
 
             # check if value is a multi param
-            value = self.valueof(name, values)
+            value = config[name]
             param = value_to_params(mac_document, name, value)
             if not param:
                 param = emane_manager.xmlparam(mac_document, name, value)
@@ -192,18 +161,15 @@ class EmaneModel(WirelessModel):
 
         return mac_document
 
-    def create_phy_doc(self, emane_manager, values):
+    def create_phy_doc(self, emane_manager, config):
         """
         Create the phy xml document.
 
         :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :param tuple values: all current configuration values, mac + phy
+        :param dict config: all current configuration values, mac + phy
         :return: nem document
         :rtype: xml.dom.minidom.Document
         """
-        names = list(self.getnames())
-        phy_names = names[len(self.mac_config):]
-
         phy_document = emane_manager.xmldoc("phy")
         phy_element = phy_document.getElementsByTagName("phy").pop()
         phy_element.setAttribute("name", "%s PHY" % self.name)
@@ -212,13 +178,14 @@ class EmaneModel(WirelessModel):
             phy_element.setAttribute("library", self.phy_library)
 
         # append all phy options
-        for name in phy_names:
+        for phy_configuration in self.phy_config:
             # ignore custom configurations
+            name = phy_configuration.id
             if name in self.config_ignore:
                 continue
 
             # check if value is a multi param
-            value = self.valueof(name, values)
+            value = config[name]
             param = value_to_params(phy_document, name, value)
             if not param:
                 param = emane_manager.xmlparam(phy_document, name, value)
@@ -226,16 +193,6 @@ class EmaneModel(WirelessModel):
             phy_element.appendChild(param)
 
         return phy_document
-
-    @classmethod
-    def configure_emane(cls, session, config_data):
-        """
-        Handle configuration messages for configuring an emane model.
-
-        :param core.session.Session session: session to configure emane
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        """
-        return cls.configure(session.emane, config_data)
 
     def post_startup(self, emane_manager):
         """
@@ -317,7 +274,7 @@ class EmaneModel(WirelessModel):
 
         if interface:
             node_id = interface.node.objid
-            if emane_manager.getifcconfig(node_id, self.name, None, interface) is not None:
+            if emane_manager.getifcconfig(node_id, self.name, {}, interface):
                 name = interface.localname.replace(".", "_")
 
         return "%s%s" % (name, self.name)

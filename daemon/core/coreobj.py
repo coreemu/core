@@ -305,8 +305,8 @@ class PyCoreNode(PyCoreObj):
 
         :return: nothing
         """
-        preserve = getattr(self.session.options, "preservedir", None)
-        if preserve == "1":
+        preserve = self.session.options.get_config("preservedir") == "1"
+        if preserve:
             return
 
         if self.tmpnodedir:

@@ -6,6 +6,7 @@ import os
 
 from core import constants
 from core import logger
+from core.conf import Configuration
 from core.emane import emanemanifest
 from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
@@ -29,7 +30,12 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
     default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
     mac_config.insert(
         0,
-        (schedule_name, ConfigDataTypes.STRING.value, default_schedule, "", "TDMA schedule file (core)")
+        Configuration(
+            _id=schedule_name,
+            _type=ConfigDataTypes.STRING,
+            default=default_schedule,
+            label="TDMA schedule file (core)"
+        )
     )
     config_ignore = {schedule_name}
 
@@ -41,10 +47,10 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # get configured schedule
-        values = emane_manager.getconfig(self.object_id, self.name, self.getdefaultvalues())[1]
-        if values is None:
+        config = emane_manager.get_configs()
+        if not config:
             return
-        schedule = self.valueof(self.schedule_name, values)
+        schedule = config[self.schedule_name]
 
         event_device = emane_manager.event_device
 

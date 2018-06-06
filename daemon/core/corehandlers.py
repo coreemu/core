@@ -10,15 +10,17 @@ import shutil
 import sys
 import threading
 import time
+from itertools import repeat
 
 from core import logger
 from core.api import coreapi
+from core.conf import ConfigShim
 from core.data import ConfigData
 from core.data import EventData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import ConfigTlvs
+from core.enumerations import ConfigTlvs, ConfigFlags, ConfigDataTypes
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
 from core.enumerations import ExceptionTlvs
@@ -35,6 +37,8 @@ from core.enumerations import SessionTlvs
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
+from core.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.service import ServiceManager
 
 
 class CoreHandler(SocketServer.BaseRequestHandler):
@@ -407,12 +411,19 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         tlv_data = ""
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, "core-daemon")
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER.value, "core-daemon")
-
-        # get config objects for session
-        for name in self.session.config_objects:
-            config_type, callback = self.session.config_objects[name]
-            # type must be in coreapi.reg_tlvs
-            tlv_data += coreapi.CoreRegisterTlv.pack(config_type, name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type, self.session.mobility.name)
+        for model_name in self.session.mobility.mobility_models():
+            model_class = self.session.mobility.get_model_class(model_name)
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type, self.session.services.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type, self.session.emane.name)
+        for model_name in self.session.emane.emane_models():
+            model_class = self.session.emane.get_model_class(model_name)
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
@@ -941,14 +952,398 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             opaque=message.get_tlv(ConfigTlvs.OPAQUE.value)
         )
         logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
+        message_type = ConfigFlags(config_data.type)
 
-        # dispatch to any registered callback for this object type
-        replies = self.session.config_object(config_data)
+        replies = []
+
+        # handle session configuration
+        if config_data.object == "all":
+            replies = self.handle_config_all(message_type, config_data)
+        elif config_data.object == self.session.options.name:
+            replies = self.handle_config_session(message_type, config_data)
+        elif config_data.object == self.session.location.name:
+            self.handle_config_location(message_type, config_data)
+        elif config_data.object == self.session.metadata.name:
+            replies = self.handle_config_metadata(message_type, config_data)
+        elif config_data.object == self.session.broker.name:
+            self.handle_config_broker(message_type, config_data)
+        elif config_data.object == self.session.services.name:
+            replies = self.handle_config_services(message_type, config_data)
+        elif config_data.object == self.session.mobility.name:
+            self.handle_config_mobility(message_type, config_data)
+        elif config_data.object in [BasicRangeModel.name, Ns2ScriptedMobility.name]:
+            replies = self.handle_config_mobility_models(message_type, config_data)
+        elif config_data.object == self.session.emane.name:
+            replies = self.handle_config_emane(message_type, config_data)
+        elif config_data.object in self.session.emane.emane_models():
+            replies = self.handle_config_emane_models(message_type, config_data)
+        else:
+            raise Exception("no handler for configuration: %s", config_data.object)
 
         for reply in replies:
             self.handle_broadcast_config(reply)
 
         return []
+
+    def handle_config_all(self, message_type, config_data):
+        replies = []
+
+        if message_type == ConfigFlags.RESET:
+            node_id = config_data.node
+            self.session.location.reset()
+            self.session.services.reset()
+            self.session.mobility.reset()
+            self.session.mobility.config_reset(node_id)
+            self.session.emane.config_reset(node_id)
+        else:
+            raise Exception("cant handle config all: %s" % message_type)
+
+        return replies
+
+    def handle_config_session(self, message_type, config_data):
+        replies = []
+        if message_type == ConfigFlags.REQUEST:
+            type_flags = ConfigFlags.NONE.value
+            config = self.session.options.get_configs()
+            config_response = ConfigShim.config_data(0, None, type_flags, self.session.options, config)
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET and config_data.data_values:
+            values = ConfigShim.str_to_dict(config_data.data_values)
+            for key, value in values.iteritems():
+                self.session.options.set_config(key, value)
+        return replies
+
+    def handle_config_location(self, message_type, config_data):
+        if message_type == ConfigFlags.RESET:
+            self.session.location.reset()
+        else:
+            if not config_data.data_values:
+                logger.warn("location data missing")
+            else:
+                values = config_data.data_values.split("|")
+
+                # Cartesian coordinate reference point
+                refx, refy = map(lambda x: float(x), values[0:2])
+                refz = 0.0
+                lat, lon, alt = map(lambda x: float(x), values[2:5])
+                # xyz point
+                self.session.location.refxyz = (refx, refy, refz)
+                # geographic reference point
+                self.session.location.setrefgeo(lat, lon, alt)
+                self.session.location.refscale = float(values[5])
+                logger.info("location configured: %s = %s scale=%s", self.session.location.refxyz,
+                            self.session.location.refgeo, self.session.location.refscale)
+                logger.info("location configured: UTM%s", self.session.location.refutm)
+
+    def handle_config_metadata(self, message_type, config_data):
+        replies = []
+        if message_type == ConfigFlags.REQUEST:
+            node_id = config_data.node
+            data_values = "|".join(["%s=%s" % item for item in self.session.metadata.get_configs().iteritems()])
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            config_response = ConfigData(
+                message_type=0,
+                node=node_id,
+                object=self.session.metadata.name,
+                type=ConfigFlags.NONE.value,
+                data_types=data_types,
+                data_values=data_values
+            )
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET and config_data.data_values:
+            values = ConfigShim.str_to_dict(config_data.data_values)
+            for key, value in values.iteritems():
+                self.session.metadata.set_config(key, value)
+        return replies
+
+    def handle_config_broker(self, message_type, config_data):
+        if message_type not in [ConfigFlags.REQUEST, ConfigFlags.RESET]:
+            session_id = config_data.session
+            if not config_data.data_values:
+                logger.info("emulation server data missing")
+            else:
+                values = config_data.data_values.split("|")
+
+                # string of "server:ip:port,server:ip:port,..."
+                server_strings = values[0]
+                server_list = server_strings.split(",")
+
+                for server in server_list:
+                    server_items = server.split(":")
+                    name, host, port = server_items[:3]
+
+                    if host == "":
+                        host = None
+
+                    if port == "":
+                        port = None
+                    else:
+                        port = int(port)
+
+                    if session_id is not None:
+                        # receive session ID and my IP from master
+                        self.session.broker.session_id_master = int(session_id.split("|")[0])
+                        self.session.broker.myip = host
+                        host = None
+                        port = None
+
+                    # this connects to the server immediately; maybe we should wait
+                    # or spin off a new "client" thread here
+                    self.session.broker.addserver(name, host, port)
+                    self.session.broker.setupserver(name)
+
+    def handle_config_services(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        opaque = config_data.opaque
+
+        if message_type == ConfigFlags.REQUEST:
+            session_id = config_data.session
+            opaque = config_data.opaque
+
+            logger.debug("configuration request: node(%s) session(%s) opaque(%s)", node_id, session_id, opaque)
+
+            # send back a list of available services
+            if opaque is None:
+                type_flag = ConfigFlags.NONE.value
+                data_types = tuple(repeat(ConfigDataTypes.BOOL.value, len(ServiceManager.services)))
+                values = "|".join(repeat('0', len(ServiceManager.services)))
+                names = map(lambda x: x._name, ServiceManager.services)
+                captions = "|".join(names)
+                possible_values = ""
+                for s in ServiceManager.services:
+                    if s._custom_needed:
+                        possible_values += '1'
+                    possible_values += '|'
+                groups = self.session.services.buildgroups(ServiceManager.services)
+            # send back the properties for this service
+            else:
+                if not node_id:
+                    return replies
+
+                node = self.session.get_object(node_id)
+                if node is None:
+                    logger.warn("Request to configure service for unknown node %s", node_id)
+                    return replies
+                servicesstring = opaque.split(':')
+                services, unknown = self.session.services.servicesfromopaque(opaque, node.objid)
+                for u in unknown:
+                    logger.warn("Request for unknown service '%s'" % u)
+
+                if not services:
+                    return replies
+
+                if len(servicesstring) == 3:
+                    # a file request: e.g. "service:zebra:quagga.conf"
+                    file_data = self.session.services.getservicefile(services, node, servicesstring[2])
+                    self.session.broadcast_file(file_data)
+                    # short circuit this request early to avoid returning response below
+                    return replies
+
+                # the first service in the list is the one being configured
+                svc = services[0]
+                # send back:
+                # dirs, configs, startindex, startup, shutdown, metadata, config
+                type_flag = ConfigFlags.UPDATE.value
+                data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(svc.keys)))
+                values = svc.tovaluelist(node, services)
+                captions = None
+                possible_values = None
+                groups = None
+
+            config_response = ConfigData(
+                message_type=0,
+                node=node_id,
+                object=self.session.services.name,
+                type=type_flag,
+                data_types=data_types,
+                data_values=values,
+                captions=captions,
+                possible_values=possible_values,
+                groups=groups,
+                session=session_id,
+                opaque=opaque
+            )
+            replies.append(config_response)
+        elif message_type == ConfigFlags.RESET:
+            self.session.services.reset()
+        else:
+            data_types = config_data.data_types
+            values = config_data.data_values
+
+            error_message = "services config message that I don't know how to handle"
+            if values is None:
+                logger.error(error_message)
+            else:
+                if opaque is None:
+                    values = values.split('|')
+                    # store default services for a node type in self.defaultservices[]
+                    if data_types is None or data_types[0] != ConfigDataTypes.STRING.value:
+                        logger.info(error_message)
+                        return None
+                    key = values.pop(0)
+                    self.session.services.defaultservices[key] = values
+                    logger.debug("default services for type %s set to %s", key, values)
+                elif node_id:
+                    # store service customized config in self.customservices[]
+                    services, unknown = self.session.services.servicesfromopaque(opaque, node_id)
+                    for u in unknown:
+                        logger.warn("Request for unknown service '%s'" % u)
+
+                    if services:
+                        svc = services[0]
+                        values = ConfigShim.str_to_dict(values)
+                        self.session.services.setcustomservice(node_id, svc, values)
+
+        return replies
+
+    def handle_config_mobility(self, message_type, _):
+        if message_type == ConfigFlags.RESET:
+            self.session.mobility.reset()
+
+    def handle_config_mobility_models(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        object_name = config_data.object
+        interface_id = config_data.interface_number
+        values_str = config_data.data_values
+
+        if interface_id is not None:
+            node_id = node_id * 1000 + interface_id
+
+        logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
+        if message_type == ConfigFlags.REQUEST:
+            logger.info("replying to configure request for model: %s", object_name)
+            if object_name == "all":
+                typeflags = ConfigFlags.UPDATE.value
+            else:
+                typeflags = ConfigFlags.NONE.value
+
+            model_class = self.session.mobility.get_model_class(object_name)
+            if not model_class:
+                logger.warn("model class does not exist: %s", object_name)
+                return []
+
+            config = self.session.mobility.get_configs(node_id, object_name)
+            if not config:
+                config = model_class.default_values()
+
+            config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
+            replies.append(config_response)
+        elif message_type == ConfigFlags.RESET:
+            if object_name == "all":
+                self.session.mobility.config_reset(node_id)
+        else:
+            # store the configuration values for later use, when the node
+            if not object_name:
+                logger.warn("no configuration object for node: %s", node_id)
+                return []
+
+            model_class = self.session.mobility.get_model_class(object_name)
+            if not model_class:
+                logger.warn("model class does not exist: %s", object_name)
+                return []
+
+            if values_str:
+                config = ConfigShim.str_to_dict(values_str)
+            else:
+                config = model_class.default_values()
+
+            self.session.mobility.set_configs(config, node_id, object_name)
+
+        return replies
+
+    def handle_config_emane(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        object_name = config_data.object
+        config_type = config_data.type
+        interface_id = config_data.interface_number
+        values_str = config_data.data_values
+
+        if interface_id is not None:
+            node_id = node_id * 1000 + interface_id
+
+        logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
+        if message_type == ConfigFlags.REQUEST:
+            logger.info("replying to configure request for %s model", object_name)
+            if object_name == "all":
+                typeflags = ConfigFlags.UPDATE.value
+            else:
+                typeflags = ConfigFlags.NONE.value
+            config = self.session.emane.get_configs()
+            config_response = ConfigShim.config_data(0, node_id, typeflags, self.session.emane.emane_config, config)
+            replies.append(config_response)
+        elif config_type == ConfigFlags.RESET.value:
+            if object_name == "all":
+                self.session.emane.config_reset(node_id)
+        else:
+            if not object_name:
+                logger.info("no configuration object for node %s", node_id)
+                return []
+
+            if values_str:
+                config = ConfigShim.str_to_dict(values_str)
+                self.session.emane.set_configs(config)
+
+        # extra logic to start slave Emane object after nemid has been configured from the master
+        if message_type == ConfigFlags.UPDATE and self.session.master is False:
+            # instantiation was previously delayed by setup returning Emane.NOT_READY
+            self.session.instantiate()
+
+        return replies
+
+    def handle_config_emane_models(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        object_name = config_data.object
+        interface_id = config_data.interface_number
+        values_str = config_data.data_values
+
+        if interface_id is not None:
+            node_id = node_id * 1000 + interface_id
+
+        logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
+        if message_type == ConfigFlags.REQUEST:
+            logger.info("replying to configure request for model: %s", object_name)
+            if object_name == "all":
+                typeflags = ConfigFlags.UPDATE.value
+            else:
+                typeflags = ConfigFlags.NONE.value
+
+            model_class = self.session.emane.get_model_class(object_name)
+            if not model_class:
+                logger.warn("model class does not exist: %s", object_name)
+                return []
+
+            config = self.session.emane.get_configs(node_id, object_name)
+            if not config:
+                config = model_class.default_values()
+
+            config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
+            replies.append(config_response)
+        elif message_type == ConfigFlags.RESET:
+            if object_name == "all":
+                self.session.emane.config_reset(node_id)
+        else:
+            # store the configuration values for later use, when the node
+            if not object_name:
+                logger.warn("no configuration object for node: %s", node_id)
+                return []
+
+            model_class = self.session.emane.get_model_class(object_name)
+            if not model_class:
+                logger.warn("model class does not exist: %s", object_name)
+                return []
+
+            if values_str:
+                config = ConfigShim.str_to_dict(values_str)
+            else:
+                config = model_class.default_values()
+
+            self.session.emane.set_configs(config, node_id, object_name)
+
+        return replies
 
     def handle_file_message(self, message):
         """

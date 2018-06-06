@@ -6,19 +6,15 @@ https://pypi.python.org/pypi/utm (version 0.3.0).
 """
 
 from core import logger
-from core.conf import ConfigurableManager
 from core.enumerations import RegisterTlvs
 from core.misc import utm
 
 
-class CoreLocation(ConfigurableManager):
+class CoreLocation(object):
     """
     Member of session class for handling global location data. This keeps
     track of a latitude/longitude/altitude reference point and scale in
     order to convert between X,Y and geo coordinates.
-
-    TODO: this could be updated to use more generic
-          Configurable/ConfigurableManager code like other Session objects
     """
     name = "location"
     config_type = RegisterTlvs.UTILITY.value
@@ -29,7 +25,7 @@ class CoreLocation(ConfigurableManager):
 
         :return: nothing
         """
-        ConfigurableManager.__init__(self)
+        # ConfigurableManager.__init__(self)
         self.reset()
         self.zonemap = {}
         self.refxyz = (0.0, 0.0, 0.0)
@@ -51,35 +47,6 @@ class CoreLocation(ConfigurableManager):
         self.refscale = 1.0
         # cached distance to refpt in other zones
         self.zoneshifts = {}
-
-    def configure_values(self, config_data):
-        """
-        Receive configuration message for setting the reference point
-        and scale.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: nothing
-        """
-        values = config_data.data_values
-
-        if values is None:
-            logger.warn("location data missing")
-            return None
-        values = values.split('|')
-
-        # Cartesian coordinate reference point
-        refx, refy = map(lambda x: float(x), values[0:2])
-        refz = 0.0
-        self.refxyz = (refx, refy, refz)
-        # Geographic reference point
-        lat, lon, alt = map(lambda x: float(x), values[2:5])
-        self.setrefgeo(lat, lon, alt)
-        self.refscale = float(values[5])
-        logger.info("location configured: (%.2f,%.2f,%.2f) = (%.5f,%.5f,%.5f) scale=%.2f" %
-                    (self.refxyz[0], self.refxyz[1], self.refxyz[2], self.refgeo[0],
-                     self.refgeo[1], self.refgeo[2], self.refscale))
-        logger.info("location configured: UTM(%.5f,%.5f,%.5f)" %
-                    (self.refutm[1], self.refutm[2], self.refutm[3]))
 
     def px2m(self, val):
         """

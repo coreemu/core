@@ -4,6 +4,7 @@ from xml.dom.minidom import parse
 
 from core import constants
 from core import logger
+from core.conf import ConfigShim
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
 from core.misc.ipaddress import MacAddress
@@ -615,6 +616,7 @@ class CoreDocumentParser1(object):
             values.append('cmddown=%s' % shutdown)
         if validate:
             values.append('cmdval=%s' % validate)
+
         filenames = []
         files = []
         for f in xmlutils.iter_children_with_name(service, 'file'):
@@ -629,11 +631,15 @@ class CoreDocumentParser1(object):
                 data = None
             typestr = 'service:%s:%s' % (name, filename)
             files.append((typestr, filename, data))
+
         if filenames:
             values.append('files=%s' % filenames)
+
         custom = service.getAttribute('custom')
         if custom and custom.lower() == 'true':
+            values = ConfigShim.str_to_dict(values)
             self.session.services.setcustomservice(node.objid, session_service, values)
+
         # NOTE: if a custom service is used, setservicefile() must be
         # called after the custom service exists
         for typestr, filename, data in files:
@@ -812,7 +818,7 @@ class CoreDocumentParser1(object):
         params = self.parse_parameter_children(options)
         for name, value in params.iteritems():
             if name and value:
-                setattr(self.session.options, str(name), str(value))
+                self.session.options.set_config(str(name), str(value))
 
     def parse_session_hooks(self, session_config):
         """

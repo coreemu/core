@@ -217,13 +217,7 @@ class ScenarioPlan(XmlElement):
         self.last_network_id = 0
         self.addNetworks()
         self.addDevices()
-
-        # XXX Do we need these?
-        # self.session.emane.setup() # not during runtime?
-        # self.addorigin()
-
         self.addDefaultServices()
-
         self.addSessionConfiguration()
 
     def addNetworks(self):
@@ -318,10 +312,12 @@ class ScenarioPlan(XmlElement):
 
         # options
         options = self.createElement("options")
-        defaults = self.coreSession.options.getdefaultvalues()
-        for i, (k, v) in enumerate(self.coreSession.options.getkeyvaluelist()):
-            if str(v) != str(defaults[i]):
-                XmlElement.add_parameter(self.document, options, k, v)
+        options_config = self.coreSession.options.get_configs()
+        for _id, default_value in self.coreSession.options.default_values().iteritems():
+            value = options_config[_id]
+            if value != default_value:
+                XmlElement.add_parameter(self.document, options, _id, value)
+
         if options.hasChildNodes():
             config.appendChild(options)
 
@@ -340,7 +336,7 @@ class ScenarioPlan(XmlElement):
 
         # metadata
         meta = self.createElement("metadata")
-        for k, v in self.coreSession.metadata.items():
+        for k, v in self.coreSession.metadata.get_configs().iteritems():
             XmlElement.add_parameter(self.document, meta, k, v)
         if meta.hasChildNodes():
             config.appendChild(meta)
@@ -482,6 +478,7 @@ class NetworkElement(NamedXmlElement):
             modelconfigs = network_object.session.mobility.getmodels(network_object)
             modelconfigs += network_object.session.emane.getmodels(network_object)
             chan = None
+
             for model, conf in modelconfigs:
                 # Handle mobility parameters below
                 if model.config_type == RegisterTlvs.MOBILITY.value:
@@ -496,10 +493,9 @@ class NetworkElement(NamedXmlElement):
                                           channel_domain="CORE")
 
                 # Add wireless model parameters
-                for i, key in enumerate(model.getnames()):
-                    value = conf[i]
+                for key, value in conf.iteritems():
                     if value is not None:
-                        chan.addParameter(key, model.valueof(key, conf))
+                        chan.addParameter(key, value)
 
             for model, conf in modelconfigs:
                 if model.config_type == RegisterTlvs.MOBILITY.value:
@@ -509,8 +505,8 @@ class NetworkElement(NamedXmlElement):
                     type_element = self.createElement("type")
                     type_element.appendChild(self.createTextNode(model.name))
                     mobility.appendChild(type_element)
-                    for i, key in enumerate(model.getnames()):
-                        value = conf[i]
+
+                    for key, value in conf.iteritems():
                         if value is not None:
                             mobility.addParameter(key, value)
 

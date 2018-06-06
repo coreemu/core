@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from itertools import repeat
 
 import pwd
 
@@ -18,8 +19,10 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.broker import CoreBroker
-from core.conf import Configurable
-from core.conf import ConfigurableManager
+from core.conf import ConfigShim
+from core.conf import ConfigurableOptions
+from core.conf import Configuration
+from core.conf import NewConfigurableManager
 from core.data import ConfigData
 from core.data import EventData
 from core.data import ExceptionData
@@ -37,11 +40,10 @@ from core.misc import nodeutils
 from core.misc import utils
 from core.misc.event import EventLoop
 from core.misc.ipaddress import MacAddress
-from core.mobility import BasicRangeModel
 from core.mobility import MobilityManager
-from core.mobility import Ns2ScriptedMobility
 from core.netns import nodes
 from core.sdt import Sdt
+from core.service import CoreService
 from core.service import CoreServices
 from core.xml.xmlsession import save_session_xml
 
@@ -81,10 +83,6 @@ class Session(object):
         self.objects = {}
         self._objects_lock = threading.Lock()
 
-        # dict of configurable objects
-        self.config_objects = {}
-        self._config_objects_lock = threading.Lock()
-
         # TODO: should the default state be definition?
         self.state = EventTypes.NONE.value
         self._state_time = time.time()
@@ -106,60 +104,30 @@ class Session(object):
         self.config_handlers = []
         self.shutdown_handlers = []
 
-        # setup broker
+        # initialize feature helpers
         self.broker = CoreBroker(session=self)
-        self.add_config_object(CoreBroker.name, CoreBroker.config_type, self.broker.configure)
-
-        # setup location
         self.location = CoreLocation()
-        self.add_config_object(CoreLocation.name, CoreLocation.config_type, self.location.configure)
-
-        # setup mobiliy
         self.mobility = MobilityManager(session=self)
-        self.add_config_object(MobilityManager.name, MobilityManager.config_type, self.mobility.configure)
-        self.add_config_object(BasicRangeModel.name, BasicRangeModel.config_type, BasicRangeModel.configure_mob)
-        self.add_config_object(Ns2ScriptedMobility.name, Ns2ScriptedMobility.config_type,
-                               Ns2ScriptedMobility.configure_mob)
-
-        # setup services
         self.services = CoreServices(session=self)
-        self.add_config_object(CoreServices.name, CoreServices.config_type, self.services.configure)
-
-        # setup emane
         self.emane = EmaneManager(session=self)
-        self.add_config_object(EmaneManager.name, EmaneManager.config_type, self.emane.configure)
-
-        # setup sdt
-        self.sdt = Sdt(session=self)
-
-        # future parameters set by the GUI may go here
-        self.options = SessionConfig(session=self)
-        self.add_config_object(SessionConfig.name, SessionConfig.config_type, self.options.configure)
+        self.options = SessionConfig()
         self.metadata = SessionMetaData()
-        self.add_config_object(SessionMetaData.name, SessionMetaData.config_type, self.metadata.configure)
+        self.sdt = Sdt(session=self)
 
     def shutdown(self):
         """
         Shutdown all emulation objects and remove the session directory.
         """
-
-        # shutdown emane
+        # shutdown/cleanup feature helpers
         self.emane.shutdown()
-
-        # shutdown broker
         self.broker.shutdown()
-
-        # shutdown NRL's SDT3D
         self.sdt.shutdown()
 
         # delete all current objects
         self.delete_objects()
 
-        preserve = False
-        if hasattr(self.options, "preservedir") and self.options.preservedir == "1":
-            preserve = True
-
         # remove this sessions working directory
+        preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
 
@@ -379,12 +347,7 @@ class Session(object):
             except:
                 message = "exception occured when running %s state hook: %s" % (coreapi.state_name(state), hook)
                 logger.exception(message)
-                self.exception(
-                    ExceptionLevels.ERROR,
-                    "Session.run_state_hooks",
-                    None,
-                    message
-                )
+                self.exception(ExceptionLevels.ERROR, "Session.run_state_hooks", None, message)
 
     def add_state_hook(self, state, hook):
         """
@@ -422,7 +385,7 @@ class Session(object):
         if state == EventTypes.RUNTIME_STATE.value:
             self.emane.poststartup()
             xml_file_version = self.get_config_item("xmlfilever")
-            if xml_file_version in ('1.0',):
+            if xml_file_version in ("1.0",):
                 xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
                 save_session_xml(self, xml_file_name, xml_file_version)
 
@@ -597,64 +560,6 @@ class Session(object):
         except IOError:
             logger.exception("error writing nodes file")
 
-    def add_config_object(self, name, object_type, callback):
-        """
-        Objects can register configuration objects that are included in
-        the Register Message and may be configured via the Configure
-        Message. The callback is invoked when receiving a Configure Message.
-
-        :param str name: name of configuration object to add
-        :param int object_type: register tlv type
-        :param func callback: callback function for object
-        :return: nothing
-        """
-        register_tlv = RegisterTlvs(object_type)
-        logger.debug("adding config object callback: %s - %s", name, register_tlv)
-        with self._config_objects_lock:
-            self.config_objects[name] = (object_type, callback)
-
-    def config_object(self, config_data):
-        """
-        Invoke the callback for an object upon receipt of configuration data for that object.
-        A no-op if the object doesn't exist.
-
-        :param core.data.ConfigData config_data: configuration data to execute against
-        :return: responses to the configuration data
-        :rtype: list
-        """
-        name = config_data.object
-        logger.info("session(%s) setting config(%s)", self.session_id, name)
-        for key, value in config_data.__dict__.iteritems():
-            logger.debug("%s = %s", key, value)
-
-        replies = []
-
-        if name == "all":
-            with self._config_objects_lock:
-                for name in self.config_objects:
-                    config_type, callback = self.config_objects[name]
-                    reply = callback(self, config_data)
-
-                    if reply:
-                        replies.append(reply)
-
-                return replies
-
-        if name in self.config_objects:
-            with self._config_objects_lock:
-                config_type, callback = self.config_objects[name]
-
-            reply = callback(self, config_data)
-
-            if reply:
-                replies.append(reply)
-
-            return replies
-        else:
-            logger.info("session object doesn't own model '%s', ignoring", name)
-
-        return replies
-
     def dump_session(self):
         """
         Log information about the session in its current state.
@@ -742,10 +647,8 @@ class Session(object):
         if self.emane.startup() == self.emane.NOT_READY:
             return
 
-        # startup broker
+        # start feature helpers
         self.broker.startup()
-
-        # startup mobility
         self.mobility.startup()
 
         # boot the services on each node
@@ -901,11 +804,25 @@ class Session(object):
         :return: control net prefix list
         :rtype: list
         """
-        p = getattr(self.options, "controlnet", self.config.get("controlnet"))
-        p0 = getattr(self.options, "controlnet0", self.config.get("controlnet0"))
-        p1 = getattr(self.options, "controlnet1", self.config.get("controlnet1"))
-        p2 = getattr(self.options, "controlnet2", self.config.get("controlnet2"))
-        p3 = getattr(self.options, "controlnet3", self.config.get("controlnet3"))
+        p = self.options.get_config("controlnet")
+        if not p:
+            p = self.config.get("controlnet")
+
+        p0 = self.options.get_config("controlnet0")
+        if not p0:
+            p0 = self.config.get("controlnet0")
+
+        p1 = self.options.get_config("controlnet1")
+        if not p1:
+            p1 = self.config.get("controlnet1")
+
+        p2 = self.options.get_config("controlnet2")
+        if not p2:
+            p2 = self.config.get("controlnet2")
+
+        p3 = self.options.get_config("controlnet3")
+        if not p3:
+            p3 = self.config.get("controlnet3")
 
         if not p0 and p:
             p0 = p
@@ -1000,7 +917,7 @@ class Session(object):
                 logger.warning("controlnet updown script not configured")
 
             # check if session option set, overwrite if so
-            options_updown_script = getattr(self.options, "controlnet_updown_script", None)
+            options_updown_script = self.options.get_config("controlnet_updown_script")
             if options_updown_script:
                 updown_script = options_updown_script
 
@@ -1194,6 +1111,7 @@ class Session(object):
             node = self.get_object(node_id)
             node.cmd(data, wait=False)
 
+    # TODO: move to core handlers
     def send_objects(self):
         """
         Return API messages that describe the current session.
@@ -1222,36 +1140,48 @@ class Session(object):
             logger.info(pprint.pformat(dict(link_data._asdict())))
             self.broadcast_link(link_data)
 
-        # send model info
-        configs = self.mobility.getallconfigs()
-        configs += self.emane.getallconfigs()
-        logger.info("sending model configs:")
-        for node_number, cls, values in configs:
-            logger.info("config: node(%s) class(%s) values(%s)", node_number, cls, values)
-            config_data = cls.config_data(
-                flags=0,
-                node_id=node_number,
-                type_flags=ConfigFlags.UPDATE.value,
-                values=values
-            )
-            logger.info(pprint.pformat(dict(config_data._asdict())))
-            self.broadcast_config(config_data)
+        # send mobility model info
+        for node_id in self.mobility.nodes():
+            node = self.get_object(node_id)
+            for model_class, config in self.mobility.getmodels(node):
+                logger.info("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                self.broadcast_config(config_data)
+
+        # send emane model info
+        for node_id in self.emane.nodes():
+            if node_id not in self.objects:
+                continue
+
+            node = self.get_object(node_id)
+            for model_class, config in self.emane.getmodels(node):
+                logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                self.broadcast_config(config_data)
 
         # service customizations
         service_configs = self.services.getallconfigs()
-        for node_number, service in service_configs:
+        for node_id, service in service_configs:
             opaque = "service:%s" % service._name
+            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(CoreService.keys)))
+            node = self.get_object(node_id)
+            values = CoreService.tovaluelist(node, node.services)
             config_data = ConfigData(
-                node=node_number,
+                message_type=0,
+                node=node_id,
+                object=self.services.name,
+                type=ConfigFlags.UPDATE.value,
+                data_types=data_types,
+                data_values=values,
+                session=self.session_id,
                 opaque=opaque
             )
-            config_response = self.services.configure_request(config_data)
-            self.broadcast_config(config_response)
+            self.broadcast_config(config_data)
 
             for file_name, config_data in self.services.getallfiles(service):
                 file_data = FileData(
                     message_type=MessageFlags.ADD.value,
-                    node=node_number,
+                    node=node_id,
                     name=str(file_name),
                     type=opaque,
                     data=str(config_data)
@@ -1271,91 +1201,62 @@ class Session(object):
                 )
                 self.broadcast_file(file_data)
 
-        config_data = ConfigData()
+        # send session configuration
+        session_config = self.options.get_configs()
+        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, self.options, session_config)
+        self.broadcast_config(config_data)
 
-        # retrieve session configuration data
-        options_config = self.options.configure_request(config_data, type_flags=ConfigFlags.UPDATE.value)
-        self.broadcast_config(options_config)
-
-        # retrieve session metadata
-        metadata_config = self.metadata.configure_request(config_data, type_flags=ConfigFlags.UPDATE.value)
-        self.broadcast_config(metadata_config)
+        # send session metadata
+        data_values = "|".join(["%s=%s" % item for item in self.metadata.get_configs().iteritems()])
+        data_types = tuple(ConfigDataTypes.STRING.value for _ in self.metadata.get_configs())
+        config_data = ConfigData(
+            message_type=0,
+            object=self.metadata.name,
+            type=ConfigFlags.NONE.value,
+            data_types=data_types,
+            data_values=data_values
+        )
+        self.broadcast_config(config_data)
 
         logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
 
-class SessionConfig(ConfigurableManager, Configurable):
+class SessionConfig(NewConfigurableManager, ConfigurableOptions):
     """
     Session configuration object.
     """
     name = "session"
     config_type = RegisterTlvs.UTILITY.value
-    config_matrix = [
-        ("controlnet", ConfigDataTypes.STRING.value, "", "", "Control network"),
-        ("controlnet_updown_script", ConfigDataTypes.STRING.value, "", "", "Control network script"),
-        ("enablerj45", ConfigDataTypes.BOOL.value, "1", "On,Off", "Enable RJ45s"),
-        ("preservedir", ConfigDataTypes.BOOL.value, "0", "On,Off", "Preserve session dir"),
-        ("enablesdt", ConfigDataTypes.BOOL.value, "0", "On,Off", "Enable SDT3D output"),
-        ("sdturl", ConfigDataTypes.STRING.value, Sdt.DEFAULT_SDT_URL, "", "SDT3D URL"),
-    ]
-    config_groups = "Options:1-%d" % len(config_matrix)
 
-    def __init__(self, session):
-        """
-        Creates a SessionConfig instance.
+    @classmethod
+    def configurations(cls):
+        return [
+            Configuration(_id="controlnet", _type=ConfigDataTypes.STRING, label="Control Network"),
+            Configuration(_id="controlnet0", _type=ConfigDataTypes.STRING, label="Control Network 0"),
+            Configuration(_id="controlnet1", _type=ConfigDataTypes.STRING, label="Control Network 1"),
+            Configuration(_id="controlnet2", _type=ConfigDataTypes.STRING, label="Control Network 2"),
+            Configuration(_id="controlnet3", _type=ConfigDataTypes.STRING, label="Control Network 3"),
+            Configuration(_id="controlnet_updown_script", _type=ConfigDataTypes.STRING, label="Control Network Script"),
+            Configuration(_id="enablerj45", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"],
+                          label="Enable RJ45s"),
+            Configuration(_id="preservedir", _type=ConfigDataTypes.BOOL, default="0", options=["On", "Off"],
+                          label="Preserve session dir"),
+            Configuration(_id="enablesdt", _type=ConfigDataTypes.BOOL, default="0", options=["On", "Off"],
+                          label="Enable SDT3D output"),
+            Configuration(_id="sdturl", _type=ConfigDataTypes.STRING, default=Sdt.DEFAULT_SDT_URL, label="SDT3D URL")
+        ]
 
-        :param core.session.Session session: session this manager is tied to
-        :return: nothing
-        """
-        ConfigurableManager.__init__(self)
-        self.session = session
-        self.reset()
+    @classmethod
+    def config_groups(cls):
+        return "Options:1-%d" % len(cls.configurations())
 
-    def reset(self):
-        """
-        Reset the session configuration.
-
-        :return: nothing
-        """
-        defaults = self.getdefaultvalues()
-        for key in self.getnames():
-            # value may come from config file
-            value = self.session.get_config_item(key)
-            if value is None:
-                value = self.valueof(key, defaults)
-                value = self.offontobool(value)
-            setattr(self, key, value)
-
-    def configure_values(self, config_data):
-        """
-        Handle configuration values.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: None
-        """
-        return self.configure_values_keyvalues(config_data, self, self.getnames())
-
-    def configure_request(self, config_data, type_flags=ConfigFlags.NONE.value):
-        """
-        Handle a configuration request.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :param type_flags:
-        :return:
-        """
-        node_id = config_data.node
-        values = []
-
-        for key in self.getnames():
-            value = getattr(self, key)
-            if value is None:
-                value = ""
-            values.append("%s" % value)
-
-        return self.config_data(0, node_id, type_flags, values)
+    def __init__(self):
+        super(SessionConfig, self).__init__()
+        config = self.default_values()
+        self.set_configs(config)
 
 
-class SessionMetaData(ConfigurableManager):
+class SessionMetaData(NewConfigurableManager):
     """
     Metadata is simply stored in a configs[] dict. Key=value pairs are
     passed in from configure messages destined to the "metadata" object.
@@ -1363,92 +1264,3 @@ class SessionMetaData(ConfigurableManager):
     """
     name = "metadata"
     config_type = RegisterTlvs.UTILITY.value
-
-    def configure_values(self, config_data):
-        """
-        Handle configuration values.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: None
-        """
-        values = config_data.data_values
-        if values is None:
-            return None
-
-        key_values = values.split('|')
-        for key_value in key_values:
-            try:
-                key, value = key_value.split('=', 1)
-            except ValueError:
-                raise ValueError("invalid key in metdata: %s", key_value)
-
-            self.add_item(key, value)
-
-        return None
-
-    def configure_request(self, config_data, type_flags=ConfigFlags.NONE.value):
-        """
-        Handle a configuration request.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :param int type_flags: configuration request flag value
-        :return: configuration data
-        :rtype: ConfigData
-        """
-        node_number = config_data.node
-        values_str = "|".join(map(lambda item: "%s=%s" % item, self.items()))
-        return self.config_data(0, node_number, type_flags, values_str)
-
-    def config_data(self, flags, node_id, type_flags, values_str):
-        """
-        Retrieve configuration data object, leveraging provided data.
-
-        :param flags: configuration data flags
-        :param int node_id: node id
-        :param type_flags: type flags
-        :param values_str: values string
-        :return: configuration data
-        :rtype: ConfigData
-        """
-        data_types = tuple(map(lambda (k, v): ConfigDataTypes.STRING.value, self.items()))
-
-        return ConfigData(
-            message_type=flags,
-            node=node_id,
-            object=self.name,
-            type=type_flags,
-            data_types=data_types,
-            data_values=values_str
-        )
-
-    def add_item(self, key, value):
-        """
-        Add configuration key/value pair.
-
-        :param key: configuration key
-        :param value: configuration value
-        :return: nothing
-        """
-        self.configs[key] = value
-
-    def get_item(self, key):
-        """
-        Retrieve configuration value.
-
-        :param key: key for configuration value to retrieve
-        :return: configuration value
-        """
-        try:
-            return self.configs[key]
-        except KeyError:
-            logger.exception("error retrieving item from configs: %s", key)
-
-        return None
-
-    def items(self):
-        """
-        Retrieve configuration items.
-
-        :return: configuration items iterator
-        """
-        return self.configs.iteritems()

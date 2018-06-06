@@ -7,17 +7,11 @@ a list of available services to the GUI and for configuring individual
 services.
 """
 import time
-from itertools import repeat
 
 from core import CoreCommandError
 from core import logger
-from core.conf import Configurable
-from core.conf import ConfigurableManager
-from core.data import ConfigData
 from core.data import EventData
 from core.data import FileData
-from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
 from core.enumerations import EventTypes
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
@@ -78,7 +72,7 @@ class ServiceManager(object):
             cls.add(service)
 
 
-class CoreServices(ConfigurableManager):
+class CoreServices(object):
     """
     Class for interacting with a list of available startup services for
     nodes. Mostly used to convert a CoreService into a Config API
@@ -88,7 +82,6 @@ class CoreServices(ConfigurableManager):
     """
     name = "services"
     config_type = RegisterTlvs.UTILITY.value
-
     _invalid_custom_names = ("core", "api", "emane", "misc", "netns", "phys", "services")
 
     def __init__(self, session):
@@ -98,7 +91,7 @@ class CoreServices(ConfigurableManager):
         :param core.session.Session session: session this manager is tied to
         :return: nothing
         """
-        ConfigurableManager.__init__(self)
+        # ConfigurableManager.__init__(self)
         self.session = session
         # dict of default services tuples, key is node type
         self.defaultservices = {}
@@ -154,34 +147,31 @@ class CoreServices(ConfigurableManager):
                     return s
         return service
 
-    def setcustomservice(self, object_id, service, values):
+    def setcustomservice(self, object_id, service, config):
         """
         Store service customizations in an instantiated service object
         using a list of values that came from a config message.
 
         :param int object_id: object id to set custom service for
         :param class service: service to set
-        :param list values: values to
+        :param dict config: values to
         :return:
         """
+        logger.debug("setting custom service(%s) for node(%s): %s", object_id, service, config)
         if service._custom:
             s = service
         else:
             # instantiate the class, for storing config customization
             s = service()
-        # values are new key=value format; not all keys need to be present
-        # a missing key means go with the default
-        if Configurable.haskeyvalues(values):
-            for v in values:
-                key, value = v.split('=', 1)
-                s.setvalue(key, value)
-        # old-style config, list of values
-        else:
-            s.fromvaluelist(values)
+
+        # set custom service configuration
+        for name, value in config.iteritems():
+            s.setvalue(name, value)
 
         # assume custom service already in dict
         if service._custom:
             return
+
         # add the custom service to dict
         if object_id in self.customservices:
             self.customservices[object_id] += (s,)
@@ -435,130 +425,6 @@ class CoreServices(ConfigurableManager):
                     # TODO: determine if its ok to just return the bad exit status
                     status = "-1"
         return status
-
-    def configure_request(self, config_data):
-        """
-        Receive configuration message for configuring services.
-        With a request flag set, a list of services has been requested.
-        When the opaque field is present, a specific service is being
-        configured or requested.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: response messages
-        :rtype: ConfigData
-        """
-        node_id = config_data.node
-        session_id = config_data.session
-        opaque = config_data.opaque
-
-        logger.debug("configuration request: node(%s) session(%s) opaque(%s)", node_id, session_id, opaque)
-
-        # send back a list of available services
-        if opaque is None:
-            type_flag = ConfigFlags.NONE.value
-            data_types = tuple(repeat(ConfigDataTypes.BOOL.value, len(ServiceManager.services)))
-            values = "|".join(repeat('0', len(ServiceManager.services)))
-            names = map(lambda x: x._name, ServiceManager.services)
-            captions = "|".join(names)
-            possible_values = ""
-            for s in ServiceManager.services:
-                if s._custom_needed:
-                    possible_values += '1'
-                possible_values += '|'
-            groups = self.buildgroups(ServiceManager.services)
-        # send back the properties for this service
-        else:
-            if node_id is None:
-                return None
-            node = self.session.get_object(node_id)
-            if node is None:
-                logger.warn("Request to configure service for unknown node %s", node_id)
-                return None
-            servicesstring = opaque.split(':')
-            services, unknown = self.servicesfromopaque(opaque, node.objid)
-            for u in unknown:
-                logger.warn("Request for unknown service '%s'" % u)
-
-            if len(services) < 1:
-                return None
-
-            if len(servicesstring) == 3:
-                # a file request: e.g. "service:zebra:quagga.conf"
-                file_data = self.getservicefile(services, node, servicesstring[2])
-                self.session.broadcast_file(file_data)
-
-                # short circuit this request early to avoid returning response below
-                return None
-
-            # the first service in the list is the one being configured
-            svc = services[0]
-            # send back:
-            # dirs, configs, startindex, startup, shutdown, metadata, config
-            type_flag = ConfigFlags.UPDATE.value
-            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(svc.keys)))
-            values = svc.tovaluelist(node, services)
-            captions = None
-            possible_values = None
-            groups = None
-
-        return ConfigData(
-            message_type=0,
-            node=node_id,
-            object=self.name,
-            type=type_flag,
-            data_types=data_types,
-            data_values=values,
-            captions=captions,
-            possible_values=possible_values,
-            groups=groups,
-            session=session_id,
-            opaque=opaque
-        )
-
-    def configure_values(self, config_data):
-        """
-        Receive configuration message for configuring services.
-        With a request flag set, a list of services has been requested.
-        When the opaque field is present, a specific service is being
-        configured or requested.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: None
-        """
-        data_types = config_data.data_types
-        values = config_data.data_values
-        node_id = config_data.node
-        opaque = config_data.opaque
-
-        error_message = "services config message that I don't know how to handle"
-        if values is None:
-            logger.error(error_message)
-            return None
-        else:
-            values = values.split('|')
-
-        if opaque is None:
-            # store default services for a node type in self.defaultservices[]
-            if data_types is None or data_types[0] != ConfigDataTypes.STRING.value:
-                logger.info(error_message)
-                return None
-            key = values.pop(0)
-            self.defaultservices[key] = values
-            logger.debug("default services for type %s set to %s", key, values)
-        else:
-            # store service customized config in self.customservices[]
-            if node_id is None:
-                return None
-            services, unknown = self.servicesfromopaque(opaque, node_id)
-            for u in unknown:
-                logger.warn("Request for unknown service '%s'" % u)
-
-            if len(services) < 1:
-                return None
-            svc = services[0]
-            self.setcustomservice(node_id, svc, values)
-
-        return None
 
     def servicesfromopaque(self, opaque, object_id):
         """

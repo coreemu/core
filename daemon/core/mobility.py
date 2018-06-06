@@ -9,10 +9,12 @@ import threading
 import time
 
 from core import logger
-from core.conf import Configurable
-from core.conf import ConfigurableManager
+from core.conf import ConfigurableOptions
+from core.conf import Configuration
+from core.conf import NewConfigurableManager
 from core.coreobj import PyCoreNode
-from core.data import EventData, LinkData
+from core.data import EventData
+from core.data import LinkData
 from core.enumerations import ConfigDataTypes
 from core.enumerations import EventTypes
 from core.enumerations import LinkTypes
@@ -24,7 +26,7 @@ from core.misc import utils
 from core.misc.ipaddress import IpAddress
 
 
-class MobilityManager(ConfigurableManager):
+class MobilityManager(NewConfigurableManager):
     """
     Member of session class for handling configuration data for mobility and
     range models.
@@ -38,19 +40,41 @@ class MobilityManager(ConfigurableManager):
 
         :param core.session.Session session: session this manager is tied to
         """
-        ConfigurableManager.__init__(self)
+        super(MobilityManager, self).__init__()
         self.session = session
-        # configurations for basic range, indexed by WLAN node number, are
-        # stored in self.configs
+        # configurations for basic range, indexed by WLAN node number, are stored in configurations
         # mapping from model names to their classes
         self._modelclsmap = {
             BasicRangeModel.name: BasicRangeModel,
             Ns2ScriptedMobility.name: Ns2ScriptedMobility
         }
+
         # dummy node objects for tracking position of nodes on other servers
         self.phys = {}
         self.physnets = {}
         self.session.broker.handlers.add(self.physnodehandlelink)
+
+    def mobility_models(self):
+        return self._modelclsmap.keys()
+
+    def get_model_class(self, model_name):
+        return self._modelclsmap[model_name]
+
+    def getmodels(self, node):
+        """
+        Return a list of model classes and values for a net if one has been
+        configured. This is invoked when exporting a session to XML.
+
+        :param node: network node to get models for
+        :return: list of model and values tuples for the network node
+        :rtype: list
+        """
+        configs = self.get_config_types(node.objid)
+        models = []
+        for model_name, config in configs.iteritems():
+            model_class = self._modelclsmap[model_name]
+            models.append((model_class, config))
+        return models
 
     def startup(self, node_ids=None):
         """
@@ -61,7 +85,7 @@ class MobilityManager(ConfigurableManager):
         :return: nothing
         """
         if node_ids is None:
-            node_ids = self.configs.keys()
+            node_ids = self.nodes()
 
         for node_id in node_ids:
             logger.info("checking mobility startup for node: %s", node_id)
@@ -69,22 +93,22 @@ class MobilityManager(ConfigurableManager):
             try:
                 node = self.session.get_object(node_id)
             except KeyError:
-                logger.warn("skipping mobility configuration for unknown node %d." % node_id)
+                logger.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
-            if node_id not in self.configs:
-                logger.warn("missing mobility configuration for node %d." % node_id)
+            node_configs = self.get_config_types(node_id)
+            if not node_configs:
+                logger.warn("missing mobility configuration for node: %s", node_id)
                 continue
 
-            v = self.configs[node_id]
-
-            for model in v:
+            for model_name in node_configs.iterkeys():
                 try:
-                    logger.info("setting mobility model to node: %s", model)
-                    cls = self._modelclsmap[model[0]]
-                    node.setmodel(cls, model[1])
+                    clazz = self._modelclsmap[model_name]
+                    model_config = self.get_config(node_id, model_name)
+                    logger.info("setting mobility model(%s) to node: %s", model_name, model_config)
+                    node.setmodel(clazz, model_config)
                 except KeyError:
-                    logger.warn("skipping mobility configuration for unknown model '%s'" % model[0])
+                    logger.warn("skipping mobility configuration for unknown model: %s", model_name)
                     continue
 
             if self.session.master:
@@ -99,26 +123,32 @@ class MobilityManager(ConfigurableManager):
 
         :return: nothing
         """
-        self.clearconfig(nodenum=None)
+        self.config_reset()
 
-    def setconfig(self, node_id, config_type, values):
+    def set_configs(self, config, node_id=None, config_type=None):
         """
-        Normal setconfig() with check for run-time updates for WLANs.
+        Adds a check for run-time updates for WLANs after providing normal set configs.
 
+        :param dict config: configuration value
         :param int node_id: node id
-        :param config_type: configuration type
-        :param values: configuration value
+        :param str config_type: configuration type
         :return: nothing
         """
-        super(MobilityManager, self).setconfig(node_id, config_type, values)
+        if not node_id or not config_type:
+            raise ValueError("mobility manager invalid node id or config type: %s - %s", node_id, config_type)
+
+        super(MobilityManager, self).set_configs(config, node_id, config_type)
+
         if self.session is None:
             return
+
         if self.session.state == EventTypes.RUNTIME_STATE.value:
             try:
                 node = self.session.get_object(node_id)
-                node.updatemodel(config_type, values)
+                # TODO: this need to be updated
+                node.updatemodel(config_type, config)
             except KeyError:
-                logger.exception("Skipping mobility configuration for unknown node %d.", node_id)
+                logger.exception("skipping mobility configuration for unknown node %s", node_id)
 
     def handleevent(self, event_data):
         """
@@ -206,13 +236,13 @@ class MobilityManager(ConfigurableManager):
         :param list moved_netifs: moved network interfaces
         :return: nothing
         """
-        for nodenum in self.configs:
+        for node_id in self.nodes():
             try:
-                n = self.session.get_object(nodenum)
+                node = self.session.get_object(node_id)
             except KeyError:
                 continue
-            if n.model:
-                n.model.update(moved, moved_netifs)
+            if node.model:
+                node.model.update(moved, moved_netifs)
 
     def addphys(self, netnum, node):
         """
@@ -222,12 +252,12 @@ class MobilityManager(ConfigurableManager):
         :param core.coreobj.PyCoreNode node: node to add physical network to
         :return: nothing
         """
-        nodenum = node.objid
-        self.phys[nodenum] = node
+        node_id = node.objid
+        self.phys[node_id] = node
         if netnum not in self.physnets:
-            self.physnets[netnum] = [nodenum, ]
+            self.physnets[netnum] = [node_id, ]
         else:
-            self.physnets[netnum].append(nodenum)
+            self.physnets[netnum].append(node_id)
 
     # TODO: remove need for handling old style message
     def physnodehandlelink(self, message):
@@ -247,8 +277,7 @@ class MobilityManager(ConfigurableManager):
                 return
             if nn[1] in self.session.broker.physical_nodes:
                 # record the fact that this PhysicalNode is linked to a net
-                dummy = PyCoreNode(session=self.session, objid=nn[1],
-                                   name="n%d" % nn[1], start=False)
+                dummy = PyCoreNode(session=self.session, objid=nn[1], name="n%d" % nn[1], start=False)
                 self.addphys(nn[0], dummy)
 
     # TODO: remove need to handling old style messages
@@ -291,7 +320,7 @@ class MobilityManager(ConfigurableManager):
             netif.poshook(netif, x, y, z)
 
 
-class WirelessModel(Configurable):
+class WirelessModel(ConfigurableOptions):
     """
     Base class used by EMANE models and the basic range model.
     Used for managing arbitrary configuration parameters.
@@ -308,9 +337,8 @@ class WirelessModel(Configurable):
         :param int object_id: object id
         :param values: values
         """
-        Configurable.__init__(self, session, object_id)
-        # 'values' can be retrieved from a ConfigurableManager, or used here
-        # during initialization, depending on the model.
+        self.session = session
+        self.object_id = object_id
 
     def all_link_data(self, flags):
         """
@@ -333,12 +361,12 @@ class WirelessModel(Configurable):
         """
         raise NotImplementedError
 
-    def updateconfig(self, values):
+    def updateconfig(self, config):
         """
         For run-time updates of model config. Returns True when position callback and set link
         parameters should be invoked.
 
-        :param values: value to update
+        :param dict config: value to update
         :return: False
         :rtype: bool
         """
@@ -353,23 +381,20 @@ class BasicRangeModel(WirelessModel):
     """
     name = "basic_range"
 
-    # configuration parameters are
-    #  ( 'name', 'type', 'default', 'possible-value-list', 'caption')
-    config_matrix = [
-        ("range", ConfigDataTypes.UINT32.value, '275',
-         '', 'wireless range (pixels)'),
-        ("bandwidth", ConfigDataTypes.UINT32.value, '54000',
-         '', 'bandwidth (bps)'),
-        ("jitter", ConfigDataTypes.FLOAT.value, '0.0',
-         '', 'transmission jitter (usec)'),
-        ("delay", ConfigDataTypes.FLOAT.value, '5000.0',
-         '', 'transmission delay (usec)'),
-        ("error", ConfigDataTypes.FLOAT.value, '0.0',
-         '', 'error rate (%)'),
-    ]
+    @classmethod
+    def configurations(cls):
+        return [
+            Configuration(_id="range", _type=ConfigDataTypes.UINT32, default="275", label="wireless range (pixels)"),
+            Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000", label="bandwidth (bps)"),
+            Configuration(_id="jitter", _type=ConfigDataTypes.FLOAT, default="0.0", label="transmission jitter (usec)"),
+            Configuration(_id="delay", _type=ConfigDataTypes.FLOAT, default="5000.0",
+                          label="transmission delay (usec)"),
+            Configuration(_id="error", _type=ConfigDataTypes.FLOAT, default="0.0", label="error rate (%)")
+        ]
 
-    # value groupings
-    config_groups = "Basic Range Parameters:1-%d" % len(config_matrix)
+    @classmethod
+    def config_groups(cls):
+        return "Basic Range Parameters:1-%d" % len(cls.configurations())
 
     def __init__(self, session, object_id, values=None):
         """
@@ -377,56 +402,48 @@ class BasicRangeModel(WirelessModel):
 
         :param core.session.Session session: related core session
         :param int object_id: object id
-        :param values: values
+        :param dict values: values
         """
         super(BasicRangeModel, self).__init__(session=session, object_id=object_id)
+        self.session = session
         self.wlan = session.get_object(object_id)
         self._netifs = {}
         self._netifslock = threading.Lock()
-        if values is None:
-            values = session.mobility.getconfig(object_id, self.name, self.getdefaultvalues())[1]
-        self.range = float(self.valueof("range", values))
-        logger.info("Basic range model configured for WLAN %d using range %d", object_id, self.range)
-        self.valuestolinkparams(values)
+        if not values:
+            values = self.default_values()
 
-        # link parameters
+        # TODO: can this be handled in a better spot
+        self.session.mobility.set_configs(values, node_id=object_id, config_type=self.name)
+
+        self.range = None
         self.bw = None
         self.delay = None
         self.loss = None
         self.jitter = None
 
-    def valuestolinkparams(self, values):
+        self.values_from_config(values)
+
+    def values_from_config(self, config):
         """
         Values to convert to link parameters.
 
-        :param values: values to convert
+        :param dict config: values to convert
         :return: nothing
         """
-        self.bw = int(self.valueof("bandwidth", values))
+        self.range = float(config["range"])
+        logger.info("Basic range model configured for WLAN %d using range %d", self.wlan.objid, self.range)
+        self.bw = int(config["bandwidth"])
         if self.bw == 0.0:
             self.bw = None
-        self.delay = float(self.valueof("delay", values))
+        self.delay = float(config["delay"])
         if self.delay == 0.0:
             self.delay = None
-        self.loss = float(self.valueof("error", values))
+        self.loss = float(config["error"])
         if self.loss == 0.0:
             self.loss = None
-        self.jitter = float(self.valueof("jitter", values))
+        self.jitter = float(config["jitter"])
         if self.jitter == 0.0:
             self.jitter = None
-
-    @classmethod
-    def configure_mob(cls, session, config_data):
-        """
-        Handle configuration messages for setting up a model.
-        Pass the MobilityManager object as the manager object.
-
-        :param core.session.Session session: current session calling function
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: configuration data
-        :rtype: core.data.ConfigData
-        """
-        return cls.configure(session.mobility, config_data)
 
     def setlinkparams(self):
         """
@@ -435,8 +452,7 @@ class BasicRangeModel(WirelessModel):
         """
         with self._netifslock:
             for netif in self._netifs:
-                self.wlan.linkconfig(netif, bw=self.bw, delay=self.delay,
-                                     loss=self.loss, duplicate=None,
+                self.wlan.linkconfig(netif, bw=self.bw, delay=self.delay, loss=self.loss, duplicate=None,
                                      jitter=self.jitter)
 
     def get_position(self, netif):
@@ -461,7 +477,6 @@ class BasicRangeModel(WirelessModel):
         :param z: z position
         :return: nothing
         """
-        # print "set_position(%s, x=%s, y=%s, z=%s)" % (netif.localname, x, y, z)
         self._netifslock.acquire()
         self._netifs[netif] = (x, y, z)
         if x is None or y is None:
@@ -487,7 +502,7 @@ class BasicRangeModel(WirelessModel):
         with self._netifslock:
             while len(moved_netifs):
                 netif = moved_netifs.pop()
-                (nx, ny, nz) = netif.node.getposition()
+                nx, ny, nz = netif.node.getposition()
                 if netif in self._netifs:
                     self._netifs[netif] = (nx, ny, nz)
                 for netif2 in self._netifs:
@@ -557,18 +572,17 @@ class BasicRangeModel(WirelessModel):
             c = p1[2] - p2[2]
         return math.hypot(math.hypot(a, b), c)
 
-    def updateconfig(self, values):
+    def updateconfig(self, config):
         """
         Configuration has changed during runtime.
         MobilityManager.setconfig() -> WlanNode.updatemodel() ->
         WirelessModel.updateconfig()
 
-        :param values: values to update configuration
+        :param dict config: values to update configuration
         :return: was update successful
         :rtype: bool
         """
-        self.valuestolinkparams(values)
-        self.range = float(self.valueof("range", values))
+        self.values_from_config(config)
         return True
 
     def create_link_data(self, interface1, interface2, message_type):
@@ -581,7 +595,6 @@ class BasicRangeModel(WirelessModel):
         :return: link data
         :rtype: LinkData
         """
-
         return LinkData(
             message_type=message_type,
             node1_id=interface1.node.objid,
@@ -678,6 +691,7 @@ class WayPointMobility(WirelessModel):
         :return:
         """
         super(WayPointMobility, self).__init__(session=session, object_id=object_id, values=values)
+
         self.state = self.STATE_STOPPED
         self.queue = []
         self.queue_copy = []
@@ -705,7 +719,6 @@ class WayPointMobility(WirelessModel):
         self.lasttime = time.time()
         now = self.lasttime - self.timezero
         dt = self.lasttime - t
-        # print "runround(now=%.2f, dt=%.2f)" % (now, dt)
 
         # keep current waypoints up-to-date
         self.updatepoints(now)
@@ -741,7 +754,6 @@ class WayPointMobility(WirelessModel):
                 moved_netifs.append(netif)
 
         # calculate all ranges after moving nodes; this saves calculations
-        # self.wlan.model.update(moved)
         self.session.mobility.updatewlans(moved, moved_netifs)
 
         # TODO: check session state
@@ -806,7 +818,6 @@ class WayPointMobility(WirelessModel):
                 self.endtime = self.lasttime - self.timezero
             del self.points[node.objid]
             return False
-        # print "node %s dx,dy= <%s, %d>" % (node.name, dx, dy)
         if (x1 + dx) < 0.0:
             dx = 0.0 - x1
         if (y1 + dy) < 0.0:
@@ -826,7 +837,7 @@ class WayPointMobility(WirelessModel):
             node = netif.node
             if node.objid not in self.initial:
                 continue
-            (x, y, z) = self.initial[node.objid].coords
+            x, y, z = self.initial[node.objid].coords
             self.setnodeposition(node, x, y, z)
             moved.append(node)
             moved_netifs.append(netif)
@@ -845,7 +856,6 @@ class WayPointMobility(WirelessModel):
         :param speed: speed
         :return: nothing
         """
-        # print "addwaypoint: %s %s %s,%s,%s %s" % (time, nodenum, x, y, z, speed)
         wp = WayPoint(time, nodenum, coords=(x, y, z), speed=speed)
         heapq.heappush(self.queue, wp)
 
@@ -976,25 +986,22 @@ class Ns2ScriptedMobility(WayPointMobility):
     """
     name = "ns2script"
 
-    config_matrix = [
-        ("file", ConfigDataTypes.STRING.value, '',
-         '', 'mobility script file'),
-        ("refresh_ms", ConfigDataTypes.UINT32.value, '50',
-         '', 'refresh time (ms)'),
-        ("loop", ConfigDataTypes.BOOL.value, '1',
-         'On,Off', 'loop'),
-        ("autostart", ConfigDataTypes.STRING.value, '',
-         '', 'auto-start seconds (0.0 for runtime)'),
-        ("map", ConfigDataTypes.STRING.value, '',
-         '', 'node mapping (optional, e.g. 0:1,1:2,2:3)'),
-        ("script_start", ConfigDataTypes.STRING.value, '',
-         '', 'script file to run upon start'),
-        ("script_pause", ConfigDataTypes.STRING.value, '',
-         '', 'script file to run upon pause'),
-        ("script_stop", ConfigDataTypes.STRING.value, '',
-         '', 'script file to run upon stop'),
-    ]
-    config_groups = "ns-2 Mobility Script Parameters:1-%d" % len(config_matrix)
+    @classmethod
+    def configurations(cls):
+        return [
+            Configuration(_id="file", _type=ConfigDataTypes.STRING, label="mobility script file"),
+            Configuration(_id="refresh_ms", _type=ConfigDataTypes.UINT32, default="50", label="mobility script file"),
+            Configuration(_id="loop", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"], label="loop"),
+            Configuration(_id="autostart", _type=ConfigDataTypes.STRING, label="auto-start seconds (0.0 for runtime)"),
+            Configuration(_id="map", _type=ConfigDataTypes.STRING, label="node mapping (optional, e.g. 0:1,1:2,2:3)"),
+            Configuration(_id="script_start", _type=ConfigDataTypes.STRING, label="script file to run upon start"),
+            Configuration(_id="script_pause", _type=ConfigDataTypes.STRING, label="script file to run upon pause"),
+            Configuration(_id="script_stop", _type=ConfigDataTypes.STRING, label="script file to run upon stop")
+        ]
+
+    @classmethod
+    def config_groups(cls):
+        return "ns-2 Mobility Script Parameters:1-%d" % len(cls.configurations())
 
     def __init__(self, session, object_id, values=None):
         """
@@ -1007,31 +1014,23 @@ class Ns2ScriptedMobility(WayPointMobility):
         super(Ns2ScriptedMobility, self).__init__(session=session, object_id=object_id, values=values)
         self._netifs = {}
         self._netifslock = threading.Lock()
-        if values is None:
-            values = session.mobility.getconfig(object_id, self.name, self.getdefaultvalues())[1]
-        self.file = self.valueof("file", values)
-        self.refresh_ms = int(self.valueof("refresh_ms", values))
-        self.loop = self.valueof("loop", values).lower() == "on"
-        self.autostart = self.valueof("autostart", values)
-        self.parsemap(self.valueof("map", values))
-        self.script_start = self.valueof("script_start", values)
-        self.script_pause = self.valueof("script_pause", values)
-        self.script_stop = self.valueof("script_stop", values)
+
+        if not values:
+            values = self.default_values()
+        self.session.mobility.set_configs(values, node_id=object_id, config_type=self.name)
+
+        self.file = values["file"]
+        self.refresh_ms = int(values["refresh_ms"])
+        self.loop = values["loop"].lower() == "on"
+        self.autostart = values["autostart"]
+        self.parsemap(values["map"])
+        self.script_start = values["script_start"]
+        self.script_pause = values["script_pause"]
+        self.script_stop = values["script_stop"]
         logger.info("ns-2 scripted mobility configured for WLAN %d using file: %s", object_id, self.file)
         self.readscriptfile()
         self.copywaypoints()
         self.setendtime()
-
-    @classmethod
-    def configure_mob(cls, session, config_data):
-        """
-        Handle configuration messages for setting up a model.
-        Pass the MobilityManager object as the manager object.
-
-        :param core.session.Session session: current session calling function
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        """
-        return cls.configure(session.mobility, config_data)
 
     def readscriptfile(self):
         """
@@ -1234,4 +1233,4 @@ class Ns2ScriptedMobility(WayPointMobility):
             return
         filename = self.findfile(filename)
         args = ["/bin/sh", filename, typestr]
-        utils.check_cmd(args, cwd=self.session.sessiondir, env=self.session.get_environment())
+        utils.check_cmd(args, cwd=self.session.session_dir, env=self.session.get_environment())

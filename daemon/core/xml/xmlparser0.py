@@ -1,6 +1,7 @@
 from xml.dom.minidom import parse
 
 from core import logger
+from core.conf import ConfigShim
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
 from core.service import ServiceManager
@@ -369,6 +370,7 @@ class CoreDocumentParser0(object):
             values.append("files=%s" % files)
         if not bool(service.getAttribute("custom")):
             return True
+        values = ConfigShim.str_to_dict(values)
         self.session.services.setcustomservice(n.objid, svc, values)
         return True
 

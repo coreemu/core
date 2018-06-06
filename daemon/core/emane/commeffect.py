@@ -35,8 +35,13 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     shim_defaults = {}
     config_shim = emanemanifest.parse(shim_xml, shim_defaults)
 
-    config_groups_override = "CommEffect SHIM Parameters:1-%d" % len(config_shim)
-    config_matrix_override = config_shim
+    @classmethod
+    def configurations(cls):
+        return cls.config_shim
+
+    @classmethod
+    def config_groups(cls):
+        return "CommEffect SHIM Parameters:1-%d" % len(cls.configurations())
 
     def build_xml_files(self, emane_manager, interface):
         """
@@ -49,8 +54,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         :param interface: interface for the emane node
         :return: nothing
         """
-        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
-        if values is None:
+        default_values = self.default_values()
+        config = emane_manager.getifcconfig(self.object_id, self.name, default_values, interface)
+        if not config:
             return
 
         # retrieve xml names
@@ -67,23 +73,22 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         nem_element.appendChild(shim_xml)
         emane_manager.xmlwrite(nem_document, nem_name)
 
-        names = self.getnames()
-        shim_names = list(names)
-        shim_names.remove("filterfile")
-
         shim_document = emane_manager.xmldoc("shim")
         shim_element = shim_document.getElementsByTagName("shim").pop()
         shim_element.setAttribute("name", "%s SHIM" % self.name)
         shim_element.setAttribute("library", self.shim_library)
 
         # append all shim options (except filterfile) to shimdoc
-        for name in shim_names:
-            value = self.valueof(name, values)
+        for configuration in self.config_shim:
+            name = configuration.id
+            if name == "filterfile":
+                continue
+            value = config[name]
             param = emane_manager.xmlparam(shim_document, name, value)
             shim_element.appendChild(param)
 
         # empty filterfile is not allowed
-        ff = self.valueof("filterfile", values)
+        ff = config["filterfile"]
         if ff.strip() != "":
             shim_element.appendChild(emane_manager.xmlparam(shim_document, "filterfile", ff))
         emane_manager.xmlwrite(shim_document, shim_name)

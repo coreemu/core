@@ -378,7 +378,8 @@ class EmuSession(Session):
             if node_two:
                 node_two.lock.release()
 
-    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None, link_options=LinkOptions()):
+    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None,
+                    link_options=LinkOptions()):
         """
         Update link information between nodes.
 
@@ -480,7 +481,7 @@ class EmuSession(Session):
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
-        enable_rj45 = getattr(self.options, "enablerj45", "0") == "1"
+        enable_rj45 = self.options.get_config("enablerj45") == "1"
         if _type == NodeTypes.RJ45 and not enable_rj45:
             start = False
 
@@ -851,7 +852,7 @@ class CoreEmu(object):
         """
         # set umask 0
         os.umask(0)
-        
+
         # configuration
         self.config = config
 

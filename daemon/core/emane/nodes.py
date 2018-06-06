@@ -174,14 +174,9 @@ class EmaneNode(EmaneNet):
         trans.setAttribute("library", "trans%s" % transport_type.lower())
         trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
 
-        flowcontrol = False
-        names = self.model.getnames()
-        values = emane.getconfig(self.objid, self.model.name, self.model.getdefaultvalues())[1]
-
-        if "flowcontrolenable" in names and values:
-            i = names.index("flowcontrolenable")
-            if self.model.booltooffon(values[i]) == "on":
-                flowcontrol = True
+        config = emane.get_configs(self.objid, self.model.name)
+        logger.debug("transport xml config: %s", config)
+        flowcontrol = config.get("flowcontrolenable", "0") == "1"
 
         if "virtual" in transport_type.lower():
             if os.path.exists("/dev/net/tun_flowctl"):
@@ -193,11 +188,11 @@ class EmaneNode(EmaneNet):
 
         emane.xmlwrite(transdoc, self.transportxmlname(transport_type.lower()))
 
-    def transportxmlname(self, type):
+    def transportxmlname(self, _type):
         """
         Return the string name for the Transport XML file, e.g. 'n3transvirtual.xml'
         """
-        return "n%strans%s.xml" % (self.objid, type)
+        return "n%strans%s.xml" % (self.objid, _type)
 
     def installnetifs(self, do_netns=True):
         """
