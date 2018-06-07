@@ -1207,14 +1207,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
+            config = model_class.default_values()
             if values_str:
-                config = ConfigShim.str_to_dict(values_str)
-            else:
-                config = self.session.mobility.get_configs(node_id, object_name)
-
-            for name, value in model_class.default_values().iteritems():
-                if name not in config:
+                parsed_config = ConfigShim.str_to_dict(values_str)
+                for name, value in parsed_config.iteritems():
                     config[name] = value
+            else:
+                config = self.session.mobility.get_configs(node_id, object_name) or config
 
             self.session.mobility.set_configs(config, node_id, object_name)
 
@@ -1303,14 +1302,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
+            config = model_class.default_values()
             if values_str:
-                config = ConfigShim.str_to_dict(values_str)
-            else:
-                config = self.session.emane.get_configs(node_id, object_name)
-
-            for name, value in model_class.default_values().iteritems():
-                if name not in config:
+                parsed_config = ConfigShim.str_to_dict(values_str)
+                for name, value in parsed_config.iteritems():
                     config[name] = value
+            else:
+                config = self.session.emane.get_configs(node_id, object_name) or config
 
             self.session.emane.set_configs(config, node_id, object_name)
 
