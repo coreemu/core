@@ -370,18 +370,20 @@ class CoreDocumentWriter0(Document):
         """
         # options
         options = self.createElement("SessionOptions")
-        defaults = self.session.options.getdefaultvalues()
-        for i, (k, v) in enumerate(self.session.options.getkeyvaluelist()):
-            if str(v) != str(defaults[i]):
-                xmlutils.add_text_param_to_parent(self, options, k, v)
-                # addparamtoparent(self, options, k, v)
+        defaults = self.session.options.default_values()
+        for name, current_value in self.session.options.get_configs().iteritems():
+            default_value = defaults[name]
+            if current_value != default_value:
+                xmlutils.add_text_param_to_parent(self, options, name, current_value)
+
         if options.hasChildNodes():
             self.meta.appendChild(options)
+
         # hook scripts
         self.addhooks()
+
         # meta
         meta = self.createElement("MetaData")
         self.meta.appendChild(meta)
-        for k, v in self.session.metadata.items():
-            xmlutils.add_text_param_to_parent(self, meta, k, v)
-            # addparamtoparent(self, meta, k, v)
+        for name, current_value in self.session.metadata.get_configs().iteritems():
+            xmlutils.add_text_param_to_parent(self, meta, name, current_value)
