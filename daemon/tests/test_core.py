@@ -10,10 +10,10 @@ from xml.etree import ElementTree
 import pytest
 from mock import MagicMock
 
-from core.data import ConfigData
 from core.emulator.emudata import NodeOptions
 from core.enumerations import MessageFlags, NodeTypes
 from core.mobility import BasicRangeModel
+from core.mobility import Ns2ScriptedMobility
 from core.netns.vnodeclient import VnodeClient
 from core.service import ServiceManager
 
@@ -306,15 +306,17 @@ class TestCore:
         session.wireless_link_all(wlan_node, [node_one, node_two])
 
         # configure mobility script for session
-        config = ConfigData(
-            node=wlan_node.objid,
-            object="ns2script",
-            type=0,
-            data_types=(10, 3, 11, 10, 10, 10, 10, 10, 0),
-            data_values="file=%s|refresh_ms=50|loop=1|autostart=0.0|"
-                        "map=|script_start=|script_pause=|script_stop=" % _MOBILITY_FILE
-        )
-        session.config_object(config)
+        config = {
+            "file": _MOBILITY_FILE,
+            "refresh_ms": "50",
+            "loop": "1",
+            "autostart": "0.0",
+            "map": "",
+            "script_start": "",
+            "script_pause": "",
+            "script_stop": "",
+        }
+        session.mobility.set_configs(config, wlan_node.objid, Ns2ScriptedMobility.name)
 
         # add handler for receiving node updates
         event = threading.Event()

@@ -140,6 +140,7 @@ class NewConfigurableManager(object):
         return [node_id for node_id in self._configuration_maps.iterkeys() if node_id != self._default_node]
 
     def config_reset(self, node_id=None):
+        logger.debug("resetting all configurations: %s", self.__class__.__name__)
         if not node_id:
             self._configuration_maps.clear()
         elif node_id in self._configuration_maps:
@@ -152,9 +153,8 @@ class NewConfigurableManager(object):
 
     def set_configs(self, config, node_id=_default_node, config_type=_default_type):
         logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
-        node_type_map = self.get_configs(node_id, config_type)
-        node_type_map.clear()
-        node_type_map.update(config)
+        node_configs = self.get_config_types(node_id)
+        node_configs[config_type] = config
 
     def get_config(self, _id, node_id=_default_node, config_type=_default_type):
         logger.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
@@ -163,8 +163,9 @@ class NewConfigurableManager(object):
 
     def get_configs(self, node_id=_default_node, config_type=_default_type):
         logger.debug("getting configs for node(%s) type(%s)", node_id, config_type)
-        node_map = self._configuration_maps.setdefault(node_id, {})
+        node_map = self.get_config_types(node_id)
         return node_map.setdefault(config_type, {})
 
     def get_config_types(self, node_id=_default_node):
-        return self._configuration_maps.get(node_id, {})
+        logger.debug("getting all configs for node(%s)", node_id)
+        return self._configuration_maps.setdefault(node_id, {})

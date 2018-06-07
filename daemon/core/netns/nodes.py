@@ -382,7 +382,7 @@ class WlanNode(LxBrNet):
         Sets the mobility and wireless model.
 
         :param core.mobility.WirelessModel.cls model: wireless model to set to
-        :param config: model configuration
+        :param dict config: model configuration
         :return: nothing
         """
         logger.info("adding model: %s", model.name)

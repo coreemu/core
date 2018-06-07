@@ -812,8 +812,8 @@ class EmuSession(Session):
         :param emane_model: emane model to set
         :return: nothing
         """
-        values = list(emane_model.getdefaultvalues())
-        self.emane.setconfig(emane_node.objid, emane_model.name, values)
+        config = emane_model.default_values()
+        self.emane.set_configs(config, emane_node.objid, emane_model.name)
 
     def set_wireless_model(self, node, model):
         """
@@ -823,8 +823,8 @@ class EmuSession(Session):
         :param core.mobility.WirelessModel model: wireless model to set node to
         :return: nothing
         """
-        values = list(model.getdefaultvalues())
-        node.setmodel(model, values)
+        config = model.default_values()
+        node.setmodel(model, config)
 
     def wireless_link_all(self, network, nodes):
         """

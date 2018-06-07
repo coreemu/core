@@ -104,11 +104,11 @@ class MobilityManager(NewConfigurableManager):
             for model_name in node_configs.iterkeys():
                 try:
                     clazz = self._modelclsmap[model_name]
-                    model_config = self.get_config(node_id, model_name)
+                    model_config = self.get_configs(node_id, model_name)
                     logger.info("setting mobility model(%s) to node: %s", model_name, model_config)
                     node.setmodel(clazz, model_config)
                 except KeyError:
-                    logger.warn("skipping mobility configuration for unknown model: %s", model_name)
+                    logger.error("skipping mobility configuration for unknown model: %s", model_name)
                     continue
 
             if self.session.master:
@@ -145,7 +145,6 @@ class MobilityManager(NewConfigurableManager):
         if self.session.state == EventTypes.RUNTIME_STATE.value:
             try:
                 node = self.session.get_object(node_id)
-                # TODO: this need to be updated
                 node.updatemodel(config_type, config)
             except KeyError:
                 logger.exception("skipping mobility configuration for unknown node %s", node_id)
@@ -409,10 +408,10 @@ class BasicRangeModel(WirelessModel):
         self.wlan = session.get_object(object_id)
         self._netifs = {}
         self._netifslock = threading.Lock()
-        if not values:
-            values = self.default_values()
 
         # TODO: can this be handled in a better spot
+        if not values:
+            values = self.default_values()
         self.session.mobility.set_configs(values, node_id=object_id, config_type=self.name)
 
         self.range = None

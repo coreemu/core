@@ -47,7 +47,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # get configured schedule
-        config = emane_manager.get_configs()
+        config = emane_manager.get_configs(self.object_id, self.name)
         if not config:
             return
         schedule = config[self.schedule_name]
