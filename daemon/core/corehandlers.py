@@ -14,13 +14,16 @@ from itertools import repeat
 
 from core import logger
 from core.api import coreapi
+from core.api import dataconversion
 from core.conf import ConfigShim
 from core.data import ConfigData
 from core.data import EventData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import ConfigTlvs, ConfigFlags, ConfigDataTypes
+from core.enumerations import ConfigDataTypes
+from core.enumerations import ConfigFlags
+from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
 from core.enumerations import ExceptionTlvs
@@ -37,7 +40,8 @@ from core.enumerations import SessionTlvs
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
-from core.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.mobility import BasicRangeModel
+from core.mobility import Ns2ScriptedMobility
 from core.service import ServiceManager
 
 
@@ -265,24 +269,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logger.debug("handling broadcast config: %s", config_data)
-
-        tlv_data = structutils.pack_values(coreapi.CoreConfigTlv, [
-            (ConfigTlvs.NODE, config_data.node),
-            (ConfigTlvs.OBJECT, config_data.object),
-            (ConfigTlvs.TYPE, config_data.type),
-            (ConfigTlvs.DATA_TYPES, config_data.data_types),
-            (ConfigTlvs.VALUES, config_data.data_values),
-            (ConfigTlvs.CAPTIONS, config_data.captions),
-            (ConfigTlvs.BITMAP, config_data.bitmap),
-            (ConfigTlvs.POSSIBLE_VALUES, config_data.possible_values),
-            (ConfigTlvs.GROUPS, config_data.groups),
-            (ConfigTlvs.SESSION, config_data.session),
-            (ConfigTlvs.INTERFACE_NUMBER, config_data.interface_number),
-            (ConfigTlvs.NETWORK_ID, config_data.network_id),
-            (ConfigTlvs.OPAQUE, config_data.opaque),
-        ])
-        message = coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)
-
+        message = dataconversion.convert_config(config_data)
         try:
             self.sendall(message)
         except IOError:
@@ -319,31 +306,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logger.debug("handling broadcast node: %s", node_data)
-
-        tlv_data = structutils.pack_values(coreapi.CoreNodeTlv, [
-            (NodeTlvs.NUMBER, node_data.id),
-            (NodeTlvs.TYPE, node_data.node_type),
-            (NodeTlvs.NAME, node_data.name),
-            (NodeTlvs.IP_ADDRESS, node_data.ip_address),
-            (NodeTlvs.MAC_ADDRESS, node_data.mac_address),
-            (NodeTlvs.IP6_ADDRESS, node_data.ip6_address),
-            (NodeTlvs.MODEL, node_data.model),
-            (NodeTlvs.EMULATION_ID, node_data.emulation_id),
-            (NodeTlvs.EMULATION_SERVER, node_data.emulation_server),
-            (NodeTlvs.SESSION, node_data.session),
-            (NodeTlvs.X_POSITION, node_data.x_position),
-            (NodeTlvs.Y_POSITION, node_data.y_position),
-            (NodeTlvs.CANVAS, node_data.canvas),
-            (NodeTlvs.NETWORK_ID, node_data.network_id),
-            (NodeTlvs.SERVICES, node_data.services),
-            (NodeTlvs.LATITUDE, node_data.latitude),
-            (NodeTlvs.LONGITUDE, node_data.longitude),
-            (NodeTlvs.ALTITUDE, node_data.altitude),
-            (NodeTlvs.ICON, node_data.icon),
-            (NodeTlvs.OPAQUE, node_data.opaque)
-        ])
-        message = coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
-
+        message = dataconversion.convert_node(node_data)
         try:
             self.sendall(message)
         except IOError:
@@ -1247,7 +1210,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if values_str:
                 config = ConfigShim.str_to_dict(values_str)
             else:
-                config = model_class.default_values()
+                config = self.session.mobility.get_configs(node_id, object_name)
+
+            for name, value in model_class.default_values().iteritems():
+                if name not in config:
+                    config[name] = value
 
             self.session.mobility.set_configs(config, node_id, object_name)
 
@@ -1339,7 +1306,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if values_str:
                 config = ConfigShim.str_to_dict(values_str)
             else:
-                config = model_class.default_values()
+                config = self.session.emane.get_configs(node_id, object_name)
+
+            for name, value in model_class.default_values().iteritems():
+                if name not in config:
+                    config[name] = value
 
             self.session.emane.set_configs(config, node_id, object_name)
 

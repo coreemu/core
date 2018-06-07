@@ -2,21 +2,19 @@
 Converts CORE data objects into legacy API messages.
 """
 
-from core import logger
 from core.api import coreapi
+from core.enumerations import ConfigTlvs
 from core.enumerations import NodeTlvs
 from core.misc import structutils
 
 
 def convert_node(node_data):
     """
-    Callback to handle an node broadcast out from a session.
+    Convenience method for converting NodeData to a packed TLV message.
 
-    :param core.data.NodeData node_data: node data to handle
+    :param core.data.NodeData node_data: node data to convert
     :return: packed node message
     """
-    logger.debug("converting node data to message: %s", node_data)
-
     tlv_data = structutils.pack_values(coreapi.CoreNodeTlv, [
         (NodeTlvs.NUMBER, node_data.id),
         (NodeTlvs.TYPE, node_data.node_type),
@@ -39,5 +37,29 @@ def convert_node(node_data):
         (NodeTlvs.ICON, node_data.icon),
         (NodeTlvs.OPAQUE, node_data.opaque)
     ])
-
     return coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
+
+
+def convert_config(config_data):
+    """
+    Convenience method for converting ConfigData to a packed TLV message.
+
+    :param core.data.ConfigData config_data: config data to convert
+    :return: packed message
+    """
+    tlv_data = structutils.pack_values(coreapi.CoreConfigTlv, [
+        (ConfigTlvs.NODE, config_data.node),
+        (ConfigTlvs.OBJECT, config_data.object),
+        (ConfigTlvs.TYPE, config_data.type),
+        (ConfigTlvs.DATA_TYPES, config_data.data_types),
+        (ConfigTlvs.VALUES, config_data.data_values),
+        (ConfigTlvs.CAPTIONS, config_data.captions),
+        (ConfigTlvs.BITMAP, config_data.bitmap),
+        (ConfigTlvs.POSSIBLE_VALUES, config_data.possible_values),
+        (ConfigTlvs.GROUPS, config_data.groups),
+        (ConfigTlvs.SESSION, config_data.session),
+        (ConfigTlvs.INTERFACE_NUMBER, config_data.interface_number),
+        (ConfigTlvs.NETWORK_ID, config_data.network_id),
+        (ConfigTlvs.OPAQUE, config_data.opaque),
+    ])
+    return coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)

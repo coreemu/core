@@ -108,7 +108,7 @@ class MobilityManager(NewConfigurableManager):
                     logger.info("setting mobility model(%s) to node: %s", model_name, model_config)
                     node.setmodel(clazz, model_config)
                 except KeyError:
-                    logger.error("skipping mobility configuration for unknown model: %s", model_name)
+                    logger.exception("skipping mobility configuration for unknown model: %s", model_name)
                     continue
 
             if self.session.master:
@@ -328,13 +328,13 @@ class WirelessModel(ConfigurableOptions):
     bitmap = None
     position_callback = None
 
-    def __init__(self, session, object_id, values=None):
+    def __init__(self, session, object_id, config=None):
         """
         Create a WirelessModel instance.
 
         :param core.session.Session session: core session we are tied to
         :param int object_id: object id
-        :param values: values
+        :param dict config: values
         """
         self.session = session
         self.object_id = object_id
@@ -395,13 +395,13 @@ class BasicRangeModel(WirelessModel):
     def config_groups(cls):
         return "Basic Range Parameters:1-%d" % len(cls.configurations())
 
-    def __init__(self, session, object_id, values=None):
+    def __init__(self, session, object_id, config=None):
         """
         Create a BasicRangeModel instance.
 
         :param core.session.Session session: related core session
         :param int object_id: object id
-        :param dict values: values
+        :param dict config: values
         """
         super(BasicRangeModel, self).__init__(session=session, object_id=object_id)
         self.session = session
@@ -410,9 +410,9 @@ class BasicRangeModel(WirelessModel):
         self._netifslock = threading.Lock()
 
         # TODO: can this be handled in a better spot
-        if not values:
-            values = self.default_values()
-        self.session.mobility.set_configs(values, node_id=object_id, config_type=self.name)
+        if not config:
+            config = self.default_values()
+        self.session.mobility.set_configs(config, node_id=object_id, config_type=self.name)
 
         self.range = None
         self.bw = None
@@ -420,7 +420,7 @@ class BasicRangeModel(WirelessModel):
         self.loss = None
         self.jitter = None
 
-        self.values_from_config(values)
+        self.values_from_config(config)
 
     def values_from_config(self, config):
         """
@@ -430,7 +430,7 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         self.range = float(config["range"])
-        logger.info("Basic range model configured for WLAN %d using range %d", self.wlan.objid, self.range)
+        logger.info("basic range model configured for WLAN %d using range %d", self.wlan.objid, self.range)
         self.bw = int(config["bandwidth"])
         if self.bw == 0.0:
             self.bw = None
@@ -680,16 +680,16 @@ class WayPointMobility(WirelessModel):
     STATE_RUNNING = 1
     STATE_PAUSED = 2
 
-    def __init__(self, session, object_id, values=None):
+    def __init__(self, session, object_id, config=None):
         """
         Create a WayPointMobility instance.
 
         :param core.session.Session session: CORE session instance
         :param int object_id: object id
-        :param values: values for this model
+        :param config: values for this model
         :return:
         """
-        super(WayPointMobility, self).__init__(session=session, object_id=object_id, values=values)
+        super(WayPointMobility, self).__init__(session=session, object_id=object_id, config=config)
 
         self.state = self.STATE_STOPPED
         self.queue = []
@@ -1002,30 +1002,30 @@ class Ns2ScriptedMobility(WayPointMobility):
     def config_groups(cls):
         return "ns-2 Mobility Script Parameters:1-%d" % len(cls.configurations())
 
-    def __init__(self, session, object_id, values=None):
+    def __init__(self, session, object_id, config=None):
         """
         Creates a Ns2ScriptedMobility instance.
 
         :param core.session.Session session: CORE session instance
         :param int object_id: object id
-        :param values: values
+        :param config: values
         """
-        super(Ns2ScriptedMobility, self).__init__(session=session, object_id=object_id, values=values)
+        super(Ns2ScriptedMobility, self).__init__(session=session, object_id=object_id, config=config)
         self._netifs = {}
         self._netifslock = threading.Lock()
 
-        if not values:
-            values = self.default_values()
-        self.session.mobility.set_configs(values, node_id=object_id, config_type=self.name)
+        if not config:
+            config = self.default_values()
+        self.session.mobility.set_configs(config, node_id=object_id, config_type=self.name)
 
-        self.file = values["file"]
-        self.refresh_ms = int(values["refresh_ms"])
-        self.loop = values["loop"].lower() == "on"
-        self.autostart = values["autostart"]
-        self.parsemap(values["map"])
-        self.script_start = values["script_start"]
-        self.script_pause = values["script_pause"]
-        self.script_stop = values["script_stop"]
+        self.file = config["file"]
+        self.refresh_ms = int(config["refresh_ms"])
+        self.loop = config["loop"].lower() == "on"
+        self.autostart = config["autostart"]
+        self.parsemap(config["map"])
+        self.script_start = config["script_start"]
+        self.script_pause = config["script_pause"]
+        self.script_stop = config["script_stop"]
         logger.info("ns-2 scripted mobility configured for WLAN %d using file: %s", object_id, self.file)
         self.readscriptfile()
         self.copywaypoints()

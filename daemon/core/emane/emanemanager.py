@@ -10,6 +10,7 @@ from core import CoreCommandError
 from core import constants
 from core import logger
 from core.api import coreapi
+from core.api import dataconversion
 from core.conf import ConfigShim
 from core.conf import Configuration
 from core.conf import NewConfigurableManager
@@ -20,11 +21,12 @@ from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.enumerations import ConfigDataTypes, NodeTypes
+from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
 from core.enumerations import MessageFlags
 from core.enumerations import MessageTypes
+from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.misc import nodeutils
 from core.misc import utils
@@ -459,9 +461,9 @@ class EmaneManager(NewConfigurableManager):
             typeflags = ConfigFlags.UPDATE.value
             self.set_config("platform_id_start", str(platformid))
             self.set_config("nem_id_start", str(nemid))
-            msg = ConfigShim.config_data(0, None, typeflags, self.emane_config, self.get_configs())
-            # TODO: this needs to be converted into a sendable TLV message
-            server.sock.send(msg)
+            config_data = ConfigShim.config_data(0, None, typeflags, self.emane_config, self.get_configs())
+            message = dataconversion.convert_config(config_data)
+            server.sock.send(message)
             # increment nemid for next server by number of interfaces
             with self._ifccountslock:
                 if server in self._ifccounts:

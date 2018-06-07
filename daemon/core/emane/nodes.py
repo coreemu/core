@@ -77,7 +77,7 @@ class EmaneNode(EmaneNet):
             #  when buildnemxml() is called, not during init()
             self.model = model(session=self.session, object_id=self.objid)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, values=config)
+            self.mobility = model(session=self.session, object_id=self.objid, config=config)
 
     def setnemid(self, netif, nemid):
         """

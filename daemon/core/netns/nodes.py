@@ -387,7 +387,7 @@ class WlanNode(LxBrNet):
         """
         logger.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.objid, values=config)
+            self.model = model(session=self.session, object_id=self.objid, config=config)
             if self.model.position_callback:
                 for netif in self.netifs():
                     netif.poshook = self.model.position_callback
@@ -396,7 +396,7 @@ class WlanNode(LxBrNet):
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, values=config)
+            self.mobility = model(session=self.session, object_id=self.objid, config=config)
 
     def updatemodel(self, model_name, config):
         """
