@@ -22,7 +22,7 @@ from core.broker import CoreBroker
 from core.conf import ConfigShim
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
-from core.conf import NewConfigurableManager
+from core.conf import ConfigurableManager
 from core.data import ConfigData
 from core.data import EventData
 from core.data import ExceptionData
@@ -1221,7 +1221,7 @@ class Session(object):
         logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
 
-class SessionConfig(NewConfigurableManager, ConfigurableOptions):
+class SessionConfig(ConfigurableManager, ConfigurableOptions):
     """
     Session configuration object.
     """
@@ -1256,7 +1256,7 @@ class SessionConfig(NewConfigurableManager, ConfigurableOptions):
         self.set_configs(config)
 
 
-class SessionMetaData(NewConfigurableManager):
+class SessionMetaData(ConfigurableManager):
     """
     Metadata is simply stored in a configs[] dict. Key=value pairs are
     passed in from configure messages destined to the "metadata" object.

@@ -1,4 +1,4 @@
-from core.conf import NewConfigurableManager, ConfigurableOptions, Configuration
+from core.conf import ConfigurableManager, ConfigurableOptions, Configuration
 from core.enumerations import ConfigDataTypes
 
 
@@ -9,8 +9,16 @@ class TestConfigurableOptions(ConfigurableOptions):
     @classmethod
     def configurations(cls):
         return [
-            Configuration(_id=TestConfigurableOptions.name_one, _type=ConfigDataTypes.STRING, label="value1"),
-            Configuration(_id=TestConfigurableOptions.name_two, _type=ConfigDataTypes.STRING, label="value2")
+            Configuration(
+                _id=TestConfigurableOptions.name_one,
+                _type=ConfigDataTypes.STRING,
+                label=TestConfigurableOptions.name_one
+            ),
+            Configuration(
+                _id=TestConfigurableOptions.name_two,
+                _type=ConfigDataTypes.STRING,
+                label=TestConfigurableOptions.name_two
+            )
         ]
 
 
@@ -33,7 +41,7 @@ class TestConf:
 
     def test_nodes(self):
         # given
-        config_manager = NewConfigurableManager()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -48,7 +56,7 @@ class TestConf:
 
     def test_config_reset_all(self):
         # given
-        config_manager = NewConfigurableManager()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -62,7 +70,7 @@ class TestConf:
 
     def test_config_reset_node(self):
         # given
-        config_manager = NewConfigurableManager()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -76,7 +84,7 @@ class TestConf:
 
     def test_configs_setget(self):
         # given
-        config_manager = NewConfigurableManager()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -92,7 +100,7 @@ class TestConf:
 
     def test_config_setget(self):
         # given
-        config_manager = NewConfigurableManager()
+        config_manager = ConfigurableManager()
         name = "test"
         value = "1"
         node_id = 1
@@ -109,7 +117,7 @@ class TestConf:
 
     def test_all_configs(self):
         # given
-        config_manager = NewConfigurableManager()
+        config_manager = ConfigurableManager()
         name = "test"
         value_one = "1"
         value_two = "2"
@@ -126,8 +134,8 @@ class TestConf:
         defaults_value_two = config_manager.get_config(name, config_type=config_two)
         node_value_one = config_manager.get_config(name, node_id=node_id, config_type=config_one)
         node_value_two = config_manager.get_config(name, node_id=node_id, config_type=config_two)
-        default_all_configs = config_manager.get_config_types()
-        node_all_configs = config_manager.get_config_types(node_id=node_id)
+        default_all_configs = config_manager.get_all_configs()
+        node_all_configs = config_manager.get_all_configs(node_id=node_id)
 
         # then
         assert defaults_value_one == value_one

@@ -13,7 +13,7 @@ from core.api import coreapi
 from core.api import dataconversion
 from core.conf import ConfigShim
 from core.conf import Configuration
-from core.conf import NewConfigurableManager
+from core.conf import ConfigurableManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -54,7 +54,7 @@ EMANE_MODELS = [
 ]
 
 
-class EmaneManager(NewConfigurableManager):
+class EmaneManager(ConfigurableManager):
     """
     EMANE controller object. Lives in a Session instance and is used for
     building EMANE config files from all of the EmaneNode objects in this
@@ -208,7 +208,7 @@ class EmaneManager(NewConfigurableManager):
         """
         Used with XML export.
         """
-        configs = self.get_config_types(node.objid)
+        configs = self.get_all_configs(node.objid)
         models = []
         for model_name, config in configs.iteritems():
             model_class = self._modelclsmap[model_name]
@@ -572,7 +572,7 @@ class EmaneManager(NewConfigurableManager):
 
     def setnodemodel(self, node_id):
         logger.debug("setting emane models for node: %s", node_id)
-        node_config_types = self.get_config_types(node_id)
+        node_config_types = self.get_all_configs(node_id)
         if not node_config_types:
             logger.debug("no emane node model configuration, leaving: %s", node_id)
             return False

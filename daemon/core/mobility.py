@@ -11,7 +11,7 @@ import time
 from core import logger
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
-from core.conf import NewConfigurableManager
+from core.conf import ConfigurableManager
 from core.coreobj import PyCoreNode
 from core.data import EventData
 from core.data import LinkData
@@ -26,7 +26,7 @@ from core.misc import utils
 from core.misc.ipaddress import IpAddress
 
 
-class MobilityManager(NewConfigurableManager):
+class MobilityManager(ConfigurableManager):
     """
     Member of session class for handling configuration data for mobility and
     range models.
@@ -69,7 +69,7 @@ class MobilityManager(NewConfigurableManager):
         :return: list of model and values tuples for the network node
         :rtype: list
         """
-        configs = self.get_config_types(node.objid)
+        configs = self.get_all_configs(node.objid)
         models = []
         for model_name, config in configs.iteritems():
             model_class = self._modelclsmap[model_name]
@@ -96,7 +96,7 @@ class MobilityManager(NewConfigurableManager):
                 logger.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
-            node_configs = self.get_config_types(node_id)
+            node_configs = self.get_all_configs(node_id)
             if not node_configs:
                 logger.warn("missing mobility configuration for node: %s", node_id)
                 continue

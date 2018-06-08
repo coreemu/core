@@ -129,7 +129,7 @@ class ConfigurableOptions(object):
         return OrderedDict([(config.id, config.default) for config in cls.configurations()])
 
 
-class NewConfigurableManager(object):
+class ConfigurableManager(object):
     _default_node = -1
     _default_type = "default"
 
@@ -153,7 +153,7 @@ class NewConfigurableManager(object):
 
     def set_configs(self, config, node_id=_default_node, config_type=_default_type):
         logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
-        node_configs = self.get_config_types(node_id)
+        node_configs = self.get_all_configs(node_id)
         node_configs[config_type] = config
 
     def get_config(self, _id, node_id=_default_node, config_type=_default_type):
@@ -163,9 +163,9 @@ class NewConfigurableManager(object):
 
     def get_configs(self, node_id=_default_node, config_type=_default_type):
         logger.debug("getting configs for node(%s) type(%s)", node_id, config_type)
-        node_map = self.get_config_types(node_id)
+        node_map = self.get_all_configs(node_id)
         return node_map.setdefault(config_type, {})
 
-    def get_config_types(self, node_id=_default_node):
+    def get_all_configs(self, node_id=_default_node):
         logger.debug("getting all configs for node(%s)", node_id)
         return self._configuration_maps.setdefault(node_id, {})
