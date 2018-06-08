@@ -12,8 +12,8 @@ from core import logger
 from core.api import coreapi
 from core.api import dataconversion
 from core.conf import ConfigShim
-from core.conf import Configuration
 from core.conf import ConfigurableManager
+from core.conf import Configuration
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -80,7 +80,7 @@ class EmaneManager(ConfigurableManager):
         self._emane_node_lock = threading.Lock()
         self._ifccounts = {}
         self._ifccountslock = threading.Lock()
-        # Port numbers are allocated from these counters
+        # port numbers are allocated from these counters
         self.platformport = self.session.get_config_item_int("emane_platform_port", 8100)
         self.transformport = self.session.get_config_item_int("emane_transform_port", 8200)
         self.doeventloop = False
@@ -97,6 +97,10 @@ class EmaneManager(ConfigurableManager):
 
         self.service = None
         self.emane_check()
+
+    def config_reset(self, node_id=None):
+        super(EmaneManager, self).config_reset(node_id)
+        self.set_configs(self.emane_config.default_values())
 
     def emane_models(self):
         return self._modelclsmap.keys()
@@ -577,8 +581,12 @@ class EmaneManager(ConfigurableManager):
             logger.debug("no emane node model configuration, leaving: %s", node_id)
             return False
 
+        # retrieve and use the last set model configured for this node
+        # this supports behavior from the legacy gui due to there not being a formal set model message
         emane_node = self._emane_nodes[node_id]
-        for model_class, config in self.getmodels(emane_node):
+        models = self.getmodels(emane_node)
+        if models:
+            model_class, config = models[-1]
             logger.debug("setting emane model(%s) config(%s)", model_class, config)
             emane_node.setmodel(model_class, config)
             return True
