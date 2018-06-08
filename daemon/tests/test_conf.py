@@ -1,4 +1,10 @@
-from core.conf import ConfigurableManager, ConfigurableOptions, Configuration
+from random import shuffle
+
+import pytest
+
+from core.conf import ConfigurableManager
+from core.conf import ConfigurableOptions
+from core.conf import Configuration
 from core.enumerations import ConfigDataTypes
 
 
@@ -148,3 +154,22 @@ class TestConf:
         assert len(node_all_configs) == 2
         assert config_one in node_all_configs
         assert config_two in node_all_configs
+
+    @pytest.mark.parametrize("_", xrange(10))
+    def test_config_last_key(self, _):
+        # given
+        config_manager = ConfigurableManager()
+        config = {1: 2}
+        node_id = 1
+        config_types = [1, 2, 3]
+        shuffle(config_types)
+        config_manager.set_configs(config, node_id=node_id, config_type=config_types[0])
+        config_manager.set_configs(config, node_id=node_id, config_type=config_types[1])
+        config_manager.set_configs(config, node_id=node_id, config_type=config_types[2])
+
+        # when
+        keys = config_manager.get_all_configs(node_id=node_id).keys()
+
+        # then
+        assert keys
+        assert keys[-1] == config_types[2]

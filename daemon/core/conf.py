@@ -154,6 +154,8 @@ class ConfigurableManager(object):
     def set_configs(self, config, node_id=_default_node, config_type=_default_type):
         logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
         node_configs = self.get_all_configs(node_id)
+        if config_type in node_configs:
+            node_configs.pop(config_type)
         node_configs[config_type] = config
 
     def get_config(self, _id, node_id=_default_node, config_type=_default_type):
@@ -168,4 +170,4 @@ class ConfigurableManager(object):
 
     def get_all_configs(self, node_id=_default_node):
         logger.debug("getting all configs for node(%s)", node_id)
-        return self._configuration_maps.setdefault(node_id, {})
+        return self._configuration_maps.setdefault(node_id, OrderedDict())
