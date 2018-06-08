@@ -813,6 +813,7 @@ class EmuSession(Session):
         :return: nothing
         """
         config = emane_model.default_values()
+        emane_node.setmodel(emane_model, config)
         self.emane.set_configs(config, emane_node.objid, emane_model.name)
 
     def set_wireless_model(self, node, model):
@@ -825,6 +826,7 @@ class EmuSession(Session):
         """
         config = model.default_values()
         node.setmodel(model, config)
+        self.mobility.set_configs(config, node.objid, model.name)
 
     def wireless_link_all(self, network, nodes):
         """
