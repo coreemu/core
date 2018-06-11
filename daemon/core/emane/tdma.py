@@ -40,11 +40,10 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
     )
     config_ignore = {schedule_name}
 
-    def post_startup(self, emane_manager):
+    def post_startup(self):
         """
         Logic to execute after the emane manager is finished with startup.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
         :return: nothing
         """
         # get configured schedule
@@ -53,7 +52,8 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             return
         schedule = config[self.schedule_name]
 
-        event_device = emane_manager.event_device
+        # get the set event device
+        event_device = self.session.emane.event_device
 
         # initiate tdma schedule
         logger.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)

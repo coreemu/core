@@ -191,11 +191,10 @@ class EmaneModel(WirelessModel):
 
         return phy_document
 
-    def post_startup(self, emane_manager):
+    def post_startup(self):
         """
         Logic to execute after the emane manager is finished with startup.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
         :return: nothing
         """
         logger.info("emane model(%s) has no post setup tasks", self.name)

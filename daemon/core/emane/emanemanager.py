@@ -335,7 +335,7 @@ class EmaneManager(object):
             for key in sorted(self._emane_nodes.keys()):
                 emane_node = self._emane_nodes[key]
                 logger.debug("post startup for emane node: %s - %s", emane_node.objid, emane_node.name)
-                emane_node.model.post_startup(self)
+                emane_node.model.post_startup()
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
                     emane_node.setnemposition(netif, x, y, z)
