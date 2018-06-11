@@ -4,14 +4,12 @@ that manages a CORE session.
 """
 
 import os
-import pprint
 import random
 import shutil
 import subprocess
 import tempfile
 import threading
 import time
-from itertools import repeat
 
 import pwd
 
@@ -19,18 +17,14 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.broker import CoreBroker
-from core.conf import ConfigShim, ConfigurableOptions
+from core.conf import ConfigurableOptions
 from core.conf import Configuration
-from core.data import ConfigData
 from core.data import EventData
 from core.data import ExceptionData
-from core.data import FileData
 from core.emane.emanemanager import EmaneManager
 from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
 from core.enumerations import EventTypes
 from core.enumerations import ExceptionLevels
-from core.enumerations import MessageFlags
 from core.enumerations import NodeTypes
 from core.enumerations import RegisterTlvs
 from core.location import CoreLocation
@@ -41,7 +35,6 @@ from core.misc.ipaddress import MacAddress
 from core.mobility import MobilityManager
 from core.netns import nodes
 from core.sdt import Sdt
-from core.service import CoreService
 from core.service import CoreServices
 from core.xml.xmlsession import save_session_xml
 
@@ -1108,123 +1101,6 @@ class Session(object):
         else:
             node = self.get_object(node_id)
             node.cmd(data, wait=False)
-
-    # TODO: move to core handlers
-    def send_objects(self):
-        """
-        Return API messages that describe the current session.
-        """
-        # find all nodes and links
-        nodes_data = []
-        links_data = []
-        with self._objects_lock:
-            for obj in self.objects.itervalues():
-                node_data = obj.data(message_type=MessageFlags.ADD.value)
-                if node_data:
-                    nodes_data.append(node_data)
-
-                node_links = obj.all_link_data(flags=MessageFlags.ADD.value)
-                for link_data in node_links:
-                    links_data.append(link_data)
-
-        # send all nodes first, so that they will exist for any links
-        logger.info("sending nodes:")
-        for node_data in nodes_data:
-            logger.info(pprint.pformat(dict(node_data._asdict())))
-            self.broadcast_node(node_data)
-
-        logger.info("sending links:")
-        for link_data in links_data:
-            logger.info(pprint.pformat(dict(link_data._asdict())))
-            self.broadcast_link(link_data)
-
-        # send mobility model info
-        for node_id in self.mobility.nodes():
-            node = self.get_object(node_id)
-            for model_class, config in self.mobility.getmodels(node):
-                logger.info("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
-                self.broadcast_config(config_data)
-
-        # send emane model info
-        for model_name in self.emane.emane_models():
-            model_class = self.emane.get_model_class(model_name)
-            for node_id in model_class.nodes():
-                config = model_class.get_configs(node_id)
-                logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
-                self.broadcast_config(config_data)
-
-        # for node_id in self.emane.nodes():
-        #     if node_id not in self.objects:
-        #         continue
-        #
-        #     node = self.get_object(node_id)
-        #     for model_class, config in self.emane.getmodels(node):
-        #         logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
-        #         config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
-        #         self.broadcast_config(config_data)
-
-        # service customizations
-        service_configs = self.services.getallconfigs()
-        for node_id, service in service_configs:
-            opaque = "service:%s" % service._name
-            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(CoreService.keys)))
-            node = self.get_object(node_id)
-            values = CoreService.tovaluelist(node, node.services)
-            config_data = ConfigData(
-                message_type=0,
-                node=node_id,
-                object=self.services.name,
-                type=ConfigFlags.UPDATE.value,
-                data_types=data_types,
-                data_values=values,
-                session=self.session_id,
-                opaque=opaque
-            )
-            self.broadcast_config(config_data)
-
-            for file_name, config_data in self.services.getallfiles(service):
-                file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
-                    node=node_id,
-                    name=str(file_name),
-                    type=opaque,
-                    data=str(config_data)
-                )
-                self.broadcast_file(file_data)
-
-        # TODO: send location info
-
-        # send hook scripts
-        for state in sorted(self._hooks.keys()):
-            for file_name, config_data in self._hooks[state]:
-                file_data = FileData(
-                    message_type=MessageFlags.ADD.value,
-                    name=str(file_name),
-                    type="hook:%s" % state,
-                    data=str(config_data)
-                )
-                self.broadcast_file(file_data)
-
-        # send session configuration
-        session_config = self.options.get_configs()
-        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, self.options, session_config)
-        self.broadcast_config(config_data)
-
-        # send session metadata
-        data_values = "|".join(["%s=%s" % item for item in self.metadata.get_configs().iteritems()])
-        data_types = tuple(ConfigDataTypes.STRING.value for _ in self.metadata.get_configs())
-        config_data = ConfigData(
-            message_type=0,
-            object=self.metadata.name,
-            type=ConfigFlags.NONE.value,
-            data_types=data_types,
-            data_values=data_values
-        )
-        self.broadcast_config(config_data)
-
-        logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
 
 class SessionConfig(ConfigurableOptions):

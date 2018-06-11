@@ -5,6 +5,7 @@ socket server request handlers leveraged by core servers.
 import Queue
 import SocketServer
 import os
+import pprint
 import shlex
 import shutil
 import sys
@@ -18,6 +19,7 @@ from core.api import dataconversion
 from core.conf import ConfigShim
 from core.data import ConfigData
 from core.data import EventData
+from core.data import FileData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
@@ -42,6 +44,7 @@ from core.misc import structutils
 from core.misc import utils
 from core.mobility import BasicRangeModel
 from core.mobility import Ns2ScriptedMobility
+from core.service import CoreService
 from core.service import ServiceManager
 
 
@@ -1428,7 +1431,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         elif event_type == EventTypes.FILE_OPEN:
             filename = event_data.name
             self.session.open_xml(filename, start=False)
-            self.session.send_objects()
+            self.send_objects()
             return ()
         elif event_type == EventTypes.FILE_SAVE:
             filename = event_data.name
@@ -1530,7 +1533,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                         self.session.set_user(user)
 
                     if message.flags & MessageFlags.STRING.value:
-                        self.session.send_objects()
+                        self.send_objects()
                 elif message.flags & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
                     logger.info("request to terminate session %s" % session_id)
@@ -1559,3 +1562,109 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.exception("error sending node emulation id message: %s", node_id)
 
             del self.node_status_request[node_id]
+
+    def send_objects(self):
+        """
+        Return API messages that describe the current session.
+        """
+        # find all nodes and links
+        nodes_data = []
+        links_data = []
+        with self.session._objects_lock:
+            for obj in self.session.objects.itervalues():
+                node_data = obj.data(message_type=MessageFlags.ADD.value)
+                if node_data:
+                    nodes_data.append(node_data)
+
+                node_links = obj.all_link_data(flags=MessageFlags.ADD.value)
+                for link_data in node_links:
+                    links_data.append(link_data)
+
+        # send all nodes first, so that they will exist for any links
+        logger.info("sending nodes:")
+        for node_data in nodes_data:
+            logger.info(pprint.pformat(dict(node_data._asdict())))
+            self.session.broadcast_node(node_data)
+
+        logger.info("sending links:")
+        for link_data in links_data:
+            logger.info(pprint.pformat(dict(link_data._asdict())))
+            self.session.broadcast_link(link_data)
+
+        # send mobility model info
+        for node_id in self.session.mobility.nodes():
+            node = self.session.get_object(node_id)
+            for model_class, config in self.session.mobility.getmodels(node):
+                logger.info("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                self.session.broadcast_config(config_data)
+
+        # send emane model info
+        for model_name in self.session.emane.emane_models():
+            model_class = self.session.emane.get_model_class(model_name)
+            for node_id in model_class.nodes():
+                config = model_class.get_configs(node_id)
+                logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                self.session.broadcast_config(config_data)
+
+        # service customizations
+        service_configs = self.session.services.getallconfigs()
+        for node_id, service in service_configs:
+            opaque = "service:%s" % service._name
+            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(CoreService.keys)))
+            node = self.session.get_object(node_id)
+            values = CoreService.tovaluelist(node, node.services)
+            config_data = ConfigData(
+                message_type=0,
+                node=node_id,
+                object=self.session.services.name,
+                type=ConfigFlags.UPDATE.value,
+                data_types=data_types,
+                data_values=values,
+                session=self.session.session_id,
+                opaque=opaque
+            )
+            self.session.broadcast_config(config_data)
+
+            for file_name, config_data in self.session.services.getallfiles(service):
+                file_data = FileData(
+                    message_type=MessageFlags.ADD.value,
+                    node=node_id,
+                    name=str(file_name),
+                    type=opaque,
+                    data=str(config_data)
+                )
+                self.session.broadcast_file(file_data)
+
+        # TODO: send location info
+
+        # send hook scripts
+        for state in sorted(self.session._hooks.keys()):
+            for file_name, config_data in self.session._hooks[state]:
+                file_data = FileData(
+                    message_type=MessageFlags.ADD.value,
+                    name=str(file_name),
+                    type="hook:%s" % state,
+                    data=str(config_data)
+                )
+                self.session.broadcast_file(file_data)
+
+        # send session configuration
+        session_config = self.session.options.get_configs()
+        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, self.session.options, session_config)
+        self.session.broadcast_config(config_data)
+
+        # send session metadata
+        data_values = "|".join(["%s=%s" % item for item in self.session.metadata.get_configs().iteritems()])
+        data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+        config_data = ConfigData(
+            message_type=0,
+            object=self.session.metadata.name,
+            type=ConfigFlags.NONE.value,
+            data_types=data_types,
+            data_values=data_values
+        )
+        self.session.broadcast_config(config_data)
+
+        logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
