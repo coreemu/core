@@ -194,8 +194,7 @@ class CoreDocumentWriter0(Document):
             self.addaddresses(i, ifc)
             # per-interface models
             if netmodel and netmodel._name[:6] == "emane_":
-                cfg = self.session.emane.getifcconfig(node.objid, netmodel._name,
-                                                      None, ifc)
+                cfg = netmodel.getifcconfig(node.objid, ifc)
                 if cfg:
                     self.addmodels(i, ((netmodel, cfg),))
 

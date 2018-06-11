@@ -305,7 +305,7 @@ class OvsNet(PyCoreNet):
             utils.check_cmd([constants.OVS_BIN, "add-port", network.bridge_name, interface.name])
             utils.check_cmd([constants.IP_BIN, "link", "set", interface.name, "up"])
 
-        # TODO: is there a native method for this? see if this  causes issues
+        # TODO: is there a native method for this? see if this causes issues
         # i = network.newifindex()
         # network._netif[i] = interface
         # with network._linked_lock:
@@ -593,7 +593,7 @@ class OvsWlanNode(OvsNet):
             interface.setposition(x, y, z)
             # self.model.setlinkparams()
 
-    def setmodel(self, model, config):
+    def setmodel(self, model, config=None):
         """
         Mobility and wireless model.
         """
@@ -611,29 +611,18 @@ class OvsWlanNode(OvsNet):
         elif model.type == RegisterTlvs.MOBILITY.value:
             self.mobility = model(session=self.session, object_id=self.objid, config=config)
 
-    def updatemodel(self, model_name, values):
-        """
-        Allow for model updates during runtime (similar to setmodel().)
-        """
-        logger.info("updating model %s", model_name)
-        if self.model is None or self.model.name != model_name:
-            logger.info(
-                "failure to update model, model doesn't exist or invalid name: model(%s) - name(%s)",
-                self.model, model_name
-            )
-            return
-
-        model = self.model
-        if model.type == RegisterTlvs.WIRELESS.value:
-            if not model.updateconfig(values):
-                return
-            if self.model.position_callback:
-                for interface in self.netifs():
-                    interface.poshook = self.model.position_callback
-                    if interface.node is not None:
-                        x, y, z = interface.node.position.get()
-                        interface.poshook(interface, x, y, z)
-            self.model.setlinkparams()
+    def updatemodel(self, config):
+        if not self.model:
+            raise ValueError("no model set to update for node(%s)", self.objid)
+        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        self.model.set_configs(config, node_id=self.objid)
+        if self.model.position_callback:
+            for netif in self.netifs():
+                netif.poshook = self.model.position_callback
+                if netif.node is not None:
+                    x, y, z = netif.node.position.get()
+                    netif.poshook(netif, x, y, z)
+        self.model.updateconfig()
 
     def all_link_data(self, flags):
         all_links = OvsNet.all_link_data(self, flags)

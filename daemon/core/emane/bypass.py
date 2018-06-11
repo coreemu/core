@@ -8,6 +8,7 @@ from core.enumerations import ConfigDataTypes
 
 class EmaneBypassModel(emanemodel.EmaneModel):
     name = "emane_bypass"
+    configuration_maps = {}
 
     # values to ignore, when writing xml files
     config_ignore = {"none"}

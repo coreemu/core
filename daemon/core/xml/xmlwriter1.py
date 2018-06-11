@@ -654,8 +654,7 @@ class DeviceElement(NamedXmlElement):
                 # per-interface models
                 # XXX Remove???
                 if netmodel and netmodel.name[:6] == "emane_":
-                    cfg = self.coreSession.emane.getifcconfig(device_object.objid, netmodel.name,
-                                                              None, interface_object)
+                    cfg = netmodel.getifcconfig(device_object.objid, interface_object)
                     if cfg:
                         interface_element.addModels(((netmodel, cfg),))
 

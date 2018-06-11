@@ -325,9 +325,6 @@ class EmuSession(Session):
         :param core.enumerations.LinkTypes link_type: link type to delete
         :return: nothing
         """
-        # interface data
-        # interface_one_data, interface_two_data = get_interfaces(link_data)
-
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
@@ -390,9 +387,6 @@ class EmuSession(Session):
         :param core.emulator.emudata.LinkOptions link_options: data to update link with
         :return: nothing
         """
-        # interface data
-        # interface_one_data, interface_two_data = get_interfaces(link_data)
-
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
@@ -801,32 +795,8 @@ class EmuSession(Session):
 
         # create and return network
         emane_network = self.add_node(_type=NodeTypes.EMANE, node_options=node_options)
-        self.set_emane_model(emane_network, model)
+        emane_network.setmodel(model)
         return emane_network
-
-    def set_emane_model(self, emane_node, emane_model):
-        """
-        Set emane model for a given emane node.
-
-        :param emane_node: emane node to set model for
-        :param emane_model: emane model to set
-        :return: nothing
-        """
-        config = emane_model.default_values()
-        emane_node.setmodel(emane_model, config)
-        self.emane.set_configs(config, emane_node.objid, emane_model.name)
-
-    def set_wireless_model(self, node, model):
-        """
-        Convenience method for setting a wireless model.
-
-        :param node: node to set wireless model for
-        :param core.mobility.WirelessModel model: wireless model to set node to
-        :return: nothing
-        """
-        config = model.default_values()
-        node.setmodel(model, config)
-        self.mobility.set_configs(config, node.objid, model.name)
 
     def wireless_link_all(self, network, nodes):
         """

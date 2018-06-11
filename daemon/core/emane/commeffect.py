@@ -29,6 +29,7 @@ def convert_none(x):
 
 class EmaneCommEffectModel(emanemodel.EmaneModel):
     name = "emane_commeffect"
+    configuration_maps = {}
 
     shim_library = "commeffectshim"
     shim_xml = "/usr/share/emane/manifest/commeffectshim.xml"
@@ -54,8 +55,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         :param interface: interface for the emane node
         :return: nothing
         """
-        default_values = self.default_values()
-        config = emane_manager.getifcconfig(self.object_id, self.name, default_values, interface)
+        config = self.getifcconfig(self.object_id, interface)
         if not config:
             return
 

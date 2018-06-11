@@ -377,7 +377,7 @@ class WlanNode(LxBrNet):
             # invokes any netif.poshook
             netif.setposition(x, y, z)
 
-    def setmodel(self, model, config):
+    def setmodel(self, model, config=None):
         """
         Sets the mobility and wireless model.
 
@@ -398,31 +398,23 @@ class WlanNode(LxBrNet):
         elif model.config_type == RegisterTlvs.MOBILITY.value:
             self.mobility = model(session=self.session, object_id=self.objid, config=config)
 
-    def updatemodel(self, model_name, config):
-        """
-        Allow for model updates during runtime (similar to setmodel().)
+    def update_mobility(self, config):
+        if not self.mobility:
+            raise ValueError("no mobility set to update for node(%s)", self.objid)
+        self.mobility.set_configs(config, node_id=self.objid)
 
-        :param str model_name: model name to update
-        :param dict config: values to update model with
-        :return: nothing
-        """
-        logger.info("updating model %s" % model_name)
-        if self.model is None or self.model.name != model_name:
-            return
-
-        model = self.model
-        if model.config_type == RegisterTlvs.WIRELESS.value:
-            if not model.updateconfig(config):
-                return
-
-            if self.model.position_callback:
-                for netif in self.netifs():
-                    netif.poshook = self.model.position_callback
-                    if netif.node is not None:
-                        x, y, z = netif.node.position.get()
-                        netif.poshook(netif, x, y, z)
-
-            self.model.setlinkparams()
+    def updatemodel(self, config):
+        if not self.model:
+            raise ValueError("no model set to update for node(%s)", self.objid)
+        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        self.model.set_configs(config, node_id=self.objid)
+        if self.model.position_callback:
+            for netif in self.netifs():
+                netif.poshook = self.model.position_callback
+                if netif.node is not None:
+                    x, y, z = netif.node.position.get()
+                    netif.poshook(netif, x, y, z)
+        self.model.updateconfig()
 
     def all_link_data(self, flags):
         """

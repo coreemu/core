@@ -1,8 +1,3 @@
-from random import shuffle
-
-import pytest
-
-from core.conf import ConfigurableManager
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
 from core.enumerations import ConfigDataTypes
@@ -11,6 +6,7 @@ from core.enumerations import ConfigDataTypes
 class TestConfigurableOptions(ConfigurableOptions):
     name_one = "value1"
     name_two = "value2"
+    configuration_maps = {}
 
     @classmethod
     def configurations(cls):
@@ -47,7 +43,7 @@ class TestConf:
 
     def test_nodes(self):
         # given
-        config_manager = ConfigurableManager()
+        config_manager = TestConfigurableOptions()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -58,11 +54,11 @@ class TestConf:
 
         # then
         assert len(nodes) == 1
-        assert nodes[0] == node_id
+        assert node_id in nodes
 
     def test_config_reset_all(self):
         # given
-        config_manager = ConfigurableManager()
+        config_manager = TestConfigurableOptions()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -72,11 +68,11 @@ class TestConf:
         config_manager.config_reset()
 
         # then
-        assert not config_manager._configuration_maps
+        assert not config_manager.configuration_maps
 
     def test_config_reset_node(self):
         # given
-        config_manager = ConfigurableManager()
+        config_manager = TestConfigurableOptions()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -86,11 +82,12 @@ class TestConf:
         config_manager.config_reset(node_id)
 
         # then
-        assert not config_manager.get_configs(node_id)
+        assert node_id not in config_manager.configuration_maps
+        assert config_manager.get_configs()
 
     def test_configs_setget(self):
         # given
-        config_manager = ConfigurableManager()
+        config_manager = TestConfigurableOptions()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -106,7 +103,7 @@ class TestConf:
 
     def test_config_setget(self):
         # given
-        config_manager = ConfigurableManager()
+        config_manager = TestConfigurableOptions()
         name = "test"
         value = "1"
         node_id = 1
@@ -120,56 +117,3 @@ class TestConf:
         # then
         assert defaults_value == value
         assert node_value == value
-
-    def test_all_configs(self):
-        # given
-        config_manager = ConfigurableManager()
-        name = "test"
-        value_one = "1"
-        value_two = "2"
-        node_id = 1
-        config_one = "config1"
-        config_two = "config2"
-        config_manager.set_config(name, value_one, config_type=config_one)
-        config_manager.set_config(name, value_two, config_type=config_two)
-        config_manager.set_config(name, value_one, node_id=node_id, config_type=config_one)
-        config_manager.set_config(name, value_two, node_id=node_id, config_type=config_two)
-
-        # when
-        defaults_value_one = config_manager.get_config(name, config_type=config_one)
-        defaults_value_two = config_manager.get_config(name, config_type=config_two)
-        node_value_one = config_manager.get_config(name, node_id=node_id, config_type=config_one)
-        node_value_two = config_manager.get_config(name, node_id=node_id, config_type=config_two)
-        default_all_configs = config_manager.get_all_configs()
-        node_all_configs = config_manager.get_all_configs(node_id=node_id)
-
-        # then
-        assert defaults_value_one == value_one
-        assert defaults_value_two == value_two
-        assert node_value_one == value_one
-        assert node_value_two == value_two
-        assert len(default_all_configs) == 2
-        assert config_one in default_all_configs
-        assert config_two in default_all_configs
-        assert len(node_all_configs) == 2
-        assert config_one in node_all_configs
-        assert config_two in node_all_configs
-
-    @pytest.mark.parametrize("_", xrange(10))
-    def test_config_last_key(self, _):
-        # given
-        config_manager = ConfigurableManager()
-        config = {1: 2}
-        node_id = 1
-        config_types = [1, 2, 3]
-        shuffle(config_types)
-        config_manager.set_configs(config, node_id=node_id, config_type=config_types[0])
-        config_manager.set_configs(config, node_id=node_id, config_type=config_types[1])
-        config_manager.set_configs(config, node_id=node_id, config_type=config_types[2])
-
-        # when
-        keys = config_manager.get_all_configs(node_id=node_id).keys()
-
-        # then
-        assert keys
-        assert keys[-1] == config_types[2]

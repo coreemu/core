@@ -12,15 +12,17 @@ from mock import MagicMock
 
 from core.emulator.emudata import NodeOptions
 from core.enumerations import MessageFlags, NodeTypes
-from core.mobility import BasicRangeModel
-from core.mobility import Ns2ScriptedMobility
+from core.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.netns.vnodeclient import VnodeClient
 from core.service import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _SERVICES_PATH = os.path.join(_PATH, "myservices")
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
-_XML_VERSIONS = ["0.0", "1.0"]
+_XML_VERSIONS = [
+    "0.0",
+    "1.0"
+]
 _WIRED = [
     NodeTypes.PEER_TO_PEER,
     NodeTypes.HUB,
@@ -101,7 +103,6 @@ class TestCore:
         :param str version: xml version to write and parse
         :param ip_prefixes: generates ip addresses for nodes
         """
-
         # create ptp
         ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
 
@@ -256,7 +257,7 @@ class TestCore:
 
         # create wlan
         wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        session.set_wireless_model(wlan_node, BasicRangeModel)
+        wlan_node.setmodel(BasicRangeModel)
 
         # create nodes
         node_options = NodeOptions()
@@ -289,7 +290,7 @@ class TestCore:
 
         # create wlan
         wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        session.set_wireless_model(wlan_node, BasicRangeModel)
+        wlan_node.setmodel(BasicRangeModel)
 
         # create nodes
         node_options = NodeOptions()
@@ -316,7 +317,7 @@ class TestCore:
             "script_pause": "",
             "script_stop": "",
         }
-        session.mobility.set_configs(config, wlan_node.objid, Ns2ScriptedMobility.name)
+        wlan_node.setmodel(Ns2ScriptedMobility, config)
 
         # add handler for receiving node updates
         event = threading.Event()

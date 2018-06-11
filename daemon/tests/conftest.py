@@ -214,6 +214,12 @@ def session():
     # return created session
     yield session_fixture
 
+    # clear session configurations
+    session_fixture.location.reset()
+    session_fixture.services.reset()
+    session_fixture.mobility.config_reset()
+    session_fixture.emane.config_reset()
+
     # shutdown coreemu
     coreemu.shutdown()
 

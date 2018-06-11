@@ -19,10 +19,8 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.broker import CoreBroker
-from core.conf import ConfigShim
-from core.conf import ConfigurableOptions
+from core.conf import ConfigShim, ConfigurableOptions
 from core.conf import Configuration
-from core.conf import ConfigurableManager
 from core.data import ConfigData
 from core.data import EventData
 from core.data import ExceptionData
@@ -1149,15 +1147,23 @@ class Session(object):
                 self.broadcast_config(config_data)
 
         # send emane model info
-        for node_id in self.emane.nodes():
-            if node_id not in self.objects:
-                continue
-
-            node = self.get_object(node_id)
-            for model_class, config in self.emane.getmodels(node):
+        for model_name in self.emane.emane_models():
+            model_class = self.emane.get_model_class(model_name)
+            for node_id in model_class.nodes():
+                config = model_class.get_configs(node_id)
                 logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
                 self.broadcast_config(config_data)
+
+        # for node_id in self.emane.nodes():
+        #     if node_id not in self.objects:
+        #         continue
+        #
+        #     node = self.get_object(node_id)
+        #     for model_class, config in self.emane.getmodels(node):
+        #         logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+        #         config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+        #         self.broadcast_config(config_data)
 
         # service customizations
         service_configs = self.services.getallconfigs()
@@ -1221,11 +1227,12 @@ class Session(object):
         logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
 
-class SessionConfig(ConfigurableManager, ConfigurableOptions):
+class SessionConfig(ConfigurableOptions):
     """
     Session configuration object.
     """
     name = "session"
+    configuration_maps = {}
     config_type = RegisterTlvs.UTILITY.value
 
     @classmethod
@@ -1251,16 +1258,16 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         return "Options:1-%d" % len(cls.configurations())
 
     def __init__(self):
-        super(SessionConfig, self).__init__()
-        config = self.default_values()
-        self.set_configs(config)
+        self.set_configs()
 
 
-class SessionMetaData(ConfigurableManager):
+class SessionMetaData(ConfigurableOptions):
     """
     Metadata is simply stored in a configs[] dict. Key=value pairs are
     passed in from configure messages destined to the "metadata" object.
     The data is not otherwise interpreted or processed.
     """
     name = "metadata"
+    configuration_maps = {}
+
     config_type = RegisterTlvs.UTILITY.value

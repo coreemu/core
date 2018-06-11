@@ -955,7 +955,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             node_id = config_data.node
             self.session.location.reset()
             self.session.services.reset()
-            self.session.mobility.reset()
             self.session.mobility.config_reset(node_id)
             self.session.emane.config_reset(node_id)
         else:
@@ -1139,7 +1138,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.error(error_message)
             else:
                 if opaque is None:
-                    values = values.split('|')
+                    values = values.split("|")
                     # store default services for a node type in self.defaultservices[]
                     if data_types is None or data_types[0] != ConfigDataTypes.STRING.value:
                         logger.info(error_message)
@@ -1151,7 +1150,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     # store service customized config in self.customservices[]
                     services, unknown = self.session.services.servicesfromopaque(opaque, node_id)
                     for u in unknown:
-                        logger.warn("Request for unknown service '%s'" % u)
+                        logger.warn("request for unknown service: %s", u)
 
                     if services:
                         svc = services[0]
@@ -1187,10 +1186,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
-            config = self.session.mobility.get_configs(node_id, object_name)
-            if not config:
-                config = model_class.default_values()
-
+            config = model_class.get_configs(node_id=node_id)
             config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
             replies.append(config_response)
         elif message_type == ConfigFlags.RESET:
@@ -1207,15 +1203,12 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
-            config = model_class.default_values()
             if values_str:
                 parsed_config = ConfigShim.str_to_dict(values_str)
-                for name, value in parsed_config.iteritems():
-                    config[name] = value
-            else:
-                config = self.session.mobility.get_configs(node_id, object_name) or config
+                model_class.set_configs(parsed_config, node_id=node_id)
 
-            self.session.mobility.set_configs(config, node_id, object_name)
+            config = model_class.get_configs(node_id)
+            model_class.set_configs(config, node_id=node_id)
 
         return replies
 
@@ -1282,10 +1275,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
-            config = self.session.emane.get_configs(node_id, object_name)
-            if not config:
-                config = model_class.default_values()
-
+            config = model_class.get_configs(node_id=node_id)
             config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
             replies.append(config_response)
         elif message_type == ConfigFlags.RESET:
@@ -1302,15 +1292,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
-            config = model_class.default_values()
             if values_str:
                 parsed_config = ConfigShim.str_to_dict(values_str)
-                for name, value in parsed_config.iteritems():
-                    config[name] = value
-            else:
-                config = self.session.emane.get_configs(node_id, object_name) or config
+                model_class.set_configs(parsed_config, node_id=node_id)
 
-            self.session.emane.set_configs(config, node_id, object_name)
+            config = model_class.get_configs(node_id)
+            model_class.set_configs(config, node_id=node_id)
+            self.session.emane.set_node_model(node_id, object_name)
 
         return replies
 

@@ -11,7 +11,6 @@ import time
 from core import logger
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
-from core.conf import ConfigurableManager
 from core.coreobj import PyCoreNode
 from core.data import EventData
 from core.data import LinkData
@@ -26,7 +25,7 @@ from core.misc import utils
 from core.misc.ipaddress import IpAddress
 
 
-class MobilityManager(ConfigurableManager):
+class MobilityManager(object):
     """
     Member of session class for handling configuration data for mobility and
     range models.
@@ -40,7 +39,6 @@ class MobilityManager(ConfigurableManager):
 
         :param core.session.Session session: session this manager is tied to
         """
-        super(MobilityManager, self).__init__()
         self.session = session
         # configurations for basic range, indexed by WLAN node number, are stored in configurations
         # mapping from model names to their classes
@@ -69,12 +67,18 @@ class MobilityManager(ConfigurableManager):
         :return: list of model and values tuples for the network node
         :rtype: list
         """
-        configs = self.get_all_configs(node.objid)
         models = []
-        for model_name, config in configs.iteritems():
-            model_class = self._modelclsmap[model_name]
-            models.append((model_class, config))
+        for model_class in self._modelclsmap.itervalues():
+            if node.objid in model_class.configuration_maps:
+                config = model_class.get_configs(node_id=node.objid)
+                models.append((model_class, config))
         return models
+
+    def nodes(self):
+        node_ids = set()
+        for model_class in self._modelclsmap.itervalues():
+            node_ids |= model_class.nodes()
+        return node_ids
 
     def startup(self, node_ids=None):
         """
@@ -96,20 +100,13 @@ class MobilityManager(ConfigurableManager):
                 logger.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
-            node_configs = self.get_all_configs(node_id)
-            if not node_configs:
-                logger.warn("missing mobility configuration for node: %s", node_id)
-                continue
-
-            for model_name in node_configs.iterkeys():
-                try:
-                    clazz = self._modelclsmap[model_name]
-                    model_config = self.get_configs(node_id, model_name)
-                    logger.info("setting mobility model(%s) to node: %s", model_name, model_config)
-                    node.setmodel(clazz, model_config)
-                except KeyError:
-                    logger.exception("skipping mobility configuration for unknown model: %s", model_name)
+            for model_class in self._modelclsmap.itervalues():
+                logger.debug("model(%s) configurations: %s", model_class, model_class.configuration_maps)
+                if node_id not in model_class.configuration_maps:
                     continue
+                config = model_class.get_configs(node_id=node_id)
+                logger.info("setting mobility model(%s) to node: %s", model_class.name, config)
+                node.setmodel(model_class, config)
 
             if self.session.master:
                 self.installphysnodes(node)
@@ -117,37 +114,15 @@ class MobilityManager(ConfigurableManager):
             if node.mobility:
                 self.session.event_loop.add_event(0.0, node.mobility.startup)
 
-    def reset(self):
+    def config_reset(self, node_id=None):
         """
         Reset all configs.
 
+        :param int node_id: node configuration to reset or None for all configurations
         :return: nothing
         """
-        self.config_reset()
-
-    def set_configs(self, config, node_id=None, config_type=None):
-        """
-        Adds a check for run-time updates for WLANs after providing normal set configs.
-
-        :param dict config: configuration value
-        :param int node_id: node id
-        :param str config_type: configuration type
-        :return: nothing
-        """
-        if not node_id or not config_type:
-            raise ValueError("mobility manager invalid node id or config type: %s - %s", node_id, config_type)
-
-        super(MobilityManager, self).set_configs(config, node_id, config_type)
-
-        if self.session is None:
-            return
-
-        if self.session.state == EventTypes.RUNTIME_STATE.value:
-            try:
-                node = self.session.get_object(node_id)
-                node.updatemodel(config_type, config)
-            except KeyError:
-                logger.exception("skipping mobility configuration for unknown node %s", node_id)
+        for model in self._modelclsmap.itervalues():
+            model.config_reset(node_id=node_id)
 
     def handleevent(self, event_data):
         """
@@ -338,6 +313,8 @@ class WirelessModel(ConfigurableOptions):
         """
         self.session = session
         self.object_id = object_id
+        if config:
+            self.set_configs(config, node_id=self.object_id)
 
     def all_link_data(self, flags):
         """
@@ -360,12 +337,11 @@ class WirelessModel(ConfigurableOptions):
         """
         raise NotImplementedError
 
-    def updateconfig(self, config):
+    def updateconfig(self):
         """
         For run-time updates of model config. Returns True when position callback and set link
         parameters should be invoked.
 
-        :param dict config: value to update
         :return: False
         :rtype: bool
         """
@@ -379,6 +355,7 @@ class BasicRangeModel(WirelessModel):
     the GUI.
     """
     name = "basic_range"
+    configuration_maps = {}
 
     @classmethod
     def configurations(cls):
@@ -409,10 +386,8 @@ class BasicRangeModel(WirelessModel):
         self._netifs = {}
         self._netifslock = threading.Lock()
 
-        # TODO: can this be handled in a better spot
-        if not config:
-            config = self.default_values()
-        self.session.mobility.set_configs(config, node_id=object_id, config_type=self.name)
+        # retrieve current configuration
+        config = self.get_configs(node_id=self.object_id)
 
         self.range = None
         self.bw = None
@@ -571,17 +546,17 @@ class BasicRangeModel(WirelessModel):
             c = p1[2] - p2[2]
         return math.hypot(math.hypot(a, b), c)
 
-    def updateconfig(self, config):
+    def updateconfig(self):
         """
         Configuration has changed during runtime.
-        MobilityManager.setconfig() -> WlanNode.updatemodel() ->
-        WirelessModel.updateconfig()
 
         :param dict config: values to update configuration
         :return: was update successful
         :rtype: bool
         """
+        config = self.get_configs(node_id=self.object_id)
         self.values_from_config(config)
+        self.setlinkparams()
         return True
 
     def create_link_data(self, interface1, interface2, message_type):
@@ -840,7 +815,6 @@ class WayPointMobility(WirelessModel):
             self.setnodeposition(node, x, y, z)
             moved.append(node)
             moved_netifs.append(netif)
-        # self.wlan.model.update(moved)
         self.session.mobility.updatewlans(moved, moved_netifs)
 
     def addwaypoint(self, time, nodenum, x, y, z, speed):
@@ -914,7 +888,6 @@ class WayPointMobility(WirelessModel):
         :return: nothing
         """
         # this would cause PyCoreNetIf.poshook() callback (range calculation)
-        # node.setposition(x, y, z)
         node.position.set(x, y, z)
         node_data = node.data(message_type=0)
         self.session.broadcast_node(node_data)
@@ -984,6 +957,7 @@ class Ns2ScriptedMobility(WayPointMobility):
     BonnMotion.
     """
     name = "ns2script"
+    configuration_maps = {}
 
     @classmethod
     def configurations(cls):
@@ -1014,9 +988,8 @@ class Ns2ScriptedMobility(WayPointMobility):
         self._netifs = {}
         self._netifslock = threading.Lock()
 
-        if not config:
-            config = self.default_values()
-        self.session.mobility.set_configs(config, node_id=object_id, config_type=self.name)
+        # retrieve current configuration
+        config = self.get_configs(self.object_id)
 
         self.file = config["file"]
         self.refresh_ms = int(config["refresh_ms"])
@@ -1041,9 +1014,9 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         filename = self.findfile(self.file)
         try:
-            f = open(filename, 'r')
+            f = open(filename, "r")
         except IOError:
-            logger.exception("ns-2 scripted mobility failed to load file  '%s'", self.file)
+            logger.exception("ns-2 scripted mobility failed to load file: %s", self.file)
             return
         logger.info("reading ns-2 script file: %s" % filename)
         ln = 0
