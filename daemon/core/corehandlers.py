@@ -1176,10 +1176,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
         if message_type == ConfigFlags.REQUEST:
             logger.info("replying to configure request for model: %s", object_name)
-            if object_name == "all":
-                typeflags = ConfigFlags.UPDATE.value
-            else:
-                typeflags = ConfigFlags.NONE.value
+            typeflags = ConfigFlags.NONE.value
 
             model_class = self.session.mobility.get_model_class(object_name)
             if not model_class:
@@ -1189,10 +1186,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             config = model_class.get_configs(node_id=node_id)
             config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
             replies.append(config_response)
-        elif message_type == ConfigFlags.RESET:
-            if object_name == "all":
-                self.session.mobility.config_reset(node_id)
-        else:
+        elif message_type != ConfigFlags.RESET:
             # store the configuration values for later use, when the node
             if not object_name:
                 logger.warn("no configuration object for node: %s", node_id)
@@ -1226,17 +1220,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
         if message_type == ConfigFlags.REQUEST:
             logger.info("replying to configure request for %s model", object_name)
-            if object_name == "all":
-                typeflags = ConfigFlags.UPDATE.value
-            else:
-                typeflags = ConfigFlags.NONE.value
+            typeflags = ConfigFlags.NONE.value
             config = self.session.emane.get_configs()
             config_response = ConfigShim.config_data(0, node_id, typeflags, self.session.emane.emane_config, config)
             replies.append(config_response)
-        elif config_type == ConfigFlags.RESET.value:
-            if object_name == "all":
-                self.session.emane.config_reset(node_id)
-        else:
+        elif message_type != ConfigFlags.RESET:
             if not object_name:
                 logger.info("no configuration object for node %s", node_id)
                 return []
@@ -1265,10 +1253,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
         if message_type == ConfigFlags.REQUEST:
             logger.info("replying to configure request for model: %s", object_name)
-            if object_name == "all":
-                typeflags = ConfigFlags.UPDATE.value
-            else:
-                typeflags = ConfigFlags.NONE.value
+            typeflags = ConfigFlags.NONE.value
 
             model_class = self.session.emane.get_model_class(object_name)
             if not model_class:
@@ -1278,10 +1263,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             config = model_class.get_configs(node_id=node_id)
             config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
             replies.append(config_response)
-        elif message_type == ConfigFlags.RESET:
-            if object_name == "all":
-                self.session.emane.config_reset(node_id)
-        else:
+        elif message_type != ConfigFlags.RESET:
             # store the configuration values for later use, when the node
             if not object_name:
                 logger.warn("no configuration object for node: %s", node_id)
