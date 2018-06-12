@@ -79,8 +79,8 @@ class EmaneManager(object):
         self._ifccounts = {}
         self._ifccountslock = threading.Lock()
         # port numbers are allocated from these counters
-        self.platformport = self.session.get_config_item_int("emane_platform_port", 8100)
-        self.transformport = self.session.get_config_item_int("emane_transform_port", 8200)
+        self.platformport = self.session.options.get_config_int("emane_platform_port", 8100)
+        self.transformport = self.session.options.get_config_int("emane_transform_port", 8200)
         self.doeventloop = False
         self.eventmonthread = None
 
@@ -133,7 +133,7 @@ class EmaneManager(object):
             self.load_models(EMANE_MODELS)
 
             # load custom models
-            custom_models_path = self.session.config.get("emane_models_dir")
+            custom_models_path = self.session.options.get_config("emane_models_dir")
             if custom_models_path:
                 emane_models = utils.load_classes(custom_models_path, EmaneModel)
                 self.load_models(emane_models)
@@ -349,8 +349,8 @@ class EmaneManager(object):
             self._emane_nodes.clear()
 
         # don't clear self._ifccounts here; NEM counts are needed for buildxml
-        self.platformport = self.session.get_config_item_int("emane_platform_port", 8100)
-        self.transformport = self.session.get_config_item_int("emane_transform_port", 8200)
+        self.platformport = self.session.options.get_config_int("emane_platform_port", 8100)
+        self.transformport = self.session.options.get_config_int("emane_transform_port", 8200)
 
     def shutdown(self):
         """
@@ -477,8 +477,6 @@ class EmaneManager(object):
             return
 
         prefix = session.options.get_config("controlnet")
-        if not prefix:
-            prefix = session.config.get("controlnet")
         prefixes = prefix.split()
         # normal Config messaging will distribute controlnets
         if len(prefixes) >= len(servers):
@@ -729,8 +727,8 @@ class EmaneManager(object):
         """
         logger.info("starting emane daemons...")
         loglevel = str(EmaneManager.DEFAULT_LOG_LEVEL)
-        cfgloglevel = self.session.get_config_item_int("emane_log_level")
-        realtime = self.session.get_config_item_bool("emane_realtime", True)
+        cfgloglevel = self.session.options.get_config_int("emane_log_level")
+        realtime = self.session.options.get_config_bool("emane_realtime", default=True)
         if cfgloglevel:
             logger.info("setting user-defined EMANE log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
@@ -837,7 +835,7 @@ class EmaneManager(object):
         """
         # this support must be explicitly turned on; by default, CORE will
         # generate the EMANE events when nodes are moved
-        return self.session.get_config_item_bool("emane_event_monitor", False)
+        return self.session.options.get_config_bool("emane_event_monitor")
 
     def genlocationevents(self):
         """
@@ -845,7 +843,7 @@ class EmaneManager(object):
         """
         # By default, CORE generates EMANE location events when nodes
         # are moved; this can be explicitly disabled in core.conf
-        tmp = self.session.get_config_item_bool("emane_event_generate")
+        tmp = self.session.options.get_config_bool("emane_event_generate")
         if tmp is None:
             tmp = not self.doeventmonitor()
         return tmp

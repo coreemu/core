@@ -440,7 +440,6 @@ class Experiment(object):
         self.session.master = True
         self.session.location.setrefgeo(47.57917, -122.13232, 2.00000)
         self.session.location.refscale = 150.0
-        self.session.config["emane_models"] = "RfPipe, Ieee80211abg, Bypass"
         self.session.emane.loadmodels()
         self.net = self.session.add_object(cls=EmaneNode, objid=numnodes + 1, name="wlan1")
         self.net.verbose = verbose

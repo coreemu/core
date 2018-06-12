@@ -129,10 +129,11 @@ class ConfigurableOptions(object):
         node_configs[_id] = value
 
     @classmethod
-    def get_config(cls, _id, node_id=_default_node):
-        logger.debug("getting config for node(%s): %s", node_id, _id)
+    def get_config(cls, _id, node_id=_default_node, default=None):
         node_configs = cls.get_configs(node_id)
-        return node_configs.get(_id)
+        value = node_configs.get(_id, default)
+        logger.debug("getting config for node(%s): %s = %s", node_id, _id, value)
+        return value
 
     @classmethod
     def set_configs(cls, config=None, node_id=_default_node):

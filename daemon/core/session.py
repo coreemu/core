@@ -54,11 +54,6 @@ class Session(object):
         """
         self.session_id = session_id
 
-        # dict of configuration items from /etc/core/core.conf config file
-        if not config:
-            config = {}
-        self.config = config
-
         # define and create session directory when desired
         self.session_dir = os.path.join(tempfile.gettempdir(), "pycore.%s" % self.session_id)
         if mkdir:
@@ -95,14 +90,19 @@ class Session(object):
         self.config_handlers = []
         self.shutdown_handlers = []
 
-        # initialize feature helpers
+        # session options/metadata
+        self.options = SessionConfig()
+        if not config:
+            config = {}
+        self.options.set_configs(config)
+        self.metadata = SessionMetaData()
+
+        # initialize session feature helpers
         self.broker = CoreBroker(session=self)
         self.location = CoreLocation()
         self.mobility = MobilityManager(session=self)
         self.services = CoreServices(session=self)
         self.emane = EmaneManager(session=self)
-        self.options = SessionConfig()
-        self.metadata = SessionMetaData()
         self.sdt = Sdt(session=self)
 
     def shutdown(self):
@@ -375,7 +375,7 @@ class Session(object):
         """
         if state == EventTypes.RUNTIME_STATE.value:
             self.emane.poststartup()
-            xml_file_version = self.get_config_item("xmlfilever")
+            xml_file_version = self.options.get_config("xmlfilever")
             if xml_file_version in ("1.0",):
                 xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
                 save_session_xml(self, xml_file_name, xml_file_version)
@@ -581,46 +581,6 @@ class Session(object):
 
         self.broadcast_exception(exception_data)
 
-    def get_config_item(self, name):
-        """
-        Return an entry from the configuration dictionary that comes from
-        command-line arguments and/or the core.conf config file.
-
-        :param str name: name of configuration to retrieve
-        :return: config value
-        """
-        return self.config.get(name)
-
-    def get_config_item_bool(self, name, default=None):
-        """
-        Return a boolean entry from the configuration dictionary, may
-        return None if undefined.
-
-        :param str name: configuration item name
-        :param default: default value to return if not found
-        :return: boolean value of the configuration item
-        :rtype: bool
-        """
-        item = self.get_config_item(name)
-        if item is None:
-            return default
-        return bool(item.lower() == "true")
-
-    def get_config_item_int(self, name, default=None):
-        """
-        Return an integer entry from the configuration dictionary, may
-        return None if undefined.
-
-        :param str name: configuration item name
-        :param default: default value to return if not found
-        :return: integer value of the configuration item
-        :rtype: int
-        """
-        item = self.get_config_item(name)
-        if item is None:
-            return default
-        return int(item)
-
     def instantiate(self):
         """
         We have entered the instantiation state, invoke startup methods
@@ -796,24 +756,10 @@ class Session(object):
         :rtype: list
         """
         p = self.options.get_config("controlnet")
-        if not p:
-            p = self.config.get("controlnet")
-
         p0 = self.options.get_config("controlnet0")
-        if not p0:
-            p0 = self.config.get("controlnet0")
-
         p1 = self.options.get_config("controlnet1")
-        if not p1:
-            p1 = self.config.get("controlnet1")
-
         p2 = self.options.get_config("controlnet2")
-        if not p2:
-            p2 = self.config.get("controlnet2")
-
         p3 = self.options.get_config("controlnet3")
-        if not p3:
-            p3 = self.config.get("controlnet3")
 
         if not p0 and p:
             p0 = p
@@ -827,12 +773,12 @@ class Session(object):
         :return: list of control net server interfaces
         :rtype: list
         """
-        d0 = self.config.get("controlnetif0")
+        d0 = self.options.get_config("controlnetif0")
         if d0:
             logger.error("controlnet0 cannot be assigned with a host interface")
-        d1 = self.config.get("controlnetif1")
-        d2 = self.config.get("controlnetif2")
-        d3 = self.config.get("controlnetif3")
+        d1 = self.options.get_config("controlnetif1")
+        d2 = self.options.get_config("controlnetif2")
+        d3 = self.options.get_config("controlnetif3")
         return [None, d1, d2, d3]
 
     def get_control_net_index(self, dev):
@@ -903,14 +849,9 @@ class Session(object):
         updown_script = None
 
         if net_index == 0:
-            updown_script = self.config.get("controlnet_updown_script")
+            updown_script = self.options.get_config("controlnet_updown_script")
             if not updown_script:
                 logger.warning("controlnet updown script not configured")
-
-            # check if session option set, overwrite if so
-            options_updown_script = self.options.get_config("controlnet_updown_script")
-            if options_updown_script:
-                updown_script = options_updown_script
 
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:
@@ -1020,7 +961,7 @@ class Session(object):
         :param bool remove: flag to check if it should be removed
         :return: nothing
         """
-        if not self.get_config_item_bool("update_etc_hosts", False):
+        if not self.options.get_config_bool("update_etc_hosts", default=False):
             return
 
         try:
@@ -1136,6 +1077,24 @@ class SessionConfig(ConfigurableOptions):
     def __init__(self):
         self.set_configs()
 
+    def get_config(cls, _id, node_id=ConfigurableOptions._default_node, default=None):
+        value = super(SessionConfig, cls).get_config(_id, node_id, default)
+        if value == "":
+            value = default
+        return value
+
+    def get_config_bool(self, name, default=None):
+        value = self.get_config(name)
+        if value is None:
+            return default
+        return value.lower() == "true"
+
+    def get_config_int(self, name, default=None):
+        value = self.get_config(name, default=default)
+        if value is not None:
+            value = int(value)
+        return value
+
 
 class SessionMetaData(ConfigurableOptions):
     """
@@ -1145,5 +1104,4 @@ class SessionMetaData(ConfigurableOptions):
     """
     name = "metadata"
     configuration_maps = {}
-
     config_type = RegisterTlvs.UTILITY.value
