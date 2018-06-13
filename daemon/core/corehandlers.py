@@ -42,8 +42,6 @@ from core.enumerations import SessionTlvs
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
-from core.mobility import BasicRangeModel
-from core.mobility import Ns2ScriptedMobility
 from core.service import CoreService
 from core.service import ServiceManager
 
@@ -380,13 +378,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type, self.session.mobility.name)
-        for model_name in self.session.mobility.mobility_models():
-            model_class = self.session.mobility.get_model_class(model_name)
+        for model_class in self.session.mobility.models.itervalues():
             tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type, self.session.services.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type, self.session.emane.name)
-        for model_name in self.session.emane.emane_models():
-            model_class = self.session.emane.get_model_class(model_name)
+        for model_class in self.session.emane.models.itervalues():
             tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
@@ -937,11 +933,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             replies = self.handle_config_services(message_type, config_data)
         elif config_data.object == self.session.mobility.name:
             self.handle_config_mobility(message_type, config_data)
-        elif config_data.object in [BasicRangeModel.name, Ns2ScriptedMobility.name]:
+        elif config_data.object in self.session.mobility.models:
             replies = self.handle_config_mobility_models(message_type, config_data)
         elif config_data.object == self.session.emane.name:
             replies = self.handle_config_emane(message_type, config_data)
-        elif config_data.object in self.session.emane.emane_models():
+        elif config_data.object in self.session.emane.models:
             replies = self.handle_config_emane_models(message_type, config_data)
         else:
             raise Exception("no handler for configuration: %s", config_data.object)
@@ -1181,7 +1177,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             logger.info("replying to configure request for model: %s", object_name)
             typeflags = ConfigFlags.NONE.value
 
-            model_class = self.session.mobility.get_model_class(object_name)
+            model_class = self.session.mobility.models.get(object_name)
             if not model_class:
                 logger.warn("model class does not exist: %s", object_name)
                 return []
@@ -1251,7 +1247,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             logger.info("replying to configure request for model: %s", object_name)
             typeflags = ConfigFlags.NONE.value
 
-            model_class = self.session.emane.get_model_class(object_name)
+            model_class = self.session.emane.models.get(object_name)
             if not model_class:
                 logger.warn("model class does not exist: %s", object_name)
                 return []

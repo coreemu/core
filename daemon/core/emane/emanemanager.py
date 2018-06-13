@@ -11,8 +11,9 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.api import dataconversion
-from core.conf import ConfigShim, ConfigurableManager
+from core.conf import ConfigShim
 from core.conf import Configuration
+from core.conf import ModelManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -53,7 +54,7 @@ EMANE_MODELS = [
 ]
 
 
-class EmaneManager(ConfigurableManager):
+class EmaneManager(ModelManager):
     """
     EMANE controller object. Lives in a Session instance and is used for
     building EMANE config files from all of the EmaneNode objects in this
@@ -89,63 +90,10 @@ class EmaneManager(ConfigurableManager):
         self.emane_config = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
 
-        # store the last configured model for a node, used during startup
-        self.node_models = {}
-
         session.broker.handlers.add(self.handledistributed)
         self.service = None
         self.event_device = None
-        self._modelclsmap = {}
-
-        self.service = None
         self.emane_check()
-
-    def set_model_config(self, node_id, model_name, config):
-        """
-        Set configuration data for a model.
-
-        :param int node_id: node id to set model configuration for
-        :param str model_name: model to set configuration for
-        :param dict config: configuration data to set for model
-        :return: nothing
-        """
-        # get model class to configure
-        model_class = self._modelclsmap.get(model_name)
-        if not model_class:
-            raise ValueError("%s is an invalid model" % model_name)
-
-        # retrieve default values
-        node_config = self.get_model_config(node_id, model_name)
-        for key, value in config.iteritems():
-            node_config[key] = value
-
-        # set as node model for startup
-        self.node_models[node_id] = model_name
-
-        # set configuration
-        self.set_configs(node_config, node_id=node_id, config_type=model_name)
-
-    def get_model_config(self, node_id, model_name):
-        """
-        Set configuration data for a model.
-
-        :param int node_id: node id to set model configuration for
-        :param str model_name: model to set configuration for
-        :return: current model configuration for node
-        :rtype: dict
-        """
-        # get model class to configure
-        model_class = self._modelclsmap.get(model_name)
-        if not model_class:
-            raise ValueError("%s is an invalid model" % model_name)
-
-        config = self.get_configs(node_id=node_id, config_type=model_name)
-        if not config:
-            # set default values, when not already set
-            config = model_class.default_values()
-            self.set_configs(config, node_id=node_id, config_type=model_name)
-
-        return config
 
     def getifcconfig(self, node_id, interface, model_name):
         """
@@ -189,23 +137,9 @@ class EmaneManager(ConfigurableManager):
 
             return config
 
-    def set_model(self, node, model_class, config=None):
-        logger.info("setting emane model(%s) for node(%s): %s", model_class.name, node.objid, config)
-        if not config:
-            config = {}
-        self.set_model_config(node.objid, model_class.name, config)
-        config = self.get_model_config(node.objid, model_class.name)
-        node.setmodel(model_class, config)
-
     def config_reset(self, node_id=None):
         super(EmaneManager, self).config_reset(node_id)
         self.set_configs(self.emane_config.default_values())
-
-    def emane_models(self):
-        return self._modelclsmap.keys()
-
-    def get_model_class(self, model_name):
-        return self._modelclsmap[model_name]
 
     def emane_check(self):
         """
@@ -281,7 +215,7 @@ class EmaneManager(ConfigurableManager):
         """
         for emane_model in emane_models:
             logger.info("loading emane model: %s", emane_model.__name__)
-            self._modelclsmap[emane_model.name] = emane_model
+            self.models[emane_model.name] = emane_model
 
     def add_node(self, emane_node):
         """
@@ -306,22 +240,6 @@ class EmaneManager(ConfigurableManager):
             for netif in emane_node.netifs():
                 nodes.add(netif.node)
         return nodes
-
-    def getmodels(self, node):
-        """
-        Used with XML export.
-        """
-        models = []
-        all_configs = {}
-        if self.has_configs(node_id=node.objid):
-            all_configs = self.get_all_configs(node_id=node.objid)
-
-        for model_name in all_configs.iterkeys():
-            model_class = self._modelclsmap[model_name]
-            config = self.get_configs(node_id=node.objid, config_type=model_name)
-            models.append((model_class, config))
-        logger.debug("emane models for node(%s): %s", node.objid, models)
-        return models
 
     def setup(self):
         """
@@ -650,7 +568,7 @@ class EmaneManager(ConfigurableManager):
 
             config = self.get_model_config(node_id=node_id, model_name=model_name)
             logger.debug("setting emane model(%s) config(%s)", model_name, config)
-            model_class = self._modelclsmap[model_name]
+            model_class = self.models[model_name]
             emane_node.setmodel(model_class, config)
 
     def nemlookup(self, nemid):

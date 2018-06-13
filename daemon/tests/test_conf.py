@@ -1,6 +1,10 @@
-from core.conf import ConfigurableOptions, ConfigurableManager
+import pytest
+
+from core.conf import ConfigurableOptions, ConfigurableManager, ModelManager
 from core.conf import Configuration
-from core.enumerations import ConfigDataTypes
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.enumerations import ConfigDataTypes, NodeTypes
+from core.mobility import BasicRangeModel
 
 
 class TestConfigurableOptions(ConfigurableOptions):
@@ -117,3 +121,64 @@ class TestConf:
         # then
         assert defaults_value == value
         assert node_value == value
+
+    def test_model_setget_config(self):
+        # given
+        manager = ModelManager()
+        manager.models[BasicRangeModel.name] = BasicRangeModel
+
+        # when
+        manager.set_model_config(1, BasicRangeModel.name)
+
+        # then
+        assert manager.get_model_config(1, BasicRangeModel.name)
+
+    def test_model_set_config_error(self):
+        # given
+        manager = ModelManager()
+        manager.models[BasicRangeModel.name] = BasicRangeModel
+        bad_name = "bad-model"
+
+        # when/then
+        with pytest.raises(ValueError):
+            manager.set_model_config(1, bad_name)
+
+    def test_model_get_config_error(self):
+        # given
+        manager = ModelManager()
+        manager.models[BasicRangeModel.name] = BasicRangeModel
+        bad_name = "bad-model"
+
+        # when/then
+        with pytest.raises(ValueError):
+            manager.get_model_config(1, bad_name)
+
+    def test_model_set(self, session):
+        # given
+        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+
+        # when
+        session.mobility.set_model(wlan_node, BasicRangeModel)
+
+        # then
+        assert session.mobility.get_model_config(wlan_node.objid, BasicRangeModel.name)
+
+    def test_model_set_error(self, session):
+        # given
+        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+
+        # when / then
+        with pytest.raises(ValueError):
+            session.mobility.set_model(wlan_node, EmaneIeee80211abgModel)
+
+    def test_get_models(self, session):
+        # given
+        wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        session.mobility.set_model(wlan_node, BasicRangeModel)
+
+        # when
+        models = session.mobility.getmodels(wlan_node)
+
+        # then
+        assert models
+        assert len(models) == 1

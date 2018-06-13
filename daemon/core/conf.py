@@ -265,3 +265,87 @@ class ConfigurableOptions(object):
         :rtype: OrderedDict
         """
         return OrderedDict([(config.id, config.default) for config in cls.configurations()])
+
+
+class ModelManager(ConfigurableManager):
+    def __init__(self):
+        super(ModelManager, self).__init__()
+        self.models = {}
+        self.node_models = {}
+
+    def set_model_config(self, node_id, model_name, config=None):
+        """
+        Set configuration data for a model.
+
+        :param int node_id: node id to set model configuration for
+        :param str model_name: model to set configuration for
+        :param dict config: configuration data to set for model
+        :return: nothing
+        """
+        # get model class to configure
+        model_class = self.models.get(model_name)
+        if not model_class:
+            raise ValueError("%s is an invalid model" % model_name)
+
+        # retrieve default values
+        node_config = self.get_model_config(node_id, model_name)
+        if not config:
+            config = {}
+        for key, value in config.iteritems():
+            node_config[key] = value
+
+        # set as node model for startup
+        self.node_models[node_id] = model_name
+
+        # set configuration
+        self.set_configs(node_config, node_id=node_id, config_type=model_name)
+
+    def get_model_config(self, node_id, model_name):
+        """
+        Set configuration data for a model.
+
+        :param int node_id: node id to set model configuration for
+        :param str model_name: model to set configuration for
+        :return: current model configuration for node
+        :rtype: dict
+        """
+        # get model class to configure
+        model_class = self.models.get(model_name)
+        if not model_class:
+            raise ValueError("%s is an invalid model" % model_name)
+
+        config = self.get_configs(node_id=node_id, config_type=model_name)
+        if not config:
+            # set default values, when not already set
+            config = model_class.default_values()
+            self.set_configs(config, node_id=node_id, config_type=model_name)
+
+        return config
+
+    def set_model(self, node, model_class, config=None):
+        logger.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
+        self.set_model_config(node.objid, model_class.name, config)
+        config = self.get_model_config(node.objid, model_class.name)
+        node.setmodel(model_class, config)
+
+    def getmodels(self, node):
+        """
+        Return a list of model classes and values for a net if one has been
+        configured. This is invoked when exporting a session to XML.
+
+        :param node: network node to get models for
+        :return: list of model and values tuples for the network node
+        :rtype: list
+        """
+        models = []
+        all_configs = {}
+        if self.has_configs(node_id=node.objid):
+            all_configs = self.get_all_configs(node_id=node.objid)
+
+        for model_name in all_configs.iterkeys():
+            model_class = self.models[model_name]
+            config = self.get_configs(node_id=node.objid, config_type=model_name)
+            models.append((model_class, config))
+
+        logger.debug("mobility models for node(%s): %s", node.objid, models)
+        return models

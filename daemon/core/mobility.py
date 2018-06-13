@@ -9,8 +9,9 @@ import threading
 import time
 
 from core import logger
-from core.conf import ConfigurableOptions, ConfigurableManager
+from core.conf import ConfigurableOptions
 from core.conf import Configuration
+from core.conf import ModelManager
 from core.coreobj import PyCoreNode
 from core.data import EventData
 from core.data import LinkData
@@ -25,7 +26,7 @@ from core.misc import utils
 from core.misc.ipaddress import IpAddress
 
 
-class MobilityManager(ConfigurableManager):
+class MobilityManager(ModelManager):
     """
     Member of session class for handling configuration data for mobility and
     range models.
@@ -41,89 +42,13 @@ class MobilityManager(ConfigurableManager):
         """
         super(MobilityManager, self).__init__()
         self.session = session
-        # configurations for basic range, indexed by WLAN node number, are stored in configurations
-        # mapping from model names to their classes
-        self._modelclsmap = {
-            BasicRangeModel.name: BasicRangeModel,
-            Ns2ScriptedMobility.name: Ns2ScriptedMobility
-        }
+        self.models[BasicRangeModel.name] = BasicRangeModel
+        self.models[Ns2ScriptedMobility.name] = Ns2ScriptedMobility
 
         # dummy node objects for tracking position of nodes on other servers
         self.phys = {}
         self.physnets = {}
         self.session.broker.handlers.add(self.physnodehandlelink)
-
-    def set_model_config(self, node_id, model_name, config):
-        """
-        Set configuration data for a model.
-
-        :param int node_id: node id to set model configuration for
-        :param str model_name: model to set configuration for
-        :param dict config: configuration data to set for model
-        :return: nothing
-        """
-        # get model class to configure
-        model_class = self._modelclsmap.get(model_name)
-        if not model_class:
-            raise ValueError("%s is an invalid model" % model_name)
-
-        # retrieve default values
-        node_config = self.get_model_config(node_id, model_name)
-        for key, value in config.iteritems():
-            node_config[key] = value
-
-        # set configuration
-        self.set_configs(node_config, node_id=node_id, config_type=model_name)
-
-    def get_model_config(self, node_id, model_name):
-        """
-        Set configuration data for a model.
-
-        :param int node_id: node id to set model configuration for
-        :param str model_name: model to set configuration for
-        :return: current model configuration for node
-        :rtype: dict
-        """
-        # get model class to configure
-        model_class = self._modelclsmap.get(model_name)
-        if not model_class:
-            raise ValueError("%s is an invalid model" % model_name)
-
-        config = self.get_configs(node_id=node_id, config_type=model_name)
-        if not config:
-            # set default values, when not already set
-            config = model_class.default_values()
-            self.set_configs(config, node_id=node_id, config_type=model_name)
-
-        return config
-
-    def mobility_models(self):
-        return self._modelclsmap.keys()
-
-    def get_model_class(self, model_name):
-        return self._modelclsmap[model_name]
-
-    def getmodels(self, node):
-        """
-        Return a list of model classes and values for a net if one has been
-        configured. This is invoked when exporting a session to XML.
-
-        :param node: network node to get models for
-        :return: list of model and values tuples for the network node
-        :rtype: list
-        """
-        models = []
-        all_configs = {}
-        if self.has_configs(node_id=node.objid):
-            all_configs = self.get_all_configs(node_id=node.objid)
-
-        for model_name in all_configs.iterkeys():
-            model_class = self._modelclsmap[model_name]
-            config = self.get_configs(node_id=node.objid, config_type=model_name)
-            models.append((model_class, config))
-
-        logger.debug("mobility models for node(%s): %s", node.objid, models)
-        return models
 
     def startup(self, node_ids=None):
         """
@@ -146,11 +71,11 @@ class MobilityManager(ConfigurableManager):
                 logger.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
-            for model_name in self._modelclsmap.iterkeys():
+            for model_name in self.models.iterkeys():
                 config = self.get_configs(node_id=node_id, config_type=model_name)
                 if not config:
                     continue
-                model_class = self._modelclsmap[model_name]
+                model_class = self.models[model_name]
                 self.set_model(node, model_class, config)
 
             if self.session.master:
@@ -158,14 +83,6 @@ class MobilityManager(ConfigurableManager):
 
             if node.mobility:
                 self.session.event_loop.add_event(0.0, node.mobility.startup)
-
-    def set_model(self, node, model_class, config=None):
-        logger.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
-        if not config:
-            config = {}
-        self.set_model_config(node.objid, model_class.name, config)
-        config = self.get_model_config(node.objid, model_class.name)
-        node.setmodel(model_class, config)
 
     def handleevent(self, event_data):
         """
@@ -189,7 +106,7 @@ class MobilityManager(ConfigurableManager):
         models = name[9:].split(',')
         for model in models:
             try:
-                cls = self._modelclsmap[model]
+                cls = self.models[model]
             except KeyError:
                 logger.warn("Ignoring event for unknown model '%s'", model)
                 continue
@@ -298,8 +215,7 @@ class MobilityManager(ConfigurableManager):
                 dummy = PyCoreNode(session=self.session, objid=nn[1], name="n%d" % nn[1], start=False)
                 self.addphys(nn[0], dummy)
 
-                # TODO: remove need to handling old style messages
-
+    # TODO: remove need to handling old style messages
     def physnodeupdateposition(self, message):
         """
         Snoop node messages belonging to physical nodes. The dummy object
