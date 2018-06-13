@@ -177,7 +177,7 @@ class TestConf:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # when
-        models = session.mobility.getmodels(wlan_node)
+        models = session.mobility.get_models(wlan_node)
 
         # then
         assert models

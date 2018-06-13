@@ -84,8 +84,8 @@ class CoreDocumentWriter0(Document):
         for netif in net.netifs(sort=True):
             self.addnetem(n, netif)
             # wireless/mobility models
-        modelconfigs = net.session.mobility.getmodels(net)
-        modelconfigs += net.session.emane.getmodels(net)
+        modelconfigs = net.session.mobility.get_models(net)
+        modelconfigs += net.session.emane.get_models(net)
         self.addmodels(n, modelconfigs)
         self.addposition(net)
 

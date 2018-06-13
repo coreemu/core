@@ -328,7 +328,7 @@ class ModelManager(ConfigurableManager):
         config = self.get_model_config(node.objid, model_class.name)
         node.setmodel(model_class, config)
 
-    def getmodels(self, node):
+    def get_models(self, node):
         """
         Return a list of model classes and values for a net if one has been
         configured. This is invoked when exporting a session to XML.

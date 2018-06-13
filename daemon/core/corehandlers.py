@@ -1577,7 +1577,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # send mobility model info
         for node_id in self.session.mobility.nodes():
             node = self.session.get_object(node_id)
-            for model_class, config in self.session.mobility.getmodels(node):
+            for model_class, config in self.session.mobility.get_models(node):
                 logger.info("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
                 self.session.broadcast_config(config_data)
@@ -1585,7 +1585,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # send emane model info
         for node_id in self.session.emane.nodes():
             node = self.session.get_object(node_id)
-            for model_class, config in self.session.emane.getmodels(node):
+            for model_class, config in self.session.emane.get_models(node):
                 logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
                 self.session.broadcast_config(config_data)

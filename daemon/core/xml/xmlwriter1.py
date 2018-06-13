@@ -475,8 +475,8 @@ class NetworkElement(NamedXmlElement):
         """
 
         if nodeutils.is_node(network_object, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
-            modelconfigs = network_object.session.mobility.getmodels(network_object)
-            modelconfigs += network_object.session.emane.getmodels(network_object)
+            modelconfigs = network_object.session.mobility.get_models(network_object)
+            modelconfigs += network_object.session.emane.get_models(network_object)
             chan = None
 
             for model, conf in modelconfigs:
