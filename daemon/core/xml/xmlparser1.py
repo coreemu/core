@@ -210,12 +210,11 @@ class CoreDocumentParser1(object):
             raise NotImplementedError
         logger.info("setting wireless link params: node(%s) model(%s) mobility_model(%s)",
                     nodenum, model_name, mobility_model_name)
-        model_class = mgr.get_model_class(model_name)
-        model_class.set_configs(link_params, node_id=nodenum)
+        mgr.set_model_config(node_id=nodenum, model_name=model_name, config=link_params)
 
         if mobility_model_name and mobility_params:
-            model_class = mgr.get_model_class(mobility_model_name)
-            model_class.set_configs(mobility_params, node_id=nodenum)
+            self.session.mobility.set_model_config(node_id=nodenum, model_name=mobility_model_name,
+                                                   config=mobility_params)
 
     def link_layer2_devices(self, device1, ifname1, device2, ifname2):
         """

@@ -1,4 +1,4 @@
-from core.conf import ConfigurableOptions
+from core.conf import ConfigurableOptions, ConfigurableManager
 from core.conf import Configuration
 from core.enumerations import ConfigDataTypes
 
@@ -43,7 +43,7 @@ class TestConf:
 
     def test_nodes(self):
         # given
-        config_manager = TestConfigurableOptions()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -58,7 +58,7 @@ class TestConf:
 
     def test_config_reset_all(self):
         # given
-        config_manager = TestConfigurableOptions()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -68,11 +68,11 @@ class TestConf:
         config_manager.config_reset()
 
         # then
-        assert not config_manager.configuration_maps
+        assert not config_manager._configuration_maps
 
     def test_config_reset_node(self):
         # given
-        config_manager = TestConfigurableOptions()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -82,12 +82,12 @@ class TestConf:
         config_manager.config_reset(node_id)
 
         # then
-        assert node_id not in config_manager.configuration_maps
+        assert node_id not in config_manager._configuration_maps
         assert config_manager.get_configs()
 
     def test_configs_setget(self):
         # given
-        config_manager = TestConfigurableOptions()
+        config_manager = ConfigurableManager()
         test_config = {1: 2}
         node_id = 1
         config_manager.set_configs(test_config)
@@ -103,7 +103,7 @@ class TestConf:
 
     def test_config_setget(self):
         # given
-        config_manager = TestConfigurableOptions()
+        config_manager = ConfigurableManager()
         name = "test"
         value = "1"
         node_id = 1

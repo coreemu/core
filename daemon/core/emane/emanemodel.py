@@ -79,7 +79,7 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         # retrieve configuration values
-        config = self.getifcconfig(self.object_id, interface)
+        config = emane_manager.getifcconfig(self.object_id, interface, self.name)
         if not config:
             return
 
@@ -149,7 +149,7 @@ class EmaneModel(WirelessModel):
                 continue
 
             # check if value is a multi param
-            value = config[name]
+            value = str(config[name])
             param = value_to_params(mac_document, name, value)
             if not param:
                 param = emane_manager.xmlparam(mac_document, name, value)
@@ -182,7 +182,7 @@ class EmaneModel(WirelessModel):
                 continue
 
             # check if value is a multi param
-            value = config[name]
+            value = str(config[name])
             param = value_to_params(phy_document, name, value)
             if not param:
                 param = emane_manager.xmlparam(phy_document, name, value)
@@ -269,7 +269,7 @@ class EmaneModel(WirelessModel):
 
         if interface:
             node_id = interface.node.objid
-            if self.getifcconfig(node_id, interface):
+            if self.session.emane.getifcconfig(node_id, interface, self.name):
                 name = interface.localname.replace(".", "_")
 
         return "%s%s" % (name, self.name)
@@ -348,43 +348,3 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         logger.warn("emane model(%s) does not support link configuration", self.name)
-
-    def getifcconfig(self, node_id, ifc):
-        """
-        Retrieve interface configuration or node configuration if not provided.
-
-        :param int node_id: node id
-        :param ifc: node interface
-        :return:
-        """
-        # use the network-wide config values or interface(NEM)-specific values?
-        if ifc is None:
-            return self.get_configs(node_id)
-        else:
-            # don"t use default values when interface config is the same as net
-            # note here that using ifc.node.objid as key allows for only one type
-            # of each model per node;
-            # TODO: use both node and interface as key
-
-            # Adamson change: first check for iface config keyed by "node:ifc.name"
-            # (so that nodes w/ multiple interfaces of same conftype can have
-            #  different configs for each separate interface)
-            key = 1000 * ifc.node.objid
-            if ifc.netindex is not None:
-                key += ifc.netindex
-
-            # try retrieve interface specific configuration, avoid getting defaults
-            config = {}
-            if key in self.configuration_maps:
-                config = self.get_configs(key)
-
-            # otherwise retrieve the interfaces node configuration, avoid using defaults
-            if not config and ifc.node.objid in self.configuration_maps:
-                config = self.get_configs(ifc.node.objid)
-
-            if not config and ifc.transport_type == "raw":
-                # with EMANE 0.9.2+, we need an extra NEM XML from
-                # model.buildnemxmlfiles(), so defaults are returned here
-                config = self.get_configs(node_id)
-
-            return config

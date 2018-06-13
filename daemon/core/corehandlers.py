@@ -1186,7 +1186,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
-            config = model_class.get_configs(node_id=node_id)
+            config = self.session.mobility.get_model_config(node_id, object_name)
             config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET:
@@ -1195,17 +1195,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("no configuration object for node: %s", node_id)
                 return []
 
-            model_class = self.session.mobility.get_model_class(object_name)
-            if not model_class:
-                logger.warn("model class does not exist: %s", object_name)
-                return []
-
+            parsed_config = {}
             if values_str:
                 parsed_config = ConfigShim.str_to_dict(values_str)
-                model_class.set_configs(parsed_config, node_id=node_id)
 
-            config = model_class.get_configs(node_id)
-            model_class.set_configs(config, node_id=node_id)
+            self.session.mobility.set_model_config(node_id, object_name, parsed_config)
 
         return replies
 
@@ -1213,7 +1207,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         replies = []
         node_id = config_data.node
         object_name = config_data.object
-        config_type = config_data.type
         interface_id = config_data.interface_number
         values_str = config_data.data_values
 
@@ -1263,7 +1256,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("model class does not exist: %s", object_name)
                 return []
 
-            config = model_class.get_configs(node_id=node_id)
+            config = self.session.emane.get_model_config(node_id, object_name)
             config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET:
@@ -1272,18 +1265,11 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.warn("no configuration object for node: %s", node_id)
                 return []
 
-            model_class = self.session.emane.get_model_class(object_name)
-            if not model_class:
-                logger.warn("model class does not exist: %s", object_name)
-                return []
-
+            parsed_config = {}
             if values_str:
                 parsed_config = ConfigShim.str_to_dict(values_str)
-                model_class.set_configs(parsed_config, node_id=node_id)
 
-            config = model_class.get_configs(node_id)
-            model_class.set_configs(config, node_id=node_id)
-            self.session.emane.set_node_model(node_id, object_name)
+            self.session.emane.set_model_config(node_id, object_name, parsed_config)
 
         return replies
 
@@ -1435,7 +1421,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             return ()
         elif event_type == EventTypes.FILE_SAVE:
             filename = event_data.name
-            self.session.save_xml(filename, self.session.config["xmlfilever"])
+            xml_version = self.session.options.get_config("xmlfilever")
+            self.session.save_xml(filename, xml_version)
         elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
             node = event_data.node
@@ -1600,10 +1587,9 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 self.session.broadcast_config(config_data)
 
         # send emane model info
-        for model_name in self.session.emane.emane_models():
-            model_class = self.session.emane.get_model_class(model_name)
-            for node_id in model_class.nodes():
-                config = model_class.get_configs(node_id)
+        for node_id in self.session.emane.nodes():
+            node = self.session.get_object(node_id)
+            for model_class, config in self.session.emane.getmodels(node):
                 logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
                 self.session.broadcast_config(config_data)

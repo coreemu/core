@@ -377,17 +377,18 @@ class WlanNode(LxBrNet):
             # invokes any netif.poshook
             netif.setposition(x, y, z)
 
-    def setmodel(self, model, config=None):
+    def setmodel(self, model, config):
         """
         Sets the mobility and wireless model.
 
         :param core.mobility.WirelessModel.cls model: wireless model to set to
-        :param dict config: model configuration
+        :param dict config: configuration for model being set
         :return: nothing
         """
         logger.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.objid, config=config)
+            self.model = model(session=self.session, object_id=self.objid)
+            self.model.update_config(config)
             if self.model.position_callback:
                 for netif in self.netifs():
                     netif.poshook = self.model.position_callback
@@ -396,7 +397,8 @@ class WlanNode(LxBrNet):
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, config=config)
+            self.mobility = model(session=self.session, object_id=self.objid)
+            self.mobility.update_config(config)
 
     def update_mobility(self, config):
         if not self.mobility:

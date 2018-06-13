@@ -9,7 +9,6 @@ from core.emane import emanemodel
 class EmaneIeee80211abgModel(emanemodel.EmaneModel):
     # model name
     name = "emane_ieee80211abg"
-    configuration_maps = {}
 
     # mac configuration
     mac_library = "ieee80211abgmaclayer"

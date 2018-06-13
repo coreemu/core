@@ -739,6 +739,7 @@ class EmuSession(Session):
         self.delete_objects()
         self.del_hooks()
         self.broker.reset()
+        self.emane.reset()
 
     def start_events(self):
         """
@@ -778,7 +779,7 @@ class EmuSession(Session):
         node_options.model = "mdr"
         return self.add_node(_type=NodeTypes.DEFAULT, _id=_id, node_options=node_options)
 
-    def create_emane_network(self, model, geo_reference, geo_scale=None, node_options=NodeOptions()):
+    def create_emane_network(self, model, geo_reference, geo_scale=None, node_options=NodeOptions(), config=None):
         """
         Convenience method for creating an emane network.
 
@@ -786,6 +787,7 @@ class EmuSession(Session):
         :param geo_reference: geo reference point to use for emane node locations
         :param geo_scale: geo scale to use for emane node locations, defaults to 1.0
         :param core.emulator.emudata.NodeOptions node_options: options for emane node being created
+        :param dict config: emane model configuration
         :return: create emane network
         """
         # required to be set for emane to function properly
@@ -795,7 +797,7 @@ class EmuSession(Session):
 
         # create and return network
         emane_network = self.add_node(_type=NodeTypes.EMANE, node_options=node_options)
-        emane_network.setmodel(model)
+        self.emane.set_model(emane_network, model, config)
         return emane_network
 
     def wireless_link_all(self, network, nodes):

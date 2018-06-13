@@ -16,7 +16,6 @@ from core.misc import utils
 class EmaneTdmaModel(emanemodel.EmaneModel):
     # model name
     name = "emane_tdma"
-    configuration_maps = {}
 
     # mac configuration
     mac_library = "tdmaeventschedulerradiomodel"
@@ -47,7 +46,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # get configured schedule
-        config = self.get_configs(self.object_id)
+        config = self.session.emane.get_configs(node_id=self.object_id, config_type=self.name)
         if not config:
             return
         schedule = config[self.schedule_name]

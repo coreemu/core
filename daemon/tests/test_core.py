@@ -5,24 +5,21 @@ Unit tests for testing basic CORE networks.
 import os
 import stat
 import threading
-from xml.etree import ElementTree
 
 import pytest
 from mock import MagicMock
 
 from core.emulator.emudata import NodeOptions
-from core.enumerations import MessageFlags, NodeTypes
-from core.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.enumerations import MessageFlags
+from core.enumerations import NodeTypes
+from core.mobility import BasicRangeModel
+from core.mobility import Ns2ScriptedMobility
 from core.netns.vnodeclient import VnodeClient
 from core.service import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _SERVICES_PATH = os.path.join(_PATH, "myservices")
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
-_XML_VERSIONS = [
-    "0.0",
-    "1.0"
-]
 _WIRED = [
     NodeTypes.PEER_TO_PEER,
     NodeTypes.HUB,
@@ -92,60 +89,6 @@ class TestCore:
         # ping n2 from n1 and assert success
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
-
-    @pytest.mark.parametrize("version", _XML_VERSIONS)
-    def test_xml(self, session, tmpdir, version, ip_prefixes):
-        """
-        Test xml client methods.
-
-        :param session: session for test
-        :param tmpdir: tmpdir to create data in
-        :param str version: xml version to write and parse
-        :param ip_prefixes: generates ip addresses for nodes
-        """
-        # create ptp
-        ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
-
-        # create nodes
-        node_one = session.add_node()
-        node_two = session.add_node()
-
-        # link nodes to ptp net
-        for node in [node_one, node_two]:
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
-
-        # instantiate session
-        session.instantiate()
-
-        # get ids for nodes
-        n1_id = node_one.objid
-        n2_id = node_two.objid
-
-        # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
-        session.save_xml(file_path, version)
-
-        # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
-
-        # stop current session, clearing data
-        session.shutdown()
-
-        # verify nodes have been removed from session
-        with pytest.raises(KeyError):
-            assert not session.get_object(n1_id)
-        with pytest.raises(KeyError):
-            assert not session.get_object(n2_id)
-
-        # load saved xml
-        session.open_xml(file_path, start=True)
-
-        # verify nodes have been recreated
-        assert session.get_object(n1_id)
-        assert session.get_object(n2_id)
 
     def test_vnode_client(self, session, ip_prefixes):
         """
@@ -257,7 +200,7 @@ class TestCore:
 
         # create wlan
         wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        wlan_node.setmodel(BasicRangeModel)
+        session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
         node_options = NodeOptions()
@@ -290,7 +233,7 @@ class TestCore:
 
         # create wlan
         wlan_node = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        wlan_node.setmodel(BasicRangeModel)
+        session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # create nodes
         node_options = NodeOptions()
@@ -317,7 +260,7 @@ class TestCore:
             "script_pause": "",
             "script_stop": "",
         }
-        wlan_node.setmodel(Ns2ScriptedMobility, config)
+        session.mobility.set_model(wlan_node, Ns2ScriptedMobility, config)
 
         # add handler for receiving node updates
         event = threading.Event()

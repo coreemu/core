@@ -72,7 +72,12 @@ class CoreDocumentParser0(object):
         """
         Helper to return tuple of attributes common to nodes and nets.
         """
-        node_id = int(obj.getAttribute("id"))
+        node_id = obj.getAttribute("id")
+        try:
+            node_id = int(node_id)
+        except:
+            logger.debug("parsing node without integer id: %s", node_id)
+
         name = str(obj.getAttribute("name"))
         node_type = str(obj.getAttribute("type"))
         return node_id, name, node_type
@@ -205,7 +210,8 @@ class CoreDocumentParser0(object):
 
         # TODO: assign other config managers here
         if mgr:
-            mgr.setconfig_keyvalues(nodenum, name, kvs)
+            for k, v in kvs:
+                mgr.set_config(k, v, node_id=nodenum, config_type=name)
 
     def parsenetem(self, model, obj, kvs):
         """
@@ -218,7 +224,6 @@ class CoreDocumentParser0(object):
         # nodes and interfaces do not exist yet, at this point of the parsing,
         # save (key, value) pairs for later
         try:
-            # kvs = map(lambda(k, v): (int(v)), kvs)
             kvs = map(self.numericvalue, kvs)
         except ValueError:
             logger.warn("error parsing link parameters for '%s' on '%s'", ifname, peer)
@@ -394,7 +399,7 @@ class CoreDocumentParser0(object):
                 v = str(param.getAttribute("value"))
                 if v == '':
                     v = xmlutils.get_text_child(param)  # allow attribute/text for newlines
-                setattr(self.session.options, k, v)
+                self.session.options.set_config(k, v)
         hooks = xmlutils.get_one_element(self.meta, "Hooks")
         if hooks:
             self.parsehooks(hooks)
@@ -405,4 +410,4 @@ class CoreDocumentParser0(object):
                 v = str(param.getAttribute("value"))
                 if v == '':
                     v = xmlutils.get_text_child(param)
-                self.session.metadata.add_item(k, v)
+                self.session.metadata.set_config(k, v)

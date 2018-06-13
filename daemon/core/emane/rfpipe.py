@@ -9,7 +9,6 @@ from core.emane import emanemodel
 class EmaneRfPipeModel(emanemodel.EmaneModel):
     # model name
     name = "emane_rfpipe"
-    configuration_maps = {}
 
     # mac configuration
     mac_library = "rfpipemaclayer"

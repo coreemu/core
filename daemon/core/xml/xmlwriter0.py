@@ -6,7 +6,7 @@ import pwd
 from core import logger
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreNode
-from core.enumerations import RegisterTlvs
+from core.enumerations import RegisterTlvs, EventTypes
 from core.xml import xmlutils
 
 
@@ -38,7 +38,8 @@ class CoreDocumentWriter0(Document):
         self.populatefromsession()
 
     def populatefromsession(self):
-        self.session.emane.setup()  # not during runtime?
+        if self.session.state != EventTypes.RUNTIME_STATE.value:
+            self.session.emane.setup()  # not during runtime?
         self.addorigin()
         self.adddefaultservices()
         self.addnets()
@@ -136,14 +137,14 @@ class CoreDocumentWriter0(Document):
         for m, conf in configs:
             model = self.createElement("model")
             n.appendChild(model)
-            model.setAttribute("name", m._name)
+            model.setAttribute("name", m.name)
             type = "wireless"
-            if m._type == RegisterTlvs.MOBILITY.value:
+            if m.config_type == RegisterTlvs.MOBILITY.value:
                 type = "mobility"
             model.setAttribute("type", type)
-            for i, k in enumerate(m.getnames()):
+
+            for k, value in conf.iteritems():
                 key = self.createElement(k)
-                value = conf[i]
                 if value is None:
                     value = ""
                 key.appendChild(self.createTextNode("%s" % value))
@@ -193,8 +194,8 @@ class CoreDocumentWriter0(Document):
             # could use ifc.params, transport_type
             self.addaddresses(i, ifc)
             # per-interface models
-            if netmodel and netmodel._name[:6] == "emane_":
-                cfg = netmodel.getifcconfig(node.objid, ifc)
+            if netmodel and netmodel.name[:6] == "emane_":
+                cfg = self.session.emane.getifcconfig(node.objid, ifc, netmodel.name)
                 if cfg:
                     self.addmodels(i, ((netmodel, cfg),))
 

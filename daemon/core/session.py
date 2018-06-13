@@ -17,6 +17,7 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.broker import CoreBroker
+from core.conf import ConfigurableManager
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
 from core.data import EventData
@@ -94,7 +95,8 @@ class Session(object):
         self.options = SessionConfig()
         if not config:
             config = {}
-        self.options.set_configs(config)
+        for key, value in config.iteritems():
+            self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
         # initialize session feature helpers
@@ -1044,7 +1046,7 @@ class Session(object):
             node.cmd(data, wait=False)
 
 
-class SessionConfig(ConfigurableOptions):
+class SessionConfig(ConfigurableManager, ConfigurableOptions):
     """
     Session configuration object.
     """
@@ -1075,10 +1077,12 @@ class SessionConfig(ConfigurableOptions):
         return "Options:1-%d" % len(cls.configurations())
 
     def __init__(self):
-        self.set_configs()
+        super(SessionConfig, self).__init__()
+        self.set_configs(self.default_values())
 
-    def get_config(cls, _id, node_id=ConfigurableOptions._default_node, default=None):
-        value = super(SessionConfig, cls).get_config(_id, node_id, default)
+    def get_config(self, _id, node_id=ConfigurableManager._default_node,
+                   config_type=ConfigurableManager._default_type, default=None):
+        value = super(SessionConfig, self).get_config(_id, node_id, config_type, default)
         if value == "":
             value = default
         return value
@@ -1096,7 +1100,7 @@ class SessionConfig(ConfigurableOptions):
         return value
 
 
-class SessionMetaData(ConfigurableOptions):
+class SessionMetaData(ConfigurableManager):
     """
     Metadata is simply stored in a configs[] dict. Key=value pairs are
     passed in from configure messages destined to the "metadata" object.

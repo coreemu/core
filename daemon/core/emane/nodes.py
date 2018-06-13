@@ -73,7 +73,7 @@ class EmaneNode(EmaneNet):
         logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
         self.model.set_configs(config, node_id=self.objid)
 
-    def setmodel(self, model, config=None):
+    def setmodel(self, model, config):
         """
         set the EmaneModel associated with this node
         """
@@ -81,9 +81,11 @@ class EmaneNode(EmaneNet):
         if model.config_type == RegisterTlvs.WIRELESS.value:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
-            self.model = model(session=self.session, object_id=self.objid, config=config)
+            self.model = model(session=self.session, object_id=self.objid)
+            self.model.update_config(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, config=config)
+            self.mobility = model(session=self.session, object_id=self.objid)
+            self.mobility.update_config(config)
 
     def setnemid(self, netif, nemid):
         """
@@ -180,8 +182,7 @@ class EmaneNode(EmaneNet):
         trans.setAttribute("library", "trans%s" % transport_type.lower())
         trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
 
-        model_class = emane.get_model_class(self.model.name)
-        config = model_class.get_configs(self.objid)
+        config = emane.get_configs(node_id=self.objid, config_type=self.model.name)
         logger.debug("transport xml config: %s", config)
         flowcontrol = config.get("flowcontrolenable", "0") == "1"
 

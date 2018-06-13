@@ -90,11 +90,57 @@ class Configuration(object):
             self.__class__.__name__, self.id, self.type, self.default, self.options)
 
 
+class ConfigurableManager(object):
+    _default_node = -1
+    _default_type = _default_node
+
+    def __init__(self):
+        self._configuration_maps = {}
+
+    def nodes(self):
+        return [node_id for node_id in self._configuration_maps.iterkeys() if node_id != self._default_node]
+
+    def has_configs(self, node_id):
+        return node_id in self._configuration_maps
+
+    def config_reset(self, node_id=None):
+        logger.debug("resetting all configurations: %s", self.__class__.__name__)
+        if not node_id:
+            self._configuration_maps.clear()
+        elif node_id in self._configuration_maps:
+            self._configuration_maps.pop(node_id)
+
+    def set_config(self, _id, value, node_id=_default_node, config_type=_default_type):
+        logger.debug("setting config for node(%s) type(%s): %s=%s", node_id, config_type, _id, value)
+        node_type_map = self.get_configs(node_id, config_type)
+        node_type_map[_id] = value
+
+    def set_configs(self, config, node_id=_default_node, config_type=_default_type):
+        logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
+        node_configs = self.get_all_configs(node_id)
+        if config_type in node_configs:
+            node_configs.pop(config_type)
+        node_configs[config_type] = config
+
+    def get_config(self, _id, node_id=_default_node, config_type=_default_type, default=None):
+        logger.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
+        node_type_map = self.get_configs(node_id, config_type)
+        return node_type_map.get(_id, default)
+
+    def get_configs(self, node_id=_default_node, config_type=_default_type):
+        logger.debug("getting configs for node(%s) type(%s)", node_id, config_type)
+        node_map = self.get_all_configs(node_id)
+        return node_map.setdefault(config_type, {})
+
+    def get_all_configs(self, node_id=_default_node):
+        logger.debug("getting all configs for node(%s)", node_id)
+        return self._configuration_maps.setdefault(node_id, OrderedDict())
+
+
 class ConfigurableOptions(object):
     # unique name to receive configuration changes
     name = None
     bitmap = None
-    configuration_maps = None
     _default_node = -1
 
     @classmethod
@@ -108,42 +154,3 @@ class ConfigurableOptions(object):
     @classmethod
     def default_values(cls):
         return OrderedDict([(config.id, config.default) for config in cls.configurations()])
-
-    @classmethod
-    def nodes(cls):
-        return {node_id for node_id in cls.configuration_maps.iterkeys() if node_id != cls._default_node}
-
-    @classmethod
-    def config_reset(cls, node_id=None):
-        if not node_id:
-            logger.debug("resetting all configurations: %s", cls.__name__)
-            cls.configuration_maps.clear()
-        elif node_id in cls.configuration_maps:
-            logger.debug("resetting node(%s) configurations: %s", node_id, cls.__name__)
-            cls.configuration_maps.pop(node_id)
-
-    @classmethod
-    def set_config(cls, _id, value, node_id=_default_node):
-        logger.debug("setting config for node(%s) type(%s): %s=%s", node_id, _id, value)
-        node_configs = cls.get_configs(node_id)
-        node_configs[_id] = value
-
-    @classmethod
-    def get_config(cls, _id, node_id=_default_node, default=None):
-        node_configs = cls.get_configs(node_id)
-        value = node_configs.get(_id, default)
-        logger.debug("getting config for node(%s): %s = %s", node_id, _id, value)
-        return value
-
-    @classmethod
-    def set_configs(cls, config=None, node_id=_default_node):
-        logger.debug("setting config for node(%s): %s", node_id, config)
-        node_config = cls.get_configs(node_id)
-        if config:
-            for key, value in config.iteritems():
-                node_config[key] = value
-
-    @classmethod
-    def get_configs(cls, node_id=_default_node):
-        logger.debug("getting configs for node(%s)", node_id)
-        return cls.configuration_maps.setdefault(node_id, cls.default_values())
