@@ -68,7 +68,7 @@ class TestConf:
         config_manager.config_reset()
 
         # then
-        assert not config_manager._configuration_maps
+        assert not config_manager.node_configurations
 
     def test_config_reset_node(self):
         # given
@@ -82,7 +82,7 @@ class TestConf:
         config_manager.config_reset(node_id)
 
         # then
-        assert node_id not in config_manager._configuration_maps
+        assert not config_manager.has_configs(node_id)
         assert config_manager.get_configs()
 
     def test_configs_setget(self):

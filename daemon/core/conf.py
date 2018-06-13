@@ -125,7 +125,7 @@ class ConfigurableManager(object):
         """
         Creates a ConfigurableManager object.
         """
-        self._configuration_maps = {}
+        self.node_configurations = {}
 
     def nodes(self):
         """
@@ -134,7 +134,7 @@ class ConfigurableManager(object):
         :return: list of node ids
         :rtype: list
         """
-        return [node_id for node_id in self._configuration_maps.iterkeys() if node_id != self._default_node]
+        return [node_id for node_id in self.node_configurations.iterkeys() if node_id != self._default_node]
 
     def has_configs(self, node_id):
         """
@@ -144,7 +144,7 @@ class ConfigurableManager(object):
         :return: True if a node configuration exists, False otherwise
         :rtype: bool
         """
-        return node_id in self._configuration_maps
+        return node_id in self.node_configurations
 
     def config_reset(self, node_id=None):
         """
@@ -155,9 +155,9 @@ class ConfigurableManager(object):
         """
         logger.debug("resetting all configurations: %s", self.__class__.__name__)
         if not node_id:
-            self._configuration_maps.clear()
-        elif node_id in self._configuration_maps:
-            self._configuration_maps.pop(node_id)
+            self.node_configurations.clear()
+        elif node_id in self.node_configurations:
+            self.node_configurations.pop(node_id)
 
     def set_config(self, _id, value, node_id=_default_node, config_type=_default_type):
         """
@@ -225,7 +225,7 @@ class ConfigurableManager(object):
         :rtype: dict
         """
         logger.debug("getting all configs for node(%s)", node_id)
-        return self._configuration_maps.setdefault(node_id, OrderedDict())
+        return self.node_configurations.setdefault(node_id, OrderedDict())
 
 
 class ConfigurableOptions(object):
