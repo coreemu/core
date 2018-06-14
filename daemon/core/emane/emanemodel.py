@@ -3,6 +3,7 @@ Defines Emane Models used within CORE.
 """
 
 from core import logger
+from core.conf import ConfigGroup
 from core.emane import emanemanifest
 from core.misc import utils
 from core.mobility import WirelessModel
@@ -68,7 +69,10 @@ class EmaneModel(WirelessModel):
     def config_groups(cls):
         mac_len = len(cls.mac_config)
         config_len = len(cls.configurations())
-        return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
+        return [
+            ConfigGroup("MAC Parameters", 1, mac_len),
+            ConfigGroup("PHY Parameters", mac_len + 1, config_len)
+        ]
 
     def build_xml_files(self, emane_manager, interface):
         """

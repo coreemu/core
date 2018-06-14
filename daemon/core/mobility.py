@@ -9,6 +9,7 @@ import threading
 import time
 
 from core import logger
+from core.conf import ConfigGroup
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
 from core.conf import ModelManager
@@ -314,21 +315,20 @@ class BasicRangeModel(WirelessModel):
     the GUI.
     """
     name = "basic_range"
-
-    @classmethod
-    def configurations(cls):
-        return [
-            Configuration(_id="range", _type=ConfigDataTypes.UINT32, default="275", label="wireless range (pixels)"),
-            Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000", label="bandwidth (bps)"),
-            Configuration(_id="jitter", _type=ConfigDataTypes.FLOAT, default="0.0", label="transmission jitter (usec)"),
-            Configuration(_id="delay", _type=ConfigDataTypes.FLOAT, default="5000.0",
-                          label="transmission delay (usec)"),
-            Configuration(_id="error", _type=ConfigDataTypes.FLOAT, default="0.0", label="error rate (%)")
-        ]
+    options = [
+        Configuration(_id="range", _type=ConfigDataTypes.UINT32, default="275", label="wireless range (pixels)"),
+        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000", label="bandwidth (bps)"),
+        Configuration(_id="jitter", _type=ConfigDataTypes.FLOAT, default="0.0", label="transmission jitter (usec)"),
+        Configuration(_id="delay", _type=ConfigDataTypes.FLOAT, default="5000.0",
+                      label="transmission delay (usec)"),
+        Configuration(_id="error", _type=ConfigDataTypes.FLOAT, default="0.0", label="error rate (%)")
+    ]
 
     @classmethod
     def config_groups(cls):
-        return "Basic Range Parameters:1-%d" % len(cls.configurations())
+        return [
+            ConfigGroup("Basic Range Parameters", 1, len(cls.configurations()))
+        ]
 
     def __init__(self, session, object_id):
         """
@@ -907,23 +907,22 @@ class Ns2ScriptedMobility(WayPointMobility):
     BonnMotion.
     """
     name = "ns2script"
-
-    @classmethod
-    def configurations(cls):
-        return [
-            Configuration(_id="file", _type=ConfigDataTypes.STRING, label="mobility script file"),
-            Configuration(_id="refresh_ms", _type=ConfigDataTypes.UINT32, default="50", label="mobility script file"),
-            Configuration(_id="loop", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"], label="loop"),
-            Configuration(_id="autostart", _type=ConfigDataTypes.STRING, label="auto-start seconds (0.0 for runtime)"),
-            Configuration(_id="map", _type=ConfigDataTypes.STRING, label="node mapping (optional, e.g. 0:1,1:2,2:3)"),
-            Configuration(_id="script_start", _type=ConfigDataTypes.STRING, label="script file to run upon start"),
-            Configuration(_id="script_pause", _type=ConfigDataTypes.STRING, label="script file to run upon pause"),
-            Configuration(_id="script_stop", _type=ConfigDataTypes.STRING, label="script file to run upon stop")
-        ]
+    options = [
+        Configuration(_id="file", _type=ConfigDataTypes.STRING, label="mobility script file"),
+        Configuration(_id="refresh_ms", _type=ConfigDataTypes.UINT32, default="50", label="mobility script file"),
+        Configuration(_id="loop", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"], label="loop"),
+        Configuration(_id="autostart", _type=ConfigDataTypes.STRING, label="auto-start seconds (0.0 for runtime)"),
+        Configuration(_id="map", _type=ConfigDataTypes.STRING, label="node mapping (optional, e.g. 0:1,1:2,2:3)"),
+        Configuration(_id="script_start", _type=ConfigDataTypes.STRING, label="script file to run upon start"),
+        Configuration(_id="script_pause", _type=ConfigDataTypes.STRING, label="script file to run upon pause"),
+        Configuration(_id="script_stop", _type=ConfigDataTypes.STRING, label="script file to run upon stop")
+    ]
 
     @classmethod
     def config_groups(cls):
-        return "ns-2 Mobility Script Parameters:1-%d" % len(cls.configurations())
+        return [
+            ConfigGroup("ns-2 Mobility Script Parameters", 1, len(cls.configurations()))
+        ]
 
     def __init__(self, session, object_id):
         """

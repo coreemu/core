@@ -30,6 +30,21 @@ class ConfigShim(object):
         return values
 
     @classmethod
+    def groups_to_str(cls, config_groups):
+        """
+        Converts configuration groups to a TLV formatted string.
+
+        :param list[ConfigGroup] config_groups: configuration groups to format
+        :return: TLV configuration group string
+        :rtype: str
+        """
+        group_strings = []
+        for config_group in config_groups:
+            group_string = "%s:%s-%s" % (config_group.name, config_group.start, config_group.stop)
+            group_strings.append(group_string)
+        return "|".join(group_strings)
+
+    @classmethod
     def config_data(cls, flags, node_id, type_flags, configurable_options, config):
         """
         Convert this class to a Config API message. Some TLVs are defined
@@ -70,6 +85,7 @@ class ConfigShim(object):
             else:
                 key_values += "|%s" % key_value
 
+        groups_str = cls.groups_to_str(configurable_options.config_groups())
         return ConfigData(
             message_type=flags,
             node=node_id,
@@ -80,7 +96,7 @@ class ConfigShim(object):
             captions=captions,
             possible_values="|".join(possible_values),
             bitmap=configurable_options.bitmap,
-            groups=configurable_options.config_groups()
+            groups=groups_str
         )
 
 
@@ -228,12 +244,31 @@ class ConfigurableManager(object):
         return self.node_configurations.setdefault(node_id, OrderedDict())
 
 
+class ConfigGroup(object):
+    """
+    Defines configuration group tabs used for display by ConfigurationOptions.
+    """
+
+    def __init__(self, name, start, stop):
+        """
+        Creates a ConfigGroup object.
+
+        :param str name: configuration group display name
+        :param int start: configurations start index for this group
+        :param int stop: configurations stop index for this group
+        """
+        self.name = name
+        self.start = start
+        self.stop = stop
+
+
 class ConfigurableOptions(object):
     """
     Provides a base for defining configuration options within CORE.
     """
     name = None
     bitmap = None
+    options = []
     _default_node = -1
 
     @classmethod
@@ -244,7 +279,7 @@ class ConfigurableOptions(object):
         :return: configurations
         :rtype: list[Configuration]
         """
-        return []
+        return cls.options
 
     @classmethod
     def config_groups(cls):
@@ -252,9 +287,11 @@ class ConfigurableOptions(object):
         Defines how configurations are grouped.
 
         :return: configuration group definition
-        :rtype: str
+        :rtype: list[ConfigGroup]
         """
-        return None
+        return [
+            ConfigGroup("Options", 1, len(cls.configurations()))
+        ]
 
     @classmethod
     def default_values(cls):

@@ -3,6 +3,7 @@ commeffect.py: EMANE CommEffect model for CORE
 """
 
 from core import logger
+from core.conf import ConfigGroup
 from core.emane import emanemanifest
 from core.emane import emanemodel
 
@@ -41,7 +42,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
     @classmethod
     def config_groups(cls):
-        return "CommEffect SHIM Parameters:1-%d" % len(cls.configurations())
+        return [
+            ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))
+        ]
 
     def build_xml_files(self, emane_manager, interface):
         """

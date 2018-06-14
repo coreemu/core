@@ -990,7 +990,6 @@ class EmaneGlobalModel(EmaneModel):
     _DEFAULT_DEV = "ctrl0"
 
     name = "emane"
-    configuration_maps = {}
 
     emulator_xml = "/usr/share/emane/manifest/nemmanager.xml"
     emulator_defaults = {

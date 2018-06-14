@@ -1051,30 +1051,22 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     Session configuration object.
     """
     name = "session"
-    configuration_maps = {}
+    options = [
+        Configuration(_id="controlnet", _type=ConfigDataTypes.STRING, label="Control Network"),
+        Configuration(_id="controlnet0", _type=ConfigDataTypes.STRING, label="Control Network 0"),
+        Configuration(_id="controlnet1", _type=ConfigDataTypes.STRING, label="Control Network 1"),
+        Configuration(_id="controlnet2", _type=ConfigDataTypes.STRING, label="Control Network 2"),
+        Configuration(_id="controlnet3", _type=ConfigDataTypes.STRING, label="Control Network 3"),
+        Configuration(_id="controlnet_updown_script", _type=ConfigDataTypes.STRING, label="Control Network Script"),
+        Configuration(_id="enablerj45", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"],
+                      label="Enable RJ45s"),
+        Configuration(_id="preservedir", _type=ConfigDataTypes.BOOL, default="0", options=["On", "Off"],
+                      label="Preserve session dir"),
+        Configuration(_id="enablesdt", _type=ConfigDataTypes.BOOL, default="0", options=["On", "Off"],
+                      label="Enable SDT3D output"),
+        Configuration(_id="sdturl", _type=ConfigDataTypes.STRING, default=Sdt.DEFAULT_SDT_URL, label="SDT3D URL")
+    ]
     config_type = RegisterTlvs.UTILITY.value
-
-    @classmethod
-    def configurations(cls):
-        return [
-            Configuration(_id="controlnet", _type=ConfigDataTypes.STRING, label="Control Network"),
-            Configuration(_id="controlnet0", _type=ConfigDataTypes.STRING, label="Control Network 0"),
-            Configuration(_id="controlnet1", _type=ConfigDataTypes.STRING, label="Control Network 1"),
-            Configuration(_id="controlnet2", _type=ConfigDataTypes.STRING, label="Control Network 2"),
-            Configuration(_id="controlnet3", _type=ConfigDataTypes.STRING, label="Control Network 3"),
-            Configuration(_id="controlnet_updown_script", _type=ConfigDataTypes.STRING, label="Control Network Script"),
-            Configuration(_id="enablerj45", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"],
-                          label="Enable RJ45s"),
-            Configuration(_id="preservedir", _type=ConfigDataTypes.BOOL, default="0", options=["On", "Off"],
-                          label="Preserve session dir"),
-            Configuration(_id="enablesdt", _type=ConfigDataTypes.BOOL, default="0", options=["On", "Off"],
-                          label="Enable SDT3D output"),
-            Configuration(_id="sdturl", _type=ConfigDataTypes.STRING, default=Sdt.DEFAULT_SDT_URL, label="SDT3D URL")
-        ]
-
-    @classmethod
-    def config_groups(cls):
-        return "Options:1-%d" % len(cls.configurations())
 
     def __init__(self):
         super(SessionConfig, self).__init__()
@@ -1107,5 +1099,4 @@ class SessionMetaData(ConfigurableManager):
     The data is not otherwise interpreted or processed.
     """
     name = "metadata"
-    configuration_maps = {}
     config_type = RegisterTlvs.UTILITY.value

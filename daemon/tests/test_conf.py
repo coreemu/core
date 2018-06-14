@@ -1,31 +1,30 @@
 import pytest
 
-from core.conf import ConfigurableOptions, ConfigurableManager, ModelManager
+from core.conf import ConfigurableManager
+from core.conf import ConfigurableOptions
 from core.conf import Configuration
+from core.conf import ModelManager
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.enumerations import ConfigDataTypes, NodeTypes
+from core.enumerations import ConfigDataTypes
+from core.enumerations import NodeTypes
 from core.mobility import BasicRangeModel
 
 
 class TestConfigurableOptions(ConfigurableOptions):
     name_one = "value1"
     name_two = "value2"
-    configuration_maps = {}
-
-    @classmethod
-    def configurations(cls):
-        return [
-            Configuration(
-                _id=TestConfigurableOptions.name_one,
-                _type=ConfigDataTypes.STRING,
-                label=TestConfigurableOptions.name_one
-            ),
-            Configuration(
-                _id=TestConfigurableOptions.name_two,
-                _type=ConfigDataTypes.STRING,
-                label=TestConfigurableOptions.name_two
-            )
-        ]
+    options = [
+        Configuration(
+            _id=name_one,
+            _type=ConfigDataTypes.STRING,
+            label=name_one
+        ),
+        Configuration(
+            _id=name_two,
+            _type=ConfigDataTypes.STRING,
+            label=name_two
+        )
+    ]
 
 
 class TestConf:
