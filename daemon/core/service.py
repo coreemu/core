@@ -22,7 +22,7 @@ class ServiceManager(object):
     """
     Manages services available for CORE nodes to use.
     """
-    services = []
+    services = {}
 
     @classmethod
     def add(cls, service):
@@ -32,14 +32,11 @@ class ServiceManager(object):
         :param CoreService service: service to add
         :return: nothing
         """
-        insert = 0
-        for index, known_service in enumerate(cls.services):
-            if known_service._group == service._group:
-                insert = index + 1
-                break
-
         logger.info("loading service: %s", service.__name__)
-        cls.services.insert(insert, service)
+        name = service._name
+        if name in cls.services:
+            raise ValueError("duplicate service being added: %s" % name)
+        cls.services[name] = service
 
     @classmethod
     def get(cls, name):
@@ -50,10 +47,7 @@ class ServiceManager(object):
         :return: service if it exists, None otherwise
         :rtype: CoreService
         """
-        for service in cls.services:
-            if service._name == name:
-                return service
-        return None
+        return cls.services.get(name)
 
     @classmethod
     def add_services(cls, path):
@@ -89,7 +83,6 @@ class CoreServices(object):
         Creates a CoreServices instance.
 
         :param core.session.Session session: session this manager is tied to
-        :return: nothing
         """
         # ConfigurableManager.__init__(self)
         self.session = session
@@ -450,39 +443,6 @@ class CoreServices(object):
                 services.append(s)
         return services, unknown
 
-    def buildgroups(self, servicelist):
-        """
-        Build a string of groups for use in a configuration message given
-        a list of services. The group list string has the format
-        "title1:1-5|title2:6-9|10-12", where title is an optional group title
-        and i-j is a numeric range of value indices; groups are
-        separated by commas.
-
-        :param list servicelist: service list to build group string from
-        :return: groups string
-        :rtype: str
-        """
-        i = 0
-        r = ""
-        lastgroup = "<undefined>"
-        for service in servicelist:
-            i += 1
-            group = service._group
-            if group != lastgroup:
-                lastgroup = group
-                # finish previous group
-                if i > 1:
-                    r += "-%d|" % (i - 1)
-                # optionally include group title
-                if group == "":
-                    r += "%d" % i
-                else:
-                    r += "%s:%d" % (group, i)
-        # finish the last group list
-        if i > 0:
-            r += "-%d" % i
-        return r
-
     def getservicefile(self, services, node, filename):
         """
         Send a File Message when the GUI has requested a service file.
@@ -662,27 +622,40 @@ class CoreService(object):
     """
     # service name should not include spaces
     _name = ""
+
     # group string allows grouping services together
     _group = ""
+
     # list name(s) of services that this service depends upon
     _depends = ()
     keys = ["dirs", "files", "startidx", "cmdup", "cmddown", "cmdval", "meta", "starttime"]
+
     # private, per-node directories required by this service
     _dirs = ()
+
     # config files written by this service
     _configs = ()
+    # configs = []
+
     # index used to determine start order with other services
     _startindex = 0
+
     # time in seconds after runtime to run startup commands
     _starttime = ""
+
     # list of startup commands
     _startup = ()
+    # startup = []
+
     # list of shutdown commands
     _shutdown = ()
+
     # list of validate commands
     _validate = ()
+
     # metadata associated with this service
     _meta = ""
+
     # custom configuration text
     _configtxt = ()
     _custom = False
@@ -701,13 +674,13 @@ class CoreService(object):
         pass
 
     @classmethod
-    def getconfigfilenames(cls, nodenum, services):
+    def getconfigfilenames(cls, node_id, services):
         """
         Return the tuple of configuration file filenames. This default method
         returns the cls._configs tuple, but this method may be overriden to
         provide node-specific filenames that may be based on other services.
 
-        :param int nodenum: node id to get config file names for
+        :param int node_id: node id to get config file names for
         :param list services: node services
         :return: class configuration files
         :rtype: tuple

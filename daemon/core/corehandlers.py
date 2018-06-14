@@ -1068,15 +1068,42 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if opaque is None:
                 type_flag = ConfigFlags.NONE.value
                 data_types = tuple(repeat(ConfigDataTypes.BOOL.value, len(ServiceManager.services)))
-                values = "|".join(repeat('0', len(ServiceManager.services)))
-                names = map(lambda x: x._name, ServiceManager.services)
-                captions = "|".join(names)
-                possible_values = ""
-                for s in ServiceManager.services:
-                    if s._custom_needed:
-                        possible_values += '1'
-                    possible_values += '|'
-                groups = self.session.services.buildgroups(ServiceManager.services)
+
+                # sort groups by name and map services to groups
+                groups = set()
+                group_map = {}
+                for service in ServiceManager.services.itervalues():
+                    group = service._group
+                    groups.add(group)
+                    group_map.setdefault(group, []).append(service)
+                groups = sorted(groups, key=lambda x: x.lower())
+
+                # define tlv values in proper order
+                captions = []
+                possible_values = []
+                values = []
+                group_strings = []
+                start_index = 1
+                logger.info("sorted groups: %s", groups)
+                for group in groups:
+                    services = sorted(group_map[group], key=lambda x: x._name.lower())
+                    logger.info("sorted services for group(%s): %s", group, services)
+                    end_index = start_index + len(services) - 1
+                    group_strings.append("%s:%s-%s" % (group, start_index, end_index))
+                    start_index = start_index + len(services)
+                    for service in services:
+                        captions.append(service._name)
+                        values.append("0")
+                        if service._custom_needed:
+                            possible_values.append("1")
+                        else:
+                            possible_values.append("")
+
+                # format for tlv
+                captions = "|".join(captions)
+                possible_values = "|".join(possible_values)
+                values = "|".join(values)
+                groups = "|".join(group_strings)
             # send back the properties for this service
             else:
                 if not node_id:
