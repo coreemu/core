@@ -16,13 +16,13 @@ import sys
 
 import ns.core
 import ns.network
+from corens3.obj import Ns3Session
+from corens3.obj import Ns3WifiNet
 
 from core import logger
 from core.misc import ipaddress
 from core.misc import nodemaps
 from core.misc import nodeutils
-from corens3.obj import Ns3Session
-from corens3.obj import Ns3WifiNet
 
 
 def add_to_server(session):
@@ -60,7 +60,7 @@ def wifisession(opt):
         node = session.addnode(name="n%d" % i)
         node.newnetif(wifi, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         nodes.append(node)
-        session.services.addservicestonode(node, "router", services_str)
+        session.services.addservicestonode(node, "router", services_str.split("|"))
         session.services.bootnodeservices(node)
     session.setuprandomwalkmobility(bounds=(1000.0, 750.0, 0))
 

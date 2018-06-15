@@ -8,7 +8,7 @@ from core.conf import ConfigShim
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
 from core.misc.ipaddress import MacAddress
-from core.service import ServiceManager
+from core.service import ServiceManager, ServiceShim
 from core.xml import xmlutils
 
 
@@ -639,17 +639,19 @@ class CoreDocumentParser1(object):
 
         custom = service.getAttribute('custom')
         if custom and custom.lower() == 'true':
-            values = ConfigShim.str_to_dict(values)
-            self.session.services.setcustomservice(node.objid, session_service, values)
+            self.session.services.setcustomservice(node.objid, session_service.name)
+            values = ConfigShim.str_to_dict("|".join(values))
+            for key, value in values.iteritems():
+                ServiceShim.setvalue(session_service, key, value)
 
         # NOTE: if a custom service is used, setservicefile() must be
         # called after the custom service exists
         for typestr, filename, data in files:
+            svcname = typestr.split(":")[1]
             self.session.services.setservicefile(
-                nodenum=node.objid,
-                type=typestr,
+                node_id=node.objid,
+                service_name=svcname,
                 filename=filename,
-                srcname=None,
                 data=data
             )
         return str(name)
@@ -678,10 +680,13 @@ class CoreDocumentParser1(object):
             services_str = None  # default services will be added
         else:
             return
+        if services_str:
+            services_str = services_str.split("|")
+
         self.session.services.addservicestonode(
             node=node,
-            nodetype=node_type,
-            services_str=services_str
+            node_type=node_type,
+            services=services_str
         )
 
     def set_object_presentation(self, obj, element, node_type):

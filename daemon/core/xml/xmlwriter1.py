@@ -277,7 +277,7 @@ class ScenarioPlan(XmlElement):
             for svc in defaults:
                 s = self.createElement("service")
                 spn.appendChild(s)
-                s.setAttribute("name", str(svc._name))
+                s.setAttribute("name", str(svc.name))
         if defaultservices.hasChildNodes():
             self.appendChild(defaultservices)
 
@@ -680,24 +680,24 @@ class DeviceElement(NamedXmlElement):
         for svc in device_object.services:
             s = self.createElement("service")
             spn.appendChild(s)
-            s.setAttribute("name", str(svc._name))
-            s.setAttribute("startup_idx", str(svc._startindex))
-            if svc._starttime != "":
-                s.setAttribute("start_time", str(svc._starttime))
+            s.setAttribute("name", str(svc.name))
+            s.setAttribute("startup_idx", str(svc.startindex))
+            if svc.starttime != "":
+                s.setAttribute("start_time", str(svc.starttime))
             # only record service names if not a customized service
-            if not svc._custom:
+            if not svc.custom:
                 continue
-            s.setAttribute("custom", str(svc._custom))
-            xmlutils.add_elements_from_list(self, s, svc._dirs, "directory", "name")
+            s.setAttribute("custom", str(svc.custom))
+            xmlutils.add_elements_from_list(self, s, svc.dirs, "directory", "name")
 
-            for fn in svc._configs:
+            for fn in svc.configs:
                 if len(fn) == 0:
                     continue
                 f = self.createElement("file")
                 f.setAttribute("name", fn)
                 # all file names are added to determine when a file has been deleted
                 s.appendChild(f)
-                data = self.coreSession.services.getservicefiledata(svc, fn)
+                data = svc.configtxt.get(fn)
                 if data is None:
                     # this includes only customized file contents and skips
                     # the auto-generated files
@@ -705,12 +705,9 @@ class DeviceElement(NamedXmlElement):
                 txt = self.createTextNode("\n" + data)
                 f.appendChild(txt)
 
-            xmlutils.add_text_elements_from_list(self, s, svc._startup, "command",
-                                                 (("type", "start"),))
-            xmlutils.add_text_elements_from_list(self, s, svc._shutdown, "command",
-                                                 (("type", "stop"),))
-            xmlutils.add_text_elements_from_list(self, s, svc._validate, "command",
-                                                 (("type", "validate"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.startup, "command", (("type", "start"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.shutdown, "command", (("type", "stop"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.validate, "command", (("type", "validate"),))
 
 
 class ChannelElement(NamedXmlElement):

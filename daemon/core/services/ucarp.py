@@ -8,29 +8,29 @@ UCARP_ETC = "/usr/local/etc/ucarp"
 
 
 class Ucarp(CoreService):
-    _name = "ucarp"
-    _group = "Utility"
-    _depends = ( )
-    _dirs = (UCARP_ETC,)
-    _configs = (
+    name = "ucarp"
+    group = "Utility"
+    depends = ( )
+    dirs = (UCARP_ETC,)
+    configs = (
         UCARP_ETC + "/default.sh", UCARP_ETC + "/default-up.sh", UCARP_ETC + "/default-down.sh", "ucarpboot.sh",)
-    _startindex = 65
-    _startup = ("sh ucarpboot.sh",)
-    _shutdown = ("killall ucarp",)
-    _validate = ("pidof ucarp",)
+    startindex = 65
+    startup = ("sh ucarpboot.sh",)
+    shutdown = ("killall ucarp",)
+    validate = ("pidof ucarp",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
         """
         Return the default file contents
         """
-        if filename == cls._configs[0]:
+        if filename == cls.configs[0]:
             return cls.generateUcarpConf(node, services)
-        elif filename == cls._configs[1]:
+        elif filename == cls.configs[1]:
             return cls.generateVipUp(node, services)
-        elif filename == cls._configs[2]:
+        elif filename == cls.configs[2]:
             return cls.generateVipDown(node, services)
-        elif filename == cls._configs[3]:
+        elif filename == cls.configs[3]:
             return cls.generateUcarpBoot(node, services)
         else:
             raise ValueError

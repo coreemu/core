@@ -101,7 +101,7 @@ def run_cmd(node, exec_cmd):
 
 
 class TestGui:
-    def test_broker(self, session, cored):
+    def test_broker(self, cored):
         """
         Test session broker creation.
 
@@ -119,6 +119,7 @@ class TestGui:
         daemon = "localhost"
 
         # add server
+        session = cored.server.coreemu.create_session()
         session.broker.addserver(daemon, "127.0.0.1", CORE_API_PORT)
 
         # setup server

@@ -7,7 +7,6 @@ import os
 import pytest
 from mock.mock import MagicMock
 
-from core import services
 from core.api.coreapi import CoreConfMessage
 from core.api.coreapi import CoreEventMessage
 from core.api.coreapi import CoreExecMessage
@@ -29,6 +28,7 @@ from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
 from core.misc import ipaddress
 from core.misc.ipaddress import MacAddress
+from core.service import ServiceManager
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
@@ -199,6 +199,7 @@ class CoreServerTest(object):
         self.request_handler.handle_message(message)
 
     def shutdown(self):
+        self.server.coreemu.shutdown()
         self.server.shutdown()
         self.server.server_close()
 
@@ -223,6 +224,9 @@ def session():
     # shutdown coreemu
     coreemu.shutdown()
 
+    # clear services, since they will be reloaded
+    ServiceManager.services.clear()
+
 
 @pytest.fixture(scope="module")
 def ip_prefixes():
@@ -231,15 +235,17 @@ def ip_prefixes():
 
 @pytest.fixture()
 def cored():
-    # load default services
-    services.load()
-
     # create and return server
     server = CoreServerTest()
     yield server
 
     # cleanup
     server.shutdown()
+
+    #
+
+    # cleanup services
+    ServiceManager.services.clear()
 
 
 def ping(from_node, to_node, ip_prefixes, count=3):

@@ -9,14 +9,14 @@ from core.service import CoreService
 
 
 class VPNClient(CoreService):
-    _name = "VPNClient"
-    _group = "Security"
-    _configs = ('vpnclient.sh',)
-    _startindex = 60
-    _startup = ('sh vpnclient.sh',)
-    _shutdown = ("killall openvpn",)
-    _validate = ("pidof openvpn",)
-    _custom_needed = True
+    name = "VPNClient"
+    group = "Security"
+    configs = ('vpnclient.sh',)
+    startindex = 60
+    startup = ('sh vpnclient.sh',)
+    shutdown = ("killall openvpn",)
+    validate = ("pidof openvpn",)
+    custom_needed = True
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -36,14 +36,14 @@ class VPNClient(CoreService):
 
 
 class VPNServer(CoreService):
-    _name = "VPNServer"
-    _group = "Security"
-    _configs = ('vpnserver.sh',)
-    _startindex = 50
-    _startup = ('sh vpnserver.sh',)
-    _shutdown = ("killall openvpn",)
-    _validate = ("pidof openvpn",)
-    _custom_needed = True
+    name = "VPNServer"
+    group = "Security"
+    configs = ('vpnserver.sh',)
+    startindex = 50
+    startup = ('sh vpnserver.sh',)
+    shutdown = ("killall openvpn",)
+    validate = ("pidof openvpn",)
+    custom_needed = True
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -64,13 +64,13 @@ class VPNServer(CoreService):
 
 
 class IPsec(CoreService):
-    _name = "IPsec"
-    _group = "Security"
-    _configs = ('ipsec.sh',)
-    _startindex = 60
-    _startup = ('sh ipsec.sh',)
-    _shutdown = ("killall racoon",)
-    _custom_needed = True
+    name = "IPsec"
+    group = "Security"
+    configs = ('ipsec.sh',)
+    startindex = 60
+    startup = ('sh ipsec.sh',)
+    shutdown = ("killall racoon",)
+    custom_needed = True
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -92,12 +92,12 @@ class IPsec(CoreService):
 
 
 class Firewall(CoreService):
-    _name = "Firewall"
-    _group = "Security"
-    _configs = ('firewall.sh',)
-    _startindex = 20
-    _startup = ('sh firewall.sh',)
-    _custom_needed = True
+    name = "Firewall"
+    group = "Security"
+    configs = ('firewall.sh',)
+    startindex = 20
+    startup = ('sh firewall.sh',)
+    custom_needed = True
 
     @classmethod
     def generateconfig(cls, node, filename, services):

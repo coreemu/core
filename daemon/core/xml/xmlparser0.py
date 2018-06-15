@@ -4,7 +4,7 @@ from core import logger
 from core.conf import ConfigShim
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
-from core.service import ServiceManager
+from core.service import ServiceManager, ServiceShim
 from core.xml import xmlutils
 
 
@@ -316,7 +316,10 @@ class CoreDocumentParser0(object):
         # associate nodes with services
         for objid in sorted(svclists.keys()):
             n = self.session.get_object(objid)
-            self.session.services.addservicestonode(node=n, nodetype=n.type, services_str=svclists[objid])
+            services = svclists[objid]
+            if services:
+                services = services.split("|")
+            self.session.services.addservicestonode(node=n, node_type=n.type, services=services)
 
     def parseservice(self, service, n):
         """
@@ -367,16 +370,20 @@ class CoreDocumentParser0(object):
             filename = file.getAttribute("name")
             files.append(filename)
             data = xmlutils.get_text_child(file)
-            typestr = "service:%s:%s" % (name, filename)
-            self.session.services.setservicefile(nodenum=n.objid, type=typestr,
-                                                 filename=filename,
-                                                 srcname=None, data=data)
+            self.session.services.setservicefile(node_id=n.objid, service_name=name, filename=filename, data=data)
+
         if len(files):
             values.append("files=%s" % files)
         if not bool(service.getAttribute("custom")):
             return True
-        values = ConfigShim.str_to_dict(values)
-        self.session.services.setcustomservice(n.objid, svc, values)
+        self.session.services.setcustomservice(n.objid, svc)
+        # set custom values for custom service
+        svc = self.session.services.getcustomservice(n.objid, None)
+        if not svc:
+            raise ValueError("custom service(%s) for node(%s) does not exist", svc.name, n.objid)
+        values = ConfigShim.str_to_dict("|".join(values))
+        for name, value in values.iteritems():
+            ServiceShim.setvalue(svc, name, value)
         return True
 
     def parsehooks(self, hooks):

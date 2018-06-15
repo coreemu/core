@@ -507,8 +507,7 @@ class EmuSession(Session):
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             node.type = node_options.model
             logger.debug("set node type: %s", node.type)
-            services = "|".join(node_options.services) or None
-            self.services.addservicestonode(node, node.type, services)
+            self.services.addservicestonode(node, node.type, node_options.services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
         is_boot_node = isinstance(node, PyCoreNode) and not nodeutils.is_node(node, NodeTypes.RJ45)
@@ -697,21 +696,6 @@ class EmuSession(Session):
         state = ":%s" % state
         self.set_hook(state, file_name, source_name, data)
 
-    def add_node_service_file(self, node_id, service_name, file_name, source_name, data):
-        """
-        Add a service file for a node.
-
-        :param int node_id: node to add service file to
-        :param str service_name: service file to add
-        :param str file_name: file name to use
-        :param str source_name: source file
-        :param str data: file data to save
-        :return: nothing
-        """
-        # hack to conform with old logic until updated
-        service_name = ":%s" % service_name
-        self.services.setservicefile(node_id, service_name, file_name, source_name, data)
-
     def add_node_file(self, node_id, source_name, file_name, data):
         """
         Add a file to a node.
@@ -748,15 +732,6 @@ class EmuSession(Session):
         :return: nothing
         """
         self.event_loop.run()
-
-    def services_event(self, event_data):
-        """
-        Handle a service event.
-
-        :param core.data.EventData event_data: event data to handle
-        :return:
-        """
-        self.services.handleevent(event_data)
 
     def mobility_event(self, event_data):
         """

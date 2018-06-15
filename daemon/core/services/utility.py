@@ -16,14 +16,14 @@ class UtilService(CoreService):
     """
     Parent class for utility services.
     """
-    _name = None
-    _group = "Utility"
-    _depends = ()
-    _dirs = ()
-    _configs = ()
-    _startindex = 80
-    _startup = ()
-    _shutdown = ()
+    name = None
+    group = "Utility"
+    depends = ()
+    dirs = ()
+    configs = ()
+    startindex = 80
+    startup = ()
+    shutdown = ()
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -31,10 +31,10 @@ class UtilService(CoreService):
 
 
 class IPForwardService(UtilService):
-    _name = "IPForward"
-    _configs = ("ipforward.sh",)
-    _startindex = 5
-    _startup = ("sh ipforward.sh",)
+    name = "IPForward"
+    configs = ("ipforward.sh",)
+    startindex = 5
+    startup = ("sh ipforward.sh",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -67,9 +67,9 @@ class IPForwardService(UtilService):
 
 
 class DefaultRouteService(UtilService):
-    _name = "DefaultRoute"
-    _configs = ("defaultroute.sh",)
-    _startup = ("sh defaultroute.sh",)
+    name = "DefaultRoute"
+    configs = ("defaultroute.sh",)
+    startup = ("sh defaultroute.sh",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -101,9 +101,9 @@ class DefaultRouteService(UtilService):
 
 
 class DefaultMulticastRouteService(UtilService):
-    _name = "DefaultMulticastRoute"
-    _configs = ("defaultmroute.sh",)
-    _startup = ("sh defaultmroute.sh",)
+    name = "DefaultMulticastRoute"
+    configs = ("defaultmroute.sh",)
+    startup = ("sh defaultmroute.sh",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -113,7 +113,7 @@ class DefaultMulticastRouteService(UtilService):
         cfg += "as needed\n"
 
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             if os.uname()[0] == "Linux":
                 rtcmd = "ip route add 224.0.0.0/4 dev"
@@ -126,10 +126,10 @@ class DefaultMulticastRouteService(UtilService):
 
 
 class StaticRouteService(UtilService):
-    _name = "StaticRoute"
-    _configs = ("staticroute.sh",)
-    _startup = ("sh staticroute.sh",)
-    _custom_needed = True
+    name = "StaticRoute"
+    configs = ("staticroute.sh",)
+    startup = ("sh staticroute.sh",)
+    custom_needed = True
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -165,12 +165,12 @@ class StaticRouteService(UtilService):
 
 
 class SshService(UtilService):
-    _name = "SSH"
-    _configs = ("startsshd.sh", "/etc/ssh/sshd_config",)
-    _dirs = ("/etc/ssh", "/var/run/sshd",)
-    _startup = ("sh startsshd.sh",)
-    _shutdown = ("killall sshd",)
-    _validate = ()
+    name = "SSH"
+    configs = ("startsshd.sh", "/etc/ssh/sshd_config",)
+    dirs = ("/etc/ssh", "/var/run/sshd",)
+    startup = ("sh startsshd.sh",)
+    shutdown = ("killall sshd",)
+    validate = ()
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -178,8 +178,8 @@ class SshService(UtilService):
         Use a startup script for launching sshd in order to wait for host
         key generation.
         """
-        sshcfgdir = cls._dirs[0]
-        sshstatedir = cls._dirs[1]
+        sshcfgdir = cls.dirs[0]
+        sshstatedir = cls.dirs[1]
         sshlibdir = "/usr/lib/openssh"
         if filename == "startsshd.sh":
             return """\
@@ -233,12 +233,12 @@ UseDNS no
 
 
 class DhcpService(UtilService):
-    _name = "DHCP"
-    _configs = ("/etc/dhcp/dhcpd.conf",)
-    _dirs = ("/etc/dhcp",)
-    _startup = ("dhcpd",)
-    _shutdown = ("killall dhcpd",)
-    _validate = ("pidof dhcpd",)
+    name = "DHCP"
+    configs = ("/etc/dhcp/dhcpd.conf",)
+    dirs = ("/etc/dhcp",)
+    startup = ("dhcpd",)
+    shutdown = ("killall dhcpd",)
+    validate = ("pidof dhcpd",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -296,11 +296,11 @@ class DhcpClientService(UtilService):
     """
     Use a DHCP client for all interfaces for addressing.
     """
-    _name = "DHCPClient"
-    _configs = ("startdhcpclient.sh",)
-    _startup = ("sh startdhcpclient.sh",)
-    _shutdown = ("killall dhclient",)
-    _validate = ("pidof dhclient",)
+    name = "DHCPClient"
+    configs = ("startdhcpclient.sh",)
+    startup = ("sh startdhcpclient.sh",)
+    shutdown = ("killall dhclient",)
+    validate = ("pidof dhclient",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -327,12 +327,12 @@ class FtpService(UtilService):
     """
     Start a vsftpd server.
     """
-    _name = "FTP"
-    _configs = ("vsftpd.conf",)
-    _dirs = ("/var/run/vsftpd/empty", "/var/ftp",)
-    _startup = ("vsftpd ./vsftpd.conf",)
-    _shutdown = ("killall vsftpd",)
-    _validate = ("pidof vsftpd",)
+    name = "FTP"
+    configs = ("vsftpd.conf",)
+    dirs = ("/var/run/vsftpd/empty", "/var/ftp",)
+    startup = ("vsftpd ./vsftpd.conf",)
+    shutdown = ("killall vsftpd",)
+    validate = ("pidof vsftpd",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -359,14 +359,14 @@ class HttpService(UtilService):
     """
     Start an apache server.
     """
-    _name = "HTTP"
-    _configs = ("/etc/apache2/apache2.conf", "/etc/apache2/envvars",
-                "/var/www/index.html",)
-    _dirs = ("/etc/apache2", "/var/run/apache2", "/var/log/apache2",
-             "/run/lock", "/var/lock/apache2", "/var/www",)
-    _startup = ("chown www-data /var/lock/apache2", "apache2ctl start",)
-    _shutdown = ("apache2ctl stop",)
-    _validate = ("pidof apache2",)
+    name = "HTTP"
+    configs = ("/etc/apache2/apache2.conf", "/etc/apache2/envvars",
+               "/var/www/index.html",)
+    dirs = ("/etc/apache2", "/var/run/apache2", "/var/log/apache2",
+            "/run/lock", "/var/lock/apache2", "/var/www",)
+    startup = ("chown www-data /var/lock/apache2", "apache2ctl start",)
+    shutdown = ("apache2ctl stop",)
+    validate = ("pidof apache2",)
 
     APACHEVER22, APACHEVER24 = (22, 24)
 
@@ -375,11 +375,11 @@ class HttpService(UtilService):
         """
         Generate an apache2.conf configuration file.
         """
-        if filename == cls._configs[0]:
+        if filename == cls.configs[0]:
             return cls.generateapache2conf(node, filename, services)
-        elif filename == cls._configs[1]:
+        elif filename == cls.configs[1]:
             return cls.generateenvvars(node, filename, services)
-        elif filename == cls._configs[2]:
+        elif filename == cls.configs[2]:
             return cls.generatehtml(node, filename, services)
         else:
             return ""
@@ -561,7 +561,7 @@ export LANG
 <p>The web server software is running but no content has been added, yet.</p>
 """ % node.name
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             body += "<li>%s - %s</li>\n" % (ifc.name, ifc.addrlist)
         return "<html><body>%s</body></html>" % body
@@ -571,14 +571,14 @@ class PcapService(UtilService):
     """
     Pcap service for logging packets.
     """
-    _name = "pcap"
-    _configs = ("pcap.sh",)
-    _dirs = ()
-    _startindex = 1
-    _startup = ("sh pcap.sh start",)
-    _shutdown = ("sh pcap.sh stop",)
-    _validate = ("pidof tcpdump",)
-    _meta = "logs network traffic to pcap packet capture files"
+    name = "pcap"
+    configs = ("pcap.sh",)
+    dirs = ()
+    startindex = 1
+    startup = ("sh pcap.sh start",)
+    shutdown = ("sh pcap.sh stop",)
+    validate = ("pidof tcpdump",)
+    meta = "logs network traffic to pcap packet capture files"
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -595,7 +595,7 @@ if [ "x$1" = "xstart" ]; then
 
 """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 cfg += '# '
             redir = "< /dev/null"
             cfg += "tcpdump ${DUMPOPTS} -w %s.%s.pcap -i %s %s &\n" % \
@@ -611,12 +611,12 @@ fi;
 
 
 class RadvdService(UtilService):
-    _name = "radvd"
-    _configs = ("/etc/radvd/radvd.conf",)
-    _dirs = ("/etc/radvd",)
-    _startup = ("radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log",)
-    _shutdown = ("pkill radvd",)
-    _validate = ("pidof radvd",)
+    name = "radvd"
+    configs = ("/etc/radvd/radvd.conf",)
+    dirs = ("/etc/radvd",)
+    startup = ("radvd -C /etc/radvd/radvd.conf -m logfile -l /var/log/radvd.log",)
+    shutdown = ("pkill radvd",)
+    validate = ("pidof radvd",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -626,7 +626,7 @@ class RadvdService(UtilService):
         """
         cfg = "# auto-generated by RADVD service (utility.py)\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, 'control') and ifc.control is True:
                 continue
             prefixes = map(cls.subnetentry, ifc.addrlist)
             if len(prefixes) < 1:
@@ -671,11 +671,11 @@ class AtdService(UtilService):
     """
     Atd service for scheduling at jobs
     """
-    _name = "atd"
-    _configs = ("startatd.sh",)
-    _dirs = ("/var/spool/cron/atjobs", "/var/spool/cron/atspool")
-    _startup = ("sh startatd.sh",)
-    _shutdown = ("pkill atd",)
+    name = "atd"
+    configs = ("startatd.sh",)
+    dirs = ("/var/spool/cron/atjobs", "/var/spool/cron/atspool")
+    startup = ("sh startatd.sh",)
+    shutdown = ("pkill atd",)
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -692,6 +692,6 @@ class UserDefinedService(UtilService):
     """
     Dummy service allowing customization of anything.
     """
-    _name = "UserDefined"
-    _startindex = 50
-    _meta = "Customize this service to do anything upon startup."
+    name = "UserDefined"
+    startindex = 50
+    meta = "Customize this service to do anything upon startup."

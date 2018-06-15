@@ -15,10 +15,8 @@ from core.enumerations import NodeTypes
 from core.mobility import BasicRangeModel
 from core.mobility import Ns2ScriptedMobility
 from core.netns.vnodeclient import VnodeClient
-from core.service import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
-_SERVICES_PATH = os.path.join(_PATH, "myservices")
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
 _WIRED = [
     NodeTypes.PEER_TO_PEER,
@@ -51,16 +49,6 @@ def ping(from_node, to_node, ip_prefixes):
 
 
 class TestCore:
-    def test_import_service(self):
-        """
-        Test importing a custom service.
-
-        :param conftest.Core core: core fixture to test with
-        """
-        ServiceManager.add_services(_SERVICES_PATH)
-        assert ServiceManager.get("MyService")
-        assert ServiceManager.get("MyService2")
-
     @pytest.mark.parametrize("net_type", _WIRED)
     def test_wired_ping(self, session, net_type, ip_prefixes):
         """

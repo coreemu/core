@@ -6,22 +6,22 @@ from core.service import CoreService
 
 
 class MyService(CoreService):
-    _name = "MyService"
-    _group = "Utility"
-    _depends = ()
-    _dirs = ()
-    _configs = ('myservice.sh',)
-    _startindex = 50
-    _startup = ('sh myservice.sh',)
-    _shutdown = ()
+    name = "MyService"
+    group = "Utility"
+    depends = ()
+    dirs = ()
+    configs = ('myservice.sh',)
+    startindex = 50
+    startup = ('sh myservice.sh',)
+    shutdown = ()
 
 
 class MyService2(CoreService):
-    _name = "MyService2"
-    _group = "Utility"
-    _depends = ()
-    _dirs = ()
-    _configs = ('myservice.sh',)
-    _startindex = 50
-    _startup = ('sh myservice.sh',)
-    _shutdown = ()
+    name = "MyService2"
+    group = "Utility"
+    depends = ()
+    dirs = ()
+    configs = ('myservice.sh',)
+    startindex = 50
+    startup = ('sh myservice.sh',)
+    shutdown = ()

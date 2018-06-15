@@ -218,7 +218,7 @@ class PyCoreObj(object):
         if hasattr(self, "services") and len(self.services) != 0:
             nodeservices = []
             for s in self.services:
-                nodeservices.append(s._name)
+                nodeservices.append(s.name)
             services = "|".join(nodeservices)
 
         node_data = NodeData(

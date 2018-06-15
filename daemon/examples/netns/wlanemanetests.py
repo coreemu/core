@@ -429,8 +429,7 @@ class Experiment(object):
                 self.net.link(prev.netif(0), tmp.netif(0))
             prev = tmp
 
-    def createemanesession(self, numnodes, verbose=False, cls=None,
-                           values=None):
+    def createemanesession(self, numnodes, verbose=False, cls=None, values=None):
         """ Build a topology consisting of the given number of LxcNodes
             connected to an EMANE WLAN.
         """

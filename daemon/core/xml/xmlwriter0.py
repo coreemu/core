@@ -284,7 +284,7 @@ class CoreDocumentWriter0(Document):
             for svc in defaults:
                 s = self.createElement("Service")
                 spn.appendChild(s)
-                s.setAttribute("name", str(svc._name))
+                s.setAttribute("name", str(svc.name))
 
     def addservices(self, node):
         """
@@ -302,17 +302,17 @@ class CoreDocumentWriter0(Document):
         for svc in node.services:
             s = self.createElement("Service")
             spn.appendChild(s)
-            s.setAttribute("name", str(svc._name))
-            s.setAttribute("startup_idx", str(svc._startindex))
-            if svc._starttime != "":
-                s.setAttribute("start_time", str(svc._starttime))
+            s.setAttribute("name", str(svc.name))
+            s.setAttribute("startup_idx", str(svc.startindex))
+            if svc.starttime != "":
+                s.setAttribute("start_time", str(svc.starttime))
             # only record service names if not a customized service
-            if not svc._custom:
+            if not svc.custom:
                 continue
-            s.setAttribute("custom", str(svc._custom))
-            xmlutils.add_elements_from_list(self, s, svc._dirs, "Directory", "name")
+            s.setAttribute("custom", str(svc.custom))
+            xmlutils.add_elements_from_list(self, s, svc.dirs, "Directory", "name")
 
-            for fn in svc._configs:
+            for fn in svc.configs:
                 if len(fn) == 0:
                     continue
                 f = self.createElement("File")
@@ -327,9 +327,9 @@ class CoreDocumentWriter0(Document):
                 txt = self.createTextNode(data)
                 f.appendChild(txt)
 
-            xmlutils.add_text_elements_from_list(self, s, svc._startup, "Command", (("type", "start"),))
-            xmlutils.add_text_elements_from_list(self, s, svc._shutdown, "Command", (("type", "stop"),))
-            xmlutils.add_text_elements_from_list(self, s, svc._validate, "Command", (("type", "validate"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.startup, "Command", (("type", "start"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.shutdown, "Command", (("type", "stop"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.validate, "Command", (("type", "validate"),))
 
     def addaddresses(self, i, netif):
         """

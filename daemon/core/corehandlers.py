@@ -42,8 +42,8 @@ from core.enumerations import SessionTlvs
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
-from core.service import CoreService
 from core.service import ServiceManager
+from core.service import ServiceShim
 
 
 class CoreHandler(SocketServer.BaseRequestHandler):
@@ -1072,10 +1072,10 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 # sort groups by name and map services to groups
                 groups = set()
                 group_map = {}
-                for service in ServiceManager.services.itervalues():
-                    group = service._group
+                for service_name in ServiceManager.services.itervalues():
+                    group = service_name.group
                     groups.add(group)
-                    group_map.setdefault(group, []).append(service)
+                    group_map.setdefault(group, []).append(service_name)
                 groups = sorted(groups, key=lambda x: x.lower())
 
                 # define tlv values in proper order
@@ -1086,15 +1086,15 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 start_index = 1
                 logger.info("sorted groups: %s", groups)
                 for group in groups:
-                    services = sorted(group_map[group], key=lambda x: x._name.lower())
+                    services = sorted(group_map[group], key=lambda x: x.name.lower())
                     logger.info("sorted services for group(%s): %s", group, services)
                     end_index = start_index + len(services) - 1
                     group_strings.append("%s:%s-%s" % (group, start_index, end_index))
-                    start_index = start_index + len(services)
-                    for service in services:
-                        captions.append(service._name)
+                    start_index += len(services)
+                    for service_name in services:
+                        captions.append(service_name.name)
                         values.append("0")
-                        if service._custom_needed:
+                        if service_name.custom_needed:
                             possible_values.append("1")
                         else:
                             possible_values.append("")
@@ -1111,30 +1111,31 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
                 node = self.session.get_object(node_id)
                 if node is None:
-                    logger.warn("Request to configure service for unknown node %s", node_id)
+                    logger.warn("request to configure service for unknown node %s", node_id)
                     return replies
-                servicesstring = opaque.split(':')
-                services, unknown = self.session.services.servicesfromopaque(opaque, node.objid)
-                for u in unknown:
-                    logger.warn("Request for unknown service '%s'" % u)
 
+                services = ServiceShim.servicesfromopaque(opaque)
                 if not services:
                     return replies
 
+                servicesstring = opaque.split(":")
                 if len(servicesstring) == 3:
                     # a file request: e.g. "service:zebra:quagga.conf"
-                    file_data = self.session.services.getservicefile(services, node, servicesstring[2])
+                    file_name = servicesstring[2]
+                    service_name = services[0]
+                    file_data = self.session.services.getservicefile(service_name, node, file_name, services)
                     self.session.broadcast_file(file_data)
                     # short circuit this request early to avoid returning response below
                     return replies
 
                 # the first service in the list is the one being configured
-                svc = services[0]
+                service_name = services[0]
                 # send back:
                 # dirs, configs, startindex, startup, shutdown, metadata, config
                 type_flag = ConfigFlags.UPDATE.value
-                data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(svc.keys)))
-                values = svc.tovaluelist(node, services)
+                data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
+                service = self.session.services.getcustomservice(node_id, service_name, default_service=True)
+                values = ServiceShim.tovaluelist(service, node, services)
                 captions = None
                 possible_values = None
                 groups = None
@@ -1173,15 +1174,21 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     self.session.services.defaultservices[key] = values
                     logger.debug("default services for type %s set to %s", key, values)
                 elif node_id:
-                    # store service customized config in self.customservices[]
-                    services, unknown = self.session.services.servicesfromopaque(opaque, node_id)
-                    for u in unknown:
-                        logger.warn("request for unknown service: %s", u)
-
+                    services = ServiceShim.servicesfromopaque(opaque)
                     if services:
-                        svc = services[0]
+                        service_name = services[0]
+
+                        # set custom service for node
+                        self.session.services.setcustomservice(node_id, service_name)
+
+                        # set custom values for custom service
+                        service = self.session.services.getcustomservice(node_id, service_name)
+                        if not service:
+                            raise ValueError("custom service(%s) for node(%s) does not exist", service_name, node_id)
+
                         values = ConfigShim.str_to_dict(values)
-                        self.session.services.setcustomservice(node_id, svc, values)
+                        for name, value in values.iteritems():
+                            ServiceShim.setvalue(service, name, value)
 
         return replies
 
@@ -1324,7 +1331,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if file_type is not None:
                 if file_type.startswith("service:"):
                     _, service_name = file_type.split(':')[:2]
-                    self.session.add_node_service_file(node_num, service_name, file_name, source_name, data)
+                    self.session.services.setservicefile(node_num, service_name, file_name, data)
                     return ()
                 elif file_type.startswith("hook:"):
                     _, state = file_type.split(':')[:2]
@@ -1430,7 +1437,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 # TODO: register system for event message handlers,
                 # like confobjs
                 if name.startswith("service:"):
-                    self.session.services_event(event_data)
+                    self.handle_service_event(event_data)
                     handled = True
                 elif name.startswith("mobility:"):
                     self.session.mobility_event(event_data)
@@ -1462,6 +1469,72 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             logger.warn("unhandled event message: event type %s", event_type)
 
         return ()
+
+    def handle_service_event(self, event_data):
+        """
+        Handle an Event Message used to start, stop, restart, or validate
+        a service on a given node.
+
+        :param EventData event_data: event data to handle
+        :return: nothing
+        """
+        event_type = event_data.event_type
+        node_id = event_data.node
+        name = event_data.name
+
+        try:
+            node = self.session.get_object(node_id)
+        except KeyError:
+            logger.warn("ignoring event for service '%s', unknown node '%s'", name, node_id)
+            return
+
+        fail = ""
+        unknown = []
+        services = ServiceShim.servicesfromopaque(name)
+        for service_name in services:
+            service = self.session.services.getcustomservice(node_id, service_name, default_service=True)
+            if not service:
+                unknown.append(service_name)
+                continue
+
+            if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
+                status = self.session.services.stopnodeservice(node, service)
+                if status != "0":
+                    fail += "Stop %s," % service.name
+            if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
+                status = self.session.services.node_service_startup(node, service, services)
+                if status != "0":
+                    fail += "Start %s(%s)," % service.name
+            if event_type == EventTypes.PAUSE.value:
+                status = self.session.services.validatenodeservice(node, service, services)
+                if status != 0:
+                    fail += "%s," % service.name
+            if event_type == EventTypes.RECONFIGURE.value:
+                self.session.services.node_service_reconfigure(node, service, services)
+
+        fail_data = ""
+        if len(fail) > 0:
+            fail_data += "Fail:" + fail
+        unknown_data = ""
+        num = len(unknown)
+        if num > 0:
+            for u in unknown:
+                unknown_data += u
+                if num > 1:
+                    unknown_data += ", "
+                num -= 1
+            logger.warn("Event requested for unknown service(s): %s", unknown_data)
+            unknown_data = "Unknown:" + unknown_data
+
+        event_data = EventData(
+            node=node_id,
+            event_type=event_type,
+            name=name,
+            data=fail_data + ";" + unknown_data,
+            time="%s" % time.time()
+        )
+
+        self.session.broadcast_event(event_data)
 
     def handle_session_message(self, message):
         """
@@ -1620,10 +1693,10 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # service customizations
         service_configs = self.session.services.getallconfigs()
         for node_id, service in service_configs:
-            opaque = "service:%s" % service._name
-            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(CoreService.keys)))
+            opaque = "service:%s" % service.name
+            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
             node = self.session.get_object(node_id)
-            values = CoreService.tovaluelist(node, node.services)
+            values = ServiceShim.tovaluelist(service, node, node.services)
             config_data = ConfigData(
                 message_type=0,
                 node=node_id,
