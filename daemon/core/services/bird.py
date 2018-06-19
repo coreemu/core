@@ -10,6 +10,7 @@ class Bird(CoreService):
     Bird router support
     """
     name = "bird"
+    executables = ("bird",)
     group = "BIRD"
     depends = ()
     dirs = ("/etc/bird",)
@@ -91,6 +92,7 @@ class BirdService(CoreService):
     """
 
     name = None
+    executables = ("bird",)
     group = "BIRD"
     depends = ("bird",)
     dirs = ()

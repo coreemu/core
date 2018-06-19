@@ -17,13 +17,13 @@ from core import logger
 from core.api import coreapi
 from core.api import dataconversion
 from core.conf import ConfigShim
-from core.data import ConfigData
+from core.data import ConfigData, ExceptionData
 from core.data import EventData
 from core.data import FileData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import ConfigDataTypes
+from core.enumerations import ConfigDataTypes, ExceptionLevels
 from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
@@ -551,6 +551,14 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # set initial session state
         self.session.set_state(EventTypes.DEFINITION_STATE)
 
+        # send service errors, if present
+        if self.coreemu.service_errors:
+            self.send_exception(
+                ExceptionLevels.ERROR,
+                "ServiceManager.load()",
+                "Failed to load services: %s" % " ".join(self.coreemu.service_errors)
+            )
+
         while True:
             try:
                 message = self.receive_message()
@@ -578,6 +586,26 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
                 logger.debug("BROADCAST TO OTHER CLIENT: %s", client)
                 client.sendall(message.raw_message)
+
+    def send_exception(self, level, source, text, node=None):
+        """
+        Sends an exception for display within the GUI.
+
+        :param core.enumerations.ExceptionLevel level: level for exception
+        :param str source: source where exception came from
+        :param str text: details about exception
+        :param int node: node id, if related to a specific node
+        :return:
+        """
+        exception_data = ExceptionData(
+            session=str(self.session.session_id),
+            node=node,
+            date=time.ctime(),
+            level=level.value,
+            source=source,
+            text=text
+        )
+        self.handle_broadcast_exception(exception_data)
 
     def add_session_handlers(self):
         logger.debug("adding session broadcast handlers")

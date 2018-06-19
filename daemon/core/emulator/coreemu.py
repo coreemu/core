@@ -15,6 +15,7 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodemaps
 from core.misc import nodeutils
+from core.service import ServiceManager
 from core.session import Session
 from core.xml.xmlparser import core_document_parser
 from core.xml.xmlwriter import core_document_writer
@@ -813,11 +814,25 @@ class CoreEmu(object):
         node_map = nodemaps.NODES
         nodeutils.set_node_map(node_map)
 
-        # load default services
-        core.services.load()
+        # load services
+        self.service_errors = []
+        self.load_services()
 
         # catch exit event
         atexit.register(self.shutdown)
+
+    def load_services(self):
+        # load default services
+        self.service_errors = core.services.load()
+
+        # load custom services
+        service_paths = self.config.get("custom_services_dir")
+        logger.debug("custom service paths: %s", service_paths)
+        if service_paths:
+            for service_path in service_paths.split(','):
+                service_path = service_path.strip()
+                custom_service_errors = ServiceManager.add_services(service_path)
+                self.service_errors.extend(custom_service_errors)
 
     def update_nodes(self, node_map):
         """

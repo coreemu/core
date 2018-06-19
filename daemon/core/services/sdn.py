@@ -11,14 +11,8 @@ class SdnService(CoreService):
     """
     Parent class for SDN services.
     """
-    name = None
     group = "SDN"
-    depends = ()
-    dirs = ()
-    configs = ()
     startindex = 50
-    startup = ()
-    shutdown = ()
 
     @classmethod
     def generateconfig(cls, node, filename, services):
@@ -27,6 +21,7 @@ class SdnService(CoreService):
 
 class OvsService(SdnService):
     name = "OvsService"
+    executables = ("ovs-ofctl", "ovs-vsctl")
     group = "SDN"
     depends = ()
     dirs = ("/etc/openvswitch", "/var/run/openvswitch", "/var/log/openvswitch")
@@ -101,6 +96,7 @@ class OvsService(SdnService):
 
 class RyuService(SdnService):
     name = "ryuService"
+    executables = ("ryu-manager",)
     group = "SDN"
     depends = ()
     dirs = ()

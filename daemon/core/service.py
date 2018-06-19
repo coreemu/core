@@ -7,6 +7,8 @@ a list of available services to the GUI and for configuring individual
 services.
 """
 
+from core.constants import which
+
 from core import CoreCommandError
 from core import logger
 from core.data import FileData
@@ -126,8 +128,18 @@ class ServiceManager(object):
         """
         logger.info("loading service: %s", service.__name__)
         name = service.name
+
+        # avoid duplicate services
         if name in cls.services:
             raise ValueError("duplicate service being added: %s" % name)
+
+        # validate dependent executables are present
+        for executable in service.executables:
+            if not which(executable):
+                logger.error("service(%s) missing executable: %s", service.name, executable)
+                raise ValueError("service(%s) missing executable: %s" % (service.name, executable))
+
+        # make service available
         cls.services[name] = service
 
     @classmethod
@@ -147,15 +159,22 @@ class ServiceManager(object):
         Method for retrieving all CoreServices from a given path.
 
         :param str path: path to retrieve services from
-        :return: list of core services
-        :rtype: list
+        :return: list of core services that failed to load
+        :rtype: list[str]
         """
+        service_errors = []
         services = utils.load_classes(path, CoreService)
         for service in services:
             if not service.name:
                 continue
             service.on_load()
-            cls.add(service)
+
+            try:
+                cls.add(service)
+            except ValueError as e:
+                service_errors.append(service.name)
+                logger.error("failure loading service: %s", e.message)
+        return service_errors
 
 
 class CoreServices(object):
@@ -622,6 +641,9 @@ class CoreService(object):
     """
     # service name should not include spaces
     name = None
+
+    # executables that must exist for service to run
+    executables = ()
 
     # group string allows grouping services together
     group = None

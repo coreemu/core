@@ -113,6 +113,7 @@ class DockerService(CoreService):
         node.
     """
     name = "Docker"
+    executables = ("docker",)
     group = "Docker"
     depends = ()
     dirs = ('/var/lib/docker/containers/', '/run/shm', '/run/resolvconf',)

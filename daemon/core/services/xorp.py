@@ -12,6 +12,7 @@ class XorpRtrmgr(CoreService):
     enabled XORP services, and launches necessary daemons upon startup.
     """
     name = "xorp_rtrmgr"
+    executables = ("xorp_rtrmgr",)
     group = "XORP"
     depends = ()
     dirs = ("/etc/xorp",)
@@ -75,6 +76,7 @@ class XorpService(CoreService):
     common to XORP's routing daemons.
     """
     name = None
+    executables = ("xorp_rtrmgr",)
     group = "XORP"
     depends = ("xorp_rtrmgr",)
     dirs = ()
