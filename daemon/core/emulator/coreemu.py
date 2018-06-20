@@ -804,6 +804,8 @@ class CoreEmu(object):
         os.umask(0)
 
         # configuration
+        if not config:
+            config = {}
         self.config = config
 
         # session management

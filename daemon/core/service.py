@@ -211,6 +211,73 @@ class CoreServices(object):
         self.defaultservices.clear()
         self.customservices.clear()
 
+    def get_service_startups(self, services):
+        # generate service map and find starting points
+        node_services = {service.name: service for service in services}
+        is_dependency = set()
+        all_services = set()
+        for service in services:
+            all_services.add(service.name)
+            for service_name in service.dependencies:
+                # check service needed is valid
+                if service_name not in node_services:
+                    raise ValueError("service(%s) dependency does not exist: %s" % (service.name, service_name))
+                is_dependency.add(service_name)
+        starting_points = all_services - is_dependency
+
+        # cycles means no starting points
+        if not starting_points:
+            raise ValueError("no valid service starting points")
+
+        stack = [iter(starting_points)]
+
+        # information used to traverse dependency graph
+        visited = set()
+        path = []
+        path_set = set()
+
+        # store startup orderings
+        startups = []
+        startup = []
+
+        logger.debug("starting points: %s", starting_points)
+        while stack:
+            for service_name in stack[-1]:
+                service = node_services[service_name]
+                logger.debug("evaluating: %s", service.name)
+
+                # check this is not a cycle
+                if service.name in path_set:
+                    raise ValueError("service has a cyclic dependency: %s" % service.name)
+                # check that we have not already visited this node
+                elif service.name not in visited:
+                    logger.debug("visiting: %s", service.name)
+                    visited.add(service.name)
+                    path.append(service.name)
+                    path_set.add(service.name)
+
+                    # retrieve and set dependencies to the stack
+                    stack.append(iter(service.dependencies))
+                    startup.append(service)
+                    break
+            # for loop completed without a break
+            else:
+                logger.debug("finished a visit: path(%s)", path)
+                if path:
+                    path_set.remove(path.pop())
+
+                if not path and startup:
+                    startup.reverse()
+                    startups.append(startup)
+                    startup = []
+
+                stack.pop()
+
+        if visited != all_services:
+            raise ValueError("cycle encountered, services are being skipped")
+
+        return startups
+
     def getdefaultservices(self, service_type):
         """
         Get the list of default services that should be enabled for a
@@ -644,6 +711,9 @@ class CoreService(object):
 
     # executables that must exist for service to run
     executables = ()
+
+    # sets service requirements that must be started prior to this service starting
+    dependencies = ()
 
     # group string allows grouping services together
     group = None

@@ -47,6 +47,7 @@ class NrlService(CoreService):
 
 class MgenSinkService(NrlService):
     name = "MGEN_Sink"
+    executables = ("mgen",)
     configs = ("sink.mgen",)
     startindex = 5
     startup = ("mgen input sink.mgen",)
@@ -73,6 +74,7 @@ class NrlNhdp(NrlService):
     NeighborHood Discovery Protocol for MANET networks.
     """
     name = "NHDP"
+    executables = ("nrlnhdp",)
     startup = ("nrlnhdp",)
     shutdown = ("killall nrlnhdp",)
     validate = ("pidof nrlnhdp",)
@@ -105,6 +107,7 @@ class NrlSmf(NrlService):
     Simplified Multicast Forwarding for MANET networks.
     """
     name = "SMF"
+    executables = ("nrlsmf",)
     startup = ("sh startsmf.sh",)
     shutdown = ("killall nrlsmf",)
     validate = ("pidof nrlsmf",)
@@ -156,6 +159,7 @@ class NrlOlsr(NrlService):
     Optimized Link State Routing protocol for MANET networks.
     """
     name = "OLSR"
+    executables = ("nrlolsrd",)
     startup = ("nrlolsrd",)
     shutdown = ("killall nrlolsrd",)
     validate = ("pidof nrlolsrd",)
@@ -189,6 +193,7 @@ class NrlOlsrv2(NrlService):
     Optimized Link State Routing protocol version 2 for MANET networks.
     """
     name = "OLSRv2"
+    executables = ("nrlolsrv2",)
     startup = ("nrlolsrv2",)
     shutdown = ("killall nrlolsrv2",)
     validate = ("pidof nrlolsrv2",)
@@ -223,6 +228,7 @@ class OlsrOrg(NrlService):
     Optimized Link State Routing protocol from olsr.org for MANET networks.
     """
     name = "OLSRORG"
+    executables = ("olsrd",)
     configs = ("/etc/olsrd/olsrd.conf",)
     dirs = ("/etc/olsrd",)
     startup = ("olsrd",)
@@ -572,6 +578,7 @@ class MgenActor(NrlService):
 
     # a unique name is required, without spaces
     name = "MgenActor"
+    executables = ("mgen",)
     # you can create your own group here
     group = "ProtoSvc"
     # list of other services this service depends on
@@ -616,6 +623,7 @@ class Arouted(NrlService):
     Adaptive Routing
     """
     name = "arouted"
+    executables = ("arouted",)
     configs = ("startarouted.sh",)
     startindex = NrlService.startindex + 10
     startup = ("sh startarouted.sh",)
