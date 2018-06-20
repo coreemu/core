@@ -10,6 +10,7 @@ import subprocess
 import tempfile
 import threading
 import time
+from multiprocessing.pool import ThreadPool
 
 import pwd
 
@@ -716,13 +717,24 @@ class Session(object):
         request flag.
         """
         with self._objects_lock:
+            pool = ThreadPool()
+            results = []
+
+            start = time.time()
             for obj in self.objects.itervalues():
                 # TODO: PyCoreNode is not the type to check
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
                     logger.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
-                    obj.boot()
+                    result = pool.apply_async(obj.boot)
+                    results.append(result)
+
+            pool.close()
+            pool.join()
+            for result in results:
+                result.get()
+            logger.info("BOOT RUN TIME: %s", time.time() - start)
 
         self.update_control_interface_hosts()
 

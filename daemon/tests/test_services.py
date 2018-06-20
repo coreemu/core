@@ -59,7 +59,7 @@ class TestServices:
         ]
 
         # when
-        startups = session.services.get_service_startups(services)
+        startups = session.services.node_service_dependencies(services)
 
         # then
         assert len(startups) == 2
@@ -75,7 +75,7 @@ class TestServices:
 
         # when
         with pytest.raises(ValueError):
-            session.services.get_service_startups(services)
+            session.services.node_service_dependencies(services)
 
     def test_services_dependencies_cycle(self, session):
         # given
@@ -91,4 +91,4 @@ class TestServices:
 
         # when
         with pytest.raises(ValueError):
-            session.services.get_service_startups(services)
+            session.services.node_service_dependencies(services)

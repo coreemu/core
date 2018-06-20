@@ -221,7 +221,7 @@ class CoreServices(object):
         self.defaultservices.clear()
         self.customservices.clear()
 
-    def node_service_startups(self, services):
+    def node_service_dependencies(self, services):
         # generate service map and find starting points
         node_services = {service.name: service for service in services}
         is_dependency = set()
@@ -424,6 +424,7 @@ class CoreServices(object):
                         continue
                 except ValueError:
                     logger.exception("error converting start time to float")
+            # self.bootnodeservice(node, service, services)
             result = pool.apply_async(self.bootnodeservice, (node, service, services))
             results.append(result)
 
