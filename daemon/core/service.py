@@ -214,10 +214,6 @@ class CoreServices(object):
         # dict of tuple of service objects, key is node number
         self.customservices = {}
 
-        # TODO: remove need for cyclic import
-        from core.services import startup
-        self.is_startup_service = startup.Startup.is_startup_service
-
     def reset(self):
         """
         Called when config message with reset flag is received
@@ -418,7 +414,6 @@ class CoreServices(object):
         results = []
 
         services = sorted(node.services, key=lambda x: x.startindex)
-        use_startup_service = any(map(self.is_startup_service, services))
         for service in services:
             if len(str(service.starttime)) > 0:
                 try:
@@ -429,7 +424,7 @@ class CoreServices(object):
                         continue
                 except ValueError:
                     logger.exception("error converting start time to float")
-            result = pool.apply_async(self.bootnodeservice, (node, service, services, use_startup_service))
+            result = pool.apply_async(self.bootnodeservice, (node, service, services))
             results.append(result)
 
         pool.close()
@@ -437,7 +432,7 @@ class CoreServices(object):
         for result in results:
             result.get()
 
-    def bootnodeservice(self, node, service, services, use_startup_service):
+    def bootnodeservice(self, node, service, services):
         """
         Start a service on a node. Create private dirs, generate config
         files, and execute startup commands.
@@ -445,7 +440,6 @@ class CoreServices(object):
         :param core.netns.vnode.LxcNode node: node to boot services on
         :param CoreService service: service to start
         :param list services: service list
-        :param bool use_startup_service: flag to use startup services or not
         :return: nothing
         """
         logger.info("starting node(%s) service: %s (%s)", node.name, service.name, service.startindex)
@@ -456,10 +450,6 @@ class CoreServices(object):
 
         # create service files
         self.node_service_files(node, service, services)
-
-        # check for startup service
-        if use_startup_service and not self.is_startup_service(service):
-            return
 
         # run startup
         wait = service.validation_mode == ServiceMode.BLOCKING
