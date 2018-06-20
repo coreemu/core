@@ -7,6 +7,10 @@ a list of available services to the GUI and for configuring individual
 services.
 """
 
+import time
+from multiprocessing.pool import ThreadPool
+
+import enum
 from core.constants import which
 
 from core import CoreCommandError
@@ -15,6 +19,16 @@ from core.data import FileData
 from core.enumerations import MessageFlags
 from core.enumerations import RegisterTlvs
 from core.misc import utils
+
+
+class ServiceBootError(Exception):
+    pass
+
+
+class ServiceMode(enum.Enum):
+    BLOCKING = 0
+    NON_BLOCKING = 1
+    TIMER = 2
 
 
 class ServiceShim(object):
@@ -211,7 +225,7 @@ class CoreServices(object):
         self.defaultservices.clear()
         self.customservices.clear()
 
-    def get_service_startups(self, services):
+    def node_service_startups(self, services):
         # generate service map and find starting points
         node_services = {service.name: service for service in services}
         is_dependency = set()
@@ -400,6 +414,9 @@ class CoreServices(object):
         :param core.netns.vnode.LxcNode node: node to start services on
         :return: nothing
         """
+        pool = ThreadPool()
+        results = []
+
         services = sorted(node.services, key=lambda x: x.startindex)
         use_startup_service = any(map(self.is_startup_service, services))
         for service in services:
@@ -412,7 +429,13 @@ class CoreServices(object):
                         continue
                 except ValueError:
                     logger.exception("error converting start time to float")
-            self.bootnodeservice(node, service, services, use_startup_service)
+            result = pool.apply_async(self.bootnodeservice, (node, service, services, use_startup_service))
+            results.append(result)
+
+        pool.close()
+        pool.join()
+        for result in results:
+            result.get()
 
     def bootnodeservice(self, node, service, services, use_startup_service):
         """
@@ -425,62 +448,35 @@ class CoreServices(object):
         :param bool use_startup_service: flag to use startup services or not
         :return: nothing
         """
-        if service.custom:
-            self.bootnodecustomservice(node, service, services, use_startup_service)
-            return
-
         logger.info("starting node(%s) service: %s (%s)", node.name, service.name, service.startindex)
+
+        # create service directories
         for directory in service.dirs:
             node.privatedir(directory)
 
-        for filename in service.getconfigfilenames(node.objid, services):
-            cfg = service.generateconfig(node, filename, services)
-            node.nodefile(filename, cfg)
+        # create service files
+        self.node_service_files(node, service, services)
 
+        # check for startup service
         if use_startup_service and not self.is_startup_service(service):
             return
 
-        for args in service.getstartup(node, services):
-            # TODO: this wait=False can be problematic!
-            node.cmd(args, wait=False)
+        # run startup
+        wait = service.validation_mode == ServiceMode.BLOCKING
+        status = self.node_service_startup(node, service, services, wait)
+        if status:
+            raise ServiceBootError("node(%s) service(%s) error during startup" % (node.name, service.name))
 
-    def bootnodecustomservice(self, node, service, services, use_startup_service):
-        """
-        Start a custom service on a node. Create private dirs, use supplied
-        config files, and execute  supplied startup commands.
+        # wait for time if provided, default to a time previously used to provide a small buffer
+        time.sleep(0.125)
+        if service.validation_timer:
+            time.sleep(service.validation_timer)
 
-        :param core.netns.vnode.LxcNode node: node to boot services on
-        :param CoreService service: service to start
-        :param list services: service list
-        :param bool use_startup_service: flag to use startup services or not
-        :return: nothing
-        """
-        logger.info("starting node(%s) service(custom): %s (%s)", node.name, service.name, service.startindex)
-        for directory in service.dirs:
-            node.privatedir(directory)
-
-        logger.info("service configurations: %s", service.configs)
-        for filename in service.configs:
-            logger.info("generating service config: %s", filename)
-            cfg = service.configtxt.get(filename)
-            if cfg is None:
-                cfg = service.generateconfig(node, filename, services)
-
-            # cfg may have a file:/// url for copying from a file
-            try:
-                if self.copyservicefile(node, filename, cfg):
-                    continue
-            except IOError:
-                logger.exception("error copying service file '%s'", filename)
-                continue
-            node.nodefile(filename, cfg)
-
-        if use_startup_service and not self.is_startup_service(service):
-            return
-
-        for args in service.startup:
-            # TODO: this wait=False can be problematic!
-            node.cmd(args, wait=False)
+        # run validation commands, if present and not timer mode
+        if service.validation_mode != ServiceMode.TIMER:
+            status = self.validatenodeservice(node, service, services)
+            if status:
+                raise ServiceBootError("node(%s) service(%s) failed validation" % (node.name, service.name))
 
     def copyservicefile(self, node, filename, cfg):
         """
@@ -510,7 +506,7 @@ class CoreServices(object):
         :param core.netns.vnode.LxcNode node: node to validate services for
         :return: nothing
         """
-        services = sorted(node.services, key=lambda service: service.startindex)
+        services = sorted(node.services, key=lambda x: x.startindex)
         for service in services:
             self.validatenodeservice(node, service, services)
 
@@ -524,17 +520,16 @@ class CoreServices(object):
         :return: service validation status
         :rtype: int
         """
-        logger.info("validating service for node (%s): %s (%s)", node.name, service.name, service.startindex)
-        if service.custom:
-            validate_cmds = service.validate
-        else:
-            validate_cmds = service.getvalidate(node, services)
+        logger.info("validating node(%s) service(%s): %s", node.name, service.name, service.startindex)
+        cmds = service.validate
+        if not service.custom:
+            cmds = service.getvalidate(node, services)
 
         status = 0
-        for args in validate_cmds:
-            logger.info("validating service %s using: %s", service.name, args)
+        for cmd in cmds:
+            logger.info("validating service %s using: %s", service.name, cmd)
             try:
-                node.check_cmd(args)
+                node.check_cmd(cmd)
             except CoreCommandError:
                 logger.exception("validate command failed")
                 status = -1
@@ -561,14 +556,13 @@ class CoreServices(object):
         :return: status for stopping the services
         :rtype: str
         """
-        status = "0"
+        status = 0
         for args in service.shutdown:
             try:
                 node.check_cmd(args)
             except CoreCommandError:
                 logger.exception("error running stop command %s", args)
-                # TODO: determine if its ok to just return the bad exit status
-                status = "-1"
+                status = -1
         return status
 
     def getservicefile(self, service_name, node, filename, services):
@@ -608,7 +602,7 @@ class CoreServices(object):
         # get the file data
         data = service.configtxt.get(filename)
         if data is None:
-            data = "%s" % service.generateconfig(node, filename, services)
+            data = "%s" % service.generateconfig(node, filename, node_services)
         else:
             data = "%s" % data
 
@@ -637,44 +631,80 @@ class CoreServices(object):
         self.setcustomservice(node_id, service_name)
 
         # retrieve custom service
-        svc = self.getcustomservice(node_id, service_name)
-        if svc is None:
+        service = self.getcustomservice(node_id, service_name)
+        if service is None:
             logger.warn("received filename for unknown service: %s", service_name)
             return
 
         # validate file being set is valid
-        cfgfiles = svc.configs
+        cfgfiles = service.configs
         if filename not in cfgfiles:
             logger.warn("received unknown file '%s' for service '%s'", filename, service_name)
             return
 
         # set custom service file data
-        svc.configtxt[filename] = data
+        service.configtxt[filename] = data
 
-    def node_service_startup(self, node, service, services):
+    def node_service_startup(self, node, service, services, wait=False):
         """
         Startup a node service.
 
         :param PyCoreNode node: node to reconfigure service for
         :param CoreService service: service to reconfigure
         :param list[CoreService] services: node services
+        :param bool wait: determines if we should wait to validate startup
         :return: status of startup
-        :rtype: str
+        :rtype: int
         """
 
-        if service.custom:
-            cmds = service.startup
-        else:
+        cmds = service.startup
+        if not service.custom:
             cmds = service.getstartup(node, services)
 
-        status = "0"
-        for args in cmds:
+        status = 0
+        for cmd in cmds:
             try:
-                node.check_cmd(args)
+                if wait:
+                    node.check_cmd(cmd)
+                else:
+                    node.cmd(cmd, wait=False)
             except CoreCommandError:
                 logger.exception("error starting command")
-                status = "-1"
+                status = -1
         return status
+
+    def node_service_files(self, node, service, services):
+        """
+        Creates node service files.
+
+        :param PyCoreNode node: node to reconfigure service for
+        :param CoreService service: service to reconfigure
+        :param list[CoreService] services: node services
+        :return: nothing
+        """
+        # get values depending on if custom or not
+        file_names = service.configs
+        if not service.custom:
+            file_names = service.getconfigfilenames(node.objid, services)
+
+        for file_name in file_names:
+            logger.info("generating service config: %s", file_name)
+            if service.custom:
+                cfg = service.configtxt.get(file_name)
+                if cfg is None:
+                    cfg = service.generateconfig(node, file_name, services)
+
+                # cfg may have a file:/// url for copying from a file
+                try:
+                    if self.copyservicefile(node, file_name, cfg):
+                        continue
+                except IOError:
+                    logger.exception("error copying service file: %s", file_name)
+                    continue
+            else:
+                cfg = service.generateconfig(node, file_name, services)
+
+            node.nodefile(file_name, cfg)
 
     def node_service_reconfigure(self, node, service, services):
         """
@@ -685,21 +715,20 @@ class CoreServices(object):
         :param list[CoreService] services: node services
         :return: nothing
         """
-        if service.custom:
-            cfgfiles = service.configs
-        else:
-            cfgfiles = service.getconfigfilenames(node.objid, services)
+        file_names = service.configs
+        if not service.custom:
+            file_names = service.getconfigfilenames(node.objid, services)
 
-        for filename in cfgfiles:
-            if filename[:7] == "file:///":
+        for file_name in file_names:
+            if file_name[:7] == "file:///":
                 # TODO: implement this
                 raise NotImplementedError
 
-            cfg = service.configtxt.get(filename)
+            cfg = service.configtxt.get(file_name)
             if cfg is None:
-                cfg = service.generateconfig(node, filename, services)
+                cfg = service.generateconfig(node, file_name, services)
 
-            node.nodefile(filename, cfg)
+            node.nodefile(file_name, cfg)
 
 
 class CoreService(object):
@@ -741,6 +770,12 @@ class CoreService(object):
 
     # list of validate commands
     validate = ()
+
+    # validation mode, used to determine startup success
+    validation_mode = ServiceMode.NON_BLOCKING
+
+    # time to wait for determining if service started successfully
+    validation_timer = 0
 
     # metadata associated with this service
     meta = None

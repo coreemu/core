@@ -1527,15 +1527,15 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
             if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
                 status = self.session.services.stopnodeservice(node, service)
-                if status != "0":
+                if status:
                     fail += "Stop %s," % service.name
             if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
                 status = self.session.services.node_service_startup(node, service, services)
-                if status != "0":
+                if status:
                     fail += "Start %s(%s)," % service.name
             if event_type == EventTypes.PAUSE.value:
                 status = self.session.services.validatenodeservice(node, service, services)
-                if status != 0:
+                if status:
                     fail += "%s," % service.name
             if event_type == EventTypes.RECONFIGURE.value:
                 self.session.services.node_service_reconfigure(node, service, services)

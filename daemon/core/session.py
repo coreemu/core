@@ -607,12 +607,6 @@ class Session(object):
         # boot the services on each node
         self.boot_nodes()
 
-        # allow time for processes to start
-        time.sleep(0.125)
-
-        # validate nodes
-        self.validate_nodes()
-
         # set broker local instantiation to complete
         self.broker.local_instantiation_complete()
 
@@ -731,24 +725,6 @@ class Session(object):
                     obj.boot()
 
         self.update_control_interface_hosts()
-
-    def validate_nodes(self):
-        """
-        Validate all nodes that are known by the session.
-
-        :return: nothing
-        """
-        with self._objects_lock:
-            for obj in self.objects.itervalues():
-                # TODO: issues with checking PyCoreNode alone, validate is not a method
-                # such as vnoded process, bridges, etc.
-                if not isinstance(obj, nodes.PyCoreNode):
-                    continue
-
-                if nodeutils.is_node(obj, NodeTypes.RJ45):
-                    continue
-
-                obj.validate()
 
     def get_control_net_prefixes(self):
         """
