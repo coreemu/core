@@ -150,7 +150,7 @@ class ServiceManager(object):
         # validate dependent executables are present
         for executable in service.executables:
             if not which(executable):
-                logger.error("service(%s) missing executable: %s", service.name, executable)
+                logger.warn("service(%s) missing executable: %s", service.name, executable)
                 raise ValueError("service(%s) missing executable: %s" % (service.name, executable))
 
         # make service available
@@ -187,7 +187,7 @@ class ServiceManager(object):
                 cls.add(service)
             except ValueError as e:
                 service_errors.append(service.name)
-                logger.error("failure loading service: %s", e.message)
+                logger.warn("not loading service: %s", e.message)
         return service_errors
 
 
