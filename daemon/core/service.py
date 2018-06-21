@@ -414,24 +414,20 @@ class CoreServices(object):
         results = []
 
         services = sorted(node.services, key=lambda x: x.startindex)
-        for service in services:
-            if len(str(service.starttime)) > 0:
-                try:
-                    starttime = float(service.starttime)
-                    if starttime > 0.0:
-                        fn = self.bootnodeservice
-                        self.session.event_loop.add_event(starttime, fn, node, service, services, False)
-                        continue
-                except ValueError:
-                    logger.exception("error converting start time to float")
-            # self.bootnodeservice(node, service, services)
-            result = pool.apply_async(self.bootnodeservice, (node, service, services))
+        boot_paths = self.node_service_dependencies(services)
+        for boot_path in boot_paths:
+            result = pool.apply_async(self.boot_node_dependencies, (node, boot_path, services))
             results.append(result)
 
         pool.close()
         pool.join()
         for result in results:
             result.get()
+
+    def boot_node_dependencies(self, node, boot_path, all_services):
+        logger.info("booting node service dependencies: %s", boot_path)
+        for service in boot_path:
+            self.bootnodeservice(node, service, all_services)
 
     def bootnodeservice(self, node, service, services):
         """
@@ -518,11 +514,11 @@ class CoreServices(object):
 
         status = 0
         for cmd in cmds:
-            logger.info("validating service %s using: %s", service.name, cmd)
+            logger.info("validating service(%s) using: %s", service.name, cmd)
             try:
                 node.check_cmd(cmd)
-            except CoreCommandError:
-                logger.exception("validate command failed")
+            except CoreCommandError as e:
+                logger.exception("node(%s) service(%s) validate command failed", node.name, service.name)
                 status = -1
 
         return status

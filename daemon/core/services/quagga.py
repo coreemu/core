@@ -222,6 +222,7 @@ class QuaggaService(CoreService):
     """
     name = None
     group = "Quagga"
+    dependencies = ("zebra",)
     depends = ("zebra",)
     dirs = ()
     configs = ()

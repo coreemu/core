@@ -94,6 +94,7 @@ class BirdService(CoreService):
     name = None
     executables = ("bird",)
     group = "BIRD"
+    dependencies = ("bird",)
     depends = ("bird",)
     dirs = ()
     configs = ()

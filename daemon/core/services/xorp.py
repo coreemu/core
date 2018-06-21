@@ -78,6 +78,7 @@ class XorpService(CoreService):
     name = None
     executables = ("xorp_rtrmgr",)
     group = "XORP"
+    dependencies = ("xorp_rtrmgr",)
     depends = ("xorp_rtrmgr",)
     dirs = ()
     configs = ()
