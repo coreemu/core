@@ -1151,7 +1151,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     # a file request: e.g. "service:zebra:quagga.conf"
                     file_name = servicesstring[2]
                     service_name = services[0]
-                    file_data = self.session.services.getservicefile(service_name, node, file_name, services)
+                    file_data = self.session.services.getservicefile(node, service_name, file_name)
                     self.session.broadcast_file(file_data)
                     # short circuit this request early to avoid returning response below
                     return replies
@@ -1163,7 +1163,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 type_flag = ConfigFlags.UPDATE.value
                 data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
                 service = self.session.services.getcustomservice(node_id, service_name, default_service=True)
-                values = ServiceShim.tovaluelist(service, node, services)
+                values = ServiceShim.tovaluelist(node, service)
                 captions = None
                 possible_values = None
                 groups = None
@@ -1530,15 +1530,15 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 if status:
                     fail += "Stop %s," % service.name
             if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
-                status = self.session.services.node_service_startup(node, service, services)
+                status = self.session.services.node_service_startup(node, service)
                 if status:
                     fail += "Start %s(%s)," % service.name
             if event_type == EventTypes.PAUSE.value:
-                status = self.session.services.validatenodeservice(node, service, services)
+                status = self.session.services.validatenodeservice(node, service)
                 if status:
                     fail += "%s," % service.name
             if event_type == EventTypes.RECONFIGURE.value:
-                self.session.services.node_service_reconfigure(node, service, services)
+                self.session.services.node_service_reconfigure(node, service)
 
         fail_data = ""
         if len(fail) > 0:
@@ -1724,7 +1724,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             opaque = "service:%s" % service.name
             data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
             node = self.session.get_object(node_id)
-            values = ServiceShim.tovaluelist(service, node, node.services)
+            values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
                 message_type=0,
                 node=node_id,

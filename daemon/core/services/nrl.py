@@ -23,7 +23,7 @@ class NrlService(CoreService):
     shutdown = ()
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         return ""
 
     @staticmethod
@@ -55,7 +55,7 @@ class MgenSinkService(NrlService):
     shutdown = ("killall mgen",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         cfg = "0.0 LISTEN UDP 5000\n"
         for ifc in node.netifs():
             name = utils.sysctl_devname(ifc.name)
@@ -63,7 +63,7 @@ class MgenSinkService(NrlService):
         return cfg
 
     @classmethod
-    def getstartup(cls, node, services):
+    def getstartup(cls, node):
         cmd = cls.startup[0]
         cmd += " output /tmp/mgen_%s.log" % node.name
         return cmd,
@@ -80,7 +80,7 @@ class NrlNhdp(NrlService):
     validate = ("pidof nrlnhdp",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def getstartup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
@@ -88,7 +88,7 @@ class NrlNhdp(NrlService):
         cmd += " -l /var/log/nrlnhdp.log"
         cmd += " -rpipe %s_nhdp" % node.name
 
-        servicenames = map(lambda x: x.name, services)
+        servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
@@ -114,7 +114,7 @@ class NrlSmf(NrlService):
     configs = ("startsmf.sh",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename, ):
         """
         Generate a startup script for SMF. Because nrlsmf does not
         daemonize, it can cause problems in some situations when launched
@@ -125,7 +125,7 @@ class NrlSmf(NrlService):
         comments = ""
         cmd = "nrlsmf instance %s_smf" % node.name
 
-        servicenames = map(lambda x: x.name, services)
+        servicenames = map(lambda x: x.name, node.services)
         netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
         if len(netifs) == 0:
             return ""
@@ -165,7 +165,7 @@ class NrlOlsr(NrlService):
     validate = ("pidof nrlolsrd",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def getstartup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
@@ -178,7 +178,7 @@ class NrlOlsr(NrlService):
         cmd += " -l /var/log/nrlolsrd.log"
         cmd += " -rpipe %s_olsr" % node.name
 
-        servicenames = map(lambda x: x.name, services)
+        servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames and not "NHDP" in servicenames:
             cmd += " -flooding s-mpr"
             cmd += " -smfClient %s_smf" % node.name
@@ -199,7 +199,7 @@ class NrlOlsrv2(NrlService):
     validate = ("pidof nrlolsrv2",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def getstartup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
@@ -207,7 +207,7 @@ class NrlOlsrv2(NrlService):
         cmd += " -l /var/log/nrlolsrv2.log"
         cmd += " -rpipe %s_olsrv2" % node.name
 
-        servicenames = map(lambda x: x.name, services)
+        servicenames = map(lambda x: x.name, node.services)
         if "SMF" in servicenames:
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
@@ -236,7 +236,7 @@ class OlsrOrg(NrlService):
     validate = ("pidof olsrd",)
 
     @classmethod
-    def getstartup(cls, node, services):
+    def getstartup(cls, node):
         """
         Generate the appropriate command-line based on node interfaces.
         """
@@ -250,7 +250,7 @@ class OlsrOrg(NrlService):
         return cmd,
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Generate a default olsrd config file to use the broadcast address of 255.255.255.255.
         """
@@ -598,7 +598,7 @@ class MgenActor(NrlService):
     shutdown = ("killall mgen",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Generate a startup script for MgenActor. Because mgenActor does not
         daemonize, it can cause problems in some situations when launched
@@ -609,7 +609,7 @@ class MgenActor(NrlService):
         comments = ""
         cmd = "mgenBasicActor.py -n %s -a 0.0.0.0" % node.name
 
-        servicenames = map(lambda x: x.name, services)
+        servicenames = map(lambda x: x.name, node.services)
         netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
         if len(netifs) == 0:
             return ""
@@ -631,7 +631,7 @@ class Arouted(NrlService):
     validate = ("pidof arouted",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """

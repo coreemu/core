@@ -23,7 +23,7 @@ class XorpRtrmgr(CoreService):
     validate = ("pidof xorp_rtrmgr",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Returns config.boot configuration file text. Other services that
         depend on this will have generatexorpconfig() hooks that are
@@ -39,7 +39,7 @@ class XorpRtrmgr(CoreService):
             cfg += "    }\n"
         cfg += "}\n\n"
 
-        for s in services:
+        for s in node.services:
             try:
                 s.depends.index(cls.name)
                 cfg += s.generatexorpconfig(node)
@@ -154,7 +154,7 @@ class XorpService(CoreService):
         return "0.0.0.0"
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         return ""
 
     @classmethod

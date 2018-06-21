@@ -21,12 +21,12 @@ class Bird(CoreService):
     validate = ("pidof bird",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Return the bird.conf file contents.
         """
         if filename == cls.configs[0]:
-            return cls.generateBirdConf(node, services)
+            return cls.generateBirdConf(node)
         else:
             raise ValueError
 
@@ -45,7 +45,7 @@ class Bird(CoreService):
         return "0.0.0.0"
 
     @classmethod
-    def generateBirdConf(cls, node, services):
+    def generateBirdConf(cls, node):
         """
         Returns configuration file text. Other services that depend on bird
         will have generatebirdifcconfig() and generatebirdconfig()
@@ -77,7 +77,7 @@ protocol device {
 """ % (cls.name, cls.routerid(node))
 
         # Generate protocol specific configurations
-        for s in services:
+        for s in node.services:
             if cls.name not in s.depends:
                 continue
             cfg += s.generatebirdconfig(node)

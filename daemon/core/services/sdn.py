@@ -15,7 +15,7 @@ class SdnService(CoreService):
     startindex = 50
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         return ""
 
 
@@ -31,16 +31,16 @@ class OvsService(SdnService):
     shutdown = ('killall ovs-vswitchd', 'killall ovsdb-server')
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         # Check whether the node is running zebra
         has_zebra = 0
-        for s in services:
+        for s in node.services:
             if s.name == "zebra":
                 has_zebra = 1
 
         # Check whether the node is running an SDN controller
         has_sdn_ctrlr = 0
-        for s in services:
+        for s in node.services:
             if s.name == "ryuService":
                 has_sdn_ctrlr = 1
 
@@ -106,7 +106,7 @@ class RyuService(SdnService):
     shutdown = ('killall ryu-manager',)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Return a string that will be written to filename, or sent to the
         GUI for user customization.

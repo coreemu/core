@@ -24,29 +24,28 @@ class Zebra(CoreService):
     validate = ("pidof zebra",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """
         if filename == cls.configs[0]:
-            return cls.generateQuaggaConf(node, services)
+            return cls.generateQuaggaConf(node)
         elif filename == cls.configs[1]:
-            return cls.generateQuaggaBoot(node, services)
+            return cls.generateQuaggaBoot(node)
         elif filename == cls.configs[2]:
-            return cls.generateVtyshConf(node, services)
+            return cls.generateVtyshConf(node)
         else:
-            raise ValueError("file name (%s) is not a known configuration: %s",
-                             filename, cls.configs)
+            raise ValueError("file name (%s) is not a known configuration: %s", filename, cls.configs)
 
     @classmethod
-    def generateVtyshConf(cls, node, services):
+    def generateVtyshConf(cls, node):
         """
         Returns configuration file text.
         """
         return "service integrated-vtysh-config\n"
 
     @classmethod
-    def generateQuaggaConf(cls, node, services):
+    def generateQuaggaConf(cls, node):
         """
         Returns configuration file text. Other services that depend on zebra
         will have generatequaggaifcconfig() and generatequaggaconfig()
@@ -66,7 +65,7 @@ class Zebra(CoreService):
             cfgv6 = ""
             want_ipv4 = False
             want_ipv6 = False
-            for s in services:
+            for s in node.services:
                 if cls.name not in s.depends:
                     continue
                 ifccfg = s.generatequaggaifcconfig(node, ifc)
@@ -92,7 +91,7 @@ class Zebra(CoreService):
                 cfg += cfgv6
             cfg += "!\n"
 
-        for s in services:
+        for s in node.services:
             if cls.name not in s.depends:
                 continue
             cfg += s.generatequaggaconfig(node)
@@ -111,7 +110,7 @@ class Zebra(CoreService):
             raise ValueError("invalid address: %s", x)
 
     @classmethod
-    def generateQuaggaBoot(cls, node, services):
+    def generateQuaggaBoot(cls, node):
         """
         Generate a shell script used to boot the Quagga daemons.
         """
@@ -263,7 +262,7 @@ class QuaggaService(CoreService):
         return False
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         return ""
 
     @classmethod
