@@ -727,7 +727,7 @@ class Session(object):
                     # add a control interface if configured
                     logger.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
-                    result = pool.apply_async(obj.boot)
+                    result = pool.apply_async(self.services.bootnodeservices, (obj,))
                     results.append(result)
 
             pool.close()

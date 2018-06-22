@@ -386,7 +386,6 @@ class CoreServices(object):
         :return:
         """
         files = []
-
         if not service.custom:
             return files
 
@@ -478,16 +477,6 @@ class CoreServices(object):
             node.nodefilecopy(filename, src, mode=0644)
             return True
         return False
-
-    def validatenodeservices(self, node):
-        """
-        Run validation commands for all services on a node.
-
-        :param core.netns.vnode.LxcNode node: node to validate services for
-        :return: nothing
-        """
-        for service in node.services:
-            self.validatenodeservice(node, service)
 
     def validatenodeservice(self, node, service):
         """

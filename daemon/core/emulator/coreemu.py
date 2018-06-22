@@ -515,9 +515,7 @@ class EmuSession(Session):
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_objects()
             self.add_remove_control_interface(node=node, remove=False)
-
-            # TODO: common method to both Physical and LxcNodes, but not the common PyCoreNode
-            node.boot()
+            self.services.bootnodeservices(node)
 
         return node
 

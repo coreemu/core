@@ -156,14 +156,6 @@ class SimpleLxcNode(PyCoreNode):
         self.client.close()
         self.up = False
 
-    def boot(self):
-        """
-        Boot logic.
-
-        :return: nothing
-        """
-        return None
-
     def cmd(self, args, wait=True):
         """
         Runs shell command on node, with option to not wait for a result.
@@ -221,7 +213,6 @@ class SimpleLxcNode(PyCoreNode):
         if status:
             raise CoreCommandError(status, cmd, output)
         self._mounts.append((source, target))
-
 
     def newifindex(self):
         """
@@ -510,22 +501,6 @@ class LxcNode(SimpleLxcNode):
         self.bootsh = bootsh
         if start:
             self.startup()
-
-    def boot(self):
-        """
-        Boot the node.
-
-        :return: nothing
-        """
-        self.session.services.bootnodeservices(self)
-
-    def validate(self):
-        """
-        Validate the node.
-
-        :return: nothing
-        """
-        self.session.services.validatenodeservices(self)
 
     def startup(self):
         """
