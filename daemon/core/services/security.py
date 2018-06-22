@@ -12,7 +12,6 @@ class VPNClient(CoreService):
     name = "VPNClient"
     group = "Security"
     configs = ('vpnclient.sh',)
-    startindex = 60
     startup = ('sh vpnclient.sh',)
     shutdown = ("killall openvpn",)
     validate = ("pidof openvpn",)
@@ -39,7 +38,6 @@ class VPNServer(CoreService):
     name = "VPNServer"
     group = "Security"
     configs = ('vpnserver.sh',)
-    startindex = 50
     startup = ('sh vpnserver.sh',)
     shutdown = ("killall openvpn",)
     validate = ("pidof openvpn",)
@@ -67,7 +65,6 @@ class IPsec(CoreService):
     name = "IPsec"
     group = "Security"
     configs = ('ipsec.sh',)
-    startindex = 60
     startup = ('sh ipsec.sh',)
     shutdown = ("killall racoon",)
     custom_needed = True
@@ -95,7 +92,6 @@ class Firewall(CoreService):
     name = "Firewall"
     group = "Security"
     configs = ('firewall.sh',)
-    startindex = 20
     startup = ('sh firewall.sh',)
     custom_needed = True
 

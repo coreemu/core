@@ -18,7 +18,6 @@ class Zebra(CoreService):
         "quaggaboot.sh",
         "/usr/local/etc/quagga/vtysh.conf"
     )
-    startindex = 35
     startup = ("sh quaggaboot.sh zebra",)
     shutdown = ("killall zebra",)
     validate = ("pidof zebra",)
@@ -66,7 +65,7 @@ class Zebra(CoreService):
             want_ipv4 = False
             want_ipv6 = False
             for s in node.services:
-                if cls.name not in s.depends:
+                if cls.name not in s.dependencies:
                     continue
                 ifccfg = s.generatequaggaifcconfig(node, ifc)
                 if s.ipv4_routing:
@@ -92,7 +91,7 @@ class Zebra(CoreService):
             cfg += "!\n"
 
         for s in node.services:
-            if cls.name not in s.depends:
+            if cls.name not in s.dependencies:
                 continue
             cfg += s.generatequaggaconfig(node)
         return cfg
@@ -222,10 +221,8 @@ class QuaggaService(CoreService):
     name = None
     group = "Quagga"
     dependencies = ("zebra",)
-    depends = ("zebra",)
     dirs = ()
     configs = ()
-    startindex = 40
     startup = ()
     shutdown = ()
     meta = "The config file for this service can be found in the Zebra service."

@@ -18,10 +18,8 @@ class UtilService(CoreService):
     """
     name = None
     group = "Utility"
-    depends = ()
     dirs = ()
     configs = ()
-    startindex = 80
     startup = ()
     shutdown = ()
 
@@ -33,7 +31,6 @@ class UtilService(CoreService):
 class IPForwardService(UtilService):
     name = "IPForward"
     configs = ("ipforward.sh",)
-    startindex = 5
     startup = ("sh ipforward.sh",)
 
     @classmethod
@@ -574,7 +571,6 @@ class PcapService(UtilService):
     name = "pcap"
     configs = ("pcap.sh",)
     dirs = ()
-    startindex = 1
     startup = ("sh pcap.sh start",)
     shutdown = ("sh pcap.sh stop",)
     validate = ("pidof tcpdump",)
@@ -693,5 +689,4 @@ class UserDefinedService(UtilService):
     Dummy service allowing customization of anything.
     """
     name = "UserDefined"
-    startindex = 50
     meta = "Customize this service to do anything upon startup."

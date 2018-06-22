@@ -45,12 +45,13 @@ class ServiceShim(object):
         :return: value list string
         :rtype: str
         """
-        valmap = [service.dirs, service.configs, service.startindex, service.startup,
-                  service.shutdown, service.validate, service.meta, service.starttime]
+        start_time = 0
+        start_index = 0
+        valmap = [service.dirs, service.configs, start_index, service.startup,
+                  service.shutdown, service.validate, service.meta, start_time]
         if not service.custom:
-            # this is always reached due to classmethod
-            valmap[valmap.index(service.configs)] = service.getconfigfilenames(node)
-            valmap[valmap.index(service.startup)] = service.getstartup(node)
+            valmap[1] = service.getconfigfilenames(node)
+            valmap[3] = service.getstartup(node)
         vals = map(lambda a, b: "%s=%s" % (a, str(b)), cls.keys, valmap)
         return "|".join(vals)
 
@@ -97,8 +98,6 @@ class ServiceShim(object):
             service.dirs = value
         elif key == "files":
             service.configs = value
-        elif key == "startidx":
-            service.startindex = value
         elif key == "cmdup":
             service.startup = value
         elif key == "cmddown":
@@ -107,8 +106,6 @@ class ServiceShim(object):
             service.validate = value
         elif key == "meta":
             service.meta = value
-        elif key == "starttime":
-            service.starttime = value
 
     @classmethod
     def servicesfromopaque(cls, opaque):
@@ -422,7 +419,7 @@ class CoreServices(object):
             result.get()
 
     def boot_node_dependencies(self, node, boot_path):
-        logger.info("booting node service dependencies: %s", boot_path)
+        logger.debug("booting node service dependencies: %s", boot_path)
         for service in boot_path:
             self.bootnodeservice(node, service)
 
@@ -435,7 +432,7 @@ class CoreServices(object):
         :param CoreService service: service to start
         :return: nothing
         """
-        logger.info("starting node(%s) service: %s (%s)", node.name, service.name, service.startindex)
+        logger.info("starting node(%s) service(%s)", node.name, service.name)
 
         # create service directories
         for directory in service.dirs:
@@ -501,14 +498,14 @@ class CoreServices(object):
         :return: service validation status
         :rtype: int
         """
-        logger.info("validating node(%s) service(%s): %s", node.name, service.name, service.startindex)
+        logger.info("validating node(%s) service(%s)", node.name, service.name)
         cmds = service.validate
         if not service.custom:
             cmds = service.getvalidate(node)
 
         status = 0
         for cmd in cmds:
-            logger.info("validating service(%s) using: %s", service.name, cmd)
+            logger.debug("validating service(%s) using: %s", service.name, cmd)
             try:
                 node.check_cmd(cmd)
             except CoreCommandError:
@@ -524,8 +521,7 @@ class CoreServices(object):
         :param core.netns.nodes.CoreNode node: node to stop services on
         :return: nothing
         """
-        services = sorted(node.services, key=lambda x: x.startindex)
-        for service in services:
+        for service in node.services:
             self.stopnodeservice(node, service)
 
     def stopnodeservice(self, node, service):
@@ -651,13 +647,14 @@ class CoreServices(object):
         :param CoreService service: service to reconfigure
         :return: nothing
         """
+        logger.info("node(%s) service(%s) creating config files", node.name, service.name)
         # get values depending on if custom or not
         file_names = service.configs
         if not service.custom:
             file_names = service.getconfigfilenames(node)
 
         for file_name in file_names:
-            logger.info("generating service config: %s", file_name)
+            logger.debug("generating service config: %s", file_name)
             if service.custom:
                 cfg = service.configtxt.get(file_name)
                 if cfg is None:
@@ -715,20 +712,11 @@ class CoreService(object):
     # group string allows grouping services together
     group = None
 
-    # list name(s) of services that this service depends upon
-    depends = ()
-
     # private, per-node directories required by this service
     dirs = ()
 
     # config files written by this service
     configs = ()
-
-    # index used to determine start order with other services
-    startindex = 0
-
-    # time in seconds after runtime to run startup commands
-    starttime = 0
 
     # list of startup commands
     startup = ()
@@ -762,12 +750,10 @@ class CoreService(object):
         self.custom = True
         self.dirs = self.__class__.dirs
         self.configs = self.__class__.configs
-        self.startindex = self.__class__.startindex
         self.startup = self.__class__.startup
         self.shutdown = self.__class__.shutdown
         self.validate = self.__class__.validate
         self.meta = self.__class__.meta
-        self.starttime = self.__class__.starttime
         self.configtxt = self.__class__.configtxt
 
     @classmethod

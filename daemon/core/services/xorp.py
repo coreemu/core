@@ -14,10 +14,8 @@ class XorpRtrmgr(CoreService):
     name = "xorp_rtrmgr"
     executables = ("xorp_rtrmgr",)
     group = "XORP"
-    depends = ()
     dirs = ("/etc/xorp",)
     configs = ("/etc/xorp/config.boot",)
-    startindex = 35
     startup = ("xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid" % (configs[0], name, name),)
     shutdown = ("killall xorp_rtrmgr",)
     validate = ("pidof xorp_rtrmgr",)
@@ -41,7 +39,7 @@ class XorpRtrmgr(CoreService):
 
         for s in node.services:
             try:
-                s.depends.index(cls.name)
+                s.dependencies.index(cls.name)
                 cfg += s.generatexorpconfig(node)
             except ValueError:
                 logger.exception("error getting value from service: %s", cls.name)
@@ -79,10 +77,8 @@ class XorpService(CoreService):
     executables = ("xorp_rtrmgr",)
     group = "XORP"
     dependencies = ("xorp_rtrmgr",)
-    depends = ("xorp_rtrmgr",)
     dirs = ()
     configs = ()
-    startindex = 40
     startup = ()
     shutdown = ()
     meta = "The config file for this service can be found in the xorp_rtrmgr service."

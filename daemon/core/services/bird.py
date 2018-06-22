@@ -12,10 +12,8 @@ class Bird(CoreService):
     name = "bird"
     executables = ("bird",)
     group = "BIRD"
-    depends = ()
     dirs = ("/etc/bird",)
     configs = ("/etc/bird/bird.conf",)
-    startindex = 35
     startup = ("bird -c %s" % (configs[0]),)
     shutdown = ("killall bird",)
     validate = ("pidof bird",)
@@ -78,7 +76,7 @@ protocol device {
 
         # Generate protocol specific configurations
         for s in node.services:
-            if cls.name not in s.depends:
+            if cls.name not in s.dependencies:
                 continue
             cfg += s.generatebirdconfig(node)
 
@@ -95,10 +93,8 @@ class BirdService(CoreService):
     executables = ("bird",)
     group = "BIRD"
     dependencies = ("bird",)
-    depends = ("bird",)
     dirs = ()
     configs = ()
-    startindex = 40
     startup = ()
     shutdown = ()
     meta = "The config file for this service can be found in the bird service."

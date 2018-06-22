@@ -15,10 +15,8 @@ class NrlService(CoreService):
     """""
     name = None
     group = "ProtoSvc"
-    depends = ()
     dirs = ()
     configs = ()
-    startindex = 45
     startup = ()
     shutdown = ()
 
@@ -49,7 +47,6 @@ class MgenSinkService(NrlService):
     name = "MGEN_Sink"
     executables = ("mgen",)
     configs = ("sink.mgen",)
-    startindex = 5
     startup = ("mgen input sink.mgen",)
     validate = ("pidof mgen",)
     shutdown = ("killall mgen",)
@@ -581,15 +578,11 @@ class MgenActor(NrlService):
     executables = ("mgen",)
     # you can create your own group here
     group = "ProtoSvc"
-    # list of other services this service depends on
-    depends = ()
     # per-node directories
     dirs = ()
     # generated files (without a full path this file goes in the node's dir,
     #  e.g. /tmp/pycore.12345/n1.conf/)
     configs = ('start_mgen_actor.sh',)
-    # this controls the starting order vs other enabled services
-    startindex = 50
     # list of startup commands, also may be generated during startup
     startup = ("sh start_mgen_actor.sh",)
     # list of validation commands
@@ -625,7 +618,6 @@ class Arouted(NrlService):
     name = "arouted"
     executables = ("arouted",)
     configs = ("startarouted.sh",)
-    startindex = NrlService.startindex + 10
     startup = ("sh startarouted.sh",)
     shutdown = ("pkill arouted",)
     validate = ("pidof arouted",)

@@ -104,7 +104,7 @@ from core.service import ServiceManager
 try:
     from docker import Client
 except ImportError:
-    logger.warns("missing python docker bindings")
+    logger.warn("missing python docker bindings")
 
 
 class DockerService(CoreService):
@@ -115,10 +115,8 @@ class DockerService(CoreService):
     name = "Docker"
     executables = ("docker",)
     group = "Docker"
-    depends = ()
     dirs = ('/var/lib/docker/containers/', '/run/shm', '/run/resolvconf',)
     configs = ('docker.sh',)
-    startindex = 50
     startup = ('sh docker.sh',)
     shutdown = ('service docker stop',)
     # Container image to start

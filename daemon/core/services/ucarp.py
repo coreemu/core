@@ -10,11 +10,9 @@ UCARP_ETC = "/usr/local/etc/ucarp"
 class Ucarp(CoreService):
     name = "ucarp"
     group = "Utility"
-    depends = ( )
     dirs = (UCARP_ETC,)
     configs = (
         UCARP_ETC + "/default.sh", UCARP_ETC + "/default-up.sh", UCARP_ETC + "/default-down.sh", "ucarpboot.sh",)
-    startindex = 65
     startup = ("sh ucarpboot.sh",)
     shutdown = ("killall ucarp",)
     validate = ("pidof ucarp",)

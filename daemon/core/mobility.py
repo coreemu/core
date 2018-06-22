@@ -471,12 +471,12 @@ class BasicRangeModel(WirelessModel):
                          a.name, b.name, linked, d, self.range)
             if d > self.range:
                 if linked:
-                    logger.info("was linked, unlinking")
+                    logger.debug("was linked, unlinking")
                     self.wlan.unlink(a, b)
                     self.sendlinkmsg(a, b, unlink=True)
             else:
                 if not linked:
-                    logger.info("was not linked, linking")
+                    logger.debug("was not linked, linking")
                     self.wlan.link(a, b)
                     self.sendlinkmsg(a, b)
         except KeyError:

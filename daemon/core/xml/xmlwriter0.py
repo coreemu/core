@@ -303,9 +303,6 @@ class CoreDocumentWriter0(Document):
             s = self.createElement("Service")
             spn.appendChild(s)
             s.setAttribute("name", str(svc.name))
-            s.setAttribute("startup_idx", str(svc.startindex))
-            if svc.starttime != "":
-                s.setAttribute("start_time", str(svc.starttime))
             # only record service names if not a customized service
             if not svc.custom:
                 continue

@@ -92,11 +92,8 @@ class TestXml:
             interface = ip_prefixes.create_interface(node)
             session.add_link(node.objid, ptp_node.objid, interface_one=interface)
 
-        # set custom values for node service\
-        custom_start = 50
+        # set custom values for node service
         session.services.setcustomservice(node_one.objid, SshService.name)
-        service = session.services.getcustomservice(node_one.objid, SshService.name)
-        service.startindex = custom_start
         service_file = SshService.configs[0]
         file_data = "# test"
         session.services.setservicefile(node_one.objid, SshService.name, service_file, file_data)
@@ -135,7 +132,6 @@ class TestXml:
         # verify nodes have been recreated
         assert session.get_object(n1_id)
         assert session.get_object(n2_id)
-        assert service.startindex == custom_start
         assert service.configtxt.get(service_file) == file_data
 
     @pytest.mark.parametrize("version", _XML_VERSIONS)

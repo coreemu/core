@@ -14,22 +14,22 @@ class MyService(CoreService):
     name = "MyService"
     # you can create your own group here
     group = "Utility"
+    # list executables that this service requires
+    executables = ()
     # list of other services this service depends on
-    depends = ()
+    dependencies = ()
     # per-node directories
     dirs = ()
     # generated files (without a full path this file goes in the node's dir,
     #  e.g. /tmp/pycore.12345/n1.conf/)
-    configs = ('myservice.sh',)
-    # this controls the starting order vs other enabled services
-    startindex = 50
+    configs = ("myservice.sh",)
     # list of startup commands, also may be generated during startup
-    startup = ('sh myservice.sh',)
+    startup = ("sh myservice.sh",)
     # list of shutdown commands
     shutdown = ()
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generateconfig(cls, node, filename):
         """
         Return a string that will be written to filename, or sent to the
         GUI for user customization.
