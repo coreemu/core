@@ -61,7 +61,7 @@ def wifisession(opt):
         node.newnetif(wifi, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         nodes.append(node)
         session.services.add_services(node, "router", services_str.split("|"))
-        session.services.boot_node_services(node)
+        session.services.boot_services(node)
     session.setuprandomwalkmobility(bounds=(1000.0, 750.0, 0))
 
     # PHY tracing

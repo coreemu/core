@@ -88,7 +88,7 @@ ip forwarding
 
     def boot(self):
         self.config()
-        self.session.services.boot_node_services(self)
+        self.session.services.boot_services(self)
 
     def bootscript(self):
         return """\

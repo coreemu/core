@@ -29,7 +29,7 @@ class MyService(CoreService):
     shutdown = ()
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return a string that will be written to filename, or sent to the
         GUI for user customization.

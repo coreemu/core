@@ -370,7 +370,7 @@ class CoreDocumentParser0(object):
             filename = file.getAttribute("name")
             files.append(filename)
             data = xmlutils.get_text_child(file)
-            self.session.services.set_service_file(node_id=n.objid, service_name=name, filename=filename, data=data)
+            self.session.services.set_service_file(node_id=n.objid, service_name=name, file_name=filename, data=data)
 
         if len(files):
             values.append("files=%s" % files)

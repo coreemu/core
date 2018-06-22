@@ -21,7 +21,7 @@ class XorpRtrmgr(CoreService):
     validate = ("pidof xorp_rtrmgr",)
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Returns config.boot configuration file text. Other services that
         depend on this will have generatexorpconfig() hooks that are
@@ -150,7 +150,7 @@ class XorpService(CoreService):
         return "0.0.0.0"
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         return ""
 
     @classmethod

@@ -18,7 +18,7 @@ class Ucarp(CoreService):
     validate = ("pidof ucarp",)
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the default file contents
         """

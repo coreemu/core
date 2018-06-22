@@ -651,7 +651,7 @@ class CoreDocumentParser1(object):
             self.session.services.set_service_file(
                 node_id=node.objid,
                 service_name=svcname,
-                filename=filename,
+                file_name=filename,
                 data=data
             )
         return str(name)

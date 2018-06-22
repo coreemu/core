@@ -123,7 +123,7 @@ class DockerService(CoreService):
     image = ""
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Returns a string having contents of a docker.sh script that
         can be modified to start a specific docker image.

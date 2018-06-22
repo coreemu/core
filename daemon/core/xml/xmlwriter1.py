@@ -694,7 +694,7 @@ class DeviceElement(NamedXmlElement):
                 f.setAttribute("name", fn)
                 # all file names are added to determine when a file has been deleted
                 s.appendChild(f)
-                data = svc.configtxt.get(fn)
+                data = svc.config_data.get(fn)
                 if data is None:
                     # this includes only customized file contents and skips
                     # the auto-generated files

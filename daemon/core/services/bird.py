@@ -19,7 +19,7 @@ class Bird(CoreService):
     validate = ("pidof bird",)
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the bird.conf file contents.
         """

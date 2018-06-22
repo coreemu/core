@@ -160,7 +160,7 @@ def main():
             n.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
             if options.services is not None:
                 session.services.add_services(n, "", options.services.split("|"))
-                session.services.boot_node_services(n)
+                session.services.boot_services(n)
             nodelist.append(n)
             if i % 25 == 0:
                 print "\n%s nodes created " % i,

@@ -23,7 +23,7 @@ class Zebra(CoreService):
     validate = ("pidof zebra",)
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """
@@ -259,7 +259,7 @@ class QuaggaService(CoreService):
         return False
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         return ""
 
     @classmethod

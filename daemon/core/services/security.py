@@ -18,7 +18,7 @@ class VPNClient(CoreService):
     custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the client.conf and vpnclient.sh file contents to
         """
@@ -44,7 +44,7 @@ class VPNServer(CoreService):
     custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the sample server.conf and vpnserver.sh file contents to
         GUI for user customization.
@@ -70,7 +70,7 @@ class IPsec(CoreService):
     custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the ipsec.conf and racoon.conf file contents to
         GUI for user customization.
@@ -96,7 +96,7 @@ class Firewall(CoreService):
     custom_needed = True
 
     @classmethod
-    def generateconfig(cls, node, filename):
+    def generate_config(cls, node, filename):
         """
         Return the firewall rule examples to GUI for user customization.
         """

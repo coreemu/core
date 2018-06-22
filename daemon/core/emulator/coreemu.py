@@ -515,7 +515,7 @@ class EmuSession(Session):
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_objects()
             self.add_remove_control_interface(node=node, remove=False)
-            self.services.boot_node_services(node)
+            self.services.boot_services(node)
 
         return node
 

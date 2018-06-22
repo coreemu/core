@@ -10,10 +10,20 @@ class MyService(CoreService):
     group = "Utility"
     configs = ("myservice.sh",)
     startup = ("sh myservice.sh",)
+    shutdown = ("sh myservice.sh",)
+
+    @classmethod
+    def generate_config(cls, node, filename):
+        return "# test file"
 
 
-class MyService2(CoreService):
+class MyService2(MyService):
     name = "MyService2"
     group = "Utility"
-    configs = ("myservice.sh",)
-    startup = ("sh myservice.sh",)
+    configs = ("myservice2.sh",)
+    startup = ("sh myservice2.sh",)
+    shutdown = ("sh myservice2.sh",)
+
+    @classmethod
+    def generate_config(cls, node, filename):
+        return "exit 1"

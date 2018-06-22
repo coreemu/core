@@ -5,7 +5,6 @@ socket server request handlers leveraged by core servers.
 import Queue
 import SocketServer
 import os
-import pprint
 import shlex
 import shutil
 import sys
@@ -1526,19 +1525,19 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 continue
 
             if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
-                status = self.session.services.stop_node_service(node, service)
+                status = self.session.services.stop_service(node, service)
                 if status:
                     fail += "Stop %s," % service.name
             if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
-                status = self.session.services.node_service_startup(node, service)
+                status = self.session.services.startup_service(node, service)
                 if status:
                     fail += "Start %s(%s)," % service.name
             if event_type == EventTypes.PAUSE.value:
-                status = self.session.services.validate_node_service(node, service)
+                status = self.session.services.validate_service(node, service)
                 if status:
                     fail += "%s," % service.name
             if event_type == EventTypes.RECONFIGURE.value:
-                self.session.services.node_service_reconfigure(node, service)
+                self.session.services.service_reconfigure(node, service)
 
         fail_data = ""
         if len(fail) > 0:
@@ -1679,6 +1678,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         Return API messages that describe the current session.
         """
         # find all nodes and links
+
         nodes_data = []
         links_data = []
         with self.session._objects_lock:
@@ -1692,21 +1692,17 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     links_data.append(link_data)
 
         # send all nodes first, so that they will exist for any links
-        logger.info("sending nodes:")
         for node_data in nodes_data:
-            logger.info(pprint.pformat(dict(node_data._asdict())))
             self.session.broadcast_node(node_data)
 
-        logger.info("sending links:")
         for link_data in links_data:
-            logger.info(pprint.pformat(dict(link_data._asdict())))
             self.session.broadcast_link(link_data)
 
         # send mobility model info
         for node_id in self.session.mobility.nodes():
             node = self.session.get_object(node_id)
             for model_class, config in self.session.mobility.get_models(node):
-                logger.info("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                logger.debug("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
                 self.session.broadcast_config(config_data)
 
@@ -1714,7 +1710,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         for node_id in self.session.emane.nodes():
             node = self.session.get_object(node_id)
             for model_class, config in self.session.emane.get_models(node):
-                logger.info("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                logger.debug("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
                 self.session.broadcast_config(config_data)
 
