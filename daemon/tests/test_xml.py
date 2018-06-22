@@ -93,10 +93,10 @@ class TestXml:
             session.add_link(node.objid, ptp_node.objid, interface_one=interface)
 
         # set custom values for node service
-        session.services.setcustomservice(node_one.objid, SshService.name)
+        session.services.set_service(node_one.objid, SshService.name)
         service_file = SshService.configs[0]
         file_data = "# test"
-        session.services.setservicefile(node_one.objid, SshService.name, service_file, file_data)
+        session.services.set_service_file(node_one.objid, SshService.name, service_file, file_data)
 
         # instantiate session
         session.instantiate()
@@ -127,12 +127,12 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # retrieve custom service
-        service = session.services.getcustomservice(node_one.objid, SshService.name)
+        service = session.services.get_service(node_one.objid, SshService.name)
 
         # verify nodes have been recreated
         assert session.get_object(n1_id)
         assert session.get_object(n2_id)
-        assert service.configtxt.get(service_file) == file_data
+        assert service.config_data.get(service_file) == file_data
 
     @pytest.mark.parametrize("version", _XML_VERSIONS)
     def test_xml_mobility(self, session, tmpdir, version, ip_prefixes):

@@ -126,7 +126,7 @@ class EmuSession(Session):
         self.node_id_gen = IdGen()
 
         # set default services
-        self.services.defaultservices = {
+        self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
             "PC": ("DefaultRoute",),
             "prouter": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
@@ -508,14 +508,14 @@ class EmuSession(Session):
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             node.type = node_options.model
             logger.debug("set node type: %s", node.type)
-            self.services.addservicestonode(node, node.type, node_options.services)
+            self.services.add_services(node, node.type, node_options.services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
         is_boot_node = isinstance(node, PyCoreNode) and not nodeutils.is_node(node, NodeTypes.RJ45)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_objects()
             self.add_remove_control_interface(node=node, remove=False)
-            self.services.bootnodeservices(node)
+            self.services.boot_node_services(node)
 
         return node
 

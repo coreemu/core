@@ -279,7 +279,7 @@ class CoreDocumentParser0(object):
             services = []
             for service in node.getElementsByTagName("Service"):
                 services.append(str(service.getAttribute("name")))
-            self.session.services.defaultservices[type] = services
+            self.session.services.default_services[type] = services
             logger.info("default services for type %s set to %s" % (type, services))
 
     def parseservices(self):
@@ -319,7 +319,7 @@ class CoreDocumentParser0(object):
             services = svclists[objid]
             if services:
                 services = services.split("|")
-            self.session.services.addservicestonode(node=n, node_type=n.type, services=services)
+            self.session.services.add_services(node=n, node_type=n.type, services=services)
 
     def parseservice(self, service, n):
         """
@@ -370,15 +370,15 @@ class CoreDocumentParser0(object):
             filename = file.getAttribute("name")
             files.append(filename)
             data = xmlutils.get_text_child(file)
-            self.session.services.setservicefile(node_id=n.objid, service_name=name, filename=filename, data=data)
+            self.session.services.set_service_file(node_id=n.objid, service_name=name, filename=filename, data=data)
 
         if len(files):
             values.append("files=%s" % files)
         if not bool(service.getAttribute("custom")):
             return True
-        self.session.services.setcustomservice(n.objid, svc)
+        self.session.services.set_service(n.objid, svc)
         # set custom values for custom service
-        svc = self.session.services.getcustomservice(n.objid, None)
+        svc = self.session.services.get_service(n.objid, None)
         if not svc:
             raise ValueError("custom service(%s) for node(%s) does not exist", svc.name, n.objid)
         values = ConfigShim.str_to_dict("|".join(values))

@@ -673,7 +673,7 @@ class Session(object):
             for obj in self.objects.itervalues():
                 # TODO: determine if checking for CoreNode alone is ok
                 if isinstance(obj, nodes.PyCoreNode):
-                    self.services.stopnodeservices(obj)
+                    self.services.stop_node_services(obj)
 
         # shutdown emane
         self.emane.shutdown()
@@ -727,7 +727,7 @@ class Session(object):
                     # add a control interface if configured
                     logger.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
-                    result = pool.apply_async(self.services.bootnodeservices, (obj,))
+                    result = pool.apply_async(self.services.boot_node_services, (obj,))
                     results.append(result)
 
             pool.close()

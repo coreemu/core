@@ -639,7 +639,7 @@ class CoreDocumentParser1(object):
 
         custom = service.getAttribute('custom')
         if custom and custom.lower() == 'true':
-            self.session.services.setcustomservice(node.objid, session_service.name)
+            self.session.services.set_service(node.objid, session_service.name)
             values = ConfigShim.str_to_dict("|".join(values))
             for key, value in values.iteritems():
                 ServiceShim.setvalue(session_service, key, value)
@@ -648,7 +648,7 @@ class CoreDocumentParser1(object):
         # called after the custom service exists
         for typestr, filename, data in files:
             svcname = typestr.split(":")[1]
-            self.session.services.setservicefile(
+            self.session.services.set_service_file(
                 node_id=node.objid,
                 service_name=svcname,
                 filename=filename,
@@ -683,7 +683,7 @@ class CoreDocumentParser1(object):
         if services_str:
             services_str = services_str.split("|")
 
-        self.session.services.addservicestonode(
+        self.session.services.add_services(
             node=node,
             node_type=node_type,
             services=services_str
@@ -885,5 +885,5 @@ class CoreDocumentParser1(object):
             self.default_services[device_type] = services
         # store default services for the session
         for t, s in self.default_services.iteritems():
-            self.session.services.defaultservices[t] = s
+            self.session.services.default_services[t] = s
             logger.info('default services for node type \'%s\' set to: %s' % (t, s))

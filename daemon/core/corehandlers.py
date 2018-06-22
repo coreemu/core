@@ -1151,7 +1151,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     # a file request: e.g. "service:zebra:quagga.conf"
                     file_name = servicesstring[2]
                     service_name = services[0]
-                    file_data = self.session.services.getservicefile(node, service_name, file_name)
+                    file_data = self.session.services.get_service_file(node, service_name, file_name)
                     self.session.broadcast_file(file_data)
                     # short circuit this request early to avoid returning response below
                     return replies
@@ -1162,7 +1162,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 # dirs, configs, startindex, startup, shutdown, metadata, config
                 type_flag = ConfigFlags.UPDATE.value
                 data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
-                service = self.session.services.getcustomservice(node_id, service_name, default_service=True)
+                service = self.session.services.get_service(node_id, service_name, default_service=True)
                 values = ServiceShim.tovaluelist(node, service)
                 captions = None
                 possible_values = None
@@ -1199,7 +1199,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                         logger.info(error_message)
                         return None
                     key = values.pop(0)
-                    self.session.services.defaultservices[key] = values
+                    self.session.services.default_services[key] = values
                     logger.debug("default services for type %s set to %s", key, values)
                 elif node_id:
                     services = ServiceShim.servicesfromopaque(opaque)
@@ -1207,10 +1207,10 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                         service_name = services[0]
 
                         # set custom service for node
-                        self.session.services.setcustomservice(node_id, service_name)
+                        self.session.services.set_service(node_id, service_name)
 
                         # set custom values for custom service
-                        service = self.session.services.getcustomservice(node_id, service_name)
+                        service = self.session.services.get_service(node_id, service_name)
                         if not service:
                             raise ValueError("custom service(%s) for node(%s) does not exist", service_name, node_id)
 
@@ -1359,7 +1359,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if file_type is not None:
                 if file_type.startswith("service:"):
                     _, service_name = file_type.split(':')[:2]
-                    self.session.services.setservicefile(node_num, service_name, file_name, data)
+                    self.session.services.set_service_file(node_num, service_name, file_name, data)
                     return ()
                 elif file_type.startswith("hook:"):
                     _, state = file_type.split(':')[:2]
@@ -1520,13 +1520,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         unknown = []
         services = ServiceShim.servicesfromopaque(name)
         for service_name in services:
-            service = self.session.services.getcustomservice(node_id, service_name, default_service=True)
+            service = self.session.services.get_service(node_id, service_name, default_service=True)
             if not service:
                 unknown.append(service_name)
                 continue
 
             if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
-                status = self.session.services.stopnodeservice(node, service)
+                status = self.session.services.stop_node_service(node, service)
                 if status:
                     fail += "Stop %s," % service.name
             if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
@@ -1534,7 +1534,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 if status:
                     fail += "Start %s(%s)," % service.name
             if event_type == EventTypes.PAUSE.value:
-                status = self.session.services.validatenodeservice(node, service)
+                status = self.session.services.validate_node_service(node, service)
                 if status:
                     fail += "%s," % service.name
             if event_type == EventTypes.RECONFIGURE.value:
@@ -1719,7 +1719,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 self.session.broadcast_config(config_data)
 
         # service customizations
-        service_configs = self.session.services.getallconfigs()
+        service_configs = self.session.services.all_configs()
         for node_id, service in service_configs:
             opaque = "service:%s" % service.name
             data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
@@ -1737,7 +1737,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             )
             self.session.broadcast_config(config_data)
 
-            for file_name, config_data in self.session.services.getallfiles(service):
+            for file_name, config_data in self.session.services.all_files(service):
                 file_data = FileData(
                     message_type=MessageFlags.ADD.value,
                     node=node_id,

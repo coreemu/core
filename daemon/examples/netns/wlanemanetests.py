@@ -420,8 +420,8 @@ class Experiment(object):
             tmp = self.session.add_object(cls=nodes.CoreNode, objid=i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
-            self.session.services.addservicestonode(tmp, "router", "IPForward")
-            self.session.services.bootnodeservices(tmp)
+            self.session.services.add_services(tmp, "router", "IPForward")
+            self.session.services.boot_node_services(tmp)
             self.staticroutes(i, prefix, numnodes)
 
             # link each node in a chain, with the previous node
@@ -451,7 +451,7 @@ class Experiment(object):
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
-            self.session.services.addservicestonode(tmp, "router", "IPForward")
+            self.session.services.add_services(tmp, "router", "IPForward")
 
         if values is None:
             values = cls.getdefaultvalues()
@@ -463,7 +463,7 @@ class Experiment(object):
 
         for i in xrange(1, numnodes + 1):
             tmp = self.nodes[i - 1]
-            self.session.services.bootnodeservices(tmp)
+            self.session.services.boot_node_services(tmp)
             self.staticroutes(i, prefix, numnodes)
 
     def setnodes(self):

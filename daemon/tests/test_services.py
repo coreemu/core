@@ -48,18 +48,21 @@ class TestServices:
         assert ServiceManager.get("MyService")
         assert ServiceManager.get("MyService2")
 
+    def test_service_defaults(self):
+        pass
+
     def test_services_dependencies(self, session):
         # given
         services = [
-            ServiceA(),
-            ServiceB(),
-            ServiceC(),
-            ServiceD(),
-            ServiceF(),
+            ServiceA,
+            ServiceB,
+            ServiceC,
+            ServiceD,
+            ServiceF,
         ]
 
         # when
-        startups = session.services.node_service_dependencies(services)
+        startups = session.services.node_boot_paths(services)
 
         # then
         assert len(startups) == 2
@@ -67,28 +70,28 @@ class TestServices:
     def test_services_dependencies_not_present(self, session):
         # given
         services = [
-            ServiceA(),
-            ServiceB(),
-            ServiceC(),
-            ServiceE()
+            ServiceA,
+            ServiceB,
+            ServiceC,
+            ServiceE
         ]
 
         # when
         with pytest.raises(ValueError):
-            session.services.node_service_dependencies(services)
+            session.services.node_boot_paths(services)
 
     def test_services_dependencies_cycle(self, session):
         # given
         service_c = ServiceC()
         service_c.dependencies = ("D",)
         services = [
-            ServiceA(),
-            ServiceB(),
+            ServiceA,
+            ServiceB,
             service_c,
-            ServiceD(),
-            ServiceF()
+            ServiceD,
+            ServiceF
         ]
 
         # when
         with pytest.raises(ValueError):
-            session.services.node_service_dependencies(services)
+            session.services.node_boot_paths(services)

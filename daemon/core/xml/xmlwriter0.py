@@ -276,8 +276,8 @@ class CoreDocumentWriter0(Document):
         """
         Add default services and node types to the ServicePlan.
         """
-        for type in self.session.services.defaultservices:
-            defaults = self.session.services.getdefaultservices(type)
+        for type in self.session.services.default_services:
+            defaults = self.session.services.get_default_services(type)
             spn = self.createElement("Node")
             spn.setAttribute("type", type)
             self.sp.appendChild(spn)
@@ -292,7 +292,7 @@ class CoreDocumentWriter0(Document):
         """
         if len(node.services) == 0:
             return
-        defaults = self.session.services.getdefaultservices(node.type)
+        defaults = self.session.services.get_default_services(node.type)
         if node.services == defaults:
             return
         spn = self.createElement("Node")
@@ -316,7 +316,7 @@ class CoreDocumentWriter0(Document):
                 f.setAttribute("name", fn)
                 # all file names are added to determine when a file has been deleted
                 s.appendChild(f)
-                data = self.session.services.getservicefiledata(svc, fn)
+                data = svc.config_data.get(fn)
                 if data is None:
                     # this includes only customized file contents and skips
                     # the auto-generated files

@@ -269,8 +269,8 @@ class ScenarioPlan(XmlElement):
         Add default services and node types to the ServicePlan.
         """
         defaultservices = self.createElement("CORE:defaultservices")
-        for type in self.coreSession.services.defaultservices:
-            defaults = self.coreSession.services.getdefaultservices(type)
+        for type in self.coreSession.services.default_services:
+            defaults = self.coreSession.services.get_default_services(type)
             spn = self.createElement("device")
             spn.setAttribute("type", type)
             defaultservices.appendChild(spn)
@@ -670,7 +670,7 @@ class DeviceElement(NamedXmlElement):
         if len(device_object.services) == 0:
             return
 
-        defaults = self.coreSession.services.getdefaultservices(device_object.type)
+        defaults = self.coreSession.services.get_default_services(device_object.type)
         if device_object.services == defaults:
             return
         spn = self.createElement("CORE:services")
