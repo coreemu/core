@@ -22,7 +22,8 @@ class MyService2(MyService):
     group = "Utility"
     configs = ("myservice2.sh",)
     startup = ("sh myservice2.sh",)
-    shutdown = ("sh myservice2.sh",)
+    shutdown = startup
+    validate = startup
 
     @classmethod
     def generate_config(cls, node, filename):

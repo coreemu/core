@@ -8,6 +8,9 @@ from core.service import ServiceManager
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _SERVICES_PATH = os.path.join(_PATH, "myservices")
 
+SERVICE_ONE = "MyService"
+SERVICE_TWO = "MyService2"
+
 
 class ServiceA(CoreService):
     name = "A"
@@ -40,10 +43,52 @@ class ServiceF(CoreService):
 
 
 class TestServices:
+    def test_service_all_files(self, session):
+        # given
+        ServiceManager.add_services(_SERVICES_PATH)
+        file_name = "myservice.sh"
+        node = session.add_node()
+
+        # when
+        session.services.set_service_file(node.objid, SERVICE_ONE, file_name, "# test")
+
+        # then
+        service = session.services.get_service(node.objid, SERVICE_ONE)
+        all_files = session.services.all_files(service)
+        assert service
+        assert all_files and len(all_files) == 1
+
+    def test_service_all_configs(self, session):
+        # given
+        ServiceManager.add_services(_SERVICES_PATH)
+        node = session.add_node()
+
+        # when
+        session.services.set_service(node.objid, SERVICE_ONE)
+        session.services.set_service(node.objid, SERVICE_TWO)
+
+        # then
+        all_configs = session.services.all_configs()
+        assert all_configs
+        assert len(all_configs) == 2
+
+    def test_service_add_services(self, session):
+        # given
+        ServiceManager.add_services(_SERVICES_PATH)
+        node = session.add_node()
+        total_service = len(node.services)
+
+        # when
+        session.services.add_services(node, node.type, [SERVICE_ONE, SERVICE_TWO])
+
+        # then
+        assert node.services
+        assert len(node.services) == total_service + 2
+
     def test_service_file(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        my_service = ServiceManager.get("MyService")
+        my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node()
         file_name = my_service.configs[0]
         file_path = node.hostfilename(file_name)
@@ -54,10 +99,36 @@ class TestServices:
         # then
         assert os.path.exists(file_path)
 
+    def test_service_validate(self, session):
+        # given
+        ServiceManager.add_services(_SERVICES_PATH)
+        my_service = ServiceManager.get(SERVICE_ONE)
+        node = session.add_node()
+        session.services.create_service_files(node, my_service)
+
+        # when
+        status = session.services.validate_service(node, my_service)
+
+        # then
+        assert not status
+
+    def test_service_validate_error(self, session):
+        # given
+        ServiceManager.add_services(_SERVICES_PATH)
+        my_service = ServiceManager.get(SERVICE_TWO)
+        node = session.add_node()
+        session.services.create_service_files(node, my_service)
+
+        # when
+        status = session.services.validate_service(node, my_service)
+
+        # then
+        assert status
+
     def test_service_startup(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        my_service = ServiceManager.get("MyService")
+        my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
 
@@ -70,7 +141,7 @@ class TestServices:
     def test_service_startup_error(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        my_service = ServiceManager.get("MyService2")
+        my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
 
@@ -83,7 +154,7 @@ class TestServices:
     def test_service_stop(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        my_service = ServiceManager.get("MyService")
+        my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
 
@@ -96,7 +167,7 @@ class TestServices:
     def test_service_stop_error(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        my_service = ServiceManager.get("MyService2")
+        my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
 
@@ -109,7 +180,7 @@ class TestServices:
     def test_service_set_file(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        my_service = ServiceManager.get("MyService")
+        my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node()
         file_name = my_service.configs[0]
         file_path = node.hostfilename(file_name)
@@ -130,21 +201,20 @@ class TestServices:
         Test importing a custom service.
         """
         ServiceManager.add_services(_SERVICES_PATH)
-        assert ServiceManager.get("MyService")
-        assert ServiceManager.get("MyService2")
+        assert ServiceManager.get(SERVICE_ONE)
+        assert ServiceManager.get(SERVICE_TWO)
 
     def test_service_setget(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
-        service_name = "MyService"
-        my_service = ServiceManager.get(service_name)
+        my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node()
 
         # when
-        no_service = session.services.get_service(node.objid, service_name)
-        default_service = session.services.get_service(node.objid, service_name, default_service=True)
-        session.services.set_service(node.objid, service_name)
-        custom_service = session.services.get_service(node.objid, service_name, default_service=True)
+        no_service = session.services.get_service(node.objid, SERVICE_ONE)
+        default_service = session.services.get_service(node.objid, SERVICE_ONE, default_service=True)
+        session.services.set_service(node.objid, SERVICE_ONE)
+        custom_service = session.services.get_service(node.objid, SERVICE_ONE, default_service=True)
 
         # then
         assert no_service is None
