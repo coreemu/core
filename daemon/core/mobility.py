@@ -73,7 +73,8 @@ class MobilityManager(ModelManager):
                 continue
 
             for model_name in self.models.iterkeys():
-                config = self.get_configs(node_id=node_id, config_type=model_name)
+                all_configs = self.get_all_configs(node_id)
+                config = all_configs.get(model_name)
                 if not config:
                     continue
                 model_class = self.models[model_name]

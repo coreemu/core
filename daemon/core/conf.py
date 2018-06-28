@@ -269,7 +269,6 @@ class ConfigurableOptions(object):
     name = None
     bitmap = None
     options = []
-    _default_node = -1
 
     @classmethod
     def configurations(cls):
@@ -380,9 +379,11 @@ class ModelManager(ConfigurableManager):
             all_configs = self.get_all_configs(node_id=node.objid)
 
         for model_name in all_configs.iterkeys():
+            if model_name == ModelManager._default_node:
+                continue
             model_class = self.models[model_name]
             config = self.get_configs(node_id=node.objid, config_type=model_name)
             models.append((model_class, config))
 
-        logger.debug("mobility models for node(%s): %s", node.objid, models)
+        logger.debug("models for node(%s): %s", node.objid, models)
         return models

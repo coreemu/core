@@ -1284,7 +1284,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
             if values_str:
                 config = ConfigShim.str_to_dict(values_str)
-                self.session.emane.set_configs(config)
+                self.session.emane.set_configs(config, node_id=node_id)
 
         # extra logic to start slave Emane object after nemid has been configured from the master
         if message_type == ConfigFlags.UPDATE and self.session.master is False:

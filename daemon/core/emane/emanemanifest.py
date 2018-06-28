@@ -34,7 +34,7 @@ def _get_possible(config_type, config_regex):
     :param str config_type: emane configuration type
     :param str config_regex: emane configuration regex
     :return: a string listing comma delimited values, if needed, empty string otherwise
-    :rtype: str
+    :rtype: list
     """
     if config_type == "bool":
         return ["On", "Off"]

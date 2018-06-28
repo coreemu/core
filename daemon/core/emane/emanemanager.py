@@ -11,6 +11,7 @@ from core import constants
 from core import logger
 from core.api import coreapi
 from core.api import dataconversion
+from core.conf import ConfigGroup
 from core.conf import ConfigShim
 from core.conf import Configuration
 from core.conf import ModelManager
@@ -1016,8 +1017,12 @@ class EmaneGlobalModel(EmaneModel):
 
     @classmethod
     def config_groups(cls):
-        return "Platform Attributes:1-%d|NEM Parameters:%d-%d" % (
-            len(cls.emulator_config), len(cls.emulator_config) + 1, len(cls.configurations()))
+        emulator_len = len(cls.emulator_config)
+        config_len = len(cls.configurations())
+        return [
+            ConfigGroup("Platform Attributes", 1, emulator_len),
+            ConfigGroup("NEM Parameters", emulator_len + 1, config_len)
+        ]
 
     def __init__(self, session, object_id=None):
         super(EmaneGlobalModel, self).__init__(session, object_id)

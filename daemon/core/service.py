@@ -339,7 +339,7 @@ class CoreServices(object):
         :param str service_name: name of service to set
         :return: nothing
         """
-        logger.debug("setting custom service(%s) for node: %s", node_id, service_name)
+        logger.debug("setting custom service(%s) for node: %s", service_name, node_id)
         service = self.get_service(node_id, service_name)
         if not service:
             service_class = ServiceManager.get(service_name)
