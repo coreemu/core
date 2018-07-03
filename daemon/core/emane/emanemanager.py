@@ -4,6 +4,7 @@ emane.py: definition of an Emane class for implementing configuration control of
 
 import os
 import threading
+from lxml import etree
 from xml.dom.minidom import parseString
 
 from core import CoreCommandError
@@ -53,6 +54,39 @@ EMANE_MODELS = [
     EmaneBypassModel,
     EmaneTdmaModel
 ]
+
+
+def build_node_platform_xml(node):
+    platform_element = etree.Element("platform")
+
+    nem_entries = {}
+
+    if node.model is None:
+        logger.info("warning: EmaneNode %s has no associated model", node.name)
+        return nem_entries
+
+    for netif in node.netifs():
+        # build nem xml
+        # nementry = node.model.build_nem_xml(doc, node, netif)
+        nem_name = node.model.nem_name(netif)
+        nem_element = etree.Element("nem", name=netif.localname, definition=nem_name)
+
+        # build transport xml
+        # trans = node.model.build_transport_xml(doc, node, netif)
+        transport_type = netif.transport_type
+        if not transport_type:
+            logger.info("warning: %s interface type unsupported!", netif.name)
+            transport_type = "raw"
+        transport_name = node.transportxmlname(transport_type)
+        transport_element = etree.SubElement(nem_element, "transport", definition=transport_name)
+
+        # add transport parameter
+        etree.SubElement(transport_element, "param", name="device", value=netif.name)
+
+        # add nem entry
+        nem_entries[netif] = nem_element
+
+    return nem_entries
 
 
 class EmaneManager(ModelManager):
@@ -637,6 +671,7 @@ class EmaneManager(ModelManager):
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
             nems = emane_node.buildplatformxmlentry(self.xmldoc("platform"))
+
             for netif in sorted(nems, key=lambda x: x.node.objid):
                 nementry = nems[netif]
                 nementry.setAttribute("id", "%d" % nemid)

@@ -1,38 +1,102 @@
 """
 Defines Emane Models used within CORE.
 """
+import os
+
+from lxml import etree
 
 from core import logger
 from core.conf import ConfigGroup
 from core.emane import emanemanifest
 from core.misc import utils
 from core.mobility import WirelessModel
-from core.xml import xmlutils
+from core.xml import corexml
 
 
-def value_to_params(doc, name, value):
+def emane_xml_doctype(name):
     """
-    Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
-    multiple values.
+    Create emane xml doctype for xml files.
 
-    :param xml.dom.minidom.Document doc: xml document
-    :param name: name of element for params
+    :param str name: name for xml doctype
+    :return: emane xml doctype
+    :rtype: str
+    """
+    return '<!DOCTYPE %s SYSTEM "file:///usr/share/emane/dtd/%s.dtd">' % (name, name)
+
+
+def add_emane_configurations(xml_element, configurations, config, config_ignore):
+    """
+
+
+    :param lxml.etree.Element xml_element: xml element to add emane configurations to
+    :param list[core.config.Configuration] configurations: configurations to add to xml
+    :param dict config: configuration values
+    :param set config_ignore: configuration options to ignore
+    :return:
+    """
+    for configuration in configurations:
+        # ignore custom configurations
+        name = configuration.id
+        if name in config_ignore:
+            continue
+
+        # check if value is a multi param
+        value = str(config[name])
+        params = lxml_value_to_params(value)
+        if params:
+            params_element = etree.SubElement(xml_element, "paramlist", name=name)
+            for param in params:
+                etree.SubElement(params_element, "item", value=param)
+        else:
+            etree.SubElement(xml_element, "param", name=name, value=value)
+
+
+def lxml_value_to_params(value):
+    """
+    Helper to convert a parameter to a parameter tuple.
+
     :param str value: value string to convert to tuple
-    :return: xml document with added params or None, when an invalid value has been provided
+    :return: parameter tuple, None otherwise
     """
     try:
         values = utils.make_tuple_fromstr(value, str)
+
+        if not hasattr(values, "__iter__"):
+            return None
+
+        if len(values) < 2:
+            return None
+
+        return values
+
     except SyntaxError:
         logger.exception("error in value string to param list")
-        return None
+    return None
 
-    if not hasattr(values, "__iter__"):
-        return None
 
-    if len(values) < 2:
-        return None
-
-    return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
+# def value_to_params(doc, name, value):
+#     """
+#     Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
+#     multiple values.
+#
+#     :param xml.dom.minidom.Document doc: xml document
+#     :param name: name of element for params
+#     :param str value: value string to convert to tuple
+#     :return: xml document with added params or None, when an invalid value has been provided
+#     """
+#     try:
+#         values = utils.make_tuple_fromstr(value, str)
+#     except SyntaxError:
+#         logger.exception("error in value string to param list")
+#         return None
+#
+#     if not hasattr(values, "__iter__"):
+#         return None
+#
+#     if len(values) < 2:
+#         return None
+#
+#     return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
 
 
 class EmaneModel(WirelessModel):
@@ -88,112 +152,82 @@ class EmaneModel(WirelessModel):
             return
 
         # create document and write to disk
-        nem_name = self.nem_name(interface)
-        nem_document = self.create_nem_doc(emane_manager, interface)
-        emane_manager.xmlwrite(nem_document, nem_name)
+        self.create_nem_doc(interface)
 
         # create mac document and write to disk
-        mac_name = self.mac_name(interface)
-        mac_document = self.create_mac_doc(emane_manager, config)
-        emane_manager.xmlwrite(mac_document, mac_name)
+        self.create_mac_doc(interface, config)
 
         # create phy document and write to disk
-        phy_name = self.phy_name(interface)
-        phy_document = self.create_phy_doc(emane_manager, config)
-        emane_manager.xmlwrite(phy_document, phy_name)
+        self.create_phy_doc(interface, config)
 
-    def create_nem_doc(self, emane_manager, interface):
+    def create_nem_doc(self, interface):
         """
         Create the nem xml document.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
         :param interface: interface for the emane node
-        :return: nem document
-        :rtype: xml.dom.minidom.Document
+        :return: nothing
         """
+        nem_element = etree.Element("nem", name="%s NEM" % self.name)
+
+        # add transport
+        transport_type = "virtual"
+        if interface and interface.transport_type == "raw":
+            transport_type = "raw"
+        transport_type = "n%strans%s.xml" % (self.object_id, transport_type)
+        etree.SubElement(nem_element, "transport", definition=transport_type)
+
+        # create mac
         mac_name = self.mac_name(interface)
+        etree.SubElement(nem_element, "mac", definition=mac_name)
+
+        # create phy
         phy_name = self.phy_name(interface)
+        etree.SubElement(nem_element, "phy", definition=phy_name)
 
-        nem_document = emane_manager.xmldoc("nem")
-        nem_element = nem_document.getElementsByTagName("nem").pop()
-        nem_element.setAttribute("name", "%s NEM" % self.name)
-        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+        # write out xml
+        nem_name = self.nem_name(interface)
+        self.create_file(nem_element, nem_name, "nem")
 
-        mac_element = nem_document.createElement("mac")
-        mac_element.setAttribute("definition", mac_name)
-        nem_element.appendChild(mac_element)
-
-        phy_element = nem_document.createElement("phy")
-        phy_element.setAttribute("definition", phy_name)
-        nem_element.appendChild(phy_element)
-
-        return nem_document
-
-    def create_mac_doc(self, emane_manager, config):
+    def create_mac_doc(self, interface, config):
         """
         Create the mac xml document.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
         :param dict config: all current configuration values, mac + phy
-        :return: nem document
-        :rtype: xml.dom.minidom.Document
+        :return: nothing
         """
-        mac_document = emane_manager.xmldoc("mac")
-        mac_element = mac_document.getElementsByTagName("mac").pop()
-        mac_element.setAttribute("name", "%s MAC" % self.name)
-
         if not self.mac_library:
             raise ValueError("must define emane model library")
-        mac_element.setAttribute("library", self.mac_library)
 
-        for mac_configuration in self.mac_config:
-            # ignore custom configurations
-            name = mac_configuration.id
-            if name in self.config_ignore:
-                continue
+        mac_element = etree.Element("mac", name="%s MAC" % self.name, library=self.mac_library)
+        add_emane_configurations(mac_element, self.mac_config, config, self.config_ignore)
 
-            # check if value is a multi param
-            value = str(config[name])
-            param = value_to_params(mac_document, name, value)
-            if not param:
-                param = emane_manager.xmlparam(mac_document, name, value)
+        # write out xml
+        mac_name = self.mac_name(interface)
+        self.create_file(mac_element, mac_name, "mac")
 
-            mac_element.appendChild(param)
-
-        return mac_document
-
-    def create_phy_doc(self, emane_manager, config):
+    def create_phy_doc(self, interface, config):
         """
         Create the phy xml document.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param interface: interface for the emane node
         :param dict config: all current configuration values, mac + phy
-        :return: nem document
-        :rtype: xml.dom.minidom.Document
+        :return: nothing
         """
-        phy_document = emane_manager.xmldoc("phy")
-        phy_element = phy_document.getElementsByTagName("phy").pop()
-        phy_element.setAttribute("name", "%s PHY" % self.name)
-
+        phy_element = etree.Element("phy", name="%s PHY" % self.name)
         if self.phy_library:
-            phy_element.setAttribute("library", self.phy_library)
+            phy_element.set("library", self.phy_library)
 
-        # append all phy options
-        for phy_configuration in self.phy_config:
-            # ignore custom configurations
-            name = phy_configuration.id
-            if name in self.config_ignore:
-                continue
+        add_emane_configurations(phy_element, self.phy_config, config, self.config_ignore)
 
-            # check if value is a multi param
-            value = str(config[name])
-            param = value_to_params(phy_document, name, value)
-            if not param:
-                param = emane_manager.xmlparam(phy_document, name, value)
+        # write out xml
+        phy_name = self.phy_name(interface)
+        self.create_file(phy_element, phy_name, "phy")
 
-            phy_element.appendChild(param)
-
-        return phy_document
+    def create_file(self, xml_element, file_name, doc_name):
+        file_path = os.path.join(self.session.session_dir, file_name)
+        doctype = emane_xml_doctype(doc_name)
+        corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
     def post_startup(self):
         """

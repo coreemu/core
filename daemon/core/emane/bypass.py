@@ -1,6 +1,7 @@
 """
 EMANE Bypass model for CORE
 """
+from core.conf import ConfigGroup
 from core.conf import Configuration
 from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
@@ -31,4 +32,6 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     # override config groups
     @classmethod
     def config_groups(cls):
-        return "Bypass Parameters:1-1"
+        return [
+            ConfigGroup("Bypass Parameters", 1, 1),
+        ]

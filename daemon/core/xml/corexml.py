@@ -12,6 +12,12 @@ from core.misc.ipaddress import MacAddress
 from core.netns import nodes
 
 
+def write_xml_file(xml_element, file_path, doctype=None):
+    xml_data = etree.tostring(xml_element, xml_declaration=True, pretty_print=True, encoding="UTF-8", doctype=doctype)
+    with open(file_path, "w") as xml_file:
+        xml_file.write(xml_data)
+
+
 def get_type(element, name, _type):
     value = element.get(name)
     if value is not None:
