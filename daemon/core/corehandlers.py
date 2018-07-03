@@ -1728,7 +1728,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 type=ConfigFlags.UPDATE.value,
                 data_types=data_types,
                 data_values=values,
-                session=self.session.session_id,
+                session=str(self.session.session_id),
                 opaque=opaque
             )
             self.session.broadcast_config(config_data)

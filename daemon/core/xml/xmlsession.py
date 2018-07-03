@@ -33,6 +33,4 @@ def save_session_xml(session, filename, version):
     """
     Export a session to the EmulationScript XML format.
     """
-    doc = core_document_writer(session, version)
-    doc.writexml(filename)
-    corexml.CoreXmlWriter(session).write(filename + ".test")
+    corexml.CoreXmlWriter(session).write(filename)

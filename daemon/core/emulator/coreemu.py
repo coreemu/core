@@ -17,8 +17,7 @@ from core.misc import nodemaps
 from core.misc import nodeutils
 from core.service import ServiceManager
 from core.session import Session
-from core.xml.xmlparser import core_document_parser
-from core.xml.xmlwriter import core_document_writer
+from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
 
 def signal_handler(signal_number, _):
@@ -199,7 +198,7 @@ class EmuSession(Session):
         objects = [x for x in objects if x]
         if len(objects) < 2:
             raise ValueError("wireless link failure: %s", objects)
-        logger.debug("handling wireless linking objects(%) connect(%s)", objects, connect)
+        logger.debug("handling wireless linking objects(%s) connect(%s)", objects, connect)
         common_networks = objects[0].commonnets(objects[1])
         if not common_networks:
             raise ValueError("no common network found for wireless link/unlink")
@@ -661,10 +660,10 @@ class EmuSession(Session):
         # clear out existing session
         self.clear()
 
-        # set default node class when one is not provided
-        node_class = nodeutils.get_node_class(NodeTypes.DEFAULT)
-        options = {"start": start, "nodecls": node_class}
-        core_document_parser(self, file_name, options)
+        # write out xml file
+        CoreXmlReader(self).read(file_name)
+
+        # start session if needed
         if start:
             self.name = os.path.basename(file_name)
             self.file_name = file_name
@@ -678,8 +677,7 @@ class EmuSession(Session):
         :param str version: xml version type
         :return: nothing
         """
-        doc = core_document_writer(self, version)
-        doc.writexml(file_name)
+        CoreXmlWriter(self).write(file_name)
 
     def add_hook(self, state, file_name, source_name, data):
         """

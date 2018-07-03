@@ -1,10 +1,30 @@
 from lxml import etree
 
 from core import coreobj
+from core import logger
+from core.emulator.emudata import InterfaceData
+from core.emulator.emudata import LinkOptions
+from core.emulator.emudata import NodeOptions
 from core.enumerations import NodeTypes
 from core.misc import ipaddress
 from core.misc import nodeutils
+from core.misc.ipaddress import MacAddress
 from core.netns import nodes
+
+
+def get_type(element, name, _type):
+    value = element.get(name)
+    if value is not None:
+        value = _type(value)
+    return value
+
+
+def get_float(element, name):
+    return get_type(element, name, float)
+
+
+def get_int(element, name):
+    return get_type(element, name, int)
 
 
 def add_attribute(element, name, value):
@@ -12,23 +32,33 @@ def add_attribute(element, name, value):
         element.set(name, str(value))
 
 
+def create_interface_data(interface_element):
+    interface_id = int(interface_element.get("id"))
+    name = interface_element.get("name")
+    mac = interface_element.get("mac")
+    if mac:
+        mac = MacAddress.from_string(mac)
+    ip4 = interface_element.get("ip4")
+    ip4_mask = get_int(interface_element, "ip4_mask")
+    ip6 = interface_element.get("ip6")
+    ip6_mask = get_int(interface_element, "ip6_mask")
+    return InterfaceData(interface_id, name, mac, ip4, ip4_mask, ip6, ip6_mask)
+
+
 def create_emane_config(node_id, emane_config, config):
     emane_configuration = etree.Element("emane_configuration")
     add_attribute(emane_configuration, "node", node_id)
     add_attribute(emane_configuration, "model", "emane")
+
     emulator_element = etree.SubElement(emane_configuration, "emulator")
     for emulator_config in emane_config.emulator_config:
-        config_element = etree.SubElement(emulator_element, "configuration")
         value = config[emulator_config.id]
-        add_attribute(config_element, "name", emulator_config.id)
-        add_attribute(config_element, "value", value)
+        add_configuration(emulator_element, emane_config.id, value)
 
     nem_element = etree.SubElement(emane_configuration, "nem")
     for nem_config in emane_config.nem_config:
-        config_element = etree.SubElement(nem_element, "configuration")
         value = config[nem_config.id]
-        add_attribute(config_element, "name", nem_config.id)
-        add_attribute(config_element, "value", value)
+        add_configuration(nem_element, nem_config.id, value)
 
     return emane_configuration
 
@@ -40,19 +70,21 @@ def create_emane_model_config(node_id, model, config):
 
     mac_element = etree.SubElement(emane_element, "mac")
     for mac_config in model.mac_config:
-        config_element = etree.SubElement(mac_element, "configuration")
         value = config[mac_config.id]
-        add_attribute(config_element, "name", mac_config.id)
-        add_attribute(config_element, "value", value)
+        add_configuration(mac_element, mac_config.id, value)
 
     phy_element = etree.SubElement(emane_element, "phy")
     for phy_config in model.phy_config:
-        config_element = etree.SubElement(phy_element, "configuration")
         value = config[phy_config.id]
-        add_attribute(config_element, "name", phy_config.id)
-        add_attribute(config_element, "value", value)
+        add_configuration(phy_element, phy_config.id, value)
 
     return emane_element
+
+
+def add_configuration(parent, name, value):
+    config_element = etree.SubElement(parent, "configuration")
+    add_attribute(config_element, "name", name)
+    add_attribute(config_element, "value", value)
 
 
 def get_endpoints(node):
@@ -164,6 +196,7 @@ def create_link_element(link_data):
     add_attribute(options, "network_id", link_data.network_id)
     add_attribute(options, "key", link_data.key)
     add_attribute(options, "opaque", link_data.opaque)
+    add_attribute(options, "session", link_data.session)
     if options.items():
         link_element.append(options)
 
@@ -401,9 +434,8 @@ class CoreXmlWriter(object):
         self.devices = None
 
     def write(self, file_name):
+        # generate xml content
         self.scenario = etree.Element("scenario", name=file_name)
-        self.networks = etree.SubElement(self.scenario, "networks")
-        self.devices = etree.SubElement(self.scenario, "devices")
         links = self.write_nodes()
         self.write_links(links)
         self.write_mobility_configs()
@@ -415,9 +447,9 @@ class CoreXmlWriter(object):
         self.write_session_metadata()
         self.write_default_services()
 
-        with open(file_name, "w") as xml_file:
-            data = etree.tostring(self.scenario, xml_declaration=True, pretty_print=True, encoding="UTF-8")
-            xml_file.write(data)
+        # write out generated xml
+        xml_tree = etree.ElementTree(self.scenario)
+        xml_tree.write(file_name, xml_declaration=True, pretty_print=True, encoding="UTF-8")
 
     def write_session_origin(self):
         # origin: geolocation of cartesian coordinate 0,0,0
@@ -454,35 +486,32 @@ class CoreXmlWriter(object):
 
     def write_session_options(self):
         # options
-        options = etree.Element("session_options")
+        option_elements = etree.Element("session_options")
         # TODO: should we just save the current config regardless, since it may change?
         options_config = self.session.options.get_configs()
         for _id, default_value in self.session.options.default_values().iteritems():
             value = options_config[_id]
             if value != default_value:
-                option = etree.SubElement(options, "option")
-                add_attribute(option, "name", _id)
-                add_attribute(option, "value", value)
+                add_configuration(option_elements, _id, value)
 
-        if options.getchildren():
-            self.scenario.append(options)
+        if option_elements.getchildren():
+            self.scenario.append(option_elements)
 
     def write_session_metadata(self):
         # metadata
-        metadata = etree.Element("session_metadata")
+        metadata_elements = etree.Element("session_metadata")
         for _id, value in self.session.metadata.get_configs().iteritems():
-            data = etree.SubElement(metadata, "data")
-            add_attribute(data, "name", _id)
-            add_attribute(data, "value", value)
+            add_configuration(metadata_elements, _id, value)
 
-        if metadata.getchildren():
-            self.scenario.append(metadata)
+        if metadata_elements.getchildren():
+            self.scenario.append(metadata_elements)
 
     def write_emane_configs(self):
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
             for model_name, config in all_configs.iteritems():
+                logger.info("writing emane config: %s", config)
                 if model_name == -1:
                     emane_configuration = create_emane_config(node_id, self.session.emane_config, config)
                 else:
@@ -496,15 +525,13 @@ class CoreXmlWriter(object):
     def write_mobility_configs(self):
         mobility_configurations = etree.Element("mobility_configurations")
         for node_id in self.session.mobility.nodes():
-            all_configs = self.session.emane.get_all_configs(node_id)
+            all_configs = self.session.mobility.get_all_configs(node_id)
             for model_name, config in all_configs.iteritems():
                 mobility_configuration = etree.SubElement(mobility_configurations, "mobility_configuration")
                 add_attribute(mobility_configuration, "node", node_id)
                 add_attribute(mobility_configuration, "model", model_name)
                 for name, value in config.iteritems():
-                    config_element = etree.SubElement(mobility_configuration, "configuration")
-                    add_attribute(config_element, "name", name)
-                    add_attribute(config_element, "value", value)
+                    add_configuration(mobility_configuration, name, value)
 
         if mobility_configurations.getchildren():
             self.scenario.append(mobility_configurations)
@@ -531,8 +558,13 @@ class CoreXmlWriter(object):
             self.scenario.append(node_types)
 
     def write_nodes(self):
+        self.networks = etree.SubElement(self.scenario, "networks")
+        self.devices = etree.SubElement(self.scenario, "devices")
+
         links = []
         for node in self.session.objects.itervalues():
+            logger.info("writer adding node(%s)", node.name)
+
             # network node
             if isinstance(node, coreobj.PyCoreNet) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
                 self.write_network(node)
@@ -555,6 +587,7 @@ class CoreXmlWriter(object):
             for netif in node.netifs(sort=True):
                 othernet = getattr(netif, "othernet", None)
                 if othernet and othernet.objid != node.objid:
+                    logger.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
                     return
 
         network = NetworkElement(self.session, node)
@@ -565,7 +598,7 @@ class CoreXmlWriter(object):
         # add link data
         for link_data in links:
             # skip basic range links
-            if not link_data.interface1_id and not link_data.interface2_id:
+            if link_data.interface1_id is None and link_data.interface2_id is None:
                 continue
 
             link_element = create_link_element(link_data)
@@ -577,3 +610,280 @@ class CoreXmlWriter(object):
     def write_device(self, node):
         device = DeviceElement(self.session, node)
         self.devices.append(device.element)
+
+
+class CoreXmlReader(object):
+    def __init__(self, session):
+        self.session = session
+        self.scenario = None
+
+    def read(self, file_name):
+        xml_tree = etree.parse(file_name)
+        self.scenario = xml_tree.getroot()
+
+        # read xml session content
+        self.read_default_services()
+        self.read_session_metadata()
+        self.read_session_options()
+        self.read_session_hooks()
+        self.read_session_origin()
+        self.read_service_configs()
+        self.read_mobility_configs()
+        self.read_emane_configs()
+        self.read_nodes()
+        self.read_links()
+
+    def read_default_services(self):
+        default_services = self.scenario.find("default_services")
+        if default_services is None:
+            return
+
+        for node in default_services.iterchildren():
+            node_type = node.get("type")
+            services = []
+            for service in node.iterchildren():
+                services.append(service.get("name"))
+            logger.info("reading default services for nodes(%s): %s", node_type, services)
+            self.session.services.default_services[node_type] = services
+
+    def read_session_metadata(self):
+        session_metadata = self.scenario.find("session_metadata")
+        if session_metadata is None:
+            return
+
+        configs = {}
+        for data in session_metadata.iterchildren():
+            name = data.get("name")
+            value = data.get("value")
+            configs[name] = value
+        logger.info("reading session metadata: %s", configs)
+        self.session.metadata.set_configs(configs)
+
+    def read_session_options(self):
+        session_options = self.scenario.find("session_options")
+        if session_options is None:
+            return
+
+        configs = {}
+        for config in session_options.iterchildren():
+            name = config.get("name")
+            value = config.get("value")
+            configs[name] = value
+        logger.info("reading session options: %s", configs)
+        self.session.options.set_configs(configs)
+
+    def read_session_hooks(self):
+        session_hooks = self.scenario.find("session_hooks")
+        if session_hooks is None:
+            return
+
+        for hook in session_hooks.iterchildren():
+            name = hook.get("name")
+            state = hook.get("state")
+            data = hook.text
+            self.session.add_state_hook()
+            hook_type = "hook:%s" % state
+            logger.info("reading hook: state(%s) name(%s)", state, name)
+            self.session.set_hook(hook_type, file_name=name, source_name=None, data=data)
+
+    def read_session_origin(self):
+        session_origin = self.scenario.find("session_origin")
+        if session_origin is None:
+            return
+
+        lat = get_float(session_origin, "lat")
+        lon = get_float(session_origin, "lon")
+        alt = get_float(session_origin, "alt")
+        if all([lat, lon, alt]):
+            logger.info("reading session reference geo: %s, %s, %s", lat, lon, alt)
+            self.session.location.setrefgeo(lat, lon, alt)
+
+        scale = get_float(session_origin, "scale")
+        if scale:
+            logger.info("reading session reference scale: %s", scale)
+            self.session.location.refscale = scale
+
+        x = get_float(session_origin, "x")
+        y = get_float(session_origin, "y")
+        z = get_float(session_origin, "z")
+        if all([x, y]):
+            logger.info("reading session reference xyz: %s, %s, %s", x, y, z)
+            self.session.location.refxyz = (x, y, z)
+
+    def read_service_configs(self):
+        service_configurations = self.scenario.find("service_configurations")
+        if service_configurations is None:
+            return
+
+        for service_configuration in service_configurations.iterchildren():
+            node_id = get_int(service_configuration, "node")
+            service_name = service_configuration.get("name")
+            logger.info("reading custom service(%s) for node(%s)", service_name, node_id)
+            self.session.services.set_service(node_id, service_name)
+            service = self.session.services.get_service(node_id, service_name)
+
+            directory_elements = service_configuration.find("directories")
+            if directory_elements is not None:
+                service.directories = tuple(x.text for x in directory_elements.iterchildren())
+
+            startup_elements = service_configuration.find("startups")
+            if startup_elements is not None:
+                service.startup = tuple(x.text for x in startup_elements.iterchildren())
+
+            validate_elements = service_configuration.find("validates")
+            if validate_elements is not None:
+                service.validate = tuple(x.text for x in validate_elements.iterchildren())
+
+            shutdown_elements = service_configuration.find("shutdowns")
+            if shutdown_elements is not None:
+                service.shutdown = tuple(x.text for x in shutdown_elements.iterchildren())
+
+            file_elements = service_configuration.find("files")
+            if file_elements is not None:
+                for file_element in file_elements.iterchildren():
+                    name = file_element.get("name")
+                    data = file_element.text
+                    service.config_data[name] = data
+
+    def read_emane_configs(self):
+        emane_configurations = self.scenario.find("emane_configurations")
+        if emane_configurations is None:
+            return
+
+        for emane_configuration in emane_configurations.iterchildren():
+            node_id = get_int(emane_configuration, "node")
+            model_name = emane_configuration.get("model")
+            configs = {}
+
+            mac_configuration = emane_configuration.find("mac")
+            for config in mac_configuration.iterchildren():
+                name = config.get("name")
+                value = config.get("value")
+                configs[name] = value
+
+            phy_configuration = emane_configuration.find("phy")
+            for config in phy_configuration.iterchildren():
+                name = config.get("name")
+                value = config.get("value")
+                configs[name] = value
+
+            logger.info("reading emane configuration node(%s) model(%s)", node_id, model_name)
+            self.session.emane.set_model_config(node_id, model_name, configs)
+
+    def read_mobility_configs(self):
+        mobility_configurations = self.scenario.find("mobility_configurations")
+        if mobility_configurations is None:
+            return
+
+        for mobility_configuration in mobility_configurations.iterchildren():
+            node_id = get_int(mobility_configuration, "node")
+            model_name = mobility_configuration.get("model")
+            configs = {}
+
+            for config in mobility_configuration.iterchildren():
+                name = config.get("name")
+                value = config.get("value")
+                configs[name] = value
+
+            logger.info("reading mobility configuration node(%s) model(%s)", node_id, model_name)
+            self.session.mobility.set_model_config(node_id, model_name, configs)
+
+    def read_nodes(self):
+        device_elements = self.scenario.find("devices")
+        if device_elements is not None:
+            for device_element in device_elements.iterchildren():
+                self.read_device(device_element)
+
+        network_elements = self.scenario.find("networks")
+        if network_elements is not None:
+            for network_element in network_elements.iterchildren():
+                self.read_network(network_element)
+
+    def read_device(self, device_element):
+        node_id = get_int(device_element, "id")
+        name = device_element.get("name")
+        model = device_element.get("type")
+        node_options = NodeOptions(name, model)
+
+        service_elements = device_element.find("services")
+        if service_elements is not None:
+            node_options.services = [x.get("name") for x in service_elements.iterchildren()]
+
+        position_element = device_element.find("position")
+        if position_element is not None:
+            x = get_float(position_element, "x")
+            y = get_float(position_element, "y")
+            if all([x, y]):
+                node_options.set_position(x, y)
+
+            lat = get_float(position_element, "lat")
+            lon = get_float(position_element, "lon")
+            alt = get_float(position_element, "alt")
+            if all([lat, lon, alt]):
+                node_options.set_location(lat, lon, alt)
+
+        logger.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
+        self.session.add_node(_id=node_id, node_options=node_options)
+
+    def read_network(self, network_element):
+        node_id = get_int(network_element, "id")
+        name = network_element.get("name")
+        node_type = NodeTypes[network_element.get("type")]
+        node_options = NodeOptions(name)
+
+        position_element = network_element.find("position")
+        if position_element is not None:
+            x = get_float(position_element, "x")
+            y = get_float(position_element, "y")
+            if all([x, y]):
+                node_options.set_position(x, y)
+
+            lat = get_float(position_element, "lat")
+            lon = get_float(position_element, "lon")
+            alt = get_float(position_element, "alt")
+            if all([lat, lon, alt]):
+                node_options.set_location(lat, lon, alt)
+
+        logger.info("reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name)
+        self.session.add_node(_type=node_type, _id=node_id, node_options=node_options)
+
+    def read_links(self):
+        link_elements = self.scenario.find("links")
+        if link_elements is None:
+            return
+
+        for link_element in link_elements.iterchildren():
+            node_one = get_int(link_element, "node_one")
+            node_two = get_int(link_element, "node_two")
+
+            interface_one_element = link_element.find("interface_one")
+            interface_one = None
+            if interface_one_element is not None:
+                interface_one = create_interface_data(interface_one_element)
+
+            interface_two_element = link_element.find("interface_two")
+            interface_two = None
+            if interface_two_element is not None:
+                interface_two = create_interface_data(interface_two_element)
+
+            options_element = link_element.find("options")
+            link_options = LinkOptions()
+            if options_element is not None:
+                link_options.bandwidth = get_float(options_element, "bandwidth")
+                link_options.burst = get_float(options_element, "burst")
+                link_options.delay = get_float(options_element, "delay")
+                link_options.dup = get_float(options_element, "dup")
+                link_options.mer = get_float(options_element, "mer")
+                link_options.mburst = get_float(options_element, "mburst")
+                link_options.jitter = get_float(options_element, "jitter")
+                link_options.key = get_float(options_element, "key")
+                link_options.per = get_float(options_element, "per")
+                link_options.unidirectional = get_int(options_element, "unidirectional")
+                link_options.session = options_element.get("session")
+                link_options.emulation_id = get_int(options_element, "emulation_id")
+                link_options.network_id = get_int(options_element, "network_id")
+                link_options.opaque = options_element.get("opaque")
+                link_options.gui_attributes = options_element.get("gui_attributes")
+
+            logger.info("reading link node_one(%s) node_two(%s)", node_one, node_two)
+            self.session.add_link(node_one, node_two, interface_one, interface_two, link_options)
