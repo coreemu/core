@@ -4,8 +4,6 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 """
 
-import os
-
 from core import logger
 from core.coreobj import PyCoreNet
 from core.enumerations import LinkTypes
@@ -118,89 +116,6 @@ class EmaneNode(EmaneNet):
         Retrieve list of linked interfaces sorted by node number.
         """
         return sorted(self._netif.values(), key=lambda ifc: ifc.node.objid)
-
-    def buildplatformxmlentry(self, doc):
-        """
-        Return a dictionary of XML elements describing the NEMs
-        connected to this EmaneNode for inclusion in the platform.xml file.
-        """
-        ret = {}
-        if self.model is None:
-            logger.info("warning: EmaneNode %s has no associated model", self.name)
-            return ret
-
-        for netif in self.netifs():
-            nementry = self.model.build_nem_xml(doc, self, netif)
-            trans = self.model.build_transport_xml(doc, self, netif)
-            nementry.appendChild(trans)
-            ret[netif] = nementry
-
-        return ret
-
-    def build_xml_files(self, emane_manager):
-        """
-        Let the configured model build the necessary nem, mac, and phy XMLs.
-
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :return: nothing
-        """
-        if self.model is None:
-            return
-
-        # build XML for overall network (EmaneNode) configs
-        self.model.build_xml_files(emane_manager, interface=None)
-
-        # build XML for specific interface (NEM) configs
-        need_virtual = False
-        need_raw = False
-        vtype = "virtual"
-        rtype = "raw"
-
-        for netif in self.netifs():
-            self.model.build_xml_files(emane_manager, netif)
-            if "virtual" in netif.transport_type:
-                need_virtual = True
-                vtype = netif.transport_type
-            else:
-                need_raw = True
-                rtype = netif.transport_type
-
-        # build transport XML files depending on type of interfaces involved
-        if need_virtual:
-            self.buildtransportxml(emane_manager, vtype)
-
-        if need_raw:
-            self.buildtransportxml(emane_manager, rtype)
-
-    def buildtransportxml(self, emane, transport_type):
-        """
-        Write a transport XML file for the Virtual or Raw Transport.
-        """
-        transdoc = emane.xmldoc("transport")
-        trans = transdoc.getElementsByTagName("transport").pop()
-        trans.setAttribute("name", "%s Transport" % transport_type.capitalize())
-        trans.setAttribute("library", "trans%s" % transport_type.lower())
-        trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
-
-        config = emane.get_configs(node_id=self.objid, config_type=self.model.name)
-        logger.debug("transport xml config: %s", config)
-        flowcontrol = config.get("flowcontrolenable", "0") == "1"
-
-        if "virtual" in transport_type.lower():
-            if os.path.exists("/dev/net/tun_flowctl"):
-                trans.appendChild(emane.xmlparam(transdoc, "devicepath", "/dev/net/tun_flowctl"))
-            else:
-                trans.appendChild(emane.xmlparam(transdoc, "devicepath", "/dev/net/tun"))
-            if flowcontrol:
-                trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable", "on"))
-
-        emane.xmlwrite(transdoc, self.transportxmlname(transport_type.lower()))
-
-    def transportxmlname(self, _type):
-        """
-        Return the string name for the Transport XML file, e.g. 'n3transvirtual.xml'
-        """
-        return "n%strans%s.xml" % (self.objid, _type)
 
     def installnetifs(self, do_netns=True):
         """

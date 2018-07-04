@@ -8,95 +8,8 @@ from lxml import etree
 from core import logger
 from core.conf import ConfigGroup
 from core.emane import emanemanifest
-from core.misc import utils
 from core.mobility import WirelessModel
-from core.xml import corexml
-
-
-def emane_xml_doctype(name):
-    """
-    Create emane xml doctype for xml files.
-
-    :param str name: name for xml doctype
-    :return: emane xml doctype
-    :rtype: str
-    """
-    return '<!DOCTYPE %s SYSTEM "file:///usr/share/emane/dtd/%s.dtd">' % (name, name)
-
-
-def add_emane_configurations(xml_element, configurations, config, config_ignore):
-    """
-
-
-    :param lxml.etree.Element xml_element: xml element to add emane configurations to
-    :param list[core.config.Configuration] configurations: configurations to add to xml
-    :param dict config: configuration values
-    :param set config_ignore: configuration options to ignore
-    :return:
-    """
-    for configuration in configurations:
-        # ignore custom configurations
-        name = configuration.id
-        if name in config_ignore:
-            continue
-
-        # check if value is a multi param
-        value = str(config[name])
-        params = lxml_value_to_params(value)
-        if params:
-            params_element = etree.SubElement(xml_element, "paramlist", name=name)
-            for param in params:
-                etree.SubElement(params_element, "item", value=param)
-        else:
-            etree.SubElement(xml_element, "param", name=name, value=value)
-
-
-def lxml_value_to_params(value):
-    """
-    Helper to convert a parameter to a parameter tuple.
-
-    :param str value: value string to convert to tuple
-    :return: parameter tuple, None otherwise
-    """
-    try:
-        values = utils.make_tuple_fromstr(value, str)
-
-        if not hasattr(values, "__iter__"):
-            return None
-
-        if len(values) < 2:
-            return None
-
-        return values
-
-    except SyntaxError:
-        logger.exception("error in value string to param list")
-    return None
-
-
-# def value_to_params(doc, name, value):
-#     """
-#     Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
-#     multiple values.
-#
-#     :param xml.dom.minidom.Document doc: xml document
-#     :param name: name of element for params
-#     :param str value: value string to convert to tuple
-#     :return: xml document with added params or None, when an invalid value has been provided
-#     """
-#     try:
-#         values = utils.make_tuple_fromstr(value, str)
-#     except SyntaxError:
-#         logger.exception("error in value string to param list")
-#         return None
-#
-#     if not hasattr(values, "__iter__"):
-#         return None
-#
-#     if len(values) < 2:
-#         return None
-#
-#     return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
+from core.xml import emanexml
 
 
 class EmaneModel(WirelessModel):
@@ -122,8 +35,6 @@ class EmaneModel(WirelessModel):
     phy_config = emanemanifest.parse(phy_xml, phy_defaults)
 
     config_ignore = set()
-    config_groups_override = None
-    configurations_override = None
 
     @classmethod
     def configurations(cls):
@@ -138,29 +49,25 @@ class EmaneModel(WirelessModel):
             ConfigGroup("PHY Parameters", mac_len + 1, config_len)
         ]
 
-    def build_xml_files(self, emane_manager, interface):
+    def build_xml_files(self, config, interface=None):
         """
-        Builds xml files for emane. Includes a nem.xml file that points to both mac.xml and phy.xml definitions.
+        Builds xml files for this emane model. Creates a nem.xml file that points to both mac.xml and phy.xml
+        definitions.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param dict config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """
-        # retrieve configuration values
-        config = emane_manager.getifcconfig(self.object_id, interface, self.name)
-        if not config:
-            return
-
         # create document and write to disk
-        self.create_nem_doc(interface)
+        self.create_nem_xml(interface)
 
         # create mac document and write to disk
-        self.create_mac_doc(interface, config)
+        self.create_mac_xml(interface, config)
 
         # create phy document and write to disk
-        self.create_phy_doc(interface, config)
+        self.create_phy_xml(interface, config)
 
-    def create_nem_doc(self, interface):
+    def create_nem_xml(self, interface):
         """
         Create the nem xml document.
 
@@ -188,7 +95,7 @@ class EmaneModel(WirelessModel):
         nem_name = self.nem_name(interface)
         self.create_file(nem_element, nem_name, "nem")
 
-    def create_mac_doc(self, interface, config):
+    def create_mac_xml(self, interface, config):
         """
         Create the mac xml document.
 
@@ -200,13 +107,13 @@ class EmaneModel(WirelessModel):
             raise ValueError("must define emane model library")
 
         mac_element = etree.Element("mac", name="%s MAC" % self.name, library=self.mac_library)
-        add_emane_configurations(mac_element, self.mac_config, config, self.config_ignore)
+        emanexml.add_configurations(mac_element, self.mac_config, config, self.config_ignore)
 
         # write out xml
         mac_name = self.mac_name(interface)
         self.create_file(mac_element, mac_name, "mac")
 
-    def create_phy_doc(self, interface, config):
+    def create_phy_xml(self, interface, config):
         """
         Create the phy xml document.
 
@@ -218,7 +125,7 @@ class EmaneModel(WirelessModel):
         if self.phy_library:
             phy_element.set("library", self.phy_library)
 
-        add_emane_configurations(phy_element, self.phy_config, config, self.config_ignore)
+        emanexml.add_configurations(phy_element, self.phy_config, config, self.config_ignore)
 
         # write out xml
         phy_name = self.phy_name(interface)
@@ -226,8 +133,7 @@ class EmaneModel(WirelessModel):
 
     def create_file(self, xml_element, file_name, doc_name):
         file_path = os.path.join(self.session.session_dir, file_name)
-        doctype = emane_xml_doctype(doc_name)
-        corexml.write_xml_file(xml_element, file_path, doctype=doctype)
+        emanexml.create_file(xml_element, doc_name, file_path)
 
     def post_startup(self):
         """
@@ -236,64 +142,6 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         logger.info("emane model(%s) has no post setup tasks", self.name)
-
-    def build_nem_xml(self, doc, emane_node, interface):
-        """
-        Build the NEM definition that goes into the platform.xml file.
-
-        This returns an XML element that will be added to the <platform/> element.
-
-        This default method supports per-interface config (e.g. <nem definition="n2_0_63emane_rfpipe.xml" id="1">
-        or per-EmaneNode config (e.g. <nem definition="n1emane_rfpipe.xml" id="1">.
-
-        This can be overriden by a model for NEM flexibility; n is the EmaneNode.
-
-            <nem name="NODE-001" definition="rfpipenem.xml">
-
-        :param xml.dom.minidom.Document doc: xml document
-        :param core.emane.nodes.EmaneNode emane_node: emane node to get information from
-        :param interface: interface for the emane node
-        :return: created platform xml
-        """
-        # if this netif contains a non-standard (per-interface) config,
-        #  then we need to use a more specific xml file here
-        nem_name = self.nem_name(interface)
-        nem = doc.createElement("nem")
-        nem.setAttribute("name", interface.localname)
-        nem.setAttribute("definition", nem_name)
-        return nem
-
-    def build_transport_xml(self, doc, emane_node, interface):
-        """
-        Build the transport definition that goes into the platform.xml file.
-        This returns an XML element that will be added to the nem definition.
-        This default method supports raw and virtual transport types, but may be
-        overridden by a model to support the e.g. pluggable virtual transport.
-
-            <transport definition="transvirtual.xml" group="1">
-               <param name="device" value="n1.0.158" />
-            </transport>
-
-        :param xml.dom.minidom.Document doc: xml document
-        :param core.emane.nodes.EmaneNode emane_node: emane node to get information from
-        :param interface: interface for the emane node
-        :return: created transport xml
-        """
-        transport_type = interface.transport_type
-        if not transport_type:
-            logger.info("warning: %s interface type unsupported!", interface.name)
-            transport_type = "raw"
-        transport_name = emane_node.transportxmlname(transport_type)
-
-        transport = doc.createElement("transport")
-        transport.setAttribute("definition", transport_name)
-
-        param = doc.createElement("param")
-        param.setAttribute("name", "device")
-        param.setAttribute("value", interface.name)
-
-        transport.appendChild(param)
-        return transport
 
     def _basename(self, interface=None):
         """

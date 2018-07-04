@@ -2,10 +2,13 @@
 commeffect.py: EMANE CommEffect model for CORE
 """
 
+from lxml import etree
+
 from core import logger
 from core.conf import ConfigGroup
 from core.emane import emanemanifest
 from core.emane import emanemodel
+from core.xml import emanexml
 
 try:
     from emane.events.commeffectevent import CommEffectEvent
@@ -36,6 +39,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     shim_defaults = {}
     config_shim = emanemanifest.parse(shim_xml, shim_defaults)
 
+    # comm effect does not need the default phy configuration
+    phy_config = ()
+
     @classmethod
     def configurations(cls):
         return cls.config_shim
@@ -46,39 +52,36 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))
         ]
 
-    def build_xml_files(self, emane_manager, interface):
+    def build_xml_files(self, config, interface=None):
         """
         Build the necessary nem and commeffect XMLs in the given path.
         If an individual NEM has a nonstandard config, we need to build
         that file also. Otherwise the WLAN-wide
         nXXemane_commeffectnem.xml, nXXemane_commeffectshim.xml are used.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param dict config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """
-        config = emane_manager.getifcconfig(self.object_id, interface, self.name)
-        if not config:
-            return
-
         # retrieve xml names
         nem_name = self.nem_name(interface)
         shim_name = self.shim_name(interface)
 
-        nem_document = emane_manager.xmldoc("nem")
-        nem_element = nem_document.getElementsByTagName("nem").pop()
-        nem_element.setAttribute("name", "%s NEM" % self.name)
-        nem_element.setAttribute("type", "unstructured")
-        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
+        # create and write nem document
+        nem_element = etree.Element("nem", name="%s NEM" % self.name, type="unstructured")
+        transport_type = "virtual"
+        if interface and interface.transport_type == "raw":
+            transport_type = "raw"
+        transport_name = "n%strans%s.xml" % (self.object_id, transport_type)
+        etree.SubElement(nem_element, "transport", definition=transport_name)
 
-        shim_xml = emane_manager.xmlshimdefinition(nem_document, shim_name)
-        nem_element.appendChild(shim_xml)
-        emane_manager.xmlwrite(nem_document, nem_name)
+        # set shim configuration
+        etree.SubElement(nem_element, "shim", definition=shim_name)
 
-        shim_document = emane_manager.xmldoc("shim")
-        shim_element = shim_document.getElementsByTagName("shim").pop()
-        shim_element.setAttribute("name", "%s SHIM" % self.name)
-        shim_element.setAttribute("library", self.shim_library)
+        self.create_file(nem_element, nem_name, "nem")
+
+        # create and write shim document
+        shim_element = etree.Element("shim", name="%s SHIM" % self.name, library=self.shim_library)
 
         # append all shim options (except filterfile) to shimdoc
         for configuration in self.config_shim:
@@ -86,14 +89,14 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             if name == "filterfile":
                 continue
             value = config[name]
-            param = emane_manager.xmlparam(shim_document, name, value)
-            shim_element.appendChild(param)
+            emanexml.add_param(shim_element, name, value)
 
         # empty filterfile is not allowed
         ff = config["filterfile"]
         if ff.strip() != "":
-            shim_element.appendChild(emane_manager.xmlparam(shim_document, "filterfile", ff))
-        emane_manager.xmlwrite(shim_document, shim_name)
+            emanexml.add_param(shim_element, "filterfile", ff)
+
+        self.create_file(shim_element, shim_name, "shim")
 
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """

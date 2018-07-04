@@ -4,8 +4,8 @@ emane.py: definition of an Emane class for implementing configuration control of
 
 import os
 import threading
+
 from lxml import etree
-from xml.dom.minidom import parseString
 
 from core import CoreCommandError
 from core import constants
@@ -33,7 +33,7 @@ from core.enumerations import RegisterTlvs
 from core.misc import nodeutils
 from core.misc import utils
 from core.misc.ipaddress import MacAddress
-from core.xml import xmlutils
+from core.xml import emanexml
 
 try:
     from emane.events import EventService
@@ -56,10 +56,9 @@ EMANE_MODELS = [
 ]
 
 
-def build_node_platform_xml(node):
-    platform_element = etree.Element("platform")
-
+def build_node_platform_xml(emane_manager, control_net, node, nem_id):
     nem_entries = {}
+    platform_xmls = {}
 
     if node.model is None:
         logger.info("warning: EmaneNode %s has no associated model", node.name)
@@ -67,26 +66,147 @@ def build_node_platform_xml(node):
 
     for netif in node.netifs():
         # build nem xml
-        # nementry = node.model.build_nem_xml(doc, node, netif)
         nem_name = node.model.nem_name(netif)
-        nem_element = etree.Element("nem", name=netif.localname, definition=nem_name)
+        nem_element = etree.Element("nem", id=str(nem_id), name=netif.localname, definition=nem_name)
 
         # build transport xml
-        # trans = node.model.build_transport_xml(doc, node, netif)
         transport_type = netif.transport_type
         if not transport_type:
             logger.info("warning: %s interface type unsupported!", netif.name)
             transport_type = "raw"
-        transport_name = node.transportxmlname(transport_type)
+        transport_name = "n%strans%s.xml" % (node.objid, transport_type.lower())
         transport_element = etree.SubElement(nem_element, "transport", definition=transport_name)
 
         # add transport parameter
-        etree.SubElement(transport_element, "param", name="device", value=netif.name)
+        emanexml.add_param(transport_element, "device", netif.name)
 
         # add nem entry
         nem_entries[netif] = nem_element
 
-    return nem_entries
+        # merging code
+        key = netif.node.objid
+        if netif.transport_type == "raw":
+            key = "host"
+            otadev = control_net.brname
+            eventdev = control_net.brname
+        else:
+            otadev = None
+            eventdev = None
+
+        platform_element = platform_xmls.get(key)
+        if not platform_element:
+            platform_element = etree.Element("platform")
+
+            if otadev:
+                emane_manager.set_config("otamanagerdevice", otadev)
+
+            if eventdev:
+                emane_manager.set_config("eventservicedevice", eventdev)
+
+            # append all platform options (except starting id) to doc
+            for configuration in emane_manager.emane_config.emulator_config:
+                name = configuration.id
+                if name == "platform_id_start":
+                    continue
+
+                value = emane_manager.get_config(name)
+                emanexml.add_param(platform_element, name, value)
+
+            # add platform xml
+            platform_xmls[key] = platform_element
+
+        platform_element.append(nem_element)
+
+        node.setnemid(netif, nem_id)
+        macstr = emane_manager._hwaddr_prefix + ":00:00:"
+        macstr += "%02X:%02X" % ((nem_id >> 8) & 0xFF, nem_id & 0xFF)
+        netif.sethwaddr(MacAddress.from_string(macstr))
+
+        # increment nem id
+        nem_id += 1
+
+    for key in sorted(platform_xmls.keys()):
+        if key == "host":
+            file_name = "platform.xml"
+        else:
+            file_name = "platform%d.xml" % key
+
+        platform_element = platform_xmls[key]
+
+        doc_name = "platform"
+        file_path = os.path.join(emane_manager.session.session_dir, file_name)
+        emanexml.create_file(platform_element, doc_name, file_path)
+
+    return nem_id
+
+
+def build_transport_xml(emane_manager, node, transport_type):
+    transport_element = etree.Element(
+        "transport",
+        name="%s Transport" % transport_type.capitalize(),
+        library="trans%s" % transport_type.lower()
+    )
+
+    # add bitrate
+    emanexml.add_param(transport_element, "bitrate", "0")
+
+    # get emane model cnfiguration
+    config = emane_manager.get_configs(node_id=node.objid, config_type=node.model.name)
+    flowcontrol = config.get("flowcontrolenable", "0") == "1"
+
+    if "virtual" in transport_type.lower():
+        device_path = "/dev/net/tun_flowctl"
+        if not os.path.exists(device_path):
+            device_path = "/dev/net/tun"
+        emanexml.add_param(transport_element, "devicepath", device_path)
+
+        if flowcontrol:
+            emanexml.add_param(transport_element, "flowcontrolenable", "on")
+
+    doc_name = "transport"
+    file_name = "n%strans%s.xml" % (node.objid, transport_type.lower())
+    file_path = os.path.join(emane_manager.session.session_dir, file_name)
+    emanexml.create_file(transport_element, doc_name, file_path)
+
+
+def build_xml_files(emane_manager, node):
+    if node.model is None:
+        return
+
+    # get model configurations
+    config = emane_manager.getifcconfig(node.model.object_id, None, node.model.name)
+    if not config:
+        return
+
+    # build XML for overall network (EmaneNode) configs
+    node.model.build_xml_files(config)
+
+    # build XML for specific interface (NEM) configs
+    need_virtual = False
+    need_raw = False
+    vtype = "virtual"
+    rtype = "raw"
+
+    for netif in node.netifs():
+        # check for interface specific emane configuration and write xml files, if needed
+        config = emane_manager.getifcconfig(node.model.object_id, netif, node.model.name)
+        if config:
+            node.model.build_xml_files(config, netif)
+
+        # check transport type needed for interface
+        if "virtual" in netif.transport_type:
+            need_virtual = True
+            vtype = netif.transport_type
+        else:
+            need_raw = True
+            rtype = netif.transport_type
+
+    # build transport XML files depending on type of interfaces involved
+    if need_virtual:
+        build_transport_xml(emane_manager, node, vtype)
+
+    if need_raw:
+        build_transport_xml(emane_manager, node, rtype)
 
 
 class EmaneManager(ModelManager):
@@ -541,46 +661,6 @@ class EmaneManager(ModelManager):
         msg = coreapi.CoreConfMessage(flags=0, hdr=msghdr, data=rawmsg[coreapi.CoreMessage.header_len:])
         self.session.broker.handle_message(msg)
 
-    def xmldoc(self, doctype):
-        """
-        Returns an XML xml.minidom.Document with a DOCTYPE tag set to the
-        provided doctype string, and an initial element having the same
-        name.
-        """
-        # we hack in the DOCTYPE using the parser
-        docstr = """<?xml version="1.0" encoding="UTF-8"?>
-        <!DOCTYPE %s SYSTEM "file:///usr/share/emane/dtd/%s.dtd">
-        <%s/>""" % (doctype, doctype, doctype)
-        # normally this would be: doc = Document()
-        return parseString(docstr)
-
-    def xmlparam(self, doc, name, value):
-        """
-        Convenience function for building a parameter tag of the format:
-        <param name="name" value="value" />
-        """
-        p = doc.createElement("param")
-        p.setAttribute("name", name)
-        p.setAttribute("value", value)
-        return p
-
-    def xmlshimdefinition(self, doc, name):
-        """
-        Convenience function for building a definition tag of the format:
-        <shim definition="name" />
-        """
-        p = doc.createElement("shim")
-        p.setAttribute("definition", name)
-        return p
-
-    def xmlwrite(self, doc, filename):
-        """
-        Write the given XML document to the specified filename.
-        """
-        pathname = os.path.join(self.session.session_dir, filename)
-        with open(pathname, "w") as xml_file:
-            doc.writexml(writer=xml_file, indent="", addindent="  ", newl="\n", encoding="UTF-8")
-
     def check_node_models(self):
         """
         Associate EmaneModel classes with EmaneNode nodes. The model
@@ -633,74 +713,16 @@ class EmaneManager(ModelManager):
             count += len(emane_node.netifs())
         return count
 
-    def newplatformxmldoc(self, otadev=None, eventdev=None):
-        """
-        Start a new platform XML file. Use global EMANE config values
-        as keys. Override OTA manager and event service devices if
-        specified (in order to support Raw Transport).
-        """
-        doc = self.xmldoc("platform")
-        plat = doc.getElementsByTagName("platform").pop()
-
-        if otadev:
-            self.set_config("otamanagerdevice", otadev)
-
-        if eventdev:
-            self.set_config("eventservicedevice", eventdev)
-
-        # append all platform options (except starting id) to doc
-        for configuration in self.emane_config.emulator_config:
-            name = configuration.id
-            if name == "platform_id_start":
-                continue
-
-            value = self.get_config(name)
-            param = self.xmlparam(doc, name, value)
-            plat.appendChild(param)
-
-        return doc
-
     def buildplatformxml(self, ctrlnet):
         """
         Build a platform.xml file now that all nodes are configured.
         """
         nemid = int(self.get_config("nem_id_start"))
-        platformxmls = {}
 
         # assume self._objslock is already held here
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            nems = emane_node.buildplatformxmlentry(self.xmldoc("platform"))
-
-            for netif in sorted(nems, key=lambda x: x.node.objid):
-                nementry = nems[netif]
-                nementry.setAttribute("id", "%d" % nemid)
-                key = netif.node.objid
-                if netif.transport_type == "raw":
-                    key = "host"
-                    otadev = ctrlnet.brname
-                    eventdev = ctrlnet.brname
-                else:
-                    otadev = None
-                    eventdev = None
-
-                if key not in platformxmls:
-                    platformxmls[key] = self.newplatformxmldoc(otadev, eventdev)
-
-                doc = platformxmls[key]
-                plat = doc.getElementsByTagName("platform").pop()
-                plat.appendChild(nementry)
-                emane_node.setnemid(netif, nemid)
-                macstr = self._hwaddr_prefix + ":00:00:"
-                macstr += "%02X:%02X" % ((nemid >> 8) & 0xFF, nemid & 0xFF)
-                netif.sethwaddr(MacAddress.from_string(macstr))
-                nemid += 1
-
-        for key in sorted(platformxmls.keys()):
-            if key == "host":
-                self.xmlwrite(platformxmls["host"], "platform.xml")
-                continue
-            self.xmlwrite(platformxmls[key], "platform%d.xml" % key)
+            nemid = build_node_platform_xml(self, ctrlnet, emane_node, nemid)
 
     def buildnemxml(self):
         """
@@ -709,23 +731,7 @@ class EmaneManager(ModelManager):
         """
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            emane_node.build_xml_files(self)
-
-    def appendtransporttonem(self, doc, nem, nodenum, ifc=None):
-        """
-        Given a nem XML node and EMANE WLAN node number, append
-        a <transport/> tag to the NEM definition, required for using
-        EMANE"s internal transport.
-        """
-        emane_node = self._emane_nodes[nodenum]
-        transtag = doc.createElement("transport")
-        transtypestr = "virtual"
-
-        if ifc and ifc.transport_type == "raw":
-            transtypestr = "raw"
-
-        transtag.setAttribute("definition", emane_node.transportxmlname(transtypestr))
-        nem.appendChild(transtag)
+            build_xml_files(self, emane_node)
 
     def buildtransportxml(self):
         """
@@ -758,14 +764,14 @@ class EmaneManager(ModelManager):
             return
 
         dev = self.get_config("eventservicedevice")
-        doc = self.xmldoc("emaneeventmsgsvc")
-        es = doc.getElementsByTagName("emaneeventmsgsvc").pop()
-        kvs = (("group", group), ("port", port), ("device", dev), ("mcloop", "1"), ("ttl", "32"))
-        xmlutils.add_text_elements_from_tuples(doc, es, kvs)
-        filename = "libemaneeventservice.xml"
-        self.xmlwrite(doc, filename)
-        pathname = os.path.join(self.session.session_dir, filename)
-        self.initeventservice(filename=pathname)
+
+        event_element = etree.Element("emaneeventmsgsvc")
+        for name, value in (("group", group), ("port", port), ("device", dev), ("mcloop", "1"), ("ttl", "32")):
+            sub_element = etree.SubElement(event_element, name)
+            sub_element.text = value
+        file_name = "libemaneeventservice.xml"
+        file_path = os.path.join(self.session.session_dir, file_name)
+        emanexml.create_file(event_element, "emaneeventmsgsvc", file_path)
 
     def startdaemons(self):
         """
@@ -1062,8 +1068,5 @@ class EmaneGlobalModel(EmaneModel):
     def __init__(self, session, object_id=None):
         super(EmaneGlobalModel, self).__init__(session, object_id)
 
-    def build_xml_files(self, emane_manager, interface):
-        """
-        Build the necessary nem, mac, and phy XMLs in the given path.
-        """
+    def build_xml_files(self, config, interface=None):
         raise NotImplementedError

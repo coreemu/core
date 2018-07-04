@@ -59,7 +59,7 @@ def create_emane_config(node_id, emane_config, config):
     emulator_element = etree.SubElement(emane_configuration, "emulator")
     for emulator_config in emane_config.emulator_config:
         value = config[emulator_config.id]
-        add_configuration(emulator_element, emane_config.id, value)
+        add_configuration(emulator_element, emulator_config.id, value)
 
     nem_element = etree.SubElement(emane_configuration, "nem")
     for nem_config in emane_config.nem_config:
@@ -519,7 +519,7 @@ class CoreXmlWriter(object):
             for model_name, config in all_configs.iteritems():
                 logger.info("writing emane config: %s", config)
                 if model_name == -1:
-                    emane_configuration = create_emane_config(node_id, self.session.emane_config, config)
+                    emane_configuration = create_emane_config(node_id, self.session.emane.emane_config, config)
                 else:
                     model = self.session.emane.models[model_name]
                     emane_configuration = create_emane_model_config(node_id, model, config)
