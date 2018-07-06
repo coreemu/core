@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.1, core-dev@nrl.navy.mil)
+AC_INIT(core, 5.2, core-dev@nrl.navy.mil)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -66,7 +66,7 @@ AC_PROG_SED
 
 want_python=no
 want_linux_netns=no
-if test "x$enable_daemon" = "xyes"; then	
+if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
