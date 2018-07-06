@@ -304,7 +304,14 @@ class ConfigurableOptions(object):
 
 
 class ModelManager(ConfigurableManager):
+    """
+    Helps handle setting models for nodes and managing their model configurations.
+    """
+
     def __init__(self):
+        """
+        Creates a ModelManager object.
+        """
         super(ModelManager, self).__init__()
         self.models = {}
         self.node_models = {}
@@ -359,6 +366,14 @@ class ModelManager(ConfigurableManager):
         return config
 
     def set_model(self, node, model_class, config=None):
+        """
+        Set model and model configuration for node.
+
+        :param node: node to set model for
+        :param model_class: model class to set for node
+        :param dict config: model configuration, None for default configuration
+        :return: nothing
+        """
         logger.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
         self.set_model_config(node.objid, model_class.name, config)
         config = self.get_model_config(node.objid, model_class.name)
