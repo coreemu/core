@@ -517,7 +517,7 @@ class CoreXmlWriter(object):
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
             for model_name, config in all_configs.iteritems():
-                logger.info("writing emane config: %s", config)
+                logger.info("writing emane config node(%s) model(%s)", node_id, model_name)
                 if model_name == -1:
                     emane_configuration = create_emane_config(node_id, self.session.emane.emane_config, config)
                 else:
@@ -533,6 +533,7 @@ class CoreXmlWriter(object):
         for node_id in self.session.mobility.nodes():
             all_configs = self.session.mobility.get_all_configs(node_id)
             for model_name, config in all_configs.iteritems():
+                logger.info("writing mobility config node(%s) model(%s)", node_id, model_name)
                 mobility_configuration = etree.SubElement(mobility_configurations, "mobility_configuration")
                 add_attribute(mobility_configuration, "node", node_id)
                 add_attribute(mobility_configuration, "model", model_name)
