@@ -34,11 +34,27 @@ def _value_to_params(value):
 
 
 def create_file(xml_element, doc_name, file_path):
+    """
+    Create xml file.
+
+    :param lxml.etree.Element xml_element: root element to write to file
+    :param str doc_name: name to use in the emane doctype
+    :param str file_path: file path to write xml file to
+    :return: nothing
+    """
     doctype = '<!DOCTYPE %(doc_name)s SYSTEM "file:///usr/share/emane/dtd/%(doc_name)s.dtd">' % {"doc_name": doc_name}
     corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
 
 def add_param(xml_element, name, value):
+    """
+    Add emane configuration parameter to xml element.
+
+    :param lxml.etree.Element xml_element: element to append parameter to
+    :param str name: name of parameter
+    :param str value: value for parameter
+    :return: nothing
+    """
     etree.SubElement(xml_element, "param", name=name, value=value)
 
 
@@ -302,6 +318,15 @@ def create_nem_xml(emane_model, nem_file, transport_definition, mac_definition, 
 
 
 def create_event_service_xml(group, port, device, file_directory):
+    """
+    Create a emane event service xml file.
+
+    :param str group: event group
+    :param str port: event port
+    :param str device: event device
+    :param str file_directory: directory to create  file in
+    :return: nothing
+    """
     event_element = etree.Element("emaneeventmsgsvc")
     for name, value in (("group", group), ("port", port), ("device", device), ("mcloop", "1"), ("ttl", "32")):
         sub_element = etree.SubElement(event_element, name)

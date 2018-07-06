@@ -209,7 +209,7 @@ class EmaneManager(ModelManager):
 
     def load_models(self, emane_models):
         """
-        load EMANE models and make them available.
+        Load EMANE models and make them available.
         """
         for emane_model in emane_models:
             logger.info("loading emane model: %s", emane_model.__name__)
