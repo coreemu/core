@@ -3,8 +3,6 @@ Defines Emane Models used within CORE.
 """
 import os
 
-from lxml import etree
-
 from core import logger
 from core.conf import ConfigGroup
 from core.emane import emanemanifest
@@ -58,82 +56,26 @@ class EmaneModel(WirelessModel):
         :param interface: interface for the emane node
         :return: nothing
         """
-        # create document and write to disk
-        self.create_nem_xml(interface)
+        nem_name = emanexml.nem_file_name(self, interface)
+        mac_name = emanexml.mac_file_name(self, interface)
+        phy_name = emanexml.phy_file_name(self, interface)
 
-        # create mac document and write to disk
-        self.create_mac_xml(interface, config)
-
-        # create phy document and write to disk
-        self.create_phy_xml(interface, config)
-
-    def create_nem_xml(self, interface):
-        """
-        Create the nem xml document.
-
-        :param interface: interface for the emane node
-        :return: nothing
-        """
-        nem_element = etree.Element("nem", name="%s NEM" % self.name)
-
-        # add transport
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_type = "n%strans%s.xml" % (self.object_id, transport_type)
-        etree.SubElement(nem_element, "transport", definition=transport_type)
+        transport_name = emanexml.transport_file_name(self.object_id, transport_type)
 
-        # create mac
-        mac_name = self.mac_name(interface)
-        etree.SubElement(nem_element, "mac", definition=mac_name)
+        # create nem xml file
+        nem_file = os.path.join(self.session.session_dir, nem_name)
+        emanexml.create_nem_xml(self, nem_file, transport_name, mac_name, phy_name)
 
-        # create phy
-        phy_name = self.phy_name(interface)
-        etree.SubElement(nem_element, "phy", definition=phy_name)
+        # create mac xml file
+        mac_file = os.path.join(self.session.session_dir, mac_name)
+        emanexml.create_mac_xml(self, config, mac_file)
 
-        # write out xml
-        nem_name = self.nem_name(interface)
-        self.create_file(nem_element, nem_name, "nem")
-
-    def create_mac_xml(self, interface, config):
-        """
-        Create the mac xml document.
-
-        :param interface: interface for the emane node
-        :param dict config: all current configuration values, mac + phy
-        :return: nothing
-        """
-        if not self.mac_library:
-            raise ValueError("must define emane model library")
-
-        mac_element = etree.Element("mac", name="%s MAC" % self.name, library=self.mac_library)
-        emanexml.add_configurations(mac_element, self.mac_config, config, self.config_ignore)
-
-        # write out xml
-        mac_name = self.mac_name(interface)
-        self.create_file(mac_element, mac_name, "mac")
-
-    def create_phy_xml(self, interface, config):
-        """
-        Create the phy xml document.
-
-        :param interface: interface for the emane node
-        :param dict config: all current configuration values, mac + phy
-        :return: nothing
-        """
-        phy_element = etree.Element("phy", name="%s PHY" % self.name)
-        if self.phy_library:
-            phy_element.set("library", self.phy_library)
-
-        emanexml.add_configurations(phy_element, self.phy_config, config, self.config_ignore)
-
-        # write out xml
-        phy_name = self.phy_name(interface)
-        self.create_file(phy_element, phy_name, "phy")
-
-    def create_file(self, xml_element, file_name, doc_name):
-        file_path = os.path.join(self.session.session_dir, file_name)
-        emanexml.create_file(xml_element, doc_name, file_path)
+        # create phy xml file
+        phy_file = os.path.join(self.session.session_dir, phy_name)
+        emanexml.create_phy_xml(self, config, phy_file)
 
     def post_startup(self):
         """
@@ -142,67 +84,6 @@ class EmaneModel(WirelessModel):
         :return: nothing
         """
         logger.info("emane model(%s) has no post setup tasks", self.name)
-
-    def _basename(self, interface=None):
-        """
-        Create name that is leveraged for configuration file creation.
-
-        :param interface: interface for this model
-        :return: basename used for file creation
-        :rtype: str
-        """
-        name = "n%s" % self.object_id
-
-        if interface:
-            node_id = interface.node.objid
-            if self.session.emane.getifcconfig(node_id, interface, self.name):
-                name = interface.localname.replace(".", "_")
-
-        return "%s%s" % (name, self.name)
-
-    def nem_name(self, interface=None):
-        """
-        Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
-
-        :param interface: interface for this model
-        :return: nem xml filename
-        :rtype: str
-        """
-        basename = self._basename(interface)
-        append = ""
-        if interface and interface.transport_type == "raw":
-            append = "_raw"
-        return "%snem%s.xml" % (basename, append)
-
-    def shim_name(self, interface=None):
-        """
-        Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
-
-        :param interface: interface for this model
-        :return: shim xml filename
-        :rtype: str
-        """
-        return "%sshim.xml" % self._basename(interface)
-
-    def mac_name(self, interface=None):
-        """
-        Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
-
-        :param interface: interface for this model
-        :return: mac xml filename
-        :rtype: str
-        """
-        return "%smac.xml" % self._basename(interface)
-
-    def phy_name(self, interface=None):
-        """
-        Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
-
-        :param interface: interface for this model
-        :return: phy xml filename
-        :rtype: str
-        """
-        return "%sphy.xml" % self._basename(interface)
 
     def update(self, moved, moved_netifs):
         """

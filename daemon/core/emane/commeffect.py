@@ -2,6 +2,8 @@
 commeffect.py: EMANE CommEffect model for CORE
 """
 
+import os
+
 from lxml import etree
 
 from core import logger
@@ -64,21 +66,22 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # retrieve xml names
-        nem_name = self.nem_name(interface)
-        shim_name = self.shim_name(interface)
+        nem_name = emanexml.nem_file_name(self, interface)
+        shim_name = emanexml.shim_file_name(self, interface)
 
         # create and write nem document
         nem_element = etree.Element("nem", name="%s NEM" % self.name, type="unstructured")
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_name = "n%strans%s.xml" % (self.object_id, transport_type)
-        etree.SubElement(nem_element, "transport", definition=transport_name)
+        transport_file = emanexml.transport_file_name(self.object_id, transport_type)
+        etree.SubElement(nem_element, "transport", definition=transport_file)
 
         # set shim configuration
         etree.SubElement(nem_element, "shim", definition=shim_name)
 
-        self.create_file(nem_element, nem_name, "nem")
+        nem_file = os.path.join(self.session.session_dir, nem_name)
+        emanexml.create_file(nem_element, "nem", nem_file)
 
         # create and write shim document
         shim_element = etree.Element("shim", name="%s SHIM" % self.name, library=self.shim_library)
@@ -96,7 +99,8 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         if ff.strip() != "":
             emanexml.add_param(shim_element, "filterfile", ff)
 
-        self.create_file(shim_element, shim_name, "shim")
+        shim_file = os.path.join(self.session.session_dir, shim_name)
+        emanexml.create_file(shim_element, "shim", shim_file)
 
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
