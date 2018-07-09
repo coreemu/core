@@ -351,12 +351,12 @@ class OvsCtrlNet(OvsNet):
 
     def __init__(self, session, objid="ctrlnet", name=None, prefix=None, hostid=None,
                  start=True, assign_address=True, updown_script=None, serverintf=None):
-        OvsNet.__init__(self, session, objid=objid, name=name, start=start)
         self.prefix = ipaddress.Ipv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
+        OvsNet.__init__(self, session, objid=objid, name=name, start=start)
 
     def startup(self):
         if self.detectoldbridge():
