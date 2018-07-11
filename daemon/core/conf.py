@@ -105,7 +105,7 @@ class Configuration(object):
     Represents a configuration options.
     """
 
-    def __init__(self, _id, _type, label, default="", options=None):
+    def __init__(self, _id, _type, label=None, default="", options=None):
         """
         Creates a Configuration object.
 

@@ -10,6 +10,17 @@ from core.xml import corexml
 _hwaddr_prefix = "02:02"
 
 
+def is_external(config):
+    """
+    Checks if the configuration is for an external transport.
+
+    :param dict config: configuration to check
+    :return: True if external, False otherwise
+    :rtype: bool
+    """
+    return config.get("external") == "1"
+
+
 def _value_to_params(value):
     """
     Helper to convert a parameter to a parameter tuple.
@@ -85,7 +96,7 @@ def add_configurations(xml_element, configurations, config, config_ignore):
             add_param(xml_element, name, value)
 
 
-def build_node_platform_xml(emane_manager, control_net, node, nem_id):
+def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_xmls):
     """
     Create platform xml for a specific node.
 
@@ -93,21 +104,31 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id):
     :param core.netns.nodes.CtrlNet control_net: control net node for this emane network
     :param core.emane.nodes.EmaneNode node: node to write platform xml for
     :param int nem_id: nem id to use for interfaces for this node
+    :param dict platform_xmls: stores platform xml elements to append nem entries to
     :return: the next nem id that can be used for creating platform xml files
     :rtype: int
     """
     logger.debug("building emane platform xml for node(%s): %s", node, node.name)
     nem_entries = {}
-    platform_xmls = {}
 
     if node.model is None:
-        logger.info("warning: EmaneNode %s has no associated model", node.name)
+        logger.warn("warning: EmaneNode %s has no associated model", node.name)
         return nem_entries
 
     for netif in node.netifs():
         # build nem xml
         nem_definition = nem_file_name(node.model, netif)
         nem_element = etree.Element("nem", id=str(nem_id), name=netif.localname, definition=nem_definition)
+
+        # check if this is an external transport, get default config if an interface specific one does not exist
+        config = emane_manager.getifcconfig(node.model.object_id, netif, node.model.name)
+
+        if is_external(config):
+            nem_element.set("transport", "external")
+            platform_endpoint = "platformendpoint"
+            add_param(nem_element, platform_endpoint, config[platform_endpoint])
+            transport_endpoint = "transportendpoint"
+            add_param(nem_element, transport_endpoint, config[transport_endpoint])
 
         # build transport xml
         transport_type = netif.transport_type
@@ -220,7 +241,6 @@ def build_xml_files(emane_manager, node):
             need_raw = True
             rtype = netif.transport_type
 
-    # build transport XML files depending on type of interfaces involved
     if need_virtual:
         build_transport_xml(emane_manager, node, vtype)
 
@@ -270,7 +290,7 @@ def create_phy_xml(emane_model, config, file_path):
     Create the phy xml document.
 
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
-    :param dict config: all current configuration values, mac + phy
+    :param dict config: all current configuration values
     :param str file_path: path to write file to
     :return: nothing
     """
@@ -287,7 +307,7 @@ def create_mac_xml(emane_model, config, file_path):
     Create the mac xml document.
 
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
-    :param dict config: all current configuration values, mac + phy
+    :param dict config: all current configuration values
     :param str file_path: path to write file to
     :return: nothing
     """
@@ -299,11 +319,12 @@ def create_mac_xml(emane_model, config, file_path):
     create_file(mac_element, "mac", file_path)
 
 
-def create_nem_xml(emane_model, nem_file, transport_definition, mac_definition, phy_definition):
+def create_nem_xml(emane_model, config, nem_file, transport_definition, mac_definition, phy_definition):
     """
     Create the nem xml document.
 
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param dict config: all current configuration values
     :param str nem_file: nem file path to write
     :param str transport_definition: transport file definition path
     :param str mac_definition: mac file definition path
@@ -311,6 +332,8 @@ def create_nem_xml(emane_model, nem_file, transport_definition, mac_definition, 
     :return: nothing
     """
     nem_element = etree.Element("nem", name="%s NEM" % emane_model.name)
+    if is_external(config):
+        nem_element.set("type", "unstructured")
     etree.SubElement(nem_element, "transport", definition=transport_definition)
     etree.SubElement(nem_element, "mac", definition=mac_definition)
     etree.SubElement(nem_element, "phy", definition=phy_definition)

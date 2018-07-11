@@ -41,8 +41,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     shim_defaults = {}
     config_shim = emanemanifest.parse(shim_xml, shim_defaults)
 
-    # comm effect does not need the default phy configuration
+    # comm effect does not need the default phy and external configurations
     phy_config = ()
+    external_config = ()
 
     @classmethod
     def configurations(cls):

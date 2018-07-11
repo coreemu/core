@@ -84,6 +84,11 @@ def create_emane_model_config(node_id, model, config):
         value = config[phy_config.id]
         add_configuration(phy_element, phy_config.id, value)
 
+    external_element = etree.SubElement(emane_element, "external")
+    for external_config in model.external_config:
+        value = config[external_config.id]
+        add_configuration(external_element, external_config.id, value)
+
     return emane_element
 
 
@@ -770,6 +775,12 @@ class CoreXmlReader(object):
 
             phy_configuration = emane_configuration.find("phy")
             for config in phy_configuration.iterchildren():
+                name = config.get("name")
+                value = config.get("value")
+                configs[name] = value
+
+            external_configuration = emane_configuration.find("external")
+            for config in external_configuration.iterchildren():
                 name = config.get("name")
                 value = config.get("value")
                 configs[name] = value

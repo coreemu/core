@@ -131,7 +131,7 @@ class EmaneNode(EmaneNet):
         for netif in self.netifs():
             if do_netns and "virtual" in netif.transport_type.lower():
                 netif.install()
-            netif.setaddrs()
+            # netif.setaddrs()
             if not self.session.emane.genlocationevents():
                 netif.poshook = None
                 continue

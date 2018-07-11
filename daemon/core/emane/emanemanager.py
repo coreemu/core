@@ -128,7 +128,9 @@ class EmaneManager(ModelManager):
             if not config and self.has_configs(interface.node.objid):
                 config = self.get_configs(node_id=interface.node.objid, config_type=model_name)
 
-            if not config and interface.transport_type == "raw":
+            # get non interface config, when none found
+            # if not config and interface.transport_type == "raw":
+            if not config and self.has_configs(node_id):
                 # with EMANE 0.9.2+, we need an extra NEM XML from
                 # model.buildnemxmlfiles(), so defaults are returned here
                 config = self.get_configs(node_id=node_id, config_type=model_name)
@@ -561,11 +563,12 @@ class EmaneManager(ModelManager):
         Build a platform.xml file now that all nodes are configured.
         """
         nemid = int(self.get_config("nem_id_start"))
+        platform_xmls = {}
 
         # assume self._objslock is already held here
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
-            nemid = emanexml.build_node_platform_xml(self, ctrlnet, emane_node, nemid)
+            nemid = emanexml.build_node_platform_xml(self, ctrlnet, emane_node, nemid, platform_xmls)
 
     def buildnemxml(self):
         """

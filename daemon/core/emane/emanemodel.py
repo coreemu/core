@@ -5,7 +5,9 @@ import os
 
 from core import logger
 from core.conf import ConfigGroup
+from core.conf import Configuration
 from core.emane import emanemanifest
+from core.enumerations import ConfigDataTypes
 from core.mobility import WirelessModel
 from core.xml import emanexml
 
@@ -32,19 +34,28 @@ class EmaneModel(WirelessModel):
     }
     phy_config = emanemanifest.parse(phy_xml, phy_defaults)
 
+    # support for external configurations
+    external_config = [
+        Configuration("external", ConfigDataTypes.BOOL, default="0"),
+        Configuration("platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"),
+        Configuration("transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002")
+    ]
+
     config_ignore = set()
 
     @classmethod
     def configurations(cls):
-        return cls.mac_config + cls.phy_config
+        return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
     def config_groups(cls):
         mac_len = len(cls.mac_config)
+        phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
         return [
             ConfigGroup("MAC Parameters", 1, mac_len),
-            ConfigGroup("PHY Parameters", mac_len + 1, config_len)
+            ConfigGroup("PHY Parameters", mac_len + 1, phy_len),
+            ConfigGroup("External Parameters", phy_len + 1, config_len)
         ]
 
     def build_xml_files(self, config, interface=None):
@@ -60,6 +71,7 @@ class EmaneModel(WirelessModel):
         mac_name = emanexml.mac_file_name(self, interface)
         phy_name = emanexml.phy_file_name(self, interface)
 
+        # check if this is external
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
@@ -67,7 +79,7 @@ class EmaneModel(WirelessModel):
 
         # create nem xml file
         nem_file = os.path.join(self.session.session_dir, nem_name)
-        emanexml.create_nem_xml(self, nem_file, transport_name, mac_name, phy_name)
+        emanexml.create_nem_xml(self, config, nem_file, transport_name, mac_name, phy_name)
 
         # create mac xml file
         mac_file = os.path.join(self.session.session_dir, mac_name)
