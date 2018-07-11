@@ -318,7 +318,7 @@ class EmaneManager(ModelManager):
 
             if self.numnems() > 0:
                 self.startdaemons()
-                self.installnetifs(do_netns=False)
+                self.installnetifs()
 
             for emane_node in self._emane_nodes.itervalues():
                 for netif in emane_node.netifs():
@@ -704,7 +704,7 @@ class EmaneManager(ModelManager):
             except CoreCommandError:
                 logger.exception("error shutting down emane daemons")
 
-    def installnetifs(self, do_netns=True):
+    def installnetifs(self):
         """
         Install TUN/TAP virtual interfaces into their proper namespaces
         now that the EMANE daemons are running.
@@ -712,7 +712,7 @@ class EmaneManager(ModelManager):
         for key in sorted(self._emane_nodes.keys()):
             emane_node = self._emane_nodes[key]
             logger.info("emane install netifs for node: %d", key)
-            emane_node.installnetifs(do_netns)
+            emane_node.installnetifs()
 
     def deinstallnetifs(self):
         """
