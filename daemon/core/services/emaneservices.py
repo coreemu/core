@@ -23,11 +23,8 @@ class EmaneTransportService(CoreService):
             for interface in node.netifs(sort=True):
                 network_node = node.session.get_object(interface.net.objid)
                 if nodeutils.is_node(network_node, NodeTypes.EMANE):
-                    if not node.session.emane.has_configs(network_node.objid):
-                        continue
-                    all_configs = node.session.emane.get_all_configs(network_node.objid)
-                    config = all_configs.get(network_node.model.name)
-                    if emanexml.is_external(config):
+                    config = node.session.emane.get_configs(network_node.objid, network_node.model.name)
+                    if config and emanexml.is_external(config):
                         nem_id = network_node.getnemid(interface)
                         command = "emanetransportd -r -l 0 -d ../transportdaemon%s.xml" % nem_id
                         transport_commands.append(command)

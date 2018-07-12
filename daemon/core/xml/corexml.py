@@ -496,11 +496,13 @@ class CoreXmlWriter(object):
             self.scenario.append(hooks)
 
     def write_session_options(self):
-        # options
         option_elements = etree.Element("session_options")
-        # TODO: should we just save the current config regardless, since it may change?
         options_config = self.session.options.get_configs()
+        if not options_config:
+            return
+
         for _id, default_value in self.session.options.default_values().iteritems():
+            # TODO: should we just save the current config regardless, since it may change?
             value = options_config[_id]
             if value != default_value:
                 add_configuration(option_elements, _id, value)
@@ -511,7 +513,11 @@ class CoreXmlWriter(object):
     def write_session_metadata(self):
         # metadata
         metadata_elements = etree.Element("session_metadata")
-        for _id, value in self.session.metadata.get_configs().iteritems():
+        config = self.session.metadata.get_configs()
+        if not config:
+            return
+
+        for _id, value in config.iteritems():
             add_configuration(metadata_elements, _id, value)
 
         if metadata_elements.getchildren():
@@ -521,6 +527,9 @@ class CoreXmlWriter(object):
         emane_configurations = etree.Element("emane_configurations")
         for node_id in self.session.emane.nodes():
             all_configs = self.session.emane.get_all_configs(node_id)
+            if not all_configs:
+                continue
+
             for model_name, config in all_configs.iteritems():
                 logger.info("writing emane config node(%s) model(%s)", node_id, model_name)
                 if model_name == -1:
@@ -537,6 +546,9 @@ class CoreXmlWriter(object):
         mobility_configurations = etree.Element("mobility_configurations")
         for node_id in self.session.mobility.nodes():
             all_configs = self.session.mobility.get_all_configs(node_id)
+            if not all_configs:
+                continue
+
             for model_name, config in all_configs.iteritems():
                 logger.info("writing mobility config node(%s) model(%s)", node_id, model_name)
                 mobility_configuration = etree.SubElement(mobility_configurations, "mobility_configuration")

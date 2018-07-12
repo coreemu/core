@@ -85,7 +85,7 @@ class TestConf:
         config_manager.config_reset(node_id)
 
         # then
-        assert not config_manager.has_configs(node_id)
+        assert not config_manager.get_configs(node_id=node_id)
         assert config_manager.get_configs()
 
     def test_configs_setget(self):

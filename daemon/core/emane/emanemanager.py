@@ -120,17 +120,14 @@ class EmaneManager(ModelManager):
                 key += interface.netindex
 
             # try retrieve interface specific configuration, avoid getting defaults
-            config = {}
-            if self.has_configs(key):
-                config = self.get_configs(key)
+            config = self.get_configs(node_id=key, config_type=model_name)
 
             # otherwise retrieve the interfaces node configuration, avoid using defaults
-            if not config and self.has_configs(interface.node.objid):
+            if not config:
                 config = self.get_configs(node_id=interface.node.objid, config_type=model_name)
 
             # get non interface config, when none found
-            # if not config and interface.transport_type == "raw":
-            if not config and self.has_configs(node_id):
+            if not config:
                 # with EMANE 0.9.2+, we need an extra NEM XML from
                 # model.buildnemxmlfiles(), so defaults are returned here
                 config = self.get_configs(node_id=node_id, config_type=model_name)

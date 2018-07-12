@@ -152,16 +152,6 @@ class ConfigurableManager(object):
         """
         return [node_id for node_id in self.node_configurations.iterkeys() if node_id != self._default_node]
 
-    def has_configs(self, node_id):
-        """
-        Checks if this manager contains a configuration for the node id.
-
-        :param int node_id: node id to check for a configuration
-        :return: True if a node configuration exists, False otherwise
-        :rtype: bool
-        """
-        return node_id in self.node_configurations
-
     def config_reset(self, node_id=None):
         """
         Clears all configurations or configuration for a specific node.
@@ -186,8 +176,9 @@ class ConfigurableManager(object):
         :return: nothing
         """
         logger.debug("setting config for node(%s) type(%s): %s=%s", node_id, config_type, _id, value)
-        node_type_map = self.get_configs(node_id, config_type)
-        node_type_map[_id] = value
+        node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
+        node_type_configs = node_configs.setdefault(config_type, OrderedDict())
+        node_type_configs[_id] = value
 
     def set_configs(self, config, node_id=_default_node, config_type=_default_type):
         """
@@ -199,9 +190,7 @@ class ConfigurableManager(object):
         :return: nothing
         """
         logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
-        node_configs = self.get_all_configs(node_id)
-        if config_type in node_configs:
-            node_configs.pop(config_type)
+        node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_configs[config_type] = config
 
     def get_config(self, _id, node_id=_default_node, config_type=_default_type, default=None):
@@ -211,13 +200,16 @@ class ConfigurableManager(object):
         :param str _id: specific configuration to retrieve
         :param int node_id: node id to store configuration for
         :param str config_type: configuration type to store configuration for
-        :param default:
+        :param default: default value to return when value is not found
         :return: configuration value
         :rtype str
         """
         logger.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
-        node_type_map = self.get_configs(node_id, config_type)
-        return node_type_map.get(_id, default)
+        result = default
+        node_type_configs = self.get_configs(node_id, config_type)
+        if node_type_configs:
+            result = node_type_configs.get(_id, default)
+        return result
 
     def get_configs(self, node_id=_default_node, config_type=_default_type):
         """
@@ -229,8 +221,11 @@ class ConfigurableManager(object):
         :rtype: dict
         """
         logger.debug("getting configs for node(%s) type(%s)", node_id, config_type)
-        node_map = self.get_all_configs(node_id)
-        return node_map.setdefault(config_type, {})
+        result = None
+        node_configs = self.node_configurations.get(node_id)
+        if node_configs:
+            result = node_configs.get(config_type)
+        return result
 
     def get_all_configs(self, node_id=_default_node):
         """
@@ -241,7 +236,7 @@ class ConfigurableManager(object):
         :rtype: dict
         """
         logger.debug("getting all configs for node(%s)", node_id)
-        return self.node_configurations.setdefault(node_id, OrderedDict())
+        return self.node_configurations.get(node_id)
 
 
 class ConfigGroup(object):
@@ -331,17 +326,17 @@ class ModelManager(ConfigurableManager):
             raise ValueError("%s is an invalid model" % model_name)
 
         # retrieve default values
-        node_config = self.get_model_config(node_id, model_name)
+        model_config = self.get_model_config(node_id, model_name)
         if not config:
             config = {}
         for key, value in config.iteritems():
-            node_config[key] = value
+            model_config[key] = value
 
         # set as node model for startup
         self.node_models[node_id] = model_name
 
         # set configuration
-        self.set_configs(node_config, node_id=node_id, config_type=model_name)
+        self.set_configs(model_config, node_id=node_id, config_type=model_name)
 
     def get_model_config(self, node_id, model_name):
         """
@@ -388,16 +383,15 @@ class ModelManager(ConfigurableManager):
         :return: list of model and values tuples for the network node
         :rtype: list
         """
-        models = []
-        all_configs = {}
-        if self.has_configs(node_id=node.objid):
-            all_configs = self.get_all_configs(node_id=node.objid)
+        all_configs = self.get_all_configs(node.objid)
+        if not all_configs:
+            all_configs = {}
 
-        for model_name in all_configs.iterkeys():
+        models = []
+        for model_name, config in all_configs.iteritems():
             if model_name == ModelManager._default_node:
                 continue
             model_class = self.models[model_name]
-            config = self.get_configs(node_id=node.objid, config_type=model_name)
             models.append((model_class, config))
 
         logger.debug("models for node(%s): %s", node.objid, models)
