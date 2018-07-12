@@ -129,17 +129,17 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             add_param(nem_element, platform_endpoint, config[platform_endpoint])
             transport_endpoint = "transportendpoint"
             add_param(nem_element, transport_endpoint, config[transport_endpoint])
+        else:
+            # build transport xml
+            transport_type = netif.transport_type
+            if not transport_type:
+                logger.info("warning: %s interface type unsupported!", netif.name)
+                transport_type = "raw"
+            transport_file = transport_file_name(node.objid, transport_type)
+            transport_element = etree.SubElement(nem_element, "transport", definition=transport_file)
 
-        # build transport xml
-        transport_type = netif.transport_type
-        if not transport_type:
-            logger.info("warning: %s interface type unsupported!", netif.name)
-            transport_type = "raw"
-        transport_file = transport_file_name(node.objid, transport_type)
-        transport_element = etree.SubElement(nem_element, "transport", definition=transport_file)
-
-        # add transport parameter
-        add_param(transport_element, "device", netif.name)
+            # add transport parameter
+            add_param(transport_element, "device", netif.name)
 
         # add nem entry
         nem_entries[netif] = nem_element
@@ -334,7 +334,8 @@ def create_nem_xml(emane_model, config, nem_file, transport_definition, mac_defi
     nem_element = etree.Element("nem", name="%s NEM" % emane_model.name)
     if is_external(config):
         nem_element.set("type", "unstructured")
-    etree.SubElement(nem_element, "transport", definition=transport_definition)
+    else:
+        etree.SubElement(nem_element, "transport", definition=transport_definition)
     etree.SubElement(nem_element, "mac", definition=mac_definition)
     etree.SubElement(nem_element, "phy", definition=phy_definition)
     create_file(nem_element, "nem", nem_file)
