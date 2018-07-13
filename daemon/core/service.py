@@ -228,16 +228,19 @@ class CoreServices(object):
         """
         # generate service map and find starting points
         node_services = {service.name: service for service in services}
-        is_dependency = set()
         all_services = set()
+        has_dependency = set()
+        dependency_map = {}
         for service in services:
             all_services.add(service.name)
-            for service_name in service.dependencies:
-                # check service needed is valid
-                if service_name not in node_services:
-                    raise ValueError("service(%s) dependency does not exist: %s" % (service.name, service_name))
-                is_dependency.add(service_name)
-        starting_points = all_services - is_dependency
+            if service.dependencies:
+                has_dependency.add(service.name)
+
+            for dependency in service.dependencies:
+                dependents = dependency_map.setdefault(dependency, set())
+                dependents.add(service.name)
+
+        starting_points = all_services - has_dependency
 
         # cycles means no starting points
         if not starting_points:
@@ -270,8 +273,9 @@ class CoreServices(object):
                     path.append(service.name)
                     path_set.add(service.name)
 
-                    # retrieve and set dependencies to the stack
-                    stack.append(iter(service.dependencies))
+                    # retrieve and dependent services and add to stack
+                    dependents = iter(dependency_map.get(service.name, []))
+                    stack.append(dependents)
                     startup.append(service)
                     break
             # for loop completed without a break
@@ -281,8 +285,10 @@ class CoreServices(object):
                     path_set.remove(path.pop())
 
                 if not path and startup:
-                    startup.reverse()
+                    # finalize startup path
                     startups.append(startup)
+
+                    # reset new startup path
                     startup = []
 
                 stack.pop()
