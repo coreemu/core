@@ -550,14 +550,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # set initial session state
         self.session.set_state(EventTypes.DEFINITION_STATE)
 
-        # send service errors, if present
-        if self.coreemu.service_errors:
-            self.send_exception(
-                ExceptionLevels.ERROR,
-                "ServiceManager.load()",
-                "Failed to load services: %s" % " ".join(self.coreemu.service_errors)
-            )
-
         while True:
             try:
                 message = self.receive_message()
