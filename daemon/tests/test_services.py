@@ -177,24 +177,48 @@ class TestServices:
         # then
         assert status
 
-    def test_service_set_file(self, session):
+    def test_service_custom_startup(self, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
         node = session.add_node()
-        file_name = my_service.configs[0]
-        file_path = node.hostfilename(file_name)
-        file_data = "# custom file"
-        session.services.set_service_file(node.objid, my_service.name, file_name, file_data)
-        custom_service = session.services.get_service(node.objid, my_service.name)
 
         # when
-        session.services.create_service_files(node, custom_service)
+        session.services.set_service(node.objid, my_service.name)
+        custom_my_service = session.services.get_service(node.objid, my_service.name)
+        custom_my_service.startup = ("sh custom.sh",)
 
         # then
-        assert os.path.exists(file_path)
-        with open(file_path, "r") as custom_file:
-            assert custom_file.read() == file_data
+        assert my_service.startup != custom_my_service.startup
+
+    def test_service_set_file(self, session):
+        # given
+        ServiceManager.add_services(_SERVICES_PATH)
+        my_service = ServiceManager.get(SERVICE_ONE)
+        node_one = session.add_node()
+        node_two = session.add_node()
+        file_name = my_service.configs[0]
+        file_data_one = "# custom file one"
+        file_data_two = "# custom file two"
+        session.services.set_service_file(node_one.objid, my_service.name, file_name, file_data_one)
+        session.services.set_service_file(node_two.objid, my_service.name, file_name, file_data_two)
+
+        # when
+        custom_service_one = session.services.get_service(node_one.objid, my_service.name)
+        session.services.create_service_files(node_one, custom_service_one)
+        custom_service_two = session.services.get_service(node_two.objid, my_service.name)
+        session.services.create_service_files(node_two, custom_service_two)
+
+        # then
+        file_path_one = node_one.hostfilename(file_name)
+        assert os.path.exists(file_path_one)
+        with open(file_path_one, "r") as custom_file:
+            assert custom_file.read() == file_data_one
+
+        file_path_two = node_two.hostfilename(file_name)
+        assert os.path.exists(file_path_two)
+        with open(file_path_two, "r") as custom_file:
+            assert custom_file.read() == file_data_two
 
     def test_service_import(self):
         """

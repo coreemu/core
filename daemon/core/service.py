@@ -761,13 +761,7 @@ class CoreService(object):
         configuration is used to override their default parameters.
         """
         self.custom = True
-        self.dirs = self.__class__.dirs
-        self.configs = self.__class__.configs
-        self.startup = self.__class__.startup
-        self.shutdown = self.__class__.shutdown
-        self.validate = self.__class__.validate
-        self.meta = self.__class__.meta
-        self.config_data = self.__class__.config_data
+        self.config_data = self.__class__.config_data.copy()
 
     @classmethod
     def on_load(cls):
