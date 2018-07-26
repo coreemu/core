@@ -11,42 +11,34 @@ class SdnService(CoreService):
     """
     Parent class for SDN services.
     """
-    _name = None
-    _group = "SDN"
-    _depends = ()
-    _dirs = ()
-    _configs = ()
-    _startindex = 50
-    _startup = ()
-    _shutdown = ()
+    group = "SDN"
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         return ""
 
 
 class OvsService(SdnService):
-    _name = "OvsService"
-    _group = "SDN"
-    _depends = ()
-    _dirs = ("/etc/openvswitch", "/var/run/openvswitch", "/var/log/openvswitch")
-    _configs = ('OvsService.sh',)
-    _startindex = 50
-    _startup = ('sh OvsService.sh',)
-    _shutdown = ('killall ovs-vswitchd', 'killall ovsdb-server')
+    name = "OvsService"
+    executables = ("ovs-ofctl", "ovs-vsctl")
+    group = "SDN"
+    dirs = ("/etc/openvswitch", "/var/run/openvswitch", "/var/log/openvswitch")
+    configs = ('OvsService.sh',)
+    startup = ('sh OvsService.sh',)
+    shutdown = ('killall ovs-vswitchd', 'killall ovsdb-server')
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         # Check whether the node is running zebra
         has_zebra = 0
-        for s in services:
-            if s._name == "zebra":
+        for s in node.services:
+            if s.name == "zebra":
                 has_zebra = 1
 
         # Check whether the node is running an SDN controller
         has_sdn_ctrlr = 0
-        for s in services:
-            if s._name == "ryuService":
+        for s in node.services:
+            if s.name == "ryuService":
                 has_sdn_ctrlr = 1
 
         cfg = "#!/bin/sh\n"
@@ -100,17 +92,16 @@ class OvsService(SdnService):
 
 
 class RyuService(SdnService):
-    _name = "ryuService"
-    _group = "SDN"
-    _depends = ()
-    _dirs = ()
-    _configs = ('ryuService.sh',)
-    _startindex = 50
-    _startup = ('sh ryuService.sh',)
-    _shutdown = ('killall ryu-manager',)
+    name = "ryuService"
+    executables = ("ryu-manager",)
+    group = "SDN"
+    dirs = ()
+    configs = ('ryuService.sh',)
+    startup = ('sh ryuService.sh',)
+    shutdown = ('killall ryu-manager',)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return a string that will be written to filename, or sent to the
         GUI for user customization.

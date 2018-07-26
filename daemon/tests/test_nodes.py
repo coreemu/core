@@ -39,7 +39,6 @@ class TestNodes:
         assert node.alive()
         assert node.up
         assert node.check_cmd(["ip", "addr", "show", "lo"])
-        node.validate()
 
     def test_node_update(self, session):
         # given

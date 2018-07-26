@@ -118,12 +118,7 @@ class Sdt(object):
         :return: True if enabled, False otherwise
         :rtype: bool
         """
-        if not hasattr(self.session.options, "enablesdt"):
-            return False
-        enabled = self.session.options.enablesdt
-        if enabled in ("1", "true", 1, True):
-            return True
-        return False
+        return self.session.options.get_config("enablesdt") == "1"
 
     def seturl(self):
         """
@@ -132,11 +127,8 @@ class Sdt(object):
 
         :return: nothing
         """
-        url = None
-        if hasattr(self.session.options, "sdturl"):
-            if self.session.options.sdturl != "":
-                url = self.session.options.sdturl
-        if url is None or url == "":
+        url = self.session.options.get_config("stdurl")
+        if not url:
             url = self.DEFAULT_SDT_URL
         self.url = urlparse(url)
         self.address = (self.url.hostname, self.url.port)

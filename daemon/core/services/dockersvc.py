@@ -104,7 +104,7 @@ from core.service import ServiceManager
 try:
     from docker import Client
 except ImportError:
-    logger.error("failure to import docker")
+    logger.warn("missing python docker bindings")
 
 
 class DockerService(CoreService):
@@ -112,19 +112,18 @@ class DockerService(CoreService):
     This is a service which will allow running docker containers in a CORE
         node.
     """
-    _name = "Docker"
-    _group = "Docker"
-    _depends = ()
-    _dirs = ('/var/lib/docker/containers/', '/run/shm', '/run/resolvconf',)
-    _configs = ('docker.sh',)
-    _startindex = 50
-    _startup = ('sh docker.sh',)
-    _shutdown = ('service docker stop',)
+    name = "Docker"
+    executables = ("docker",)
+    group = "Docker"
+    dirs = ('/var/lib/docker/containers/', '/run/shm', '/run/resolvconf',)
+    configs = ('docker.sh',)
+    startup = ('sh docker.sh',)
+    shutdown = ('service docker stop',)
     # Container image to start
-    _image = ""
+    image = ""
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Returns a string having contents of a docker.sh script that
         can be modified to start a specific docker image.
@@ -139,7 +138,7 @@ class DockerService(CoreService):
         #   distros may just be docker
         cfg += 'service docker start\n'
         cfg += "# you could add a command to start a image here eg:\n"
-        if not cls._image:
+        if not cls.image:
             cfg += "# docker run -d --net host --name coreDock <imagename>\n"
         else:
             cfg += """\
@@ -150,7 +149,7 @@ until [ $result -eq 0 ]; do
   # this is to alleviate contention to docker's SQLite database
   sleep 0.3
 done
-""" % (cls._image,)
+""" % (cls.image,)
         return cfg
 
     @classmethod

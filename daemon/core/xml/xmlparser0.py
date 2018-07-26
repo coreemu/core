@@ -1,9 +1,10 @@
 from xml.dom.minidom import parse
 
 from core import logger
+from core.conf import ConfigShim
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
-from core.service import ServiceManager
+from core.service import ServiceManager, ServiceShim
 from core.xml import xmlutils
 
 
@@ -71,7 +72,12 @@ class CoreDocumentParser0(object):
         """
         Helper to return tuple of attributes common to nodes and nets.
         """
-        node_id = int(obj.getAttribute("id"))
+        node_id = obj.getAttribute("id")
+        try:
+            node_id = int(node_id)
+        except:
+            logger.debug("parsing node without integer id: %s", node_id)
+
         name = str(obj.getAttribute("name"))
         node_type = str(obj.getAttribute("type"))
         return node_id, name, node_type
@@ -204,7 +210,8 @@ class CoreDocumentParser0(object):
 
         # TODO: assign other config managers here
         if mgr:
-            mgr.setconfig_keyvalues(nodenum, name, kvs)
+            for k, v in kvs:
+                mgr.set_config(k, v, node_id=nodenum, config_type=name)
 
     def parsenetem(self, model, obj, kvs):
         """
@@ -217,7 +224,6 @@ class CoreDocumentParser0(object):
         # nodes and interfaces do not exist yet, at this point of the parsing,
         # save (key, value) pairs for later
         try:
-            # kvs = map(lambda(k, v): (int(v)), kvs)
             kvs = map(self.numericvalue, kvs)
         except ValueError:
             logger.warn("error parsing link parameters for '%s' on '%s'", ifname, peer)
@@ -273,7 +279,7 @@ class CoreDocumentParser0(object):
             services = []
             for service in node.getElementsByTagName("Service"):
                 services.append(str(service.getAttribute("name")))
-            self.session.services.defaultservices[type] = services
+            self.session.services.default_services[type] = services
             logger.info("default services for type %s set to %s" % (type, services))
 
     def parseservices(self):
@@ -310,7 +316,10 @@ class CoreDocumentParser0(object):
         # associate nodes with services
         for objid in sorted(svclists.keys()):
             n = self.session.get_object(objid)
-            self.session.services.addservicestonode(node=n, nodetype=n.type, services_str=svclists[objid])
+            services = svclists[objid]
+            if services:
+                services = services.split("|")
+            self.session.services.add_services(node=n, node_type=n.type, services=services)
 
     def parseservice(self, service, n):
         """
@@ -361,15 +370,20 @@ class CoreDocumentParser0(object):
             filename = file.getAttribute("name")
             files.append(filename)
             data = xmlutils.get_text_child(file)
-            typestr = "service:%s:%s" % (name, filename)
-            self.session.services.setservicefile(nodenum=n.objid, type=typestr,
-                                                 filename=filename,
-                                                 srcname=None, data=data)
+            self.session.services.set_service_file(node_id=n.objid, service_name=name, file_name=filename, data=data)
+
         if len(files):
             values.append("files=%s" % files)
         if not bool(service.getAttribute("custom")):
             return True
-        self.session.services.setcustomservice(n.objid, svc, values)
+        self.session.services.set_service(n.objid, svc)
+        # set custom values for custom service
+        svc = self.session.services.get_service(n.objid, None)
+        if not svc:
+            raise ValueError("custom service(%s) for node(%s) does not exist", svc.name, n.objid)
+        values = ConfigShim.str_to_dict("|".join(values))
+        for name, value in values.iteritems():
+            ServiceShim.setvalue(svc, name, value)
         return True
 
     def parsehooks(self, hooks):
@@ -392,7 +406,7 @@ class CoreDocumentParser0(object):
                 v = str(param.getAttribute("value"))
                 if v == '':
                     v = xmlutils.get_text_child(param)  # allow attribute/text for newlines
-                setattr(self.session.options, k, v)
+                self.session.options.set_config(k, v)
         hooks = xmlutils.get_one_element(self.meta, "Hooks")
         if hooks:
             self.parsehooks(hooks)
@@ -403,4 +417,4 @@ class CoreDocumentParser0(object):
                 v = str(param.getAttribute("value"))
                 if v == '':
                     v = xmlutils.get_text_child(param)
-                self.session.metadata.add_item(k, v)
+                self.session.metadata.set_config(k, v)

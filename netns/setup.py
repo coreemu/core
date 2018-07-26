@@ -29,7 +29,7 @@ vcmd = Extension(
 
 setup(
     name="core-netns",
-    version="5.1",
+    version="5.2",
     description="Extension modules to support virtual nodes using Linux network namespaces",
     scripts=["vcmd", "vnoded", "netns"],
     ext_modules=[

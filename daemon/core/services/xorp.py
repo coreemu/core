@@ -11,18 +11,17 @@ class XorpRtrmgr(CoreService):
     XORP router manager service builds a config.boot file based on other
     enabled XORP services, and launches necessary daemons upon startup.
     """
-    _name = "xorp_rtrmgr"
-    _group = "XORP"
-    _depends = ()
-    _dirs = ("/etc/xorp",)
-    _configs = ("/etc/xorp/config.boot",)
-    _startindex = 35
-    _startup = ("xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid" % (_configs[0], _name, _name),)
-    _shutdown = ("killall xorp_rtrmgr",)
-    _validate = ("pidof xorp_rtrmgr",)
+    name = "xorp_rtrmgr"
+    executables = ("xorp_rtrmgr",)
+    group = "XORP"
+    dirs = ("/etc/xorp",)
+    configs = ("/etc/xorp/config.boot",)
+    startup = ("xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid" % (configs[0], name, name),)
+    shutdown = ("killall xorp_rtrmgr",)
+    validate = ("pidof xorp_rtrmgr",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Returns config.boot configuration file text. Other services that
         depend on this will have generatexorpconfig() hooks that are
@@ -38,12 +37,12 @@ class XorpRtrmgr(CoreService):
             cfg += "    }\n"
         cfg += "}\n\n"
 
-        for s in services:
+        for s in node.services:
             try:
-                s._depends.index(cls._name)
+                s.dependencies.index(cls.name)
                 cfg += s.generatexorpconfig(node)
             except ValueError:
-                logger.exception("error getting value from service: %s", cls._name)
+                logger.exception("error getting value from service: %s", cls.name)
 
         return cfg
 
@@ -74,15 +73,15 @@ class XorpService(CoreService):
     Parent class for XORP services. Defines properties and methods
     common to XORP's routing daemons.
     """
-    _name = None
-    _group = "XORP"
-    _depends = ("xorp_rtrmgr",)
-    _dirs = ()
-    _configs = ()
-    _startindex = 40
-    _startup = ()
-    _shutdown = ()
-    _meta = "The config file for this service can be found in the xorp_rtrmgr service."
+    name = None
+    executables = ("xorp_rtrmgr",)
+    group = "XORP"
+    dependencies = ("xorp_rtrmgr",)
+    dirs = ()
+    configs = ()
+    startup = ()
+    shutdown = ()
+    meta = "The config file for this service can be found in the xorp_rtrmgr service."
 
     @staticmethod
     def fea(forwarding):
@@ -151,7 +150,7 @@ class XorpService(CoreService):
         return "0.0.0.0"
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         return ""
 
     @classmethod
@@ -165,7 +164,7 @@ class XorpOspfv2(XorpService):
     not build its own configuration file but has hooks for adding to the
     unified XORP configuration file.
     """
-    _name = "XORP_OSPFv2"
+    name = "XORP_OSPFv2"
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -200,7 +199,7 @@ class XorpOspfv3(XorpService):
     not build its own configuration file but has hooks for adding to the
     unified XORP configuration file.
     """
-    _name = "XORP_OSPFv3"
+    name = "XORP_OSPFv3"
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -227,8 +226,8 @@ class XorpBgp(XorpService):
     """
     IPv4 inter-domain routing. AS numbers and peers must be customized.
     """
-    _name = "XORP_BGP"
-    _custom_needed = True
+    name = "XORP_BGP"
+    custom_needed = True
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -257,7 +256,7 @@ class XorpRip(XorpService):
     RIP IPv4 unicast routing.
     """
 
-    _name = "XORP_RIP"
+    name = "XORP_RIP"
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -289,7 +288,7 @@ class XorpRipng(XorpService):
     """
     RIP NG IPv6 unicast routing.
     """
-    _name = "XORP_RIPNG"
+    name = "XORP_RIPNG"
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -324,7 +323,7 @@ class XorpPimSm4(XorpService):
     """
     PIM Sparse Mode IPv4 multicast routing.
     """
-    _name = "XORP_PIMSM4"
+    name = "XORP_PIMSM4"
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -383,7 +382,7 @@ class XorpPimSm6(XorpService):
     """
     PIM Sparse Mode IPv6 multicast routing.
     """
-    _name = "XORP_PIMSM6"
+    name = "XORP_PIMSM6"
 
     @classmethod
     def generatexorpconfig(cls, node):
@@ -442,7 +441,7 @@ class XorpOlsr(XorpService):
     """
     OLSR IPv4 unicast MANET routing.
     """
-    _name = "XORP_OLSR"
+    name = "XORP_OLSR"
 
     @classmethod
     def generatexorpconfig(cls, node):

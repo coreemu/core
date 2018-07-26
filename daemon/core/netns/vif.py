@@ -169,6 +169,7 @@ class TunTap(PyCoreNetIf):
         :return: wait for device local response
         :rtype: int
         """
+        logger.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
             args = [constants.IP_BIN, "link", "show", self.localname]
@@ -182,6 +183,7 @@ class TunTap(PyCoreNetIf):
 
         :return: nothing
         """
+        logger.debug("waiting for device node: %s", self.name)
 
         def nodedevexists():
             args = [constants.IP_BIN, "link", "show", self.name]

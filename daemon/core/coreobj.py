@@ -218,7 +218,7 @@ class PyCoreObj(object):
         if hasattr(self, "services") and len(self.services) != 0:
             nodeservices = []
             for s in self.services:
-                nodeservices.append(s._name)
+                nodeservices.append(s.name)
             services = "|".join(nodeservices)
 
         node_data = NodeData(
@@ -305,8 +305,8 @@ class PyCoreNode(PyCoreObj):
 
         :return: nothing
         """
-        preserve = getattr(self.session.options, "preservedir", None)
-        if preserve == "1":
+        preserve = self.session.options.get_config("preservedir") == "1"
+        if preserve:
             return
 
         if self.tmpnodedir:

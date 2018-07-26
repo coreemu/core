@@ -159,8 +159,8 @@ def main():
             n.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
             n.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
             if options.services is not None:
-                session.services.addservicestonode(n, "", options.services)
-                n.boot()
+                session.services.add_services(n, "", options.services.split("|"))
+                session.services.boot_services(n)
             nodelist.append(n)
             if i % 25 == 0:
                 print "\n%s nodes created " % i,

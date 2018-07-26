@@ -7,6 +7,7 @@ import os.path
 
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
+from core.xml import corexml
 from core.xml.xmlparser import core_document_parser
 from core.xml.xmlwriter import core_document_writer
 
@@ -32,5 +33,4 @@ def save_session_xml(session, filename, version):
     """
     Export a session to the EmulationScript XML format.
     """
-    doc = core_document_writer(session, version)
-    doc.writexml(filename)
+    corexml.CoreXmlWriter(session).write(filename)

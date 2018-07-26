@@ -4,7 +4,6 @@ Sample user-defined service.
 
 from core.misc.ipaddress import Ipv4Prefix
 from core.service import CoreService
-from core.service import ServiceManager
 
 
 class MyService(CoreService):
@@ -12,25 +11,25 @@ class MyService(CoreService):
     This is a sample user-defined service.
     """
     # a unique name is required, without spaces
-    _name = "MyService"
+    name = "MyService"
     # you can create your own group here
-    _group = "Utility"
+    group = "Utility"
+    # list executables that this service requires
+    executables = ()
     # list of other services this service depends on
-    _depends = ()
+    dependencies = ()
     # per-node directories
-    _dirs = ()
+    dirs = ()
     # generated files (without a full path this file goes in the node's dir,
     #  e.g. /tmp/pycore.12345/n1.conf/)
-    _configs = ('myservice.sh',)
-    # this controls the starting order vs other enabled services
-    _startindex = 50
+    configs = ("myservice.sh",)
     # list of startup commands, also may be generated during startup
-    _startup = ('sh myservice.sh',)
+    startup = ("sh myservice.sh",)
     # list of shutdown commands
-    _shutdown = ()
+    shutdown = ()
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return a string that will be written to filename, or sent to the
         GUI for user customization.
@@ -57,9 +56,3 @@ class MyService(CoreService):
         else:
             net = Ipv4Prefix(x)
             return 'echo "  network %s"' % net
-
-
-# this is needed to load desired services when being integrated into core, otherwise this is not needed
-def load_services():
-    # this line is required to add the above class to the list of available services
-    ServiceManager.add(MyService)

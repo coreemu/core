@@ -772,14 +772,17 @@ proc manageCPUwindow {xpos ypos start} {
 }
 
 proc getMyIP { } {
-    if { [catch {set theServer [socket -server none -myaddr \
-                                [info hostname] 0]} ] } {
-        return "127.0.0.1"
+    variable myIP
+    if { ![info exists myIP] } {
+	if { [catch {set theServer [socket -server none \
+					   -myaddr [info hostname] 0]} ] } {
+	    set myIP "127.0.0.1"
+	} else {
+	    set myIP [lindex [fconfigure $theServer -sockname] 0]
+	    close $theServer
+	}
     }
-    set myIP [lindex [fconfigure $theServer -sockname] 0]
-    close $theServer
     return $myIP
-
 }
 
 # display all values stored in cpu usage history for each server

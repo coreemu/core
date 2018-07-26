@@ -440,7 +440,7 @@ class LxBrNet(PyCoreNet):
                        "burst", str(burst), "limit", str(limit)]
             if bw > 0:
                 if self.up:
-                    logger.info("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
+                    logger.debug("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
                     utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
                 changed = True
@@ -475,9 +475,9 @@ class LxBrNet(PyCoreNet):
             else:
                 netem += ["%sus" % jitter, "25%"]
 
-        if loss is not None:
+        if loss is not None and loss > 0:
             netem += ["loss", "%s%%" % min(loss, 100)]
-        if duplicate is not None:
+        if duplicate is not None and duplicate > 0:
             netem += ["duplicate", "%s%%" % min(duplicate, 100)]
         if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
             # possibly remove netem if it exists and parent queue wasn't removed
@@ -485,12 +485,12 @@ class LxBrNet(PyCoreNet):
                 return
             tc[2] = "delete"
             if self.up:
-                logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
+                logger.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
                 utils.check_cmd(tc + parent + ["handle", "10:"])
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
+                logger.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
                 utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 

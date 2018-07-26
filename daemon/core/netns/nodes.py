@@ -384,12 +384,13 @@ class WlanNode(LxBrNet):
         Sets the mobility and wireless model.
 
         :param core.mobility.WirelessModel.cls model: wireless model to set to
-        :param config: model configuration
+        :param dict config: configuration for model being set
         :return: nothing
         """
         logger.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.objid, values=config)
+            self.model = model(session=self.session, object_id=self.objid)
+            self.model.update_config(config)
             if self.model.position_callback:
                 for netif in self.netifs():
                     netif.poshook = self.model.position_callback
@@ -398,33 +399,26 @@ class WlanNode(LxBrNet):
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, values=config)
+            self.mobility = model(session=self.session, object_id=self.objid)
+            self.mobility.update_config(config)
 
-    def updatemodel(self, model_name, values):
-        """
-        Allow for model updates during runtime (similar to setmodel().)
+    def update_mobility(self, config):
+        if not self.mobility:
+            raise ValueError("no mobility set to update for node(%s)", self.objid)
+        self.mobility.set_configs(config, node_id=self.objid)
 
-        :param model_name: model name to update
-        :param values: values to update model with
-        :return: nothing
-        """
-        logger.info("updating model %s" % model_name)
-        if self.model is None or self.model.name != model_name:
-            return
-
-        model = self.model
-        if model.config_type == RegisterTlvs.WIRELESS.value:
-            if not model.updateconfig(values):
-                return
-
-            if self.model.position_callback:
-                for netif in self.netifs():
-                    netif.poshook = self.model.position_callback
-                    if netif.node is not None:
-                        (x, y, z) = netif.node.position.get()
-                        netif.poshook(netif, x, y, z)
-
-            self.model.setlinkparams()
+    def updatemodel(self, config):
+        if not self.model:
+            raise ValueError("no model set to update for node(%s)", self.objid)
+        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        self.model.set_configs(config, node_id=self.objid)
+        if self.model.position_callback:
+            for netif in self.netifs():
+                netif.poshook = self.model.position_callback
+                if netif.node is not None:
+                    x, y, z = netif.node.position.get()
+                    netif.poshook(netif, x, y, z)
+        self.model.updateconfig()
 
     def all_link_data(self, flags):
         """

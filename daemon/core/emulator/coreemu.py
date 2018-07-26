@@ -15,9 +15,9 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodemaps
 from core.misc import nodeutils
+from core.service import ServiceManager
 from core.session import Session
-from core.xml.xmlparser import core_document_parser
-from core.xml.xmlwriter import core_document_writer
+from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
 
 def signal_handler(signal_number, _):
@@ -126,7 +126,7 @@ class EmuSession(Session):
         self.node_id_gen = IdGen()
 
         # set default services
-        self.services.defaultservices = {
+        self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
             "PC": ("DefaultRoute",),
             "prouter": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
@@ -199,7 +199,7 @@ class EmuSession(Session):
         objects = [x for x in objects if x]
         if len(objects) < 2:
             raise ValueError("wireless link failure: %s", objects)
-        logger.debug("handling wireless linking objects(%) connect(%s)", objects, connect)
+        logger.debug("handling wireless linking objects(%s) connect(%s)", objects, connect)
         common_networks = objects[0].commonnets(objects[1])
         if not common_networks:
             raise ValueError("no common network found for wireless link/unlink")
@@ -326,9 +326,6 @@ class EmuSession(Session):
         :param core.enumerations.LinkTypes link_type: link type to delete
         :return: nothing
         """
-        # interface data
-        # interface_one_data, interface_two_data = get_interfaces(link_data)
-
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
@@ -379,7 +376,8 @@ class EmuSession(Session):
             if node_two:
                 node_two.lock.release()
 
-    def update_link(self, node_one_id, node_two_id, link_options, interface_one_id=None, interface_two_id=None):
+    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None,
+                    link_options=LinkOptions()):
         """
         Update link information between nodes.
 
@@ -390,9 +388,6 @@ class EmuSession(Session):
         :param core.emulator.emudata.LinkOptions link_options: data to update link with
         :return: nothing
         """
-        # interface data
-        # interface_one_data, interface_two_data = get_interfaces(link_data)
-
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
 
@@ -481,7 +476,7 @@ class EmuSession(Session):
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
-        enable_rj45 = getattr(self.options, "enablerj45", "0") == "1"
+        enable_rj45 = self.options.get_config("enablerj45") == "1"
         if _type == NodeTypes.RJ45 and not enable_rj45:
             start = False
 
@@ -512,18 +507,15 @@ class EmuSession(Session):
         # add services to default and physical nodes only
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             node.type = node_options.model
-            services = "|".join(node_options.services) or None
-            logger.debug("set node type: %s - services(%s)", node.type, services)
-            self.services.addservicestonode(node, node.type, services)
+            logger.debug("set node type: %s", node.type)
+            self.services.add_services(node, node.type, node_options.services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
         is_boot_node = isinstance(node, PyCoreNode) and not nodeutils.is_node(node, NodeTypes.RJ45)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_objects()
             self.add_remove_control_interface(node=node, remove=False)
-
-            # TODO: common method to both Physical and LxcNodes, but not the common PyCoreNode
-            node.boot()
+            self.services.boot_services(node)
 
         return node
 
@@ -669,10 +661,10 @@ class EmuSession(Session):
         # clear out existing session
         self.clear()
 
-        # set default node class when one is not provided
-        node_class = nodeutils.get_node_class(NodeTypes.DEFAULT)
-        options = {"start": start, "nodecls": node_class}
-        core_document_parser(self, file_name, options)
+        # write out xml file
+        CoreXmlReader(self).read(file_name)
+
+        # start session if needed
         if start:
             self.name = os.path.basename(file_name)
             self.file_name = file_name
@@ -686,8 +678,7 @@ class EmuSession(Session):
         :param str version: xml version type
         :return: nothing
         """
-        doc = core_document_writer(self, version)
-        doc.writexml(file_name)
+        CoreXmlWriter(self).write(file_name)
 
     def add_hook(self, state, file_name, source_name, data):
         """
@@ -702,21 +693,6 @@ class EmuSession(Session):
         # hack to conform with old logic until updated
         state = ":%s" % state
         self.set_hook(state, file_name, source_name, data)
-
-    def add_node_service_file(self, node_id, service_name, file_name, source_name, data):
-        """
-        Add a service file for a node.
-
-        :param int node_id: node to add service file to
-        :param str service_name: service file to add
-        :param str file_name: file name to use
-        :param str source_name: source file
-        :param str data: file data to save
-        :return: nothing
-        """
-        # hack to conform with old logic until updated
-        service_name = ":%s" % service_name
-        self.services.setservicefile(node_id, service_name, file_name, source_name, data)
 
     def add_node_file(self, node_id, source_name, file_name, data):
         """
@@ -745,6 +721,7 @@ class EmuSession(Session):
         self.delete_objects()
         self.del_hooks()
         self.broker.reset()
+        self.emane.reset()
 
     def start_events(self):
         """
@@ -753,15 +730,6 @@ class EmuSession(Session):
         :return: nothing
         """
         self.event_loop.run()
-
-    def services_event(self, event_data):
-        """
-        Handle a service event.
-
-        :param core.data.EventData event_data: event data to handle
-        :return:
-        """
-        self.services.handleevent(event_data)
 
     def mobility_event(self, event_data):
         """
@@ -784,7 +752,7 @@ class EmuSession(Session):
         node_options.model = "mdr"
         return self.add_node(_type=NodeTypes.DEFAULT, _id=_id, node_options=node_options)
 
-    def create_emane_network(self, model, geo_reference, geo_scale=None, node_options=NodeOptions()):
+    def create_emane_network(self, model, geo_reference, geo_scale=None, node_options=NodeOptions(), config=None):
         """
         Convenience method for creating an emane network.
 
@@ -792,6 +760,7 @@ class EmuSession(Session):
         :param geo_reference: geo reference point to use for emane node locations
         :param geo_scale: geo scale to use for emane node locations, defaults to 1.0
         :param core.emulator.emudata.NodeOptions node_options: options for emane node being created
+        :param dict config: emane model configuration
         :return: create emane network
         """
         # required to be set for emane to function properly
@@ -801,30 +770,8 @@ class EmuSession(Session):
 
         # create and return network
         emane_network = self.add_node(_type=NodeTypes.EMANE, node_options=node_options)
-        self.set_emane_model(emane_network, model)
+        self.emane.set_model(emane_network, model, config)
         return emane_network
-
-    def set_emane_model(self, emane_node, emane_model):
-        """
-        Set emane model for a given emane node.
-
-        :param emane_node: emane node to set model for
-        :param emane_model: emane model to set
-        :return: nothing
-        """
-        values = list(emane_model.getdefaultvalues())
-        self.emane.setconfig(emane_node.objid, emane_model.name, values)
-
-    def set_wireless_model(self, node, model):
-        """
-        Convenience method for setting a wireless model.
-
-        :param node: node to set wireless model for
-        :param core.mobility.WirelessModel model: wireless model to set node to
-        :return: nothing
-        """
-        values = list(model.getdefaultvalues())
-        node.setmodel(model, values)
 
     def wireless_link_all(self, network, nodes):
         """
@@ -850,7 +797,12 @@ class CoreEmu(object):
 
         :param dict config: configuration options
         """
+        # set umask 0
+        os.umask(0)
+
         # configuration
+        if not config:
+            config = {}
         self.config = config
 
         # session management
@@ -861,11 +813,25 @@ class CoreEmu(object):
         node_map = nodemaps.NODES
         nodeutils.set_node_map(node_map)
 
-        # load default services
-        core.services.load()
+        # load services
+        self.service_errors = []
+        self.load_services()
 
         # catch exit event
         atexit.register(self.shutdown)
+
+    def load_services(self):
+        # load default services
+        self.service_errors = core.services.load()
+
+        # load custom services
+        service_paths = self.config.get("custom_services_dir")
+        logger.debug("custom service paths: %s", service_paths)
+        if service_paths:
+            for service_path in service_paths.split(','):
+                service_path = service_path.strip()
+                custom_service_errors = ServiceManager.add_services(service_path)
+                self.service_errors.extend(custom_service_errors)
 
     def update_nodes(self, node_map):
         """

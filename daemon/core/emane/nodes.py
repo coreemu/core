@@ -4,8 +4,6 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 """
 
-import os
-
 from core import logger
 from core.coreobj import PyCoreNet
 from core.enumerations import LinkTypes
@@ -67,6 +65,12 @@ class EmaneNode(EmaneNet):
     def unlink(self, netif1, netif2):
         pass
 
+    def updatemodel(self, config):
+        if not self.model:
+            raise ValueError("no model set to update for node(%s)", self.objid)
+        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        self.model.set_configs(config, node_id=self.objid)
+
     def setmodel(self, model, config):
         """
         set the EmaneModel associated with this node
@@ -76,8 +80,10 @@ class EmaneNode(EmaneNet):
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
             self.model = model(session=self.session, object_id=self.objid)
+            self.model.update_config(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, values=config)
+            self.mobility = model(session=self.session, object_id=self.objid)
+            self.mobility.update_config(config)
 
     def setnemid(self, netif, nemid):
         """
@@ -111,95 +117,7 @@ class EmaneNode(EmaneNet):
         """
         return sorted(self._netif.values(), key=lambda ifc: ifc.node.objid)
 
-    def buildplatformxmlentry(self, doc):
-        """
-        Return a dictionary of XML elements describing the NEMs
-        connected to this EmaneNode for inclusion in the platform.xml file.
-        """
-        ret = {}
-        if self.model is None:
-            logger.info("warning: EmaneNode %s has no associated model", self.name)
-            return ret
-
-        for netif in self.netifs():
-            nementry = self.model.build_nem_xml(doc, self, netif)
-            trans = self.model.build_transport_xml(doc, self, netif)
-            nementry.appendChild(trans)
-            ret[netif] = nementry
-
-        return ret
-
-    def build_xml_files(self, emane_manager):
-        """
-        Let the configured model build the necessary nem, mac, and phy XMLs.
-
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :return: nothing
-        """
-        if self.model is None:
-            return
-
-        # build XML for overall network (EmaneNode) configs
-        self.model.build_xml_files(emane_manager, interface=None)
-
-        # build XML for specific interface (NEM) configs
-        need_virtual = False
-        need_raw = False
-        vtype = "virtual"
-        rtype = "raw"
-
-        for netif in self.netifs():
-            self.model.build_xml_files(emane_manager, netif)
-            if "virtual" in netif.transport_type:
-                need_virtual = True
-                vtype = netif.transport_type
-            else:
-                need_raw = True
-                rtype = netif.transport_type
-
-        # build transport XML files depending on type of interfaces involved
-        if need_virtual:
-            self.buildtransportxml(emane_manager, vtype)
-
-        if need_raw:
-            self.buildtransportxml(emane_manager, rtype)
-
-    def buildtransportxml(self, emane, transport_type):
-        """
-        Write a transport XML file for the Virtual or Raw Transport.
-        """
-        transdoc = emane.xmldoc("transport")
-        trans = transdoc.getElementsByTagName("transport").pop()
-        trans.setAttribute("name", "%s Transport" % transport_type.capitalize())
-        trans.setAttribute("library", "trans%s" % transport_type.lower())
-        trans.appendChild(emane.xmlparam(transdoc, "bitrate", "0"))
-
-        flowcontrol = False
-        names = self.model.getnames()
-        values = emane.getconfig(self.objid, self.model.name, self.model.getdefaultvalues())[1]
-
-        if "flowcontrolenable" in names and values:
-            i = names.index("flowcontrolenable")
-            if self.model.booltooffon(values[i]) == "on":
-                flowcontrol = True
-
-        if "virtual" in transport_type.lower():
-            if os.path.exists("/dev/net/tun_flowctl"):
-                trans.appendChild(emane.xmlparam(transdoc, "devicepath", "/dev/net/tun_flowctl"))
-            else:
-                trans.appendChild(emane.xmlparam(transdoc, "devicepath", "/dev/net/tun"))
-            if flowcontrol:
-                trans.appendChild(emane.xmlparam(transdoc, "flowcontrolenable", "on"))
-
-        emane.xmlwrite(transdoc, self.transportxmlname(transport_type.lower()))
-
-    def transportxmlname(self, type):
-        """
-        Return the string name for the Transport XML file, e.g. 'n3transvirtual.xml'
-        """
-        return "n%strans%s.xml" % (self.objid, type)
-
-    def installnetifs(self, do_netns=True):
+    def installnetifs(self):
         """
         Install TAP devices into their namespaces. This is done after
         EMANE daemons have been started, because that is their only chance
@@ -211,12 +129,14 @@ class EmaneNode(EmaneNet):
             logger.error(warntxt)
 
         for netif in self.netifs():
-            if do_netns and "virtual" in netif.transport_type.lower():
-                netif.install()
-            netif.setaddrs()
+            external = self.session.emane.get_config("external", self.objid, self.model.name)
+            if external == "0":
+                netif.setaddrs()
+
             if not self.session.emane.genlocationevents():
                 netif.poshook = None
                 continue
+
             # at this point we register location handlers for generating
             # EMANE location events
             netif.poshook = self.setnemposition

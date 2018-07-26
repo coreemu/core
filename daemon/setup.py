@@ -39,10 +39,11 @@ data_files.extend(recursive_files(_EXAMPLES_DIR, "examples"))
 
 setup(
     name="core",
-    version="5.1",
+    version="5.2",
     packages=find_packages(),
     install_requires=[
         "enum34",
+        "lxml"
     ],
     tests_require=[
         "pytest",
