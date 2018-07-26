@@ -131,10 +131,7 @@ class EmaneNode(EmaneNet):
         for netif in self.netifs():
             external = self.session.emane.get_config("external", self.objid, self.model.name)
             if external == "0":
-                logger.info("I AM NOT SKIPPING EMANE ADDRESSES")
                 netif.setaddrs()
-            else:
-                logger.info("I AM SKIPPING EMANE ADDRESSES")
 
             if not self.session.emane.genlocationevents():
                 netif.poshook = None
