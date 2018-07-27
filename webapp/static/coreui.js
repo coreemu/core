@@ -83,11 +83,18 @@ class ConfigModel {
             configs.push({name, value, type: dataType});
         }
         console.log('config data: ', configs);
-        await this.coreRest.setConfig({
-            name: configType,
-            node: nodeId,
-            values: configs
-        });
+        if (configType === "emane") {
+            await this.coreRest.setEmaneConfig({
+                node: nodeId,
+                values: configs
+            });
+        } else {
+            await this.coreRest.setEmaneModelConfig({
+                node: nodeId,
+                name: configType,
+                values: configs
+            });
+        }
         this.$modal.modal('hide');
     }
 
@@ -124,7 +131,7 @@ class ConfigModel {
         const configName = 'emane';
         this.$modal.data('type', configName);
         this.$title.text('EMANE Options');
-        const config = await this.coreRest.getConfig({node: nodeId, name: configName});
+        const config = await this.coreRest.getEmaneConfig({node: nodeId});
         console.log('emane options clicked: ', config);
         this.showConfig(config);
         return false;
@@ -137,7 +144,7 @@ class ConfigModel {
         this.$modal.data('type', configName);
         this.$title.text('EMANE Model Options');
         console.log('emane model clicked: ', configName);
-        const config = await this.coreRest.getConfig({node: nodeId, name: configName});
+        const config = await this.coreRest.getEmaneModelConfig({node: nodeId, name: configName});
         console.log('emane model options clicked: ', config);
         this.showConfig(config);
         return false;

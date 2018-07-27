@@ -12,16 +12,16 @@ from flask_socketio import SocketIO
 from flask_socketio import emit
 
 from core import logger
-from core.data import ConfigData
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import EventTypes, ConfigFlags, ConfigDataTypes
+from core.enumerations import EventTypes
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
 from core.misc.ipaddress import Ipv4Prefix, Ipv6Prefix
+from core.service import ServiceManager
 
 CORE_LOCK = Lock()
 
@@ -30,13 +30,6 @@ app.config["SECRET_KEY"] = "core"
 socketio = SocketIO(app)
 
 coreemu = CoreEmu()
-
-
-def custom_service_values(service):
-    valmap = [service._dirs, service._configs, service._startindex, service._startup,
-              service._shutdown, service._validate, service._meta, service._starttime]
-    vals = map(lambda a, b: "%s=%s" % (a, str(b)), service.keys, valmap)
-    return "|".join(vals)
 
 
 def synchronized(function):
@@ -185,7 +178,7 @@ def get_session(session_id):
         if nodeutils.is_node(node, NodeTypes.EMANE):
             emane_model = node.model.name
 
-        services = [x._name for x in getattr(node, "services", [])]
+        services = [x.name for x in getattr(node, "services", [])]
         nodes.append({
             "id": node.objid,
             "name": node.name,
@@ -207,34 +200,39 @@ def get_session(session_id):
     )
 
 
-@app.route("/sessions/<int:session_id>/config", methods=["PUT"])
+@app.route("/sessions/<int:session_id>/emane/config", methods=["PUT"])
 @synchronized
-def set_config(session_id):
+def set_emane_config(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
 
     data = request.get_json() or {}
-    name = data["name"]
     node_id = data.get("node")
     values = data["values"]
-    data_types = [value["type"] for value in values]
-    data_values = "|".join(["%s=%s" % (value["name"], value["value"]) for value in values])
-
-    config_data = ConfigData(
-        node=node_id,
-        object=name,
-        type=ConfigFlags.NONE.value,
-        data_types=tuple(data_types),
-        data_values=data_values
-    )
-    logger.info("setting config: %s", config_data)
-    session.config_object(config_data)
+    config = {x["name"]: x["value"] for x in values}
+    session.emane.set_configs(config)
     return jsonify()
 
 
-@app.route("/sessions/<int:session_id>/config")
-def get_config(session_id):
+@app.route("/sessions/<int:session_id>/emane/model/config", methods=["PUT"])
+@synchronized
+def set_emane_model_config(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    data = request.get_json() or {}
+    model_name = data["name"]
+    node_id = data.get("node")
+    values = data["values"]
+    config = {x["name"]: x["value"] for x in values}
+    session.emane.set_model_config(node_id, model_name, config)
+    return jsonify()
+
+
+@app.route("/sessions/<int:session_id>/emane/config")
+def get_emane_config(session_id):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
@@ -243,59 +241,66 @@ def get_config(session_id):
     if node_id.isdigit():
         node_id = int(node_id)
 
-    name = request.args["name"]
-
-    config_data = ConfigData(
-        node=node_id,
-        object=name,
-        type=ConfigFlags.REQUEST.value
-    )
-    replies = session.config_object(config_data)
-    if len(replies) != 1:
-        return jsonify(error="failure getting config options"), 404
-    config_groups = replies[0]
-
-    captions = config_groups.captions.split("|")
-    data_values = config_groups.data_values.split("|")
-    possible_values = config_groups.possible_values.split("|")
-    groups = config_groups.groups.split("|")
+    config = session.emane.get_configs()
 
     config_options = []
-    for i, data_type in enumerate(config_groups.data_types):
-        data_value = data_values[i].split("=")
-        value = None
-        name = data_value[0]
-        if len(data_value) == 2:
-            value = data_value[1]
-
-        possible_value = possible_values[i]
-        select = None
-        if possible_value:
-            select = possible_value.split(",")
-
-        label = captions[i]
-
-        config_option = {
-            "label": label,
-            "name": name,
+    for configuration in session.emane.emane_config.configurations():
+        value = config[configuration.id]
+        config_options.append({
+            "label": configuration.label,
+            "name": configuration.id,
             "value": value,
-            "type": data_type,
-            "select": select
-        }
-        config_options.append(config_option)
+            "type": configuration.type.value,
+            "select": configuration.options
+        })
 
-    config_groups = []
-    for group in groups:
-        name, indexes = group.split(":")
-        indexes = [int(x) for x in indexes.split("-")]
-        start = indexes[0] - 1
-        stop = indexes[1]
-        config_groups.append({
-            "name": name,
+    response = []
+    for config_group in session.emane.emane_config.config_groups():
+        start = config_group.start - 1
+        stop = config_group.stop
+        response.append({
+            "name": config_group.name,
             "options": config_options[start: stop]
         })
 
-    return jsonify(groups=config_groups)
+    return jsonify(groups=response)
+
+
+@app.route("/sessions/<int:session_id>/emane/model/config")
+def get_emane_model_config(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    node_id = request.args.get("node")
+    if node_id.isdigit():
+        node_id = int(node_id)
+
+    model_name = request.args["name"]
+    model = session.emane.models[model_name]
+    config = session.emane.get_model_config(node_id, model_name)
+
+    config_options = []
+    for configuration in model.configurations():
+        value = config[configuration.id]
+        config_options.append({
+            "label": configuration.label,
+            "name": configuration.id,
+            "value": value,
+            "type": configuration.type.value,
+            "select": configuration.options
+        })
+
+    response = []
+    for config_group in model.config_groups():
+        start = config_group.start - 1
+        stop = config_group.stop
+        response.append({
+            "name": config_group.name,
+            "options": config_options[start: stop]
+        })
+
+    return jsonify(groups=response)
 
 
 @app.route("/sessions/<int:session_id>/emane/models")
@@ -305,7 +310,7 @@ def get_emane_models(session_id):
         return jsonify(error="session does not exist"), 404
 
     models = []
-    for model in session.emane._modelclsmap.keys():
+    for model in session.emane.models.keys():
         if len(model.split("_")) != 2:
             continue
         models.append(model)
@@ -340,16 +345,8 @@ def create_node(session_id):
     # configure emane if provided
     emane_model = data.get("emane")
     if emane_model:
-        config_data = ConfigData(
-            node=node_id,
-            object=emane_model,
-            type=2
-        )
-        session.config_object(config_data)
+        session.emane.set_model_config(node_id, emane_model)
 
-    logger.info("custom services: %s", session.services.customservices)
-    for service in node.services:
-        logger.info("node services: %s - %s", service._name, service._custom)
     return jsonify(
         id=node.objid,
         url="/sessions/%s/nodes/%s" % (session_id, node.objid)
@@ -414,7 +411,7 @@ def get_node(session_id, node_id):
             "flowid": interface.flow_id
         })
 
-    services = [x._name for x in getattr(node, "services", [])]
+    services = [x.name for x in getattr(node, "services", [])]
 
     emane_model = None
     if nodeutils.is_node(node, NodeTypes.EMANE):
@@ -468,6 +465,7 @@ def delete_node(session_id, node_id):
         return jsonify(error="failure to delete node"), 404
 
 
+# TODO: this should just be a general service query
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services")
 def get_node_services(session_id, node_id):
     session = coreemu.sessions.get(session_id)
@@ -477,33 +475,16 @@ def get_node_services(session_id, node_id):
     if node_id.isdigit():
         node_id = int(node_id)
 
-    config_data = ConfigData(
-        node=node_id,
-        object="services",
-        type=ConfigFlags.REQUEST.value,
-    )
-    logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
-
-    # dispatch to any registered callback for this object type
-    replies = session.config_object(config_data)
-    if len(replies) != 1:
-        return jsonify(error="failure getting node services"), 404
-
-    service_data = replies[0]
-    names = service_data.captions.split("|")
     services = {}
-    for group in service_data.groups.split("|"):
-        group = group.split(":")
-        group_name = group[0]
-        group_start, group_stop = [int(x) for x in group[1].split("-")]
-        group_start -= 1
-        services[group_name] = names[group_start:group_stop]
+    for service in ServiceManager.services.itervalues():
+        service_group = services.setdefault(service.group, [])
+        service_group.append(service.name)
 
     return jsonify(services)
 
 
-@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>")
-def get_node_service(session_id, node_id, service):
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>")
+def get_node_service(session_id, node_id, service_name):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
@@ -511,41 +492,22 @@ def get_node_service(session_id, node_id, service):
     if node_id.isdigit():
         node_id = int(node_id)
 
-    config_data = ConfigData(
-        node=node_id,
-        object="services",
-        opaque="service:%s" % service,
-        type=ConfigFlags.REQUEST.value,
-    )
-    logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
-
-    # dispatch to any registered callback for this object type
-    replies = session.config_object(config_data)
-    if len(replies) != 1:
-        return jsonify(error="failure getting node services"), 404
-    response = replies[0]
-    data_values = response.data_values
-
-    # check if this is a custom service, since core cant currently handle this right
-    node_services, _ = session.services.servicesfromopaque("service:%s" % service, node_id)
-    node_service = node_services[0]
-    if node_service._custom:
-        data_values = custom_service_values(node_service)
-
-    data_values = data_values.split("|")
-    service_config = {}
-    for data_value in data_values:
-        name, value = data_value.split("=")
-        if value.startswith("("):
-            value = value.strip("()").split(",")
-            value = [x.strip(" '") for x in value if x]
-        service_config[name] = value
-
+    service = session.services.get_service(node_id, service_name, default_service=True)
+    service_config = {
+        "dirs": service.dirs,
+        "files": service.configs,
+        "startidx": "0",
+        "cmdup": service.startup,
+        "cmddown": service.shutdown,
+        "cmdval": service.validate,
+        "meta": service.meta,
+        "starttime": "0"
+    }
     return jsonify(service_config)
 
 
-@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>", methods=["PUT"])
-def set_node_service(session_id, node_id, service):
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>", methods=["PUT"])
+def set_node_service(session_id, node_id, service_name):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
@@ -558,57 +520,24 @@ def set_node_service(session_id, node_id, service):
 
     data = request.get_json() or {}
 
-    data_types = list()
-    data_values = list()
-    data_types.append(ConfigDataTypes.STRING.value)
-    data_values.append("startidx=%s" % data["index"])
-    index = data["time"]
-    if index:
-        data_types.append(ConfigDataTypes.STRING.value)
-        data_values.append("starttime=%s" % index)
-    startup = create_tuple_str(data["startup"])
-    if startup:
-        data_types.append(ConfigDataTypes.STRING.value)
-        data_values.append("cmdup=%s" % startup)
-    shutdown = create_tuple_str(data["shutdown"])
-    if shutdown:
-        data_types.append(ConfigDataTypes.STRING.value)
-        data_values.append("cmddown=%s" % shutdown)
-    validate = create_tuple_str(data["validate"])
-    if validate:
-        data_types.append(ConfigDataTypes.STRING.value)
-        data_values.append("cmdval=%s" % validate)
-    data_values = "|".join(data_values)
-    logger.info("service types: %s", data_types)
-    logger.info("service values: %s", data_values)
-
-    config_data = ConfigData(
-        node=node_id,
-        object="services",
-        opaque="service:%s" % service,
-        type=ConfigFlags.NONE.value,
-        data_types=data_types,
-        data_values=data_values
-    )
-    session.config_object(config_data)
-    logger.info("custom services: %s", session.services.customservices)
+    logger.info("setting custom service node(%s) service(%s)", node_id, service_name)
+    # guarantee custom service exists
+    session.services.set_service(node_id, service_name)
+    service = session.services.get_service(node_id, service_name)
+    startup = data["startup"] or ""
+    service.startup = tuple(startup.split("\n"))
+    logger.info("custom startup: %s", service.startup)
+    validate = data["validate"] or ""
+    service.validate = tuple(validate.split("\n"))
+    logger.info("custom validate: %s", service.validate)
+    shutdown = data["shutdown"] or ""
+    service.shutdown = tuple(shutdown.split("\n"))
+    logger.info("custom shutdown: %s", service.shutdown)
     return jsonify()
 
 
-def create_tuple_str(data):
-    if not data:
-        return None
-    data = data.strip()
-
-    output = "("
-    for line in data.split("\n"):
-        output += "'%s'," % line.strip()
-    output += ")"
-    return output
-
-
-@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>/file")
-def get_node_service_file(session_id, node_id, service):
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>/file")
+def get_node_service_file(session_id, node_id, service_name):
     session = coreemu.sessions.get(session_id)
     if not session:
         return jsonify(error="session does not exist"), 404
@@ -619,9 +548,9 @@ def get_node_service_file(session_id, node_id, service):
     if not node:
         return jsonify(error="node does not exist"), 404
 
+    # get custom service file or default
     service_file = request.args["file"]
-    services, _ = session.services.servicesfromopaque("service:%s" % service, node_id)
-    file_data = session.services.getservicefile(services, node, service_file)
+    file_data = session.services.get_service_file(node, service_name, service_file)
     return jsonify(file_data.data)
 
 
@@ -640,7 +569,7 @@ def set_node_service_file(session_id, node_id, service):
     data = request.get_json() or {}
     file_name = data["name"]
     data = data["data"]
-    session.add_node_service_file(node_id, service, file_name, None, data)
+    session.services.set_service_file(node_id, service, file_name, data)
     return jsonify()
 
 

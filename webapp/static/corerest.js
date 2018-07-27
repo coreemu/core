@@ -78,12 +78,20 @@ class CoreRest {
         return await $.getJSON(`/sessions/${this.currentSession}/emane/models`);
     }
 
-    async getConfig(config) {
-        return await $.getJSON(`/sessions/${this.currentSession}/config`, config);
+    async getEmaneConfig(config) {
+        return await $.getJSON(`/sessions/${this.currentSession}/emane/config`, config);
     }
 
-    async setConfig(config) {
-        return await putJson(`/sessions/${this.currentSession}/config`, config);
+    async getEmaneModelConfig(config) {
+        return await $.getJSON(`/sessions/${this.currentSession}/emane/model/config`, config);
+    }
+
+    async setEmaneConfig(config) {
+        return await putJson(`/sessions/${this.currentSession}/emane/config`, config);
+    }
+
+    async setEmaneModelConfig(config) {
+        return await putJson(`/sessions/${this.currentSession}/emane/model/config`, config);
     }
 
     async getNode(nodeId) {
