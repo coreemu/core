@@ -16,9 +16,45 @@ _XML_VERSIONS = [
 
 class TestXml:
     @pytest.mark.parametrize("version", _XML_VERSIONS)
+    def test_xml_hooks(self, session, tmpdir, version):
+        """
+        Test save/load hooks in xml.
+
+        :param session: session for test
+        :param tmpdir: tmpdir to create data in
+        :param str version: xml version to write and parse
+        """
+        # create hook
+        file_name = "runtime_hook.sh"
+        data = "#!/bin/sh\necho hello"
+        session.set_hook("hook:4", file_name, None, data)
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path, version)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        runtime_hooks = session._hooks.get(4)
+        assert runtime_hooks
+        runtime_hook = runtime_hooks[0]
+        assert file_name == runtime_hook[0]
+        assert data == runtime_hook[1]
+
+    @pytest.mark.parametrize("version", _XML_VERSIONS)
     def test_xml_ptp(self, session, tmpdir, version, ip_prefixes):
         """
-        Test xml client methods for a ptp neetwork.
+        Test xml client methods for a ptp network.
 
         :param session: session for test
         :param tmpdir: tmpdir to create data in
