@@ -705,7 +705,6 @@ class CoreXmlReader(object):
             name = hook.get("name")
             state = hook.get("state")
             data = hook.text
-            self.session.add_state_hook()
             hook_type = "hook:%s" % state
             logger.info("reading hook: state(%s) name(%s)", state, name)
             self.session.set_hook(hook_type, file_name=name, source_name=None, data=data)
