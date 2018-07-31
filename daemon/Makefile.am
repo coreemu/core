@@ -15,7 +15,7 @@ if WANT_DOCS
 endif
 
 SCRIPT_FILES := $(notdir $(wildcard scripts/*))
-MAN_FILES := $(notdir $(wildcard ../doc/man/*.1))
+MAN_FILES := $(notdir $(wildcard ../man/*.1))
 
 # Python package build
 noinst_SCRIPTS = build
