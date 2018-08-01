@@ -3,6 +3,7 @@ import os
 import pytest
 
 from core.service import CoreService
+from core.service import ServiceDependencies
 from core.service import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
@@ -19,20 +20,20 @@ class ServiceA(CoreService):
 
 class ServiceB(CoreService):
     name = "B"
-    dependencies = ("C",)
+    dependencies = ()
 
 
 class ServiceC(CoreService):
     name = "C"
-    dependencies = ()
+    dependencies = ("B", "D")
 
 
 class ServiceD(CoreService):
     name = "D"
-    dependencies = ("A",)
+    dependencies = ()
 
 
-class ServiceE(CoreService):
+class ServiceBadDependency(CoreService):
     name = "E"
     dependencies = ("Z",)
 
@@ -40,6 +41,10 @@ class ServiceE(CoreService):
 class ServiceF(CoreService):
     name = "F"
     dependencies = ()
+
+
+class ServiceCycleDependency(CoreService):
+    name = "G"
 
 
 class TestServices:
@@ -245,7 +250,23 @@ class TestServices:
         assert default_service == my_service
         assert custom_service and custom_service != my_service
 
-    def test_services_dependencies(self, session):
+    def test_services_dependencies(self):
+        # given
+        services = [
+            ServiceA,
+            ServiceB,
+            ServiceC,
+            ServiceD,
+            ServiceF
+        ]
+
+        # when
+        boot_paths = ServiceDependencies(services).boot_paths()
+
+        # then
+        assert len(boot_paths) == 2
+
+    def test_services_dependencies_not_present(self):
         # given
         services = [
             ServiceA,
@@ -253,39 +274,25 @@ class TestServices:
             ServiceC,
             ServiceD,
             ServiceF,
+            ServiceBadDependency
         ]
 
-        # when
-        startups = session.services.create_boot_paths(services)
+        # when, then
+        with pytest.raises(ValueError):
+            ServiceDependencies(services).boot_paths()
 
-        # then
-        assert len(startups) == 2
-
-    def test_services_dependencies_not_present(self, session):
+    def test_services_dependencies_cycle(self):
         # given
+        service_d = ServiceD()
+        service_d.dependencies = ("C",)
         services = [
             ServiceA,
             ServiceB,
             ServiceC,
-            ServiceE
-        ]
-
-        # when
-        with pytest.raises(ValueError):
-            session.services.create_boot_paths(services)
-
-    def test_services_dependencies_cycle(self, session):
-        # given
-        service_c = ServiceC()
-        service_c.dependencies = ("D",)
-        services = [
-            ServiceA,
-            ServiceB,
-            service_c,
-            ServiceD,
+            service_d,
             ServiceF
         ]
 
-        # when
+        # when, then
         with pytest.raises(ValueError):
-            session.services.create_boot_paths(services)
+            ServiceDependencies(services).boot_paths()
