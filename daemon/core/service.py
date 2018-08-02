@@ -70,8 +70,8 @@ class ServiceDependencies(object):
             if path:
                 paths.append(path)
 
-        if self.booted != self.node_services.viewkeys():
-            raise ValueError("failure to boot all services: %s != %s", self.booted, self.node_services.keys())
+        if self.booted != set(self.node_services.iterkeys()):
+            raise ValueError("failure to boot all services: %s != %s" % (self.booted, self.node_services.keys()))
 
         return paths
 
@@ -170,7 +170,7 @@ class ServiceShim(object):
         :return: nothing
         """
         if key not in cls.keys:
-            raise ValueError('key `%s` not in `%s`' % (key, cls.keys))
+            raise ValueError("key `%s` not in `%s`" % (key, cls.keys))
         # this handles data conversion to int, string, and tuples
         if value:
             if key == "startidx":

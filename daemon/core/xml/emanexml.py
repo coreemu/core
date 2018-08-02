@@ -155,7 +155,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             eventdev = None
 
         platform_element = platform_xmls.get(key)
-        if not platform_element:
+        if platform_element is None:
             platform_element = etree.Element("platform")
 
             if otadev:
