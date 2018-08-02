@@ -16,7 +16,7 @@ CORE files are installed to the following directories, when the installation pre
 
 Install Path | Description
 -------------|------------
-/usr/local/bin/core-gui|GUI startup command
+/usr/bin/core-gui|GUI startup command
 /usr/bin/core-daemon|Daemon startup command
 /usr/bin/|Misc. helper commands/scripts
 /usr/lib/core|GUI files
@@ -66,8 +66,8 @@ sudo apt-get install quagga
 Install the CORE deb packages for Ubuntu from command line.
 
 ```shell
-sudo dpkg -i python-core_systemd_5.1_all.deb
-sudo dpkg -i core-gui_5.1_amd64.deb
+sudo dpkg -i python-core_*.deb
+sudo dpkg -i core-gui_*.deb
 ```
 
 Start the CORE daemon as root, the systemd installation will auto start the daemon, but you can use the commands below if need be.
@@ -122,8 +122,8 @@ yum install quagga
 Install the CORE RPM packages and automatically resolve dependencies:
 
 ```shell
-yum install python-core_sysv_5.1_noarch.rpm
-yum install core-gui_5.1_x86_64.rpm
+yum install python-core_*.rpm
+yum install core-gui_*.rpm
 ```
 
 Turn off SELINUX by setting *SELINUX=disabled* in the */etc/sysconfig/selinux* file, and adding *selinux=0* to the kernel line in your */etc/grub.conf* file; on Fedora 15 and newer, disable sandboxd using ```chkconfig sandbox off```; you need to reboot in order for this change to take effect
@@ -138,14 +138,14 @@ chkconfig iptables off
 chkconfig ip6tables off
 ```
 
-You need to reboot after making these changes, or flush the firewall using 
+You need to reboot after making these changes, or flush the firewall using
 
 ```shell
 iptables -F
 ip6tables -F
 ```
 
-Start the CORE daemon as root. 
+Start the CORE daemon as root.
 
 ```shell
 # systemd
@@ -173,14 +173,14 @@ To build CORE from source on Ubuntu, first install these development packages. T
 #### Ubuntu pre-reqs
 
 ```shell
-sudo apt-get install
+sudo apt-get install 
 ```
 
 You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu/core) page. Choose either a stable release version or the development snapshot available in the *nightly_snapshots* directory.
 
 ```shell
-tar xzf core-5.1.tar.gz
-cd core-5.1
+tar xzf core-*.tar.gz
+cd core-*
 ./bootstrap.sh
 ./configure
 make

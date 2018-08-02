@@ -14,7 +14,7 @@ EMANE is developed by U.S. Naval Research Labs (NRL) Code 5522 and Adjacent Link
 
 Instead of building Linux Ethernet bridging networks with CORE, higher-fidelity wireless networks can be emulated using EMANE bound to virtual devices. CORE emulates layers 3 and above (network, session, application) with its virtual network stacks and process space for protocols and applications, while EMANE emulates layers 1 and 2 (physical and data link) using its pluggable PHY and MAC models.
 
-The interface between CORE and EMANE is a TAP device. CORE builds the virtual node using Linux network namespaces, installs the TAP device into the namespace and instantiates one EMANE process in the namespace. The EMANE process binds a user space socket to the TAP device for sending and receiving data from CORE. 
+The interface between CORE and EMANE is a TAP device. CORE builds the virtual node using Linux network namespaces, installs the TAP device into the namespace and instantiates one EMANE process in the namespace. The EMANE process binds a user space socket to the TAP device for sending and receiving data from CORE.
 
 An EMANE instance sends and receives OTA traffic to and from other EMANE instances via a control port (e.g. *ctrl0*, *ctrl1*).  It also sends and receives Events to and from the Event Service using the same or a different control port. EMANE models are configured through CORE's WLAN configuration dialog. A corresponding EmaneModel Python class is sub-classed for each supported EMANE model, to provide configuration items and their mapping to XML files. This way new models can be easily supported. When CORE starts the emulation, it generates the appropriate XML files that specify the EMANE NEM configuration, and launches the EMANE daemons.
 
@@ -34,8 +34,8 @@ emane_event_monitor = False
 emane_log_level = 2
 emane_realtime = True
 ```
-  
-EMANE can be installed from deb or RPM packages or from source. See the [EMANE GitHub](https://github.com/adjacentlink/emane) for full details. 
+
+EMANE can be installed from deb or RPM packages or from source. See the [EMANE GitHub](https://github.com/adjacentlink/emane) for full details.
 
 Here are quick instructions for installing all EMANE packages:
 
@@ -52,20 +52,20 @@ If you have an EMANE event generator (e.g. mobility or pathloss scripts) and wan
 ```shell
 emane_event_monitor = True
 ```
-  
+
 Do not set the above option to True if you want to manually drag nodes around on the canvas to update their location in EMANE.
 
-Another common issue is if installing EMANE from source, the default configure prefix will place the DTD files in */usr/local/share/emane/dtd* while CORE expects them in */usr/share/emane/dtd*. 
+Another common issue is if installing EMANE from source, the default configure prefix will place the DTD files in */usr/local/share/emane/dtd* while CORE expects them in */usr/share/emane/dtd*.
 
 A symbolic link will fix this:
 
 ```shell
 sudo ln -s /usr/local/share/emane /usr/share/emane
 ```
- 
+
 ## Custom EMANE Models
 
-CORE supports custom developed EMANE models by way of dynamically loading user created python files that represent the model. Custom EMANE models should be placed within the path defined by **emane_models_dir** in the CORE configuration file. This path cannot end in **emane**.
+CORE supports custom developed EMANE models by way of dynamically loading user created python files that represent the model. Custom EMANE models should be placed within the path defined by **emane_models_dir** in the CORE configuration file. This path cannot end in **/emane**.
 
 Here is an example model with documentation describing functionality:
 [Example Model](examplemodel.html)
@@ -82,7 +82,7 @@ Double-click on a WLAN node to invoke the WLAN configuration dialog. Click the *
 
 When an EMANE model is selected in the *EMANE Models* list, clicking on the *model options* button causes the GUI to query the CORE daemon for configuration items. Each model will have different parameters, refer to the EMANE documentation for an explanation of each item. The defaults values are presented in the dialog. Clicking *Apply*  and *Apply* again will store the EMANE model selections.
 
-The *EMANE options* button allows specifying some global parameters for EMANE, some of which are necessary for distributed operation. 
+The *EMANE options* button allows specifying some global parameters for EMANE, some of which are necessary for distributed operation.
 
 The RF-PIPE and IEEE 802.11abg models use a Universal PHY that supports geographic location information for determining pathloss between nodes. A default latitude and longitude location is provided by CORE and this location-based pathloss is enabled by default; this is the *pathloss mode* setting for the Universal PHY.  Moving a node on the canvas while the emulation is running generates location events for EMANE. To view or change the geographic location or scale of the canvas use the *Canvas Size and Scale* dialog available from the *Canvas* menu.
 
@@ -136,7 +136,7 @@ Under the *EMANE* tab of the EMANE WLAN, click on the *EMANE options* button. Th
 
 Now when the Start button is used to instantiate the emulation, the local CORE Python daemon will connect to other emulation servers that have been assigned to nodes. Each server will have its own session directory where the *platform.xml* file and other EMANE XML files are generated. The NEM IDs are automatically coordinated across servers so there is no overlap. Each server also gets its own Platform ID.
 
-An Ethernet device is used for disseminating multicast EMANE events, as specified in the *configure emane* dialog. EMANE's Event Service can be run with mobility or pathloss scripts as described in :ref:`Single_PC_with_EMANE`. If CORE is not subscribed to location events, it will generate them as nodes are moved on the canvas. 
+An Ethernet device is used for disseminating multicast EMANE events, as specified in the *configure emane* dialog. EMANE's Event Service can be run with mobility or pathloss scripts as described in :ref:`Single_PC_with_EMANE`. If CORE is not subscribed to location events, it will generate them as nodes are moved on the canvas.
 
 Double-clicking on a node during runtime will cause the GUI to attempt to SSH to the emulation server for that node and run an interactive shell. The public key SSH configuration should be tested with all emulation servers prior to starting the emulation.
 
