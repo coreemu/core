@@ -33,7 +33,7 @@ data_files = [
         "data/core.conf",
         "data/logging.conf",
     ]),
-    (_MAN_DIR, glob_files("../doc/man/**.1")),
+    (_MAN_DIR, glob_files("../man/**.1")),
 ]
 data_files.extend(recursive_files(_EXAMPLES_DIR, "examples"))
 

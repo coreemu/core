@@ -734,7 +734,7 @@ class Session(object):
             pool.join()
             for result in results:
                 result.get()
-            logger.info("BOOT RUN TIME: %s", time.time() - start)
+            logger.debug("boot run time: %s", time.time() - start)
 
         self.update_control_interface_hosts()
 

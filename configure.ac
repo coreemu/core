@@ -208,10 +208,8 @@ AC_CONFIG_FILES([Makefile
 		gui/icons/Makefile
 		scripts/Makefile
 		scripts/perf/Makefile
-		doc/Makefile
-		doc/conf.py
-		doc/man/Makefile
-		doc/figures/Makefile
+		man/Makefile
+		docs/Makefile
 		daemon/Makefile
 		daemon/doc/Makefile
 		daemon/doc/conf.py
@@ -229,7 +227,7 @@ Build:
   Host System Type:           ${host}
   C Compiler and flags:       ${CC} ${CFLAGS}
   Prefix:             	      ${prefix}
-  Exec Prefix:		      ${exec_prefix}
+  Exec Prefix:		          ${exec_prefix}
 
 GUI:
   GUI path:                   ${CORE_LIB_DIR}
@@ -241,11 +239,11 @@ Daemon:
   Python modules:             ${pythondir}
   Logs:                       ${CORE_STATE_DIR}/log
 
-Startup:		      ${with_startup}
+Startup:		              ${with_startup}
 
 Features to build:
   Build GUI:                  ${enable_gui}
-  Build Daemon:		      ${enable_daemon}
+  Build Daemon:		          ${enable_daemon}
   Documentation:              ${want_docs}
 
 ------------------------------------------------------------------------"
