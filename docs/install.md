@@ -177,7 +177,7 @@ sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-
 ```
 
 
-#### CentOS 7 Gnome Desktop pre-reqs
+#### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
 sudo yum -y install automake gcc python-devel libev-devel python-sphinx tk python-lxml python-enum34
