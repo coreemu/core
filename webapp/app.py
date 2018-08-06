@@ -173,6 +173,7 @@ def get_session(session_id):
         return jsonify(error="session does not exist"), 404
 
     nodes = []
+    links = []
     for node in session.objects.itervalues():
         emane_model = None
         if nodeutils.is_node(node, NodeTypes.EMANE):
@@ -194,9 +195,22 @@ def get_session(session_id):
             "url": "/sessions/%s/nodes/%s" % (session_id, node.objid)
         })
 
+        links_data = node.all_link_data(0)
+        for link_data in links_data:
+            link = link_data._asdict()
+            del link["message_type"]
+            link_data_str(link, "interface1_ip4")
+            link_data_str(link, "interface1_ip6")
+            link_data_str(link, "interface1_mac")
+            link_data_str(link, "interface2_ip4")
+            link_data_str(link, "interface2_ip6")
+            link_data_str(link, "interface2_mac")
+            links.append(link)
+
     return jsonify(
         state=session.state,
-        nodes=nodes
+        nodes=nodes,
+        links=links
     )
 
 
