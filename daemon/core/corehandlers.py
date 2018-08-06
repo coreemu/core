@@ -22,7 +22,7 @@ from core.data import FileData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import ConfigDataTypes, ExceptionLevels
+from core.enumerations import ConfigDataTypes
 from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
@@ -645,11 +645,16 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             y=message.get_tlv(NodeTlvs.Y_POSITION.value)
         )
 
-        node_options.set_location(
-            lat=message.get_tlv(NodeTlvs.LATITUDE.value),
-            lon=message.get_tlv(NodeTlvs.LONGITUDE.value),
-            alt=message.get_tlv(NodeTlvs.ALTITUDE.value)
-        )
+        lat = message.get_tlv(NodeTlvs.LATITUDE.value)
+        if lat is not None:
+            lat = float(lat)
+        lon = message.get_tlv(NodeTlvs.LONGITUDE.value)
+        if lon is not None:
+            lon = float(lon)
+        alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
+        if alt is not None:
+            alt = float(alt)
+        node_options.set_location(lat=lat, lon=lon, alt=alt)
 
         node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
         node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)

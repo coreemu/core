@@ -542,7 +542,7 @@ class EmuSession(Session):
             # set node as updated successfully
             result = True
         except KeyError:
-            logger.error("failure to update node that does not exist: %s", node_options.id)
+            logger.error("failure to update node that does not exist: %s", node_id)
 
         return result
 
