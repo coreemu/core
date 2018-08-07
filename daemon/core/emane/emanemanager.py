@@ -808,9 +808,10 @@ class EmaneManager(ModelManager):
 
             # yaw,pitch,roll,azimuth,elevation,velocity are unhandled
             lat = attrs["latitude"]
-            long = attrs["longitude"]
+            lon = attrs["longitude"]
             alt = attrs["altitude"]
-            self.handlelocationeventtoxyz(txnemid, lat, long, alt)
+            logger.debug("emane location event: %s,%s,%s", lat, lon, alt)
+            self.handlelocationeventtoxyz(txnemid, lat, lon, alt)
 
     def handlelocationeventtoxyz(self, nemid, lat, lon, alt):
         """
@@ -848,7 +849,7 @@ class EmaneManager(ModelManager):
 
         # don"t use node.setposition(x,y,z) which generates an event
         node.position.set(x, y, z)
-        node_data = node.data(message_type=0, lat=lat, lon=lon, alt=alt)
+        node_data = node.data(message_type=0, lat=str(lat), lon=str(lon), alt=str(alt))
         self.session.broadcast_node(node_data)
         return True
 
