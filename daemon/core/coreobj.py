@@ -195,9 +195,9 @@ class PyCoreObj(object):
         Build a data object for this node.
 
         :param message_type: purpose for the data object we are creating
-        :param float lat: latitude
-        :param float lon: longitude
-        :param float alt: altitude
+        :param str lat: latitude
+        :param str lon: longitude
+        :param str alt: altitude
         :return: node data object
         :rtype: core.data.NodeData
         """
