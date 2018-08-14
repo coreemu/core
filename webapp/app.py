@@ -49,6 +49,65 @@ def link_data_str(link, key):
         link[key] = str(value)
 
 
+def convert_value(value):
+    if value is None:
+        return value
+    else:
+        return str(value)
+
+
+def convert_link(session, link_data):
+    interface_one = None
+    interface_two = None
+
+    if link_data.interface1_id is not None:
+        node = session.get_object(link_data.node1_id)
+        interface = node.netif(link_data.interface1_id)
+        interface_one = {
+            "id": link_data.interface1_id,
+            "name": interface.name,
+            "mac": convert_value(link_data.interface1_mac),
+            "ip4": convert_value(link_data.interface1_ip4),
+            "ip4mask": link_data.interface1_ip4_mask,
+            "ip6": convert_value(link_data.interface1_ip6),
+            "ip6mask": link_data.interface1_ip6_mask,
+        }
+
+    if link_data.interface2_id is not None:
+        node = session.get_object(link_data.node2_id)
+        interface = node.netif(link_data.interface2_id)
+        interface_two = {
+            "id": link_data.interface2_id,
+            "name": interface.name,
+            "mac": convert_value(link_data.interface2_mac),
+            "ip4": convert_value(link_data.interface2_ip4),
+            "ip4mask": link_data.interface2_ip4_mask,
+            "ip6": convert_value(link_data.interface2_ip6),
+            "ip6mask": link_data.interface2_ip6_mask,
+        }
+
+    return {
+        "node_one": link_data.node1_id,
+        "node_two": link_data.node2_id,
+        "type": link_data.link_type,
+        "interface_one": interface_one,
+        "interface_two": interface_two,
+        "options": {
+            "opaque": link_data.opaque,
+            "jitter": link_data.jitter,
+            "key": link_data.key,
+            "mburst": link_data.mburst,
+            "mer": link_data.mer,
+            "per": link_data.per,
+            "bandwidth": link_data.bandwidth,
+            "burst": link_data.burst,
+            "delay": link_data.delay,
+            "dup": link_data.dup,
+            "unidirectional": link_data.unidirectional
+        }
+    }
+
+
 @socketio.on("connect")
 def websocket_connect():
     emit("info", {"message": "You are connected!"})
@@ -126,6 +185,16 @@ def open_xml():
         return jsonify(error="error opening session file"), 404
 
 
+@app.route("/services")
+def get_services():
+    groups = {}
+    for service in ServiceManager.services.itervalues():
+        service_group = groups.setdefault(service.group, [])
+        service_group.append(service.name)
+
+    return jsonify(groups=groups)
+
+
 @app.route("/sessions")
 def get_sessions():
     sessions = []
@@ -197,14 +266,7 @@ def get_session(session_id):
 
         links_data = node.all_link_data(0)
         for link_data in links_data:
-            link = link_data._asdict()
-            del link["message_type"]
-            link_data_str(link, "interface1_ip4")
-            link_data_str(link, "interface1_ip6")
-            link_data_str(link, "interface1_mac")
-            link_data_str(link, "interface2_ip4")
-            link_data_str(link, "interface2_ip6")
-            link_data_str(link, "interface2_mac")
+            link = convert_link(session, link_data)
             links.append(link)
 
     return jsonify(
@@ -352,7 +414,8 @@ def create_node(session_id):
     node_options.icon = data.get("icon")
     node_options.opaque = data.get("opaque")
     node_options.services = data.get("services", [])
-    node_options.set_position(data.get("x"), data.get("y"))
+    position = data.get("position")
+    node_options.set_position(position.get("x"), position.get("y"))
     node_options.set_location(data.get("lat"), data.get("lon"), data.get("alt"))
     node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
 
@@ -624,6 +687,7 @@ def add_link(session_id):
         return jsonify(error="session does not exist"), 404
 
     data = request.get_json()
+    logger.info("adding link: %s", data)
 
     node_one = data.get("node_one")
     node_two = data.get("node_two")
