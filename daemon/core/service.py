@@ -222,8 +222,8 @@ class ServiceManager(object):
         :param CoreService service: service to add
         :return: nothing
         """
-        logger.info("loading service: %s", service.__name__)
         name = service.name
+        logger.info("loading service: class(%s) name(%s)", service.__name__, name)
 
         # avoid duplicate services
         if name in cls.services:
