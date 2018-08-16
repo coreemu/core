@@ -601,14 +601,11 @@ def set_node_service(session_id, node_id, service_name):
     # guarantee custom service exists
     session.services.set_service(node_id, service_name)
     service = session.services.get_service(node_id, service_name)
-    startup = data["startup"] or ""
-    service.startup = tuple(startup.split("\n"))
+    service.startup = tuple(data["cmdup"])
     logger.info("custom startup: %s", service.startup)
-    validate = data["validate"] or ""
-    service.validate = tuple(validate.split("\n"))
+    service.validate = tuple(data["cmdval"])
     logger.info("custom validate: %s", service.validate)
-    shutdown = data["shutdown"] or ""
-    service.shutdown = tuple(shutdown.split("\n"))
+    service.shutdown = tuple(data["cmddown"])
     logger.info("custom shutdown: %s", service.shutdown)
     return jsonify()
 
