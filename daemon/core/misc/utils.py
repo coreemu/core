@@ -148,7 +148,7 @@ def split_args(args):
     :return: shell-like syntax list
     :rtype: list
     """
-    if type(args) == str:
+    if isinstance(args, basestring):
         args = shlex.split(args)
     return args
 
