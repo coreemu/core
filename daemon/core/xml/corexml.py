@@ -764,7 +764,7 @@ class CoreXmlReader(object):
 
             directory_elements = service_configuration.find("directories")
             if directory_elements is not None:
-                service.directories = tuple(x.text for x in directory_elements.iterchildren())
+                service.dirs = tuple(x.text for x in directory_elements.iterchildren())
 
             startup_elements = service_configuration.find("startups")
             if startup_elements is not None:
