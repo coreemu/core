@@ -132,7 +132,11 @@ def make_tuple_fromstr(s, value_type):
     :rtype: tuple
     """
     # remove tuple braces and strip commands and space from all values in the tuple string
-    values = [x.strip("' ") for x in s.strip("(), ").split(",")]
+    values = []
+    for x in s.strip("(), ").split(","):
+        x = x.strip("' ")
+        if x:
+            values.append(x)
     return tuple(value_type(i) for i in values)
 
 
