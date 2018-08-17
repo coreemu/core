@@ -126,7 +126,7 @@ def make_tuple_fromstr(s, value_type):
     """
     Create a tuple from a string.
 
-    :param str s: string to convert to a tuple
+    :param str|unicode s: string to convert to a tuple
     :param value_type: type of values to be contained within tuple
     :return: tuple from string
     :rtype: tuple
