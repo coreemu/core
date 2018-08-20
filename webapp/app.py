@@ -571,14 +571,16 @@ def get_node_service(session_id, node_id, service_name):
 
     service = session.services.get_service(node_id, service_name, default_service=True)
     service_config = {
+        "executables": service.executables,
+        "dependencies": service.dependencies,
         "dirs": service.dirs,
-        "files": service.configs,
-        "startidx": "0",
-        "cmdup": service.startup,
-        "cmddown": service.shutdown,
-        "cmdval": service.validate,
+        "configs": service.configs,
+        "startup": service.startup,
+        "validate": service.validate,
+        "validation_mode": service.validation_mode.name,
+        "validation_timer": service.validation_timer,
+        "shutdown": service.shutdown,
         "meta": service.meta,
-        "starttime": "0"
     }
     return jsonify(service_config)
 
@@ -601,11 +603,11 @@ def set_node_service(session_id, node_id, service_name):
     # guarantee custom service exists
     session.services.set_service(node_id, service_name)
     service = session.services.get_service(node_id, service_name)
-    service.startup = tuple(data["cmdup"])
+    service.startup = tuple(data["startup"])
     logger.info("custom startup: %s", service.startup)
-    service.validate = tuple(data["cmdval"])
+    service.validate = tuple(data["validate"])
     logger.info("custom validate: %s", service.validate)
-    service.shutdown = tuple(data["cmddown"])
+    service.shutdown = tuple(data["shutdown"])
     logger.info("custom shutdown: %s", service.shutdown)
     return jsonify()
 
