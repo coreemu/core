@@ -171,6 +171,8 @@ def save_xml(session_id):
 @app.route("/sessions/xml", methods=["POST"])
 def open_xml():
     session = coreemu.create_session()
+    session.set_state(EventTypes.CONFIGURATION_STATE)
+
     logger.info("open xml: %s", request.files)
     _, temp_path = tempfile.mkstemp()
     session_file = request.files['session']

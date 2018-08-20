@@ -447,7 +447,11 @@ class CoreServices(object):
         """
         logger.info("booting node services: %s", boot_path)
         for service in boot_path:
-            self.boot_service(node, service)
+            try:
+                self.boot_service(node, service)
+            except:
+                logger.exception("error booting service: %s", service.name)
+                raise
 
     def boot_service(self, node, service):
         """
