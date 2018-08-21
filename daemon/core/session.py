@@ -38,7 +38,8 @@ from core.mobility import MobilityManager
 from core.netns import nodes
 from core.sdt import Sdt
 from core.service import CoreServices
-from core.xml import corexml
+from core.xml import corexml, corexmldeployment
+from core.xml.xmlsession import save_session_xml
 
 
 class Session(object):
@@ -381,7 +382,10 @@ class Session(object):
             xml_file_version = self.options.get_config("xmlfilever")
             if xml_file_version in ("1.0",):
                 xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
-                corexml.CoreXmlWriter(self).write(xml_file_name)
+                xml_writer = corexml.CoreXmlWriter(self)
+                corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
+                xml_writer.write(xml_file_name)
+                save_session_xml(self, xml_file_name + ".old", xml_file_version)
 
     def get_environment(self, state=True):
         """
