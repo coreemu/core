@@ -278,6 +278,20 @@ def get_session(session_id):
     )
 
 
+@app.route("/sessions/<int:session_id>/hooks", methods=["POST"])
+def add_hook(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    data = request.get_json() or {}
+    state = data["state"]
+    file_name = data["file"]
+    file_data = data["data"]
+    session.add_hook(state, file_name, None, file_data)
+    return jsonify()
+
+
 @app.route("/sessions/<int:session_id>/emane/config", methods=["PUT"])
 @synchronized
 def set_emane_config(session_id):
