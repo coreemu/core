@@ -21,6 +21,7 @@ from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
 from core.misc.ipaddress import Ipv4Prefix, Ipv6Prefix
+from core.mobility import BasicRangeModel
 from core.service import ServiceManager
 
 CORE_LOCK = Lock()
@@ -106,6 +107,17 @@ def convert_link(session, link_data):
             "unidirectional": link_data.unidirectional
         }
     }
+
+
+def broadcast_event(event):
+    socketio.emit("event", {
+        "node": event.node,
+        "event_type": event.event_type,
+        "name": event.name,
+        "data": event.data,
+        "time": event.time,
+        "session": event.session
+    })
 
 
 @socketio.on("connect")
@@ -219,6 +231,9 @@ def create_session():
     session.location.setrefgeo(47.57917, -122.13232, 2.0)
     session.location.refscale = 150.0
 
+    # add handlers
+    session.event_handlers.append(broadcast_event)
+
     response_data = jsonify(
         id=session.session_id,
         state=session.state,
@@ -289,6 +304,51 @@ def add_hook(session_id):
     file_name = data["file"]
     file_data = data["data"]
     session.add_hook(state, file_name, None, file_data)
+    return jsonify()
+
+
+@app.route("/sessions/<int:session_id>/hooks")
+def get_hooks(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    hooks = []
+    for state, state_hooks in session._hooks.iteritems():
+        for file_name, file_data in state_hooks:
+            hooks.append({
+                "state": state,
+                "file": file_name,
+                "data": file_data
+            })
+
+    return jsonify(hooks=hooks)
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/wlan")
+def get_wlan_config(session_id, node_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+
+    config = session.mobility.get_model_config(node_id, BasicRangeModel.name)
+    return jsonify(config)
+
+
+@app.route("/sessions/<int:session_id>/nodes/<node_id>/wlan", methods=["PUT"])
+def set_wlan_config(session_id, node_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    if node_id.isdigit():
+        node_id = int(node_id)
+
+    config = request.get_json() or {}
+    session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
     return jsonify()
 
 
@@ -533,9 +593,9 @@ def node_terminal(session_id, node_id):
     if not node:
         return jsonify(error="node does not exist"), 404
 
-    node.client.term("bash")
+    terminal_command = node.termcmdstring("/bin/bash")
 
-    return jsonify()
+    return jsonify(terminal_command)
 
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>", methods=["DELETE"])
