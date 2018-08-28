@@ -15,8 +15,8 @@ def add_type(parent_element, name):
     type_element.text = name
 
 
-def add_address(host_element, address_type, address, interface_name=None):
-    address_element = etree.SubElement(host_element, "address", type=address_type)
+def add_address(parent_element, address_type, address, interface_name=None):
+    address_element = etree.SubElement(parent_element, "address", type=address_type)
     address_element.text = address
     if interface_name is not None:
         address_element.set("iface", interface_name)
@@ -36,7 +36,7 @@ def add_emane_interface(host_element, netif, platform_name="p1", transport_name=
 
     # transport data
     transport_id = "%s/%s" % (host_id, transport_name)
-    transport_element = etree.SubElement(host_element, "transport", id=transport_id, name=transport_name)
+    etree.SubElement(platform_element, "transport", id=transport_id, name=transport_name)
 
     # nem data
     nem_name = "nem%s" % nem_id
@@ -44,7 +44,8 @@ def add_emane_interface(host_element, netif, platform_name="p1", transport_name=
     nem_element = etree.SubElement(platform_element, "nem", id=nem_element_id, name=nem_name)
     nem_id_element = etree.SubElement(nem_element, "parameter", name="nemid")
     nem_id_element.text = str(nem_id)
-    add_mapping(transport_element, "nem", nem_element_id)
+
+    return platform_element
 
 
 def get_address_type(address):
@@ -139,12 +140,17 @@ class CoreXmlDeployment(object):
         add_type(host_element, "virtual")
 
         for netif in node.netifs():
+            emane_element = None
+            if nodeutils.is_node(netif.net, NodeTypes.EMANE):
+                emane_element = add_emane_interface(host_element, netif)
+
+            parent_element = host_element
+            if emane_element is not None:
+                parent_element = emane_element
+
             for address in netif.addrlist:
                 address_type = get_address_type(address)
-                add_address(host_element, address_type, address, netif.name)
-
-            if nodeutils.is_node(netif.net, NodeTypes.EMANE):
-                add_emane_interface(host_element, netif)
+                add_address(parent_element, address_type, address, netif.name)
 
                 # TODO: need to inject mapping in interface?
                 # interface = self.find_interface(device, netif.name)
