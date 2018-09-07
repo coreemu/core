@@ -252,6 +252,51 @@ def delete_session(session_id):
         return jsonify(error="session does not exist"), 404
 
 
+@app.route("/sessions/<int:session_id>/options")
+def get_session_options(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    config = session.options.get_configs()
+
+    config_options = []
+    for configuration in session.options.configurations():
+        value = config[configuration.id]
+        config_options.append({
+            "label": configuration.label,
+            "name": configuration.id,
+            "value": value,
+            "type": configuration.type.value,
+            "select": configuration.options
+        })
+
+    response = []
+    for config_group in session.emane.emane_config.config_groups():
+        start = config_group.start - 1
+        stop = config_group.stop
+        response.append({
+            "name": config_group.name,
+            "options": config_options[start: stop]
+        })
+
+    return jsonify(groups=response)
+
+
+@app.route("/sessions/<int:session_id>/options", methods=["PUT"])
+@synchronized
+def set_session_options(session_id):
+    session = coreemu.sessions.get(session_id)
+    if not session:
+        return jsonify(error="session does not exist"), 404
+
+    data = request.get_json() or {}
+    values = data["values"]
+    config = {x["name"]: x["value"] for x in values}
+    session.options.set_configs(config)
+    return jsonify()
+
+
 @app.route("/sessions/<int:session_id>")
 def get_session(session_id):
     session = coreemu.sessions.get(session_id)
