@@ -165,7 +165,8 @@ fi
 # check for sphinx required during make
 AC_CHECK_PROG(sphinxapi_path, sphinx-apidoc, $as_dir, no, $SEARCHPATH)
 if test "x$sphinxapi_path" = "xno" ; then
-    AC_MSG_ERROR(["Could not location sphinx-apidoc, from the python-sphinx package"])
+    AC_MSG_WARN(["Could not location sphinx-apidoc, from the python-sphinx package"])
+    want_docs=no
 fi
 
 #AC_PATH_PROGS(tcl_path, [tclsh tclsh8.5 tclsh8.4], no)
