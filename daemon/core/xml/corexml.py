@@ -387,13 +387,13 @@ class NetworkElement(NodeElement):
 class CoreXmlWriter(object):
     def __init__(self, session):
         self.session = session
-        self.scenario = None
+        self.scenario = etree.Element("scenario")
         self.networks = None
         self.devices = None
+        self.write_session()
 
-    def write(self, file_name):
+    def write_session(self):
         # generate xml content
-        self.scenario = etree.Element("scenario", name=file_name)
         links = self.write_nodes()
         self.write_links(links)
         self.write_mobility_configs()
@@ -404,6 +404,9 @@ class CoreXmlWriter(object):
         self.write_session_options()
         self.write_session_metadata()
         self.write_default_services()
+
+    def write(self, file_name):
+        self.scenario.set("name", file_name)
 
         # write out generated xml
         xml_tree = etree.ElementTree(self.scenario)
