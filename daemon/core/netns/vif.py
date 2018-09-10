@@ -169,6 +169,7 @@ class TunTap(PyCoreNetIf):
         :return: wait for device local response
         :rtype: int
         """
+        logger.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
             args = [constants.IP_BIN, "link", "show", self.localname]
@@ -182,6 +183,7 @@ class TunTap(PyCoreNetIf):
 
         :return: nothing
         """
+        logger.debug("waiting for device node: %s", self.name)
 
         def nodedevexists():
             args = [constants.IP_BIN, "link", "show", self.name]
@@ -272,7 +274,7 @@ class GreTap(PyCoreNetIf):
 
         if remoteip is None:
             raise ValueError, "missing remote IP required for GRE TAP device"
-        args = ["ip", "link", "add", self.localname, "type", "gretap",
+        args = [constants.IP_BIN, "link", "add", self.localname, "type", "gretap",
                 "remote", str(remoteip)]
         if localip:
             args += ["local", str(localip)]
@@ -281,7 +283,7 @@ class GreTap(PyCoreNetIf):
         if key:
             args += ["key", str(key)]
         utils.check_cmd(args)
-        args = ["ip", "link", "set", self.localname, "up"]
+        args = [constants.IP_BIN, "link", "set", self.localname, "up"]
         utils.check_cmd(args)
         self.up = True
 
@@ -293,9 +295,9 @@ class GreTap(PyCoreNetIf):
         """
         if self.localname:
             try:
-                args = ["ip", "link", "set", self.localname, "down"]
+                args = [constants.IP_BIN, "link", "set", self.localname, "down"]
                 utils.check_cmd(args)
-                args = ["ip", "link", "del", self.localname]
+                args = [constants.IP_BIN, "link", "del", self.localname]
                 utils.check_cmd(args)
             except CoreCommandError:
                 logger.exception("error during shutdown")

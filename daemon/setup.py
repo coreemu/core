@@ -33,16 +33,17 @@ data_files = [
         "data/core.conf",
         "data/logging.conf",
     ]),
-    (_MAN_DIR, glob_files("../doc/man/**.1")),
+    (_MAN_DIR, glob_files("../man/**.1")),
 ]
 data_files.extend(recursive_files(_EXAMPLES_DIR, "examples"))
 
 setup(
     name="core",
-    version="5.1",
+    version="5.2",
     packages=find_packages(),
     install_requires=[
         "enum34",
+        "lxml"
     ],
     tests_require=[
         "pytest",

@@ -126,13 +126,17 @@ def make_tuple_fromstr(s, value_type):
     """
     Create a tuple from a string.
 
-    :param str s: string to convert to a tuple
+    :param str|unicode s: string to convert to a tuple
     :param value_type: type of values to be contained within tuple
     :return: tuple from string
     :rtype: tuple
     """
     # remove tuple braces and strip commands and space from all values in the tuple string
-    values = [x.strip("' ") for x in s.strip("(), ").split(",")]
+    values = []
+    for x in s.strip("(), ").split(","):
+        x = x.strip("' ")
+        if x:
+            values.append(x)
     return tuple(value_type(i) for i in values)
 
 
@@ -144,7 +148,7 @@ def split_args(args):
     :return: shell-like syntax list
     :rtype: list
     """
-    if type(args) == str:
+    if isinstance(args, basestring):
         args = shlex.split(args)
     return args
 

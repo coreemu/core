@@ -27,7 +27,7 @@ def example(options):
 
     # create wlan network node
     wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-    session.set_wireless_model(wlan, BasicRangeModel)
+    session.mobility.set_model(wlan, BasicRangeModel)
 
     # create nodes
     wireless_nodes = []

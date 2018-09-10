@@ -6,22 +6,25 @@ from core.service import CoreService
 
 
 class MyService(CoreService):
-    _name = "MyService"
-    _group = "Utility"
-    _depends = ()
-    _dirs = ()
-    _configs = ('myservice.sh',)
-    _startindex = 50
-    _startup = ('sh myservice.sh',)
-    _shutdown = ()
+    name = "MyService"
+    group = "Utility"
+    configs = ("myservice.sh",)
+    startup = ("sh myservice.sh",)
+    shutdown = ("sh myservice.sh",)
+
+    @classmethod
+    def generate_config(cls, node, filename):
+        return "# test file"
 
 
-class MyService2(CoreService):
-    _name = "MyService2"
-    _group = "Utility"
-    _depends = ()
-    _dirs = ()
-    _configs = ('myservice.sh',)
-    _startindex = 50
-    _startup = ('sh myservice.sh',)
-    _shutdown = ()
+class MyService2(MyService):
+    name = "MyService2"
+    group = "Utility"
+    configs = ("myservice2.sh",)
+    startup = ("sh myservice2.sh",)
+    shutdown = startup
+    validate = startup
+
+    @classmethod
+    def generate_config(cls, node, filename):
+        return "exit 1"

@@ -488,7 +488,7 @@ class Ns3Session(Session):
         Start a tracing thread using the ASCII output from the ns3
         mobility helper.
         """
-        net.mobility = WayPointMobility(session=self, object_id=net.objid, values=None)
+        net.mobility = WayPointMobility(session=self, object_id=net.objid, config=None)
         net.mobility.setendtime()
         net.mobility.refresh_ms = 300
         net.mobility.empty_queue_stop = False

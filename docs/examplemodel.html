@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html;charset=utf-8">
+  <title>examplemodel.py</title>
+  <link rel="stylesheet" href="pycco.css">
+</head>
+<body>
+<div id='container'>
+  <div id="background"></div>
+  <div class='section'>
+    <div class='docs'><h1>examplemodel.py</h1></div>
+  </div>
+  <div class='clearall'>
+  <div class='section' id='section-0'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-0'>#</a>
+      </div>
+      
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span></span><span class="kn">from</span> <span class="nn">core.emane</span> <span class="kn">import</span> <span class="n">emanemanifest</span>
+<span class="kn">from</span> <span class="nn">core.emane</span> <span class="kn">import</span> <span class="n">emanemodel</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-1'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-1'>#</a>
+      </div>
+      <h1>Custom EMANE Model</h1>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre><span class="k">class</span> <span class="nc">ExampleModel</span><span class="p">(</span><span class="n">emanemodel</span><span class="o">.</span><span class="n">EmaneModel</span><span class="p">):</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-2'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-2'>#</a>
+      </div>
+      <h2>MAC Definition</h2>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-3'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-3'>#</a>
+      </div>
+      <p>Defines the emane model name that will show up in the GUI.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">name</span> <span class="o">=</span> <span class="s2">&quot;emane_example&quot;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-4'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-4'>#</a>
+      </div>
+      <p>Defines that mac library that the model will reference.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">mac_library</span> <span class="o">=</span> <span class="s2">&quot;rfpipemaclayer&quot;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-5'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-5'>#</a>
+      </div>
+      <p>Defines the mac manifest file that will be parsed to obtain configuration options, that will be displayed
+within the GUI.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">mac_xml</span> <span class="o">=</span> <span class="s2">&quot;/usr/share/emane/manifest/rfpipemaclayer.xml&quot;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-6'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-6'>#</a>
+      </div>
+      <p>Allows you to override options that are maintained within the manifest file above.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">mac_defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;pcrcurveuri&quot;</span><span class="p">:</span> <span class="s2">&quot;/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml&quot;</span><span class="p">,</span>
+    <span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-7'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-7'>#</a>
+      </div>
+      <p>Parses the manifest file and converts configurations into core supported formats.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">mac_config</span> <span class="o">=</span> <span class="n">emanemanifest</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">mac_xml</span><span class="p">,</span> <span class="n">mac_defaults</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-8'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-8'>#</a>
+      </div>
+      <h2>PHY Definition</h2>
+<p><strong>NOTE: phy configuration will default to the universal model as seen below and the below section does not
+have to be included.</strong></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-9'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-9'>#</a>
+      </div>
+      <p>Defines that phy library that the model will reference, used if you need to provide a custom phy.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">phy_library</span> <span class="o">=</span> <span class="bp">None</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-10'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-10'>#</a>
+      </div>
+      <p>Defines the phy manifest file that will be parsed to obtain configuration options, that will be displayed
+within the GUI.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">phy_xml</span> <span class="o">=</span> <span class="s2">&quot;/usr/share/emane/manifest/emanephy.xml&quot;</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-11'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-11'>#</a>
+      </div>
+      <p>Allows you to override options that are maintained within the manifest file above or for the default universal
+model.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">phy_defaults</span> <span class="o">=</span> <span class="p">{</span>
+        <span class="s2">&quot;subid&quot;</span><span class="p">:</span> <span class="s2">&quot;1&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;propagationmodel&quot;</span><span class="p">:</span> <span class="s2">&quot;2ray&quot;</span><span class="p">,</span>
+        <span class="s2">&quot;noisemode&quot;</span><span class="p">:</span> <span class="s2">&quot;none&quot;</span>
+    <span class="p">}</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-12'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-12'>#</a>
+      </div>
+      <p>Parses the manifest file and converts configurations into core supported formats.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">phy_config</span> <span class="o">=</span> <span class="n">emanemanifest</span><span class="o">.</span><span class="n">parse</span><span class="p">(</span><span class="n">phy_xml</span><span class="p">,</span> <span class="n">phy_defaults</span><span class="p">)</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-13'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-13'>#</a>
+      </div>
+      <h2>Custom override options</h2>
+<p><strong>NOTE: these options default to what's seen below and do not have to be included.</strong></p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-14'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Allows you to ignore options within phy/mac, used typically if you needed to add a custom option for display
+within the gui.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">config_ignore</span> <span class="o">=</span> <span class="nb">set</span><span class="p">()</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
+      </div>
+      <p>Allows you to override how options are displayed with the GUI, using the GUI format of
+"name:1-2|othername:3-4". This will be parsed into tabs, split by "|" and account for items based on the indexed
+numbers after ":" for including values in each tab.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">config_groups_override</span> <span class="o">=</span> <span class="bp">None</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-16'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-16'>#</a>
+      </div>
+      <p>Allows you to override the default config matrix list. This value by default is the mac_config + phy_config, in
+that order.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">config_matrix_override</span> <span class="o">=</span> <span class="bp">None</span>
+
+</pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+</div>
+</body>

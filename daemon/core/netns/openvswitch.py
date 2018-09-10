@@ -185,55 +185,55 @@ class OvsNet(PyCoreNet):
 
         ebtables_queue.ebchange(self)
 
-    def linkconfig(self, interface, bw=None, delay=None, loss=None, duplicate=None,
+    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None,
                    jitter=None, netif2=None, devname=None):
         """
         Configure link parameters by applying tc queuing disciplines on the
         interface.
         """
         if not devname:
-            devname = interface.localname
+            devname = netif.localname
 
         tc = [constants.TC_BIN, "qdisc", "replace", "dev", devname]
         parent = ["root"]
 
         # attempt to set bandwidth and update as needed if value changed
-        bandwidth_changed = interface.setparam("bw", bw)
+        bandwidth_changed = netif.setparam("bw", bw)
         if bandwidth_changed:
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
             if bw > 0:
                 if self.up:
-                    burst = max(2 * interface.mtu, bw / 1000)
+                    burst = max(2 * netif.mtu, bw / 1000)
                     limit = 0xffff  # max IP payload
                     tbf = ["tbf", "rate", str(bw), "burst", str(burst), "limit", str(limit)]
                     logger.info("linkconfig: %s" % [tc + parent + ["handle", "1:"] + tbf])
                     utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
-                interface.setparam("has_tbf", True)
-            elif interface.getparam("has_tbf") and bw <= 0:
+                netif.setparam("has_tbf", True)
+            elif netif.getparam("has_tbf") and bw <= 0:
                 tcd = [] + tc
                 tcd[2] = "delete"
 
                 if self.up:
                     utils.check_cmd(tcd + parent)
 
-                interface.setparam("has_tbf", False)
+                netif.setparam("has_tbf", False)
                 # removing the parent removes the child
-                interface.setparam("has_netem", False)
+                netif.setparam("has_netem", False)
 
-        if interface.getparam("has_tbf"):
+        if netif.getparam("has_tbf"):
             parent = ["parent", "1:1"]
 
         netem = ["netem"]
-        delay_changed = interface.setparam("delay", delay)
+        delay_changed = netif.setparam("delay", delay)
 
         if loss is not None:
             loss = float(loss)
-        loss_changed = interface.setparam("loss", loss)
+        loss_changed = netif.setparam("loss", loss)
 
         if duplicate is not None:
             duplicate = float(duplicate)
-        duplicate_changed = interface.setparam("duplicate", duplicate)
-        jitter_changed = interface.setparam("jitter", jitter)
+        duplicate_changed = netif.setparam("duplicate", duplicate)
+        jitter_changed = netif.setparam("jitter", jitter)
 
         # if nothing changed return
         if not any([bandwidth_changed, delay_changed, loss_changed, duplicate_changed, jitter_changed]):
@@ -256,7 +256,7 @@ class OvsNet(PyCoreNet):
 
         if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
             # possibly remove netem if it exists and parent queue wasn"t removed
-            if not interface.getparam("has_netem"):
+            if not netif.getparam("has_netem"):
                 return
 
             tc[2] = "delete"
@@ -264,12 +264,12 @@ class OvsNet(PyCoreNet):
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
                 utils.check_cmd(tc + parent + ["handle", "10:"])
-            interface.setparam("has_netem", False)
+            netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
                 logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
                 utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
-            interface.setparam("has_netem", True)
+            netif.setparam("has_netem", True)
 
     def linknet(self, network):
         """
@@ -305,7 +305,7 @@ class OvsNet(PyCoreNet):
             utils.check_cmd([constants.OVS_BIN, "add-port", network.bridge_name, interface.name])
             utils.check_cmd([constants.IP_BIN, "link", "set", interface.name, "up"])
 
-        # TODO: is there a native method for this? see if this  causes issues
+        # TODO: is there a native method for this? see if this causes issues
         # i = network.newifindex()
         # network._netif[i] = interface
         # with network._linked_lock:
@@ -351,12 +351,12 @@ class OvsCtrlNet(OvsNet):
 
     def __init__(self, session, objid="ctrlnet", name=None, prefix=None, hostid=None,
                  start=True, assign_address=True, updown_script=None, serverintf=None):
-        OvsNet.__init__(self, session, objid=objid, name=name, start=start)
         self.prefix = ipaddress.Ipv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
+        OvsNet.__init__(self, session, objid=objid, name=name, start=start)
 
     def startup(self):
         if self.detectoldbridge():
@@ -593,14 +593,14 @@ class OvsWlanNode(OvsNet):
             interface.setposition(x, y, z)
             # self.model.setlinkparams()
 
-    def setmodel(self, model, config):
+    def setmodel(self, model, config=None):
         """
         Mobility and wireless model.
         """
         logger.info("adding model %s", model.name)
 
         if model.type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.objid, values=config)
+            self.model = model(session=self.session, object_id=self.objid, config=config)
             if self.model.position_callback:
                 for interface in self.netifs():
                     interface.poshook = self.model.position_callback
@@ -609,31 +609,20 @@ class OvsWlanNode(OvsNet):
                         interface.poshook(interface, x, y, z)
             self.model.setlinkparams()
         elif model.type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, values=config)
+            self.mobility = model(session=self.session, object_id=self.objid, config=config)
 
-    def updatemodel(self, model_name, values):
-        """
-        Allow for model updates during runtime (similar to setmodel().)
-        """
-        logger.info("updating model %s", model_name)
-        if self.model is None or self.model.name != model_name:
-            logger.info(
-                "failure to update model, model doesn't exist or invalid name: model(%s) - name(%s)",
-                self.model, model_name
-            )
-            return
-
-        model = self.model
-        if model.type == RegisterTlvs.WIRELESS.value:
-            if not model.updateconfig(values):
-                return
-            if self.model.position_callback:
-                for interface in self.netifs():
-                    interface.poshook = self.model.position_callback
-                    if interface.node is not None:
-                        x, y, z = interface.node.position.get()
-                        interface.poshook(interface, x, y, z)
-            self.model.setlinkparams()
+    def updatemodel(self, config):
+        if not self.model:
+            raise ValueError("no model set to update for node(%s)", self.objid)
+        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        self.model.set_configs(config, node_id=self.objid)
+        if self.model.position_callback:
+            for netif in self.netifs():
+                netif.poshook = self.model.position_callback
+                if netif.node is not None:
+                    x, y, z = netif.node.position.get()
+                    netif.poshook(netif, x, y, z)
+        self.model.updateconfig()
 
     def all_link_data(self, flags):
         all_links = OvsNet.all_link_data(self, flags)

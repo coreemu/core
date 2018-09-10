@@ -1,4 +1,5 @@
 from core import logger
+from core.conf import Configuration
 from core.enumerations import ConfigDataTypes
 
 manifest = None
@@ -23,7 +24,7 @@ def _type_value(config_type):
         config_type = "FLOAT"
     elif config_type == "INETADDR":
         config_type = "STRING"
-    return ConfigDataTypes[config_type].value
+    return ConfigDataTypes[config_type]
 
 
 def _get_possible(config_type, config_regex):
@@ -33,17 +34,16 @@ def _get_possible(config_type, config_regex):
     :param str config_type: emane configuration type
     :param str config_regex: emane configuration regex
     :return: a string listing comma delimited values, if needed, empty string otherwise
-    :rtype: str
+    :rtype: list
     """
     if config_type == "bool":
-        return "On,Off"
+        return ["On", "Off"]
 
     if config_type == "string" and config_regex:
         possible = config_regex[2:-2]
-        possible = possible.replace("|", ",")
-        return possible
+        return possible.split("|")
 
-    return ""
+    return []
 
 
 def _get_default(config_type_name, config_value):
@@ -116,7 +116,13 @@ def parse(manifest_path, defaults):
         if config_name.endswith("uri"):
             config_descriptions = "%s file" % config_descriptions
 
-        config_tuple = (config_name, config_type_value, config_default, possible, config_descriptions)
-        configurations.append(config_tuple)
+        configuration = Configuration(
+            _id=config_name,
+            _type=config_type_value,
+            default=config_default,
+            options=possible,
+            label=config_descriptions
+        )
+        configurations.append(configuration)
 
     return configurations

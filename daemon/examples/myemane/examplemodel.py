@@ -1,7 +1,6 @@
-
-
 from core.emane import emanemanifest
 from core.emane import emanemodel
+
 
 ## Custom EMANE Model
 class ExampleModel(emanemodel.EmaneModel):
@@ -47,10 +46,3 @@ class ExampleModel(emanemodel.EmaneModel):
     # Allows you to ignore options within phy/mac, used typically if you needed to add a custom option for display
     # within the gui.
     config_ignore = set()
-    # Allows you to override how options are displayed with the GUI, using the GUI format of
-    # "name:1-2|othername:3-4". This will be parsed into tabs, split by "|" and account for items based on the indexed
-    # numbers after ":" for including values in each tab.
-    config_groups_override = None
-    # Allows you to override the default config matrix list. This value by default is the mac_config + phy_config, in
-    # that order.
-    config_matrix_override = None

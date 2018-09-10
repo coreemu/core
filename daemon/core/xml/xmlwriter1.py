@@ -217,13 +217,7 @@ class ScenarioPlan(XmlElement):
         self.last_network_id = 0
         self.addNetworks()
         self.addDevices()
-
-        # XXX Do we need these?
-        # self.session.emane.setup() # not during runtime?
-        # self.addorigin()
-
         self.addDefaultServices()
-
         self.addSessionConfiguration()
 
     def addNetworks(self):
@@ -275,15 +269,15 @@ class ScenarioPlan(XmlElement):
         Add default services and node types to the ServicePlan.
         """
         defaultservices = self.createElement("CORE:defaultservices")
-        for type in self.coreSession.services.defaultservices:
-            defaults = self.coreSession.services.getdefaultservices(type)
+        for type in self.coreSession.services.default_services:
+            defaults = self.coreSession.services.get_default_services(type)
             spn = self.createElement("device")
             spn.setAttribute("type", type)
             defaultservices.appendChild(spn)
             for svc in defaults:
                 s = self.createElement("service")
                 spn.appendChild(s)
-                s.setAttribute("name", str(svc._name))
+                s.setAttribute("name", str(svc.name))
         if defaultservices.hasChildNodes():
             self.appendChild(defaultservices)
 
@@ -318,10 +312,12 @@ class ScenarioPlan(XmlElement):
 
         # options
         options = self.createElement("options")
-        defaults = self.coreSession.options.getdefaultvalues()
-        for i, (k, v) in enumerate(self.coreSession.options.getkeyvaluelist()):
-            if str(v) != str(defaults[i]):
-                XmlElement.add_parameter(self.document, options, k, v)
+        options_config = self.coreSession.options.get_configs()
+        for _id, default_value in self.coreSession.options.default_values().iteritems():
+            value = options_config[_id]
+            if value != default_value:
+                XmlElement.add_parameter(self.document, options, _id, value)
+
         if options.hasChildNodes():
             config.appendChild(options)
 
@@ -340,7 +336,7 @@ class ScenarioPlan(XmlElement):
 
         # metadata
         meta = self.createElement("metadata")
-        for k, v in self.coreSession.metadata.items():
+        for k, v in self.coreSession.metadata.get_configs().iteritems():
             XmlElement.add_parameter(self.document, meta, k, v)
         if meta.hasChildNodes():
             config.appendChild(meta)
@@ -479,9 +475,10 @@ class NetworkElement(NamedXmlElement):
         """
 
         if nodeutils.is_node(network_object, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
-            modelconfigs = network_object.session.mobility.getmodels(network_object)
-            modelconfigs += network_object.session.emane.getmodels(network_object)
+            modelconfigs = network_object.session.mobility.get_models(network_object)
+            modelconfigs += network_object.session.emane.get_models(network_object)
             chan = None
+
             for model, conf in modelconfigs:
                 # Handle mobility parameters below
                 if model.config_type == RegisterTlvs.MOBILITY.value:
@@ -496,10 +493,9 @@ class NetworkElement(NamedXmlElement):
                                           channel_domain="CORE")
 
                 # Add wireless model parameters
-                for i, key in enumerate(model.getnames()):
-                    value = conf[i]
+                for key, value in conf.iteritems():
                     if value is not None:
-                        chan.addParameter(key, model.valueof(key, conf))
+                        chan.addParameter(key, value)
 
             for model, conf in modelconfigs:
                 if model.config_type == RegisterTlvs.MOBILITY.value:
@@ -509,8 +505,8 @@ class NetworkElement(NamedXmlElement):
                     type_element = self.createElement("type")
                     type_element.appendChild(self.createTextNode(model.name))
                     mobility.appendChild(type_element)
-                    for i, key in enumerate(model.getnames()):
-                        value = conf[i]
+
+                    for key, value in conf.iteritems():
                         if value is not None:
                             mobility.addParameter(key, value)
 
@@ -658,8 +654,7 @@ class DeviceElement(NamedXmlElement):
                 # per-interface models
                 # XXX Remove???
                 if netmodel and netmodel.name[:6] == "emane_":
-                    cfg = self.coreSession.emane.getifcconfig(device_object.objid, netmodel.name,
-                                                              None, interface_object)
+                    cfg = self.coreSession.emane.getifcconfig(device_object.objid, interface_object, netmodel.name)
                     if cfg:
                         interface_element.addModels(((netmodel, cfg),))
 
@@ -675,7 +670,7 @@ class DeviceElement(NamedXmlElement):
         if len(device_object.services) == 0:
             return
 
-        defaults = self.coreSession.services.getdefaultservices(device_object.type)
+        defaults = self.coreSession.services.get_default_services(device_object.type)
         if device_object.services == defaults:
             return
         spn = self.createElement("CORE:services")
@@ -685,24 +680,21 @@ class DeviceElement(NamedXmlElement):
         for svc in device_object.services:
             s = self.createElement("service")
             spn.appendChild(s)
-            s.setAttribute("name", str(svc._name))
-            s.setAttribute("startup_idx", str(svc._startindex))
-            if svc._starttime != "":
-                s.setAttribute("start_time", str(svc._starttime))
+            s.setAttribute("name", str(svc.name))
             # only record service names if not a customized service
-            if not svc._custom:
+            if not svc.custom:
                 continue
-            s.setAttribute("custom", str(svc._custom))
-            xmlutils.add_elements_from_list(self, s, svc._dirs, "directory", "name")
+            s.setAttribute("custom", str(svc.custom))
+            xmlutils.add_elements_from_list(self, s, svc.dirs, "directory", "name")
 
-            for fn in svc._configs:
+            for fn in svc.configs:
                 if len(fn) == 0:
                     continue
                 f = self.createElement("file")
                 f.setAttribute("name", fn)
                 # all file names are added to determine when a file has been deleted
                 s.appendChild(f)
-                data = self.coreSession.services.getservicefiledata(svc, fn)
+                data = svc.config_data.get(fn)
                 if data is None:
                     # this includes only customized file contents and skips
                     # the auto-generated files
@@ -710,12 +702,9 @@ class DeviceElement(NamedXmlElement):
                 txt = self.createTextNode("\n" + data)
                 f.appendChild(txt)
 
-            xmlutils.add_text_elements_from_list(self, s, svc._startup, "command",
-                                                 (("type", "start"),))
-            xmlutils.add_text_elements_from_list(self, s, svc._shutdown, "command",
-                                                 (("type", "stop"),))
-            xmlutils.add_text_elements_from_list(self, s, svc._validate, "command",
-                                                 (("type", "validate"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.startup, "command", (("type", "start"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.shutdown, "command", (("type", "stop"),))
+            xmlutils.add_text_elements_from_list(self, s, svc.validate, "command", (("type", "validate"),))
 
 
 class ChannelElement(NamedXmlElement):

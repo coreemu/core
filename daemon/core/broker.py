@@ -11,7 +11,6 @@ import threading
 
 from core import logger
 from core.api import coreapi
-from core.conf import ConfigurableManager
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreNode
 from core.enumerations import ConfigDataTypes
@@ -81,7 +80,7 @@ class CoreDistributedServer(object):
             self.sock = None
 
 
-class CoreBroker(ConfigurableManager):
+class CoreBroker(object):
     """
     Helps with brokering messages between CORE daemon servers.
     """
@@ -100,7 +99,7 @@ class CoreBroker(ConfigurableManager):
         :return: nothing
         """
 
-        ConfigurableManager.__init__(self)
+        # ConfigurableManager.__init__(self)
         self.session = session
         self.session_clients = []
         self.session_id_master = None
@@ -611,62 +610,6 @@ class CoreBroker(ConfigurableManager):
         """
         self.physical_nodes.add(nodenum)
 
-    def configure_reset(self, config_data):
-        """
-        Ignore reset messages, because node delete responses may still
-        arrive and require the use of nodecounts.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: nothing
-        """
-        return None
-
-    def configure_values(self, config_data):
-        """
-        Receive configuration message with a list of server:host:port
-        combinations that we"ll need to connect with.
-
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        :return: nothing
-        """
-        values = config_data.data_values
-        session_id = config_data.session
-
-        if values is None:
-            logger.info("emulation server data missing")
-            return None
-        values = values.split("|")
-
-        # string of "server:ip:port,server:ip:port,..."
-        server_strings = values[0]
-        server_list = server_strings.split(",")
-
-        for server in server_list:
-            server_items = server.split(":")
-            (name, host, port) = server_items[:3]
-
-            if host == "":
-                host = None
-
-            if port == "":
-                port = None
-            else:
-                port = int(port)
-
-            if session_id is not None:
-                # receive session ID and my IP from master
-                self.session_id_master = int(session_id.split("|")[0])
-                self.myip = host
-                host = None
-                port = None
-
-            # this connects to the server immediately; maybe we should wait
-            # or spin off a new "client" thread here
-            self.addserver(name, host, port)
-            self.setupserver(name)
-
-        return None
-
     def handle_message(self, message):
         """
         Handle an API message. Determine whether this needs to be handled
@@ -733,6 +676,7 @@ class CoreBroker(ConfigurableManager):
         if server is None:
             logger.warn("ignoring unknown server: %s", servername)
             return
+
         if server.sock is None or server.host is None or server.port is None:
             logger.info("ignoring disconnected server: %s", servername)
             return

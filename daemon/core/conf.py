@@ -2,492 +2,397 @@
 Common support for configurable CORE objects.
 """
 
-import string
+from collections import OrderedDict
 
 from core import logger
 from core.data import ConfigData
-from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
 
 
-class ConfigurableManager(object):
+class ConfigShim(object):
     """
-    A generic class for managing Configurables. This class can register
-    with a session to receive Config Messages for setting some parameters
-    for itself or for the Configurables that it manages.
+    Provides helper methods for converting newer configuration values into TLV compatible formats.
     """
-    # name corresponds to configuration object field
-    name = ""
-
-    # type corresponds with register message types
-    config_type = None
-
-    def __init__(self):
-        """
-        Creates a ConfigurableManager instance.
-        """
-        # configurable key=values, indexed by node number
-        self.configs = {}
-
-        # TODO: fix the need for this and isolate to the mobility class that wants it
-        self._modelclsmap = {}
-
-    def configure(self, session, config_data):
-        """
-        Handle configure messages. The configuration message sent to a
-        ConfigurableManager usually is used to:
-        1. Request a list of Configurables (request flag)
-        2. Reset manager and clear configs (reset flag)
-        3. Send values that configure the manager or one of its Configurables
-
-        :param core.session.Session session: CORE session object
-        :param ConfigData config_data: configuration data for carrying out a configuration
-        :return: response messages
-        """
-
-        if config_data.type == ConfigFlags.REQUEST.value:
-            return self.configure_request(config_data)
-        elif config_data.type == ConfigFlags.RESET.value:
-            return self.configure_reset(config_data)
-        else:
-            return self.configure_values(config_data)
-
-    def configure_request(self, config_data):
-        """
-        Request configuration data.
-
-        :param ConfigData config_data: configuration data for carrying out a configuration
-        :return: nothing
-        """
-        return None
-
-    def configure_reset(self, config_data):
-        """
-        By default, resets this manager to clear configs.
-
-        :param ConfigData config_data: configuration data for carrying out a configuration
-        :return: reset response messages, or None
-        """
-        return self.reset()
-
-    def configure_values(self, config_data):
-        """
-        Values have been sent to this manager.
-
-        :param ConfigData config_data: configuration data for carrying out a configuration
-        :return: nothing
-        """
-        return None
-
-    def configure_values_keyvalues(self, config_data, target, keys):
-        """
-        Helper that can be used for configure_values for parsing in
-        'key=value' strings from a values field. The key name must be
-        in the keys list, and target.key=value is set.
-
-        :param ConfigData config_data: configuration data for carrying out a configuration
-        :param target: target to set attribute values on
-        :param keys: list of keys to verify validity
-        :return: nothing
-        """
-        values = config_data.data_values
-
-        if values is None:
-            return None
-
-        kvs = values.split('|')
-        for kv in kvs:
-            try:
-                key, value = kv.split('=', 1)
-                if value is not None and not value.strip():
-                    value = None
-            except ValueError:
-                # value only
-                key = keys[kvs.index(kv)]
-                value = kv
-            if key not in keys:
-                raise ValueError("invalid key: %s" % key)
-            if value is not None:
-                setattr(target, key, value)
-
-        return None
-
-    def reset(self):
-        """
-        Reset functionality for the configurable class.
-
-        :return: nothing
-        """
-        return None
-
-    def setconfig(self, nodenum, conftype, values):
-        """
-        Add configuration values for a node to a dictionary; values are
-        usually received from a Configuration Message, and may refer to a
-        node for which no object exists yet
-
-        :param int nodenum: node id
-        :param conftype: configuration types
-        :param values: configuration values
-        :return: nothing
-        """
-        logger.info("setting config for node(%s): %s - %s", nodenum, conftype, values)
-        conflist = []
-        if nodenum in self.configs:
-            oldlist = self.configs[nodenum]
-            found = False
-            for t, v in oldlist:
-                if t == conftype:
-                    # replace existing config
-                    found = True
-                    conflist.append((conftype, values))
-                else:
-                    conflist.append((t, v))
-            if not found:
-                conflist.append((conftype, values))
-        else:
-            conflist.append((conftype, values))
-        self.configs[nodenum] = conflist
-
-    def getconfig(self, nodenum, conftype, defaultvalues):
-        """
-        Get configuration values for a node; if the values don't exist in
-        our dictionary then return the default values supplied
-
-        :param int nodenum: node id
-        :param conftype: configuration type
-        :param defaultvalues: default values
-        :return: configuration type and default values
-        :type: tuple
-        """
-        logger.info("getting config for node(%s): %s - default(%s)",
-                    nodenum, conftype, defaultvalues)
-        if nodenum in self.configs:
-            # return configured values
-            conflist = self.configs[nodenum]
-            for t, v in conflist:
-                if conftype is None or t == conftype:
-                    return t, v
-        # return default values provided (may be None)
-        return conftype, defaultvalues
-
-    def getallconfigs(self, use_clsmap=True):
-        """
-        Return (nodenum, conftype, values) tuples for all stored configs.
-        Used when reconnecting to a session.
-
-        :param bool use_clsmap: should a class map be used, default to True
-        :return: list of all configurations
-        :rtype: list
-        """
-        r = []
-        for nodenum in self.configs:
-            for t, v in self.configs[nodenum]:
-                if use_clsmap:
-                    t = self._modelclsmap[t]
-                r.append((nodenum, t, v))
-        return r
-
-    def clearconfig(self, nodenum):
-        """
-        remove configuration values for the specified node;
-        when nodenum is None, remove all configuration values
-
-        :param int nodenum: node id
-        :return: nothing
-        """
-        if nodenum is None:
-            self.configs = {}
-            return
-        if nodenum in self.configs:
-            self.configs.pop(nodenum)
-
-    def setconfig_keyvalues(self, nodenum, conftype, keyvalues):
-        """
-        Key values list of tuples for a node.
-
-        :param int nodenum: node id
-        :param conftype: configuration type
-        :param keyvalues: key valyes
-        :return: nothing
-        """
-        if conftype not in self._modelclsmap:
-            logger.warn("unknown model type '%s'", conftype)
-            return
-        model = self._modelclsmap[conftype]
-        keys = model.getnames()
-        # defaults are merged with supplied values here
-        values = list(model.getdefaultvalues())
-        for key, value in keyvalues:
-            if key not in keys:
-                logger.warn("Skipping unknown configuration key for %s: '%s'", conftype, key)
-                continue
-            i = keys.index(key)
-            values[i] = value
-        self.setconfig(nodenum, conftype, values)
-
-    def getmodels(self, n):
-        """
-        Return a list of model classes and values for a net if one has been
-        configured. This is invoked when exporting a session to XML.
-        This assumes self.configs contains an iterable of (model-names, values)
-        and a self._modelclsmapdict exists.
-
-        :param n: network node to get models for
-        :return: list of model and values tuples for the network node
-        :rtype: list
-        """
-        r = []
-        if n.objid in self.configs:
-            v = self.configs[n.objid]
-            for model in v:
-                cls = self._modelclsmap[model[0]]
-                vals = model[1]
-                r.append((cls, vals))
-        return r
-
-
-class Configurable(object):
-    """
-    A generic class for managing configuration parameters.
-    Parameters are sent via Configuration Messages, which allow the GUI
-    to build dynamic dialogs depending on what is being configured.
-    """
-    name = ""
-    # Configuration items:
-    #   ('name', 'type', 'default', 'possible-value-list', 'caption')
-    config_matrix = []
-    config_groups = None
-    bitmap = None
-
-    def __init__(self, session=None, object_id=None):
-        """
-        Creates a Configurable instance.
-
-        :param core.session.Session session: session for this configurable
-        :param object_id:
-        """
-        self.session = session
-        self.object_id = object_id
-
-    def reset(self):
-        """
-        Reset method.
-
-        :return: nothing
-        """
-        pass
-
-    def register(self):
-        """
-        Register method.
-
-        :return: nothing
-        """
-        pass
 
     @classmethod
-    def getdefaultvalues(cls):
+    def str_to_dict(cls, key_values):
         """
-        Retrieve default values from configuration matrix.
+        Converts a TLV key/value string into an ordered mapping.
 
-        :return: tuple of default values
-        :rtype: tuple
+        :param str key_values:
+        :return: ordered mapping of key/value pairs
+        :rtype: OrderedDict
         """
-        return tuple(map(lambda x: x[2], cls.config_matrix))
+        key_values = key_values.split("|")
+        values = OrderedDict()
+        for key_value in key_values:
+            key, value = key_value.split("=", 1)
+            values[key] = value
+        return values
 
     @classmethod
-    def getnames(cls):
+    def groups_to_str(cls, config_groups):
         """
-        Retrieve name values from configuration matrix.
+        Converts configuration groups to a TLV formatted string.
 
-        :return: tuple of name values
-        :rtype: tuple
+        :param list[ConfigGroup] config_groups: configuration groups to format
+        :return: TLV configuration group string
+        :rtype: str
         """
-        return tuple(map(lambda x: x[0], cls.config_matrix))
+        group_strings = []
+        for config_group in config_groups:
+            group_string = "%s:%s-%s" % (config_group.name, config_group.start, config_group.stop)
+            group_strings.append(group_string)
+        return "|".join(group_strings)
 
     @classmethod
-    def configure(cls, manager, config_data):
-        """
-        Handle configuration messages for this object.
-
-        :param ConfigurableManager manager: configuration manager
-        :param config_data: configuration data
-        :return: configuration data object
-        :rtype: ConfigData
-        """
-        reply = None
-        node_id = config_data.node
-        object_name = config_data.object
-        config_type = config_data.type
-        interface_id = config_data.interface_number
-        values_str = config_data.data_values
-
-        if interface_id is not None:
-            node_id = node_id * 1000 + interface_id
-
-        logger.debug("received configure message for %s nodenum:%s", cls.name, str(node_id))
-        if config_type == ConfigFlags.REQUEST.value:
-            logger.info("replying to configure request for %s model", cls.name)
-            # when object name is "all", the reply to this request may be None
-            # if this node has not been configured for this model; otherwise we
-            # reply with the defaults for this model
-            if object_name == "all":
-                defaults = None
-                typeflags = ConfigFlags.UPDATE.value
-            else:
-                defaults = cls.getdefaultvalues()
-                typeflags = ConfigFlags.NONE.value
-            values = manager.getconfig(node_id, cls.name, defaults)[1]
-            if values is None:
-                logger.warn("no active configuration for node (%s), ignoring request")
-                # node has no active config for this model (don't send defaults)
-                return None
-            # reply with config options
-            reply = cls.config_data(0, node_id, typeflags, values)
-        elif config_type == ConfigFlags.RESET.value:
-            if object_name == "all":
-                manager.clearconfig(node_id)
-        # elif conftype == coreapi.CONF_TYPE_FLAGS_UPDATE:
-        else:
-            # store the configuration values for later use, when the node
-            # object has been created
-            if object_name is None:
-                logger.info("no configuration object for node %s", node_id)
-                return None
-            defaults = cls.getdefaultvalues()
-            if values_str is None:
-                # use default or preconfigured values
-                values = manager.getconfig(node_id, cls.name, defaults)[1]
-            else:
-                # use new values supplied from the conf message
-                values = values_str.split('|')
-                # determine new or old style config
-                new = cls.haskeyvalues(values)
-                if new:
-                    new_values = list(defaults)
-                    keys = cls.getnames()
-                    for v in values:
-                        key, value = v.split('=', 1)
-                        try:
-                            new_values[keys.index(key)] = value
-                        except ValueError:
-                            logger.info("warning: ignoring invalid key '%s'" % key)
-                    values = new_values
-            manager.setconfig(node_id, object_name, values)
-
-        return reply
-
-    @classmethod
-    def config_data(cls, flags, node_id, type_flags, values):
+    def config_data(cls, flags, node_id, type_flags, configurable_options, config):
         """
         Convert this class to a Config API message. Some TLVs are defined
         by the class, but node number, conf type flags, and values must
         be passed in.
 
-        :param flags: message flags
+        :param int flags: message flags
         :param int node_id: node id
-        :param type_flags: type flags
-        :param values: values
+        :param int type_flags: type flags
+        :param ConfigurableOptions configurable_options: options to create config data for
+        :param dict config: configuration values for options
         :return: configuration data object
         :rtype: ConfigData
         """
-        keys = cls.getnames()
-        keyvalues = map(lambda a, b: "%s=%s" % (a, b), keys, values)
-        values_str = string.join(keyvalues, '|')
-        datatypes = tuple(map(lambda x: x[1], cls.config_matrix))
-        captions = reduce(lambda a, b: a + '|' + b, map(lambda x: x[4], cls.config_matrix))
-        possible_valuess = reduce(lambda a, b: a + '|' + b, map(lambda x: x[3], cls.config_matrix))
+        key_values = None
+        captions = None
+        data_types = []
+        possible_values = []
+        logger.debug("configurable: %s", configurable_options)
+        logger.debug("configuration options: %s", configurable_options.configurations)
+        logger.debug("configuration data: %s", config)
+        for configuration in configurable_options.configurations():
+            if not captions:
+                captions = configuration.label
+            else:
+                captions += "|%s" % configuration.label
 
+            data_types.append(configuration.type.value)
+
+            options = ",".join(configuration.options)
+            possible_values.append(options)
+
+            _id = configuration.id
+            config_value = config.get(_id, configuration.default)
+            key_value = "%s=%s" % (_id, config_value)
+            if not key_values:
+                key_values = key_value
+            else:
+                key_values += "|%s" % key_value
+
+        groups_str = cls.groups_to_str(configurable_options.config_groups())
         return ConfigData(
             message_type=flags,
             node=node_id,
-            object=cls.name,
+            object=configurable_options.name,
             type=type_flags,
-            data_types=datatypes,
-            data_values=values_str,
+            data_types=tuple(data_types),
+            data_values=key_values,
             captions=captions,
-            possible_values=possible_valuess,
-            bitmap=cls.bitmap,
-            groups=cls.config_groups
+            possible_values="|".join(possible_values),
+            bitmap=configurable_options.bitmap,
+            groups=groups_str
         )
 
-    @staticmethod
-    def booltooffon(value):
-        """
-        Convenience helper turns bool into on (True) or off (False) string.
 
-        :param str value: value to retrieve on/off value for
-        :return: on or off string
-        :rtype: str
-        """
-        if value == "1" or value == "true" or value == "on":
-            return "on"
-        else:
-            return "off"
+class Configuration(object):
+    """
+    Represents a configuration options.
+    """
 
-    @staticmethod
-    def offontobool(value):
+    def __init__(self, _id, _type, label=None, default="", options=None):
         """
-        Convenience helper for converting an on/off string to a integer.
+        Creates a Configuration object.
 
-        :param str value: on/off string
-        :return: on/off integer value
-        :rtype: int
+        :param str _id: unique name for configuration
+        :param core.enumerations.ConfigDataTypes _type: configuration data type
+        :param str label: configuration label for display
+        :param str default: default value for configuration
+        :param list options: list options if this is a configuration with a combobox
         """
-        if type(value) == str:
-            if value.lower() == "on":
-                return 1
-            elif value.lower() == "off":
-                return 0
-        return value
+        self.id = _id
+        self.type = _type
+        self.default = default
+        if not options:
+            options = []
+        self.options = options
+        if not label:
+            label = _id
+        self.label = label
 
-    @classmethod
-    def valueof(cls, name, values):
+    def __str__(self):
+        return "%s(id=%s, type=%s, default=%s, options=%s)" % (
+            self.__class__.__name__, self.id, self.type, self.default, self.options)
+
+
+class ConfigurableManager(object):
+    """
+    Provides convenience methods for storing and retrieving configuration options for nodes.
+    """
+    _default_node = -1
+    _default_type = _default_node
+
+    def __init__(self):
         """
-        Helper to return a value by the name defined in confmatrix.
-        Checks if it is boolean
-
-        :param str name: name to get value of
-        :param values: values to get value from
-        :return: value for name
+        Creates a ConfigurableManager object.
         """
-        i = cls.getnames().index(name)
-        if cls.config_matrix[i][1] == ConfigDataTypes.BOOL.value and values[i] != "":
-            return cls.booltooffon(values[i])
-        else:
-            return values[i]
+        self.node_configurations = {}
 
-    @staticmethod
-    def haskeyvalues(values):
+    def nodes(self):
         """
-        Helper to check for list of key=value pairs versus a plain old
-        list of values. Returns True if all elements are "key=value".
+        Retrieves the ids of all node configurations known by this manager.
 
-        :param values: items to check for key/value pairs
-        :return: True if all values are key/value pairs, False otherwise
-        :rtype: bool
-        """
-        if len(values) == 0:
-            return False
-        for v in values:
-            if "=" not in v:
-                return False
-        return True
-
-    def getkeyvaluelist(self):
-        """
-        Helper to return a list of (key, value) tuples. Keys come from
-        configuration matrix and values are instance attributes.
-
-        :return: tuples of key value pairs
+        :return: list of node ids
         :rtype: list
         """
-        key_values = []
+        return [node_id for node_id in self.node_configurations.iterkeys() if node_id != self._default_node]
 
-        for name in self.getnames():
-            if hasattr(self, name):
-                value = getattr(self, name)
-                key_values.append((name, value))
+    def config_reset(self, node_id=None):
+        """
+        Clears all configurations or configuration for a specific node.
 
-        return key_values
+        :param int node_id: node id to clear configurations for, default is None and clears all configurations
+        :return: nothing
+        """
+        logger.debug("resetting all configurations: %s", self.__class__.__name__)
+        if not node_id:
+            self.node_configurations.clear()
+        elif node_id in self.node_configurations:
+            self.node_configurations.pop(node_id)
+
+    def set_config(self, _id, value, node_id=_default_node, config_type=_default_type):
+        """
+        Set a specific configuration value for a node and configuration type.
+
+        :param str _id: configuration key
+        :param str value: configuration value
+        :param int node_id: node id to store configuration for
+        :param str config_type: configuration type to store configuration for
+        :return: nothing
+        """
+        logger.debug("setting config for node(%s) type(%s): %s=%s", node_id, config_type, _id, value)
+        node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
+        node_type_configs = node_configs.setdefault(config_type, OrderedDict())
+        node_type_configs[_id] = value
+
+    def set_configs(self, config, node_id=_default_node, config_type=_default_type):
+        """
+        Set configurations for a node and configuration type.
+
+        :param dict config: configurations to set
+        :param int node_id: node id to store configuration for
+        :param str config_type: configuration type to store configuration for
+        :return: nothing
+        """
+        logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
+        node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
+        node_configs[config_type] = config
+
+    def get_config(self, _id, node_id=_default_node, config_type=_default_type, default=None):
+        """
+        Retrieves a specific configuration for a node and configuration type.
+
+        :param str _id: specific configuration to retrieve
+        :param int node_id: node id to store configuration for
+        :param str config_type: configuration type to store configuration for
+        :param default: default value to return when value is not found
+        :return: configuration value
+        :rtype str
+        """
+        logger.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
+        result = default
+        node_type_configs = self.get_configs(node_id, config_type)
+        if node_type_configs:
+            result = node_type_configs.get(_id, default)
+        return result
+
+    def get_configs(self, node_id=_default_node, config_type=_default_type):
+        """
+        Retrieve configurations for a node and configuration type.
+
+        :param int node_id: node id to store configuration for
+        :param str config_type: configuration type to store configuration for
+        :return: configurations
+        :rtype: dict
+        """
+        logger.debug("getting configs for node(%s) type(%s)", node_id, config_type)
+        result = None
+        node_configs = self.node_configurations.get(node_id)
+        if node_configs:
+            result = node_configs.get(config_type)
+        return result
+
+    def get_all_configs(self, node_id=_default_node):
+        """
+        Retrieve all current configuration types for a node.
+
+        :param int node_id: node id to retrieve configurations for
+        :return: all configuration types for a node
+        :rtype: dict
+        """
+        logger.debug("getting all configs for node(%s)", node_id)
+        return self.node_configurations.get(node_id)
+
+
+class ConfigGroup(object):
+    """
+    Defines configuration group tabs used for display by ConfigurationOptions.
+    """
+
+    def __init__(self, name, start, stop):
+        """
+        Creates a ConfigGroup object.
+
+        :param str name: configuration group display name
+        :param int start: configurations start index for this group
+        :param int stop: configurations stop index for this group
+        """
+        self.name = name
+        self.start = start
+        self.stop = stop
+
+
+class ConfigurableOptions(object):
+    """
+    Provides a base for defining configuration options within CORE.
+    """
+    name = None
+    bitmap = None
+    options = []
+
+    @classmethod
+    def configurations(cls):
+        """
+        Provides the configurations for this class.
+
+        :return: configurations
+        :rtype: list[Configuration]
+        """
+        return cls.options
+
+    @classmethod
+    def config_groups(cls):
+        """
+        Defines how configurations are grouped.
+
+        :return: configuration group definition
+        :rtype: list[ConfigGroup]
+        """
+        return [
+            ConfigGroup("Options", 1, len(cls.configurations()))
+        ]
+
+    @classmethod
+    def default_values(cls):
+        """
+        Provides an ordered mapping of configuration keys to default values.
+
+        :return: ordered configuration mapping default values
+        :rtype: OrderedDict
+        """
+        return OrderedDict([(config.id, config.default) for config in cls.configurations()])
+
+
+class ModelManager(ConfigurableManager):
+    """
+    Helps handle setting models for nodes and managing their model configurations.
+    """
+
+    def __init__(self):
+        """
+        Creates a ModelManager object.
+        """
+        super(ModelManager, self).__init__()
+        self.models = {}
+        self.node_models = {}
+
+    def set_model_config(self, node_id, model_name, config=None):
+        """
+        Set configuration data for a model.
+
+        :param int node_id: node id to set model configuration for
+        :param str model_name: model to set configuration for
+        :param dict config: configuration data to set for model
+        :return: nothing
+        """
+        # get model class to configure
+        model_class = self.models.get(model_name)
+        if not model_class:
+            raise ValueError("%s is an invalid model" % model_name)
+
+        # retrieve default values
+        model_config = self.get_model_config(node_id, model_name)
+        if not config:
+            config = {}
+        for key, value in config.iteritems():
+            model_config[key] = value
+
+        # set as node model for startup
+        self.node_models[node_id] = model_name
+
+        # set configuration
+        self.set_configs(model_config, node_id=node_id, config_type=model_name)
+
+    def get_model_config(self, node_id, model_name):
+        """
+        Set configuration data for a model.
+
+        :param int node_id: node id to set model configuration for
+        :param str model_name: model to set configuration for
+        :return: current model configuration for node
+        :rtype: dict
+        """
+        # get model class to configure
+        model_class = self.models.get(model_name)
+        if not model_class:
+            raise ValueError("%s is an invalid model" % model_name)
+
+        config = self.get_configs(node_id=node_id, config_type=model_name)
+        if not config:
+            # set default values, when not already set
+            config = model_class.default_values()
+            self.set_configs(config, node_id=node_id, config_type=model_name)
+
+        return config
+
+    def set_model(self, node, model_class, config=None):
+        """
+        Set model and model configuration for node.
+
+        :param node: node to set model for
+        :param model_class: model class to set for node
+        :param dict config: model configuration, None for default configuration
+        :return: nothing
+        """
+        logger.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
+        self.set_model_config(node.objid, model_class.name, config)
+        config = self.get_model_config(node.objid, model_class.name)
+        node.setmodel(model_class, config)
+
+    def get_models(self, node):
+        """
+        Return a list of model classes and values for a net if one has been
+        configured. This is invoked when exporting a session to XML.
+
+        :param node: network node to get models for
+        :return: list of model and values tuples for the network node
+        :rtype: list
+        """
+        all_configs = self.get_all_configs(node.objid)
+        if not all_configs:
+            all_configs = {}
+
+        models = []
+        for model_name, config in all_configs.iteritems():
+            if model_name == ModelManager._default_node:
+                continue
+            model_class = self.models[model_name]
+            models.append((model_class, config))
+
+        logger.debug("models for node(%s): %s", node.objid, models)
+        return models

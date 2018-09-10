@@ -420,8 +420,8 @@ class Experiment(object):
             tmp = self.session.add_object(cls=nodes.CoreNode, objid=i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
-            self.session.services.addservicestonode(tmp, "router", "IPForward")
-            self.session.services.bootnodeservices(tmp)
+            self.session.services.add_services(tmp, "router", "IPForward")
+            self.session.services.boot_services(tmp)
             self.staticroutes(i, prefix, numnodes)
 
             # link each node in a chain, with the previous node
@@ -429,8 +429,7 @@ class Experiment(object):
                 self.net.link(prev.netif(0), tmp.netif(0))
             prev = tmp
 
-    def createemanesession(self, numnodes, verbose=False, cls=None,
-                           values=None):
+    def createemanesession(self, numnodes, verbose=False, cls=None, values=None):
         """ Build a topology consisting of the given number of LxcNodes
             connected to an EMANE WLAN.
         """
@@ -440,7 +439,6 @@ class Experiment(object):
         self.session.master = True
         self.session.location.setrefgeo(47.57917, -122.13232, 2.00000)
         self.session.location.refscale = 150.0
-        self.session.config["emane_models"] = "RfPipe, Ieee80211abg, Bypass"
         self.session.emane.loadmodels()
         self.net = self.session.add_object(cls=EmaneNode, objid=numnodes + 1, name="wlan1")
         self.net.verbose = verbose
@@ -453,7 +451,7 @@ class Experiment(object):
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
-            self.session.services.addservicestonode(tmp, "router", "IPForward")
+            self.session.services.add_services(tmp, "router", "IPForward")
 
         if values is None:
             values = cls.getdefaultvalues()
@@ -465,7 +463,7 @@ class Experiment(object):
 
         for i in xrange(1, numnodes + 1):
             tmp = self.nodes[i - 1]
-            self.session.services.bootnodeservices(tmp)
+            self.session.services.boot_services(tmp)
             self.staticroutes(i, prefix, numnodes)
 
     def setnodes(self):

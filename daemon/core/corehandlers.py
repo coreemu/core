@@ -10,14 +10,20 @@ import shutil
 import sys
 import threading
 import time
+from itertools import repeat
 
 from core import logger
 from core.api import coreapi
-from core.data import ConfigData
+from core.api import dataconversion
+from core.conf import ConfigShim
+from core.data import ConfigData, ExceptionData
 from core.data import EventData
+from core.data import FileData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
+from core.enumerations import ConfigDataTypes
+from core.enumerations import ConfigFlags
 from core.enumerations import ConfigTlvs
 from core.enumerations import EventTlvs
 from core.enumerations import EventTypes
@@ -35,6 +41,8 @@ from core.enumerations import SessionTlvs
 from core.misc import nodeutils
 from core.misc import structutils
 from core.misc import utils
+from core.service import ServiceManager
+from core.service import ServiceShim
 
 
 class CoreHandler(SocketServer.BaseRequestHandler):
@@ -261,24 +269,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logger.debug("handling broadcast config: %s", config_data)
-
-        tlv_data = structutils.pack_values(coreapi.CoreConfigTlv, [
-            (ConfigTlvs.NODE, config_data.node),
-            (ConfigTlvs.OBJECT, config_data.object),
-            (ConfigTlvs.TYPE, config_data.type),
-            (ConfigTlvs.DATA_TYPES, config_data.data_types),
-            (ConfigTlvs.VALUES, config_data.data_values),
-            (ConfigTlvs.CAPTIONS, config_data.captions),
-            (ConfigTlvs.BITMAP, config_data.bitmap),
-            (ConfigTlvs.POSSIBLE_VALUES, config_data.possible_values),
-            (ConfigTlvs.GROUPS, config_data.groups),
-            (ConfigTlvs.SESSION, config_data.session),
-            (ConfigTlvs.INTERFACE_NUMBER, config_data.interface_number),
-            (ConfigTlvs.NETWORK_ID, config_data.network_id),
-            (ConfigTlvs.OPAQUE, config_data.opaque),
-        ])
-        message = coreapi.CoreConfMessage.pack(config_data.message_type, tlv_data)
-
+        message = dataconversion.convert_config(config_data)
         try:
             self.sendall(message)
         except IOError:
@@ -315,31 +306,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logger.debug("handling broadcast node: %s", node_data)
-
-        tlv_data = structutils.pack_values(coreapi.CoreNodeTlv, [
-            (NodeTlvs.NUMBER, node_data.id),
-            (NodeTlvs.TYPE, node_data.node_type),
-            (NodeTlvs.NAME, node_data.name),
-            (NodeTlvs.IP_ADDRESS, node_data.ip_address),
-            (NodeTlvs.MAC_ADDRESS, node_data.mac_address),
-            (NodeTlvs.IP6_ADDRESS, node_data.ip6_address),
-            (NodeTlvs.MODEL, node_data.model),
-            (NodeTlvs.EMULATION_ID, node_data.emulation_id),
-            (NodeTlvs.EMULATION_SERVER, node_data.emulation_server),
-            (NodeTlvs.SESSION, node_data.session),
-            (NodeTlvs.X_POSITION, node_data.x_position),
-            (NodeTlvs.Y_POSITION, node_data.y_position),
-            (NodeTlvs.CANVAS, node_data.canvas),
-            (NodeTlvs.NETWORK_ID, node_data.network_id),
-            (NodeTlvs.SERVICES, node_data.services),
-            (NodeTlvs.LATITUDE, node_data.latitude),
-            (NodeTlvs.LONGITUDE, node_data.longitude),
-            (NodeTlvs.ALTITUDE, node_data.altitude),
-            (NodeTlvs.ICON, node_data.icon),
-            (NodeTlvs.OPAQUE, node_data.opaque)
-        ])
-        message = coreapi.CoreNodeMessage.pack(node_data.message_type, tlv_data)
-
+        message = dataconversion.convert_node(node_data)
         try:
             self.sendall(message)
         except IOError:
@@ -407,12 +374,17 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         tlv_data = ""
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, "core-daemon")
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER.value, "core-daemon")
-
-        # get config objects for session
-        for name in self.session.config_objects:
-            config_type, callback = self.session.config_objects[name]
-            # type must be in coreapi.reg_tlvs
-            tlv_data += coreapi.CoreRegisterTlv.pack(config_type, name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type, self.session.mobility.name)
+        for model_class in self.session.mobility.models.itervalues():
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type, self.session.services.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type, self.session.emane.name)
+        for model_class in self.session.emane.models.itervalues():
+            tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
+        tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
@@ -606,6 +578,26 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.debug("BROADCAST TO OTHER CLIENT: %s", client)
                 client.sendall(message.raw_message)
 
+    def send_exception(self, level, source, text, node=None):
+        """
+        Sends an exception for display within the GUI.
+
+        :param core.enumerations.ExceptionLevel level: level for exception
+        :param str source: source where exception came from
+        :param str text: details about exception
+        :param int node: node id, if related to a specific node
+        :return:
+        """
+        exception_data = ExceptionData(
+            session=str(self.session.session_id),
+            node=node,
+            date=time.ctime(),
+            level=level.value,
+            source=source,
+            text=text
+        )
+        self.handle_broadcast_exception(exception_data)
+
     def add_session_handlers(self):
         logger.debug("adding session broadcast handlers")
         self.session.event_handlers.append(self.handle_broadcast_event)
@@ -653,11 +645,16 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             y=message.get_tlv(NodeTlvs.Y_POSITION.value)
         )
 
-        node_options.set_location(
-            lat=message.get_tlv(NodeTlvs.LATITUDE.value),
-            lon=message.get_tlv(NodeTlvs.LONGITUDE.value),
-            alt=message.get_tlv(NodeTlvs.ALTITUDE.value)
-        )
+        lat = message.get_tlv(NodeTlvs.LATITUDE.value)
+        if lat is not None:
+            lat = float(lat)
+        lon = message.get_tlv(NodeTlvs.LONGITUDE.value)
+        if lon is not None:
+            lon = float(lon)
+        alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
+        if alt is not None:
+            alt = float(alt)
+        node_options.set_location(lat=lat, lon=lon, alt=alt)
 
         node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
         node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
@@ -941,14 +938,394 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             opaque=message.get_tlv(ConfigTlvs.OPAQUE.value)
         )
         logger.debug("configuration message for %s node %s", config_data.object, config_data.node)
+        message_type = ConfigFlags(config_data.type)
 
-        # dispatch to any registered callback for this object type
-        replies = self.session.config_object(config_data)
+        replies = []
+
+        # handle session configuration
+        if config_data.object == "all":
+            replies = self.handle_config_all(message_type, config_data)
+        elif config_data.object == self.session.options.name:
+            replies = self.handle_config_session(message_type, config_data)
+        elif config_data.object == self.session.location.name:
+            self.handle_config_location(message_type, config_data)
+        elif config_data.object == self.session.metadata.name:
+            replies = self.handle_config_metadata(message_type, config_data)
+        elif config_data.object == self.session.broker.name:
+            self.handle_config_broker(message_type, config_data)
+        elif config_data.object == self.session.services.name:
+            replies = self.handle_config_services(message_type, config_data)
+        elif config_data.object == self.session.mobility.name:
+            self.handle_config_mobility(message_type, config_data)
+        elif config_data.object in self.session.mobility.models:
+            replies = self.handle_config_mobility_models(message_type, config_data)
+        elif config_data.object == self.session.emane.name:
+            replies = self.handle_config_emane(message_type, config_data)
+        elif config_data.object in self.session.emane.models:
+            replies = self.handle_config_emane_models(message_type, config_data)
+        else:
+            raise Exception("no handler for configuration: %s", config_data.object)
 
         for reply in replies:
             self.handle_broadcast_config(reply)
 
         return []
+
+    def handle_config_all(self, message_type, config_data):
+        replies = []
+
+        if message_type == ConfigFlags.RESET:
+            node_id = config_data.node
+            self.session.location.reset()
+            self.session.services.reset()
+            self.session.mobility.config_reset(node_id)
+            self.session.emane.config_reset(node_id)
+        else:
+            raise Exception("cant handle config all: %s" % message_type)
+
+        return replies
+
+    def handle_config_session(self, message_type, config_data):
+        replies = []
+        if message_type == ConfigFlags.REQUEST:
+            type_flags = ConfigFlags.NONE.value
+            config = self.session.options.get_configs()
+            config_response = ConfigShim.config_data(0, None, type_flags, self.session.options, config)
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET and config_data.data_values:
+            values = ConfigShim.str_to_dict(config_data.data_values)
+            for key, value in values.iteritems():
+                self.session.options.set_config(key, value)
+        return replies
+
+    def handle_config_location(self, message_type, config_data):
+        if message_type == ConfigFlags.RESET:
+            self.session.location.reset()
+        else:
+            if not config_data.data_values:
+                logger.warn("location data missing")
+            else:
+                values = config_data.data_values.split("|")
+
+                # Cartesian coordinate reference point
+                refx, refy = map(lambda x: float(x), values[0:2])
+                refz = 0.0
+                lat, lon, alt = map(lambda x: float(x), values[2:5])
+                # xyz point
+                self.session.location.refxyz = (refx, refy, refz)
+                # geographic reference point
+                self.session.location.setrefgeo(lat, lon, alt)
+                self.session.location.refscale = float(values[5])
+                logger.info("location configured: %s = %s scale=%s", self.session.location.refxyz,
+                            self.session.location.refgeo, self.session.location.refscale)
+                logger.info("location configured: UTM%s", self.session.location.refutm)
+
+    def handle_config_metadata(self, message_type, config_data):
+        replies = []
+        if message_type == ConfigFlags.REQUEST:
+            node_id = config_data.node
+            data_values = "|".join(["%s=%s" % item for item in self.session.metadata.get_configs().iteritems()])
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            config_response = ConfigData(
+                message_type=0,
+                node=node_id,
+                object=self.session.metadata.name,
+                type=ConfigFlags.NONE.value,
+                data_types=data_types,
+                data_values=data_values
+            )
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET and config_data.data_values:
+            values = ConfigShim.str_to_dict(config_data.data_values)
+            for key, value in values.iteritems():
+                self.session.metadata.set_config(key, value)
+        return replies
+
+    def handle_config_broker(self, message_type, config_data):
+        if message_type not in [ConfigFlags.REQUEST, ConfigFlags.RESET]:
+            session_id = config_data.session
+            if not config_data.data_values:
+                logger.info("emulation server data missing")
+            else:
+                values = config_data.data_values.split("|")
+
+                # string of "server:ip:port,server:ip:port,..."
+                server_strings = values[0]
+                server_list = server_strings.split(",")
+
+                for server in server_list:
+                    server_items = server.split(":")
+                    name, host, port = server_items[:3]
+
+                    if host == "":
+                        host = None
+
+                    if port == "":
+                        port = None
+                    else:
+                        port = int(port)
+
+                    if session_id is not None:
+                        # receive session ID and my IP from master
+                        self.session.broker.session_id_master = int(session_id.split("|")[0])
+                        self.session.broker.myip = host
+                        host = None
+                        port = None
+
+                    # this connects to the server immediately; maybe we should wait
+                    # or spin off a new "client" thread here
+                    self.session.broker.addserver(name, host, port)
+                    self.session.broker.setupserver(name)
+
+    def handle_config_services(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        opaque = config_data.opaque
+
+        if message_type == ConfigFlags.REQUEST:
+            session_id = config_data.session
+            opaque = config_data.opaque
+
+            logger.debug("configuration request: node(%s) session(%s) opaque(%s)", node_id, session_id, opaque)
+
+            # send back a list of available services
+            if opaque is None:
+                type_flag = ConfigFlags.NONE.value
+                data_types = tuple(repeat(ConfigDataTypes.BOOL.value, len(ServiceManager.services)))
+
+                # sort groups by name and map services to groups
+                groups = set()
+                group_map = {}
+                for service_name in ServiceManager.services.itervalues():
+                    group = service_name.group
+                    groups.add(group)
+                    group_map.setdefault(group, []).append(service_name)
+                groups = sorted(groups, key=lambda x: x.lower())
+
+                # define tlv values in proper order
+                captions = []
+                possible_values = []
+                values = []
+                group_strings = []
+                start_index = 1
+                logger.info("sorted groups: %s", groups)
+                for group in groups:
+                    services = sorted(group_map[group], key=lambda x: x.name.lower())
+                    logger.info("sorted services for group(%s): %s", group, services)
+                    end_index = start_index + len(services) - 1
+                    group_strings.append("%s:%s-%s" % (group, start_index, end_index))
+                    start_index += len(services)
+                    for service_name in services:
+                        captions.append(service_name.name)
+                        values.append("0")
+                        if service_name.custom_needed:
+                            possible_values.append("1")
+                        else:
+                            possible_values.append("")
+
+                # format for tlv
+                captions = "|".join(captions)
+                possible_values = "|".join(possible_values)
+                values = "|".join(values)
+                groups = "|".join(group_strings)
+            # send back the properties for this service
+            else:
+                if not node_id:
+                    return replies
+
+                node = self.session.get_object(node_id)
+                if node is None:
+                    logger.warn("request to configure service for unknown node %s", node_id)
+                    return replies
+
+                services = ServiceShim.servicesfromopaque(opaque)
+                if not services:
+                    return replies
+
+                servicesstring = opaque.split(":")
+                if len(servicesstring) == 3:
+                    # a file request: e.g. "service:zebra:quagga.conf"
+                    file_name = servicesstring[2]
+                    service_name = services[0]
+                    file_data = self.session.services.get_service_file(node, service_name, file_name)
+                    self.session.broadcast_file(file_data)
+                    # short circuit this request early to avoid returning response below
+                    return replies
+
+                # the first service in the list is the one being configured
+                service_name = services[0]
+                # send back:
+                # dirs, configs, startindex, startup, shutdown, metadata, config
+                type_flag = ConfigFlags.UPDATE.value
+                data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
+                service = self.session.services.get_service(node_id, service_name, default_service=True)
+                values = ServiceShim.tovaluelist(node, service)
+                captions = None
+                possible_values = None
+                groups = None
+
+            config_response = ConfigData(
+                message_type=0,
+                node=node_id,
+                object=self.session.services.name,
+                type=type_flag,
+                data_types=data_types,
+                data_values=values,
+                captions=captions,
+                possible_values=possible_values,
+                groups=groups,
+                session=session_id,
+                opaque=opaque
+            )
+            replies.append(config_response)
+        elif message_type == ConfigFlags.RESET:
+            self.session.services.reset()
+        else:
+            data_types = config_data.data_types
+            values = config_data.data_values
+
+            error_message = "services config message that I don't know how to handle"
+            if values is None:
+                logger.error(error_message)
+            else:
+                if opaque is None:
+                    values = values.split("|")
+                    # store default services for a node type in self.defaultservices[]
+                    if data_types is None or data_types[0] != ConfigDataTypes.STRING.value:
+                        logger.info(error_message)
+                        return None
+                    key = values.pop(0)
+                    self.session.services.default_services[key] = values
+                    logger.debug("default services for type %s set to %s", key, values)
+                elif node_id:
+                    services = ServiceShim.servicesfromopaque(opaque)
+                    if services:
+                        service_name = services[0]
+
+                        # set custom service for node
+                        self.session.services.set_service(node_id, service_name)
+
+                        # set custom values for custom service
+                        service = self.session.services.get_service(node_id, service_name)
+                        if not service:
+                            raise ValueError("custom service(%s) for node(%s) does not exist", service_name, node_id)
+
+                        values = ConfigShim.str_to_dict(values)
+                        for name, value in values.iteritems():
+                            ServiceShim.setvalue(service, name, value)
+
+        return replies
+
+    def handle_config_mobility(self, message_type, _):
+        if message_type == ConfigFlags.RESET:
+            self.session.mobility.reset()
+
+    def handle_config_mobility_models(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        object_name = config_data.object
+        interface_id = config_data.interface_number
+        values_str = config_data.data_values
+
+        if interface_id is not None:
+            node_id = node_id * 1000 + interface_id
+
+        logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
+        if message_type == ConfigFlags.REQUEST:
+            logger.info("replying to configure request for model: %s", object_name)
+            typeflags = ConfigFlags.NONE.value
+
+            model_class = self.session.mobility.models.get(object_name)
+            if not model_class:
+                logger.warn("model class does not exist: %s", object_name)
+                return []
+
+            config = self.session.mobility.get_model_config(node_id, object_name)
+            config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET:
+            # store the configuration values for later use, when the node
+            if not object_name:
+                logger.warn("no configuration object for node: %s", node_id)
+                return []
+
+            parsed_config = {}
+            if values_str:
+                parsed_config = ConfigShim.str_to_dict(values_str)
+
+            self.session.mobility.set_model_config(node_id, object_name, parsed_config)
+
+        return replies
+
+    def handle_config_emane(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        object_name = config_data.object
+        interface_id = config_data.interface_number
+        values_str = config_data.data_values
+
+        if interface_id is not None:
+            node_id = node_id * 1000 + interface_id
+
+        logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
+        if message_type == ConfigFlags.REQUEST:
+            logger.info("replying to configure request for %s model", object_name)
+            typeflags = ConfigFlags.NONE.value
+            config = self.session.emane.get_configs()
+            config_response = ConfigShim.config_data(0, node_id, typeflags, self.session.emane.emane_config, config)
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET:
+            if not object_name:
+                logger.info("no configuration object for node %s", node_id)
+                return []
+
+            if values_str:
+                config = ConfigShim.str_to_dict(values_str)
+                self.session.emane.set_configs(config)
+
+        # extra logic to start slave Emane object after nemid has been configured from the master
+        if message_type == ConfigFlags.UPDATE and self.session.master is False:
+            # instantiation was previously delayed by setup returning Emane.NOT_READY
+            self.session.instantiate()
+
+        return replies
+
+    def handle_config_emane_models(self, message_type, config_data):
+        replies = []
+        node_id = config_data.node
+        object_name = config_data.object
+        interface_id = config_data.interface_number
+        values_str = config_data.data_values
+
+        if interface_id is not None:
+            node_id = node_id * 1000 + interface_id
+
+        logger.debug("received configure message for %s nodenum: %s", object_name, node_id)
+        if message_type == ConfigFlags.REQUEST:
+            logger.info("replying to configure request for model: %s", object_name)
+            typeflags = ConfigFlags.NONE.value
+
+            model_class = self.session.emane.models.get(object_name)
+            if not model_class:
+                logger.warn("model class does not exist: %s", object_name)
+                return []
+
+            config = self.session.emane.get_model_config(node_id, object_name)
+            config_response = ConfigShim.config_data(0, node_id, typeflags, model_class, config)
+            replies.append(config_response)
+        elif message_type != ConfigFlags.RESET:
+            # store the configuration values for later use, when the node
+            if not object_name:
+                logger.warn("no configuration object for node: %s", node_id)
+                return []
+
+            parsed_config = {}
+            if values_str:
+                parsed_config = ConfigShim.str_to_dict(values_str)
+
+            self.session.emane.set_model_config(node_id, object_name, parsed_config)
+
+        return replies
 
     def handle_file_message(self, message):
         """
@@ -978,7 +1355,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if file_type is not None:
                 if file_type.startswith("service:"):
                     _, service_name = file_type.split(':')[:2]
-                    self.session.add_node_service_file(node_num, service_name, file_name, source_name, data)
+                    self.session.services.set_service_file(node_num, service_name, file_name, data)
                     return ()
                 elif file_type.startswith("hook:"):
                     _, state = file_type.split(':')[:2]
@@ -1084,7 +1461,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 # TODO: register system for event message handlers,
                 # like confobjs
                 if name.startswith("service:"):
-                    self.session.services_event(event_data)
+                    self.handle_service_event(event_data)
                     handled = True
                 elif name.startswith("mobility:"):
                     self.session.mobility_event(event_data)
@@ -1094,11 +1471,12 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         elif event_type == EventTypes.FILE_OPEN:
             filename = event_data.name
             self.session.open_xml(filename, start=False)
-            self.session.send_objects()
+            self.send_objects()
             return ()
         elif event_type == EventTypes.FILE_SAVE:
             filename = event_data.name
-            self.session.save_xml(filename, self.session.config["xmlfilever"])
+            xml_version = self.session.options.get_config("xmlfilever")
+            self.session.save_xml(filename, xml_version)
         elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
             node = event_data.node
@@ -1115,6 +1493,72 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             logger.warn("unhandled event message: event type %s", event_type)
 
         return ()
+
+    def handle_service_event(self, event_data):
+        """
+        Handle an Event Message used to start, stop, restart, or validate
+        a service on a given node.
+
+        :param EventData event_data: event data to handle
+        :return: nothing
+        """
+        event_type = event_data.event_type
+        node_id = event_data.node
+        name = event_data.name
+
+        try:
+            node = self.session.get_object(node_id)
+        except KeyError:
+            logger.warn("ignoring event for service '%s', unknown node '%s'", name, node_id)
+            return
+
+        fail = ""
+        unknown = []
+        services = ServiceShim.servicesfromopaque(name)
+        for service_name in services:
+            service = self.session.services.get_service(node_id, service_name, default_service=True)
+            if not service:
+                unknown.append(service_name)
+                continue
+
+            if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
+                status = self.session.services.stop_service(node, service)
+                if status:
+                    fail += "Stop %s," % service.name
+            if event_type == EventTypes.START.value or event_type == EventTypes.RESTART.value:
+                status = self.session.services.startup_service(node, service)
+                if status:
+                    fail += "Start %s(%s)," % service.name
+            if event_type == EventTypes.PAUSE.value:
+                status = self.session.services.validate_service(node, service)
+                if status:
+                    fail += "%s," % service.name
+            if event_type == EventTypes.RECONFIGURE.value:
+                self.session.services.service_reconfigure(node, service)
+
+        fail_data = ""
+        if len(fail) > 0:
+            fail_data += "Fail:" + fail
+        unknown_data = ""
+        num = len(unknown)
+        if num > 0:
+            for u in unknown:
+                unknown_data += u
+                if num > 1:
+                    unknown_data += ", "
+                num -= 1
+            logger.warn("Event requested for unknown service(s): %s", unknown_data)
+            unknown_data = "Unknown:" + unknown_data
+
+        event_data = EventData(
+            node=node_id,
+            event_type=event_type,
+            name=name,
+            data=fail_data + ";" + unknown_data,
+            time="%s" % time.time()
+        )
+
+        self.session.broadcast_event(event_data)
 
     def handle_session_message(self, message):
         """
@@ -1196,7 +1640,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                         self.session.set_user(user)
 
                     if message.flags & MessageFlags.STRING.value:
-                        self.session.send_objects()
+                        self.send_objects()
                 elif message.flags & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
                     logger.info("request to terminate session %s" % session_id)
@@ -1225,3 +1669,105 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logger.exception("error sending node emulation id message: %s", node_id)
 
             del self.node_status_request[node_id]
+
+    def send_objects(self):
+        """
+        Return API messages that describe the current session.
+        """
+        # find all nodes and links
+
+        nodes_data = []
+        links_data = []
+        with self.session._objects_lock:
+            for obj in self.session.objects.itervalues():
+                node_data = obj.data(message_type=MessageFlags.ADD.value)
+                if node_data:
+                    nodes_data.append(node_data)
+
+                node_links = obj.all_link_data(flags=MessageFlags.ADD.value)
+                for link_data in node_links:
+                    links_data.append(link_data)
+
+        # send all nodes first, so that they will exist for any links
+        for node_data in nodes_data:
+            self.session.broadcast_node(node_data)
+
+        for link_data in links_data:
+            self.session.broadcast_link(link_data)
+
+        # send mobility model info
+        for node_id in self.session.mobility.nodes():
+            for model_name, config in self.session.mobility.get_all_configs(node_id).iteritems():
+                model_class = self.session.mobility.models[model_name]
+                logger.debug("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                self.session.broadcast_config(config_data)
+
+        # send emane model info
+        for node_id in self.session.emane.nodes():
+            for model_name, config in self.session.emane.get_all_configs(node_id).iteritems():
+                model_class = self.session.emane.models[model_name]
+                logger.debug("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
+                config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
+                self.session.broadcast_config(config_data)
+
+        # service customizations
+        service_configs = self.session.services.all_configs()
+        for node_id, service in service_configs:
+            opaque = "service:%s" % service.name
+            data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
+            node = self.session.get_object(node_id)
+            values = ServiceShim.tovaluelist(node, service)
+            config_data = ConfigData(
+                message_type=0,
+                node=node_id,
+                object=self.session.services.name,
+                type=ConfigFlags.UPDATE.value,
+                data_types=data_types,
+                data_values=values,
+                session=str(self.session.session_id),
+                opaque=opaque
+            )
+            self.session.broadcast_config(config_data)
+
+            for file_name, config_data in self.session.services.all_files(service):
+                file_data = FileData(
+                    message_type=MessageFlags.ADD.value,
+                    node=node_id,
+                    name=str(file_name),
+                    type=opaque,
+                    data=str(config_data)
+                )
+                self.session.broadcast_file(file_data)
+
+        # TODO: send location info
+
+        # send hook scripts
+        for state in sorted(self.session._hooks.keys()):
+            for file_name, config_data in self.session._hooks[state]:
+                file_data = FileData(
+                    message_type=MessageFlags.ADD.value,
+                    name=str(file_name),
+                    type="hook:%s" % state,
+                    data=str(config_data)
+                )
+                self.session.broadcast_file(file_data)
+
+        # send session configuration
+        session_config = self.session.options.get_configs()
+        config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, self.session.options, session_config)
+        self.session.broadcast_config(config_data)
+
+        # send session metadata
+        data_values = "|".join(["%s=%s" % item for item in self.session.metadata.get_configs().iteritems()])
+        data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+        config_data = ConfigData(
+            message_type=0,
+            object=self.session.metadata.name,
+            type=ConfigFlags.NONE.value,
+            data_types=data_types,
+            data_values=data_values
+        )
+        self.session.broadcast_config(config_data)
+
+        logger.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))

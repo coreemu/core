@@ -16,7 +16,6 @@ from core import logger
 from core.corehandlers import CoreHandler
 from core.coreserver import CoreServer
 from core.misc.utils import close_onexec
-from core.service import ServiceManager
 
 
 def banner():
@@ -115,14 +114,6 @@ def main():
     cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     for a in args:
         logger.error("ignoring command line argument: %s", a)
-
-    # attempt load custom services
-    service_paths = cfg.get("custom_services_dir")
-    logger.debug("custom service paths: %s", service_paths)
-    if service_paths:
-        for service_path in service_paths.split(','):
-            service_path = service_path.strip()
-            ServiceManager.add_services(service_path)
 
     banner()
 

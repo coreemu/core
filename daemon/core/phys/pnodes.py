@@ -25,12 +25,6 @@ class PhysicalNode(PyCoreNode):
         if start:
             self.startup()
 
-    def boot(self):
-        self.session.services.bootnodeservices(self)
-
-    def validate(self):
-        self.session.services.validatenodeservices(self)
-
     def startup(self):
         with self.lock:
             self.makenodedir()

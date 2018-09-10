@@ -1,7 +1,8 @@
 """
 EMANE Bypass model for CORE
 """
-
+from core.conf import ConfigGroup
+from core.conf import Configuration
 from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 
@@ -15,13 +16,22 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     # mac definitions
     mac_library = "bypassmaclayer"
     mac_config = [
-        ("none", ConfigDataTypes.BOOL.value, "0", "True,False",
-         "There are no parameters for the bypass model."),
+        Configuration(
+            _id="none",
+            _type=ConfigDataTypes.BOOL,
+            default="0",
+            options=["True", "False"],
+            label="There are no parameters for the bypass model."
+        )
     ]
 
     # phy definitions
     phy_library = "bypassphylayer"
     phy_config = []
 
-    # override gui display tabs
-    config_groups_override = "Bypass Parameters:1-1"
+    # override config groups
+    @classmethod
+    def config_groups(cls):
+        return [
+            ConfigGroup("Bypass Parameters", 1, 1),
+        ]

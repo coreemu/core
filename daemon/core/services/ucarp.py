@@ -8,35 +8,33 @@ UCARP_ETC = "/usr/local/etc/ucarp"
 
 
 class Ucarp(CoreService):
-    _name = "ucarp"
-    _group = "Utility"
-    _depends = ( )
-    _dirs = (UCARP_ETC,)
-    _configs = (
+    name = "ucarp"
+    group = "Utility"
+    dirs = (UCARP_ETC,)
+    configs = (
         UCARP_ETC + "/default.sh", UCARP_ETC + "/default-up.sh", UCARP_ETC + "/default-down.sh", "ucarpboot.sh",)
-    _startindex = 65
-    _startup = ("sh ucarpboot.sh",)
-    _shutdown = ("killall ucarp",)
-    _validate = ("pidof ucarp",)
+    startup = ("sh ucarpboot.sh",)
+    shutdown = ("killall ucarp",)
+    validate = ("pidof ucarp",)
 
     @classmethod
-    def generateconfig(cls, node, filename, services):
+    def generate_config(cls, node, filename):
         """
         Return the default file contents
         """
-        if filename == cls._configs[0]:
-            return cls.generateUcarpConf(node, services)
-        elif filename == cls._configs[1]:
-            return cls.generateVipUp(node, services)
-        elif filename == cls._configs[2]:
-            return cls.generateVipDown(node, services)
-        elif filename == cls._configs[3]:
-            return cls.generateUcarpBoot(node, services)
+        if filename == cls.configs[0]:
+            return cls.generateUcarpConf(node)
+        elif filename == cls.configs[1]:
+            return cls.generateVipUp(node)
+        elif filename == cls.configs[2]:
+            return cls.generateVipDown(node)
+        elif filename == cls.configs[3]:
+            return cls.generateUcarpBoot(node)
         else:
             raise ValueError
 
     @classmethod
-    def generateUcarpConf(cls, node, services):
+    def generateUcarpConf(cls, node):
         """
         Returns configuration file text.
         """
@@ -105,7 +103,7 @@ ${UCARP_EXEC} -B ${UCARP_OPTS}
 """ % (ucarp_bin, UCARP_ETC)
 
     @classmethod
-    def generateUcarpBoot(cls, node, services):
+    def generateUcarpBoot(cls, node):
         """
         Generate a shell script used to boot the Ucarp daemons.
         """
@@ -127,7 +125,7 @@ ${UCARP_CFGDIR}/default.sh
 """ % UCARP_ETC
 
     @classmethod
-    def generateVipUp(cls, node, services):
+    def generateVipUp(cls, node):
         """
         Generate a shell script used to start the virtual ip
         """
@@ -154,7 +152,7 @@ fi
 """
 
     @classmethod
-    def generateVipDown(cls, node, services):
+    def generateVipDown(cls, node):
         """
         Generate a shell script used to stop the virtual ip
         """

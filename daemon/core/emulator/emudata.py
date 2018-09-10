@@ -34,8 +34,8 @@ class NodeOptions(object):
         """
         Convenience method for setting position.
 
-        :param int x: x position
-        :param int y: y position
+        :param float x: x position
+        :param float y: y position
         :return: nothing
         """
         self.x = x
@@ -161,7 +161,7 @@ class IpPrefixes(object):
 
         # random mac
         if not mac:
-            mac = str(MacAddress.random())
+            mac = MacAddress.random()
 
         return InterfaceData(
             _id=inteface_id,

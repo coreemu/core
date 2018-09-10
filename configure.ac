@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.1, core-dev@nrl.navy.mil)
+AC_INIT(core, 5.2, core-dev@nrl.navy.mil)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -66,7 +66,7 @@ AC_PROG_SED
 
 want_python=no
 want_linux_netns=no
-if test "x$enable_daemon" = "xyes"; then	
+if test "x$enable_daemon" = "xyes"; then
   want_python=yes
   want_linux_netns=yes
 
@@ -208,10 +208,8 @@ AC_CONFIG_FILES([Makefile
 		gui/icons/Makefile
 		scripts/Makefile
 		scripts/perf/Makefile
-		doc/Makefile
-		doc/conf.py
-		doc/man/Makefile
-		doc/figures/Makefile
+		man/Makefile
+		docs/Makefile
 		daemon/Makefile
 		daemon/doc/Makefile
 		daemon/doc/conf.py
@@ -228,8 +226,8 @@ ${PACKAGE_STRING} Configuration:
 Build:
   Host System Type:           ${host}
   C Compiler and flags:       ${CC} ${CFLAGS}
-  Prefix:             	      ${prefix}
-  Exec Prefix:		      ${exec_prefix}
+  Prefix:                     ${prefix}
+  Exec Prefix:                ${exec_prefix}
 
 GUI:
   GUI path:                   ${CORE_LIB_DIR}
@@ -241,11 +239,11 @@ Daemon:
   Python modules:             ${pythondir}
   Logs:                       ${CORE_STATE_DIR}/log
 
-Startup:		      ${with_startup}
+Startup:                      ${with_startup}
 
 Features to build:
   Build GUI:                  ${enable_gui}
-  Build Daemon:		      ${enable_daemon}
+  Build Daemon:               ${enable_daemon}
   Documentation:              ${want_docs}
 
 ------------------------------------------------------------------------"

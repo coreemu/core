@@ -1,74 +1,15 @@
 """
 Defines Emane Models used within CORE.
 """
+import os
 
 from core import logger
+from core.conf import ConfigGroup
+from core.conf import Configuration
 from core.emane import emanemanifest
-from core.misc import utils
+from core.enumerations import ConfigDataTypes
 from core.mobility import WirelessModel
-from core.xml import xmlutils
-
-
-def value_to_params(doc, name, value):
-    """
-    Helper to convert a parameter to a paramlist. Returns an XML paramlist, or None if the value does not expand to
-    multiple values.
-
-    :param xml.dom.minidom.Document doc: xml document
-    :param name: name of element for params
-    :param str value: value string to convert to tuple
-    :return: xml document with added params or None, when an invalid value has been provided
-    """
-    try:
-        values = utils.make_tuple_fromstr(value, str)
-    except SyntaxError:
-        logger.exception("error in value string to param list")
-        return None
-
-    if not hasattr(values, "__iter__"):
-        return None
-
-    if len(values) < 2:
-        return None
-
-    return xmlutils.add_param_list_to_parent(doc, parent=None, name=name, values=values)
-
-
-class EmaneModelMetaClass(type):
-    """
-    Hack into making class level properties to streamline emane model creation, until the Configurable class is
-    removed or refactored.
-    """
-
-    @property
-    def config_matrix(cls):
-        """
-        Convenience method for creating the config matrix, allow for a custom override.
-
-        :param EmaneModel cls: emane class
-        :return: config matrix value
-        :rtype: list
-        """
-        if cls.config_matrix_override:
-            return cls.config_matrix_override
-        else:
-            return cls.mac_config + cls.phy_config
-
-    @property
-    def config_groups(cls):
-        """
-        Convenience method for creating the config groups, allow for a custom override.
-
-        :param EmaneModel cls: emane class
-        :return: config groups value
-        :rtype: str
-        """
-        if cls.config_groups_override:
-            return cls.config_groups_override
-        else:
-            mac_len = len(cls.mac_config)
-            config_len = len(cls.config_matrix)
-            return "MAC Parameters:1-%d|PHY Parameters:%d-%d" % (mac_len, mac_len + 1, config_len)
+from core.xml import emanexml
 
 
 class EmaneModel(WirelessModel):
@@ -77,8 +18,6 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
-    __metaclass__ = EmaneModelMetaClass
-
     # default mac configuration settings
     mac_library = None
     mac_xml = None
@@ -95,276 +34,68 @@ class EmaneModel(WirelessModel):
     }
     phy_config = emanemanifest.parse(phy_xml, phy_defaults)
 
+    # support for external configurations
+    external_config = [
+        Configuration("external", ConfigDataTypes.BOOL, default="0"),
+        Configuration("platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"),
+        Configuration("transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002")
+    ]
+
     config_ignore = set()
-    config_groups_override = None
-    config_matrix_override = None
 
-    def __init__(self, session, object_id=None):
-        WirelessModel.__init__(self, session, object_id)
+    @classmethod
+    def configurations(cls):
+        return cls.mac_config + cls.phy_config + cls.external_config
 
-    def build_xml_files(self, emane_manager, interface):
+    @classmethod
+    def config_groups(cls):
+        mac_len = len(cls.mac_config)
+        phy_len = len(cls.phy_config) + mac_len
+        config_len = len(cls.configurations())
+        return [
+            ConfigGroup("MAC Parameters", 1, mac_len),
+            ConfigGroup("PHY Parameters", mac_len + 1, phy_len),
+            ConfigGroup("External Parameters", phy_len + 1, config_len)
+        ]
+
+    def build_xml_files(self, config, interface=None):
         """
-        Builds xml files for emane. Includes a nem.xml file that points to both mac.xml and phy.xml definitions.
+        Builds xml files for this emane model. Creates a nem.xml file that points to both mac.xml and phy.xml
+        definitions.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
+        :param dict config: emane model configuration for the node and interface
         :param interface: interface for the emane node
         :return: nothing
         """
-        # retrieve configuration values
-        values = emane_manager.getifcconfig(self.object_id, self.name, self.getdefaultvalues(), interface)
-        if values is None:
-            return
+        nem_name = emanexml.nem_file_name(self, interface)
+        mac_name = emanexml.mac_file_name(self, interface)
+        phy_name = emanexml.phy_file_name(self, interface)
 
-        # create document and write to disk
-        nem_name = self.nem_name(interface)
-        nem_document = self.create_nem_doc(emane_manager, interface)
-        emane_manager.xmlwrite(nem_document, nem_name)
+        # check if this is external
+        transport_type = "virtual"
+        if interface and interface.transport_type == "raw":
+            transport_type = "raw"
+        transport_name = emanexml.transport_file_name(self.object_id, transport_type)
 
-        # create mac document and write to disk
-        mac_name = self.mac_name(interface)
-        mac_document = self.create_mac_doc(emane_manager, values)
-        emane_manager.xmlwrite(mac_document, mac_name)
+        # create nem xml file
+        nem_file = os.path.join(self.session.session_dir, nem_name)
+        emanexml.create_nem_xml(self, config, nem_file, transport_name, mac_name, phy_name)
 
-        # create phy document and write to disk
-        phy_name = self.phy_name(interface)
-        phy_document = self.create_phy_doc(emane_manager, values)
-        emane_manager.xmlwrite(phy_document, phy_name)
+        # create mac xml file
+        mac_file = os.path.join(self.session.session_dir, mac_name)
+        emanexml.create_mac_xml(self, config, mac_file)
 
-    def create_nem_doc(self, emane_manager, interface):
-        """
-        Create the nem xml document.
+        # create phy xml file
+        phy_file = os.path.join(self.session.session_dir, phy_name)
+        emanexml.create_phy_xml(self, config, phy_file)
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :param interface: interface for the emane node
-        :return: nem document
-        :rtype: xml.dom.minidom.Document
-        """
-        mac_name = self.mac_name(interface)
-        phy_name = self.phy_name(interface)
-
-        nem_document = emane_manager.xmldoc("nem")
-        nem_element = nem_document.getElementsByTagName("nem").pop()
-        nem_element.setAttribute("name", "%s NEM" % self.name)
-        emane_manager.appendtransporttonem(nem_document, nem_element, self.object_id, interface)
-
-        mac_element = nem_document.createElement("mac")
-        mac_element.setAttribute("definition", mac_name)
-        nem_element.appendChild(mac_element)
-
-        phy_element = nem_document.createElement("phy")
-        phy_element.setAttribute("definition", phy_name)
-        nem_element.appendChild(phy_element)
-
-        return nem_document
-
-    def create_mac_doc(self, emane_manager, values):
-        """
-        Create the mac xml document.
-
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :param tuple values: all current configuration values, mac + phy
-        :return: nem document
-        :rtype: xml.dom.minidom.Document
-        """
-        names = list(self.getnames())
-        mac_names = names[:len(self.mac_config)]
-
-        mac_document = emane_manager.xmldoc("mac")
-        mac_element = mac_document.getElementsByTagName("mac").pop()
-        mac_element.setAttribute("name", "%s MAC" % self.name)
-
-        if not self.mac_library:
-            raise ValueError("must define emane model library")
-        mac_element.setAttribute("library", self.mac_library)
-
-        for name in mac_names:
-            # ignore custom configurations
-            if name in self.config_ignore:
-                continue
-
-            # check if value is a multi param
-            value = self.valueof(name, values)
-            param = value_to_params(mac_document, name, value)
-            if not param:
-                param = emane_manager.xmlparam(mac_document, name, value)
-
-            mac_element.appendChild(param)
-
-        return mac_document
-
-    def create_phy_doc(self, emane_manager, values):
-        """
-        Create the phy xml document.
-
-        :param core.emane.emanemanager.EmaneManager emane_manager: core emane manager
-        :param tuple values: all current configuration values, mac + phy
-        :return: nem document
-        :rtype: xml.dom.minidom.Document
-        """
-        names = list(self.getnames())
-        phy_names = names[len(self.mac_config):]
-
-        phy_document = emane_manager.xmldoc("phy")
-        phy_element = phy_document.getElementsByTagName("phy").pop()
-        phy_element.setAttribute("name", "%s PHY" % self.name)
-
-        if self.phy_library:
-            phy_element.setAttribute("library", self.phy_library)
-
-        # append all phy options
-        for name in phy_names:
-            # ignore custom configurations
-            if name in self.config_ignore:
-                continue
-
-            # check if value is a multi param
-            value = self.valueof(name, values)
-            param = value_to_params(phy_document, name, value)
-            if not param:
-                param = emane_manager.xmlparam(phy_document, name, value)
-
-            phy_element.appendChild(param)
-
-        return phy_document
-
-    @classmethod
-    def configure_emane(cls, session, config_data):
-        """
-        Handle configuration messages for configuring an emane model.
-
-        :param core.session.Session session: session to configure emane
-        :param core.conf.ConfigData config_data: configuration data for carrying out a configuration
-        """
-        return cls.configure(session.emane, config_data)
-
-    def post_startup(self, emane_manager):
+    def post_startup(self):
         """
         Logic to execute after the emane manager is finished with startup.
 
-        :param core.emane.emanemanager.EmaneManager emane_manager: emane manager for the session
         :return: nothing
         """
         logger.info("emane model(%s) has no post setup tasks", self.name)
-
-    def build_nem_xml(self, doc, emane_node, interface):
-        """
-        Build the NEM definition that goes into the platform.xml file.
-
-        This returns an XML element that will be added to the <platform/> element.
-
-        This default method supports per-interface config (e.g. <nem definition="n2_0_63emane_rfpipe.xml" id="1">
-        or per-EmaneNode config (e.g. <nem definition="n1emane_rfpipe.xml" id="1">.
-
-        This can be overriden by a model for NEM flexibility; n is the EmaneNode.
-
-            <nem name="NODE-001" definition="rfpipenem.xml">
-
-        :param xml.dom.minidom.Document doc: xml document
-        :param core.emane.nodes.EmaneNode emane_node: emane node to get information from
-        :param interface: interface for the emane node
-        :return: created platform xml
-        """
-        # if this netif contains a non-standard (per-interface) config,
-        #  then we need to use a more specific xml file here
-        nem_name = self.nem_name(interface)
-        nem = doc.createElement("nem")
-        nem.setAttribute("name", interface.localname)
-        nem.setAttribute("definition", nem_name)
-        return nem
-
-    def build_transport_xml(self, doc, emane_node, interface):
-        """
-        Build the transport definition that goes into the platform.xml file.
-        This returns an XML element that will be added to the nem definition.
-        This default method supports raw and virtual transport types, but may be
-        overridden by a model to support the e.g. pluggable virtual transport.
-
-            <transport definition="transvirtual.xml" group="1">
-               <param name="device" value="n1.0.158" />
-            </transport>
-
-        :param xml.dom.minidom.Document doc: xml document
-        :param core.emane.nodes.EmaneNode emane_node: emane node to get information from
-        :param interface: interface for the emane node
-        :return: created transport xml
-        """
-        transport_type = interface.transport_type
-        if not transport_type:
-            logger.info("warning: %s interface type unsupported!", interface.name)
-            transport_type = "raw"
-        transport_name = emane_node.transportxmlname(transport_type)
-
-        transport = doc.createElement("transport")
-        transport.setAttribute("definition", transport_name)
-
-        param = doc.createElement("param")
-        param.setAttribute("name", "device")
-        param.setAttribute("value", interface.name)
-
-        transport.appendChild(param)
-        return transport
-
-    def _basename(self, interface=None):
-        """
-        Create name that is leveraged for configuration file creation.
-
-        :param interface: interface for this model
-        :return: basename used for file creation
-        :rtype: str
-        """
-        name = "n%s" % self.object_id
-        emane_manager = self.session.emane
-
-        if interface:
-            node_id = interface.node.objid
-            if emane_manager.getifcconfig(node_id, self.name, None, interface) is not None:
-                name = interface.localname.replace(".", "_")
-
-        return "%s%s" % (name, self.name)
-
-    def nem_name(self, interface=None):
-        """
-        Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
-
-        :param interface: interface for this model
-        :return: nem xml filename
-        :rtype: str
-        """
-        basename = self._basename(interface)
-        append = ""
-        if interface and interface.transport_type == "raw":
-            append = "_raw"
-        return "%snem%s.xml" % (basename, append)
-
-    def shim_name(self, interface=None):
-        """
-        Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
-
-        :param interface: interface for this model
-        :return: shim xml filename
-        :rtype: str
-        """
-        return "%sshim.xml" % self._basename(interface)
-
-    def mac_name(self, interface=None):
-        """
-        Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
-
-        :param interface: interface for this model
-        :return: mac xml filename
-        :rtype: str
-        """
-        return "%smac.xml" % self._basename(interface)
-
-    def phy_name(self, interface=None):
-        """
-        Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
-
-        :param interface: interface for this model
-        :return: phy xml filename
-        :rtype: str
-        """
-        return "%sphy.xml" % self._basename(interface)
 
     def update(self, moved, moved_netifs):
         """
