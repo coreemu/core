@@ -170,6 +170,12 @@ This option is listed here for developers and advanced users who are comfortable
 
 To build CORE from source on Ubuntu, first install these development packages. These packages are not required for normal binary package installs.
 
+#### Ubuntu 18.04 pre-reqs
+
+```shell
+sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-sphinx python-setuptools python-lxml python-enum34 tk libtk-img
+```
+
 #### Ubuntu 16.04 Requirements
 
 ```shell
