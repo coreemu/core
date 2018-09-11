@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXColorPicker?>
+<?import com.jfoenix.controls.JFXComboBox?>
+<?import com.jfoenix.controls.JFXToggleButton?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.RowConstraints?>
+
+<fx:root type="GridPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+  <columnConstraints>
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+    <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+      <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" prefWidth="100.0" />
+  </columnConstraints>
+  <rowConstraints>
+    <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+  </rowConstraints>
+   <children>
+      <JFXComboBox fx:id="shapeCombo" maxWidth="1.7976931348623157E308" />
+      <JFXComboBox fx:id="layerCombo" maxWidth="1.7976931348623157E308" GridPane.columnIndex="3" />
+      <JFXColorPicker fx:id="colorPicker" maxWidth="1.7976931348623157E308" GridPane.columnIndex="2" />
+      <JFXToggleButton fx:id="fillToggle" maxWidth="1.7976931348623157E308" text="Fill?" GridPane.columnIndex="1" />
+   </children>
+</fx:root>

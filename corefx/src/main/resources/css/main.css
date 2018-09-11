@@ -1,0 +1,114 @@
+.root {
+    -fx-font-family: "Roboto";
+    -fx-font-smoothing-type: gray;
+}
+
+#run-button:start {
+    -fx-background-color: green;
+}
+
+#run-button:stop {
+    -fx-background-color: red;
+}
+
+.details-label {
+    -fx-background-color: olivedrab;
+    -fx-pref-width: Infinity;
+    -fx-text-fill: white;
+    -fx-alignment: center;
+    -fx-padding: 10;
+    -fx-background-radius: 5;
+}
+
+.details-title {
+    -fx-pref-width: Infinity;
+    -fx-alignment: center;
+    -fx-padding: 10;
+    -fx-font-size: 17;
+}
+
+.code {
+    -fx-text-fill: lime;
+    -fx-font-family: monospaced;
+    -jfx-focus-color: lime;
+}
+
+.code .content {
+    -fx-background-color: black;
+}
+
+.selected {
+    -fx-base: yellow;
+}
+
+.toolbar-button {
+    -fx-background-color: olivedrab;
+    -fx-text-fill: white;
+    -jfx-button-type: RAISED;
+    -fx-font-size: 0.75em;
+    -fx-content-display: top;
+    -fx-pref-width: Infinity;
+    -fx-pref-height: 75px;
+}
+
+.toolbar-button .jfx-svg-glyph {
+    -fx-background-color: white;
+}
+
+.toolbar-button:selected .jfx-svg-glyph {
+    -fx-background-color: olivedrab;
+}
+
+.toolbar-button:selected {
+    -fx-background-color: white;
+    -fx-text-fill: black;
+}
+
+.core-button {
+    -fx-background-color: olivedrab;
+    -fx-text-fill: white;
+    -fx-pref-width: 100px;
+    -jfx-button-type: RAISED;
+}
+
+.jfx-tab-pane .tab-selected-line {
+    -fx-background-color: white;
+}
+
+.jfx-tab-pane .tab-header-background {
+    -fx-background-color: olivedrab;
+}
+
+.jfx-snackbar-content {
+    -fx-background-color: black;
+}
+
+.jfx-snackbar-content:toast-info {
+    -fx-background-color: steelblue;
+}
+
+.jfx-snackbar-content:toast-success {
+    -fx-background-color: green;
+}
+
+.jfx-snackbar-content:toast-warning {
+    -fx-background-color: yellow;
+}
+
+.jfx-snackbar-content:toast-error {
+    -fx-background-color: red;
+}
+
+.jfx-snackbar-content:toast-warning .jfx-snackbar-toast {
+    -fx-text-fill: black;
+}
+
+.jfx-snackbar-toast {
+    -fx-text-fill: white;
+}
+
+.jfx-snackbar-content:toast-error .jfx-snackbar-action {
+    -fx-text-fill: red;
+    -fx-background-color: white;
+    -fx-font-weight: bold;
+}

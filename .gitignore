@@ -43,3 +43,6 @@ coverage.xml
 
 # ignore swap files
 *.swp
+
+# java files
+target

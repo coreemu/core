@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.embed.swing.SwingNode?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+
+<StackPane fx:id="stackPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.core.Controller">
+   <children>
+      <BorderPane fx:id="borderPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
+          <top>
+              <MenuBar BorderPane.alignment="CENTER">
+                  <menus>
+                      <Menu mnemonicParsing="false" text="File">
+                          <items>
+                              <MenuItem mnemonicParsing="false" onAction="#onOpenXmlAction" text="Open XML" />
+                        <MenuItem mnemonicParsing="false" onAction="#onSaveXmlAction" text="Save XML" />
+                          </items>
+                      </Menu>
+                  <Menu mnemonicParsing="false" text="Session">
+                    <items>
+                      <MenuItem mnemonicParsing="false" onAction="#onJoinSessionMenu" text="Join" />
+                        <MenuItem mnemonicParsing="false" onAction="#onSessionHooksMenu" text="Hooks" />
+                        <MenuItem mnemonicParsing="false" onAction="#onSessionOptionsMenu" text="Options" />
+                    </items>
+                  </Menu>
+                      <Menu mnemonicParsing="false" text="Help">
+                          <items>
+                        <MenuItem mnemonicParsing="false" onAction="#onHelpMenuWebsite" text="CORE Website" />
+                              <MenuItem mnemonicParsing="false" onAction="#onHelpMenuDocumentation" text="CORE Documentation" />
+                        <MenuItem mnemonicParsing="false" onAction="#onHelpMenuMailingList" text="CORE Mailing List" />
+                          </items>
+                      </Menu>
+                  </menus>
+              </MenuBar>
+          </top>
+          <center>
+            <AnchorPane>
+               <children>
+                    <SwingNode fx:id="swingNode" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" BorderPane.alignment="CENTER" />
+               </children>
+            </AnchorPane>
+          </center>
+      </BorderPane>
+   </children>
+</StackPane>
