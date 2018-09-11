@@ -22,7 +22,6 @@ public class Main extends Application {
         // load svg icons
         SVGGlyphLoader.loadGlyphsFont(getClass().getResourceAsStream("/icons/icomoon_material.svg"),
                 "icomoon.svg");
-        logger.info("icons: {}", SVGGlyphLoader.getAllGlyphsIDs());
 
         // load font
         Font.loadFont(getClass().getResourceAsStream("/font/roboto/Roboto-Regular.ttf"), 10);

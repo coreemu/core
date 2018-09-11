@@ -8,6 +8,7 @@ import com.core.rest.CoreApi;
 import com.core.rest.GetConfig;
 import com.core.rest.SetConfig;
 import com.core.ui.*;
+import com.core.utils.ConfigUtils;
 import com.core.websocket.CoreWebSocket;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -73,7 +74,7 @@ public class Controller implements Initializable {
 
     public Controller() {
         // load configuration
-        Properties properties = getConfiguration();
+        Properties properties = ConfigUtils.load();
         String coreUrl = properties.getProperty("core-rest");
         logger.info("core rest: {}", coreUrl);
 
@@ -194,17 +195,6 @@ public class Controller implements Initializable {
             });
         } catch (IOException ex) {
             logger.error("error getting session config");
-        }
-    }
-
-    private Properties getConfiguration() {
-        try {
-            Properties properties = new Properties();
-            properties.load(getClass().getResourceAsStream("/config.properties"));
-            return properties;
-        } catch (IOException ex) {
-            logger.error("error reading config file");
-            throw new RuntimeException("configuration file did not exist");
         }
     }
 
