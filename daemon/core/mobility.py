@@ -909,7 +909,7 @@ class Ns2ScriptedMobility(WayPointMobility):
     name = "ns2script"
     options = [
         Configuration(_id="file", _type=ConfigDataTypes.STRING, label="mobility script file"),
-        Configuration(_id="refresh_ms", _type=ConfigDataTypes.UINT32, default="50", label="mobility script file"),
+        Configuration(_id="refresh_ms", _type=ConfigDataTypes.UINT32, default="50", label="refresh time (ms)"),
         Configuration(_id="loop", _type=ConfigDataTypes.BOOL, default="1", options=["On", "Off"], label="loop"),
         Configuration(_id="autostart", _type=ConfigDataTypes.STRING, label="auto-start seconds (0.0 for runtime)"),
         Configuration(_id="map", _type=ConfigDataTypes.STRING, label="node mapping (optional, e.g. 0:1,1:2,2:3)"),
