@@ -8,13 +8,13 @@ import java.util.Map;
 
 @Data
 public class NodeType {
-    private static final Map<String, NodeType> LOOKUP = new HashMap<>();
-    private static final Map<Integer, String> DISPLAY_MAP = new HashMap<>();
     public static final int DEFAULT = 0;
     public static final int SWITCH = 4;
     public static final int HUB = 5;
     public static final int WLAN = 6;
     public static final int EMANE = 10;
+    private static final Map<String, NodeType> LOOKUP = new HashMap<>();
+    private static final Map<Integer, String> DISPLAY_MAP = new HashMap<>();
     private final int value;
     private final String display;
     private final String model;

@@ -17,6 +17,9 @@ public class CoreLink {
     @JsonIgnore
     private boolean loaded = true;
 
+    @JsonIgnore
+    private boolean visible = true;
+
     private Integer type = 1;
 
     @JsonProperty("node_one")

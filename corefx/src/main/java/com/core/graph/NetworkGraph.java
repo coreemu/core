@@ -13,6 +13,7 @@ import edu.uci.ics.jung.graph.ObservableGraph;
 import edu.uci.ics.jung.graph.event.GraphEvent;
 import edu.uci.ics.jung.graph.event.GraphEventListener;
 import edu.uci.ics.jung.graph.util.Pair;
+import edu.uci.ics.jung.visualization.LayeredIcon;
 import edu.uci.ics.jung.visualization.RenderContext;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.annotations.AnnotationControls;
@@ -67,24 +68,33 @@ public class NetworkGraph {
         graphViewer.setBackground(Color.WHITE);
         graphViewer.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.S);
 
-        // establish render properties for vertexes/edges
         RenderContext<CoreNode, CoreLink> renderContext = graphViewer.getRenderContext();
+
+        // vertext render properties
         renderContext.setVertexLabelTransformer(CoreNode::getName);
         renderContext.setVertexShapeTransformer(node -> {
             double offset = -(IconUtils.ICON_SIZE / 2);
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
         });
+        renderContext.setVertexIconTransformer(vertex -> {
+            LayeredIcon layeredIcon = IconUtils.getIcon(vertex.getIcon());
+            if (hasWirelessLink(vertex)) {
+                RadioIcon radioIcon = new RadioIcon();
+                layeredIcon.add(radioIcon);
+            }
+            return layeredIcon;
+        });
+
+        // edge render properties
         renderContext.setEdgeStrokeTransformer(edge -> new BasicStroke(1));
         renderContext.setEdgeShapeTransformer(edge -> new Rectangle2D.Float(0, 0, 1, 10));
         renderContext.setEdgeFillPaintTransformer(edge -> Color.BLACK);
+        renderContext.setEdgeIncludePredicate(predicate -> predicate.element.isVisible());
 
         graphViewer.setVertexToolTipTransformer(renderContext.getVertexLabelTransformer());
         graphMouse = new CoreEditingModalGraphMouse<>(controller, this, renderContext,
                 vertexFactory, linkFactory);
         graphViewer.setGraphMouse(graphMouse);
-
-        // icons
-        renderContext.setVertexIconTransformer(vertex -> IconUtils.getIcon(vertex.getIcon()));
 
         // mouse events
         graphViewer.addGraphMouseListener(new GraphMouseListener<CoreNode>() {
@@ -207,6 +217,9 @@ public class NetworkGraph {
                 link.setInterfaceTwo(interfaceTwo);
             }
 
+            boolean isVisible = !isWirelessLink(nodeOne, nodeTwo);
+            link.setVisible(isVisible);
+
             logger.info("adding user created edge: {}", link);
         }
     }
@@ -270,6 +283,25 @@ public class NetworkGraph {
         graphViewer.repaint();
     }
 
+    private boolean isWirelessNode(CoreNode node) {
+        return node.getType() == NodeType.EMANE || node.getType() == NodeType.WLAN;
+    }
+
+    private boolean isWirelessLink(CoreNode nodeOne, CoreNode nodeTwo) {
+        boolean result = isWirelessNode(nodeOne);
+        return result || isWirelessNode(nodeTwo);
+    }
+
+    private boolean hasWirelessLink(CoreNode node) {
+        for (CoreNode neighbor : graph.getNeighbors(node)) {
+            if (isWirelessNode(neighbor)) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     public void addLink(CoreLink link) {
         link.setId(linkId++);
 
@@ -284,6 +316,9 @@ public class NetworkGraph {
         if (interfaceTwo != null) {
             nodeTwo.addInterface(interfaceTwo);
         }
+
+        boolean isVisible = !isWirelessLink(nodeOne, nodeTwo);
+        link.setVisible(isVisible);
 
         graph.addEdge(link, nodeOne, nodeTwo);
     }

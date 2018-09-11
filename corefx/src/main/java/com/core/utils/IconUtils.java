@@ -14,13 +14,13 @@ import java.util.Map;
 public final class IconUtils {
     private static final Logger logger = LogManager.getLogger();
     public static final int ICON_SIZE = 75;
-    private static final Map<String, Icon> ICON_MAP = new HashMap<>();
+    private static final Map<String, LayeredIcon> ICON_MAP = new HashMap<>();
 
     private IconUtils() {
 
     }
 
-    public static Icon getIcon(String iconPath) {
+    public static LayeredIcon getIcon(String iconPath) {
         return ICON_MAP.computeIfAbsent(iconPath, key -> {
             ImageIcon imageIcon = new ImageIcon(IconUtils.class.getResource(iconPath));
             Image image = imageIcon.getImage().getScaledInstance(ICON_SIZE, ICON_SIZE, Image.SCALE_DEFAULT);
