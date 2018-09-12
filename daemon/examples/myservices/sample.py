@@ -22,7 +22,7 @@ class MyService(CoreService):
     dirs = ()
     # Files that this service will generate, without a full path this file goes in the node's directory.
     # e.g. /tmp/pycore.12345/n1.conf/myfile
-    configs = ("sh myservice1.sh", "sh myservice2.sh")
+    configs = ("myservice1.sh", "myservice2.sh")
     # Commands used to start this service, any non-zero exit code will cause a failure.
     startup = ("sh %s" % configs[0], "sh %s" % configs[1])
     # Commands used to validate that a service was started, any non-zero exit code will cause a failure.
