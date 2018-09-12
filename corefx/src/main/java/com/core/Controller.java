@@ -71,6 +71,7 @@ public class Controller implements Initializable {
     private NodeWlanDialog nodeWlanDialog = new NodeWlanDialog(this);
     private ConfigDialog configDialog = new ConfigDialog(this);
     private HooksDialog hooksDialog = new HooksDialog(this);
+    private MobilityDialog mobilityDialog = new MobilityDialog(this);
 
     public Controller() {
         // load configuration
@@ -108,6 +109,7 @@ public class Controller implements Initializable {
         nodeWlanDialog.setOwner(window);
         nodeEmaneDialog.setOwner(window);
         configDialog.setOwner(window);
+        mobilityDialog.setOwner(window);
     }
 
     @FXML

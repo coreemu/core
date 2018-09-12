@@ -2,6 +2,7 @@ package com.core.websocket;
 
 import com.core.Controller;
 import com.core.data.CoreEvent;
+import com.core.data.CoreNode;
 import com.core.data.SessionState;
 import com.core.utils.JsonUtils;
 import io.socket.client.IO;
@@ -25,6 +26,17 @@ public class CoreWebSocket {
         socket = IO.socket(this.url);
         socket.on(Socket.EVENT_CONNECT, args -> {
             logger.info("connected to web socket");
+        });
+        socket.on("node", args -> {
+            for (Object arg : args) {
+                try {
+                    CoreNode node = JsonUtils.read(arg.toString(), CoreNode.class);
+                    logger.info("core node update: {}", node);
+                    controller.getNetworkGraph().setNodeLocation(node);
+                } catch (IOException ex) {
+                    logger.error("error getting core node", ex);
+                }
+            }
         });
         socket.on("event", args -> {
             for (Object arg : args) {

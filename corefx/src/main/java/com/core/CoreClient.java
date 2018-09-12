@@ -39,9 +39,10 @@ public class CoreClient {
         logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
         for (CoreNode node : session.getNodes()) {
             if (node.getModel() == null) {
+                logger.info("skipping joined session node: {}", node.getName());
                 continue;
             }
-
+            
             NodeType nodeType = NodeType.getNodeType(node.getNodeTypeKey());
             node.setIcon(nodeType.getIcon());
             networkGraph.addNode(node);
@@ -219,5 +220,17 @@ public class CoreClient {
 
     public String getTerminalCommand(CoreNode node) throws IOException {
         return coreApi.getTerminalCommand(sessionId, node);
+    }
+
+    public boolean setMobilityConfig(CoreNode node, MobilityConfig config) throws IOException {
+        return coreApi.setMobilityConfig(sessionId, node, config);
+    }
+
+    public MobilityConfig getMobilityConfig(CoreNode node) throws IOException {
+        return coreApi.getMobilityConfig(sessionId, node);
+    }
+
+    public boolean mobilityAction(CoreNode node, String action) throws IOException {
+        return coreApi.mobilityAction(sessionId, node, action);
     }
 }

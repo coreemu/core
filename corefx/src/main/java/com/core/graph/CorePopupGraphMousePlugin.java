@@ -82,6 +82,8 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
             case NodeType.WLAN:
                 menuItems.add(createMenuItem("WLAN Settings",
                         event -> controller.getNodeWlanDialog().showDialog(node)));
+                menuItems.add(createMenuItem("Mobility",
+                        event -> controller.getMobilityDialog().showDialog(node)));
                 menuItems.add(createMenuItem("Link MDRs",
                         event -> networkGraph.linkMdrs(node)));
                 break;

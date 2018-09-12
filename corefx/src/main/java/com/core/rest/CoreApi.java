@@ -170,6 +170,22 @@ public class CoreApi {
         return WebUtils.putJson(url, jsonData);
     }
 
+    public boolean setMobilityConfig(Integer session, CoreNode node, MobilityConfig config) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/mobility", session, node.getId()));
+        String data = JsonUtils.toString(config);
+        return WebUtils.postJson(url, data);
+    }
+
+    public MobilityConfig getMobilityConfig(Integer session, CoreNode node) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/mobility", session, node.getId()));
+        return WebUtils.getJson(url, MobilityConfig.class);
+    }
+
+    public boolean mobilityAction(Integer session, CoreNode node, String action) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/mobility/%s", session, node.getId(), action));
+        return WebUtils.putJson(url, null);
+    }
+
     public String getTerminalCommand(Integer session, CoreNode node) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/terminal", session, node.getId()));
         return WebUtils.getJson(url, String.class);

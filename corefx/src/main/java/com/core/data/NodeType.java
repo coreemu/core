@@ -1,6 +1,8 @@
 package com.core.data;
 
 import lombok.Data;
+import org.apache.logging.log4j.LogManager;
+import org.apache.logging.log4j.Logger;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -8,6 +10,7 @@ import java.util.Map;
 
 @Data
 public class NodeType {
+    private static final Logger logger = LogManager.getLogger();
     public static final int DEFAULT = 0;
     public static final int SWITCH = 4;
     public static final int HUB = 5;
@@ -36,7 +39,7 @@ public class NodeType {
         addNodeType(new NodeType(DEFAULT, "mdr", "MDR", "/icons/router-100.png"));
         addNodeType(new NodeType(SWITCH, "Switch", "/icons/switch-100.png"));
         addNodeType(new NodeType(HUB, "Hub", "/icons/hub-100.png"));
-        addNodeType(new NodeType(WLAN, "WLAN", "/icons/wlan-100.png"));
+        addNodeType(new NodeType(WLAN, "wlan", "WLAN", "/icons/wlan-100.png"));
         addNodeType(new NodeType(EMANE, "EMANE", "/icons/emane-100.png"));
 
         DISPLAY_MAP.put(HUB, "Hub");

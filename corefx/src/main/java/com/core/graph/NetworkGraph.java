@@ -271,6 +271,19 @@ public class NetworkGraph {
         nodeMap.put(node.getId(), node);
     }
 
+    public void setNodeLocation(CoreNode nodeData) {
+        // update actual graph node
+        CoreNode node = nodeMap.get(nodeData.getId());
+        node.getPosition().setX(nodeData.getPosition().getX());
+        node.getPosition().setY(nodeData.getPosition().getY());
+
+        // set graph node location
+        Double x = Math.abs(node.getPosition().getX());
+        Double y = Math.abs(node.getPosition().getY());
+        graphLayout.setLocation(node, x, y);
+        graphViewer.repaint();
+    }
+
     public void removeNode(CoreNode node) {
         try {
             controller.getCoreClient().deleteNode(node);

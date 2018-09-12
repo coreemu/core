@@ -11,6 +11,7 @@ from flask import send_file
 from flask_socketio import SocketIO
 from flask_socketio import emit
 
+import mobility_routes
 from core import logger
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import InterfaceData
@@ -25,12 +26,14 @@ from core.mobility import BasicRangeModel
 from core.service import ServiceManager
 
 CORE_LOCK = Lock()
+coreemu = CoreEmu()
 
 app = Flask(__name__)
-app.config["SECRET_KEY"] = "core"
 socketio = SocketIO(app)
+app.config["SECRET_KEY"] = "core"
 
-coreemu = CoreEmu()
+mobility_routes.coreemu = coreemu
+app.register_blueprint(mobility_routes.mobility_api, url_prefix="/sessions/<int:session_id>")
 
 
 def synchronized(function):
@@ -120,19 +123,22 @@ def broadcast_event(event):
     })
 
 
+def broadcast_node(node):
+    socketio.emit("node", {
+        "id": node.id,
+        "name": node.name,
+        "model": node.model,
+        "position": {
+            "x": node.x_position,
+            "y": node.y_position,
+        },
+        "services": node.services.split("|"),
+    })
+
+
 @socketio.on("connect")
 def websocket_connect():
     emit("info", {"message": "You are connected!"})
-    socketio.emit("node", {
-        "id": 1,
-        "x": 100,
-        "y": 101
-    })
-    socketio.emit("node", {
-        "id": 1,
-        "x": 100,
-        "y": 150
-    })
 
 
 @socketio.on("disconnect")
@@ -142,7 +148,7 @@ def websocket_disconnect():
 
 @app.route("/")
 def home():
-    return render_template('index.html')
+    return render_template("index.html")
 
 
 @app.route("/ips", methods=["POST"])
@@ -233,6 +239,7 @@ def create_session():
 
     # add handlers
     session.event_handlers.append(broadcast_event)
+    session.node_handlers.append(broadcast_node)
 
     response_data = jsonify(
         id=session.session_id,
