@@ -445,9 +445,13 @@ class CoreServices(object):
         :param list[CoreService] boot_path: service to start in dependent order
         :return: nothing
         """
-        logger.info("booting node services: %s", boot_path)
+        logger.info("booting node services: %s", " -> ".join([x.name for x in boot_path]))
         for service in boot_path:
-            self.boot_service(node, service)
+            try:
+                self.boot_service(node, service)
+            except:
+                logger.exception("exception booting service: %s", service.name)
+                raise
 
     def boot_service(self, node, service):
         """
