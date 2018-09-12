@@ -2,7 +2,7 @@ package com.core.ui;
 
 import com.core.Controller;
 import com.core.data.CoreNode;
-import com.core.rest.GetServices;
+import com.core.client.rest.GetServices;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXScrollPane;

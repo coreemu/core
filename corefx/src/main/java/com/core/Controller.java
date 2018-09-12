@@ -1,12 +1,10 @@
 package com.core;
 
+import com.core.client.ICoreClient;
+import com.core.client.rest.*;
 import com.core.data.CoreLink;
 import com.core.data.CoreNode;
 import com.core.graph.NetworkGraph;
-import com.core.rest.ConfigOption;
-import com.core.rest.CoreApi;
-import com.core.rest.GetConfig;
-import com.core.rest.SetConfig;
 import com.core.ui.*;
 import com.core.utils.ConfigUtils;
 import com.core.websocket.CoreWebSocket;
@@ -53,8 +51,7 @@ public class Controller implements Initializable {
 
     // core client utilities
     private CoreWebSocket coreWebSocket;
-    private CoreApi coreApi;
-    private CoreClient coreClient;
+    private ICoreClient coreClient;
 
     // ui elements
     private NetworkGraph networkGraph = new NetworkGraph(this);
@@ -87,8 +84,7 @@ public class Controller implements Initializable {
             logger.error("error starting web socket", ex);
         }
 
-        coreApi = new CoreApi(coreUrl);
-        coreClient = new CoreClient(this);
+        coreClient = new CoreRestClient(this, coreUrl);
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() -> {
             try {

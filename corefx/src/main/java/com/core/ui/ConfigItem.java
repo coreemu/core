@@ -1,7 +1,7 @@
 package com.core.ui;
 
 import com.core.data.ConfigDataType;
-import com.core.rest.ConfigOption;
+import com.core.client.rest.ConfigOption;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXToggleButton;

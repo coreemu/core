@@ -1,4 +1,4 @@
-package com.core.rest;
+package com.core.client.rest;
 
 import com.core.data.CoreNode;
 import com.core.data.CoreLink;

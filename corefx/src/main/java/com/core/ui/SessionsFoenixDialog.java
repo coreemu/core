@@ -1,9 +1,9 @@
 package com.core.ui;
 
 import com.core.Controller;
+import com.core.client.rest.GetSessions;
+import com.core.client.rest.GetSessionsData;
 import com.core.data.SessionState;
-import com.core.rest.GetSessions;
-import com.core.rest.GetSessionsData;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
@@ -67,7 +67,7 @@ public class SessionsFoenixDialog extends CoreFoenixDialog {
 
     public void showDialog() throws IOException {
         sessionsTable.getItems().clear();
-        GetSessions getSessions = getCoreClient().getCoreApi().getSessions();
+        GetSessions getSessions = getCoreClient().getSessions();
         sessionsTable.getItems().addAll(getSessions.getSessions().stream()
                 .map(SessionRow::new)
                 .collect(Collectors.toList()));

@@ -133,10 +133,13 @@ public class NetworkGraph {
 
             @Override
             public void graphReleased(CoreNode node, MouseEvent mouseEvent) {
+                logger.info("graph released mouse event: {}", mouseEvent);
                 if (SwingUtilities.isLeftMouseButton(mouseEvent)) {
-                    logger.debug("moved node({}): {}", node.getName(), mouseEvent.getPoint());
-                    node.getPosition().setX(mouseEvent.getPoint().getX());
-                    node.getPosition().setY(mouseEvent.getPoint().getY());
+                    double x = graphLayout.getX(node);
+                    double y = graphLayout.getY(node);
+                    logger.debug("graph moved node({}): {},{}", node.getName(), x, y);
+                    node.getPosition().setX(x);
+                    node.getPosition().setY(y);
                 }
             }
         });

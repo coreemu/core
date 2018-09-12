@@ -1,4 +1,4 @@
-package com.core.rest;
+package com.core.client.rest;
 
 import lombok.Data;
 

@@ -3,7 +3,7 @@ package com.core.ui;
 import com.core.Controller;
 import com.core.data.CoreNode;
 import com.core.data.CoreService;
-import com.core.rest.ServiceFile;
+import com.core.client.rest.ServiceFile;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextArea;
@@ -64,12 +64,13 @@ public class ServiceDialog extends StageDialog {
             coreService.setValidate(textToList(validateTextArea.getText()));
             coreService.setShutdown(textToList(shutdownTextArea.getText()));
 
+            // service file data
+            String fileName = filesComboBox.getSelectionModel().getSelectedItem();
+            String data = fileTextArea.getText();
+            ServiceFile serviceFile = new ServiceFile(fileName, data);
+
             try {
                 getCoreClient().setService(coreNode, serviceName, coreService);
-
-                String fileName = filesComboBox.getSelectionModel().getSelectedItem();
-                String data = fileTextArea.getText();
-                ServiceFile serviceFile = new ServiceFile(fileName, data);
                 getCoreClient().setServiceFile(coreNode, serviceName, serviceFile);
             } catch (IOException ex) {
                 logger.error("error setting node service", ex);

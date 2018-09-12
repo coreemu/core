@@ -2,9 +2,9 @@ package com.core.ui;
 
 import com.core.Controller;
 import com.core.data.CoreNode;
-import com.core.rest.ConfigGroup;
-import com.core.rest.ConfigOption;
-import com.core.rest.GetConfig;
+import com.core.client.rest.ConfigGroup;
+import com.core.client.rest.ConfigOption;
+import com.core.client.rest.GetConfig;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXScrollPane;
 import com.jfoenix.controls.JFXTabPane;

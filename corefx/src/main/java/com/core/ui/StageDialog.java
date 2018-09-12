@@ -1,7 +1,7 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.CoreClient;
+import com.core.client.ICoreClient;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXDecorator;
 import javafx.fxml.FXMLLoader;
@@ -88,7 +88,7 @@ public class StageDialog {
         stage.close();
     }
 
-    public CoreClient getCoreClient() {
+    public ICoreClient getCoreClient() {
         return controller.getCoreClient();
     }
 

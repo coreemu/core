@@ -46,7 +46,7 @@ public class CoreWebSocket {
                     SessionState state = SessionState.get(event.getEventType().getValue());
                     if (state != null) {
                         logger.info("event updating session state: {}", state);
-                        controller.getCoreClient().setSessionState(state);
+                        controller.getCoreClient().setState(state);
                     }
                 } catch (IOException ex) {
                     logger.error("error getting core event", ex);

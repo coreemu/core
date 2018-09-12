@@ -1,7 +1,7 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.CoreClient;
+import com.core.client.ICoreClient;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXDialog;
 import com.jfoenix.controls.JFXDialogLayout;
@@ -40,13 +40,13 @@ public class CoreFoenixDialog extends JFXDialog {
         dialogLayout.setHeading(heading);
         dialog = new JFXDialog(controller.getStackPane(), dialogLayout, DialogTransition.CENTER);
         dialogLayout.setPrefWidth(800);
-        dialogLayout.setPrefHeight(600);;
+        dialogLayout.setPrefHeight(600);
     }
 
     public void setOwner(Stage window) {
     }
 
-    public CoreClient getCoreClient() {
+    public ICoreClient getCoreClient() {
         return controller.getCoreClient();
     }
 

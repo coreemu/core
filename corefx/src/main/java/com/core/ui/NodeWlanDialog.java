@@ -2,7 +2,7 @@ package com.core.ui;
 
 import com.core.Controller;
 import com.core.data.CoreNode;
-import com.core.rest.WlanConfig;
+import com.core.client.rest.WlanConfig;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import javafx.fxml.FXML;
