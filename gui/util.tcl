@@ -1094,7 +1094,7 @@ proc get_text_editor { want_default } {
 # - if want_default is specified, first return COLORTERM or TERM environment
 #   variable, then find the first in the list of terminals that exists on the
 #   system
-set TERMS "{gnome-terminal -x} {lxterminal -e} {konsole -e} {xterm -e}"
+set TERMS "{gnome-terminal --window --} {lxterminal -e} {konsole -e} {xterm -e}"
 set TERMS "$TERMS {aterm -e} {eterm -e} {rxvt -e} {xfce4-terminal -x}"
 
 proc get_term_prog { want_default } {
