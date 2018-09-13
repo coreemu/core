@@ -176,6 +176,11 @@ public class CoreRestClient implements ICoreClient {
         return result;
     }
 
+    private boolean uploadFile(File file) throws IOException {
+        String url = getUrl("upload");
+        return WebUtils.postFile(url, file);
+    }
+
     @Override
     public CoreService getService(CoreNode node, String serviceName) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s", sessionId, node.getId(), serviceName));
@@ -266,7 +271,7 @@ public class CoreRestClient implements ICoreClient {
     @Override
     public void openSession(File file) throws IOException {
         String url = getUrl("sessions/xml");
-        CreatedSession createdSession = WebUtils.putFile(url, file, CreatedSession.class);
+        CreatedSession createdSession = WebUtils.postFile(url, file, CreatedSession.class);
         joinSession(createdSession.getId(), true);
     }
 
@@ -336,7 +341,13 @@ public class CoreRestClient implements ICoreClient {
 
     @Override
     public boolean setMobilityConfig(CoreNode node, MobilityConfig config) throws IOException {
+        boolean uploaded = uploadFile(config.getScriptFile());
+        if (!uploaded) {
+            throw new IOException("failed to upload mobility script");
+        }
+
         String url = getUrl(String.format("sessions/%s/nodes/%s/mobility", sessionId, node.getId()));
+        config.setFile(config.getScriptFile().getName());
         String data = JsonUtils.toString(config);
         return WebUtils.postJson(url, data);
     }

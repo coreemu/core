@@ -59,6 +59,7 @@ public class MobilityDialog extends StageDialog {
         saveButton.setOnAction(event -> {
             MobilityConfig mobilityConfig = new MobilityConfig();
             mobilityConfig.setFile(fileTextField.getText());
+            mobilityConfig.setScriptFile(new File(mobilityConfig.getFile()));
             mobilityConfig.setAutostart(autoStartTextField.getText());
             String loop = loopToggleButton.isSelected() ? "1" : "";
             mobilityConfig.setLoop(loop);

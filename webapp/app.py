@@ -1,8 +1,11 @@
+import os
+
 from bottle import HTTPError
 from flask import Flask
 from flask import jsonify
 from flask import request
 
+import core_utils
 import emane_routes
 import hook_routes
 import link_routes
@@ -63,6 +66,16 @@ def get_ips():
         ip6=str(ip6_prefixes.addr(node_id)),
         ip6mask=ip6_prefixes.prefixlen
     )
+
+
+@app.route("/upload", methods=["POST"])
+def upload():
+    if not os.path.exists(core_utils.save_dir):
+        os.mkdir(core_utils.save_dir, 755)
+    upload_file = request.files["file"]
+    save_path = os.path.join(core_utils.save_dir, upload_file.filename)
+    upload_file.save(save_path)
+    return jsonify()
 
 
 @app.errorhandler(HTTPError)

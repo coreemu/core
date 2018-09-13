@@ -51,11 +51,28 @@ public final class WebUtils {
         }
     }
 
-    public static <T> T putFile(String url, File file, Class<T> clazz) throws IOException {
+    public static boolean postFile(String url, File file) throws IOException {
         MediaType mediaType = MediaType.parse("File/*");
         RequestBody requestBody = new MultipartBody.Builder()
                 .setType(MultipartBody.FORM)
-                .addFormDataPart("session", file.getName(), RequestBody.create(mediaType, file))
+                .addFormDataPart("file", file.getName(), RequestBody.create(mediaType, file))
+                .build();
+
+        Request request = new Request.Builder()
+                .url(url)
+                .post(requestBody)
+                .build();
+
+        try (Response response = client.newCall(request).execute()) {
+            return response.isSuccessful();
+        }
+    }
+
+    public static <T> T postFile(String url, File file, Class<T> clazz) throws IOException {
+        MediaType mediaType = MediaType.parse("File/*");
+        RequestBody requestBody = new MultipartBody.Builder()
+                .setType(MultipartBody.FORM)
+                .addFormDataPart("file", file.getName(), RequestBody.create(mediaType, file))
                 .build();
 
         Request request = new Request.Builder()

@@ -35,7 +35,7 @@ def open_xml():
 
     logger.info("open xml: %s", request.files)
     _, temp_path = tempfile.mkstemp()
-    session_file = request.files['session']
+    session_file = request.files["file"]
     session_file.save(temp_path)
 
     try:
