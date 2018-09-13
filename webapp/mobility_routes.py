@@ -4,12 +4,12 @@ from flask import request
 
 from core.mobility import Ns2ScriptedMobility
 
-mobility_api = Blueprint("mobility_api", __name__)
+api = Blueprint("mobility_api", __name__)
 
 coreemu = None
 
 
-@mobility_api.route("/nodes/<node_id>/mobility", methods=["POST"])
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/mobility", methods=["POST"])
 def set_mobility_config(session_id, node_id):
     session = coreemu.sessions.get(session_id)
     if not session:
@@ -25,7 +25,7 @@ def set_mobility_config(session_id, node_id):
     return jsonify()
 
 
-@mobility_api.route("/nodes/<node_id>/mobility")
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/mobility")
 def get_mobility_config(session_id, node_id):
     session = coreemu.sessions.get(session_id)
     if not session:
@@ -39,7 +39,7 @@ def get_mobility_config(session_id, node_id):
     return jsonify(config)
 
 
-@mobility_api.route("/nodes/<node_id>/mobility/<action>", methods=["PUT"])
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/mobility/<action>", methods=["PUT"])
 def mobility_action(session_id, node_id, action):
     session = coreemu.sessions.get(session_id)
     if not session:
