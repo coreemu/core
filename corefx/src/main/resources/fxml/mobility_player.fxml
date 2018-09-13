@@ -8,9 +8,9 @@
 <fx:root alignment="CENTER" maxHeight="-Infinity" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" spacing="10.0" type="HBox" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <Label fx:id="label" maxHeight="1.7976931348623157E308" text="Label" />
-      <JFXButton fx:id="playButton" styleClass="core-button" text="Play" />
-      <JFXButton fx:id="pauseButton" styleClass="core-button" text="Pause" />
-      <JFXButton fx:id="stopButton" styleClass="core-button" text="Stop" />
+      <JFXButton fx:id="playButton" contentDisplay="GRAPHIC_ONLY" styleClass="core-button" />
+      <JFXButton fx:id="pauseButton" contentDisplay="GRAPHIC_ONLY" styleClass="core-button" />
+      <JFXButton fx:id="stopButton" contentDisplay="GRAPHIC_ONLY" styleClass="core-button" />
    </children>
    <padding>
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />

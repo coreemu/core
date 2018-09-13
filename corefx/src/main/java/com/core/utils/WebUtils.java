@@ -103,9 +103,9 @@ public final class WebUtils {
         }
     }
 
-    public static boolean postJson(String url, String json) throws IOException {
+    public static boolean postJson(String url, Object json) throws IOException {
         logger.debug("post json: {} - {}", url, json);
-        RequestBody body = RequestBody.create(JSON, json);
+        RequestBody body = RequestBody.create(JSON, JsonUtils.toString(json));
         Request request = new Request.Builder()
                 .url(url)
                 .post(body)
@@ -127,9 +127,9 @@ public final class WebUtils {
         }
     }
 
-    public static boolean putJson(String url, String json) throws IOException {
+    public static boolean putJson(String url, Object json) throws IOException {
         logger.debug("put json: {} - {}", url, json);
-        RequestBody body = RequestBody.create(JSON, json);
+        RequestBody body = RequestBody.create(JSON, JsonUtils.toString(json));
         Request request = new Request.Builder()
                 .url(url)
                 .put(body)

@@ -3,6 +3,7 @@ package com.core.utils;
 import com.jfoenix.svg.SVGGlyph;
 import com.jfoenix.svg.SVGGlyphLoader;
 import edu.uci.ics.jung.visualization.LayeredIcon;
+import javafx.scene.paint.Paint;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -34,6 +35,15 @@ public final class IconUtils {
             svg = SVGGlyphLoader.getIcoMoonGlyph("icomoon.svg." + name);
         } catch (Exception ex) {
             logger.error("error loading icon: {}", name, ex);
+        }
+        return svg;
+    }
+
+    public static SVGGlyph get(String name, int size, String paint) {
+        SVGGlyph svg = get(name);
+        if (svg != null) {
+            svg.setSize(size);
+            svg.setFill(Paint.valueOf(paint));
         }
         return svg;
     }

@@ -3,6 +3,7 @@ package com.core.ui;
 import com.core.Controller;
 import com.core.data.CoreNode;
 import com.core.data.MobilityConfig;
+import com.core.utils.IconUtils;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
 import javafx.fxml.FXMLLoader;
@@ -15,6 +16,8 @@ import java.io.IOException;
 
 public class MobilityPlayer extends HBox {
     private static final Logger logger = LogManager.getLogger();
+    private static final int ICON_SIZE = 20;
+    private static final String ICON_FILL = "white";
 
     @FXML
     private Label label;
@@ -44,8 +47,11 @@ public class MobilityPlayer extends HBox {
             throw new RuntimeException(ex);
         }
 
+        playButton.setGraphic(IconUtils.get("play_arrow", ICON_SIZE, ICON_FILL));
         playButton.setOnAction(event -> action("start"));
+        pauseButton.setGraphic(IconUtils.get("pause", ICON_SIZE, ICON_FILL));
         pauseButton.setOnAction(event -> action("pause"));
+        stopButton.setGraphic(IconUtils.get("stop", ICON_SIZE, ICON_FILL));
         stopButton.setOnAction(event -> action("stop"));
     }
 

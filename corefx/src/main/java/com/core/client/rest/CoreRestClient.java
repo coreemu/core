@@ -5,7 +5,6 @@ import com.core.client.ICoreClient;
 import com.core.data.*;
 import com.core.graph.NetworkGraph;
 import com.core.ui.Toast;
-import com.core.utils.JsonUtils;
 import com.core.utils.WebUtils;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -168,7 +167,7 @@ public class CoreRestClient implements ICoreClient {
         String url = getUrl(String.format("sessions/%s/state", sessionId));
         Map<String, Integer> data = new HashMap<>();
         data.put("state", state.getValue());
-        boolean result = WebUtils.putJson(url, JsonUtils.toString(data));
+        boolean result = WebUtils.putJson(url, data);
 
         if (result) {
             sessionState = state;
@@ -190,7 +189,7 @@ public class CoreRestClient implements ICoreClient {
     @Override
     public boolean setService(CoreNode node, String serviceName, CoreService service) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s", sessionId, node.getId(), serviceName));
-        return WebUtils.putJson(url, JsonUtils.toString(service));
+        return WebUtils.putJson(url, service);
     }
 
     @Override
@@ -206,7 +205,7 @@ public class CoreRestClient implements ICoreClient {
     public boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/file", sessionId, node.getId(),
                 serviceName));
-        return WebUtils.putJson(url, JsonUtils.toString(serviceFile));
+        return WebUtils.putJson(url, serviceFile);
     }
 
     @Override
@@ -238,7 +237,7 @@ public class CoreRestClient implements ICoreClient {
         SetEmaneConfig setEmaneConfig = new SetEmaneConfig();
         setEmaneConfig.setNode(node.getId());
         setEmaneConfig.setValues(options);
-        return WebUtils.putJson(url, JsonUtils.toString(setEmaneConfig));
+        return WebUtils.putJson(url, setEmaneConfig);
     }
 
     @Override
@@ -248,7 +247,7 @@ public class CoreRestClient implements ICoreClient {
         setEmaneModelConfig.setNode(node.getId());
         setEmaneModelConfig.setName(model);
         setEmaneModelConfig.setValues(options);
-        return WebUtils.putJson(url, JsonUtils.toString(setEmaneModelConfig));
+        return WebUtils.putJson(url, setEmaneModelConfig);
     }
 
     private void updateController() {
@@ -284,14 +283,13 @@ public class CoreRestClient implements ICoreClient {
     @Override
     public boolean setSessionConfig(SetConfig config) throws IOException {
         String url = getUrl(String.format("sessions/%s/options", sessionId));
-        return WebUtils.putJson(url, JsonUtils.toString(config));
+        return WebUtils.putJson(url, config);
     }
 
     @Override
     public boolean createNode(CoreNode node) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes", sessionId));
-        String data = JsonUtils.toString(node);
-        return WebUtils.postJson(url, data);
+        return WebUtils.postJson(url, node);
     }
 
     @Override
@@ -303,15 +301,13 @@ public class CoreRestClient implements ICoreClient {
     @Override
     public boolean createLink(CoreLink link) throws IOException {
         String url = getUrl(String.format("sessions/%s/links", sessionId));
-        String data = JsonUtils.toString(link);
-        return WebUtils.postJson(url, data);
+        return WebUtils.postJson(url, link);
     }
 
     @Override
     public boolean createHook(Hook hook) throws IOException {
         String url = getUrl(String.format("sessions/%s/hooks", sessionId));
-        String data = JsonUtils.toString(hook);
-        return WebUtils.postJson(url, data);
+        return WebUtils.postJson(url, hook);
     }
 
     @Override
@@ -329,8 +325,7 @@ public class CoreRestClient implements ICoreClient {
     @Override
     public boolean setWlanConfig(CoreNode node, WlanConfig config) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/wlan", sessionId, node.getId()));
-        String jsonData = JsonUtils.toString(config);
-        return WebUtils.putJson(url, jsonData);
+        return WebUtils.putJson(url, config);
     }
 
     @Override
@@ -348,8 +343,7 @@ public class CoreRestClient implements ICoreClient {
 
         String url = getUrl(String.format("sessions/%s/nodes/%s/mobility", sessionId, node.getId()));
         config.setFile(config.getScriptFile().getName());
-        String data = JsonUtils.toString(config);
-        return WebUtils.postJson(url, data);
+        return WebUtils.postJson(url, config);
     }
 
     @Override
