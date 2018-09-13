@@ -8,7 +8,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.text.Font?>
 
-<fx:root fitToWidth="true" prefHeight="418.0" prefWidth="300.0" type="ScrollPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+<fx:root fx:id="scrollPane" fitToWidth="true" prefHeight="418.0" prefWidth="300.0" type="ScrollPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <content>
       <GridPane fx:id="gridPane" hgap="5.0" prefWidth="298.0" vgap="5.0">
         <columnConstraints>

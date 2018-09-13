@@ -7,7 +7,8 @@ import lombok.NoArgsConstructor;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.HashSet;
+import java.util.Set;
 
 @Data
 @NoArgsConstructor
@@ -26,8 +27,6 @@ public class CoreNode {
     @JsonIgnore
     private String icon;
     @JsonIgnore
-    private Map<Integer, CoreInterface> interfaces = new HashMap<>();
-    @JsonIgnore
     private boolean loaded = true;
 
     public CoreNode(Integer id) {
@@ -36,30 +35,12 @@ public class CoreNode {
         this.loaded = false;
     }
 
-    public CoreInterface getInterface(Integer id) {
-        return interfaces.get(id);
-    }
-
     @JsonIgnore
     public String getNodeTypeKey() {
         if (model == null) {
             return type.toString();
         } else {
             return String.format("%s-%s", type, model);
-        }
-    }
-
-    public void addInterface(CoreInterface coreInterface) {
-        logger.info("adding interface node({}) {}", id, coreInterface);
-        interfaces.put(coreInterface.getId(), coreInterface);
-    }
-
-    @JsonIgnore
-    public int getNextInterfaceId() {
-        if (interfaces.isEmpty()) {
-            return 0;
-        } else {
-            return Collections.max(interfaces.keySet()) + 1;
         }
     }
 }

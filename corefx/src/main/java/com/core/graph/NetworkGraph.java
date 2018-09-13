@@ -33,8 +33,10 @@ import java.awt.geom.Ellipse2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.*;
+import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 
 @Data
@@ -119,7 +121,7 @@ public class NetworkGraph {
                                 Toast.error("Node terminal command failed");
                             }
                         } catch (InterruptedException ex) {
-                            logger.error("error waiting for terminal to start");
+                            logger.error("error waiting for terminal to start", ex);
                         }
                     } catch (IOException ex) {
                         logger.error("error launching terminal", ex);
@@ -204,20 +206,20 @@ public class NetworkGraph {
 
             // create interfaces for nodes
             int sub = coreAddresses.getSubnet(
-                    nodeOne.getInterfaces().values(),
-                    nodeTwo.getInterfaces().values()
+                    getInterfaces(nodeOne),
+                    getInterfaces(nodeTwo)
             );
 
             link.setNodeOne(nodeOne.getId());
-            int interfaceOneId = nodeOne.getNextInterfaceId();
             if (isNode(nodeOne)) {
+                int interfaceOneId = nextInterfaceId(nodeOne);
                 CoreInterface interfaceOne = createInterface(nodeOne, sub, interfaceOneId);
                 link.setInterfaceOne(interfaceOne);
             }
 
             link.setNodeTwo(nodeTwo.getId());
             if (isNode(nodeTwo)) {
-                int interfaceTwoId = nodeTwo.getNextInterfaceId();
+                int interfaceTwoId = nextInterfaceId(nodeTwo);
                 CoreInterface interfaceTwo = createInterface(nodeTwo, sub, interfaceTwoId);
                 link.setInterfaceTwo(interfaceTwo);
             }
@@ -229,18 +231,53 @@ public class NetworkGraph {
         }
     }
 
+    public List<CoreInterface> getInterfaces(CoreNode node) {
+        return graph.getIncidentEdges(node).stream()
+                .map(link -> {
+                    if (node.getId().equals(link.getNodeOne())) {
+                        return link.getInterfaceOne();
+                    } else {
+                        return link.getInterfaceTwo();
+                    }
+                })
+                .filter(Objects::nonNull)
+                .collect(Collectors.toList());
+    }
+
+    private int nextInterfaceId(CoreNode node) {
+        Set<Integer> interfaceIds = graph.getIncidentEdges(node).stream()
+                .map(link -> {
+                    if (node.getId().equals(link.getNodeOne())) {
+                        return link.getInterfaceOne();
+                    } else {
+                        return link.getInterfaceTwo();
+                    }
+                })
+                .filter(Objects::nonNull)
+                .map(CoreInterface::getId)
+                .collect(Collectors.toSet());
+
+        int i = 0;
+        while (true) {
+            if (!interfaceIds.contains(i)) {
+                return i;
+            }
+
+            i += 1;
+        }
+    }
+
     private boolean isNode(CoreNode node) {
         return node.getType() == NodeType.DEFAULT;
     }
 
     private CoreInterface createInterface(CoreNode node, int sub, int interfaceId) {
-        String nodeOneIp4 = coreAddresses.getIp4Address(sub, node.getId());
         CoreInterface coreInterface = new CoreInterface();
         coreInterface.setId(interfaceId);
         coreInterface.setName(String.format("eth%s", interfaceId));
+        String nodeOneIp4 = coreAddresses.getIp4Address(sub, node.getId());
         coreInterface.setIp4(nodeOneIp4);
         coreInterface.setIp4Mask(CoreAddresses.IP4_MASK);
-        node.addInterface(coreInterface);
         return coreInterface;
     }
 
@@ -322,18 +359,8 @@ public class NetworkGraph {
 
     public void addLink(CoreLink link) {
         link.setId(linkId++);
-
         CoreNode nodeOne = nodeMap.get(link.getNodeOne());
-        CoreInterface interfaceOne = link.getInterfaceOne();
-        if (interfaceOne != null) {
-            nodeOne.addInterface(interfaceOne);
-        }
-
         CoreNode nodeTwo = nodeMap.get(link.getNodeTwo());
-        CoreInterface interfaceTwo = link.getInterfaceTwo();
-        if (interfaceTwo != null) {
-            nodeTwo.addInterface(interfaceTwo);
-        }
 
         boolean isVisible = !isWirelessLink(nodeOne, nodeTwo);
         link.setVisible(isVisible);
@@ -360,28 +387,6 @@ public class NetworkGraph {
                 graph.addEdge(link, currentNode, node);
                 graphViewer.repaint();
             }
-        }
-    }
-
-    private void linkNodes(CoreNode nodeOne, CoreNode nodeTwo, CoreLink link) {
-        // create interfaces for nodes
-        int sub = coreAddresses.getSubnet(
-                nodeOne.getInterfaces().values(),
-                nodeTwo.getInterfaces().values()
-        );
-
-        link.setNodeOne(nodeOne.getId());
-        int interfaceOneId = nodeOne.getNextInterfaceId();
-        if (isNode(nodeOne)) {
-            CoreInterface interfaceOne = createInterface(nodeOne, sub, interfaceOneId);
-            link.setInterfaceOne(interfaceOne);
-        }
-
-        link.setNodeTwo(nodeTwo.getId());
-        if (isNode(nodeTwo)) {
-            int interfaceTwoId = nodeTwo.getNextInterfaceId();
-            CoreInterface interfaceTwo = createInterface(nodeTwo, sub, interfaceTwoId);
-            link.setInterfaceTwo(interfaceTwo);
         }
     }
 }
