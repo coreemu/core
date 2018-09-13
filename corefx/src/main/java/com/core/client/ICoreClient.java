@@ -20,6 +20,8 @@ public interface ICoreClient {
 
     boolean start() throws IOException;
 
+    void updateState(SessionState state);
+
     boolean setState(SessionState state) throws IOException;
 
     GetServices getServices() throws IOException;

@@ -3,6 +3,7 @@ import tempfile
 from functools import wraps
 from threading import Lock
 
+from bottle import HTTPError
 from flask import Flask
 from flask import jsonify
 from flask import render_template
@@ -11,6 +12,7 @@ from flask import send_file
 from flask_socketio import SocketIO
 from flask_socketio import emit
 
+import core_utils
 import mobility_routes
 from core import logger
 from core.emulator.coreemu import CoreEmu
@@ -261,10 +263,7 @@ def delete_session(session_id):
 
 @app.route("/sessions/<int:session_id>/options")
 def get_session_options(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
     config = session.options.get_configs()
 
     config_options = []
@@ -293,10 +292,7 @@ def get_session_options(session_id):
 @app.route("/sessions/<int:session_id>/options", methods=["PUT"])
 @synchronized
 def set_session_options(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
     data = request.get_json() or {}
     values = data["values"]
     config = {x["name"]: x["value"] for x in values}
@@ -306,9 +302,7 @@ def set_session_options(session_id):
 
 @app.route("/sessions/<int:session_id>")
 def get_session(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     nodes = []
     links = []
@@ -347,10 +341,7 @@ def get_session(session_id):
 
 @app.route("/sessions/<int:session_id>/hooks", methods=["POST"])
 def add_hook(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
     data = request.get_json() or {}
     state = data["state"]
     file_name = data["file"]
@@ -361,9 +352,7 @@ def add_hook(session_id):
 
 @app.route("/sessions/<int:session_id>/hooks")
 def get_hooks(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     hooks = []
     for state, state_hooks in session._hooks.iteritems():
@@ -379,26 +368,16 @@ def get_hooks(session_id):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/wlan")
 def get_wlan_config(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
     config = session.mobility.get_model_config(node_id, BasicRangeModel.name)
     return jsonify(config)
 
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/wlan", methods=["PUT"])
 def set_wlan_config(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
     config = request.get_json() or {}
     session.mobility.set_model_config(node_id, BasicRangeModel.name, config)
     return jsonify()
@@ -407,12 +386,8 @@ def set_wlan_config(session_id, node_id):
 @app.route("/sessions/<int:session_id>/emane/config", methods=["PUT"])
 @synchronized
 def set_emane_config(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
     data = request.get_json() or {}
-    node_id = data.get("node")
     values = data["values"]
     config = {x["name"]: x["value"] for x in values}
     session.emane.set_configs(config)
@@ -422,10 +397,7 @@ def set_emane_config(session_id):
 @app.route("/sessions/<int:session_id>/emane/model/config", methods=["PUT"])
 @synchronized
 def set_emane_model_config(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
     data = request.get_json() or {}
     model_name = data["name"]
     node_id = data.get("node")
@@ -437,13 +409,7 @@ def set_emane_model_config(session_id):
 
 @app.route("/sessions/<int:session_id>/emane/config")
 def get_emane_config(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    node_id = request.args.get("node")
-    if node_id.isdigit():
-        node_id = int(node_id)
+    session = core_utils.get_session(coreemu, session_id)
 
     config = session.emane.get_configs()
 
@@ -472,13 +438,8 @@ def get_emane_config(session_id):
 
 @app.route("/sessions/<int:session_id>/emane/model/config")
 def get_emane_model_config(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    node_id = request.args.get("node")
-    if node_id.isdigit():
-        node_id = int(node_id)
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(request.args.get("node"))
 
     model_name = request.args["name"]
     model = session.emane.models[model_name]
@@ -509,9 +470,7 @@ def get_emane_model_config(session_id):
 
 @app.route("/sessions/<int:session_id>/emane/models")
 def get_emane_models(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     models = []
     for model in session.emane.models.keys():
@@ -525,9 +484,7 @@ def get_emane_models(session_id):
 @app.route("/sessions/<int:session_id>/nodes", methods=["POST"])
 @synchronized
 def create_node(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     data = request.get_json() or {}
     node_id = data.get("id")
@@ -561,15 +518,8 @@ def create_node(session_id):
 @app.route("/sessions/<int:session_id>/nodes/<node_id>", methods=["PUT"])
 @synchronized
 def edit_node(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
 
     data = request.get_json() or {}
 
@@ -591,15 +541,8 @@ def edit_node(session_id, node_id):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>")
 def get_node(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
 
     interfaces = []
     for interface_id, interface in node._netif.iteritems():
@@ -635,34 +578,17 @@ def get_node(session_id, node_id):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/terminal")
 def node_terminal(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
     terminal_command = node.termcmdstring("/bin/bash")
-
     return jsonify(terminal_command)
 
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>", methods=["DELETE"])
 @synchronized
 def delete_node(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
     result = session.delete_node(node_id)
     if result:
         return jsonify()
@@ -673,12 +599,8 @@ def delete_node(session_id, node_id):
 # TODO: this should just be a general service query
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services")
 def get_node_services(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
 
     services = {}
     for service in ServiceManager.services.itervalues():
@@ -690,12 +612,8 @@ def get_node_services(session_id, node_id):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>")
 def get_node_service(session_id, node_id, service_name):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
 
     service = session.services.get_service(node_id, service_name, default_service=True)
     service_config = {
@@ -715,15 +633,8 @@ def get_node_service(session_id, node_id, service_name):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>", methods=["PUT"])
 def set_node_service(session_id, node_id, service_name):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
 
     data = request.get_json() or {}
 
@@ -742,15 +653,8 @@ def set_node_service(session_id, node_id, service_name):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>/file")
 def get_node_service_file(session_id, node_id, service_name):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
 
     # get custom service file or default
     service_file = request.args["file"]
@@ -760,15 +664,8 @@ def get_node_service_file(session_id, node_id, service_name):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service>/file", methods=["PUT"])
 def set_node_service_file(session_id, node_id, service):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
+    node_id = core_utils.get_node_id(node_id)
 
     data = request.get_json() or {}
     file_name = data["name"]
@@ -780,9 +677,7 @@ def set_node_service_file(session_id, node_id, service):
 @app.route("/sessions/<int:session_id>/state", methods=["PUT"])
 @synchronized
 def set_session_state(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     data = request.get_json()
     try:
@@ -809,9 +704,7 @@ def set_session_state(session_id):
 @app.route("/sessions/<int:session_id>/links", methods=["POST"])
 @synchronized
 def add_link(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     data = request.get_json()
     logger.info("adding link: %s", data)
@@ -873,9 +766,7 @@ def add_link(session_id):
 @app.route("/sessions/<int:session_id>/links", methods=["PUT"])
 @synchronized
 def edit_link(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
 
     data = request.get_json()
 
@@ -907,10 +798,7 @@ def edit_link(session_id):
 @app.route("/sessions/<int:session_id>/links", methods=["DELETE"])
 @synchronized
 def delete_link(session_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
+    session = core_utils.get_session(coreemu, session_id)
     data = request.get_json()
     node_one = data.get("node_one")
     node_two = data.get("node_two")
@@ -922,15 +810,8 @@ def delete_link(session_id):
 
 @app.route("/sessions/<int:session_id>/nodes/<node_id>/links")
 def get_node_links(session_id, node_id):
-    session = coreemu.sessions.get(session_id)
-    if not session:
-        return jsonify(error="session does not exist"), 404
-
-    if node_id.isdigit():
-        node_id = int(node_id)
-    node = session.objects.get(node_id)
-    if not node:
-        return jsonify(error="node does not exist"), 404
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
 
     links_data = node.all_link_data(0)
     links = []
@@ -946,6 +827,11 @@ def get_node_links(session_id, node_id):
         links.append(link)
 
     return jsonify(links=links)
+
+
+@app.errorhandler(HTTPError)
+def handle_error(e):
+    return jsonify(message=e.body, status=e.status_code), e.status_code
 
 
 if __name__ == "__main__":

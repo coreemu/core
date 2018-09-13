@@ -158,6 +158,10 @@ public class CoreRestClient implements ICoreClient {
         return setState(SessionState.INSTANTIATION);
     }
 
+    @Override
+    public void updateState(SessionState state) {
+        sessionState = state;
+    }
 
     @Override
     public boolean setState(SessionState state) throws IOException {
