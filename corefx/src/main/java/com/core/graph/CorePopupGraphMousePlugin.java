@@ -99,7 +99,7 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
 
         if (!isRunning) {
             menuItems.add(createMenuItem("Delete Node",
-                    event -> networkGraph.removeNode(node)));
+                    event -> controller.deleteNode(node)));
         }
 
         return menuItems;

@@ -1,6 +1,8 @@
 package com.core.ui;
 
 import com.core.Controller;
+import com.core.data.CoreNode;
+import com.core.data.MobilityConfig;
 import com.core.data.NodeType;
 import com.core.data.SessionState;
 import com.core.utils.IconUtils;
@@ -252,6 +254,7 @@ public class GraphToolbar extends VBox {
 
             boolean result = controller.getCoreClient().start();
             if (result) {
+                controller.sessionStarted();
                 Toast.success("Session Started");
                 setRunButton(true);
             }
@@ -266,6 +269,7 @@ public class GraphToolbar extends VBox {
         try {
             boolean result = controller.getCoreClient().setState(SessionState.SHUTDOWN);
             if (result) {
+                controller.sessionStopped();
                 Toast.success("Session Stopped");
                 setRunButton(false);
             }

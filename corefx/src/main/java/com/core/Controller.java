@@ -1,9 +1,13 @@
 package com.core;
 
 import com.core.client.ICoreClient;
-import com.core.client.rest.*;
+import com.core.client.rest.ConfigOption;
+import com.core.client.rest.CoreRestClient;
+import com.core.client.rest.GetConfig;
+import com.core.client.rest.SetConfig;
 import com.core.data.CoreLink;
 import com.core.data.CoreNode;
+import com.core.data.MobilityConfig;
 import com.core.graph.NetworkGraph;
 import com.core.ui.*;
 import com.core.utils.ConfigUtils;
@@ -16,6 +20,7 @@ import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.stage.FileChooser;
 import javafx.stage.Stage;
 import lombok.Data;
@@ -59,6 +64,7 @@ public class Controller implements Initializable {
     private NodeDetails nodeDetails = new NodeDetails();
     private LinkDetails linkDetails = new LinkDetails(networkGraph);
     private GraphToolbar graphToolbar = new GraphToolbar(this);
+    private MobilityPlayer mobilityPlayer = new MobilityPlayer(this);
 
     // dialogs
     private SessionsDialog sessionsDialog = new SessionsDialog(this);
@@ -94,6 +100,32 @@ public class Controller implements Initializable {
                 Toast.error(String.format("Initial join failure: %s", ex.getMessage()));
             }
         });
+    }
+
+    public void sessionStarted() {
+        // configure and add mobility player
+        VBox vBox = (VBox) borderPane.getTop();
+        CoreNode node = mobilityDialog.getNode();
+        if (node != null) {
+            MobilityConfig mobilityConfig = mobilityDialog.getMobilityScripts().get(node.getId());
+            if (mobilityConfig != null) {
+                mobilityPlayer.show(node, mobilityConfig);
+                vBox.getChildren().add(mobilityPlayer);
+            }
+        }
+    }
+
+    public void sessionStopped() {
+        VBox vBox = (VBox) borderPane.getTop();
+        vBox.getChildren().remove(mobilityPlayer);
+    }
+
+    public void deleteNode(CoreNode node) {
+        networkGraph.removeNode(node);
+        CoreNode mobilityNode = mobilityDialog.getNode();
+        if (mobilityNode != null && mobilityNode.getId().equals(node.getId())) {
+            mobilityDialog.setNode(null);
+        }
     }
 
     public void setWindow(Stage window) {

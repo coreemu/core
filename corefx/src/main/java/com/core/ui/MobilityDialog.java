@@ -10,12 +10,16 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.layout.GridPane;
 import javafx.stage.FileChooser;
+import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.HashMap;
+import java.util.Map;
 
+@Data
 public class MobilityDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
 
@@ -43,6 +47,7 @@ public class MobilityDialog extends StageDialog {
     @FXML
     private JFXTextField stopTextField;
 
+    private Map<Integer, MobilityConfig> mobilityScripts = new HashMap<>();
     private CoreNode node;
 
     public MobilityDialog(Controller controller) {
@@ -65,9 +70,9 @@ public class MobilityDialog extends StageDialog {
 
             try {
                 controller.getCoreClient().setMobilityConfig(node, mobilityConfig);
+                mobilityScripts.put(node.getId(), mobilityConfig);
             } catch (IOException ex) {
-                logger.error("error setting mobility configuration", ex);
-                Toast.error("error setting mobility configuration");
+                Toast.error("error setting mobility configuration", ex);
             }
 
             close();
@@ -108,8 +113,7 @@ public class MobilityDialog extends StageDialog {
             pauseTextField.setText(mobilityConfig.getPauseScript());
             stopTextField.setText(mobilityConfig.getStopScript());
         } catch (IOException ex) {
-            logger.error("error getting mobility config", ex);
-            Toast.error("error getting mobility config");
+            Toast.error("error getting mobility config", ex);
         }
 
         show();

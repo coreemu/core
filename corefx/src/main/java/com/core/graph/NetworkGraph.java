@@ -58,6 +58,7 @@ public class NetworkGraph {
     private Set<NodeType> nodeTypes = new HashSet<>();
     private CorePopupGraphMousePlugin customPopupPlugin;
     private CoreAnnotatingGraphMousePlugin<CoreNode, CoreLink> customAnnotatingPlugin;
+    private RadioIcon radioIcon = new RadioIcon();
 
     public NetworkGraph(Controller controller) {
         this.controller = controller;
@@ -77,12 +78,13 @@ public class NetworkGraph {
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
         });
         renderContext.setVertexIconTransformer(vertex -> {
-            LayeredIcon layeredIcon = IconUtils.getIcon(vertex.getIcon());
+            LayeredIcon icon = IconUtils.getIcon(vertex.getIcon());
             if (hasWirelessLink(vertex)) {
-                RadioIcon radioIcon = new RadioIcon();
-                layeredIcon.add(radioIcon);
+                icon.add(radioIcon);
+            } else {
+                icon.remove(radioIcon);
             }
-            return layeredIcon;
+            return icon;
         });
 
         // edge render properties

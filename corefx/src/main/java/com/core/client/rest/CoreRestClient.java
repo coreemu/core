@@ -350,6 +350,6 @@ public class CoreRestClient implements ICoreClient {
     @Override
     public boolean mobilityAction(CoreNode node, String action) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/mobility/%s", sessionId, node.getId(), action));
-        return WebUtils.putJson(url, null);
+        return WebUtils.putJson(url);
     }
 }

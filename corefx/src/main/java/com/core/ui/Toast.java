@@ -37,6 +37,13 @@ public final class Toast {
     }
 
     public static void error(String message) {
+        error(message, null);
+    }
+
+    public static void error(String message, Exception ex) {
+        if (ex != null) {
+            logger.error(message, ex);
+        }
         JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(message,
                 "toast-error", "X", TIMEOUT, true, event -> snackbar.close());
         snackbar.enqueue(snackbarEvent);

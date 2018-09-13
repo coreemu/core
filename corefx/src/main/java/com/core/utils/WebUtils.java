@@ -98,6 +98,18 @@ public final class WebUtils {
         }
     }
 
+    public static boolean putJson(String url) throws IOException {
+        logger.debug("put json: {}", url);
+        RequestBody body = new FormBody.Builder().build();
+        Request request = new Request.Builder()
+                .url(url)
+                .put(body)
+                .build();
+        try (Response response = client.newCall(request).execute()) {
+            return response.isSuccessful();
+        }
+    }
+
     public static boolean putJson(String url, String json) throws IOException {
         logger.debug("put json: {} - {}", url, json);
         RequestBody body = RequestBody.create(JSON, json);
