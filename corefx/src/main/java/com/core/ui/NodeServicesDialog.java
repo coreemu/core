@@ -1,11 +1,12 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.data.CoreNode;
 import com.core.client.rest.GetServices;
+import com.core.data.CoreNode;
 import com.jfoenix.controls.JFXButton;
-import com.jfoenix.controls.JFXComboBox;
+import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXScrollPane;
+import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.layout.GridPane;
@@ -16,10 +17,11 @@ import java.util.*;
 
 public class NodeServicesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
+    private final Map<String, List<ServiceItem>> serviceItemGroups = new HashMap<>();
+    private final Map<String, ServiceItem> serviceItemMap = new HashMap<>();
+    // TODO: get this from core itself
+    private final Map<String, Set<String>> defaultServices = new HashMap<>();
     private CoreNode node;
-
-    @FXML
-    private JFXComboBox<String> comboBox;
 
     @FXML
     private GridPane gridPane;
@@ -27,10 +29,17 @@ public class NodeServicesDialog extends StageDialog {
     @FXML
     private ScrollPane scrollPane;
 
-    private Map<String, List<ServiceItem>> serviceItemGroups = new HashMap<>();
+    @FXML
+    private JFXListView<String> groupListView;
 
-    // TODO: get this from core itself
-    private Map<String, Set<String>> defaultServices = new HashMap<>();
+    @FXML
+    private JFXListView<String> activeListView;
+
+    @FXML
+    private JFXButton removeButton;
+
+    @FXML
+    private JFXButton editButton;
 
     private int index = 0;
 
@@ -57,24 +66,40 @@ public class NodeServicesDialog extends StageDialog {
         defaultServices.put("router", new HashSet<>(Arrays.asList("zebra", "OSPFv2", "OSPFv3", "IPForward")));
         defaultServices.put("host", new HashSet<>(Arrays.asList("DefaultRoute", "SSH")));
 
-        comboBox.valueProperty().addListener((ov, previous, current) -> {
+        groupListView.getSelectionModel().selectedItemProperty().addListener((ov, previous, current) -> {
             if (current == null) {
                 return;
             }
 
             updateItems(current);
         });
+
+        activeListView.getSelectionModel().selectedItemProperty().addListener((ov, previous, current) -> {
+            boolean isDisabled = current == null;
+            removeButton.setDisable(isDisabled);
+            editButton.setDisable(isDisabled);
+        });
+
+        removeButton.setOnAction(event -> {
+            String service = activeListView.getSelectionModel().getSelectedItem();
+            activeListView.getItems().remove(service);
+            ServiceItem serviceItem = serviceItemMap.get(service);
+            serviceItem.getCheckBox().setSelected(false);
+        });
+
+        editButton.setOnAction(event -> {
+            String service = activeListView.getSelectionModel().getSelectedItem();
+            getController().getServiceDialog().showDialog(node, service);
+        });
     }
 
     public void setServices(GetServices getServices) {
-        comboBox.getItems().clear();
         serviceItemGroups.clear();
 
         getServices.getGroups().keySet().stream()
                 .sorted()
                 .forEach(group -> {
-                    comboBox.getItems().add(group);
-
+                    groupListView.getItems().add(group);
                     getServices.getGroups().get(group).stream()
                             .sorted()
                             .forEach(service -> {
@@ -82,33 +107,46 @@ public class NodeServicesDialog extends StageDialog {
                                 List<ServiceItem> items = serviceItemGroups.computeIfAbsent(
                                         group, k -> new ArrayList<>());
                                 items.add(serviceItem);
+
+                                if (serviceItem.getCheckBox().isSelected()) {
+                                    activeListView.getItems().add(serviceItem.getService());
+                                }
+
+                                serviceItem.getCheckBox().setOnAction(event -> {
+                                    if (serviceItem.getCheckBox().isSelected()) {
+                                        activeListView.getItems().add(service);
+                                        FXCollections.sort(activeListView.getItems());
+                                    } else {
+                                        activeListView.getItems().remove(service);
+                                    }
+                                });
+
+                                serviceItemMap.put(service, serviceItem);
                             });
                 });
+        groupListView.getSelectionModel().selectFirst();
         JFXScrollPane.smoothScrolling(scrollPane);
-
-        comboBox.getSelectionModel().selectFirst();
     }
 
     private void updateItems(String group) {
         logger.debug("updating services for group: {}", group);
-        clear();
+        clearAvailableServices();
         List<ServiceItem> items = serviceItemGroups.get(group);
         for (ServiceItem item : items) {
-            gridPane.addRow(index++, item.getCheckBox(), item.getButton());
+            gridPane.addRow(index++, item.getCheckBox());
         }
     }
 
-    private void clear() {
-        if (!gridPane.getChildren().isEmpty()) {
-            gridPane.getChildren().remove(0, gridPane.getChildren().size());
-        }
+    private void clearAvailableServices() {
+        gridPane.getChildren().clear();
         index = 0;
     }
 
     public void showDialog(CoreNode node) {
         this.node = node;
-        comboBox.getSelectionModel().selectFirst();
         setTitle(String.format("%s - Services", node.getName()));
+        groupListView.getSelectionModel().selectFirst();
+        activeListView.getItems().clear();
 
         Set<String> nodeServices = node.getServices();
         if (nodeServices.isEmpty()) {
@@ -119,10 +157,13 @@ public class NodeServicesDialog extends StageDialog {
             for (ServiceItem item : items) {
                 boolean selected = nodeServices.contains(item.getService());
                 item.getCheckBox().setSelected(selected);
-                item.setEditHandler(event -> getController().getServiceDialog().showDialog(node, item.getService()));
+                if (item.getCheckBox().isSelected()) {
+                    activeListView.getItems().add(item.getService());
+                }
             }
         }
 
+        FXCollections.sort(activeListView.getItems());
         show();
     }
 }

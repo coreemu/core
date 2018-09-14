@@ -192,6 +192,7 @@ public class GraphToolbar extends VBox {
     }
 
     private void setupNodesButton() {
+        nodesButton.setTooltip(new Tooltip("Network Nodes (host, pc, etc)"));
         nodesList.getSelectionModel().selectedItemProperty().addListener((ov, old, current) -> {
             if (current == null) {
                 return;
@@ -211,6 +212,7 @@ public class GraphToolbar extends VBox {
     }
 
     private void setupDevicesButton() {
+        devicesButton.setTooltip(new Tooltip("Device Nodes (WLAN, EMANE, Switch, etc)"));
         devicesList.getSelectionModel().selectedItemProperty().addListener((ov, old, current) -> {
             if (current == null) {
                 return;
