@@ -307,7 +307,7 @@ public class NetworkGraph {
         vertexId = Math.max(node.getId() + 1, node.getId());
         Double x = Math.abs(node.getPosition().getX());
         Double y = Math.abs(node.getPosition().getY());
-        logger.info("adding  session node: {}", node);
+        logger.info("adding session node: {}", node);
         graph.addVertex(node);
         graphLayout.setLocation(node, x, y);
         nodeMap.put(node.getId(), node);
@@ -358,6 +358,7 @@ public class NetworkGraph {
     }
 
     public void addLink(CoreLink link) {
+        logger.info("adding session link: {}", link);
         link.setId(linkId++);
         CoreNode nodeOne = nodeMap.get(link.getNodeOne());
         CoreNode nodeTwo = nodeMap.get(link.getNodeTwo());

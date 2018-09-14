@@ -1,4 +1,4 @@
-from flask.ext.socketio import SocketIO, emit
+from flask_socketio import SocketIO
 
 from core import logger
 

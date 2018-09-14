@@ -15,7 +15,6 @@ public class CoreObservableGraph<V, E> extends ObservableGraph<V, E> {
 
     @Override
     public boolean addEdge(E e, V v1, V v2, EdgeType edgeType) {
-        logger.info("graph adding edge: {} - {}", v1, v2);
         if (v1 == null || v2 == null) {
             return false;
         }
@@ -24,7 +23,6 @@ public class CoreObservableGraph<V, E> extends ObservableGraph<V, E> {
 
     @Override
     public boolean addEdge(E e, V v1, V v2) {
-        logger.info("graph adding edge: {} - {}", v1, v2);
         if (v1 == null || v2 == null) {
             return false;
         }
