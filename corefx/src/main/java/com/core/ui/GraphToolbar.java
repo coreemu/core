@@ -1,8 +1,6 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.data.CoreNode;
-import com.core.data.MobilityConfig;
 import com.core.data.NodeType;
 import com.core.data.SessionState;
 import com.core.utils.IconUtils;
@@ -178,7 +176,6 @@ public class GraphToolbar extends VBox {
     }
 
     private void updateButtonValues(JFXButton button, Label label) {
-        button.setText(label.getText());
         ImageView icon = new ImageView(((ImageView) label.getGraphic()).getImage());
         icon.setFitHeight(ICON_SIZE);
         icon.setFitWidth(ICON_SIZE);
