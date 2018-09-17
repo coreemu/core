@@ -2,7 +2,6 @@ package com.core.ui;
 
 import com.core.Controller;
 import com.core.data.NodeType;
-import com.core.data.SessionState;
 import com.core.utils.IconUtils;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
@@ -266,7 +265,7 @@ public class GraphToolbar extends VBox {
 
     private void stopSession() {
         try {
-            boolean result = controller.getCoreClient().setState(SessionState.SHUTDOWN);
+            boolean result = controller.getCoreClient().stop();
             if (result) {
                 controller.sessionStopped();
                 Toast.success("Session Stopped");

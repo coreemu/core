@@ -20,6 +20,8 @@ public interface ICoreClient {
 
     boolean start() throws IOException;
 
+    boolean stop() throws IOException;
+
     void updateState(SessionState state);
 
     boolean setState(SessionState state) throws IOException;
@@ -55,6 +57,8 @@ public interface ICoreClient {
     boolean setSessionConfig(SetConfig config) throws IOException;
 
     boolean createNode(CoreNode node) throws IOException;
+
+    boolean editNode(CoreNode node) throws IOException;
 
     boolean deleteNode(CoreNode node) throws IOException;
 

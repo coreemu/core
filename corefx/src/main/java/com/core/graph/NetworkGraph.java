@@ -1,10 +1,7 @@
 package com.core.graph;
 
 import com.core.Controller;
-import com.core.data.CoreInterface;
-import com.core.data.CoreLink;
-import com.core.data.CoreNode;
-import com.core.data.NodeType;
+import com.core.data.*;
 import com.core.ui.Toast;
 import com.core.utils.IconUtils;
 import com.google.common.base.Supplier;
@@ -20,6 +17,7 @@ import edu.uci.ics.jung.visualization.annotations.AnnotationControls;
 import edu.uci.ics.jung.visualization.control.EditingModalGraphMouse;
 import edu.uci.ics.jung.visualization.control.GraphMouseListener;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
+import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
 import lombok.Data;
 import org.apache.commons.net.util.SubnetUtils;
@@ -30,7 +28,6 @@ import javax.swing.*;
 import java.awt.*;
 import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
-import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 import java.util.*;
 import java.util.List;
@@ -90,9 +87,25 @@ public class NetworkGraph {
         });
 
         // edge render properties
-        renderContext.setEdgeStrokeTransformer(edge -> new BasicStroke(1));
-        renderContext.setEdgeShapeTransformer(edge -> new Rectangle2D.Float(0, 0, 1, 10));
-        renderContext.setEdgeFillPaintTransformer(edge -> Color.BLACK);
+        renderContext.setEdgeStrokeTransformer(edge -> {
+            LinkTypes linkType = LinkTypes.get(edge.getType());
+            if (LinkTypes.WIRELESS == linkType) {
+                float[] dash = {15.0f};
+                return new BasicStroke(5, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND,
+                        0, dash, 0);
+            } else {
+                return new BasicStroke(5);
+            }
+        });
+        renderContext.setEdgeShapeTransformer(EdgeShape.line(graph));
+        renderContext.setEdgeDrawPaintTransformer(edge -> {
+            LinkTypes linkType = LinkTypes.get(edge.getType());
+            if (LinkTypes.WIRELESS == linkType) {
+                return Color.BLUE;
+            } else {
+                return Color.BLACK;
+            }
+        });
         renderContext.setEdgeIncludePredicate(predicate -> predicate.element.isVisible());
 
         graphViewer.setVertexToolTipTransformer(renderContext.getVertexLabelTransformer());
@@ -144,6 +157,15 @@ public class NetworkGraph {
                     logger.debug("graph moved node({}): {},{}", node.getName(), x, y);
                     node.getPosition().setX(x);
                     node.getPosition().setY(y);
+
+                    // upate node when session is active
+                    if (controller.getCoreClient().isRunning()) {
+                        try {
+                            controller.getCoreClient().editNode(node);
+                        } catch (IOException ex) {
+                            Toast.error("failed to update node location");
+                        }
+                    }
                 }
             }
         });
@@ -224,7 +246,7 @@ public class NetworkGraph {
                 link.setInterfaceTwo(interfaceTwo);
             }
 
-            boolean isVisible = !isWirelessLink(nodeOne, nodeTwo);
+            boolean isVisible = !checkForWirelessNode(nodeOne, nodeTwo);
             link.setVisible(isVisible);
 
             logger.info("adding user created edge: {}", link);
@@ -342,7 +364,7 @@ public class NetworkGraph {
         return node.getType() == NodeType.EMANE || node.getType() == NodeType.WLAN;
     }
 
-    private boolean isWirelessLink(CoreNode nodeOne, CoreNode nodeTwo) {
+    private boolean checkForWirelessNode(CoreNode nodeOne, CoreNode nodeTwo) {
         boolean result = isWirelessNode(nodeOne);
         return result || isWirelessNode(nodeTwo);
     }
@@ -363,10 +385,21 @@ public class NetworkGraph {
         CoreNode nodeOne = nodeMap.get(link.getNodeOne());
         CoreNode nodeTwo = nodeMap.get(link.getNodeTwo());
 
-        boolean isVisible = !isWirelessLink(nodeOne, nodeTwo);
+        boolean isVisible = !checkForWirelessNode(nodeOne, nodeTwo);
         link.setVisible(isVisible);
 
         graph.addEdge(link, nodeOne, nodeTwo);
+    }
+
+    public void removeWirelessLink(CoreLink link) {
+        logger.info("deleting link: {}", link);
+        CoreNode nodeOne = nodeMap.get(link.getNodeOne());
+        CoreNode nodeTwo = nodeMap.get(link.getNodeTwo());
+
+        CoreLink existingLink = graph.findEdge(nodeOne, nodeTwo);
+        if (existingLink != null) {
+            graph.removeEdge(existingLink);
+        }
     }
 
     public void removeLink(CoreLink link) {

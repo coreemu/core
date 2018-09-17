@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @Data
 public class CoreRestClient implements ICoreClient {
@@ -55,6 +56,10 @@ public class CoreRestClient implements ICoreClient {
         }
 
         for (CoreLink link : session.getLinks()) {
+            if (link.getInterfaceOne() != null || link.getInterfaceTwo() != null) {
+                link.setType(LinkTypes.WIRED.getValue());
+            }
+
             networkGraph.addLink(link);
         }
 
@@ -155,6 +160,17 @@ public class CoreRestClient implements ICoreClient {
         }
 
         return setState(SessionState.INSTANTIATION);
+    }
+
+    @Override
+    public boolean stop() throws IOException {
+        List<CoreLink> wirelessLinks = networkGraph.getGraph().getEdges().stream()
+                .filter(CoreLink::isWireless)
+                .collect(Collectors.toList());
+        wirelessLinks.forEach(networkGraph::removeWirelessLink);
+        networkGraph.getGraphViewer().repaint();
+
+        return setState(SessionState.SHUTDOWN);
     }
 
     @Override
@@ -290,6 +306,12 @@ public class CoreRestClient implements ICoreClient {
     public boolean createNode(CoreNode node) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes", sessionId));
         return WebUtils.postJson(url, node);
+    }
+
+    @Override
+    public boolean editNode(CoreNode node) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s", sessionId, node.getId()));
+        return WebUtils.putJson(url, node);
     }
 
     @Override

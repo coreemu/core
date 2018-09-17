@@ -56,8 +56,9 @@ def edit_node(session_id, node_id):
     data = request.get_json() or {}
 
     node_options = NodeOptions()
-    x = data.get("x")
-    y = data.get("y")
+    node_position = data["position"]
+    x = node_position["x"]
+    y = node_position["y"]
     node_options.set_position(x, y)
     lat = data.get("lat")
     lon = data.get("lon")

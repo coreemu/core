@@ -20,6 +20,9 @@ public class CoreLink {
     @JsonIgnore
     private boolean visible = true;
 
+    @JsonProperty("message_type")
+    private Integer messageType;
+
     private Integer type = 1;
 
     @JsonProperty("node_one")
@@ -40,5 +43,9 @@ public class CoreLink {
         this.id = id;
         this.weight = (float) id;
         this.loaded = false;
+    }
+
+    public boolean isWireless() {
+        return interfaceOne == null && interfaceTwo == null;
     }
 }

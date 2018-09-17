@@ -39,6 +39,10 @@ def create_session():
     # add handlers
     session.event_handlers.append(websocket_routes.broadcast_event)
     session.node_handlers.append(websocket_routes.broadcast_node)
+    session.config_handlers.append(websocket_routes.broadcast_config)
+    session.link_handlers.append(websocket_routes.broadcast_link)
+    session.exception_handlers.append(websocket_routes.broadcast_exception)
+    session.file_handlers.append(websocket_routes.broadtcast_file)
 
     response_data = jsonify(
         id=session.session_id,
