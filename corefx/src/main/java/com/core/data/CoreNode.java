@@ -1,6 +1,9 @@
 package com.core.data;
 
+import com.core.graph.RadioIcon;
+import com.core.utils.IconUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
+import edu.uci.ics.jung.visualization.LayeredIcon;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
@@ -28,11 +31,24 @@ public class CoreNode {
     private String icon;
     @JsonIgnore
     private boolean loaded = true;
+    @JsonIgnore
+    private LayeredIcon graphIcon;
+    @JsonIgnore
+    private RadioIcon radioIcon = new RadioIcon();
 
     public CoreNode(Integer id) {
         this.id = id;
         this.name = String.format("Node%s", this.id);
         this.loaded = false;
+    }
+
+    public LayeredIcon getGraphIcon() {
+        if (graphIcon == null) {
+            graphIcon = IconUtils.getIcon(icon);
+            graphIcon.add(radioIcon);
+        }
+
+        return graphIcon;
     }
 
     @JsonIgnore

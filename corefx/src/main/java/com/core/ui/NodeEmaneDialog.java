@@ -1,9 +1,9 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.data.CoreNode;
 import com.core.client.rest.ConfigOption;
 import com.core.client.rest.GetConfig;
+import com.core.data.CoreNode;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import javafx.event.ActionEvent;
@@ -48,6 +48,10 @@ public class NodeEmaneDialog extends StageDialog {
         models.stream().sorted()
                 .forEach(model -> modelCombo.getItems().add(model));
         modelCombo.getSelectionModel().selectFirst();
+    }
+
+    public List<String> getModels() {
+        return modelCombo.getItems();
     }
 
     private void emaneButtonHandler(ActionEvent event) {

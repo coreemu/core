@@ -10,7 +10,6 @@ import edu.uci.ics.jung.graph.ObservableGraph;
 import edu.uci.ics.jung.graph.event.GraphEvent;
 import edu.uci.ics.jung.graph.event.GraphEventListener;
 import edu.uci.ics.jung.graph.util.Pair;
-import edu.uci.ics.jung.visualization.LayeredIcon;
 import edu.uci.ics.jung.visualization.RenderContext;
 import edu.uci.ics.jung.visualization.VisualizationViewer;
 import edu.uci.ics.jung.visualization.annotations.AnnotationControls;
@@ -57,7 +56,6 @@ public class NetworkGraph {
     private Set<NodeType> nodeTypes = new HashSet<>();
     private CorePopupGraphMousePlugin customPopupPlugin;
     private CoreAnnotatingGraphMousePlugin<CoreNode, CoreLink> customAnnotatingPlugin;
-    private RadioIcon radioIcon = new RadioIcon();
 
     public NetworkGraph(Controller controller) {
         this.controller = controller;
@@ -77,13 +75,9 @@ public class NetworkGraph {
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
         });
         renderContext.setVertexIconTransformer(vertex -> {
-            LayeredIcon icon = IconUtils.getIcon(vertex.getIcon());
-            if (hasWirelessLink(vertex)) {
-                icon.add(radioIcon);
-            } else {
-                icon.remove(radioIcon);
-            }
-            return icon;
+            long wirelessLinks = wirelessLinkCount(vertex);
+            vertex.getRadioIcon().setWiressLinks(wirelessLinks);
+            return vertex.getGraphIcon();
         });
 
         // edge render properties
@@ -312,8 +306,13 @@ public class NetworkGraph {
         CoreNode node = vertexEvent.getVertex();
         if (!node.isLoaded()) {
             node.setType(nodeType.getValue());
-            node.setIcon(nodeType.getIcon());
             node.setModel(nodeType.getModel());
+            node.setIcon(nodeType.getIcon());
+            if (node.getType() == NodeType.EMANE) {
+                String emaneModel = controller.getNodeEmaneDialog().getModels().get(0);
+                node.setEmane(emaneModel);
+            }
+
             logger.info("adding user created node: {}", node);
             nodeMap.put(node.getId(), node);
         }
@@ -369,14 +368,10 @@ public class NetworkGraph {
         return result || isWirelessNode(nodeTwo);
     }
 
-    private boolean hasWirelessLink(CoreNode node) {
-        for (CoreNode neighbor : graph.getNeighbors(node)) {
-            if (isWirelessNode(neighbor)) {
-                return true;
-            }
-        }
-
-        return false;
+    private long wirelessLinkCount(CoreNode node) {
+        return graph.getNeighbors(node).stream()
+                .filter(this::isWirelessNode)
+                .count();
     }
 
     public void addLink(CoreLink link) {
