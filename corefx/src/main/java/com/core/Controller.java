@@ -75,6 +75,7 @@ public class Controller implements Initializable {
     private ConfigDialog configDialog = new ConfigDialog(this);
     private HooksDialog hooksDialog = new HooksDialog(this);
     private MobilityDialog mobilityDialog = new MobilityDialog(this);
+    private ChartDialog chartDialog = new ChartDialog(this);
 
     public Controller() {
         // load configuration
@@ -226,6 +227,11 @@ public class Controller implements Initializable {
         } catch (IOException ex) {
             logger.error("error getting session config");
         }
+    }
+
+    @FXML
+    private void onTestMenuCharts(ActionEvent event) {
+        chartDialog.show();
     }
 
     @Override
