@@ -1643,8 +1643,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                         self.send_objects()
                 elif message.flags & MessageFlags.DELETE.value:
                     # shut down the specified session(s)
-                    logger.info("request to terminate session %s" % session_id)
-                    session.shutdown()
+                    logger.info("request to terminate session %s", session_id)
+                    self.coreemu.delete_session(session_id)
                 else:
                     logger.warn("unhandled session flags for session %s", session_id)
 
