@@ -305,9 +305,7 @@ public class NetworkGraph {
     private void handleVertexAdded(GraphEvent.Vertex<CoreNode, CoreLink> vertexEvent) {
         CoreNode node = vertexEvent.getVertex();
         if (!node.isLoaded()) {
-            node.setType(nodeType.getValue());
-            node.setModel(nodeType.getModel());
-            node.setIcon(nodeType.getIcon());
+            node.setNodeType(nodeType);
             if (node.getType() == NodeType.EMANE) {
                 String emaneModel = controller.getNodeEmaneDialog().getModels().get(0);
                 node.setEmane(emaneModel);

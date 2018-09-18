@@ -19,9 +19,9 @@ public class NodeType {
     private static final Map<String, NodeType> LOOKUP = new HashMap<>();
     private static final Map<Integer, String> DISPLAY_MAP = new HashMap<>();
     private final int value;
-    private final String display;
-    private final String model;
-    private final String icon;
+    private String display;
+    private String model;
+    private String icon;
 
     //    PHYSICAL = 1
 //    RJ45 = 7

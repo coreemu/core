@@ -42,13 +42,22 @@ public class CoreNode {
         this.loaded = false;
     }
 
-    public LayeredIcon getGraphIcon() {
-        if (graphIcon == null) {
-            graphIcon = IconUtils.getIcon(icon);
-            graphIcon.add(radioIcon);
-        }
+//    public void setExternalIcon(String iconPath) {
+//        icon = iconPath;
+//        graphIcon = IconUtils.getExternalLayeredIcon(icon);
+//        graphIcon.add(radioIcon);
+//    }
 
-        return graphIcon;
+    public void setNodeType(NodeType nodeType) {
+        type = nodeType.getValue();
+        model = nodeType.getModel();
+        icon = nodeType.getIcon();
+        if (icon.startsWith("file:")) {
+            graphIcon = IconUtils.getExternalLayeredIcon(icon);
+        } else {
+            graphIcon = IconUtils.getLayeredIcon(icon);
+        }
+        graphIcon.add(radioIcon);
     }
 
     @JsonIgnore

@@ -62,7 +62,8 @@ public class GraphToolbar extends VBox {
     private SVGGlyph stopIcon;
     private JFXListView<Label> nodesList = new JFXListView<>();
     private JFXListView<Label> devicesList = new JFXListView<>();
-    private Map<Label, NodeType> labelMap = new HashMap<>();
+    private Map<String, NodeType> nodeTypeMap = new HashMap<>();
+    private Map<String, Label> labelMap = new HashMap<>();
     private JFXButton selectedEditButton;
     private NodeType selectedNodeType;
     private boolean isEditing = false;
@@ -149,7 +150,8 @@ public class GraphToolbar extends VBox {
             icon.setFitWidth(NODES_ICON_SIZE);
             icon.setFitHeight(NODES_ICON_SIZE);
             Label label = new Label(nodeType.getDisplay(), icon);
-            labelMap.put(label, nodeType);
+            nodeTypeMap.put(nodeType.getDisplay(), nodeType);
+            labelMap.put(nodeType.getDisplay(), label);
 
             if (nodeType.getValue() == NodeType.DEFAULT) {
                 nodesList.getItems().add(label);
@@ -165,7 +167,7 @@ public class GraphToolbar extends VBox {
         // initial node
         nodesList.getSelectionModel().selectFirst();
         Label selectedNodeLabel = nodesList.getSelectionModel().getSelectedItem();
-        selectedNodeType = labelMap.get(selectedNodeLabel);
+        selectedNodeType = nodeTypeMap.get(selectedNodeLabel.getText());
         selectedEditButton = nodesButton;
         controller.getNetworkGraph().setNodeType(selectedNodeType);
         updateButtonValues(nodesButton, selectedNodeLabel);
@@ -198,7 +200,7 @@ public class GraphToolbar extends VBox {
             }
 
             updateButtonValues(nodesButton, current);
-            selectedNodeType = labelMap.get(current);
+            selectedNodeType = nodeTypeMap.get(current.getText());
             setSelectedEditButton(nodesButton);
             devicesList.getSelectionModel().clearSelection();
             controller.getNetworkGraph().setNodeType(selectedNodeType);
@@ -218,7 +220,7 @@ public class GraphToolbar extends VBox {
             }
 
             updateButtonValues(devicesButton, current);
-            selectedNodeType = labelMap.get(current);
+            selectedNodeType = nodeTypeMap.get(current.getText());
             controller.getNetworkGraph().setNodeType(selectedNodeType);
             setSelectedEditButton(devicesButton);
             nodesList.getSelectionModel().clearSelection();
@@ -236,6 +238,18 @@ public class GraphToolbar extends VBox {
             startSession();
         } else {
             stopSession();
+        }
+    }
+
+    public void updateNodeType(String display, String uri) {
+        Label label = labelMap.get(display);
+        ImageView icon = new ImageView(uri);
+        icon.setFitWidth(NODES_ICON_SIZE);
+        icon.setFitHeight(NODES_ICON_SIZE);
+        label.setGraphic(icon);
+
+        if (selectedNodeType.getDisplay().equals(display)) {
+            updateButtonValues(nodesButton, label);
         }
     }
 

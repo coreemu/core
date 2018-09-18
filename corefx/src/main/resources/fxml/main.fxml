@@ -30,6 +30,11 @@
                               <MenuItem mnemonicParsing="false" onAction="#onSessionOptionsMenu" text="Options" />
                           </items>
                         </Menu>
+                        <Menu mnemonicParsing="false" text="Options">
+                          <items>
+                            <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuNodeTypes" text="Node Configuration" />
+                          </items>
+                        </Menu>
                             <Menu mnemonicParsing="false" text="Help">
                                 <items>
                               <MenuItem mnemonicParsing="false" onAction="#onHelpMenuWebsite" text="CORE Website" />
