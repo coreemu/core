@@ -1,16 +1,19 @@
 package com.core.ui;
 
 import com.core.Controller;
+import com.core.client.graph.*;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import javafx.application.Platform;
 import javafx.fxml.FXML;
-import javafx.scene.chart.*;
+import javafx.scene.chart.Chart;
 import javafx.scene.layout.Pane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.*;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class ChartDialog extends StageDialog {
@@ -28,11 +31,18 @@ public class ChartDialog extends StageDialog {
     @FXML
     private JFXButton stopButton;
 
+    private CoreGraph coreGraph;
+
     public ChartDialog(Controller controller) {
         super(controller, "/fxml/chart_dialog.fxml");
         addCancelButton();
 
-        chartCombo.getItems().addAll("pie", "line", "area", "bar", "scatter", "bubble");
+        coreGraph = new CoreGraph();
+        coreGraph.setTitle("My Graph");
+        coreGraph.setXAxis(new CoreGraphAxis("X Label", 0.0, 100.0, 1.0));
+        coreGraph.setYAxis(new CoreGraphAxis("Y Label", 0.0, 100.0, 1.0));
+
+        chartCombo.getItems().addAll("pie", "line", "area", "bar", "scatter", "bubble", "time");
         chartCombo.getSelectionModel().selectedItemProperty().addListener((ov, prev, curr) -> {
             if (curr == null) {
                 return;
@@ -58,6 +68,9 @@ public class ChartDialog extends StageDialog {
                 case "bubble":
                     bubbleChart();
                     break;
+                case "time":
+                    timeChart();
+                    break;
             }
         });
 
@@ -65,26 +78,36 @@ public class ChartDialog extends StageDialog {
         chartCombo.getSelectionModel().selectFirst();
     }
 
-    private void bubbleChart() {
-        NumberAxis xAxis = new NumberAxis("X Axis", 0, 100, 1);
-        NumberAxis yAxis = new NumberAxis("Y Axis", 0, 100, 1);
-        BubbleChart<Number, Number> chart = new BubbleChart<>(xAxis, yAxis);
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Bubble Series Data");
-        chart.getData().add(series);
-        chart.setTitle("Bubble Chart");
-        chart.prefHeightProperty().bind(chartPane.heightProperty());
-        chart.prefWidthProperty().bind(chartPane.widthProperty());
-        chartPane.getChildren().clear();
-        chartPane.getChildren().add(chart);
-        running.set(true);
+    private void timeChart() {
+        coreGraph.setGraphType(GraphType.TIME);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
+
         new Thread(() -> {
             while (running.get()) {
                 try {
-                    Integer x = numbers.nextInt(100);
-                    Integer y = numbers.nextInt(100);
-                    Integer weight = numbers.nextInt(10);
-                    Platform.runLater(() -> series.getData().add(new XYChart.Data<>(x, y, weight)));
+                    double y = numbers.nextInt(100);
+                    Platform.runLater(() -> graphWrapper.add(new CoreGraphData(null, null, y, null)));
+                    Thread.sleep(1000);
+                } catch (Exception ex) {
+                    logger.error("error adding data", ex);
+                }
+            }
+        }).start();
+    }
+
+    private void bubbleChart() {
+        coreGraph.setGraphType(GraphType.BUBBLE);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
+
+        new Thread(() -> {
+            while (running.get()) {
+                try {
+                    double x = numbers.nextInt(100);
+                    double y = numbers.nextInt(100);
+                    double weight = numbers.nextInt(10);
+                    Platform.runLater(() -> graphWrapper.add(new CoreGraphData(null, x, y, weight)));
                     Thread.sleep(1000);
                 } catch (Exception ex) {
                     logger.error("error adding data", ex);
@@ -94,24 +117,16 @@ public class ChartDialog extends StageDialog {
     }
 
     private void scatterChart() {
-        NumberAxis xAxis = new NumberAxis("X Axis", 0, 100, 1);
-        NumberAxis yAxis = new NumberAxis("Y Axis", 0, 100, 1);
-        ScatterChart<Number, Number> chart = new ScatterChart<>(xAxis, yAxis);
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Scatter Series Data");
-        chart.getData().add(series);
-        chart.setTitle("Scatter Chart");
-        chart.prefHeightProperty().bind(chartPane.heightProperty());
-        chart.prefWidthProperty().bind(chartPane.widthProperty());
-        chartPane.getChildren().clear();
-        chartPane.getChildren().add(chart);
-        running.set(true);
+        coreGraph.setGraphType(GraphType.SCATTER);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
+
         new Thread(() -> {
             while (running.get()) {
                 try {
-                    Integer x = numbers.nextInt(100);
-                    Integer y = numbers.nextInt(100);
-                    Platform.runLater(() -> series.getData().add(new XYChart.Data<>(x, y)));
+                    double x = numbers.nextInt(100);
+                    double y = numbers.nextInt(100);
+                    Platform.runLater(() -> graphWrapper.add(new CoreGraphData(null, x, y, null)));
                     Thread.sleep(1000);
                 } catch (Exception ex) {
                     logger.error("error adding data", ex);
@@ -121,24 +136,16 @@ public class ChartDialog extends StageDialog {
     }
 
     private void areaChart() {
-        NumberAxis xAxis = new NumberAxis("X Axis", 0, 100, 1);
-        NumberAxis yAxis = new NumberAxis("Y Axis", 0, 100, 1);
-        AreaChart<Number, Number> chart = new AreaChart<>(xAxis, yAxis);
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Area Series Data");
-        chart.getData().add(series);
-        chart.setTitle("Area Chart");
-        chart.prefHeightProperty().bind(chartPane.heightProperty());
-        chart.prefWidthProperty().bind(chartPane.widthProperty());
-        chartPane.getChildren().clear();
-        chartPane.getChildren().add(chart);
-        running.set(true);
+        coreGraph.setGraphType(GraphType.AREA);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
+
         new Thread(() -> {
             while (running.get()) {
                 try {
-                    Integer x = numbers.nextInt(100);
-                    Integer y = numbers.nextInt(100);
-                    Platform.runLater(() -> series.getData().add(new XYChart.Data<>(x, y)));
+                    double x = numbers.nextInt(100);
+                    double y = numbers.nextInt(100);
+                    Platform.runLater(() -> graphWrapper.add(new CoreGraphData(null, x, y, null)));
                     Thread.sleep(1000);
                 } catch (Exception ex) {
                     logger.error("error adding data", ex);
@@ -147,25 +154,25 @@ public class ChartDialog extends StageDialog {
         }).start();
     }
 
-    private void lineChart() {
-        NumberAxis xAxis = new NumberAxis("X Axis", 0, 100, 1);
-        NumberAxis yAxis = new NumberAxis("Y Axis", 0, 100, 1);
-        LineChart<Number, Number> chart = new LineChart<>(xAxis, yAxis);
-        XYChart.Series<Number, Number> series = new XYChart.Series<>();
-        series.setName("Line Series Data");
-        chart.getData().add(series);
-        chart.setTitle("Line Chart");
+    private void setChart(Chart chart) {
         chart.prefHeightProperty().bind(chartPane.heightProperty());
         chart.prefWidthProperty().bind(chartPane.widthProperty());
         chartPane.getChildren().clear();
         chartPane.getChildren().add(chart);
         running.set(true);
+    }
+
+    private void lineChart() {
+        coreGraph.setGraphType(GraphType.LINE);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
+
         new Thread(() -> {
             while (running.get()) {
                 try {
-                    Integer x = numbers.nextInt(100);
-                    Integer y = numbers.nextInt(100);
-                    Platform.runLater(() -> series.getData().add(new XYChart.Data<>(x, y)));
+                    double x = numbers.nextInt(100);
+                    double y = numbers.nextInt(100);
+                    Platform.runLater(() -> graphWrapper.add(new CoreGraphData(null, x, y, null)));
                     Thread.sleep(1000);
                 } catch (Exception ex) {
                     logger.error("error adding data", ex);
@@ -175,29 +182,15 @@ public class ChartDialog extends StageDialog {
     }
 
     private void pieChart() {
-        PieChart chart = new PieChart();
-        chart.setTitle("Pie Chart");
-        chart.prefHeightProperty().bind(chartPane.heightProperty());
-        chart.prefWidthProperty().bind(chartPane.widthProperty());
-        chartPane.getChildren().clear();
-        chartPane.getChildren().add(chart);
-        running.set(true);
-        Map<String, PieChart.Data> pieMap = new HashMap<>();
+        coreGraph.setGraphType(GraphType.PIE);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
         new Thread(() -> {
             while (running.get()) {
                 try {
                     String name = chartNames.get(numbers.nextInt(chartNames.size()));
-                    Integer y = numbers.nextInt(100);
-                    Platform.runLater(() -> {
-                        PieChart.Data data = pieMap.get(name);
-                        if (data != null) {
-                            data.setPieValue(y);
-                        } else {
-                            data = new PieChart.Data(name, y);
-                            chart.getData().add(data);
-                            pieMap.put(name, data);
-                        }
-                    });
+                    double y = numbers.nextInt(100);
+                    Platform.runLater(() -> graphWrapper.add(new CoreGraphData(name, null, y, null)));
                     Thread.sleep(1000);
                 } catch (Exception ex) {
                     logger.error("error adding data", ex);
@@ -207,36 +200,15 @@ public class ChartDialog extends StageDialog {
     }
 
     private void barChart() {
-        CategoryAxis xAxis = new CategoryAxis();
-        xAxis.setLabel("X Axis");
-        xAxis.getCategories().add("My Ctageory");
-        NumberAxis yAxis = new NumberAxis("Y Axis", 0, 100, 1);
-        BarChart<String, Number> chart = new BarChart<>(xAxis, yAxis);
-        XYChart.Series<String, Number> series = new XYChart.Series<>();
-        series.setName("Bar Chart Series");
-        chart.getData().add(series);
-        chart.setTitle("Bar Chart");
-        chart.prefHeightProperty().bind(chartPane.heightProperty());
-        chart.prefWidthProperty().bind(chartPane.widthProperty());
-        chartPane.getChildren().clear();
-        chartPane.getChildren().add(chart);
-        running.set(true);
-        Map<String, XYChart.Data<String, Number>> barMap = new HashMap<>();
+        coreGraph.setGraphType(GraphType.BAR);
+        CoreGraphWrapper graphWrapper = new CoreGraphWrapper(coreGraph);
+        setChart(graphWrapper.getChart());
         new Thread(() -> {
             while (running.get()) {
                 try {
                     String name = chartNames.get(numbers.nextInt(chartNames.size()));
                     Integer y = numbers.nextInt(100);
-                    Platform.runLater(() -> {
-                        XYChart.Data<String, Number> data = barMap.get(name);
-                        if (data != null) {
-                            data.setYValue(y);
-                        } else {
-                            data = new XYChart.Data<>(name, y);
-                            series.getData().add(data);
-                            barMap.put(name, data);
-                        }
-                    });
+                    Platform.runLater(() -> graphWrapper.add(name, y));
                     Thread.sleep(1000);
                 } catch (Exception ex) {
                     logger.error("error adding data", ex);
