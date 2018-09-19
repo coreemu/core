@@ -149,6 +149,12 @@ public class CoreRestClient implements ICoreClient {
         }
 
         for (CoreNode node : networkGraph.getGraph().getVertices()) {
+            // must pre-configure wlan nodes, if not already
+            if (node.getNodeType().getValue() == NodeType.WLAN) {
+                WlanConfig config = getWlanConfig(node);
+                setWlanConfig(node, config);
+            }
+
             if (!createNode(node)) {
                 return false;
             }
