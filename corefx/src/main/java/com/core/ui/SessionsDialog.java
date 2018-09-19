@@ -1,9 +1,9 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.data.SessionState;
 import com.core.client.rest.GetSessions;
 import com.core.client.rest.GetSessionsData;
+import com.core.data.SessionState;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
@@ -43,7 +43,7 @@ public class SessionsDialog extends StageDialog {
             try {
                 getCoreClient().joinSession(row.getId(), true);
             } catch (IOException ex) {
-                logger.error("error joining session: {}", row.getId());
+                Toast.error(String.format("error joining session: %s", row.getId()), ex);
             }
 
             close();

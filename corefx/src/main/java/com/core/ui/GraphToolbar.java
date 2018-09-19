@@ -36,6 +36,14 @@ public class GraphToolbar extends VBox {
     private static final PseudoClass STOP_CLASS = PseudoClass.getPseudoClass("stop");
     private static final PseudoClass SELECTED_CLASS = PseudoClass.getPseudoClass("selected");
     private final Controller controller;
+    private final Map<Integer, Label> labelMap = new HashMap<>();
+    private SVGGlyph startIcon;
+    private SVGGlyph stopIcon;
+    private JFXListView<Label> nodesList = new JFXListView<>();
+    private JFXListView<Label> devicesList = new JFXListView<>();
+    private JFXButton selectedEditButton;
+    private NodeType selectedNodeType;
+    private boolean isEditing = false;
 
     @FXML
     private JFXButton runButton;
@@ -57,16 +65,6 @@ public class GraphToolbar extends VBox {
 
     @FXML
     private JFXButton devicesButton;
-
-    private SVGGlyph startIcon;
-    private SVGGlyph stopIcon;
-    private JFXListView<Label> nodesList = new JFXListView<>();
-    private JFXListView<Label> devicesList = new JFXListView<>();
-    private Map<String, NodeType> nodeTypeMap = new HashMap<>();
-    private Map<String, Label> labelMap = new HashMap<>();
-    private JFXButton selectedEditButton;
-    private NodeType selectedNodeType;
-    private boolean isEditing = false;
 
     public GraphToolbar(Controller controller) {
         this.controller = controller;
@@ -145,13 +143,13 @@ public class GraphToolbar extends VBox {
     }
 
     private void setupNodeTypes() {
-        for (NodeType nodeType : NodeType.getNodeTypes()) {
+        for (NodeType nodeType : NodeType.getAll()) {
             ImageView icon = new ImageView(nodeType.getIcon());
             icon.setFitWidth(NODES_ICON_SIZE);
             icon.setFitHeight(NODES_ICON_SIZE);
             Label label = new Label(nodeType.getDisplay(), icon);
-            nodeTypeMap.put(nodeType.getDisplay(), nodeType);
-            labelMap.put(nodeType.getDisplay(), label);
+            label.setUserData(nodeType.getId());
+            labelMap.put(nodeType.getId(), label);
 
             if (nodeType.getValue() == NodeType.DEFAULT) {
                 nodesList.getItems().add(label);
@@ -167,7 +165,7 @@ public class GraphToolbar extends VBox {
         // initial node
         nodesList.getSelectionModel().selectFirst();
         Label selectedNodeLabel = nodesList.getSelectionModel().getSelectedItem();
-        selectedNodeType = nodeTypeMap.get(selectedNodeLabel.getText());
+        selectedNodeType = NodeType.get((int) selectedNodeLabel.getUserData());
         selectedEditButton = nodesButton;
         controller.getNetworkGraph().setNodeType(selectedNodeType);
         updateButtonValues(nodesButton, selectedNodeLabel);
@@ -200,7 +198,8 @@ public class GraphToolbar extends VBox {
             }
 
             updateButtonValues(nodesButton, current);
-            selectedNodeType = nodeTypeMap.get(current.getText());
+            selectedNodeType = NodeType.get((int) current.getUserData());
+            logger.info("selected node type: {}", selectedNodeType);
             setSelectedEditButton(nodesButton);
             devicesList.getSelectionModel().clearSelection();
             controller.getNetworkGraph().setNodeType(selectedNodeType);
@@ -220,7 +219,8 @@ public class GraphToolbar extends VBox {
             }
 
             updateButtonValues(devicesButton, current);
-            selectedNodeType = nodeTypeMap.get(current.getText());
+            selectedNodeType = NodeType.get((int) current.getUserData());
+            logger.info("selected node type: {}", selectedNodeType);
             controller.getNetworkGraph().setNodeType(selectedNodeType);
             setSelectedEditButton(devicesButton);
             nodesList.getSelectionModel().clearSelection();
@@ -241,14 +241,14 @@ public class GraphToolbar extends VBox {
         }
     }
 
-    public void updateNodeType(String display, String uri) {
-        Label label = labelMap.get(display);
+    public void updateNodeType(int id, String uri) {
+        Label label = labelMap.get(id);
         ImageView icon = new ImageView(uri);
         icon.setFitWidth(NODES_ICON_SIZE);
         icon.setFitHeight(NODES_ICON_SIZE);
         label.setGraphic(icon);
 
-        if (selectedNodeType.getDisplay().equals(display)) {
+        if (selectedNodeType.getId() == id) {
             updateButtonValues(nodesButton, label);
         }
     }

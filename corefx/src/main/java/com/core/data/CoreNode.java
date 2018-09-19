@@ -28,6 +28,8 @@ public class CoreNode {
     private String emane;
     private String url;
     @JsonIgnore
+    private NodeType nodeType;
+    @JsonIgnore
     private String icon;
     @JsonIgnore
     private boolean loaded = true;
@@ -42,12 +44,6 @@ public class CoreNode {
         this.loaded = false;
     }
 
-//    public void setExternalIcon(String iconPath) {
-//        icon = iconPath;
-//        graphIcon = IconUtils.getExternalLayeredIcon(icon);
-//        graphIcon.add(radioIcon);
-//    }
-
     public void setNodeType(NodeType nodeType) {
         type = nodeType.getValue();
         model = nodeType.getModel();
@@ -58,14 +54,6 @@ public class CoreNode {
             graphIcon = IconUtils.getLayeredIcon(icon);
         }
         graphIcon.add(radioIcon);
-    }
-
-    @JsonIgnore
-    public String getNodeTypeKey() {
-        if (model == null) {
-            return type.toString();
-        } else {
-            return String.format("%s-%s", type, model);
-        }
+        this.nodeType = nodeType;
     }
 }

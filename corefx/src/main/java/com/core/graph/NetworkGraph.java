@@ -47,13 +47,12 @@ public class NetworkGraph {
 
     private SubnetUtils subnetUtils = new SubnetUtils("10.0.0.0/24");
     private CoreAddresses coreAddresses = new CoreAddresses("10.0");
-    private NodeType nodeType = NodeType.getNodeType("0-host");
+    private NodeType nodeType;
     private Map<Integer, CoreNode> nodeMap = new ConcurrentHashMap<>();
     private int vertexId = 1;
     private int linkId = 1;
     private Supplier<CoreNode> vertexFactory = () -> new CoreNode(vertexId++);
     private Supplier<CoreLink> linkFactory = () -> new CoreLink(linkId++);
-    private Set<NodeType> nodeTypes = new HashSet<>();
     private CorePopupGraphMousePlugin customPopupPlugin;
     private CoreAnnotatingGraphMousePlugin<CoreNode, CoreLink> customAnnotatingPlugin;
 

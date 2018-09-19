@@ -85,14 +85,14 @@ public class NodeTypesDialog extends StageDialog {
             String iconPath = iconTextField.getText();
             selectedNodeType.setIcon(iconPath);
             for (CoreNode node : controller.getNetworkGraph().getGraph().getVertices()) {
-                if (!selectedNodeType.getKey().equals(node.getNodeTypeKey())) {
+                if (selectedNodeType != node.getNodeType()) {
                     continue;
                 }
 
                 node.setNodeType(selectedNodeType);
             }
             controller.getNetworkGraph().getGraphViewer().repaint();
-            controller.getGraphToolbar().updateNodeType(selectedNodeType.getDisplay(), iconPath);
+            controller.getGraphToolbar().updateNodeType(selectedNodeType.getId(), iconPath);
             Toast.info(String.format("Node %s Updated", selectedNodeType.getDisplay()));
         });
     }
@@ -100,7 +100,7 @@ public class NodeTypesDialog extends StageDialog {
     public void showDialog() {
         listView.getItems().clear();
         nodeTypeMap.clear();
-        for (NodeType nodeType : NodeType.getNodeTypes()) {
+        for (NodeType nodeType : NodeType.getAll()) {
             if (nodeType.getValue() != NodeType.DEFAULT) {
                 continue;
             }

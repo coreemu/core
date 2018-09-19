@@ -98,8 +98,7 @@ public class Controller implements Initializable {
             try {
                 coreClient.initialJoin();
             } catch (IOException ex) {
-                logger.error("failure during initial join", ex);
-                Toast.error(String.format("Initial join failure: %s", ex.getMessage()));
+                Toast.error(String.format("Initial join failure: %s", ex.getMessage()), ex);
             }
         });
     }

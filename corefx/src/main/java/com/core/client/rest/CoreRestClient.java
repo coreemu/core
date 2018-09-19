@@ -45,13 +45,14 @@ public class CoreRestClient implements ICoreClient {
 
         logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
         for (CoreNode node : session.getNodes()) {
-            if (node.getModel() == null) {
-                logger.info("skipping joined session node: {}", node.getName());
+            NodeType nodeType = NodeType.find(node.getType(), node.getModel());
+            if (nodeType == null) {
+                logger.info(String.format("failed to find node type(%s) model(%s): %s",
+                        node.getType(), node.getModel(), node.getName()));
                 continue;
             }
 
-            NodeType nodeType = NodeType.getNodeType(node.getNodeTypeKey());
-            node.setIcon(nodeType.getIcon());
+            node.setNodeType(nodeType);
             networkGraph.addNode(node);
         }
 

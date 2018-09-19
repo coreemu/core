@@ -108,6 +108,9 @@ def get_session(session_id):
     nodes = []
     links = []
     for node in session.objects.itervalues():
+        if not isinstance(node.objid, int):
+            continue
+
         emane_model = None
         if nodeutils.is_node(node, NodeTypes.EMANE):
             emane_model = node.model.name

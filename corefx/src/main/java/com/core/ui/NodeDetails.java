@@ -59,7 +59,7 @@ public class NodeDetails extends ScrollPane {
         if (node.getType() == NodeType.DEFAULT) {
             addRow("Model", node.getModel());
         } else {
-            addRow("Type", NodeType.getDisplay(node.getType()));
+            addRow("Type", node.getNodeType().getDisplay());
         }
         if (node.getEmane() != null) {
             addRow("EMANE", node.getEmane());
