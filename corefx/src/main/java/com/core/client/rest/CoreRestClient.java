@@ -310,6 +310,18 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public LocationConfig getLocationConfig() throws IOException {
+        String url = getUrl(String.format("sessions/%s/location", sessionId));
+        return WebUtils.getJson(url, LocationConfig.class);
+    }
+
+    @Override
+    public boolean setLocationConfig(LocationConfig config) throws IOException {
+        String url = getUrl(String.format("sessions/%s/location", sessionId));
+        return WebUtils.putJson(url, config);
+    }
+
+    @Override
     public boolean createNode(CoreNode node) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes", sessionId));
         return WebUtils.postJson(url, node);

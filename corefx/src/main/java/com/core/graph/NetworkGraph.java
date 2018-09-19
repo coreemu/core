@@ -55,6 +55,7 @@ public class NetworkGraph {
     private Supplier<CoreLink> linkFactory = () -> new CoreLink(linkId++);
     private CorePopupGraphMousePlugin customPopupPlugin;
     private CoreAnnotatingGraphMousePlugin<CoreNode, CoreLink> customAnnotatingPlugin;
+    private BackgroundPaintable<CoreNode, CoreLink> backgroundPaintable;
 
     public NetworkGraph(Controller controller) {
         this.controller = controller;
@@ -162,6 +163,24 @@ public class NetworkGraph {
                 }
             }
         });
+    }
+
+    public void setBackground(String imagePath) {
+        try {
+            backgroundPaintable = new BackgroundPaintable<>(imagePath, graphViewer);
+            graphViewer.addPreRenderPaintable(backgroundPaintable);
+            graphViewer.repaint();
+        } catch (IOException ex) {
+            logger.error("error setting background", ex);
+        }
+    }
+
+    public void removeBackground() {
+        if (backgroundPaintable != null) {
+            graphViewer.removePreRenderPaintable(backgroundPaintable);
+            graphViewer.repaint();
+            backgroundPaintable = null;
+        }
     }
 
     public void setMode(ModalGraphMouse.Mode mode) {

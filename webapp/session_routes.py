@@ -101,6 +101,38 @@ def set_session_options(session_id):
     return jsonify()
 
 
+@api.route("/sessions/<int:session_id>/location", methods=["PUT"])
+def set_session_location(session_id):
+    session = core_utils.get_session(coreemu, session_id)
+    data = request.get_json() or {}
+    position = data["position"]
+    location = data["location"]
+    session.location.refxyz = (position["x"], position["y"], position["z"])
+    session.location.setrefgeo(location["latitude"], location["longitude"], location["altitude"])
+    session.location.refscale = data["scale"]
+    return jsonify()
+
+
+@api.route("/sessions/<int:session_id>/location")
+def get_session_location(session_id):
+    session = core_utils.get_session(coreemu, session_id)
+    x, y, z = session.location.refxyz
+    lat, lon, alt = session.location.refgeo
+    return jsonify({
+        "position": {
+            "x": x,
+            "y": y,
+            "z": z,
+        },
+        "location": {
+            "latitude": lat,
+            "longitude": lon,
+            "altitude": alt
+        },
+        "scale": session.location.refscale
+    })
+
+
 @api.route("/sessions/<int:session_id>")
 def get_session(session_id):
     session = core_utils.get_session(coreemu, session_id)

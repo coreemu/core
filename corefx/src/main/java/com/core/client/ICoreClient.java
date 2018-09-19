@@ -79,4 +79,8 @@ public interface ICoreClient {
     MobilityConfig getMobilityConfig(CoreNode node) throws IOException;
 
     boolean mobilityAction(CoreNode node, String action) throws IOException;
+
+    LocationConfig getLocationConfig() throws IOException;
+
+    boolean setLocationConfig(LocationConfig config) throws IOException;
 }

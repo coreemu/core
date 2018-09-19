@@ -32,7 +32,9 @@
                         </Menu>
                         <Menu mnemonicParsing="false" text="Options">
                           <items>
-                            <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuNodeTypes" text="Node Configuration" />
+                            <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuNodeTypes" text="Nodes" />
+                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuLocation" text="Location" />
+                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuBackground" text="Background" />
                           </items>
                         </Menu>
                             <Menu mnemonicParsing="false" text="Help">

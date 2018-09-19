@@ -77,6 +77,8 @@ public class Controller implements Initializable {
     private MobilityDialog mobilityDialog = new MobilityDialog(this);
     private ChartDialog chartDialog = new ChartDialog(this);
     private NodeTypesDialog nodeTypesDialog = new NodeTypesDialog(this);
+    private BackgroundDialog backgroundDialog = new BackgroundDialog(this);
+    private LocationDialog locationDialog = new LocationDialog(this);
 
     public Controller() {
         // load configuration
@@ -140,11 +142,23 @@ public class Controller implements Initializable {
         configDialog.setOwner(window);
         mobilityDialog.setOwner(window);
         nodeTypesDialog.setOwner(window);
+        backgroundDialog.setOwner(window);
+        locationDialog.setOwner(window);
     }
 
     @FXML
     private void onOptionsMenuNodeTypes(ActionEvent event) {
         nodeTypesDialog.showDialog();
+    }
+
+    @FXML
+    private void onOptionsMenuBackground(ActionEvent event) {
+        backgroundDialog.showDialog();
+    }
+
+    @FXML
+    private void onOptionsMenuLocation(ActionEvent event) {
+        locationDialog.showDialog();
     }
 
     @FXML
