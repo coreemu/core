@@ -1,4 +1,4 @@
-package com.core.client.graph;
+package com.core.datavis;
 
 import lombok.Data;
 

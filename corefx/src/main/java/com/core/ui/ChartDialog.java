@@ -1,7 +1,7 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.client.graph.*;
+import com.core.datavis.*;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import javafx.application.Platform;
