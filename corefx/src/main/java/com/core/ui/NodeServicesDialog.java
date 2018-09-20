@@ -22,26 +22,13 @@ public class NodeServicesDialog extends StageDialog {
     // TODO: get this from core itself
     private final Map<String, Set<String>> defaultServices = new HashMap<>();
     private CoreNode node;
-
-    @FXML
-    private GridPane gridPane;
-
-    @FXML
-    private ScrollPane scrollPane;
-
-    @FXML
-    private JFXListView<String> groupListView;
-
-    @FXML
-    private JFXListView<String> activeListView;
-
-    @FXML
-    private JFXButton removeButton;
-
-    @FXML
-    private JFXButton editButton;
-
     private int index = 0;
+    @FXML private GridPane gridPane;
+    @FXML private ScrollPane scrollPane;
+    @FXML private JFXListView<String> groupListView;
+    @FXML private JFXListView<String> activeListView;
+    @FXML private JFXButton removeButton;
+    @FXML private JFXButton editButton;
 
     public NodeServicesDialog(Controller controller) {
         super(controller, "/fxml/node_services_dialog.fxml");

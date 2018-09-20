@@ -44,27 +44,13 @@ public class GraphToolbar extends VBox {
     private JFXButton selectedEditButton;
     private NodeType selectedNodeType;
     private boolean isEditing = false;
-
-    @FXML
-    private JFXButton runButton;
-
-    @FXML
-    private JFXButton pickingButton;
-
-    @FXML
-    private JFXButton editingButton;
-
-    @FXML
-    private JFXButton drawingButton;
-
-    @FXML
-    private ComboBox<String> graphModeCombo;
-
-    @FXML
-    private JFXButton nodesButton;
-
-    @FXML
-    private JFXButton devicesButton;
+    @FXML private JFXButton runButton;
+    @FXML private JFXButton pickingButton;
+    @FXML private JFXButton editingButton;
+    @FXML private JFXButton drawingButton;
+    @FXML private ComboBox<String> graphModeCombo;
+    @FXML private JFXButton nodesButton;
+    @FXML private JFXButton devicesButton;
 
     public GraphToolbar(Controller controller) {
         this.controller = controller;

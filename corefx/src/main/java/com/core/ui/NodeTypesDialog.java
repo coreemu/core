@@ -19,36 +19,17 @@ import java.util.Map;
 
 public class NodeTypesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
     private final Map<String, NodeType> nodeTypeMap = new HashMap<>();
     private NodeType selectedNodeType;
-
-    @FXML
-    private JFXListView<String> listView;
-
-    @FXML
-    private JFXTextField modelTextField;
-
-    @FXML
-    private JFXTextField displayTextField;
-
-    @FXML
-    private JFXTextField iconTextField;
-
-    @FXML
-    private JFXButton iconButton;
-
-    @FXML
-    private ImageView iconImage;
-
-    @FXML
-    private JFXButton saveButton;
-
-    @FXML
-    private JFXButton addButton;
-
-    @FXML
-    private JFXButton deleteButton;
+    @FXML private JFXListView<String> listView;
+    @FXML private JFXTextField modelTextField;
+    @FXML private JFXTextField displayTextField;
+    @FXML private JFXTextField iconTextField;
+    @FXML private JFXButton iconButton;
+    @FXML private ImageView iconImage;
+    @FXML private JFXButton saveButton;
+    @FXML private JFXButton addButton;
+    @FXML private JFXButton deleteButton;
 
     public NodeTypesDialog(Controller controller) {
         super(controller, "/fxml/node_types_dialog.fxml");

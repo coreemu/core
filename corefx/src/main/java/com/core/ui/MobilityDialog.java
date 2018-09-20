@@ -22,37 +22,19 @@ import java.util.Map;
 @Data
 public class MobilityDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
-    @FXML
-    private JFXTextField fileTextField;
-
-    @FXML
-    private JFXTextField refreshTextField;
-
-    @FXML
-    private JFXToggleButton loopToggleButton;
-
-    @FXML
-    private JFXTextField nodeMappingTextField;
-
-    @FXML
-    private JFXTextField autoStartTextField;
-
-    @FXML
-    private JFXTextField startTextField;
-
-    @FXML
-    private JFXTextField pauseTextField;
-
-    @FXML
-    private JFXTextField stopTextField;
-
+    @FXML private JFXTextField fileTextField;
+    @FXML private JFXTextField refreshTextField;
+    @FXML private JFXToggleButton loopToggleButton;
+    @FXML private JFXTextField nodeMappingTextField;
+    @FXML private JFXTextField autoStartTextField;
+    @FXML private JFXTextField startTextField;
+    @FXML private JFXTextField pauseTextField;
+    @FXML private JFXTextField stopTextField;
     private Map<Integer, MobilityConfig> mobilityScripts = new HashMap<>();
     private CoreNode node;
 
     public MobilityDialog(Controller controller) {
         super(controller, "/fxml/mobility_dialog.fxml");
-
         setTitle("Mobility Script");
 
         JFXButton saveButton = createButton("Save");

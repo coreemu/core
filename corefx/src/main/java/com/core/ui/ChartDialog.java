@@ -21,16 +21,9 @@ public class ChartDialog extends StageDialog {
     private final AtomicBoolean running = new AtomicBoolean(false);
     private final Random numbers = new Random();
     private final List<String> chartNames = Arrays.asList("Name 1", "Name 2", "Name 3", "Name 4", "Name 5");
-
-    @FXML
-    private JFXComboBox<String> chartCombo;
-
-    @FXML
-    private Pane chartPane;
-
-    @FXML
-    private JFXButton stopButton;
-
+    @FXML private JFXComboBox<String> chartCombo;
+    @FXML private Pane chartPane;
+    @FXML private JFXButton stopButton;
     private CoreGraph coreGraph;
 
     public ChartDialog(Controller controller) {

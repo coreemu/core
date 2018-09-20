@@ -1,9 +1,9 @@
 package com.core.ui;
 
 import com.core.Controller;
+import com.core.client.rest.ServiceFile;
 import com.core.data.CoreNode;
 import com.core.data.CoreService;
-import com.core.client.rest.ServiceFile;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXComboBox;
 import com.jfoenix.controls.JFXTextArea;
@@ -19,40 +19,19 @@ import java.util.stream.Collectors;
 
 public class ServiceDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
     private CoreNode coreNode;
     private CoreService coreService;
     private String serviceName;
-
-    @FXML
-    private JFXComboBox<String> executablesComboBox;
-
-    @FXML
-    private JFXComboBox<String> dependenciesComboBox;
-
-    @FXML
-    private JFXTextField validationModeTextField;
-
-    @FXML
-    private JFXTextField validationTimerTextField;
-
-    @FXML
-    private JFXComboBox<String> directoriesComboBox;
-
-    @FXML
-    private JFXComboBox<String> filesComboBox;
-
-    @FXML
-    private JFXTextArea fileTextArea;
-
-    @FXML
-    private JFXTextArea startupTextArea;
-
-    @FXML
-    private JFXTextArea validateTextArea;
-
-    @FXML
-    private JFXTextArea shutdownTextArea;
+    @FXML private JFXComboBox<String> executablesComboBox;
+    @FXML private JFXComboBox<String> dependenciesComboBox;
+    @FXML private JFXTextField validationModeTextField;
+    @FXML private JFXTextField validationTimerTextField;
+    @FXML private JFXComboBox<String> directoriesComboBox;
+    @FXML private JFXComboBox<String> filesComboBox;
+    @FXML private JFXTextArea fileTextArea;
+    @FXML private JFXTextArea startupTextArea;
+    @FXML private JFXTextArea validateTextArea;
+    @FXML private JFXTextArea shutdownTextArea;
 
     public ServiceDialog(Controller controller) {
         super(controller, "/fxml/service_dialog.fxml");

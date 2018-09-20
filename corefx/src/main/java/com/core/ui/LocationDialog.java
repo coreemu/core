@@ -13,25 +13,12 @@ import java.io.IOException;
 
 public class LocationDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
-    @FXML
-    private JFXTextField scaleTextField;
-
-    @FXML
-    private JFXTextField xTextField;
-
-    @FXML
-    private JFXTextField yTextField;
-
-    @FXML
-    private JFXTextField latTextField;
-
-    @FXML
-    private JFXTextField lonTextField;
-
-    @FXML
-    private JFXTextField altTextField;
-
+    @FXML private JFXTextField scaleTextField;
+    @FXML private JFXTextField xTextField;
+    @FXML private JFXTextField yTextField;
+    @FXML private JFXTextField latTextField;
+    @FXML private JFXTextField lonTextField;
+    @FXML private JFXTextField altTextField;
     private JFXButton saveButton;
 
     public LocationDialog(Controller controller) {

@@ -13,8 +13,6 @@ import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.layout.GridPane;
-import javafx.scene.text.Font;
-import javafx.scene.text.FontWeight;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -23,12 +21,9 @@ import java.io.IOException;
 public class LinkDetails extends ScrollPane {
     private static final Logger logger = LogManager.getLogger();
     private static final int START_INDEX = 1;
-
     private NetworkGraph graph;
     private int index = START_INDEX;
-
-    @FXML
-    private GridPane gridPane;
+    @FXML private GridPane gridPane;
 
     public LinkDetails(NetworkGraph graph) {
         this.graph = graph;

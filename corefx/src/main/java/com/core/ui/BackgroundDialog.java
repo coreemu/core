@@ -19,19 +19,11 @@ import java.nio.file.Paths;
 
 public class BackgroundDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
-    @FXML
-    private ImageView imageView;
-
-    @FXML
-    private JFXTextField fileTextField;
-
-    @FXML
-    private JFXButton fileButton;
-
+    @FXML private ImageView imageView;
+    @FXML private JFXTextField fileTextField;
+    @FXML private JFXButton fileButton;
     private JFXButton saveButton;
     private JFXButton clearButton;
-
 
     public BackgroundDialog(Controller controller) {
         super(controller, "/fxml/background_dialog.fxml");

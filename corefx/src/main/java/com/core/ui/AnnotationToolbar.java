@@ -20,18 +20,10 @@ import java.io.IOException;
 public class AnnotationToolbar extends GridPane {
     private static final Logger logger = LogManager.getLogger();
     private NetworkGraph graph;
-
-    @FXML
-    private JFXComboBox<String> shapeCombo;
-
-    @FXML
-    private JFXColorPicker colorPicker;
-
-    @FXML
-    private JFXComboBox<String> layerCombo;
-
-    @FXML
-    private JFXToggleButton fillToggle;
+    @FXML private JFXComboBox<String> shapeCombo;
+    @FXML private JFXColorPicker colorPicker;
+    @FXML private JFXComboBox<String> layerCombo;
+    @FXML private JFXToggleButton fillToggle;
 
     public AnnotationToolbar(NetworkGraph graph) {
         this.graph = graph;

@@ -1,10 +1,10 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.data.CoreNode;
 import com.core.client.rest.ConfigGroup;
 import com.core.client.rest.ConfigOption;
 import com.core.client.rest.GetConfig;
+import com.core.data.CoreNode;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXScrollPane;
 import com.jfoenix.controls.JFXTabPane;
@@ -24,16 +24,11 @@ import java.util.stream.Collectors;
 
 public class ConfigDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
     private CoreNode coreNode;
     private List<ConfigItem> configItems = new ArrayList<>();
     private JFXButton saveButton;
-
-    @FXML
-    private JFXTabPane tabPane;
-
-    @FXML
-    private HBox buttonBar;
+    @FXML private JFXTabPane tabPane;
+    @FXML private HBox buttonBar;
 
     public ConfigDialog(Controller controller) {
         super(controller, "/fxml/config_dialog.fxml");

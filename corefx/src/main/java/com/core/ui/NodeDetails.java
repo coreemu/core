@@ -28,13 +28,8 @@ public class NodeDetails extends ScrollPane {
     private static final Logger logger = LogManager.getLogger();
     private static final int START_INDEX = 1;
     private final Controller controller;
-
-    @FXML
-    private ScrollPane scrollPane;
-
-    @FXML
-    private GridPane gridPane;
-
+    @FXML private ScrollPane scrollPane;
+    @FXML private GridPane gridPane;
     private int index = START_INDEX;
 
     public NodeDetails(Controller controller) {

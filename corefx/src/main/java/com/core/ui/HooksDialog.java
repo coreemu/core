@@ -1,9 +1,9 @@
 package com.core.ui;
 
 import com.core.Controller;
+import com.core.client.rest.GetHooks;
 import com.core.data.Hook;
 import com.core.data.SessionState;
-import com.core.client.rest.GetHooks;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
@@ -20,15 +20,9 @@ public class HooksDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
     private HookDialog hookDialog;
     private int fileCount = 0;
-
-    @FXML
-    private TableView<Hook> hooksTable;
-
-    @FXML
-    private TableColumn<Hook, Integer> fileColumn;
-
-    @FXML
-    private TableColumn<Hook, Integer> stateColumn;
+    @FXML private TableView<Hook> hooksTable;
+    @FXML private TableColumn<Hook, Integer> fileColumn;
+    @FXML private TableColumn<Hook, Integer> stateColumn;
 
     public HooksDialog(Controller controller) {
         super(controller, "/fxml/hooks_dialog.fxml");

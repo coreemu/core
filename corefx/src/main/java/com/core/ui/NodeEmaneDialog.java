@@ -16,17 +16,10 @@ import java.util.List;
 
 public class NodeEmaneDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
     private CoreNode coreNode;
-
-    @FXML
-    private JFXComboBox<String> modelCombo;
-
-    @FXML
-    private JFXButton modelButton;
-
-    @FXML
-    private JFXButton emaneButton;
+    @FXML private JFXComboBox<String> modelCombo;
+    @FXML private JFXButton modelButton;
+    @FXML private JFXButton emaneButton;
 
     public NodeEmaneDialog(Controller controller) {
         super(controller, "/fxml/node_emane_dialog.fxml");

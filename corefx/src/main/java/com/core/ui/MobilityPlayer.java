@@ -18,19 +18,10 @@ public class MobilityPlayer extends HBox {
     private static final Logger logger = LogManager.getLogger();
     private static final int ICON_SIZE = 20;
     private static final String ICON_FILL = "white";
-
-    @FXML
-    private Label label;
-
-    @FXML
-    private JFXButton playButton;
-
-    @FXML
-    private JFXButton pauseButton;
-
-    @FXML
-    private JFXButton stopButton;
-
+    @FXML private Label label;
+    @FXML private JFXButton playButton;
+    @FXML private JFXButton pauseButton;
+    @FXML private JFXButton stopButton;
     private Controller controller;
     private CoreNode node;
     private MobilityConfig mobilityConfig;

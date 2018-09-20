@@ -1,8 +1,8 @@
 package com.core.ui;
 
 import com.core.Controller;
-import com.core.data.CoreNode;
 import com.core.client.rest.WlanConfig;
+import com.core.data.CoreNode;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import javafx.fxml.FXML;
@@ -13,23 +13,12 @@ import java.io.IOException;
 
 public class NodeWlanDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-
     private CoreNode coreNode;
-
-    @FXML
-    private JFXTextField rangeTextField;
-
-    @FXML
-    private JFXTextField bandwidthTextField;
-
-    @FXML
-    private JFXTextField delayTextField;
-
-    @FXML
-    private JFXTextField lossTextField;
-
-    @FXML
-    private JFXTextField jitterTextField;
+    @FXML private JFXTextField rangeTextField;
+    @FXML private JFXTextField bandwidthTextField;
+    @FXML private JFXTextField delayTextField;
+    @FXML private JFXTextField lossTextField;
+    @FXML private JFXTextField jitterTextField;
 
     public NodeWlanDialog(Controller controller) {
         super(controller, "/fxml/wlan_dialog.fxml");

@@ -19,16 +19,9 @@ public class HookDialog extends StageDialog {
     private static final String DEFAULT_DATA = "#!/bin/sh\n" +
             "# session hook script; write commands here to execute\n" +
             "# on the host at the specified state\n";
-
-    @FXML
-    private JFXComboBox<String> stateCombo;
-
-    @FXML
-    private JFXTextField fileTextField;
-
-    @FXML
-    private JFXTextArea fileData;
-
+    @FXML private JFXComboBox<String> stateCombo;
+    @FXML private JFXTextField fileTextField;
+    @FXML private JFXTextArea fileData;
     private JFXButton saveButton;
 
     public HookDialog(Controller controller) {

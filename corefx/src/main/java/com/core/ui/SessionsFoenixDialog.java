@@ -18,18 +18,10 @@ import java.util.stream.Collectors;
 
 public class SessionsFoenixDialog extends CoreFoenixDialog {
     private static final Logger logger = LogManager.getLogger();
-
-    @FXML
-    private TableView<SessionRow> sessionsTable;
-
-    @FXML
-    private TableColumn<SessionRow, Integer> sessionIdColumn;
-
-    @FXML
-    private TableColumn<SessionRow, String> stateColumn;
-
-    @FXML
-    private TableColumn<SessionRow, Integer> nodeCountColumn;
+    @FXML private TableView<SessionRow> sessionsTable;
+    @FXML private TableColumn<SessionRow, Integer> sessionIdColumn;
+    @FXML private TableColumn<SessionRow, String> stateColumn;
+    @FXML private TableColumn<SessionRow, Integer> nodeCountColumn;
 
     public SessionsFoenixDialog(Controller controller) {
         super(controller, "/fxml/sessions_dialog.fxml");
