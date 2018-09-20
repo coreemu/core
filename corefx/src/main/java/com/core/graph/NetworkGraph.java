@@ -68,7 +68,7 @@ public class NetworkGraph {
 
         RenderContext<CoreNode, CoreLink> renderContext = graphViewer.getRenderContext();
 
-        // vertext render properties
+        // node render properties
         renderContext.setVertexLabelTransformer(CoreNode::getName);
         renderContext.setVertexShapeTransformer(node -> {
             double offset = -(IconUtils.ICON_SIZE / 2);
@@ -80,7 +80,7 @@ public class NetworkGraph {
             return vertex.getGraphIcon();
         });
 
-        // edge render properties
+        // link render properties
         renderContext.setEdgeStrokeTransformer(edge -> {
             LinkTypes linkType = LinkTypes.get(edge.getType());
             if (LinkTypes.WIRELESS == linkType) {
@@ -146,11 +146,16 @@ public class NetworkGraph {
             public void graphReleased(CoreNode node, MouseEvent mouseEvent) {
                 logger.info("graph released mouse event: {}", mouseEvent);
                 if (SwingUtilities.isLeftMouseButton(mouseEvent)) {
-                    double x = graphLayout.getX(node);
-                    double y = graphLayout.getY(node);
-                    logger.debug("graph moved node({}): {},{}", node.getName(), x, y);
-                    node.getPosition().setX(x);
-                    node.getPosition().setY(y);
+                    double newX = graphLayout.getX(node);
+                    double newY = graphLayout.getY(node);
+                    double oldX = node.getPosition().getX();
+                    double oldY = node.getPosition().getY();
+                    if (oldX == newX && oldY == newY) {
+                        return;
+                    }
+                    logger.debug("graph moved node({}): {},{}", node.getName(), newX, newY);
+                    node.getPosition().setX(newX);
+                    node.getPosition().setY(newY);
 
                     // upate node when session is active
                     if (controller.getCoreClient().isRunning()) {
