@@ -3,10 +3,10 @@ package com.core.ui;
 import com.core.Controller;
 import com.core.data.CoreNode;
 import com.core.data.MobilityConfig;
+import com.core.utils.FxmlUtils;
 import com.core.utils.IconUtils;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
 import org.apache.logging.log4j.LogManager;
@@ -28,15 +28,7 @@ public class MobilityPlayer extends HBox {
 
     public MobilityPlayer(Controller controller) {
         this.controller = controller;
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/mobility_player.fxml"));
-        loader.setRoot(this);
-        loader.setController(this);
-
-        try {
-            loader.load();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        FxmlUtils.loadRootController(this, "/fxml/mobility_player.fxml");
 
         playButton.setGraphic(IconUtils.get("play_arrow", ICON_SIZE, ICON_FILL));
         playButton.setOnAction(event -> action("start"));

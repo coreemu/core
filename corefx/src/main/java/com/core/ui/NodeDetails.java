@@ -5,6 +5,7 @@ import com.core.data.CoreInterface;
 import com.core.data.CoreLink;
 import com.core.data.CoreNode;
 import com.core.data.NodeType;
+import com.core.utils.FxmlUtils;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXScrollPane;
@@ -12,7 +13,6 @@ import com.jfoenix.controls.JFXTextField;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
@@ -21,8 +21,6 @@ import javafx.scene.control.Separator;
 import javafx.scene.layout.GridPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.IOException;
 
 public class NodeDetails extends ScrollPane {
     private static final Logger logger = LogManager.getLogger();
@@ -34,22 +32,12 @@ public class NodeDetails extends ScrollPane {
 
     public NodeDetails(Controller controller) {
         this.controller = controller;
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/node_details.fxml"));
-        loader.setRoot(this);
-        loader.setController(this);
-
-        try {
-            loader.load();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
-
+        FxmlUtils.loadRootController(this, "/fxml/node_details.fxml");
         setPrefWidth(500);
     }
 
     public void setNode(CoreNode node) {
         clear();
-
         addSeparator();
 
         addRow("Name", node.getName());

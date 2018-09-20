@@ -4,9 +4,9 @@ import com.core.data.CoreInterface;
 import com.core.data.CoreLink;
 import com.core.data.CoreNode;
 import com.core.graph.NetworkGraph;
+import com.core.utils.FxmlUtils;
 import com.jfoenix.controls.JFXTextField;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.scene.control.Label;
@@ -15,8 +15,6 @@ import javafx.scene.control.Separator;
 import javafx.scene.layout.GridPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
-
-import java.io.IOException;
 
 public class LinkDetails extends ScrollPane {
     private static final Logger logger = LogManager.getLogger();
@@ -27,15 +25,7 @@ public class LinkDetails extends ScrollPane {
 
     public LinkDetails(NetworkGraph graph) {
         this.graph = graph;
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/link_details.fxml"));
-        loader.setRoot(this);
-        loader.setController(this);
-
-        try {
-            loader.load();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        FxmlUtils.loadRootController(this, "/fxml/link_details.fxml");
     }
 
     public void setLink(CoreLink link) {
