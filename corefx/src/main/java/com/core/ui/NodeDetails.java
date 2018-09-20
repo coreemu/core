@@ -48,6 +48,8 @@ public class NodeDetails extends ScrollPane {
         } catch (IOException ex) {
             throw new RuntimeException(ex);
         }
+
+        setPrefWidth(500);
     }
 
     public void setNode(CoreNode node) {
@@ -67,8 +69,12 @@ public class NodeDetails extends ScrollPane {
 
         addSeparator();
 
-        addRow("X", node.getPosition().getX().toString());
-        addRow("Y", node.getPosition().getY().toString());
+        if (node.getPosition().getX() != null) {
+            addRow("X", node.getPosition().getX().toString());
+        }
+        if (node.getPosition().getY() != null) {
+            addRow("Y", node.getPosition().getY().toString());
+        }
 
         for (CoreLink link : controller.getNetworkGraph().getGraph().getIncidentEdges(node)) {
             CoreNode linkedNode;
@@ -87,13 +93,23 @@ public class NodeDetails extends ScrollPane {
 
             addSeparator();
             if (linkedNode.getType() == NodeType.EMANE) {
-                addButton(linkedNode.getName(), event -> controller.getNodeEmaneDialog().showDialog(linkedNode));
+                String emaneModel = linkedNode.getEmane();
+                String linkedLabel = String.format("%s - %s", linkedNode.getName(), emaneModel);
+                addButton(linkedLabel, event -> controller.getNodeEmaneDialog()
+                        .displayEmaneModelConfig(linkedNode.getId(), emaneModel));
+                String nodeLabel = String.format("%s - %s", node.getName(), emaneModel);
+                addButton(nodeLabel, event -> controller.getNodeEmaneDialog()
+                        .displayEmaneModelConfig(node.getId(), emaneModel));
+                String interfaceLabel = String.format("%s - %s", coreInterface.getName(), emaneModel);
+                Integer interfaceId = 1000 * node.getId() + coreInterface.getId();
+                addButton(interfaceLabel, event -> controller.getNodeEmaneDialog()
+                        .displayEmaneModelConfig(interfaceId, emaneModel));
             }
 
             if (linkedNode.getType() == NodeType.WLAN) {
                 addButton(linkedNode.getName(), event -> controller.getNodeWlanDialog().showDialog(linkedNode));
             }
-            addInterface(coreInterface);
+            addInterface(coreInterface, linkedNode);
         }
 
 
@@ -132,7 +148,8 @@ public class NodeDetails extends ScrollPane {
         GridPane.setMargin(separator, new Insets(10, 0, 0, 0));
     }
 
-    private void addInterface(CoreInterface coreInterface) {
+    private void addInterface(CoreInterface coreInterface, CoreNode linkedNode) {
+        addRow("Linked To", linkedNode.getName());
         addRow("Interface", coreInterface.getName());
         if (coreInterface.getMac() != null) {
             addRow("MAC", coreInterface.getMac());

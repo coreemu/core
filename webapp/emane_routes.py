@@ -24,7 +24,7 @@ def set_emane_model_config(session_id):
     session = core_utils.get_session(coreemu, session_id)
     data = request.get_json() or {}
     model_name = data["name"]
-    node_id = data.get("node")
+    node_id = data["node"]
     values = data["values"]
     config = {x["name"]: x["value"] for x in values}
     session.emane.set_model_config(node_id, model_name, config)
@@ -63,7 +63,7 @@ def get_emane_config(session_id):
 @api.route("/sessions/<int:session_id>/emane/model/config")
 def get_emane_model_config(session_id):
     session = core_utils.get_session(coreemu, session_id)
-    node_id = core_utils.get_node_id(request.args.get("node"))
+    node_id = core_utils.get_node_id(request.args["node"])
 
     model_name = request.args["name"]
     model = session.emane.models[model_name]

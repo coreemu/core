@@ -36,15 +36,15 @@ public interface ICoreClient {
 
     boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException;
 
-    GetConfig getEmaneModelConfig(CoreNode node, String model) throws IOException;
-
     GetConfig getEmaneConfig(CoreNode node) throws IOException;
 
     GetEmaneModels getEmaneModels() throws IOException;
 
     boolean setEmaneConfig(CoreNode node, List<ConfigOption> options) throws IOException;
 
-    boolean setEmaneModelConfig(CoreNode node, String model, List<ConfigOption> options) throws IOException;
+    GetConfig getEmaneModelConfig(Integer id, String model) throws IOException;
+
+    boolean setEmaneModelConfig(Integer id, String model, List<ConfigOption> options) throws IOException;
 
     boolean isRunning();
 

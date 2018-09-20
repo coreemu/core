@@ -238,10 +238,10 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public GetConfig getEmaneModelConfig(CoreNode node, String model) throws IOException {
+    public GetConfig getEmaneModelConfig(Integer id, String model) throws IOException {
         String url = getUrl(String.format("sessions/%s/emane/model/config", sessionId));
         Map<String, String> args = new HashMap<>();
-        args.put("node", node.getId().toString());
+        args.put("node", id.toString());
         args.put("name", model);
         return WebUtils.getJson(url, GetConfig.class, args);
     }
@@ -264,10 +264,10 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public boolean setEmaneModelConfig(CoreNode node, String model, List<ConfigOption> options) throws IOException {
+    public boolean setEmaneModelConfig(Integer id, String model, List<ConfigOption> options) throws IOException {
         String url = getUrl(String.format("sessions/%s/emane/model/config", sessionId));
         SetEmaneModelConfig setEmaneModelConfig = new SetEmaneModelConfig();
-        setEmaneModelConfig.setNode(node.getId());
+        setEmaneModelConfig.setNode(id);
         setEmaneModelConfig.setName(model);
         setEmaneModelConfig.setValues(options);
         return WebUtils.putJson(url, setEmaneModelConfig);

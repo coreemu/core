@@ -68,26 +68,30 @@ public class NodeEmaneDialog extends StageDialog {
                 }
             });
         } catch (IOException ex) {
-            logger.error("error getting emane model config", ex);
+            Toast.error("error getting emane model config", ex);
         }
     }
 
     private void emaneModelButtonHandler(ActionEvent event) {
         String model = modelCombo.getSelectionModel().getSelectedItem();
+        displayEmaneModelConfig(coreNode.getId(), model);
+    }
+
+    public void displayEmaneModelConfig(Integer id, String model) {
         try {
-            GetConfig getConfig = getCoreClient().getEmaneModelConfig(coreNode, model);
+            GetConfig getConfig = getCoreClient().getEmaneModelConfig(id, model);
             logger.debug("emane model config: {}", getConfig);
-            String title = String.format("%s %s Config", coreNode.getName(), model);
+            String title = String.format("EMANE(%s) %s Config", id, model);
             getController().getConfigDialog().showDialog(title, getConfig, () -> {
                 List<ConfigOption> options = getController().getConfigDialog().getOptions();
                 try {
-                    getCoreClient().setEmaneModelConfig(coreNode, model, options);
+                    getCoreClient().setEmaneModelConfig(id, model, options);
                 } catch (IOException ex) {
-                    logger.error("set emane model config error", ex);
+                    Toast.error("set emane model config error", ex);
                 }
             });
         } catch (IOException ex) {
-            logger.error("error getting emane model config", ex);
+            Toast.error("error getting emane model config", ex);
         }
     }
 
