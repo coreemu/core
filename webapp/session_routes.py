@@ -34,7 +34,7 @@ def create_session():
 
     # set session location
     session.location.setrefgeo(47.57917, -122.13232, 2.0)
-    session.location.refscale = 150.0
+    session.location.refscale = 150000.0
 
     # add handlers
     session.event_handlers.append(websocket_routes.broadcast_event)
