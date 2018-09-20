@@ -56,14 +56,15 @@ def edit_node(session_id, node_id):
     data = request.get_json() or {}
 
     node_options = NodeOptions()
-    node_position = data["position"]
-    x = node_position["x"]
-    y = node_position["y"]
+    node_position = data.get("position", {})
+    x = node_position.get("x")
+    y = node_position.get("y")
     node_options.set_position(x, y)
     lat = data.get("lat")
     lon = data.get("lon")
     alt = data.get("alt")
     node_options.set_location(lat, lon, alt)
+    logger.debug("updating node(%s) - pos(%s, %s) geo(%s, %s, %s)", node_id, x, y, lat, lon, alt)
 
     result = session.update_node(node_id, node_options)
     if result:

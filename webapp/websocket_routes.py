@@ -114,25 +114,26 @@ def broadcast_config(config_data):
     })
 
 
-def broadcast_event(event):
+def broadcast_event(event_data):
     socketio.emit("event", {
-        "node": event.node,
-        "event_type": event.event_type,
-        "name": event.name,
-        "data": event.data,
-        "time": event.time,
-        "session": event.session
+        "node": event_data.node,
+        "event_type": event_data.event_type,
+        "name": event_data.name,
+        "data": event_data.data,
+        "time": event_data.time,
+        "session": event_data.session
     })
 
 
-def broadcast_node(node):
+def broadcast_node(node_data):
+    services = node_data.services or ""
     socketio.emit("node", {
-        "id": node.id,
-        "name": node.name,
-        "model": node.model,
+        "id": node_data.id,
+        "name": node_data.name,
+        "model": node_data.model,
         "position": {
-            "x": node.x_position,
-            "y": node.y_position,
+            "x": node_data.x_position,
+            "y": node_data.y_position,
         },
-        "services": node.services.split("|"),
+        "services": services.split("|"),
     })

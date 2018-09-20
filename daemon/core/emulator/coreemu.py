@@ -581,6 +581,7 @@ class EmuSession(Session):
         has_lat_lon_alt = all(i is not None for i in [lat, lon, alt])
         using_lat_lon_alt = has_empty_position and has_lat_lon_alt
         if using_lat_lon_alt:
+            logger.debug("updating node(%s) location using geo: %s, %s, %s", node.name, lat, lon, alt)
             x, y, _ = self.location.getxyz(lat, lon, alt)
 
         # set position and broadcast
@@ -588,6 +589,7 @@ class EmuSession(Session):
 
         # broadcast updated location when using lat/lon/alt
         if using_lat_lon_alt:
+            logger.debug("broadcasting node(%s) location", node.name)
             self.broadcast_node_location(node)
 
     def broadcast_node_location(self, node):
