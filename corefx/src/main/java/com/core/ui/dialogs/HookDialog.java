@@ -26,15 +26,12 @@ public class HookDialog extends StageDialog {
 
     public HookDialog(Controller controller) {
         super(controller, "/fxml/hook_dialog.fxml");
-
         setTitle("Hook");
-
         saveButton = createButton("Save");
         addCancelButton();
 
-        stateCombo.getItems().addAll(
-                Arrays.stream(SessionState.values()).map(Enum::name).sorted().collect(Collectors.toList())
-        );
+        stateCombo.getItems()
+                .addAll(Arrays.stream(SessionState.values()).map(Enum::name).sorted().collect(Collectors.toList()));
         stateCombo.getSelectionModel().select(SessionState.RUNTIME.name());
     }
 

@@ -4,8 +4,8 @@ import com.core.Controller;
 import com.core.client.rest.ConfigGroup;
 import com.core.client.rest.ConfigOption;
 import com.core.client.rest.GetConfig;
-import com.core.data.CoreNode;
-import com.core.ui.ConfigItem;
+import com.core.ui.config.ConfigItemUtils;
+import com.core.ui.config.IConfigItem;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXScrollPane;
 import com.jfoenix.controls.JFXTabPane;
@@ -15,7 +15,6 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -25,11 +24,9 @@ import java.util.stream.Collectors;
 
 public class ConfigDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-    private CoreNode coreNode;
-    private List<ConfigItem> configItems = new ArrayList<>();
+    private List<IConfigItem> configItems = new ArrayList<>();
     private JFXButton saveButton;
     @FXML private JFXTabPane tabPane;
-    @FXML private HBox buttonBar;
 
     public ConfigDialog(Controller controller) {
         super(controller, "/fxml/config_dialog.fxml");
@@ -38,7 +35,7 @@ public class ConfigDialog extends StageDialog {
     }
 
     public List<ConfigOption> getOptions() {
-        return configItems.stream().map(ConfigItem::getOption).collect(Collectors.toList());
+        return configItems.stream().map(IConfigItem::getOption).collect(Collectors.toList());
     }
 
     public void showDialog(String title, GetConfig getConfig, Runnable runnable) {
@@ -64,11 +61,10 @@ public class ConfigDialog extends StageDialog {
             gridPane.setHgap(10);
             gridPane.setVgap(10);
             int index = 0;
-            logger.info("tabs: {}", tabPane.getTabs());
             tabPane.getTabs().add(tab);
 
             for (ConfigOption option : group.getOptions()) {
-                ConfigItem configItem = new ConfigItem(getStage(), option);
+                IConfigItem configItem = ConfigItemUtils.get(getStage(), option);
                 gridPane.addRow(index, configItem.getLabel(), configItem.getNode());
                 configItems.add(configItem);
                 index += 1;

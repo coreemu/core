@@ -2,6 +2,7 @@ package com.core.ui;
 
 import com.core.Controller;
 import com.core.data.NodeType;
+import com.core.utils.FxmlUtils;
 import com.core.utils.IconUtils;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
@@ -12,7 +13,6 @@ import javafx.application.Platform;
 import javafx.css.PseudoClass;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
-import javafx.fxml.FXMLLoader;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
@@ -54,15 +54,7 @@ public class GraphToolbar extends VBox {
 
     public GraphToolbar(Controller controller) {
         this.controller = controller;
-        FXMLLoader loader = new FXMLLoader(getClass().getResource("/fxml/graph_toolbar.fxml"));
-        loader.setRoot(this);
-        loader.setController(this);
-
-        try {
-            loader.load();
-        } catch (IOException ex) {
-            throw new RuntimeException(ex);
-        }
+        FxmlUtils.loadRootController(this, "/fxml/graph_toolbar.fxml");
 
         startIcon = IconUtils.get("play_circle_filled");
         startIcon.setSize(ICON_SIZE);
