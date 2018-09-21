@@ -1,8 +1,9 @@
-package com.core.ui;
+package com.core.ui.dialogs;
 
 import com.core.Controller;
 import com.core.data.CoreNode;
 import com.core.data.MobilityConfig;
+import com.core.ui.Toast;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXToggleButton;

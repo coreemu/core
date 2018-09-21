@@ -144,13 +144,12 @@ public class NetworkGraph {
 
             @Override
             public void graphReleased(CoreNode node, MouseEvent mouseEvent) {
-                logger.info("graph released mouse event: {}", mouseEvent);
                 if (SwingUtilities.isLeftMouseButton(mouseEvent)) {
-                    double newX = graphLayout.getX(node);
-                    double newY = graphLayout.getY(node);
-                    double oldX = node.getPosition().getX();
-                    double oldY = node.getPosition().getY();
-                    if (oldX == newX && oldY == newY) {
+                    Double newX = graphLayout.getX(node);
+                    Double newY = graphLayout.getY(node);
+                    Double oldX = node.getPosition().getX();
+                    Double oldY = node.getPosition().getY();
+                    if (newX.equals(oldX) && newY.equals(oldY)) {
                         return;
                     }
                     logger.debug("graph moved node({}): {},{}", node.getName(), newX, newY);

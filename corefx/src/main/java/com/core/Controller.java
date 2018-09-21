@@ -10,6 +10,7 @@ import com.core.data.CoreNode;
 import com.core.data.MobilityConfig;
 import com.core.graph.NetworkGraph;
 import com.core.ui.*;
+import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
 import com.core.websocket.CoreWebSocket;
 import javafx.application.Application;

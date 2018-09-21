@@ -1,4 +1,4 @@
-package com.core.ui;
+package com.core.ui.dialogs;
 
 import com.core.Controller;
 import com.core.client.ICoreClient;

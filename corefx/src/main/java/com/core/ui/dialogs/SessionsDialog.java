@@ -1,9 +1,10 @@
-package com.core.ui;
+package com.core.ui.dialogs;
 
 import com.core.Controller;
 import com.core.client.rest.GetSessions;
 import com.core.client.rest.GetSessionsData;
 import com.core.data.SessionState;
+import com.core.ui.Toast;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
