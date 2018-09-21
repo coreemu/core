@@ -67,7 +67,7 @@ public class ConfigDialog extends StageDialog {
             tabPane.getTabs().add(tab);
 
             for (ConfigOption option : group.getOptions()) {
-                ConfigItem configItem = new ConfigItem(option);
+                ConfigItem configItem = new ConfigItem(getStage(), option);
                 gridPane.addRow(index, configItem.getLabel(), configItem.getNode());
                 configItems.add(configItem);
                 index += 1;

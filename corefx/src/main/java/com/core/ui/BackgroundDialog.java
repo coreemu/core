@@ -6,6 +6,7 @@ import com.core.data.CoreNode;
 import com.core.graph.BackgroundPaintable;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -29,33 +30,40 @@ public class BackgroundDialog extends StageDialog {
         super(controller, "/fxml/background_dialog.fxml");
         setTitle("Background Configuration");
         saveButton = createButton("Save");
-        saveButton.setOnAction(event -> {
-            controller.getNetworkGraph().setBackground(fileTextField.getText());
-            close();
-        });
+        saveButton.setOnAction(this::saveAction);
+
         clearButton = createButton("Clear");
-        clearButton.setOnAction(event -> {
-            controller.getNetworkGraph().removeBackground();
-            close();
-        });
+        clearButton.setOnAction(this::clearAction);
         addCancelButton();
 
         HBox parent = (HBox) imageView.getParent();
         imageView.fitHeightProperty().bind(parent.heightProperty());
 
-        fileButton.setOnAction(event -> {
-            FileChooser fileChooser = new FileChooser();
-            fileChooser.setTitle("Select Background");
-            fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
-            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
-            File file = fileChooser.showOpenDialog(getStage());
-            if (file != null) {
-                String uri = file.toURI().toString();
-                imageView.setImage(new Image(uri));
-                fileTextField.setText(file.getPath());
-                saveButton.setDisable(false);
-            }
-        });
+        fileButton.setOnAction(this::fileAction);
+    }
+
+    private void fileAction(ActionEvent event) {
+        FileChooser fileChooser = new FileChooser();
+        fileChooser.setTitle("Select Background");
+        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
+        File file = fileChooser.showOpenDialog(getStage());
+        if (file != null) {
+            String uri = file.toURI().toString();
+            imageView.setImage(new Image(uri));
+            fileTextField.setText(file.getPath());
+            saveButton.setDisable(false);
+        }
+    }
+
+    private void saveAction(ActionEvent event) {
+        getController().getNetworkGraph().setBackground(fileTextField.getText());
+        close();
+    }
+
+    private void clearAction(ActionEvent event) {
+        getController().getNetworkGraph().removeBackground();
+        close();
     }
 
     public void showDialog() {
