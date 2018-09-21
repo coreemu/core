@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Geo</title>
+    <link rel="stylesheet" href="../css/leaflet.css"/>
+    <style>
+        body {
+            position: fixed;
+            top:0 ;
+            left: 0;
+            height: 100%;
+            width: 100%;
+            margin: 0;
+        }
+        .map {
+            position: relative;
+            height: 100%;
+            width: 100%;
+            outline: none;
+            touch-action: none;
+            position: relative;
+        }
+    </style>
+</head>
+<body>
+<div id="map" class="map"></div>
+<script src="../js/leaflet.js"></script>
+<script>
+        var map = L.map('map').setView([51.505, -0.09], 13);
+	    var osmUrl='https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png';
+	    var osmAttrib='Map data © <a href="https://openstreetmap.org">OpenStreetMap</a> contributors';
+	    var osm = new L.TileLayer(osmUrl, {attribution: osmAttrib});
+        map.addLayer(osm);
+        var marker = L.marker([51.5, -0.09]).addTo(map);
+
+        function getRandomInRange(from, to, fixed) {
+            return (Math.random() * (to - from) + from).toFixed(fixed) * 1;
+        }
+
+        var previousLocation = null;
+        function randomMarker() {
+            var lat = getRandomInRange(-180, 180, 3);
+            var lon = getRandomInRange(-180, 180, 3);
+            var location = [lat, lon];
+            L.marker(location).addTo(map);
+
+            if (previousLocation !== null) {
+                new L.Polyline([previousLocation, location]).addTo(map);
+            }
+
+            previousLocation = location;
+        }
+</script>
+</body>
+</html>

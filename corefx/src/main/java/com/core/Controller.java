@@ -79,6 +79,7 @@ public class Controller implements Initializable {
     private NodeTypesDialog nodeTypesDialog = new NodeTypesDialog(this);
     private BackgroundDialog backgroundDialog = new BackgroundDialog(this);
     private LocationDialog locationDialog = new LocationDialog(this);
+    private GeoDialog geoDialog = new GeoDialog(this);
 
     public Controller() {
         // load configuration
@@ -252,6 +253,11 @@ public class Controller implements Initializable {
     @FXML
     private void onTestMenuCharts(ActionEvent event) {
         chartDialog.show();
+    }
+
+    @FXML
+    private void onTestMenuGeo(ActionEvent event) {
+        geoDialog.showDialog();
     }
 
     @Override

@@ -47,6 +47,7 @@
                         <Menu mnemonicParsing="false" text="Test">
                           <items>
                             <MenuItem mnemonicParsing="false" onAction="#onTestMenuCharts" text="Charts" />
+                              <MenuItem mnemonicParsing="false" onAction="#onTestMenuGeo" text="Geo" />
                           </items>
                         </Menu>
                         </menus>
