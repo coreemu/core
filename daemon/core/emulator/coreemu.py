@@ -403,6 +403,8 @@ class EmuSession(Session):
             else:
                 if not node_one and not node_two:
                     if net_one and net_two:
+                        logger.debug("updating link between two networks")
+
                         # modify link between nets
                         interface = net_one.getlinknetif(net_two)
                         upstream = False
@@ -431,20 +433,24 @@ class EmuSession(Session):
                     else:
                         raise ValueError("modify link for unknown nodes")
                 elif not node_one:
+                    logger.debug("updating link, node one is a network")
                     # node1 = layer 2node, node2 = layer3 node
                     interface = node_two.netif(interface_two_id, net_one)
                     link_config(net_one, interface, link_options)
                 elif not node_two:
+                    logger.debug("updating link, node two is a network")
                     # node2 = layer 2node, node1 = layer3 node
                     interface = node_one.netif(interface_one_id, net_one)
                     link_config(net_one, interface, link_options)
                 else:
+                    logger.debug("updating link between non-network nodes")
                     common_networks = node_one.commonnets(node_two)
                     if not common_networks:
                         raise ValueError("no common network found")
 
                     for net_one, interface_one, interface_two in common_networks:
                         if interface_one_id is not None and interface_one_id != node_one.getifindex(interface_one):
+                            logger.warn("skipping link for interface one(%s) - %s", interface_one_id, interface_one)
                             continue
 
                         link_config(net_one, interface_one, link_options, interface_two=interface_two)

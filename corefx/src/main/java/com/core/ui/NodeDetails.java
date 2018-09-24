@@ -26,6 +26,7 @@ public class NodeDetails extends ScrollPane {
     private static final Logger logger = LogManager.getLogger();
     private static final int START_INDEX = 1;
     private final Controller controller;
+    @FXML private Label title;
     @FXML private ScrollPane scrollPane;
     @FXML private GridPane gridPane;
     private int index = START_INDEX;
@@ -33,32 +34,36 @@ public class NodeDetails extends ScrollPane {
     public NodeDetails(Controller controller) {
         this.controller = controller;
         FxmlUtils.loadRootController(this, "/fxml/node_details.fxml");
-        setPrefWidth(500);
+        setPrefWidth(400);
     }
 
     public void setNode(CoreNode node) {
         clear();
-        addSeparator();
+        title.setText(node.getName());
 
-        addRow("Name", node.getName());
+        addSeparator();
+        addLabel("Properties");
         if (node.getType() == NodeType.DEFAULT) {
-            addRow("Model", node.getModel());
+            addRow("Model", node.getModel(), true);
         } else {
-            addRow("Type", node.getNodeType().getDisplay());
+            addRow("Type", node.getNodeType().getDisplay(), true);
         }
+
         if (node.getEmane() != null) {
-            addRow("EMANE", node.getEmane());
+            addRow("EMANE", node.getEmane(), true);
         }
 
         addSeparator();
-
+        addLabel("Position");
         if (node.getPosition().getX() != null) {
-            addRow("X", node.getPosition().getX().toString());
+            addRow("X", node.getPosition().getX().toString(), true);
         }
         if (node.getPosition().getY() != null) {
-            addRow("Y", node.getPosition().getY().toString());
+            addRow("Y", node.getPosition().getY().toString(), true);
         }
 
+        addSeparator();
+        addLabel("Interfaces");
         for (CoreLink link : controller.getNetworkGraph().getGraph().getIncidentEdges(node)) {
             CoreNode linkedNode;
             CoreInterface coreInterface;
@@ -121,7 +126,7 @@ public class NodeDetails extends ScrollPane {
 
     private void addLabel(String text) {
         Label label = new Label(text);
-        label.getStyleClass().add("details-title");
+        label.getStyleClass().add("details-label");
         gridPane.add(label, 0, index++, 2, 1);
     }
 
@@ -132,18 +137,19 @@ public class NodeDetails extends ScrollPane {
     }
 
     private void addInterface(CoreInterface coreInterface, CoreNode linkedNode) {
-        addRow("Linked To", linkedNode.getName());
-        addRow("Interface", coreInterface.getName());
+        addRow("Linked To", linkedNode.getName(), true);
+        addRow("Interface", coreInterface.getName(), true);
         if (coreInterface.getMac() != null) {
-            addRow("MAC", coreInterface.getMac());
+            addRow("MAC", coreInterface.getMac(), true);
         }
         addIp4Address(coreInterface.getIp4(), coreInterface.getIp4Mask());
         addIp6Address(coreInterface.getIp6(), coreInterface.getIp6Mask());
     }
 
-    private void addRow(String labelText, String value) {
+    private void addRow(String labelText, String value, boolean disabled) {
         Label label = new Label(labelText);
         JFXTextField textField = new JFXTextField(value);
+        textField.setDisable(disabled);
         gridPane.addRow(index++, label, textField);
     }
 
@@ -151,14 +157,14 @@ public class NodeDetails extends ScrollPane {
         if (ip == null) {
             return;
         }
-        addRow("IP4", String.format("%s/%s", ip, mask));
+        addRow("IP4", String.format("%s/%s", ip, mask), true);
     }
 
     private void addIp6Address(String ip, String mask) {
         if (ip == null) {
             return;
         }
-        addRow("IP6", String.format("%s/%s", ip, mask));
+        addRow("IP6", String.format("%s/%s", ip, mask), true);
     }
 
     private void clear() {

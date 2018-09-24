@@ -12,19 +12,21 @@
 }
 
 .details-label {
+    -fx-background-color: slategrey;
+    -fx-pref-width: Infinity;
+    -fx-text-fill: white;
+    -fx-alignment: center;
+    -fx-padding: 5;
+    -fx-background-radius: 5;
+}
+
+.details-title {
     -fx-background-color: olivedrab;
     -fx-pref-width: Infinity;
     -fx-text-fill: white;
     -fx-alignment: center;
     -fx-padding: 10;
     -fx-background-radius: 5;
-}
-
-.details-title {
-    -fx-pref-width: Infinity;
-    -fx-alignment: center;
-    -fx-padding: 10;
-    -fx-font-size: 17;
 }
 
 .code {

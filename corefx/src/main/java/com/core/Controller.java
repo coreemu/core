@@ -63,7 +63,7 @@ public class Controller implements Initializable {
     private NetworkGraph networkGraph = new NetworkGraph(this);
     private AnnotationToolbar annotationToolbar = new AnnotationToolbar(networkGraph);
     private NodeDetails nodeDetails = new NodeDetails(this);
-    private LinkDetails linkDetails = new LinkDetails(networkGraph);
+    private LinkDetails linkDetails = new LinkDetails(this);
     private GraphToolbar graphToolbar = new GraphToolbar(this);
     private MobilityPlayer mobilityPlayer = new MobilityPlayer(this);
 

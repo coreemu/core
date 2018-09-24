@@ -64,6 +64,8 @@ public interface ICoreClient {
 
     boolean createLink(CoreLink link) throws IOException;
 
+    boolean editLink(CoreLink link) throws IOException;
+
     boolean createHook(Hook hook) throws IOException;
 
     GetHooks getHooks() throws IOException;

@@ -81,12 +81,12 @@ def edit_link(session_id):
 
     data = request.get_json()
 
-    node_one = data.get("node_one")
-    node_two = data.get("node_two")
-    interface_one = data.get("interface_one")
-    interface_two = data.get("interface_two")
+    node_one = data["node_one"]
+    node_two = data["node_two"]
+    interface_one_id = data["interface_one"]["id"]
+    interface_two_id = data["interface_two"]["id"]
 
-    options_data = data.get("options")
+    options_data = data["options"]
     link_options = LinkOptions()
     if options_data:
         link_options.delay = options_data.get("delay")
@@ -102,7 +102,7 @@ def edit_link(session_id):
         link_options.key = options_data.get("key")
         link_options.opaque = options_data.get("opaque")
 
-    session.update_link(node_one, node_two, link_options, interface_one, interface_two)
+    session.update_link(node_one, node_two, interface_one_id, interface_two_id, link_options)
     return jsonify(), 201
 
 

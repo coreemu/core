@@ -22,7 +22,7 @@
             <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
          </padding>
          <children>
-            <Label styleClass="details-label" text="Node Details" GridPane.columnSpan="2147483647">
+            <Label fx:id="title" styleClass="details-title" text="Node Details" GridPane.columnSpan="2147483647">
                <font>
                   <Font name="System Bold" size="17.0" />
                </font>

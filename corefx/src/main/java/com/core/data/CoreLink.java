@@ -12,6 +12,7 @@ import lombok.NoArgsConstructor;
 public class CoreLink {
     @EqualsAndHashCode.Include
     private Integer id;
+    @JsonIgnore
     private Float weight = 1.0f;
 
     @JsonIgnore

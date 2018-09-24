@@ -346,6 +346,12 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public boolean editLink(CoreLink link) throws IOException {
+        String url = getUrl(String.format("sessions/%s/links", sessionId));
+        return WebUtils.putJson(url, link);
+    }
+
+    @Override
     public boolean createHook(Hook hook) throws IOException {
         String url = getUrl(String.format("sessions/%s/hooks", sessionId));
         return WebUtils.postJson(url, hook);
