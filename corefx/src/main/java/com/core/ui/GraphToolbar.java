@@ -244,7 +244,6 @@ public class GraphToolbar extends VBox {
 
             boolean result = controller.getCoreClient().start();
             if (result) {
-                controller.sessionStarted();
                 Toast.success("Session Started");
                 setRunButton(true);
             }
@@ -259,7 +258,6 @@ public class GraphToolbar extends VBox {
         try {
             boolean result = controller.getCoreClient().stop();
             if (result) {
-                controller.sessionStopped();
                 Toast.success("Session Stopped");
                 setRunButton(false);
             }
@@ -271,6 +269,7 @@ public class GraphToolbar extends VBox {
     public void setRunButton(boolean isRunning) {
         if (isRunning) {
             Platform.runLater(() -> {
+                controller.sessionStarted();
                 pickingButton.fire();
                 editingButton.setDisable(true);
                 runButton.pseudoClassStateChanged(START_CLASS, false);
@@ -281,6 +280,7 @@ public class GraphToolbar extends VBox {
             });
         } else {
             Platform.runLater(() -> {
+                controller.sessionStopped();
                 editingButton.setDisable(false);
                 runButton.pseudoClassStateChanged(START_CLASS, true);
                 runButton.pseudoClassStateChanged(STOP_CLASS, false);

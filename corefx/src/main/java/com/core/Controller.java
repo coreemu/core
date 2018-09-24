@@ -19,6 +19,7 @@ import javafx.embed.swing.SwingNode;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.MenuItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -42,15 +43,10 @@ import java.util.concurrent.Executors;
 @Data
 public class Controller implements Initializable {
     private static final Logger logger = LogManager.getLogger();
-
-    @FXML
-    private StackPane stackPane;
-
-    @FXML
-    private BorderPane borderPane;
-
-    @FXML
-    private SwingNode swingNode;
+    @FXML private StackPane stackPane;
+    @FXML private BorderPane borderPane;
+    @FXML private SwingNode swingNode;
+    @FXML private MenuItem saveXmlMenuItem;
 
     private Application application;
     private Stage window;
@@ -118,11 +114,13 @@ public class Controller implements Initializable {
                 vBox.getChildren().add(mobilityPlayer);
             }
         }
+        saveXmlMenuItem.setDisable(false);
     }
 
     public void sessionStopped() {
         VBox vBox = (VBox) borderPane.getTop();
         vBox.getChildren().remove(mobilityPlayer);
+        saveXmlMenuItem.setDisable(true);
     }
 
     public void deleteNode(CoreNode node) {

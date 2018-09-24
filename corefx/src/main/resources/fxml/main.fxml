@@ -20,7 +20,7 @@
                             <Menu mnemonicParsing="false" text="File">
                                 <items>
                                     <MenuItem mnemonicParsing="false" onAction="#onOpenXmlAction" text="Open XML" />
-                              <MenuItem mnemonicParsing="false" onAction="#onSaveXmlAction" text="Save XML" />
+                              <MenuItem fx:id="saveXmlMenuItem" disable="true" mnemonicParsing="false" onAction="#onSaveXmlAction" text="Save XML" />
                                 </items>
                             </Menu>
                         <Menu mnemonicParsing="false" text="Session">
