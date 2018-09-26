@@ -269,7 +269,7 @@ class ServiceManager(object):
                 cls.add(service)
             except ValueError as e:
                 service_errors.append(service.name)
-                logger.warn("not loading service: %s", e.message)
+                logger.warn("not loading service: %s", e)
         return service_errors
 
 
@@ -462,7 +462,8 @@ class CoreServices(object):
         :param CoreService service: service to start
         :return: nothing
         """
-        logger.info("starting node(%s) service(%s)", node.name, service.name)
+        logger.info("starting node(%s) service(%s) validation(%s)", node.name, service.name,
+                    service.validation_mode.name)
 
         # create service directories
         for directory in service.dirs:
@@ -477,14 +478,26 @@ class CoreServices(object):
         if status:
             raise ServiceBootError("node(%s) service(%s) error during startup" % (node.name, service.name))
 
-        # wait for time if provided, default to a time previously used to provide a small buffer
-        time.sleep(0.125)
-        if service.validation_timer:
-            time.sleep(service.validation_timer)
+        # blocking mode is finished
+        if wait:
+            return
 
-        # run validation commands, if present and not timer mode
-        if service.validation_mode != ServiceMode.TIMER:
-            status = self.validate_service(node, service)
+        # timer mode, sleep and return
+        if service.validation_mode == ServiceMode.TIMER:
+            time.sleep(service.validation_timer)
+        # non-blocking, attempt to validate periodically, up to validation_timer time
+        elif service.validation_mode == ServiceMode.NON_BLOCKING:
+            start = time.time()
+            while True:
+                status = self.validate_service(node, service)
+                if not status:
+                    break
+
+                if time.time() - start > service.validation_timer:
+                    break
+
+                time.sleep(service.validation_period)
+
             if status:
                 raise ServiceBootError("node(%s) service(%s) failed validation" % (node.name, service.name))
 
@@ -528,9 +541,11 @@ class CoreServices(object):
             logger.debug("validating service(%s) using: %s", service.name, cmd)
             try:
                 node.check_cmd(cmd)
-            except CoreCommandError:
-                logger.exception("node(%s) service(%s) validate command failed", node.name, service.name)
+            except CoreCommandError as e:
+                logger.error("node(%s) service(%s) validate failed", node.name, service.name)
+                logger.error("cmd(%s): %s", e.cmd, e.output)
                 status = -1
+                break
 
         return status
 
@@ -753,8 +768,11 @@ class CoreService(object):
     # validation mode, used to determine startup success
     validation_mode = ServiceMode.NON_BLOCKING
 
-    # time to wait for determining if service started successfully
-    validation_timer = 0
+    # time to wait in seconds for determining if service started successfully
+    validation_timer = 5
+
+    # validation period in seconds, how frequent validation is attempted
+    validation_period = 0.5
 
     # metadata associated with this service
     meta = None

@@ -28,12 +28,15 @@ class MyService(CoreService):
     # Commands used to validate that a service was started, any non-zero exit code will cause a failure.
     validate = ()
     # Validation mode, used to determine startup success.
+    #
     # * NON_BLOCKING    - runs startup commands, and validates success with validation commands
     # * BLOCKING        - runs startup commands, and validates success with the startup commands themselves
     # * TIMER           - runs startup commands, and validates success by waiting for "validation_timer" alone
     validation_mode = ServiceMode.NON_BLOCKING
-    # Time for a service to wait before running validation commands or determining success in TIMER mode.
-    validation_timer = 0
+    # Time in seconds for a service to wait for validation, before determining success in TIMER/NON_BLOCKING modes.
+    validation_timer = 5
+    # Period in seconds to wait before retrying validation, only used in NON_BLOCKING mode.
+    validation_period = 0.5
     # Shutdown commands to stop this service.
     shutdown = ()
 

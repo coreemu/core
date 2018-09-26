@@ -114,11 +114,11 @@
       <div class='octowrap'>
         <a class='octothorpe' href='#section-8'>#</a>
       </div>
-      <p>Files that this service will generate, without a full path this file goes in the node's directory.
+      <p>Files that this service will generate, without a full path this file goes in the node&rsquo;s directory.
 e.g. /tmp/pycore.12345/n1.conf/myfile</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>    <span class="n">configs</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;sh myservice1.sh&quot;</span><span class="p">,</span> <span class="s2">&quot;sh myservice2.sh&quot;</span><span class="p">)</span></pre></div>
+      <div class="highlight"><pre>    <span class="n">configs</span> <span class="o">=</span> <span class="p">(</span><span class="s2">&quot;myservice1.sh&quot;</span><span class="p">,</span> <span class="s2">&quot;myservice2.sh&quot;</span><span class="p">)</span></pre></div>
     </div>
   </div>
   <div class='clearall'></div>
@@ -151,10 +151,12 @@ e.g. /tmp/pycore.12345/n1.conf/myfile</p>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-11'>#</a>
       </div>
-      <p>Validation mode, used to determine startup success.
-<em> NON_BLOCKING    - runs startup commands, and validates success with validation commands
-</em> BLOCKING        - runs startup commands, and validates success with the startup commands themselves
-* TIMER           - runs startup commands, and validates success by waiting for "validation_timer" alone</p>
+      <p>Validation mode, used to determine startup success.</p>
+<ul>
+<li>NON_BLOCKING    - runs startup commands, and validates success with validation commands</li>
+<li>BLOCKING        - runs startup commands, and validates success with the startup commands themselves</li>
+<li>TIMER           - runs startup commands, and validates success by waiting for &ldquo;validation_timer&rdquo; alone</li>
+</ul>
     </div>
     <div class='code'>
       <div class="highlight"><pre>    <span class="n">validation_mode</span> <span class="o">=</span> <span class="n">ServiceMode</span><span class="o">.</span><span class="n">NON_BLOCKING</span></pre></div>
@@ -166,10 +168,10 @@ e.g. /tmp/pycore.12345/n1.conf/myfile</p>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-12'>#</a>
       </div>
-      <p>Time for a service to wait before running validation commands or determining success in TIMER mode.</p>
+      <p>Time in seconds for a service to wait for validation, before determining success in TIMER/NON_BLOCKING modes.</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>    <span class="n">validation_timer</span> <span class="o">=</span> <span class="mi">0</span></pre></div>
+      <div class="highlight"><pre>    <span class="n">validation_timer</span> <span class="o">=</span> <span class="mi">5</span></pre></div>
     </div>
   </div>
   <div class='clearall'></div>
@@ -178,10 +180,10 @@ e.g. /tmp/pycore.12345/n1.conf/myfile</p>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-13'>#</a>
       </div>
-      <p>Shutdown commands to stop this service.</p>
+      <p>Period in seconds to wait before retrying validation, only used in NON_BLOCKING mode.</p>
     </div>
     <div class='code'>
-      <div class="highlight"><pre>    <span class="n">shutdown</span> <span class="o">=</span> <span class="p">()</span></pre></div>
+      <div class="highlight"><pre>    <span class="n">validation_period</span> <span class="o">=</span> <span class="mf">0.5</span></pre></div>
     </div>
   </div>
   <div class='clearall'></div>
@@ -189,6 +191,18 @@ e.g. /tmp/pycore.12345/n1.conf/myfile</p>
     <div class='docs'>
       <div class='octowrap'>
         <a class='octothorpe' href='#section-14'>#</a>
+      </div>
+      <p>Shutdown commands to stop this service.</p>
+    </div>
+    <div class='code'>
+      <div class="highlight"><pre>    <span class="n">shutdown</span> <span class="o">=</span> <span class="p">()</span></pre></div>
+    </div>
+  </div>
+  <div class='clearall'></div>
+  <div class='section' id='section-15'>
+    <div class='docs'>
+      <div class='octowrap'>
+        <a class='octothorpe' href='#section-15'>#</a>
       </div>
       <h2>On Load</h2>
     </div>
@@ -198,10 +212,10 @@ e.g. /tmp/pycore.12345/n1.conf/myfile</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-15'>
+  <div class='section' id='section-16'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-15'>#</a>
+        <a class='octothorpe' href='#section-16'>#</a>
       </div>
       <p>Provides a way to run some arbitrary logic when the service is loaded, possibly to help facilitate
 dynamic settings for the environment.</p>
@@ -211,10 +225,10 @@ dynamic settings for the environment.</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-16'>
+  <div class='section' id='section-17'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-16'>#</a>
+        <a class='octothorpe' href='#section-17'>#</a>
       </div>
       <h2>Get Configs</h2>
     </div>
@@ -224,10 +238,10 @@ dynamic settings for the environment.</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-17'>
+  <div class='section' id='section-18'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-17'>#</a>
+        <a class='octothorpe' href='#section-18'>#</a>
       </div>
       <p>Provides a way to dynamically generate the config files from the node a service will run.
 Defaults to the class definition and can be left out entirely if not needed.</p>
@@ -237,10 +251,10 @@ Defaults to the class definition and can be left out entirely if not needed.</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-18'>
+  <div class='section' id='section-19'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-18'>#</a>
+        <a class='octothorpe' href='#section-19'>#</a>
       </div>
       <h2>Generate Config</h2>
     </div>
@@ -250,13 +264,13 @@ Defaults to the class definition and can be left out entirely if not needed.</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-19'>
+  <div class='section' id='section-20'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-19'>#</a>
+        <a class='octothorpe' href='#section-20'>#</a>
       </div>
       <p>Returns a string representation for a file, given the node the service is starting on the config filename
-that this information will be used for. This must be defined, if "configs" are defined.</p>
+that this information will be used for. This must be defined, if &ldquo;configs&rdquo; are defined.</p>
     </div>
     <div class='code'>
       <div class="highlight"><pre>        <span class="n">cfg</span> <span class="o">=</span> <span class="s2">&quot;#!/bin/sh</span><span class="se">\n</span><span class="s2">&quot;</span>
@@ -272,10 +286,10 @@ that this information will be used for. This must be defined, if "configs" are d
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-20'>
+  <div class='section' id='section-21'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-20'>#</a>
+        <a class='octothorpe' href='#section-21'>#</a>
       </div>
       <h2>Get Startup</h2>
     </div>
@@ -285,10 +299,10 @@ that this information will be used for. This must be defined, if "configs" are d
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-21'>
+  <div class='section' id='section-22'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-21'>#</a>
+        <a class='octothorpe' href='#section-22'>#</a>
       </div>
       <p>Provides a way to dynamically generate the startup commands from the node a service will run.
 Defaults to the class definition and can be left out entirely if not needed.</p>
@@ -298,10 +312,10 @@ Defaults to the class definition and can be left out entirely if not needed.</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-22'>
+  <div class='section' id='section-23'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-22'>#</a>
+        <a class='octothorpe' href='#section-23'>#</a>
       </div>
       <h2>Get Validate</h2>
     </div>
@@ -311,10 +325,10 @@ Defaults to the class definition and can be left out entirely if not needed.</p>
     </div>
   </div>
   <div class='clearall'></div>
-  <div class='section' id='section-23'>
+  <div class='section' id='section-24'>
     <div class='docs'>
       <div class='octowrap'>
-        <a class='octothorpe' href='#section-23'>#</a>
+        <a class='octothorpe' href='#section-24'>#</a>
       </div>
       <p>Provides a way to dynamically generate the validate commands from the node a service will run.
 Defaults to the class definition and can be left out entirely if not needed.</p>
