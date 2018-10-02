@@ -714,7 +714,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             ip4=message.get_tlv(LinkTlvs.INTERFACE2_IP4.value),
             ip4_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP4_MASK.value),
             ip6=message.get_tlv(LinkTlvs.INTERFACE2_IP6.value),
-            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE1_IP6_MASK.value),
+            ip6_mask=message.get_tlv(LinkTlvs.INTERFACE2_IP6_MASK.value),
         )
 
         link_type = None
