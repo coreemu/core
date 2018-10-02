@@ -300,7 +300,6 @@ class CoreServices(object):
         """
         Called when config message with reset flag is received
         """
-        self.default_services.clear()
         self.custom_services.clear()
 
     def get_default_services(self, node_type):
