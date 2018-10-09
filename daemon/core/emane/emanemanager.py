@@ -42,7 +42,7 @@ except ImportError:
         from emanesh.events import LocationEvent
         from emanesh.events.eventserviceexception import EventServiceException
     except ImportError:
-        logger.warn("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 EMANE_MODELS = [
     EmaneRfPipeModel,
