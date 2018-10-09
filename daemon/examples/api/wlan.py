@@ -9,7 +9,7 @@ import datetime
 
 import parser
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes
+from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.enumerations import NodeTypes, EventTypes
 from core.mobility import BasicRangeModel
 
@@ -29,16 +29,13 @@ def example(options):
     wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
     session.mobility.set_model(wlan, BasicRangeModel)
 
-    # create nodes
-    wireless_nodes = []
+    # create nodes, must set a position for wlan basic range model
+    node_options = NodeOptions()
+    node_options.set_position(0, 0)
     for _ in xrange(options.nodes):
-        node = session.add_node()
+        node = session.add_node(node_options=node_options)
         interface = prefixes.create_interface(node)
         session.add_link(node.objid, wlan.objid, interface_one=interface)
-        wireless_nodes.append(node)
-
-    # link all created nodes with the wireless network
-    session.wireless_link_all(wlan, wireless_nodes)
 
     # instantiate session
     session.instantiate()

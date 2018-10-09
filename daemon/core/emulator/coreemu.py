@@ -772,18 +772,6 @@ class EmuSession(Session):
         self.emane.set_model(emane_network, model, config)
         return emane_network
 
-    def wireless_link_all(self, network, nodes):
-        """
-        Link all nodes to the provided wireless network.
-
-        :param network: wireless network to link nodes to
-        :param nodes: nodes to link to wireless network
-        :return: nothing
-        """
-        for node in nodes:
-            for common_network, interface_one, interface_two in node.commonnets(network):
-                common_network.link(interface_one, interface_two)
-
 
 class CoreEmu(object):
     """

@@ -201,9 +201,6 @@ class TestCore:
             interface = ip_prefixes.create_interface(node)
             session.add_link(node.objid, wlan_node.objid, interface_one=interface)
 
-        # link nodes in wlan
-        session.wireless_link_all(wlan_node, [node_one, node_two])
-
         # instantiate session
         session.instantiate()
 
@@ -233,9 +230,6 @@ class TestCore:
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
             session.add_link(node.objid, wlan_node.objid, interface_one=interface)
-
-        # link nodes in wlan
-        session.wireless_link_all(wlan_node, [node_one, node_two])
 
         # configure mobility script for session
         config = {
