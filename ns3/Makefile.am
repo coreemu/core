@@ -7,6 +7,8 @@
 # Makefile for building corens3 components.
 #
 
+if WANT_PYTHON
+
 SETUPPY	= setup.py
 SETUPPYFLAGS = -v
 
@@ -47,3 +49,6 @@ DISTCLEANFILES = Makefile.in
 
 # files to include with distribution tarball
 EXTRA_DIST = LICENSE $(SETUPPY) corens3 examples
+
+endif
+# endif WANT_PYTHON

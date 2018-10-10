@@ -43,17 +43,30 @@ AC_ARG_ENABLE([gui],
 		[build and install the GUI (default is yes)])],
 		[], [enable_gui=yes])
 AC_SUBST(enable_gui)
+
+AC_ARG_ENABLE([python],
+	       [AS_HELP_STRING([--enable-python[=ARG]],
+		[build and install the python bindings (default is yes)])],
+		[], [enable_python=yes])
+AC_SUBST(enable_python)
+if test "x$enable_python" = "xyes" ; then
+  want_python=yes
+else
+  want_python=no
+fi
 AC_ARG_ENABLE([daemon],
 	       [AS_HELP_STRING([--enable-daemon[=ARG]],
 		[build and install the daemon with Python modules
 		 (default is yes)])],
 		[], [enable_daemon=yes])
 AC_SUBST(enable_daemon)
-AC_ARG_ENABLE([docs],
-	      [AS_HELP_STRING([--enable-docs[=ARG]],
-		[build documentation (default is no)])],
-		[], [enable_docs=no])
-AC_SUBST(enable_docs)
+
+AC_ARG_ENABLE([vnodedonly],
+	       [AS_HELP_STRING([--enable-vnodedonly[=ARG]],
+		[only try to build vnoded and vcmd container utils
+		 (default is no)])],
+		[enable_vnodedonly=yes], [enable_vnodedonly=no])
+AC_SUBST(enable_vnodedonly)
 
 SEARCHPATH="/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/sbin:/usr/local/bin"
 
@@ -141,6 +154,9 @@ if test "x$enable_daemon" = "xyes"; then
     AC_MSG_ERROR([Python bindings require Python development headers (try installing your 'python-devel' or 'python-dev' package)]))
   CFLAGS=$CFLAGS_save
   CPPFLAGS=$CPPFLAGS_save
+fi
+if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
+  want_linux_netns=yes
   PKG_CHECK_MODULES(libev, libev,
     AC_MSG_RESULT([found libev using pkgconfig OK])
     AC_SUBST(libev_CFLAGS)
@@ -204,6 +220,7 @@ AM_CONDITIONAL(WANT_PYTHON, test x$want_python = xyes)
 AM_CONDITIONAL(WANT_NETNS, test x$want_linux_netns = xyes)
 AM_CONDITIONAL(WANT_INITD, test x$with_startup = xinitd)
 AM_CONDITIONAL(WANT_SYSTEMD, test x$with_startup = xsystemd)
+AM_CONDITIONAL(WANT_VNODEDONLY, test x$enable_vnodedonly = xyes)
 
 if test $cross_compiling = no; then
   AM_MISSING_PROG(HELP2MAN, help2man)
