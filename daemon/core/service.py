@@ -466,7 +466,11 @@ class CoreServices(object):
 
         # create service directories
         for directory in service.dirs:
-            node.privatedir(directory)
+            try:
+                node.privatedir(directory)
+            except (CoreCommandError, ValueError) as e:
+                logger.warn("error mounting private dir '%s' for service '%s': %s", 
+                            directory, service.name, e)
 
         # create service files
         self.create_service_files(node, service)
