@@ -30,6 +30,7 @@ netns_SOURCES = $(SRC_NETNS)
 # this triggers automake to run setup.py for building the Python libraries
 #   actual library names are netns.so and vcmd.so
 #   SOURCES line prevents 'make dist' from looking for a 'libnetns.c' file
+if WANT_PYTHON
 noinst_LIBRARIES = libnetns.a
 libnetns_a_SOURCES = netnsmodule.c vcmdmodule.c
 libnetns.a:
@@ -59,6 +60,9 @@ clean-local-check:
 
 distclean-local:
 	-rm -rf core_netns.egg-info
+
+endif
+# endif WANT_PYTHON
 
 # extra cruft to remove
 DISTCLEANFILES = Makefile.in MANIFEST
