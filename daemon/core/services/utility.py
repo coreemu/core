@@ -232,11 +232,11 @@ UseDNS no
 class DhcpService(UtilService):
     name = "DHCP"
     configs = ("/etc/dhcp/dhcpd.conf",)
-    dirs = ("/etc/dhcp",)
-    startup = ("dhcpd",)
+    dirs = ("/etc/dhcp","/var/lib/dhcp")
+    startup = ("touch /var/lib/dhcp/dhcpd.leases","dhcpd")
     shutdown = ("killall dhcpd",)
     validate = ("pidof dhcpd",)
-
+        
     @classmethod
     def generate_config(cls, node, filename):
         """
