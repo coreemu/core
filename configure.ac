@@ -49,6 +49,11 @@ AC_ARG_ENABLE([daemon],
 		 (default is yes)])],
 		[], [enable_daemon=yes])
 AC_SUBST(enable_daemon)
+AC_ARG_ENABLE([docs],
+	      [AS_HELP_STRING([--enable-docs[=ARG]],
+		[build documentation (default is no)])],
+		[], [enable_docs=no])
+AC_SUBST(enable_docs)
 
 SEARCHPATH="/usr/sbin:/usr/bin:/sbin:/bin:/usr/local/sbin:/usr/local/bin"
 
@@ -148,24 +153,29 @@ if test "x$enable_daemon" = "xyes"; then
 	 AC_MSG_ERROR([Python bindings require libev (try installing your 'libev-devel' or 'libev-dev' package)])))
 fi
 
-AC_CHECK_PROG(help2man, help2man, yes, no, $SEARCHPATH)
+want_docs=no
+if test "x$enable_docs" = "xyes" ; then
 
-if test "x$help2man" = "xno" ; then
+  AC_CHECK_PROG(help2man, help2man, yes, no, $SEARCHPATH)
+
+  if test "x$help2man" = "xno" ; then
     AC_MSG_WARN([Could not locate help2man.])
     want_docs_missing="$want_docs_missing help2man"
-fi
+  fi
 
-if test "x$want_docs_missing" = "x" ; then
-  want_docs=yes
-else
-  AC_MSG_WARN([Could not find required helper utilities (${want_docs_missing}) so the CORE documentation will not be built.])
-  want_docs=no
-fi
+  if test "x$want_docs_missing" = "x" ; then
+    want_docs=yes
+  else
+    AC_MSG_ERROR([Could not find required helper utilities (${want_docs_missing}) so the CORE documentation will not be built.])
+    want_docs=no
+  fi
 
-# check for sphinx required during make
-AC_CHECK_PROG(sphinxapi_path, sphinx-apidoc, $as_dir, no, $SEARCHPATH)
-if test "x$sphinxapi_path" = "xno" ; then
+  # check for sphinx required during make
+  AC_CHECK_PROG(sphinxapi_path, sphinx-apidoc, $as_dir, no, $SEARCHPATH)
+  if test "x$sphinxapi_path" = "xno" ; then
     AC_MSG_ERROR(["Could not location sphinx-apidoc, from the python-sphinx package"])
+    want_docs=no
+  fi
 fi
 
 #AC_PATH_PROGS(tcl_path, [tclsh tclsh8.5 tclsh8.4], no)
