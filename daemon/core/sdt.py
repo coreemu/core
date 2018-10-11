@@ -183,10 +183,10 @@ class Sdt(object):
         if not self.cmd("path \"%s/icons/normal\"" % constants.CORE_DATA_DIR):
             return False
         # send node type to icon mappings
-        for type, icon in self.DEFAULT_SPRITES:
-            if not self.cmd("sprite %s image %s" % (type, icon)):
+        for node_type, icon in self.DEFAULT_SPRITES:
+            if not self.cmd("sprite %s image %s" % (node_type, icon)):
                 return False
-        (lat, long) = self.session.location.refgeo[:2]
+        lat, long = self.session.location.refgeo[:2]
         return self.cmd("flyto %.6f,%.6f,%d" % (long, lat, self.DEFAULT_ALT))
 
     def disconnect(self):
@@ -238,7 +238,7 @@ class Sdt(object):
             self.connected = False
             return False
 
-    def updatenode(self, nodenum, flags, x, y, z, name=None, type=None, icon=None):
+    def updatenode(self, nodenum, flags, x, y, z, name=None, node_type=None, icon=None):
         """
         Node is updated from a Node Message or mobility script.
 
@@ -248,7 +248,7 @@ class Sdt(object):
         :param y: y position
         :param z: z position
         :param str name: node name
-        :param type: node type
+        :param node_type: node type
         :param icon: node icon
         :return: nothing
         """
@@ -263,11 +263,11 @@ class Sdt(object):
         pos = "pos %.6f,%.6f,%.6f" % (lon, lat, alt)
         if flags & MessageFlags.ADD.value:
             if icon is not None:
-                type = name
+                node_type = name
                 icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
                 icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
                 self.cmd("sprite %s image %s" % (type, icon))
-            self.cmd("node %d type %s label on,\"%s\" %s" % (nodenum, type, name, pos))
+            self.cmd("node %d type %s label on,\"%s\" %s" % (nodenum, node_type, name, pos))
         else:
             self.cmd("node %d %s" % (nodenum, pos))
 
@@ -403,12 +403,12 @@ class Sdt(object):
                 nodetype == NodeTypes.PHYSICAL.value:
             if model is None:
                 model = "router"
-            type = model
+            nodetype = model
         elif nodetype is not None:
-            type = nodeutils.get_node_class(NodeTypes(nodetype)).type
+            nodetype = nodeutils.get_node_class(NodeTypes(nodetype)).type
             net = True
         else:
-            type = None
+            nodetype = None
 
         try:
             node = self.session.get_object(nodenum)
@@ -421,15 +421,15 @@ class Sdt(object):
                 remote = self.remotes[nodenum]
                 if name is None:
                     name = remote.name
-                if type is None:
-                    type = remote.type
+                if nodetype is None:
+                    nodetype = remote.type
                 if icon is None:
                     icon = remote.icon
             else:
-                remote = Bunch(objid=nodenum, type=type, icon=icon, name=name, net=net, links=set())
+                remote = Bunch(objid=nodenum, type=nodetype, icon=icon, name=name, net=net, links=set())
                 self.remotes[nodenum] = remote
             remote.pos = (x, y, z)
-            self.updatenode(nodenum, msg.flags, x, y, z, name, type, icon)
+            self.updatenode(nodenum, msg.flags, x, y, z, name, nodetype, icon)
 
     def handlelinkmsg(self, msg):
         """
@@ -467,8 +467,8 @@ class Sdt(object):
         :rtype: bool
         """
         if nodenum in self.remotes:
-            type = self.remotes[nodenum].type
-            if type in ("wlan", "emane"):
+            node_type = self.remotes[nodenum].type
+            if node_type in ("wlan", "emane"):
                 return True
         else:
             try:

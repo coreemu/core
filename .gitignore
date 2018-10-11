@@ -20,6 +20,9 @@ stamp-h1
 # python build directory
 dist
 
+# vscode
+.vscode
+
 # intellij
 *.iml
 .idea

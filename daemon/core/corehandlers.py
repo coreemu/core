@@ -1005,17 +1005,17 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             if not config_data.data_values:
                 logger.warn("location data missing")
             else:
-                values = config_data.data_values.split("|")
+                values = [float(x) for x in config_data.data_values.split("|")]
 
                 # Cartesian coordinate reference point
-                refx, refy = map(lambda x: float(x), values[0:2])
+                refx, refy = values[0], values[1]
                 refz = 0.0
-                lat, lon, alt = map(lambda x: float(x), values[2:5])
+                lat, lon, alt = values[2], values[3], values[4]
                 # xyz point
                 self.session.location.refxyz = (refx, refy, refz)
                 # geographic reference point
                 self.session.location.setrefgeo(lat, lon, alt)
-                self.session.location.refscale = float(values[5])
+                self.session.location.refscale = values[5]
                 logger.info("location configured: %s = %s scale=%s", self.session.location.refxyz,
                             self.session.location.refgeo, self.session.location.refscale)
                 logger.info("location configured: UTM%s", self.session.location.refutm)

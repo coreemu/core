@@ -138,7 +138,7 @@ class ServiceShim(object):
         if not service.custom:
             valmap[1] = service.get_configs(node)
             valmap[3] = service.get_startup(node)
-        vals = map(lambda a, b: "%s=%s" % (a, str(b)), cls.keys, valmap)
+        vals = ["%s=%s" % (x, y) for x, y in zip(cls.keys, valmap)]
         return "|".join(vals)
 
     @classmethod
@@ -469,7 +469,7 @@ class CoreServices(object):
             try:
                 node.privatedir(directory)
             except (CoreCommandError, ValueError) as e:
-                logger.warn("error mounting private dir '%s' for service '%s': %s", 
+                logger.warn("error mounting private dir '%s' for service '%s': %s",
                             directory, service.name, e)
 
         # create service files

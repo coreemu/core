@@ -252,8 +252,9 @@ class Session(object):
         hooks = self._hooks.get(state, [])
 
         # execute all state hooks
-        for hook in hooks:
-            self.run_hook(hook)
+        if hooks:
+            for hook in hooks:
+                self.run_hook(hook)
         else:
             logger.info("no state hooks for %s", state)
 
@@ -269,7 +270,7 @@ class Session(object):
         """
         logger.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
 
-        hook_id, state = hook_type.split(':')[:2]
+        _hook_id, state = hook_type.split(':')[:2]
         if not state.isdigit():
             logger.error("error setting hook having state '%s'", state)
             return
@@ -352,7 +353,8 @@ class Session(object):
         :return: nothing
         """
         hooks = self._state_hooks.setdefault(state, [])
-        assert hook not in hooks
+        if hook in hooks:
+            raise ValueError("attempting to add duplicate state hook")
         hooks.append(hook)
 
         if self.state == state:
@@ -629,13 +631,10 @@ class Session(object):
         """
 
         with self._objects_lock:
-            count = len(filter(lambda x: not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET)),
-                               self.objects))
+            count = len([x for x in self.objects if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
 
             # on Linux, GreTapBridges are auto-created, not part of GUI's node count
-            count -= len(filter(
-                lambda (x): nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL),
-                self.objects))
+            count -= len([x for x in self.objects if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
 
         return count
 

@@ -85,6 +85,9 @@ class PyCoreObj(object):
         if name is None:
             name = "o%s" % self.objid
         self.name = name
+        self.type = None
+        self.server = None
+        self.services = None
         # ifindex is key, PyCoreNetIf instance is value
         self._netif = {}
         self.ifindex = 0
@@ -205,21 +208,12 @@ class PyCoreObj(object):
             return None
 
         x, y, _ = self.getposition()
+        model = self.type
+        emulation_server = self.server
 
-        model = None
-        if hasattr(self, "type"):
-            model = self.type
-
-        emulation_server = None
-        if hasattr(self, "server"):
-            emulation_server = self.server
-
-        services = None
-        if hasattr(self, "services") and len(self.services) != 0:
-            nodeservices = []
-            for s in self.services:
-                nodeservices.append(s.name)
-            services = "|".join(nodeservices)
+        services = self.services
+        if services is not None:
+            services = "|".join([x.name for x in services])
 
         node_data = NodeData(
             message_type=message_type,
@@ -269,10 +263,8 @@ class PyCoreNode(PyCoreObj):
         :param str name: object name
         :param bool start: boolean for starting
         """
-        PyCoreObj.__init__(self, session, objid, name, start=start)
+        super(PyCoreNode, self).__init__(session, objid, name, start=start)
         self.services = []
-        if not hasattr(self, "type"):
-            self.type = None
         self.nodedir = None
         self.tmpnodedir = False
 
@@ -460,6 +452,19 @@ class PyCoreNet(PyCoreObj):
     """
     linktype = LinkTypes.WIRED.value
 
+    def __init__(self, session, objid, name, start=True):
+        """
+        Create a PyCoreNet instance.
+
+        :param core.session.Session session: CORE session object
+        :param int objid: object id
+        :param str name: object name
+        :param bool start: should object start
+        """
+        super(PyCoreNet, self).__init__(session, objid, name, start=start)
+        self._linked = {}
+        self._linked_lock = threading.Lock()
+
     def startup(self):
         """
         Each object implements its own startup method.
@@ -475,19 +480,6 @@ class PyCoreNet(PyCoreObj):
         :return: nothing
         """
         raise NotImplementedError
-
-    def __init__(self, session, objid, name, start=True):
-        """
-        Create a PyCoreNet instance.
-
-        :param core.session.Session session: CORE session object
-        :param int objid: object id
-        :param str name: object name
-        :param bool start: should object start
-        """
-        PyCoreObj.__init__(self, session, objid, name, start=start)
-        self._linked = {}
-        self._linked_lock = threading.Lock()
 
     def attach(self, netif):
         """
@@ -550,7 +542,7 @@ class PyCoreNet(PyCoreObj):
             interface2_ip6 = None
             interface2_ip6_mask = None
             for address in netif.addrlist:
-                ip, sep, mask = address.partition('/')
+                ip, _sep, mask = address.partition("/")
                 mask = int(mask)
                 if ipaddress.is_ipv4_address(ip):
                     family = AF_INET
@@ -627,7 +619,8 @@ class PyCoreNetIf(object):
         self._params = {}
         self.addrlist = []
         self.hwaddr = None
-        self.poshook = None
+        # placeholder position hook
+        self.poshook = lambda a, b, c, d: None
         # used with EMANE
         self.transport_type = None
         # interface index on the network
@@ -760,5 +753,4 @@ class PyCoreNetIf(object):
         :param z: z position
         :return: nothing
         """
-        if self.poshook is not None:
-            self.poshook(self, x, y, z)
+        self.poshook(self, x, y, z)
