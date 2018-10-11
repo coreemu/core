@@ -35,7 +35,7 @@ class PhysicalNode(PyCoreNode):
 
         with self.lock:
             while self._mounts:
-                source, target = self._mounts.pop(-1)
+                _source, target = self._mounts.pop(-1)
                 self.umount(target)
 
             for netif in self.netifs():

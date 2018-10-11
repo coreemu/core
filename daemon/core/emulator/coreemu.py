@@ -262,7 +262,7 @@ class EmuSession(Session):
 
                 # network to network
                 if net_one and net_two:
-                    logger.info("adding link from network to network: %s", net_one.name, net_two.name)
+                    logger.info("adding link from network to network: %s - %s", net_one.name, net_two.name)
                     if nodeutils.is_node(net_two, NodeTypes.RJ45):
                         interface = net_two.linknet(net_one)
                     else:
@@ -326,7 +326,7 @@ class EmuSession(Session):
         :return: nothing
         """
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
+        node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(node_one_id, node_two_id)
 
         if node_one:
             node_one.lock.acquire()
@@ -388,7 +388,7 @@ class EmuSession(Session):
         :return: nothing
         """
         # get node objects identified by link data
-        node_one, node_two, net_one, net_two, tunnel = self._link_nodes(node_one_id, node_two_id)
+        node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(node_one_id, node_two_id)
 
         if node_one:
             node_one.lock.acquire()
