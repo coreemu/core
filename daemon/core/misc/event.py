@@ -155,7 +155,8 @@ class EventLoop(object):
                     schedule = True
                     break
                 event = heapq.heappop(self.queue)
-            assert event.time <= now
+            if event.time > now:
+                raise ValueError("invalid event time: %s > %s", event.time, now)
             event.run()
 
         with self.lock:
@@ -170,11 +171,13 @@ class EventLoop(object):
         :return: nothing
         """
         with self.lock:
-            assert self.running
+            if not self.running:
+                raise ValueError("scheduling event while not running")
             if not self.queue:
                 return
             delay = self.queue[0].time - time.time()
-            assert self.timer is None
+            if self.timer:
+                raise ValueError("timer was already set")
             self.timer = Timer(delay, self.__run_events)
             self.timer.daemon = True
             self.timer.start()

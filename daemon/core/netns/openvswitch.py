@@ -449,9 +449,7 @@ class OvsPtpNet(OvsNet):
         if len(self._netif) != 2:
             return all_links
 
-        if1, if2 = self._netif.items()
-        if1 = if1[1]
-        if2 = if2[1]
+        if1, if2 = self._netif.values()
 
         unidirectional = 0
         if if1.getparams() != if2.getparams():
@@ -462,7 +460,7 @@ class OvsPtpNet(OvsNet):
         interface1_ip6 = None
         interface1_ip6_mask = None
         for address in if1.addrlist:
-            ip, sep, mask = address.partition("/")
+            ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
@@ -480,7 +478,7 @@ class OvsPtpNet(OvsNet):
         interface2_ip6 = None
         interface2_ip6_mask = None
         for address in if2.addrlist:
-            ip, sep, mask = address.partition("/")
+            ip, _sep, mask = address.partition("/")
             mask = int(mask)
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
