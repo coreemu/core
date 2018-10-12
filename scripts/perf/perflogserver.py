@@ -181,7 +181,7 @@ def collectservermems():
     Return memory (total, free) in KB from proc/meminfo.
     """
     lines = readfile("/proc/meminfo")
-    mem = [x.plit() for x in lines[0:2]]
+    mem = [x.split() for x in lines[0:2]]
     return [int(x) for x in zip(*mem)[1]]
 
 
@@ -584,6 +584,8 @@ def main():
     cyclecount = 0
     while True:
         cputimea = collectservercputimes()
+        if options.session is not None:
+            nodesa = logsession.getnodemetrics("a")
         time.sleep(options.interval)
         cputimeb = collectservercputimes()
         mems = collectservermems()
