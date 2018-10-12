@@ -669,12 +669,11 @@ class EmuSession(Session):
             self.file_name = file_name
             self.instantiate()
 
-    def save_xml(self, file_name, version):
+    def save_xml(self, file_name):
         """
         Export a session to the EmulationScript XML format.
 
         :param str file_name: file name to write session xml to
-        :param str version: xml version type
         :return: nothing
         """
         CoreXmlWriter(self).write(file_name)

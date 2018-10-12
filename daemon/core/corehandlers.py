@@ -1475,8 +1475,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             return ()
         elif event_type == EventTypes.FILE_SAVE:
             filename = event_data.name
-            xml_version = self.session.options.get_config("xmlfilever")
-            self.session.save_xml(filename, xml_version)
+            self.session.save_xml(filename)
         elif event_type == EventTypes.SCHEDULED:
             etime = event_data.time
             node = event_data.node

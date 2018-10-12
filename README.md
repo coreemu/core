@@ -17,7 +17,7 @@ scripting network emulation.
 ## Documentation and Examples
 
 * Documentation hosted on GitHub
-  * http://coreemu.github.io/core/
+  * <http://coreemu.github.io/core/>
 * Basic Script Examples
   * [Examples](daemon/examples/api)
 * Custom Service Example
@@ -30,7 +30,7 @@ scripting network emulation.
 We are leveraging Discord for persistent chat rooms, voice chat, and
 GitHub integration. This allows for more dynamic conversations and the
 capability to respond faster. Feel free to join us at the link below.
-https://discord.gg/AKd7kmP
+<https://discord.gg/AKd7kmP>
 
 You can also get help with questions, comments, or trouble, by using
 the CORE mailing lists:
@@ -47,8 +47,7 @@ make
 sudo make install
 ```
 
-Building Documentation
-----------------------
+### Building Documentation
 
 ```shell
 ./bootstrap.sh
@@ -56,10 +55,9 @@ Building Documentation
 make doc
 ```
 
-Building Packages
------------------
+### Building Packages
 
-Install fpm: http://fpm.readthedocs.io/en/latest/installing.html
+Install fpm: <http://fpm.readthedocs.io/en/latest/installing.html>
 
 Build package commands, DESTDIR is used for gui packaging only
 
@@ -81,8 +79,7 @@ This will produce:
   * python-core-sysv_$VERSION_$ARCH
   * python-core-systemd_$VERSION_$ARCH
 
-Running CORE
-------------
+### Running CORE
 
 First start the CORE services:
 
