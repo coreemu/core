@@ -25,7 +25,7 @@ def convert_none(x):
     """
     Helper to use 0 for None values.
     """
-    if type(x) is str:
+    if isinstance(x, basestring):
         x = float(x)
     if x is None:
         return 0

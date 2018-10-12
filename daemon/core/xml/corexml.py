@@ -98,79 +98,6 @@ def add_configuration(parent, name, value):
     add_attribute(config_element, "value", value)
 
 
-def get_endpoints(node):
-    endpoints = []
-    for interface in node.netifs(sort=True):
-        endpoint = get_endpoint(node, interface)
-        endpoints.append(endpoint)
-    return endpoints
-
-
-def get_endpoint(node, interface):
-    l2devport = None
-    othernet = getattr(interface, "othernet", None)
-
-    # reference interface of node that is part of this network
-    if interface.net.objid == node.objid and interface.node:
-        params = interface.getparams()
-        if nodeutils.is_node(interface.net, (NodeTypes.HUB, NodeTypes.SWITCH)):
-            l2devport = "%s/e%s" % (interface.net.name, interface.netindex)
-        endpoint_id = "%s/%s" % (interface.node.name, interface.name)
-        endpoint = Endpoint(
-            node,
-            interface,
-            "interface",
-            endpoint_id,
-            l2devport,
-            params
-        )
-    # references another node connected to this network
-    elif othernet and othernet.objid == node.objid:
-        interface.swapparams("_params_up")
-        params = interface.getparams()
-        interface.swapparams("_params_up")
-        l2devport = "%s/e%s" % (othernet.name, interface.netindex)
-        endpoint_id = "%s/%s/%s" % (node.name, interface.node.name, interface.netindex)
-        endpoint = Endpoint(
-            interface.net,
-            interface,
-            "interface",
-            endpoint_id,
-            l2devport,
-            params
-        )
-    else:
-        endpoint = Endpoint(
-            node,
-            interface,
-        )
-
-    return endpoint
-
-
-def get_downstream_l2_devices(node):
-    all_endpoints = []
-    l2_devices = [node]
-    current_endpoint = get_endpoints(node)
-    all_endpoints.extend(current_endpoint)
-    for endpoint in current_endpoint:
-        if endpoint.type and endpoint.network.objid != node.objid:
-            new_l2_devices, new_endpoints = get_downstream_l2_devices(endpoint.network)
-            l2_devices.extend(new_l2_devices)
-            all_endpoints.extend(new_endpoints)
-    return l2_devices, all_endpoints
-
-
-class Endpoint(object):
-    def __init__(self, network, interface, _type=None, _id=None, l2devport=None, params=None):
-        self.network = network
-        self.interface = interface
-        self.type = _type
-        self.id = _id
-        self.l2devport = l2devport
-        self.params = params
-
-
 class NodeElement(object):
     def __init__(self, session, node, element_name):
         self.session = session
@@ -196,50 +123,6 @@ class NodeElement(object):
         add_attribute(position, "lat", lat)
         add_attribute(position, "lon", lon)
         add_attribute(position, "alt", alt)
-
-
-class InterfaceElement(object):
-    def __init__(self, session, node, interface):
-        self.session = session
-        self.node = node
-        self.interface = interface
-        self.element = etree.Element("interface")
-        add_attribute(self.element, "id", interface.netindex)
-        add_attribute(self.element, "name", interface.name)
-        mac = etree.SubElement(self.element, "mac")
-        mac.text = str(interface.hwaddr)
-        self.add_mtu()
-        self.addresses = etree.SubElement(self.element, "addresses")
-        self.add_addresses()
-        self.add_model()
-
-    def add_mtu(self):
-        # check to add mtu
-        if self.interface.mtu and self.interface.mtu != 1500:
-            add_attribute(self.element, "mtu", self.interface.mtu)
-
-    def add_model(self):
-        # check for emane specific interface configuration
-        net_model = None
-        if self.interface.net and hasattr(self.interface.net, "model"):
-            net_model = self.interface.net.model
-
-        if net_model and net_model.name.startswith("emane_"):
-            config = self.session.emane.getifcconfig(self.node.objid, self.interface, net_model.name)
-            if config:
-                emane_element = create_emane_model_config(net_model, config)
-                self.element.append(emane_element)
-
-    def add_addresses(self):
-        for address in self.interface.addrlist:
-            ip, mask = address.split("/")
-            if ipaddress.is_ipv4_address(ip):
-                address_type = "IPv4"
-            else:
-                address_type = "IPv6"
-            address_element = etree.SubElement(self.addresses, "address")
-            add_attribute(address_element, "type", address_type)
-            address_element.text = str(address)
 
 
 class ServiceElement(object):
@@ -309,7 +192,6 @@ class DeviceElement(NodeElement):
     def __init__(self, session, node):
         super(DeviceElement, self).__init__(session, node, "device")
         add_attribute(self.element, "type", node.type)
-        # self.add_interfaces()
         self.add_services()
 
     def add_services(self):
@@ -319,15 +201,6 @@ class DeviceElement(NodeElement):
 
         if service_elements.getchildren():
             self.element.append(service_elements)
-
-    def add_interfaces(self):
-        interfaces = etree.Element("interfaces")
-        for interface in self.node.netifs(sort=True):
-            interface_element = InterfaceElement(self.session, self.node, interface)
-            interfaces.append(interface_element.element)
-
-        if interfaces.getchildren():
-            self.element.append(interfaces)
 
 
 class NetworkElement(NodeElement):
@@ -343,9 +216,6 @@ class NetworkElement(NodeElement):
         if grekey and grekey is not None:
             add_attribute(self.element, "grekey", grekey)
         self.add_type()
-        # self.endpoints = get_endpoints(self.node)
-        # self.l2_devices = self.get_l2_devices()
-        # self.add_configs()
 
     def add_type(self):
         if self.node.apitype:
@@ -353,35 +223,6 @@ class NetworkElement(NodeElement):
         else:
             node_type = self.node.__class__.__name__
         add_attribute(self.element, "type", node_type)
-
-    def get_l2_devices(self):
-        l2_devices = []
-        found_l2_devices = []
-        found_endpoints = []
-        if nodeutils.is_node(self.node, (NodeTypes.SWITCH, NodeTypes.HUB)):
-            for endpoint in self.endpoints:
-                if endpoint.type and endpoint.network.objid != self.node.objid:
-                    downstream_l2_devices, downstream_endpoints = get_downstream_l2_devices(endpoint.network)
-                    found_l2_devices.extend(downstream_l2_devices)
-                    found_endpoints.extend(downstream_endpoints)
-
-            for l2_device in found_l2_devices:
-                pass
-
-            self.endpoints.extend(found_endpoints)
-        return l2_devices
-
-    def add_peer_to_peer_config(self):
-        pass
-
-    def add_switch_hub_tunnel_config(self):
-        pass
-
-    def add_configs(self):
-        if nodeutils.is_node(self.node, NodeTypes.PEER_TO_PEER):
-            self.add_peer_to_peer_config()
-        elif nodeutils.is_node(self.node, (NodeTypes.SWITCH, NodeTypes.HUB, NodeTypes.TUNNEL)):
-            self.add_switch_hub_tunnel_config()
 
 
 class CoreXmlWriter(object):

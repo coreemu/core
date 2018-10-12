@@ -49,7 +49,7 @@ def add_emane_interface(host_element, netif, platform_name="p1", transport_name=
 
 
 def get_address_type(address):
-    addr, slash, prefixlen = address.partition("/")
+    addr, _slash, _prefixlen = address.partition("/")
     if ipaddress.is_ipv4_address(addr):
         address_type = "IPv4"
     elif ipaddress.is_ipv6_address(addr):
@@ -122,19 +122,12 @@ class CoreXmlDeployment(object):
         return host_element
 
     def add_virtual_host(self, physical_host, node):
-        assert isinstance(node, PyCoreNode)
+        if not isinstance(node, PyCoreNode):
+            raise TypeError("invalid node type: %s" % node)
 
         # create virtual host element
         host_id = "%s/%s" % (physical_host.get("id"), node.name)
         host_element = etree.SubElement(physical_host, "testHost", id=host_id, name=node.name)
-
-        # TODO: need to inject mapping into device element?
-        self.find_device(node.name)
-        # device = self.find_device(self.root.base_element, obj.name)
-        # if device is None:
-        #     logger.warn("corresponding XML device not found for %s", obj.name)
-        #     return
-        # add_mapping(device, "testHost", host_id)
 
         # add host type
         add_type(host_element, "virtual")
@@ -151,7 +144,3 @@ class CoreXmlDeployment(object):
             for address in netif.addrlist:
                 address_type = get_address_type(address)
                 add_address(parent_element, address_type, address, netif.name)
-
-                # TODO: need to inject mapping in interface?
-                # interface = self.find_interface(device, netif.name)
-                # add_mapping(interface, "nem", nem.getAttribute("id"))

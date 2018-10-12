@@ -627,11 +627,11 @@ class EmaneManager(ModelManager):
         if realtime:
             emanecmd += "-r",
 
-        otagroup, otaport = self.get_config("otamanagergroup").split(":")
+        otagroup, _otaport = self.get_config("otamanagergroup").split(":")
         otadev = self.get_config("otamanagerdevice")
         otanetidx = self.session.get_control_net_index(otadev)
 
-        eventgroup, eventport = self.get_config("eventservicegroup").split(":")
+        eventgroup, _eventport = self.get_config("eventservicegroup").split(":")
         eventdev = self.get_config("eventservicedevice")
         eventservicenetidx = self.session.get_control_net_index(eventdev)
 
@@ -781,7 +781,7 @@ class EmaneManager(ModelManager):
             return
         logger.info("subscribing to EMANE location events. (%s)", threading.currentThread().getName())
         while self.doeventloop is True:
-            uuid, seq, events = self.service.nextEvent()
+            _uuid, _seq, events = self.service.nextEvent()
 
             # this occurs with 0.9.1 event service
             if not self.doeventloop:
@@ -820,7 +820,7 @@ class EmaneManager(ModelManager):
         Returns True if successfully parsed and a Node Message was sent.
         """
         # convert nemid to node number
-        emanenode, netif = self.nemlookup(nemid)
+        _emanenode, netif = self.nemlookup(nemid)
         if netif is None:
             logger.info("location event for unknown NEM %s", nemid)
             return False

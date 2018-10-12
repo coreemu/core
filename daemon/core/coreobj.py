@@ -213,7 +213,7 @@ class PyCoreObj(object):
 
         services = self.services
         if services is not None:
-            services = "|".join([x.name for x in services])
+            services = "|".join([service.name for service in services])
 
         node_data = NodeData(
             message_type=message_type,

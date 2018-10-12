@@ -37,7 +37,7 @@ class EmaneNode(EmaneNet):
     """
 
     def __init__(self, session, objid=None, name=None, start=True):
-        PyCoreNet.__init__(self, session, objid, name, start)
+        super(EmaneNode, self).__init__(session, objid, name, start)
         self.conf = ""
         self.up = False
         self.nemidmap = {}

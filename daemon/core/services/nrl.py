@@ -602,8 +602,7 @@ class MgenActor(NrlService):
         comments = ""
         cmd = "mgenBasicActor.py -n %s -a 0.0.0.0" % node.name
 
-        servicenames = map(lambda x: x.name, node.services)
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = [x for x in node.netifs() if not getattr(x, "control", False)]
         if len(netifs) == 0:
             return ""
 

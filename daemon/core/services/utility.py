@@ -83,10 +83,8 @@ class DefaultRouteService(UtilService):
     def addrstr(x):
         if x.find(":") >= 0:
             net = Ipv6Prefix(x)
-            fam = "inet6 ::"
         else:
             net = Ipv4Prefix(x)
-            fam = "inet 0.0.0.0"
         if net.max_addr() == net.min_addr():
             return ""
         else:
@@ -145,11 +143,9 @@ class StaticRouteService(UtilService):
     def routestr(x):
         if x.find(":") >= 0:
             net = Ipv6Prefix(x)
-            fam = "inet6"
             dst = "3ffe:4::/64"
         else:
             net = Ipv4Prefix(x)
-            fam = "inet"
             dst = "10.9.8.0/24"
         if net.max_addr() == net.min_addr():
             return ""

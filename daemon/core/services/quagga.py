@@ -551,7 +551,6 @@ class Babel(QuaggaService):
 
     @classmethod
     def generatequaggaifcconfig(cls, node, ifc):
-        type = "wired"
         if ifc.net and ifc.net.linktype == LinkTypes.WIRELESS.value:
             return "  babel wireless\n  no babel split-horizon\n"
         else:
