@@ -14,14 +14,14 @@ _EXAMPLES_DIR = "share/core"
 
 
 def recursive_files(data_path, files_path):
-    data_files = []
-    for path, directories, filenames in os.walk(files_path):
+    all_files = []
+    for path, _directories, filenames in os.walk(files_path):
         directory = os.path.join(data_path, path)
         files = []
         for filename in filenames:
             files.append(os.path.join(path, filename))
-        data_files.append((directory, files))
-    return data_files
+        all_files.append((directory, files))
+    return all_files
 
 
 def glob_files(glob_path):

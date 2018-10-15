@@ -12,7 +12,6 @@ node metrics: throughput, mem, cpu total, usr, sys, wait
 import commands
 import optparse
 import os
-import pdb
 import signal
 import sys
 import time
@@ -116,8 +115,8 @@ def checkserverthreshold(metricval):
     for key in serverthresholds.getkeys():
         if key == "processorusedcputime":
             pcpus = metricval.getvalue(key)
-            for ind in range(0, len(pcpus)):
-                if pcpus[ind] > serverthresholds.getvalue(key):
+            for ind, pcpu in enumerate(pcpus):
+                if pcpu > serverthresholds.getvalue(key):
                     alarm = ["server", os.uname()[1], str(ind) + key,
                              "%.2f" % pcpus[ind], ">", serverthresholds.getvalue(key)]
                     if options.timestamp:
