@@ -2,7 +2,7 @@ import os
 from functools import wraps
 from threading import Lock
 
-from bottle import abort
+from werkzeug.exceptions import abort
 
 save_dir = os.path.join(os.path.dirname(os.path.abspath(__file__)), "uploads")
 CORE_LOCK = Lock()

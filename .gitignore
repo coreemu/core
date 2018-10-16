@@ -8,6 +8,7 @@ Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache
+/config
 config.h
 config.h.in
 config.log
@@ -16,8 +17,11 @@ configure
 debian
 stamp-h1
 
-# python build directory
+# python
 dist
+*.egg-info
+.cache
+*.pyc
 
 # intellij
 *.iml
@@ -30,15 +34,11 @@ dist
 coverage.xml
 
 # python files
-*.egg-info
 
 # ignore package files
 *.rpm
 *.deb
 *.tar.gz
-
-# pytest cache files
-.cache
 
 # ignore swap files
 *.swp

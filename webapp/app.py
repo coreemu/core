@@ -1,9 +1,9 @@
 import os
 
-from bottle import HTTPError
 from flask import Flask
 from flask import jsonify
 from flask import request
+from werkzeug.exceptions import HTTPException
 
 import core_utils
 import emane_routes
@@ -78,9 +78,9 @@ def upload():
     return jsonify()
 
 
-@app.errorhandler(HTTPError)
+@app.errorhandler(HTTPException)
 def handle_error(e):
-    return jsonify(message=e.body, status=e.status_code), e.status_code
+    return jsonify(message=e.description, status=e.code), e.code
 
 
 if __name__ == "__main__":
