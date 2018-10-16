@@ -236,7 +236,7 @@ class DhcpService(UtilService):
     startup = ("touch /var/lib/dhcp/dhcpd.leases","dhcpd")
     shutdown = ("killall dhcpd",)
     validate = ("pidof dhcpd",)
-        
+
     @classmethod
     def generate_config(cls, node, filename):
         """
