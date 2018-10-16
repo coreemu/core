@@ -10,19 +10,18 @@ public final class ConfigItemUtils {
     }
 
     public static IConfigItem get(Stage stage, ConfigOption option) {
-        IConfigItem configItem = null;
+        IConfigItem configItem;
         ConfigDataType dataType = ConfigDataType.get(option.getType());
-        switch (dataType) {
-            case BOOL:
-                configItem = new BooleanConfigItem(option);
-                break;
-            default:
-                if (!option.getSelect().isEmpty()) {
-                    configItem = new SelectConfigItem(option);
-                } else {
-                    configItem = new DefaultConfigItem(option);
-                }
-                break;
+        if (dataType == ConfigDataType.BOOL) {
+            configItem = new BooleanConfigItem(stage, option);
+        } else {
+            if (!option.getSelect().isEmpty()) {
+                configItem = new SelectConfigItem(stage, option);
+            } else if (option.getLabel().endsWith(" file")) {
+                configItem = new FileConfigItem(stage, option);
+            } else {
+                configItem = new DefaultConfigItem(stage, option);
+            }
         }
 
         return configItem;
