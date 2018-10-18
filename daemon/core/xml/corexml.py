@@ -6,7 +6,6 @@ from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
 from core.enumerations import NodeTypes
-from core.misc import ipaddress
 from core.misc import nodeutils
 from core.misc.ipaddress import MacAddress
 from core.netns import nodes
