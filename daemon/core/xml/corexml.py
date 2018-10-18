@@ -377,8 +377,6 @@ class CoreXmlWriter(object):
 
         links = []
         for node in self.session.objects.itervalues():
-            logger.info("writer adding node(%s)", node.name)
-
             # network node
             if isinstance(node, coreobj.PyCoreNet) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
                 self.write_network(node)

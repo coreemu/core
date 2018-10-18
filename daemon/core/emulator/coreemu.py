@@ -583,7 +583,8 @@ class EmuSession(Session):
             x, y, _ = self.location.getxyz(lat, lon, alt)
 
         # set position and broadcast
-        node.setposition(x, y, None)
+        if None not in [x, y]:
+            node.setposition(x, y, None)
 
         # broadcast updated location when using lat/lon/alt
         if using_lat_lon_alt:
