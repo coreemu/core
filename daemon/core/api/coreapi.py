@@ -91,7 +91,7 @@ class CoreTlvDataObj(CoreTlvData):
     """
 
     @classmethod
-    def pack(cls, obj):
+    def pack(cls, value):
         """
         Convenience method for packing custom object data.
 
@@ -99,7 +99,7 @@ class CoreTlvDataObj(CoreTlvData):
         :return: length of data and the packed data itself
         :rtype: tuple
         """
-        value = cls.get_value(obj)
+        value = cls.get_value(value)
         return super(CoreTlvDataObj, cls).pack(value)
 
     @classmethod
@@ -244,7 +244,7 @@ class CoreTlvDataUint16List(CoreTlvData):
         :return: unint 16 list
         :rtype: list
         """
-        return tuple(map(lambda (x): int(x), value.split()))
+        return tuple(int(x) for x in value.split())
 
 
 class CoreTlvDataIpv4Addr(CoreTlvDataObj):
@@ -266,7 +266,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         return obj.addr
 
     @staticmethod
-    def new_obj(value):
+    def new_obj(obj):
         """
         Retrieve Ipv4 address from a string representation.
 
@@ -274,7 +274,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
-        return IpAddress(af=socket.AF_INET, address=value)
+        return IpAddress(af=socket.AF_INET, address=obj)
 
 
 class CoreTlvDataIPv6Addr(CoreTlvDataObj):
@@ -380,7 +380,7 @@ class CoreTlv(object):
         tlv_type, tlv_len = struct.unpack(cls.header_format, data[:cls.header_len])
         header_len = cls.header_len
         if tlv_len == 0:
-            tlv_type, zero, tlv_len = struct.unpack(cls.long_header_format, data[:cls.long_header_len])
+            tlv_type, _zero, tlv_len = struct.unpack(cls.long_header_format, data[:cls.long_header_len])
             header_len = cls.long_header_len
         tlv_size = header_len + tlv_len
         # for 32-bit alignment

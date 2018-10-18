@@ -102,7 +102,7 @@ class CoreNs3Node(CoreNode, ns.network.Node):
             mm = self.GetObject(ns.mobility.MobilityModel.GetTypeId())
             if z is None:
                 z = 0.0
-            pos = mm.SetPosition(ns.core.Vector(x, y, z))
+            mm.SetPosition(ns.core.Vector(x, y, z))
         except AttributeError:
             self.warn("ns-3 mobility model not found, not setting position")
 
@@ -209,10 +209,10 @@ class Ns3LteNet(CoreNs3Net):
         Register user equipment with a nodeb.
         Optionally install mobility model while we have the ns-3 devs handy.
         """
-        tmp, nodebdev = self.findns3dev(nodeb)
-        tmp, dev = self.findns3dev(node)
+        _tmp, nodebdev = self.findns3dev(nodeb)
+        _tmp, dev = self.findns3dev(node)
         if nodebdev is None or dev is None:
-            raise KeyError, "ns-3 device for node not found"
+            raise KeyError("ns-3 device for node not found")
         self.lte.RegisterUeToTheEnb(dev, nodebdev)
         if mob:
             self.lte.AddMobility(dev.GetPhy(), mob)
@@ -364,7 +364,7 @@ class Ns3Session(Session):
         self.duration = duration
         self.nodes = ns.network.NodeContainer()
         self.mobhelper = ns.mobility.MobilityHelper()
-        Session.__init__(self, session_id, persistent=persistent)
+        Session.__init__(self, session_id)
 
     def run(self, vis=False):
         """
@@ -488,7 +488,7 @@ class Ns3Session(Session):
         Start a tracing thread using the ASCII output from the ns3
         mobility helper.
         """
-        net.mobility = WayPointMobility(session=self, object_id=net.objid, config=None)
+        net.mobility = WayPointMobility(session=self, object_id=net.objid)
         net.mobility.setendtime()
         net.mobility.refresh_ms = 300
         net.mobility.empty_queue_stop = False
@@ -528,7 +528,7 @@ class Ns3Session(Session):
                         sleep += 0.001
                     continue
                 sleep = 0.001
-                items = dict(map(lambda x: x.split('='), line.split()))
+                items = dict(x.split("=") for x in line.split())
                 logger.info("trace: %s %s %s", items['node'], items['pos'], items['vel'])
                 x, y, z = map(float, items['pos'].split(':'))
                 vel = map(float, items['vel'].split(':'))
@@ -544,7 +544,7 @@ class Ns3Session(Session):
                         net.mobility.state = net.mobility.STATE_RUNNING
                         self.event_loop.add_event(0, net.mobility.runround)
         except IOError:
-            logger.exception("mobilitytrace error opening '%s': %s", filename)
+            logger.exception("mobilitytrace error opening: %s", filename)
         finally:
             if f:
                 f.close()

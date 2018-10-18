@@ -31,7 +31,7 @@ class MacAddress(object):
         :return: string representation
         :rtype: str
         """
-        return ":".join(map(lambda x: "%02x" % ord(x), self.addr))
+        return ":".join("%02x" % ord(x) for x in self.addr)
 
     def to_link_local(self):
         """
@@ -61,7 +61,7 @@ class MacAddress(object):
         :return: mac address class
         :rtype: MacAddress
         """
-        addr = "".join(map(lambda x: chr(int(x, 16)), s.split(":")))
+        addr = "".join(chr(int(x, 16)) for x in s.split(":"))
         return cls(addr)
 
     @classmethod
@@ -154,14 +154,14 @@ class IpAddress(object):
             logger.exception("error during addition")
             return NotImplemented
 
-        tmp = map(lambda x: ord(x), self.addr)
+        tmp = [ord(x) for x in self.addr]
         for i in xrange(len(tmp) - 1, -1, -1):
             x = tmp[i] + carry
             tmp[i] = x & 0xff
             carry = x >> 8
             if carry == 0:
                 break
-        addr = "".join(map(lambda x: chr(x), tmp))
+        addr = "".join(chr(x) for x in tmp)
         return self.__class__(self.af, addr)
 
     def __sub__(self, other):
@@ -200,8 +200,8 @@ class IpAddress(object):
         :return: integer value
         :rtype: int
         """
-        bin = socket.inet_pton(AF_INET, s)
-        return struct.unpack("!I", bin)[0]
+        value = socket.inet_pton(AF_INET, s)
+        return struct.unpack("!I", value)[0]
 
 
 class IpPrefix(object):

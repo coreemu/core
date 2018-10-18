@@ -8,15 +8,9 @@ from core.enumerations import NodeTypes
 from core.mobility import BasicRangeModel
 from core.services.utility import SshService
 
-_XML_VERSIONS = [
-    "0.0",
-    "1.0"
-]
-
 
 class TestXml:
-    @pytest.mark.parametrize("version", _XML_VERSIONS)
-    def test_xml_hooks(self, session, tmpdir, version):
+    def test_xml_hooks(self, session, tmpdir):
         """
         Test save/load hooks in xml.
 
@@ -32,7 +26,7 @@ class TestXml:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path, version)
+        session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -51,8 +45,7 @@ class TestXml:
         assert file_name == runtime_hook[0]
         assert data == runtime_hook[1]
 
-    @pytest.mark.parametrize("version", _XML_VERSIONS)
-    def test_xml_ptp(self, session, tmpdir, version, ip_prefixes):
+    def test_xml_ptp(self, session, tmpdir, ip_prefixes):
         """
         Test xml client methods for a ptp network.
 
@@ -83,7 +76,7 @@ class TestXml:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path, version)
+        session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -105,8 +98,7 @@ class TestXml:
         assert session.get_object(n1_id)
         assert session.get_object(n2_id)
 
-    @pytest.mark.parametrize("version", _XML_VERSIONS)
-    def test_xml_ptp_services(self, session, tmpdir, version, ip_prefixes):
+    def test_xml_ptp_services(self, session, tmpdir, ip_prefixes):
         """
         Test xml client methods for a ptp neetwork.
 
@@ -144,7 +136,7 @@ class TestXml:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path, version)
+        session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -170,8 +162,7 @@ class TestXml:
         assert session.get_object(n2_id)
         assert service.config_data.get(service_file) == file_data
 
-    @pytest.mark.parametrize("version", _XML_VERSIONS)
-    def test_xml_mobility(self, session, tmpdir, version, ip_prefixes):
+    def test_xml_mobility(self, session, tmpdir, ip_prefixes):
         """
         Test xml client methods for mobility.
 
@@ -206,7 +197,7 @@ class TestXml:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path, version)
+        session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()
@@ -233,8 +224,7 @@ class TestXml:
         assert session.get_object(wlan_id)
         assert value == "1"
 
-    @pytest.mark.parametrize("version", ["1.0"])
-    def test_xml_emane(self, session, tmpdir, version, ip_prefixes):
+    def test_xml_emane(self, session, tmpdir, ip_prefixes):
         """
         Test xml client methods for emane.
 
@@ -274,7 +264,7 @@ class TestXml:
         # save xml
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        session.save_xml(file_path, version)
+        session.save_xml(file_path)
 
         # verify xml file was created and can be parsed
         assert xml_file.isfile()

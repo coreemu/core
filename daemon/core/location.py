@@ -139,7 +139,7 @@ class CoreLocation(object):
         """
         # convert lat/lon to UTM coordinates in meters
         e, n, zonen, zonel = utm.from_latlon(lat, lon)
-        rlat, rlon, ralt = self.refgeo
+        _rlat, _rlon, ralt = self.refgeo
         xshift = self.geteastingshift(zonen, zonel)
         if xshift is None:
             xm = e - self.refutm[1]
@@ -180,11 +180,11 @@ class CoreLocation(object):
         if z in self.zoneshifts and self.zoneshifts[z][0] is not None:
             return self.zoneshifts[z][0]
 
-        rlat, rlon, ralt = self.refgeo
+        rlat, rlon, _ralt = self.refgeo
         # ea. zone is 6deg band
         lon2 = rlon + 6 * (zonen - rzonen)
         # ignore northing
-        e2, n2, zonen2, zonel2 = utm.from_latlon(rlat, lon2)
+        e2, _n2, _zonen2, _zonel2 = utm.from_latlon(rlat, lon2)
         # NOTE: great circle distance used here, not reference ellipsoid!
         xshift = utm.haversine(rlon, rlat, lon2, rlat) - e2
         # cache the return value
@@ -216,12 +216,12 @@ class CoreLocation(object):
         if z in self.zoneshifts and self.zoneshifts[z][1] is not None:
             return self.zoneshifts[z][1]
 
-        rlat, rlon, ralt = self.refgeo
+        rlat, rlon, _ralt = self.refgeo
         # zonemap is used to calculate degrees difference between zone letters
         latshift = self.zonemap[zonel] - self.zonemap[rzonel]
         # ea. latitude band is 8deg high
         lat2 = rlat + latshift
-        e2, n2, zonen2, zonel2 = utm.from_latlon(lat2, rlon)
+        _e2, n2, _zonen2, _zonel2 = utm.from_latlon(lat2, rlon)
         # NOTE: great circle distance used here, not reference ellipsoid
         yshift = -(utm.haversine(rlon, rlat, rlon, lat2) + n2)
         # cache the return value
@@ -244,12 +244,12 @@ class CoreLocation(object):
         :rtype: tuple
         """
         zone = self.refutm[0]
-        rlat, rlon, ralt = self.refgeo
+        rlat, rlon, _ralt = self.refgeo
         if e > 834000 or e < 166000:
             num_zones = (int(e) - 166000) / (utm.R / 10)
             # estimate number of zones to shift, E (positive) or W (negative)
             rlon2 = self.refgeo[1] + (num_zones * 6)
-            e2, n2, zonen2, zonel2 = utm.from_latlon(rlat, rlon2)
+            _e2, _n2, zonen2, zonel2 = utm.from_latlon(rlat, rlon2)
             xshift = utm.haversine(rlon, rlat, rlon2, rlat)
             # after >3 zones away from refpt, the above estimate won't work
             # (the above estimate could be improved)
@@ -257,7 +257,7 @@ class CoreLocation(object):
                 # move one more zone away
                 num_zones = (abs(num_zones) + 1) * (abs(num_zones) / num_zones)
                 rlon2 = self.refgeo[1] + (num_zones * 6)
-                e2, n2, zonen2, zonel2 = utm.from_latlon(rlat, rlon2)
+                _e2, _n2, zonen2, zonel2 = utm.from_latlon(rlat, rlon2)
                 xshift = utm.haversine(rlon, rlat, rlon2, rlat)
             e = e - xshift
             zone = (zonen2, zonel2)

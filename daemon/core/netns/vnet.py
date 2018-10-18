@@ -140,11 +140,9 @@ class EbtablesQueue(object):
         while self.doupdateloop:
             with self.updatelock:
                 for wlan in self.updates:
-                    """
-                    Check if wlan is from a previously closed session. Because of the
-                    rate limiting scheme employed here, this may happen if a new session
-                    is started soon after closing a previous session.
-                    """
+                    # Check if wlan is from a previously closed session. Because of the
+                    # rate limiting scheme employed here, this may happen if a new session
+                    # is started soon after closing a previous session.
                     # TODO: if these are WlanNodes, this will never throw an exception
                     try:
                         wlan.session

@@ -1,4 +1,4 @@
-# CORE
+# CORE [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d94eb0244ade4510a106b4af76077a92)](https://www.codacy.com/app/blakeharnden/core?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=coreemu/core&amp;utm_campaign=Badge_Grade)
 
 CORE: Common Open Research Emulator
 
@@ -17,7 +17,7 @@ scripting network emulation.
 ## Documentation and Examples
 
 * Documentation hosted on GitHub
-  * http://coreemu.github.io/core/
+  * <http://coreemu.github.io/core/>
 * Basic Script Examples
   * [Examples](daemon/examples/api)
 * Custom Service Example
@@ -30,7 +30,7 @@ scripting network emulation.
 We are leveraging Discord for persistent chat rooms, voice chat, and
 GitHub integration. This allows for more dynamic conversations and the
 capability to respond faster. Feel free to join us at the link below.
-https://discord.gg/AKd7kmP
+<https://discord.gg/AKd7kmP>
 
 You can also get help with questions, comments, or trouble, by using
 the CORE mailing lists:
@@ -42,7 +42,6 @@ the CORE mailing lists:
 
 See [CORE Installation](http://coreemu.github.io/core/install.html) for detailed build instructions.
 
-Running CORE
-------------
+### Running CORE
 
 See [Using the CORE GUI](http://coreemu.github.io/core/usage.html) for more details on running CORE.

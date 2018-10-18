@@ -27,12 +27,9 @@ def ltesession(opt):
     lte = session.add_object(cls=Ns3LteNet, name="wlan1")
     lte.setsubchannels(range(25), range(50, 100))
     if opt.verbose:
-        ascii = ns.network.AsciiTraceHelper()
-        stream = ascii.CreateFileStream('/tmp/ns3lte.tr')
+        ascii_helper = ns.network.AsciiTraceHelper()
+        stream = ascii_helper.CreateFileStream('/tmp/ns3lte.tr')
         lte.lte.EnableAsciiAll(stream)
-        # ns.core.LogComponentEnable("EnbNetDevice", ns.core.LOG_LEVEL_INFO)
-        # ns.core.LogComponentEnable("UeNetDevice", ns.core.LOG_LEVEL_INFO)
-        # lte.lte.EnableLogComponents()
 
     prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
     mobb = None
@@ -48,7 +45,7 @@ def ltesession(opt):
         node.newnetif(lte, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         nodes.append(node)
         if i == 1:
-            (tmp, ns3dev) = lte.findns3dev(node)
+            _tmp, ns3dev = lte.findns3dev(node)
             lte.lte.AddMobility(ns3dev.GetPhy(), mob)
         if i > 1:
             lte.linknodeb(node, nodes[0], mob, mobb)

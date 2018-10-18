@@ -364,7 +364,7 @@ class SimpleLxcNode(PyCoreNode):
         if self.up:
             self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
-    def delalladdr(self, ifindex, address_types=valid_address_types):
+    def delalladdr(self, ifindex, address_types=None):
         """
         Delete all addresses from an interface.
 
@@ -373,6 +373,9 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
+        if not address_types:
+            address_types = self.valid_address_types
+
         interface_name = self.ifname(ifindex)
         addresses = self.client.getaddr(interface_name, rescan=True)
 
@@ -570,7 +573,7 @@ class LxcNode(SimpleLxcNode):
         :rtype: file
         """
         hostfilename = self.hostfilename(filename)
-        dirname, basename = os.path.split(hostfilename)
+        dirname, _basename = os.path.split(hostfilename)
         if not os.path.isdir(dirname):
             os.makedirs(dirname, mode=0755)
         return open(hostfilename, mode)

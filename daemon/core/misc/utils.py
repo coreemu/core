@@ -293,10 +293,10 @@ def file_demunge(pathname, header):
     start = None
     end = None
 
-    for i in range(len(lines)):
-        if lines[i] == "# BEGIN %s\n" % header:
+    for i, line in enumerate(lines):
+        if line == "# BEGIN %s\n" % header:
             start = i
-        elif lines[i] == "# END %s\n" % header:
+        elif line == "# END %s\n" % header:
             end = i + 1
 
     if start is None or end is None:

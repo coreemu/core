@@ -107,11 +107,6 @@ ${UCARP_EXEC} -B ${UCARP_OPTS}
         """
         Generate a shell script used to boot the Ucarp daemons.
         """
-
-        try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
-        except KeyError:
-            ucarp_bin = "/usr/sbin/ucarp"
         return """\
 #!/bin/sh
 # Location of the UCARP config directory
@@ -129,11 +124,6 @@ ${UCARP_CFGDIR}/default.sh
         """
         Generate a shell script used to start the virtual ip
         """
-        try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
-        except KeyError:
-            ucarp_bin = "/usr/sbin/ucarp"
-
         return """\
 #!/bin/bash
 
@@ -156,10 +146,6 @@ fi
         """
         Generate a shell script used to stop the virtual ip
         """
-        try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
-        except KeyError:
-            ucarp_bin = "/usr/sbin/ucarp"
         return """\
 #!/bin/bash
 

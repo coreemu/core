@@ -18,7 +18,7 @@ if [ -e /usr/sbin/ntpd ]; then
    # It is not quick enough for our need here
    /etc/init.d/ntp status
    if [ $? = 0 ]; then
-      svs=`ntpq -c peers | awk {'print $1'} | grep ^*`
+      svs=$(ntpq -c peers | awk {'print $1'} | grep ^*)
       if [ "$dbg" = "debug" ]; then
           ntpq -c peers
           echo "get time servers for later need: $svs"
@@ -31,7 +31,7 @@ if [ -e /usr/sbin/ntpd ]; then
    # if there are time servers configured in file /etc/ntp.conf, 
    # adjust time to the first server
    if [ "$svs" = "" ]; then
-      svs=`grep ^server /etc/ntp.conf | awk {'print $2'} `
+      svs=$(grep ^server /etc/ntp.conf | awk {'print $2'})
       if [ "$dbg" = "debug" ]; then
           echo "$svs"
       fi

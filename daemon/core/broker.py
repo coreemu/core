@@ -58,7 +58,9 @@ class CoreDistributedServer(object):
 
         :return: nothing
         """
-        assert self.sock is None
+        if self.sock:
+            raise ValueError("socket already connected")
+
         sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
 
         try:
@@ -168,7 +170,7 @@ class CoreBroker(object):
         self.network_nodes.clear()
         self.physical_nodes.clear()
         while len(self.tunnels) > 0:
-            key, gt = self.tunnels.popitem()
+            _key, gt = self.tunnels.popitem()
             gt.shutdown()
 
     def startrecvloop(self):
@@ -202,7 +204,7 @@ class CoreBroker(object):
                 for server in self.servers.itervalues():
                     if server.sock is not None:
                         rlist.append(server.sock)
-            r, w, x = select.select(rlist, [], [], 1.0)
+            r, _w, _x = select.select(rlist, [], [], 1.0)
             for sock in r:
                 server = self.getserverbysock(sock)
                 logger.info("attempting to receive from server: peer:%s remote:%s",
@@ -319,7 +321,8 @@ class CoreBroker(object):
         with self.servers_lock:
             try:
                 s = self.servers.pop(server.name)
-                assert s == server
+                if s != server:
+                    raise ValueError("server removed was not the server provided")
             except KeyError:
                 logger.exception("error deleting server")
 
@@ -709,7 +712,7 @@ class CoreBroker(object):
         :param str host: host address
         :return: packed core execute tlv data
         """
-        msgtype, msgflags, msglen = coreapi.CoreMessage.unpack_header(msghdr)
+        msgtype, msgflags, _msglen = coreapi.CoreMessage.unpack_header(msghdr)
         msgcls = coreapi.CLASS_MAP[msgtype]
         msg = msgcls(msgflags, msghdr, msgdata)
 
@@ -722,7 +725,6 @@ class CoreBroker(object):
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, nodenum)
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execnum)
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, cmd)
-        title = "\\\"CORE: n%s @ %s\\\"" % (nodenum, host)
         res = "ssh -X -f " + host + " xterm -e " + res
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.RESULT.value, res)
 
@@ -931,7 +933,7 @@ class CoreBroker(object):
         :rtype: bool
         """
         hdr = msg[:coreapi.CoreMessage.header_len]
-        msgtype, flags, msglen = coreapi.CoreMessage.unpack_header(hdr)
+        msgtype, flags, _msglen = coreapi.CoreMessage.unpack_header(hdr)
         msgcls = coreapi.CLASS_MAP[msgtype]
         return self.handle_message(msgcls(flags, hdr, msg[coreapi.CoreMessage.header_len:]))
 
@@ -1067,7 +1069,7 @@ class CoreBroker(object):
 
         value_strings = values_str.split("|")
         for value_string in value_strings:
-            key, value = value_string.split("=", 1)
+            key, _value = value_string.split("=", 1)
             if key == "controlnet":
                 self.handle_distributed_control_net(message, value_strings, value_strings.index(value_string))
 
@@ -1083,7 +1085,7 @@ class CoreBroker(object):
         :return: nothing
         """
         key_value = values[index]
-        key, value = key_value.split("=", 1)
+        _key, value = key_value.split("=", 1)
         control_nets = value.split()
 
         if len(control_nets) < 2:
