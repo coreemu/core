@@ -179,7 +179,7 @@ sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-
 #### Ubuntu 16.04 Requirements
 
 ```shell
-sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-sphinx python-setuptools python-enum34 python-lxml
+sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-sphinx python-setuptools python-enum34 python-lxml libtk-img
 ```
 
 
