@@ -40,25 +40,9 @@ the CORE mailing lists:
 
 ## Building CORE
 
-See [CORE Installation](http://coreemu.github.io/core/install.html) for detailed build instructions
+See [CORE Installation](http://coreemu.github.io/core/install.html) for detailed build instructions.
 
 Running CORE
 ------------
 
-First start the CORE services:
-
-```shell
-# sysv
-sudo service core-daemon start
-# systemd
-sudo systemctl start core-daemon
-```
-
-This automatically runs the core-daemon program.
-Assuming the GUI is in your PATH, run the CORE GUI by typing the following:
-
-```shell
-core-gui
-```
-
-This launches the CORE GUI. You do not need to run the GUI as root.
+See [Using the CORE GUI](http://coreemu.github.io/core/usage.html) for more details on running CORE.

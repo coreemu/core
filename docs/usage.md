@@ -11,6 +11,18 @@ CORE can be used via the GUI or [Python_Scripting](scripting.md). Often the GUI 
 
 CORE can be customized to perform any action at each phase in the workflow above. See the *Hooks...* entry on the **Session Menu** for details about when these session states are reached.
 
+## Prerequisites
+
+Beyond instaling CORE, you must have the CORE daemon running.  This is done on the command line with either Systemd or SysV
+```shell
+# systed
+sudo systemctl daemon-reload
+sudo systemctl start core-daemon
+
+# sysv
+sudo service core-daemon start
+```
+
 ## Modes of Operation
 
 The CORE GUI has two primary modes of operation, **Edit** and **Execute** modes. Running the GUI, by typing **core-gui** with no options, starts in Edit mode.  Nodes are drawn on a blank canvas using the toolbar on the left and configured from right-click menus or by double-clicking them. The GUI does not need to be run as root.
