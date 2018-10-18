@@ -40,46 +40,7 @@ the CORE mailing lists:
 
 ## Building CORE
 
-```shell
-./bootstrap.sh
-./configure
-make
-sudo make install
-```
-
-Building Documentation
-----------------------
-
-```shell
-./bootstrap.sh
-./configure
-make doc
-```
-
-Building Packages
------------------
-
-Install fpm: http://fpm.readthedocs.io/en/latest/installing.html
-
-Build package commands, DESTDIR is used for gui packaging only
-
-```shell
-./bootstrap.sh
-./configure
-make
-mkdir /tmp/core-gui
-make fpm DESTDIR=/tmp/core-gui
-```
-
-This will produce:
-
-* CORE GUI rpm/deb files
-  * core-gui_$VERSION_$ARCH
-* CORE ns3 rpm/deb files
-  * python-core-ns3_$VERSION_$ARCH
-* CORE python rpm/deb files for SysV and systemd service types
-  * python-core-sysv_$VERSION_$ARCH
-  * python-core-systemd_$VERSION_$ARCH
+See [CORE Installation](http://coreemu.github.io/core/install.html) for detailed build instructions
 
 Running CORE
 ------------

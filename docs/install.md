@@ -194,10 +194,30 @@ You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu
 ```shell
 tar xzf core-*.tar.gz
 cd core-*
+```
+
+#### Tradional Autotools Build
+```shell
 ./bootstrap.sh
 ./configure
 make
 sudo make install
+```
+
+#### Build Documentation
+```shell
+./bootstrap.sh
+./configure
+make doc
+```
+
+#### Build Packages
+```shell
+./bootstrap.sh
+./configure
+make
+mkdir /tmp/core-gui
+make fpm DESTDIR=/tmp/core-gui
 ```
 
 ### Quagga Routing Software
