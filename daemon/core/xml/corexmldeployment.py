@@ -87,13 +87,11 @@ class CoreXmlDeployment(object):
 
     def find_device(self, name):
         device = self.scenario.find("devices/device[@name='%s']" % name)
-        logger.info("specific found scenario device: %s", device)
         return device
 
     def find_interface(self, device, name):
         interface = self.scenario.find("devices/device[@name='%s']/interfaces/interface[@name='%s']" % (
             device.name, name))
-        logger.info("specific found scenario interface: %s", interface)
         return interface
 
     def add_deployment(self):
