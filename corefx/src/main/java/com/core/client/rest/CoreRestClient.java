@@ -22,13 +22,12 @@ public class CoreRestClient implements ICoreClient {
     private static final Logger logger = LogManager.getLogger();
     private final Controller controller;
     private final NetworkGraph networkGraph;
-    private final String baseUrl;
+    private String baseUrl;
     private Integer sessionId;
     private SessionState sessionState;
 
-    public CoreRestClient(Controller controller, String baseUrl) {
+    public CoreRestClient(Controller controller) {
         this.controller = controller;
-        this.baseUrl = baseUrl;
         this.networkGraph = controller.getNetworkGraph();
     }
 
@@ -91,7 +90,8 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public void initialJoin() throws IOException {
+    public void initialJoin(String url) throws IOException {
+        this.baseUrl = url;
         GetServices services = getServices();
         logger.info("core services: {}", services);
         controller.getNodeServicesDialog().setServices(services);

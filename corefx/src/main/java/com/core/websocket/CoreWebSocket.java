@@ -14,24 +14,33 @@ import java.net.URISyntaxException;
 public class CoreWebSocket {
     private static final Logger logger = LogManager.getLogger();
     private final Controller controller;
-    private final String url;
-    private final Socket socket;
     private Thread socketThread;
+    private Socket socket;
 
-    public CoreWebSocket(Controller controller, String url) throws URISyntaxException {
+    public CoreWebSocket(Controller controller) {
         this.controller = controller;
-        this.url = url;
-        socket = IO.socket(this.url);
-        socket.on(Socket.EVENT_CONNECT, args -> {
-            logger.info("connected to web socket");
-        });
+    }
+
+    public void start(String url) throws URISyntaxException {
+        socket = IO.socket(url);
+        socket.on(Socket.EVENT_CONNECT, args -> logger.info("connected to web socket"));
         socket.on("node", this::handleNodes);
         socket.on("event", this::handleEvents);
         socket.on("config", this::handleConfigs);
         socket.on("link", this::handleLinks);
-        socket.on(Socket.EVENT_DISCONNECT, args -> {
-            logger.info("disconnected from web socket");
-        });
+        socket.on(Socket.EVENT_DISCONNECT, args -> logger.info("disconnected from web socket"));
+
+        logger.info("attempting to connect to web socket!");
+        socketThread = new Thread(socket::connect);
+        socketThread.setDaemon(true);
+        socketThread.start();
+    }
+
+    public void stop() {
+        if (socketThread != null) {
+            socket.close();
+            socketThread.interrupt();
+        }
     }
 
     private void handleNodes(Object... args) {
@@ -86,12 +95,5 @@ public class CoreWebSocket {
         for (Object arg : args) {
             logger.info("handling broadcast config: {}", arg);
         }
-    }
-
-    public void start() {
-        logger.info("attempting to connect to web socket!");
-        socketThread = new Thread(socket::connect);
-        socketThread.setDaemon(true);
-        socketThread.start();
     }
 }

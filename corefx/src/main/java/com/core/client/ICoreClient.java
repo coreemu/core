@@ -16,7 +16,7 @@ public interface ICoreClient {
 
     GetSession getSession(Integer sessionId) throws IOException;
 
-    void initialJoin() throws IOException;
+    void initialJoin(String url) throws IOException;
 
     boolean start() throws IOException;
 

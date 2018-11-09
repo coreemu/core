@@ -46,6 +46,7 @@ public final class Toast {
         }
         JFXSnackbar.SnackbarEvent snackbarEvent = new JFXSnackbar.SnackbarEvent(message,
                 "toast-error", "X", TIMEOUT, true, event -> snackbar.close());
+        snackbar.close();
         snackbar.enqueue(snackbarEvent);
     }
 }

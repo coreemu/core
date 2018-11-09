@@ -52,8 +52,8 @@ public class Controller implements Initializable {
     private Stage window;
 
     // core client utilities
-    private CoreWebSocket coreWebSocket;
     private ICoreClient coreClient;
+    private CoreWebSocket coreWebSocket;
 
     // ui elements
     private NetworkGraph networkGraph = new NetworkGraph(this);
@@ -77,28 +77,22 @@ public class Controller implements Initializable {
     private BackgroundDialog backgroundDialog = new BackgroundDialog(this);
     private LocationDialog locationDialog = new LocationDialog(this);
     private GeoDialog geoDialog = new GeoDialog(this);
+    private ConnectDialog connectDialog = new ConnectDialog(this);
 
     public Controller() {
-        // load configuration
-        Properties properties = ConfigUtils.load();
-        String coreUrl = properties.getProperty("core-rest");
-        logger.info("core rest: {}", coreUrl);
+    }
 
-        // start web socket thread
-        try {
-            coreWebSocket = new CoreWebSocket(this, coreUrl);
-            coreWebSocket.start();
-        } catch (URISyntaxException ex) {
-            logger.error("error starting web socket", ex);
-        }
+    public void connectToCore(String coreUrl) {
+        coreWebSocket.stop();
 
-        coreClient = new CoreRestClient(this, coreUrl);
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() -> {
             try {
-                coreClient.initialJoin();
-            } catch (IOException ex) {
-                Toast.error(String.format("Initial join failure: %s", ex.getMessage()), ex);
+                coreWebSocket.start(coreUrl);
+                coreClient.initialJoin(coreUrl);
+            } catch (IOException | URISyntaxException ex) {
+                Toast.error(String.format("Connection failure: %s", ex.getMessage()), ex);
+                Platform.runLater(() -> connectDialog.showDialog());
             }
         });
     }
@@ -144,6 +138,13 @@ public class Controller implements Initializable {
         nodeTypesDialog.setOwner(window);
         backgroundDialog.setOwner(window);
         locationDialog.setOwner(window);
+        connectDialog.setOwner(window);
+    }
+
+    @FXML
+    private void onCoreMenuConnect(ActionEvent event) {
+        logger.info("showing connect!");
+        connectDialog.showDialog();
     }
 
     @FXML
@@ -261,6 +262,14 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
+        coreClient = new CoreRestClient(this);
+        coreWebSocket = new CoreWebSocket(this);
+        Properties properties = ConfigUtils.load();
+        String coreUrl = properties.getProperty("core-rest");
+        logger.info("core rest: {}", coreUrl);
+        connectDialog.setCoreUrl(coreUrl);
+        connectToCore(coreUrl);
+
         logger.info("controller initialize");
         swingNode.setContent(networkGraph.getGraphViewer());
 
