@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
+<?import com.jfoenix.controls.JFXProgressBar?>
 <?import javafx.embed.swing.SwingNode?>
 <?import javafx.scene.control.Menu?>
 <?import javafx.scene.control.MenuBar?>
@@ -57,6 +58,7 @@
                         </Menu>
                         </menus>
                     </MenuBar>
+                  <JFXProgressBar fx:id="progressBar" maxWidth="1.7976931348623157E308" visible="false" />
                </children>
             </VBox>
           </top>

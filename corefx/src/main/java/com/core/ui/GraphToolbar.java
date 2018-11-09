@@ -15,7 +15,6 @@ import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ProgressBar;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
@@ -237,33 +236,37 @@ public class GraphToolbar extends VBox {
     }
 
     private void startSession() {
-        try {
-            ProgressBar progressBar = new ProgressBar();
-            progressBar.setPrefWidth(Double.MAX_VALUE);
-            controller.getBorderPane().setBottom(progressBar);
-
-            boolean result = controller.getCoreClient().start();
-            if (result) {
-                Toast.success("Session Started");
-                setRunButton(true);
+        controller.getProgressBar().setVisible(true);
+        runButton.setDisable(true);
+        new Thread(() -> {
+            try {
+                boolean result = controller.getCoreClient().start();
+                if (result) {
+                    Toast.success("Session Started");
+                    setRunButton(true);
+                }
+            } catch (IOException ex) {
+                logger.error("failure starting session", ex);
             }
-
-            controller.getBorderPane().setBottom(null);
-        } catch (IOException ex) {
-            logger.error("failure starting session", ex);
-        }
+            controller.getProgressBar().setVisible(false);
+        }).start();
     }
 
     private void stopSession() {
-        try {
-            boolean result = controller.getCoreClient().stop();
-            if (result) {
-                Toast.success("Session Stopped");
-                setRunButton(false);
+        controller.getProgressBar().setVisible(true);
+        runButton.setDisable(true);
+        new Thread(() -> {
+            try {
+                boolean result = controller.getCoreClient().stop();
+                if (result) {
+                    Toast.success("Session Stopped");
+                    setRunButton(false);
+                }
+            } catch (IOException ex) {
+                logger.error("failure to stopSession session", ex);
             }
-        } catch (IOException ex) {
-            logger.error("failure to stopSession session", ex);
-        }
+            controller.getProgressBar().setVisible(false);
+        }).start();
     }
 
     public void setRunButton(boolean isRunning) {
@@ -277,6 +280,7 @@ public class GraphToolbar extends VBox {
                 if (runButton.getGraphic() != stopIcon) {
                     runButton.setGraphic(stopIcon);
                 }
+                runButton.setDisable(false);
             });
         } else {
             Platform.runLater(() -> {
@@ -287,6 +291,7 @@ public class GraphToolbar extends VBox {
                 if (runButton.getGraphic() != startIcon) {
                     runButton.setGraphic(startIcon);
                 }
+                runButton.setDisable(false);
             });
         }
     }

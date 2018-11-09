@@ -13,6 +13,7 @@ import com.core.ui.*;
 import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
 import com.core.websocket.CoreWebSocket;
+import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingNode;
@@ -47,6 +48,7 @@ public class Controller implements Initializable {
     @FXML private BorderPane borderPane;
     @FXML private SwingNode swingNode;
     @FXML private MenuItem saveXmlMenuItem;
+    @FXML private JFXProgressBar progressBar;
 
     private Application application;
     private Stage window;
