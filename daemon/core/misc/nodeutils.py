@@ -13,7 +13,7 @@ def _log_map():
         name = None
         if value:
             name = value.__name__
-        logger.info("node type (%s) - class (%s)", key.name, name)
+        logger.debug("node type (%s) - class (%s)", key.name, name)
 
 
 def _convert_map(x, y):

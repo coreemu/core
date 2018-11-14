@@ -9,7 +9,7 @@ except ImportError:
     try:
         from emanesh import manifest
     except ImportError:
-        logger.warn("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 
 def _type_value(config_type):

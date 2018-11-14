@@ -223,7 +223,7 @@ class ServiceManager(object):
         :return: nothing
         """
         name = service.name
-        logger.info("loading service: class(%s) name(%s)", service.__name__, name)
+        logger.debug("loading service: class(%s) name(%s)", service.__name__, name)
 
         # avoid duplicate services
         if name in cls.services:
@@ -232,7 +232,7 @@ class ServiceManager(object):
         # validate dependent executables are present
         for executable in service.executables:
             if not which(executable):
-                logger.warn("service(%s) missing executable: %s", service.name, executable)
+                logger.debug("service(%s) missing executable: %s", service.name, executable)
                 raise ValueError("service(%s) missing executable: %s" % (service.name, executable))
 
         # make service available
@@ -269,7 +269,7 @@ class ServiceManager(object):
                 cls.add(service)
             except ValueError as e:
                 service_errors.append(service.name)
-                logger.warn("not loading service: %s", e)
+                logger.debug("not loading service: %s", e)
         return service_errors
 
 

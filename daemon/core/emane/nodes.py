@@ -16,7 +16,7 @@ except ImportError:
     try:
         from emanesh.events import LocationEvent
     except ImportError:
-        logger.warn("compatible emane python bindings not installed")
+        logger.debug("compatible emane python bindings not installed")
 
 
 class EmaneNet(PyCoreNet):

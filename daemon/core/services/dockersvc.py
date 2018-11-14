@@ -104,7 +104,7 @@ from core.service import ServiceManager
 try:
     from docker import Client
 except ImportError:
-    logger.warn("missing python docker bindings")
+    logger.debug("missing python docker bindings")
 
 
 class DockerService(CoreService):
