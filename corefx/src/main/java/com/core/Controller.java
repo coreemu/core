@@ -46,6 +46,8 @@ public class Controller implements Initializable {
     private static final Logger logger = LogManager.getLogger();
     @FXML private StackPane stackPane;
     @FXML private BorderPane borderPane;
+    @FXML private VBox top;
+    @FXML private VBox bottom;
     @FXML private SwingNode swingNode;
     @FXML private MenuItem saveXmlMenuItem;
     @FXML private JFXProgressBar progressBar;
@@ -103,21 +105,19 @@ public class Controller implements Initializable {
 
     public void sessionStarted() {
         // configure and add mobility player
-        VBox vBox = (VBox) borderPane.getTop();
         CoreNode node = mobilityDialog.getNode();
         if (node != null) {
             MobilityConfig mobilityConfig = mobilityDialog.getMobilityScripts().get(node.getId());
             if (mobilityConfig != null) {
                 mobilityPlayer.show(node, mobilityConfig);
-                vBox.getChildren().add(mobilityPlayer);
+                bottom.getChildren().add(mobilityPlayer);
             }
         }
         saveXmlMenuItem.setDisable(false);
     }
 
     public void sessionStopped() {
-        VBox vBox = (VBox) borderPane.getTop();
-        vBox.getChildren().remove(mobilityPlayer);
+        bottom.getChildren().remove(mobilityPlayer);
         saveXmlMenuItem.setDisable(true);
     }
 

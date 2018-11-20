@@ -90,6 +90,8 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
             case NodeType.EMANE:
                 menuItems.add(createMenuItem("EMANE Settings",
                         event -> controller.getNodeEmaneDialog().showDialog(node)));
+                menuItems.add(createMenuItem("Mobility",
+                        event -> controller.getMobilityDialog().showDialog(node)));
                 menuItems.add(createMenuItem("Link MDRs",
                         event -> networkGraph.linkMdrs(node)));
                 break;

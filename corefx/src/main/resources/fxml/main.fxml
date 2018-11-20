@@ -14,7 +14,7 @@
    <children>
       <BorderPane fx:id="borderPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
           <top>
-            <VBox BorderPane.alignment="CENTER">
+            <VBox fx:id="top" BorderPane.alignment="CENTER">
                <children>
                     <MenuBar>
                         <menus>
@@ -70,6 +70,9 @@
                </children>
             </AnchorPane>
           </center>
+         <bottom>
+            <VBox fx:id="bottom" spacing="5.0" BorderPane.alignment="CENTER" />
+         </bottom>
       </BorderPane>
    </children>
 </StackPane>

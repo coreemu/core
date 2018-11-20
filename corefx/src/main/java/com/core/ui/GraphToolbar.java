@@ -81,7 +81,7 @@ public class GraphToolbar extends VBox {
         pickingButton.setTooltip(new Tooltip("Pick/Move Nodes"));
         pickingButton.setOnAction(event -> {
             controller.getNetworkGraph().setMode(ModalGraphMouse.Mode.PICKING);
-            controller.getBorderPane().setBottom(null);
+            controller.getBottom().getChildren().remove(controller.getAnnotationToolbar());
             controller.getBorderPane().setRight(null);
             setSelected(true, pickingButton);
             setSelected(false, editingButton, drawingButton, selectedEditButton);
@@ -96,7 +96,7 @@ public class GraphToolbar extends VBox {
         editingButton.setTooltip(new Tooltip("Edit Graph"));
         editingButton.setOnAction(event -> {
             controller.getNetworkGraph().setMode(ModalGraphMouse.Mode.EDITING);
-            controller.getBorderPane().setBottom(null);
+            controller.getBottom().getChildren().remove(controller.getAnnotationToolbar());
             controller.getBorderPane().setRight(null);
             setSelected(true, editingButton, selectedEditButton);
             setSelected(false, drawingButton, pickingButton);
@@ -111,7 +111,7 @@ public class GraphToolbar extends VBox {
         drawingButton.setTooltip(new Tooltip("Annotate Graph"));
         drawingButton.setOnAction(event -> {
             controller.getNetworkGraph().setMode(ModalGraphMouse.Mode.ANNOTATING);
-            controller.getBorderPane().setBottom(controller.getAnnotationToolbar());
+            controller.getBottom().getChildren().add(controller.getAnnotationToolbar());
             controller.getBorderPane().setRight(null);
             setSelected(true, drawingButton);
             setSelected(false, editingButton, pickingButton, selectedEditButton);
