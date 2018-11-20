@@ -3,6 +3,7 @@ package com.core.graph;
 import com.core.Controller;
 import com.core.data.*;
 import com.core.ui.Toast;
+import com.core.utils.ConfigUtils;
 import com.core.utils.IconUtils;
 import com.google.common.base.Supplier;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
@@ -117,8 +118,9 @@ public class NetworkGraph {
 
                 if (mouseEvent.getClickCount() == 2 && controller.getCoreClient().isRunning()) {
                     try {
+                        String shellCommand = controller.getProperties().getProperty(ConfigUtils.SHELL_COMMAND);
                         String terminalCommand = controller.getCoreClient().getTerminalCommand(node);
-                        terminalCommand = String.format("gnome-terminal -x %s", terminalCommand);
+                        terminalCommand = String.format("%s %s", shellCommand, terminalCommand);
                         logger.info("launching node terminal: {}", terminalCommand);
                         String[] commands = terminalCommand.split("\\s+");
                         logger.info("launching node terminal: {}", Arrays.toString(commands));

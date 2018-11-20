@@ -52,6 +52,7 @@ public class Controller implements Initializable {
 
     private Application application;
     private Stage window;
+    private Properties properties;
 
     // core client utilities
     private ICoreClient coreClient;
@@ -80,6 +81,7 @@ public class Controller implements Initializable {
     private LocationDialog locationDialog = new LocationDialog(this);
     private GeoDialog geoDialog = new GeoDialog(this);
     private ConnectDialog connectDialog = new ConnectDialog(this);
+    private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
 
     public Controller() {
     }
@@ -141,6 +143,7 @@ public class Controller implements Initializable {
         backgroundDialog.setOwner(window);
         locationDialog.setOwner(window);
         connectDialog.setOwner(window);
+        guiPreferencesDialog.setOwner(window);
     }
 
     @FXML
@@ -165,6 +168,11 @@ public class Controller implements Initializable {
     }
 
     @FXML
+    private void onOptionsMenuPreferences(ActionEvent event) {
+        guiPreferencesDialog.showDialog();
+    }
+
+    @FXML
     private void onHelpMenuWebsite(ActionEvent event) {
         application.getHostServices().showDocument("https://github.com/coreemu/core");
     }
@@ -183,7 +191,8 @@ public class Controller implements Initializable {
     private void onOpenXmlAction() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Session");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        String xmlPath = properties.getProperty(ConfigUtils.CORE_XML_PATH);
+        fileChooser.setInitialDirectory(new File(xmlPath));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
         File file = fileChooser.showOpenDialog(window);
         if (file != null) {
@@ -201,7 +210,8 @@ public class Controller implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Session");
         fileChooser.setInitialFileName("session.xml");
-        fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+        String xmlPath = properties.getProperty(ConfigUtils.CORE_XML_PATH);
+        fileChooser.setInitialDirectory(new File(xmlPath));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
         File file = fileChooser.showSaveDialog(window);
         if (file != null) {
@@ -266,8 +276,8 @@ public class Controller implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         coreClient = new CoreRestClient(this);
         coreWebSocket = new CoreWebSocket(this);
-        Properties properties = ConfigUtils.load();
-        String coreUrl = properties.getProperty("core-rest");
+        properties = ConfigUtils.load();
+        String coreUrl = properties.getProperty(ConfigUtils.CORE_REST);
         logger.info("core rest: {}", coreUrl);
         connectDialog.setCoreUrl(coreUrl);
         connectToCore(coreUrl);
