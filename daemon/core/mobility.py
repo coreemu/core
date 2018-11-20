@@ -317,7 +317,7 @@ class BasicRangeModel(WirelessModel):
     name = "basic_range"
     options = [
         Configuration(_id="range", _type=ConfigDataTypes.UINT32, default="275", label="wireless range (pixels)"),
-        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000", label="bandwidth (bps)"),
+        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000000", label="bandwidth (bps)"),
         Configuration(_id="jitter", _type=ConfigDataTypes.FLOAT, default="0.0", label="transmission jitter (usec)"),
         Configuration(_id="delay", _type=ConfigDataTypes.FLOAT, default="5000.0",
                       label="transmission delay (usec)"),
