@@ -191,7 +191,7 @@ public class Controller implements Initializable {
     private void onOpenXmlAction() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Session");
-        String xmlPath = properties.getProperty(ConfigUtils.CORE_XML_PATH);
+        String xmlPath = properties.getProperty(ConfigUtils.XML_PATH);
         fileChooser.setInitialDirectory(new File(xmlPath));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
         File file = fileChooser.showOpenDialog(window);
@@ -210,7 +210,7 @@ public class Controller implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Session");
         fileChooser.setInitialFileName("session.xml");
-        String xmlPath = properties.getProperty(ConfigUtils.CORE_XML_PATH);
+        String xmlPath = properties.getProperty(ConfigUtils.XML_PATH);
         fileChooser.setInitialDirectory(new File(xmlPath));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
         File file = fileChooser.showSaveDialog(window);
@@ -277,7 +277,7 @@ public class Controller implements Initializable {
         coreClient = new CoreRestClient(this);
         coreWebSocket = new CoreWebSocket(this);
         properties = ConfigUtils.load();
-        String coreUrl = properties.getProperty(ConfigUtils.CORE_REST);
+        String coreUrl = properties.getProperty(ConfigUtils.REST_URL);
         logger.info("core rest: {}", coreUrl);
         connectDialog.setCoreUrl(coreUrl);
         connectToCore(coreUrl);

@@ -14,12 +14,14 @@ import java.util.Properties;
 public final class ConfigUtils {
     private static final Logger logger = LogManager.getLogger();
     private static final String DEFAULT_CONFIG = "/config.properties";
-    private static final Path CORE_HOME = Paths.get(System.getProperty("user.home"), ".core");
-    private static final Path CORE_PROPERTIES = Paths.get(CORE_HOME.toString(), "config.properties");
-    private static final Path CORE_XML_DIR = Paths.get(CORE_HOME.toString(), "xml");
+    private static final Path HOME = Paths.get(System.getProperty("user.home"), ".core");
+    private static final Path PROPERTIES_FILE = Paths.get(HOME.toString(), "config.properties");
+    private static final Path XML_DIR = Paths.get(HOME.toString(), "xml");
+    private static final Path MOBILITY_DIR = Paths.get(HOME.toString(), "mobility");
     // config fields
-    public static final String CORE_REST = "core-rest";
-    public static final String CORE_XML_PATH = "xml-path";
+    public static final String REST_URL = "core-rest";
+    public static final String XML_PATH = "xml-path";
+    public static final String MOBILITY_PATH = "mobility-path";
     public static final String SHELL_COMMAND = "shell-command";
 
 
@@ -28,26 +30,28 @@ public final class ConfigUtils {
     }
 
     public static void save(Properties properties) throws IOException {
-        properties.store(new FileOutputStream(CORE_PROPERTIES.toFile()), null);
+        properties.store(new FileOutputStream(PROPERTIES_FILE.toFile()), null);
     }
 
     public static Properties load() {
         try {
-            if (!CORE_HOME.toFile().exists()) {
+            if (!HOME.toFile().exists()) {
                 logger.info("creating core home directory");
-                Files.createDirectory(CORE_HOME);
-                Files.createDirectory(CORE_XML_DIR);
+                Files.createDirectory(HOME);
+                Files.createDirectory(XML_DIR);
+                Files.createDirectory(MOBILITY_DIR);
             }
 
             Properties properties = new Properties();
-            if (!CORE_PROPERTIES.toFile().exists()) {
+            if (!PROPERTIES_FILE.toFile().exists()) {
                 logger.info("creating default configuration");
-                Files.copy(ConfigUtils.class.getResourceAsStream(DEFAULT_CONFIG), CORE_PROPERTIES);
-                properties.load(new FileInputStream(CORE_PROPERTIES.toFile()));
-                properties.setProperty(CORE_XML_PATH, CORE_XML_DIR.toString());
+                Files.copy(ConfigUtils.class.getResourceAsStream(DEFAULT_CONFIG), PROPERTIES_FILE);
+                properties.load(new FileInputStream(PROPERTIES_FILE.toFile()));
+                properties.setProperty(XML_PATH, XML_DIR.toString());
+                properties.setProperty(MOBILITY_PATH, MOBILITY_DIR.toString());
                 save(properties);
             } else {
-                properties.load(new FileInputStream(CORE_PROPERTIES.toFile()));
+                properties.load(new FileInputStream(PROPERTIES_FILE.toFile()));
             }
 
             // override values if provided

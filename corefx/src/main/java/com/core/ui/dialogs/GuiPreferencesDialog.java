@@ -17,6 +17,7 @@ import java.util.Properties;
 public class GuiPreferencesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
     private @FXML JFXTextField xmlFilePathTextField;
+    private @FXML JFXTextField mobilityFilePathTextField;
     private @FXML JFXTextField shellCommandTextField;
     private @FXML JFXButton saveButton;
 
@@ -30,7 +31,8 @@ public class GuiPreferencesDialog extends StageDialog {
 
     private EventHandler<ActionEvent> onSave = event -> {
         Properties properties = getController().getProperties();
-        properties.setProperty(ConfigUtils.CORE_XML_PATH, xmlFilePathTextField.getText());
+        properties.setProperty(ConfigUtils.XML_PATH, xmlFilePathTextField.getText());
+        properties.setProperty(ConfigUtils.MOBILITY_PATH, mobilityFilePathTextField.getText());
         properties.setProperty(ConfigUtils.SHELL_COMMAND, shellCommandTextField.getText());
         try {
             ConfigUtils.save(properties);
@@ -43,7 +45,8 @@ public class GuiPreferencesDialog extends StageDialog {
 
     public void showDialog() {
         Properties properties = getController().getProperties();
-        xmlFilePathTextField.setText(properties.getProperty(ConfigUtils.CORE_XML_PATH));
+        xmlFilePathTextField.setText(properties.getProperty(ConfigUtils.XML_PATH));
+        mobilityFilePathTextField.setText(properties.getProperty(ConfigUtils.MOBILITY_PATH));
         shellCommandTextField.setText(properties.getProperty(ConfigUtils.SHELL_COMMAND));
         show();
     }

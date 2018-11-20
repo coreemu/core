@@ -8,19 +8,21 @@
 
 <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="10.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <children>
-      <TitledPane animated="false" collapsible="false" text="XML">
+      <TitledPane animated="false" collapsible="false" text="File Paths">
          <content>
-            <VBox spacing="5.0">
+            <VBox spacing="10.0">
                <children>
-                  <Label text="File Path" />
+                  <Label text="Session XML Files" />
                   <JFXTextField fx:id="xmlFilePathTextField" />
+                  <Label text="Mobility Files" />
+                  <JFXTextField fx:id="mobilityFilePathTextField" />
                </children>
             </VBox>
          </content>
       </TitledPane>
       <TitledPane animated="false" collapsible="false" text="Programs">
          <content>
-            <VBox spacing="5.0">
+            <VBox spacing="10.0">
                <children>
                   <Label text="Shell Command" />
                   <JFXTextField fx:id="shellCommandTextField" />
