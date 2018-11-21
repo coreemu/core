@@ -5,6 +5,7 @@ import com.core.data.*;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.List;
 
 public interface ICoreClient {
@@ -20,7 +21,7 @@ public interface ICoreClient {
 
     GetSession getSession(Integer sessionId) throws IOException;
 
-    boolean start() throws IOException;
+    boolean start(Collection<CoreNode> nodes, Collection<CoreLink> links, List<Hook> hooks) throws IOException;
 
     boolean stop() throws IOException;
 

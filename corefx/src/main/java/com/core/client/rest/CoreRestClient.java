@@ -1,9 +1,7 @@
 package com.core.client.rest;
 
-import com.core.Controller;
 import com.core.client.ICoreClient;
 import com.core.data.*;
-import com.core.graph.NetworkGraph;
 import com.core.utils.WebUtils;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -11,24 +9,17 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.stream.Collectors;
 
 @Data
 public class CoreRestClient implements ICoreClient {
     private static final Logger logger = LogManager.getLogger();
-    private final Controller controller;
-    private final NetworkGraph networkGraph;
     private String baseUrl;
     private Integer sessionId;
     private SessionState sessionState;
-
-    public CoreRestClient(Controller controller) {
-        this.controller = controller;
-        this.networkGraph = controller.getNetworkGraph();
-    }
 
     @Override
     public void setUrl(String url) {
@@ -74,9 +65,7 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public boolean start() throws IOException {
-        networkGraph.updatePositions();
-
+    public boolean start(Collection<CoreNode> nodes, Collection<CoreLink> links, List<Hook> hooks) throws IOException {
         boolean result = setState(SessionState.DEFINITION);
         if (!result) {
             return false;
@@ -87,13 +76,13 @@ public class CoreRestClient implements ICoreClient {
             return false;
         }
 
-        for (Hook hook : controller.getHooksDialog().getHooks()) {
+        for (Hook hook : hooks) {
             if (!createHook(hook)) {
                 return false;
             }
         }
 
-        for (CoreNode node : networkGraph.getGraph().getVertices()) {
+        for (CoreNode node : nodes) {
             // must pre-configure wlan nodes, if not already
             if (node.getNodeType().getValue() == NodeType.WLAN) {
                 WlanConfig config = getWlanConfig(node);
@@ -105,7 +94,7 @@ public class CoreRestClient implements ICoreClient {
             }
         }
 
-        for (CoreLink link : networkGraph.getGraph().getEdges()) {
+        for (CoreLink link : links) {
             if (!createLink(link)) {
                 return false;
             }
@@ -116,12 +105,6 @@ public class CoreRestClient implements ICoreClient {
 
     @Override
     public boolean stop() throws IOException {
-        List<CoreLink> wirelessLinks = networkGraph.getGraph().getEdges().stream()
-                .filter(CoreLink::isWireless)
-                .collect(Collectors.toList());
-        wirelessLinks.forEach(networkGraph::removeWirelessLink);
-        networkGraph.getGraphViewer().repaint();
-
         return setState(SessionState.SHUTDOWN);
     }
 

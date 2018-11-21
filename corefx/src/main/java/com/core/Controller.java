@@ -30,11 +30,10 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URISyntaxException;
 import java.net.URL;
-import java.util.List;
-import java.util.Properties;
-import java.util.ResourceBundle;
+import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.stream.Collectors;
 
 @Data
 public class Controller implements Initializable {
@@ -52,7 +51,7 @@ public class Controller implements Initializable {
     private Properties properties;
 
     // core client utilities
-    private ICoreClient coreClient;
+    private ICoreClient coreClient = new CoreRestClient();
     private CoreWebSocket coreWebSocket;
 
     // ui elements
@@ -79,9 +78,6 @@ public class Controller implements Initializable {
     private GeoDialog geoDialog = new GeoDialog(this);
     private ConnectDialog connectDialog = new ConnectDialog(this);
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
-
-    public Controller() {
-    }
 
     public void connectToCore(String coreUrl) {
         coreWebSocket.stop();
@@ -168,24 +164,64 @@ public class Controller implements Initializable {
         // update other components for new session
         graphToolbar.setRunButton(coreClient.isRunning());
         hooksDialog.updateHooks();
-    }
 
-    public void sessionStarted() {
-        // configure and add mobility player
-        CoreNode node = mobilityDialog.getNode();
-        if (node != null) {
-            MobilityConfig mobilityConfig = mobilityDialog.getMobilityScripts().get(node.getId());
-            if (mobilityConfig != null) {
-                mobilityPlayer.show(node, mobilityConfig);
-                bottom.getChildren().add(mobilityPlayer);
-            }
+        // display first mobility script in player
+        GetMobilityConfigs getMobilityConfigs = coreClient.getMobilityConfigs();
+        Optional<Integer> nodeIdOptional = getMobilityConfigs.getConfigurations().keySet().stream().findFirst();
+        if (nodeIdOptional.isPresent()) {
+            Integer nodeId = nodeIdOptional.get();
+            MobilityConfig mobilityConfig = getMobilityConfigs.getConfigurations().get(nodeId);
+            CoreNode node = networkGraph.getVertex(nodeId);
+            mobilityPlayer.show(node, mobilityConfig);
+            Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
         }
-        saveXmlMenuItem.setDisable(false);
     }
 
-    public void sessionStopped() {
-        bottom.getChildren().remove(mobilityPlayer);
-        saveXmlMenuItem.setDisable(true);
+    public boolean startSession() throws IOException {
+        // force nodes to get latest positions
+        networkGraph.updatePositions();
+
+        // retrieve items for creation/start
+        Collection<CoreNode> nodes = networkGraph.getGraph().getVertices();
+        Collection<CoreLink> links = networkGraph.getGraph().getEdges();
+        List<Hook> hooks = hooksDialog.getHooks();
+
+        // start/create session
+        progressBar.setVisible(true);
+        boolean result = coreClient.start(nodes, links, hooks);
+        progressBar.setVisible(false);
+        if (result) {
+            // configure and add mobility player
+            CoreNode node = mobilityDialog.getNode();
+            if (node != null) {
+                MobilityConfig mobilityConfig = mobilityDialog.getMobilityScripts().get(node.getId());
+                if (mobilityConfig != null) {
+                    mobilityPlayer.show(node, mobilityConfig);
+                    Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
+                }
+            }
+            saveXmlMenuItem.setDisable(false);
+        }
+        return result;
+    }
+
+    public boolean stopSession() throws IOException {
+        // clear out any drawn wireless links
+        List<CoreLink> wirelessLinks = networkGraph.getGraph().getEdges().stream()
+                .filter(CoreLink::isWireless)
+                .collect(Collectors.toList());
+        wirelessLinks.forEach(networkGraph::removeWirelessLink);
+        networkGraph.getGraphViewer().repaint();
+
+        // stop session
+        progressBar.setVisible(true);
+        boolean result = coreClient.stop();
+        progressBar.setVisible(false);
+        if (result) {
+            Platform.runLater(() -> bottom.getChildren().remove(mobilityPlayer));
+            saveXmlMenuItem.setDisable(true);
+        }
+        return result;
     }
 
     public void deleteNode(CoreNode node) {
@@ -344,7 +380,6 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        coreClient = new CoreRestClient(this);
         coreWebSocket = new CoreWebSocket(this);
         properties = ConfigUtils.load();
         String coreUrl = properties.getProperty(ConfigUtils.REST_URL);

@@ -236,43 +236,38 @@ public class GraphToolbar extends VBox {
     }
 
     private void startSession() {
-        controller.getProgressBar().setVisible(true);
         runButton.setDisable(true);
         new Thread(() -> {
             try {
-                boolean result = controller.getCoreClient().start();
+                boolean result = controller.startSession();
                 if (result) {
                     Toast.success("Session Started");
                     setRunButton(true);
                 }
             } catch (IOException ex) {
-                logger.error("failure starting session", ex);
+                Toast.error("Failure Starting Session", ex);
             }
-            controller.getProgressBar().setVisible(false);
         }).start();
     }
 
     private void stopSession() {
-        controller.getProgressBar().setVisible(true);
         runButton.setDisable(true);
         new Thread(() -> {
             try {
-                boolean result = controller.getCoreClient().stop();
+                boolean result = controller.stopSession();
                 if (result) {
                     Toast.success("Session Stopped");
                     setRunButton(false);
                 }
             } catch (IOException ex) {
-                logger.error("failure to stopSession session", ex);
+                Toast.error("Failure Stopping Session", ex);
             }
-            controller.getProgressBar().setVisible(false);
         }).start();
     }
 
     public void setRunButton(boolean isRunning) {
         if (isRunning) {
             Platform.runLater(() -> {
-                controller.sessionStarted();
                 pickingButton.fire();
                 editingButton.setDisable(true);
                 runButton.pseudoClassStateChanged(START_CLASS, false);
@@ -284,7 +279,6 @@ public class GraphToolbar extends VBox {
             });
         } else {
             Platform.runLater(() -> {
-                controller.sessionStopped();
                 editingButton.setDisable(false);
                 runButton.pseudoClassStateChanged(START_CLASS, true);
                 runButton.pseudoClassStateChanged(STOP_CLASS, false);
