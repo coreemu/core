@@ -4,7 +4,7 @@ import com.core.Controller;
 import com.core.client.rest.GetSessions;
 import com.core.client.rest.GetSessionsData;
 import com.core.data.SessionState;
-import com.core.ui.dialogs.CoreFoenixDialog;
+import com.core.ui.Toast;
 import com.jfoenix.controls.JFXButton;
 import javafx.fxml.FXML;
 import javafx.scene.control.TableColumn;
@@ -32,7 +32,8 @@ public class SessionsFoenixDialog extends CoreFoenixDialog {
             SessionRow row = sessionsTable.getSelectionModel().getSelectedItem();
             logger.info("selected session: {}", row);
             try {
-                getCoreClient().joinSession(row.getId(), true);
+                getController().joinSession(row.getId());
+                Toast.info(String.format("Joined Session %s", row.getId()));
             } catch (IOException ex) {
                 logger.error("error joining session: {}", row.getId());
             }

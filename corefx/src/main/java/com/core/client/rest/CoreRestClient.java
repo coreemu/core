@@ -4,7 +4,6 @@ import com.core.Controller;
 import com.core.client.ICoreClient;
 import com.core.data.*;
 import com.core.graph.NetworkGraph;
-import com.core.ui.Toast;
 import com.core.utils.WebUtils;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
@@ -36,57 +35,24 @@ public class CoreRestClient implements ICoreClient {
         this.baseUrl = url;
     }
 
+    @Override
+    public void updateState(SessionState state) {
+        sessionState = state;
+    }
+
+    @Override
+    public void updateSession(Integer sessionId) {
+        this.sessionId = sessionId;
+    }
+
     private String getUrl(String path) {
         return String.format("%s/%s", baseUrl, path);
     }
 
     @Override
-    public void joinSession(Integer joinId, boolean notification) throws IOException {
-        networkGraph.reset();
-        GetSession session = getSession(joinId);
-        sessionId = joinId;
-        sessionState = SessionState.get(session.getState());
-
-        logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
-        for (CoreNode node : session.getNodes()) {
-            NodeType nodeType = NodeType.find(node.getType(), node.getModel());
-            if (nodeType == null) {
-                logger.info(String.format("failed to find node type(%s) model(%s): %s",
-                        node.getType(), node.getModel(), node.getName()));
-                continue;
-            }
-
-            node.setNodeType(nodeType);
-            networkGraph.addNode(node);
-        }
-
-        for (CoreLink link : session.getLinks()) {
-            if (link.getInterfaceOne() != null || link.getInterfaceTwo() != null) {
-                link.setType(LinkTypes.WIRED.getValue());
-            }
-
-            networkGraph.addLink(link);
-        }
-
-        networkGraph.getGraphViewer().repaint();
-
-        if (notification) {
-            Toast.info(String.format("Joined Session %s", sessionId.toString()));
-        }
-
-        updateController();
-    }
-
-    @Override
-    public void createSession() throws IOException {
+    public CreatedSession createSession() throws IOException {
         String url = getUrl("sessions");
-        CreatedSession session = WebUtils.post(url, CreatedSession.class);
-
-        logger.info("created session: {}", session);
-        sessionId = session.getId();
-        sessionState = SessionState.get(session.getState());
-        Toast.info(String.format("Created Session %s", sessionId.toString()));
-        joinSession(sessionId, false);
+        return WebUtils.post(url, CreatedSession.class);
     }
 
     public GetServices getServices() throws IOException {
@@ -157,11 +123,6 @@ public class CoreRestClient implements ICoreClient {
         networkGraph.getGraphViewer().repaint();
 
         return setState(SessionState.SHUTDOWN);
-    }
-
-    @Override
-    public void updateState(SessionState state) {
-        sessionState = state;
     }
 
     @Override
@@ -252,11 +213,6 @@ public class CoreRestClient implements ICoreClient {
         return WebUtils.putJson(url, setEmaneModelConfig);
     }
 
-    private void updateController() {
-        controller.getGraphToolbar().setRunButton(isRunning());
-        controller.getHooksDialog().updateHooks();
-    }
-
     @Override
     public boolean isRunning() {
         return sessionState == SessionState.RUNTIME;
@@ -270,10 +226,9 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public void openSession(File file) throws IOException {
+    public CreatedSession openSession(File file) throws IOException {
         String url = getUrl("sessions/xml");
-        CreatedSession createdSession = WebUtils.postFile(url, file, CreatedSession.class);
-        joinSession(createdSession.getId(), true);
+        return WebUtils.postFile(url, file, CreatedSession.class);
     }
 
     @Override

@@ -2,9 +2,7 @@ package com.core;
 
 import com.core.client.ICoreClient;
 import com.core.client.rest.*;
-import com.core.data.CoreLink;
-import com.core.data.CoreNode;
-import com.core.data.MobilityConfig;
+import com.core.data.*;
 import com.core.graph.NetworkGraph;
 import com.core.ui.*;
 import com.core.ui.dialogs.*;
@@ -110,20 +108,66 @@ public class Controller implements Initializable {
         GetSessions response = coreClient.getSessions();
 
         logger.info("existing sessions: {}", response);
+        Integer sessionId;
         if (response.getSessions().isEmpty()) {
             logger.info("creating initial session");
-            coreClient.createSession();
-            graphToolbar.setRunButton(coreClient.isRunning());
-            hooksDialog.updateHooks();
+            CreatedSession createdSession = coreClient.createSession();
+            sessionId = createdSession.getId();
+            Toast.info(String.format("Created Session %s", sessionId));
         } else {
             GetSessionsData getSessionsData = response.getSessions().get(0);
-            Integer joinId = getSessionsData.getId();
-            coreClient.joinSession(joinId, true);
+            sessionId = getSessionsData.getId();
+            Toast.info(String.format("Joined Session %s", sessionId));
         }
+
+        joinSession(sessionId);
 
         // set emane models
         List<String> emaneModels = coreClient.getEmaneModels().getModels();
         nodeEmaneDialog.setModels(emaneModels);
+    }
+
+    public void joinSession(Integer joinId) throws IOException {
+        // clear graph
+        networkGraph.reset();
+
+        // get session to join
+        GetSession session = coreClient.getSession(joinId);
+        SessionState sessionState = SessionState.get(session.getState());
+
+        // update client to use this session
+        coreClient.updateSession(joinId);
+        coreClient.updateState(sessionState);
+
+        // display all nodes
+        logger.info("joining core session({}) state({}): {}", joinId, sessionState, session);
+        for (CoreNode node : session.getNodes()) {
+            NodeType nodeType = NodeType.find(node.getType(), node.getModel());
+            if (nodeType == null) {
+                logger.info(String.format("failed to find node type(%s) model(%s): %s",
+                        node.getType(), node.getModel(), node.getName()));
+                continue;
+            }
+
+            node.setNodeType(nodeType);
+            networkGraph.addNode(node);
+        }
+
+        // display all links
+        for (CoreLink link : session.getLinks()) {
+            if (link.getInterfaceOne() != null || link.getInterfaceTwo() != null) {
+                link.setType(LinkTypes.WIRED.getValue());
+            }
+
+            networkGraph.addLink(link);
+        }
+
+        // refresh graph
+        networkGraph.getGraphViewer().repaint();
+
+        // update other components for new session
+        graphToolbar.setRunButton(coreClient.isRunning());
+        hooksDialog.updateHooks();
     }
 
     public void sessionStarted() {
@@ -152,7 +196,7 @@ public class Controller implements Initializable {
         }
     }
 
-    public void setWindow(Stage window) {
+    void setWindow(Stage window) {
         this.window = window;
         sessionsDialog.setOwner(window);
         hooksDialog.setOwner(window);
@@ -221,7 +265,10 @@ public class Controller implements Initializable {
         if (file != null) {
             logger.info("opening session xml: {}", file.getPath());
             try {
-                coreClient.openSession(file);
+                CreatedSession createdSession = coreClient.openSession(file);
+                Integer sessionId = createdSession.getId();
+                joinSession(sessionId);
+                Toast.info(String.format("Joined Session %s", sessionId));
             } catch (IOException ex) {
                 logger.error("error opening session xml", ex);
             }

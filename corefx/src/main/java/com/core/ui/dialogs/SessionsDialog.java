@@ -34,7 +34,8 @@ public class SessionsDialog extends StageDialog {
             SessionRow row = sessionsTable.getSelectionModel().getSelectedItem();
             logger.info("selected session: {}", row);
             try {
-                getCoreClient().joinSession(row.getId(), true);
+                getController().joinSession(row.getId());
+                Toast.info(String.format("Joined Session %s", row.getId()));
             } catch (IOException ex) {
                 Toast.error(String.format("error joining session: %s", row.getId()), ex);
             }

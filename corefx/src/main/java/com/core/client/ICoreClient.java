@@ -10,9 +10,11 @@ import java.util.List;
 public interface ICoreClient {
     void setUrl(String url);
 
-    void joinSession(Integer joinId, boolean notification) throws IOException;
+    void updateSession(Integer sessionId);
 
-    void createSession() throws IOException;
+    void updateState(SessionState state);
+
+    CreatedSession createSession() throws IOException;
 
     GetSessions getSessions() throws IOException;
 
@@ -21,8 +23,6 @@ public interface ICoreClient {
     boolean start() throws IOException;
 
     boolean stop() throws IOException;
-
-    void updateState(SessionState state);
 
     boolean setState(SessionState state) throws IOException;
 
@@ -50,7 +50,7 @@ public interface ICoreClient {
 
     void saveSession(File file) throws IOException;
 
-    void openSession(File file) throws IOException;
+    CreatedSession openSession(File file) throws IOException;
 
     GetConfig getSessionConfig() throws IOException;
 
