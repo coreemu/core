@@ -31,6 +31,11 @@ public class CoreRestClient implements ICoreClient {
         this.networkGraph = controller.getNetworkGraph();
     }
 
+    @Override
+    public void setUrl(String url) {
+        this.baseUrl = url;
+    }
+
     private String getUrl(String path) {
         return String.format("%s/%s", baseUrl, path);
     }
@@ -87,32 +92,6 @@ public class CoreRestClient implements ICoreClient {
     public GetServices getServices() throws IOException {
         String url = getUrl("services");
         return WebUtils.getJson(url, GetServices.class);
-    }
-
-    @Override
-    public void initialJoin(String url) throws IOException {
-        this.baseUrl = url;
-        GetServices services = getServices();
-        logger.info("core services: {}", services);
-        controller.getNodeServicesDialog().setServices(services);
-
-        logger.info("initial core session join");
-        GetSessions response = getSessions();
-
-        logger.info("existing sessions: {}", response);
-        if (response.getSessions().isEmpty()) {
-            logger.info("creating initial session");
-            createSession();
-            updateController();
-        } else {
-            GetSessionsData getSessionsData = response.getSessions().get(0);
-            Integer joinId = getSessionsData.getId();
-            joinSession(joinId, true);
-        }
-
-        // set emane models
-        List<String> emaneModels = getEmaneModels().getModels();
-        controller.getNodeEmaneDialog().setModels(emaneModels);
     }
 
     @Override
@@ -391,6 +370,12 @@ public class CoreRestClient implements ICoreClient {
         String url = getUrl(String.format("sessions/%s/nodes/%s/mobility", sessionId, node.getId()));
         config.setFile(config.getScriptFile().getName());
         return WebUtils.postJson(url, config);
+    }
+
+    @Override
+    public GetMobilityConfigs getMobilityConfigs() throws IOException {
+        String url = getUrl(String.format("sessions/%s/mobility/configs", sessionId));
+        return WebUtils.getJson(url, GetMobilityConfigs.class);
     }
 
     @Override

@@ -8,6 +8,8 @@ import java.io.IOException;
 import java.util.List;
 
 public interface ICoreClient {
+    void setUrl(String url);
+
     void joinSession(Integer joinId, boolean notification) throws IOException;
 
     void createSession() throws IOException;
@@ -15,8 +17,6 @@ public interface ICoreClient {
     GetSessions getSessions() throws IOException;
 
     GetSession getSession(Integer sessionId) throws IOException;
-
-    void initialJoin(String url) throws IOException;
 
     boolean start() throws IOException;
 
@@ -75,6 +75,8 @@ public interface ICoreClient {
     boolean setWlanConfig(CoreNode node, WlanConfig config) throws IOException;
 
     String getTerminalCommand(CoreNode node) throws IOException;
+
+    GetMobilityConfigs getMobilityConfigs() throws IOException;
 
     boolean setMobilityConfig(CoreNode node, MobilityConfig config) throws IOException;
 

@@ -1,10 +1,7 @@
 package com.core;
 
 import com.core.client.ICoreClient;
-import com.core.client.rest.ConfigOption;
-import com.core.client.rest.CoreRestClient;
-import com.core.client.rest.GetConfig;
-import com.core.client.rest.SetConfig;
+import com.core.client.rest.*;
 import com.core.data.CoreLink;
 import com.core.data.CoreNode;
 import com.core.data.MobilityConfig;
@@ -95,12 +92,38 @@ public class Controller implements Initializable {
         executorService.submit(() -> {
             try {
                 coreWebSocket.start(coreUrl);
-                coreClient.initialJoin(coreUrl);
+                coreClient.setUrl(coreUrl);
+                initialJoin();
             } catch (IOException | URISyntaxException ex) {
                 Toast.error(String.format("Connection failure: %s", ex.getMessage()), ex);
                 Platform.runLater(() -> connectDialog.showDialog());
             }
         });
+    }
+
+    private void initialJoin() throws IOException {
+        GetServices services = coreClient.getServices();
+        logger.info("core services: {}", services);
+        nodeServicesDialog.setServices(services);
+
+        logger.info("initial core session join");
+        GetSessions response = coreClient.getSessions();
+
+        logger.info("existing sessions: {}", response);
+        if (response.getSessions().isEmpty()) {
+            logger.info("creating initial session");
+            coreClient.createSession();
+            graphToolbar.setRunButton(coreClient.isRunning());
+            hooksDialog.updateHooks();
+        } else {
+            GetSessionsData getSessionsData = response.getSessions().get(0);
+            Integer joinId = getSessionsData.getId();
+            coreClient.joinSession(joinId, true);
+        }
+
+        // set emane models
+        List<String> emaneModels = coreClient.getEmaneModels().getModels();
+        nodeEmaneDialog.setModels(emaneModels);
     }
 
     public void sessionStarted() {
