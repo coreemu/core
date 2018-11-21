@@ -19,6 +19,30 @@ def synchronized(function):
     return wrapper
 
 
+def get_config_groups(model, config):
+    config_options = []
+    for configuration in model.configurations():
+        value = config[configuration.id]
+        config_options.append({
+            "label": configuration.label,
+            "name": configuration.id,
+            "value": value,
+            "type": configuration.type.value,
+            "select": configuration.options
+        })
+
+    response = []
+    for config_group in model.config_groups():
+        start = config_group.start - 1
+        stop = config_group.stop
+        response.append({
+            "name": config_group.name,
+            "options": config_options[start: stop]
+        })
+
+    return response
+
+
 def convert_value(value):
     if value is None:
         return value

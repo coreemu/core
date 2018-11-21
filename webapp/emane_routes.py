@@ -31,32 +31,28 @@ def set_emane_model_config(session_id):
     return jsonify()
 
 
+@api.route("/sessions/<int:session_id>/emane/model/configs")
+def get_emane_model_configs(session_id):
+    session = core_utils.get_session(coreemu, session_id)
+    response = {}
+    for node_id, model_config in session.emane.node_configurations.iteritems():
+        if node_id == -1:
+            continue
+
+        for model_name in model_config.iterkeys():
+            model = session.emane.models[model_name]
+            config = session.emane.get_model_config(node_id, model_name)
+            config_groups = core_utils.get_config_groups(model, config)
+            node_configurations = response.setdefault(node_id, {})
+            node_configurations[model_name] = config_groups
+    return jsonify(configurations=response)
+
+
 @api.route("/sessions/<int:session_id>/emane/config")
 def get_emane_config(session_id):
     session = core_utils.get_session(coreemu, session_id)
-
     config = session.emane.get_configs()
-
-    config_options = []
-    for configuration in session.emane.emane_config.configurations():
-        value = config[configuration.id]
-        config_options.append({
-            "label": configuration.label,
-            "name": configuration.id,
-            "value": value,
-            "type": configuration.type.value,
-            "select": configuration.options
-        })
-
-    response = []
-    for config_group in session.emane.emane_config.config_groups():
-        start = config_group.start - 1
-        stop = config_group.stop
-        response.append({
-            "name": config_group.name,
-            "options": config_options[start: stop]
-        })
-
+    response = core_utils.get_config_groups(session.emane.emane_config, config)
     return jsonify(groups=response)
 
 
@@ -64,31 +60,10 @@ def get_emane_config(session_id):
 def get_emane_model_config(session_id):
     session = core_utils.get_session(coreemu, session_id)
     node_id = core_utils.get_node_id(request.args["node"])
-
     model_name = request.args["name"]
     model = session.emane.models[model_name]
     config = session.emane.get_model_config(node_id, model_name)
-
-    config_options = []
-    for configuration in model.configurations():
-        value = config[configuration.id]
-        config_options.append({
-            "label": configuration.label,
-            "name": configuration.id,
-            "value": value,
-            "type": configuration.type.value,
-            "select": configuration.options
-        })
-
-    response = []
-    for config_group in model.config_groups():
-        start = config_group.start - 1
-        stop = config_group.stop
-        response.append({
-            "name": config_group.name,
-            "options": config_options[start: stop]
-        })
-
+    response = core_utils.get_config_groups(model, config)
     return jsonify(groups=response)
 
 

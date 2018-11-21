@@ -1,15 +1,32 @@
 import os
 
+from core.mobility import Ns2ScriptedMobility
 from flask import Blueprint
 from flask import jsonify
 from flask import request
 
 import core_utils
-from core.mobility import Ns2ScriptedMobility
 
 api = Blueprint("mobility_api", __name__)
 
 coreemu = None
+
+
+@api.route("/sessions/<int:session_id>/mobility/configs")
+def get_mobility_configs(session_id):
+    session = core_utils.get_session(coreemu, session_id)
+    configs = {}
+    for node_id, model_config in session.mobility.node_configurations.iteritems():
+        if node_id == -1:
+            continue
+
+        for model_name in model_config.iterkeys():
+            if model_name != Ns2ScriptedMobility.name:
+                continue
+
+            config = session.mobility.get_model_config(node_id, model_name)
+            configs[node_id] = config
+    return jsonify(configurations=configs)
 
 
 @api.route("/sessions/<int:session_id>/nodes/<node_id>/mobility", methods=["POST"])
