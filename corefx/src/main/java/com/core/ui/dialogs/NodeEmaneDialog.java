@@ -1,8 +1,8 @@
 package com.core.ui.dialogs;
 
 import com.core.Controller;
-import com.core.client.rest.ConfigOption;
-import com.core.client.rest.GetConfig;
+import com.core.data.ConfigGroup;
+import com.core.data.ConfigOption;
 import com.core.data.CoreNode;
 import com.core.ui.Toast;
 import com.jfoenix.controls.JFXButton;
@@ -50,10 +50,10 @@ public class NodeEmaneDialog extends StageDialog {
 
     private void emaneButtonHandler(ActionEvent event) {
         try {
-            GetConfig getConfig = getCoreClient().getEmaneConfig(coreNode);
-            logger.debug("emane model config: {}", getConfig);
+            List<ConfigGroup> configGroups = getCoreClient().getEmaneConfig(coreNode);
+            logger.debug("emane model config: {}", configGroups);
             String title = String.format("%s EMANE Config", coreNode.getName());
-            getController().getConfigDialog().showDialog(title, getConfig, () -> {
+            getController().getConfigDialog().showDialog(title, configGroups, () -> {
                 List<ConfigOption> options = getController().getConfigDialog().getOptions();
                 try {
                     getCoreClient().setEmaneConfig(coreNode, options);
@@ -73,10 +73,10 @@ public class NodeEmaneDialog extends StageDialog {
 
     public void displayEmaneModelConfig(Integer id, String model) {
         try {
-            GetConfig getConfig = getCoreClient().getEmaneModelConfig(id, model);
-            logger.debug("emane model config: {}", getConfig);
+            List<ConfigGroup> configGroups = getCoreClient().getEmaneModelConfig(id, model);
+            logger.debug("emane model config: {}", configGroups);
             String title = String.format("EMANE(%s) %s Config", id, model);
-            getController().getConfigDialog().showDialog(title, getConfig, () -> {
+            getController().getConfigDialog().showDialog(title, configGroups, () -> {
                 List<ConfigOption> options = getController().getConfigDialog().getOptions();
                 try {
                     getCoreClient().setEmaneModelConfig(id, model, options);

@@ -3,6 +3,7 @@ package com.core.ui.dialogs;
 import com.core.Controller;
 import com.core.ui.Toast;
 import com.core.utils.ConfigUtils;
+import com.core.utils.Configuration;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import javafx.event.ActionEvent;
@@ -12,7 +13,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
-import java.util.Properties;
 
 public class GuiPreferencesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
@@ -30,12 +30,12 @@ public class GuiPreferencesDialog extends StageDialog {
     }
 
     private EventHandler<ActionEvent> onSave = event -> {
-        Properties properties = getController().getProperties();
-        properties.setProperty(ConfigUtils.XML_PATH, xmlFilePathTextField.getText());
-        properties.setProperty(ConfigUtils.MOBILITY_PATH, mobilityFilePathTextField.getText());
-        properties.setProperty(ConfigUtils.SHELL_COMMAND, shellCommandTextField.getText());
+        Configuration configuration = getController().getConfiguration();
+        configuration.setXmlPath(xmlFilePathTextField.getText());
+        configuration.setMobilityPath(mobilityFilePathTextField.getText());
+        configuration.setShellCommand(shellCommandTextField.getText());
         try {
-            ConfigUtils.save(properties);
+            ConfigUtils.save(configuration);
             Toast.success("Updated preferences");
         } catch (IOException ex) {
             Toast.error("Failure to update preferences", ex);
@@ -44,10 +44,10 @@ public class GuiPreferencesDialog extends StageDialog {
     };
 
     public void showDialog() {
-        Properties properties = getController().getProperties();
-        xmlFilePathTextField.setText(properties.getProperty(ConfigUtils.XML_PATH));
-        mobilityFilePathTextField.setText(properties.getProperty(ConfigUtils.MOBILITY_PATH));
-        shellCommandTextField.setText(properties.getProperty(ConfigUtils.SHELL_COMMAND));
+        Configuration configuration = getController().getConfiguration();
+        xmlFilePathTextField.setText(configuration.getXmlPath());
+        mobilityFilePathTextField.setText(configuration.getMobilityPath());
+        shellCommandTextField.setText(configuration.getShellCommand());
         show();
     }
 }

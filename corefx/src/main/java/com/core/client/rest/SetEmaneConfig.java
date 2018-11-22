@@ -1,5 +1,6 @@
 package com.core.client.rest;
 
+import com.core.data.ConfigOption;
 import lombok.Data;
 
 import java.util.ArrayList;

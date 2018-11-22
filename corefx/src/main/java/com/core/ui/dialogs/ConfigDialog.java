@@ -1,9 +1,8 @@
 package com.core.ui.dialogs;
 
 import com.core.Controller;
-import com.core.client.rest.ConfigGroup;
-import com.core.client.rest.ConfigOption;
-import com.core.client.rest.GetConfig;
+import com.core.data.ConfigGroup;
+import com.core.data.ConfigOption;
 import com.core.ui.config.ConfigItemUtils;
 import com.core.ui.config.IConfigItem;
 import com.jfoenix.controls.JFXButton;
@@ -38,12 +37,12 @@ public class ConfigDialog extends StageDialog {
         return configItems.stream().map(IConfigItem::getOption).collect(Collectors.toList());
     }
 
-    public void showDialog(String title, GetConfig getConfig, Runnable runnable) {
+    public void showDialog(String title, List<ConfigGroup> configGroups, Runnable runnable) {
         setTitle(title);
 
         configItems.clear();
         tabPane.getTabs().clear();
-        for (ConfigGroup group : getConfig.getGroups()) {
+        for (ConfigGroup group : configGroups) {
             String groupName = group.getName();
             Tab tab = new Tab(groupName);
             ScrollPane scrollPane = new ScrollPane();

@@ -1,0 +1,6 @@
+{
+  "coreRest": "http://127.0.0.1:5000",
+  "xmlPath": null,
+  "mobilityPath": null,
+  "shellCommand": "gnome-terminal --window --"
+}

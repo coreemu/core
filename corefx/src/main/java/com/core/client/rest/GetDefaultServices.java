@@ -1,16 +1,16 @@
 package com.core.client.rest;
 
-import com.core.data.ConfigOption;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @Data
 @AllArgsConstructor
 @NoArgsConstructor
-public class SetConfig {
-    private List<ConfigOption> values = new ArrayList<>();
+public class GetDefaultServices {
+    private Map<String, List<String>> defaults = new HashMap<>();
 }

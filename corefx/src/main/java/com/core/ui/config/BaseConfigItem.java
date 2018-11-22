@@ -1,6 +1,6 @@
 package com.core.ui.config;
 
-import com.core.client.rest.ConfigOption;
+import com.core.data.ConfigOption;
 import javafx.scene.control.Label;
 import javafx.stage.Stage;
 import lombok.Data;

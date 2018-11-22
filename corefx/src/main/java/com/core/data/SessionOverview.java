@@ -1,12 +1,13 @@
-package com.core.client.rest;
+package com.core.data;
 
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 @Data
 @NoArgsConstructor
-public class GetSessionsData {
+public class SessionOverview {
     private Integer id;
     private Integer state;
-    private Integer nodes;
+    private Integer nodes = 0;
+    private String url;
 }

@@ -1,12 +1,14 @@
 package com.core.client;
 
-import com.core.client.rest.*;
+import com.core.client.rest.ServiceFile;
+import com.core.client.rest.WlanConfig;
 import com.core.data.*;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
+import java.util.Map;
 
 public interface ICoreClient {
     void setUrl(String url);
@@ -15,11 +17,11 @@ public interface ICoreClient {
 
     void updateState(SessionState state);
 
-    CreatedSession createSession() throws IOException;
+    SessionOverview createSession() throws IOException;
 
-    GetSessions getSessions() throws IOException;
+    List<SessionOverview> getSessions() throws IOException;
 
-    GetSession getSession(Integer sessionId) throws IOException;
+    Session getSession(Integer sessionId) throws IOException;
 
     boolean start(Collection<CoreNode> nodes, Collection<CoreLink> links, List<Hook> hooks) throws IOException;
 
@@ -27,7 +29,9 @@ public interface ICoreClient {
 
     boolean setState(SessionState state) throws IOException;
 
-    GetServices getServices() throws IOException;
+    Map<String, List<String>> getServices() throws IOException;
+
+    Map<String, List<String>> defaultServices() throws IOException;
 
     CoreService getService(CoreNode node, String serviceName) throws IOException;
 
@@ -37,13 +41,13 @@ public interface ICoreClient {
 
     boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException;
 
-    GetConfig getEmaneConfig(CoreNode node) throws IOException;
+    List<ConfigGroup> getEmaneConfig(CoreNode node) throws IOException;
 
-    GetEmaneModels getEmaneModels() throws IOException;
+    List<String> getEmaneModels() throws IOException;
 
     boolean setEmaneConfig(CoreNode node, List<ConfigOption> options) throws IOException;
 
-    GetConfig getEmaneModelConfig(Integer id, String model) throws IOException;
+    List<ConfigGroup> getEmaneModelConfig(Integer id, String model) throws IOException;
 
     boolean setEmaneModelConfig(Integer id, String model, List<ConfigOption> options) throws IOException;
 
@@ -51,11 +55,11 @@ public interface ICoreClient {
 
     void saveSession(File file) throws IOException;
 
-    CreatedSession openSession(File file) throws IOException;
+    SessionOverview openSession(File file) throws IOException;
 
-    GetConfig getSessionConfig() throws IOException;
+    List<ConfigGroup> getSessionConfig() throws IOException;
 
-    boolean setSessionConfig(SetConfig config) throws IOException;
+    boolean setSessionConfig(List<ConfigOption> configOptions) throws IOException;
 
     boolean createNode(CoreNode node) throws IOException;
 
@@ -69,7 +73,7 @@ public interface ICoreClient {
 
     boolean createHook(Hook hook) throws IOException;
 
-    GetHooks getHooks() throws IOException;
+    List<Hook> getHooks() throws IOException;
 
     WlanConfig getWlanConfig(CoreNode node) throws IOException;
 
@@ -77,7 +81,7 @@ public interface ICoreClient {
 
     String getTerminalCommand(CoreNode node) throws IOException;
 
-    GetMobilityConfigs getMobilityConfigs() throws IOException;
+    Map<Integer, MobilityConfig> getMobilityConfigs() throws IOException;
 
     boolean setMobilityConfig(CoreNode node, MobilityConfig config) throws IOException;
 

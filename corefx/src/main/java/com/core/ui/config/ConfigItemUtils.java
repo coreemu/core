@@ -1,6 +1,6 @@
 package com.core.ui.config;
 
-import com.core.client.rest.ConfigOption;
+import com.core.data.ConfigOption;
 import com.core.data.ConfigDataType;
 import javafx.stage.Stage;
 

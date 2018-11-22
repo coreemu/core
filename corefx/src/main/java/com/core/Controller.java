@@ -1,12 +1,13 @@
 package com.core;
 
 import com.core.client.ICoreClient;
-import com.core.client.rest.*;
+import com.core.client.rest.CoreRestClient;
 import com.core.data.*;
 import com.core.graph.NetworkGraph;
 import com.core.ui.*;
 import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
+import com.core.utils.Configuration;
 import com.core.websocket.CoreWebSocket;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
@@ -48,7 +49,7 @@ public class Controller implements Initializable {
 
     private Application application;
     private Stage window;
-    private Properties properties;
+    private Configuration configuration;
 
     // core client utilities
     private ICoreClient coreClient = new CoreRestClient();
@@ -96,30 +97,30 @@ public class Controller implements Initializable {
     }
 
     private void initialJoin() throws IOException {
-        GetServices services = coreClient.getServices();
-        logger.info("core services: {}", services);
-        nodeServicesDialog.setServices(services);
+        Map<String, List<String>> serviceGroups = coreClient.getServices();
+        logger.info("core services: {}", serviceGroups);
+        nodeServicesDialog.setServices(serviceGroups);
 
         logger.info("initial core session join");
-        GetSessions response = coreClient.getSessions();
+        List<SessionOverview> sessions = coreClient.getSessions();
 
-        logger.info("existing sessions: {}", response);
+        logger.info("existing sessions: {}", sessions);
         Integer sessionId;
-        if (response.getSessions().isEmpty()) {
+        if (sessions.isEmpty()) {
             logger.info("creating initial session");
-            CreatedSession createdSession = coreClient.createSession();
-            sessionId = createdSession.getId();
+            SessionOverview sessionOverview = coreClient.createSession();
+            sessionId = sessionOverview.getId();
             Toast.info(String.format("Created Session %s", sessionId));
         } else {
-            GetSessionsData getSessionsData = response.getSessions().get(0);
-            sessionId = getSessionsData.getId();
+            SessionOverview sessionOverview = sessions.get(0);
+            sessionId = sessionOverview.getId();
             Toast.info(String.format("Joined Session %s", sessionId));
         }
 
         joinSession(sessionId);
 
         // set emane models
-        List<String> emaneModels = coreClient.getEmaneModels().getModels();
+        List<String> emaneModels = coreClient.getEmaneModels();
         nodeEmaneDialog.setModels(emaneModels);
     }
 
@@ -127,8 +128,12 @@ public class Controller implements Initializable {
         // clear graph
         networkGraph.reset();
 
+        // clear out any previously set information
+        bottom.getChildren().remove(mobilityPlayer);
+        mobilityDialog.setNode(null);
+
         // get session to join
-        GetSession session = coreClient.getSession(joinId);
+        Session session = coreClient.getSession(joinId);
         SessionState sessionState = SessionState.get(session.getState());
 
         // update client to use this session
@@ -164,13 +169,14 @@ public class Controller implements Initializable {
         // update other components for new session
         graphToolbar.setRunButton(coreClient.isRunning());
         hooksDialog.updateHooks();
+        nodeTypesDialog.updateDefaultServices();
 
         // display first mobility script in player
-        GetMobilityConfigs getMobilityConfigs = coreClient.getMobilityConfigs();
-        Optional<Integer> nodeIdOptional = getMobilityConfigs.getConfigurations().keySet().stream().findFirst();
+        Map<Integer, MobilityConfig> mobilityConfigMap = coreClient.getMobilityConfigs();
+        Optional<Integer> nodeIdOptional = mobilityConfigMap.keySet().stream().findFirst();
         if (nodeIdOptional.isPresent()) {
             Integer nodeId = nodeIdOptional.get();
-            MobilityConfig mobilityConfig = getMobilityConfigs.getConfigurations().get(nodeId);
+            MobilityConfig mobilityConfig = mobilityConfigMap.get(nodeId);
             CoreNode node = networkGraph.getVertex(nodeId);
             mobilityPlayer.show(node, mobilityConfig);
             Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
@@ -294,20 +300,27 @@ public class Controller implements Initializable {
     private void onOpenXmlAction() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Session");
-        String xmlPath = properties.getProperty(ConfigUtils.XML_PATH);
-        fileChooser.setInitialDirectory(new File(xmlPath));
+        fileChooser.setInitialDirectory(new File(configuration.getXmlPath()));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
-        File file = fileChooser.showOpenDialog(window);
-        if (file != null) {
-            logger.info("opening session xml: {}", file.getPath());
-            try {
-                CreatedSession createdSession = coreClient.openSession(file);
-                Integer sessionId = createdSession.getId();
-                joinSession(sessionId);
-                Toast.info(String.format("Joined Session %s", sessionId));
-            } catch (IOException ex) {
-                logger.error("error opening session xml", ex);
+        try {
+            File file = fileChooser.showOpenDialog(window);
+            if (file != null) {
+                openXml(file);
             }
+        } catch (IllegalArgumentException ex) {
+            Toast.error(String.format("Invalid XML directory: %s", configuration.getXmlPath()));
+        }
+    }
+
+    private void openXml(File file) {
+        logger.info("opening session xml: {}", file.getPath());
+        try {
+            SessionOverview sessionOverview = coreClient.openSession(file);
+            Integer sessionId = sessionOverview.getId();
+            joinSession(sessionId);
+            Toast.info(String.format("Joined Session %s", sessionId));
+        } catch (IOException ex) {
+            Toast.error("Error opening session xml", ex);
         }
     }
 
@@ -316,8 +329,7 @@ public class Controller implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Session");
         fileChooser.setInitialFileName("session.xml");
-        String xmlPath = properties.getProperty(ConfigUtils.XML_PATH);
-        fileChooser.setInitialDirectory(new File(xmlPath));
+        fileChooser.setInitialDirectory(new File(configuration.getXmlPath()));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
         File file = fileChooser.showSaveDialog(window);
         if (file != null) {
@@ -325,7 +337,7 @@ public class Controller implements Initializable {
             try {
                 coreClient.saveSession(file);
             } catch (IOException ex) {
-                logger.error("error saving session xml", ex);
+                Toast.error("Error saving session xml", ex);
             }
         }
     }
@@ -348,12 +360,11 @@ public class Controller implements Initializable {
     @FXML
     private void onSessionOptionsMenu(ActionEvent event) {
         try {
-            GetConfig config = coreClient.getSessionConfig();
-            configDialog.showDialog("Session Options", config, () -> {
+            List<ConfigGroup> configGroups = coreClient.getSessionConfig();
+            configDialog.showDialog("Session Options", configGroups, () -> {
                 List<ConfigOption> options = configDialog.getOptions();
-                SetConfig setConfig = new SetConfig(options);
                 try {
-                    boolean result = coreClient.setSessionConfig(setConfig);
+                    boolean result = coreClient.setSessionConfig(options);
                     if (result) {
                         Toast.info("Session options saved");
                     } else {
@@ -381,8 +392,8 @@ public class Controller implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         coreWebSocket = new CoreWebSocket(this);
-        properties = ConfigUtils.load();
-        String coreUrl = properties.getProperty(ConfigUtils.REST_URL);
+        configuration = ConfigUtils.load();
+        String coreUrl = configuration.getCoreRest();
         logger.info("core rest: {}", coreUrl);
         connectDialog.setCoreUrl(coreUrl);
         connectToCore(coreUrl);

@@ -3,7 +3,6 @@ package com.core.graph;
 import com.core.Controller;
 import com.core.data.*;
 import com.core.ui.Toast;
-import com.core.utils.ConfigUtils;
 import com.core.utils.IconUtils;
 import com.google.common.base.Supplier;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
@@ -72,7 +71,7 @@ public class NetworkGraph {
         // node render properties
         renderContext.setVertexLabelTransformer(CoreNode::getName);
         renderContext.setVertexShapeTransformer(node -> {
-            double offset = -(IconUtils.ICON_SIZE / 2);
+            double offset = -(IconUtils.ICON_SIZE / 2.0);
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
         });
         renderContext.setVertexIconTransformer(vertex -> {
@@ -118,7 +117,7 @@ public class NetworkGraph {
 
                 if (mouseEvent.getClickCount() == 2 && controller.getCoreClient().isRunning()) {
                     try {
-                        String shellCommand = controller.getProperties().getProperty(ConfigUtils.SHELL_COMMAND);
+                        String shellCommand = controller.getConfiguration().getShellCommand();
                         String terminalCommand = controller.getCoreClient().getTerminalCommand(node);
                         terminalCommand = String.format("%s %s", shellCommand, terminalCommand);
                         logger.info("launching node terminal: {}", terminalCommand);
@@ -348,8 +347,8 @@ public class NetworkGraph {
 
     public void addNode(CoreNode node) {
         vertexId = Math.max(node.getId() + 1, node.getId());
-        Double x = Math.abs(node.getPosition().getX());
-        Double y = Math.abs(node.getPosition().getY());
+        double x = Math.abs(node.getPosition().getX());
+        double y = Math.abs(node.getPosition().getY());
         logger.info("adding session node: {}", node);
         graph.addVertex(node);
         graphLayout.setLocation(node, x, y);
@@ -363,8 +362,8 @@ public class NetworkGraph {
         node.getPosition().setY(nodeData.getPosition().getY());
 
         // set graph node location
-        Double x = Math.abs(node.getPosition().getX());
-        Double y = Math.abs(node.getPosition().getY());
+        double x = Math.abs(node.getPosition().getX());
+        double y = Math.abs(node.getPosition().getY());
         graphLayout.setLocation(node, x, y);
         graphViewer.repaint();
     }

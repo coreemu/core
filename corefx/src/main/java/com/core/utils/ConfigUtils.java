@@ -4,36 +4,38 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.FileInputStream;
-import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Properties;
 
 public final class ConfigUtils {
     private static final Logger logger = LogManager.getLogger();
-    private static final String DEFAULT_CONFIG = "/config.properties";
+    private static final String CONFIG_FILE_NAME = "config.json";
+    private static final String DEFAULT_CONFIG = "/" + CONFIG_FILE_NAME;
     private static final Path HOME = Paths.get(System.getProperty("user.home"), ".core");
-    private static final Path PROPERTIES_FILE = Paths.get(HOME.toString(), "config.properties");
+    private static final Path CONFIG_FILE = Paths.get(HOME.toString(), CONFIG_FILE_NAME);
     private static final Path XML_DIR = Paths.get(HOME.toString(), "xml");
     private static final Path MOBILITY_DIR = Paths.get(HOME.toString(), "mobility");
-    // config fields
-    public static final String REST_URL = "core-rest";
-    public static final String XML_PATH = "xml-path";
-    public static final String MOBILITY_PATH = "mobility-path";
-    public static final String SHELL_COMMAND = "shell-command";
 
 
     private ConfigUtils() {
 
     }
 
-    public static void save(Properties properties) throws IOException {
-        properties.store(new FileOutputStream(PROPERTIES_FILE.toFile()), null);
+    public static void save(Configuration configuration) throws IOException {
+        String fileData = JsonUtils.toPrettyString(configuration);
+        try (PrintWriter out = new PrintWriter(CONFIG_FILE.toFile())) {
+            out.println(fileData);
+        }
     }
 
-    public static Properties load() {
+    private static Configuration readConfig() throws IOException {
+        return JsonUtils.read(new FileInputStream(CONFIG_FILE.toFile()), Configuration.class);
+    }
+
+    public static Configuration load() {
         try {
             if (!HOME.toFile().exists()) {
                 logger.info("creating core home directory");
@@ -42,28 +44,19 @@ public final class ConfigUtils {
                 Files.createDirectory(MOBILITY_DIR);
             }
 
-            Properties properties = new Properties();
-            if (!PROPERTIES_FILE.toFile().exists()) {
+            Configuration configuration;
+            if (!CONFIG_FILE.toFile().exists()) {
                 logger.info("creating default configuration");
-                Files.copy(ConfigUtils.class.getResourceAsStream(DEFAULT_CONFIG), PROPERTIES_FILE);
-                properties.load(new FileInputStream(PROPERTIES_FILE.toFile()));
-                properties.setProperty(XML_PATH, XML_DIR.toString());
-                properties.setProperty(MOBILITY_PATH, MOBILITY_DIR.toString());
-                save(properties);
+                Files.copy(ConfigUtils.class.getResourceAsStream(DEFAULT_CONFIG), CONFIG_FILE);
+                configuration = readConfig();
+                configuration.setXmlPath(XML_DIR.toString());
+                configuration.setMobilityPath(MOBILITY_DIR.toString());
+                save(configuration);
             } else {
-                properties.load(new FileInputStream(PROPERTIES_FILE.toFile()));
+                configuration = readConfig();
             }
 
-            // override values if provided
-            for (String key : properties.stringPropertyNames()) {
-                String value = System.getProperty(key);
-                if (value != null) {
-                    logger.info("command line config: {} - {}", key, value);
-                    properties.setProperty(key, value);
-                }
-            }
-
-            return properties;
+            return configuration;
         } catch (IOException ex) {
             logger.error("error reading config file");
             throw new RuntimeException("configuration file did not exist");
