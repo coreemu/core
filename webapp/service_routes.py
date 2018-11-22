@@ -21,6 +21,12 @@ def get_services():
     return jsonify(groups=groups)
 
 
+@api.route("/sessions/<int:session_id>/services/default")
+def get_session_options(session_id):
+    session = core_utils.get_session(coreemu, session_id)
+    return jsonify(defaults=session.services.default_services)
+
+
 @api.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>")
 def get_node_service(session_id, node_id, service_name):
     session = core_utils.get_session(coreemu, session_id)
