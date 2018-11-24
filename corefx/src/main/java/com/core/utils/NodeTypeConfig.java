@@ -1,16 +1,20 @@
 package com.core.utils;
 
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Set;
 
 @Data
+@EqualsAndHashCode(onlyExplicitlyIncluded = true)
 @NoArgsConstructor
+@AllArgsConstructor
 public class NodeTypeConfig {
+    @EqualsAndHashCode.Include
     private String model;
     private String display;
     private String icon;
-    private List<String> services = new ArrayList<>();
+    private Set<String> services;
 }

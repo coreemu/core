@@ -4,6 +4,7 @@ import com.core.Controller;
 import com.core.data.CoreNode;
 import com.core.data.NodeType;
 import com.core.ui.Toast;
+import com.core.utils.NodeTypeConfig;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXListView;
 import com.jfoenix.controls.JFXTextField;
@@ -15,17 +16,14 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.io.IOException;
-import java.util.Collections;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class NodeTypesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
     private final Map<String, NodeType> nodeTypeMap = new HashMap<>();
     private NodeType selectedNodeType;
-    private Map<String, List<String>> defaultServices = new HashMap<>();
     @FXML private JFXListView<String> listView;
     @FXML private JFXTextField modelTextField;
     @FXML private JFXTextField displayTextField;
@@ -40,7 +38,8 @@ public class NodeTypesDialog extends StageDialog {
     public NodeTypesDialog(Controller controller) {
         super(controller, "/fxml/node_types_dialog.fxml");
         setTitle("Node Configuration");
-        addCancelButton();
+        JFXButton closeButton = createButton("Close");
+        closeButton.setOnAction(event -> close());
 
         listView.getSelectionModel().selectedItemProperty().addListener((ov, prev, current) -> {
             if (current == null) {
@@ -53,14 +52,14 @@ public class NodeTypesDialog extends StageDialog {
             iconTextField.setText(nodeType.getIcon());
             iconImage.setImage(new Image(nodeType.getIcon()));
             selectedNodeType = nodeType;
-            List<String> services = defaultServices.getOrDefault(nodeType.getModel(), Collections.emptyList());
+            Set<String> services = nodeType.getServices();
             nodeServicesListView.getItems().setAll(services);
         });
 
         iconButton.setOnAction(event -> {
             FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Select Icon");
-            fileChooser.setInitialDirectory(new File(System.getProperty("user.home")));
+            fileChooser.setInitialDirectory(new File(getController().getConfiguration().getIconPath()));
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
             File file = fileChooser.showOpenDialog(controller.getWindow());
             if (file != null) {
@@ -84,15 +83,40 @@ public class NodeTypesDialog extends StageDialog {
             controller.getGraphToolbar().updateNodeType(selectedNodeType.getId(), iconPath);
             Toast.info(String.format("Node %s Updated", selectedNodeType.getDisplay()));
         });
+
+        deleteButton.setOnAction(event -> {
+            String display = listView.getSelectionModel().getSelectedItem();
+            NodeType nodeType = nodeTypeMap.get(display);
+            NodeType.remove(nodeType);
+            listView.getItems().remove(display);
+            NodeTypeConfig nodeTypeConfig = createNodeTypeConfig(nodeType);
+            getController().getDefaultServices().remove(nodeTypeConfig.getModel());
+            getController().getConfiguration().getNodeTypeConfigs().remove(nodeTypeConfig);
+            getController().updateNodeTypes();
+        });
+
+        addButton.setOnAction(event -> {
+            NodeTypeCreateDialog nodeTypeCreateDialog = getController().getNodeTypeCreateDialog();
+            nodeTypeCreateDialog.showDialog(() -> {
+                NodeType nodeType = nodeTypeCreateDialog.getCreatedNodeType();
+                NodeType.add(nodeType);
+                nodeTypeMap.put(nodeType.getDisplay(), nodeType);
+                listView.getItems().add(nodeType.getDisplay());
+                NodeTypeConfig nodeTypeConfig = createNodeTypeConfig(nodeType);
+                getController().getDefaultServices().put(nodeTypeConfig.getModel(), nodeTypeConfig.getServices());
+                getController().getConfiguration().getNodeTypeConfigs().add(nodeTypeConfig);
+                getController().updateNodeTypes();
+            });
+        });
     }
 
-    public void updateDefaultServices() {
-        try {
-            defaultServices = getCoreClient().defaultServices();
-            listView.getSelectionModel().selectFirst();
-        } catch (IOException ex) {
-            Toast.error("Error getting default services", ex);
-        }
+    private NodeTypeConfig createNodeTypeConfig(NodeType nodeType) {
+        return new NodeTypeConfig(
+                nodeType.getModel(),
+                nodeType.getDisplay(),
+                nodeType.getIcon(),
+                nodeType.getServices()
+        );
     }
 
     public void showDialog() {

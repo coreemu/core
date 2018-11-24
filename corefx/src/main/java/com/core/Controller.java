@@ -8,6 +8,7 @@ import com.core.ui.*;
 import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
 import com.core.utils.Configuration;
+import com.core.utils.NodeTypeConfig;
 import com.core.websocket.CoreWebSocket;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
@@ -50,6 +51,7 @@ public class Controller implements Initializable {
     private Application application;
     private Stage window;
     private Configuration configuration;
+    private Map<String, Set<String>> defaultServices = new HashMap<>();
 
     // core client utilities
     private ICoreClient coreClient = new CoreRestClient();
@@ -79,6 +81,7 @@ public class Controller implements Initializable {
     private GeoDialog geoDialog = new GeoDialog(this);
     private ConnectDialog connectDialog = new ConnectDialog(this);
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
+    private NodeTypeCreateDialog nodeTypeCreateDialog = new NodeTypeCreateDialog(this);
 
     public void connectToCore(String coreUrl) {
         coreWebSocket.stop();
@@ -100,6 +103,7 @@ public class Controller implements Initializable {
         Map<String, List<String>> serviceGroups = coreClient.getServices();
         logger.info("core services: {}", serviceGroups);
         nodeServicesDialog.setServices(serviceGroups);
+        nodeTypeCreateDialog.setServices(serviceGroups);
 
         logger.info("initial core session join");
         List<SessionOverview> sessions = coreClient.getSessions();
@@ -169,17 +173,21 @@ public class Controller implements Initializable {
         // update other components for new session
         graphToolbar.setRunButton(coreClient.isRunning());
         hooksDialog.updateHooks();
-        nodeTypesDialog.updateDefaultServices();
 
-        // display first mobility script in player
+        // update session default services
+        setCoreDefaultServices();
+
+        // display first mobility script in player, if needed
         Map<Integer, MobilityConfig> mobilityConfigMap = coreClient.getMobilityConfigs();
         Optional<Integer> nodeIdOptional = mobilityConfigMap.keySet().stream().findFirst();
         if (nodeIdOptional.isPresent()) {
             Integer nodeId = nodeIdOptional.get();
             MobilityConfig mobilityConfig = mobilityConfigMap.get(nodeId);
             CoreNode node = networkGraph.getVertex(nodeId);
-            mobilityPlayer.show(node, mobilityConfig);
-            Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
+            if (node != null) {
+                mobilityPlayer.show(node, mobilityConfig);
+                Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
+            }
         }
     }
 
@@ -230,6 +238,24 @@ public class Controller implements Initializable {
         return result;
     }
 
+    private void setCoreDefaultServices() {
+        try {
+            coreClient.setDefaultServices(defaultServices);
+        } catch (IOException ex) {
+            Toast.error("Error updating core default services", ex);
+        }
+    }
+
+    public void updateNodeTypes() {
+        graphToolbar.setupNodeTypes();
+        setCoreDefaultServices();
+        try {
+            ConfigUtils.save(configuration);
+        } catch (IOException ex) {
+            Toast.error("Error saving configuration", ex);
+        }
+    }
+
     public void deleteNode(CoreNode node) {
         networkGraph.removeNode(node);
         CoreNode mobilityNode = mobilityDialog.getNode();
@@ -253,6 +279,7 @@ public class Controller implements Initializable {
         locationDialog.setOwner(window);
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
+        nodeTypeCreateDialog.setOwner(window);
     }
 
     @FXML
@@ -400,6 +427,11 @@ public class Controller implements Initializable {
 
         logger.info("controller initialize");
         swingNode.setContent(networkGraph.getGraphViewer());
+
+        // set node types / default services
+        graphToolbar.setupNodeTypes();
+        defaultServices = configuration.getNodeTypeConfigs().stream()
+                .collect(Collectors.toMap(NodeTypeConfig::getModel, NodeTypeConfig::getServices));
 
         // set graph toolbar
         borderPane.setLeft(graphToolbar);

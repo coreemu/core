@@ -19,8 +19,6 @@ public class NodeServicesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
     private final Map<String, List<ServiceItem>> serviceItemGroups = new HashMap<>();
     private final Map<String, ServiceItem> serviceItemMap = new HashMap<>();
-    // TODO: get this from core itself
-    private final Map<String, Set<String>> defaultServices = new HashMap<>();
     private CoreNode node;
     private int index = 0;
     @FXML private GridPane gridPane;
@@ -46,12 +44,6 @@ public class NodeServicesDialog extends StageDialog {
             close();
         });
         addCancelButton();
-
-        defaultServices.put("mdr", new HashSet<>(Arrays.asList("zebra", "OSPFv3MDR", "IPForward")));
-        defaultServices.put("PC", new HashSet<>(Arrays.asList("DefaultRoute")));
-        defaultServices.put("prouter", new HashSet<>(Arrays.asList("zebra", "OSPFv2", "OSPFv3", "IPForward")));
-        defaultServices.put("router", new HashSet<>(Arrays.asList("zebra", "OSPFv2", "OSPFv3", "IPForward")));
-        defaultServices.put("host", new HashSet<>(Arrays.asList("DefaultRoute", "SSH")));
 
         groupListView.getSelectionModel().selectedItemProperty().addListener((ov, previous, current) -> {
             if (current == null) {
@@ -137,7 +129,7 @@ public class NodeServicesDialog extends StageDialog {
 
         Set<String> nodeServices = node.getServices();
         if (nodeServices.isEmpty()) {
-            nodeServices = defaultServices.get(node.getModel());
+            nodeServices = getController().getDefaultServices().get(node.getModel());
         }
 
         for (List<ServiceItem> items : serviceItemGroups.values()) {

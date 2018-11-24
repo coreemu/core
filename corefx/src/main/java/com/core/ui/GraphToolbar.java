@@ -45,7 +45,6 @@ public class GraphToolbar extends VBox {
     private boolean isEditing = false;
     @FXML private JFXButton runButton;
     @FXML private JFXButton pickingButton;
-    @FXML private JFXButton editingButton;
     @FXML private JFXButton drawingButton;
     @FXML private ComboBox<String> graphModeCombo;
     @FXML private JFXButton nodesButton;
@@ -61,10 +60,7 @@ public class GraphToolbar extends VBox {
         stopIcon.setSize(ICON_SIZE);
 
         setupPickingButton();
-        setupEditingButton();
         setupDrawingButton();
-
-        setupNodeTypes();
         setupNodesButton();
         setupDevicesButton();
 
@@ -84,24 +80,20 @@ public class GraphToolbar extends VBox {
             controller.getBottom().getChildren().remove(controller.getAnnotationToolbar());
             controller.getBorderPane().setRight(null);
             setSelected(true, pickingButton);
-            setSelected(false, editingButton, drawingButton, selectedEditButton);
+            setSelected(false, drawingButton, selectedEditButton);
             isEditing = false;
         });
     }
 
-    private void setupEditingButton() {
-        SVGGlyph editIcon = IconUtils.get("mode_edit");
-        editIcon.setSize(ICON_SIZE);
-        editingButton.setGraphic(editIcon);
-        editingButton.setTooltip(new Tooltip("Edit Graph"));
-        editingButton.setOnAction(event -> {
-            controller.getNetworkGraph().setMode(ModalGraphMouse.Mode.EDITING);
-            controller.getBottom().getChildren().remove(controller.getAnnotationToolbar());
-            controller.getBorderPane().setRight(null);
-            setSelected(true, editingButton, selectedEditButton);
-            setSelected(false, drawingButton, pickingButton);
-            isEditing = true;
-        });
+    private void setEditMode() {
+        controller.getNetworkGraph().setMode(ModalGraphMouse.Mode.EDITING);
+        controller.getBottom().getChildren().remove(controller.getAnnotationToolbar());
+        controller.getBorderPane().setRight(null);
+        if (selectedEditButton != null) {
+            setSelected(true, selectedEditButton);
+        }
+        setSelected(false, drawingButton, pickingButton);
+        isEditing = true;
     }
 
     private void setupDrawingButton() {
@@ -114,12 +106,17 @@ public class GraphToolbar extends VBox {
             controller.getBottom().getChildren().add(controller.getAnnotationToolbar());
             controller.getBorderPane().setRight(null);
             setSelected(true, drawingButton);
-            setSelected(false, editingButton, pickingButton, selectedEditButton);
+            setSelected(false, pickingButton, selectedEditButton);
             isEditing = false;
         });
     }
 
-    private void setupNodeTypes() {
+    public void setupNodeTypes() {
+        // clear existing configuration
+        labelMap.clear();
+        nodesList.getItems().clear();
+        devicesList.getItems().clear();
+
         for (NodeType nodeType : NodeType.getAll()) {
             ImageView icon = new ImageView(nodeType.getIcon());
             icon.setFitWidth(NODES_ICON_SIZE);
@@ -162,7 +159,9 @@ public class GraphToolbar extends VBox {
         JFXButton previous = selectedEditButton;
         selectedEditButton = button;
         if (isEditing) {
-            setSelected(false, previous);
+            if (previous != null) {
+                setSelected(false, previous);
+            }
             setSelected(true, selectedEditButton);
         }
     }
@@ -184,8 +183,11 @@ public class GraphToolbar extends VBox {
         });
 
         JFXPopup popup = new JFXPopup(nodesList);
-        nodesButton.setOnAction(event -> popup.show(nodesButton, JFXPopup.PopupVPosition.TOP,
-                JFXPopup.PopupHPosition.LEFT, nodesButton.getWidth(), 0));
+        nodesButton.setOnAction(event -> {
+            setEditMode();
+            popup.show(nodesButton, JFXPopup.PopupVPosition.TOP,
+                    JFXPopup.PopupHPosition.LEFT, nodesButton.getWidth(), 0);
+        });
     }
 
     private void setupDevicesButton() {
@@ -205,8 +207,11 @@ public class GraphToolbar extends VBox {
         });
 
         JFXPopup popup = new JFXPopup(devicesList);
-        devicesButton.setOnAction(event -> popup.show(devicesButton, JFXPopup.PopupVPosition.TOP,
-                JFXPopup.PopupHPosition.LEFT, devicesButton.getWidth(), 0));
+        devicesButton.setOnAction(event -> {
+            setEditMode();
+            popup.show(devicesButton, JFXPopup.PopupVPosition.TOP,
+                    JFXPopup.PopupHPosition.LEFT, devicesButton.getWidth(), 0);
+        });
     }
 
     @FXML
@@ -269,7 +274,8 @@ public class GraphToolbar extends VBox {
         if (isRunning) {
             Platform.runLater(() -> {
                 pickingButton.fire();
-                editingButton.setDisable(true);
+                devicesButton.setDisable(true);
+                nodesButton.setDisable(true);
                 runButton.pseudoClassStateChanged(START_CLASS, false);
                 runButton.pseudoClassStateChanged(STOP_CLASS, true);
                 if (runButton.getGraphic() != stopIcon) {
@@ -279,7 +285,8 @@ public class GraphToolbar extends VBox {
             });
         } else {
             Platform.runLater(() -> {
-                editingButton.setDisable(false);
+                devicesButton.setDisable(false);
+                nodesButton.setDisable(false);
                 runButton.pseudoClassStateChanged(START_CLASS, true);
                 runButton.pseudoClassStateChanged(STOP_CLASS, false);
                 if (runButton.getGraphic() != startIcon) {

@@ -5,9 +5,7 @@ import lombok.EqualsAndHashCode;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 @Data
@@ -24,6 +22,7 @@ public class NodeType {
     @EqualsAndHashCode.Include
     private final int id;
     private final int value;
+    private final Set<String> services = new TreeSet<>();
     private String display;
     private String model;
     private String icon;
@@ -39,13 +38,10 @@ public class NodeType {
 //    EMANE_NET = 14;
 
     static {
-        addNodeType(new NodeType(DEFAULT, "host", "Host", "/icons/host-100.png"));
-        addNodeType(new NodeType(DEFAULT, "PC", "PC", "/icons/pc-100.png"));
-        addNodeType(new NodeType(DEFAULT, "mdr", "MDR", "/icons/router-100.png"));
-        addNodeType(new NodeType(SWITCH, "lanswitch", "Switch", "/icons/switch-100.png"));
-        addNodeType(new NodeType(HUB, "hub", "Hub", "/icons/hub-100.png"));
-        addNodeType(new NodeType(WLAN, "wlan", "WLAN", "/icons/wlan-100.png"));
-        addNodeType(new NodeType(EMANE, "wlan", "EMANE", "/icons/emane-100.png"));
+        add(new NodeType(SWITCH, "lanswitch", "Switch", "/icons/switch-100.png"));
+        add(new NodeType(HUB, "hub", "Hub", "/icons/hub-100.png"));
+        add(new NodeType(WLAN, "wlan", "WLAN", "/icons/wlan-100.png"));
+        add(new NodeType(EMANE, "wlan", "EMANE", "/icons/emane-100.png"));
     }
 
 
@@ -57,8 +53,12 @@ public class NodeType {
         this.icon = icon;
     }
 
-    public static void addNodeType(NodeType nodeType) {
+    public static void add(NodeType nodeType) {
         ID_LOOKUP.put(nodeType.getId(), nodeType);
+    }
+
+    public static void remove(NodeType nodeType) {
+        ID_LOOKUP.remove(nodeType.getId());
     }
 
     public static NodeType get(Integer id) {

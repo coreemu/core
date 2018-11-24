@@ -8,7 +8,6 @@
    <children>
       <JFXButton id="run-button" fx:id="runButton" onAction="#onRunButtonAction" styleClass="toolbar-button" />
       <JFXButton fx:id="pickingButton" styleClass="toolbar-button" />
-      <JFXButton fx:id="editingButton" styleClass="toolbar-button" />
       <JFXButton fx:id="nodesButton" styleClass="toolbar-button" text="Nodes" />
       <JFXButton fx:id="devicesButton" styleClass="toolbar-button" text="Devices" />
       <JFXButton fx:id="drawingButton" styleClass="toolbar-button" />

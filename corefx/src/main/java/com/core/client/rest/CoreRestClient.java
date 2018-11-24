@@ -9,10 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 public class CoreRestClient implements ICoreClient {
@@ -129,10 +126,16 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public Map<String, List<String>> defaultServices() throws IOException {
+    public Map<String, List<String>> getDefaultServices() throws IOException {
         String url = getUrl(String.format("sessions/%s/services/default", sessionId));
         GetDefaultServices getDefaultServices = WebUtils.getJson(url, GetDefaultServices.class);
         return getDefaultServices.getDefaults();
+    }
+
+    @Override
+    public boolean setDefaultServices(Map<String, Set<String>> defaults) throws IOException {
+        String url = getUrl(String.format("sessions/%s/services/default", sessionId));
+        return WebUtils.postJson(url, defaults);
     }
 
     @Override
@@ -154,6 +157,34 @@ public class CoreRestClient implements ICoreClient {
         Map<String, String> args = new HashMap<>();
         args.put("file", fileName);
         return WebUtils.getJson(url, String.class, args);
+    }
+
+    @Override
+    public boolean startService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/start", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean stopService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/stop", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean restartService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/restart", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean validateService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/validate", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
     }
 
     @Override

@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ICoreClient {
     void setUrl(String url);
@@ -31,13 +32,23 @@ public interface ICoreClient {
 
     Map<String, List<String>> getServices() throws IOException;
 
-    Map<String, List<String>> defaultServices() throws IOException;
+    Map<String, List<String>> getDefaultServices() throws IOException;
+
+    boolean setDefaultServices(Map<String, Set<String>> defaults) throws IOException;
 
     CoreService getService(CoreNode node, String serviceName) throws IOException;
 
     boolean setService(CoreNode node, String serviceName, CoreService service) throws IOException;
 
     String getServiceFile(CoreNode node, String serviceName, String fileName) throws IOException;
+
+    boolean startService(CoreNode node, String serviceName) throws IOException;
+
+    boolean stopService(CoreNode node, String serviceName) throws IOException;
+
+    boolean restartService(CoreNode node, String serviceName) throws IOException;
+
+    boolean validateService(CoreNode node, String serviceName) throws IOException;
 
     boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException;
 
