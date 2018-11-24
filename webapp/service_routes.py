@@ -22,9 +22,19 @@ def get_services():
 
 
 @api.route("/sessions/<int:session_id>/services/default")
-def get_session_options(session_id):
+def get_session_service_defaults(session_id):
     session = core_utils.get_session(coreemu, session_id)
     return jsonify(defaults=session.services.default_services)
+
+
+@api.route("/sessions/<int:session_id>/services/default", methods=["POST"])
+def set_session_service_defaults(session_id):
+    data = request.get_json() or {}
+    session = core_utils.get_session(coreemu, session_id)
+    session.services.default_services.clear()
+    session.services.default_services.update(data)
+    logger.info("default services: %s", session.services.default_services)
+    return jsonify()
 
 
 @api.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>")
