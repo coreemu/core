@@ -99,3 +99,69 @@ def set_node_service_file(session_id, node_id, service):
     data = data["data"]
     session.services.set_service_file(node_id, service, file_name, data)
     return jsonify()
+
+
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>/start", methods=["PUT"])
+def start_node_service(session_id, node_id, service_name):
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
+    status = -1
+    for service in node.services:
+        if service.name == service_name:
+            status = session.services.startup_service(node, service, wait=True)
+            break
+
+    if status:
+        return jsonify(), 400
+    else:
+        return jsonify()
+
+
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>/stop", methods=["PUT"])
+def stop_node_service(session_id, node_id, service_name):
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
+    status = -1
+    for service in node.services:
+        if service.name == service_name:
+            status = session.services.stop_service(node, service)
+            break
+
+    if status:
+        return jsonify(), 400
+    else:
+        return jsonify()
+
+
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>/restart", methods=["PUT"])
+def restart_node_service(session_id, node_id, service_name):
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
+    status = -1
+    for service in node.services:
+        if service.name == service_name:
+            status = session.services.stop_service(node, service)
+            if not status:
+                status = session.services.startup_service(node, service, wait=True)
+            break
+
+    if status:
+        return jsonify(), 400
+    else:
+        return jsonify()
+
+
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/services/<service_name>/validate", methods=["PUT"])
+def validate_node_service(session_id, node_id, service_name):
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
+    status = -1
+    for service in node.services:
+        if service.name == service_name:
+            status = session.services.validate_service(node, service)
+            break
+
+    if status:
+        return jsonify(), 400
+    else:
+        return jsonify()
