@@ -195,7 +195,7 @@ public class Controller implements Initializable {
             }
         }
 
-        decorator.setTitle(String.format("CORE (Session %s)", sessionId));
+        Platform.runLater(() -> decorator.setTitle(String.format("CORE (Session %s)", sessionId)));
     }
 
     public boolean startSession() throws IOException {

@@ -12,7 +12,7 @@
 }
 
 .details-label {
-    -fx-background-color: slategrey;
+    -fx-background-color: black;
     -fx-pref-width: Infinity;
     -fx-text-fill: white;
     -fx-alignment: center;

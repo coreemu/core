@@ -24,6 +24,11 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public Integer currentSession() {
+        return sessionId;
+    }
+
+    @Override
     public void updateState(SessionState state) {
         sessionState = state;
     }
@@ -41,6 +46,13 @@ public class CoreRestClient implements ICoreClient {
     public SessionOverview createSession() throws IOException {
         String url = getUrl("sessions");
         return WebUtils.post(url, SessionOverview.class);
+    }
+
+    @Override
+    public boolean deleteSession(Integer sessionId) throws IOException {
+        String path = String.format("sessions/%s", sessionId);
+        String url = getUrl(path);
+        return WebUtils.delete(url);
     }
 
     public Map<String, List<String>> getServices() throws IOException {
