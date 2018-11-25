@@ -1,4 +1,5 @@
 import os
+import sys
 
 from flask import Flask
 from flask import jsonify
@@ -84,4 +85,7 @@ def handle_error(e):
 
 
 if __name__ == "__main__":
-    websocket_routes.socketio.run(app, host="0.0.0.0", debug=True)
+    host = "127.0.0.1"
+    if len(sys.argv) == 2:
+        host = sys.argv[1]
+    websocket_routes.socketio.run(app, host=host, debug=True)

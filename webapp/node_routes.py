@@ -149,3 +149,14 @@ def get_node_links(session_id, node_id):
         links.append(link)
 
     return jsonify(links=links)
+
+
+@api.route("/sessions/<int:session_id>/nodes/<node_id>/command", methods=["PUT"])
+def node_command(session_id, node_id):
+    command = request.get_json() or {}
+    session = core_utils.get_session(coreemu, session_id)
+    node = core_utils.get_node(session, node_id)
+    logger.info("command: %s", command)
+    _, output = node.cmd_output(command)
+    logger.info("output: %s", output)
+    return jsonify(output)
