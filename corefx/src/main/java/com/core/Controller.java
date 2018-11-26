@@ -80,6 +80,10 @@ public class Controller implements Initializable {
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
 
     public void connectToCore(String coreUrl) {
+        // clear out any previously set information
+        bottom.getChildren().remove(mobilityPlayer);
+        mobilityDialog.setNode(null);
+
         coreWebSocket.stop();
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
