@@ -39,6 +39,10 @@ public final class JsonUtils {
         }
     }
 
+    public static String toPrettyString(Object obj) throws JsonProcessingException {
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(obj);
+    }
+
     public static String toString(Object obj) throws JsonProcessingException {
         return mapper.writeValueAsString(obj);
     }

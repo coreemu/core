@@ -7,6 +7,7 @@ import com.core.graph.NetworkGraph;
 import com.core.ui.*;
 import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
+import com.core.utils.Configuration;
 import com.core.websocket.CoreWebSocket;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
@@ -48,7 +49,7 @@ public class Controller implements Initializable {
 
     private Application application;
     private Stage window;
-    private Properties properties;
+    private Configuration configuration;
 
     // core client utilities
     private ICoreClient coreClient = new CoreRestClient();
@@ -299,20 +300,27 @@ public class Controller implements Initializable {
     private void onOpenXmlAction() {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Open Session");
-        String xmlPath = properties.getProperty(ConfigUtils.XML_PATH);
-        fileChooser.setInitialDirectory(new File(xmlPath));
+        fileChooser.setInitialDirectory(new File(configuration.getXmlPath()));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
-        File file = fileChooser.showOpenDialog(window);
-        if (file != null) {
-            logger.info("opening session xml: {}", file.getPath());
-            try {
-                SessionOverview sessionOverview = coreClient.openSession(file);
-                Integer sessionId = sessionOverview.getId();
-                joinSession(sessionId);
-                Toast.info(String.format("Joined Session %s", sessionId));
-            } catch (IOException ex) {
-                logger.error("error opening session xml", ex);
+        try {
+            File file = fileChooser.showOpenDialog(window);
+            if (file != null) {
+                openXml(file);
             }
+        } catch (IllegalArgumentException ex) {
+            Toast.error(String.format("Invalid XML directory: %s", configuration.getXmlPath()));
+        }
+    }
+
+    private void openXml(File file) {
+        logger.info("opening session xml: {}", file.getPath());
+        try {
+            SessionOverview sessionOverview = coreClient.openSession(file);
+            Integer sessionId = sessionOverview.getId();
+            joinSession(sessionId);
+            Toast.info(String.format("Joined Session %s", sessionId));
+        } catch (IOException ex) {
+            Toast.error("Error opening session xml", ex);
         }
     }
 
@@ -321,8 +329,7 @@ public class Controller implements Initializable {
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Save Session");
         fileChooser.setInitialFileName("session.xml");
-        String xmlPath = properties.getProperty(ConfigUtils.XML_PATH);
-        fileChooser.setInitialDirectory(new File(xmlPath));
+        fileChooser.setInitialDirectory(new File(configuration.getXmlPath()));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("XML", "*.xml"));
         File file = fileChooser.showSaveDialog(window);
         if (file != null) {
@@ -330,7 +337,7 @@ public class Controller implements Initializable {
             try {
                 coreClient.saveSession(file);
             } catch (IOException ex) {
-                logger.error("error saving session xml", ex);
+                Toast.error("Error saving session xml", ex);
             }
         }
     }
@@ -385,8 +392,8 @@ public class Controller implements Initializable {
     @Override
     public void initialize(URL location, ResourceBundle resources) {
         coreWebSocket = new CoreWebSocket(this);
-        properties = ConfigUtils.load();
-        String coreUrl = properties.getProperty(ConfigUtils.REST_URL);
+        configuration = ConfigUtils.load();
+        String coreUrl = configuration.getCoreRest();
         logger.info("core rest: {}", coreUrl);
         connectDialog.setCoreUrl(coreUrl);
         connectToCore(coreUrl);

@@ -4,7 +4,6 @@ import com.core.Controller;
 import com.core.data.CoreNode;
 import com.core.data.MobilityConfig;
 import com.core.ui.Toast;
-import com.core.utils.ConfigUtils;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import com.jfoenix.controls.JFXToggleButton;
@@ -73,14 +72,19 @@ public class MobilityDialog extends StageDialog {
 
         FileChooser fileChooser = new FileChooser();
         fileChooser.setTitle("Select File");
-        String mobilityPath = getController().getProperties().getProperty(ConfigUtils.MOBILITY_PATH);
+        String mobilityPath = getController().getConfiguration().getMobilityPath();
         fileChooser.setInitialDirectory(new File(mobilityPath));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Mobility",
                 "*.mobility"));
-        File file = fileChooser.showOpenDialog(getController().getWindow());
-        if (file != null) {
-            logger.info("opening session xml: {}", file.getPath());
-            textField.setText(file.getPath());
+        try {
+            File file = fileChooser.showOpenDialog(getController().getWindow());
+            if (file != null) {
+                logger.info("opening session xml: {}", file.getPath());
+                textField.setText(file.getPath());
+            }
+        } catch (IllegalArgumentException ex) {
+            Toast.error(String.format("Invalid mobility directory: %s",
+                    getController().getConfiguration().getMobilityPath()));
         }
     }
 
