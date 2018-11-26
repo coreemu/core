@@ -80,10 +80,6 @@ public class Controller implements Initializable {
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
 
     public void connectToCore(String coreUrl) {
-        // clear out any previously set information
-        bottom.getChildren().remove(mobilityPlayer);
-        mobilityDialog.setNode(null);
-
         coreWebSocket.stop();
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
@@ -131,6 +127,10 @@ public class Controller implements Initializable {
         // clear graph
         networkGraph.reset();
 
+        // clear out any previously set information
+        bottom.getChildren().remove(mobilityPlayer);
+        mobilityDialog.setNode(null);
+
         // get session to join
         Session session = coreClient.getSession(joinId);
         SessionState sessionState = SessionState.get(session.getState());
@@ -168,6 +168,7 @@ public class Controller implements Initializable {
         // update other components for new session
         graphToolbar.setRunButton(coreClient.isRunning());
         hooksDialog.updateHooks();
+        nodeTypesDialog.updateDefaultServices();
 
         // display first mobility script in player
         Map<Integer, MobilityConfig> mobilityConfigMap = coreClient.getMobilityConfigs();

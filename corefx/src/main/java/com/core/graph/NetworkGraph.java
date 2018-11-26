@@ -72,7 +72,7 @@ public class NetworkGraph {
         // node render properties
         renderContext.setVertexLabelTransformer(CoreNode::getName);
         renderContext.setVertexShapeTransformer(node -> {
-            double offset = -(IconUtils.ICON_SIZE / 2);
+            double offset = -(IconUtils.ICON_SIZE / 2.0);
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
         });
         renderContext.setVertexIconTransformer(vertex -> {
@@ -348,8 +348,8 @@ public class NetworkGraph {
 
     public void addNode(CoreNode node) {
         vertexId = Math.max(node.getId() + 1, node.getId());
-        Double x = Math.abs(node.getPosition().getX());
-        Double y = Math.abs(node.getPosition().getY());
+        double x = Math.abs(node.getPosition().getX());
+        double y = Math.abs(node.getPosition().getY());
         logger.info("adding session node: {}", node);
         graph.addVertex(node);
         graphLayout.setLocation(node, x, y);
@@ -363,8 +363,8 @@ public class NetworkGraph {
         node.getPosition().setY(nodeData.getPosition().getY());
 
         // set graph node location
-        Double x = Math.abs(node.getPosition().getX());
-        Double y = Math.abs(node.getPosition().getY());
+        double x = Math.abs(node.getPosition().getX());
+        double y = Math.abs(node.getPosition().getY());
         graphLayout.setLocation(node, x, y);
         graphViewer.repaint();
     }

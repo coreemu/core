@@ -129,6 +129,13 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public Map<String, List<String>> defaultServices() throws IOException {
+        String url = getUrl(String.format("sessions/%s/services/default", sessionId));
+        GetDefaultServices getDefaultServices = WebUtils.getJson(url, GetDefaultServices.class);
+        return getDefaultServices.getDefaults();
+    }
+
+    @Override
     public CoreService getService(CoreNode node, String serviceName) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s", sessionId, node.getId(), serviceName));
         return WebUtils.getJson(url, CoreService.class);
