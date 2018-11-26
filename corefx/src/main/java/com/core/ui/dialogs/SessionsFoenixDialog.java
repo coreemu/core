@@ -1,8 +1,7 @@
 package com.core.ui.dialogs;
 
 import com.core.Controller;
-import com.core.client.rest.GetSessions;
-import com.core.client.rest.GetSessionsData;
+import com.core.data.SessionOverview;
 import com.core.data.SessionState;
 import com.core.ui.Toast;
 import com.jfoenix.controls.JFXButton;
@@ -15,6 +14,7 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
+import java.util.List;
 import java.util.stream.Collectors;
 
 public class SessionsFoenixDialog extends CoreFoenixDialog {
@@ -52,17 +52,17 @@ public class SessionsFoenixDialog extends CoreFoenixDialog {
         private String state;
         private Integer nodes;
 
-        public SessionRow(GetSessionsData getSessionsData) {
-            id = getSessionsData.getId();
-            state = SessionState.get(getSessionsData.getState()).name();
-            nodes = getSessionsData.getNodes();
+        public SessionRow(SessionOverview sessionOverview) {
+            id = sessionOverview.getId();
+            state = SessionState.get(sessionOverview.getState()).name();
+            nodes = sessionOverview.getNodes();
         }
     }
 
     public void showDialog() throws IOException {
         sessionsTable.getItems().clear();
-        GetSessions getSessions = getCoreClient().getSessions();
-        sessionsTable.getItems().addAll(getSessions.getSessions().stream()
+        List<SessionOverview> sessions = getCoreClient().getSessions();
+        sessionsTable.getItems().addAll(sessions.stream()
                 .map(SessionRow::new)
                 .collect(Collectors.toList()));
         getDialog().show(getController().getStackPane());

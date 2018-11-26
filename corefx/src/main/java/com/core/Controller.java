@@ -1,7 +1,7 @@
 package com.core;
 
 import com.core.client.ICoreClient;
-import com.core.client.rest.*;
+import com.core.client.rest.CoreRestClient;
 import com.core.data.*;
 import com.core.graph.NetworkGraph;
 import com.core.ui.*;
@@ -100,30 +100,30 @@ public class Controller implements Initializable {
     }
 
     private void initialJoin() throws IOException {
-        GetServices services = coreClient.getServices();
-        logger.info("core services: {}", services);
-        nodeServicesDialog.setServices(services);
+        Map<String, List<String>> serviceGroups = coreClient.getServices();
+        logger.info("core services: {}", serviceGroups);
+        nodeServicesDialog.setServices(serviceGroups);
 
         logger.info("initial core session join");
-        GetSessions response = coreClient.getSessions();
+        List<SessionOverview> sessions = coreClient.getSessions();
 
-        logger.info("existing sessions: {}", response);
+        logger.info("existing sessions: {}", sessions);
         Integer sessionId;
-        if (response.getSessions().isEmpty()) {
+        if (sessions.isEmpty()) {
             logger.info("creating initial session");
-            CreatedSession createdSession = coreClient.createSession();
-            sessionId = createdSession.getId();
+            SessionOverview sessionOverview = coreClient.createSession();
+            sessionId = sessionOverview.getId();
             Toast.info(String.format("Created Session %s", sessionId));
         } else {
-            GetSessionsData getSessionsData = response.getSessions().get(0);
-            sessionId = getSessionsData.getId();
+            SessionOverview sessionOverview = sessions.get(0);
+            sessionId = sessionOverview.getId();
             Toast.info(String.format("Joined Session %s", sessionId));
         }
 
         joinSession(sessionId);
 
         // set emane models
-        List<String> emaneModels = coreClient.getEmaneModels().getModels();
+        List<String> emaneModels = coreClient.getEmaneModels();
         nodeEmaneDialog.setModels(emaneModels);
     }
 
@@ -132,7 +132,7 @@ public class Controller implements Initializable {
         networkGraph.reset();
 
         // get session to join
-        GetSession session = coreClient.getSession(joinId);
+        Session session = coreClient.getSession(joinId);
         SessionState sessionState = SessionState.get(session.getState());
 
         // update client to use this session
@@ -170,11 +170,11 @@ public class Controller implements Initializable {
         hooksDialog.updateHooks();
 
         // display first mobility script in player
-        GetMobilityConfigs getMobilityConfigs = coreClient.getMobilityConfigs();
-        Optional<Integer> nodeIdOptional = getMobilityConfigs.getConfigurations().keySet().stream().findFirst();
+        Map<Integer, MobilityConfig> mobilityConfigMap = coreClient.getMobilityConfigs();
+        Optional<Integer> nodeIdOptional = mobilityConfigMap.keySet().stream().findFirst();
         if (nodeIdOptional.isPresent()) {
             Integer nodeId = nodeIdOptional.get();
-            MobilityConfig mobilityConfig = getMobilityConfigs.getConfigurations().get(nodeId);
+            MobilityConfig mobilityConfig = mobilityConfigMap.get(nodeId);
             CoreNode node = networkGraph.getVertex(nodeId);
             mobilityPlayer.show(node, mobilityConfig);
             Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
@@ -305,8 +305,8 @@ public class Controller implements Initializable {
         if (file != null) {
             logger.info("opening session xml: {}", file.getPath());
             try {
-                CreatedSession createdSession = coreClient.openSession(file);
-                Integer sessionId = createdSession.getId();
+                SessionOverview sessionOverview = coreClient.openSession(file);
+                Integer sessionId = sessionOverview.getId();
                 joinSession(sessionId);
                 Toast.info(String.format("Joined Session %s", sessionId));
             } catch (IOException ex) {
@@ -352,12 +352,11 @@ public class Controller implements Initializable {
     @FXML
     private void onSessionOptionsMenu(ActionEvent event) {
         try {
-            GetConfig config = coreClient.getSessionConfig();
-            configDialog.showDialog("Session Options", config, () -> {
+            List<ConfigGroup> configGroups = coreClient.getSessionConfig();
+            configDialog.showDialog("Session Options", configGroups, () -> {
                 List<ConfigOption> options = configDialog.getOptions();
-                SetConfig setConfig = new SetConfig(options);
                 try {
-                    boolean result = coreClient.setSessionConfig(setConfig);
+                    boolean result = coreClient.setSessionConfig(options);
                     if (result) {
                         Toast.info("Session options saved");
                     } else {

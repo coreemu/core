@@ -41,27 +41,29 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public CreatedSession createSession() throws IOException {
+    public SessionOverview createSession() throws IOException {
         String url = getUrl("sessions");
-        return WebUtils.post(url, CreatedSession.class);
+        return WebUtils.post(url, SessionOverview.class);
     }
 
-    public GetServices getServices() throws IOException {
+    public Map<String, List<String>> getServices() throws IOException {
         String url = getUrl("services");
-        return WebUtils.getJson(url, GetServices.class);
+        GetServices getServices = WebUtils.getJson(url, GetServices.class);
+        return getServices.getGroups();
     }
 
     @Override
-    public GetSession getSession(Integer sessionId) throws IOException {
+    public Session getSession(Integer sessionId) throws IOException {
         String path = String.format("sessions/%s", sessionId);
         String url = getUrl(path);
-        return WebUtils.getJson(url, GetSession.class);
+        return WebUtils.getJson(url, Session.class);
     }
 
     @Override
-    public GetSessions getSessions() throws IOException {
+    public List<SessionOverview> getSessions() throws IOException {
         String url = getUrl("sessions");
-        return WebUtils.getJson(url, GetSessions.class);
+        GetSessions getSessions = WebUtils.getJson(url, GetSessions.class);
+        return getSessions.getSessions();
     }
 
     @Override
@@ -155,26 +157,29 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public GetEmaneModels getEmaneModels() throws IOException {
+    public List<String> getEmaneModels() throws IOException {
         String url = getUrl(String.format("sessions/%s/emane/models", sessionId));
-        return WebUtils.getJson(url, GetEmaneModels.class);
+        GetEmaneModels getEmaneModels = WebUtils.getJson(url, GetEmaneModels.class);
+        return getEmaneModels.getModels();
     }
 
     @Override
-    public GetConfig getEmaneModelConfig(Integer id, String model) throws IOException {
+    public List<ConfigGroup> getEmaneModelConfig(Integer id, String model) throws IOException {
         String url = getUrl(String.format("sessions/%s/emane/model/config", sessionId));
         Map<String, String> args = new HashMap<>();
         args.put("node", id.toString());
         args.put("name", model);
-        return WebUtils.getJson(url, GetConfig.class, args);
+        GetConfig getConfig = WebUtils.getJson(url, GetConfig.class, args);
+        return getConfig.getGroups();
     }
 
     @Override
-    public GetConfig getEmaneConfig(CoreNode node) throws IOException {
+    public List<ConfigGroup> getEmaneConfig(CoreNode node) throws IOException {
         String url = getUrl(String.format("sessions/%s/emane/config", sessionId));
         Map<String, String> args = new HashMap<>();
         args.put("node", node.getId().toString());
-        return WebUtils.getJson(url, GetConfig.class, args);
+        GetConfig getConfig = WebUtils.getJson(url, GetConfig.class, args);
+        return getConfig.getGroups();
     }
 
     @Override
@@ -209,21 +214,23 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public CreatedSession openSession(File file) throws IOException {
+    public SessionOverview openSession(File file) throws IOException {
         String url = getUrl("sessions/xml");
-        return WebUtils.postFile(url, file, CreatedSession.class);
+        return WebUtils.postFile(url, file, SessionOverview.class);
     }
 
     @Override
-    public GetConfig getSessionConfig() throws IOException {
+    public List<ConfigGroup> getSessionConfig() throws IOException {
         String url = getUrl(String.format("sessions/%s/options", sessionId));
-        return WebUtils.getJson(url, GetConfig.class);
+        GetConfig getConfig = WebUtils.getJson(url, GetConfig.class);
+        return getConfig.getGroups();
     }
 
     @Override
-    public boolean setSessionConfig(SetConfig config) throws IOException {
+    public boolean setSessionConfig(List<ConfigOption> configOptions) throws IOException {
         String url = getUrl(String.format("sessions/%s/options", sessionId));
-        return WebUtils.putJson(url, config);
+        SetConfig setConfig = new SetConfig(configOptions);
+        return WebUtils.putJson(url, setConfig);
     }
 
     @Override
@@ -275,9 +282,10 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public GetHooks getHooks() throws IOException {
+    public List<Hook> getHooks() throws IOException {
         String url = getUrl(String.format("sessions/%s/hooks", sessionId));
-        return WebUtils.getJson(url, GetHooks.class);
+        GetHooks getHooks = WebUtils.getJson(url, GetHooks.class);
+        return getHooks.getHooks();
     }
 
     @Override
@@ -311,9 +319,10 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public GetMobilityConfigs getMobilityConfigs() throws IOException {
+    public Map<Integer, MobilityConfig> getMobilityConfigs() throws IOException {
         String url = getUrl(String.format("sessions/%s/mobility/configs", sessionId));
-        return WebUtils.getJson(url, GetMobilityConfigs.class);
+        GetMobilityConfigs getMobilityConfigs = WebUtils.getJson(url, GetMobilityConfigs.class);
+        return getMobilityConfigs.getConfigurations();
     }
 
     @Override

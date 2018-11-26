@@ -1,7 +1,6 @@
 package com.core.ui.dialogs;
 
 import com.core.Controller;
-import com.core.client.rest.GetHooks;
 import com.core.data.Hook;
 import com.core.data.SessionState;
 import com.core.ui.Toast;
@@ -98,8 +97,8 @@ public class HooksDialog extends StageDialog {
 
         // update hooks
         try {
-            GetHooks getHooks = getCoreClient().getHooks();
-            for (Hook hook : getHooks.getHooks()) {
+            List<Hook> hooks = getCoreClient().getHooks();
+            for (Hook hook : hooks) {
                 SessionState state = SessionState.get(hook.getState());
                 hook.setStateDisplay(state.name());
                 hooksTable.getItems().add(hook);

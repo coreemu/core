@@ -1,7 +1,6 @@
 package com.core.ui.dialogs;
 
 import com.core.Controller;
-import com.core.client.rest.GetServices;
 import com.core.data.CoreNode;
 import com.core.ui.ServiceItem;
 import com.jfoenix.controls.JFXButton;
@@ -81,14 +80,14 @@ public class NodeServicesDialog extends StageDialog {
         });
     }
 
-    public void setServices(GetServices getServices) {
+    public void setServices(Map<String, List<String>> serviceGroups) {
         serviceItemGroups.clear();
 
-        getServices.getGroups().keySet().stream()
+        serviceGroups.keySet().stream()
                 .sorted()
                 .forEach(group -> {
                     groupListView.getItems().add(group);
-                    getServices.getGroups().get(group).stream()
+                    serviceGroups.get(group).stream()
                             .sorted()
                             .forEach(service -> {
                                 ServiceItem serviceItem = new ServiceItem(service);

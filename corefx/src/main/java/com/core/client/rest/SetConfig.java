@@ -1,5 +1,6 @@
 package com.core.client.rest;
 
+import com.core.data.ConfigOption;
 import lombok.AllArgsConstructor;
 import lombok.Data;
 import lombok.NoArgsConstructor;
