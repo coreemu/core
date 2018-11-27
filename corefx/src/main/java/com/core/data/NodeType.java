@@ -22,7 +22,7 @@ public class NodeType {
     @EqualsAndHashCode.Include
     private final int id;
     private final int value;
-    private final List<String> services = new ArrayList<>();
+    private final Set<String> services = new TreeSet<>();
     private String display;
     private String model;
     private String icon;

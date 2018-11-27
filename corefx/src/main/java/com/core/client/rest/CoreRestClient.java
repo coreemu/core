@@ -9,10 +9,7 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.Collection;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 @Data
 public class CoreRestClient implements ICoreClient {
@@ -136,7 +133,7 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public boolean setDefaultServices(Map<String, List<String>> defaults) throws IOException {
+    public boolean setDefaultServices(Map<String, Set<String>> defaults) throws IOException {
         String url = getUrl(String.format("sessions/%s/services/default", sessionId));
         return WebUtils.postJson(url, defaults);
     }

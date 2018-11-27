@@ -19,7 +19,6 @@ public class NodeServicesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
     private final Map<String, List<ServiceItem>> serviceItemGroups = new HashMap<>();
     private final Map<String, ServiceItem> serviceItemMap = new HashMap<>();
-    private final Map<String, Set<String>> defaultServices = new HashMap<>();
     private CoreNode node;
     private int index = 0;
     @FXML private GridPane gridPane;
@@ -71,11 +70,6 @@ public class NodeServicesDialog extends StageDialog {
             String service = activeListView.getSelectionModel().getSelectedItem();
             getController().getServiceDialog().showDialog(node, service);
         });
-    }
-
-    public void setDefaultServices(Map<String, Set<String>> defaultServices) {
-        this.defaultServices.clear();
-        this.defaultServices.putAll(defaultServices);
     }
 
     public void setServices(Map<String, List<String>> serviceGroups) {
@@ -135,7 +129,7 @@ public class NodeServicesDialog extends StageDialog {
 
         Set<String> nodeServices = node.getServices();
         if (nodeServices.isEmpty()) {
-            nodeServices = defaultServices.get(node.getModel());
+            nodeServices = getController().getDefaultServices().get(node.getModel());
         }
 
         for (List<ServiceItem> items : serviceItemGroups.values()) {

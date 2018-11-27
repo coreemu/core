@@ -5,7 +5,7 @@ import lombok.Data;
 import lombok.EqualsAndHashCode;
 import lombok.NoArgsConstructor;
 
-import java.util.List;
+import java.util.Set;
 
 @Data
 @EqualsAndHashCode(onlyExplicitlyIncluded = true)
@@ -16,5 +16,5 @@ public class NodeTypeConfig {
     private String model;
     private String display;
     private String icon;
-    private List<String> services;
+    private Set<String> services;
 }

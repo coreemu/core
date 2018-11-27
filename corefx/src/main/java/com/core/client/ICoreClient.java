@@ -9,6 +9,7 @@ import java.io.IOException;
 import java.util.Collection;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public interface ICoreClient {
     void setUrl(String url);
@@ -33,7 +34,7 @@ public interface ICoreClient {
 
     Map<String, List<String>> getDefaultServices() throws IOException;
 
-    boolean setDefaultServices(Map<String, List<String>> defaults) throws IOException;
+    boolean setDefaultServices(Map<String, Set<String>> defaults) throws IOException;
 
     CoreService getService(CoreNode node, String serviceName) throws IOException;
 

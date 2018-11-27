@@ -10,9 +10,7 @@ import java.io.PrintWriter;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import java.util.*;
 
 public final class ConfigUtils {
     private static final Logger logger = LogManager.getLogger();
@@ -42,19 +40,19 @@ public final class ConfigUtils {
 
     private static List<NodeTypeConfig> createDefaults() throws IOException {
         return Arrays.asList(
-                createDefault("host", "Host", "/icons/host-100.png", Arrays.asList(
+                createDefault("host", "Host", "/icons/host-100.png", new TreeSet<>(Arrays.asList(
                         "DefaultRoute", "SSH"
-                )),
+                ))),
                 createDefault("PC", "PC", "/icons/pc-100.png",
-                        Collections.singletonList("DefaultRoute")),
-                createDefault("mdr", "MDR", "/icons/router-100.png", Arrays.asList(
+                        new TreeSet<>(Collections.singletonList("DefaultRoute"))),
+                createDefault("mdr", "MDR", "/icons/router-100.png", new TreeSet<>(Arrays.asList(
                         "zebra", "OSPFv3MDR", "IPForward"
-                ))
+                )))
         );
     }
 
     private static NodeTypeConfig createDefault(String model, String display, String icon,
-                                                List<String> services) throws IOException {
+                                                Set<String> services) throws IOException {
         String fileName = Paths.get(icon).getFileName().toString();
         Path iconPath = Paths.get(ICON_DIR.toString(), fileName);
         Files.copy(ConfigUtils.class.getResourceAsStream(icon), iconPath);
@@ -93,7 +91,6 @@ public final class ConfigUtils {
                         nodeTypeConfig.getDisplay(),
                         nodeTypeConfig.getIcon()
                 );
-                nodeTypeConfig.getServices().sort(String::compareTo);
                 nodeType.getServices().addAll(nodeTypeConfig.getServices());
                 NodeType.add(nodeType);
             }

@@ -51,6 +51,7 @@ public class Controller implements Initializable {
     private Application application;
     private Stage window;
     private Configuration configuration;
+    private Map<String, Set<String>> defaultServices = new HashMap<>();
 
     // core client utilities
     private ICoreClient coreClient = new CoreRestClient();
@@ -237,9 +238,7 @@ public class Controller implements Initializable {
 
     private void setCoreDefaultServices() {
         try {
-            Map<String, List<String>> defaults = configuration.getNodeTypeConfigs().stream()
-                    .collect(Collectors.toMap(NodeTypeConfig::getModel, NodeTypeConfig::getServices));
-            coreClient.setDefaultServices(defaults);
+            coreClient.setDefaultServices(defaultServices);
         } catch (IOException ex) {
             Toast.error("Error updating core default services", ex);
         }
@@ -247,10 +246,6 @@ public class Controller implements Initializable {
 
     public void updateNodeTypes() {
         graphToolbar.setupNodeTypes();
-        Map<String, Set<String>> defaults = configuration.getNodeTypeConfigs().stream()
-                .collect(Collectors.toMap(NodeTypeConfig::getModel,
-                        nodeTypeConfig -> new HashSet<>(nodeTypeConfig.getServices())));
-        nodeServicesDialog.setDefaultServices(defaults);
         setCoreDefaultServices();
         try {
             ConfigUtils.save(configuration);
@@ -433,10 +428,8 @@ public class Controller implements Initializable {
 
         // set node types / default services
         graphToolbar.setupNodeTypes();
-        Map<String, Set<String>> defaults = configuration.getNodeTypeConfigs().stream()
-                .collect(Collectors.toMap(NodeTypeConfig::getModel,
-                        nodeTypeConfig -> new HashSet<>(nodeTypeConfig.getServices())));
-        nodeServicesDialog.setDefaultServices(defaults);
+        defaultServices = configuration.getNodeTypeConfigs().stream()
+                .collect(Collectors.toMap(NodeTypeConfig::getModel, NodeTypeConfig::getServices));
 
         // set graph toolbar
         borderPane.setLeft(graphToolbar);

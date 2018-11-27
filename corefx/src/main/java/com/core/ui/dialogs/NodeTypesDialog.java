@@ -17,8 +17,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.util.HashMap;
-import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class NodeTypesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
@@ -52,7 +52,7 @@ public class NodeTypesDialog extends StageDialog {
             iconTextField.setText(nodeType.getIcon());
             iconImage.setImage(new Image(nodeType.getIcon()));
             selectedNodeType = nodeType;
-            List<String> services = nodeType.getServices();
+            Set<String> services = nodeType.getServices();
             nodeServicesListView.getItems().setAll(services);
         });
 
@@ -90,6 +90,7 @@ public class NodeTypesDialog extends StageDialog {
             NodeType.remove(nodeType);
             listView.getItems().remove(display);
             NodeTypeConfig nodeTypeConfig = createNodeTypeConfig(nodeType);
+            getController().getDefaultServices().remove(nodeTypeConfig.getModel());
             getController().getConfiguration().getNodeTypeConfigs().remove(nodeTypeConfig);
             getController().updateNodeTypes();
         });
@@ -102,6 +103,7 @@ public class NodeTypesDialog extends StageDialog {
                 nodeTypeMap.put(nodeType.getDisplay(), nodeType);
                 listView.getItems().add(nodeType.getDisplay());
                 NodeTypeConfig nodeTypeConfig = createNodeTypeConfig(nodeType);
+                getController().getDefaultServices().put(nodeTypeConfig.getModel(), nodeTypeConfig.getServices());
                 getController().getConfiguration().getNodeTypeConfigs().add(nodeTypeConfig);
                 getController().updateNodeTypes();
             });
