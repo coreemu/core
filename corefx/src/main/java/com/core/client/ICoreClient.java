@@ -31,7 +31,9 @@ public interface ICoreClient {
 
     Map<String, List<String>> getServices() throws IOException;
 
-    Map<String, List<String>> defaultServices() throws IOException;
+    Map<String, List<String>> getDefaultServices() throws IOException;
+
+    boolean setDefaultServices(Map<String, List<String>> defaults) throws IOException;
 
     CoreService getService(CoreNode node, String serviceName) throws IOException;
 

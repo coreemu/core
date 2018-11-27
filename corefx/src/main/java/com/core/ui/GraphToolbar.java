@@ -63,8 +63,6 @@ public class GraphToolbar extends VBox {
         setupPickingButton();
         setupEditingButton();
         setupDrawingButton();
-
-        setupNodeTypes();
         setupNodesButton();
         setupDevicesButton();
 
@@ -119,7 +117,12 @@ public class GraphToolbar extends VBox {
         });
     }
 
-    private void setupNodeTypes() {
+    public void setupNodeTypes() {
+        // clear existing configuration
+        labelMap.clear();
+        nodesList.getItems().clear();
+        devicesList.getItems().clear();
+
         for (NodeType nodeType : NodeType.getAll()) {
             ImageView icon = new ImageView(nodeType.getIcon());
             icon.setFitWidth(NODES_ICON_SIZE);

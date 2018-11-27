@@ -8,6 +8,7 @@ import com.core.ui.*;
 import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
 import com.core.utils.Configuration;
+import com.core.utils.NodeTypeConfig;
 import com.core.websocket.CoreWebSocket;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
@@ -79,6 +80,7 @@ public class Controller implements Initializable {
     private GeoDialog geoDialog = new GeoDialog(this);
     private ConnectDialog connectDialog = new ConnectDialog(this);
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
+    private NodeTypeCreateDialog nodeTypeCreateDialog = new NodeTypeCreateDialog(this);
 
     public void connectToCore(String coreUrl) {
         coreWebSocket.stop();
@@ -100,6 +102,7 @@ public class Controller implements Initializable {
         Map<String, List<String>> serviceGroups = coreClient.getServices();
         logger.info("core services: {}", serviceGroups);
         nodeServicesDialog.setServices(serviceGroups);
+        nodeTypeCreateDialog.setServices(serviceGroups);
 
         logger.info("initial core session join");
         List<SessionOverview> sessions = coreClient.getSessions();
@@ -169,9 +172,11 @@ public class Controller implements Initializable {
         // update other components for new session
         graphToolbar.setRunButton(coreClient.isRunning());
         hooksDialog.updateHooks();
-        nodeTypesDialog.updateDefaultServices();
 
-        // display first mobility script in player
+        // update session default services
+        setCoreDefaultServices();
+
+        // display first mobility script in player, if needed
         Map<Integer, MobilityConfig> mobilityConfigMap = coreClient.getMobilityConfigs();
         Optional<Integer> nodeIdOptional = mobilityConfigMap.keySet().stream().findFirst();
         if (nodeIdOptional.isPresent()) {
@@ -230,6 +235,30 @@ public class Controller implements Initializable {
         return result;
     }
 
+    private void setCoreDefaultServices() {
+        try {
+            Map<String, List<String>> defaults = configuration.getNodeTypeConfigs().stream()
+                    .collect(Collectors.toMap(NodeTypeConfig::getModel, NodeTypeConfig::getServices));
+            coreClient.setDefaultServices(defaults);
+        } catch (IOException ex) {
+            Toast.error("Error updating core default services", ex);
+        }
+    }
+
+    public void updateNodeTypes() {
+        graphToolbar.setupNodeTypes();
+        Map<String, Set<String>> defaults = configuration.getNodeTypeConfigs().stream()
+                .collect(Collectors.toMap(NodeTypeConfig::getModel,
+                        nodeTypeConfig -> new HashSet<>(nodeTypeConfig.getServices())));
+        nodeServicesDialog.setDefaultServices(defaults);
+        setCoreDefaultServices();
+        try {
+            ConfigUtils.save(configuration);
+        } catch (IOException ex) {
+            Toast.error("Error saving configuration", ex);
+        }
+    }
+
     public void deleteNode(CoreNode node) {
         networkGraph.removeNode(node);
         CoreNode mobilityNode = mobilityDialog.getNode();
@@ -253,6 +282,7 @@ public class Controller implements Initializable {
         locationDialog.setOwner(window);
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
+        nodeTypeCreateDialog.setOwner(window);
     }
 
     @FXML
@@ -400,6 +430,13 @@ public class Controller implements Initializable {
 
         logger.info("controller initialize");
         swingNode.setContent(networkGraph.getGraphViewer());
+
+        // set node types / default services
+        graphToolbar.setupNodeTypes();
+        Map<String, Set<String>> defaults = configuration.getNodeTypeConfigs().stream()
+                .collect(Collectors.toMap(NodeTypeConfig::getModel,
+                        nodeTypeConfig -> new HashSet<>(nodeTypeConfig.getServices())));
+        nodeServicesDialog.setDefaultServices(defaults);
 
         // set graph toolbar
         borderPane.setLeft(graphToolbar);

@@ -12,6 +12,7 @@ public class Configuration {
     private String coreRest;
     private String xmlPath;
     private String mobilityPath;
+    private String iconPath;
     private String shellCommand;
     private List<NodeTypeConfig> nodeTypeConfigs = new ArrayList<>();
 }
