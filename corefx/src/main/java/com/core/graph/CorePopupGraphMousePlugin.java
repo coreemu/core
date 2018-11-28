@@ -9,17 +9,12 @@ import edu.uci.ics.jung.algorithms.layout.GraphElementAccessor;
 import edu.uci.ics.jung.algorithms.layout.Layout;
 import edu.uci.ics.jung.visualization.control.EditingPopupGraphMousePlugin;
 import javafx.application.Platform;
-import javafx.event.ActionEvent;
-import javafx.event.EventHandler;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.awt.event.MouseEvent;
 import java.awt.geom.Point2D;
-import java.util.ArrayList;
-import java.util.List;
 
 public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugin<V, E> {
     private static final Logger logger = LogManager.getLogger();
@@ -45,15 +40,13 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
         final CoreNode node = pickSupport.getVertex(graphLayout, p.getX(), p.getY());
         final CoreLink link = pickSupport.getEdge(graphLayout, p.getX(), p.getY());
 
-        ContextMenu contextMenu = new ContextMenu();
-
-        // edge picked
+        final ContextMenu contextMenu;
         if (node != null) {
-            List<MenuItem> menuItems = handleNodeContext(node);
-            contextMenu.getItems().addAll(menuItems);
+            contextMenu = handleNodeContext(node);
         } else if (link != null) {
-            List<MenuItem> menuItems = handleLinkContext(link);
-            contextMenu.getItems().addAll(menuItems);
+            contextMenu = new LinkContextMenu(controller, link);
+        } else {
+            contextMenu = new ContextMenu();
         }
 
         if (!contextMenu.getItems().isEmpty()) {
@@ -63,60 +56,23 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
         }
     }
 
-    private MenuItem createMenuItem(String text, EventHandler<ActionEvent> handler) {
-        MenuItem menuItem = new MenuItem(text);
-        menuItem.setOnAction(handler);
-        return menuItem;
-    }
-
-    private List<MenuItem> handleNodeContext(final CoreNode node) {
-        boolean isRunning = controller.getCoreClient().isRunning();
-
-        List<MenuItem> menuItems = new ArrayList<>();
-
+    private ContextMenu handleNodeContext(final CoreNode node) {
+        ContextMenu contextMenu = new ContextMenu();
         switch (node.getType()) {
             case NodeType.DEFAULT:
-                menuItems.add(createMenuItem("Services",
-                        event -> controller.getNodeServicesDialog().showDialog(node)));
+                contextMenu = new NodeContextMenu(controller, node);
                 break;
             case NodeType.WLAN:
-                menuItems.add(createMenuItem("WLAN Settings",
-                        event -> controller.getNodeWlanDialog().showDialog(node)));
-                menuItems.add(createMenuItem("Mobility",
-                        event -> controller.getMobilityDialog().showDialog(node)));
-                menuItems.add(createMenuItem("Link MDRs",
-                        event -> networkGraph.linkMdrs(node)));
+                contextMenu = new WlanContextMenu(controller, node);
                 break;
             case NodeType.EMANE:
-                menuItems.add(createMenuItem("EMANE Settings",
-                        event -> controller.getNodeEmaneDialog().showDialog(node)));
-                menuItems.add(createMenuItem("Mobility",
-                        event -> controller.getMobilityDialog().showDialog(node)));
-                menuItems.add(createMenuItem("Link MDRs",
-                        event -> networkGraph.linkMdrs(node)));
+                contextMenu = new EmaneContextMenu(controller, node);
                 break;
             default:
+                logger.warn("no context menu for node: {}", node.getType());
                 break;
         }
 
-        if (!isRunning) {
-            menuItems.add(createMenuItem("Delete Node",
-                    event -> controller.deleteNode(node)));
-        }
-
-        return menuItems;
-    }
-
-    private List<MenuItem> handleLinkContext(final CoreLink link) {
-        boolean isRunning = controller.getCoreClient().isRunning();
-
-        List<MenuItem> menuItems = new ArrayList<>();
-
-        if (!isRunning) {
-            menuItems.add(createMenuItem("Delete Link",
-                    event -> networkGraph.removeLink(link)));
-        }
-
-        return menuItems;
+        return contextMenu;
     }
 }

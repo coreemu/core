@@ -38,9 +38,8 @@ public class NodeEmaneDialog extends StageDialog {
     }
 
     public void setModels(List<String> models) {
-        modelCombo.getItems().clear();
-        models.stream().sorted()
-                .forEach(model -> modelCombo.getItems().add(model));
+        models.sort(String::compareTo);
+        modelCombo.getItems().setAll(models);
         modelCombo.getSelectionModel().selectFirst();
     }
 

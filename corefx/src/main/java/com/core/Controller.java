@@ -184,8 +184,10 @@ public class Controller implements Initializable {
             Integer nodeId = nodeIdOptional.get();
             MobilityConfig mobilityConfig = mobilityConfigMap.get(nodeId);
             CoreNode node = networkGraph.getVertex(nodeId);
-            mobilityPlayer.show(node, mobilityConfig);
-            Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
+            if (node != null) {
+                mobilityPlayer.show(node, mobilityConfig);
+                Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
+            }
         }
     }
 

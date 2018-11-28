@@ -22,6 +22,7 @@ import javafx.scene.layout.GridPane;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
+import java.util.Collections;
 import java.util.Set;
 
 public class NodeDetails extends ScrollPane {
@@ -105,16 +106,18 @@ public class NodeDetails extends ScrollPane {
         // display custom or default node services
         Set<String> services = node.getServices();
         if (services.isEmpty()) {
-            services = controller.getDefaultServices().get(node.getModel());
+            services = controller.getDefaultServices().getOrDefault(node.getModel(), Collections.emptySet());
         }
-        addSeparator();
-        addLabel("Services");
-        JFXListView<String> listView = new JFXListView<>();
-        listView.setMouseTransparent(true);
-        listView.setFocusTraversable(false);
-        listView.getItems().setAll(services);
-        gridPane.add(listView, 0, index++, 2, 1);
-        
+        if (!services.isEmpty()) {
+            addSeparator();
+            addLabel("Services");
+            JFXListView<String> listView = new JFXListView<>();
+            listView.setMouseTransparent(true);
+            listView.setFocusTraversable(false);
+            listView.getItems().setAll(services);
+            gridPane.add(listView, 0, index++, 2, 1);
+        }
+
         JFXScrollPane.smoothScrolling(scrollPane);
     }
 
