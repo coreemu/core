@@ -28,7 +28,6 @@
                                       </items>
                                   </Menu>
                             <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuNodeTypes" text="Nodes" />
-                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuBackground" text="Background" />
                               <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuPreferences" text="Preferences" />
                           </items>
                         </Menu>
@@ -37,6 +36,7 @@
                             <MenuItem mnemonicParsing="false" onAction="#onJoinSessionMenu" text="Join" />
                               <MenuItem mnemonicParsing="false" onAction="#onSessionHooksMenu" text="Hooks" />
                               <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuLocation" text="Location" />
+                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuBackground" text="Background" />
                               <MenuItem mnemonicParsing="false" onAction="#onSessionOptionsMenu" text="Options" />
                           </items>
                         </Menu>

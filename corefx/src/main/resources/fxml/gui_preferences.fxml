@@ -5,7 +5,6 @@
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.VBox?>
 
-
 <VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="10.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
    <children>
       <TitledPane animated="false" collapsible="false" text="File Paths">
@@ -16,6 +15,8 @@
                   <JFXTextField fx:id="xmlFilePathTextField" />
                   <Label text="Mobility Files" />
                   <JFXTextField fx:id="mobilityFilePathTextField" />
+                  <Label text="Icon Path" />
+                  <JFXTextField fx:id="iconPathTextField" />
                </children>
             </VBox>
          </content>

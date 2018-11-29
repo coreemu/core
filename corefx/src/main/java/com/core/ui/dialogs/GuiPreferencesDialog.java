@@ -16,10 +16,11 @@ import java.io.IOException;
 
 public class GuiPreferencesDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-    private @FXML JFXTextField xmlFilePathTextField;
-    private @FXML JFXTextField mobilityFilePathTextField;
-    private @FXML JFXTextField shellCommandTextField;
-    private @FXML JFXButton saveButton;
+    @FXML private JFXTextField xmlFilePathTextField;
+    @FXML private JFXTextField mobilityFilePathTextField;
+    @FXML private JFXTextField shellCommandTextField;
+    @FXML private JFXTextField iconPathTextField;
+    @FXML private JFXButton saveButton;
 
     public GuiPreferencesDialog(Controller controller) {
         super(controller, "/fxml/gui_preferences.fxml");
@@ -34,6 +35,7 @@ public class GuiPreferencesDialog extends StageDialog {
         configuration.setXmlPath(xmlFilePathTextField.getText());
         configuration.setMobilityPath(mobilityFilePathTextField.getText());
         configuration.setShellCommand(shellCommandTextField.getText());
+        configuration.setIconPath(iconPathTextField.getText());
         try {
             ConfigUtils.save(configuration);
             Toast.success("Updated preferences");
@@ -48,6 +50,7 @@ public class GuiPreferencesDialog extends StageDialog {
         xmlFilePathTextField.setText(configuration.getXmlPath());
         mobilityFilePathTextField.setText(configuration.getMobilityPath());
         shellCommandTextField.setText(configuration.getShellCommand());
+        iconPathTextField.setText(configuration.getIconPath());
         show();
     }
 }
