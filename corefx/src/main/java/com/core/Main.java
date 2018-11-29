@@ -1,5 +1,6 @@
 package com.core;
 
+import com.core.utils.ConfigUtils;
 import com.jfoenix.controls.JFXDecorator;
 import com.jfoenix.svg.SVGGlyphLoader;
 import javafx.application.Application;
@@ -11,14 +12,21 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
-import org.apache.logging.log4j.LogManager;
-import org.apache.logging.log4j.Logger;
+
+import java.nio.file.Path;
+import java.nio.file.Paths;
 
 public class Main extends Application {
-    private static final Logger logger = LogManager.getLogger();
+    private static final Path LOG_FILE = Paths.get(System.getProperty("user.home"), ".core", "core.log");
 
     @Override
     public void start(Stage window) throws Exception {
+        // set core dir property for logging
+        System.setProperty("core_log", LOG_FILE.toString());
+
+        // check for and create gui home directory
+        ConfigUtils.checkForHomeDirectory();
+
         // load svg icons
         SVGGlyphLoader.loadGlyphsFont(getClass().getResourceAsStream("/icons/icomoon_material.svg"),
                 "icomoon.svg");
@@ -51,11 +59,9 @@ public class Main extends Application {
 
         // configure window
         window.setOnCloseRequest(event -> {
-            logger.info("exiting gui");
             Platform.exit();
             System.exit(0);
         });
-        window.setOnShown(windowEvent -> logger.info("stage show event"));
         window.show();
     }
 

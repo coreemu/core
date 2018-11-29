@@ -14,9 +14,9 @@ import java.util.*;
 
 public final class ConfigUtils {
     private static final Logger logger = LogManager.getLogger();
+    private static final Path HOME = Paths.get(System.getProperty("user.home"), ".core");
     private static final String CONFIG_FILE_NAME = "config.json";
     private static final String DEFAULT_CONFIG = "/" + CONFIG_FILE_NAME;
-    private static final Path HOME = Paths.get(System.getProperty("user.home"), ".core");
     private static final Path CONFIG_FILE = Paths.get(HOME.toString(), CONFIG_FILE_NAME);
     private static final Path XML_DIR = Paths.get(HOME.toString(), "xml");
     private static final Path MOBILITY_DIR = Paths.get(HOME.toString(), "mobility");
@@ -59,29 +59,31 @@ public final class ConfigUtils {
         return new NodeTypeConfig(model, display, iconPath.toUri().toString(), services);
     }
 
+    public static void checkForHomeDirectory() throws IOException {
+        if (!HOME.toFile().exists()) {
+            logger.info("creating core home directory");
+            Files.createDirectory(HOME);
+            Files.createDirectory(XML_DIR);
+            Files.createDirectory(MOBILITY_DIR);
+            Files.createDirectory(ICON_DIR);
+            createDefaultConfigFile();
+        }
+    }
+
+    private static void createDefaultConfigFile() throws IOException {
+        logger.info("creating default configuration");
+        Files.copy(ConfigUtils.class.getResourceAsStream(DEFAULT_CONFIG), CONFIG_FILE);
+        Configuration configuration = readConfig();
+        configuration.setXmlPath(XML_DIR.toString());
+        configuration.setMobilityPath(MOBILITY_DIR.toString());
+        configuration.setIconPath(ICON_DIR.toString());
+        configuration.setNodeTypeConfigs(createDefaults());
+        save(configuration);
+    }
+
     public static Configuration load() {
         try {
-            if (!HOME.toFile().exists()) {
-                logger.info("creating core home directory");
-                Files.createDirectory(HOME);
-                Files.createDirectory(XML_DIR);
-                Files.createDirectory(MOBILITY_DIR);
-                Files.createDirectory(ICON_DIR);
-            }
-
-            Configuration configuration;
-            if (!CONFIG_FILE.toFile().exists()) {
-                logger.info("creating default configuration");
-                Files.copy(ConfigUtils.class.getResourceAsStream(DEFAULT_CONFIG), CONFIG_FILE);
-                configuration = readConfig();
-                configuration.setXmlPath(XML_DIR.toString());
-                configuration.setMobilityPath(MOBILITY_DIR.toString());
-                configuration.setIconPath(ICON_DIR.toString());
-                configuration.setNodeTypeConfigs(createDefaults());
-                save(configuration);
-            } else {
-                configuration = readConfig();
-            }
+            Configuration configuration = readConfig();
 
             // initialize node types
             for (NodeTypeConfig nodeTypeConfig : configuration.getNodeTypeConfigs()) {
