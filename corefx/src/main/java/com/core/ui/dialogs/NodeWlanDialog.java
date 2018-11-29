@@ -14,6 +14,7 @@ import java.io.IOException;
 
 public class NodeWlanDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
+    private final JFXButton saveButton;
     private CoreNode coreNode;
     @FXML private JFXTextField rangeTextField;
     @FXML private JFXTextField bandwidthTextField;
@@ -24,7 +25,7 @@ public class NodeWlanDialog extends StageDialog {
     public NodeWlanDialog(Controller controller) {
         super(controller, "/fxml/wlan_dialog.fxml");
 
-        JFXButton saveButton = createButton("Save");
+        saveButton = createButton("Save");
         saveButton.setOnAction(event -> {
             try {
                 WlanConfig config = new WlanConfig();
@@ -44,9 +45,19 @@ public class NodeWlanDialog extends StageDialog {
         addCancelButton();
     }
 
+    private void setDisabled(boolean isDisabled) {
+        rangeTextField.setDisable(isDisabled);
+        bandwidthTextField.setDisable(isDisabled);
+        jitterTextField.setDisable(isDisabled);
+        delayTextField.setDisable(isDisabled);
+        lossTextField.setDisable(isDisabled);
+        saveButton.setDisable(isDisabled);
+    }
+
     public void showDialog(CoreNode node) {
         coreNode = node;
         setTitle(String.format("%s - WLAN", node.getName()));
+        setDisabled(getCoreClient().isRunning());
 
         try {
             WlanConfig wlanConfig = getCoreClient().getWlanConfig(coreNode);

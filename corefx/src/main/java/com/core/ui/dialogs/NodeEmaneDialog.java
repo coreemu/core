@@ -17,6 +17,7 @@ import java.util.List;
 
 public class NodeEmaneDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
+    private final JFXButton saveButton;
     private CoreNode coreNode;
     @FXML private JFXComboBox<String> modelCombo;
     @FXML private JFXButton modelButton;
@@ -25,7 +26,7 @@ public class NodeEmaneDialog extends StageDialog {
     public NodeEmaneDialog(Controller controller) {
         super(controller, "/fxml/node_emane_dialog.fxml");
 
-        JFXButton saveButton = createButton("Save");
+        saveButton = createButton("Save");
         saveButton.setOnAction(event -> {
             String model = modelCombo.getSelectionModel().getSelectedItem();
             coreNode.setEmane(model);
@@ -88,9 +89,15 @@ public class NodeEmaneDialog extends StageDialog {
         }
     }
 
+    private void setDisabled(boolean isDisabled) {
+        saveButton.setDisable(isDisabled);
+        modelCombo.setDisable(isDisabled);
+    }
+
     public void showDialog(CoreNode node) {
         coreNode = node;
         setTitle(String.format("%s - EMANE", node.getName()));
+        setDisabled(getCoreClient().isRunning());
         show();
     }
 }

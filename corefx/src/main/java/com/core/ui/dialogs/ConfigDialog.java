@@ -10,6 +10,7 @@ import com.jfoenix.controls.JFXScrollPane;
 import com.jfoenix.controls.JFXTabPane;
 import javafx.fxml.FXML;
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Tab;
 import javafx.scene.layout.ColumnConstraints;
@@ -37,8 +38,14 @@ public class ConfigDialog extends StageDialog {
         return configItems.stream().map(IConfigItem::getOption).collect(Collectors.toList());
     }
 
+    private void setDisabled(boolean isDisabled) {
+        saveButton.setDisable(isDisabled);
+    }
+
     public void showDialog(String title, List<ConfigGroup> configGroups, Runnable runnable) {
         setTitle(title);
+        boolean sessionRunning = getCoreClient().isRunning();
+        setDisabled(sessionRunning);
 
         configItems.clear();
         tabPane.getTabs().clear();
@@ -64,7 +71,9 @@ public class ConfigDialog extends StageDialog {
 
             for (ConfigOption option : group.getOptions()) {
                 IConfigItem configItem = ConfigItemUtils.get(getStage(), option);
-                gridPane.addRow(index, configItem.getLabel(), configItem.getNode());
+                Node node = configItem.getNode();
+                node.setDisable(sessionRunning);
+                gridPane.addRow(index, configItem.getLabel(), node);
                 configItems.add(configItem);
                 index += 1;
             }
