@@ -25,7 +25,7 @@ public class Main extends Application {
         System.setProperty("core_log", LOG_FILE.toString());
 
         // check for and create gui home directory
-        ConfigUtils.checkForHomeDirectory();
+        ConfigUtils.checkHomeDirectory();
 
         // load svg icons
         SVGGlyphLoader.loadGlyphsFont(getClass().getResourceAsStream("/icons/icomoon_material.svg"),

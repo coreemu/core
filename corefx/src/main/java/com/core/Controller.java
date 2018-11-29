@@ -432,6 +432,9 @@ public class Controller implements Initializable {
         logger.info("controller initialize");
         swingNode.setContent(networkGraph.getGraphViewer());
 
+        // update graph preferences
+        networkGraph.updatePreferences(configuration);
+
         // set node types / default services
         graphToolbar.setupNodeTypes();
         defaultServices = configuration.getNodeTypeConfigs().stream()

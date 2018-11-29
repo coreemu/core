@@ -3,6 +3,7 @@ package com.core.graph;
 import com.core.Controller;
 import com.core.data.*;
 import com.core.ui.Toast;
+import com.core.utils.Configuration;
 import com.core.utils.IconUtils;
 import com.google.common.base.Supplier;
 import edu.uci.ics.jung.algorithms.layout.StaticLayout;
@@ -56,6 +57,7 @@ public class NetworkGraph {
     private CorePopupGraphMousePlugin customPopupPlugin;
     private CoreAnnotatingGraphMousePlugin<CoreNode, CoreLink> customAnnotatingPlugin;
     private BackgroundPaintable<CoreNode, CoreLink> backgroundPaintable;
+    private CoreVertexLabelRenderer nodeLabelRenderer = new CoreVertexLabelRenderer();
 
     public NetworkGraph(Controller controller) {
         this.controller = controller;
@@ -70,7 +72,7 @@ public class NetworkGraph {
 
         // node render properties
         renderContext.setVertexLabelTransformer(CoreNode::getName);
-        renderContext.setVertexLabelRenderer(new CoreVertexLabelRenderer(Color.YELLOW));
+        renderContext.setVertexLabelRenderer(nodeLabelRenderer);
         renderContext.setVertexShapeTransformer(node -> {
             double offset = -(IconUtils.ICON_SIZE / 2.0);
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
@@ -169,6 +171,18 @@ public class NetworkGraph {
                 }
             }
         });
+    }
+
+    private Color convertJfxColor(String hexValue) {
+        javafx.scene.paint.Color color = javafx.scene.paint.Color.web(hexValue);
+        return new Color((float) color.getRed(), (float) color.getGreen(), (float) color.getBlue());
+    }
+
+    public void updatePreferences(Configuration configuration) {
+        Color nodeLabelColor = convertJfxColor(configuration.getNodeLabelColor());
+        Color nodeLabelBackgroundColor = convertJfxColor(configuration.getNodeLabelBackgroundColor());
+        nodeLabelRenderer.setColors(nodeLabelColor, nodeLabelBackgroundColor);
+        graphViewer.repaint();
     }
 
     public void setBackground(String imagePath) {

@@ -7,19 +7,26 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class CoreVertexLabelRenderer extends DefaultVertexLabelRenderer {
+    private Color foregroundColor = Color.WHITE;
+    private Color backgroundColor = Color.BLACK;
 
-    CoreVertexLabelRenderer(Color pickedVertexLabelColor) {
-        super(pickedVertexLabelColor);
+    CoreVertexLabelRenderer() {
+        super(Color.YELLOW);
+    }
+
+    public void setColors(Color foregroundColor, Color backgroundColor) {
+        this.foregroundColor = foregroundColor;
+        this.backgroundColor = backgroundColor;
     }
 
     @Override
     public <V> Component getVertexLabelRendererComponent(JComponent vv, Object value, Font font, boolean isSelected, V vertex) {
-        super.setForeground(Color.WHITE);
+        super.setForeground(foregroundColor);
         if (isSelected) {
             this.setForeground(this.pickedVertexLabelColor);
         }
 
-        super.setBackground(Color.BLACK);
+        super.setBackground(backgroundColor);
         if (font != null) {
             this.setFont(font);
         } else {

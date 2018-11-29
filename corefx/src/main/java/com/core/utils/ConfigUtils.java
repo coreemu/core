@@ -1,6 +1,7 @@
 package com.core.utils;
 
 import com.core.data.NodeType;
+import javafx.scene.paint.Color;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -59,13 +60,19 @@ public final class ConfigUtils {
         return new NodeTypeConfig(model, display, iconPath.toUri().toString(), services);
     }
 
-    public static void checkForHomeDirectory() throws IOException {
-        if (!HOME.toFile().exists()) {
-            logger.info("creating core home directory");
-            Files.createDirectory(HOME);
-            Files.createDirectory(XML_DIR);
-            Files.createDirectory(MOBILITY_DIR);
-            Files.createDirectory(ICON_DIR);
+    private static void checkDirectory(Path path) throws IOException {
+        if (!path.toFile().exists()) {
+            Files.createDirectory(path);
+        }
+    }
+
+    public static void checkHomeDirectory() throws IOException {
+        logger.info("checking core home directory");
+        checkDirectory(HOME);
+        checkDirectory(XML_DIR);
+        checkDirectory(MOBILITY_DIR);
+        checkDirectory(ICON_DIR);
+        if (!CONFIG_FILE.toFile().exists()) {
             createDefaultConfigFile();
         }
     }
@@ -78,6 +85,8 @@ public final class ConfigUtils {
         configuration.setMobilityPath(MOBILITY_DIR.toString());
         configuration.setIconPath(ICON_DIR.toString());
         configuration.setNodeTypeConfigs(createDefaults());
+        configuration.setNodeLabelColor(Color.WHITE.toString());
+        configuration.setNodeLabelBackgroundColor(Color.BLACK.toString());
         save(configuration);
     }
 
@@ -103,8 +112,8 @@ public final class ConfigUtils {
 
             return configuration;
         } catch (IOException ex) {
-            logger.error("error reading config file");
-            throw new RuntimeException("configuration file did not exist");
+            logger.error("error reading config file", ex);
+            throw new RuntimeException("configuration file did not exist", ex);
         }
     }
 }

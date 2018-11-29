@@ -15,4 +15,6 @@ public class Configuration {
     private String iconPath;
     private String shellCommand;
     private List<NodeTypeConfig> nodeTypeConfigs = new ArrayList<>();
+    private String nodeLabelColor;
+    private String nodeLabelBackgroundColor;
 }
