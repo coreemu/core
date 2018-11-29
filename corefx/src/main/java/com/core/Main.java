@@ -56,6 +56,7 @@ public class Main extends Application {
         Controller controller = loader.getController();
         controller.setApplication(this);
         controller.setWindow(window);
+        controller.setDecorator(decorator);
 
         // configure window
         window.setOnCloseRequest(event -> {

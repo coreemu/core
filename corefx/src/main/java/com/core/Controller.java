@@ -10,6 +10,7 @@ import com.core.utils.ConfigUtils;
 import com.core.utils.Configuration;
 import com.core.utils.NodeTypeConfig;
 import com.core.websocket.CoreWebSocket;
+import com.jfoenix.controls.JFXDecorator;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
 import javafx.application.Platform;
@@ -49,6 +50,7 @@ public class Controller implements Initializable {
     @FXML private JFXProgressBar progressBar;
 
     private Application application;
+    private JFXDecorator decorator;
     private Stage window;
     private Configuration configuration;
     private Map<String, Set<String>> defaultServices = new HashMap<>();
@@ -189,6 +191,8 @@ public class Controller implements Initializable {
                 Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
             }
         }
+
+        decorator.setTitle(String.format("CORE (Session %s)", sessionId));
     }
 
     public boolean startSession() throws IOException {
