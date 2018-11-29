@@ -70,6 +70,7 @@ public class NetworkGraph {
 
         // node render properties
         renderContext.setVertexLabelTransformer(CoreNode::getName);
+        renderContext.setVertexLabelRenderer(new CoreVertexLabelRenderer(Color.YELLOW));
         renderContext.setVertexShapeTransformer(node -> {
             double offset = -(IconUtils.ICON_SIZE / 2.0);
             return new Ellipse2D.Double(offset, offset, IconUtils.ICON_SIZE, IconUtils.ICON_SIZE);
