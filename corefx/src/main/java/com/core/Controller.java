@@ -128,7 +128,7 @@ public class Controller implements Initializable {
         nodeEmaneDialog.setModels(emaneModels);
     }
 
-    public void joinSession(Integer joinId) throws IOException {
+    public void joinSession(Integer sessionId) throws IOException {
         // clear graph
         networkGraph.reset();
 
@@ -137,15 +137,15 @@ public class Controller implements Initializable {
         mobilityDialog.setNode(null);
 
         // get session to join
-        Session session = coreClient.getSession(joinId);
+        Session session = coreClient.getSession(sessionId);
         SessionState sessionState = SessionState.get(session.getState());
 
         // update client to use this session
-        coreClient.updateSession(joinId);
+        coreClient.updateSession(sessionId);
         coreClient.updateState(sessionState);
 
         // display all nodes
-        logger.info("joining core session({}) state({}): {}", joinId, sessionState, session);
+        logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
         for (CoreNode node : session.getNodes()) {
             NodeType nodeType = NodeType.find(node.getType(), node.getModel());
             if (nodeType == null) {
@@ -370,12 +370,12 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    private void onJoinSessionMenu(ActionEvent event) {
-        logger.info("join sessions menu clicked!");
+    private void onSessionMenu(ActionEvent event) {
+        logger.info("sessions menu clicked");
         try {
             sessionsDialog.showDialog();
         } catch (IOException ex) {
-            logger.error("error getting session dialog", ex);
+            Toast.error("Error retrieving sessions", ex);
         }
     }
 

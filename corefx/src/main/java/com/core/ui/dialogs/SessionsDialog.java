@@ -29,24 +29,41 @@ public class SessionsDialog extends StageDialog {
 
         setTitle("Sessions");
 
+        JFXButton createButton = createButton("New");
+        createButton.setOnAction(event -> {
+            close();
+            new Thread(() -> {
+                try {
+                    SessionOverview sessionOverview = getCoreClient().createSession();
+                    controller.joinSession(sessionOverview.getId());
+                    Toast.success(String.format("Created Session %s", sessionOverview.getId()));
+                } catch (IOException ex) {
+                    Toast.error("Error creating new session", ex);
+                }
+            }).start();
+        });
         JFXButton joinButton = createButton("Join");
         joinButton.setOnAction(event -> {
             SessionRow row = sessionsTable.getSelectionModel().getSelectedItem();
             logger.info("selected session: {}", row);
             try {
-                getController().joinSession(row.getId());
+                controller.joinSession(row.getId());
                 Toast.info(String.format("Joined Session %s", row.getId()));
             } catch (IOException ex) {
-                Toast.error(String.format("error joining session: %s", row.getId()), ex);
+                Toast.error(String.format("Error joining session: %s", row.getId()), ex);
             }
 
             close();
         });
+        joinButton.setDisable(true);
         addCancelButton();
 
         sessionIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
         stateColumn.setCellValueFactory(new PropertyValueFactory<>("state"));
         nodeCountColumn.setCellValueFactory(new PropertyValueFactory<>("nodes"));
+        sessionsTable.getSelectionModel().selectedItemProperty().addListener((ov, prev, current) -> {
+            joinButton.setDisable(current == null);
+        });
     }
 
     @Data
