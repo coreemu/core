@@ -42,6 +42,14 @@ public interface ICoreClient {
 
     String getServiceFile(CoreNode node, String serviceName, String fileName) throws IOException;
 
+    boolean startService(CoreNode node, String serviceName) throws IOException;
+
+    boolean stopService(CoreNode node, String serviceName) throws IOException;
+
+    boolean restartService(CoreNode node, String serviceName) throws IOException;
+
+    boolean validateService(CoreNode node, String serviceName) throws IOException;
+
     boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException;
 
     List<ConfigGroup> getEmaneConfig(CoreNode node) throws IOException;

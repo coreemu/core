@@ -160,6 +160,34 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public boolean startService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/start", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean stopService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/stop", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean restartService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/restart", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean validateService(CoreNode node, String serviceName) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/validate", sessionId, node.getId(),
+                serviceName));
+        return WebUtils.putJson(url);
+    }
+
+    @Override
     public boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/services/%s/file", sessionId, node.getId(),
                 serviceName));
