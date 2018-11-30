@@ -135,7 +135,10 @@ public class Controller implements Initializable {
         networkGraph.reset();
 
         // clear out any previously set information
-        bottom.getChildren().remove(mobilityPlayer);
+        Platform.runLater(() -> {
+            bottom.getChildren().remove(mobilityPlayer);
+            borderPane.setRight(null);
+        });
         mobilityDialog.setNode(null);
 
         // get session to join
