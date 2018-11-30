@@ -80,12 +80,9 @@ public class SessionsDialog extends StageDialog {
     }
 
     public void showDialog() throws IOException {
-        sessionsTable.getItems().clear();
         List<SessionOverview> sessions = getCoreClient().getSessions();
-        sessionsTable.getItems().addAll(sessions.stream()
-                .map(SessionRow::new)
-                .collect(Collectors.toList()));
-
+        List<SessionRow> rows = sessions.stream().map(SessionRow::new).collect(Collectors.toList());
+        sessionsTable.getItems().setAll(rows);
         show();
     }
 }

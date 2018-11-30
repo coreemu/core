@@ -168,50 +168,48 @@ public class GraphToolbar extends VBox {
 
     private void setupNodesButton() {
         nodesButton.setTooltip(new Tooltip("Network Nodes (host, pc, etc)"));
-        nodesList.getSelectionModel().selectedItemProperty().addListener((ov, old, current) -> {
-            if (current == null) {
+        nodesList.setOnMouseClicked(event -> {
+            Label selectedLabel = nodesList.getSelectionModel().getSelectedItem();
+            if (selectedLabel == null) {
                 return;
             }
 
-            updateButtonValues(nodesButton, current);
-            selectedNodeType = NodeType.get((int) current.getUserData());
+            updateButtonValues(nodesButton, selectedLabel);
+            selectedNodeType = NodeType.get((int) selectedLabel.getUserData());
             logger.info("selected node type: {}", selectedNodeType);
             setSelectedEditButton(nodesButton);
             devicesList.getSelectionModel().clearSelection();
             controller.getNetworkGraph().setNodeType(selectedNodeType);
-            logger.info("node selected: {} - type: {}", current, selectedNodeType);
+            logger.info("node selected: {} - type: {}", selectedLabel, selectedNodeType);
+            setEditMode();
         });
 
         JFXPopup popup = new JFXPopup(nodesList);
-        nodesButton.setOnAction(event -> {
-            setEditMode();
-            popup.show(nodesButton, JFXPopup.PopupVPosition.TOP,
-                    JFXPopup.PopupHPosition.LEFT, nodesButton.getWidth(), 0);
-        });
+        nodesButton.setOnAction(event -> popup.show(nodesButton, JFXPopup.PopupVPosition.TOP,
+                JFXPopup.PopupHPosition.LEFT, nodesButton.getWidth(), 0));
     }
 
     private void setupDevicesButton() {
         devicesButton.setTooltip(new Tooltip("Device Nodes (WLAN, EMANE, Switch, etc)"));
-        devicesList.getSelectionModel().selectedItemProperty().addListener((ov, old, current) -> {
-            if (current == null) {
+        devicesList.setOnMouseClicked(event -> {
+            Label selectedLabel = devicesList.getSelectionModel().getSelectedItem();
+            if (selectedLabel == null) {
                 return;
             }
 
-            updateButtonValues(devicesButton, current);
-            selectedNodeType = NodeType.get((int) current.getUserData());
+            updateButtonValues(devicesButton, selectedLabel);
+            selectedNodeType = NodeType.get((int) selectedLabel.getUserData());
             logger.info("selected node type: {}", selectedNodeType);
             controller.getNetworkGraph().setNodeType(selectedNodeType);
             setSelectedEditButton(devicesButton);
             nodesList.getSelectionModel().clearSelection();
-            logger.info("device selected: {} - type: {}", current, selectedNodeType);
+            logger.info("device selected: {} - type: {}", selectedLabel, selectedNodeType);
+            setEditMode();
         });
 
         JFXPopup popup = new JFXPopup(devicesList);
-        devicesButton.setOnAction(event -> {
-            setEditMode();
-            popup.show(devicesButton, JFXPopup.PopupVPosition.TOP,
-                    JFXPopup.PopupHPosition.LEFT, devicesButton.getWidth(), 0);
-        });
+        devicesButton.setOnAction(event -> popup.show(devicesButton, JFXPopup.PopupVPosition.TOP,
+                JFXPopup.PopupHPosition.LEFT, devicesButton.getWidth(), 0));
     }
 
     @FXML
