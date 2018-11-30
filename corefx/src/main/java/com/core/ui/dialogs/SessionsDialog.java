@@ -15,6 +15,8 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.IOException;
 import java.util.List;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
 import java.util.stream.Collectors;
 
 public class SessionsDialog extends StageDialog {
@@ -23,47 +25,98 @@ public class SessionsDialog extends StageDialog {
     @FXML private TableColumn<SessionRow, Integer> sessionIdColumn;
     @FXML private TableColumn<SessionRow, String> stateColumn;
     @FXML private TableColumn<SessionRow, Integer> nodeCountColumn;
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
+    private final JFXButton joinButton;
+    private final JFXButton deleteButton;
 
     public SessionsDialog(Controller controller) {
         super(controller, "/fxml/sessions_dialog.fxml");
-
         setTitle("Sessions");
 
+        // add dialog buttons
+        addCreateButton();
+        deleteButton = createDeleteButton();
+        joinButton = createJoinButton();
+        addCancelButton();
+
+        // update table cell factories
+        sessionIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
+        stateColumn.setCellValueFactory(new PropertyValueFactory<>("state"));
+        nodeCountColumn.setCellValueFactory(new PropertyValueFactory<>("nodes"));
+
+        // handle table row selection
+        sessionsTable.getSelectionModel().selectedItemProperty().addListener((ov, prev, current) -> {
+            if (current != null) {
+                boolean isCurrentSession = current.getId().equals(controller.getCoreClient().currentSession());
+                deleteButton.setDisable(isCurrentSession);
+                joinButton.setDisable(isCurrentSession);
+            } else {
+                deleteButton.setDisable(true);
+                joinButton.setDisable(true);
+            }
+        });
+    }
+
+    private void addCreateButton() {
         JFXButton createButton = createButton("New");
         createButton.setOnAction(event -> {
-            close();
-            new Thread(() -> {
+            logger.info("creating new session");
+            executorService.submit(() -> {
                 try {
                     SessionOverview sessionOverview = getCoreClient().createSession();
-                    controller.joinSession(sessionOverview.getId());
+                    getController().joinSession(sessionOverview.getId());
                     Toast.success(String.format("Created Session %s", sessionOverview.getId()));
                 } catch (IOException ex) {
                     Toast.error("Error creating new session", ex);
                 }
-            }).start();
-        });
-        JFXButton joinButton = createButton("Join");
-        joinButton.setOnAction(event -> {
-            SessionRow row = sessionsTable.getSelectionModel().getSelectedItem();
-            logger.info("selected session: {}", row);
-            try {
-                controller.joinSession(row.getId());
-                Toast.info(String.format("Joined Session %s", row.getId()));
-            } catch (IOException ex) {
-                Toast.error(String.format("Error joining session: %s", row.getId()), ex);
-            }
-
+            });
             close();
         });
-        joinButton.setDisable(true);
-        addCancelButton();
+    }
 
-        sessionIdColumn.setCellValueFactory(new PropertyValueFactory<>("id"));
-        stateColumn.setCellValueFactory(new PropertyValueFactory<>("state"));
-        nodeCountColumn.setCellValueFactory(new PropertyValueFactory<>("nodes"));
-        sessionsTable.getSelectionModel().selectedItemProperty().addListener((ov, prev, current) -> {
-            joinButton.setDisable(current == null);
+    private JFXButton createJoinButton() {
+        JFXButton button = createButton("Join");
+        button.setDisable(true);
+        button.setOnAction(event -> {
+            SessionRow row = sessionsTable.getSelectionModel().getSelectedItem();
+            Integer sessionId = row.getId();
+            logger.info("joining session: {}", sessionId);
+            executorService.submit(() -> {
+                try {
+                    getController().joinSession(sessionId);
+                    Toast.info(String.format("Joined Session %s", sessionId));
+                } catch (IOException ex) {
+                    Toast.error(String.format("Error joining session: %s", sessionId), ex);
+                }
+            });
+            close();
         });
+        return button;
+    }
+
+    private JFXButton createDeleteButton() {
+        JFXButton button = createButton("Delete");
+        button.setDisable(true);
+        button.setOnAction(event -> {
+            SessionRow row = sessionsTable.getSelectionModel().getSelectedItem();
+            Integer sessionId = row.getId();
+            logger.info("deleting session: {}", sessionId);
+            executorService.submit(() -> {
+                try {
+                    boolean result = getCoreClient().deleteSession(sessionId);
+                    if (result) {
+                        sessionsTable.getItems().remove(row);
+                        sessionsTable.getSelectionModel().clearSelection();
+                        Toast.info(String.format("Deleted Session %s", sessionId));
+                    } else {
+                        Toast.error(String.format("Failure to delete session %s", sessionId));
+                    }
+                } catch (IOException ex) {
+                    Toast.error(String.format("Error deleting session: %s", sessionId), ex);
+                }
+            });
+        });
+        return button;
     }
 
     @Data
@@ -72,7 +125,7 @@ public class SessionsDialog extends StageDialog {
         private String state;
         private Integer nodes;
 
-        public SessionRow(SessionOverview sessionOverview) {
+        SessionRow(SessionOverview sessionOverview) {
             id = sessionOverview.getId();
             state = SessionState.get(sessionOverview.getState()).name();
             nodes = sessionOverview.getNodes();
@@ -84,5 +137,11 @@ public class SessionsDialog extends StageDialog {
         List<SessionRow> rows = sessions.stream().map(SessionRow::new).collect(Collectors.toList());
         sessionsTable.getItems().setAll(rows);
         show();
+    }
+
+    @Override
+    public void close() {
+        sessionsTable.getSelectionModel().clearSelection();
+        super.close();
     }
 }

@@ -14,11 +14,15 @@ import java.util.Set;
 public interface ICoreClient {
     void setUrl(String url);
 
+    Integer currentSession();
+
     void updateSession(Integer sessionId);
 
     void updateState(SessionState state);
 
     SessionOverview createSession() throws IOException;
+
+    boolean deleteSession(Integer sessionId) throws IOException;
 
     List<SessionOverview> getSessions() throws IOException;
 
