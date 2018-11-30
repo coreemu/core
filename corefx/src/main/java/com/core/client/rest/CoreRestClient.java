@@ -14,13 +14,20 @@ import java.util.*;
 @Data
 public class CoreRestClient implements ICoreClient {
     private static final Logger logger = LogManager.getLogger();
-    private String baseUrl;
+    private String address;
+    private int port;
     private Integer sessionId;
     private SessionState sessionState;
 
     @Override
-    public void setUrl(String url) {
-        this.baseUrl = url;
+    public void setConnection(String address, int port) {
+        this.address = address;
+        this.port = port;
+    }
+
+    @Override
+    public boolean isLocalConnection() {
+        return address.equals("127.0.0.1") || address.equals("localhost");
     }
 
     @Override
@@ -39,7 +46,7 @@ public class CoreRestClient implements ICoreClient {
     }
 
     private String getUrl(String path) {
-        return String.format("%s/%s", baseUrl, path);
+        return String.format("http://%s:%s/%s", address, port, path);
     }
 
     @Override
@@ -296,10 +303,17 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public String nodeCommand(CoreNode node, String command) throws IOException {
+        String url = getUrl(String.format("sessions/%s/nodes/%s/command", sessionId, node.getId()));
+        return WebUtils.putJson(url, command, String.class);
+    }
+
+    @Override
     public boolean createNode(CoreNode node) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes", sessionId));
         return WebUtils.postJson(url, node);
     }
+
 
     @Override
     public boolean editNode(CoreNode node) throws IOException {

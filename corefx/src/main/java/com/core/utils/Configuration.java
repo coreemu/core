@@ -9,7 +9,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class Configuration {
-    private String coreRest;
+    private String coreAddress;
+    private int corePort;
     private String xmlPath;
     private String mobilityPath;
     private String iconPath;

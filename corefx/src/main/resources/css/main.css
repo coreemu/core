@@ -30,6 +30,7 @@
 }
 
 .code {
+    -fx-background-color: black;
     -fx-text-fill: lime;
     -fx-font-family: monospaced;
     -jfx-focus-color: lime;

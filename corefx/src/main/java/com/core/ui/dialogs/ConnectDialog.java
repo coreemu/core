@@ -4,8 +4,6 @@ import com.core.Controller;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
 import javafx.fxml.FXML;
-import javafx.stage.Modality;
-import javafx.stage.StageStyle;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -13,16 +11,19 @@ import org.apache.logging.log4j.Logger;
 @Data
 public class ConnectDialog extends StageDialog {
     private static final Logger logger = LogManager.getLogger();
-    private String coreUrl;
+    private String address;
+    private int port;
     private JFXButton saveButton;
-    @FXML JFXTextField urlTextField;
+    @FXML JFXTextField addressTextField;
+    @FXML JFXTextField portTextField;
 
     public ConnectDialog(Controller controller) {
         super(controller, "/fxml/connect_dialog.fxml");
         saveButton = createButton("Connect");
         saveButton.setOnAction(event -> {
-            coreUrl = urlTextField.getText();
-            controller.connectToCore(coreUrl);
+            address = addressTextField.getText();
+            port = Integer.parseInt(portTextField.getText());
+            controller.connectToCore(address, port);
             close();
         });
         addCancelButton();
@@ -31,7 +32,8 @@ public class ConnectDialog extends StageDialog {
     }
 
     public void showDialog() {
-        urlTextField.setText(coreUrl);
+        addressTextField.setText(address);
+        portTextField.setText(Integer.toString(port));
         show();
     }
 }

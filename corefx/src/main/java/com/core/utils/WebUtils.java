@@ -139,6 +139,17 @@ public final class WebUtils {
         }
     }
 
+    public static <T> T putJson(String url, Object json, Class<T> clazz) throws IOException {
+        logger.debug("put json: {} - {}", url, json);
+        RequestBody body = RequestBody.create(JSON, JsonUtils.toString(json));
+        Request request = new Request.Builder()
+                .url(url)
+                .put(body)
+                .build();
+        String response = readResponse(request);
+        return JsonUtils.read(response, clazz);
+    }
+
     public static <T> T post(String url, Class<T> clazz) throws IOException {
         logger.debug("post: {}", url);
         RequestBody body = new FormBody.Builder().build();

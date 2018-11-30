@@ -10,7 +10,9 @@
       <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
    </padding>
    <children>
-      <Label maxWidth="1.7976931348623157E308" text="URL" />
-      <JFXTextField fx:id="urlTextField" />
+      <Label maxWidth="1.7976931348623157E308" text="Address" />
+      <JFXTextField fx:id="addressTextField" />
+      <Label maxWidth="1.7976931348623157E308" text="Port" />
+      <JFXTextField fx:id="portTextField" />
    </children>
 </VBox>

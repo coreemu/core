@@ -21,8 +21,8 @@ public class CoreWebSocket {
         this.controller = controller;
     }
 
-    public void start(String url) throws URISyntaxException {
-        socket = IO.socket(url);
+    public void start(String address, int port) throws URISyntaxException {
+        socket = IO.socket(String.format("http://%s:%s", address, port));
         socket.on(Socket.EVENT_CONNECT, args -> logger.info("connected to web socket"));
         socket.on("node", this::handleNodes);
         socket.on("event", this::handleEvents);

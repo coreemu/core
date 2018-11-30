@@ -12,7 +12,9 @@ import java.util.Map;
 import java.util.Set;
 
 public interface ICoreClient {
-    void setUrl(String url);
+    void setConnection(String address, int port);
+
+    boolean isLocalConnection();
 
     Integer currentSession();
 
@@ -77,6 +79,8 @@ public interface ICoreClient {
     boolean setSessionConfig(List<ConfigOption> configOptions) throws IOException;
 
     boolean createNode(CoreNode node) throws IOException;
+
+    String nodeCommand(CoreNode node, String command) throws IOException;
 
     boolean editNode(CoreNode node) throws IOException;
 

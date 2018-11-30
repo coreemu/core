@@ -84,15 +84,16 @@ public class Controller implements Initializable {
     private ConnectDialog connectDialog = new ConnectDialog(this);
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
     private NodeTypeCreateDialog nodeTypeCreateDialog = new NodeTypeCreateDialog(this);
+    private TerminalDialog terminalDialog = new TerminalDialog(this);
 
-    public void connectToCore(String coreUrl) {
+    public void connectToCore(String address, int port) {
         coreWebSocket.stop();
 
         ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() -> {
             try {
-                coreWebSocket.start(coreUrl);
-                coreClient.setUrl(coreUrl);
+                coreWebSocket.start(address, port);
+                coreClient.setConnection(address, port);
                 initialJoin();
             } catch (IOException | URISyntaxException ex) {
                 Toast.error(String.format("Connection failure: %s", ex.getMessage()), ex);
@@ -287,6 +288,7 @@ public class Controller implements Initializable {
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
         nodeTypeCreateDialog.setOwner(window);
+        terminalDialog.setOwner(window);
     }
 
     @FXML
@@ -387,6 +389,11 @@ public class Controller implements Initializable {
     }
 
     @FXML
+    private void onSessionNodesMenu(ActionEvent event) {
+
+    }
+
+    @FXML
     private void onSessionHooksMenu(ActionEvent event) {
         hooksDialog.showDialog();
     }
@@ -427,10 +434,12 @@ public class Controller implements Initializable {
     public void initialize(URL location, ResourceBundle resources) {
         coreWebSocket = new CoreWebSocket(this);
         configuration = ConfigUtils.load();
-        String coreUrl = configuration.getCoreRest();
-        logger.info("core rest: {}", coreUrl);
-        connectDialog.setCoreUrl(coreUrl);
-        connectToCore(coreUrl);
+        String address = configuration.getCoreAddress();
+        int port = configuration.getCorePort();
+        logger.info("core connection: {}:{}", address, port);
+        connectDialog.setAddress(address);
+        connectDialog.setPort(port);
+        connectToCore(address, port);
 
         logger.info("controller initialize");
         swingNode.setContent(networkGraph.getGraphViewer());

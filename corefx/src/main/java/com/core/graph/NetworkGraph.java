@@ -19,6 +19,7 @@ import edu.uci.ics.jung.visualization.control.GraphMouseListener;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
+import javafx.application.Platform;
 import lombok.Data;
 import org.apache.commons.net.util.SubnetUtils;
 import org.apache.logging.log4j.LogManager;
@@ -119,24 +120,28 @@ public class NetworkGraph {
                         controller.getCoreClient().isRunning());
 
                 if (mouseEvent.getClickCount() == 2 && controller.getCoreClient().isRunning()) {
-                    try {
-                        String shellCommand = controller.getConfiguration().getShellCommand();
-                        String terminalCommand = controller.getCoreClient().getTerminalCommand(node);
-                        terminalCommand = String.format("%s %s", shellCommand, terminalCommand);
-                        logger.info("launching node terminal: {}", terminalCommand);
-                        String[] commands = terminalCommand.split("\\s+");
-                        logger.info("launching node terminal: {}", Arrays.toString(commands));
-                        Process p = new ProcessBuilder(commands).start();
+                    if (controller.getCoreClient().isLocalConnection()) {
                         try {
-                            if (!p.waitFor(5, TimeUnit.SECONDS)) {
-                                Toast.error("Node terminal command failed");
+                            String shellCommand = controller.getConfiguration().getShellCommand();
+                            String terminalCommand = controller.getCoreClient().getTerminalCommand(node);
+                            terminalCommand = String.format("%s %s", shellCommand, terminalCommand);
+                            logger.info("launching node terminal: {}", terminalCommand);
+                            String[] commands = terminalCommand.split("\\s+");
+                            logger.info("launching node terminal: {}", Arrays.toString(commands));
+                            Process p = new ProcessBuilder(commands).start();
+                            try {
+                                if (!p.waitFor(5, TimeUnit.SECONDS)) {
+                                    Toast.error("Node terminal command failed");
+                                }
+                            } catch (InterruptedException ex) {
+                                logger.error("error waiting for terminal to start", ex);
                             }
-                        } catch (InterruptedException ex) {
-                            logger.error("error waiting for terminal to start", ex);
+                        } catch (IOException ex) {
+                            logger.error("error launching terminal", ex);
+                            Toast.error("Node terminal failed to start");
                         }
-                    } catch (IOException ex) {
-                        logger.error("error launching terminal", ex);
-                        Toast.error("Node terminal failed to start");
+                    } else {
+                        Platform.runLater(() -> controller.getTerminalDialog().showDialog(node));
                     }
                 }
             }

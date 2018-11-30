@@ -68,13 +68,11 @@ public class StageDialog {
 
         buttonBar.setAlignment(Pos.CENTER_RIGHT);
         buttonBar.setSpacing(10);
-        gridPane.addRow(1, buttonBar);
 
         stage.initModality(Modality.APPLICATION_MODAL);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
         loader.setController(this);
-
         try {
             Parent parent = loader.load();
             setContent(parent);
@@ -82,6 +80,8 @@ public class StageDialog {
             logger.error("error loading fxml: {}", fxmlPath, ex);
             throw new RuntimeException(ex);
         }
+
+        gridPane.addRow(1, buttonBar);
     }
 
     public void close() {
@@ -118,7 +118,7 @@ public class StageDialog {
     }
 
     public void show() {
-        if (buttonBar.getChildren().isEmpty()) {
+        if (buttonBar.getChildren().isEmpty() && gridPane.getChildren().contains(buttonBar)) {
             gridPane.getChildren().remove(1);
             gridPane.getRowConstraints().remove(1);
             gridPane.setVgap(0);

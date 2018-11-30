@@ -107,8 +107,8 @@ public final class ConfigUtils {
             }
 
             // override configuration from command line
-            String coreRest = System.getProperty("core-rest");
-            configuration.setCoreRest(coreRest);
+            String coreAddress = System.getProperty("coreAddress");
+            configuration.setCoreAddress(coreAddress);
 
             return configuration;
         } catch (IOException ex) {
