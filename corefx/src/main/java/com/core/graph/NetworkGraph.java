@@ -3,6 +3,7 @@ package com.core.graph;
 import com.core.Controller;
 import com.core.data.*;
 import com.core.ui.Toast;
+import com.core.ui.dialogs.TerminalDialog;
 import com.core.utils.Configuration;
 import com.core.utils.IconUtils;
 import com.google.common.base.Supplier;
@@ -141,7 +142,11 @@ public class NetworkGraph {
                             Toast.error("Node terminal failed to start");
                         }
                     } else {
-                        Platform.runLater(() -> controller.getTerminalDialog().showDialog(node));
+                        Platform.runLater(() -> {
+                            TerminalDialog terminalDialog = new TerminalDialog(controller);
+                            terminalDialog.setOwner(controller.getWindow());
+                            terminalDialog.showDialog(node);
+                        });
                     }
                 }
             }

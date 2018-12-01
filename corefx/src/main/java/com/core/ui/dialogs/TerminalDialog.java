@@ -8,6 +8,7 @@ import com.jfoenix.controls.JFXTextArea;
 import com.jfoenix.controls.JFXTextField;
 import javafx.concurrent.Task;
 import javafx.fxml.FXML;
+import javafx.stage.Modality;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
@@ -18,12 +19,12 @@ public class TerminalDialog extends StageDialog {
     private String address;
     private int port;
     private JFXButton saveButton;
-    @FXML JFXTextArea outputTextArea;
-    @FXML JFXTextField commandTextField;
+    private @FXML JFXTextArea outputTextArea;
+    private @FXML JFXTextField commandTextField;
     private CoreNode node;
 
     public TerminalDialog(Controller controller) {
-        super(controller, "/fxml/terminal_dialog.fxml");
+        super(controller, "/fxml/terminal_dialog.fxml", Modality.NONE);
         commandTextField.setOnAction(event -> {
             String command = commandTextField.getText();
             addOutput(String.format("$> %s", command));

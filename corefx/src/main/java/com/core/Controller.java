@@ -84,7 +84,6 @@ public class Controller implements Initializable {
     private ConnectDialog connectDialog = new ConnectDialog(this);
     private GuiPreferencesDialog guiPreferencesDialog = new GuiPreferencesDialog(this);
     private NodeTypeCreateDialog nodeTypeCreateDialog = new NodeTypeCreateDialog(this);
-    private TerminalDialog terminalDialog = new TerminalDialog(this);
 
     public void connectToCore(String address, int port) {
         coreWebSocket.stop();
@@ -288,7 +287,6 @@ public class Controller implements Initializable {
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
         nodeTypeCreateDialog.setOwner(window);
-        terminalDialog.setOwner(window);
     }
 
     @FXML

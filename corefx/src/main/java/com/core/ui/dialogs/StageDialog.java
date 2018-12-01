@@ -35,6 +35,10 @@ public class StageDialog {
     private final HBox buttonBar = new HBox();
 
     public StageDialog(Controller controller, String fxmlPath) {
+        this(controller, fxmlPath, Modality.APPLICATION_MODAL);
+    }
+
+    public StageDialog(Controller controller, String fxmlPath, Modality modality) {
         this.controller = controller;
 
         JFXDecorator decorator = new JFXDecorator(stage, gridPane);
@@ -69,7 +73,7 @@ public class StageDialog {
         buttonBar.setAlignment(Pos.CENTER_RIGHT);
         buttonBar.setSpacing(10);
 
-        stage.initModality(Modality.APPLICATION_MODAL);
+        stage.initModality(modality);
 
         FXMLLoader loader = new FXMLLoader(getClass().getResource(fxmlPath));
         loader.setController(this);
