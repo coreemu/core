@@ -52,7 +52,7 @@ public class TerminalDialog extends StageDialog {
 
         @Override
         protected void failed() {
-            Toast.error("Failed sending terminal command");
+            Toast.error("Failed sending terminal command", new RuntimeException(getException()));
         }
     }
 
