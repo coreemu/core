@@ -262,6 +262,7 @@ class LxBrNet(PyCoreNet):
         self.name = name
         sessionid = self.session.short_session_id()
         self.brname = "b.%s.%s" % (str(self.objid), sessionid)
+        self.brcreate = True
         self.up = False
         if start:
             self.startup()
@@ -274,11 +275,17 @@ class LxBrNet(PyCoreNet):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        utils.check_cmd([constants.BRCTL_BIN, "addbr", self.brname])
+        if os.path.isdir("/sys/class/net/%s/bridge" % self.name):
+            # attach to existing bridge when name matches
+            logger.debug("joining existing bridge %s" % self.name)
+            self.brname = self.name
+            self.brcreate = False
+        else:
+            utils.check_cmd([constants.BRCTL_BIN, "addbr", self.brname])
 
-        # turn off spanning tree protocol and forwarding delay
-        utils.check_cmd([constants.BRCTL_BIN, "stp", self.brname, "off"])
-        utils.check_cmd([constants.BRCTL_BIN, "setfd", self.brname, "0"])
+            # turn off spanning tree protocol and forwarding delay
+            utils.check_cmd([constants.BRCTL_BIN, "stp", self.brname, "off"])
+            utils.check_cmd([constants.BRCTL_BIN, "setfd", self.brname, "0"])
         utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "up"])
         # create a new ebtables chain for this bridge
         ebtablescmds(utils.check_cmd, [
@@ -305,8 +312,9 @@ class LxBrNet(PyCoreNet):
         ebq.stopupdateloop(self)
 
         try:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "down"])
-            utils.check_cmd([constants.BRCTL_BIN, "delbr", self.brname])
+            if self.brcreate:
+                utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "down"])
+                utils.check_cmd([constants.BRCTL_BIN, "delbr", self.brname])
             ebtablescmds(utils.check_cmd, [
                 [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.brname, "-j", self.brname],
                 [constants.EBTABLES_BIN, "-X", self.brname]
