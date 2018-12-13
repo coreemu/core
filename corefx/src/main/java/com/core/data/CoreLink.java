@@ -12,11 +12,15 @@ import lombok.NoArgsConstructor;
 public class CoreLink {
     @EqualsAndHashCode.Include
     private Integer id;
+
     @JsonIgnore
     private Float weight = 1.0f;
 
     @JsonIgnore
     private boolean loaded = true;
+
+    @JsonIgnore
+    private double throughput;
 
     @JsonIgnore
     private boolean visible = true;

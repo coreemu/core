@@ -14,10 +14,12 @@ import com.jfoenix.controls.JFXDecorator;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.embed.swing.SwingNode;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.MenuItem;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
@@ -48,7 +50,9 @@ public class Controller implements Initializable {
     @FXML private SwingNode swingNode;
     @FXML private MenuItem saveXmlMenuItem;
     @FXML private JFXProgressBar progressBar;
+    @FXML private CheckMenuItem throughputMenuItem;
 
+    private final ExecutorService executorService = Executors.newSingleThreadExecutor();
     private final Map<Integer, MobilityConfig> mobilityScripts = new HashMap<>();
     private final Map<Integer, MobilityPlayerDialog> mobilityPlayerDialogs = new HashMap<>();
     private Application application;
@@ -226,6 +230,27 @@ public class Controller implements Initializable {
             saveXmlMenuItem.setDisable(true);
         }
         return result;
+    }
+
+    public void handleThroughputs(Throughputs throughputs) {
+        for (InterfaceThroughput interfaceThroughput : throughputs.getInterfaces()) {
+            int nodeId = interfaceThroughput.getNode();
+            CoreNode node = networkGraph.getVertex(nodeId);
+            Collection<CoreLink> links = networkGraph.getGraph().getIncidentEdges(node);
+            int interfaceId = interfaceThroughput.getNodeInterface();
+            for (CoreLink link : links) {
+                if (nodeId == link.getNodeOne()) {
+                    if (interfaceId == link.getInterfaceOne().getId()) {
+                        link.setThroughput(interfaceThroughput.getThroughput());
+                    }
+                } else {
+                    if (interfaceId == link.getInterfaceTwo().getId()) {
+                        link.setThroughput(interfaceThroughput.getThroughput());
+                    }
+                }
+            }
+        }
+        networkGraph.getGraphViewer().repaint();
     }
 
     private void setCoreDefaultServices() {
@@ -453,6 +478,9 @@ public class Controller implements Initializable {
         // setup snackbar
         Toast.setSnackbarRoot(stackPane);
 
+        // setup throughput menu item
+        throughputMenuItem.setOnAction(event -> executorService.submit(new ChangeThroughputTask()));
+
         // node details
         networkGraph.getGraphViewer().getPickedVertexState().addItemListener(event -> {
             CoreNode node = (CoreNode) event.getItem();
@@ -480,5 +508,36 @@ public class Controller implements Initializable {
                 Platform.runLater(() -> borderPane.setRight(null));
             }
         });
+    }
+
+    private class ChangeThroughputTask extends Task<Boolean> {
+        @Override
+        protected Boolean call() throws Exception {
+            if (throughputMenuItem.isSelected()) {
+                return coreClient.startThroughput();
+            } else {
+                return coreClient.stopThroughput();
+            }
+        }
+
+        @Override
+        protected void succeeded() {
+            if (getValue()) {
+                if (throughputMenuItem.isSelected()) {
+                    networkGraph.setShowThroughput(true);
+                } else {
+                    networkGraph.setShowThroughput(false);
+                    networkGraph.getGraph().getEdges().forEach(edge -> edge.setThroughput(0));
+                    networkGraph.getGraphViewer().repaint();
+                }
+            } else {
+                Toast.error("Failure changing throughput");
+            }
+        }
+
+        @Override
+        protected void failed() {
+            Toast.error("Error changing throughput", new RuntimeException(getException()));
+        }
     }
 }

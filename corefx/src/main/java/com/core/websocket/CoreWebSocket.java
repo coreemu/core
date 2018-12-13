@@ -2,7 +2,6 @@ package com.core.websocket;
 
 import com.core.Controller;
 import com.core.data.*;
-import com.core.ui.dialogs.MobilityDialog;
 import com.core.ui.dialogs.MobilityPlayerDialog;
 import com.core.utils.JsonUtils;
 import io.socket.client.IO;
@@ -30,6 +29,7 @@ public class CoreWebSocket {
         socket.on("event", this::handleEvents);
         socket.on("config", this::handleConfigs);
         socket.on("link", this::handleLinks);
+        socket.on("throughput", this::handleThroughputs);
         socket.on(Socket.EVENT_DISCONNECT, args -> logger.info("disconnected from web socket"));
 
         logger.info("attempting to connect to web socket!");
@@ -42,6 +42,18 @@ public class CoreWebSocket {
         if (socketThread != null) {
             socket.close();
             socketThread.interrupt();
+        }
+    }
+
+    private void handleThroughputs(Object... args) {
+        for (Object arg : args) {
+            logger.info("throughput update: {}", arg);
+            try {
+                Throughputs throughputs = JsonUtils.read(arg.toString(), Throughputs.class);
+                controller.handleThroughputs(throughputs);
+            } catch (IOException ex) {
+                logger.error("error getting throughputs", ex);
+            }
         }
     }
 

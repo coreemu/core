@@ -41,6 +41,7 @@ import java.util.stream.Collectors;
 @Data
 public class NetworkGraph {
     private static final Logger logger = LogManager.getLogger();
+    private static final int EDGE_LABEL_OFFSET = -5;
     private Controller controller;
     private ObservableGraph<CoreNode, CoreLink> graph;
     private StaticLayout<CoreNode, CoreLink> graphLayout;
@@ -60,6 +61,9 @@ public class NetworkGraph {
     private CoreAnnotatingGraphMousePlugin<CoreNode, CoreLink> customAnnotatingPlugin;
     private BackgroundPaintable<CoreNode, CoreLink> backgroundPaintable;
     private CoreVertexLabelRenderer nodeLabelRenderer = new CoreVertexLabelRenderer();
+
+    // display options
+    private boolean showThroughput = false;
 
     public NetworkGraph(Controller controller) {
         this.controller = controller;
@@ -86,6 +90,14 @@ public class NetworkGraph {
         });
 
         // link render properties
+        renderContext.setEdgeLabelTransformer(link -> {
+            if (!showThroughput || link == null) {
+                return null;
+            }
+            double kbps = link.getThroughput() / 1000.0;
+            return String.format("%.2f kbps", kbps);
+        });
+        renderContext.setLabelOffset(EDGE_LABEL_OFFSET);
         renderContext.setEdgeStrokeTransformer(edge -> {
             LinkTypes linkType = LinkTypes.get(edge.getType());
             if (LinkTypes.WIRELESS == linkType) {

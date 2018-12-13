@@ -145,6 +145,18 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
+    public boolean startThroughput() throws IOException {
+        String url = getUrl("throughput/start");
+        return WebUtils.putJson(url);
+    }
+
+    @Override
+    public boolean stopThroughput() throws IOException {
+        String url = getUrl("throughput/stop");
+        return WebUtils.putJson(url);
+    }
+
+    @Override
     public Map<String, List<String>> getDefaultServices() throws IOException {
         String url = getUrl(String.format("sessions/%s/services/default", sessionId));
         GetDefaultServices getDefaultServices = WebUtils.getJson(url, GetDefaultServices.class);
