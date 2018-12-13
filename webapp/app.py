@@ -14,6 +14,7 @@ import mobility_routes
 import node_routes
 import service_routes
 import session_routes
+import throughput_routes
 import websocket_routes
 import wlan_routes
 import xml_routes
@@ -45,6 +46,7 @@ register_blueprint(mobility_routes)
 register_blueprint(node_routes)
 register_blueprint(service_routes)
 register_blueprint(session_routes)
+register_blueprint(throughput_routes)
 register_blueprint(wlan_routes)
 register_blueprint(xml_routes)
 
