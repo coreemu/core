@@ -19,7 +19,7 @@ def register(app):
         logger.info("websocket client disconnected")
 
 
-def broadtcast_file(file_data):
+def broadcast_file(file_data):
     socketio.emit("file", {
         "message_type": file_data.message_type,
         "node": file_data.node,
