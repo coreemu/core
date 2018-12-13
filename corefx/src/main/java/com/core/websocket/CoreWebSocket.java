@@ -2,6 +2,8 @@ package com.core.websocket;
 
 import com.core.Controller;
 import com.core.data.*;
+import com.core.ui.dialogs.MobilityDialog;
+import com.core.ui.dialogs.MobilityPlayerDialog;
 import com.core.utils.JsonUtils;
 import io.socket.client.IO;
 import io.socket.client.Socket;
@@ -61,9 +63,26 @@ public class CoreWebSocket {
                 CoreEvent event = JsonUtils.read(arg.toString(), CoreEvent.class);
                 logger.info("handling broadcast event: {}", event);
                 SessionState state = SessionState.get(event.getEventType().getValue());
-                if (state != null) {
+                if (state == null) {
+                    logger.warn("unknown event type: {}", event.getEventType().getValue());
+                    return;
+                }
+
+                // session state event
+                if (state.getValue() <= 6) {
                     logger.info("event updating session state: {}", state);
                     controller.getCoreClient().updateState(state);
+                    // mobility script event
+                } else if (state.getValue() <= 9) {
+                    Integer nodeId = event.getNode();
+                    String[] values = event.getData().split("\\s+");
+                    Integer start = Integer.parseInt(values[0].split("=")[1]);
+                    Integer end = Integer.parseInt(values[1].split("=")[1]);
+                    logger.info(String.format("node(%s) mobility event (%s) - start(%s) stop(%s)",
+                            nodeId, state, start, end));
+                    logger.info("all dialogs: {}", controller.getMobilityPlayerDialogs().keySet());
+                    MobilityPlayerDialog mobilityPlayerDialog = controller.getMobilityPlayerDialogs().get(nodeId);
+                    mobilityPlayerDialog.event(state, start, end);
                 }
             } catch (IOException ex) {
                 logger.error("error getting core event", ex);

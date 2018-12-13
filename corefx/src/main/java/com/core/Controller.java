@@ -49,6 +49,8 @@ public class Controller implements Initializable {
     @FXML private MenuItem saveXmlMenuItem;
     @FXML private JFXProgressBar progressBar;
 
+    private final Map<Integer, MobilityConfig> mobilityScripts = new HashMap<>();
+    private final Map<Integer, MobilityPlayerDialog> mobilityPlayerDialogs = new HashMap<>();
     private Application application;
     private JFXDecorator decorator;
     private Stage window;
@@ -65,7 +67,6 @@ public class Controller implements Initializable {
     private NodeDetails nodeDetails = new NodeDetails(this);
     private LinkDetails linkDetails = new LinkDetails(this);
     private GraphToolbar graphToolbar = new GraphToolbar(this);
-    private MobilityPlayer mobilityPlayer = new MobilityPlayer(this);
 
     // dialogs
     private SessionsDialog sessionsDialog = new SessionsDialog(this);
@@ -135,11 +136,10 @@ public class Controller implements Initializable {
         networkGraph.reset();
 
         // clear out any previously set information
-        Platform.runLater(() -> {
-            bottom.getChildren().remove(mobilityPlayer);
-            borderPane.setRight(null);
-        });
+        mobilityPlayerDialogs.clear();
+        mobilityScripts.clear();
         mobilityDialog.setNode(null);
+        Platform.runLater(() -> borderPane.setRight(null));
 
         // get session to join
         Session session = coreClient.getSession(sessionId);
@@ -182,18 +182,10 @@ public class Controller implements Initializable {
         // update session default services
         setCoreDefaultServices();
 
-        // display first mobility script in player, if needed
+        // retrieve current mobility script configurations and show dialogs
         Map<Integer, MobilityConfig> mobilityConfigMap = coreClient.getMobilityConfigs();
-        Optional<Integer> nodeIdOptional = mobilityConfigMap.keySet().stream().findFirst();
-        if (nodeIdOptional.isPresent()) {
-            Integer nodeId = nodeIdOptional.get();
-            MobilityConfig mobilityConfig = mobilityConfigMap.get(nodeId);
-            CoreNode node = networkGraph.getVertex(nodeId);
-            if (node != null) {
-                mobilityPlayer.show(node, mobilityConfig);
-                Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
-            }
-        }
+        mobilityScripts.putAll(mobilityConfigMap);
+        showMobilityScriptDialogs();
 
         Platform.runLater(() -> decorator.setTitle(String.format("CORE (Session %s)", sessionId)));
     }
@@ -212,15 +204,7 @@ public class Controller implements Initializable {
         boolean result = coreClient.start(nodes, links, hooks);
         progressBar.setVisible(false);
         if (result) {
-            // configure and add mobility player
-            CoreNode node = mobilityDialog.getNode();
-            if (node != null) {
-                MobilityConfig mobilityConfig = mobilityDialog.getMobilityScripts().get(node.getId());
-                if (mobilityConfig != null) {
-                    mobilityPlayer.show(node, mobilityConfig);
-                    Platform.runLater(() -> bottom.getChildren().add(mobilityPlayer));
-                }
-            }
+            showMobilityScriptDialogs();
             saveXmlMenuItem.setDisable(false);
         }
         return result;
@@ -239,7 +223,6 @@ public class Controller implements Initializable {
         boolean result = coreClient.stop();
         progressBar.setVisible(false);
         if (result) {
-            Platform.runLater(() -> bottom.getChildren().remove(mobilityPlayer));
             saveXmlMenuItem.setDisable(true);
         }
         return result;
@@ -287,6 +270,20 @@ public class Controller implements Initializable {
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
         nodeTypeCreateDialog.setOwner(window);
+    }
+
+    private void showMobilityScriptDialogs() {
+        for (Map.Entry<Integer, MobilityConfig> entry : mobilityScripts.entrySet()) {
+            Integer nodeId = entry.getKey();
+            CoreNode node = networkGraph.getVertex(nodeId);
+            MobilityConfig mobilityConfig = entry.getValue();
+            Platform.runLater(() -> {
+                MobilityPlayerDialog mobilityPlayerDialog = new MobilityPlayerDialog(this, node);
+                mobilityPlayerDialog.setOwner(window);
+                mobilityPlayerDialogs.put(nodeId, mobilityPlayerDialog);
+                mobilityPlayerDialog.showDialog(mobilityConfig);
+            });
+        }
     }
 
     @FXML

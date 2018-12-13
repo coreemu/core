@@ -17,8 +17,6 @@ import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.HashMap;
-import java.util.Map;
 
 @Data
 public class MobilityDialog extends StageDialog {
@@ -31,7 +29,6 @@ public class MobilityDialog extends StageDialog {
     @FXML private JFXTextField startTextField;
     @FXML private JFXTextField pauseTextField;
     @FXML private JFXTextField stopTextField;
-    private Map<Integer, MobilityConfig> mobilityScripts = new HashMap<>();
     private CoreNode node;
 
     public MobilityDialog(Controller controller) {
@@ -53,8 +50,13 @@ public class MobilityDialog extends StageDialog {
             mobilityConfig.setStopScript(stopTextField.getText());
 
             try {
-                controller.getCoreClient().setMobilityConfig(node, mobilityConfig);
-                mobilityScripts.put(node.getId(), mobilityConfig);
+                boolean result = controller.getCoreClient().setMobilityConfig(node, mobilityConfig);
+                if (result) {
+                    getController().getMobilityScripts().put(node.getId(), mobilityConfig);
+                    Toast.info(String.format("Set mobility configuration for %s", node.getName()));
+                } else {
+                    Toast.error(String.format("Error setting mobility configuration for %s", node.getName()));
+                }
             } catch (IOException ex) {
                 Toast.error("error setting mobility configuration", ex);
             }
@@ -75,7 +77,7 @@ public class MobilityDialog extends StageDialog {
         String mobilityPath = getController().getConfiguration().getMobilityPath();
         fileChooser.setInitialDirectory(new File(mobilityPath));
         fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("Mobility",
-                "*.mobility"));
+                "*.scen"));
         try {
             File file = fileChooser.showOpenDialog(getController().getWindow());
             if (file != null) {

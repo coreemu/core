@@ -67,6 +67,27 @@
     -fx-text-fill: black;
 }
 
+.mobility-start {
+    -fx-background-color: green;
+    -fx-text-fill: white;
+    -fx-pref-width: 100px;
+    -jfx-button-type: RAISED;
+}
+
+.mobility-pause {
+    -fx-background-color: yellow;
+    -fx-text-fill: white;
+    -fx-pref-width: 100px;
+    -jfx-button-type: RAISED;
+}
+
+.mobility-stop {
+    -fx-background-color: red;
+    -fx-text-fill: white;
+    -fx-pref-width: 100px;
+    -jfx-button-type: RAISED;
+}
+
 .core-button {
     -fx-background-color: olivedrab;
     -fx-text-fill: white;

@@ -9,7 +9,10 @@ public enum SessionState {
     INSTANTIATION(3),
     RUNTIME(4),
     DATA_COLLECT(5),
-    SHUTDOWN(6);
+    SHUTDOWN(6),
+    START(7),
+    STOP(8),
+    PAUSE(9);
 
     private static final Map<Integer, SessionState> LOOKUP = new HashMap<>();
 
