@@ -45,7 +45,6 @@
                         <Menu mnemonicParsing="false" text="Widgets">
                           <items>
                               <CheckMenuItem fx:id="throughputMenuItem" mnemonicParsing="false" text="Throughput" />
-                              <MenuItem mnemonicParsing="false" text="Throughput Config" />
                           </items>
                         </Menu>
                             <Menu mnemonicParsing="false" text="Help">

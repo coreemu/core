@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
 public class NetworkGraph {
     private static final Logger logger = LogManager.getLogger();
     private static final int EDGE_LABEL_OFFSET = -5;
+    private static final int EDGE_WIDTH = 5;
     private Controller controller;
     private ObservableGraph<CoreNode, CoreLink> graph;
     private StaticLayout<CoreNode, CoreLink> graphLayout;
@@ -64,6 +65,8 @@ public class NetworkGraph {
 
     // display options
     private boolean showThroughput = false;
+    private Double throughputLimit = null;
+    private int throughputWidth = 10;
 
     public NetworkGraph(Controller controller) {
         this.controller = controller;
@@ -90,22 +93,28 @@ public class NetworkGraph {
         });
 
         // link render properties
-        renderContext.setEdgeLabelTransformer(link -> {
-            if (!showThroughput || link == null) {
+        renderContext.setEdgeLabelTransformer(edge -> {
+            if (!showThroughput || edge == null) {
                 return null;
             }
-            double kbps = link.getThroughput() / 1000.0;
+            double kbps = edge.getThroughput() / 1000.0;
             return String.format("%.2f kbps", kbps);
         });
         renderContext.setLabelOffset(EDGE_LABEL_OFFSET);
         renderContext.setEdgeStrokeTransformer(edge -> {
+            // determine edge width
+            int width = EDGE_WIDTH;
+            if (throughputLimit != null && edge.getThroughput() > throughputLimit) {
+                width = throughputWidth;
+            }
+
             LinkTypes linkType = LinkTypes.get(edge.getType());
             if (LinkTypes.WIRELESS == linkType) {
                 float[] dash = {15.0f};
-                return new BasicStroke(5, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND,
+                return new BasicStroke(width, BasicStroke.CAP_SQUARE, BasicStroke.JOIN_ROUND,
                         0, dash, 0);
             } else {
-                return new BasicStroke(5);
+                return new BasicStroke(width);
             }
         });
         renderContext.setEdgeShapeTransformer(EdgeShape.line(graph));
@@ -204,6 +213,10 @@ public class NetworkGraph {
         Color nodeLabelColor = convertJfxColor(configuration.getNodeLabelColor());
         Color nodeLabelBackgroundColor = convertJfxColor(configuration.getNodeLabelBackgroundColor());
         nodeLabelRenderer.setColors(nodeLabelColor, nodeLabelBackgroundColor);
+        throughputLimit = configuration.getThroughputLimit();
+        if (configuration.getThroughputWidth() != null) {
+            throughputWidth = configuration.getThroughputWidth();
+        }
         graphViewer.repaint();
     }
 

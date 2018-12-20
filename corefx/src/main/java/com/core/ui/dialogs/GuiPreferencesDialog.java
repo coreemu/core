@@ -24,6 +24,8 @@ public class GuiPreferencesDialog extends StageDialog {
     @FXML private JFXTextField iconPathTextField;
     @FXML private JFXColorPicker nodeLabelColorPicker;
     @FXML private JFXColorPicker nodeLabelBackgroundColorPicker;
+    @FXML private JFXTextField throughputLimitTextField;
+    @FXML private JFXTextField throughputWidthTextField;
     @FXML private JFXButton saveButton;
 
     public GuiPreferencesDialog(Controller controller) {
@@ -42,6 +44,8 @@ public class GuiPreferencesDialog extends StageDialog {
         configuration.setIconPath(iconPathTextField.getText());
         configuration.setNodeLabelColor(nodeLabelColorPicker.getValue().toString());
         configuration.setNodeLabelBackgroundColor(nodeLabelBackgroundColorPicker.getValue().toString());
+        configuration.setThroughputLimit(Double.parseDouble(throughputLimitTextField.getText()));
+        configuration.setThroughputWidth(Integer.parseInt(throughputWidthTextField.getText()));
         getController().getNetworkGraph().updatePreferences(configuration);
         try {
             ConfigUtils.save(configuration);
@@ -60,6 +64,17 @@ public class GuiPreferencesDialog extends StageDialog {
         iconPathTextField.setText(configuration.getIconPath());
         nodeLabelColorPicker.setValue(Color.web(configuration.getNodeLabelColor()));
         nodeLabelBackgroundColorPicker.setValue(Color.web(configuration.getNodeLabelBackgroundColor()));
+        String throughputLimit = null;
+        if (configuration.getThroughputLimit() != null) {
+            throughputLimit = configuration.getThroughputLimit().toString();
+        }
+        throughputLimitTextField.setText(throughputLimit);
+
+        String throughputWidth = null;
+        if (configuration.getThroughputWidth() != null) {
+            throughputWidth = configuration.getThroughputWidth().toString();
+        }
+        throughputWidthTextField.setText(throughputWidth);
         show();
     }
 }

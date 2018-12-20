@@ -2,13 +2,15 @@
 
 <?import com.jfoenix.controls.JFXColorPicker?>
 <?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.control.Accordion?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.VBox?>
 
-<VBox maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0" spacing="10.0" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
-   <children>
-      <TitledPane animated="false" collapsible="false" text="File Paths">
+
+<Accordion xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+   <panes>
+      <TitledPane text="File Paths">
          <content>
             <VBox spacing="10.0">
                <children>
@@ -22,7 +24,7 @@
             </VBox>
          </content>
       </TitledPane>
-      <TitledPane animated="false" collapsible="false" text="Graph">
+      <TitledPane text="Graph">
          <content>
             <VBox spacing="10.0">
                <children>
@@ -30,11 +32,15 @@
                   <JFXColorPicker fx:id="nodeLabelColorPicker" maxWidth="1.7976931348623157E308" />
                   <Label text="Node Label Background" />
                   <JFXColorPicker fx:id="nodeLabelBackgroundColorPicker" maxWidth="1.7976931348623157E308" />
+                  <Label text="Throughput Limit" />
+                  <JFXTextField fx:id="throughputLimitTextField" />
+                  <Label text="Throughput Width" />
+                  <JFXTextField fx:id="throughputWidthTextField" />
                </children>
             </VBox>
          </content>
       </TitledPane>
-      <TitledPane animated="false" collapsible="false" text="Programs">
+      <TitledPane text="Programs">
          <content>
             <VBox spacing="10.0">
                <children>
@@ -44,5 +50,5 @@
             </VBox>
          </content>
       </TitledPane>
-   </children>
-</VBox>
+   </panes>
+</Accordion>

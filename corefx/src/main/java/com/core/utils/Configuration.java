@@ -18,4 +18,6 @@ public class Configuration {
     private List<NodeTypeConfig> nodeTypeConfigs = new ArrayList<>();
     private String nodeLabelColor;
     private String nodeLabelBackgroundColor;
+    private Double throughputLimit;
+    private Integer throughputWidth;
 }
