@@ -843,7 +843,7 @@ class CoreMessage(object):
         elif self.message_type == MessageTypes.INTERFACE.value:
             number1 = self.get_tlv(InterfaceTlvs.NODE.value)
         elif self.message_type == MessageTypes.EVENT.value:
-            number1 = self.get_tlv(EventTlvs.NODE)
+            number1 = self.get_tlv(EventTlvs.NODE.value)
 
         result = []
 
