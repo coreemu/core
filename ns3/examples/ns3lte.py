@@ -4,13 +4,13 @@ ns3lte.py - This script demonstrates using CORE with the ns-3 LTE model.
 - issues connecting TapBridge with LteNetDevice
 """
 
+import logging
 import optparse
 import sys
 
 import ns.core
 import ns.mobility
 
-from core import logger
 from core.misc import ipaddress
 from core.misc import nodemaps
 from core.misc import nodeutils
@@ -84,13 +84,13 @@ def main():
         usage("invalid numnodes: %s" % opt.numnodes)
 
     for a in args:
-        logger.warn("ignoring command line argument: '%s'", a)
+        logging.warn("ignoring command line argument: '%s'", a)
 
     return ltesession(opt)
 
 
 def cleanup():
-    logger.info("shutting down session")
+    logging.info("shutting down session")
     session.shutdown()
 
 

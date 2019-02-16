@@ -2,7 +2,7 @@
 Serves as a global point for storing and retrieving node types needed during simulation.
 """
 
-from core import logger
+import logging
 
 _NODE_MAP = None
 
@@ -13,7 +13,7 @@ def _log_map():
         name = None
         if value:
             name = value.__name__
-        logger.debug("node type (%s) - class (%s)", key.name, name)
+        logging.debug("node type (%s) - class (%s)", key.name, name)
 
 
 def _convert_map(x, y):

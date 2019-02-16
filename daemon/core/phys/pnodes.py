@@ -2,13 +2,13 @@
 PhysicalNode class for including real systems in the emulated network.
 """
 
+import logging
 import os
 import subprocess
 import threading
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNode
 from core.misc import utils
 from core.netns.vnet import GreTap
@@ -121,7 +121,7 @@ class PhysicalNode(PyCoreNode):
         try:
             self._netif[ifindex].deladdr(addr)
         except ValueError:
-            logger.exception("trying to delete unknown address: %s", addr)
+            logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
             self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
@@ -172,7 +172,7 @@ class PhysicalNode(PyCoreNode):
             return ifindex
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
-        logger.info("creating interface")
+        logging.info("creating interface")
         if not addrlist:
             addrlist = []
 
@@ -210,17 +210,17 @@ class PhysicalNode(PyCoreNode):
 
     def mount(self, source, target):
         source = os.path.abspath(source)
-        logger.info("mounting %s at %s", source, target)
+        logging.info("mounting %s at %s", source, target)
         os.makedirs(target)
         self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
         self._mounts.append((source, target))
 
     def umount(self, target):
-        logger.info("unmounting '%s'" % target)
+        logging.info("unmounting '%s'" % target)
         try:
             self.check_cmd([constants.UMOUNT_BIN, "-l", target])
         except CoreCommandError:
-            logger.exception("unmounting failed for %s", target)
+            logging.exception("unmounting failed for %s", target)
 
     def opennodefile(self, filename, mode="w"):
         dirname, basename = os.path.split(filename)
@@ -242,4 +242,4 @@ class PhysicalNode(PyCoreNode):
         with self.opennodefile(filename, "w") as node_file:
             node_file.write(contents)
             os.chmod(node_file.name, mode)
-            logger.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
+            logging.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)

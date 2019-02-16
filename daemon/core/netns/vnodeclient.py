@@ -5,13 +5,13 @@ The control channel can be accessed via calls to the vcmd Python module or
 by invoking the vcmd shell command.
 """
 
+import logging
 import os
 
 import vcmd
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.misc import utils
 
 
@@ -158,7 +158,7 @@ class VnodeClient(object):
         # wait for and return exit status
         status = p.wait()
         if status:
-            logger.warn("cmd exited with status %s: %s", status, args)
+            logging.warn("cmd exited with status %s: %s", status, args)
         return status
 
     def term(self, sh="/bin/sh"):
@@ -236,16 +236,16 @@ class VnodeClient(object):
                 elif line[3] == "link":
                     interface["inet6link"].append(line[1])
                 else:
-                    logger.warn("unknown scope: %s" % line[3])
+                    logging.warn("unknown scope: %s" % line[3])
 
         err = stderr.read()
         stdout.close()
         stderr.close()
         status = p.wait()
         if status:
-            logger.warn("nonzero exist status (%s) for cmd: %s", status, args)
+            logging.warn("nonzero exist status (%s) for cmd: %s", status, args)
         if err:
-            logger.warn("error output: %s", err)
+            logging.warn("error output: %s", err)
         self._addr[ifname] = interface
         return interface
 
@@ -285,9 +285,9 @@ class VnodeClient(object):
         stderr.close()
         status = p.wait()
         if status:
-            logger.warn("nonzero exist status (%s) for cmd: %s", status, args)
+            logging.warn("nonzero exist status (%s) for cmd: %s", status, args)
         if err:
-            logger.warn("error output: %s", err)
+            logging.warn("error output: %s", err)
         if ifname is not None:
             return stats[ifname]
         else:

@@ -2,7 +2,7 @@
 Utilities for working with python struct data.
 """
 
-from core import logger
+import logging
 
 
 def pack_values(clazz, packers):
@@ -40,7 +40,7 @@ def pack_values(clazz, packers):
             value = transformer(value)
 
         # pack and add to existing data
-        logger.debug("packing: %s - %s", tlv_type, value)
+        logging.debug("packing: %s - %s", tlv_type, value)
         data += clazz.pack(tlv_type.value, value)
 
     return data

@@ -2,13 +2,12 @@
 Helper objects for dealing with IPv4/v6 addresses.
 """
 
+import logging
 import random
 import socket
 import struct
 from socket import AF_INET
 from socket import AF_INET6
-
-from core import logger
 
 
 class MacAddress(object):
@@ -151,7 +150,7 @@ class IpAddress(object):
         try:
             carry = int(other)
         except ValueError:
-            logger.exception("error during addition")
+            logging.exception("error during addition")
             return NotImplemented
 
         tmp = [ord(x) for x in self.addr]
@@ -174,7 +173,7 @@ class IpAddress(object):
         try:
             tmp = -int(other)
         except ValueError:
-            logger.exception("error during subtraction")
+            logging.exception("error during subtraction")
             return NotImplemented
 
         return self.__add__(tmp)
@@ -276,7 +275,7 @@ class IpPrefix(object):
         try:
             tmp = int(other)
         except ValueError:
-            logger.exception("error during addition")
+            logging.exception("error during addition")
             return NotImplemented
 
         a = IpAddress(self.af, self.prefix) + (tmp << (self.addrlen - self.prefixlen))
@@ -297,7 +296,7 @@ class IpPrefix(object):
         try:
             tmp = -int(other)
         except ValueError:
-            logger.exception("error during subtraction")
+            logging.exception("error during subtraction")
             return NotImplemented
 
         return self.__add__(tmp)

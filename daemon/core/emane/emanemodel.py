@@ -1,9 +1,9 @@
 """
 Defines Emane Models used within CORE.
 """
+import logging
 import os
 
-from core import logger
 from core.conf import ConfigGroup
 from core.conf import Configuration
 from core.emane import emanemanifest
@@ -95,7 +95,7 @@ class EmaneModel(WirelessModel):
 
         :return: nothing
         """
-        logger.info("emane model(%s) has no post setup tasks", self.name)
+        logging.info("emane model(%s) has no post setup tasks", self.name)
 
     def update(self, moved, moved_netifs):
         """
@@ -111,7 +111,7 @@ class EmaneModel(WirelessModel):
             wlan = self.session.get_object(self.object_id)
             wlan.setnempositions(moved_netifs)
         except KeyError:
-            logger.exception("error during update")
+            logging.exception("error during update")
 
     def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
         """
@@ -126,4 +126,4 @@ class EmaneModel(WirelessModel):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        logger.warn("emane model(%s) does not support link configuration", self.name)
+        logging.warn("emane model(%s) does not support link configuration", self.name)

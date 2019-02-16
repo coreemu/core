@@ -2,10 +2,10 @@
 tdma.py: EMANE TDMA model bindings for CORE
 """
 
+import logging
 import os
 
 from core import constants
-from core import logger
 from core.conf import Configuration
 from core.emane import emanemanifest
 from core.emane import emanemodel
@@ -55,5 +55,5 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         event_device = self.session.emane.event_device
 
         # initiate tdma schedule
-        logger.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
+        logging.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
         utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])

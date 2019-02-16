@@ -2,6 +2,7 @@
 ns3.py: defines classes for running emulations with ns-3 simulated networks.
 """
 
+import logging
 import subprocess
 import threading
 import time
@@ -16,7 +17,6 @@ import ns.wifi
 import ns.wimax
 
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNet
 from core.enumerations import EventTypes
 from core.enumerations import LinkTypes
@@ -174,7 +174,7 @@ class CoreNs3Net(PyCoreNet):
             netif.poshook = self.setns3position
 
     def setns3position(self, netif, x, y, z):
-        logger.info("setns3position: %s (%s, %s, %s)", netif.node.name, x, y, z)
+        logging.info("setns3position: %s (%s, %s, %s)", netif.node.name, x, y, z)
         netif.node.setns3position(x, y, z)
 
 
@@ -246,7 +246,7 @@ class Ns3LteNet(CoreNs3Net):
         #                ns.core.IntegerValue(ns.tap_bridge.TapBridge.USE_LOCAL))
         tap = self.tapbridge.Install(netif.node, ns3dev)
         # tap.SetMode(ns.tap_bridge.TapBridge.USE_LOCAL)
-        logger.info("using TAP device %s for %s/%s", netif.localname, netif.node.name, netif.name)
+        logging.info("using TAP device %s for %s/%s", netif.localname, netif.node.name, netif.name)
         subprocess.check_call(['tunctl', '-t', netif.localname, '-n'])
         # check_call([IP_BIN, 'link', 'set', 'dev', netif.localname, \
         #    'address', '%s' % netif.hwaddr])
@@ -373,12 +373,12 @@ class Ns3Session(Session):
 
         def runthread():
             ns.core.Simulator.Stop(ns.core.Seconds(self.duration))
-            logger.info("running ns-3 simulation for %d seconds", self.duration)
+            logging.info("running ns-3 simulation for %d seconds", self.duration)
             if vis:
                 try:
                     import visualizer
                 except ImportError:
-                    logger.exception("visualizer is not available")
+                    logging.exception("visualizer is not available")
                     ns.core.Simulator.Run()
                 else:
                     visualizer.start()
@@ -509,7 +509,7 @@ class Ns3Session(Session):
             net.mobility.setnodeposition(node, x, y, z)
             nodemap[node.GetId()] = node
 
-        logger.info("mobilitytrace opening '%s'", filename)
+        logging.info("mobilitytrace opening '%s'", filename)
 
         f = None
         try:
@@ -529,7 +529,7 @@ class Ns3Session(Session):
                     continue
                 sleep = 0.001
                 items = dict(x.split("=") for x in line.split())
-                logger.info("trace: %s %s %s", items['node'], items['pos'], items['vel'])
+                logging.info("trace: %s %s %s", items['node'], items['pos'], items['vel'])
                 x, y, z = map(float, items['pos'].split(':'))
                 vel = map(float, items['vel'].split(':'))
                 node = nodemap[int(items['node'])]
@@ -544,7 +544,7 @@ class Ns3Session(Session):
                         net.mobility.state = net.mobility.STATE_RUNNING
                         self.event_loop.add_event(0, net.mobility.runround)
         except IOError:
-            logger.exception("mobilitytrace error opening: %s", filename)
+            logging.exception("mobilitytrace error opening: %s", filename)
         finally:
             if f:
                 f.close()

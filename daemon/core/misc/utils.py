@@ -4,6 +4,7 @@ Miscellaneous utility functions, wrappers around some subprocess procedures.
 
 import importlib
 import inspect
+import logging
 import os
 import shlex
 import subprocess
@@ -12,7 +13,6 @@ import sys
 import fcntl
 
 from core import CoreCommandError
-from core import logger
 
 DEVNULL = open(os.devnull, "wb")
 
@@ -179,7 +179,7 @@ def cmd(args, wait=True):
     :rtype: int
     """
     args = split_args(args)
-    logger.debug("command: %s", args)
+    logging.debug("command: %s", args)
     try:
         p = subprocess.Popen(args)
         if not wait:
@@ -200,7 +200,7 @@ def cmd_output(args):
     :raises CoreCommandError: when the file to execute is not found
     """
     args = split_args(args)
-    logger.debug("command: %s", args)
+    logging.debug("command: %s", args)
     try:
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, _ = p.communicate()
@@ -224,7 +224,7 @@ def check_cmd(args, **kwargs):
     kwargs["stdout"] = subprocess.PIPE
     kwargs["stderr"] = subprocess.STDOUT
     args = split_args(args)
-    logger.debug("command: %s", args)
+    logging.debug("command: %s", args)
     try:
         p = subprocess.Popen(args, **kwargs)
         stdout, _ = p.communicate()
@@ -362,7 +362,7 @@ def load_config(filename, d):
             key, value = line.split("=", 1)
             d[key] = value.strip()
         except ValueError:
-            logger.exception("error reading file to dict: %s", filename)
+            logging.exception("error reading file to dict: %s", filename)
 
 
 def load_classes(path, clazz):
@@ -374,13 +374,13 @@ def load_classes(path, clazz):
     :return: list of classes loaded
     """
     # validate path exists
-    logger.debug("attempting to load modules from path: %s", path)
+    logging.debug("attempting to load modules from path: %s", path)
     if not os.path.isdir(path):
-        logger.warn("invalid custom module directory specified" ": %s" % path)
+        logging.warn("invalid custom module directory specified" ": %s" % path)
     # check if path is in sys.path
     parent_path = os.path.dirname(path)
     if parent_path not in sys.path:
-        logger.debug("adding parent path to allow imports: %s", parent_path)
+        logging.debug("adding parent path to allow imports: %s", parent_path)
         sys.path.append(parent_path)
 
     # retrieve potential service modules, and filter out invalid modules
@@ -393,7 +393,7 @@ def load_classes(path, clazz):
     classes = []
     for module_name in module_names:
         import_statement = "%s.%s" % (base_module, module_name)
-        logger.debug("importing custom module: %s", import_statement)
+        logging.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)
             members = inspect.getmembers(module, lambda x: _is_class(module, x, clazz))
@@ -401,6 +401,6 @@ def load_classes(path, clazz):
                 valid_class = member[1]
                 classes.append(valid_class)
         except:
-            logger.exception("unexpected error during import, skipping: %s", import_statement)
+            logging.exception("unexpected error during import, skipping: %s", import_statement)
 
     return classes

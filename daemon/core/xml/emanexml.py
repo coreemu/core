@@ -1,8 +1,8 @@
+import logging
 import os
 
 from lxml import etree
 
-from core import logger
 from core.misc import utils
 from core.misc.ipaddress import MacAddress
 from core.xml import corexml
@@ -40,7 +40,7 @@ def _value_to_params(value):
         return values
 
     except SyntaxError:
-        logger.exception("error in value string to param list")
+        logging.exception("error in value string to param list")
     return None
 
 
@@ -108,11 +108,11 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     :return: the next nem id that can be used for creating platform xml files
     :rtype: int
     """
-    logger.debug("building emane platform xml for node(%s): %s", node, node.name)
+    logging.debug("building emane platform xml for node(%s): %s", node, node.name)
     nem_entries = {}
 
     if node.model is None:
-        logger.warn("warning: EmaneNode %s has no associated model", node.name)
+        logging.warn("warning: EmaneNode %s has no associated model", node.name)
         return nem_entries
 
     for netif in node.netifs():
@@ -133,7 +133,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             # build transport xml
             transport_type = netif.transport_type
             if not transport_type:
-                logger.info("warning: %s interface type unsupported!", netif.name)
+                logging.info("warning: %s interface type unsupported!", netif.name)
                 transport_type = "raw"
             transport_file = transport_file_name(node.objid, transport_type)
             transport_element = etree.SubElement(nem_element, "transport", definition=transport_file)
@@ -209,7 +209,7 @@ def build_xml_files(emane_manager, node):
     :param core.emane.nodes.EmaneNode node: node to write platform xml for
     :return: nothing
     """
-    logger.debug("building all emane xml for node(%s): %s", node, node.name)
+    logging.debug("building all emane xml for node(%s): %s", node, node.name)
     if node.model is None:
         return
 

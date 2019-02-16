@@ -2,11 +2,11 @@
 sdt.py: Scripted Display Tool (SDT3D) helper
 """
 
+import logging
 import socket
 from urlparse import urlparse
 
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreObj
 from core.enumerations import EventTypes
@@ -149,7 +149,7 @@ class Sdt(object):
             return False
 
         self.seturl()
-        logger.info("connecting to SDT at %s://%s" % (self.protocol, self.address))
+        logging.info("connecting to SDT at %s://%s" % (self.protocol, self.address))
         if self.sock is None:
             try:
                 if self.protocol.lower() == "udp":
@@ -159,7 +159,7 @@ class Sdt(object):
                     # Default to tcp
                     self.sock = socket.create_connection(self.address, 5)
             except IOError:
-                logger.exception("SDT socket connect error")
+                logging.exception("SDT socket connect error")
                 return False
 
         if not self.initialize():
@@ -199,7 +199,7 @@ class Sdt(object):
             try:
                 self.sock.close()
             except IOError:
-                logger.error("error closing socket")
+                logging.error("error closing socket")
             finally:
                 self.sock = None
 
@@ -211,7 +211,7 @@ class Sdt(object):
 
         :return: nothing
         """
-        logger.info("SDT shutdown!")
+        logging.info("SDT shutdown!")
         self.cmd("clear all")
         self.disconnect()
         self.showerror = True
@@ -229,11 +229,11 @@ class Sdt(object):
         if self.sock is None:
             return False
         try:
-            logger.info("sdt: %s" % cmdstr)
+            logging.info("sdt: %s" % cmdstr)
             self.sock.sendall("%s\n" % cmdstr)
             return True
         except IOError:
-            logger.exception("SDT connection error")
+            logging.exception("SDT connection error")
             self.sock = None
             self.connected = False
             return False

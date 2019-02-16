@@ -4,9 +4,11 @@
 # n nodes are connected to a virtual wlan; run test for testsec
 # and repeat for minnodes <= n <= maxnodes with a step size of
 # nodestep
-
+from core import load_logging_config
 from core.emulator.emudata import IpPrefixes
 from core.enumerations import NodeTypes, EventTypes
+
+load_logging_config()
 
 
 def example(nodes):

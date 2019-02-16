@@ -1,4 +1,5 @@
-from core import logger
+import logging
+
 from core.conf import Configuration
 from core.enumerations import ConfigDataTypes
 
@@ -9,7 +10,7 @@ except ImportError:
     try:
         from emanesh import manifest
     except ImportError:
-        logger.debug("compatible emane python bindings not installed")
+        logging.debug("compatible emane python bindings not installed")
 
 
 def _type_value(config_type):

@@ -2,11 +2,11 @@
 virtual ethernet classes that implement the interfaces available under Linux.
 """
 
+import logging
 import time
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNetIf
 from core.enumerations import NodeTypes
 from core.misc import nodeutils
@@ -65,13 +65,13 @@ class VEth(PyCoreNetIf):
             try:
                 self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
             except CoreCommandError:
-                logger.exception("error shutting down interface")
+                logging.exception("error shutting down interface")
 
         if self.localname:
             try:
                 utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
             except CoreCommandError:
-                logger.exception("error deleting link")
+                logging.exception("error deleting link")
 
         self.up = False
 
@@ -126,7 +126,7 @@ class TunTap(PyCoreNetIf):
         try:
             self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
         except CoreCommandError:
-            logger.exception("error shutting down tunnel tap")
+            logging.exception("error shutting down tunnel tap")
 
         self.up = False
 
@@ -150,14 +150,14 @@ class TunTap(PyCoreNetIf):
             msg = "attempt %s failed with nonzero exit status %s" % (i, r)
             if i < attempts + 1:
                 msg += ", retrying..."
-                logger.info(msg)
+                logging.info(msg)
                 time.sleep(delay)
                 delay += delay
                 if delay > maxretrydelay:
                     delay = maxretrydelay
             else:
                 msg += ", giving up"
-                logger.info(msg)
+                logging.info(msg)
 
         return result
 
@@ -169,7 +169,7 @@ class TunTap(PyCoreNetIf):
         :return: wait for device local response
         :rtype: int
         """
-        logger.debug("waiting for device local: %s", self.localname)
+        logging.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
             args = [constants.IP_BIN, "link", "show", self.localname]
@@ -183,7 +183,7 @@ class TunTap(PyCoreNetIf):
 
         :return: nothing
         """
-        logger.debug("waiting for device node: %s", self.name)
+        logging.debug("waiting for device node: %s", self.name)
 
         def nodedevexists():
             args = [constants.IP_BIN, "link", "show", self.name]
@@ -300,7 +300,7 @@ class GreTap(PyCoreNetIf):
                 args = [constants.IP_BIN, "link", "del", self.localname]
                 utils.check_cmd(args)
             except CoreCommandError:
-                logger.exception("error during shutdown")
+                logging.exception("error during shutdown")
 
             self.localname = None
 

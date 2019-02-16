@@ -3,13 +3,13 @@ PyCoreNet and LxBrNet classes that implement virtual networks using
 Linux Ethernet bridging and ebtables rules.
 """
 
+import logging
 import os
 import threading
 import time
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNet
 from core.misc import utils
 from core.netns.vif import GreTap
@@ -80,7 +80,7 @@ class EbtablesQueue(object):
             try:
                 del self.last_update_time[wlan]
             except KeyError:
-                logger.exception("error deleting last update time for wlan, ignored before: %s", wlan)
+                logging.exception("error deleting last update time for wlan, ignored before: %s", wlan)
 
         if len(self.last_update_time) > 0:
             return
@@ -181,7 +181,7 @@ class EbtablesQueue(object):
         try:
             os.unlink(self.atomic_file)
         except OSError:
-            logger.exception("error removing atomic file: %s", self.atomic_file)
+            logging.exception("error removing atomic file: %s", self.atomic_file)
 
     def ebchange(self, wlan):
         """
@@ -310,7 +310,7 @@ class LxBrNet(PyCoreNet):
                 [constants.EBTABLES_BIN, "-X", self.brname]
             ])
         except CoreCommandError:
-            logger.exception("error during shutdown")
+            logging.exception("error during shutdown")
 
         # removes veth pairs used for bridge-to-bridge connections
         for netif in self.netifs():
@@ -438,7 +438,7 @@ class LxBrNet(PyCoreNet):
                        "burst", str(burst), "limit", str(limit)]
             if bw > 0:
                 if self.up:
-                    logger.debug("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
+                    logging.debug("linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],))
                     utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
                 changed = True
@@ -483,12 +483,12 @@ class LxBrNet(PyCoreNet):
                 return
             tc[2] = "delete"
             if self.up:
-                logger.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
+                logging.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
                 utils.check_cmd(tc + parent + ["handle", "10:"])
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                logger.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
+                logging.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
                 utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 

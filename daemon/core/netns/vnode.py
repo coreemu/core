@@ -3,6 +3,7 @@ PyCoreNode and LxcNode classes that implement the network namespac virtual node.
 """
 
 import errno
+import logging
 import os
 import random
 import shutil
@@ -12,7 +13,6 @@ import threading
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
 from core.enumerations import NodeTypes
@@ -107,11 +107,11 @@ class SimpleLxcNode(PyCoreNode):
         self.client = vnodeclient.VnodeClient(self.name, self.ctrlchnlname)
 
         # bring up the loopback interface
-        logger.debug("bringing up loopback interface")
+        logging.debug("bringing up loopback interface")
         self.check_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
 
         # set hostname for node
-        logger.debug("setting hostname: %s", self.name)
+        logging.debug("setting hostname: %s", self.name)
         self.check_cmd(["hostname", self.name])
 
         # mark node as up
@@ -141,7 +141,7 @@ class SimpleLxcNode(PyCoreNode):
             os.waitpid(self.pid, 0)
         except OSError as e:
             if e.errno != 10:
-                logger.exception("error killing process")
+                logging.exception("error killing process")
 
         # remove node directory if present
         try:
@@ -149,7 +149,7 @@ class SimpleLxcNode(PyCoreNode):
         except OSError as e:
             # no such file or directory
             if e.errno != errno.ENOENT:
-                logger.exception("error removing node directory")
+                logging.exception("error removing node directory")
 
         # clear interface data, close client, and mark self and not up
         self._netif.clear()
@@ -207,7 +207,7 @@ class SimpleLxcNode(PyCoreNode):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         source = os.path.abspath(source)
-        logger.info("node(%s) mounting: %s at %s", self.name, source, target)
+        logging.info("node(%s) mounting: %s at %s", self.name, source, target)
         cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
         status, output = self.client.shcmd_result(cmd)
         if status:
@@ -267,12 +267,12 @@ class SimpleLxcNode(PyCoreNode):
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
                 output = self.check_cmd(["ip", "link", "show", veth.name])
-                logger.debug("interface command output: %s", output)
+                logging.debug("interface command output: %s", output)
                 output = output.split("\n")
                 veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-                logger.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
+                logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
                 veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
-                logger.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
+                logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
                 self.addnetif(veth, ifindex)
@@ -359,7 +359,7 @@ class SimpleLxcNode(PyCoreNode):
         try:
             self._netif[ifindex].deladdr(addr)
         except ValueError:
-            logger.exception("trying to delete unknown address: %s" % addr)
+            logging.exception("trying to delete unknown address: %s" % addr)
 
         if self.up:
             self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
@@ -475,7 +475,7 @@ class SimpleLxcNode(PyCoreNode):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logger.info("adding file from %s to %s", srcname, filename)
+        logging.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
 
         cmd = 'mkdir -p "%s" && mv "%s" "%s" && sync' % (directory, srcname, filename)
@@ -530,7 +530,7 @@ class LxcNode(SimpleLxcNode):
             try:
                 super(LxcNode, self).shutdown()
             except OSError:
-                logger.exception("error during shutdown")
+                logging.exception("error during shutdown")
             finally:
                 self.rmnodedir()
 
@@ -590,7 +590,7 @@ class LxcNode(SimpleLxcNode):
         with self.opennodefile(filename, "w") as open_file:
             open_file.write(contents)
             os.chmod(open_file.name, mode)
-            logger.info("node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode)
+            logging.info("node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode)
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -606,4 +606,4 @@ class LxcNode(SimpleLxcNode):
         shutil.copy2(srcfilename, hostfilename)
         if mode is not None:
             os.chmod(hostfilename, mode)
-        logger.info("node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode)
+        logging.info("node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode)

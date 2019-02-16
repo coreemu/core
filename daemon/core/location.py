@@ -5,7 +5,8 @@ systems. Depends on utm contributed module, from
 https://pypi.python.org/pypi/utm (version 0.3.0).
 """
 
-from core import logger
+import logging
+
 from core.enumerations import RegisterTlvs
 from core.misc import utm
 
@@ -117,7 +118,7 @@ class CoreLocation(object):
         try:
             lat, lon = utm.to_latlon(e, n, zone[0], zone[1])
         except utm.OutOfRangeError:
-            logger.exception("UTM out of range error for n=%s zone=%s xyz=(%s,%s,%s)", n, zone, x, y, z)
+            logging.exception("UTM out of range error for n=%s zone=%s xyz=(%s,%s,%s)", n, zone, x, y, z)
             lat, lon = self.refgeo[:2]
         # self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
         #          "%.3f,%.3f,%.3f" % (x, y, z, e, n, zone, lat, lon, alt))

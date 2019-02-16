@@ -2,9 +2,9 @@
 Common support for configurable CORE objects.
 """
 
+import logging
 from collections import OrderedDict
 
-from core import logger
 from core.data import ConfigData
 
 
@@ -63,9 +63,9 @@ class ConfigShim(object):
         captions = None
         data_types = []
         possible_values = []
-        logger.debug("configurable: %s", configurable_options)
-        logger.debug("configuration options: %s", configurable_options.configurations)
-        logger.debug("configuration data: %s", config)
+        logging.debug("configurable: %s", configurable_options)
+        logging.debug("configuration options: %s", configurable_options.configurations)
+        logging.debug("configuration data: %s", config)
         for configuration in configurable_options.configurations():
             if not captions:
                 captions = configuration.label
@@ -159,7 +159,7 @@ class ConfigurableManager(object):
         :param int node_id: node id to clear configurations for, default is None and clears all configurations
         :return: nothing
         """
-        logger.debug("resetting all configurations: %s", self.__class__.__name__)
+        logging.debug("resetting all configurations: %s", self.__class__.__name__)
         if not node_id:
             self.node_configurations.clear()
         elif node_id in self.node_configurations:
@@ -175,7 +175,7 @@ class ConfigurableManager(object):
         :param str config_type: configuration type to store configuration for
         :return: nothing
         """
-        logger.debug("setting config for node(%s) type(%s): %s=%s", node_id, config_type, _id, value)
+        logging.debug("setting config for node(%s) type(%s): %s=%s", node_id, config_type, _id, value)
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_type_configs = node_configs.setdefault(config_type, OrderedDict())
         node_type_configs[_id] = value
@@ -189,7 +189,7 @@ class ConfigurableManager(object):
         :param str config_type: configuration type to store configuration for
         :return: nothing
         """
-        logger.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
+        logging.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_configs[config_type] = config
 
@@ -204,7 +204,7 @@ class ConfigurableManager(object):
         :return: configuration value
         :rtype str
         """
-        logger.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
+        logging.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
         result = default
         node_type_configs = self.get_configs(node_id, config_type)
         if node_type_configs:
@@ -220,7 +220,7 @@ class ConfigurableManager(object):
         :return: configurations
         :rtype: dict
         """
-        logger.debug("getting configs for node(%s) type(%s)", node_id, config_type)
+        logging.debug("getting configs for node(%s) type(%s)", node_id, config_type)
         result = None
         node_configs = self.node_configurations.get(node_id)
         if node_configs:
@@ -235,7 +235,7 @@ class ConfigurableManager(object):
         :return: all configuration types for a node
         :rtype: dict
         """
-        logger.debug("getting all configs for node(%s)", node_id)
+        logging.debug("getting all configs for node(%s)", node_id)
         return self.node_configurations.get(node_id)
 
 
@@ -369,7 +369,7 @@ class ModelManager(ConfigurableManager):
         :param dict config: model configuration, None for default configuration
         :return: nothing
         """
-        logger.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
+        logging.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
         self.set_model_config(node.objid, model_class.name, config)
         config = self.get_model_config(node.objid, model_class.name)
         node.setmodel(model_class, config)
@@ -394,5 +394,5 @@ class ModelManager(ConfigurableManager):
             model_class = self.models[model_name]
             models.append((model_class, config))
 
-        logger.debug("models for node(%s): %s", node.objid, models)
+        logging.debug("models for node(%s): %s", node.objid, models)
         return models

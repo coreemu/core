@@ -3,8 +3,9 @@ security.py: defines security services (vpnclient, vpnserver, ipsec and
 firewall)
 """
 
+import logging
+
 from core import constants
-from core import logger
 from core.service import CoreService
 
 
@@ -29,7 +30,7 @@ class VPNClient(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening VPN client configuration template (%s)", fname)
+            logging.exception("Error opening VPN client configuration template (%s)", fname)
 
         return cfg
 
@@ -56,7 +57,7 @@ class VPNServer(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening VPN server configuration template (%s)", fname)
+            logging.exception("Error opening VPN server configuration template (%s)", fname)
 
         return cfg
 
@@ -83,7 +84,7 @@ class IPsec(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening IPsec configuration template (%s)", fname)
+            logging.exception("Error opening IPsec configuration template (%s)", fname)
 
         return cfg
 
@@ -107,7 +108,7 @@ class Firewall(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logger.exception("Error opening Firewall configuration template (%s)", fname)
+            logging.exception("Error opening Firewall configuration template (%s)", fname)
 
         return cfg
 

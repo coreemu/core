@@ -1,6 +1,6 @@
+import logging
 import time
 
-from core import logger
 from core.misc.event import EventLoop
 
 
@@ -9,7 +9,7 @@ def main():
 
     def msg(arg):
         delta = time.time() - loop.start
-        logger.debug("%s arg: %s", delta, arg)
+        logging.debug("%s arg: %s", delta, arg)
 
     def repeat(interval, count):
         count -= 1

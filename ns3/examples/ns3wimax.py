@@ -9,10 +9,10 @@ Current issues:
 - no packets are sent between nodes - no connection?
 """
 
+import logging
 import optparse
 import sys
 
-from core import logger
 from core.misc import ipaddress
 from core.misc import nodemaps
 from core.misc import nodeutils
@@ -76,7 +76,7 @@ def main():
         usage("invalid numnodes: %s" % opt.numnodes)
 
     for a in args:
-        logger.warn("ignoring command line argument: '%s'", a)
+        logging.warn("ignoring command line argument: '%s'", a)
 
     return wimaxsession(opt)
 

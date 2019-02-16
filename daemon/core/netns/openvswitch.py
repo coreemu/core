@@ -2,6 +2,7 @@
 TODO: probably goes away, or implement the usage of "unshare", or docker formal.
 """
 
+import logging
 import socket
 import threading
 from socket import AF_INET
@@ -9,7 +10,6 @@ from socket import AF_INET6
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNet
 from core.data import LinkData
 from core.enumerations import LinkTypes
@@ -100,7 +100,7 @@ class OvsNet(PyCoreNet):
 
     def shutdown(self):
         if not self.up:
-            logger.info("exiting shutdown, object is not up")
+            logging.info("exiting shutdown, object is not up")
             return
 
         ebtables_queue.stopupdateloop(self)
@@ -113,7 +113,7 @@ class OvsNet(PyCoreNet):
                 [constants.EBTABLES_BIN, "-X", self.bridge_name]
             ])
         except CoreCommandError:
-            logger.exception("error bringing bridge down and removing it")
+            logging.exception("error bringing bridge down and removing it")
 
         # removes veth pairs used for bridge-to-bridge connections
         for interface in self.netifs():
@@ -206,7 +206,7 @@ class OvsNet(PyCoreNet):
                     burst = max(2 * netif.mtu, bw / 1000)
                     limit = 0xffff  # max IP payload
                     tbf = ["tbf", "rate", str(bw), "burst", str(burst), "limit", str(limit)]
-                    logger.info("linkconfig: %s" % [tc + parent + ["handle", "1:"] + tbf])
+                    logging.info("linkconfig: %s" % [tc + parent + ["handle", "1:"] + tbf])
                     utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
             elif netif.getparam("has_tbf") and bw <= 0:
@@ -262,12 +262,12 @@ class OvsNet(PyCoreNet):
             tc[2] = "delete"
 
             if self.up:
-                logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
+                logging.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
                 utils.check_cmd(tc + parent + ["handle", "10:"])
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                logger.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
+                logging.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
                 utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 
@@ -373,10 +373,10 @@ class OvsCtrlNet(OvsNet):
         if self.assign_address:
             self.addrconfig(addresses=addresses)
             message += " address %s" % addr
-        logger.info(message)
+        logging.info(message)
 
         if self.updown_script:
-            logger.info("interface %s updown script %s startup called" % (self.bridge_name, self.updown_script))
+            logging.info("interface %s updown script %s startup called" % (self.bridge_name, self.updown_script))
             utils.check_cmd([self.updown_script, self.bridge_name, "startup"])
 
         if self.serverintf:
@@ -395,7 +395,7 @@ class OvsCtrlNet(OvsNet):
             for line in output.split("\n"):
                 bride_name = line.split(".")
                 if bride_name[0] == "b" and bride_name[1] == self.objid:
-                    logger.error("older session may still be running with conflicting id for bridge: %s", line)
+                    logging.error("older session may still be running with conflicting id for bridge: %s", line)
                     return True
 
         return False
@@ -405,15 +405,15 @@ class OvsCtrlNet(OvsNet):
             try:
                 utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, self.serverintf])
             except CoreCommandError:
-                logger.exception("error deleting server interface %s to controlnet bridge %s",
+                logging.exception("error deleting server interface %s to controlnet bridge %s",
                                  self.serverintf, self.bridge_name)
 
         if self.updown_script:
             try:
-                logger.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
+                logging.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
                 utils.check_cmd([self.updown_script, self.bridge_name, "shutdown"])
             except CoreCommandError:
-                logger.exception("error during updown script shutdown")
+                logging.exception("error during updown script shutdown")
 
         OvsNet.shutdown(self)
 
@@ -595,7 +595,7 @@ class OvsWlanNode(OvsNet):
         """
         Mobility and wireless model.
         """
-        logger.info("adding model %s", model.name)
+        logging.info("adding model %s", model.name)
 
         if model.type == RegisterTlvs.WIRELESS.value:
             self.model = model(session=self.session, object_id=self.objid, config=config)
@@ -612,7 +612,7 @@ class OvsWlanNode(OvsNet):
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.objid)
-        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        logging.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
         self.model.set_configs(config, node_id=self.objid)
         if self.model.position_callback:
             for netif in self.netifs():

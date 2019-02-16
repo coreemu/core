@@ -2,7 +2,8 @@
 xorp.py: defines routing services provided by the XORP routing suite.
 """
 
-from core import logger
+import logging
+
 from core.service import CoreService
 
 
@@ -42,7 +43,7 @@ class XorpRtrmgr(CoreService):
                 s.dependencies.index(cls.name)
                 cfg += s.generatexorpconfig(node)
             except ValueError:
-                logger.exception("error getting value from service: %s", cls.name)
+                logging.exception("error getting value from service: %s", cls.name)
 
         return cfg
 

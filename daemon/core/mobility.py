@@ -3,12 +3,12 @@ mobility.py: mobility helpers for moving nodes and calculating wireless range.
 """
 
 import heapq
+import logging
 import math
 import os
 import threading
 import time
 
-from core import logger
 from core.conf import ConfigGroup
 from core.conf import ConfigurableOptions
 from core.conf import Configuration
@@ -63,13 +63,13 @@ class MobilityManager(ModelManager):
             node_ids = self.nodes()
 
         for node_id in node_ids:
-            logger.info("checking mobility startup for node: %s", node_id)
-            logger.info("node mobility configurations: %s", self.get_all_configs(node_id))
+            logging.info("checking mobility startup for node: %s", node_id)
+            logging.info("node mobility configurations: %s", self.get_all_configs(node_id))
 
             try:
                 node = self.session.get_object(node_id)
             except KeyError:
-                logger.warn("skipping mobility configuration for unknown node: %s", node_id)
+                logging.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
             for model_name in self.models.iterkeys():
@@ -100,7 +100,7 @@ class MobilityManager(ModelManager):
         try:
             node = self.session.get_object(node_id)
         except KeyError:
-            logger.exception("Ignoring event for model '%s', unknown node '%s'", name, node_id)
+            logging.exception("Ignoring event for model '%s', unknown node '%s'", name, node_id)
             return
 
         # name is e.g. "mobility:ns2script"
@@ -109,7 +109,7 @@ class MobilityManager(ModelManager):
             try:
                 cls = self.models[model]
             except KeyError:
-                logger.warn("Ignoring event for unknown model '%s'", model)
+                logging.warn("Ignoring event for unknown model '%s'", model)
                 continue
 
             if cls.config_type in [RegisterTlvs.WIRELESS.value, RegisterTlvs.MOBILITY.value]:
@@ -118,11 +118,11 @@ class MobilityManager(ModelManager):
                 continue
 
             if model is None:
-                logger.warn("Ignoring event, %s has no model", node.name)
+                logging.warn("Ignoring event, %s has no model", node.name)
                 continue
 
             if cls.name != model.name:
-                logger.warn("Ignoring event for %s wrong model %s,%s", node.name, cls.name, model.name)
+                logging.warn("Ignoring event for %s wrong model %s,%s", node.name, cls.name, model.name)
                 continue
 
             if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:
@@ -232,7 +232,7 @@ class MobilityManager(ModelManager):
             nodeypos = message.get_tlv(NodeTlvs.Y_POSITION.value)
             dummy.setposition(nodexpos, nodeypos, None)
         except KeyError:
-            logger.exception("error retrieving physical node: %s", nodenum)
+            logging.exception("error retrieving physical node: %s", nodenum)
 
     def installphysnodes(self, net):
         """
@@ -358,7 +358,7 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         self.range = float(config["range"])
-        logger.info("basic range model configured for WLAN %d using range %d", self.wlan.objid, self.range)
+        logging.info("basic range model configured for WLAN %d using range %d", self.wlan.objid, self.range)
         self.bw = int(config["bandwidth"])
         if self.bw == 0.0:
             self.bw = None
@@ -467,20 +467,20 @@ class BasicRangeModel(WirelessModel):
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
 
-            logger.debug("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
+            logging.debug("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
                          a.name, b.name, linked, d, self.range)
             if d > self.range:
                 if linked:
-                    logger.debug("was linked, unlinking")
+                    logging.debug("was linked, unlinking")
                     self.wlan.unlink(a, b)
                     self.sendlinkmsg(a, b, unlink=True)
             else:
                 if not linked:
-                    logger.debug("was not linked, linking")
+                    logging.debug("was not linked, linking")
                     self.wlan.link(a, b)
                     self.sendlinkmsg(a, b)
         except KeyError:
-            logger.exception("error getting interfaces during calclinkS")
+            logging.exception("error getting interfaces during calclinkS")
 
     @staticmethod
     def calcdistance(p1, p2):
@@ -689,7 +689,7 @@ class WayPointMobility(WirelessModel):
 
         :return: nothing
         """
-        logger.info("running mobility scenario")
+        logging.info("running mobility scenario")
         self.timezero = time.time()
         self.lasttime = self.timezero - (0.001 * self.refresh_ms)
         self.movenodesinitial()
@@ -947,7 +947,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
     def update_config(self, config):
         self.file = config["file"]
-        logger.info("ns-2 scripted mobility configured for WLAN %d using file: %s", self.object_id, self.file)
+        logging.info("ns-2 scripted mobility configured for WLAN %d using file: %s", self.object_id, self.file)
         self.refresh_ms = int(config["refresh_ms"])
         self.loop = config["loop"].lower() == "on"
         self.autostart = config["autostart"]
@@ -971,9 +971,9 @@ class Ns2ScriptedMobility(WayPointMobility):
         try:
             f = open(filename, "r")
         except IOError:
-            logger.exception("ns-2 scripted mobility failed to load file: %s", self.file)
+            logging.exception("ns-2 scripted mobility failed to load file: %s", self.file)
             return
-        logger.info("reading ns-2 script file: %s" % filename)
+        logging.info("reading ns-2 script file: %s" % filename)
         ln = 0
         ix = iy = iz = None
         inodenum = None
@@ -1017,7 +1017,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                 else:
                     raise ValueError
             except ValueError:
-                logger.exception("skipping line %d of file %s '%s'", ln, self.file, line)
+                logging.exception("skipping line %d of file %s '%s'", ln, self.file, line)
                 continue
         if ix is not None and iy is not None:
             self.addinitial(self.map(inodenum), ix, iy, iz)
@@ -1067,7 +1067,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                     raise ValueError
                 self.nodemap[int(parts[0])] = int(parts[1])
             except ValueError:
-                logger.exception("ns-2 mobility node map error")
+                logging.exception("ns-2 mobility node map error")
 
     def map(self, nodenum):
         """
@@ -1090,15 +1090,15 @@ class Ns2ScriptedMobility(WayPointMobility):
         :return: nothing
         """
         if self.autostart == '':
-            logger.info("not auto-starting ns-2 script for %s" % self.wlan.name)
+            logging.info("not auto-starting ns-2 script for %s" % self.wlan.name)
             return
         try:
             t = float(self.autostart)
         except ValueError:
-            logger.exception("Invalid auto-start seconds specified '%s' for %s", self.autostart, self.wlan.name)
+            logging.exception("Invalid auto-start seconds specified '%s' for %s", self.autostart, self.wlan.name)
             return
         self.movenodesinitial()
-        logger.info("scheduling ns-2 script for %s autostart at %s" % (self.wlan.name, t))
+        logging.info("scheduling ns-2 script for %s autostart at %s" % (self.wlan.name, t))
         self.state = self.STATE_RUNNING
         self.session.event_loop.add_event(t, self.run)
 
@@ -1108,7 +1108,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        logger.info("starting script")
+        logging.info("starting script")
         laststate = self.state
         super(Ns2ScriptedMobility, self).start()
         if laststate == self.STATE_PAUSED:

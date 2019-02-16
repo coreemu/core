@@ -8,9 +8,12 @@
 import datetime
 
 import parser
+from core import load_logging_config
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.enumerations import NodeTypes, EventTypes
+
+load_logging_config()
 
 
 def example(options):

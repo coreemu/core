@@ -4,7 +4,8 @@ control of an EMANE emulation. An EmaneNode has several attached NEMs that
 share the same MAC+PHY model.
 """
 
-from core import logger
+import logging
+
 from core.coreobj import PyCoreNet
 from core.enumerations import LinkTypes
 from core.enumerations import NodeTypes
@@ -16,7 +17,7 @@ except ImportError:
     try:
         from emanesh.events import LocationEvent
     except ImportError:
-        logger.debug("compatible emane python bindings not installed")
+        logging.debug("compatible emane python bindings not installed")
 
 
 class EmaneNet(PyCoreNet):
@@ -68,14 +69,14 @@ class EmaneNode(EmaneNet):
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.objid)
-        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        logging.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
         self.model.set_configs(config, node_id=self.objid)
 
     def setmodel(self, model, config):
         """
         set the EmaneModel associated with this node
         """
-        logger.info("adding model: %s", model.name)
+        logging.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
@@ -126,7 +127,7 @@ class EmaneNode(EmaneNet):
         if self.session.emane.genlocationevents() and self.session.emane.service is None:
             warntxt = "unable to publish EMANE events because the eventservice "
             warntxt += "Python bindings failed to load"
-            logger.error(warntxt)
+            logging.error(warntxt)
 
         for netif in self.netifs():
             external = self.session.emane.get_config("external", self.objid, self.model.name)
@@ -159,15 +160,15 @@ class EmaneNode(EmaneNet):
         Publish a NEM location change event using the EMANE event service.
         """
         if self.session.emane.service is None:
-            logger.info("position service not available")
+            logging.info("position service not available")
             return
         nemid = self.getnemid(netif)
         ifname = netif.localname
         if nemid is None:
-            logger.info("nemid for %s is unknown" % ifname)
+            logging.info("nemid for %s is unknown" % ifname)
             return
         lat, long, alt = self.session.location.getgeo(x, y, z)
-        logger.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)", ifname, nemid, x, y, z, lat, long, alt)
+        logging.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)", ifname, nemid, x, y, z, lat, long, alt)
         event = LocationEvent()
 
         # altitude must be an integer or warning is printed
@@ -186,7 +187,7 @@ class EmaneNode(EmaneNet):
             return
 
         if self.session.emane.service is None:
-            logger.info("position service not available")
+            logging.info("position service not available")
             return
 
         event = LocationEvent()
@@ -195,11 +196,11 @@ class EmaneNode(EmaneNet):
             nemid = self.getnemid(netif)
             ifname = netif.localname
             if nemid is None:
-                logger.info("nemid for %s is unknown" % ifname)
+                logging.info("nemid for %s is unknown" % ifname)
                 continue
             x, y, z = netif.node.getposition()
             lat, long, alt = self.session.location.getgeo(x, y, z)
-            logger.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
+            logging.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
                         i, ifname, nemid, x, y, z, lat, long, alt)
             # altitude must be an integer or warning is printed
             alt = int(round(alt))

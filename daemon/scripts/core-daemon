@@ -6,16 +6,19 @@ message handlers are defined and some support for sending messages.
 """
 
 import ConfigParser
+import logging
 import optparse
 import sys
 import time
 
+from core import load_logging_config
 from core import constants
 from core import enumerations
-from core import logger
 from core.corehandlers import CoreHandler
 from core.coreserver import CoreServer
 from core.misc.utils import close_onexec
+
+load_logging_config()
 
 
 def banner():
@@ -24,7 +27,7 @@ def banner():
 
     :return: nothing
     """
-    logger.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
+    logging.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
 
 
 def cored(cfg, use_ovs):
@@ -46,11 +49,11 @@ def cored(cfg, use_ovs):
             from core.netns.openvswitch import OVS_NODES
             server.coreemu.update_nodes(OVS_NODES)
     except:
-        logger.exception("error starting main server on:  %s:%s", host, port)
+        logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
 
     close_onexec(server.fileno())
-    logger.info("server started, listening on: %s:%s", host, port)
+    logging.info("server started, listening on: %s:%s", host, port)
     server.serve_forever()
 
 
@@ -113,7 +116,7 @@ def main():
     # get a configuration merged from config file and command-line arguments
     cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     for a in args:
-        logger.error("ignoring command line argument: %s", a)
+        logging.error("ignoring command line argument: %s", a)
 
     banner()
 
@@ -123,7 +126,7 @@ def main():
     try:
         cored(cfg, use_ovs)
     except KeyboardInterrupt:
-        logger.info("keyboard interrupt, stopping core daemon")
+        logging.info("keyboard interrupt, stopping core daemon")
 
     sys.exit(0)
 

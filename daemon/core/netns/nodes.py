@@ -3,6 +3,7 @@ Definition of LxcNode, CoreNode, and other node classes that inherit from the Co
 implementing specific node types.
 """
 
+import logging
 import socket
 import threading
 from socket import AF_INET
@@ -10,7 +11,6 @@ from socket import AF_INET6
 
 from core import CoreCommandError
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNetIf
 from core.coreobj import PyCoreNode
 from core.coreobj import PyCoreObj
@@ -80,15 +80,15 @@ class CtrlNet(LxBrNet):
         else:
             addr = self.prefix.max_addr()
 
-        logger.info("added control network bridge: %s %s", self.brname, self.prefix)
+        logging.info("added control network bridge: %s %s", self.brname, self.prefix)
 
         if self.assign_address:
             addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
             self.addrconfig(addrlist=addrlist)
-            logger.info("address %s", addr)
+            logging.info("address %s", addr)
 
         if self.updown_script:
-            logger.info("interface %s updown script (%s startup) called", self.brname, self.updown_script)
+            logging.info("interface %s updown script (%s startup) called", self.brname, self.updown_script)
             utils.check_cmd([self.updown_script, self.brname, "startup"])
 
         if self.serverintf:
@@ -108,7 +108,7 @@ class CtrlNet(LxBrNet):
         """
         status, output = utils.cmd_output([constants.BRCTL_BIN, "show"])
         if status != 0:
-            logger.error("Unable to retrieve list of installed bridges")
+            logging.error("Unable to retrieve list of installed bridges")
         else:
             lines = output.split("\n")
             for line in lines[1:]:
@@ -117,7 +117,7 @@ class CtrlNet(LxBrNet):
                 flds = cols[0].split(".")
                 if len(flds) == 3:
                     if flds[0] == "b" and flds[1] == self.objid:
-                        logger.error(
+                        logging.error(
                             "error: An active control net bridge (%s) found. "
                             "An older session might still be running. "
                             "Stop all sessions and, if needed, delete %s to continue.", oldbr, oldbr
@@ -135,14 +135,14 @@ class CtrlNet(LxBrNet):
             try:
                 utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, self.serverintf])
             except CoreCommandError:
-                logger.exception("error deleting server interface %s from bridge %s", self.serverintf, self.brname)
+                logging.exception("error deleting server interface %s from bridge %s", self.serverintf, self.brname)
 
         if self.updown_script is not None:
             try:
-                logger.info("interface %s updown script (%s shutdown) called", self.brname, self.updown_script)
+                logging.info("interface %s updown script (%s shutdown) called", self.brname, self.updown_script)
                 utils.check_cmd([self.updown_script, self.brname, "shutdown"])
             except CoreCommandError:
-                logger.exception("error issuing shutdown script shutdown")
+                logging.exception("error issuing shutdown script shutdown")
 
         LxBrNet.shutdown(self)
 
@@ -383,7 +383,7 @@ class WlanNode(LxBrNet):
         :param dict config: configuration for model being set
         :return: nothing
         """
-        logger.info("adding model: %s", model.name)
+        logging.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
             self.model = model(session=self.session, object_id=self.objid)
             self.model.update_config(config)
@@ -406,7 +406,7 @@ class WlanNode(LxBrNet):
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.objid)
-        logger.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
+        logging.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
         self.model.set_configs(config, node_id=self.objid)
         if self.model.position_callback:
             for netif in self.netifs():
@@ -492,7 +492,7 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
             utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
             utils.check_cmd([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
         except CoreCommandError:
-            logger.exception("error shutting down")
+            logging.exception("error shutting down")
 
         self.up = False
         self.restorestate()

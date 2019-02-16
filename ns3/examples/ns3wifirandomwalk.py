@@ -11,6 +11,7 @@ How to run this:
     python -i ns3wifirandomwalk.py
 """
 
+import logging
 import optparse
 import sys
 
@@ -19,7 +20,6 @@ import ns.network
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
 
-from core import logger
 from core.misc import ipaddress
 from core.misc import nodemaps
 from core.misc import nodeutils
@@ -109,11 +109,11 @@ def main():
         usage("invalid numnodes: %s" % opt.numnodes)
 
     for a in args:
-        logger.warn("ignoring command line argument: '%s'", a)
+        logging.warn("ignoring command line argument: '%s'", a)
 
     return wifisession(opt)
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     session = main()
-    logger.info("\nsession =%s", session)
+    logging.info("\nsession =%s", session)

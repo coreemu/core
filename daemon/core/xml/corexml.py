@@ -1,7 +1,8 @@
+import logging
+
 from lxml import etree
 
 from core import coreobj
-from core import logger
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
@@ -321,7 +322,7 @@ class CoreXmlWriter(object):
                 continue
 
             for model_name, config in all_configs.iteritems():
-                logger.info("writing emane config node(%s) model(%s)", node_id, model_name)
+                logging.info("writing emane config node(%s) model(%s)", node_id, model_name)
                 if model_name == -1:
                     emane_configuration = create_emane_config(node_id, self.session.emane.emane_config, config)
                 else:
@@ -340,7 +341,7 @@ class CoreXmlWriter(object):
                 continue
 
             for model_name, config in all_configs.iteritems():
-                logger.info("writing mobility config node(%s) model(%s)", node_id, model_name)
+                logging.info("writing mobility config node(%s) model(%s)", node_id, model_name)
                 mobility_configuration = etree.SubElement(mobility_configurations, "mobility_configuration")
                 add_attribute(mobility_configuration, "node", node_id)
                 add_attribute(mobility_configuration, "model", model_name)
@@ -399,7 +400,7 @@ class CoreXmlWriter(object):
             for netif in node.netifs(sort=True):
                 othernet = getattr(netif, "othernet", None)
                 if othernet and othernet.objid != node.objid:
-                    logger.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
+                    logging.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
                     return
 
         network = NetworkElement(self.session, node)
@@ -525,7 +526,7 @@ class CoreXmlReader(object):
             services = []
             for service in node.iterchildren():
                 services.append(service.get("name"))
-            logger.info("reading default services for nodes(%s): %s", node_type, services)
+            logging.info("reading default services for nodes(%s): %s", node_type, services)
             self.session.services.default_services[node_type] = services
 
     def read_session_metadata(self):
@@ -538,7 +539,7 @@ class CoreXmlReader(object):
             name = data.get("name")
             value = data.get("value")
             configs[name] = value
-        logger.info("reading session metadata: %s", configs)
+        logging.info("reading session metadata: %s", configs)
         self.session.metadata.set_configs(configs)
 
     def read_session_options(self):
@@ -551,7 +552,7 @@ class CoreXmlReader(object):
             name = config.get("name")
             value = config.get("value")
             configs[name] = value
-        logger.info("reading session options: %s", configs)
+        logging.info("reading session options: %s", configs)
         self.session.options.set_configs(configs)
 
     def read_session_hooks(self):
@@ -564,7 +565,7 @@ class CoreXmlReader(object):
             state = hook.get("state")
             data = hook.text
             hook_type = "hook:%s" % state
-            logger.info("reading hook: state(%s) name(%s)", state, name)
+            logging.info("reading hook: state(%s) name(%s)", state, name)
             self.session.set_hook(hook_type, file_name=name, source_name=None, data=data)
 
     def read_session_origin(self):
@@ -576,19 +577,19 @@ class CoreXmlReader(object):
         lon = get_float(session_origin, "lon")
         alt = get_float(session_origin, "alt")
         if all([lat, lon, alt]):
-            logger.info("reading session reference geo: %s, %s, %s", lat, lon, alt)
+            logging.info("reading session reference geo: %s, %s, %s", lat, lon, alt)
             self.session.location.setrefgeo(lat, lon, alt)
 
         scale = get_float(session_origin, "scale")
         if scale:
-            logger.info("reading session reference scale: %s", scale)
+            logging.info("reading session reference scale: %s", scale)
             self.session.location.refscale = scale
 
         x = get_float(session_origin, "x")
         y = get_float(session_origin, "y")
         z = get_float(session_origin, "z")
         if all([x, y]):
-            logger.info("reading session reference xyz: %s, %s, %s", x, y, z)
+            logging.info("reading session reference xyz: %s, %s, %s", x, y, z)
             self.session.location.refxyz = (x, y, z)
 
     def read_service_configs(self):
@@ -599,7 +600,7 @@ class CoreXmlReader(object):
         for service_configuration in service_configurations.iterchildren():
             node_id = get_int(service_configuration, "node")
             service_name = service_configuration.get("name")
-            logger.info("reading custom service(%s) for node(%s)", service_name, node_id)
+            logging.info("reading custom service(%s) for node(%s)", service_name, node_id)
             self.session.services.set_service(node_id, service_name)
             service = self.session.services.get_service(node_id, service_name)
 
@@ -654,7 +655,7 @@ class CoreXmlReader(object):
                 value = config.get("value")
                 configs[name] = value
 
-            logger.info("reading emane configuration node(%s) model(%s)", node_id, model_name)
+            logging.info("reading emane configuration node(%s) model(%s)", node_id, model_name)
             self.session.emane.set_model_config(node_id, model_name, configs)
 
     def read_mobility_configs(self):
@@ -672,7 +673,7 @@ class CoreXmlReader(object):
                 value = config.get("value")
                 configs[name] = value
 
-            logger.info("reading mobility configuration node(%s) model(%s)", node_id, model_name)
+            logging.info("reading mobility configuration node(%s) model(%s)", node_id, model_name)
             self.session.mobility.set_model_config(node_id, model_name, configs)
 
     def read_nodes(self):
@@ -709,7 +710,7 @@ class CoreXmlReader(object):
             if all([lat, lon, alt]):
                 node_options.set_location(lat, lon, alt)
 
-        logger.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
+        logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
         self.session.add_node(_id=node_id, node_options=node_options)
 
     def read_network(self, network_element):
@@ -731,7 +732,7 @@ class CoreXmlReader(object):
             if all([lat, lon, alt]):
                 node_options.set_location(lat, lon, alt)
 
-        logger.info("reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name)
+        logging.info("reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name)
         self.session.add_node(_type=node_type, _id=node_id, node_options=node_options)
 
     def read_links(self):
@@ -772,5 +773,5 @@ class CoreXmlReader(object):
                 link_options.opaque = options_element.get("opaque")
                 link_options.gui_attributes = options_element.get("gui_attributes")
 
-            logger.info("reading link node_one(%s) node_two(%s)", node_one, node_two)
+            logging.info("reading link node_one(%s) node_two(%s)", node_one, node_two)
             self.session.add_link(node_one, node_two, interface_one, interface_two, link_options)

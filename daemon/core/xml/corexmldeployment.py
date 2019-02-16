@@ -4,7 +4,6 @@ import socket
 from lxml import etree
 
 from core import constants
-from core import logger
 from core.coreobj import PyCoreNode
 from core.enumerations import NodeTypes
 from core.misc import utils, nodeutils, ipaddress

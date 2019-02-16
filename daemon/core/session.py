@@ -3,6 +3,7 @@ session.py: defines the Session class used by the core-daemon daemon program
 that manages a CORE session.
 """
 
+import logging
 import os
 import random
 import shutil
@@ -15,7 +16,6 @@ from multiprocessing.pool import ThreadPool
 import pwd
 
 from core import constants
-from core import logger
 from core.api import coreapi
 from core.broker import CoreBroker
 from core.conf import ConfigurableManager
@@ -207,12 +207,12 @@ class Session(object):
         state_name = state.name
 
         if self.state == state_value:
-            logger.info("session(%s) is already in state: %s, skipping change", self.session_id, state_name)
+            logging.info("session(%s) is already in state: %s, skipping change", self.session_id, state_name)
             return
 
         self.state = state_value
         self._state_time = time.time()
-        logger.info("changing session(%s) to state %s", self.session_id, state_name)
+        logging.info("changing session(%s) to state %s", self.session_id, state_name)
 
         self.write_state(state_value)
         self.run_hooks(state_value)
@@ -234,7 +234,7 @@ class Session(object):
             state_file.write("%d %s\n" % (state, coreapi.state_name(state)))
             state_file.close()
         except IOError:
-            logger.exception("error writing state file: %s", state)
+            logging.exception("error writing state file: %s", state)
 
     def run_hooks(self, state):
         """
@@ -256,7 +256,7 @@ class Session(object):
             for hook in hooks:
                 self.run_hook(hook)
         else:
-            logger.info("no state hooks for %s", state)
+            logging.info("no state hooks for %s", state)
 
     def set_hook(self, hook_type, file_name, source_name, data):
         """
@@ -268,11 +268,11 @@ class Session(object):
         :param data: hook data
         :return: nothing
         """
-        logger.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
+        logging.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
 
         _hook_id, state = hook_type.split(':')[:2]
         if not state.isdigit():
-            logger.error("error setting hook having state '%s'", state)
+            logging.error("error setting hook having state '%s'", state)
             return
 
         state = int(state)
@@ -285,7 +285,7 @@ class Session(object):
         # immediately run a hook if it is in the current state
         # (this allows hooks in the definition and configuration states)
         if self.state == state:
-            logger.info("immediately running new state hook")
+            logging.info("immediately running new state hook")
             self.run_hook(hook)
 
     def del_hooks(self):
@@ -302,7 +302,7 @@ class Session(object):
         :return: nothing
         """
         file_name, data = hook
-        logger.info("running hook %s", file_name)
+        logging.info("running hook %s", file_name)
 
         # write data to hook file
         try:
@@ -310,14 +310,14 @@ class Session(object):
             hook_file.write(data)
             hook_file.close()
         except IOError:
-            logger.exception("error writing hook '%s'", file_name)
+            logging.exception("error writing hook '%s'", file_name)
 
         # setup hook stdout and stderr
         try:
             stdout = open(os.path.join(self.session_dir, file_name + ".log"), "w")
             stderr = subprocess.STDOUT
         except IOError:
-            logger.exception("error setting up hook stderr and stdout")
+            logging.exception("error setting up hook stderr and stdout")
             stdout = None
             stderr = None
 
@@ -327,7 +327,7 @@ class Session(object):
             subprocess.check_call(args, stdout=stdout, stderr=stderr,
                                   close_fds=True, cwd=self.session_dir, env=self.get_environment())
         except (OSError, subprocess.CalledProcessError):
-            logger.exception("error running hook: %s", file_name)
+            logging.exception("error running hook: %s", file_name)
 
     def run_state_hooks(self, state):
         """
@@ -341,7 +341,7 @@ class Session(object):
                 hook(state)
             except:
                 message = "exception occured when running %s state hook: %s" % (coreapi.state_name(state), hook)
-                logger.exception(message)
+                logging.exception(message)
                 self.exception(ExceptionLevels.ERROR, "Session.run_state_hooks", None, message)
 
     def add_state_hook(self, state, hook):
@@ -414,7 +414,7 @@ class Session(object):
             if os.path.isfile(environment_config_file):
                 utils.load_config(environment_config_file, env)
         except IOError:
-            logger.warn("environment configuration file does not exist: %s", environment_config_file)
+            logging.warn("environment configuration file does not exist: %s", environment_config_file)
 
         # attempt to read and add user environment file
         if self.user:
@@ -422,7 +422,7 @@ class Session(object):
             try:
                 utils.load_config(environment_user_file, env)
             except IOError:
-                logger.debug("user core environment settings file not present: %s", environment_user_file)
+                logging.debug("user core environment settings file not present: %s", environment_user_file)
 
         return env
 
@@ -434,7 +434,7 @@ class Session(object):
         :return: nothing
         """
         if not os.path.exists(thumb_file):
-            logger.error("thumbnail file to set does not exist: %s", thumb_file)
+            logging.error("thumbnail file to set does not exist: %s", thumb_file)
             self.thumbnail = None
             return
 
@@ -456,7 +456,7 @@ class Session(object):
                 gid = os.stat(self.session_dir).st_gid
                 os.chown(self.session_dir, uid, gid)
             except IOError:
-                logger.exception("failed to set permission on %s", self.session_dir)
+                logging.exception("failed to set permission on %s", self.session_dir)
 
         self.user = user
 
@@ -532,7 +532,7 @@ class Session(object):
                 obj = self.objects.pop(object_id)
                 obj.shutdown()
             except KeyError:
-                logger.error("failed to remove object, object with id was not found: %s", object_id)
+                logging.error("failed to remove object, object with id was not found: %s", object_id)
 
     def delete_objects(self):
         """
@@ -556,14 +556,14 @@ class Session(object):
                     nodes_file.write("%s %s %s %s\n" % (object_id, obj.name, obj.apitype, type(obj)))
             nodes_file.close()
         except IOError:
-            logger.exception("error writing nodes file")
+            logging.exception("error writing nodes file")
 
     def dump_session(self):
         """
         Log information about the session in its current state.
         """
-        logger.info("session id=%s name=%s state=%s", self.session_id, self.name, self.state)
-        logger.info("file=%s thumbnail=%s node_count=%s/%s",
+        logging.info("session id=%s name=%s state=%s", self.session_id, self.name, self.state)
+        logging.info("file=%s thumbnail=%s node_count=%s/%s",
                     self.file_name, self.thumbnail, self.get_node_count(), len(self.objects))
 
     def exception(self, level, source, object_id, text):
@@ -647,10 +647,10 @@ class Session(object):
         # this is called from instantiate() after receiving an event message
         # for the instantiation state, and from the broker when distributed
         # nodes have been started
-        logger.info("session(%s) checking if not in runtime state, current state: %s", self.session_id,
+        logging.info("session(%s) checking if not in runtime state, current state: %s", self.session_id,
                     coreapi.state_name(self.state))
         if self.state == EventTypes.RUNTIME_STATE.value:
-            logger.info("valid runtime state found, returning")
+            logging.info("valid runtime state found, returning")
             return
 
         # check to verify that all nodes and networks are running
@@ -694,7 +694,7 @@ class Session(object):
         and links remain.
         """
         node_count = self.get_node_count()
-        logger.info("session(%s) checking shutdown: %s nodes remaining", self.session_id, node_count)
+        logging.info("session(%s) checking shutdown: %s nodes remaining", self.session_id, node_count)
 
         shutdown = False
         if node_count == 0:
@@ -726,7 +726,7 @@ class Session(object):
                 # TODO: PyCoreNode is not the type to check
                 if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
-                    logger.info("booting node: %s", obj.name)
+                    logging.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
                     result = pool.apply_async(self.services.boot_services, (obj,))
                     results.append(result)
@@ -735,7 +735,7 @@ class Session(object):
             pool.join()
             for result in results:
                 result.get()
-            logger.debug("boot run time: %s", time.time() - start)
+            logging.debug("boot run time: %s", time.time() - start)
 
         self.update_control_interface_hosts()
 
@@ -766,7 +766,7 @@ class Session(object):
         """
         d0 = self.options.get_config("controlnetif0")
         if d0:
-            logger.error("controlnet0 cannot be assigned with a host interface")
+            logging.error("controlnet0 cannot be assigned with a host interface")
         d1 = self.options.get_config("controlnetif1")
         d2 = self.options.get_config("controlnetif2")
         d3 = self.options.get_config("controlnetif3")
@@ -806,7 +806,7 @@ class Session(object):
         :return: control net object
         :rtype: core.netns.nodes.CtrlNet
         """
-        logger.debug("add/remove control net: index(%s) remove(%s) conf_required(%s)", net_index, remove, conf_required)
+        logging.debug("add/remove control net: index(%s) remove(%s) conf_required(%s)", net_index, remove, conf_required)
         prefix_spec_list = self.get_control_net_prefixes()
         prefix_spec = prefix_spec_list[net_index]
         if not prefix_spec:
@@ -816,7 +816,7 @@ class Session(object):
             else:
                 control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
                 prefix_spec = control_net_class.DEFAULT_PREFIX_LIST[net_index]
-        logger.debug("prefix spec: %s", prefix_spec)
+        logging.debug("prefix spec: %s", prefix_spec)
 
         server_interface = self.get_control_net_server_interfaces()[net_index]
 
@@ -842,7 +842,7 @@ class Session(object):
         if net_index == 0:
             updown_script = self.options.get_config("controlnet_updown_script")
             if not updown_script:
-                logger.warning("controlnet updown script not configured")
+                logging.warning("controlnet updown script not configured")
 
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:
@@ -875,7 +875,7 @@ class Session(object):
                         break
 
                 if not prefix:
-                    logger.error("Control network prefix not found for server '%s'" % servers[0])
+                    logging.error("Control network prefix not found for server '%s'" % servers[0])
                     assign_address = False
                     try:
                         prefix = prefixes[0].split(':', 1)[1]
@@ -935,7 +935,7 @@ class Session(object):
             msg = "Control interface not added to node %s. " % node.objid
             msg += "Invalid control network prefix (%s). " % control_net.prefix
             msg += "A longer prefix length may be required for this many nodes."
-            logger.exception(msg)
+            logging.exception(msg)
             return
 
         interface1 = node.newnetif(net=control_net,
@@ -958,12 +958,12 @@ class Session(object):
         try:
             control_net = self.get_control_net_object(net_index)
         except KeyError:
-            logger.exception("error retrieving control net object")
+            logging.exception("error retrieving control net object")
             return
 
         header = "CORE session %s host entries" % self.session_id
         if remove:
-            logger.info("Removing /etc/hosts file entries.")
+            logging.info("Removing /etc/hosts file entries.")
             utils.file_demunge("/etc/hosts", header)
             return
 
@@ -973,7 +973,7 @@ class Session(object):
             for address in interface.addrlist:
                 entries.append("%s %s" % (address.split("/")[0], name))
 
-        logger.info("Adding %d /etc/hosts file entries." % len(entries))
+        logging.info("Adding %d /etc/hosts file entries." % len(entries))
 
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
@@ -1003,7 +1003,7 @@ class Session(object):
 
         if current_time > 0.0:
             if time <= current_time:
-                logger.warn("could not schedule past event for time %s (run time is now %s)", time, current_time)
+                logging.warn("could not schedule past event for time %s (run time is now %s)", time, current_time)
                 return
             event_time = event_time - current_time
 
@@ -1011,7 +1011,7 @@ class Session(object):
 
         if not name:
             name = ""
-        logger.info("scheduled event %s at time %s data=%s", name, event_time + current_time, data)
+        logging.info("scheduled event %s at time %s data=%s", name, event_time + current_time, data)
 
     # TODO: if data is None, this blows up, but this ties into how event functions are ran, need to clean that up
     def run_event(self, node_id=None, name=None, data=None):
@@ -1027,7 +1027,7 @@ class Session(object):
         if not name:
             name = ""
 
-        logger.info("running event %s at time %s cmd=%s" % (name, now, data))
+        logging.info("running event %s at time %s cmd=%s" % (name, now, data))
         if not node_id:
             utils.mute_detach(data)
         else:

@@ -1,10 +1,10 @@
 import atexit
+import logging
 import os
 import signal
 import sys
 
 import core.services
-from core import logger
 from core.coreobj import PyCoreNet
 from core.coreobj import PyCoreNode
 from core.data import NodeData
@@ -28,7 +28,7 @@ def signal_handler(signal_number, _):
     :param _: ignored
     :return: nothing
     """
-    logger.info("caught signal: %s", signal_number)
+    logging.info("caught signal: %s", signal_number)
     sys.exit(signal_number)
 
 
@@ -142,7 +142,7 @@ class EmuSession(Session):
         :return: nodes, network nodes if present, and tunnel if present
         :rtype: tuple
         """
-        logger.debug("link message between node1(%s) and node2(%s)", node_one_id, node_two_id)
+        logging.debug("link message between node1(%s) and node2(%s)", node_one_id, node_two_id)
 
         # values to fill
         net_one = None
@@ -154,7 +154,7 @@ class EmuSession(Session):
 
         # both node ids are provided
         tunnel = self.broker.gettunnel(node_one_id, node_two_id)
-        logger.debug("tunnel between nodes: %s", tunnel)
+        logging.debug("tunnel between nodes: %s", tunnel)
         if nodeutils.is_node(tunnel, NodeTypes.TAP_BRIDGE):
             net_one = tunnel
             if tunnel.remotenum == node_one_id:
@@ -182,7 +182,7 @@ class EmuSession(Session):
                 net_two = node_two
             node_two = None
 
-        logger.debug("link node types n1(%s) n2(%s) net1(%s) net2(%s) tunnel(%s)",
+        logging.debug("link node types n1(%s) n2(%s) net1(%s) net2(%s) tunnel(%s)",
                      node_one, node_two, net_one, net_two, tunnel)
         return node_one, node_two, net_one, net_two, tunnel
 
@@ -198,17 +198,17 @@ class EmuSession(Session):
         objects = [x for x in objects if x]
         if len(objects) < 2:
             raise ValueError("wireless link failure: %s", objects)
-        logger.debug("handling wireless linking objects(%s) connect(%s)", objects, connect)
+        logging.debug("handling wireless linking objects(%s) connect(%s)", objects, connect)
         common_networks = objects[0].commonnets(objects[1])
         if not common_networks:
             raise ValueError("no common network found for wireless link/unlink")
 
         for common_network, interface_one, interface_two in common_networks:
             if not nodeutils.is_node(common_network, [NodeTypes.WIRELESS_LAN, NodeTypes.EMANE]):
-                logger.info("skipping common network that is not wireless/emane: %s", common_network)
+                logging.info("skipping common network that is not wireless/emane: %s", common_network)
                 continue
 
-            logger.info("wireless linking connect(%s): %s - %s", connect, interface_one, interface_two)
+            logging.info("wireless linking connect(%s): %s - %s", connect, interface_one, interface_two)
             if connect:
                 common_network.link(interface_one, interface_two)
             else:
@@ -242,27 +242,27 @@ class EmuSession(Session):
             else:
                 # 2 nodes being linked, ptp network
                 if all([node_one, node_two]) and not net_one:
-                    logger.info("adding link for peer to peer nodes: %s - %s", node_one.name, node_two.name)
+                    logging.info("adding link for peer to peer nodes: %s - %s", node_one.name, node_two.name)
                     ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
                     start = self.state > EventTypes.DEFINITION_STATE.value
                     net_one = self.add_object(cls=ptp_class, start=start)
 
                 # node to network
                 if node_one and net_one:
-                    logger.info("adding link from node to network: %s - %s", node_one.name, net_one.name)
+                    logging.info("adding link from node to network: %s - %s", node_one.name, net_one.name)
                     interface = create_interface(node_one, net_one, interface_one)
                     link_config(net_one, interface, link_options)
 
                 # network to node
                 if node_two and net_one:
-                    logger.info("adding link from network to node: %s - %s", node_two.name, net_one.name)
+                    logging.info("adding link from network to node: %s - %s", node_two.name, net_one.name)
                     interface = create_interface(node_two, net_one, interface_two)
                     if not link_options.unidirectional:
                         link_config(net_one, interface, link_options)
 
                 # network to network
                 if net_one and net_two:
-                    logger.info("adding link from network to network: %s - %s", net_one.name, net_two.name)
+                    logging.info("adding link from network to network: %s - %s", net_one.name, net_two.name)
                     if nodeutils.is_node(net_two, NodeTypes.RJ45):
                         interface = net_two.linknet(net_one)
                     else:
@@ -286,12 +286,12 @@ class EmuSession(Session):
                 # tunnel node logic
                 key = link_options.key
                 if key and nodeutils.is_node(net_one, NodeTypes.TUNNEL):
-                    logger.info("setting tunnel key for: %s", net_one.name)
+                    logging.info("setting tunnel key for: %s", net_one.name)
                     net_one.setkey(key)
                     if addresses:
                         net_one.addrconfig(addresses)
                 if key and nodeutils.is_node(net_two, NodeTypes.TUNNEL):
-                    logger.info("setting tunnel key for: %s", net_two.name)
+                    logging.info("setting tunnel key for: %s", net_two.name)
                     net_two.setkey(key)
                     if addresses:
                         net_two.addrconfig(addresses)
@@ -299,12 +299,12 @@ class EmuSession(Session):
                 # physical node connected with tunnel
                 if not net_one and not net_two and (node_one or node_two):
                     if node_one and nodeutils.is_node(node_one, NodeTypes.PHYSICAL):
-                        logger.info("adding link for physical node: %s", node_one.name)
+                        logging.info("adding link for physical node: %s", node_one.name)
                         addresses = interface_one.get_addresses()
                         node_one.adoptnetif(tunnel, interface_one.id, interface_one.mac, addresses)
                         link_config(node_one, tunnel, link_options)
                     elif node_two and nodeutils.is_node(node_two, NodeTypes.PHYSICAL):
-                        logger.info("adding link for physical node: %s", node_two.name)
+                        logging.info("adding link for physical node: %s", node_two.name)
                         addresses = interface_two.get_addresses()
                         node_two.adoptnetif(tunnel, interface_two.id, interface_two.mac, addresses)
                         link_config(node_two, tunnel, link_options)
@@ -360,7 +360,7 @@ class EmuSession(Session):
                         if interface_one.net != interface_two.net and all([interface_one.up, interface_two.up]):
                             raise ValueError("no common network found")
 
-                        logger.info("deleting link node(%s):interface(%s) node(%s):interface(%s)",
+                        logging.info("deleting link node(%s):interface(%s) node(%s):interface(%s)",
                                     node_one.name, interface_one.name, node_two.name, interface_two.name)
                         net_one = interface_one.net
                         interface_one.detachnet()
@@ -470,7 +470,7 @@ class EmuSession(Session):
         try:
             node_class = nodeutils.get_node_class(_type)
         except KeyError:
-            logger.error("invalid node type to create: %s", _type)
+            logging.error("invalid node type to create: %s", _type)
             return None
 
         # set node start based on current session state, override and check when rj45
@@ -492,7 +492,7 @@ class EmuSession(Session):
             name = "%s%s" % (node_class.__name__, _id)
 
         # create node
-        logger.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
+        logging.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
         node = self.add_object(cls=node_class, objid=_id, name=name, start=start)
 
         # set node attributes
@@ -506,7 +506,7 @@ class EmuSession(Session):
         # add services to default and physical nodes only
         if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
             node.type = node_options.model
-            logger.debug("set node type: %s", node.type)
+            logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
@@ -542,7 +542,7 @@ class EmuSession(Session):
             # set node as updated successfully
             result = True
         except KeyError:
-            logger.error("failure to update node that does not exist: %s", node_id)
+            logging.error("failure to update node that does not exist: %s", node_id)
 
         return result
 
@@ -620,7 +620,7 @@ class EmuSession(Session):
 
         :return: nothing
         """
-        logger.info("session(%s) shutting down", self.session_id)
+        logging.info("session(%s) shutting down", self.session_id)
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         super(EmuSession, self).shutdown()
@@ -647,7 +647,7 @@ class EmuSession(Session):
         :return: True if active, False otherwise
         """
         result = self.state in {EventTypes.RUNTIME_STATE.value, EventTypes.DATACOLLECT_STATE.value}
-        logger.info("session(%s) checking if active: %s", self.session_id, result)
+        logging.info("session(%s) checking if active: %s", self.session_id, result)
         return result
 
     def open_xml(self, file_name, start=False):
@@ -813,7 +813,7 @@ class CoreEmu(object):
 
         # load custom services
         service_paths = self.config.get("custom_services_dir")
-        logger.debug("custom service paths: %s", service_paths)
+        logging.debug("custom service paths: %s", service_paths)
         if service_paths:
             for service_path in service_paths.split(','):
                 service_path = service_path.strip()
@@ -835,7 +835,7 @@ class CoreEmu(object):
 
         :return: nothing
         """
-        logger.info("shutting down all sessions")
+        logging.info("shutting down all sessions")
         sessions = self.sessions.copy()
         self.sessions.clear()
         for session in sessions.itervalues():
@@ -860,7 +860,7 @@ class CoreEmu(object):
                     break
 
         session = _cls(session_id, config=self.config)
-        logger.info("created session: %s", session_id)
+        logging.info("created session: %s", session_id)
         if master:
             session.master = True
 
@@ -875,14 +875,14 @@ class CoreEmu(object):
         :return: True if deleted, False otherwise
         :rtype: bool
         """
-        logger.info("deleting session: %s", _id)
+        logging.info("deleting session: %s", _id)
         session = self.sessions.pop(_id, None)
         result = False
         if session:
-            logger.info("shutting session down: %s", _id)
+            logging.info("shutting session down: %s", _id)
             session.shutdown()
             result = True
         else:
-            logger.error("session to delete did not exist: %s", _id)
+            logging.error("session to delete did not exist: %s", _id)
 
         return result

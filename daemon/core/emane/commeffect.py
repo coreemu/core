@@ -2,11 +2,11 @@
 commeffect.py: EMANE CommEffect model for CORE
 """
 
+import logging
 import os
 
 from lxml import etree
 
-from core import logger
 from core.conf import ConfigGroup
 from core.emane import emanemanifest
 from core.emane import emanemodel
@@ -18,7 +18,7 @@ except ImportError:
     try:
         from emanesh.events.commeffectevent import CommEffectEvent
     except ImportError:
-        logger.debug("compatible emane python bindings not installed")
+        logging.debug("compatible emane python bindings not installed")
 
 
 def convert_none(x):
@@ -110,11 +110,11 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         """
         service = self.session.emane.service
         if service is None:
-            logger.warn("%s: EMANE event service unavailable", self.name)
+            logging.warn("%s: EMANE event service unavailable", self.name)
             return
 
         if netif is None or netif2 is None:
-            logger.warn("%s: missing NEM information", self.name)
+            logging.warn("%s: missing NEM information", self.name)
             return
 
         # TODO: batch these into multiple events per transmission
@@ -124,7 +124,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
         mbw = bw
-        logger.info("sending comm effect event")
+        logging.info("sending comm effect event")
         event.append(
             nemid,
             latency=convert_none(delay),

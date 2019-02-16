@@ -22,12 +22,12 @@ To run with the CORE GUI:
 
 """
 
+import logging
 import optparse
 import sys
 
 import ns.core
 
-from core import logger
 from core.misc import ipaddress
 from core.misc import nodeutils
 from core.misc import nodemaps
@@ -105,11 +105,11 @@ def main():
         usage("invalid numnodes: %s" % opt.numnodes)
 
     for a in args:
-        logger.warn("ignoring command line argument: '%s'", a)
+        logging.warn("ignoring command line argument: '%s'", a)
 
     return wifisession(opt)
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":
     session = main()
-    logger.info("\nsession =%s", session)
+    logging.info("\nsession =%s", session)
