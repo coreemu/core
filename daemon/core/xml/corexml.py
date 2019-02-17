@@ -379,7 +379,7 @@ class CoreXmlWriter(object):
         links = []
         for node in self.session.objects.itervalues():
             # network node
-            if isinstance(node, coreobj.PyCoreNet) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
+            if isinstance(node, (coreobj.PyCoreNet, nodes.RJ45Node)) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
                 self.write_network(node)
             # device node
             elif isinstance(node, nodes.PyCoreNode):
