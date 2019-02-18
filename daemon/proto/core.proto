@@ -1,0 +1,18 @@
+syntax = "proto3";
+
+package core;
+
+service CoreApi {
+  rpc GetSessions (SessionsRequest) returns (SessionsResponse) {}
+}
+
+message SessionsRequest {
+}
+
+message SessionsResponse {
+  repeated Session sessions = 1;
+}
+
+message Session {
+  int32 id = 1;
+}

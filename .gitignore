@@ -17,6 +17,10 @@ configure
 debian
 stamp-h1
 
+# generated protobuf files
+daemon/core/grpc/core_pb2.py
+daemon/core/grpc/core_pb2_grpc.py
+
 # python build directory
 dist
 
