@@ -4,6 +4,7 @@ package core;
 
 service CoreApi {
   rpc GetSessions (SessionsRequest) returns (SessionsResponse) {}
+  rpc GetSession (SessionRequest) returns (SessionResponse) {}
 }
 
 message SessionsRequest {
@@ -13,6 +14,41 @@ message SessionsResponse {
   repeated Session sessions = 1;
 }
 
+message SessionRequest {
+  int32 id = 1;
+}
+
+message SessionResponse {
+  int32 state = 1;
+  repeated Node nodes = 2;
+  repeated Link links = 3;
+}
+
 message Session {
   int32 id = 1;
+  int32 state = 2;
+  int32 nodes = 3;
+}
+
+message Node {
+  int32 id = 1;
+  string name = 2;
+  int32 type = 3;
+  string model = 4;
+  Position position = 5;
+  repeated string services = 6;
+  string emane = 7;
+}
+
+message Link {
+
+}
+
+message Position {
+  int32 x = 1;
+  int32 y = 2;
+  int32 z = 3;
+  float lat = 4;
+  float lon = 5;
+  float alt = 6;
 }

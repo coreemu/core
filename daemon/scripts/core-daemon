@@ -9,6 +9,7 @@ import ConfigParser
 import logging
 import optparse
 import sys
+import threading
 import time
 
 from core import load_logging_config
@@ -16,6 +17,7 @@ from core import constants
 from core import enumerations
 from core.corehandlers import CoreHandler
 from core.coreserver import CoreServer
+from core.grpc.server import listen
 from core.misc.utils import close_onexec
 
 load_logging_config()
@@ -51,6 +53,11 @@ def cored(cfg, use_ovs):
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
+
+    # initialize grpc api
+    grpc_thread = threading.Thread(target=listen, args=(server.coreemu,))
+    grpc_thread.daemon = True
+    grpc_thread.start()
 
     close_onexec(server.fileno())
     logging.info("server started, listening on: %s:%s", host, port)

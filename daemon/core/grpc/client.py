@@ -16,6 +16,11 @@ class CoreApiClient(object):
     def get_sessions(self):
         return self.stub.GetSessions(core_pb2.SessionsRequest())
 
+    def get_session(self, _id):
+        request = core_pb2.SessionRequest()
+        request.id = _id
+        return self.stub.GetSession(request)
+
     @contextmanager
     def connect(self):
         channel = grpc.insecure_channel(self.address)
@@ -31,6 +36,11 @@ def main():
     with client.connect():
         response = client.get_sessions()
         print("core client received: %s" % response)
+
+        if len(response.sessions) > 0:
+            session_data = response.sessions[0]
+            session = client.get_session(session_data.id)
+            print(session)
 
 
 if __name__ == "__main__":
