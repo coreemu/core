@@ -41,7 +41,36 @@ message Node {
 }
 
 message Link {
+  int32 node_one = 1;
+  int32 node_two = 2;
+  int32 type = 3;
+  Interface interface_one = 4;
+  Interface interface_two = 5;
+  LinkOptions options = 6;
+}
 
+message LinkOptions {
+  string opaque = 1;
+  float jitter = 2;
+  string key = 3;
+  float mburst = 4;
+  float mer = 5;
+  float per = 6;
+  float bandwidth = 7;
+  float burst = 8;
+  float delay = 9;
+  float dup = 10;
+  bool unidirectional = 11;
+}
+
+message Interface {
+  int32 id = 1;
+  string name = 2;
+  string mac = 3;
+  string ip4 = 4;
+  int32 ip4mask = 5;
+  string ip6 = 6;
+  int32 ip6mask = 7;
 }
 
 message Position {

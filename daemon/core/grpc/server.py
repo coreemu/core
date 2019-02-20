@@ -13,6 +13,69 @@ from core.misc import nodeutils
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
+def convert_value(value):
+    if value is None:
+        return value
+    else:
+        return str(value)
+
+
+def update_proto(obj, **kwargs):
+    for key in kwargs:
+        value = kwargs[key]
+        if value is not None:
+            logging.info("setting proto key(%s) value(%s)", key, value)
+            setattr(obj, key, value)
+
+
+def convert_link(session, link_data, link):
+    if link_data.interface1_id is not None:
+        node = session.get_object(link_data.node1_id)
+        interface = node.netif(link_data.interface1_id)
+        link.interface_one.id = link_data.interface1_id
+        link.interface_one.name = interface.name
+        update_proto(
+            link.interface_one,
+            mac=convert_value(link_data.interface1_mac),
+            ip4=convert_value(link_data.interface1_ip4),
+            ip4mask=link_data.interface1_ip4_mask,
+            ip6=convert_value(link_data.interface1_ip6),
+            ip6mask=link_data.interface1_ip6_mask
+        )
+
+    if link_data.interface2_id is not None:
+        node = session.get_object(link_data.node2_id)
+        interface = node.netif(link_data.interface2_id)
+        link.interface_two.id = link_data.interface2_id
+        link.interface_two.name = interface.name
+        update_proto(
+            link.interface_two,
+            mac=convert_value(link_data.interface2_mac),
+            ip4=convert_value(link_data.interface2_ip4),
+            ip4mask=link_data.interface2_ip4_mask,
+            ip6=convert_value(link_data.interface2_ip6),
+            ip6mask=link_data.interface2_ip6_mask
+        )
+
+    link.node_one = link_data.node1_id
+    link.node_two = link_data.node2_id
+    link.type = link_data.link_type
+    update_proto(
+        link.options,
+        opaque=link_data.opaque,
+        jitter=link_data.jitter,
+        key=link_data.key,
+        mburst=link_data.mburst,
+        mer=link_data.mer,
+        per=link_data.per,
+        bandwidth=link_data.bandwidth,
+        burst=link_data.burst,
+        delay=link_data.delay,
+        dup=link_data.dup,
+        unidirectional=link_data.unidirectional
+    )
+
+
 class CoreApiServer(core_pb2_grpc.CoreApiServicer):
     def __init__(self, coreemu):
         super(CoreApiServer, self).__init__()
@@ -72,9 +135,9 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
             links_data = node.all_link_data(0)
             for link_data in links_data:
-                pass
-                # link = core_utils.convert_link(session, link_data)
-                # links.append(link)
+                link = response.links.add()
+                convert_link(session, link_data, link)
+
         return response
 
 
