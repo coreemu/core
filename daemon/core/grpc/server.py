@@ -91,6 +91,48 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             session_data.nodes = session.get_node_count()
         return response
 
+    def GetSessionLocation(self, request, context):
+        session = self.coreemu.sessions.get(request.id)
+        x, y, z = session.location.refxyz
+        lat, lon, alt = session.location.refgeo
+        response = core_pb2.SessionLocationResponse()
+        update_proto(
+            response.position,
+            x=x,
+            y=y,
+            z=z,
+            lat=lat,
+            lon=lon,
+            alt=alt
+        )
+        update_proto(response, scale=session.location.refscale)
+        return response
+
+    def GetSessionOptions(self, request, context):
+        session = self.coreemu.sessions.get(request.id)
+        config = session.options.get_configs()
+
+        response = core_pb2.SessionOptionsResponse()
+        config_options = []
+        for configuration in session.options.configurations():
+            value = config[configuration.id]
+            config_option = core_pb2.ConfigOption()
+            config_option.label = configuration.label
+            config_option.name = configuration.id
+            config_option.value = value
+            config_option.type = configuration.type.value
+            config_option.select.extend(configuration.options)
+            config_options.append(config_option)
+
+        for config_group in session.options.config_groups():
+            start = config_group.start - 1
+            stop = config_group.stop
+            config_group_proto = response.groups.add()
+            config_group_proto.name = config_group.name
+            config_group_proto.options.extend(config_options[start: stop])
+
+        return response
+
     def GetSession(self, request, context):
         session = self.coreemu.sessions.get(request.id)
         if not request:
@@ -103,35 +145,32 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             if not isinstance(node.objid, int):
                 continue
 
-            node_data = response.nodes.add()
-            node_data.id = node.objid
-            node_data.name = node.name
-            node_data.type = nodeutils.get_node_type(node.__class__).value
+            node_proto = response.nodes.add()
+            node_proto.id = node.objid
+            node_proto.name = node.name
+            node_proto.type = nodeutils.get_node_type(node.__class__).value
             model = getattr(node, "type", None)
-            if model:
-                node_data.model = model
+            if model is not None:
+                node_proto.model = model
 
-            x = node.position.x
-            if x is not None:
-                node_data.position.x = x
-            y = node.position.y
-            if y is not None:
-                node_data.position.y = y
-            z = node.position.z
-            if z is not None:
-                node_data.position.z = z
+            update_proto(
+                node_proto.position,
+                x=node.position.x,
+                y=node.position.y,
+                z=node.position.z
+            )
 
             services = getattr(node, "services", [])
             if services is None:
                 services = []
             services = [x.name for x in services]
-            node_data.services.extend(services)
+            node_proto.services.extend(services)
 
             emane_model = None
             if nodeutils.is_node(node, NodeTypes.EMANE):
                 emane_model = node.model.name
-            if emane_model:
-                node_data.emane = emane_model
+            if emane_model is not None:
+                node_proto.emane = emane_model
 
             links_data = node.all_link_data(0)
             for link_data in links_data:
