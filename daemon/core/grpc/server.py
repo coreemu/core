@@ -1,4 +1,4 @@
-from core.enumerations import NodeTypes
+from core.enumerations import NodeTypes, EventTypes
 
 from concurrent import futures
 import time
@@ -81,6 +81,27 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         super(CoreApiServer, self).__init__()
         self.coreemu = coreemu
 
+    def CreateSession(self, request, context):
+        session = self.coreemu.create_session()
+        session.set_state(EventTypes.DEFINITION_STATE)
+
+        # default set session location
+        session.location.setrefgeo(47.57917, -122.13232, 2.0)
+        session.location.refscale = 150000.0
+
+        # grpc stream handlers
+        # session.event_handlers.append(websocket_routes.broadcast_event)
+        # session.node_handlers.append(websocket_routes.broadcast_node)
+        # session.config_handlers.append(websocket_routes.broadcast_config)
+        # session.link_handlers.append(websocket_routes.broadcast_link)
+        # session.exception_handlers.append(websocket_routes.broadcast_exception)
+        # session.file_handlers.append(websocket_routes.broadcast_file)
+
+        response = core_pb2.CreateSessionResponse()
+        response.id = session.session_id
+        response.state = session.state
+        return response
+
     def GetSessions(self, request, context):
         response = core_pb2.SessionsResponse()
         for session_id in self.coreemu.sessions:
@@ -95,7 +116,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.sessions.get(request.id)
         x, y, z = session.location.refxyz
         lat, lon, alt = session.location.refgeo
-        response = core_pb2.SessionLocationResponse()
+        response = core_pb2.GetSessionLocationResponse()
         update_proto(
             response.position,
             x=x,
@@ -107,6 +128,15 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         )
         update_proto(response, scale=session.location.refscale)
         return response
+
+    def SetSessionLocation(self, request, context):
+        session = self.coreemu.sessions.get(request.id)
+
+        session.location.refxyz = (request.position.x, request.position.y, request.position.z)
+        session.location.setrefgeo(request.position.lat, request.position.lon, request.position.alt)
+        session.location.refscale = request.scale
+
+        return core_pb2.SetSessionLocationResponse()
 
     def GetSessionOptions(self, request, context):
         session = self.coreemu.sessions.get(request.id)

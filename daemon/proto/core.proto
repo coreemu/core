@@ -3,14 +3,29 @@ syntax = "proto3";
 package core;
 
 service CoreApi {
+    rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
+    }
     rpc GetSessions (SessionsRequest) returns (SessionsResponse) {
     }
     rpc GetSession (SessionRequest) returns (SessionResponse) {
     }
     rpc GetSessionOptions (SessionOptionsRequest) returns (SessionOptionsResponse) {
     }
-    rpc GetSessionLocation (SessionLocationRequest) returns (SessionLocationResponse) {
+    rpc GetSessionLocation (GetSessionLocationRequest) returns (GetSessionLocationResponse) {
     }
+    rpc SetSessionLocation (SetSessionLocationRequest) returns (SetSessionLocationResponse) {
+
+    }
+}
+
+// rpc request/response messages
+message CreateSessionRequest {
+
+}
+
+message CreateSessionResponse {
+    int32 id = 1;
+    int32 state = 2;
 }
 
 message SessionsRequest {
@@ -38,15 +53,26 @@ message SessionOptionsResponse {
     repeated ConfigGroup groups = 1;
 }
 
-message SessionLocationRequest {
+message GetSessionLocationRequest {
     int32 id = 1;
 }
 
-message SessionLocationResponse {
+message GetSessionLocationResponse {
     Position position = 1;
     float scale = 2;
 }
 
+message SetSessionLocationRequest {
+    int32 id = 1;
+    Position position = 2;
+    float scale = 3;
+}
+
+message SetSessionLocationResponse {
+
+}
+
+// data structures for messages below
 message ConfigGroup {
     string name = 1;
     repeated ConfigOption options = 2;
