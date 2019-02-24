@@ -24,6 +24,11 @@ class CoreApiClient(object):
     def create_session(self):
         return self.stub.CreateSession(core_pb2.CreateSessionRequest())
 
+    def delete_session(self, _id):
+        request = core_pb2.DeleteSessionRequest()
+        request.id = _id
+        return self.stub.DeleteSession(request)
+
     def get_sessions(self):
         return self.stub.GetSessions(core_pb2.SessionsRequest())
 
@@ -48,6 +53,12 @@ class CoreApiClient(object):
         update_proto(request.position, x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
         update_proto(request, scale=scale)
         return self.stub.SetSessionLocation(request)
+
+    def set_session_state(self, _id, state):
+        request = core_pb2.SetSessionStateRequest()
+        request.id = _id
+        request.state = state
+        return self.stub.SetSessionState(request)
 
     @contextmanager
     def connect(self):
@@ -76,20 +87,25 @@ def main():
             response = client.set_session_location(
                 session_data.id,
                 x=0, y=0, z=None,
-                lat=47.57917, lon=-122.13232, alt=2.0,
+                lat=47.57917, lon=-122.13232, alt=3.0,
                 scale=150000.0
             )
             print("set location response: %s" % response)
 
-            # get session
-            session = client.get_session(session_data.id)
-            print(session)
-
             # get options
-            print(client.get_session_options(session_data.id))
+            print("get options: %s" % client.get_session_options(session_data.id))
 
             # get location
-            print(client.get_session_location(session_data.id))
+            print("get location: %s" % client.get_session_location(session_data.id))
+
+            # change session state
+            print("set session state: %s" % client.set_session_state(session_data.id, core_pb2.INSTANTIATION))
+
+            # get session
+            print("get session: %s" % client.get_session(session_data.id))
+
+            # delete session
+            print("delete session: %s" % client.delete_session(session_data.id))
 
 
 if __name__ == "__main__":

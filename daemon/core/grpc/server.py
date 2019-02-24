@@ -1,3 +1,5 @@
+import os
+
 from core.enumerations import NodeTypes, EventTypes
 
 from concurrent import futures
@@ -102,6 +104,11 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         response.state = session.state
         return response
 
+    def DeleteSession(self, request, context):
+        response = core_pb2.DeleteSessionResponse()
+        response.result = self.coreemu.delete_session(request.id)
+        return response
+
     def GetSessions(self, request, context):
         response = core_pb2.SessionsResponse()
         for session_id in self.coreemu.sessions:
@@ -138,6 +145,32 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.SetSessionLocationResponse()
 
+    def SetSessionState(self, request, context):
+        response = core_pb2.SetSessionStateResponse()
+        session = self.coreemu.sessions.get(request.id)
+
+        try:
+            state = EventTypes(request.state)
+            session.set_state(state)
+
+            if state == EventTypes.INSTANTIATION_STATE:
+                # create session directory if it does not exist
+                if not os.path.exists(session.session_dir):
+                    os.mkdir(session.session_dir)
+                session.instantiate()
+            elif state == EventTypes.SHUTDOWN_STATE:
+                session.shutdown()
+            elif state == EventTypes.DATACOLLECT_STATE:
+                session.data_collect()
+            elif state == EventTypes.DEFINITION_STATE:
+                session.clear()
+
+            response.result = True
+        except KeyError:
+            response.result = False
+
+        return response
+
     def GetSessionOptions(self, request, context):
         session = self.coreemu.sessions.get(request.id)
         config = session.options.get_configs()
@@ -169,6 +202,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             pass
 
         response = core_pb2.SessionResponse()
+        response.state = session.state
+
         for node_id in session.objects:
             node = session.objects[node_id]
 
