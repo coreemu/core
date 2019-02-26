@@ -19,6 +19,10 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
+    rpc CreateNode (CreateNodeRequest) returns (CreateNodeResponse) {
+    }
+    rpc EditNode (EditNodeRequest) returns (EditNodeResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -91,6 +95,33 @@ message SetSessionStateResponse {
     bool result = 1;
 }
 
+message CreateNodeRequest {
+    int32 session = 1;
+    int32 id = 2;
+    NodeType type = 3;
+    string name = 4;
+    string model = 5;
+    string icon = 6;
+    repeated string services = 7;
+    Position position = 8;
+    string emane = 9;
+    string opaque = 10;
+}
+
+message CreateNodeResponse {
+    int32 id = 1;
+}
+
+message EditNodeRequest {
+    int32 session = 1;
+    int32 id = 2;
+    Position position = 3;
+}
+
+message EditNodeResponse {
+    bool result = 1;
+}
+
 // data structures for messages below
 enum SessionState {
     NONE = 0;
@@ -100,6 +131,23 @@ enum SessionState {
     RUNTIME = 4;
     DATACOLLECT = 5;
     SHUTDOWN = 6;
+}
+
+enum NodeType {
+    DEFAULT = 0;
+    PHYSICAL = 1;
+    TBD = 3;
+    SWITCH = 4;
+    HUB = 5;
+    WIRELESS_LAN = 6;
+    RJ45 = 7;
+    TUNNEL = 8;
+    KTUNNEL = 9;
+    EMANE = 10;
+    TAP_BRIDGE = 11;
+    PEER_TO_PEER = 12;
+    CONTROL_NET = 13;
+    EMANE_NET = 14;
 }
 
 message ConfigGroup {

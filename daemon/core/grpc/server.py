@@ -1,5 +1,6 @@
 import os
 
+from core.emulator.emudata import NodeOptions
 from core.enumerations import NodeTypes, EventTypes
 
 from concurrent import futures
@@ -198,8 +199,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def GetSession(self, request, context):
         session = self.coreemu.sessions.get(request.id)
-        if not request:
-            pass
+        if not session:
+            raise Exception("no session found")
 
         response = core_pb2.SessionResponse()
         response.state = session.state
@@ -242,6 +243,58 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
                 link = response.links.add()
                 convert_link(session, link_data, link)
 
+        return response
+
+    def CreateNode(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        node_id = request.id
+        node_type = request.type
+        if node_type is None:
+            node_type = NodeTypes.DEFAULT.value
+        node_type = NodeTypes(node_type)
+        logging.info("creating node: %s - %s", node_type.name, request)
+
+        node_options = NodeOptions(name=request.name, model=request.model)
+        node_options.icon = request.icon
+        node_options.opaque = request.opaque
+        node_options.services = request.services
+
+        position = request.position
+        node_options.set_position(position.x, position.y)
+        node_options.set_location(position.lat, position.lon, position.alt)
+        node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
+
+        # configure emane if provided
+        emane_model = request.emane
+        if emane_model:
+            session.emane.set_model_config(node_id, emane_model)
+
+        response = core_pb2.CreateNodeResponse()
+        response.id = node.objid
+        return response
+
+    def EditNode(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        node_id = request.id
+        node_options = NodeOptions()
+        x = request.position.x
+        y = request.position.y
+        node_options.set_position(x, y)
+        lat = request.position.lat
+        lon = request.position.lon
+        alt = request.position.alt
+        node_options.set_location(lat, lon, alt)
+        logging.debug("updating node(%s) - pos(%s, %s) geo(%s, %s, %s)", node_id, x, y, lat, lon, alt)
+
+        result = session.update_node(node_id, node_options)
+        response = core_pb2.EditNodeResponse()
+        response.result = result
         return response
 
 

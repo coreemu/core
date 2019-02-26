@@ -6,6 +6,8 @@ import grpc
 
 import core_pb2
 import core_pb2_grpc
+from core.emulator.emudata import NodeOptions
+from core.enumerations import NodeTypes
 
 
 def update_proto(obj, **kwargs):
@@ -60,6 +62,47 @@ class CoreApiClient(object):
         request.state = state
         return self.stub.SetSessionState(request)
 
+    def create_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
+        if not node_options:
+            node_options = NodeOptions()
+
+        request = core_pb2.CreateNodeRequest()
+        request.session = session
+        request.type = _type.value
+        update_proto(
+            request,
+            id=_id,
+            name=node_options.name,
+            model=node_options.model,
+            icon=node_options.icon,
+            opaque=node_options.opaque,
+            emane=emane
+        )
+        update_proto(
+            request.position,
+            x=node_options.x,
+            y=node_options.y,
+            lat=node_options.lat,
+            lon=node_options.lon,
+            alt=node_options.alt
+        )
+        request.services.extend(node_options.services)
+        return self.stub.CreateNode(request)
+
+    def edit_node(self, session, _id, node_options):
+        request = core_pb2.EditNodeRequest()
+        request.session = session
+        request.id = _id
+        update_proto(
+            request.position,
+            x=node_options.x,
+            y=node_options.y,
+            lat=node_options.lat,
+            lon=node_options.lon,
+            alt=node_options.alt
+        )
+        return self.stub.EditNode(request)
+
     @contextmanager
     def connect(self):
         channel = grpc.insecure_channel(self.address)
@@ -100,6 +143,14 @@ def main():
 
             # change session state
             print("set session state: %s" % client.set_session_state(session_data.id, core_pb2.INSTANTIATION))
+
+            for i in xrange(2):
+                response = client.create_node(session_data.id)
+                print("created node: %s" % response)
+                node_options = NodeOptions()
+                node_options.x = 5
+                node_options.y = 5
+                print("edit node: %s" % client.edit_node(session_data.id, response.id, node_options))
 
             # get session
             print("get session: %s" % client.get_session(session_data.id))
