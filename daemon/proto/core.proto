@@ -21,7 +21,17 @@ service CoreApi {
     }
     rpc CreateNode (CreateNodeRequest) returns (CreateNodeResponse) {
     }
+    rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {
+    }
     rpc EditNode (EditNodeRequest) returns (EditNodeResponse) {
+    }
+    rpc DeleteNode (DeleteNodeRequest) returns (DeleteNodeResponse) {
+    }
+    rpc CreateLink (CreateLinkRequest) returns (CreateLinkResponse) {
+    }
+    rpc EditLink (EditLinkRequest) returns (EditLinkResponse) {
+    }
+    rpc DeleteLink (DeleteLinkRequest) returns (DeleteLinkResponse) {
     }
 }
 
@@ -112,6 +122,16 @@ message CreateNodeResponse {
     int32 id = 1;
 }
 
+message GetNodeRequest {
+    int32 session = 1;
+    int32 id = 2;
+}
+
+message GetNodeResponse {
+    Node node = 1;
+    repeated Interface interfaces = 2;
+}
+
 message EditNodeRequest {
     int32 session = 1;
     int32 id = 2;
@@ -119,6 +139,49 @@ message EditNodeRequest {
 }
 
 message EditNodeResponse {
+    bool result = 1;
+}
+
+message DeleteNodeRequest {
+    int32 session = 1;
+    int32 id = 2;
+}
+
+message DeleteNodeResponse {
+    bool result = 1;
+}
+
+message CreateLinkRequest {
+    int32 session = 1;
+    Link link = 2;
+}
+
+message CreateLinkResponse {
+    bool result = 1;
+}
+
+message EditLinkRequest {
+    int32 session = 1;
+    int32 node_one = 2;
+    int32 node_two = 3;
+    int32 interface_one = 4;
+    int32 interface_two = 5;
+    LinkOptions options = 6;
+}
+
+message EditLinkResponse {
+    bool result = 1;
+}
+
+message DeleteLinkRequest {
+    int32 session = 1;
+    int32 node_one = 2;
+    int32 node_two = 3;
+    int32 interface_one = 4;
+    int32 interface_two = 5;
+}
+
+message DeleteLinkResponse {
     bool result = 1;
 }
 
@@ -210,6 +273,9 @@ message Interface {
     int32 ip4mask = 5;
     string ip6 = 6;
     int32 ip6mask = 7;
+    int32 netid = 8;
+    int32 flowid = 9;
+    int32 mtu = 10;
 }
 
 message Position {

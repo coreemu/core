@@ -1,7 +1,7 @@
 import os
 
-from core.emulator.emudata import NodeOptions
-from core.enumerations import NodeTypes, EventTypes
+from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
+from core.enumerations import NodeTypes, EventTypes, LinkTypes
 
 from concurrent import futures
 import time
@@ -27,7 +27,6 @@ def update_proto(obj, **kwargs):
     for key in kwargs:
         value = kwargs[key]
         if value is not None:
-            logging.info("setting proto key(%s) value(%s)", key, value)
             setattr(obj, key, value)
 
 
@@ -276,6 +275,52 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         response.id = node.objid
         return response
 
+    def GetNode(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        response = core_pb2.GetNodeResponse()
+
+        for interface_id, interface in node._netif.iteritems():
+            net_id = None
+            if interface.net:
+                net_id = interface.net.objid
+
+            interface_proto = response.interfaces.add()
+            interface_proto.id = interface_id
+            interface_proto.netid = net_id
+            interface_proto.name = interface.name
+            interface_proto.mac = str(interface.hwaddr)
+            interface_proto.mtu = interface.mtu
+            interface_proto.flowid = interface.flow_id
+
+        emane_model = None
+        if nodeutils.is_node(node, NodeTypes.EMANE):
+            emane_model = node.model.name
+
+        update_proto(
+            response.node,
+            name=node.name,
+            type=nodeutils.get_node_type(node.__class__).value,
+            emane=emane_model,
+            model=node.type
+        )
+
+        update_proto(
+            response.node.position,
+            x=node.position.x,
+            y=node.position.y,
+            z=node.position.z,
+        )
+
+        services = [x.name for x in getattr(node, "services", [])]
+        response.node.services.extend(services)
+        return response
+
     def EditNode(self, request, context):
         session = self.coreemu.sessions.get(request.session)
         if not session:
@@ -295,6 +340,137 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         result = session.update_node(node_id, node_options)
         response = core_pb2.EditNodeResponse()
         response.result = result
+        return response
+
+    def DeleteNode(self, request, context):
+        logging.info("delete node: %s", request)
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        response = core_pb2.DeleteNodeResponse()
+        response.result = session.delete_node(request.id)
+        return response
+
+    def CreateLink(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        logging.info("adding link: %s", request)
+
+        node_one = request.link.node_one
+        node_two = request.link.node_two
+
+        interface_one = None
+        interface_one_data = request.link.interface_one
+        if interface_one_data:
+            name = interface_one_data.name
+            if name == "":
+                name = None
+            mac = interface_one_data.mac
+            if mac == "":
+                mac = None
+            interface_one = InterfaceData(
+                _id=interface_one_data.id,
+                name=name,
+                mac=mac,
+                ip4=interface_one_data.ip4,
+                ip4_mask=interface_one_data.ip4mask,
+                ip6=interface_one_data.ip6,
+                ip6_mask=interface_one_data.ip6mask,
+            )
+
+        interface_two = None
+        interface_two_data = request.link.interface_two
+        if interface_two_data:
+            name = interface_two_data.name
+            if name == "":
+                name = None
+            mac = interface_two_data.mac
+            if mac == "":
+                mac = None
+            interface_two = InterfaceData(
+                _id=interface_two_data.id,
+                name=name,
+                mac=mac,
+                ip4=interface_two_data.ip4,
+                ip4_mask=interface_two_data.ip4mask,
+                ip6=interface_two_data.ip6,
+                ip6_mask=interface_two_data.ip6mask,
+            )
+
+        link_type = None
+        link_type_value = request.link.type
+        if link_type_value is not None:
+            link_type = LinkTypes(link_type_value)
+
+        options_data = request.link.options
+        link_options = LinkOptions(_type=link_type)
+        if options_data:
+            link_options.delay = options_data.delay
+            link_options.bandwidth = options_data.bandwidth
+            link_options.per = options_data.per
+            link_options.dup = options_data.dup
+            link_options.jitter = options_data.jitter
+            link_options.mer = options_data.mer
+            link_options.burst = options_data.burst
+            link_options.mburst = options_data.mburst
+            link_options.unidirectional = options_data.unidirectional
+            link_options.key = options_data.key
+            link_options.opaque = options_data.opaque
+
+        session.add_link(node_one, node_two, interface_one, interface_two, link_options=link_options)
+
+        response = core_pb2.CreateLinkResponse()
+        response.result = True
+        return response
+
+    def EditLink(self, request, context):
+        logging.info("edit link: %s", request)
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        node_one = request.node_one
+        node_two = request.node_two
+        interface_one_id = request.interface_one
+        interface_two_id = request.interface_two
+
+        options_data = request.options
+        link_options = LinkOptions()
+        link_options.delay = options_data.delay
+        link_options.bandwidth = options_data.bandwidth
+        link_options.per = options_data.per
+        link_options.dup = options_data.dup
+        link_options.jitter = options_data.jitter
+        link_options.mer = options_data.mer
+        link_options.burst = options_data.burst
+        link_options.mburst = options_data.mburst
+        link_options.unidirectional = options_data.unidirectional
+        link_options.key = options_data.key
+        link_options.opaque = options_data.opaque
+
+        session.update_link(node_one, node_two, interface_one_id, interface_two_id, link_options)
+
+        response = core_pb2.EditLinkResponse()
+        response.result = True
+        return response
+
+    def DeleteLink(self, request, context):
+        logging.info("delete link: %s", request)
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        node_one = request.node_one
+        node_two = request.node_two
+        interface_one = request.interface_one
+        interface_two = request.interface_two
+        session.delete_link(node_one, node_two, interface_one, interface_two)
+
+        response = core_pb2.DeleteLinkResponse()
+        response.result = True
         return response
 
 
