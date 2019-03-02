@@ -115,6 +115,12 @@ class CoreApiClient(object):
         request.id = _id
         return self.stub.DeleteNode(request)
 
+    def get_node_links(self, session, _id):
+        request = core_pb2.GetNodeLinksRequest()
+        request.session = session
+        request.id = _id
+        return self.stub.GetNodeLinks(request)
+
     def create_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
         request = core_pb2.CreateLinkRequest()
         request.session = session
@@ -205,6 +211,15 @@ class CoreApiClient(object):
         )
         return self.stub.DeleteLink(request)
 
+    def get_services(self):
+        request = core_pb2.GetServicesRequest()
+        return self.stub.GetServices(request)
+
+    def get_emane_config(self, session):
+        request = core_pb2.GetEmaneConfigRequest()
+        request.session = session
+        return self.stub.GetEmaneConfig(request)
+
     @contextmanager
     def connect(self):
         channel = grpc.insecure_channel(self.address)
@@ -218,6 +233,8 @@ class CoreApiClient(object):
 def main():
     client = CoreApiClient()
     with client.connect():
+        print("services: %s" % client.get_services())
+
         # create session
         response = client.create_session()
         print("created session: %s" % response)
@@ -227,6 +244,8 @@ def main():
 
         if len(response.sessions) > 0:
             session_data = response.sessions[0]
+
+            print("emane config: %s" % client.get_emane_config(session_data.id))
 
             # set session location
             response = client.set_session_location(
@@ -276,8 +295,11 @@ def main():
                 print("edit link: %s" % client.edit_link(
                     session_data.id, node_id, switch_id, link_options, interface_one=0))
 
+                print("get node links: %s" % client.get_node_links(session_data.id, node_id))
+
             # change session state
             print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.INSTANTIATION_STATE))
+            # import pdb; pdb.set_trace()
 
             # get session
             print("get session: %s" % client.get_session(session_data.id))

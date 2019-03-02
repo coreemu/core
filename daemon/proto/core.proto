@@ -27,11 +27,17 @@ service CoreApi {
     }
     rpc DeleteNode (DeleteNodeRequest) returns (DeleteNodeResponse) {
     }
+    rpc GetNodeLinks (GetNodeLinksRequest) returns (GetNodeLinksResponse) {
+    }
     rpc CreateLink (CreateLinkRequest) returns (CreateLinkResponse) {
     }
     rpc EditLink (EditLinkRequest) returns (EditLinkResponse) {
     }
     rpc DeleteLink (DeleteLinkRequest) returns (DeleteLinkResponse) {
+    }
+    rpc GetServices (GetServicesRequest) returns (GetServicesResponse) {
+    }
+    rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
     }
 }
 
@@ -151,6 +157,15 @@ message DeleteNodeResponse {
     bool result = 1;
 }
 
+message GetNodeLinksRequest {
+    int32 session = 1;
+    int32 id = 2;
+}
+
+message GetNodeLinksResponse {
+    repeated Link links = 1;
+}
+
 message CreateLinkRequest {
     int32 session = 1;
     Link link = 2;
@@ -185,6 +200,22 @@ message DeleteLinkResponse {
     bool result = 1;
 }
 
+message GetServicesRequest {
+
+}
+
+message GetServicesResponse {
+    repeated Service services = 1;
+}
+
+message GetEmaneConfigRequest {
+    int32 session = 1;
+}
+
+message GetEmaneConfigResponse {
+    repeated ConfigGroup groups = 1;
+}
+
 // data structures for messages below
 enum SessionState {
     NONE = 0;
@@ -211,6 +242,11 @@ enum NodeType {
     PEER_TO_PEER = 12;
     CONTROL_NET = 13;
     EMANE_NET = 14;
+}
+
+message Service {
+    string group = 1;
+    string name = 2;
 }
 
 message ConfigGroup {

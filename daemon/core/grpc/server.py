@@ -12,6 +12,7 @@ import grpc
 import core_pb2
 import core_pb2_grpc
 from core.misc import nodeutils
+from core.service import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -28,6 +29,31 @@ def update_proto(obj, **kwargs):
         value = kwargs[key]
         if value is not None:
             setattr(obj, key, value)
+
+
+def get_config_groups(config, configurable_options):
+    groups = []
+    config_options = []
+
+    for configuration in configurable_options.configurations():
+        value = config[configuration.id]
+        config_option = core_pb2.ConfigOption()
+        config_option.label = configuration.label
+        config_option.name = configuration.id
+        config_option.value = value
+        config_option.type = configuration.type.value
+        config_option.select.extend(configuration.options)
+        config_options.append(config_option)
+
+    for config_group in configurable_options.config_groups():
+        start = config_group.start - 1
+        stop = config_group.stop
+        config_group_proto = core_pb2.ConfigGroup()
+        config_group_proto.name = config_group.name
+        config_group_proto.options.extend(config_options[start: stop])
+        groups.append(config_group_proto)
+
+    return groups
 
 
 def convert_link(session, link_data, link):
@@ -173,27 +199,12 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def GetSessionOptions(self, request, context):
         session = self.coreemu.sessions.get(request.id)
+
         config = session.options.get_configs()
+        groups = get_config_groups(config, session.options)
 
         response = core_pb2.SessionOptionsResponse()
-        config_options = []
-        for configuration in session.options.configurations():
-            value = config[configuration.id]
-            config_option = core_pb2.ConfigOption()
-            config_option.label = configuration.label
-            config_option.name = configuration.id
-            config_option.value = value
-            config_option.type = configuration.type.value
-            config_option.select.extend(configuration.options)
-            config_options.append(config_option)
-
-        for config_group in session.options.config_groups():
-            start = config_group.start - 1
-            stop = config_group.stop
-            config_group_proto = response.groups.add()
-            config_group_proto.name = config_group.name
-            config_group_proto.options.extend(config_options[start: stop])
-
+        response.groups.extend(groups)
         return response
 
     def GetSession(self, request, context):
@@ -352,6 +363,23 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         response.result = session.delete_node(request.id)
         return response
 
+    def GetNodeLinks(self, request, context):
+        logging.info("get node links: %s", request)
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        response = core_pb2.GetNodeLinksResponse()
+        links_data = node.all_link_data(0)
+        for link_data in links_data:
+            link = response.links.add()
+            convert_link(session, link_data, link)
+
+        return response
+
     def CreateLink(self, request, context):
         session = self.coreemu.sessions.get(request.session)
         if not session:
@@ -471,6 +499,24 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
         response = core_pb2.DeleteLinkResponse()
         response.result = True
+        return response
+
+    def GetServices(self, request, context):
+        response = core_pb2.GetServicesResponse()
+        for service in ServiceManager.services.itervalues():
+            service_proto = response.services.add()
+            service_proto.group = service.group
+            service_proto.name = service.name
+        return response
+
+    def GetEmaneConfig(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        config = session.emane.get_configs()
+        groups = get_config_groups(config, session.emane.emane_config)
+        response = core_pb2.GetEmaneConfigResponse()
+        response.groups.extend(groups)
         return response
 
 
