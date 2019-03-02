@@ -1,5 +1,6 @@
 from __future__ import print_function
 import logging
+import os
 from contextlib import contextmanager
 
 import grpc
@@ -220,6 +221,21 @@ class CoreApiClient(object):
         request.session = session
         return self.stub.GetEmaneConfig(request)
 
+    def save_xml(self, session, file_path):
+        request = core_pb2.SaveXmlRequest()
+        request.session = session
+        response = self.stub.SaveXml(request)
+        with open(file_path, "wb") as xml_file:
+            xml_file.write(response.data)
+
+    def open_xml(self, file_path):
+        with open(file_path, "rb") as xml_file:
+            data = xml_file.read()
+
+        request = core_pb2.OpenXmlRequest()
+        request.data = data
+        return self.stub.OpenXml(request)
+
     @contextmanager
     def connect(self):
         channel = grpc.insecure_channel(self.address)
@@ -231,81 +247,86 @@ class CoreApiClient(object):
 
 
 def main():
+    xml_file_name = "/tmp/core.xml"
+
     client = CoreApiClient()
     with client.connect():
+        if os.path.exists(xml_file_name):
+            print("open xml: %s" % client.open_xml(xml_file_name))
+
         print("services: %s" % client.get_services())
 
         # create session
-        response = client.create_session()
-        print("created session: %s" % response)
+        session_data = client.create_session()
+        print("created session: %s" % session_data)
 
         response = client.get_sessions()
         print("core client received: %s" % response)
 
-        if len(response.sessions) > 0:
-            session_data = response.sessions[0]
+        print("emane config: %s" % client.get_emane_config(session_data.id))
 
-            print("emane config: %s" % client.get_emane_config(session_data.id))
+        # set session location
+        response = client.set_session_location(
+            session_data.id,
+            x=0, y=0, z=None,
+            lat=47.57917, lon=-122.13232, alt=3.0,
+            scale=150000.0
+        )
+        print("set location response: %s" % response)
 
-            # set session location
-            response = client.set_session_location(
-                session_data.id,
-                x=0, y=0, z=None,
-                lat=47.57917, lon=-122.13232, alt=3.0,
-                scale=150000.0
+        # get options
+        print("get options: %s" % client.get_session_options(session_data.id))
+
+        # get location
+        print("get location: %s" % client.get_session_location(session_data.id))
+
+        # change session state
+        print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.CONFIGURATION_STATE))
+
+        # create switch node
+        response = client.create_node(session_data.id, _type=NodeTypes.SWITCH)
+        print("created switch: %s" % response)
+        switch_id = response.id
+
+        # ip generator for example
+        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
+
+        for i in xrange(2):
+            response = client.create_node(session_data.id)
+            print("created node: %s" % response)
+            node_id = response.id
+            node_options = NodeOptions()
+            node_options.x = 5
+            node_options.y = 5
+            print("edit node: %s" % client.edit_node(session_data.id, node_id, node_options))
+            print("get node: %s" % client.get_node(session_data.id, node_id))
+
+            # create link
+            interface_one = InterfaceData(
+                _id=None, name=None, mac=None,
+                ip4=str(prefixes.ip4.addr(node_id)), ip4_mask=prefixes.ip4.prefixlen,
+                ip6=None, ip6_mask=None
             )
-            print("set location response: %s" % response)
+            print("created link: %s" % client.create_link(session_data.id, node_id, switch_id, interface_one))
+            link_options = LinkOptions()
+            link_options.per = 50
+            print("edit link: %s" % client.edit_link(
+                session_data.id, node_id, switch_id, link_options, interface_one=0))
 
-            # get options
-            print("get options: %s" % client.get_session_options(session_data.id))
+            print("get node links: %s" % client.get_node_links(session_data.id, node_id))
 
-            # get location
-            print("get location: %s" % client.get_session_location(session_data.id))
+        # change session state
+        print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.INSTANTIATION_STATE))
+        # import pdb; pdb.set_trace()
 
-            # change session state
-            print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.CONFIGURATION_STATE))
+        # get session
+        print("get session: %s" % client.get_session(session_data.id))
 
-            # create switch node
-            response = client.create_node(session_data.id, _type=NodeTypes.SWITCH)
-            print("created switch: %s" % response)
-            switch_id = response.id
+        # save xml
+        client.save_xml(session_data.id, xml_file_name)
 
-            # ip generator for example
-            prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-
-            for i in xrange(2):
-                response = client.create_node(session_data.id)
-                print("created node: %s" % response)
-                node_id = response.id
-                node_options = NodeOptions()
-                node_options.x = 5
-                node_options.y = 5
-                print("edit node: %s" % client.edit_node(session_data.id, node_id, node_options))
-                print("get node: %s" % client.get_node(session_data.id, node_id))
-
-                # create link
-                interface_one = InterfaceData(
-                    _id=None, name=None, mac=None,
-                    ip4=str(prefixes.ip4.addr(node_id)), ip4_mask=prefixes.ip4.prefixlen,
-                    ip6=None, ip6_mask=None
-                )
-                print("created link: %s" % client.create_link(session_data.id, node_id, switch_id, interface_one))
-                link_options = LinkOptions()
-                link_options.per = 50
-                print("edit link: %s" % client.edit_link(
-                    session_data.id, node_id, switch_id, link_options, interface_one=0))
-
-                print("get node links: %s" % client.get_node_links(session_data.id, node_id))
-
-            # change session state
-            print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.INSTANTIATION_STATE))
-            # import pdb; pdb.set_trace()
-
-            # get session
-            print("get session: %s" % client.get_session(session_data.id))
-
-            # delete session
-            print("delete session: %s" % client.delete_session(session_data.id))
+        # delete session
+        print("delete session: %s" % client.delete_session(session_data.id))
 
 
 if __name__ == "__main__":

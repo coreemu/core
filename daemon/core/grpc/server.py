@@ -1,4 +1,5 @@
 import os
+import tempfile
 
 from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
 from core.enumerations import NodeTypes, EventTypes, LinkTypes
@@ -201,7 +202,10 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.sessions.get(request.id)
 
         config = session.options.get_configs()
-        groups = get_config_groups(config, session.options)
+        defaults = session.options.default_values()
+        defaults.update(config)
+
+        groups = get_config_groups(defaults, session.options)
 
         response = core_pb2.SessionOptionsResponse()
         response.groups.extend(groups)
@@ -517,6 +521,41 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         groups = get_config_groups(config, session.emane.emane_config)
         response = core_pb2.GetEmaneConfigResponse()
         response.groups.extend(groups)
+        return response
+
+    def SaveXml(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        _, temp_path = tempfile.mkstemp()
+        session.save_xml(temp_path)
+
+        with open(temp_path, "rb") as xml_file:
+            data = xml_file.read()
+
+        response = core_pb2.SaveXmlResponse()
+        response.data = data
+        return response
+
+    def OpenXml(self, request, context):
+        session = self.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+
+        _, temp_path = tempfile.mkstemp()
+        with open(temp_path, "wb") as xml_file:
+            xml_file.write(request.data)
+
+        response = core_pb2.OpenXmlResponse()
+        try:
+            session.open_xml(temp_path, start=True)
+            response.session = session.session_id
+            response.result = True
+        except:
+            response.result = False
+            logging.exception("error opening session file")
+            self.coreemu.delete_session(session.session_id)
+
         return response
 
 

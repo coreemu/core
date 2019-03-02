@@ -39,6 +39,10 @@ service CoreApi {
     }
     rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
     }
+    rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {
+    }
+    rpc OpenXml (OpenXmlRequest) returns (OpenXmlResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -214,6 +218,23 @@ message GetEmaneConfigRequest {
 
 message GetEmaneConfigResponse {
     repeated ConfigGroup groups = 1;
+}
+
+message SaveXmlRequest {
+    int32 session = 1;
+}
+
+message SaveXmlResponse {
+    bytes data = 1;
+}
+
+message OpenXmlRequest {
+    bytes data = 1;
+}
+
+message OpenXmlResponse {
+    bool result = 1;
+    int32 session = 2;
 }
 
 // data structures for messages below
