@@ -513,6 +513,55 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             service_proto.name = service.name
         return response
 
+    def GetServiceDefaults(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        response = core_pb2.GetServiceDefaultsResponse()
+        for node_type in session.services.default_services:
+            services = session.services.default_services[node_type]
+            service_defaults = response.defaults.add()
+            service_defaults.node_type = node_type
+            service_defaults.services.extend(services)
+        return response
+
+    def SetServiceDefaults(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        session.services.default_services.clear()
+        for service_defaults in request.defaults:
+            session.services.default_services[service_defaults.node_type] = service_defaults.services
+
+        response = core_pb2.SetServiceDefaultsResponse()
+        response.result = True
+        return response
+
+    def GetNodeService(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        service = session.services.get_service(node.objid, request.service, default_service=True)
+        response = core_pb2.GetNodeServiceResponse()
+        response.service.executables.extend(service.executables)
+        response.service.dependencies.extend(service.dependencies)
+        response.service.dirs.extend(service.dirs)
+        response.service.configs.extend(service.configs)
+        response.service.startup.extend(service.startup)
+        response.service.validate.extend(service.validate)
+        response.service.validation_mode = service.validation_mode.value
+        response.service.validation_timer = service.validation_timer
+        response.service.shutdown.extend(service.shutdown)
+        if service.meta:
+            response.service.meta = service.meta
+        return response
+
     def GetEmaneConfig(self, request, context):
         session = self.coreemu.sessions.get(request.session)
         if not session:

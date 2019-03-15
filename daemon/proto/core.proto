@@ -37,6 +37,12 @@ service CoreApi {
     }
     rpc GetServices (GetServicesRequest) returns (GetServicesResponse) {
     }
+    rpc GetServiceDefaults (GetServiceDefaultsRequest) returns (GetServiceDefaultsResponse) {
+    }
+    rpc SetServiceDefaults (SetServiceDefaultsRequest) returns (SetServiceDefaultsResponse) {
+    }
+    rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
+    }
     rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
     }
     rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {
@@ -212,6 +218,33 @@ message GetServicesResponse {
     repeated Service services = 1;
 }
 
+message GetServiceDefaultsRequest {
+    int32 session = 1;
+}
+
+message GetServiceDefaultsResponse {
+    repeated ServiceDefaults defaults = 1;
+}
+
+message SetServiceDefaultsRequest {
+    int32 session = 1;
+    repeated ServiceDefaults defaults = 2;
+}
+
+message SetServiceDefaultsResponse {
+    bool result = 1;
+}
+
+message GetNodeServiceRequest {
+    int32 session = 1;
+    int32 id = 2;
+    string service = 3;
+}
+
+message GetNodeServiceResponse {
+    NodeServiceData service = 1;
+}
+
 message GetEmaneConfigRequest {
     int32 session = 1;
 }
@@ -265,9 +298,33 @@ enum NodeType {
     EMANE_NET = 14;
 }
 
+enum ServiceValidationMode {
+    BLOCKING = 0;
+    NON_BLOCKING = 1;
+    TIMER = 2;
+}
+
+message ServiceDefaults {
+    string node_type = 1;
+    repeated string services = 2;
+}
+
 message Service {
     string group = 1;
     string name = 2;
+}
+
+message NodeServiceData {
+    repeated string executables = 1;
+    repeated string dependencies = 2;
+    repeated string dirs = 3;
+    repeated string configs = 4;
+    repeated string startup = 5;
+    repeated string validate = 6;
+    ServiceValidationMode validation_mode = 7;
+    int32 validation_timer = 8;
+    repeated string shutdown = 9;
+    string meta = 10;
 }
 
 message ConfigGroup {

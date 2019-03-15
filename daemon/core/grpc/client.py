@@ -216,6 +216,29 @@ class CoreApiClient(object):
         request = core_pb2.GetServicesRequest()
         return self.stub.GetServices(request)
 
+    def get_service_defaults(self, session):
+        request = core_pb2.GetServiceDefaultsRequest()
+        request.session = session
+        return self.stub.GetServiceDefaults(request)
+
+    def set_service_defaults(self, session, service_defaults):
+        request = core_pb2.SetServiceDefaultsRequest()
+        request.session = session
+        for node_type in service_defaults:
+            services = service_defaults[node_type]
+            service_defaults_proto = request.defaults.add()
+            service_defaults_proto.node_type = node_type
+            service_defaults_proto.services.extend(services)
+
+        return self.stub.SetServiceDefaults(request)
+
+    def get_node_service(self, session, _id, service):
+        request = core_pb2.GetNodeServiceRequest()
+        request.session = session
+        request.id = _id
+        request.service = service
+        return self.stub.GetNodeService(request)
+
     def get_emane_config(self, session):
         request = core_pb2.GetEmaneConfigRequest()
         request.session = session
@@ -260,6 +283,8 @@ def main():
         session_data = client.create_session()
         print("created session: %s" % session_data)
 
+        print("default services: %s" % client.get_service_defaults(session_data.id))
+
         response = client.get_sessions()
         print("core client received: %s" % response)
 
@@ -300,6 +325,8 @@ def main():
             node_options.y = 5
             print("edit node: %s" % client.edit_node(session_data.id, node_id, node_options))
             print("get node: %s" % client.get_node(session_data.id, node_id))
+
+            print("node service: %s" % client.get_node_service(session_data.id, node_id, "zebra"))
 
             # create link
             interface_one = InterfaceData(
