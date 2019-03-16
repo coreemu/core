@@ -507,6 +507,32 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         response.result = True
         return response
 
+    def GetHooks(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        response = core_pb2.GetHooksResponse()
+        for state, state_hooks in session._hooks.iteritems():
+            for file_name, file_data in state_hooks:
+                hook = response.hooks.add()
+                hook.state = state
+                hook.file = file_name
+                hook.data = file_data
+
+        return response
+
+    def AddHook(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        hook = request.hook
+        session.add_hook(hook.state, hook.file, None, hook.data)
+        response = core_pb2.AddHookResponse()
+        response.result = True
+        return response
+
     def GetServices(self, request, context):
         response = core_pb2.GetServicesResponse()
         for service in ServiceManager.services.itervalues():

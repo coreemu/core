@@ -3,6 +3,7 @@ syntax = "proto3";
 package core;
 
 service CoreApi {
+    // session rpc
     rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
     }
     rpc DeleteSession (DeleteSessionRequest) returns (DeleteSessionResponse) {
@@ -19,6 +20,8 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
+
+    // node rpc
     rpc CreateNode (CreateNodeRequest) returns (CreateNodeResponse) {
     }
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {
@@ -27,6 +30,8 @@ service CoreApi {
     }
     rpc DeleteNode (DeleteNodeRequest) returns (DeleteNodeResponse) {
     }
+
+    // link rpc
     rpc GetNodeLinks (GetNodeLinksRequest) returns (GetNodeLinksResponse) {
     }
     rpc CreateLink (CreateLinkRequest) returns (CreateLinkResponse) {
@@ -35,6 +40,14 @@ service CoreApi {
     }
     rpc DeleteLink (DeleteLinkRequest) returns (DeleteLinkResponse) {
     }
+
+    // hook rpc
+    rpc GetHooks (GetHooksRequest) returns (GetHooksResponse) {
+    }
+    rpc AddHook (AddHookRequest) returns (AddHookResponse) {
+    }
+
+    // service rpc
     rpc GetServices (GetServicesRequest) returns (GetServicesResponse) {
     }
     rpc GetServiceDefaults (GetServiceDefaultsRequest) returns (GetServiceDefaultsResponse) {
@@ -43,6 +56,8 @@ service CoreApi {
     }
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
+
+    // emane rpc
     rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
     }
     rpc SetEmaneConfig (SetEmaneConfigRequest) returns (SetEmaneConfigResponse) {
@@ -55,6 +70,8 @@ service CoreApi {
     }
     rpc GetEmaneModelConfigs (GetEmaneModelConfigsRequest) returns (GetEmaneModelConfigsResponse) {
     }
+
+    // xml rpc
     rpc SaveXml (SaveXmlRequest) returns (SaveXmlResponse) {
     }
     rpc OpenXml (OpenXmlRequest) returns (OpenXmlResponse) {
@@ -221,6 +238,23 @@ message DeleteLinkResponse {
     bool result = 1;
 }
 
+message GetHooksRequest {
+    int32 session = 1;
+}
+
+message GetHooksResponse {
+    repeated Hook hooks = 1;
+}
+
+message AddHookRequest {
+    int32 session = 1;
+    Hook hook = 2;
+}
+
+message AddHookResponse {
+    bool result = 1;
+}
+
 message GetServicesRequest {
 
 }
@@ -363,6 +397,12 @@ enum ServiceValidationMode {
     BLOCKING = 0;
     NON_BLOCKING = 1;
     TIMER = 2;
+}
+
+message Hook {
+    SessionState state = 1;
+    string file = 2;
+    bytes data = 3;
 }
 
 message ServiceDefaults {

@@ -212,6 +212,19 @@ class CoreApiClient(object):
         )
         return self.stub.DeleteLink(request)
 
+    def get_hooks(self, session):
+        request = core_pb2.GetHooksRequest()
+        request.session = session
+        return self.stub.GetHooks(request)
+
+    def add_hook(self, session, state, file_name, file_data):
+        request = core_pb2.AddHookRequest()
+        request.session = session
+        request.hook.state = state.value
+        request.hook.file = file_name
+        request.hook.data = file_data
+        return self.stub.AddHook(request)
+
     def get_services(self):
         request = core_pb2.GetServicesRequest()
         return self.stub.GetServices(request)
@@ -317,10 +330,10 @@ def main():
         # create session
         session_data = client.create_session()
         print("created session: {}".format(session_data))
-
         print("default services: {}".format(client.get_service_defaults(session_data.id)))
-
         print("emane models: {}".format(client.get_emane_models(session_data.id)))
+        print("add hook: {}".format(client.add_hook(session_data.id, EventTypes.RUNTIME_STATE, "test", "echo hello")))
+        print("hooks: {}".format(client.get_hooks(session_data.id)))
 
         response = client.get_sessions()
         print("core client received: {}".format(response))
