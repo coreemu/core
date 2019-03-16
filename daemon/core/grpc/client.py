@@ -252,6 +252,19 @@ class CoreApiClient(object):
         request.service = service
         return self.stub.GetNodeService(request)
 
+    def get_wlan_config(self, session, _id):
+        request = core_pb2.GetWlanConfigRequest()
+        request.session = session
+        request.id = _id
+        return self.stub.GetWlanConfig(request)
+
+    def set_wlan_config(self, session, _id, config):
+        request = core_pb2.SetWlanConfigRequest()
+        request.session = session
+        request.id = _id
+        request.config.update(config)
+        return self.stub.SetWlanConfig(request)
+
     def get_emane_config(self, session):
         request = core_pb2.GetEmaneConfigRequest()
         request.session = session

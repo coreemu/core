@@ -57,6 +57,12 @@ service CoreApi {
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
 
+    // wlan rpc
+    rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
+    }
+    rpc SetWlanConfig (SetWlanConfigRequest) returns (SetWlanConfigResponse) {
+    }
+
     // emane rpc
     rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
     }
@@ -288,6 +294,25 @@ message GetNodeServiceRequest {
 
 message GetNodeServiceResponse {
     NodeServiceData service = 1;
+}
+
+message GetWlanConfigRequest {
+    int32 session = 1;
+    int32 id = 2;
+}
+
+message GetWlanConfigResponse {
+    repeated ConfigGroup groups = 1;
+}
+
+message SetWlanConfigRequest {
+    int32 session = 1;
+    int32 id = 2;
+    map<string, string> config = 3;
+}
+
+message SetWlanConfigResponse {
+    bool result = 1;
 }
 
 message GetEmaneConfigRequest {

@@ -13,6 +13,7 @@ import grpc
 import core_pb2
 import core_pb2_grpc
 from core.misc import nodeutils
+from core.mobility import BasicRangeModel
 from core.service import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -588,6 +589,33 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         response.service.shutdown.extend(service.shutdown)
         if service.meta:
             response.service.meta = service.meta
+        return response
+
+    def GetWlanConfig(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        config = session.mobility.get_model_config(node.objid, BasicRangeModel.name)
+        groups = get_config_groups(config, BasicRangeModel)
+        response = core_pb2.GetWlanConfigResponse()
+        response.groups.extend(groups)
+        return response
+
+    def SetWlanConfig(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        session.mobility.set_model_config(node.objid, BasicRangeModel.name, request.config)
+        response = core_pb2.SetWlanConfigResponse()
+        response.result = True
         return response
 
     def GetEmaneConfig(self, request, context):
