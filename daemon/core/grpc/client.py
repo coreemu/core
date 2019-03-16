@@ -244,6 +244,25 @@ class CoreApiClient(object):
         request.session = session
         return self.stub.GetEmaneConfig(request)
 
+    def get_emane_models(self, session):
+        request = core_pb2.GetEmaneModelsRequest()
+        request.session = session
+        return self.stub.GetEmaneModels(request)
+
+    def get_emane_model_config(self, session, _id, model, interface_id=None):
+        request = core_pb2.GetEmaneModelConfigRequest()
+        request.session = session
+        if interface_id is not None:
+            _id = _id * 1000 + interface_id
+        request.id = _id
+        request.model = model
+        return self.stub.GetEmaneModelConfig(request)
+
+    def get_emane_model_configs(self, session):
+        request = core_pb2.GetEmaneModelConfigsRequest()
+        request.session = session
+        return self.stub.GetEmaneModelConfigs(request)
+
     def save_xml(self, session, file_path):
         request = core_pb2.SaveXmlRequest()
         request.session = session
@@ -285,10 +304,12 @@ def main():
 
         print("default services: %s" % client.get_service_defaults(session_data.id))
 
+        print("emane models: {}".format(client.get_emane_models(session_data.id)))
+
         response = client.get_sessions()
         print("core client received: %s" % response)
 
-        print("emane config: %s" % client.get_emane_config(session_data.id))
+        print("emane config: {}".format(client.get_emane_config(session_data.id)))
 
         # set session location
         response = client.set_session_location(
@@ -325,6 +346,8 @@ def main():
             node_options.y = 5
             print("edit node: %s" % client.edit_node(session_data.id, node_id, node_options))
             print("get node: %s" % client.get_node(session_data.id, node_id))
+            print("emane model config: {}".format(
+                client.get_emane_model_config(session_data.id, node_id, "emane_tdma")))
 
             print("node service: %s" % client.get_node_service(session_data.id, node_id, "zebra"))
 

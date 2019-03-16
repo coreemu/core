@@ -170,7 +170,9 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session.location.setrefgeo(request.position.lat, request.position.lon, request.position.alt)
         session.location.refscale = request.scale
 
-        return core_pb2.SetSessionLocationResponse()
+        response = core_pb2.SetSessionLocationResponse()
+        response.result = True
+        return response
 
     def SetSessionState(self, request, context):
         response = core_pb2.SetSessionStateResponse()
@@ -570,6 +572,57 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         groups = get_config_groups(config, session.emane.emane_config)
         response = core_pb2.GetEmaneConfigResponse()
         response.groups.extend(groups)
+        return response
+
+    def GetEmaneModels(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        models = []
+        for model in session.emane.models.keys():
+            if len(model.split("_")) != 2:
+                continue
+            models.append(model)
+
+        response = core_pb2.GetEmaneModelsResponse()
+        response.models.extend(models)
+        return response
+
+    def GetEmaneModelConfig(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        model = session.emane.models[request.model]
+        config = session.emane.get_model_config(node.objid, request.model)
+        groups = get_config_groups(config, model)
+        response = core_pb2.GetEmaneModelConfigResponse()
+        response.groups.extend(groups)
+        return response
+
+    def GetEmaneModelConfigs(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        response = core_pb2.GetEmaneModelConfigsResponse()
+        for node_id, model_config in session.emane.node_configurations.iteritems():
+            if node_id == -1:
+                continue
+
+            for model_name in model_config.iterkeys():
+                model = session.emane.models[model_name]
+                config = session.emane.get_model_config(node_id, model_name)
+                config_groups = get_config_groups(config, model)
+                # node_configurations = response.setdefault(node_id, {})
+                node_configurations = response.configs[node_id]
+                node_configurations.model = model_name
+                node_configurations.groups.extend(config_groups)
+                # node_configurations[model_name] = config_groups
         return response
 
     def SaveXml(self, request, context):
