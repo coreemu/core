@@ -23,6 +23,7 @@ class CoreApiClient(object):
     def __init__(self, address="localhost:50051"):
         self.address = address
         self.stub = None
+        self.channel = None
 
     def create_session(self):
         return self.stub.CreateSession(core_pb2.CreateSessionRequest())
@@ -320,21 +321,29 @@ class CoreApiClient(object):
         request.data = data
         return self.stub.OpenXml(request)
 
-    @contextmanager
     def connect(self):
-        channel = grpc.insecure_channel(self.address)
+        self.channel = grpc.insecure_channel(self.address)
+        self.stub = core_pb2_grpc.CoreApiStub(self.channel)
+
+    def close(self):
+        if self.channel:
+            self.channel.close()
+            self.channel = None
+
+    @contextmanager
+    def context_connect(self):
         try:
-            self.stub = core_pb2_grpc.CoreApiStub(channel)
-            yield channel
+            self.connect()
+            yield
         finally:
-            channel.close()
+            self.close()
 
 
 def main():
     xml_file_name = "/tmp/core.xml"
 
     client = CoreApiClient()
-    with client.connect():
+    with client.context_connect():
         if os.path.exists(xml_file_name):
             print("open xml: {}".format(client.open_xml(xml_file_name)))
 
