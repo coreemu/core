@@ -21,6 +21,12 @@ service CoreApi {
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
 
+    // event streams
+    rpc NodeEvents (NodeEventsRequest) returns (stream NodeEvent) {
+    }
+    rpc SessionEvents (SessionEventsRequest) returns (stream SessionEvent) {
+    }
+
     // node rpc
     rpc CreateNode (CreateNodeRequest) returns (CreateNodeResponse) {
     }
@@ -153,6 +159,27 @@ message SetSessionStateRequest {
 
 message SetSessionStateResponse {
     bool result = 1;
+}
+
+message NodeEventsRequest {
+    int32 id = 1;
+}
+
+message NodeEvent {
+    Node node = 1;
+}
+
+message SessionEventsRequest {
+    int32 id = 1;
+}
+
+message SessionEvent {
+    int32 node = 1;
+    int32 event = 2;
+    string name = 3;
+    bytes data = 4;
+    float time = 5;
+    int32 session = 6;
 }
 
 message CreateNodeRequest {

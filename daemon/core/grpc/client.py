@@ -1,6 +1,7 @@
 from __future__ import print_function
 import logging
 import os
+import threading
 from contextlib import contextmanager
 
 import grpc
@@ -63,6 +64,30 @@ class CoreApiClient(object):
         request.id = _id
         request.state = state.value
         return self.stub.SetSessionState(request)
+
+    def node_events(self, _id, handler):
+        request = core_pb2.NodeEventsRequest()
+        request.id = _id
+
+        def listen():
+            for event in self.stub.NodeEvents(request):
+                handler(event)
+
+        thread = threading.Thread(target=listen)
+        thread.daemon = True
+        thread.start()
+
+    def session_events(self, _id, handler):
+        request = core_pb2.SessionEventsRequest()
+        request.id = _id
+
+        def listen():
+            for event in self.stub.SessionEvents(request):
+                handler(event)
+
+        thread = threading.Thread(target=listen)
+        thread.daemon = True
+        thread.start()
 
     def create_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
         if not node_options:

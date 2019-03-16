@@ -1,17 +1,16 @@
+import logging
 import os
 import tempfile
-
-from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
-from core.enumerations import NodeTypes, EventTypes, LinkTypes
-
-from concurrent import futures
 import time
-import logging
 
 import grpc
+from concurrent import futures
+from Queue import Queue
 
 import core_pb2
 import core_pb2_grpc
+from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
+from core.enumerations import NodeTypes, EventTypes, LinkTypes
 from core.misc import nodeutils
 from core.mobility import BasicRangeModel
 from core.service import ServiceManager
@@ -118,14 +117,6 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         # default set session location
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
         session.location.refscale = 150000.0
-
-        # grpc stream handlers
-        # session.event_handlers.append(websocket_routes.broadcast_event)
-        # session.node_handlers.append(websocket_routes.broadcast_node)
-        # session.config_handlers.append(websocket_routes.broadcast_config)
-        # session.link_handlers.append(websocket_routes.broadcast_link)
-        # session.exception_handlers.append(websocket_routes.broadcast_exception)
-        # session.file_handlers.append(websocket_routes.broadcast_file)
 
         response = core_pb2.CreateSessionResponse()
         response.id = session.session_id
@@ -261,6 +252,57 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
                 convert_link(session, link_data, link)
 
         return response
+
+    def NodeEvents(self, request, context):
+        session = self.coreemu.sessions.get(request.id)
+        if not session:
+            raise Exception("no session found")
+        queue = Queue()
+
+        session.node_handlers.append(lambda x: queue.put(x))
+
+        while True:
+            node = queue.get()
+            node_event = core_pb2.NodeEvent()
+            update_proto(
+                node_event.node,
+                id=node.id,
+                name=node.name,
+                model=node.model
+            )
+            update_proto(
+                node_event.node.position,
+                x=node.x_position,
+                y=node.y_position
+            )
+            services = node.services or ""
+            node_event.node.services.extend(services.split("|"))
+            yield node_event
+
+    def SessionEvents(self, request, context):
+        session = self.coreemu.sessions.get(request.id)
+        if not session:
+            raise Exception("no session found")
+        queue = Queue()
+
+        session.event_handlers.append(lambda x: queue.put(x))
+
+        while True:
+            event = queue.get()
+            session_event = core_pb2.SessionEvent()
+            event_time = event.time
+            if event_time is not None:
+                event_time = float(event_time)
+            update_proto(
+                session_event,
+                node=event.node,
+                event=event.event_type,
+                name=event.name,
+                data=event.data,
+                time=event_time,
+                session=session.session_id
+            )            
+            yield session_event
 
     def CreateNode(self, request, context):
         session = self.coreemu.sessions.get(request.session)
