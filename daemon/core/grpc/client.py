@@ -244,6 +244,12 @@ class CoreApiClient(object):
         request.session = session
         return self.stub.GetEmaneConfig(request)
 
+    def set_emane_config(self, session, config):
+        request = core_pb2.SetEmaneConfigRequest()
+        request.session = session
+        request.config.update(config)
+        return self.stub.SetEmaneConfig(request)
+
     def get_emane_models(self, session):
         request = core_pb2.GetEmaneModelsRequest()
         request.session = session
@@ -257,6 +263,16 @@ class CoreApiClient(object):
         request.id = _id
         request.model = model
         return self.stub.GetEmaneModelConfig(request)
+
+    def set_emane_model_config(self, session, _id, model, config, interface_id=None):
+        request = core_pb2.SetEmaneModelConfigRequest()
+        request.session = session
+        if interface_id is not None:
+            _id = _id * 1000 + interface_id
+        request.id = _id
+        request.model = model
+        request.config.update(config)
+        return self.stub.SetEmaneModelConfig(request)
 
     def get_emane_model_configs(self, session):
         request = core_pb2.GetEmaneModelConfigsRequest()
@@ -294,21 +310,22 @@ def main():
     client = CoreApiClient()
     with client.connect():
         if os.path.exists(xml_file_name):
-            print("open xml: %s" % client.open_xml(xml_file_name))
+            print("open xml: {}".format(client.open_xml(xml_file_name)))
 
-        print("services: %s" % client.get_services())
+        print("services: {}".format(client.get_services()))
 
         # create session
         session_data = client.create_session()
-        print("created session: %s" % session_data)
+        print("created session: {}".format(session_data))
 
-        print("default services: %s" % client.get_service_defaults(session_data.id))
+        print("default services: {}".format(client.get_service_defaults(session_data.id)))
 
         print("emane models: {}".format(client.get_emane_models(session_data.id)))
 
         response = client.get_sessions()
-        print("core client received: %s" % response)
+        print("core client received: {}".format(response))
 
+        print("set emane config: {}".format(client.set_emane_config(session_data.id, {"otamanagerttl": "2"})))
         print("emane config: {}".format(client.get_emane_config(session_data.id)))
 
         # set session location
@@ -318,20 +335,20 @@ def main():
             lat=47.57917, lon=-122.13232, alt=3.0,
             scale=150000.0
         )
-        print("set location response: %s" % response)
+        print("set location response: {}".format(response))
 
         # get options
-        print("get options: %s" % client.get_session_options(session_data.id))
+        print("get options: {}".format(client.get_session_options(session_data.id)))
 
         # get location
-        print("get location: %s" % client.get_session_location(session_data.id))
+        print("get location: {}".format(client.get_session_location(session_data.id)))
 
         # change session state
-        print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.CONFIGURATION_STATE))
+        print("set session state: {}".format(client.set_session_state(session_data.id, EventTypes.CONFIGURATION_STATE)))
 
         # create switch node
         response = client.create_node(session_data.id, _type=NodeTypes.SWITCH)
-        print("created switch: %s" % response)
+        print("created switch: {}".format(response))
         switch_id = response.id
 
         # ip generator for example
@@ -339,17 +356,17 @@ def main():
 
         for i in xrange(2):
             response = client.create_node(session_data.id)
-            print("created node: %s" % response)
+            print("created node: {}".format(response))
             node_id = response.id
             node_options = NodeOptions()
             node_options.x = 5
             node_options.y = 5
-            print("edit node: %s" % client.edit_node(session_data.id, node_id, node_options))
-            print("get node: %s" % client.get_node(session_data.id, node_id))
+            print("edit node: {}".format(client.edit_node(session_data.id, node_id, node_options)))
+            print("get node: {}".format(client.get_node(session_data.id, node_id)))
             print("emane model config: {}".format(
                 client.get_emane_model_config(session_data.id, node_id, "emane_tdma")))
 
-            print("node service: %s" % client.get_node_service(session_data.id, node_id, "zebra"))
+            print("node service: {}".format(client.get_node_service(session_data.id, node_id, "zebra")))
 
             # create link
             interface_one = InterfaceData(
@@ -357,26 +374,26 @@ def main():
                 ip4=str(prefixes.ip4.addr(node_id)), ip4_mask=prefixes.ip4.prefixlen,
                 ip6=None, ip6_mask=None
             )
-            print("created link: %s" % client.create_link(session_data.id, node_id, switch_id, interface_one))
+            print("created link: {}".format(client.create_link(session_data.id, node_id, switch_id, interface_one)))
             link_options = LinkOptions()
             link_options.per = 50
-            print("edit link: %s" % client.edit_link(
-                session_data.id, node_id, switch_id, link_options, interface_one=0))
+            print("edit link: {}".format(client.edit_link(
+                session_data.id, node_id, switch_id, link_options, interface_one=0)))
 
-            print("get node links: %s" % client.get_node_links(session_data.id, node_id))
+            print("get node links: {}".format(client.get_node_links(session_data.id, node_id)))
 
         # change session state
-        print("set session state: %s" % client.set_session_state(session_data.id, EventTypes.INSTANTIATION_STATE))
+        print("set session state: {}".format(client.set_session_state(session_data.id, EventTypes.INSTANTIATION_STATE)))
         # import pdb; pdb.set_trace()
 
         # get session
-        print("get session: %s" % client.get_session(session_data.id))
+        print("get session: {}".format(client.get_session(session_data.id)))
 
         # save xml
         client.save_xml(session_data.id, xml_file_name)
 
         # delete session
-        print("delete session: %s" % client.delete_session(session_data.id))
+        print("delete session: {}".format(client.delete_session(session_data.id)))
 
 
 if __name__ == "__main__":

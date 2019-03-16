@@ -574,6 +574,16 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         response.groups.extend(groups)
         return response
 
+    def SetEmaneConfig(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        session.emane.set_configs(request.config)
+        response = core_pb2.SetEmaneConfigResponse()
+        response.result = True
+        return response
+
     def GetEmaneModels(self, request, context):
         session = self.coreemu.sessions.get(request.session)
         if not session:
@@ -602,6 +612,16 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         groups = get_config_groups(config, model)
         response = core_pb2.GetEmaneModelConfigResponse()
         response.groups.extend(groups)
+        return response
+
+    def SetEmaneModelConfig(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        session.emane.set_model_config(request.id, request.model, request.config)
+        response = core_pb2.SetEmaneModelConfigResponse()
+        response.result = True
         return response
 
     def GetEmaneModelConfigs(self, request, context):

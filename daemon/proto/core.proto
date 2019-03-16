@@ -45,9 +45,13 @@ service CoreApi {
     }
     rpc GetEmaneConfig (GetEmaneConfigRequest) returns (GetEmaneConfigResponse) {
     }
+    rpc SetEmaneConfig (SetEmaneConfigRequest) returns (SetEmaneConfigResponse) {
+    }
     rpc GetEmaneModels (GetEmaneModelsRequest) returns (GetEmaneModelsResponse) {
     }
     rpc GetEmaneModelConfig (GetEmaneModelConfigRequest) returns (GetEmaneModelConfigResponse) {
+    }
+    rpc SetEmaneModelConfig (SetEmaneModelConfigRequest) returns (SetEmaneModelConfigResponse) {
     }
     rpc GetEmaneModelConfigs (GetEmaneModelConfigsRequest) returns (GetEmaneModelConfigsResponse) {
     }
@@ -260,6 +264,15 @@ message GetEmaneConfigResponse {
     repeated ConfigGroup groups = 1;
 }
 
+message SetEmaneConfigRequest {
+    int32 session = 1;
+    map<string, string> config = 2;
+}
+
+message SetEmaneConfigResponse {
+    bool result = 1;
+}
+
 message GetEmaneModelsRequest {
     int32 session = 1;
 }
@@ -276,6 +289,17 @@ message GetEmaneModelConfigRequest {
 
 message GetEmaneModelConfigResponse {
     repeated ConfigGroup groups = 1;
+}
+
+message SetEmaneModelConfigRequest {
+    int32 session = 1;
+    int32 id = 2;
+    string model = 3;
+    map<string, string> config = 4;
+}
+
+message SetEmaneModelConfigResponse {
+    bool result = 1;
 }
 
 message GetEmaneModelConfigsRequest {
