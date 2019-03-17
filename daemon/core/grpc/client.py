@@ -257,6 +257,31 @@ class CoreApiClient(object):
         request.hook.data = file_data
         return self.stub.AddHook(request)
 
+    def get_mobility_configs(self, session):
+        request = core_pb2.GetMobilityConfigsRequest()
+        request.session = session
+        return self.stub.GetMobilityConfigs(request)
+
+    def get_mobility_config(self, session, _id):
+        request = core_pb2.GetMobilityConfigRequest()
+        request.session = session
+        request.id = _id
+        return self.stub.GetMobilityConfig(request)
+
+    def set_mobility_config(self, session, _id, config):
+        request = core_pb2.SetMobilityConfigRequest()
+        request.session = session
+        request.id = _id
+        request.config.update(config)
+        return self.stub.SetMobilityConfig(request)
+
+    def mobility_action(self, session, _id, action):
+        request = core_pb2.MobilityActionRequest()
+        request.session = session
+        request.id = _id
+        request.action = action
+        return self.stub.MobilityAction(request)
+
     def get_services(self):
         request = core_pb2.GetServicesRequest()
         return self.stub.GetServices(request)

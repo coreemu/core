@@ -55,6 +55,17 @@ service CoreApi {
     rpc AddHook (AddHookRequest) returns (AddHookResponse) {
     }
 
+    // mobility rpc
+    rpc GetMobilityConfigs (GetMobilityConfigsRequest) returns (GetMobilityConfigsResponse) {
+    }
+    rpc GetMobilityConfig (GetMobilityConfigRequest) returns (GetMobilityConfigResponse) {
+    }
+    rpc SetMobilityConfig (SetMobilityConfigRequest) returns (SetMobilityConfigResponse) {
+    }
+    rpc MobilityAction (MobilityActionRequest) returns (MobilityActionResponse) {
+    }
+
+
     // service rpc
     rpc GetServices (GetServicesRequest) returns (GetServicesResponse) {
     }
@@ -307,6 +318,46 @@ message AddHookResponse {
     bool result = 1;
 }
 
+message GetMobilityConfigsRequest {
+    int32 session = 1;
+}
+
+message GetMobilityConfigsResponse {
+    message MobilityConfig {
+        repeated ConfigGroup groups = 1;
+    }
+    map<int32, MobilityConfig> configs = 1;
+}
+
+message GetMobilityConfigRequest {
+    int32 session = 1;
+    int32 id = 2;
+}
+
+message GetMobilityConfigResponse {
+    repeated ConfigGroup groups = 1;
+}
+
+message SetMobilityConfigRequest {
+    int32 session = 1;
+    int32 id = 2;
+    map<string, string> config = 3;
+}
+
+message SetMobilityConfigResponse {
+    bool result = 1;
+}
+
+message MobilityActionRequest {
+    int32 session = 1;
+    int32 id = 2;
+    MobilityAction action = 3;
+}
+
+message MobilityActionResponse {
+    bool result = 1;
+}
+
 message GetServicesRequest {
 
 }
@@ -522,6 +573,12 @@ enum ServiceAction {
     STOP = 1;
     RESTART = 2;
     VALIDATE = 3;
+}
+
+enum MobilityAction {
+    MOBILITY_START = 0;
+    MOBILITY_PAUSE = 1;
+    MOBILITY_STOP = 2;
 }
 
 message Hook {
