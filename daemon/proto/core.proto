@@ -62,6 +62,10 @@ service CoreApi {
     }
     rpc GetNodeService (GetNodeServiceRequest) returns (GetNodeServiceResponse) {
     }
+    rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
+    }
+    rpc ServiceAction (ServiceActionRequest) returns (ServiceActionResponse) {
+    }
 
     // wlan rpc
     rpc GetWlanConfig (GetWlanConfigRequest) returns (GetWlanConfigResponse) {
@@ -323,6 +327,28 @@ message GetNodeServiceResponse {
     NodeServiceData service = 1;
 }
 
+message GetNodeServiceFileRequest {
+    int32 session = 1;
+    int32 id = 2;
+    string service = 3;
+    string file = 4;
+}
+
+message GetNodeServiceFileResponse {
+    bytes data = 1;
+}
+
+message ServiceActionRequest {
+    int32 session = 1;
+    int32 id = 2;
+    string service = 3;
+    ServiceAction action = 4;
+}
+
+message ServiceActionResponse {
+    bool result = 1;
+}
+
 message GetWlanConfigRequest {
     int32 session = 1;
     int32 id = 2;
@@ -449,6 +475,13 @@ enum ServiceValidationMode {
     BLOCKING = 0;
     NON_BLOCKING = 1;
     TIMER = 2;
+}
+
+enum ServiceAction {
+    START = 0;
+    STOP = 1;
+    RESTART = 2;
+    VALIDATE = 3;
 }
 
 message Hook {

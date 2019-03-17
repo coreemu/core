@@ -633,6 +633,64 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             response.service.meta = service.meta
         return response
 
+    def GetNodeServiceFile(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        service = None
+        for current_service in node.services:
+            if current_service.name == request.service:
+                service = current_service
+                break
+
+        response = core_pb2.GetNodeServiceFileResponse()
+        if not service:
+            return response
+        file_data = session.services.get_service_file(node, request.service, request.file)
+        response.data = file_data.data
+        return response
+
+    def ServiceAction(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+        node = session.get_object(request.id)
+        if not node:
+            raise Exception("no node found")
+
+        service = None
+        for current_service in node.services:
+            if current_service.name == request.service:
+                service = current_service
+                break
+
+        response = core_pb2.ServiceActionResponse()
+        response.result = False
+
+        if not service:
+            return response
+
+        status = -1
+        if request.action == core_pb2.START:
+            status = session.services.startup_service(node, service, wait=True)
+        elif request.action == core_pb2.STOP:
+            status = session.services.stop_service(node, service)
+        elif request.action == core_pb2.RESTART:
+            status = session.services.stop_service(node, service)
+            if not status:
+                status = session.services.startup_service(node, service, wait=True)
+        elif request.action == core_pb2.VALIDATE:
+            status = session.services.validate_service(node, service)
+
+        if not status:
+            response.result = True
+
+        return response
+
     def GetWlanConfig(self, request, context):
         session = self.coreemu.sessions.get(request.session)
         if not session:

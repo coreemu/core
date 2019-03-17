@@ -278,6 +278,22 @@ class CoreApiClient(object):
         request.service = service
         return self.stub.GetNodeService(request)
 
+    def get_node_service_file(self, session, _id, service, file_name):
+        request = core_pb2.GetNodeServiceFileRequest()
+        request.session = session
+        request.id = _id
+        request.service = service
+        request.file = file_name
+        return self.stub.GetNodeServiceFile(request)
+
+    def service_action(self, session, _id, service, action):
+        request = core_pb2.ServiceActionRequest()
+        request.session = session
+        request.id = _id
+        request.service = service
+        request.action = action
+        return self.stub.ServiceAction(request)
+
     def get_wlan_config(self, session, _id):
         request = core_pb2.GetWlanConfigRequest()
         request.session = session
