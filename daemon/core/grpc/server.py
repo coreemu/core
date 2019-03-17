@@ -110,16 +110,16 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         super(CoreApiServer, self).__init__()
         self.coreemu = coreemu
 
-    def get_session(self, _id):
+    def get_session(self, _id, context):
         session = self.coreemu.sessions.get(_id)
         if not session:
-            raise Exception("no session found")
+            context.abort(grpc.StatusCode.NOT_FOUND, "session not found")
         return session
 
-    def get_node(self, session, _id):
+    def get_node(self, session, _id, context):
         node = session.get_object(_id)
         if not node:
-            raise Exception("no node found")
+            context.abort(grpc.StatusCode.NOT_FOUND, "node not found")
         return node
 
     def CreateSession(self, request, context):
@@ -151,7 +151,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetSessionLocation(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
         x, y, z = session.location.refxyz
         lat, lon, alt = session.location.refgeo
         response = core_pb2.GetSessionLocationResponse()
@@ -168,7 +168,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetSessionLocation(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
 
         session.location.refxyz = (request.position.x, request.position.y, request.position.z)
         session.location.setrefgeo(request.position.lat, request.position.lon, request.position.alt)
@@ -180,7 +180,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def SetSessionState(self, request, context):
         response = core_pb2.SetSessionStateResponse()
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
 
         try:
             state = EventTypes(request.state)
@@ -205,7 +205,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetSessionOptions(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
 
         config = session.options.get_configs()
         defaults = session.options.default_values()
@@ -218,14 +218,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetSessionOptions(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
         session.options.set_configs(request.config)
         response = core_pb2.SetSessionOptionsResponse()
         response.result = True
         return response
 
     def GetSession(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
         response = core_pb2.GetSessionResponse()
         response.state = session.state
 
@@ -270,7 +270,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def NodeEvents(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
         queue = Queue()
         session.node_handlers.append(lambda x: queue.put(x))
 
@@ -293,7 +293,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             yield node_event
 
     def SessionEvents(self, request, context):
-        session = self.get_session(request.id)
+        session = self.get_session(request.id, context)
         queue = Queue()
         session.event_handlers.append(lambda x: queue.put(x))
 
@@ -315,7 +315,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             yield session_event
 
     def CreateNode(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         node_id = request.id
         node_type = request.type
@@ -344,8 +344,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetNode(self, request, context):
-        session = self.get_session(request.session)
-        node = self.get_node(session, request.id)
+        session = self.get_session(request.session, context)
+        node = self.get_node(session, request.id, context)
         response = core_pb2.GetNodeResponse()
 
         for interface_id, interface in node._netif.iteritems():
@@ -385,7 +385,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def EditNode(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         node_id = request.id
         node_options = NodeOptions()
@@ -405,15 +405,15 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def DeleteNode(self, request, context):
         logging.info("delete node: %s", request)
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         response = core_pb2.DeleteNodeResponse()
         response.result = session.delete_node(request.id)
         return response
 
     def GetNodeLinks(self, request, context):
         logging.info("get node links: %s", request)
-        session = self.get_session(request.session)
-        node = self.get_node(session, request.id)
+        session = self.get_session(request.session, context)
+        node = self.get_node(session, request.id, context)
         response = core_pb2.GetNodeLinksResponse()
         links_data = node.all_link_data(0)
         for link_data in links_data:
@@ -423,7 +423,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def CreateLink(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         logging.info("adding link: %s", request)
         node_one = request.link.node_one
         node_two = request.link.node_two
@@ -494,7 +494,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def EditLink(self, request, context):
         logging.info("edit link: %s", request)
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         node_one = request.node_one
         node_two = request.node_two
@@ -523,7 +523,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def DeleteLink(self, request, context):
         logging.info("delete link: %s", request)
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         node_one = request.node_one
         node_two = request.node_two
@@ -536,7 +536,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetHooks(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         response = core_pb2.GetHooksResponse()
         for state, state_hooks in session._hooks.iteritems():
@@ -549,7 +549,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def AddHook(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         hook = request.hook
         session.add_hook(hook.state, hook.file, None, hook.data)
@@ -558,7 +558,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetMobilityConfigs(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         response = core_pb2.GetMobilityConfigsResponse()
         for node_id, model_config in session.mobility.node_configurations.iteritems():
@@ -576,7 +576,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetMobilityConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         config = session.mobility.get_model_config(request.id, Ns2ScriptedMobility.name)
         groups = get_config_groups(config, Ns2ScriptedMobility)
         response = core_pb2.GetMobilityConfigResponse()
@@ -584,15 +584,15 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetMobilityConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         session.mobility.set_model_config(request.id, Ns2ScriptedMobility.name, request.config)
         response = core_pb2.SetMobilityConfigResponse()
         response.result = True
         return response
 
     def MobilityAction(self, request, context):
-        session = self.get_session(request.session)
-        node = self.get_node(session, request.id)
+        session = self.get_session(request.session, context)
+        node = self.get_node(session, request.id, context)
 
         response = core_pb2.MobilityActionResponse()
         response.result = True
@@ -616,7 +616,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetServiceDefaults(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         response = core_pb2.GetServiceDefaultsResponse()
         for node_type in session.services.default_services:
@@ -627,7 +627,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetServiceDefaults(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         session.services.default_services.clear()
         for service_defaults in request.defaults:
             session.services.default_services[service_defaults.node_type] = service_defaults.services
@@ -637,7 +637,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetNodeService(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         service = session.services.get_service(request.id, request.service, default_service=True)
         response = core_pb2.GetNodeServiceResponse()
@@ -655,8 +655,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetNodeServiceFile(self, request, context):
-        session = self.get_session(request.session)
-        node = self.get_node(session, request.id)
+        session = self.get_session(request.session, context)
+        node = self.get_node(session, request.id, context)
 
         service = None
         for current_service in node.services:
@@ -672,7 +672,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetNodeService(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         # guarantee custom service exists
         session.services.set_service(request.id, request.service)
@@ -689,15 +689,15 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetNodeServiceFile(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         session.services.set_service_file(request.id, request.service, request.file, request.data)
         response = core_pb2.SetNodeServiceFileResponse()
         response.result = True
         return response
 
     def ServiceAction(self, request, context):
-        session = self.get_session(request.session)
-        node = self.get_node(session, request.id)
+        session = self.get_session(request.session, context)
+        node = self.get_node(session, request.id, context)
 
         service = None
         for current_service in node.services:
@@ -729,7 +729,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetWlanConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         config = session.mobility.get_model_config(request.id, BasicRangeModel.name)
         groups = get_config_groups(config, BasicRangeModel)
         response = core_pb2.GetWlanConfigResponse()
@@ -737,14 +737,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetWlanConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         session.mobility.set_model_config(request.id, BasicRangeModel.name, request.config)
         response = core_pb2.SetWlanConfigResponse()
         response.result = True
         return response
 
     def GetEmaneConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         config = session.emane.get_configs()
         groups = get_config_groups(config, session.emane.emane_config)
         response = core_pb2.GetEmaneConfigResponse()
@@ -752,14 +752,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetEmaneConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         session.emane.set_configs(request.config)
         response = core_pb2.SetEmaneConfigResponse()
         response.result = True
         return response
 
     def GetEmaneModels(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         models = []
         for model in session.emane.models.keys():
@@ -772,7 +772,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetEmaneModelConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         model = session.emane.models[request.model]
         config = session.emane.get_model_config(request.id, request.model)
         groups = get_config_groups(config, model)
@@ -781,14 +781,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SetEmaneModelConfig(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
         session.emane.set_model_config(request.id, request.model, request.config)
         response = core_pb2.SetEmaneModelConfigResponse()
         response.result = True
         return response
 
     def GetEmaneModelConfigs(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         response = core_pb2.GetEmaneModelConfigsResponse()
         for node_id, model_config in session.emane.node_configurations.iteritems():
@@ -807,7 +807,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def SaveXml(self, request, context):
-        session = self.get_session(request.session)
+        session = self.get_session(request.session, context)
 
         _, temp_path = tempfile.mkstemp()
         session.save_xml(temp_path)
