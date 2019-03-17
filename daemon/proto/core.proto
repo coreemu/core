@@ -8,11 +8,13 @@ service CoreApi {
     }
     rpc DeleteSession (DeleteSessionRequest) returns (DeleteSessionResponse) {
     }
-    rpc GetSessions (SessionsRequest) returns (SessionsResponse) {
+    rpc GetSessions (GetSessionsRequest) returns (GetSessionsResponse) {
     }
-    rpc GetSession (SessionRequest) returns (SessionResponse) {
+    rpc GetSession (GetSessionRequest) returns (GetSessionResponse) {
     }
-    rpc GetSessionOptions (SessionOptionsRequest) returns (SessionOptionsResponse) {
+    rpc GetSessionOptions (GetSessionOptionsRequest) returns (GetSessionOptionsResponse) {
+    }
+    rpc SetSessionOptions (SetSessionOptionsRequest) returns (SetSessionOptionsResponse) {
     }
     rpc GetSessionLocation (GetSessionLocationRequest) returns (GetSessionLocationResponse) {
     }
@@ -64,6 +66,10 @@ service CoreApi {
     }
     rpc GetNodeServiceFile (GetNodeServiceFileRequest) returns (GetNodeServiceFileResponse) {
     }
+    rpc SetNodeService (SetNodeServiceRequest) returns (SetNodeServiceResponse) {
+    }
+    rpc SetNodeServiceFile (SetNodeServiceFileRequest) returns (SetNodeServiceFileResponse) {
+    }
     rpc ServiceAction (ServiceActionRequest) returns (ServiceActionResponse) {
     }
 
@@ -112,29 +118,38 @@ message DeleteSessionResponse {
     bool result = 1;
 }
 
-message SessionsRequest {
+message GetSessionsRequest {
 }
 
-message SessionsResponse {
+message GetSessionsResponse {
     repeated Session sessions = 1;
 }
 
-message SessionRequest {
+message GetSessionRequest {
     int32 id = 1;
 }
 
-message SessionResponse {
+message GetSessionResponse {
     int32 state = 1;
     repeated Node nodes = 2;
     repeated Link links = 3;
 }
 
-message SessionOptionsRequest {
+message GetSessionOptionsRequest {
     int32 id = 1;
 }
 
-message SessionOptionsResponse {
+message GetSessionOptionsResponse {
     repeated ConfigGroup groups = 1;
+}
+
+message SetSessionOptionsRequest {
+    int32 id = 1;
+    map<string, string> config = 2;
+}
+
+message SetSessionOptionsResponse {
+    bool result = 1;
 }
 
 message GetSessionLocationRequest {
@@ -336,6 +351,31 @@ message GetNodeServiceFileRequest {
 
 message GetNodeServiceFileResponse {
     bytes data = 1;
+}
+
+message SetNodeServiceRequest {
+    int32 session = 1;
+    int32 id = 2;
+    string service = 3;
+    repeated string startup = 4;
+    repeated string validate = 5;
+    repeated string shutdown = 6;
+}
+
+message SetNodeServiceResponse {
+    bool result = 1;
+}
+
+message SetNodeServiceFileRequest {
+    int32 session = 1;
+    int32 id = 2;
+    string service = 3;
+    string file = 4;
+    bytes data = 5;
+}
+
+message SetNodeServiceFileResponse {
+    bool result = 1;
 }
 
 message ServiceActionRequest {

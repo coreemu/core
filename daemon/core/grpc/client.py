@@ -35,17 +35,23 @@ class CoreApiClient(object):
         return self.stub.DeleteSession(request)
 
     def get_sessions(self):
-        return self.stub.GetSessions(core_pb2.SessionsRequest())
+        return self.stub.GetSessions(core_pb2.GetSessionsRequest())
 
     def get_session(self, _id):
-        request = core_pb2.SessionRequest()
+        request = core_pb2.GetSessionRequest()
         request.id = _id
         return self.stub.GetSession(request)
 
     def get_session_options(self, _id):
-        request = core_pb2.SessionOptionsRequest()
+        request = core_pb2.GetSessionOptionsRequest()
         request.id = _id
         return self.stub.GetSessionOptions(request)
+
+    def set_session_options(self, _id, config):
+        request = core_pb2.SetSessionOptionsRequest()
+        request.id = _id
+        request.config.update(config)
+        return self.stub.SetSessionOptions(request)
 
     def get_session_location(self, _id):
         request = core_pb2.GetSessionLocationRequest()
@@ -285,6 +291,25 @@ class CoreApiClient(object):
         request.service = service
         request.file = file_name
         return self.stub.GetNodeServiceFile(request)
+
+    def set_node_service(self, session, _id, service, startup, validate, shutdown):
+        request = core_pb2.SetNodeServiceRequest()
+        request.session = session
+        request.id = _id
+        request.service = service
+        request.startup.extend(startup)
+        request.validate.extend(validate)
+        request.shutdown.extend(shutdown)
+        return self.stub.SetNodeService(request)
+
+    def set_node_service_file(self, session, _id, service, file_name, data):
+        request = core_pb2.SetNodeServiceFileRequest()
+        request.session = session
+        request.id = _id
+        request.service = service
+        request.file = file_name
+        request.data = data
+        return self.stub.SetNodeServiceFile(request)
 
     def service_action(self, session, _id, service, action):
         request = core_pb2.ServiceActionRequest()

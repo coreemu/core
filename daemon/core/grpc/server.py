@@ -129,7 +129,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         return response
 
     def GetSessions(self, request, context):
-        response = core_pb2.SessionsResponse()
+        response = core_pb2.GetSessionsResponse()
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
             session_data = response.sessions.add()
@@ -201,8 +201,18 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
         groups = get_config_groups(defaults, session.options)
 
-        response = core_pb2.SessionOptionsResponse()
+        response = core_pb2.GetSessionOptionsResponse()
         response.groups.extend(groups)
+        return response
+
+    def SetSessionOptions(self, request, context):
+        session = self.coreemu.sessions.get(request.id)
+        if not session:
+            raise Exception("no session found")
+
+        session.options.set_configs(request.config)
+        response = core_pb2.SetSessionOptionsResponse()
+        response.result = True
         return response
 
     def GetSession(self, request, context):
@@ -210,7 +220,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         if not session:
             raise Exception("no session found")
 
-        response = core_pb2.SessionResponse()
+        response = core_pb2.GetSessionResponse()
         response.state = session.state
 
         for node_id in session.objects:
@@ -614,11 +624,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.sessions.get(request.session)
         if not session:
             raise Exception("no session found")
-        node = session.get_object(request.id)
-        if not node:
-            raise Exception("no node found")
 
-        service = session.services.get_service(node.objid, request.service, default_service=True)
+        service = session.services.get_service(request.id, request.service, default_service=True)
         response = core_pb2.GetNodeServiceResponse()
         response.service.executables.extend(service.executables)
         response.service.dependencies.extend(service.dependencies)
@@ -652,6 +659,36 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             return response
         file_data = session.services.get_service_file(node, request.service, request.file)
         response.data = file_data.data
+        return response
+
+    def SetNodeService(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        # guarantee custom service exists
+        session.services.set_service(request.id, request.service)
+        service = session.services.get_service(request.id, request.service)
+        service.startup = tuple(request.startup)
+        logging.info("custom startup: %s", service.startup)
+        service.validate = tuple(request.validate)
+        logging.info("custom validate: %s", service.validate)
+        service.shutdown = tuple(request.shutdown)
+        logging.info("custom shutdown: %s", service.shutdown)
+
+        response = core_pb2.SetNodeServiceResponse()
+        response.result = True
+        return response
+
+    def SetNodeServiceFile(self, request, context):
+        session = self.coreemu.sessions.get(request.session)
+        if not session:
+            raise Exception("no session found")
+
+        session.services.set_service_file(request.id, request.service, request.file, request.data)
+
+        response = core_pb2.SetNodeServiceFileResponse()
+        response.result = True
         return response
 
     def ServiceAction(self, request, context):
@@ -695,11 +732,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.sessions.get(request.session)
         if not session:
             raise Exception("no session found")
-        node = session.get_object(request.id)
-        if not node:
-            raise Exception("no node found")
 
-        config = session.mobility.get_model_config(node.objid, BasicRangeModel.name)
+        config = session.mobility.get_model_config(request.id, BasicRangeModel.name)
         groups = get_config_groups(config, BasicRangeModel)
         response = core_pb2.GetWlanConfigResponse()
         response.groups.extend(groups)
@@ -709,11 +743,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.sessions.get(request.session)
         if not session:
             raise Exception("no session found")
-        node = session.get_object(request.id)
-        if not node:
-            raise Exception("no node found")
 
-        session.mobility.set_model_config(node.objid, BasicRangeModel.name, request.config)
+        session.mobility.set_model_config(request.id, BasicRangeModel.name, request.config)
         response = core_pb2.SetWlanConfigResponse()
         response.result = True
         return response
@@ -757,12 +788,9 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         session = self.coreemu.sessions.get(request.session)
         if not session:
             raise Exception("no session found")
-        node = session.get_object(request.id)
-        if not node:
-            raise Exception("no node found")
 
         model = session.emane.models[request.model]
-        config = session.emane.get_model_config(node.objid, request.model)
+        config = session.emane.get_model_config(request.id, request.model)
         groups = get_config_groups(config, model)
         response = core_pb2.GetEmaneModelConfigResponse()
         response.groups.extend(groups)
