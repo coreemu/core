@@ -2,10 +2,10 @@ import logging
 import os
 import tempfile
 import time
+from Queue import Queue
 
 import grpc
 from concurrent import futures
-from Queue import Queue
 
 import core_pb2
 import core_pb2_grpc
@@ -311,8 +311,81 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
                 data=event.data,
                 time=event_time,
                 session=session.session_id
-            )            
+            )
             yield session_event
+
+    def ConfigEvents(self, request, context):
+        session = self.get_session(request.id, context)
+        queue = Queue()
+        session.config_handlers.append(lambda x: queue.put(x))
+
+        while True:
+            event = queue.get()
+            config_event = core_pb2.ConfigEvent()
+            update_proto(
+                config_event,
+                message_type=event.message_type,
+                node=event.node,
+                object=event.object,
+                type=event.type,
+                captions=event.captions,
+                bitmap=event.bitmap,
+                data_values=event.data_values,
+                possible_values=event.possible_values,
+                groups=event.groups,
+                session=event.session,
+                interface=event.interface_number,
+                network_id=event.network_id,
+                opaque=event.opaque
+            )
+            config_event.data_types.extend(event.data_types)
+            yield config_event
+
+    def ExceptionEvents(self, request, context):
+        session = self.get_session(request.id, context)
+        queue = Queue()
+        session.exception_handlers.append(lambda x: queue.put(x))
+
+        while True:
+            event = queue.get()
+            exception_event = core_pb2.ExceptionEvent()
+            event_time = event.date
+            if event_time is not None:
+                event_time = float(event_time)
+            update_proto(
+                exception_event,
+                node=event.node,
+                session=event.session,
+                level=event.level,
+                source=event.source,
+                date=event_time,
+                text=event.text,
+                opaque=event.opaque
+            )
+            yield exception_event
+
+    def FileEvents(self, request, context):
+        session = self.get_session(request.id, context)
+        queue = Queue()
+        session.file_handlers.append(lambda x: queue.put(x))
+
+        while True:
+            event = queue.get()
+            file_event = core_pb2.FileEvent()
+            update_proto(
+                file_event,
+                message_type=event.message_type,
+                node=event.node,
+                name=event.name,
+                mode=event.mode,
+                number=event.number,
+                type=event.type,
+                source=event.source,
+                session=event.session,
+                data=event.data,
+                compressed_data=event.compressed_data
+            )
+            yield file_event
 
     def CreateNode(self, request, context):
         session = self.get_session(request.session, context)
@@ -799,11 +872,9 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
                 model = session.emane.models[model_name]
                 config = session.emane.get_model_config(node_id, model_name)
                 config_groups = get_config_groups(config, model)
-                # node_configurations = response.setdefault(node_id, {})
                 node_configurations = response.configs[node_id]
                 node_configurations.model = model_name
                 node_configurations.groups.extend(config_groups)
-                # node_configurations[model_name] = config_groups
         return response
 
     def SaveXml(self, request, context):

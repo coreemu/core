@@ -95,6 +95,42 @@ class CoreApiClient(object):
         thread.daemon = True
         thread.start()
 
+    def config_events(self, _id, handler):
+        request = core_pb2.ConfigEventsRequest()
+        request.id = _id
+
+        def listen():
+            for event in self.stub.ConfigEvents(request):
+                handler(event)
+
+        thread = threading.Thread(target=listen)
+        thread.daemon = True
+        thread.start()
+
+    def exception_events(self, _id, handler):
+        request = core_pb2.ExceptionEventsRequest()
+        request.id = _id
+
+        def listen():
+            for event in self.stub.ExceptionEvents(request):
+                handler(event)
+
+        thread = threading.Thread(target=listen)
+        thread.daemon = True
+        thread.start()
+
+    def file_events(self, _id, handler):
+        request = core_pb2.FileEventsRequest()
+        request.id = _id
+
+        def listen():
+            for event in self.stub.FileEvents(request):
+                handler(event)
+
+        thread = threading.Thread(target=listen)
+        thread.daemon = True
+        thread.start()
+
     def create_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
         if not node_options:
             node_options = NodeOptions()
@@ -436,7 +472,8 @@ def main():
     client = CoreApiClient()
     with client.context_connect():
         if os.path.exists(xml_file_name):
-            print("open xml: {}".format(client.open_xml(xml_file_name)))
+            response = client.open_xml(xml_file_name)
+            print("open xml: {}".format(response))
 
         print("services: {}".format(client.get_services()))
 

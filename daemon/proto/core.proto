@@ -28,6 +28,12 @@ service CoreApi {
     }
     rpc SessionEvents (SessionEventsRequest) returns (stream SessionEvent) {
     }
+    rpc ConfigEvents (ConfigEventsRequest) returns (stream ConfigEvent) {
+    }
+    rpc ExceptionEvents (ExceptionEventsRequest) returns (stream ExceptionEvent) {
+    }
+    rpc FileEvents (FileEventsRequest) returns (stream FileEvent) {
+    }
 
     // node rpc
     rpc CreateNode (CreateNodeRequest) returns (CreateNodeResponse) {
@@ -210,6 +216,58 @@ message SessionEvent {
     bytes data = 4;
     float time = 5;
     int32 session = 6;
+}
+
+message ConfigEventsRequest {
+    int32 id = 1;
+}
+
+message ConfigEvent {
+    MessageType message_type = 1;
+    int32 node = 2;
+    string object = 3;
+    int32 type = 4;
+    repeated int32 data_types = 5;
+    string data_values = 6;
+    string captions = 7;
+    string bitmap = 8;
+    string possible_values = 9;
+    string groups = 10;
+    string session = 11;
+    int32 interface = 12;
+    int32 network_id = 13;
+    string opaque = 14;
+}
+
+message ExceptionEventsRequest {
+    int32 id = 1;
+}
+
+message ExceptionEvent {
+    int32 node = 1;
+    int32 session = 2;
+    string level = 3;
+    string source = 4;
+    float date = 5;
+    string text = 6;
+    string opaque = 7;
+}
+
+message FileEventsRequest {
+    int32 id = 1;
+}
+
+message FileEvent {
+    MessageType message_type = 1;
+    int32 node = 2;
+    string name = 3;
+    string mode = 4;
+    int32 number = 5;
+    string type = 6;
+    string source = 7;
+    int32 session = 8;
+    bytes data = 9;
+    bytes compressed_data = 10;
 }
 
 message CreateNodeRequest {
@@ -535,6 +593,17 @@ message OpenXmlResponse {
 }
 
 // data structures for messages below
+enum MessageType {
+    NOTHING = 0;
+    ADD = 1;
+    DELETE = 2;
+    CRI = 4;
+    LOCAL = 8;
+    STRING = 16;
+    TEXT = 32;
+    TTY = 64;
+}
+
 enum SessionState {
     NONE = 0;
     DEFINITION = 1;
