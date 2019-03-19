@@ -26,6 +26,8 @@ service CoreApi {
     // event streams
     rpc NodeEvents (NodeEventsRequest) returns (stream NodeEvent) {
     }
+    rpc LinkEvents (LinkEventsRequest) returns (stream LinkEvent) {
+    }
     rpc SessionEvents (SessionEventsRequest) returns (stream SessionEvent) {
     }
     rpc ConfigEvents (ConfigEventsRequest) returns (stream ConfigEvent) {
@@ -203,6 +205,15 @@ message NodeEventsRequest {
 
 message NodeEvent {
     Node node = 1;
+}
+
+message LinkEventsRequest {
+    int32 id = 1;
+}
+
+message LinkEvent {
+    MessageType message_type = 1;
+    Link link = 2;
 }
 
 message SessionEventsRequest {

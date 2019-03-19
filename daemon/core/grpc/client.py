@@ -1,4 +1,5 @@
 from __future__ import print_function
+
 import logging
 import os
 import threading
@@ -77,6 +78,18 @@ class CoreApiClient(object):
 
         def listen():
             for event in self.stub.NodeEvents(request):
+                handler(event)
+
+        thread = threading.Thread(target=listen)
+        thread.daemon = True
+        thread.start()
+
+    def link_events(self, _id, handler):
+        request = core_pb2.LinkEventsRequest()
+        request.id = _id
+
+        def listen():
+            for event in self.stub.LinkEvents(request):
                 handler(event)
 
         thread = threading.Thread(target=listen)
