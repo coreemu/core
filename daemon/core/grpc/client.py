@@ -492,6 +492,7 @@ def main():
 
         # create session
         session_data = client.create_session()
+        client.exception_events(session_data.id, lambda x: print(x))
         print("created session: {}".format(session_data))
         print("default services: {}".format(client.get_service_defaults(session_data.id)))
         print("emane models: {}".format(client.get_emane_models(session_data.id)))

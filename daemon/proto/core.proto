@@ -257,9 +257,9 @@ message ExceptionEventsRequest {
 message ExceptionEvent {
     int32 node = 1;
     int32 session = 2;
-    string level = 3;
+    ExceptionLevel level = 3;
     string source = 4;
-    float date = 5;
+    string date = 5;
     string text = 6;
     string opaque = 7;
 }
@@ -659,6 +659,14 @@ enum MobilityAction {
     MOBILITY_START = 0;
     MOBILITY_PAUSE = 1;
     MOBILITY_STOP = 2;
+}
+
+enum ExceptionLevel {
+    EXCEPTION_DEFAULT = 0;
+    FATAL = 1;
+    ERROR = 2;
+    WARNING = 3;
+    NOTICE = 4;
 }
 
 message Hook {

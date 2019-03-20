@@ -522,16 +522,13 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             try:
                 event = queue.get(timeout=1)
                 exception_event = core_pb2.ExceptionEvent()
-                event_time = event.date
-                if event_time is not None:
-                    event_time = float(event_time)
                 update_proto(
                     exception_event,
                     node=event.node,
-                    session=event.session,
-                    level=event.level,
+                    session=int(event.session),
+                    level=event.level.value,
                     source=event.source,
-                    date=event_time,
+                    date=event.date,
                     text=event.text,
                     opaque=event.opaque
                 )
