@@ -1,3 +1,4 @@
+import atexit
 import logging
 import os
 import tempfile
@@ -194,16 +195,18 @@ def send_objects(session):
     session.broadcast_config(config_data)
 
     # send session metadata
-    data_values = "|".join(["%s=%s" % item for item in session.metadata.get_configs().iteritems()])
-    data_types = tuple(ConfigDataTypes.STRING.value for _ in session.metadata.get_configs())
-    config_data = ConfigData(
-        message_type=0,
-        object=session.metadata.name,
-        type=ConfigFlags.NONE.value,
-        data_types=data_types,
-        data_values=data_values
-    )
-    session.broadcast_config(config_data)
+    configs = session.metadata.get_configs()
+    if configs:
+        data_values = "|".join(["%s=%s" % item for item in configs.iteritems()])
+        data_types = tuple(ConfigDataTypes.STRING.value for _ in session.metadata.get_configs())
+        config_data = ConfigData(
+            message_type=0,
+            object=session.metadata.name,
+            type=ConfigFlags.NONE.value,
+            data_types=data_types,
+            data_values=data_values
+        )
+        session.broadcast_config(config_data)
 
     logging.debug("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
@@ -212,6 +215,18 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
     def __init__(self, coreemu):
         super(CoreApiServer, self).__init__()
         self.coreemu = coreemu
+        self.running = True
+        atexit.register(self._exit_handler)
+
+    def _exit_handler(self):
+        logging.debug("catching exit, stop running")
+        self.running = False
+
+    def _is_running(self, context):
+        return self.running and context.is_active()
+
+    def _cancel_stream(self, context):
+        context.abort(grpc.StatusCode.CANCELLED, "server stopping")
 
     def get_session(self, _id, context):
         session = self.coreemu.sessions.get(_id)
@@ -386,7 +401,7 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
         queue = Queue()
         session.node_handlers.append(lambda x: queue.put(x))
 
-        while context.is_active():
+        while self._is_running(context):
             try:
                 node = queue.get(timeout=1)
                 node_event = core_pb2.NodeEvent()
@@ -407,12 +422,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             except Empty:
                 continue
 
+        self._cancel_stream(context)
+
     def LinkEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
         session.link_handlers.append(lambda x: queue.put(x))
 
-        while context.is_active():
+        while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
                 link_event = core_pb2.LinkEvent()
@@ -467,12 +484,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             except Empty:
                 continue
 
+        self._cancel_stream(context)
+
     def SessionEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
         session.event_handlers.append(lambda x: queue.put(x))
 
-        while context.is_active():
+        while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
                 session_event = core_pb2.SessionEvent()
@@ -492,12 +511,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             except Empty:
                 continue
 
+        self._cancel_stream(context)
+
     def ConfigEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
         session.config_handlers.append(lambda x: queue.put(x))
 
-        while context.is_active():
+        while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
                 config_event = core_pb2.ConfigEvent()
@@ -522,12 +543,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             except Empty:
                 continue
 
+        self._cancel_stream(context)
+
     def ExceptionEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
         session.exception_handlers.append(lambda x: queue.put(x))
 
-        while context.is_active():
+        while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
                 exception_event = core_pb2.ExceptionEvent()
@@ -545,12 +568,14 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             except Empty:
                 continue
 
+        self._cancel_stream(context)
+
     def FileEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
         session.file_handlers.append(lambda x: queue.put(x))
 
-        while context.is_active():
+        while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
                 file_event = core_pb2.FileEvent()
@@ -570,6 +595,8 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
                 yield file_event
             except Empty:
                 continue
+
+        self._cancel_stream(context)
 
     def CreateNode(self, request, context):
         logging.debug("create node: %s", request)

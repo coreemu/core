@@ -21,6 +21,23 @@ def update_proto(obj, **kwargs):
             setattr(obj, key, value)
 
 
+def stream_listener(stream, handler):
+    try:
+        for event in stream:
+            handler(event)
+    except grpc.RpcError as e:
+        if e.code() == grpc.StatusCode.CANCELLED:
+            logging.debug("stream closed")
+        else:
+            logging.exception("stream error")
+
+
+def start_streamer(stream, handler):
+    thread = threading.Thread(target=stream_listener, args=(stream, handler))
+    thread.daemon = True
+    thread.start()
+
+
 class CoreApiClient(object):
     def __init__(self, address="localhost:50051"):
         self.address = address
@@ -75,74 +92,38 @@ class CoreApiClient(object):
     def node_events(self, _id, handler):
         request = core_pb2.NodeEventsRequest()
         request.id = _id
-
-        def listen():
-            for event in self.stub.NodeEvents(request):
-                handler(event)
-
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        stream = self.stub.NodeEvents(request)
+        start_streamer(stream, handler)
 
     def link_events(self, _id, handler):
         request = core_pb2.LinkEventsRequest()
         request.id = _id
-
-        def listen():
-            for event in self.stub.LinkEvents(request):
-                handler(event)
-
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        stream = self.stub.LinkEvents(request)
+        start_streamer(stream, handler)
 
     def session_events(self, _id, handler):
         request = core_pb2.SessionEventsRequest()
         request.id = _id
-
-        def listen():
-            for event in self.stub.SessionEvents(request):
-                handler(event)
-
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        stream = self.stub.SessionEvents(request)
+        start_streamer(stream, handler)
 
     def config_events(self, _id, handler):
         request = core_pb2.ConfigEventsRequest()
         request.id = _id
-
-        def listen():
-            for event in self.stub.ConfigEvents(request):
-                handler(event)
-
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        stream = self.stub.ConfigEvents(request)
+        start_streamer(stream, handler)
 
     def exception_events(self, _id, handler):
         request = core_pb2.ExceptionEventsRequest()
         request.id = _id
-
-        def listen():
-            for event in self.stub.ExceptionEvents(request):
-                handler(event)
-
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        stream = self.stub.ExceptionEvents(request)
+        start_streamer(stream, handler)
 
     def file_events(self, _id, handler):
         request = core_pb2.FileEventsRequest()
         request.id = _id
-
-        def listen():
-            for event in self.stub.FileEvents(request):
-                handler(event)
-
-        thread = threading.Thread(target=listen)
-        thread.daemon = True
-        thread.start()
+        stream = self.stub.FileEvents(request)
+        start_streamer(stream, handler)
 
     def create_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
         if not node_options:
@@ -492,7 +473,12 @@ def main():
 
         # create session
         session_data = client.create_session()
-        client.exception_events(session_data.id, lambda x: print(x))
+        client.exception_events(session_data.id, lambda x: print(type(x)))
+        client.node_events(session_data.id, lambda x: print(type(x)))
+        client.session_events(session_data.id, lambda x: print(type(x)))
+        client.link_events(session_data.id, lambda x: print(type(x)))
+        client.file_events(session_data.id, lambda x: print(type(x)))
+        client.config_events(session_data.id, lambda x: print(type(x)))
         print("created session: {}".format(session_data))
         print("default services: {}".format(client.get_service_defaults(session_data.id)))
         print("emane models: {}".format(client.get_emane_models(session_data.id)))
@@ -574,5 +560,5 @@ def main():
 
 
 if __name__ == "__main__":
-    logging.basicConfig()
+    logging.basicConfig(level=logging.DEBUG)
     main()
