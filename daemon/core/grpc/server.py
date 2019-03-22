@@ -61,40 +61,27 @@ def get_config_groups(config, configurable_options):
     return groups
 
 
-def convert_link(session, link_data, link):
+def convert_link(session, link_data, links):
+    interface_one = None
     if link_data.interface1_id is not None:
         node = session.get_object(link_data.node1_id)
         interface = node.netif(link_data.interface1_id)
-        link.interface_one.id = link_data.interface1_id
-        link.interface_one.name = interface.name
-        update_proto(
-            link.interface_one,
-            mac=convert_value(link_data.interface1_mac),
-            ip4=convert_value(link_data.interface1_ip4),
-            ip4mask=link_data.interface1_ip4_mask,
-            ip6=convert_value(link_data.interface1_ip6),
-            ip6mask=link_data.interface1_ip6_mask
-        )
+        interface_one = core_pb2.Interface(
+            id=link_data.interface1_id, name=interface.name, mac=convert_value(link_data.interface1_mac),
+            ip4=convert_value(link_data.interface1_ip4), ip4mask=link_data.interface1_ip4_mask,
+            ip6=convert_value(link_data.interface1_ip6), ip6mask=link_data.interface1_ip6_mask)
 
+    interface_two = None
     if link_data.interface2_id is not None:
         node = session.get_object(link_data.node2_id)
         interface = node.netif(link_data.interface2_id)
-        link.interface_two.id = link_data.interface2_id
-        link.interface_two.name = interface.name
-        update_proto(
-            link.interface_two,
-            mac=convert_value(link_data.interface2_mac),
-            ip4=convert_value(link_data.interface2_ip4),
-            ip4mask=link_data.interface2_ip4_mask,
-            ip6=convert_value(link_data.interface2_ip6),
-            ip6mask=link_data.interface2_ip6_mask
+        interface_two = core_pb2.Interface(
+            id=link_data.interface2_id, name=interface.name, mac=convert_value(link_data.interface2_mac),
+            ip4=convert_value(link_data.interface2_ip4), ip4mask=link_data.interface2_ip4_mask,
+            ip6=convert_value(link_data.interface2_ip6), ip6mask=link_data.interface2_ip6_mask
         )
 
-    link.node_one = link_data.node1_id
-    link.node_two = link_data.node2_id
-    link.type = link_data.link_type
-    update_proto(
-        link.options,
+    options = core_pb2.LinkOptions(
         opaque=link_data.opaque,
         jitter=link_data.jitter,
         key=link_data.key,
@@ -106,6 +93,11 @@ def convert_link(session, link_data, link):
         delay=link_data.delay,
         dup=link_data.dup,
         unidirectional=link_data.unidirectional
+    )
+
+    links.add(
+        type=link_data.link_type, node_one=link_data.node1_id, node_two=link_data.node2_id,
+        interface_one=interface_one, interface_two=interface_two, options=options
     )
 
 
@@ -258,31 +250,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("create session: %s", request)
         session = self.coreemu.create_session(request.id)
         session.set_state(EventTypes.DEFINITION_STATE)
-
-        # default set session location
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
         session.location.refscale = 150000.0
-
-        response = core_pb2.CreateSessionResponse()
-        response.id = session.session_id
-        response.state = session.state
-        return response
+        return core_pb2.CreateSessionResponse(id=session.session_id, state=session.state)
 
     def DeleteSession(self, request, context):
         logging.debug("delete session: %s", request)
-        response = core_pb2.DeleteSessionResponse()
-        response.result = self.coreemu.delete_session(request.id)
-        return response
+        result = self.coreemu.delete_session(request.id)
+        return core_pb2.DeleteSessionResponse(result=result)
 
     def GetSessions(self, request, context):
         logging.debug("get sessions: %s", request)
         response = core_pb2.GetSessionsResponse()
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
-            session_summary = response.sessions.add()
-            session_summary.id = session_id
-            session_summary.state = session.state
-            session_summary.nodes = session.get_node_count()
+            response.sessions.add(id=session_id, state=session.state, nodes=session.get_node_count())
         return response
 
     def GetSessionLocation(self, request, context):
@@ -290,34 +272,19 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.id, context)
         x, y, z = session.location.refxyz
         lat, lon, alt = session.location.refgeo
-        response = core_pb2.GetSessionLocationResponse()
-        update_proto(
-            response.position,
-            x=x,
-            y=y,
-            z=z,
-            lat=lat,
-            lon=lon,
-            alt=alt
-        )
-        update_proto(response, scale=session.location.refscale)
-        return response
+        position = core_pb2.Position(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
+        return core_pb2.GetSessionLocationResponse(position=position, scale=session.location.refscale)
 
     def SetSessionLocation(self, request, context):
         logging.debug("set session location: %s", request)
         session = self.get_session(request.id, context)
-
         session.location.refxyz = (request.position.x, request.position.y, request.position.z)
         session.location.setrefgeo(request.position.lat, request.position.lon, request.position.alt)
         session.location.refscale = request.scale
-
-        response = core_pb2.SetSessionLocationResponse()
-        response.result = True
-        return response
+        return core_pb2.SetSessionLocationResponse(result=True)
 
     def SetSessionState(self, request, context):
         logging.debug("set session state: %s", request)
-        response = core_pb2.SetSessionStateResponse()
         session = self.get_session(request.id, context)
 
         try:
@@ -325,7 +292,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session.set_state(state)
 
             if state == EventTypes.INSTANTIATION_STATE:
-                # create session directory if it does not exist
                 if not os.path.exists(session.session_dir):
                     os.mkdir(session.session_dir)
                 session.instantiate()
@@ -336,79 +302,58 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             elif state == EventTypes.DEFINITION_STATE:
                 session.clear()
 
-            response.result = True
+            result = True
         except KeyError:
-            response.result = False
+            result = False
 
-        return response
+        return core_pb2.SetSessionStateResponse(result=result)
 
     def GetSessionOptions(self, request, context):
         logging.debug("get session options: %s", request)
         session = self.get_session(request.id, context)
-
         config = session.options.get_configs()
         defaults = session.options.default_values()
         defaults.update(config)
-
         groups = get_config_groups(defaults, session.options)
-
-        response = core_pb2.GetSessionOptionsResponse()
-        response.groups.extend(groups)
-        return response
+        return core_pb2.GetSessionOptionsResponse(groups=groups)
 
     def SetSessionOptions(self, request, context):
         logging.debug("set session options: %s", request)
         session = self.get_session(request.id, context)
         session.options.set_configs(request.config)
-        response = core_pb2.SetSessionOptionsResponse()
-        response.result = True
-        return response
+        return core_pb2.SetSessionOptionsResponse(result=True)
 
     def GetSession(self, request, context):
         logging.debug("get session: %s", request)
         session = self.get_session(request.id, context)
-        response = core_pb2.GetSessionResponse()
-        response.session.state = session.state
+        session_proto = core_pb2.Session(state=session.state)
 
         for node_id in session.objects:
             node = session.objects[node_id]
-
             if not isinstance(node.objid, int):
                 continue
 
-            node_proto = response.session.nodes.add()
-            node_proto.id = node.objid
-            node_proto.name = node.name
-            node_proto.type = nodeutils.get_node_type(node.__class__).value
+            node_type = nodeutils.get_node_type(node.__class__).value
             model = getattr(node, "type", None)
-            if model is not None:
-                node_proto.model = model
-
-            update_proto(
-                node_proto.position,
-                x=node.position.x,
-                y=node.position.y,
-                z=node.position.z
-            )
+            position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
 
             services = getattr(node, "services", [])
             if services is None:
                 services = []
             services = [x.name for x in services]
-            node_proto.services.extend(services)
 
             emane_model = None
             if nodeutils.is_node(node, NodeTypes.EMANE):
                 emane_model = node.model.name
-            if emane_model is not None:
-                node_proto.emane = emane_model
+
+            session_proto.nodes.add(id=node.objid, name=node.name, emane=emane_model, model=model,
+                                    type=node_type, position=position, services=services)
 
             links_data = node.all_link_data(0)
             for link_data in links_data:
-                link = response.session.links.add()
-                convert_link(session, link_data, link)
+                convert_link(session, link_data, session_proto.links)
 
-        return response
+        return core_pb2.GetSessionResponse(session=session_proto)
 
     def NodeEvents(self, request, context):
         session = self.get_session(request.id, context)

@@ -49,45 +49,35 @@ class CoreGrpcClient(object):
         return self.stub.CreateSession(request)
 
     def delete_session(self, _id):
-        request = core_pb2.DeleteSessionRequest()
-        request.id = _id
+        request = core_pb2.DeleteSessionRequest(id=_id)
         return self.stub.DeleteSession(request)
 
     def get_sessions(self):
         return self.stub.GetSessions(core_pb2.GetSessionsRequest())
 
     def get_session(self, _id):
-        request = core_pb2.GetSessionRequest()
-        request.id = _id
+        request = core_pb2.GetSessionRequest(id=_id)
         return self.stub.GetSession(request)
 
     def get_session_options(self, _id):
-        request = core_pb2.GetSessionOptionsRequest()
-        request.id = _id
+        request = core_pb2.GetSessionOptionsRequest(id=_id)
         return self.stub.GetSessionOptions(request)
 
     def set_session_options(self, _id, config):
-        request = core_pb2.SetSessionOptionsRequest()
-        request.id = _id
-        request.config.update(config)
+        request = core_pb2.SetSessionOptionsRequest(id=_id, config=config)
         return self.stub.SetSessionOptions(request)
 
     def get_session_location(self, _id):
-        request = core_pb2.GetSessionLocationRequest()
-        request.id = _id
+        request = core_pb2.GetSessionLocationRequest(id=_id)
         return self.stub.GetSessionLocation(request)
 
     def set_session_location(self, _id, x=None, y=None, z=None, lat=None, lon=None, alt=None, scale=None):
-        request = core_pb2.SetSessionLocationRequest()
-        request.id = _id
-        update_proto(request.position, x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
-        update_proto(request, scale=scale)
+        position = core_pb2.Position(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
+        request = core_pb2.SetSessionLocationRequest(id=_id, position=position, scale=scale)
         return self.stub.SetSessionLocation(request)
 
     def set_session_state(self, _id, state):
-        request = core_pb2.SetSessionStateRequest()
-        request.id = _id
-        request.state = state.value
+        request = core_pb2.SetSessionStateRequest(id=_id, state=state.value)
         return self.stub.SetSessionState(request)
 
     def node_events(self, _id, handler):
