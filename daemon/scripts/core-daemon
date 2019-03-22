@@ -56,8 +56,8 @@ def cored(cfg):
 
     # initialize grpc api
     if cfg["grpc"] == "True":
-        api_server = CoreGrpcServer(server.coreemu)
-        grpc_thread = threading.Thread(target=api_server.listen)
+        grpc_server = CoreGrpcServer(server.coreemu)
+        grpc_thread = threading.Thread(target=grpc_server.listen)
         grpc_thread.daemon = True
         grpc_thread.start()
 

@@ -216,6 +216,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         super(CoreGrpcServer, self).__init__()
         self.coreemu = coreemu
         self.running = True
+        self.server = None
         atexit.register(self._exit_handler)
 
     def _exit_handler(self):
@@ -230,16 +231,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def listen(self, address="[::]:50051"):
         logging.info("starting grpc api: %s", address)
-        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        core_pb2_grpc.add_CoreApiServicer_to_server(self, server)
-        server.add_insecure_port(address)
-        server.start()
+        self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        core_pb2_grpc.add_CoreApiServicer_to_server(self, self.server)
+        self.server.add_insecure_port(address)
+        self.server.start()
 
         try:
             while True:
                 time.sleep(_ONE_DAY_IN_SECONDS)
         except KeyboardInterrupt:
-            server.stop(0)
+            self.server.stop(None)
 
     def get_session(self, _id, context):
         session = self.coreemu.sessions.get(_id)
