@@ -256,7 +256,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def CreateSession(self, request, context):
         logging.debug("create session: %s", request)
-        session = self.coreemu.create_session()
+        session = self.coreemu.create_session(request.id)
         session.set_state(EventTypes.DEFINITION_STATE)
 
         # default set session location

@@ -4,6 +4,7 @@ Unit test fixture module.
 
 import os
 import threading
+import time
 
 import pytest
 from mock.mock import MagicMock
@@ -27,7 +28,6 @@ from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
-from core.grpc.client import CoreGrpcClient
 from core.grpc.server import CoreGrpcServer
 from core.misc import ipaddress
 from core.misc.ipaddress import MacAddress
@@ -214,6 +214,7 @@ def grpc_server():
     thread = threading.Thread(target=grpc_server.listen)
     thread.daemon = True
     thread.start()
+    time.sleep(0.1)
     yield grpc_server
     coremu.shutdown()
     grpc_server.server.stop(None)

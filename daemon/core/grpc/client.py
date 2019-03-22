@@ -44,8 +44,9 @@ class CoreGrpcClient(object):
         self.stub = None
         self.channel = None
 
-    def create_session(self):
-        return self.stub.CreateSession(core_pb2.CreateSessionRequest())
+    def create_session(self, _id=None):
+        request = core_pb2.CreateSessionRequest(id=_id)
+        return self.stub.CreateSession(request)
 
     def delete_session(self, _id):
         request = core_pb2.DeleteSessionRequest()
