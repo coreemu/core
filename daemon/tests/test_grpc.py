@@ -66,9 +66,9 @@ class TestGrpc:
             response = client.get_session(session.session_id)
 
         # then
-        assert response.state == core_pb2.DEFINITION
-        assert len(response.nodes) == 1
-        assert len(response.links) == 0
+        assert response.session.state == core_pb2.DEFINITION
+        assert len(response.session.nodes) == 1
+        assert len(response.session.links) == 0
 
     def test_get_sessions(self, grpc_server):
         # given
@@ -147,12 +147,14 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
 
         # then
+        option = "enablerj45"
+        value = "1"
         with client.context_connect():
-            response = client.set_session_options(session.session_id, {"preservedir": "1"})
+            response = client.set_session_options(session.session_id, {option: value})
 
         # then
         assert response.result is True
-        assert session.options.get_config("preservedir") == "1"
+        assert session.options.get_config(option) == value
 
     def test_set_session_state(self, grpc_server):
         # given

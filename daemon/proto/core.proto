@@ -141,7 +141,7 @@ message GetSessionsRequest {
 }
 
 message GetSessionsResponse {
-    repeated Session sessions = 1;
+    repeated SessionSummary sessions = 1;
 }
 
 message GetSessionRequest {
@@ -149,9 +149,7 @@ message GetSessionRequest {
 }
 
 message GetSessionResponse {
-    SessionState state = 1;
-    repeated Node nodes = 2;
-    repeated Link links = 3;
+    Session session = 1;
 }
 
 message GetSessionOptionsRequest {
@@ -712,6 +710,13 @@ message ConfigOption {
 }
 
 message Session {
+    int32 id = 1;
+    SessionState state = 2;
+    repeated Node nodes = 3;
+    repeated Link links = 4;
+}
+
+message SessionSummary {
     int32 id = 1;
     SessionState state = 2;
     int32 nodes = 3;

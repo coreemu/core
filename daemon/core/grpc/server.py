@@ -279,10 +279,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         response = core_pb2.GetSessionsResponse()
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
-            session_data = response.sessions.add()
-            session_data.id = session_id
-            session_data.state = session.state
-            session_data.nodes = session.get_node_count()
+            session_summary = response.sessions.add()
+            session_summary.id = session_id
+            session_summary.state = session.state
+            session_summary.nodes = session.get_node_count()
         return response
 
     def GetSessionLocation(self, request, context):
@@ -368,7 +368,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get session: %s", request)
         session = self.get_session(request.id, context)
         response = core_pb2.GetSessionResponse()
-        response.state = session.state
+        response.session.state = session.state
 
         for node_id in session.objects:
             node = session.objects[node_id]
@@ -376,7 +376,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if not isinstance(node.objid, int):
                 continue
 
-            node_proto = response.nodes.add()
+            node_proto = response.session.nodes.add()
             node_proto.id = node.objid
             node_proto.name = node.name
             node_proto.type = nodeutils.get_node_type(node.__class__).value
@@ -405,7 +405,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
             links_data = node.all_link_data(0)
             for link_data in links_data:
-                link = response.links.add()
+                link = response.session.links.add()
                 convert_link(session, link_data, link)
 
         return response
