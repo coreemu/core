@@ -13,14 +13,6 @@ from core.emulator.emudata import NodeOptions, IpPrefixes, InterfaceData, LinkOp
 from core.enumerations import NodeTypes, LinkTypes, EventTypes
 
 
-def update_proto(obj, **kwargs):
-    for key in kwargs:
-        value = kwargs[key]
-        if value is not None:
-            logging.info("setting proto key(%s) value(%s)", key, value)
-            setattr(obj, key, value)
-
-
 def stream_listener(stream, handler):
     try:
         for event in stream:
@@ -81,137 +73,84 @@ class CoreGrpcClient(object):
         return self.stub.SetSessionState(request)
 
     def node_events(self, _id, handler):
-        request = core_pb2.NodeEventsRequest()
-        request.id = _id
+        request = core_pb2.NodeEventsRequest(id=_id)
         stream = self.stub.NodeEvents(request)
         start_streamer(stream, handler)
 
     def link_events(self, _id, handler):
-        request = core_pb2.LinkEventsRequest()
-        request.id = _id
+        request = core_pb2.LinkEventsRequest(id=_id)
         stream = self.stub.LinkEvents(request)
         start_streamer(stream, handler)
 
     def session_events(self, _id, handler):
-        request = core_pb2.SessionEventsRequest()
-        request.id = _id
+        request = core_pb2.SessionEventsRequest(id=_id)
         stream = self.stub.SessionEvents(request)
         start_streamer(stream, handler)
 
     def config_events(self, _id, handler):
-        request = core_pb2.ConfigEventsRequest()
-        request.id = _id
+        request = core_pb2.ConfigEventsRequest(id=_id)
         stream = self.stub.ConfigEvents(request)
         start_streamer(stream, handler)
 
     def exception_events(self, _id, handler):
-        request = core_pb2.ExceptionEventsRequest()
-        request.id = _id
+        request = core_pb2.ExceptionEventsRequest(id=_id)
         stream = self.stub.ExceptionEvents(request)
         start_streamer(stream, handler)
 
     def file_events(self, _id, handler):
-        request = core_pb2.FileEventsRequest()
-        request.id = _id
+        request = core_pb2.FileEventsRequest(id=_id)
         stream = self.stub.FileEvents(request)
         start_streamer(stream, handler)
 
     def create_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
         if not node_options:
             node_options = NodeOptions()
-
-        request = core_pb2.CreateNodeRequest()
-        request.session = session
-        request.type = _type.value
-        update_proto(
-            request,
-            id=_id,
-            name=node_options.name,
-            model=node_options.model,
-            icon=node_options.icon,
-            opaque=node_options.opaque,
-            emane=emane
-        )
-        update_proto(
-            request.position,
-            x=node_options.x,
-            y=node_options.y,
-            lat=node_options.lat,
-            lon=node_options.lon,
-            alt=node_options.alt
-        )
-        request.services.extend(node_options.services)
+        position = core_pb2.Position(
+            x=node_options.x, y=node_options.y,
+            lat=node_options.lat, lon=node_options.lon, alt=node_options.alt)
+        request = core_pb2.CreateNodeRequest(
+            session=session, type=_type.value, name=node_options.name,
+            model=node_options.model, icon=node_options.icon, services=node_options.services,
+            opaque=node_options.opaque, emane=emane, position=position)
         return self.stub.CreateNode(request)
 
     def get_node(self, session, _id):
-        request = core_pb2.GetNodeRequest()
-        request.session = session
-        request.id = _id
+        request = core_pb2.GetNodeRequest(session=session, id=_id)
         return self.stub.GetNode(request)
 
     def edit_node(self, session, _id, node_options):
-        request = core_pb2.EditNodeRequest()
-        request.session = session
-        request.id = _id
-        update_proto(
-            request.position,
-            x=node_options.x,
-            y=node_options.y,
-            lat=node_options.lat,
-            lon=node_options.lon,
-            alt=node_options.alt
-        )
+        position = core_pb2.Position(
+            x=node_options.x, y=node_options.y,
+            lat=node_options.lat, lon=node_options.lon, alt=node_options.alt)
+        request = core_pb2.EditNodeRequest(session=session, id=_id, position=position)
         return self.stub.EditNode(request)
 
     def delete_node(self, session, _id):
-        request = core_pb2.DeleteNodeRequest()
-        request.session = session
-        request.id = _id
+        request = core_pb2.DeleteNodeRequest(session=session, id=_id)
         return self.stub.DeleteNode(request)
 
     def get_node_links(self, session, _id):
-        request = core_pb2.GetNodeLinksRequest()
-        request.session = session
-        request.id = _id
+        request = core_pb2.GetNodeLinksRequest(session=session, id=_id)
         return self.stub.GetNodeLinks(request)
 
     def create_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
-        request = core_pb2.CreateLinkRequest()
-        request.session = session
-        update_proto(
-            request.link,
-            node_one=node_one,
-            node_two=node_two,
-            type=LinkTypes.WIRED.value
-        )
-
+        interface_one_proto = None
         if interface_one is not None:
-            update_proto(
-                request.link.interface_one,
-                id=interface_one.id,
-                name=interface_one.name,
-                mac=interface_one.mac,
-                ip4=interface_one.ip4,
-                ip4mask=interface_one.ip4_mask,
-                ip6=interface_one.ip6,
-                ip6mask=interface_one.ip6_mask
-            )
+            interface_one_proto = core_pb2.Interface(
+                id=interface_one.id, name=interface_one.name, mac=interface_one.mac,
+                ip4=interface_one.ip4, ip4mask=interface_one.ip4_mask,
+                ip6=interface_one.ip6, ip6mask=interface_one.ip6_mask)
 
+        interface_two_proto = None
         if interface_two is not None:
-            update_proto(
-                request.link.interface_two,
-                id=interface_two.id,
-                name=interface_two.name,
-                mac=interface_two.mac,
-                ip4=interface_two.ip4,
-                ip4mask=interface_two.ip4_mask,
-                ip6=interface_two.ip6,
-                ip6mask=interface_two.ip6_mask
-            )
+            interface_two_proto = core_pb2.Interface(
+                id=interface_two.id, name=interface_two.name, mac=interface_two.mac,
+                ip4=interface_two.ip4, ip4mask=interface_two.ip4_mask,
+                ip6=interface_two.ip6, ip6mask=interface_two.ip6_mask)
 
+        options = None
         if link_options is not None:
-            update_proto(
-                request.link.options,
+            options = core_pb2.LinkOptions(
                 delay=link_options.delay,
                 bandwidth=link_options.bandwidth,
                 per=link_options.per,
@@ -225,20 +164,14 @@ class CoreGrpcClient(object):
                 opaque=link_options.opaque
             )
 
+        link = core_pb2.Link(
+            node_one=node_one, node_two=node_two, type=LinkTypes.WIRED.value,
+            interface_one=interface_one_proto, interface_two=interface_two_proto, options=options)
+        request = core_pb2.CreateLinkRequest(session=session, link=link)
         return self.stub.CreateLink(request)
 
     def edit_link(self, session, node_one, node_two, link_options, interface_one=None, interface_two=None):
-        request = core_pb2.EditLinkRequest()
-        request.session = session
-        request.node_one = node_one
-        request.node_two = node_two
-        update_proto(
-            request,
-            interface_one=interface_one,
-            interface_two=interface_two
-        )
-        update_proto(
-            request.options,
+        options = core_pb2.LinkOptions(
             delay=link_options.delay,
             bandwidth=link_options.bandwidth,
             per=link_options.per,
@@ -251,56 +184,40 @@ class CoreGrpcClient(object):
             key=link_options.key,
             opaque=link_options.opaque
         )
+        request = core_pb2.EditLinkRequest(
+            session=session, node_one=node_one, node_two=node_two, options=options,
+            interface_one=interface_one, interface_two=interface_two)
         return self.stub.EditLink(request)
 
     def delete_link(self, session, node_one, node_two, interface_one=None, interface_two=None):
-        request = core_pb2.DeleteLinkRequest()
-        request.session = session
-        request.node_one = node_one
-        request.node_two = node_two
-        update_proto(
-            request,
-            interface_one=interface_one,
-            interface_two=interface_two
-        )
+        request = core_pb2.DeleteLinkRequest(
+            session=session, node_one=node_one, node_two=node_two,
+            interface_one=interface_one, interface_two=interface_two)
         return self.stub.DeleteLink(request)
 
     def get_hooks(self, session):
-        request = core_pb2.GetHooksRequest()
-        request.session = session
+        request = core_pb2.GetHooksRequest(session=session)
         return self.stub.GetHooks(request)
 
     def add_hook(self, session, state, file_name, file_data):
-        request = core_pb2.AddHookRequest()
-        request.session = session
-        request.hook.state = state.value
-        request.hook.file = file_name
-        request.hook.data = file_data
+        hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
+        request = core_pb2.AddHookRequest(session=session, hook=hook)
         return self.stub.AddHook(request)
 
     def get_mobility_configs(self, session):
-        request = core_pb2.GetMobilityConfigsRequest()
-        request.session = session
+        request = core_pb2.GetMobilityConfigsRequest(session=session)
         return self.stub.GetMobilityConfigs(request)
 
     def get_mobility_config(self, session, _id):
-        request = core_pb2.GetMobilityConfigRequest()
-        request.session = session
-        request.id = _id
+        request = core_pb2.GetMobilityConfigRequest(session=session, id=_id)
         return self.stub.GetMobilityConfig(request)
 
     def set_mobility_config(self, session, _id, config):
-        request = core_pb2.SetMobilityConfigRequest()
-        request.session = session
-        request.id = _id
-        request.config.update(config)
+        request = core_pb2.SetMobilityConfigRequest(session=session, id=_id, config=config)
         return self.stub.SetMobilityConfig(request)
 
     def mobility_action(self, session, _id, action):
-        request = core_pb2.MobilityActionRequest()
-        request.session = session
-        request.id = _id
-        request.action = action
+        request = core_pb2.MobilityActionRequest(session=session, id=_id, action=action)
         return self.stub.MobilityAction(request)
 
     def get_services(self):
@@ -308,119 +225,76 @@ class CoreGrpcClient(object):
         return self.stub.GetServices(request)
 
     def get_service_defaults(self, session):
-        request = core_pb2.GetServiceDefaultsRequest()
-        request.session = session
+        request = core_pb2.GetServiceDefaultsRequest(session=session)
         return self.stub.GetServiceDefaults(request)
 
     def set_service_defaults(self, session, service_defaults):
-        request = core_pb2.SetServiceDefaultsRequest()
-        request.session = session
+        request = core_pb2.SetServiceDefaultsRequest(session=session)
         for node_type in service_defaults:
             services = service_defaults[node_type]
-            service_defaults_proto = request.defaults.add()
-            service_defaults_proto.node_type = node_type
-            service_defaults_proto.services.extend(services)
-
+            request.defaults.add(node_type=node_type, services=services)
         return self.stub.SetServiceDefaults(request)
 
     def get_node_service(self, session, _id, service):
-        request = core_pb2.GetNodeServiceRequest()
-        request.session = session
-        request.id = _id
-        request.service = service
+        request = core_pb2.GetNodeServiceRequest(session=session, id=_id, service=service)
         return self.stub.GetNodeService(request)
 
     def get_node_service_file(self, session, _id, service, file_name):
-        request = core_pb2.GetNodeServiceFileRequest()
-        request.session = session
-        request.id = _id
-        request.service = service
-        request.file = file_name
+        request = core_pb2.GetNodeServiceFileRequest(session=session, id=_id, service=service, file=file_name)
         return self.stub.GetNodeServiceFile(request)
 
     def set_node_service(self, session, _id, service, startup, validate, shutdown):
-        request = core_pb2.SetNodeServiceRequest()
-        request.session = session
-        request.id = _id
-        request.service = service
-        request.startup.extend(startup)
-        request.validate.extend(validate)
-        request.shutdown.extend(shutdown)
+        request = core_pb2.SetNodeServiceRequest(
+            session=session, id=_id, service=service, startup=startup, validate=validate, shutdown=shutdown)
         return self.stub.SetNodeService(request)
 
     def set_node_service_file(self, session, _id, service, file_name, data):
-        request = core_pb2.SetNodeServiceFileRequest()
-        request.session = session
-        request.id = _id
-        request.service = service
-        request.file = file_name
-        request.data = data
+        request = core_pb2.SetNodeServiceFileRequest(
+            session=session, id=_id, service=service, file=file_name, data=data)
         return self.stub.SetNodeServiceFile(request)
 
     def service_action(self, session, _id, service, action):
-        request = core_pb2.ServiceActionRequest()
-        request.session = session
-        request.id = _id
-        request.service = service
-        request.action = action
+        request = core_pb2.ServiceActionRequest(session=session, id=_id, service=service, action=action)
         return self.stub.ServiceAction(request)
 
     def get_wlan_config(self, session, _id):
-        request = core_pb2.GetWlanConfigRequest()
-        request.session = session
-        request.id = _id
+        request = core_pb2.GetWlanConfigRequest(session=session, id=_id)
         return self.stub.GetWlanConfig(request)
 
     def set_wlan_config(self, session, _id, config):
-        request = core_pb2.SetWlanConfigRequest()
-        request.session = session
-        request.id = _id
-        request.config.update(config)
+        request = core_pb2.SetWlanConfigRequest(session=session, id=_id, config=config)
         return self.stub.SetWlanConfig(request)
 
     def get_emane_config(self, session):
-        request = core_pb2.GetEmaneConfigRequest()
-        request.session = session
+        request = core_pb2.GetEmaneConfigRequest(session=session)
         return self.stub.GetEmaneConfig(request)
 
     def set_emane_config(self, session, config):
-        request = core_pb2.SetEmaneConfigRequest()
-        request.session = session
-        request.config.update(config)
+        request = core_pb2.SetEmaneConfigRequest(session=session, config=config)
         return self.stub.SetEmaneConfig(request)
 
     def get_emane_models(self, session):
-        request = core_pb2.GetEmaneModelsRequest()
-        request.session = session
+        request = core_pb2.GetEmaneModelsRequest(session=session)
         return self.stub.GetEmaneModels(request)
 
     def get_emane_model_config(self, session, _id, model, interface_id=None):
-        request = core_pb2.GetEmaneModelConfigRequest()
-        request.session = session
         if interface_id is not None:
             _id = _id * 1000 + interface_id
-        request.id = _id
-        request.model = model
+        request = core_pb2.GetEmaneModelConfigRequest(session=session, id=_id, model=model)
         return self.stub.GetEmaneModelConfig(request)
 
     def set_emane_model_config(self, session, _id, model, config, interface_id=None):
-        request = core_pb2.SetEmaneModelConfigRequest()
-        request.session = session
         if interface_id is not None:
             _id = _id * 1000 + interface_id
-        request.id = _id
-        request.model = model
-        request.config.update(config)
+        request = core_pb2.SetEmaneModelConfigRequest(session=session, id=_id, model=model, config=config)
         return self.stub.SetEmaneModelConfig(request)
 
     def get_emane_model_configs(self, session):
-        request = core_pb2.GetEmaneModelConfigsRequest()
-        request.session = session
+        request = core_pb2.GetEmaneModelConfigsRequest(session=session)
         return self.stub.GetEmaneModelConfigs(request)
 
     def save_xml(self, session, file_path):
-        request = core_pb2.SaveXmlRequest()
-        request.session = session
+        request = core_pb2.SaveXmlRequest(session=session)
         response = self.stub.SaveXml(request)
         with open(file_path, "wb") as xml_file:
             xml_file.write(response.data)
@@ -428,9 +302,7 @@ class CoreGrpcClient(object):
     def open_xml(self, file_path):
         with open(file_path, "rb") as xml_file:
             data = xml_file.read()
-
-        request = core_pb2.OpenXmlRequest()
-        request.data = data
+        request = core_pb2.OpenXmlRequest(data=data)
         return self.stub.OpenXml(request)
 
     def connect(self):

@@ -78,8 +78,7 @@ def convert_link(session, link_data, links):
         interface_two = core_pb2.Interface(
             id=link_data.interface2_id, name=interface.name, mac=convert_value(link_data.interface2_mac),
             ip4=convert_value(link_data.interface2_ip4), ip4mask=link_data.interface2_ip4_mask,
-            ip6=convert_value(link_data.interface2_ip6), ip6mask=link_data.interface2_ip6_mask
-        )
+            ip6=convert_value(link_data.interface2_ip6), ip6mask=link_data.interface2_ip6_mask)
 
     options = core_pb2.LinkOptions(
         opaque=link_data.opaque,
@@ -346,8 +345,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if nodeutils.is_node(node, NodeTypes.EMANE):
                 emane_model = node.model.name
 
-            session_proto.nodes.add(id=node.objid, name=node.name, emane=emane_model, model=model,
-                                    type=node_type, position=position, services=services)
+            session_proto.nodes.add(
+                id=node.objid, name=node.name, emane=emane_model, model=model,
+                type=node_type, position=position, services=services)
 
             links_data = node.all_link_data(0)
             for link_data in links_data:
