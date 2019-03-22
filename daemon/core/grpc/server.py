@@ -29,13 +29,6 @@ def convert_value(value):
         return str(value)
 
 
-def update_proto(obj, **kwargs):
-    for key in kwargs:
-        value = kwargs[key]
-        if value is not None:
-            setattr(obj, key, value)
-
-
 def get_config_groups(config, configurable_options):
     groups = []
     config_options = []
@@ -363,20 +356,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             try:
                 node = queue.get(timeout=1)
-                node_event = core_pb2.NodeEvent()
-                update_proto(
-                    node_event.node,
-                    id=node.id,
-                    name=node.name,
-                    model=node.model
-                )
-                update_proto(
-                    node_event.node.position,
-                    x=node.x_position,
-                    y=node.y_position
-                )
+                position = core_pb2.Position(x=node.x_position, y=node.y_position)
                 services = node.services or ""
-                node_event.node.services.extend(services.split("|"))
+                services = services.split("|")
+                node_proto = core_pb2.Node(
+                    id=node.id, name=node.name, model=node.model, position=position, services=services)
+                node_event = core_pb2.NodeEvent(node=node_proto)
                 yield node_event
             except Empty:
                 continue
@@ -391,42 +376,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
-                link_event = core_pb2.LinkEvent()
+                interface_one = None
                 if event.interface1_id is not None:
-                    interface_one = link_event.link.interface_one
-                    update_proto(
-                        interface_one,
-                        id=event.interface1_id,
-                        name=event.interface1_name,
-                        mac=convert_value(event.interface1_mac),
-                        ip4=convert_value(event.interface1_ip4),
-                        ip4mask=event.interface1_ip4_mask,
-                        ip6=convert_value(event.interface1_ip6),
-                        ip6mask=event.interface1_ip6_mask,
-                    )
+                    interface_one = core_pb2.Interface(
+                        id=event.interface1_id, name=event.interface1_name, mac=convert_value(event.interface1_mac),
+                        ip4=convert_value(event.interface1_ip4), ip4mask=event.interface1_ip4_mask,
+                        ip6=convert_value(event.interface1_ip6), ip6mask=event.interface1_ip6_mask)
 
+                interface_two = None
                 if event.interface2_id is not None:
-                    interface_two = link_event.link.interface_two
-                    update_proto(
-                        interface_two,
-                        id=event.interface2_id,
-                        name=event.interface2_name,
-                        mac=convert_value(event.interface2_mac),
-                        ip4=convert_value(event.interface2_ip4),
-                        ip4mask=event.interface2_ip4_mask,
-                        ip6=convert_value(event.interface2_ip6),
-                        ip6mask=event.interface2_ip6_mask,
-                    )
+                    interface_two = core_pb2.Interface(
+                        id=event.interface2_id, name=event.interface2_name, mac=convert_value(event.interface2_mac),
+                        ip4=convert_value(event.interface2_ip4), ip4mask=event.interface2_ip4_mask,
+                        ip6=convert_value(event.interface2_ip6), ip6mask=event.interface2_ip6_mask)
 
-                link_event.message_type = event.message_type
-                update_proto(
-                    link_event.link,
-                    type=event.link_type,
-                    node_one=event.node1_id,
-                    node_two=event.node2_id
-                )
-                update_proto(
-                    link_event.link.options,
+                options = core_pb2.LinkOptions(
                     opaque=event.opaque,
                     jitter=event.jitter,
                     key=event.key,
@@ -439,6 +403,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     dup=event.dup,
                     unidirectional=event.unidirectional
                 )
+                link = core_pb2.Link(
+                    type=event.link_type, node_one=event.node1_id, node_two=event.node2_id,
+                    interface_one=interface_one, interface_two=interface_two, options=options)
+                link_event = core_pb2.LinkEvent(message_type=event.message_type, link=link)
                 yield link_event
             except Empty:
                 continue
@@ -453,12 +421,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
-                session_event = core_pb2.SessionEvent()
                 event_time = event.time
                 if event_time is not None:
                     event_time = float(event_time)
-                update_proto(
-                    session_event,
+                session_event = core_pb2.SessionEvent(
                     node=event.node,
                     event=event.event_type,
                     name=event.name,
@@ -480,9 +446,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
-                config_event = core_pb2.ConfigEvent()
-                update_proto(
-                    config_event,
+                config_event = core_pb2.ConfigEvent(
                     message_type=event.message_type,
                     node=event.node,
                     object=event.object,
@@ -495,9 +459,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     session=event.session,
                     interface=event.interface_number,
                     network_id=event.network_id,
-                    opaque=event.opaque
+                    opaque=event.opaque,
+                    data_types=event.data_types
                 )
-                config_event.data_types.extend(event.data_types)
                 yield config_event
             except Empty:
                 continue
@@ -512,9 +476,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
-                exception_event = core_pb2.ExceptionEvent()
-                update_proto(
-                    exception_event,
+                exception_event = core_pb2.ExceptionEvent(
                     node=event.node,
                     session=int(event.session),
                     level=event.level.value,
@@ -537,9 +499,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         while self._is_running(context):
             try:
                 event = queue.get(timeout=1)
-                file_event = core_pb2.FileEvent()
-                update_proto(
-                    file_event,
+                file_event = core_pb2.FileEvent(
                     message_type=event.message_type,
                     node=event.node,
                     name=event.name,
@@ -590,43 +550,28 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node: %s", request)
         session = self.get_session(request.session, context)
         node = self.get_node(session, request.id, context)
-        response = core_pb2.GetNodeResponse()
 
+        interfaces = []
         for interface_id, interface in node._netif.iteritems():
             net_id = None
             if interface.net:
                 net_id = interface.net.objid
-
-            interface_proto = response.interfaces.add()
-            interface_proto.id = interface_id
-            interface_proto.netid = net_id
-            interface_proto.name = interface.name
-            interface_proto.mac = str(interface.hwaddr)
-            interface_proto.mtu = interface.mtu
-            interface_proto.flowid = interface.flow_id
+            interface_proto = core_pb2.Interface(
+                id=interface_id, netid=net_id, name=interface.name, mac=str(interface.hwaddr),
+                mtu=interface.mtu, flowid=interface.flow_id)
+            interfaces.append(interface_proto)
 
         emane_model = None
         if nodeutils.is_node(node, NodeTypes.EMANE):
             emane_model = node.model.name
 
-        update_proto(
-            response.node,
-            name=node.name,
-            type=nodeutils.get_node_type(node.__class__).value,
-            emane=emane_model,
-            model=node.type
-        )
-
-        update_proto(
-            response.node.position,
-            x=node.position.x,
-            y=node.position.y,
-            z=node.position.z,
-        )
-
         services = [x.name for x in getattr(node, "services", [])]
-        response.node.services.extend(services)
-        return response
+        position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
+        node_type = nodeutils.get_node_type(node.__class__).value
+        node = core_pb2.Node(
+            name=node.name, type=node_type, emane=emane_model, model=node.type, position=position, services=services)
+
+        return core_pb2.GetNodeResponse(node=node, interfaces=interfaces)
 
     def EditNode(self, request, context):
         logging.debug("edit node: %s", request)
