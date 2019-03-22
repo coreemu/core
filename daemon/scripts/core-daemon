@@ -17,7 +17,7 @@ from core import constants
 from core import enumerations
 from core.corehandlers import CoreHandler
 from core.coreserver import CoreServer
-from core.grpc.server import listen
+from core.grpc.server import CoreGrpcServer
 from core.misc.utils import close_onexec
 
 load_logging_config()
@@ -56,7 +56,8 @@ def cored(cfg):
 
     # initialize grpc api
     if cfg["grpc"] == "True":
-        grpc_thread = threading.Thread(target=listen, args=(server.coreemu,))
+        api_server = CoreGrpcServer(server.coreemu)
+        grpc_thread = threading.Thread(target=api_server.listen)
         grpc_thread.daemon = True
         grpc_thread.start()
 

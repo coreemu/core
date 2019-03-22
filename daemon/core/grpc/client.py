@@ -38,7 +38,7 @@ def start_streamer(stream, handler):
     thread.start()
 
 
-class CoreApiClient(object):
+class CoreGrpcClient(object):
     def __init__(self, address="localhost:50051"):
         self.address = address
         self.stub = None
@@ -463,7 +463,7 @@ class CoreApiClient(object):
 def main():
     xml_file_name = "/tmp/core.xml"
 
-    client = CoreApiClient()
+    client = CoreGrpcClient()
     with client.context_connect():
         if os.path.exists(xml_file_name):
             response = client.open_xml(xml_file_name)
@@ -473,12 +473,12 @@ def main():
 
         # create session
         session_data = client.create_session()
-        client.exception_events(session_data.id, lambda x: print(type(x)))
-        client.node_events(session_data.id, lambda x: print(type(x)))
-        client.session_events(session_data.id, lambda x: print(type(x)))
-        client.link_events(session_data.id, lambda x: print(type(x)))
-        client.file_events(session_data.id, lambda x: print(type(x)))
-        client.config_events(session_data.id, lambda x: print(type(x)))
+        client.exception_events(session_data.id, lambda x: print(x))
+        client.node_events(session_data.id, lambda x: print(x))
+        client.session_events(session_data.id, lambda x: print(x))
+        client.link_events(session_data.id, lambda x: print(x))
+        client.file_events(session_data.id, lambda x: print(x))
+        client.config_events(session_data.id, lambda x: print(x))
         print("created session: {}".format(session_data))
         print("default services: {}".format(client.get_service_defaults(session_data.id)))
         print("emane models: {}".format(client.get_emane_models(session_data.id)))

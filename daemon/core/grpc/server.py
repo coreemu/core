@@ -211,9 +211,9 @@ def send_objects(session):
     logging.debug("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
 
 
-class CoreApiServer(core_pb2_grpc.CoreApiServicer):
+class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def __init__(self, coreemu):
-        super(CoreApiServer, self).__init__()
+        super(CoreGrpcServer, self).__init__()
         self.coreemu = coreemu
         self.running = True
         atexit.register(self._exit_handler)
@@ -227,6 +227,19 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
 
     def _cancel_stream(self, context):
         context.abort(grpc.StatusCode.CANCELLED, "server stopping")
+
+    def listen(self, address="[::]:50051"):
+        logging.info("starting grpc api: %s", address)
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        core_pb2_grpc.add_CoreApiServicer_to_server(self, server)
+        server.add_insecure_port(address)
+        server.start()
+
+        try:
+            while True:
+                time.sleep(_ONE_DAY_IN_SECONDS)
+        except KeyboardInterrupt:
+            server.stop(0)
 
     def get_session(self, _id, context):
         session = self.coreemu.sessions.get(_id)
@@ -1142,17 +1155,3 @@ class CoreApiServer(core_pb2_grpc.CoreApiServicer):
             self.coreemu.delete_session(session.session_id)
 
         return response
-
-
-def listen(coreemu, address="[::]:50051"):
-    logging.info("starting grpc api: %s", address)
-    server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-    core_pb2_grpc.add_CoreApiServicer_to_server(CoreApiServer(coreemu), server)
-    server.add_insecure_port(address)
-    server.start()
-
-    try:
-        while True:
-            time.sleep(_ONE_DAY_IN_SECONDS)
-    except KeyboardInterrupt:
-        server.stop(0)
