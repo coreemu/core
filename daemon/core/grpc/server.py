@@ -45,15 +45,22 @@ def get_config_groups(config, configurable_options):
     for config_group in configurable_options.config_groups():
         start = config_group.start - 1
         stop = config_group.stop
-        config_group_proto = core_pb2.ConfigGroup()
-        config_group_proto.name = config_group.name
-        config_group_proto.options.extend(config_options[start: stop])
+        options = config_options[start: stop]
+        config_group_proto = core_pb2.ConfigGroup(name=config_group.name, options=options)
         groups.append(config_group_proto)
 
     return groups
 
 
-def convert_link(session, link_data, links):
+def get_links(session, node):
+    links = []
+    for link_data in node.all_link_data(0):
+        link = convert_link(session, link_data)
+        links.append(link)
+    return links
+
+
+def convert_link(session, link_data):
     interface_one = None
     if link_data.interface1_id is not None:
         node = session.get_object(link_data.node1_id)
@@ -86,7 +93,7 @@ def convert_link(session, link_data, links):
         unidirectional=link_data.unidirectional
     )
 
-    links.add(
+    return core_pb2.Link(
         type=link_data.link_type, node_one=link_data.node1_id, node_two=link_data.node2_id,
         interface_one=interface_one, interface_two=interface_two, options=options
     )
@@ -319,8 +326,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetSession(self, request, context):
         logging.debug("get session: %s", request)
         session = self.get_session(request.id, context)
-        session_proto = core_pb2.Session(state=session.state)
 
+        links = []
+        nodes = []
         for node_id in session.objects:
             node = session.objects[node_id]
             if not isinstance(node.objid, int):
@@ -339,14 +347,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if nodeutils.is_node(node, NodeTypes.EMANE):
                 emane_model = node.model.name
 
-            session_proto.nodes.add(
+            node_proto = core_pb2.Node(
                 id=node.objid, name=node.name, emane=emane_model, model=model,
                 type=node_type, position=position, services=services)
+            nodes.append(node_proto)
 
-            links_data = node.all_link_data(0)
-            for link_data in links_data:
-                convert_link(session, link_data, session_proto.links)
+            node_links = get_links(session, node)
+            links.extend(node_links)
 
+        session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
         return core_pb2.GetSessionResponse(session=session_proto)
 
     def NodeEvents(self, request, context):
@@ -597,12 +606,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get node links: %s", request)
         session = self.get_session(request.session, context)
         node = self.get_node(session, request.id, context)
-        response = core_pb2.GetNodeLinksResponse()
-        links_data = node.all_link_data(0)
-        for link_data in links_data:
-            link = response.links.add()
-            convert_link(session, link_data, link)
-        return response
+        links = get_links(session, node)
+        return core_pb2.GetNodeLinksResponse(links=links)
 
     def CreateLink(self, request, context):
         logging.debug("create link: %s", request)
