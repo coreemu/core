@@ -3,6 +3,7 @@ import time
 
 import pytest
 
+from core.emulator.emudata import NodeOptions
 from core.grpc import core_pb2
 from core.enumerations import NodeTypes, EventTypes
 from core.grpc.client import CoreGrpcClient
@@ -168,3 +169,62 @@ class TestGrpc:
         # then
         assert response.result is True
         assert session.state == EventTypes.DEFINITION_STATE.value
+
+    def test_create_node(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+
+        # then
+        with client.context_connect():
+            response = client.create_node(session.session_id)
+
+        # then
+        assert response.id is not None
+        assert session.get_object(response.id) is not None
+
+    def test_get_node(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node()
+
+        # then
+        with client.context_connect():
+            response = client.get_node(session.session_id, node.objid)
+
+        # then
+        assert response.node.id == node.objid
+
+    def test_edit_node(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node()
+
+        # then
+        x, y = 10, 10
+        with client.context_connect():
+            node_options = NodeOptions()
+            node_options.set_position(x, y)
+            response = client.edit_node(session.session_id, node.objid, node_options)
+
+        # then
+        assert response.result is True
+        assert node.position.x == x
+        assert node.position.y == y
+
+    def test_delete_node(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node()
+
+        # then
+        with client.context_connect():
+            response = client.delete_node(session.session_id, node.objid)
+
+        # then
+        assert response.result is True
+        with pytest.raises(KeyError):
+            assert session.get_object(node.objid)

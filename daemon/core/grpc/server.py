@@ -577,7 +577,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
         node_type = nodeutils.get_node_type(node.__class__).value
         node = core_pb2.Node(
-            name=node.name, type=node_type, emane=emane_model, model=node.type, position=position, services=services)
+            id=node.objid, name=node.name, type=node_type, emane=emane_model, model=node.type, position=position,
+            services=services)
 
         return core_pb2.GetNodeResponse(node=node, interfaces=interfaces)
 
