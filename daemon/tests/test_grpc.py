@@ -228,3 +228,64 @@ class TestGrpc:
         assert response.result is True
         with pytest.raises(KeyError):
             assert session.get_object(node.objid)
+
+    def test_get_hooks(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        file_name = "test"
+        file_data = "echo hello"
+        session.add_hook(EventTypes.RUNTIME_STATE.value, file_name, None, file_data)
+
+        # then
+        with client.context_connect():
+            response = client.get_hooks(session.session_id)
+
+        # then
+        assert len(response.hooks) == 1
+        hook = response.hooks[0]
+        assert hook.state == EventTypes.RUNTIME_STATE.value
+        assert hook.file == file_name
+        assert hook.data == file_data
+
+    def test_add_hook(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+
+        # then
+        file_name = "test"
+        file_data = "echo hello"
+        with client.context_connect():
+            response = client.add_hook(session.session_id, EventTypes.RUNTIME_STATE, file_name, file_data)
+
+        # then
+        assert response.result is True
+
+    def test_save_xml(self, grpc_server, tmpdir):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        tmp = tmpdir.join("text.xml")
+
+        # then
+        with client.context_connect():
+            response = client.save_xml(session.session_id, str(tmp))
+
+        # then
+        assert tmp.exists()
+
+    def test_open_xml_hook(self, grpc_server, tmpdir):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        tmp = tmpdir.join("text.xml")
+        session.save_xml(str(tmp))
+
+        # then
+        with client.context_connect():
+            response = client.open_xml(str(tmp))
+
+        # then
+        assert response.result is True
+        assert response.session is not None
