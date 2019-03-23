@@ -7,10 +7,10 @@ from contextlib import contextmanager
 
 import grpc
 
-import core_pb2
-import core_pb2_grpc
 from core.emulator.emudata import NodeOptions, IpPrefixes, InterfaceData, LinkOptions
 from core.enumerations import NodeTypes, LinkTypes, EventTypes
+from core.grpc import core_pb2
+from core.grpc import core_pb2_grpc
 
 
 def stream_listener(stream, handler):
@@ -229,10 +229,12 @@ class CoreGrpcClient(object):
         return self.stub.GetServiceDefaults(request)
 
     def set_service_defaults(self, session, service_defaults):
-        request = core_pb2.SetServiceDefaultsRequest(session=session)
+        defaults = []
         for node_type in service_defaults:
             services = service_defaults[node_type]
-            request.defaults.add(node_type=node_type, services=services)
+            default = core_pb2.ServiceDefaults(node_type=node_type, services=services)
+            defaults.append(default)
+        request = core_pb2.SetServiceDefaultsRequest(session=session, defaults=defaults)
         return self.stub.SetServiceDefaults(request)
 
     def get_node_service(self, session, _id, service):
@@ -380,7 +382,7 @@ def main():
         # ip generator for example
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
-        for i in xrange(2):
+        for _ in xrange(2):
             response = client.create_node(session_data.id)
             print("created node: {}".format(response))
             node_id = response.id

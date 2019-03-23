@@ -9,12 +9,12 @@ from itertools import repeat
 import grpc
 from concurrent import futures
 
-import core_pb2
-import core_pb2_grpc
 from core.conf import ConfigShim
 from core.data import ConfigData, FileData
 from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
 from core.enumerations import NodeTypes, EventTypes, LinkTypes, MessageFlags, ConfigFlags, ConfigDataTypes
+from core.grpc import core_pb2
+from core.grpc import core_pb2_grpc
 from core.misc import nodeutils
 from core.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.service import ServiceManager, ServiceShim
@@ -23,10 +23,9 @@ _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
 
 def convert_value(value):
-    if value is None:
-        return value
-    else:
-        return str(value)
+    if value is not None:
+        value = str(value)
+    return value
 
 
 def get_config_groups(config, configurable_options):
@@ -253,11 +252,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def GetSessions(self, request, context):
         logging.debug("get sessions: %s", request)
-        response = core_pb2.GetSessionsResponse()
+        sessions = []
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
-            response.sessions.add(id=session_id, state=session.state, nodes=session.get_node_count())
-        return response
+            session_summary = core_pb2.SessionSummary(
+                id=session_id, state=session.state, nodes=session.get_node_count())
+            sessions.append(session_summary)
+        return core_pb2.GetSessionsResponse(sessions=sessions)
 
     def GetSessionLocation(self, request, context):
         logging.debug("get session location: %s", request)
@@ -542,9 +543,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if emane_model:
             session.emane.set_model_config(node_id, emane_model)
 
-        response = core_pb2.CreateNodeResponse()
-        response.id = node.objid
-        return response
+        return core_pb2.CreateNodeResponse(id=node.objid)
 
     def GetNode(self, request, context):
         logging.debug("get node: %s", request)
@@ -576,7 +575,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def EditNode(self, request, context):
         logging.debug("edit node: %s", request)
         session = self.get_session(request.session, context)
-
         node_id = request.id
         node_options = NodeOptions()
         x = request.position.x
@@ -586,18 +584,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         lon = request.position.lon
         alt = request.position.alt
         node_options.set_location(lat, lon, alt)
-
         result = session.update_node(node_id, node_options)
-        response = core_pb2.EditNodeResponse()
-        response.result = result
-        return response
+        return core_pb2.EditNodeResponse(result=result)
 
     def DeleteNode(self, request, context):
         logging.debug("delete node: %s", request)
         session = self.get_session(request.session, context)
-        response = core_pb2.DeleteNodeResponse()
-        response.result = session.delete_node(request.id)
-        return response
+        result = session.delete_node(request.id)
+        return core_pb2.DeleteNodeResponse(result=result)
 
     def GetNodeLinks(self, request, context):
         logging.debug("get node links: %s", request)
@@ -608,7 +602,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for link_data in links_data:
             link = response.links.add()
             convert_link(session, link_data, link)
-
         return response
 
     def CreateLink(self, request, context):
@@ -676,20 +669,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             link_options.opaque = options_data.opaque
 
         session.add_link(node_one, node_two, interface_one, interface_two, link_options=link_options)
-
-        response = core_pb2.CreateLinkResponse()
-        response.result = True
-        return response
+        return core_pb2.CreateLinkResponse(result=True)
 
     def EditLink(self, request, context):
         logging.debug("edit link: %s", request)
         session = self.get_session(request.session, context)
-
         node_one = request.node_one
         node_two = request.node_two
         interface_one_id = request.interface_one
         interface_two_id = request.interface_two
-
         options_data = request.options
         link_options = LinkOptions()
         link_options.delay = options_data.delay
@@ -703,94 +691,69 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         link_options.unidirectional = options_data.unidirectional
         link_options.key = options_data.key
         link_options.opaque = options_data.opaque
-
         session.update_link(node_one, node_two, interface_one_id, interface_two_id, link_options)
-
-        response = core_pb2.EditLinkResponse()
-        response.result = True
-        return response
+        return core_pb2.EditLinkResponse(result=True)
 
     def DeleteLink(self, request, context):
         logging.debug("delete link: %s", request)
         session = self.get_session(request.session, context)
-
         node_one = request.node_one
         node_two = request.node_two
         interface_one = request.interface_one
         interface_two = request.interface_two
         session.delete_link(node_one, node_two, interface_one, interface_two)
-
-        response = core_pb2.DeleteLinkResponse()
-        response.result = True
-        return response
+        return core_pb2.DeleteLinkResponse(result=True)
 
     def GetHooks(self, request, context):
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session, context)
-
-        response = core_pb2.GetHooksResponse()
+        hooks = []
         for state, state_hooks in session._hooks.iteritems():
             for file_name, file_data in state_hooks:
-                hook = response.hooks.add()
-                hook.state = state
-                hook.file = file_name
-                hook.data = file_data
-
-        return response
+                hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
+                hooks.append(hook)
+        return core_pb2.GetHooksResponse(hooks=hooks)
 
     def AddHook(self, request, context):
         logging.debug("add hook: %s", request)
         session = self.get_session(request.session, context)
-
         hook = request.hook
         session.add_hook(hook.state, hook.file, None, hook.data)
-        response = core_pb2.AddHookResponse()
-        response.result = True
-        return response
+        return core_pb2.AddHookResponse(result=True)
 
     def GetMobilityConfigs(self, request, context):
         logging.debug("get mobility configs: %s", request)
         session = self.get_session(request.session, context)
-
-        response = core_pb2.GetMobilityConfigsResponse()
+        mobility_configs = {}
         for node_id, model_config in session.mobility.node_configurations.iteritems():
             if node_id == -1:
                 continue
-
             for model_name in model_config.iterkeys():
                 if model_name != Ns2ScriptedMobility.name:
                     continue
-
                 config = session.mobility.get_model_config(node_id, model_name)
                 groups = get_config_groups(config, Ns2ScriptedMobility)
-                mobility_config = response.configs[node_id]
-                mobility_config.groups.extend(groups)
-        return response
+                mobility_configs[node_id] = groups
+        return core_pb2.GetMobilityConfigsResponse(configs=mobility_configs)
 
     def GetMobilityConfig(self, request, context):
         logging.debug("get mobility config: %s", request)
         session = self.get_session(request.session, context)
         config = session.mobility.get_model_config(request.id, Ns2ScriptedMobility.name)
         groups = get_config_groups(config, Ns2ScriptedMobility)
-        response = core_pb2.GetMobilityConfigResponse()
-        response.groups.extend(groups)
-        return response
+        return core_pb2.GetMobilityConfigResponse(groups=groups)
 
     def SetMobilityConfig(self, request, context):
         logging.debug("set mobility config: %s", request)
         session = self.get_session(request.session, context)
         session.mobility.set_model_config(request.id, Ns2ScriptedMobility.name, request.config)
-        response = core_pb2.SetMobilityConfigResponse()
-        response.result = True
-        return response
+        return core_pb2.SetMobilityConfigResponse(result=True)
 
     def MobilityAction(self, request, context):
         logging.debug("mobility action: %s", request)
         session = self.get_session(request.session, context)
         node = self.get_node(session, request.id, context)
-
-        response = core_pb2.MobilityActionResponse()
-        response.result = True
+        result = True
         if request.action == core_pb2.MOBILITY_START:
             node.mobility.start()
         elif request.action == core_pb2.MOBILITY_PAUSE:
@@ -798,30 +761,26 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         elif request.action == core_pb2.MOBILITY_STOP:
             node.mobility.stop(move_initial=True)
         else:
-            response.result = False
-
-        return response
+            result = False
+        return core_pb2.MobilityActionResponse(result=result)
 
     def GetServices(self, request, context):
         logging.debug("get services: %s", request)
-        response = core_pb2.GetServicesResponse()
+        services = []
         for service in ServiceManager.services.itervalues():
-            service_proto = response.services.add()
-            service_proto.group = service.group
-            service_proto.name = service.name
-        return response
+            service_proto = core_pb2.Service(group=service.group, name=service.name)
+            services.append(service_proto)
+        return core_pb2.GetServicesResponse(services=services)
 
     def GetServiceDefaults(self, request, context):
         logging.debug("get service defaults: %s", request)
         session = self.get_session(request.session, context)
-
-        response = core_pb2.GetServiceDefaultsResponse()
+        all_service_defaults = []
         for node_type in session.services.default_services:
             services = session.services.default_services[node_type]
-            service_defaults = response.defaults.add()
-            service_defaults.node_type = node_type
-            service_defaults.services.extend(services)
-        return response
+            service_defaults = core_pb2.ServiceDefaults(node_type=node_type, services=services)
+            all_service_defaults.append(service_defaults)
+        return core_pb2.GetServiceDefaultsResponse(defaults=all_service_defaults)
 
     def SetServiceDefaults(self, request, context):
         logging.debug("set service defaults: %s", request)
@@ -829,87 +788,68 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.services.default_services.clear()
         for service_defaults in request.defaults:
             session.services.default_services[service_defaults.node_type] = service_defaults.services
-
-        response = core_pb2.SetServiceDefaultsResponse()
-        response.result = True
-        return response
+        return core_pb2.SetServiceDefaultsResponse(result=True)
 
     def GetNodeService(self, request, context):
         logging.debug("get node service: %s", request)
         session = self.get_session(request.session, context)
-
         service = session.services.get_service(request.id, request.service, default_service=True)
-        response = core_pb2.GetNodeServiceResponse()
-        response.service.executables.extend(service.executables)
-        response.service.dependencies.extend(service.dependencies)
-        response.service.dirs.extend(service.dirs)
-        response.service.configs.extend(service.configs)
-        response.service.startup.extend(service.startup)
-        response.service.validate.extend(service.validate)
-        response.service.validation_mode = service.validation_mode.value
-        response.service.validation_timer = service.validation_timer
-        response.service.shutdown.extend(service.shutdown)
-        if service.meta:
-            response.service.meta = service.meta
-        return response
+        service_proto = core_pb2.NodeServiceData(
+            executables=service.executables,
+            dependencies=service.dependencies,
+            dirs=service.dirs,
+            configs=service.configs,
+            startup=service.startup,
+            validate=service.validate,
+            validation_mode=service.validation_mode.value,
+            validation_timer=service.validation_timer,
+            shutdown=service.shutdown,
+            meta=service.meta
+        )
+        return core_pb2.GetNodeServiceResponse(service=service_proto)
 
     def GetNodeServiceFile(self, request, context):
         logging.debug("get node service file: %s", request)
         session = self.get_session(request.session, context)
         node = self.get_node(session, request.id, context)
-
         service = None
         for current_service in node.services:
             if current_service.name == request.service:
                 service = current_service
                 break
-
-        response = core_pb2.GetNodeServiceFileResponse()
         if not service:
-            return response
+            context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
         file_data = session.services.get_service_file(node, request.service, request.file)
-        response.data = file_data.data
-        return response
+        return core_pb2.GetNodeServiceFileResponse(data=file_data.data)
 
     def SetNodeService(self, request, context):
         logging.debug("set node service: %s", request)
         session = self.get_session(request.session, context)
-
-        # guarantee custom service exists
         session.services.set_service(request.id, request.service)
         service = session.services.get_service(request.id, request.service)
         service.startup = tuple(request.startup)
         service.validate = tuple(request.validate)
         service.shutdown = tuple(request.shutdown)
-
-        response = core_pb2.SetNodeServiceResponse()
-        response.result = True
-        return response
+        return core_pb2.SetNodeServiceResponse(result=True)
 
     def SetNodeServiceFile(self, request, context):
         logging.debug("set node service file: %s", request)
         session = self.get_session(request.session, context)
         session.services.set_service_file(request.id, request.service, request.file, request.data)
-        response = core_pb2.SetNodeServiceFileResponse()
-        response.result = True
-        return response
+        return core_pb2.SetNodeServiceFileResponse(result=True)
 
     def ServiceAction(self, request, context):
         logging.debug("service action: %s", request)
         session = self.get_session(request.session, context)
         node = self.get_node(session, request.id, context)
-
         service = None
         for current_service in node.services:
             if current_service.name == request.service:
                 service = current_service
                 break
 
-        response = core_pb2.ServiceActionResponse()
-        response.result = False
-
         if not service:
-            return response
+            context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
 
         status = -1
         if request.action == core_pb2.START:
@@ -923,58 +863,47 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         elif request.action == core_pb2.VALIDATE:
             status = session.services.validate_service(node, service)
 
+        result = False
         if not status:
-            response.result = True
+            result = True
 
-        return response
+        return core_pb2.ServiceActionResponse(result=result)
 
     def GetWlanConfig(self, request, context):
         logging.debug("get wlan config: %s", request)
         session = self.get_session(request.session, context)
         config = session.mobility.get_model_config(request.id, BasicRangeModel.name)
         groups = get_config_groups(config, BasicRangeModel)
-        response = core_pb2.GetWlanConfigResponse()
-        response.groups.extend(groups)
-        return response
+        return core_pb2.GetWlanConfigResponse(groups=groups)
 
     def SetWlanConfig(self, request, context):
         logging.debug("set wlan config: %s", request)
         session = self.get_session(request.session, context)
         session.mobility.set_model_config(request.id, BasicRangeModel.name, request.config)
-        response = core_pb2.SetWlanConfigResponse()
-        response.result = True
-        return response
+        return core_pb2.SetWlanConfigResponse(result=True)
 
     def GetEmaneConfig(self, request, context):
         logging.debug("get emane config: %s", request)
         session = self.get_session(request.session, context)
         config = session.emane.get_configs()
         groups = get_config_groups(config, session.emane.emane_config)
-        response = core_pb2.GetEmaneConfigResponse()
-        response.groups.extend(groups)
-        return response
+        return core_pb2.GetEmaneConfigResponse(groups=groups)
 
     def SetEmaneConfig(self, request, context):
         logging.debug("set emane config: %s", request)
         session = self.get_session(request.session, context)
         session.emane.set_configs(request.config)
-        response = core_pb2.SetEmaneConfigResponse()
-        response.result = True
-        return response
+        return core_pb2.SetEmaneConfigResponse(result=True)
 
     def GetEmaneModels(self, request, context):
         logging.debug("get emane models: %s", request)
         session = self.get_session(request.session, context)
-
         models = []
         for model in session.emane.models.keys():
             if len(model.split("_")) != 2:
                 continue
             models.append(model)
-
-        response = core_pb2.GetEmaneModelsResponse()
-        response.models.extend(models)
-        return response
+        return core_pb2.GetEmaneModelsResponse(models=models)
 
     def GetEmaneModelConfig(self, request, context):
         logging.debug("get emane model config: %s", request)
@@ -982,22 +911,17 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         model = session.emane.models[request.model]
         config = session.emane.get_model_config(request.id, request.model)
         groups = get_config_groups(config, model)
-        response = core_pb2.GetEmaneModelConfigResponse()
-        response.groups.extend(groups)
-        return response
+        return core_pb2.GetEmaneModelConfigResponse(groups=groups)
 
     def SetEmaneModelConfig(self, request, context):
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session, context)
         session.emane.set_model_config(request.id, request.model, request.config)
-        response = core_pb2.SetEmaneModelConfigResponse()
-        response.result = True
-        return response
+        return core_pb2.SetEmaneModelConfigResponse(result=True)
 
     def GetEmaneModelConfigs(self, request, context):
         logging.debug("get emane model configs: %s", request)
         session = self.get_session(request.session, context)
-
         response = core_pb2.GetEmaneModelConfigsResponse()
         for node_id, model_config in session.emane.node_configurations.iteritems():
             if node_id == -1:
@@ -1022,9 +946,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         with open(temp_path, "rb") as xml_file:
             data = xml_file.read()
 
-        response = core_pb2.SaveXmlResponse()
-        response.data = data
-        return response
+        return core_pb2.SaveXmlResponse(data=data)
 
     def OpenXml(self, request, context):
         logging.debug("open xml: %s", request)
@@ -1035,14 +957,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         with open(temp_path, "wb") as xml_file:
             xml_file.write(request.data)
 
-        response = core_pb2.OpenXmlResponse()
         try:
             session.open_xml(temp_path, start=True)
-            response.session = session.session_id
-            response.result = True
-        except:
-            response.result = False
+            return core_pb2.OpenXmlResponse(session=session.session_id, result=True)
+        except IOError:
             logging.exception("error opening session file")
             self.coreemu.delete_session(session.session_id)
-
-        return response
+            context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
