@@ -320,7 +320,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def SetSessionOptions(self, request, context):
         logging.debug("set session options: %s", request)
         session = self.get_session(request.id, context)
-        session.options.set_configs(request.config)
+        config = session.options.get_configs()
+        config.update(request.config)
         return core_pb2.SetSessionOptionsResponse(result=True)
 
     def GetSession(self, request, context):
@@ -898,7 +899,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def SetEmaneConfig(self, request, context):
         logging.debug("set emane config: %s", request)
         session = self.get_session(request.session, context)
-        session.emane.set_configs(request.config)
+        config = session.emane.get_configs()
+        config.update(request.config)
         return core_pb2.SetEmaneConfigResponse(result=True)
 
     def GetEmaneModels(self, request, context):

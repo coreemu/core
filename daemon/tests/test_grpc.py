@@ -3,6 +3,7 @@ import time
 
 import pytest
 
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.emudata import NodeOptions, LinkOptions
 from core.grpc import core_pb2
 from core.enumerations import NodeTypes, EventTypes
@@ -157,6 +158,8 @@ class TestGrpc:
         # then
         assert response.result is True
         assert session.options.get_config(option) == value
+        config = session.options.get_configs()
+        assert len(config) > 0
 
     def test_set_session_state(self, grpc_server):
         # given
@@ -401,3 +404,32 @@ class TestGrpc:
         assert response.result is True
         config = session.mobility.get_model_config(wlan.objid, BasicRangeModel.name)
         assert config[range_key] == range_value
+
+    def test_get_emane_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+
+        # then
+        with client.context_connect():
+            response = client.get_emane_config(session.session_id)
+
+        # then
+        assert len(response.groups) > 0
+
+    def test_set_emane_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        config_key = "platform_id_start"
+        config_value = "2"
+
+        # then
+        with client.context_connect():
+            response = client.set_emane_config(session.session_id, {config_key: config_value})
+
+        # then
+        assert response.result is True
+        config = session.emane.get_configs()
+        assert len(config) > 1
+        assert config[config_key] == config_value
