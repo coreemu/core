@@ -527,8 +527,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         self._cancel_stream(context)
 
-    def CreateNode(self, request, context):
-        logging.debug("create node: %s", request)
+    def AddNode(self, request, context):
+        logging.debug("add node: %s", request)
         session = self.get_session(request.session, context)
 
         node_id = request.id
@@ -552,7 +552,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if emane_model:
             session.emane.set_model_config(node_id, emane_model)
 
-        return core_pb2.CreateNodeResponse(id=node.objid)
+        return core_pb2.AddNodeResponse(id=node.objid)
 
     def GetNode(self, request, context):
         logging.debug("get node: %s", request)
@@ -610,8 +610,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         links = get_links(session, node)
         return core_pb2.GetNodeLinksResponse(links=links)
 
-    def CreateLink(self, request, context):
-        logging.debug("create link: %s", request)
+    def AddLink(self, request, context):
+        logging.debug("add link: %s", request)
         session = self.get_session(request.session, context)
         node_one = request.link.node_one
         node_two = request.link.node_two
@@ -675,7 +675,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             link_options.opaque = options_data.opaque
 
         session.add_link(node_one, node_two, interface_one, interface_two, link_options=link_options)
-        return core_pb2.CreateLinkResponse(result=True)
+        return core_pb2.AddLinkResponse(result=True)
 
     def EditLink(self, request, context):
         logging.debug("edit link: %s", request)

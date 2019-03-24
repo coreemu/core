@@ -38,7 +38,7 @@ service CoreApi {
     }
 
     // node rpc
-    rpc CreateNode (CreateNodeRequest) returns (CreateNodeResponse) {
+    rpc AddNode (AddNodeRequest) returns (AddNodeResponse) {
     }
     rpc GetNode (GetNodeRequest) returns (GetNodeResponse) {
     }
@@ -50,7 +50,7 @@ service CoreApi {
     // link rpc
     rpc GetNodeLinks (GetNodeLinksRequest) returns (GetNodeLinksResponse) {
     }
-    rpc CreateLink (CreateLinkRequest) returns (CreateLinkResponse) {
+    rpc AddLink (AddLinkRequest) returns (AddLinkResponse) {
     }
     rpc EditLink (EditLinkRequest) returns (EditLinkResponse) {
     }
@@ -279,7 +279,7 @@ message FileEvent {
     bytes compressed_data = 10;
 }
 
-message CreateNodeRequest {
+message AddNodeRequest {
     int32 session = 1;
     int32 id = 2;
     NodeType type = 3;
@@ -292,7 +292,7 @@ message CreateNodeRequest {
     string opaque = 10;
 }
 
-message CreateNodeResponse {
+message AddNodeResponse {
     int32 id = 1;
 }
 
@@ -334,12 +334,12 @@ message GetNodeLinksResponse {
     repeated Link links = 1;
 }
 
-message CreateLinkRequest {
+message AddLinkRequest {
     int32 session = 1;
     Link link = 2;
 }
 
-message CreateLinkResponse {
+message AddLinkResponse {
     bool result = 1;
 }
 

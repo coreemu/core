@@ -170,14 +170,14 @@ class TestGrpc:
         assert response.result is True
         assert session.state == EventTypes.DEFINITION_STATE.value
 
-    def test_create_node(self, grpc_server):
+    def test_add_node(self, grpc_server):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
 
         # then
         with client.context_connect():
-            response = client.create_node(session.session_id)
+            response = client.add_node(session.session_id)
 
         # then
         assert response.id is not None
@@ -306,7 +306,7 @@ class TestGrpc:
         # then
         assert len(response.links) == 1
 
-    def test_create_link(self, grpc_server, ip_prefixes):
+    def test_add_link(self, grpc_server, ip_prefixes):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -317,7 +317,7 @@ class TestGrpc:
         # then
         interface = ip_prefixes.create_interface(node)
         with client.context_connect():
-            response = client.create_link(session.session_id, node.objid, switch.objid, interface)
+            response = client.add_link(session.session_id, node.objid, switch.objid, interface)
 
         # then
         assert response.result is True

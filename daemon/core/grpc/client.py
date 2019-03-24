@@ -102,17 +102,17 @@ class CoreGrpcClient(object):
         stream = self.stub.FileEvents(request)
         start_streamer(stream, handler)
 
-    def create_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
+    def add_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
         if not node_options:
             node_options = NodeOptions()
         position = core_pb2.Position(
             x=node_options.x, y=node_options.y,
             lat=node_options.lat, lon=node_options.lon, alt=node_options.alt)
-        request = core_pb2.CreateNodeRequest(
+        request = core_pb2.AddNodeRequest(
             session=session, type=_type.value, name=node_options.name,
             model=node_options.model, icon=node_options.icon, services=node_options.services,
             opaque=node_options.opaque, emane=emane, position=position)
-        return self.stub.CreateNode(request)
+        return self.stub.AddNode(request)
 
     def get_node(self, session, _id):
         request = core_pb2.GetNodeRequest(session=session, id=_id)
@@ -133,7 +133,7 @@ class CoreGrpcClient(object):
         request = core_pb2.GetNodeLinksRequest(session=session, id=_id)
         return self.stub.GetNodeLinks(request)
 
-    def create_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
+    def add_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
         interface_one_proto = None
         if interface_one is not None:
             interface_one_proto = core_pb2.Interface(
@@ -167,8 +167,8 @@ class CoreGrpcClient(object):
         link = core_pb2.Link(
             node_one=node_one, node_two=node_two, type=LinkTypes.WIRED.value,
             interface_one=interface_one_proto, interface_two=interface_two_proto, options=options)
-        request = core_pb2.CreateLinkRequest(session=session, link=link)
-        return self.stub.CreateLink(request)
+        request = core_pb2.AddLinkRequest(session=session, link=link)
+        return self.stub.AddLink(request)
 
     def edit_link(self, session, node_one, node_two, link_options, interface_one=None, interface_two=None):
         options = core_pb2.LinkOptions(
@@ -375,7 +375,7 @@ def main():
         print("set session state: {}".format(client.set_session_state(session_data.id, EventTypes.CONFIGURATION_STATE)))
 
         # create switch node
-        response = client.create_node(session_data.id, _type=NodeTypes.SWITCH)
+        response = client.add_node(session_data.id, _type=NodeTypes.SWITCH)
         print("created switch: {}".format(response))
         switch_id = response.id
 
@@ -383,7 +383,7 @@ def main():
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
         for _ in xrange(2):
-            response = client.create_node(session_data.id)
+            response = client.add_node(session_data.id)
             print("created node: {}".format(response))
             node_id = response.id
             node_options = NodeOptions()
@@ -402,7 +402,7 @@ def main():
                 ip4=str(prefixes.ip4.addr(node_id)), ip4_mask=prefixes.ip4.prefixlen,
                 ip6=None, ip6_mask=None
             )
-            print("created link: {}".format(client.create_link(session_data.id, node_id, switch_id, interface_one)))
+            print("created link: {}".format(client.add_link(session_data.id, node_id, switch_id, interface_one)))
             link_options = LinkOptions()
             link_options.per = 50
             print("edit link: {}".format(client.edit_link(
