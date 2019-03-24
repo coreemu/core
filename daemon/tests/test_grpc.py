@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from core.emulator.emudata import NodeOptions
+from core.emulator.emudata import NodeOptions, LinkOptions
 from core.grpc import core_pb2
 from core.enumerations import NodeTypes, EventTypes
 from core.grpc.client import CoreGrpcClient
@@ -289,3 +289,84 @@ class TestGrpc:
         # then
         assert response.result is True
         assert response.session is not None
+
+    def test_get_node_links(self, grpc_server, ip_prefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        switch = session.add_node(_type=NodeTypes.SWITCH)
+        node = session.add_node()
+        interface = ip_prefixes.create_interface(node)
+        session.add_link(node.objid, switch.objid, interface)
+
+        # then
+        with client.context_connect():
+            response = client.get_node_links(session.session_id, switch.objid)
+
+        # then
+        assert len(response.links) == 1
+
+    def test_create_link(self, grpc_server, ip_prefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        switch = session.add_node(_type=NodeTypes.SWITCH)
+        node = session.add_node()
+        assert len(switch.all_link_data(0)) == 0
+
+        # then
+        interface = ip_prefixes.create_interface(node)
+        with client.context_connect():
+            response = client.create_link(session.session_id, node.objid, switch.objid, interface)
+
+        # then
+        assert response.result is True
+        assert len(switch.all_link_data(0)) == 1
+
+    def test_edit_link(self, grpc_server, ip_prefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        switch = session.add_node(_type=NodeTypes.SWITCH)
+        node = session.add_node()
+        interface = ip_prefixes.create_interface(node)
+        session.add_link(node.objid, switch.objid, interface)
+        options = LinkOptions()
+        options.bandwidth = 30000
+        link = switch.all_link_data(0)[0]
+        assert options.bandwidth != link.bandwidth
+
+        # then
+        with client.context_connect():
+            response = client.edit_link(session.session_id, node.objid, switch.objid, options)
+
+        # then
+        assert response.result is True
+        link = switch.all_link_data(0)[0]
+        assert options.bandwidth == link.bandwidth
+
+    def test_delete_link(self, grpc_server, ip_prefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node_one = session.add_node()
+        interface_one = ip_prefixes.create_interface(node_one)
+        node_two = session.add_node()
+        interface_two = ip_prefixes.create_interface(node_two)
+        session.add_link(node_one.objid, node_two.objid, interface_one, interface_two)
+        link_node = None
+        for node_id in session.objects:
+            node = session.objects[node_id]
+            if node.objid not in {node_one.objid, node_two.objid}:
+                link_node = node
+                break
+        assert len(link_node.all_link_data(0)) == 1
+
+        # then
+        with client.context_connect():
+            response = client.delete_link(
+                session.session_id, node_one.objid, node_two.objid, interface_one.id, interface_two.id)
+
+        # then
+        assert response.result is True
+        assert len(link_node.all_link_data(0)) == 0
