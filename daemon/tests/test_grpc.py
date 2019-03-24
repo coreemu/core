@@ -7,6 +7,7 @@ from core.emulator.emudata import NodeOptions, LinkOptions
 from core.grpc import core_pb2
 from core.enumerations import NodeTypes, EventTypes
 from core.grpc.client import CoreGrpcClient
+from core.mobility import BasicRangeModel
 
 MODELS = [
     "router",
@@ -370,3 +371,33 @@ class TestGrpc:
         # then
         assert response.result is True
         assert len(link_node.all_link_data(0)) == 0
+
+    def test_get_wlan_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+
+        # then
+        with client.context_connect():
+            response = client.get_wlan_config(session.session_id, wlan.objid)
+
+        # then
+        assert len(response.groups) > 0
+
+    def test_set_wlan_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        range_key = "range"
+        range_value = "300"
+
+        # then
+        with client.context_connect():
+            response = client.set_wlan_config(session.session_id, wlan.objid, {range_key: range_value})
+
+        # then
+        assert response.result is True
+        config = session.mobility.get_model_config(wlan.objid, BasicRangeModel.name)
+        assert config[range_key] == range_value
