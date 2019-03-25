@@ -6,7 +6,7 @@ _EXAMPLES_DIR = "share/corens3/examples"
 
 setup(
     name="core-ns3",
-    version="5.2",
+    version="@PACKAGE_VERSION@",
     packages=[
         "corens3",
     ],

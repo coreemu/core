@@ -46,3 +46,8 @@ coverage.xml
 
 # ignore swap files
 *.swp
+
+# ignore built input files
+netns/setup.py
+daemon/setup.py
+ns3/setup.py
