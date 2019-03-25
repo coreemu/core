@@ -646,10 +646,10 @@ enum ServiceValidationMode {
 }
 
 enum ServiceAction {
-    START = 0;
-    STOP = 1;
-    RESTART = 2;
-    VALIDATE = 3;
+    SERVICE_START = 0;
+    SERVICE_STOP = 1;
+    SERVICE_RESTART = 2;
+    SERVICE_VALIDATE = 3;
 }
 
 enum MobilityAction {

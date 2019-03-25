@@ -859,15 +859,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
 
         status = -1
-        if request.action == core_pb2.START:
+        if request.action == core_pb2.SERVICE_START:
             status = session.services.startup_service(node, service, wait=True)
-        elif request.action == core_pb2.STOP:
+        elif request.action == core_pb2.SERVICE_STOP:
             status = session.services.stop_service(node, service)
-        elif request.action == core_pb2.RESTART:
+        elif request.action == core_pb2.SERVICE_RESTART:
             status = session.services.stop_service(node, service)
             if not status:
                 status = session.services.startup_service(node, service, wait=True)
-        elif request.action == core_pb2.VALIDATE:
+        elif request.action == core_pb2.SERVICE_VALIDATE:
             status = session.services.validate_service(node, service)
 
         result = False
