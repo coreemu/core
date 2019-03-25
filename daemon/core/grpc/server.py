@@ -731,7 +731,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetMobilityConfigs(self, request, context):
         logging.debug("get mobility configs: %s", request)
         session = self.get_session(request.session, context)
-        mobility_configs = {}
+        response = core_pb2.GetMobilityConfigsResponse()
         for node_id, model_config in session.mobility.node_configurations.iteritems():
             if node_id == -1:
                 continue
@@ -740,8 +740,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     continue
                 config = session.mobility.get_model_config(node_id, model_name)
                 groups = get_config_groups(config, Ns2ScriptedMobility)
-                mobility_configs[node_id] = groups
-        return core_pb2.GetMobilityConfigsResponse(configs=mobility_configs)
+                response.configs[node_id].groups.extend(groups)
+        return response
 
     def GetMobilityConfig(self, request, context):
         logging.debug("get mobility config: %s", request)

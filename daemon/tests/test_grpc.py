@@ -8,7 +8,7 @@ from core.emulator.emudata import NodeOptions, LinkOptions
 from core.grpc import core_pb2
 from core.enumerations import NodeTypes, EventTypes
 from core.grpc.client import CoreGrpcClient
-from core.mobility import BasicRangeModel
+from core.mobility import BasicRangeModel, Ns2ScriptedMobility
 
 MODELS = [
     "router",
@@ -503,3 +503,64 @@ class TestGrpc:
 
         # then
         assert len(response.models) > 0
+
+    def test_get_mobility_configs(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        session.mobility.set_model_config(wlan.objid, Ns2ScriptedMobility.name, {})
+
+        # then
+        with client.context_connect():
+            response = client.get_mobility_configs(session.session_id)
+
+        # then
+        assert len(response.configs) > 0
+        assert wlan.objid in response.configs
+
+    def test_get_mobility_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        session.mobility.set_model_config(wlan.objid, Ns2ScriptedMobility.name, {})
+
+        # then
+        with client.context_connect():
+            response = client.get_mobility_config(session.session_id, wlan.objid)
+
+        # then
+        assert len(response.groups) > 0
+
+    def test_set_mobility_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        config_key = "refresh_ms"
+        config_value = "60"
+
+        # then
+        with client.context_connect():
+            response = client.set_mobility_config(session.session_id, wlan.objid, {config_key: config_value})
+
+        # then
+        assert response.result is True
+        config = session.mobility.get_model_config(wlan.objid, Ns2ScriptedMobility.name)
+        assert config[config_key] == config_value
+
+    def test_mobility_action(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        session.mobility.set_model_config(wlan.objid, Ns2ScriptedMobility.name, {})
+        session.instantiate()
+
+        # then
+        with client.context_connect():
+            response = client.mobility_action(session.session_id, wlan.objid, core_pb2.MOBILITY_STOP)
+
+        # then
+        assert response.result is True

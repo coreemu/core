@@ -73,7 +73,6 @@ service CoreApi {
     rpc MobilityAction (MobilityActionRequest) returns (MobilityActionResponse) {
     }
 
-
     // service rpc
     rpc GetServices (GetServicesRequest) returns (GetServicesResponse) {
     }
