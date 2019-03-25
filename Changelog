@@ -1,3 +1,21 @@
+2019-03-25 CORE 5.2.1
+  * Packaging:
+   - documentation no longer builds by default, must use configure flag
+   - added configure flag to allow only building vcmd
+   - sphinx will no long be required when not building documentation
+  * Services:
+   - Added source NAT service
+   - Fixed DHCP service for Ubuntu 18.04
+  * BUGFIXES:
+   - #188 - properly remove session on delete TLV API call
+   - #192 - updated default gnome terminal command for nodes to be Ubuntu 18.04 compatible
+   - #193 - updates to service validation, will retry on failure and better exception logging
+   - #195 - TLV link message data fix
+   - #196 - fix to avoid clearing out default services
+   - #197 - removed wireless_link_all API from EmuSession
+   - #216 - updated default WLAN bandwidth to 54Mbps
+   - #223 - fix to saving RJ45 to session XML files
+
 2018-05-22 CORE 5.1
   * DAEMON:
    - removed and cleared out code that is either legacy or no longer supported (Xen, BSD, Kernel patching, RPM/DEB specific files)
@@ -16,9 +34,9 @@
    - added make target for generating documentation "make doc"
    - Python 2.7+ is now required
    - ns3 is no longer bundled by default, but will be produced as a separate package for installation
-  * GUI
+  * GUI:
    - updated broken help links in GUI Help->About
-  * Packaging
+  * Packaging:
    - fixed PYTHON_PATH to PYTHONPATH in sysv script
    - added make command to leverage FPM as the tool for creating deb/rpm packages going forward, there is documentation within README.md to try it out
   * TEST:
