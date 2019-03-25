@@ -433,3 +433,73 @@ class TestGrpc:
         config = session.emane.get_configs()
         assert len(config) > 1
         assert config[config_key] == config_value
+
+    def test_get_emane_model_configs(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        emane_network = session.create_emane_network(
+            model=EmaneIeee80211abgModel,
+            geo_reference=(47.57917, -122.13232, 2.00000)
+        )
+        config_key = "platform_id_start"
+        config_value = "2"
+        session.emane.set_model_config(emane_network.objid, EmaneIeee80211abgModel.name, {config_key: config_value})
+
+        # then
+        with client.context_connect():
+            response = client.get_emane_model_configs(session.session_id)
+
+        # then
+        assert len(response.configs) == 1
+        assert emane_network.objid in response.configs
+
+    def test_set_emane_model_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        emane_network = session.create_emane_network(
+            model=EmaneIeee80211abgModel,
+            geo_reference=(47.57917, -122.13232, 2.00000)
+        )
+        config_key = "bandwidth"
+        config_value = "900000"
+
+        # then
+        with client.context_connect():
+            response = client.set_emane_model_config(
+                session.session_id, emane_network.objid, EmaneIeee80211abgModel.name, {config_key: config_value})
+
+        # then
+        assert response.result is True
+        config = session.emane.get_model_config(emane_network.objid, EmaneIeee80211abgModel.name)
+        assert config[config_key] == config_value
+
+    def test_get_emane_model_config(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        emane_network = session.create_emane_network(
+            model=EmaneIeee80211abgModel,
+            geo_reference=(47.57917, -122.13232, 2.00000)
+        )
+
+        # then
+        with client.context_connect():
+            response = client.get_emane_model_config(
+                session.session_id, emane_network.objid, EmaneIeee80211abgModel.name)
+
+        # then
+        assert len(response.groups) > 0
+
+    def test_get_emane_models(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+
+        # then
+        with client.context_connect():
+            response = client.get_emane_models(session.session_id)
+
+        # then
+        assert len(response.models) > 0
