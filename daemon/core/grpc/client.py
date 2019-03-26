@@ -1,3 +1,7 @@
+"""
+gRpc client for interfacing with CORE, when gRPC mode is enabled.
+"""
+
 from __future__ import print_function
 
 import logging
@@ -14,6 +18,13 @@ from core.grpc import core_pb2_grpc
 
 
 def stream_listener(stream, handler):
+    """
+    Listen for stream events and provide them to the handler.
+
+    :param stream: grpc stream that will provide events
+    :param handler: function that handles an event
+    :return: nothing
+    """
     try:
         for event in stream:
             handler(event)
@@ -25,29 +36,74 @@ def stream_listener(stream, handler):
 
 
 def start_streamer(stream, handler):
+    """
+    Convenience method for starting a grpc stream thread for handling streamed events.
+
+    :param stream: grpc stream that will provide events
+    :param handler: function that handles an event
+    :return: nothing
+    """
     thread = threading.Thread(target=stream_listener, args=(stream, handler))
     thread.daemon = True
     thread.start()
 
 
 class CoreGrpcClient(object):
+    """
+    Provides convenience methods for interfacing with the CORE grpc server.
+    """
+
     def __init__(self, address="localhost:50051"):
+        """
+        Creates a CoreGrpcClient instance.
+
+        :param str address: grpc server address to connect to
+        """
         self.address = address
         self.stub = None
         self.channel = None
 
     def create_session(self, _id=None):
+        """
+        Create a session.
+
+        :param int _id: id for session, defaults to None will be created for you
+        :return: response with created session id
+        :rtype: core_pb2.CreateSessionResponse
+        """
         request = core_pb2.CreateSessionRequest(id=_id)
         return self.stub.CreateSession(request)
 
     def delete_session(self, _id):
+        """
+        Delete a session.
+
+        :param int _id: id of session to delete
+        :return: response with result of deletion success or failure
+        :rtype: core_pb2.DeleteSessionResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.DeleteSessionRequest(id=_id)
         return self.stub.DeleteSession(request)
 
     def get_sessions(self):
+        """
+        Retrieves all currently known sessions.
+
+        :return: response with a list of currently known session, their state and number of nodes
+        :rtype: core_pb2.GetSessionsResponse
+        """
         return self.stub.GetSessions(core_pb2.GetSessionsRequest())
 
     def get_session(self, _id):
+        """
+        Retrieve a session.
+
+        :param int _id: id of session to get data for
+        :return: response with sessions state, nodes, and links
+        :rtype: core_pb2.GetSessionResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetSessionRequest(id=_id)
         return self.stub.GetSession(request)
 
