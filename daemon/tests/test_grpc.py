@@ -72,7 +72,7 @@ class TestGrpc:
             response = client.get_session(session.session_id)
 
         # then
-        assert response.session.state == core_pb2.DEFINITION
+        assert response.session.state == core_pb2.STATE_DEFINITION
         assert len(response.session.nodes) == 1
         assert len(response.session.links) == 0
 
@@ -277,7 +277,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.save_xml(session.session_id, str(tmp))
+            client.save_xml(session.session_id, str(tmp))
 
         # then
         assert tmp.exists()

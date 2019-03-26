@@ -602,47 +602,47 @@ message OpenXmlResponse {
 
 // data structures for messages below
 enum MessageType {
-    NOTHING = 0;
-    ADD = 1;
-    DELETE = 2;
-    CRI = 4;
-    LOCAL = 8;
-    STRING = 16;
-    TEXT = 32;
-    TTY = 64;
+    MESSAGE_NONE = 0;
+    MESSAGE_ADD = 1;
+    MESSAGE_DELETE = 2;
+    MESSAGE_CRI = 4;
+    MESSAGE_LOCAL = 8;
+    MESSAGE_STRING = 16;
+    MESSAGE_TEXT = 32;
+    MESSAGE_TTY = 64;
 }
 
 enum SessionState {
-    NONE = 0;
-    DEFINITION = 1;
-    CONFIGURATION = 2;
-    INSTANTIATION = 3;
-    RUNTIME = 4;
-    DATACOLLECT = 5;
-    SHUTDOWN = 6;
+    STATE_NONE = 0;
+    STATE_DEFINITION = 1;
+    STATE_CONFIGURATION = 2;
+    STATE_INSTANTIATION = 3;
+    STATE_RUNTIME = 4;
+    STATE_DATACOLLECT = 5;
+    STATE_SHUTDOWN = 6;
 }
 
 enum NodeType {
-    DEFAULT = 0;
-    PHYSICAL = 1;
-    TBD = 3;
-    SWITCH = 4;
-    HUB = 5;
-    WIRELESS_LAN = 6;
-    RJ45 = 7;
-    TUNNEL = 8;
-    KTUNNEL = 9;
-    EMANE = 10;
-    TAP_BRIDGE = 11;
-    PEER_TO_PEER = 12;
-    CONTROL_NET = 13;
-    EMANE_NET = 14;
+    NODE_DEFAULT = 0;
+    NODE_PHYSICAL = 1;
+    NODE_TBD = 3;
+    NODE_SWITCH = 4;
+    NODE_HUB = 5;
+    NODE_WIRELESS_LAN = 6;
+    NODE_RJ45 = 7;
+    NODE_TUNNEL = 8;
+    NODE_KTUNNEL = 9;
+    NODE_EMANE = 10;
+    NODE_TAP_BRIDGE = 11;
+    NODE_PEER_TO_PEER = 12;
+    NODE_CONTROL_NET = 13;
+    NODE_EMANE_NET = 14;
 }
 
 enum ServiceValidationMode {
-    BLOCKING = 0;
-    NON_BLOCKING = 1;
-    TIMER = 2;
+    VALIDATION_BLOCKING = 0;
+    VALIDATION_NON_BLOCKING = 1;
+    VALIDATION_TIMER = 2;
 }
 
 enum ServiceAction {
@@ -660,10 +660,10 @@ enum MobilityAction {
 
 enum ExceptionLevel {
     EXCEPTION_DEFAULT = 0;
-    FATAL = 1;
-    ERROR = 2;
-    WARNING = 3;
-    NOTICE = 4;
+    EXCEPTION_FATAL = 1;
+    EXCEPTION_ERROR = 2;
+    EXCEPTION_WARNING = 3;
+    EXCEPTION_NOTICE = 4;
 }
 
 message Hook {

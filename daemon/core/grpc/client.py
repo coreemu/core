@@ -136,15 +136,21 @@ class CoreGrpcClient(object):
     def add_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
         interface_one_proto = None
         if interface_one is not None:
+            mac = interface_one.mac
+            if mac is not None:
+                mac = str(mac)
             interface_one_proto = core_pb2.Interface(
-                id=interface_one.id, name=interface_one.name, mac=str(interface_one.mac),
+                id=interface_one.id, name=interface_one.name, mac=mac,
                 ip4=interface_one.ip4, ip4mask=interface_one.ip4_mask,
                 ip6=interface_one.ip6, ip6mask=interface_one.ip6_mask)
 
         interface_two_proto = None
         if interface_two is not None:
+            mac = interface_two.mac
+            if mac is not None:
+                mac = str(mac)
             interface_two_proto = core_pb2.Interface(
-                id=interface_two.id, name=interface_two.name, mac=str(interface_two.mac),
+                id=interface_two.id, name=interface_two.name, mac=mac,
                 ip4=interface_two.ip4, ip4mask=interface_two.ip4_mask,
                 ip6=interface_two.ip6, ip6mask=interface_two.ip6_mask)
 
