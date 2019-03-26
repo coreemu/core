@@ -2,6 +2,7 @@ import time
 
 from Queue import Queue
 
+import grpc
 import pytest
 
 from core.conf import ConfigShim
@@ -47,18 +48,24 @@ class TestGrpc:
             assert response.id == session_id
             assert session.session_id == session_id
 
-    def test_delete_session(self, grpc_server):
+    @pytest.mark.parametrize("session_id, expected", [
+        (None, True),
+        (6013, False)
+    ])
+    def test_delete_session(self, grpc_server, session_id, expected):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
+        if session_id is None:
+            session_id = session.session_id
 
         # then
         with client.context_connect():
-            response = client.delete_session(session.session_id)
+            response = client.delete_session(session_id)
 
         # then
-        assert response.result is True
-        assert grpc_server.coreemu.sessions.get(session.session_id) is None
+        assert response.result is expected
+        assert grpc_server.coreemu.sessions.get(session_id) is None
 
     def test_get_session(self, grpc_server):
         # given
@@ -203,7 +210,11 @@ class TestGrpc:
         # then
         assert response.node.id == node.objid
 
-    def test_edit_node(self, grpc_server):
+    @pytest.mark.parametrize("node_id, expected", [
+        (1, True),
+        (2, False)
+    ])
+    def test_edit_node(self, grpc_server, node_id, expected):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -214,14 +225,19 @@ class TestGrpc:
         with client.context_connect():
             node_options = NodeOptions()
             node_options.set_position(x, y)
-            response = client.edit_node(session.session_id, node.objid, node_options)
+            response = client.edit_node(session.session_id, node_id, node_options)
 
         # then
-        assert response.result is True
-        assert node.position.x == x
-        assert node.position.y == y
+        assert response.result is expected
+        if expected is True:
+            assert node.position.x == x
+            assert node.position.y == y
 
-    def test_delete_node(self, grpc_server):
+    @pytest.mark.parametrize("node_id, expected", [
+        (1, True),
+        (2, False)
+    ])
+    def test_delete_node(self, grpc_server, node_id, expected):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -229,12 +245,13 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.delete_node(session.session_id, node.objid)
+            response = client.delete_node(session.session_id, node_id)
 
         # then
-        assert response.result is True
-        with pytest.raises(KeyError):
-            assert session.get_object(node.objid)
+        assert response.result is expected
+        if expected is True:
+            with pytest.raises(KeyError):
+                assert session.get_object(node.objid)
 
     def test_get_hooks(self, grpc_server):
         # given
@@ -313,6 +330,20 @@ class TestGrpc:
         # then
         assert len(response.links) == 1
 
+    def test_get_node_links_exception(self, grpc_server, ip_prefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        switch = session.add_node(_type=NodeTypes.SWITCH)
+        node = session.add_node()
+        interface = ip_prefixes.create_interface(node)
+        session.add_link(node.objid, switch.objid, interface)
+
+        # then
+        with pytest.raises(grpc.RpcError):
+            with client.context_connect():
+                client.get_node_links(session.session_id, 3)
+
     def test_add_link(self, grpc_server, ip_prefixes):
         # given
         client = CoreGrpcClient()
@@ -329,6 +360,18 @@ class TestGrpc:
         # then
         assert response.result is True
         assert len(switch.all_link_data(0)) == 1
+
+    def test_add_link_exception(self, grpc_server, ip_prefixes):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        node = session.add_node()
+
+        # then
+        interface = ip_prefixes.create_interface(node)
+        with pytest.raises(grpc.RpcError):
+            with client.context_connect():
+                client.add_link(session.session_id, 1, 3, interface)
 
     def test_edit_link(self, grpc_server, ip_prefixes):
         # given

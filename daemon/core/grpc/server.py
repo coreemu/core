@@ -130,14 +130,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def get_session(self, _id, context):
         session = self.coreemu.sessions.get(_id)
         if not session:
-            context.abort(grpc.StatusCode.NOT_FOUND, "session not found")
+            context.abort(grpc.StatusCode.NOT_FOUND, "session {} not found".format(_id))
         return session
 
     def get_node(self, session, _id, context):
-        node = session.get_object(_id)
-        if not node:
-            context.abort(grpc.StatusCode.NOT_FOUND, "node not found")
-        return node
+        try:
+            return session.get_object(_id)
+        except KeyError:
+            context.abort(grpc.StatusCode.NOT_FOUND, "node {} not found".format(_id))
 
     def CreateSession(self, request, context):
         logging.debug("create session: %s", request)
@@ -509,6 +509,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def AddLink(self, request, context):
         logging.debug("add link: %s", request)
         session = self.get_session(request.session, context)
+
+        # validate node exist
+        self.get_node(session, request.link.node_one, context)
+        self.get_node(session, request.link.node_two, context)
         node_one = request.link.node_one
         node_two = request.link.node_two
 
