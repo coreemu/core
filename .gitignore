@@ -5,7 +5,6 @@
 .version.date
 Makefile
 !kernel/**/Makefile
-!daemon/proto/Makefile
 Makefile.in
 aclocal.m4
 autom4te.cache

@@ -11,8 +11,10 @@ SETUPPY	= setup.py
 SETUPPYFLAGS = -v
 
 if WANT_DOCS
-  SUBDIRS = doc
+  DOCS = doc
 endif
+
+SUBDIRS = proto $(DOCS)
 
 SCRIPT_FILES := $(notdir $(wildcard scripts/*))
 MAN_FILES := $(notdir $(wildcard ../man/*.1))
