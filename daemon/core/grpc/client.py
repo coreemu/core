@@ -67,7 +67,7 @@ class CoreGrpcClient(object):
         """
         Create a session.
 
-        :param int _id: id for session, defaults to None will be created for you
+        :param int _id: id for session, default is None and one will be created for you
         :return: response with created session id
         :rtype: core_pb2.CreateSessionResponse
         """
@@ -78,7 +78,7 @@ class CoreGrpcClient(object):
         """
         Delete a session.
 
-        :param int _id: id of session to delete
+        :param int _id: id of session
         :return: response with result of deletion success or failure
         :rtype: core_pb2.DeleteSessionResponse
         :raises grpc.RpcError: when session doesn't exist
@@ -99,7 +99,7 @@ class CoreGrpcClient(object):
         """
         Retrieve a session.
 
-        :param int _id: id of session to get data for
+        :param int _id: id of session
         :return: response with sessions state, nodes, and links
         :rtype: core_pb2.GetSessionResponse
         :raises grpc.RpcError: when session doesn't exist
@@ -108,57 +108,166 @@ class CoreGrpcClient(object):
         return self.stub.GetSession(request)
 
     def get_session_options(self, _id):
+        """
+        Retrieve session options.
+
+        :param int _id: id of session
+        :return: response with a list of configuration groups
+        :rtype: core_pb2.GetSessionOptionsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetSessionOptionsRequest(id=_id)
         return self.stub.GetSessionOptions(request)
 
     def set_session_options(self, _id, config):
+        """
+        Set options for a session.
+
+        :param int _id: id of session
+        :param dict[str, str] config: configuration values to set
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetSessionOptionsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.SetSessionOptionsRequest(id=_id, config=config)
         return self.stub.SetSessionOptions(request)
 
     def get_session_location(self, _id):
+        """
+        Get session location.
+
+        :param int _id: id of session
+        :return: response with session position reference and scale
+        :rtype: core_pb2.GetSessionLocationResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetSessionLocationRequest(id=_id)
         return self.stub.GetSessionLocation(request)
 
     def set_session_location(self, _id, x=None, y=None, z=None, lat=None, lon=None, alt=None, scale=None):
+        """
+        Set session location.
+
+        :param int _id: id of session
+        :param float x: x position
+        :param float y: y position
+        :param float z: z position
+        :param float lat: latitude position
+        :param float lon: longitude  position
+        :param float alt: altitude position
+        :param float scale: geo scale
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetSessionLocationResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         position = core_pb2.Position(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
         request = core_pb2.SetSessionLocationRequest(id=_id, position=position, scale=scale)
         return self.stub.SetSessionLocation(request)
 
     def set_session_state(self, _id, state):
+        """
+        Set session state.
+
+        :param int _id: id of session
+        :param EventTypes state: session state to transition to
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetSessionStateResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.SetSessionStateRequest(id=_id, state=state.value)
         return self.stub.SetSessionState(request)
 
     def node_events(self, _id, handler):
+        """
+        Listen for session node events.
+
+        :param int _id: id of session
+        :param handler: handler for every event
+        :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.NodeEventsRequest(id=_id)
         stream = self.stub.NodeEvents(request)
         start_streamer(stream, handler)
 
     def link_events(self, _id, handler):
+        """
+        Listen for session link events.
+
+        :param int _id: id of session
+        :param handler: handler for every event
+        :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.LinkEventsRequest(id=_id)
         stream = self.stub.LinkEvents(request)
         start_streamer(stream, handler)
 
     def session_events(self, _id, handler):
+        """
+        Listen for session events.
+
+        :param int _id: id of session
+        :param handler: handler for every event
+        :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.SessionEventsRequest(id=_id)
         stream = self.stub.SessionEvents(request)
         start_streamer(stream, handler)
 
     def config_events(self, _id, handler):
+        """
+        Listen for session config events.
+
+        :param int _id: id of session
+        :param handler: handler for every event
+        :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.ConfigEventsRequest(id=_id)
         stream = self.stub.ConfigEvents(request)
         start_streamer(stream, handler)
 
     def exception_events(self, _id, handler):
+        """
+        Listen for session exception events.
+
+        :param int _id: id of session
+        :param handler: handler for every event
+        :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.ExceptionEventsRequest(id=_id)
         stream = self.stub.ExceptionEvents(request)
         start_streamer(stream, handler)
 
     def file_events(self, _id, handler):
+        """
+        Listen for session file events.
+
+        :param int _id: id of session
+        :param handler: handler for every event
+        :return: nothing
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.FileEventsRequest(id=_id)
         stream = self.stub.FileEvents(request)
         start_streamer(stream, handler)
 
     def add_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
+        """
+        Add node to session.
+
+        :param int session: session id
+        :param NodeTypes _type: type of node to create
+        :param int _id: id for node, defaults to None, which will generate an id
+        :param NodeOptions node_options: options for node including position, services, and model
+        :param str emane: emane model, if an emane node
+        :return: response with node id
+        :rtype: core_pb2.AddNodeResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         if not node_options:
             node_options = NodeOptions()
         position = core_pb2.Position(
@@ -171,10 +280,29 @@ class CoreGrpcClient(object):
         return self.stub.AddNode(request)
 
     def get_node(self, session, _id):
+        """
+        Get node details.
+
+        :param int session: session id
+        :param int _id: node id
+        :return: response with node details
+        :rtype: core_pb2.GetNodeResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.GetNodeRequest(session=session, id=_id)
         return self.stub.GetNode(request)
 
     def edit_node(self, session, _id, node_options):
+        """
+        Edit a node, currently only changes position.
+
+        :param int session: session id
+        :param int _id: node id
+        :param NodeOptions node_options: options for node including position, services, and model
+        :return: response with result of success or failure
+        :rtype: core_pb2.EditNodeResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         position = core_pb2.Position(
             x=node_options.x, y=node_options.y,
             lat=node_options.lat, lon=node_options.lon, alt=node_options.alt)
@@ -182,14 +310,45 @@ class CoreGrpcClient(object):
         return self.stub.EditNode(request)
 
     def delete_node(self, session, _id):
+        """
+        Delete node from session.
+
+        :param int session: session id
+        :param int _id: node id
+        :return: response with result of success or failure
+        :rtype: core_pb2.DeleteNodeResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.DeleteNodeRequest(session=session, id=_id)
         return self.stub.DeleteNode(request)
 
     def get_node_links(self, session, _id):
+        """
+        Get current links for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :return: response with a list of links
+        :rtype: core_pb2.GetNodeLinksResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.GetNodeLinksRequest(session=session, id=_id)
         return self.stub.GetNodeLinks(request)
 
     def add_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
+        """
+        Add a link between nodes.
+
+        :param int session: session id
+        :param int node_one: node one id
+        :param int node_two: node two id
+        :param InterfaceData interface_one: node one interface data
+        :param InterfaceData interface_two: node two interface data
+        :param LinkOptions link_options: options for link (jitter, bandwidth, etc)
+        :return: response with result of success or failure
+        :rtype: core_pb2.AddLinkResponse
+        :raises grpc.RpcError: when session or one of the nodes don't exist
+        """
         interface_one_proto = None
         if interface_one is not None:
             mac = interface_one.mac
@@ -233,6 +392,19 @@ class CoreGrpcClient(object):
         return self.stub.AddLink(request)
 
     def edit_link(self, session, node_one, node_two, link_options, interface_one=None, interface_two=None):
+        """
+        Edit a link between nodes.
+
+        :param int session: session id
+        :param int node_one: node one id
+        :param int node_two: node two id
+        :param LinkOptions link_options: options for link (jitter, bandwidth, etc)
+        :param int interface_one: node one interface id
+        :param int interface_two: node two interface id
+        :return: response with result of success or failure
+        :rtype: core_pb2.EditLinkResponse
+        :raises grpc.RpcError: when session or one of the nodes don't exist
+        """
         options = core_pb2.LinkOptions(
             delay=link_options.delay,
             bandwidth=link_options.bandwidth,
@@ -252,6 +424,18 @@ class CoreGrpcClient(object):
         return self.stub.EditLink(request)
 
     def delete_link(self, session, node_one, node_two, interface_one=None, interface_two=None):
+        """
+        Delete a link between nodes.
+
+        :param int session: session id
+        :param int node_one: node one id
+        :param int node_two: node two id
+        :param int interface_one: node one interface id
+        :param int interface_two: node two interface id
+        :return: response with result of success or failure
+        :rtype: core_pb2.DeleteLinkResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.DeleteLinkRequest(
             session=session, node_one=node_one, node_two=node_two,
             interface_one=interface_one, interface_two=interface_two)
