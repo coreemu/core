@@ -260,7 +260,7 @@ class CoreGrpcClient(object):
         Add node to session.
 
         :param int session: session id
-        :param core_pb2.Node: node to add
+        :param core_pb2.Node node: node to add
         :return: response with node id
         :rtype: core_pb2.AddNodeResponse
         :raises grpc.RpcError: when session doesn't exist
