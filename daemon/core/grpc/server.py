@@ -57,6 +57,13 @@ def get_links(session, node):
     return links
 
 
+def get_emane_model_id(_id, interface):
+    if interface >= 0:
+        return _id * 1000 + interface
+    else:
+        return _id
+
+
 def convert_link(session, link_data):
     interface_one = None
     if link_data.interface1_id is not None:
@@ -427,24 +434,25 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("add node: %s", request)
         session = self.get_session(request.session, context)
 
-        node_id = request.id
-        node_type = request.type
+        node_proto = request.node
+        node_id = node_proto.id
+        node_type = node_proto.type
         if node_type is None:
             node_type = NodeTypes.DEFAULT.value
         node_type = NodeTypes(node_type)
 
-        node_options = NodeOptions(name=request.name, model=request.model)
-        node_options.icon = request.icon
-        node_options.opaque = request.opaque
-        node_options.services = request.services
+        node_options = NodeOptions(name=node_proto.name, model=node_proto.model)
+        node_options.icon = node_proto.icon
+        node_options.opaque = node_proto.opaque
+        node_options.services = node_proto.services
 
-        position = request.position
+        position = node_proto.position
         node_options.set_position(position.x, position.y)
         node_options.set_location(position.lat, position.lon, position.alt)
         node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
 
         # configure emane if provided
-        emane_model = request.emane
+        emane_model = node_proto.emane
         if emane_model:
             session.emane.set_model_config(node_id, emane_model)
 
@@ -816,14 +824,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get emane model config: %s", request)
         session = self.get_session(request.session, context)
         model = session.emane.models[request.model]
-        config = session.emane.get_model_config(request.id, request.model)
+        _id = get_emane_model_id(request.id, request.interface)
+        config = session.emane.get_model_config(_id, request.model)
         groups = get_config_groups(config, model)
         return core_pb2.GetEmaneModelConfigResponse(groups=groups)
 
     def SetEmaneModelConfig(self, request, context):
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session, context)
-        session.emane.set_model_config(request.id, request.model, request.config)
+        _id = get_emane_model_id(request.id, request.interface)
+        session.emane.set_model_config(_id, request.model, request.config)
         return core_pb2.SetEmaneModelConfigResponse(result=True)
 
     def GetEmaneModelConfigs(self, request, context):

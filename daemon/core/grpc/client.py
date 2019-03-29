@@ -169,12 +169,12 @@ class CoreGrpcClient(object):
         Set session state.
 
         :param int _id: id of session
-        :param EventTypes state: session state to transition to
+        :param core_pb2.SessionState state: session state to transition to
         :return: response with result of success or failure
         :rtype: core_pb2.SetSessionStateResponse
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.SetSessionStateRequest(id=_id, state=state.value)
+        request = core_pb2.SetSessionStateRequest(id=_id, state=state)
         return self.stub.SetSessionState(request)
 
     def node_events(self, _id, handler):
@@ -255,28 +255,17 @@ class CoreGrpcClient(object):
         stream = self.stub.FileEvents(request)
         start_streamer(stream, handler)
 
-    def add_node(self, session, _type=NodeTypes.DEFAULT, _id=None, node_options=None, emane=None):
+    def add_node(self, session, node):
         """
         Add node to session.
 
         :param int session: session id
-        :param NodeTypes _type: type of node to create
-        :param int _id: id for node, defaults to None, which will generate an id
-        :param NodeOptions node_options: options for node including position, services, and model
-        :param str emane: emane model, if an emane node
+        :param core_pb2.Node: node to add
         :return: response with node id
         :rtype: core_pb2.AddNodeResponse
         :raises grpc.RpcError: when session doesn't exist
         """
-        if not node_options:
-            node_options = NodeOptions()
-        position = core_pb2.Position(
-            x=node_options.x, y=node_options.y,
-            lat=node_options.lat, lon=node_options.lon, alt=node_options.alt)
-        request = core_pb2.AddNodeRequest(
-            session=session, type=_type.value, name=node_options.name,
-            model=node_options.model, icon=node_options.icon, services=node_options.services,
-            opaque=node_options.opaque, emane=emane, position=position)
+        request = core_pb2.AddNodeRequest(session=session, node=node)
         return self.stub.AddNode(request)
 
     def get_node(self, session, _id):
@@ -446,7 +435,7 @@ class CoreGrpcClient(object):
         return self.stub.GetHooks(request)
 
     def add_hook(self, session, state, file_name, file_data):
-        hook = core_pb2.Hook(state=state.value, file=file_name, data=file_data)
+        hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
         request = core_pb2.AddHookRequest(session=session, hook=hook)
         return self.stub.AddHook(request)
 
@@ -525,16 +514,13 @@ class CoreGrpcClient(object):
         request = core_pb2.GetEmaneModelsRequest(session=session)
         return self.stub.GetEmaneModels(request)
 
-    def get_emane_model_config(self, session, _id, model, interface_id=None):
-        if interface_id is not None:
-            _id = _id * 1000 + interface_id
-        request = core_pb2.GetEmaneModelConfigRequest(session=session, id=_id, model=model)
+    def get_emane_model_config(self, session, _id, model, interface_id=-1):
+        request = core_pb2.GetEmaneModelConfigRequest(session=session, id=_id, model=model, interface=interface_id)
         return self.stub.GetEmaneModelConfig(request)
 
-    def set_emane_model_config(self, session, _id, model, config, interface_id=None):
-        if interface_id is not None:
-            _id = _id * 1000 + interface_id
-        request = core_pb2.SetEmaneModelConfigRequest(session=session, id=_id, model=model, config=config)
+    def set_emane_model_config(self, session, _id, model, config, interface_id=-1):
+        request = core_pb2.SetEmaneModelConfigRequest(
+            session=session, id=_id, model=model, config=config, interface=interface_id)
         return self.stub.SetEmaneModelConfig(request)
 
     def get_emane_model_configs(self, session):
@@ -593,7 +579,7 @@ def main():
         print("created session: {}".format(session_data))
         print("default services: {}".format(client.get_service_defaults(session_data.id)))
         print("emane models: {}".format(client.get_emane_models(session_data.id)))
-        print("add hook: {}".format(client.add_hook(session_data.id, EventTypes.RUNTIME_STATE, "test", "echo hello")))
+        print("add hook: {}".format(client.add_hook(session_data.id, core_pb2.STATE_RUNTIME, "test", "echo hello")))
         print("hooks: {}".format(client.get_hooks(session_data.id)))
 
         response = client.get_sessions()
@@ -618,10 +604,11 @@ def main():
         print("get location: {}".format(client.get_session_location(session_data.id)))
 
         # change session state
-        print("set session state: {}".format(client.set_session_state(session_data.id, EventTypes.CONFIGURATION_STATE)))
+        print("set session state: {}".format(client.set_session_state(session_data.id, core_pb2.STATE_CONFIGURATION)))
 
         # create switch node
-        response = client.add_node(session_data.id, _type=NodeTypes.SWITCH)
+        switch = core_pb2.Node(type=core_pb2.NODE_SWITCH)
+        response = client.add_node(session_data.id, switch)
         print("created switch: {}".format(response))
         switch_id = response.id
 
@@ -629,7 +616,8 @@ def main():
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
         for _ in xrange(2):
-            response = client.add_node(session_data.id)
+            node = core_pb2.Node()
+            response = client.add_node(session_data.id, node)
             print("created node: {}".format(response))
             node_id = response.id
             node_options = NodeOptions()
@@ -657,7 +645,7 @@ def main():
             print("get node links: {}".format(client.get_node_links(session_data.id, node_id)))
 
         # change session state
-        print("set session state: {}".format(client.set_session_state(session_data.id, EventTypes.INSTANTIATION_STATE)))
+        print("set session state: {}".format(client.set_session_state(session_data.id, core_pb2.STATE_INSTANTIATION)))
         # import pdb; pdb.set_trace()
 
         # get session

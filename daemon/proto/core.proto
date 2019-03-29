@@ -280,15 +280,7 @@ message FileEvent {
 
 message AddNodeRequest {
     int32 session = 1;
-    int32 id = 2;
-    NodeType type = 3;
-    string name = 4;
-    string model = 5;
-    string icon = 6;
-    repeated string services = 7;
-    Position position = 8;
-    string emane = 9;
-    string opaque = 10;
+    Node node = 2;
 }
 
 message AddNodeResponse {
@@ -553,7 +545,8 @@ message GetEmaneModelsResponse {
 message GetEmaneModelConfigRequest {
     int32 session = 1;
     int32 id = 2;
-    string model = 3;
+    int32 interface = 3;
+    string model = 4;
 }
 
 message GetEmaneModelConfigResponse {
@@ -563,8 +556,9 @@ message GetEmaneModelConfigResponse {
 message SetEmaneModelConfigRequest {
     int32 session = 1;
     int32 id = 2;
-    string model = 3;
-    map<string, string> config = 4;
+    int32 interface = 3;
+    string model = 4;
+    map<string, string> config = 5;
 }
 
 message SetEmaneModelConfigResponse {
@@ -724,11 +718,13 @@ message SessionSummary {
 message Node {
     int32 id = 1;
     string name = 2;
-    int32 type = 3;
+    NodeType type = 3;
     string model = 4;
     Position position = 5;
     repeated string services = 6;
     string emane = 7;
+    string icon = 8;
+    string opaque = 9;
 }
 
 message Link {

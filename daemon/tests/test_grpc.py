@@ -14,19 +14,6 @@ from core.grpc import core_pb2
 from core.grpc.client import CoreGrpcClient
 from core.mobility import BasicRangeModel, Ns2ScriptedMobility
 
-MODELS = [
-    "router",
-    "host",
-    "PC",
-    "mdr",
-]
-
-NET_TYPES = [
-    NodeTypes.SWITCH,
-    NodeTypes.HUB,
-    NodeTypes.WIRELESS_LAN
-]
-
 
 class TestGrpc:
     @pytest.mark.parametrize("session_id", [None, 6013])
@@ -178,11 +165,11 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_session_state(session.session_id, EventTypes.DEFINITION_STATE)
+            response = client.set_session_state(session.session_id, core_pb2.STATE_DEFINITION)
 
         # then
         assert response.result is True
-        assert session.state == EventTypes.DEFINITION_STATE.value
+        assert session.state == core_pb2.STATE_DEFINITION
 
     def test_add_node(self, grpc_server):
         # given
@@ -191,7 +178,8 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.add_node(session.session_id)
+            node = core_pb2.Node()
+            response = client.add_node(session.session_id, node)
 
         # then
         assert response.id is not None
@@ -281,7 +269,7 @@ class TestGrpc:
         file_name = "test"
         file_data = "echo hello"
         with client.context_connect():
-            response = client.add_hook(session.session_id, EventTypes.RUNTIME_STATE, file_name, file_data)
+            response = client.add_hook(session.session_id, core_pb2.STATE_RUNTIME, file_name, file_data)
 
         # then
         assert response.result is True
