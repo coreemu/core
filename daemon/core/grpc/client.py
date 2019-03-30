@@ -587,19 +587,65 @@ class CoreGrpcClient(object):
         return self.stub.SetServiceDefaults(request)
 
     def get_node_service(self, session, _id, service):
+        """
+        Get service data for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str service: service name
+        :return: response with node service data
+        :rtype: core_pb2.GetNodeServiceResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.GetNodeServiceRequest(session=session, id=_id, service=service)
         return self.stub.GetNodeService(request)
 
     def get_node_service_file(self, session, _id, service, file_name):
+        """
+        Get a service file for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str service: service name
+        :param str file_name: file name to get data for
+        :return: response with file data
+        :rtype: core_pb2.GetNodeServiceFileResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.GetNodeServiceFileRequest(session=session, id=_id, service=service, file=file_name)
         return self.stub.GetNodeServiceFile(request)
 
     def set_node_service(self, session, _id, service, startup, validate, shutdown):
+        """
+        Set service data for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str service: service name
+        :param list startup: startup commands
+        :param list validate: validation commands
+        :param list shutdown: shutdown commands
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetNodeServiceResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.SetNodeServiceRequest(
             session=session, id=_id, service=service, startup=startup, validate=validate, shutdown=shutdown)
         return self.stub.SetNodeService(request)
 
     def set_node_service_file(self, session, _id, service, file_name, data):
+        """
+        Set a service file for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str service: service name
+        :param str file_name: file name to save
+        :param bytes data: data to save for file
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetNodeServiceFileResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.SetNodeServiceFileRequest(
             session=session, id=_id, service=service, file=file_name, data=data)
         return self.stub.SetNodeServiceFile(request)
@@ -642,28 +688,57 @@ class CoreGrpcClient(object):
         return self.stub.GetEmaneModelConfigs(request)
 
     def save_xml(self, session, file_path):
+        """
+        Save the current scenario to an XML file.
+
+        :param int session: session id
+        :param str file_path: local path to save scenario XML file to
+        :return: nothing
+        """
         request = core_pb2.SaveXmlRequest(session=session)
         response = self.stub.SaveXml(request)
         with open(file_path, "wb") as xml_file:
             xml_file.write(response.data)
 
     def open_xml(self, file_path):
+        """
+        Load a local scenario XML file to open as a new session.
+
+        :param str file_path: path of scenario XML file
+        :return: response with opened session id
+        :rtype: core_pb2.OpenXmlResponse
+        """
         with open(file_path, "rb") as xml_file:
             data = xml_file.read()
         request = core_pb2.OpenXmlRequest(data=data)
         return self.stub.OpenXml(request)
 
     def connect(self):
+        """
+        Open connection to server, must be closed manually.
+
+        :return: nothing
+        """
         self.channel = grpc.insecure_channel(self.address)
         self.stub = core_pb2_grpc.CoreApiStub(self.channel)
 
     def close(self):
+        """
+        Close currently opened server channel connection.
+
+        :return: nothing
+        """
         if self.channel:
             self.channel.close()
             self.channel = None
 
     @contextmanager
     def context_connect(self):
+        """
+        Makes a context manager based connection to the server, will close after context ends.
+
+        :return: nothing
+        """
         try:
             self.connect()
             yield
