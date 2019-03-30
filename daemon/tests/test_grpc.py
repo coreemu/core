@@ -8,7 +8,6 @@ import pytest
 from core.conf import ConfigShim
 from core.data import EventData
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.emudata import NodeOptions, LinkOptions
 from core.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
 from core.grpc import core_pb2
 from core.grpc.client import CoreGrpcClient
@@ -211,9 +210,8 @@ class TestGrpc:
         # then
         x, y = 10, 10
         with client.context_connect():
-            node_options = NodeOptions()
-            node_options.set_position(x, y)
-            response = client.edit_node(session.session_id, node_id, node_options)
+            position = core_pb2.Position(x=x, y=y)
+            response = client.edit_node(session.session_id, node_id, position)
 
         # then
         assert response.result is expected
@@ -332,7 +330,7 @@ class TestGrpc:
             with client.context_connect():
                 client.get_node_links(session.session_id, 3)
 
-    def test_add_link(self, grpc_server, ip_prefixes):
+    def test_add_link(self, grpc_server, interface_helper):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -341,7 +339,7 @@ class TestGrpc:
         assert len(switch.all_link_data(0)) == 0
 
         # then
-        interface = ip_prefixes.create_interface(node)
+        interface = interface_helper.create_interface(node.objid, 0)
         with client.context_connect():
             response = client.add_link(session.session_id, node.objid, switch.objid, interface)
 
@@ -349,14 +347,14 @@ class TestGrpc:
         assert response.result is True
         assert len(switch.all_link_data(0)) == 1
 
-    def test_add_link_exception(self, grpc_server, ip_prefixes):
+    def test_add_link_exception(self, grpc_server, interface_helper):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
 
         # then
-        interface = ip_prefixes.create_interface(node)
+        interface = interface_helper.create_interface(node.objid, 0)
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
                 client.add_link(session.session_id, 1, 3, interface)
@@ -369,8 +367,7 @@ class TestGrpc:
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
         session.add_link(node.objid, switch.objid, interface)
-        options = LinkOptions()
-        options.bandwidth = 30000
+        options = core_pb2.LinkOptions(bandwidth=30000)
         link = switch.all_link_data(0)[0]
         assert options.bandwidth != link.bandwidth
 

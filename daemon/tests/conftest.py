@@ -28,6 +28,7 @@ from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
+from core.grpc.client import InterfaceHelper
 from core.grpc.server import CoreGrpcServer
 from core.misc import ipaddress
 from core.misc.ipaddress import MacAddress
@@ -247,6 +248,11 @@ def session():
 @pytest.fixture(scope="module")
 def ip_prefixes():
     return IpPrefixes(ip4_prefix="10.83.0.0/16")
+
+
+@pytest.fixture(scope="module")
+def interface_helper():
+    return InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
 
 @pytest.fixture()

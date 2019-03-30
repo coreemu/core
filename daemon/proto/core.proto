@@ -606,6 +606,11 @@ enum MessageType {
     MESSAGE_TTY = 64;
 }
 
+enum LinkType {
+    LINK_WIRELESS = 0;
+    LINK_WIRED = 1;
+}
+
 enum SessionState {
     STATE_NONE = 0;
     STATE_DEFINITION = 1;
@@ -730,7 +735,7 @@ message Node {
 message Link {
     int32 node_one = 1;
     int32 node_two = 2;
-    int32 type = 3;
+    LinkType type = 3;
     Interface interface_one = 4;
     Interface interface_two = 5;
     LinkOptions options = 6;

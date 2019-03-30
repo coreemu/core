@@ -11,10 +11,97 @@ from contextlib import contextmanager
 
 import grpc
 
-from core.emulator.emudata import NodeOptions, IpPrefixes, InterfaceData, LinkOptions
-from core.enumerations import NodeTypes, LinkTypes, EventTypes
 from core.grpc import core_pb2
 from core.grpc import core_pb2_grpc
+from core.misc.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+
+
+class InterfaceHelper(object):
+    """
+    Convenience class to help generate IP4 and IP6 addresses for gRPC clients.
+    """
+
+    def __init__(self, ip4_prefix=None, ip6_prefix=None):
+        """
+        Creates an InterfaceHelper object.
+
+        :param str ip4_prefix: ip4 prefix to use for generation
+        :param str ip6_prefix: ip6 prefix to use for generation
+        :raises ValueError: when both ip4 and ip6 prefixes have not been provided
+        """
+        if not ip4_prefix and not ip6_prefix:
+            raise ValueError("ip4 or ip6 must be provided")
+
+        self.ip4 = None
+        if ip4_prefix:
+            self.ip4 = Ipv4Prefix(ip4_prefix)
+        self.ip6 = None
+        if ip6_prefix:
+            self.ip6 = Ipv6Prefix(ip6_prefix)
+
+    def ip4_address(self, node_id):
+        """
+        Convenience method to return the IP4 address for a node.
+
+        :param int node_id: node id to get IP4 address for
+        :return: IP4 address or None
+        :rtype: str
+        """
+        if not self.ip4:
+            raise ValueError("ip4 prefixes have not been set")
+        return str(self.ip4.addr(node_id))
+
+    def ip6_address(self, node_id):
+        """
+        Convenience method to return the IP6 address for a node.
+
+        :param int node_id: node id to get IP6 address for
+        :return: IP4 address or None
+        :rtype: str
+        """
+        if not self.ip6:
+            raise ValueError("ip6 prefixes have not been set")
+        return str(self.ip6.addr(node_id))
+
+    def create_interface(self, node_id, interface_id, name=None, mac=None):
+        """
+        Creates interface data for linking nodes, using the nodes unique id for generation, along with a random
+        mac address, unless provided.
+
+        :param int node_id: node id to create interface for
+        :param int interface_id: interface id for interface
+        :param str name: name to set for interface, default is eth{id}
+        :param str mac: mac address to use for this interface, default is random generation
+        :return: new interface data for the provided node
+        :rtype: core_pb2.Interface
+        """
+        # generate ip4 data
+        ip4 = None
+        ip4_mask = None
+        if self.ip4:
+            ip4 = str(self.ip4.addr(node_id))
+            ip4_mask = self.ip4.prefixlen
+
+        # generate ip6 data
+        ip6 = None
+        ip6_mask = None
+        if self.ip6:
+            ip6 = str(self.ip6.addr(node_id))
+            ip6_mask = self.ip6.prefixlen
+
+        # random mac
+        if not mac:
+            mac = MacAddress.random()
+
+        return core_pb2.Interface(
+            id=interface_id,
+            name=name,
+            ip4=ip4,
+            ip4mask=ip4_mask,
+            ip6=ip6,
+            ip6mask=ip6_mask,
+            mac=str(mac)
+        )
 
 
 def stream_listener(stream, handler):
@@ -281,20 +368,17 @@ class CoreGrpcClient(object):
         request = core_pb2.GetNodeRequest(session=session, id=_id)
         return self.stub.GetNode(request)
 
-    def edit_node(self, session, _id, node_options):
+    def edit_node(self, session, _id, position):
         """
         Edit a node, currently only changes position.
 
         :param int session: session id
         :param int _id: node id
-        :param NodeOptions node_options: options for node including position, services, and model
+        :param core_pb2.Position position: position to set node to
         :return: response with result of success or failure
         :rtype: core_pb2.EditNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        position = core_pb2.Position(
-            x=node_options.x, y=node_options.y,
-            lat=node_options.lat, lon=node_options.lon, alt=node_options.alt)
         request = core_pb2.EditNodeRequest(session=session, id=_id, position=position)
         return self.stub.EditNode(request)
 
@@ -324,89 +408,40 @@ class CoreGrpcClient(object):
         request = core_pb2.GetNodeLinksRequest(session=session, id=_id)
         return self.stub.GetNodeLinks(request)
 
-    def add_link(self, session, node_one, node_two, interface_one=None, interface_two=None, link_options=None):
+    def add_link(self, session, node_one, node_two, interface_one=None, interface_two=None, options=None):
         """
         Add a link between nodes.
 
         :param int session: session id
         :param int node_one: node one id
         :param int node_two: node two id
-        :param InterfaceData interface_one: node one interface data
-        :param InterfaceData interface_two: node two interface data
-        :param LinkOptions link_options: options for link (jitter, bandwidth, etc)
+        :param core_pb2.Interface interface_one: node one interface data
+        :param core_pb2.Interface interface_two: node two interface data
+        :param core_pb2.LinkOptions options: options for link (jitter, bandwidth, etc)
         :return: response with result of success or failure
         :rtype: core_pb2.AddLinkResponse
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
-        interface_one_proto = None
-        if interface_one is not None:
-            mac = interface_one.mac
-            if mac is not None:
-                mac = str(mac)
-            interface_one_proto = core_pb2.Interface(
-                id=interface_one.id, name=interface_one.name, mac=mac,
-                ip4=interface_one.ip4, ip4mask=interface_one.ip4_mask,
-                ip6=interface_one.ip6, ip6mask=interface_one.ip6_mask)
-
-        interface_two_proto = None
-        if interface_two is not None:
-            mac = interface_two.mac
-            if mac is not None:
-                mac = str(mac)
-            interface_two_proto = core_pb2.Interface(
-                id=interface_two.id, name=interface_two.name, mac=mac,
-                ip4=interface_two.ip4, ip4mask=interface_two.ip4_mask,
-                ip6=interface_two.ip6, ip6mask=interface_two.ip6_mask)
-
-        options = None
-        if link_options is not None:
-            options = core_pb2.LinkOptions(
-                delay=link_options.delay,
-                bandwidth=link_options.bandwidth,
-                per=link_options.per,
-                dup=link_options.dup,
-                jitter=link_options.jitter,
-                mer=link_options.mer,
-                burst=link_options.burst,
-                mburst=link_options.mburst,
-                unidirectional=link_options.unidirectional,
-                key=link_options.key,
-                opaque=link_options.opaque
-            )
-
         link = core_pb2.Link(
-            node_one=node_one, node_two=node_two, type=LinkTypes.WIRED.value,
-            interface_one=interface_one_proto, interface_two=interface_two_proto, options=options)
+            node_one=node_one, node_two=node_two, type=core_pb2.LINK_WIRED,
+            interface_one=interface_one, interface_two=interface_two, options=options)
         request = core_pb2.AddLinkRequest(session=session, link=link)
         return self.stub.AddLink(request)
 
-    def edit_link(self, session, node_one, node_two, link_options, interface_one=None, interface_two=None):
+    def edit_link(self, session, node_one, node_two, options, interface_one=None, interface_two=None):
         """
         Edit a link between nodes.
 
         :param int session: session id
         :param int node_one: node one id
         :param int node_two: node two id
-        :param LinkOptions link_options: options for link (jitter, bandwidth, etc)
+        :param core_pb2.LinkOptions options: options for link (jitter, bandwidth, etc)
         :param int interface_one: node one interface id
         :param int interface_two: node two interface id
         :return: response with result of success or failure
         :rtype: core_pb2.EditLinkResponse
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
-        options = core_pb2.LinkOptions(
-            delay=link_options.delay,
-            bandwidth=link_options.bandwidth,
-            per=link_options.per,
-            dup=link_options.dup,
-            jitter=link_options.jitter,
-            mer=link_options.mer,
-            burst=link_options.burst,
-            mburst=link_options.mburst,
-            unidirectional=link_options.unidirectional,
-            key=link_options.key,
-            opaque=link_options.opaque
-        )
         request = core_pb2.EditLinkRequest(
             session=session, node_one=node_one, node_two=node_two, options=options,
             interface_one=interface_one, interface_two=interface_two)
@@ -431,39 +466,118 @@ class CoreGrpcClient(object):
         return self.stub.DeleteLink(request)
 
     def get_hooks(self, session):
+        """
+        Get all hook scripts.
+
+        :param int session: session id
+        :return: response with a list of hooks
+        :rtype: core_pb2.GetHooksResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetHooksRequest(session=session)
         return self.stub.GetHooks(request)
 
     def add_hook(self, session, state, file_name, file_data):
+        """
+        Add hook scripts.
+
+        :param int session: session id
+        :param core_pb2.SessionState state: state to trigger hook
+        :param str file_name: name of file for hook script
+        :param bytes file_data: hook script contents
+        :return: response with result of success or failure
+        :rtype: core_pb2.AddHookResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
         request = core_pb2.AddHookRequest(session=session, hook=hook)
         return self.stub.AddHook(request)
 
     def get_mobility_configs(self, session):
+        """
+        Get all mobility configurations.
+
+        :param int session: session id
+        :return: response with a dict of node ids to mobility configurations
+        :rtype: core_pb2.GetMobilityConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetMobilityConfigsRequest(session=session)
         return self.stub.GetMobilityConfigs(request)
 
     def get_mobility_config(self, session, _id):
+        """
+        Get mobility configuration for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :return: response with a list of configuration groups
+        :rtype: core_pb2.GetMobilityConfigResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.GetMobilityConfigRequest(session=session, id=_id)
         return self.stub.GetMobilityConfig(request)
 
     def set_mobility_config(self, session, _id, config):
+        """
+        Set mobility configuration for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param dict[str, str] config: mobility configuration
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetMobilityConfigResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.SetMobilityConfigRequest(session=session, id=_id, config=config)
         return self.stub.SetMobilityConfig(request)
 
     def mobility_action(self, session, _id, action):
+        """
+        Send a mobility action for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param core_pb2.ServiceAction action: action to take
+        :return: response with result of success or failure
+        :rtype: core_pb2.MobilityActionResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.MobilityActionRequest(session=session, id=_id, action=action)
         return self.stub.MobilityAction(request)
 
     def get_services(self):
+        """
+        Get all currently loaded services.
+
+        :return: response with a list of services
+        :rtype: core_pb2.GetServicesResponse
+        """
         request = core_pb2.GetServicesRequest()
         return self.stub.GetServices(request)
 
     def get_service_defaults(self, session):
+        """
+        Get default services for different default node models.
+
+        :param int session: session id
+        :return: response with a dict of node model to a list of services
+        :rtype: core_pb2.GetServiceDefaultsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetServiceDefaultsRequest(session=session)
         return self.stub.GetServiceDefaults(request)
 
     def set_service_defaults(self, session, service_defaults):
+        """
+        Set default services for node models.
+
+        :param int session: session id
+        :param dict service_defaults: node models to lists of services
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetServiceDefaultsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         defaults = []
         for node_type in service_defaults:
             services = service_defaults[node_type]
@@ -591,7 +705,7 @@ def main():
         # set session location
         response = client.set_session_location(
             session_data.id,
-            x=0, y=0, z=None,
+            x=0, y=0,
             lat=47.57917, lon=-122.13232, alt=3.0,
             scale=150000.0
         )
@@ -613,17 +727,15 @@ def main():
         switch_id = response.id
 
         # ip generator for example
-        prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
+        interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
         for _ in xrange(2):
             node = core_pb2.Node()
             response = client.add_node(session_data.id, node)
             print("created node: {}".format(response))
             node_id = response.id
-            node_options = NodeOptions()
-            node_options.x = 5
-            node_options.y = 5
-            print("edit node: {}".format(client.edit_node(session_data.id, node_id, node_options)))
+            position = core_pb2.Position(x=5, y=5)
+            print("edit node: {}".format(client.edit_node(session_data.id, node_id, position)))
             print("get node: {}".format(client.get_node(session_data.id, node_id)))
             print("emane model config: {}".format(
                 client.get_emane_model_config(session_data.id, node_id, "emane_tdma")))
@@ -631,14 +743,9 @@ def main():
             print("node service: {}".format(client.get_node_service(session_data.id, node_id, "zebra")))
 
             # create link
-            interface_one = InterfaceData(
-                _id=None, name=None, mac=None,
-                ip4=str(prefixes.ip4.addr(node_id)), ip4_mask=prefixes.ip4.prefixlen,
-                ip6=None, ip6_mask=None
-            )
+            interface_one = interface_helper.create_interface(node_id, 0)
             print("created link: {}".format(client.add_link(session_data.id, node_id, switch_id, interface_one)))
-            link_options = LinkOptions()
-            link_options.per = 50
+            link_options = core_pb2.LinkOptions(per=50)
             print("edit link: {}".format(client.edit_link(
                 session_data.id, node_id, switch_id, link_options, interface_one=0)))
 
