@@ -651,39 +651,125 @@ class CoreGrpcClient(object):
         return self.stub.SetNodeServiceFile(request)
 
     def service_action(self, session, _id, service, action):
+        """
+        Send an action to a service for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str service: service name
+        :param core_pb2.ServiceAction action: action for service (start, stop, restart, validate)
+        :return: response with result of success or failure
+        :rtype: core_pb2.ServiceActionResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
         request = core_pb2.ServiceActionRequest(session=session, id=_id, service=service, action=action)
         return self.stub.ServiceAction(request)
 
     def get_wlan_config(self, session, _id):
+        """
+        Get wlan configuration for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :return: response with a list of configuration groups
+        :rtype: core_pb2.GetWlanConfigResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetWlanConfigRequest(session=session, id=_id)
         return self.stub.GetWlanConfig(request)
 
     def set_wlan_config(self, session, _id, config):
+        """
+        Set wlan configuration for a node.
+
+        :param int session: session id
+        :param int _id: node id
+        :param dict[str, str] config: wlan configuration
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetWlanConfigResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.SetWlanConfigRequest(session=session, id=_id, config=config)
         return self.stub.SetWlanConfig(request)
 
     def get_emane_config(self, session):
+        """
+        Get session emane configuration.
+
+        :param int session: session id
+        :return: response with a list of configuration groups
+        :rtype: core_pb2.GetEmaneConfigResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetEmaneConfigRequest(session=session)
         return self.stub.GetEmaneConfig(request)
 
     def set_emane_config(self, session, config):
+        """
+        Set session emane configuration.
+
+        :param int session: session id
+        :param dict[str, str] config: emane configuration
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetEmaneConfigResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.SetEmaneConfigRequest(session=session, config=config)
         return self.stub.SetEmaneConfig(request)
 
     def get_emane_models(self, session):
+        """
+        Get session emane models.
+
+        :param int session: session id
+        :return: response with a list of emane models
+        :rtype: core_pb2.GetEmaneModelsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetEmaneModelsRequest(session=session)
         return self.stub.GetEmaneModels(request)
 
     def get_emane_model_config(self, session, _id, model, interface_id=-1):
+        """
+        Get emane model configuration for a node or a node's interface.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str model: emane model name
+        :param int interface_id: node interface id
+        :return: response with a list of configuration groups
+        :rtype: core_pb2.GetEmaneModelConfigResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetEmaneModelConfigRequest(session=session, id=_id, model=model, interface=interface_id)
         return self.stub.GetEmaneModelConfig(request)
 
     def set_emane_model_config(self, session, _id, model, config, interface_id=-1):
+        """
+        Set emane model configuration for a node or a node's interface.
+
+        :param int session: session id
+        :param int _id: node id
+        :param str model: emane model name
+        :param dict[str, str] config: emane model configuration
+        :param int interface_id: node interface id
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetEmaneModelConfigResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.SetEmaneModelConfigRequest(
             session=session, id=_id, model=model, config=config, interface=interface_id)
         return self.stub.SetEmaneModelConfig(request)
 
     def get_emane_model_configs(self, session):
+        """
+        Get all emane model configurations for a session.
+
+        :param int session: session id
+        :return: response with a dictionary of node/interface ids to configurations
+        :rtype: core_pb2.GetEmaneModelConfigsResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
         request = core_pb2.GetEmaneModelConfigsRequest(session=session)
         return self.stub.GetEmaneModelConfigs(request)
 
