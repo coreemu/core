@@ -5,10 +5,11 @@ messages and instantiates emulated nodes and networks within the kernel. Various
 message handlers are defined and some support for sending messages.
 """
 
+import argparse
 import ConfigParser
 import logging
-import optparse
 import sys
+import threading
 import time
 
 from core import load_logging_config
@@ -16,6 +17,7 @@ from core import constants
 from core import enumerations
 from core.corehandlers import CoreHandler
 from core.coreserver import CoreServer
+from core.grpc.server import CoreGrpcServer
 from core.misc.utils import close_onexec
 
 load_logging_config()
@@ -30,7 +32,7 @@ def banner():
     logging.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
 
 
-def cored(cfg, use_ovs):
+def cored(cfg):
     """
     Start the CoreServer object and enter the server loop.
 
@@ -45,12 +47,19 @@ def cored(cfg, use_ovs):
 
     try:
         server = CoreServer((host, port), CoreHandler, cfg)
-        if use_ovs:
+        if cfg["ovs"] == "True":
             from core.netns.openvswitch import OVS_NODES
             server.coreemu.update_nodes(OVS_NODES)
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
+
+    # initialize grpc api
+    if cfg["grpc"] == "True":
+        grpc_server = CoreGrpcServer(server.coreemu)
+        grpc_thread = threading.Thread(target=grpc_server.listen)
+        grpc_thread.daemon = True
+        grpc_thread.start()
 
     close_onexec(server.fileno())
     logging.info("server started, listening on: %s:%s", host, port)
@@ -73,24 +82,24 @@ def get_merged_config(filename):
         "numthreads": "1",
     }
 
-    usagestr = "usage: %prog [-h] [options] [args]\n\n" + \
-               "CORE daemon v.%s instantiates Linux network namespace " \
-               "nodes." % constants.COREDPY_VERSION
-    parser = optparse.OptionParser(usage=usagestr)
-    parser.add_option("-f", "--configfile", dest="configfile", type="string",
-                      help="read config from specified file; default = %s" % filename)
-    parser.add_option("-p", "--port", dest="port", type=int,
-                      help="port number to listen on; default = %s" % defaults["port"])
-    parser.add_option("-t", "--numthreads", dest="numthreads", type=int,
-                      help="number of server threads; default = %s" % defaults["numthreads"])
+    parser = argparse.ArgumentParser(
+        description="CORE daemon v.%s instantiates Linux network namespace nodes." % constants.COREDPY_VERSION)
+    parser.add_argument("-f", "--configfile", dest="configfile",
+                        help="read config from specified file; default = %s" % filename)
+    parser.add_argument("-p", "--port", dest="port", type=int,
+                        help="port number to listen on; default = %s" % defaults["port"])
+    parser.add_argument("-n", "--numthreads", dest="numthreads", type=int,
+                        help="number of server threads; default = %s" % defaults["numthreads"])
+    parser.add_argument("--ovs", action="store_true", help="enable experimental ovs mode, default is false")
+    parser.add_argument("--grpc", action="store_true", help="enable grpc api, default is false")
 
     # parse command line options
-    options, args = parser.parse_args()
+    args = parser.parse_args()
 
     # read the config file
-    if options.configfile is not None:
-        filename = options.configfile
-    del options.configfile
+    if args.configfile is not None:
+        filename = args.configfile
+    del args.configfile
     cfg = ConfigParser.SafeConfigParser(defaults)
     cfg.read(filename)
 
@@ -99,12 +108,12 @@ def get_merged_config(filename):
         cfg.add_section(section)
 
     # merge command line with config file
-    for opt in options.__dict__:
-        val = options.__dict__[opt]
+    for opt in args.__dict__:
+        val = args.__dict__[opt]
         if val is not None:
-            cfg.set(section, opt, val.__str__())
+            cfg.set(section, opt, str(val))
 
-    return dict(cfg.items(section)), args
+    return dict(cfg.items(section))
 
 
 def main():
@@ -114,21 +123,13 @@ def main():
     :return: nothing
     """
     # get a configuration merged from config file and command-line arguments
-    cfg, args = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
-    for a in args:
-        logging.error("ignoring command line argument: %s", a)
-
+    cfg = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     banner()
 
-    # check if ovs flag was provided
-    use_ovs = len(sys.argv) == 2 and sys.argv[1] == "ovs"
-
     try:
-        cored(cfg, use_ovs)
+        cored(cfg)
     except KeyboardInterrupt:
         logging.info("keyboard interrupt, stopping core daemon")
-
-    sys.exit(0)
 
 
 if __name__ == "__main__":

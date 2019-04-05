@@ -56,7 +56,7 @@ fpm -s dir -t $1 -n core-gui \
 	-m "$(PACKAGE_MAINTAINERS)" \
 	--license "BSD" \
 	--description "Common Open Research Emulator GUI front-end" \
-	--url http://www.nrl.navy.mil/itd/ncs/products/core \
+	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
 	-p core-gui_VERSION_ARCH.$1 \
 	-v $(PACKAGE_VERSION) \

@@ -3,6 +3,8 @@ Unit test fixture module.
 """
 
 import os
+import threading
+import time
 
 import pytest
 from mock.mock import MagicMock
@@ -26,6 +28,8 @@ from core.enumerations import LinkTypes
 from core.enumerations import MessageFlags
 from core.enumerations import NodeTlvs
 from core.enumerations import NodeTypes
+from core.grpc.client import InterfaceHelper
+from core.grpc.server import CoreGrpcServer
 from core.misc import ipaddress
 from core.misc.ipaddress import MacAddress
 from core.service import ServiceManager
@@ -205,6 +209,19 @@ class CoreServerTest(object):
 
 
 @pytest.fixture
+def grpc_server():
+    coremu = CoreEmu()
+    grpc_server = CoreGrpcServer(coremu)
+    thread = threading.Thread(target=grpc_server.listen)
+    thread.daemon = True
+    thread.start()
+    time.sleep(0.1)
+    yield grpc_server
+    coremu.shutdown()
+    grpc_server.server.stop(None)
+
+
+@pytest.fixture
 def session():
     # use coreemu and create a session
     coreemu = CoreEmu()
@@ -233,6 +250,11 @@ def ip_prefixes():
     return IpPrefixes(ip4_prefix="10.83.0.0/16")
 
 
+@pytest.fixture(scope="module")
+def interface_helper():
+    return InterfaceHelper(ip4_prefix="10.83.0.0/16")
+
+
 @pytest.fixture()
 def cored():
     # create and return server
@@ -241,8 +263,6 @@ def cored():
 
     # cleanup
     server.shutdown()
-
-    #
 
     # cleanup services
     ServiceManager.services.clear()

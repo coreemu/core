@@ -564,7 +564,7 @@ class Session(object):
         """
         logging.info("session id=%s name=%s state=%s", self.session_id, self.name, self.state)
         logging.info("file=%s thumbnail=%s node_count=%s/%s",
-                    self.file_name, self.thumbnail, self.get_node_count(), len(self.objects))
+                     self.file_name, self.thumbnail, self.get_node_count(), len(self.objects))
 
     def exception(self, level, source, object_id, text):
         """
@@ -631,10 +631,12 @@ class Session(object):
         """
 
         with self._objects_lock:
-            count = len([x for x in self.objects if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
+            count = len([x for x in self.objects.itervalues()
+                         if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
 
             # on Linux, GreTapBridges are auto-created, not part of GUI's node count
-            count -= len([x for x in self.objects if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
+            count -= len([x for x in self.objects.itervalues()
+                          if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
 
         return count
 
