@@ -570,7 +570,8 @@ class PyCoreNet(PyCoreObj):
                 delay=netif.getparam("delay"),
                 bandwidth=netif.getparam("bw"),
                 dup=netif.getparam("duplicate"),
-                jitter=netif.getparam("jitter")
+                jitter=netif.getparam("jitter"),
+                per=netif.getparam("loss")
             )
 
             all_links.append(link_data)
@@ -587,7 +588,8 @@ class PyCoreNet(PyCoreObj):
                 delay=netif.getparam("delay"),
                 bandwidth=netif.getparam("bw"),
                 dup=netif.getparam("duplicate"),
-                jitter=netif.getparam("jitter")
+                jitter=netif.getparam("jitter"),
+                per=netif.getparam("loss")
             )
             netif.swapparams('_params_up')
 

@@ -320,13 +320,16 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return: nothing
         """
         logging.debug("handling broadcast link: %s", link_data)
+        per = ""
+        if link_data.per is not None:
+            per = str(link_data.per)
 
         tlv_data = structutils.pack_values(coreapi.CoreLinkTlv, [
             (LinkTlvs.N1_NUMBER, link_data.node1_id),
             (LinkTlvs.N2_NUMBER, link_data.node2_id),
             (LinkTlvs.DELAY, link_data.delay),
             (LinkTlvs.BANDWIDTH, link_data.bandwidth),
-            (LinkTlvs.PER, link_data.per),
+            (LinkTlvs.PER, per),
             (LinkTlvs.DUP, link_data.dup),
             (LinkTlvs.JITTER, link_data.jitter),
             (LinkTlvs.MER, link_data.mer),
