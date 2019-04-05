@@ -264,7 +264,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def NodeEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
-        session.node_handlers.append(lambda x: queue.put(x))
+        session.node_handlers.append(queue.put)
 
         while self._is_running(context):
             try:
@@ -284,7 +284,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def LinkEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
-        session.link_handlers.append(lambda x: queue.put(x))
+        session.link_handlers.append(queue.put)
 
         while self._is_running(context):
             try:
@@ -329,7 +329,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def SessionEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
-        session.event_handlers.append(lambda x: queue.put(x))
+        session.event_handlers.append(queue.put)
 
         while self._is_running(context):
             try:
@@ -354,7 +354,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def ConfigEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
-        session.config_handlers.append(lambda x: queue.put(x))
+        session.config_handlers.append(queue.put)
 
         while self._is_running(context):
             try:
@@ -384,7 +384,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def ExceptionEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
-        session.exception_handlers.append(lambda x: queue.put(x))
+        session.exception_handlers.append(queue.put)
 
         while self._is_running(context):
             try:
@@ -407,7 +407,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def FileEvents(self, request, context):
         session = self.get_session(request.id, context)
         queue = Queue()
-        session.file_handlers.append(lambda x: queue.put(x))
+        session.file_handlers.append(queue.put)
 
         while self._is_running(context):
             try:
