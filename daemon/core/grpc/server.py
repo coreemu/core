@@ -13,6 +13,7 @@ from core.enumerations import NodeTypes, EventTypes, LinkTypes
 from core.grpc import core_pb2
 from core.grpc import core_pb2_grpc
 from core.misc import nodeutils
+from core.misc.ipaddress import MacAddress
 from core.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.service import ServiceManager
 
@@ -533,6 +534,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             mac = interface_one_data.mac
             if mac == "":
                 mac = None
+            else:
+                mac = MacAddress.from_string(mac)
             interface_one = InterfaceData(
                 _id=interface_one_data.id,
                 name=name,
@@ -552,6 +555,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             mac = interface_two_data.mac
             if mac == "":
                 mac = None
+            else:
+                mac = MacAddress.from_string(mac)
             interface_two = InterfaceData(
                 _id=interface_two_data.id,
                 name=name,

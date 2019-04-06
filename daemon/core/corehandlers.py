@@ -1761,15 +1761,17 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         self.session.broadcast_config(config_data)
 
         # send session metadata
-        data_values = "|".join(["%s=%s" % item for item in self.session.metadata.get_configs().iteritems()])
-        data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
-        config_data = ConfigData(
-            message_type=0,
-            object=self.session.metadata.name,
-            type=ConfigFlags.NONE.value,
-            data_types=data_types,
-            data_values=data_values
-        )
-        self.session.broadcast_config(config_data)
+        metadata_configs = self.session.metadata.get_configs()
+        if metadata_configs:
+            data_values = "|".join(["%s=%s" % item for item in metadata_configs.iteritems()])
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            config_data = ConfigData(
+                message_type=0,
+                object=self.session.metadata.name,
+                type=ConfigFlags.NONE.value,
+                data_types=data_types,
+                data_values=data_values
+            )
+            self.session.broadcast_config(config_data)
 
         logging.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
