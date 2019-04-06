@@ -9,9 +9,9 @@ QUAGGA_STATE_DIR = "@CORE_STATE_DIR@/run/quagga"
 
 def which(command):
     for path in os.environ["PATH"].split(os.pathsep):
-	command_path = os.path.join(path, command)
-	if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
-	    return command_path
+        command_path = os.path.join(path, command)
+        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+            return command_path
 
 
 VNODED_BIN = which("vnoded")
