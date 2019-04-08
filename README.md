@@ -32,12 +32,6 @@ GitHub integration. This allows for more dynamic conversations and the
 capability to respond faster. Feel free to join us at the link below.
 <https://discord.gg/AKd7kmP>
 
-You can also get help with questions, comments, or trouble, by using
-the CORE mailing lists:
-
-* [core-users](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-users) for general comments and questions
-* [core-dev](https://pf.itd.nrl.navy.mil/mailman/listinfo/core-dev) for bugs, compile errors, and other development issues
-
 ## Building CORE
 
 See [CORE Installation](http://coreemu.github.io/core/install.html) for detailed build instructions.
