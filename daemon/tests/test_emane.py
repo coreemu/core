@@ -1,6 +1,7 @@
 """
 Unit tests for testing CORE EMANE networks.
 """
+import os
 
 import pytest
 
@@ -19,6 +20,7 @@ _EMANE_MODELS = [
     EmaneCommEffectModel,
     EmaneTdmaModel,
 ]
+_DIR = os.path.dirname(os.path.abspath(__file__))
 
 
 class TestEmane:
@@ -38,6 +40,12 @@ class TestEmane:
             geo_reference=(47.57917, -122.13232, 2.00000)
         )
         emane_network.setposition(x=80, y=50)
+
+        # configure tdma
+        if model == EmaneTdmaModel:
+            session.emane.set_model_config(emane_network.objid, EmaneTdmaModel.name, {
+                "schedule": os.path.join(_DIR, "../examples/tdma/schedule.xml")
+            })
 
         # create nodes
         node_options = NodeOptions()

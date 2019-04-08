@@ -37,13 +37,18 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     name = "emane_commeffect"
 
     shim_library = "commeffectshim"
-    shim_xml = "/usr/share/emane/manifest/commeffectshim.xml"
+    shim_xml = "commeffectshim.xml"
     shim_defaults = {}
-    config_shim = emanemanifest.parse(shim_xml, shim_defaults)
+    config_shim = []
 
     # comm effect does not need the default phy and external configurations
-    phy_config = ()
-    external_config = ()
+    phy_config = []
+    external_config = []
+
+    @classmethod
+    def load(cls, emane_prefix):
+        shim_xml_path = os.path.join(emane_prefix, "share/emane/manifest", cls.shim_xml)
+        cls.config_shim = emanemanifest.parse(shim_xml_path, cls.shim_defaults)
 
     @classmethod
     def configurations(cls):

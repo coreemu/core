@@ -1,8 +1,8 @@
 """
 rfpipe.py: EMANE RF-PIPE model for CORE
 """
+import os
 
-from core.emane import emanemanifest
 from core.emane import emanemodel
 
 
@@ -12,8 +12,12 @@ class EmaneRfPipeModel(emanemodel.EmaneModel):
 
     # mac configuration
     mac_library = "rfpipemaclayer"
-    mac_xml = "/usr/share/emane/manifest/rfpipemaclayer.xml"
-    mac_defaults = {
-        "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml",
-    }
-    mac_config = emanemanifest.parse(mac_xml, mac_defaults)
+    mac_xml = "rfpipemaclayer.xml"
+
+    @classmethod
+    def load(cls, emane_prefix):
+        cls.mac_defaults["pcrcurveuri"] = os.path.join(
+            emane_prefix,
+            "share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
+        )
+        super(EmaneRfPipeModel, cls).load(emane_prefix)

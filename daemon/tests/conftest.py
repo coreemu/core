@@ -224,7 +224,7 @@ def grpc_server():
 @pytest.fixture
 def session():
     # use coreemu and create a session
-    coreemu = CoreEmu()
+    coreemu = CoreEmu(config={"emane_prefix": "/usr"})
     session_fixture = coreemu.create_session()
     session_fixture.set_state(EventTypes.CONFIGURATION_STATE)
     assert os.path.exists(session_fixture.session_dir)

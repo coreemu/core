@@ -26,13 +26,13 @@ class EmaneModel(WirelessModel):
 
     # default phy configuration settings, using the universal model
     phy_library = None
-    phy_xml = "/usr/share/emane/manifest/emanephy.xml"
+    phy_xml = "emanephy.xml"
     phy_defaults = {
         "subid": "1",
         "propagationmodel": "2ray",
         "noisemode": "none"
     }
-    phy_config = emanemanifest.parse(phy_xml, phy_defaults)
+    phy_config = []
 
     # support for external configurations
     external_config = [
@@ -44,11 +44,41 @@ class EmaneModel(WirelessModel):
     config_ignore = set()
 
     @classmethod
+    def load(cls, emane_prefix):
+        """
+        Called after being loaded within the EmaneManager. Provides configured emane_prefix for
+        parsing xml files.
+
+        :param str emane_prefix: configured emane prefix path
+        :return: nothing
+        """
+        manifest_path = "share/emane/manifest"
+        # load mac configuration
+        mac_xml_path = os.path.join(emane_prefix, manifest_path, cls.mac_xml)
+        cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
+
+        # load phy configuration
+        phy_xml_path = os.path.join(emane_prefix, manifest_path, cls.phy_xml)
+        cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
+
+    @classmethod
     def configurations(cls):
+        """
+        Returns the combination all all configurations (mac, phy, and external).
+
+        :return: all configurations
+        :rtype: list[Configuration]
+        """
         return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
     def config_groups(cls):
+        """
+        Returns the defined configuration groups.
+
+        :return: list of configuration groups.
+        :rtype: list[ConfigGroup]
+        """
         mac_len = len(cls.mac_config)
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
