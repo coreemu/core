@@ -32,7 +32,7 @@ class TestGrpc:
         assert session.state == response.state
         if session_id is not None:
             assert response.id == session_id
-            assert session.session_id == session_id
+            assert session.id == session_id
 
     @pytest.mark.parametrize("session_id, expected", [
         (None, True),
@@ -43,7 +43,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         if session_id is None:
-            session_id = session.session_id
+            session_id = session.id
 
         # then
         with client.context_connect():
@@ -62,7 +62,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_session(session.session_id)
+            response = client.get_session(session.id)
 
         # then
         assert response.session.state == core_pb2.STATE_DEFINITION
@@ -81,7 +81,7 @@ class TestGrpc:
         # then
         found_session = None
         for current_session in response.sessions:
-            if current_session.id == session.session_id:
+            if current_session.id == session.id:
                 found_session = current_session
                 break
         assert len(response.sessions) == 1
@@ -94,7 +94,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_session_options(session.session_id)
+            response = client.get_session_options(session.id)
 
         # then
         assert len(response.groups) > 0
@@ -106,7 +106,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_session_location(session.session_id)
+            response = client.get_session_location(session.id)
 
         # then
         assert response.scale == 1.0
@@ -128,7 +128,7 @@ class TestGrpc:
         lat_lon_alt = (1, 1, 1)
         with client.context_connect():
             response = client.set_session_location(
-                session.session_id,
+                session.id,
                 x=xyz[0], y=xyz[1], z=xyz[2],
                 lat=lat_lon_alt[0], lon=lat_lon_alt[1], alt=lat_lon_alt[2],
                 scale=scale
@@ -149,7 +149,7 @@ class TestGrpc:
         option = "enablerj45"
         value = "1"
         with client.context_connect():
-            response = client.set_session_options(session.session_id, {option: value})
+            response = client.set_session_options(session.id, {option: value})
 
         # then
         assert response.result is True
@@ -164,7 +164,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_session_state(session.session_id, core_pb2.STATE_DEFINITION)
+            response = client.set_session_state(session.id, core_pb2.STATE_DEFINITION)
 
         # then
         assert response.result is True
@@ -178,7 +178,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             node = core_pb2.Node()
-            response = client.add_node(session.session_id, node)
+            response = client.add_node(session.id, node)
 
         # then
         assert response.id is not None
@@ -192,7 +192,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node(session.session_id, node.objid)
+            response = client.get_node(session.id, node.objid)
 
         # then
         assert response.node.id == node.objid
@@ -211,7 +211,7 @@ class TestGrpc:
         x, y = 10, 10
         with client.context_connect():
             position = core_pb2.Position(x=x, y=y)
-            response = client.edit_node(session.session_id, node_id, position)
+            response = client.edit_node(session.id, node_id, position)
 
         # then
         assert response.result is expected
@@ -231,7 +231,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.delete_node(session.session_id, node_id)
+            response = client.delete_node(session.id, node_id)
 
         # then
         assert response.result is expected
@@ -249,7 +249,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_hooks(session.session_id)
+            response = client.get_hooks(session.id)
 
         # then
         assert len(response.hooks) == 1
@@ -267,7 +267,7 @@ class TestGrpc:
         file_name = "test"
         file_data = "echo hello"
         with client.context_connect():
-            response = client.add_hook(session.session_id, core_pb2.STATE_RUNTIME, file_name, file_data)
+            response = client.add_hook(session.id, core_pb2.STATE_RUNTIME, file_name, file_data)
 
         # then
         assert response.result is True
@@ -280,7 +280,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.save_xml(session.session_id, str(tmp))
+            client.save_xml(session.id, str(tmp))
 
         # then
         assert tmp.exists()
@@ -311,7 +311,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_links(session.session_id, switch.objid)
+            response = client.get_node_links(session.id, switch.objid)
 
         # then
         assert len(response.links) == 1
@@ -328,7 +328,7 @@ class TestGrpc:
         # then
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
-                client.get_node_links(session.session_id, 3)
+                client.get_node_links(session.id, 3)
 
     def test_add_link(self, grpc_server, interface_helper):
         # given
@@ -341,7 +341,7 @@ class TestGrpc:
         # then
         interface = interface_helper.create_interface(node.objid, 0)
         with client.context_connect():
-            response = client.add_link(session.session_id, node.objid, switch.objid, interface)
+            response = client.add_link(session.id, node.objid, switch.objid, interface)
 
         # then
         assert response.result is True
@@ -357,7 +357,7 @@ class TestGrpc:
         interface = interface_helper.create_interface(node.objid, 0)
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
-                client.add_link(session.session_id, 1, 3, interface)
+                client.add_link(session.id, 1, 3, interface)
 
     def test_edit_link(self, grpc_server, ip_prefixes):
         # given
@@ -373,7 +373,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.edit_link(session.session_id, node.objid, switch.objid, options)
+            response = client.edit_link(session.id, node.objid, switch.objid, options)
 
         # then
         assert response.result is True
@@ -400,7 +400,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.delete_link(
-                session.session_id, node_one.objid, node_two.objid, interface_one.id, interface_two.id)
+                session.id, node_one.objid, node_two.objid, interface_one.id, interface_two.id)
 
         # then
         assert response.result is True
@@ -414,7 +414,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_wlan_config(session.session_id, wlan.objid)
+            response = client.get_wlan_config(session.id, wlan.objid)
 
         # then
         assert len(response.groups) > 0
@@ -429,7 +429,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_wlan_config(session.session_id, wlan.objid, {range_key: range_value})
+            response = client.set_wlan_config(session.id, wlan.objid, {range_key: range_value})
 
         # then
         assert response.result is True
@@ -443,7 +443,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_emane_config(session.session_id)
+            response = client.get_emane_config(session.id)
 
         # then
         assert len(response.groups) > 0
@@ -457,7 +457,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_emane_config(session.session_id, {config_key: config_value})
+            response = client.set_emane_config(session.id, {config_key: config_value})
 
         # then
         assert response.result is True
@@ -479,7 +479,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_emane_model_configs(session.session_id)
+            response = client.get_emane_model_configs(session.id)
 
         # then
         assert len(response.configs) == 1
@@ -499,7 +499,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.set_emane_model_config(
-                session.session_id, emane_network.objid, EmaneIeee80211abgModel.name, {config_key: config_value})
+                session.id, emane_network.objid, EmaneIeee80211abgModel.name, {config_key: config_value})
 
         # then
         assert response.result is True
@@ -518,7 +518,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.get_emane_model_config(
-                session.session_id, emane_network.objid, EmaneIeee80211abgModel.name)
+                session.id, emane_network.objid, EmaneIeee80211abgModel.name)
 
         # then
         assert len(response.groups) > 0
@@ -530,7 +530,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_emane_models(session.session_id)
+            response = client.get_emane_models(session.id)
 
         # then
         assert len(response.models) > 0
@@ -544,7 +544,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_mobility_configs(session.session_id)
+            response = client.get_mobility_configs(session.id)
 
         # then
         assert len(response.configs) > 0
@@ -559,7 +559,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_mobility_config(session.session_id, wlan.objid)
+            response = client.get_mobility_config(session.id, wlan.objid)
 
         # then
         assert len(response.groups) > 0
@@ -574,7 +574,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_mobility_config(session.session_id, wlan.objid, {config_key: config_value})
+            response = client.set_mobility_config(session.id, wlan.objid, {config_key: config_value})
 
         # then
         assert response.result is True
@@ -591,7 +591,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.mobility_action(session.session_id, wlan.objid, core_pb2.MOBILITY_STOP)
+            response = client.mobility_action(session.id, wlan.objid, core_pb2.MOBILITY_STOP)
 
         # then
         assert response.result is True
@@ -614,7 +614,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_service_defaults(session.session_id)
+            response = client.get_service_defaults(session.id)
 
         # then
         assert len(response.defaults) > 0
@@ -628,7 +628,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_service_defaults(session.session_id, {node_type: services})
+            response = client.set_service_defaults(session.id, {node_type: services})
 
         # then
         assert response.result is True
@@ -642,7 +642,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_service(session.session_id, node.objid, "IPForward")
+            response = client.get_node_service(session.id, node.objid, "IPForward")
 
         # then
         assert len(response.service.configs) > 0
@@ -655,7 +655,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_service_file(session.session_id, node.objid, "IPForward", "ipforward.sh")
+            response = client.get_node_service_file(session.id, node.objid, "IPForward", "ipforward.sh")
 
         # then
         assert response.data is not None
@@ -670,7 +670,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_node_service(session.session_id, node.objid, service_name, (), validate, ())
+            response = client.set_node_service(session.id, node.objid, service_name, (), validate, ())
 
         # then
         assert response.result is True
@@ -688,7 +688,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_node_service_file(session.session_id, node.objid, service_name, file_name, file_data)
+            response = client.set_node_service_file(session.id, node.objid, service_name, file_name, file_data)
 
         # then
         assert response.result is True
@@ -704,7 +704,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.service_action(session.session_id, node.objid, service_name, core_pb2.SERVICE_STOP)
+            response = client.service_action(session.id, node.objid, service_name, core_pb2.SERVICE_STOP)
 
         # then
         assert response.result is True
@@ -722,7 +722,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.node_events(session.session_id, handle_event)
+            client.node_events(session.id, handle_event)
             time.sleep(0.1)
             session.broadcast_node(node_data)
 
@@ -745,7 +745,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.link_events(session.session_id, handle_event)
+            client.link_events(session.id, handle_event)
             time.sleep(0.1)
             session.broadcast_link(link_data)
 
@@ -763,7 +763,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.session_events(session.session_id, handle_event)
+            client.session_events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(event_type=EventTypes.RUNTIME_STATE.value, time="%s" % time.time())
             session.broadcast_event(event)
@@ -782,7 +782,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.config_events(session.session_id, handle_event)
+            client.config_events(session.id, handle_event)
             time.sleep(0.1)
             session_config = session.options.get_configs()
             config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, session.options, session_config)
@@ -802,7 +802,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.exception_events(session.session_id, handle_event)
+            client.exception_events(session.id, handle_event)
             time.sleep(0.1)
             session.exception(ExceptionLevels.FATAL, "test", None, "exception message")
 
@@ -821,7 +821,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            client.file_events(session.session_id, handle_event)
+            client.file_events(session.id, handle_event)
             time.sleep(0.1)
             file_data = session.services.get_service_file(node, "IPForward", "ipforward.sh")
             session.broadcast_file(file_data)

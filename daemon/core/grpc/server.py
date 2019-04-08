@@ -153,7 +153,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.set_state(EventTypes.DEFINITION_STATE)
         session.location.setrefgeo(47.57917, -122.13232, 2.0)
         session.location.refscale = 150000.0
-        return core_pb2.CreateSessionResponse(id=session.session_id, state=session.state)
+        return core_pb2.CreateSessionResponse(id=session.id, state=session.state)
 
     def DeleteSession(self, request, context):
         logging.debug("delete session: %s", request)
@@ -344,7 +344,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                     name=event.name,
                     data=event.data,
                     time=event_time,
-                    session=session.session_id
+                    session=session.id
                 )
                 yield session_event
             except Empty:
@@ -881,8 +881,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         try:
             session.open_xml(temp_path, start=True)
-            return core_pb2.OpenXmlResponse(session=session.session_id, result=True)
+            return core_pb2.OpenXmlResponse(session=session.id, result=True)
         except IOError:
             logging.exception("error opening session file")
-            self.coreemu.delete_session(session.session_id)
+            self.coreemu.delete_session(session.id)
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")

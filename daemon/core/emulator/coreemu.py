@@ -118,8 +118,8 @@ class IdGen(object):
 
 
 class EmuSession(Session):
-    def __init__(self, session_id, config=None, mkdir=True):
-        super(EmuSession, self).__init__(session_id, config, mkdir)
+    def __init__(self, _id, config=None, mkdir=True):
+        super(EmuSession, self).__init__(_id, config, mkdir)
 
         # object management
         self.node_id_gen = IdGen()
@@ -620,7 +620,7 @@ class EmuSession(Session):
 
         :return: nothing
         """
-        logging.info("session(%s) shutting down", self.session_id)
+        logging.info("session(%s) shutting down", self.id)
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         super(EmuSession, self).shutdown()
@@ -647,7 +647,7 @@ class EmuSession(Session):
         :return: True if active, False otherwise
         """
         result = self.state in {EventTypes.RUNTIME_STATE.value, EventTypes.DATACOLLECT_STATE.value}
-        logging.info("session(%s) checking if active: %s", self.session_id, result)
+        logging.info("session(%s) checking if active: %s", self.id, result)
         return result
 
     def open_xml(self, file_name, start=False):

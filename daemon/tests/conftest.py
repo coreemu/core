@@ -194,7 +194,7 @@ class CoreServerTest(object):
 
         # set services for host nodes
         message = CoreConfMessage.create(0, [
-            (ConfigTlvs.SESSION, str(self.session.session_id)),
+            (ConfigTlvs.SESSION, str(self.session.id)),
             (ConfigTlvs.OBJECT, "services"),
             (ConfigTlvs.TYPE, 0),
             (ConfigTlvs.DATA_TYPES, (10, 10, 10)),

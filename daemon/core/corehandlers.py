@@ -57,7 +57,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :param request: request object
         :param str client_address: client address
         :param CoreServer server: core server instance
-        :return:
         """
         self.done = False
         self.message_handlers = {
@@ -140,7 +139,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             self.session.broker.session_clients.remove(self)
             if not self.session.broker.session_clients and not self.session.is_active():
                 logging.info("no session clients left and not active, initiating shutdown")
-                self.coreemu.delete_session(self.session.session_id)
+                self.coreemu.delete_session(self.session.id)
 
         return SocketServer.BaseRequestHandler.finish(self)
 
@@ -160,9 +159,9 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         num_sessions = 0
 
         with self._sessions_lock:
-            for session_id, session in self.coreemu.sessions.iteritems():
+            for _id, session in self.coreemu.sessions.iteritems():
                 num_sessions += 1
-                id_list.append(str(session_id))
+                id_list.append(str(_id))
 
                 name = session.name
                 if not name:
@@ -372,7 +371,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         :return: register message data
         """
-        logging.info("GUI has connected to session %d at %s", self.session.session_id, time.ctime())
+        logging.info("GUI has connected to session %d at %s", self.session.id, time.ctime())
 
         tlv_data = ""
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, "core-daemon")
@@ -538,7 +537,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # TODO: add shutdown handler for session
         self.session = self.coreemu.create_session(port, master=False)
         # self.session.shutdown_handlers.append(self.session_shutdown)
-        logging.debug("created new session for client: %s", self.session.session_id)
+        logging.debug("created new session for client: %s", self.session.id)
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
         # TODO: broker needs to be pulled out of session to the server/handler level
@@ -592,7 +591,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         :return:
         """
         exception_data = ExceptionData(
-            session=str(self.session.session_id),
+            session=str(self.session.id),
             node=node,
             date=time.ctime(),
             level=level.value,
@@ -850,7 +849,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     try:
                         session.open_xml(file_name, start=True)
                     except:
-                        self.coreemu.delete_session(session.session_id)
+                        self.coreemu.delete_session(session.id)
                         raise
                 else:
                     thread = threading.Thread(
@@ -908,7 +907,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             # find the session containing this client and set the session to master
             for session in self.coreemu.sessions.itervalues():
                 if self in session.broker.session_clients:
-                    logging.debug("setting session to master: %s", session.session_id)
+                    logging.debug("setting session to master: %s", session.id)
                     session.master = True
                     break
 
@@ -1591,7 +1590,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     logging.warn("session %s not found", session_id)
                     continue
 
-                logging.info("request to modify to session: %s", session.session_id)
+                logging.info("request to modify to session: %s", session.id)
                 if names is not None:
                     session.name = names[index]
 
@@ -1624,7 +1623,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
                     if not self.session.broker.session_clients and not self.session.is_active():
-                        self.coreemu.delete_session(self.session.session_id)
+                        self.coreemu.delete_session(self.session.id)
 
                     # set session to join
                     self.session = session
@@ -1727,7 +1726,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 type=ConfigFlags.UPDATE.value,
                 data_types=data_types,
                 data_values=values,
-                session=str(self.session.session_id),
+                session=str(self.session.id),
                 opaque=opaque
             )
             self.session.broadcast_config(config_data)

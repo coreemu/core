@@ -648,7 +648,7 @@ class OvsGreTapBridge(OvsNet):
         OvsNet.__init__(self, session=session, objid=objid, name=name, policy=policy, start=False)
         self.grekey = key
         if self.grekey is None:
-            self.grekey = self.session.session_id ^ self.objid
+            self.grekey = self.session.id ^ self.objid
 
         self.localnum = None
         self.remotenum = None
