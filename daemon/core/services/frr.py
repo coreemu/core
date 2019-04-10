@@ -597,7 +597,7 @@ class FRRBabel(FrrService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "  network %s\n" % ifc.name
-        cfg += "  redistribute static\n  redistribute connected\n"
+        cfg += "  redistribute static\n  redistribute ipv4 connected\n"
         return cfg
 
     @classmethod
