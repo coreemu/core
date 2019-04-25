@@ -171,7 +171,7 @@ bootdaemon()
 
     flags=""
 
-    if [ "$1" = "xpimd" ] && \\
+    if [ "$1" = "pimd" ] && \\
         grep -E -q '^[[:space:]]*router[[:space:]]+pim6[[:space:]]*$' $FRR_CONF; then
         flags="$flags -6"
     fi
@@ -210,7 +210,7 @@ bootfrr()
     done
 
     if grep -E -q '^[[:space:]]*router[[:space:]]+pim6?[[:space:]]*$' $FRR_CONF; then
-        bootdaemon "xpimd"
+        bootdaemon "pimd"
     fi
 
     $FRR_BIN_DIR/vtysh -b
@@ -597,7 +597,7 @@ class FRRBabel(FrrService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "  network %s\n" % ifc.name
-        cfg += "  redistribute static\n  redistribute connected\n"
+        cfg += "  redistribute static\n  redistribute ipv4 connected\n"
         return cfg
 
     @classmethod
@@ -608,14 +608,14 @@ class FRRBabel(FrrService):
             return "  babel wired\n  babel split-horizon\n"
 
 
-class FRRXpimd(FrrService):
+class FRRpimd(FrrService):
     """
     PIM multicast routing based on XORP.
     """
-    name = 'FRRXpimd'
+    name = 'FRRpimd'
     startup = ()
-    shutdown = ('killall xpimd',)
-    validate = ('pidof xpimd',)
+    shutdown = ('killall pimd',)
+    validate = ('pidof pimd',)
     ipv4_routing = True
 
     @classmethod
