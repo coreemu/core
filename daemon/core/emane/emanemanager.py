@@ -51,6 +51,7 @@ EMANE_MODELS = [
     EmaneBypassModel,
     EmaneTdmaModel
 ]
+DEFAULT_EMANE_PREFIX = "/usr"
 
 
 class EmaneManager(ModelManager):
@@ -212,6 +213,8 @@ class EmaneManager(ModelManager):
         """
         for emane_model in emane_models:
             logging.info("loading emane model: %s", emane_model.__name__)
+            emane_prefix = self.session.options.get_config("emane_prefix", default=DEFAULT_EMANE_PREFIX)
+            emane_model.load(emane_prefix)
             self.models[emane_model.name] = emane_model
 
     def add_node(self, emane_node):

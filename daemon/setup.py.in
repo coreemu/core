@@ -54,7 +54,7 @@ setup(
     data_files=data_files,
     scripts=glob.glob("scripts/*"),
     description="Python components of CORE",
-    url="http://www.nrl.navy.mil/itd/ncs/products/core",
+    url="https://github.com/coreemu/core",
     author="Boeing Research & Technology",
     author_email="core-dev@nrl.navy.mil",
     license="BSD",

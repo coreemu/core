@@ -389,7 +389,7 @@ class CoreBroker(object):
         sid = self.session_id_master
         if sid is None:
             # this is the master session
-            sid = self.session.session_id
+            sid = self.session.id
 
         key = (sid << 16) ^ hash(n1num) ^ (hash(n2num) << 8)
         return key & 0xFFFFFFFF
@@ -697,7 +697,7 @@ class CoreBroker(object):
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.DATA_TYPES.value, (ConfigDataTypes.STRING.value,))
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value,
                                               "%s:%s:%s" % (server.name, server.host, server.port))
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.SESSION.value, "%s" % self.session.session_id)
+        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.SESSION.value, "%s" % self.session.id)
         msg = coreapi.CoreConfMessage.pack(0, tlvdata)
         server.sock.send(msg)
 
@@ -973,7 +973,7 @@ class CoreBroker(object):
         filename = os.path.join(self.session.session_dir, "servers")
         master = self.session_id_master
         if master is None:
-            master = self.session.session_id
+            master = self.session.id
         try:
             with open(filename, "w") as f:
                 f.write("master=%s\n" % master)

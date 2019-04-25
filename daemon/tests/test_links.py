@@ -124,7 +124,6 @@ class TestLinks:
         session.add_link(node_one.objid, node_two.objid, interface_one, interface_two)
         assert node_one.netif(interface_one.id)
         assert node_two.netif(interface_two.id)
-        assert session.get_node_count() == 3
 
         # when
         session.delete_link(node_one.objid, node_two.objid, interface_one.id, interface_two.id)
@@ -132,7 +131,6 @@ class TestLinks:
         # then
         assert not node_one.netif(interface_one.id)
         assert not node_two.netif(interface_two.id)
-        assert session.get_node_count() == 2
 
     def test_link_bandwidth(self, session, ip_prefixes):
         """

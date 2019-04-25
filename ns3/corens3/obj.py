@@ -360,11 +360,11 @@ class Ns3Session(Session):
     A Session that starts an ns-3 simulation thread.
     """
 
-    def __init__(self, session_id, persistent=False, duration=600):
+    def __init__(self, _id, persistent=False, duration=600):
         self.duration = duration
         self.nodes = ns.network.NodeContainer()
         self.mobhelper = ns.mobility.MobilityHelper()
-        Session.__init__(self, session_id)
+        Session.__init__(self, _id)
 
     def run(self, vis=False):
         """

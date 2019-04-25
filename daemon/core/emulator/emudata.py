@@ -183,13 +183,13 @@ class InterfaceData(object):
         """
         Creates an InterfaceData object.
 
-        :param int _id:
-        :param str name:
-        :param str mac:
-        :param str ip4:
-        :param int ip4_mask:
-        :param str ip6:
-        :param int ip6_mask:
+        :param int _id: interface id
+        :param str name: name for interface
+        :param core.misc.ipaddress.MacAddress mac: mac address
+        :param str ip4: ipv4 address
+        :param int ip4_mask: ipv4 bit mask
+        :param str ip6: ipv6 address
+        :param int ip6_mask: ipv6 bit mask
         """
         self.id = _id
         self.name = name

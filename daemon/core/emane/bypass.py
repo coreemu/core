@@ -29,6 +29,11 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     phy_library = "bypassphylayer"
     phy_config = []
 
+    @classmethod
+    def load(cls, emane_prefix):
+        # ignore default logic
+        pass
+
     # override config groups
     @classmethod
     def config_groups(cls):

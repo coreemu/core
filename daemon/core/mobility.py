@@ -271,7 +271,6 @@ class WirelessModel(ConfigurableOptions):
 
         :param core.session.Session session: core session we are tied to
         :param int object_id: object id
-        :param dict config: values
         """
         self.session = session
         self.object_id = object_id

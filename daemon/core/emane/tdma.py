@@ -7,7 +7,6 @@ import os
 
 from core import constants
 from core.conf import Configuration
-from core.emane import emanemanifest
 from core.emane import emanemodel
 from core.enumerations import ConfigDataTypes
 from core.misc import utils
@@ -19,25 +18,29 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
 
     # mac configuration
     mac_library = "tdmaeventschedulerradiomodel"
-    mac_xml = "/usr/share/emane/manifest/tdmaeventschedulerradiomodel.xml"
-    mac_defaults = {
-        "pcrcurveuri": "/usr/share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
-    }
-    mac_config = emanemanifest.parse(mac_xml, mac_defaults)
+    mac_xml = "tdmaeventschedulerradiomodel.xml"
 
     # add custom schedule options and ignore it when writing emane xml
     schedule_name = "schedule"
     default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
-    mac_config.insert(
-        0,
-        Configuration(
-            _id=schedule_name,
-            _type=ConfigDataTypes.STRING,
-            default=default_schedule,
-            label="TDMA schedule file (core)"
-        )
-    )
     config_ignore = {schedule_name}
+
+    @classmethod
+    def load(cls, emane_prefix):
+        cls.mac_defaults["pcrcurveuri"] = os.path.join(
+            emane_prefix,
+            "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml"
+        )
+        super(EmaneTdmaModel, cls).load(emane_prefix)
+        cls.mac_config.insert(
+            0,
+            Configuration(
+                _id=cls.schedule_name,
+                _type=ConfigDataTypes.STRING,
+                default=cls.default_schedule,
+                label="TDMA schedule file (core)"
+            )
+        )
 
     def post_startup(self):
         """

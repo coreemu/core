@@ -46,18 +46,18 @@ class Session(object):
     CORE session manager.
     """
 
-    def __init__(self, session_id, config=None, mkdir=True):
+    def __init__(self, _id, config=None, mkdir=True):
         """
         Create a Session instance.
 
-        :param int session_id: session id
+        :param int _id: session id
         :param dict config: session configuration
         :param bool mkdir: flag to determine if a directory should be made
         """
-        self.session_id = session_id
+        self.id = _id
 
         # define and create session directory when desired
-        self.session_dir = os.path.join(tempfile.gettempdir(), "pycore.%s" % self.session_id)
+        self.session_dir = os.path.join(tempfile.gettempdir(), "pycore.%s" % self.id)
         if mkdir:
             os.mkdir(self.session_dir)
 
@@ -207,12 +207,12 @@ class Session(object):
         state_name = state.name
 
         if self.state == state_value:
-            logging.info("session(%s) is already in state: %s, skipping change", self.session_id, state_name)
+            logging.info("session(%s) is already in state: %s, skipping change", self.id, state_name)
             return
 
         self.state = state_value
         self._state_time = time.time()
-        logging.info("changing session(%s) to state %s", self.session_id, state_name)
+        logging.info("changing session(%s) to state %s", self.id, state_name)
 
         self.write_state(state_value)
         self.run_hooks(state_value)
@@ -397,7 +397,7 @@ class Session(object):
         :return:
         """
         env = os.environ.copy()
-        env["SESSION"] = "%s" % self.session_id
+        env["SESSION"] = "%s" % self.id
         env["SESSION_SHORT"] = "%s" % self.short_session_id()
         env["SESSION_DIR"] = "%s" % self.session_dir
         env["SESSION_NAME"] = "%s" % self.name
@@ -562,9 +562,9 @@ class Session(object):
         """
         Log information about the session in its current state.
         """
-        logging.info("session id=%s name=%s state=%s", self.session_id, self.name, self.state)
+        logging.info("session id=%s name=%s state=%s", self.id, self.name, self.state)
         logging.info("file=%s thumbnail=%s node_count=%s/%s",
-                    self.file_name, self.thumbnail, self.get_node_count(), len(self.objects))
+                     self.file_name, self.thumbnail, self.get_node_count(), len(self.objects))
 
     def exception(self, level, source, object_id, text):
         """
@@ -579,7 +579,7 @@ class Session(object):
 
         exception_data = ExceptionData(
             node=object_id,
-            session=str(self.session_id),
+            session=str(self.id),
             level=level,
             source=source,
             date=time.ctime(),
@@ -631,10 +631,12 @@ class Session(object):
         """
 
         with self._objects_lock:
-            count = len([x for x in self.objects if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
+            count = len([x for x in self.objects.itervalues()
+                         if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
 
             # on Linux, GreTapBridges are auto-created, not part of GUI's node count
-            count -= len([x for x in self.objects if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
+            count -= len([x for x in self.objects.itervalues()
+                          if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
 
         return count
 
@@ -647,8 +649,8 @@ class Session(object):
         # this is called from instantiate() after receiving an event message
         # for the instantiation state, and from the broker when distributed
         # nodes have been started
-        logging.info("session(%s) checking if not in runtime state, current state: %s", self.session_id,
-                    coreapi.state_name(self.state))
+        logging.info("session(%s) checking if not in runtime state, current state: %s", self.id,
+                     coreapi.state_name(self.state))
         if self.state == EventTypes.RUNTIME_STATE.value:
             logging.info("valid runtime state found, returning")
             return
@@ -694,7 +696,7 @@ class Session(object):
         and links remain.
         """
         node_count = self.get_node_count()
-        logging.info("session(%s) checking shutdown: %s nodes remaining", self.session_id, node_count)
+        logging.info("session(%s) checking shutdown: %s nodes remaining", self.id, node_count)
 
         shutdown = False
         if node_count == 0:
@@ -708,7 +710,7 @@ class Session(object):
         Return a shorter version of the session ID, appropriate for
         interface names, where length may be limited.
         """
-        ssid = (self.session_id >> 8) ^ (self.session_id & ((1 << 8) - 1))
+        ssid = (self.id >> 8) ^ (self.id & ((1 << 8) - 1))
         return "%x" % ssid
 
     def boot_nodes(self):
@@ -961,7 +963,7 @@ class Session(object):
             logging.exception("error retrieving control net object")
             return
 
-        header = "CORE session %s host entries" % self.session_id
+        header = "CORE session %s host entries" % self.id
         if remove:
             logging.info("Removing /etc/hosts file entries.")
             utils.file_demunge("/etc/hosts", header)

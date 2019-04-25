@@ -12,7 +12,7 @@ setup(
     ],
     data_files=[(_EXAMPLES_DIR, glob.glob("examples/*"))],
     description="Python ns-3 components of CORE",
-    url="http://www.nrl.navy.mil/itd/ncs/products/core",
+    url="https://github.com/coreemu/core",
     author="Boeing Research & Technology",
     author_email="core-dev@nrl.navy.mil",
     license="GPLv2",
