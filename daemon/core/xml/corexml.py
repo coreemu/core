@@ -103,7 +103,7 @@ class NodeElement(object):
         self.session = session
         self.node = node
         self.element = etree.Element(element_name)
-        add_attribute(self.element, "id", node.objid)
+        add_attribute(self.element, "id", node.id)
         add_attribute(self.element, "name", node.name)
         add_attribute(self.element, "icon", node.icon)
         add_attribute(self.element, "canvas", node.canvas)
@@ -399,7 +399,7 @@ class CoreXmlWriter(object):
         if nodeutils.is_node(node, (NodeTypes.SWITCH, NodeTypes.HUB)):
             for netif in node.netifs(sort=True):
                 othernet = getattr(netif, "othernet", None)
-                if othernet and othernet.objid != node.objid:
+                if othernet and othernet.id != node.id:
                     logging.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
                     return
 

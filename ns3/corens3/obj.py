@@ -46,9 +46,9 @@ class CoreNs3Node(CoreNode, ns.network.Node):
     def __init__(self, *args, **kwds):
         ns.network.Node.__init__(self)
         # ns-3 ID starts at 0, CORE uses 1
-        objid = self.GetId() + 1
-        if 'objid' not in kwds:
-            kwds['objid'] = objid
+        _id = self.GetId() + 1
+        if '_id' not in kwds:
+            kwds['_id'] = _id
         CoreNode.__init__(self, *args, **kwds)
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
@@ -118,8 +118,8 @@ class CoreNs3Net(PyCoreNet):
     # icon used
     type = "wlan"
 
-    def __init__(self, session, objid=None, name=None, start=True, policy=None):
-        PyCoreNet.__init__(self, session, objid, name)
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
+        PyCoreNet.__init__(self, session, _id, name)
         self.tapbridge = ns.tap_bridge.TapBridgeHelper()
         self._ns3devs = {}
         self._tapdevs = {}
@@ -480,7 +480,7 @@ class Ns3Session(Session):
                 node.position.set(x, y, z)
                 node_data = node.data(0)
                 self.broadcast_node(node_data)
-                self.sdt.updatenode(node.objid, flags=0, x=x, y=y, z=z)
+                self.sdt.updatenode(node.id, flags=0, x=x, y=y, z=z)
             time.sleep(0.001 * refresh_ms)
 
     def setupmobilitytracing(self, net, filename, nodes):
@@ -488,7 +488,7 @@ class Ns3Session(Session):
         Start a tracing thread using the ASCII output from the ns3
         mobility helper.
         """
-        net.mobility = WayPointMobility(session=self, object_id=net.objid)
+        net.mobility = WayPointMobility(session=self, object_id=net.id)
         net.mobility.setendtime()
         net.mobility.refresh_ms = 300
         net.mobility.empty_queue_stop = False
@@ -533,8 +533,7 @@ class Ns3Session(Session):
                 x, y, z = map(float, items['pos'].split(':'))
                 vel = map(float, items['vel'].split(':'))
                 node = nodemap[int(items['node'])]
-                net.mobility.addwaypoint(time=0, nodenum=node.objid,
-                                         x=x, y=y, z=z, speed=vel)
+                net.mobility.addwaypoint(time=0, nodenum=node.id, x=x, y=y, z=z, speed=vel)
                 if kickstart:
                     kickstart = False
                     self.event_loop.add_event(0, net.mobility.start)

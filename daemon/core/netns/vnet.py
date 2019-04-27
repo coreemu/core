@@ -242,24 +242,24 @@ class LxBrNet(PyCoreNet):
     """
     policy = "DROP"
 
-    def __init__(self, session, objid=None, name=None, start=True, policy=None):
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
         """
         Creates a LxBrNet instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: object id
+        :param int _id: object id
         :param str name: object name
         :param bool start: start flag
         :param policy: network policy
         """
-        PyCoreNet.__init__(self, session, objid, name, start)
+        PyCoreNet.__init__(self, session, _id, name, start)
         if name is None:
-            name = str(self.objid)
+            name = str(self.id)
         if policy is not None:
             self.policy = policy
         self.name = name
         sessionid = self.session.short_session_id()
-        self.brname = "b.%s.%s" % (str(self.objid), sessionid)
+        self.brname = "b.%s.%s" % (str(self.id), sessionid)
         self.up = False
         if start:
             self.startup()
@@ -503,20 +503,20 @@ class LxBrNet(PyCoreNet):
         """
         sessionid = self.session.short_session_id()
         try:
-            self_objid = "%x" % self.objid
+            _id = "%x" % self.id
         except TypeError:
-            self_objid = "%s" % self.objid
+            _id = "%s" % self.id
 
         try:
-            net_objid = "%x" % net.objid
+            net_id = "%x" % net.id
         except TypeError:
-            net_objid = "%s" % net.objid
+            net_id = "%s" % net.id
 
-        localname = "veth%s.%s.%s" % (self_objid, net_objid, sessionid)
+        localname = "veth%s.%s.%s" % (_id, net_id, sessionid)
         if len(localname) >= 16:
             raise ValueError("interface local name %s too long" % localname)
 
-        name = "veth%s.%s.%s" % (net_objid, self_objid, sessionid)
+        name = "veth%s.%s.%s" % (net_id, _id, sessionid)
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
@@ -570,14 +570,14 @@ class GreTapBridge(LxBrNet):
     another system.
     """
 
-    def __init__(self, session, remoteip=None, objid=None, name=None,
+    def __init__(self, session, remoteip=None, _id=None, name=None,
                  policy="ACCEPT", localip=None, ttl=255, key=None, start=True):
         """
         Create a GreTapBridge instance.
 
         :param core.session.Session session: core session instance
         :param str remoteip: remote address
-        :param int objid: object id
+        :param int _id: object id
         :param str name: object name
         :param policy: network policy
         :param str localip: local address
@@ -586,10 +586,10 @@ class GreTapBridge(LxBrNet):
         :param bool start: start flag
         :return:
         """
-        LxBrNet.__init__(self, session=session, objid=objid, name=name, policy=policy, start=False)
+        LxBrNet.__init__(self, session=session, _id=_id, name=name, policy=policy, start=False)
         self.grekey = key
         if self.grekey is None:
-            self.grekey = self.session.id ^ self.objid
+            self.grekey = self.session.id ^ self.id
         self.localnum = None
         self.remotenum = None
         self.remoteip = remoteip

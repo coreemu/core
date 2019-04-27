@@ -42,17 +42,17 @@ class SimpleLxcNode(PyCoreNode):
     """
     valid_address_types = {"inet", "inet6", "inet6link"}
 
-    def __init__(self, session, objid=None, name=None, nodedir=None, start=True):
+    def __init__(self, session, _id=None, name=None, nodedir=None, start=True):
         """
         Create a SimpleLxcNode instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: object id
+        :param int _id: object id
         :param str name: object name
         :param str nodedir: node directory
         :param bool start: start flag
         """
-        PyCoreNode.__init__(self, session, objid, name, start=start)
+        PyCoreNode.__init__(self, session, _id, name, start=start)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
         self.client = None
@@ -97,7 +97,7 @@ class SimpleLxcNode(PyCoreNode):
         if self.nodedir:
             vnoded += ["-C", self.nodedir]
         env = self.session.get_environment(state=False)
-        env["NODE_NUMBER"] = str(self.objid)
+        env["NODE_NUMBER"] = str(self.id)
         env["NODE_NAME"] = str(self.name)
 
         output = utils.check_cmd(vnoded, env=env)
@@ -243,9 +243,9 @@ class SimpleLxcNode(PyCoreNode):
             sessionid = self.session.short_session_id()
 
             try:
-                suffix = "%x.%s.%s" % (self.objid, ifindex, sessionid)
+                suffix = "%x.%s.%s" % (self.id, ifindex, sessionid)
             except TypeError:
-                suffix = "%s.%s.%s" % (self.objid, ifindex, sessionid)
+                suffix = "%s.%s.%s" % (self.id, ifindex, sessionid)
 
             localname = "veth" + suffix
             if len(localname) >= 16:
@@ -301,7 +301,7 @@ class SimpleLxcNode(PyCoreNode):
                 ifname = "eth%d" % ifindex
 
             sessionid = self.session.short_session_id()
-            localname = "tap%s.%s.%s" % (self.objid, ifindex, sessionid)
+            localname = "tap%s.%s.%s" % (self.id, ifindex, sessionid)
             name = ifname
             tuntap = TunTap(node=self, name=name, localname=localname, net=net, start=self.up)
 
@@ -489,18 +489,18 @@ class LxcNode(SimpleLxcNode):
     Provides lcx node functionality for core nodes.
     """
 
-    def __init__(self, session, objid=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
+    def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
         """
         Create a LxcNode instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: object id
+        :param int _id: object id
         :param str name: object name
         :param str nodedir: node directory
         :param bootsh: boot shell
         :param bool start: start flag
         """
-        super(LxcNode, self).__init__(session=session, objid=objid, name=name, nodedir=nodedir, start=start)
+        super(LxcNode, self).__init__(session=session, _id=_id, name=name, nodedir=nodedir, start=start)
         self.bootsh = bootsh
         if start:
             self.startup()

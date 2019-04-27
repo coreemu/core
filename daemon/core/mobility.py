@@ -187,7 +187,7 @@ class MobilityManager(ModelManager):
         :param core.coreobj.PyCoreNode node: node to add physical network to
         :return: nothing
         """
-        node_id = node.objid
+        node_id = node.id
         self.phys[node_id] = node
         if netnum not in self.physnets:
             self.physnets[netnum] = [node_id, ]
@@ -213,7 +213,7 @@ class MobilityManager(ModelManager):
                 return
             if nn[1] in self.session.broker.physical_nodes:
                 # record the fact that this PhysicalNode is linked to a net
-                dummy = PyCoreNode(session=self.session, objid=nn[1], name="n%d" % nn[1], start=False)
+                dummy = PyCoreNode(session=self.session, _id=nn[1], name="n%d" % nn[1], start=False)
                 self.addphys(nn[0], dummy)
 
     # TODO: remove need to handling old style messages
@@ -243,13 +243,13 @@ class MobilityManager(ModelManager):
         :param net: network to install
         :return: nothing
         """
-        nodenums = self.physnets.get(net.objid, [])
-        for nodenum in nodenums:
-            node = self.phys[nodenum]
+        node_ids = self.physnets.get(net.id, [])
+        for node_id in node_ids:
+            node = self.phys[node_id]
             # TODO: fix this bad logic, relating to depending on a break to get a valid server
-            for server in self.session.broker.getserversbynode(nodenum):
+            for server in self.session.broker.getserversbynode(node_id):
                 break
-            netif = self.session.broker.gettunnel(net.objid, IpAddress.to_int(server.host))
+            netif = self.session.broker.gettunnel(net.id, IpAddress.to_int(server.host))
             node.addnetif(netif, 0)
             netif.node = node
             x, y, z = netif.node.position.get()
@@ -357,7 +357,7 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         self.range = float(config["range"])
-        logging.info("basic range model configured for WLAN %d using range %d", self.wlan.objid, self.range)
+        logging.info("basic range model configured for WLAN %d using range %d", self.wlan.id, self.range)
         self.bw = int(config["bandwidth"])
         if self.bw == 0.0:
             self.bw = None
@@ -521,9 +521,9 @@ class BasicRangeModel(WirelessModel):
         """
         return LinkData(
             message_type=message_type,
-            node1_id=interface1.node.objid,
-            node2_id=interface2.node.objid,
-            network_id=self.wlan.objid,
+            node1_id=interface1.node.id,
+            node2_id=interface2.node.id,
+            network_id=self.wlan.id,
             link_type=LinkTypes.WIRELESS.value
         )
 
@@ -705,15 +705,15 @@ class WayPointMobility(WirelessModel):
         :return: True if node was moved, False otherwise
         :rtype: bool
         """
-        if node.objid not in self.points:
+        if node.id not in self.points:
             return False
         x1, y1, z1 = node.getposition()
-        x2, y2, z2 = self.points[node.objid].coords
-        speed = self.points[node.objid].speed
+        x2, y2, z2 = self.points[node.id].coords
+        speed = self.points[node.id].speed
         # instantaneous move (prevents dx/dy == 0.0 below)
         if speed == 0:
             self.setnodeposition(node, x2, y2, z2)
-            del self.points[node.objid]
+            del self.points[node.id]
             return True
         # speed can be a velocity vector (ns3 mobility) or speed value
         if isinstance(speed, (float, int)):
@@ -739,7 +739,7 @@ class WayPointMobility(WirelessModel):
                 # the last node to reach the last waypoint determines this
                 # script's endtime
                 self.endtime = self.lasttime - self.timezero
-            del self.points[node.objid]
+            del self.points[node.id]
             return False
         if (x1 + dx) < 0.0:
             dx = 0.0 - x1
@@ -758,9 +758,9 @@ class WayPointMobility(WirelessModel):
         moved_netifs = []
         for netif in self.wlan.netifs():
             node = netif.node
-            if node.objid not in self.initial:
+            if node.id not in self.initial:
                 continue
-            x, y, z = self.initial[node.objid].coords
+            x, y, z = self.initial[node.id].coords
             self.setnodeposition(node, x, y, z)
             moved.append(node)
             moved_netifs.append(netif)

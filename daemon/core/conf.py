@@ -369,9 +369,9 @@ class ModelManager(ConfigurableManager):
         :param dict config: model configuration, None for default configuration
         :return: nothing
         """
-        logging.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.objid, config)
-        self.set_model_config(node.objid, model_class.name, config)
-        config = self.get_model_config(node.objid, model_class.name)
+        logging.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.id, config)
+        self.set_model_config(node.id, model_class.name, config)
+        config = self.get_model_config(node.id, model_class.name)
         node.setmodel(model_class, config)
 
     def get_models(self, node):
@@ -383,7 +383,7 @@ class ModelManager(ConfigurableManager):
         :return: list of model and values tuples for the network node
         :rtype: list
         """
-        all_configs = self.get_all_configs(node.objid)
+        all_configs = self.get_all_configs(node.id)
         if not all_configs:
             all_configs = {}
 
@@ -394,5 +394,5 @@ class ModelManager(ConfigurableManager):
             model_class = self.models[model_name]
             models.append((model_class, config))
 
-        logging.debug("models for node(%s): %s", node.objid, models)
+        logging.debug("models for node(%s): %s", node.id, models)
         return models

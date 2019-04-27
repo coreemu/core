@@ -670,10 +670,10 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             node = self.session.add_node(node_type, node_id, node_options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
-                    self.node_status_request[node.objid] = True
+                    self.node_status_request[node.id] = True
 
                 if self.session.state == EventTypes.RUNTIME_STATE.value:
-                    self.send_node_emulation_id(node.objid)
+                    self.send_node_emulation_id(node.id)
         elif message.flags & MessageFlags.DELETE.value:
             with self._shutdown_lock:
                 result = self.session.delete_node(node_id)
@@ -1424,7 +1424,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
                 # configure mobility models for WLAN added during runtime
                 if event_type == EventTypes.INSTANTIATION_STATE and nodeutils.is_node(node, NodeTypes.WIRELESS_LAN):
-                    self.session.start_mobility(node_ids=(node.objid,))
+                    self.session.start_mobility(node_ids=(node.id,))
                     return ()
 
                 logging.warn("dropping unhandled Event message with node number")
@@ -1442,8 +1442,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             self.session.instantiate()
 
             # after booting nodes attempt to send emulation id for nodes waiting on status
-            for obj in self.session.objects.itervalues():
-                self.send_node_emulation_id(obj.objid)
+            for _id in self.session.objects:
+                self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
             if self.session.master:
                 logging.warn("Unexpected event message: RUNTIME state received at session master")

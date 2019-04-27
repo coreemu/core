@@ -25,7 +25,7 @@ def command_message(node, command):
     :param command: command to execute
     :return: packed execute message
     """
-    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
     return coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
@@ -52,8 +52,8 @@ def switch_link_message(switch, node, address, prefix_len):
     :param prefix_len: prefix length of address
     :return: packed link message
     """
-    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.objid)
+    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.id)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, address)
@@ -70,7 +70,7 @@ def run_cmd(node, exec_cmd):
     :return: Returns the result of the command
     """
     # Set up the command api message
-    # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
     # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)

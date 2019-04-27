@@ -34,7 +34,7 @@ def example(options):
     for _ in xrange(options.nodes):
         node = session.add_node()
         interface = prefixes.create_interface(node)
-        session.add_link(node.objid, switch.objid, interface_one=interface)
+        session.add_link(node.id, switch.id, interface_one=interface)
 
     # instantiate session
     session.instantiate()

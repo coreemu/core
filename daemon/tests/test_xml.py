@@ -64,14 +64,14 @@ class TestXml:
         # link nodes to ptp net
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.objid
-        n2_id = node_two.objid
+        n1_id = node_one.id
+        n2_id = node_two.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -118,20 +118,20 @@ class TestXml:
         # link nodes to ptp net
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface_one=interface)
 
         # set custom values for node service
-        session.services.set_service(node_one.objid, SshService.name)
+        session.services.set_service(node_one.id, SshService.name)
         service_file = SshService.configs[0]
         file_data = "# test"
-        session.services.set_service_file(node_one.objid, SshService.name, service_file, file_data)
+        session.services.set_service_file(node_one.id, SshService.name, service_file, file_data)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        n1_id = node_one.objid
-        n2_id = node_two.objid
+        n1_id = node_one.id
+        n2_id = node_two.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -155,7 +155,7 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # retrieve custom service
-        service = session.services.get_service(node_one.objid, SshService.name)
+        service = session.services.get_service(node_one.id, SshService.name)
 
         # verify nodes have been recreated
         assert session.get_object(n1_id)
@@ -184,15 +184,15 @@ class TestXml:
         # link nodes
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, wlan_node.objid, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        wlan_id = wlan_node.objid
-        n1_id = node_one.objid
-        n2_id = node_two.objid
+        wlan_id = wlan_node.id
+        n1_id = node_one.id
+        n2_id = node_two.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")
@@ -251,15 +251,15 @@ class TestXml:
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, emane_network.objid, interface_one=interface)
+            session.add_link(node.id, emane_network.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
 
         # get ids for nodes
-        emane_id = emane_network.objid
-        n1_id = node_one.objid
-        n2_id = node_two.objid
+        emane_id = emane_network.id
+        n1_id = node_one.id
+        n2_id = node_two.id
 
         # save xml
         xml_file = tmpdir.join("session.xml")

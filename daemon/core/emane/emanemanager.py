@@ -109,14 +109,14 @@ class EmaneManager(ModelManager):
             return self.get_configs(node_id=node_id, config_type=model_name)
         else:
             # don"t use default values when interface config is the same as net
-            # note here that using ifc.node.objid as key allows for only one type
+            # note here that using ifc.node.id as key allows for only one type
             # of each model per node;
             # TODO: use both node and interface as key
 
             # Adamson change: first check for iface config keyed by "node:ifc.name"
             # (so that nodes w/ multiple interfaces of same conftype can have
             #  different configs for each separate interface)
-            key = 1000 * interface.node.objid
+            key = 1000 * interface.node.id
             if interface.netindex is not None:
                 key += interface.netindex
 
@@ -125,7 +125,7 @@ class EmaneManager(ModelManager):
 
             # otherwise retrieve the interfaces node configuration, avoid using defaults
             if not config:
-                config = self.get_configs(node_id=interface.node.objid, config_type=model_name)
+                config = self.get_configs(node_id=interface.node.id, config_type=model_name)
 
             # get non interface config, when none found
             if not config:
@@ -225,9 +225,9 @@ class EmaneManager(ModelManager):
         :return: nothing
         """
         with self._emane_node_lock:
-            if emane_node.objid in self._emane_nodes:
-                raise KeyError("non-unique EMANE object id %s for %s" % (emane_node.objid, emane_node))
-            self._emane_nodes[emane_node.objid] = emane_node
+            if emane_node.id in self._emane_nodes:
+                raise KeyError("non-unique EMANE object id %s for %s" % (emane_node.id, emane_node))
+            self._emane_nodes[emane_node.id] = emane_node
 
     def getnodes(self):
         """
@@ -254,7 +254,7 @@ class EmaneManager(ModelManager):
         with self.session._objects_lock:
             for node in self.session.objects.itervalues():
                 if nodeutils.is_node(node, NodeTypes.EMANE):
-                    logging.debug("adding emane node: id(%s) name(%s)", node.objid, node.name)
+                    logging.debug("adding emane node: id(%s) name(%s)", node.id, node.name)
                     self.add_node(node)
 
             if not self._emane_nodes:
@@ -345,7 +345,7 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             for key in sorted(self._emane_nodes.keys()):
                 emane_node = self._emane_nodes[key]
-                logging.debug("post startup for emane node: %s - %s", emane_node.objid, emane_node.name)
+                logging.debug("post startup for emane node: %s - %s", emane_node.id, emane_node.name)
                 emane_node.model.post_startup()
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
@@ -517,7 +517,7 @@ class EmaneManager(ModelManager):
 
             # skip nodes that already have a model set
             if emane_node.model:
-                logging.debug("node(%s) already has model(%s)", emane_node.objid, emane_node.model.name)
+                logging.debug("node(%s) already has model(%s)", emane_node.id, emane_node.model.name)
                 continue
 
             # set model configured for node, due to legacy messaging configuration before nodes exist
@@ -644,7 +644,7 @@ class EmaneManager(ModelManager):
                 run_emane_on_host = True
                 continue
             path = self.session.session_dir
-            n = node.objid
+            n = node.id
 
             # control network not yet started here
             self.session.add_remove_control_interface(node, 0, remove=False, conf_required=False)
@@ -828,7 +828,7 @@ class EmaneManager(ModelManager):
             logging.info("location event for unknown NEM %s", nemid)
             return False
 
-        n = netif.node.objid
+        n = netif.node.id
         # convert from lat/long/alt to x,y,z coordinates
         x, y, z = self.session.location.getxyz(lat, lon, alt)
         x = int(x)

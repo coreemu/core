@@ -160,7 +160,7 @@ class TestConf:
         session.mobility.set_model(wlan_node, BasicRangeModel)
 
         # then
-        assert session.mobility.get_model_config(wlan_node.objid, BasicRangeModel.name)
+        assert session.mobility.get_model_config(wlan_node.id, BasicRangeModel.name)
 
     def test_model_set_error(self, session):
         # given

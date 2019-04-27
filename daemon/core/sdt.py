@@ -330,7 +330,7 @@ class Sdt(object):
                 (x, y, z) = obj.getposition()
                 if x is None or y is None:
                     continue
-                self.updatenode(obj.objid, MessageFlags.ADD.value, x, y, z,
+                self.updatenode(obj.id, MessageFlags.ADD.value, x, y, z,
                                 obj.name, obj.type, obj.icon)
             for nodenum in sorted(self.remotes.keys()):
                 r = self.remotes[nodenum]
@@ -343,7 +343,7 @@ class Sdt(object):
                 for link_data in all_links:
                     is_wireless = nodeutils.is_node(net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE))
                     wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
-                    if is_wireless and link_data.node1_id == net.objid:
+                    if is_wireless and link_data.node1_id == net.id:
                         continue
 
                     self.updatelink(
@@ -385,7 +385,7 @@ class Sdt(object):
         # enabled prior to starting the session
         if not self.is_enabled():
             return False
-        # node.(objid, type, icon, name) are used.
+        # node.(_id, type, icon, name) are used.
         nodenum = msg.get_tlv(NodeTlvs.NUMBER.value)
         if not nodenum:
             return
@@ -415,7 +415,7 @@ class Sdt(object):
         except KeyError:
             node = None
         if node:
-            self.updatenode(node.objid, msg.flags, x, y, z, node.name, node.type, node.icon)
+            self.updatenode(node.id, msg.flags, x, y, z, node.name, node.type, node.icon)
         else:
             if nodenum in self.remotes:
                 remote = self.remotes[nodenum]
@@ -426,7 +426,7 @@ class Sdt(object):
                 if icon is None:
                     icon = remote.icon
             else:
-                remote = Bunch(objid=nodenum, type=nodetype, icon=icon, name=name, net=net, links=set())
+                remote = Bunch(_id=nodenum, type=nodetype, icon=icon, name=name, net=net, links=set())
                 self.remotes[nodenum] = remote
             remote.pos = (x, y, z)
             self.updatenode(nodenum, msg.flags, x, y, z, name, nodetype, icon)

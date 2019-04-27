@@ -417,7 +417,7 @@ class Experiment(object):
         prev = None
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=nodes.CoreNode, objid=i, name="n%d" % i)
+            tmp = self.session.add_object(cls=nodes.CoreNode, _id=i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
             self.session.services.add_services(tmp, "router", "IPForward")
@@ -440,13 +440,12 @@ class Experiment(object):
         self.session.location.setrefgeo(47.57917, -122.13232, 2.00000)
         self.session.location.refscale = 150.0
         self.session.emane.loadmodels()
-        self.net = self.session.add_object(cls=EmaneNode, objid=numnodes + 1, name="wlan1")
+        self.net = self.session.add_object(cls=EmaneNode, _id=numnodes + 1, name="wlan1")
         self.net.verbose = verbose
         # self.session.emane.addobj(self.net)
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=nodes.CoreNode, objid=i,
-                                          name="n%d" % i)
+            tmp = self.session.add_object(cls=nodes.CoreNode, _id=i, name="n%d" % i)
             # tmp.setposition(i * 20, 50, None)
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])
@@ -455,7 +454,7 @@ class Experiment(object):
 
         if values is None:
             values = cls.getdefaultvalues()
-        self.session.emane.setconfig(self.net.objid, cls.name, values)
+        self.session.emane.setconfig(self.net.id, cls.name, values)
         self.session.instantiate()
 
         self.info("waiting %s sec (TAP bring-up)" % 2)

@@ -80,7 +80,7 @@ def main():
     print "creating %d (%d local / %d remote) nodes with addresses from %s" % \
           (options.numnodes, num_local, num_remote, prefix)
     for i in xrange(1, num_local + 1):
-        node = session.add_object(cls=nodes.CoreNode, name="n%d" % i, objid=i)
+        node = session.add_object(cls=nodes.CoreNode, name="n%d" % i, _id=i)
         node.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         node.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
         node.setposition(x=150 * i, y=150)
@@ -91,7 +91,7 @@ def main():
 
     # create remote nodes via API
     for i in xrange(num_local + 1, options.numnodes + 1):
-        node = nodes.CoreNode(session=session, objid=i, name="n%d" % i, start=False)
+        node = nodes.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
         node.setposition(x=150 * i, y=150)
         node.server = slave
         n.append(node)
@@ -101,7 +101,7 @@ def main():
 
     # create remote links via API
     for i in xrange(num_local + 1, options.numnodes + 1):
-        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
+        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)

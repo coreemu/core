@@ -324,7 +324,7 @@ def expand_corepath(pathname, session=None, node=None):
         pathname = pathname.replace("%SESSION_USER%", session.user)
 
     if node is not None:
-        pathname = pathname.replace("%NODE%", str(node.objid))
+        pathname = pathname.replace("%NODE%", str(node.id))
         pathname = pathname.replace("%NODENAME%", node.name)
 
     return pathname

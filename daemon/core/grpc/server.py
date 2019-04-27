@@ -235,7 +235,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nodes = []
         for node_id in session.objects:
             node = session.objects[node_id]
-            if not isinstance(node.objid, int):
+            if not isinstance(node.id, int):
                 continue
 
             node_type = nodeutils.get_node_type(node.__class__).value
@@ -252,7 +252,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 emane_model = node.model.name
 
             node_proto = core_pb2.Node(
-                id=node.objid, name=node.name, emane=emane_model, model=model,
+                id=node.id, name=node.name, emane=emane_model, model=model,
                 type=node_type, position=position, services=services)
             nodes.append(node_proto)
 
@@ -457,7 +457,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if emane_model:
             session.emane.set_model_config(node_id, emane_model)
 
-        return core_pb2.AddNodeResponse(id=node.objid)
+        return core_pb2.AddNodeResponse(id=node.id)
 
     def GetNode(self, request, context):
         logging.debug("get node: %s", request)
@@ -468,7 +468,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for interface_id, interface in node._netif.iteritems():
             net_id = None
             if interface.net:
-                net_id = interface.net.objid
+                net_id = interface.net.id
             interface_proto = core_pb2.Interface(
                 id=interface_id, netid=net_id, name=interface.name, mac=str(interface.hwaddr),
                 mtu=interface.mtu, flowid=interface.flow_id)
@@ -482,7 +482,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
         node_type = nodeutils.get_node_type(node.__class__).value
         node = core_pb2.Node(
-            id=node.objid, name=node.name, type=node_type, emane=emane_model, model=node.type, position=position,
+            id=node.id, name=node.name, type=node_type, emane=emane_model, model=node.type, position=position,
             services=services)
 
         return core_pb2.GetNodeResponse(node=node, interfaces=interfaces)

@@ -37,7 +37,7 @@ switch = session.add_node(_type=NodeTypes.SWITCH)
 for _ in xrange(options.nodes):
     node = session.add_node()
     interface = prefixes.create_interface(node)
-    session.add_link(node.objid, switch.objid, interface_one=interface)
+    session.add_link(node.id, switch.id, interface_one=interface)
 
 # instantiate session
 session.instantiate()
@@ -90,11 +90,11 @@ session = coreemu.create_session()
 node = session.add_node()
 
 # create and retrieve custom service
-session.services.set_service(node.objid, "ServiceName")
-custom_service = session.services.get_service(node.objid, "ServiceName")
+session.services.set_service(node.id, "ServiceName")
+custom_service = session.services.get_service(node.id, "ServiceName")
 
 # set custom file data
-session.services.set_service_file(node.objid, "ServiceName", "FileName", "custom file data")
+session.services.set_service_file(node.id, "ServiceName", "FileName", "custom file data")
 
 # set services to a node, using custom services when defined
 session.services.add_services(node, node.type, ["Service1", "Service2"])
@@ -116,5 +116,5 @@ emane_network.setposition(x=80, y=50)
 
 # set custom emane model config
 config = {}
-session.emane.set_model_config(emane_network.objid, EmaneIeee80211abgModel.name, config)
+session.emane.set_model_config(emane_network.id, EmaneIeee80211abgModel.name, config)
 ```

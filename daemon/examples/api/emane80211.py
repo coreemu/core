@@ -37,7 +37,7 @@ def example(options):
         node = session.create_wireless_node()
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
-        session.add_link(node.objid, emane_network.objid, interface_one=interface)
+        session.add_link(node.id, emane_network.id, interface_one=interface)
 
     # instantiate session
     session.instantiate()

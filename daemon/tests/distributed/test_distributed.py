@@ -40,7 +40,7 @@ class TestDistributed:
 
         # create local node
         message = conftest.node_message(
-            objid=1,
+            _id=1,
             name="n1",
             model="host"
         )
@@ -48,7 +48,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = conftest.node_message(
-            objid=2,
+            _id=2,
             name="n2",
             emulation_server=cored.distributed_server,
             model="host"
@@ -57,7 +57,7 @@ class TestDistributed:
 
         # create distributed switch and assign to distributed server
         message = conftest.node_message(
-            objid=3,
+            _id=3,
             name="n3",
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.SWITCH
@@ -106,7 +106,7 @@ class TestDistributed:
 
         # create local node
         message = conftest.node_message(
-            objid=1,
+            _id=1,
             name="n1",
             model="host"
         )
@@ -114,7 +114,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = conftest.node_message(
-            objid=2,
+            _id=2,
             name="n2",
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.PHYSICAL,
@@ -124,7 +124,7 @@ class TestDistributed:
 
         # create distributed switch and assign to distributed server
         message = conftest.node_message(
-            objid=3,
+            _id=3,
             name="n3",
             node_type=NodeTypes.SWITCH
         )
@@ -173,7 +173,7 @@ class TestDistributed:
 
         # create local node
         message = conftest.node_message(
-            objid=1,
+            _id=1,
             name="n1",
             model="host"
         )
@@ -181,7 +181,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = conftest.node_message(
-            objid=2,
+            _id=2,
             name=distributed_address,
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.TUNNEL

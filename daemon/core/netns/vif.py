@@ -241,7 +241,7 @@ class GreTap(PyCoreNetIf):
     """
 
     def __init__(self, node=None, name=None, session=None, mtu=1458,
-                 remoteip=None, objid=None, localip=None, ttl=255,
+                 remoteip=None, _id=None, localip=None, ttl=255,
                  key=None, start=True):
         """
         Creates a GreTap instance.
@@ -251,7 +251,7 @@ class GreTap(PyCoreNetIf):
         :param core.session.Session session: core session instance
         :param mtu: interface mtu
         :param str remoteip: remote address
-        :param int objid: object id
+        :param int _id: object id
         :param str localip: local address
         :param ttl: ttl value
         :param key: gre tap key
@@ -260,13 +260,13 @@ class GreTap(PyCoreNetIf):
         """
         PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
         self.session = session
-        if objid is None:
+        if _id is None:
             # from PyCoreObj
-            objid = ((id(self) >> 16) ^ (id(self) & 0xffff)) & 0xffff
-        self.objid = objid
+            _id = ((id(self) >> 16) ^ (id(self) & 0xffff)) & 0xffff
+        self.id = _id
         sessionid = self.session.short_session_id()
         # interface name on the local host machine
-        self.localname = "gt.%s.%s" % (self.objid, sessionid)
+        self.localname = "gt.%s.%s" % (self.id, sessionid)
         self.transport_type = "raw"
         if not start:
             self.up = False

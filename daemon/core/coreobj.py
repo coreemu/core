@@ -67,23 +67,23 @@ class PyCoreObj(object):
     apitype = None
 
     # TODO: appears start has no usage, verify and remove
-    def __init__(self, session, objid=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True):
         """
         Creates a PyCoreObj instance.
 
         :param core.session.Session session: CORE session object
-        :param int objid: object id
+        :param int _id: id
         :param str name: object name
         :param bool start: start value
         :return:
         """
 
         self.session = session
-        if objid is None:
-            objid = session.get_object_id()
-        self.objid = objid
+        if _id is None:
+            _id = session.get_node_id()
+        self.id = _id
         if name is None:
-            name = "o%s" % self.objid
+            name = "o%s" % self.id
         self.name = name
         self.type = None
         self.server = None
@@ -217,10 +217,10 @@ class PyCoreObj(object):
 
         node_data = NodeData(
             message_type=message_type,
-            id=self.objid,
+            id=self.id,
             node_type=self.apitype,
             name=self.name,
-            emulation_id=self.objid,
+            emulation_id=self.id,
             canvas=self.canvas,
             icon=self.icon,
             opaque=self.opaque,
@@ -254,16 +254,16 @@ class PyCoreNode(PyCoreObj):
     Base class for CORE nodes.
     """
 
-    def __init__(self, session, objid=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True):
         """
         Create a PyCoreNode instance.
 
         :param core.session.Session session: CORE session object
-        :param int objid: object id
+        :param int _id: object id
         :param str name: object name
         :param bool start: boolean for starting
         """
-        super(PyCoreNode, self).__init__(session, objid, name, start=start)
+        super(PyCoreNode, self).__init__(session, _id, name, start=start)
         self.services = []
         self.nodedir = None
         self.tmpnodedir = False
@@ -452,16 +452,16 @@ class PyCoreNet(PyCoreObj):
     """
     linktype = LinkTypes.WIRED.value
 
-    def __init__(self, session, objid, name, start=True):
+    def __init__(self, session, _id, name, start=True):
         """
         Create a PyCoreNet instance.
 
         :param core.session.Session session: CORE session object
-        :param int objid: object id
+        :param int _id: object id
         :param str name: object name
         :param bool start: should object start
         """
-        super(PyCoreNet, self).__init__(session, objid, name, start=start)
+        super(PyCoreNet, self).__init__(session, _id, name, start=start)
         self._linked = {}
         self._linked_lock = threading.Lock()
 
@@ -518,14 +518,14 @@ class PyCoreNet(PyCoreObj):
         for netif in self.netifs(sort=True):
             if not hasattr(netif, "node"):
                 continue
-            otherobj = netif.node
+            linked_node = netif.node
             uni = False
-            if otherobj is None:
+            if linked_node is None:
                 # two layer-2 switches/hubs linked together via linknet()
                 if not hasattr(netif, "othernet"):
                     continue
-                otherobj = netif.othernet
-                if otherobj.objid == self.objid:
+                linked_node = netif.othernet
+                if linked_node.id == self.id:
                     continue
                 netif.swapparams('_params_up')
                 upstream_params = netif.getparams()
@@ -557,11 +557,11 @@ class PyCoreNet(PyCoreObj):
 
             link_data = LinkData(
                 message_type=flags,
-                node1_id=self.objid,
-                node2_id=otherobj.objid,
+                node1_id=self.id,
+                node2_id=linked_node.id,
                 link_type=self.linktype,
                 unidirectional=unidirectional,
-                interface2_id=otherobj.getifindex(netif),
+                interface2_id=linked_node.getifindex(netif),
                 interface2_mac=netif.hwaddr,
                 interface2_ip4=interface2_ip4,
                 interface2_ip4_mask=interface2_ip4_mask,
@@ -582,8 +582,8 @@ class PyCoreNet(PyCoreObj):
             netif.swapparams('_params_up')
             link_data = LinkData(
                 message_type=0,
-                node1_id=otherobj.objid,
-                node2_id=self.objid,
+                node1_id=linked_node.id,
+                node2_id=self.id,
                 unidirectional=1,
                 delay=netif.getparam("delay"),
                 bandwidth=netif.getparam("bw"),

@@ -46,7 +46,7 @@ def cmd(node, exec_cmd):
     global exec_num
 
     # Set up the command api message
-    tlvdata = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    tlvdata = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     tlvdata += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, exec_num)
     tlvdata += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
     msg = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlvdata)
@@ -149,7 +149,7 @@ def main():
 
     # create remote nodes via API
     for i in xrange(1, number_of_nodes + 1):
-        node = nodes.CoreNode(session=session, objid=i, name="n%d" % i, start=False)
+        node = nodes.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
         node.setposition(x=150 * i, y=150)
         node.server = daemon
         node_data = node.data(flags)
@@ -159,7 +159,7 @@ def main():
 
     # create remote links via API
     for i in xrange(1, number_of_nodes + 1):
-        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
+        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)

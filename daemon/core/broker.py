@@ -413,15 +413,14 @@ class CoreBroker(object):
         if key in self.tunnels.keys():
             logging.warn("tunnel with key %s (%s-%s) already exists!", key, n1num, n2num)
         else:
-            objid = key & ((1 << 16) - 1)
+            _id = key & ((1 << 16) - 1)
             logging.info("adding tunnel for %s-%s to %s with key %s", n1num, n2num, remoteip, key)
             if localnum in self.physical_nodes:
                 # no bridge is needed on physical nodes; use the GreTap directly
                 gt = GreTap(node=None, name=None, session=self.session,
                             remoteip=remoteip, key=key)
             else:
-                gt = self.session.add_object(cls=GreTapBridge, objid=objid,
-                                             policy="ACCEPT", remoteip=remoteip, key=key)
+                gt = self.session.add_object(cls=GreTapBridge, _id=_id, policy="ACCEPT", remoteip=remoteip, key=key)
             gt.localnum = localnum
             gt.remotenum = remotenum
             self.tunnels[key] = gt
@@ -518,7 +517,7 @@ class CoreBroker(object):
         except KeyError:
             gt = None
         if gt:
-            self.session.delete_object(gt.objid)
+            self.session.delete_object(gt.id)
             del gt
 
     def gettunnel(self, n1num, n2num):

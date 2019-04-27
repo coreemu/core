@@ -69,7 +69,7 @@ class TestCore:
         # link nodes to net node
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, net_node.objid, interface_one=interface)
+            session.add_link(node.id, net_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
@@ -96,7 +96,7 @@ class TestCore:
         # link nodes to ptp net
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface_one=interface)
 
         # get node client for testing
         client = node_one.client
@@ -152,7 +152,7 @@ class TestCore:
         # link nodes to ptp net
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
@@ -199,7 +199,7 @@ class TestCore:
         # link nodes
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, wlan_node.objid, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
@@ -229,7 +229,7 @@ class TestCore:
         # link nodes
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, wlan_node.objid, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface_one=interface)
 
         # configure mobility script for session
         config = {

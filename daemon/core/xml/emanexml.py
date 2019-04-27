@@ -135,7 +135,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             if not transport_type:
                 logging.info("warning: %s interface type unsupported!", netif.name)
                 transport_type = "raw"
-            transport_file = transport_file_name(node.objid, transport_type)
+            transport_file = transport_file_name(node.id, transport_type)
             transport_element = etree.SubElement(nem_element, "transport", definition=transport_file)
 
             # add transport parameter
@@ -145,7 +145,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         nem_entries[netif] = nem_element
 
         # merging code
-        key = netif.node.objid
+        key = netif.node.id
         if netif.transport_type == "raw":
             key = "host"
             otadev = control_net.brname
@@ -267,7 +267,7 @@ def build_transport_xml(emane_manager, node, transport_type):
     add_param(transport_element, "bitrate", "0")
 
     # get emane model cnfiguration
-    config = emane_manager.get_configs(node.objid, node.model.name)
+    config = emane_manager.get_configs(node.id, node.model.name)
     flowcontrol = config.get("flowcontrolenable", "0") == "1"
 
     if "virtual" in transport_type.lower():
@@ -280,7 +280,7 @@ def build_transport_xml(emane_manager, node, transport_type):
             add_param(transport_element, "flowcontrolenable", "on")
 
     doc_name = "transport"
-    file_name = transport_file_name(node.objid, transport_type)
+    file_name = transport_file_name(node.id, transport_type)
     file_path = os.path.join(emane_manager.session.session_dir, file_name)
     create_file(transport_element, doc_name, file_path)
 
@@ -382,7 +382,7 @@ def _basename(emane_model, interface=None):
     name = "n%s" % emane_model.object_id
 
     if interface:
-        node_id = interface.node.objid
+        node_id = interface.node.id
         if emane_model.session.emane.getifcconfig(node_id, interface, emane_model.name):
             name = interface.localname.replace(".", "_")
 

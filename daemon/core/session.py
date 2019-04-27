@@ -460,12 +460,10 @@ class Session(object):
 
         self.user = user
 
-    def get_object_id(self):
+    def get_node_id(self):
         """
-        Return a unique, new random object id.
+        Return a unique, new node id.
         """
-        object_id = None
-
         with self._objects_lock:
             while True:
                 object_id = random.randint(1, 0xFFFF)
@@ -476,24 +474,22 @@ class Session(object):
 
     def add_object(self, cls, *clsargs, **clskwds):
         """
-        Add an emulation object.
+        Create an emulation node.
 
         :param class cls: object class to add
         :param list clsargs: list of arguments for the class to create
         :param dict clskwds: dictionary of arguments for the class to create
         :return: the created class instance
         """
-        obj = cls(self, *clsargs, **clskwds)
+        node = cls(self, *clsargs, **clskwds)
 
-        self._objects_lock.acquire()
-        if obj.objid in self.objects:
-            self._objects_lock.release()
-            obj.shutdown()
-            raise KeyError("duplicate object id %s for %s" % (obj.objid, obj))
-        self.objects[obj.objid] = obj
-        self._objects_lock.release()
+        with self._objects_lock:
+            if node.id in self.objects:
+                node.shutdown()
+                raise KeyError("duplicate node id %s for %s" % (node.id, node.name))
+            self.objects[node.id] = node
 
-        return obj
+        return node
 
     def get_object(self, object_id):
         """
@@ -827,7 +823,7 @@ class Session(object):
             control_net = self.get_control_net_object(net_index)
 
             if remove:
-                self.delete_object(control_net.objid)
+                self.delete_object(control_net.id)
                 return None
 
             return control_net
@@ -891,7 +887,7 @@ class Session(object):
             prefix = prefixes[0]
 
         control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
-        control_net = self.add_object(cls=control_net_class, objid=object_id, prefix=prefix,
+        control_net = self.add_object(cls=control_net_class, _id=object_id, prefix=prefix,
                                       assign_address=assign_address,
                                       updown_script=updown_script, serverintf=server_interface)
 
@@ -929,12 +925,12 @@ class Session(object):
         if node.netif(control_net.CTRLIF_IDX_BASE + net_index):
             return
 
-        control_ip = node.objid
+        control_ip = node.id
 
         try:
             addrlist = ["%s/%s" % (control_net.prefix.addr(control_ip), control_net.prefix.prefixlen)]
         except ValueError:
-            msg = "Control interface not added to node %s. " % node.objid
+            msg = "Control interface not added to node %s. " % node.id
             msg += "Invalid control network prefix (%s). " % control_net.prefix
             msg += "A longer prefix length may be required for this many nodes."
             logging.exception(msg)

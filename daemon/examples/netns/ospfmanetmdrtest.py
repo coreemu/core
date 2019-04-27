@@ -64,12 +64,12 @@ ip forwarding
     confdir = "/usr/local/etc/quagga"
 
     def __init__(self, core, ipaddr, routerid=None,
-                 objid=None, name=None, nodedir=None):
+                 _id=None, name=None, nodedir=None):
         if routerid is None:
             routerid = ipaddr.split("/")[0]
         self.ipaddr = ipaddr
         self.routerid = routerid
-        nodes.LxcNode.__init__(self, core, objid, name, nodedir)
+        nodes.LxcNode.__init__(self, core, _id, name, nodedir)
         self.privatedir(self.confdir)
         self.privatedir(QUAGGA_STATE_DIR)
 
@@ -246,7 +246,7 @@ class ManetExperiment(object):
         self.net = self.session.add_object(cls=nodes.WlanNode)
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=ManetNode, ipaddr=addr, objid="%d" % i, name="n%d" % i)
+            tmp = self.session.add_object(cls=ManetNode, ipaddr=addr, _id="%d" % i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
         # connect nodes with probability linkprob

@@ -37,11 +37,11 @@ from core.service import ServiceManager
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
 
-def node_message(objid, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None):
+def node_message(_id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None):
     """
     Convenience method for creating a node TLV messages.
 
-    :param int objid: node id
+    :param int _id: node id
     :param str name: node name
     :param str emulation_server: distributed server name, if desired
     :param core.enumerations.NodeTypes node_type: node type
@@ -50,7 +50,7 @@ def node_message(objid, name, emulation_server=None, node_type=NodeTypes.DEFAULT
     :rtype: core.api.coreapi.CoreNodeMessage
     """
     values = [
-        (NodeTlvs.NUMBER, objid),
+        (NodeTlvs.NUMBER, _id),
         (NodeTlvs.TYPE, node_type.value),
         (NodeTlvs.NAME, name),
         (NodeTlvs.EMULATION_SERVER, emulation_server),
@@ -118,7 +118,7 @@ def command_message(node, command):
     """
     flags = MessageFlags.STRING.value | MessageFlags.TEXT.value
     return CoreExecMessage.create(flags, [
-        (ExecuteTlvs.NODE, node.objid),
+        (ExecuteTlvs.NODE, node.id),
         (ExecuteTlvs.NUMBER, 1),
         (ExecuteTlvs.COMMAND, command)
     ])

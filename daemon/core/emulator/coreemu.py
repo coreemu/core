@@ -366,7 +366,7 @@ class EmuSession(Session):
                         interface_one.detachnet()
                         interface_two.detachnet()
                         if net_one.numnetif() == 0:
-                            self.delete_object(net_one.objid)
+                            self.delete_object(net_one.id)
                         node_one.delnetif(interface_one.netindex)
                         node_two.delnetif(interface_two.netindex)
         finally:
@@ -493,7 +493,7 @@ class EmuSession(Session):
 
         # create node
         logging.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
-        node = self.add_object(cls=node_class, objid=_id, name=name, start=start)
+        node = self.add_object(cls=node_class, _id=_id, name=name, start=start)
 
         # set node attributes
         node.icon = node_options.icon
@@ -599,7 +599,7 @@ class EmuSession(Session):
         """
         node_data = NodeData(
             message_type=0,
-            id=node.objid,
+            id=node.id,
             x_position=node.position.x,
             y_position=node.position.y
         )

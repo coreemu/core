@@ -50,19 +50,19 @@ class OvsNet(PyCoreNet):
 
     policy = "DROP"
 
-    def __init__(self, session, objid=None, name=None, start=True, policy=None):
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
         """
         Creates an OvsNet instance.
 
         :param core.session.Session session: session this object is a part of
-        :param objid:
+        :param _id:
         :param name:
         :param start:
         :param policy:
         :return:
         """
 
-        PyCoreNet.__init__(self, session, objid, name, start)
+        PyCoreNet.__init__(self, session, _id, name, start)
 
         if policy:
             self.policy = policy
@@ -70,7 +70,7 @@ class OvsNet(PyCoreNet):
             self.policy = self.__class__.policy
 
         session_id = self.session.short_session_id()
-        self.bridge_name = "b.%s.%s" % (str(self.objid), session_id)
+        self.bridge_name = "b.%s.%s" % (str(self.id), session_id)
         self.up = False
 
         if start:
@@ -279,21 +279,21 @@ class OvsNet(PyCoreNet):
         session_id = self.session.short_session_id()
 
         try:
-            self_objid = "%x" % self.objid
+            _id = "%x" % self.id
         except TypeError:
-            self_objid = "%s" % self.objid
+            _id = "%s" % self.id
 
         try:
-            net_objid = "%x" % network.objid
+            network_id = "%x" % network.id
         except TypeError:
-            net_objid = "%s" % network.objid
+            network_id = "%s" % network.id
 
-        localname = "veth%s.%s.%s" % (self_objid, net_objid, session_id)
+        localname = "veth%s.%s.%s" % (_id, network_id, session_id)
 
         if len(localname) >= 16:
             raise ValueError("interface local name %s too long" % localname)
 
-        name = "veth%s.%s.%s" % (net_objid, self_objid, session_id)
+        name = "veth%s.%s.%s" % (network_id, _id, session_id)
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
@@ -349,14 +349,14 @@ class OvsCtrlNet(OvsNet):
         "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"
     ]
 
-    def __init__(self, session, objid="ctrlnet", name=None, prefix=None, hostid=None,
+    def __init__(self, session, _id="ctrlnet", name=None, prefix=None, hostid=None,
                  start=True, assign_address=True, updown_script=None, serverintf=None):
         self.prefix = ipaddress.Ipv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
-        OvsNet.__init__(self, session, objid=objid, name=name, start=start)
+        OvsNet.__init__(self, session, _id=_id, name=name, start=start)
 
     def startup(self):
         if self.detectoldbridge():
@@ -394,7 +394,7 @@ class OvsCtrlNet(OvsNet):
         if output:
             for line in output.split("\n"):
                 bride_name = line.split(".")
-                if bride_name[0] == "b" and bride_name[1] == self.objid:
+                if bride_name[0] == "b" and bride_name[1] == self.id:
                     logging.error("older session may still be running with conflicting id for bridge: %s", line)
                     return True
 
@@ -495,8 +495,8 @@ class OvsPtpNet(OvsNet):
         # loss=netif.getparam("loss")
         link_data = LinkData(
             message_type=flags,
-            node1_id=if1.node.objid,
-            node2_id=if2.node.objid,
+            node1_id=if1.node.id,
+            node2_id=if2.node.id,
             link_type=self.linktype,
             unidirectional=unidirectional,
             delay=if1.getparam("delay"),
@@ -524,8 +524,8 @@ class OvsPtpNet(OvsNet):
         if unidirectional:
             link_data = LinkData(
                 message_type=0,
-                node1_id=if2.node.objid,
-                node2_id=if1.node.objid,
+                node1_id=if2.node.id,
+                node2_id=if1.node.id,
                 delay=if1.getparam("delay"),
                 bandwidth=if1.getparam("bw"),
                 dup=if1.getparam("duplicate"),
@@ -550,12 +550,12 @@ class OvsHubNode(OvsNet):
     policy = "ACCEPT"
     type = "hub"
 
-    def __init__(self, session, objid=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True):
         """
         the Hub node forwards packets to all bridge ports by turning off
         the MAC address learning
         """
-        OvsNet.__init__(self, session, objid, name, start)
+        OvsNet.__init__(self, session, _id, name, start)
 
         if start:
             # TODO: verify that the below flow accomplishes what is desired for a "HUB"
@@ -569,8 +569,8 @@ class OvsWlanNode(OvsNet):
     policy = "DROP"
     type = "wlan"
 
-    def __init__(self, session, objid=None, name=None, start=True, policy=None):
-        OvsNet.__init__(self, session, objid, name, start, policy)
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
+        OvsNet.__init__(self, session, _id, name, start, policy)
 
         # wireless model such as basic range
         self.model = None
@@ -598,7 +598,7 @@ class OvsWlanNode(OvsNet):
         logging.info("adding model %s", model.name)
 
         if model.type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.objid, config=config)
+            self.model = model(session=self.session, object_id=self.id, config=config)
             if self.model.position_callback:
                 for interface in self.netifs():
                     interface.poshook = self.model.position_callback
@@ -607,13 +607,13 @@ class OvsWlanNode(OvsNet):
                         interface.poshook(interface, x, y, z)
             self.model.setlinkparams()
         elif model.type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid, config=config)
+            self.mobility = model(session=self.session, object_id=self.id, config=config)
 
     def updatemodel(self, config):
         if not self.model:
-            raise ValueError("no model set to update for node(%s)", self.objid)
-        logging.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
-        self.model.set_configs(config, node_id=self.objid)
+            raise ValueError("no model set to update for node(%s)", self.id)
+        logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
+        self.model.set_configs(config, node_id=self.id)
         if self.model.position_callback:
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
@@ -643,12 +643,12 @@ class OvsGreTapBridge(OvsNet):
     another system.
     """
 
-    def __init__(self, session, remoteip=None, objid=None, name=None, policy="ACCEPT",
+    def __init__(self, session, remoteip=None, _id=None, name=None, policy="ACCEPT",
                  localip=None, ttl=255, key=None, start=True):
-        OvsNet.__init__(self, session=session, objid=objid, name=name, policy=policy, start=False)
+        OvsNet.__init__(self, session=session, _id=_id, name=name, policy=policy, start=False)
         self.grekey = key
         if self.grekey is None:
-            self.grekey = self.session.id ^ self.objid
+            self.grekey = self.session.id ^ self.id
 
         self.localnum = None
         self.remotenum = None

@@ -39,14 +39,14 @@ class CtrlNet(LxBrNet):
         "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"
     ]
 
-    def __init__(self, session, objid="ctrlnet", name=None, prefix=None,
+    def __init__(self, session, _id="ctrlnet", name=None, prefix=None,
                  hostid=None, start=True, assign_address=True,
                  updown_script=None, serverintf=None):
         """
         Creates a CtrlNet instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: node id
+        :param int _id: node id
         :param str name: node namee
         :param prefix: control network ipv4 prefix
         :param hostid: host id
@@ -61,7 +61,7 @@ class CtrlNet(LxBrNet):
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
-        LxBrNet.__init__(self, session, objid=objid, name=name, start=start)
+        LxBrNet.__init__(self, session, _id=_id, name=name, start=start)
 
     def startup(self):
         """
@@ -116,7 +116,7 @@ class CtrlNet(LxBrNet):
                 oldbr = cols[0]
                 flds = cols[0].split(".")
                 if len(flds) == 3:
-                    if flds[0] == "b" and flds[1] == self.objid:
+                    if flds[0] == "b" and flds[1] == self.id:
                         logging.error(
                             "error: An active control net bridge (%s) found. "
                             "An older session might still be running. "
@@ -255,8 +255,8 @@ class PtpNet(LxBrNet):
 
         link_data = LinkData(
             message_type=flags,
-            node1_id=if1.node.objid,
-            node2_id=if2.node.objid,
+            node1_id=if1.node.id,
+            node2_id=if2.node.id,
             link_type=self.linktype,
             unidirectional=unidirectional,
             delay=if1.getparam("delay"),
@@ -284,8 +284,8 @@ class PtpNet(LxBrNet):
         if unidirectional:
             link_data = LinkData(
                 message_type=0,
-                node1_id=if2.node.objid,
-                node2_id=if1.node.objid,
+                node1_id=if2.node.id,
+                node2_id=if1.node.id,
                 delay=if1.getparam("delay"),
                 bandwidth=if1.getparam("bw"),
                 dup=if1.getparam("duplicate"),
@@ -317,17 +317,17 @@ class HubNode(LxBrNet):
     policy = "ACCEPT"
     type = "hub"
 
-    def __init__(self, session, objid=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True):
         """
         Creates a HubNode instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: node id
+        :param int _id: node id
         :param str name: node namee
         :param bool start: start flag
         :raises CoreCommandError: when there is a command exception
         """
-        LxBrNet.__init__(self, session, objid, name, start)
+        LxBrNet.__init__(self, session, _id, name, start)
 
         # TODO: move to startup method
         if start:
@@ -343,17 +343,17 @@ class WlanNode(LxBrNet):
     policy = "DROP"
     type = "wlan"
 
-    def __init__(self, session, objid=None, name=None, start=True, policy=None):
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
         """
         Create a WlanNode instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: node id
+        :param int _id: node id
         :param str name: node name
         :param bool start: start flag
         :param policy: wlan policy
         """
-        LxBrNet.__init__(self, session, objid, name, start, policy)
+        LxBrNet.__init__(self, session, _id, name, start, policy)
         # wireless model such as basic range
         self.model = None
         # mobility model such as scripted
@@ -385,7 +385,7 @@ class WlanNode(LxBrNet):
         """
         logging.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.objid)
+            self.model = model(session=self.session, object_id=self.id)
             self.model.update_config(config)
             if self.model.position_callback:
                 for netif in self.netifs():
@@ -395,19 +395,19 @@ class WlanNode(LxBrNet):
                         netif.poshook(netif, x, y, z)
             self.model.setlinkparams()
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid)
+            self.mobility = model(session=self.session, object_id=self.id)
             self.mobility.update_config(config)
 
     def update_mobility(self, config):
         if not self.mobility:
-            raise ValueError("no mobility set to update for node(%s)", self.objid)
-        self.mobility.set_configs(config, node_id=self.objid)
+            raise ValueError("no mobility set to update for node(%s)", self.id)
+        self.mobility.set_configs(config, node_id=self.id)
 
     def updatemodel(self, config):
         if not self.model:
-            raise ValueError("no model set to update for node(%s)", self.objid)
-        logging.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
-        self.model.set_configs(config, node_id=self.objid)
+            raise ValueError("no model set to update for node(%s)", self.id)
+        logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
+        self.model.set_configs(config, node_id=self.id)
         if self.model.position_callback:
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
@@ -440,18 +440,18 @@ class RJ45Node(PyCoreNode, PyCoreNetIf):
     apitype = NodeTypes.RJ45.value
     type = "rj45"
 
-    def __init__(self, session, objid=None, name=None, mtu=1500, start=True):
+    def __init__(self, session, _id=None, name=None, mtu=1500, start=True):
         """
         Create an RJ45Node instance.
 
         :param core.session.Session session: core session instance
-        :param int objid: node id
+        :param int _id: node id
         :param str name: node name
         :param mtu: rj45 mtu
         :param bool start: start flag
         :return:
         """
-        PyCoreNode.__init__(self, session, objid, name, start=start)
+        PyCoreNode.__init__(self, session, _id, name, start=start)
         PyCoreNetIf.__init__(self, node=self, name=name, mtu=mtu)
         self.up = False
         self.lock = threading.RLock()

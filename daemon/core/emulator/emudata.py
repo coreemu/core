@@ -117,7 +117,7 @@ class IpPrefixes(object):
         """
         if not self.ip4:
             raise ValueError("ip4 prefixes have not been set")
-        return str(self.ip4.addr(node.objid))
+        return str(self.ip4.addr(node.id))
 
     def ip6_address(self, node):
         """
@@ -129,7 +129,7 @@ class IpPrefixes(object):
         """
         if not self.ip6:
             raise ValueError("ip6 prefixes have not been set")
-        return str(self.ip6.addr(node.objid))
+        return str(self.ip6.addr(node.id))
 
     def create_interface(self, node, name=None, mac=None):
         """
@@ -149,14 +149,14 @@ class IpPrefixes(object):
         ip4 = None
         ip4_mask = None
         if self.ip4:
-            ip4 = str(self.ip4.addr(node.objid))
+            ip4 = str(self.ip4.addr(node.id))
             ip4_mask = self.ip4.prefixlen
 
         # generate ip6 data
         ip6 = None
         ip6_mask = None
         if self.ip6:
-            ip6 = str(self.ip6.addr(node.objid))
+            ip6 = str(self.ip6.addr(node.id))
             ip6_mask = self.ip6.prefixlen
 
         # random mac

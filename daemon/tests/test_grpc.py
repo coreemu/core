@@ -192,10 +192,10 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node(session.id, node.objid)
+            response = client.get_node(session.id, node.id)
 
         # then
-        assert response.node.id == node.objid
+        assert response.node.id == node.id
 
     @pytest.mark.parametrize("node_id, expected", [
         (1, True),
@@ -237,7 +237,7 @@ class TestGrpc:
         assert response.result is expected
         if expected is True:
             with pytest.raises(KeyError):
-                assert session.get_object(node.objid)
+                assert session.get_object(node.id)
 
     def test_get_hooks(self, grpc_server):
         # given
@@ -307,11 +307,11 @@ class TestGrpc:
         switch = session.add_node(_type=NodeTypes.SWITCH)
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
-        session.add_link(node.objid, switch.objid, interface)
+        session.add_link(node.id, switch.id, interface)
 
         # then
         with client.context_connect():
-            response = client.get_node_links(session.id, switch.objid)
+            response = client.get_node_links(session.id, switch.id)
 
         # then
         assert len(response.links) == 1
@@ -323,7 +323,7 @@ class TestGrpc:
         switch = session.add_node(_type=NodeTypes.SWITCH)
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
-        session.add_link(node.objid, switch.objid, interface)
+        session.add_link(node.id, switch.id, interface)
 
         # then
         with pytest.raises(grpc.RpcError):
@@ -339,9 +339,9 @@ class TestGrpc:
         assert len(switch.all_link_data(0)) == 0
 
         # then
-        interface = interface_helper.create_interface(node.objid, 0)
+        interface = interface_helper.create_interface(node.id, 0)
         with client.context_connect():
-            response = client.add_link(session.id, node.objid, switch.objid, interface)
+            response = client.add_link(session.id, node.id, switch.id, interface)
 
         # then
         assert response.result is True
@@ -354,7 +354,7 @@ class TestGrpc:
         node = session.add_node()
 
         # then
-        interface = interface_helper.create_interface(node.objid, 0)
+        interface = interface_helper.create_interface(node.id, 0)
         with pytest.raises(grpc.RpcError):
             with client.context_connect():
                 client.add_link(session.id, 1, 3, interface)
@@ -366,14 +366,14 @@ class TestGrpc:
         switch = session.add_node(_type=NodeTypes.SWITCH)
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
-        session.add_link(node.objid, switch.objid, interface)
+        session.add_link(node.id, switch.id, interface)
         options = core_pb2.LinkOptions(bandwidth=30000)
         link = switch.all_link_data(0)[0]
         assert options.bandwidth != link.bandwidth
 
         # then
         with client.context_connect():
-            response = client.edit_link(session.id, node.objid, switch.objid, options)
+            response = client.edit_link(session.id, node.id, switch.id, options)
 
         # then
         assert response.result is True
@@ -388,11 +388,11 @@ class TestGrpc:
         interface_one = ip_prefixes.create_interface(node_one)
         node_two = session.add_node()
         interface_two = ip_prefixes.create_interface(node_two)
-        session.add_link(node_one.objid, node_two.objid, interface_one, interface_two)
+        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
         link_node = None
         for node_id in session.objects:
             node = session.objects[node_id]
-            if node.objid not in {node_one.objid, node_two.objid}:
+            if node.id not in {node_one.id, node_two.id}:
                 link_node = node
                 break
         assert len(link_node.all_link_data(0)) == 1
@@ -400,7 +400,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.delete_link(
-                session.id, node_one.objid, node_two.objid, interface_one.id, interface_two.id)
+                session.id, node_one.id, node_two.id, interface_one.id, interface_two.id)
 
         # then
         assert response.result is True
@@ -414,7 +414,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_wlan_config(session.id, wlan.objid)
+            response = client.get_wlan_config(session.id, wlan.id)
 
         # then
         assert len(response.groups) > 0
@@ -429,11 +429,11 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_wlan_config(session.id, wlan.objid, {range_key: range_value})
+            response = client.set_wlan_config(session.id, wlan.id, {range_key: range_value})
 
         # then
         assert response.result is True
-        config = session.mobility.get_model_config(wlan.objid, BasicRangeModel.name)
+        config = session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
         assert config[range_key] == range_value
 
     def test_get_emane_config(self, grpc_server):
@@ -475,7 +475,7 @@ class TestGrpc:
         )
         config_key = "platform_id_start"
         config_value = "2"
-        session.emane.set_model_config(emane_network.objid, EmaneIeee80211abgModel.name, {config_key: config_value})
+        session.emane.set_model_config(emane_network.id, EmaneIeee80211abgModel.name, {config_key: config_value})
 
         # then
         with client.context_connect():
@@ -483,7 +483,7 @@ class TestGrpc:
 
         # then
         assert len(response.configs) == 1
-        assert emane_network.objid in response.configs
+        assert emane_network.id in response.configs
 
     def test_set_emane_model_config(self, grpc_server):
         # given
@@ -499,11 +499,11 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.set_emane_model_config(
-                session.id, emane_network.objid, EmaneIeee80211abgModel.name, {config_key: config_value})
+                session.id, emane_network.id, EmaneIeee80211abgModel.name, {config_key: config_value})
 
         # then
         assert response.result is True
-        config = session.emane.get_model_config(emane_network.objid, EmaneIeee80211abgModel.name)
+        config = session.emane.get_model_config(emane_network.id, EmaneIeee80211abgModel.name)
         assert config[config_key] == config_value
 
     def test_get_emane_model_config(self, grpc_server):
@@ -518,7 +518,7 @@ class TestGrpc:
         # then
         with client.context_connect():
             response = client.get_emane_model_config(
-                session.id, emane_network.objid, EmaneIeee80211abgModel.name)
+                session.id, emane_network.id, EmaneIeee80211abgModel.name)
 
         # then
         assert len(response.groups) > 0
@@ -540,7 +540,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        session.mobility.set_model_config(wlan.objid, Ns2ScriptedMobility.name, {})
+        session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
 
         # then
         with client.context_connect():
@@ -548,18 +548,18 @@ class TestGrpc:
 
         # then
         assert len(response.configs) > 0
-        assert wlan.objid in response.configs
+        assert wlan.id in response.configs
 
     def test_get_mobility_config(self, grpc_server):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        session.mobility.set_model_config(wlan.objid, Ns2ScriptedMobility.name, {})
+        session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
 
         # then
         with client.context_connect():
-            response = client.get_mobility_config(session.id, wlan.objid)
+            response = client.get_mobility_config(session.id, wlan.id)
 
         # then
         assert len(response.groups) > 0
@@ -574,11 +574,11 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_mobility_config(session.id, wlan.objid, {config_key: config_value})
+            response = client.set_mobility_config(session.id, wlan.id, {config_key: config_value})
 
         # then
         assert response.result is True
-        config = session.mobility.get_model_config(wlan.objid, Ns2ScriptedMobility.name)
+        config = session.mobility.get_model_config(wlan.id, Ns2ScriptedMobility.name)
         assert config[config_key] == config_value
 
     def test_mobility_action(self, grpc_server):
@@ -586,12 +586,12 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
-        session.mobility.set_model_config(wlan.objid, Ns2ScriptedMobility.name, {})
+        session.mobility.set_model_config(wlan.id, Ns2ScriptedMobility.name, {})
         session.instantiate()
 
         # then
         with client.context_connect():
-            response = client.mobility_action(session.id, wlan.objid, core_pb2.MOBILITY_STOP)
+            response = client.mobility_action(session.id, wlan.id, core_pb2.MOBILITY_STOP)
 
         # then
         assert response.result is True
@@ -642,7 +642,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_service(session.id, node.objid, "IPForward")
+            response = client.get_node_service(session.id, node.id, "IPForward")
 
         # then
         assert len(response.service.configs) > 0
@@ -655,7 +655,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_service_file(session.id, node.objid, "IPForward", "ipforward.sh")
+            response = client.get_node_service_file(session.id, node.id, "IPForward", "ipforward.sh")
 
         # then
         assert response.data is not None
@@ -670,11 +670,11 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_node_service(session.id, node.objid, service_name, (), validate, ())
+            response = client.set_node_service(session.id, node.id, service_name, (), validate, ())
 
         # then
         assert response.result is True
-        service = session.services.get_service(node.objid, service_name, default_service=True)
+        service = session.services.get_service(node.id, service_name, default_service=True)
         assert service.validate == validate
 
     def test_set_node_service_file(self, grpc_server):
@@ -688,7 +688,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_node_service_file(session.id, node.objid, service_name, file_name, file_data)
+            response = client.set_node_service_file(session.id, node.id, service_name, file_name, file_data)
 
         # then
         assert response.result is True
@@ -704,7 +704,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.service_action(session.id, node.objid, service_name, core_pb2.SERVICE_STOP)
+            response = client.service_action(session.id, node.id, service_name, core_pb2.SERVICE_STOP)
 
         # then
         assert response.result is True
@@ -736,7 +736,7 @@ class TestGrpc:
         wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
         node = session.add_node()
         interface = ip_prefixes.create_interface(node)
-        session.add_link(node.objid, wlan.objid, interface)
+        session.add_link(node.id, wlan.id, interface)
         link_data = wlan.all_link_data(0)[0]
         queue = Queue()
 

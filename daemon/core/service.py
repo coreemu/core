@@ -374,7 +374,7 @@ class CoreServices(object):
 
         logging.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
-            service = self.get_service(node.objid, service_name, default_service=True)
+            service = self.get_service(node.id, service_name, default_service=True)
             if not service:
                 logging.warn("unknown service(%s) for node(%s)", service_name, node.name)
                 continue
@@ -591,7 +591,7 @@ class CoreServices(object):
         :return: file message for node
         """
         # get service to get file from
-        service = self.get_service(node.objid, service_name, default_service=True)
+        service = self.get_service(node.id, service_name, default_service=True)
         if not service:
             raise ValueError("invalid service: %s", service_name)
 
@@ -614,7 +614,7 @@ class CoreServices(object):
         filetypestr = "service:%s" % service.name
         return FileData(
             message_type=MessageFlags.ADD.value,
-            node=node.objid,
+            node=node.id,
             name=filename,
             type=filetypestr,
             data=data

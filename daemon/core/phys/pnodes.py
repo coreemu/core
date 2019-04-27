@@ -16,8 +16,8 @@ from core.netns.vnet import LxBrNet
 
 
 class PhysicalNode(PyCoreNode):
-    def __init__(self, session, objid=None, name=None, nodedir=None, start=True):
-        PyCoreNode.__init__(self, session, objid, name, start=start)
+    def __init__(self, session, _id=None, name=None, nodedir=None, start=True):
+        PyCoreNode.__init__(self, session, _id, name, start=start)
         self.nodedir = nodedir
         self.up = start
         self.lock = threading.RLock()
@@ -185,7 +185,7 @@ class PhysicalNode(PyCoreNode):
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
-            gt = self.session.broker.addnettunnel(net.objid)
+            gt = self.session.broker.addnettunnel(net.id)
             if gt is None or len(gt) != 1:
                 raise ValueError("error building tunnel from adding a new network interface: %s" % gt)
             gt = gt[0]

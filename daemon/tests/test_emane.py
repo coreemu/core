@@ -43,7 +43,7 @@ class TestEmane:
 
         # configure tdma
         if model == EmaneTdmaModel:
-            session.emane.set_model_config(emane_network.objid, EmaneTdmaModel.name, {
+            session.emane.set_model_config(emane_network.id, EmaneTdmaModel.name, {
                 "schedule": os.path.join(_DIR, "../examples/tdma/schedule.xml")
             })
 
@@ -57,7 +57,7 @@ class TestEmane:
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, emane_network.objid, interface_one=interface)
+            session.add_link(node.id, emane_network.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
