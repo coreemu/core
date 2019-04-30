@@ -10,27 +10,26 @@ import select
 import socket
 import threading
 
-from core.api import coreapi
-from core.coreobj import PyCoreNet
-from core.coreobj import PyCoreNode
-from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
-from core.enumerations import ConfigTlvs
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import FileTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTlvs
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
-from core.misc import nodeutils
-from core.misc.ipaddress import IpAddress
-from core.netns.vif import GreTap
-from core.netns.vnet import GreTapBridge
-from core.phys.pnodes import PhysicalNode
+from core.api.tlv import coreapi
+from core.nodes.base import CoreNodeBase, CoreNetworkBase
+from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigFlags
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import FileTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
+from core.nodes import nodeutils
+from core.nodes.ipaddress import IpAddress
+from core.nodes.interface import GreTap
+from core.nodes.network import GreTapBridge
+from core.nodes.physical import PhysicalNode
 
 
 class CoreDistributedServer(object):
@@ -420,7 +419,7 @@ class CoreBroker(object):
                 gt = GreTap(node=None, name=None, session=self.session,
                             remoteip=remoteip, key=key)
             else:
-                gt = self.session.add_object(cls=GreTapBridge, _id=_id, policy="ACCEPT", remoteip=remoteip, key=key)
+                gt = self.session.create_node(cls=GreTapBridge, _id=_id, policy="ACCEPT", remoteip=remoteip, key=key)
             gt.localnum = localnum
             gt.remotenum = remotenum
             self.tunnels[key] = gt
@@ -443,7 +442,7 @@ class CoreBroker(object):
         :rtype: list
         """
         try:
-            net = self.session.get_object(node_id)
+            net = self.session.get_node(node_id)
             logging.info("adding net tunnel for: id(%s) %s", node_id, net)
         except KeyError:
             raise KeyError("network node %s not found" % node_id)
@@ -517,7 +516,7 @@ class CoreBroker(object):
         except KeyError:
             gt = None
         if gt:
-            self.session.delete_object(gt.id)
+            self.session.delete_node(gt.id)
             del gt
 
     def gettunnel(self, n1num, n2num):
@@ -757,7 +756,7 @@ class CoreBroker(object):
             if nodecls is None:
                 logging.warn("broker unimplemented node type %s", nodetype)
                 return handle_locally, servers
-            if issubclass(nodecls, PyCoreNet) and nodetype != NodeTypes.WIRELESS_LAN.value:
+            if issubclass(nodecls, CoreNetworkBase) and nodetype != NodeTypes.WIRELESS_LAN.value:
                 # network node replicated on all servers; could be optimized
                 # don"t replicate WLANs, because ebtables rules won"t work
                 servers = self.getservers()
@@ -768,7 +767,7 @@ class CoreBroker(object):
                 # do not record server name for networks since network
                 # nodes are replicated across all server
                 return handle_locally, servers
-            elif issubclass(nodecls, PyCoreNode):
+            elif issubclass(nodecls, CoreNodeBase):
                 name = message.get_tlv(NodeTlvs.NAME.value)
                 if name:
                     serverfiletxt = "%s %s %s" % (n, name, nodecls)

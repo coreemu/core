@@ -11,9 +11,7 @@ import sys
 import ns.core
 import ns.mobility
 
-from core.misc import ipaddress
-from core.misc import nodemaps
-from core.misc import nodeutils
+from core.nodes import nodeutils, nodemaps, ipaddress
 from corens3.obj import Ns3LteNet
 from corens3.obj import Ns3Session
 
@@ -24,7 +22,7 @@ def ltesession(opt):
     """
     nodeutils.set_node_map(nodemaps.NODES)
     session = Ns3Session(1, persistent=True, duration=opt.duration)
-    lte = session.add_object(cls=Ns3LteNet, name="wlan1")
+    lte = session.create_node(cls=Ns3LteNet, name="wlan1")
     lte.setsubchannels(range(25), range(50, 100))
     if opt.verbose:
         ascii_helper = ns.network.AsciiTraceHelper()

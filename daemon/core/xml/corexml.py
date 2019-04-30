@@ -1,15 +1,14 @@
 import logging
-
 from lxml import etree
 
-from core import coreobj
+import core.nodes.base
+import core.nodes.physical
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import NodeTypes
-from core.misc import nodeutils
-from core.misc.ipaddress import MacAddress
-from core.netns import nodes
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils
+from core.nodes.ipaddress import MacAddress
 
 
 def write_xml_file(xml_element, file_path, doctype=None):
@@ -377,12 +376,12 @@ class CoreXmlWriter(object):
         self.devices = etree.SubElement(self.scenario, "devices")
 
         links = []
-        for node in self.session.objects.itervalues():
+        for node in self.session.nodes.itervalues():
             # network node
-            if isinstance(node, (coreobj.PyCoreNet, nodes.RJ45Node)) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
+            if isinstance(node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node)) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
                 self.write_network(node)
             # device node
-            elif isinstance(node, nodes.PyCoreNode):
+            elif isinstance(node, core.nodes.base.CoreNodeBase):
                 self.write_device(node)
 
             # add known links
@@ -432,7 +431,7 @@ class CoreXmlWriter(object):
         # check for interface one
         if link_data.interface1_id is not None:
             interface_one = etree.Element("interface_one")
-            node = self.session.get_object(link_data.node1_id)
+            node = self.session.get_node(link_data.node1_id)
             node_interface = node.netif(link_data.interface1_id)
 
             add_attribute(interface_one, "id", link_data.interface1_id)
@@ -453,7 +452,7 @@ class CoreXmlWriter(object):
         # check for interface two
         if link_data.interface2_id is not None:
             interface_two = etree.Element("interface_two")
-            node = self.session.get_object(link_data.node2_id)
+            node = self.session.get_node(link_data.node2_id)
             node_interface = node.netif(link_data.interface2_id)
 
             add_attribute(interface_two, "id", link_data.interface2_id)

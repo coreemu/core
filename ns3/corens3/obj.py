@@ -17,14 +17,13 @@ import ns.wifi
 import ns.wimax
 
 from core import constants
-from core.coreobj import PyCoreNet
-from core.enumerations import EventTypes
-from core.enumerations import LinkTypes
-from core.enumerations import NodeTypes
-from core.misc.utils import make_tuple
-from core.mobility import WayPointMobility
-from core.netns.nodes import CoreNode
-from core.session import Session
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.utils import make_tuple
+from core.location.mobility import WayPointMobility
+from core.nodes.base import CoreNode, CoreNetworkBase
+from core.emulator.session import Session
 
 ns.core.GlobalValue.Bind(
     "SimulatorImplementationType",
@@ -107,7 +106,7 @@ class CoreNs3Node(CoreNode, ns.network.Node):
             self.warn("ns-3 mobility model not found, not setting position")
 
 
-class CoreNs3Net(PyCoreNet):
+class CoreNs3Net(CoreNetworkBase):
     """
     The CoreNs3Net is a helper PyCoreNet object. Networks are represented
     entirely in simulation with the TunTap device bridging the emulated and
@@ -119,7 +118,7 @@ class CoreNs3Net(PyCoreNet):
     type = "wlan"
 
     def __init__(self, session, _id=None, name=None, start=True, policy=None):
-        PyCoreNet.__init__(self, session, _id, name)
+        CoreNetworkBase.__init__(self, session, _id, name)
         self.tapbridge = ns.tap_bridge.TapBridgeHelper()
         self._ns3devs = {}
         self._tapdevs = {}
@@ -402,7 +401,7 @@ class Ns3Session(Session):
         A convenience helper for Session.addobj(), for adding CoreNs3Nodes
         to this session. Keeps a NodeContainer for later use.
         """
-        n = self.add_object(cls=CoreNs3Node, name=name)
+        n = self.create_node(cls=CoreNs3Node, name=name)
         self.nodes.Add(n)
         return n
 
@@ -488,7 +487,7 @@ class Ns3Session(Session):
         Start a tracing thread using the ASCII output from the ns3
         mobility helper.
         """
-        net.mobility = WayPointMobility(session=self, object_id=net.id)
+        net.mobility = WayPointMobility(session=self, _id=net.id)
         net.mobility.setendtime()
         net.mobility.refresh_ms = 300
         net.mobility.empty_queue_stop = False

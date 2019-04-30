@@ -6,7 +6,7 @@ __all__ is automatically loaded by the main core module.
 """
 import os
 
-from core.service import ServiceManager
+from core.services.coreservices import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 

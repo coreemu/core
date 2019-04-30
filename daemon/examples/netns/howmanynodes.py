@@ -19,10 +19,11 @@ import shutil
 import sys
 import time
 
+import core.nodes.base
+import core.nodes.network
 from core import constants
-from core.misc import ipaddress
-from core.netns import nodes
-from core.session import Session
+from core.nodes import ipaddress
+from core.emulator.session import Session
 
 GBD = 1024.0 * 1024.0
 
@@ -135,7 +136,7 @@ def main():
         lfp.flush()
 
     session = Session(1)
-    switch = session.add_object(cls=nodes.SwitchNode)
+    switch = session.create_node(cls=core.nodes.network.SwitchNode)
     switchlist.append(switch)
     print "Added bridge %s (%d)." % (switch.brname, len(switchlist))
 
@@ -146,7 +147,7 @@ def main():
         # optionally add a bridge (options.bridges nodes per bridge)
         try:
             if 0 < options.bridges <= switch.numnetif():
-                switch = session.add_object(cls=nodes.SwitchNode)
+                switch = session.create_node(cls=core.nodes.network.SwitchNode)
                 switchlist.append(switch)
                 print "\nAdded bridge %s (%d) for node %d." % (switch.brname, len(switchlist), i)
         except Exception, e:
@@ -155,7 +156,7 @@ def main():
 
         # create a node
         try:
-            n = session.add_object(cls=nodes.LxcNode, name="n%d" % i)
+            n = session.create_node(cls=core.nodes.base.CoreNode, name="n%d" % i)
             n.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
             n.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
             if options.services is not None:

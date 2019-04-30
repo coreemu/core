@@ -9,13 +9,13 @@ import grpc
 from concurrent import futures
 
 from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
-from core.enumerations import NodeTypes, EventTypes, LinkTypes
-from core.grpc import core_pb2
-from core.grpc import core_pb2_grpc
-from core.misc import nodeutils
-from core.misc.ipaddress import MacAddress
-from core.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.service import ServiceManager
+from core.emulator.enumerations import NodeTypes, EventTypes, LinkTypes
+from core.api.grpc import core_pb2
+from core.api.grpc import core_pb2_grpc
+from core.nodes import nodeutils
+from core.nodes.ipaddress import MacAddress
+from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
@@ -68,7 +68,7 @@ def get_emane_model_id(_id, interface):
 def convert_link(session, link_data):
     interface_one = None
     if link_data.interface1_id is not None:
-        node = session.get_object(link_data.node1_id)
+        node = session.get_node(link_data.node1_id)
         interface = node.netif(link_data.interface1_id)
         interface_one = core_pb2.Interface(
             id=link_data.interface1_id, name=interface.name, mac=convert_value(link_data.interface1_mac),
@@ -77,7 +77,7 @@ def convert_link(session, link_data):
 
     interface_two = None
     if link_data.interface2_id is not None:
-        node = session.get_object(link_data.node2_id)
+        node = session.get_node(link_data.node2_id)
         interface = node.netif(link_data.interface2_id)
         interface_two = core_pb2.Interface(
             id=link_data.interface2_id, name=interface.name, mac=convert_value(link_data.interface2_mac),
@@ -143,7 +143,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def get_node(self, session, _id, context):
         try:
-            return session.get_object(_id)
+            return session.get_node(_id)
         except KeyError:
             context.abort(grpc.StatusCode.NOT_FOUND, "node {} not found".format(_id))
 
@@ -233,8 +233,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         links = []
         nodes = []
-        for node_id in session.objects:
-            node = session.objects[node_id]
+        for _id in session.nodes:
+            node = session.nodes[_id]
             if not isinstance(node.id, int):
                 continue
 

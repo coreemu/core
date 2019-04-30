@@ -11,8 +11,8 @@ import parser
 from core import load_logging_config
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.enumerations import NodeTypes, EventTypes
-from core.mobility import BasicRangeModel
+from core.emulator.enumerations import NodeTypes, EventTypes
+from core.location.mobility import BasicRangeModel
 
 load_logging_config()
 
@@ -44,8 +44,8 @@ def example(options):
     session.instantiate()
 
     # get nodes for example run
-    first_node = session.get_object(2)
-    last_node = session.get_object(options.nodes + 1)
+    first_node = session.get_node(2)
+    last_node = session.get_node(options.nodes + 1)
 
     print "starting iperf server on node: %s" % first_node.name
     first_node.cmd(["iperf", "-s", "-D"])

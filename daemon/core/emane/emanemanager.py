@@ -6,14 +6,13 @@ import logging
 import os
 import threading
 
-from core import CoreCommandError
+from core import CoreCommandError, utils
 from core import constants
-from core.api import coreapi
-from core.api import dataconversion
-from core.conf import ConfigGroup
-from core.conf import ConfigShim
-from core.conf import Configuration
-from core.conf import ModelManager
+from core.api.tlv import coreapi, dataconversion
+from core.config import ConfigGroup
+from core.config import ConfigShim
+from core.config import Configuration
+from core.config import ModelManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -21,15 +20,14 @@ from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
-from core.enumerations import ConfigTlvs
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
-from core.misc import nodeutils
-from core.misc import utils
+from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigFlags
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
+from core.nodes import nodeutils
 from core.xml import emanexml
 
 try:
@@ -251,8 +249,8 @@ class EmaneManager(ModelManager):
         logging.debug("emane setup")
 
         # TODO: drive this from the session object
-        with self.session._objects_lock:
-            for node in self.session.objects.itervalues():
+        with self.session._nodes_lock:
+            for node in self.session.nodes.itervalues():
                 if nodeutils.is_node(node, NodeTypes.EMANE):
                     logging.debug("adding emane node: id(%s) name(%s)", node.id, node.name)
                     self.add_node(node)
@@ -845,7 +843,7 @@ class EmaneManager(ModelManager):
 
         # generate a node message for this location update
         try:
-            node = self.session.get_object(n)
+            node = self.session.get_node(n)
         except KeyError:
             logging.exception("location event NEM %s has no corresponding node %s" % (nemid, n))
             return False
@@ -906,8 +904,8 @@ class EmaneGlobalModel(EmaneModel):
             ConfigGroup("NEM Parameters", emulator_len + 1, config_len)
         ]
 
-    def __init__(self, session, object_id=None):
-        super(EmaneGlobalModel, self).__init__(session, object_id)
+    def __init__(self, session, _id=None):
+        super(EmaneGlobalModel, self).__init__(session, _id)
 
     def build_xml_files(self, config, interface=None):
         raise NotImplementedError

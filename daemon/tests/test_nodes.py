@@ -4,8 +4,8 @@ import time
 import pytest
 
 from core.emulator.emudata import NodeOptions
-from core.enumerations import NodeTypes
-from core.misc import utils
+from core.emulator.enumerations import NodeTypes
+from core import utils
 
 MODELS = [
     "router",
@@ -63,7 +63,7 @@ class TestNodes:
 
         # then
         with pytest.raises(KeyError):
-            session.get_object(node.id)
+            session.get_node(node.id)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)
     def test_net(self, session, net_type):

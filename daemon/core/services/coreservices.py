@@ -14,11 +14,10 @@ from multiprocessing.pool import ThreadPool
 import enum
 from core.constants import which
 
-from core import CoreCommandError
-from core.data import FileData
-from core.enumerations import MessageFlags
-from core.enumerations import RegisterTlvs
-from core.misc import utils
+from core import CoreCommandError, utils
+from core.emulator.data import FileData
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import RegisterTlvs
 
 
 class ServiceBootError(Exception):
@@ -58,7 +57,7 @@ class ServiceDependencies(object):
         Generates the boot paths for the services provided to the class.
 
         :return: list of services to boot, in order
-        :rtype: list[core.service.CoreService]
+        :rtype: list[core.coreservices.CoreService]
         """
         paths = []
         for service in self.node_services.itervalues():
@@ -126,7 +125,7 @@ class ServiceShim(object):
         Convert service properties into a string list of key=value pairs,
         separated by "|".
 
-        :param core.netns.nodes.CoreNode node: node to get value list for
+        :param core.netns.vnode.CoreNode node: node to get value list for
         :param CoreService service: service to get value list for
         :return: value list string
         :rtype: str
@@ -556,7 +555,7 @@ class CoreServices(object):
         """
         Stop all services on a node.
 
-        :param core.netns.nodes.CoreNode node: node to stop services on
+        :param core.netns.vnode.CoreNode node: node to stop services on
         :return: nothing
         """
         for service in node.services:

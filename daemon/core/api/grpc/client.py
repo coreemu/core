@@ -10,9 +10,9 @@ from contextlib import contextmanager
 
 import grpc
 
-from core.grpc import core_pb2
-from core.grpc import core_pb2_grpc
-from core.misc.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+from core.api.grpc import core_pb2
+from core.api.grpc import core_pb2_grpc
+from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 
 
 class InterfaceHelper(object):

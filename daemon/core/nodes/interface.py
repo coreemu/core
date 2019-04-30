@@ -5,17 +5,175 @@ virtual ethernet classes that implement the interfaces available under Linux.
 import logging
 import time
 
-from core import CoreCommandError
+from core import CoreCommandError, utils
 from core import constants
-from core.coreobj import PyCoreNetIf
-from core.enumerations import NodeTypes
-from core.misc import nodeutils
-from core.misc import utils
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils
 
 utils.check_executables([constants.IP_BIN])
 
 
-class VEth(PyCoreNetIf):
+class CoreInterface(object):
+    """
+    Base class for network interfaces.
+    """
+
+    def __init__(self, node, name, mtu):
+        """
+        Creates a PyCoreNetIf instance.
+
+        :param core.coreobj.PyCoreNode node: node for interface
+        :param str name: interface name
+        :param mtu: mtu value
+        """
+
+        self.node = node
+        self.name = name
+        if not isinstance(mtu, (int, long)):
+            raise ValueError
+        self.mtu = mtu
+        self.net = None
+        self._params = {}
+        self.addrlist = []
+        self.hwaddr = None
+        # placeholder position hook
+        self.poshook = lambda a, b, c, d: None
+        # used with EMANE
+        self.transport_type = None
+        # interface index on the network
+        self.netindex = None
+        # index used to find flow data
+        self.flow_id = None
+
+    def startup(self):
+        """
+        Startup method for the interface.
+
+        :return: nothing
+        """
+        pass
+
+    def shutdown(self):
+        """
+        Shutdown method for the interface.
+
+        :return: nothing
+        """
+        pass
+
+    def attachnet(self, net):
+        """
+        Attach network.
+
+        :param core.coreobj.PyCoreNet net: network to attach
+        :return: nothing
+        """
+        if self.net:
+            self.detachnet()
+            self.net = None
+
+        net.attach(self)
+        self.net = net
+
+    def detachnet(self):
+        """
+        Detach from a network.
+
+        :return: nothing
+        """
+        if self.net is not None:
+            self.net.detach(self)
+
+    def addaddr(self, addr):
+        """
+        Add address.
+
+        :param str addr: address to add
+        :return: nothing
+        """
+
+        self.addrlist.append(addr)
+
+    def deladdr(self, addr):
+        """
+        Delete address.
+
+        :param str addr: address to delete
+        :return: nothing
+        """
+        self.addrlist.remove(addr)
+
+    def sethwaddr(self, addr):
+        """
+        Set hardware address.
+
+        :param core.misc.ipaddress.MacAddress addr: hardware address to set to.
+        :return: nothing
+        """
+        self.hwaddr = addr
+
+    def getparam(self, key):
+        """
+        Retrieve a parameter from the, or None if the parameter does not exist.
+
+        :param key: parameter to get value for
+        :return: parameter value
+        """
+        return self._params.get(key)
+
+    def getparams(self):
+        """
+        Return (key, value) pairs for parameters.
+        """
+        parameters = []
+        for k in sorted(self._params.keys()):
+            parameters.append((k, self._params[k]))
+        return parameters
+
+    def setparam(self, key, value):
+        """
+        Set a parameter value, returns True if the parameter has changed.
+
+        :param key: parameter name to set
+        :param value: parameter value
+        :return: True if parameter changed, False otherwise
+        """
+        # treat None and 0 as unchanged values
+        current_value = self._params.get(key)
+        if current_value == value or current_value <= 0 and value <= 0:
+            return False
+
+        self._params[key] = value
+        return True
+
+    def swapparams(self, name):
+        """
+        Swap out parameters dict for name. If name does not exist,
+        intialize it. This is for supporting separate upstream/downstream
+        parameters when two layer-2 nodes are linked together.
+
+        :param str name: name of parameter to swap
+        :return: nothing
+        """
+        tmp = self._params
+        if not hasattr(self, name):
+            setattr(self, name, {})
+        self._params = getattr(self, name)
+        setattr(self, name, tmp)
+
+    def setposition(self, x, y, z):
+        """
+        Dispatch position hook handler.
+
+        :param x: x position
+        :param y: y position
+        :param z: z position
+        :return: nothing
+        """
+        self.poshook(self, x, y, z)
+
+
+class Veth(CoreInterface):
     """
     Provides virtual ethernet functionality for core nodes.
     """
@@ -34,7 +192,7 @@ class VEth(PyCoreNetIf):
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
-        PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
+        CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
         self.localname = localname
         self.up = False
         if start:
@@ -76,7 +234,7 @@ class VEth(PyCoreNetIf):
         self.up = False
 
 
-class TunTap(PyCoreNetIf):
+class TunTap(CoreInterface):
     """
     TUN/TAP virtual device in TAP mode
     """
@@ -93,7 +251,7 @@ class TunTap(PyCoreNetIf):
         :param net: related network
         :param bool start: start flag
         """
-        PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
+        CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
         self.localname = localname
         self.up = False
         self.transport_type = "virtual"
@@ -233,7 +391,7 @@ class TunTap(PyCoreNetIf):
             self.node.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
 
 
-class GreTap(PyCoreNetIf):
+class GreTap(CoreInterface):
     """
     GRE TAP device for tunneling between emulation servers.
     Uses the "gretap" tunnel device type from Linux which is a GRE device
@@ -258,7 +416,7 @@ class GreTap(PyCoreNetIf):
         :param bool start: start flag
         :raises CoreCommandError: when there is a command exception
         """
-        PyCoreNetIf.__init__(self, node=node, name=name, mtu=mtu)
+        CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
         self.session = session
         if _id is None:
             # from PyCoreObj

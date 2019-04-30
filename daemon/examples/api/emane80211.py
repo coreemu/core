@@ -9,7 +9,7 @@ from core import load_logging_config
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.enumerations import EventTypes
+from core.emulator.enumerations import EventTypes
 
 load_logging_config()
 
@@ -43,7 +43,7 @@ def example(options):
     session.instantiate()
 
     # start a shell on the first node
-    node = session.get_object(2)
+    node = session.get_node(2)
     node.client.term("bash")
 
     # shutdown session

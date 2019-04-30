@@ -7,8 +7,8 @@ https://pypi.python.org/pypi/utm (version 0.3.0).
 
 import logging
 
-from core.enumerations import RegisterTlvs
-from core.misc import utm
+from core.emulator.enumerations import RegisterTlvs
+from core.location import utm
 
 
 class CoreLocation(object):

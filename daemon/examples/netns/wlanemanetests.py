@@ -37,13 +37,14 @@ import os
 import sys
 import time
 
+import core.nodes.base
+import core.nodes.network
 from core import emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
-from core.misc import ipaddress
-from core.netns import nodes
-from core.session import Session
+from core.nodes import ipaddress
+from core.emulator.session import Session
 
 try:
     import emaneeventservice
@@ -413,11 +414,11 @@ class Experiment(object):
         prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
         self.session = Session(1)
         # emulated network
-        self.net = self.session.add_object(cls=nodes.WlanNode, name="wlan1")
+        self.net = self.session.create_node(cls=core.nodes.network.WlanNode, name="wlan1")
         prev = None
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=nodes.CoreNode, _id=i, name="n%d" % i)
+            tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
             self.session.services.add_services(tmp, "router", "IPForward")
@@ -440,12 +441,12 @@ class Experiment(object):
         self.session.location.setrefgeo(47.57917, -122.13232, 2.00000)
         self.session.location.refscale = 150.0
         self.session.emane.loadmodels()
-        self.net = self.session.add_object(cls=EmaneNode, _id=numnodes + 1, name="wlan1")
+        self.net = self.session.create_node(cls=EmaneNode, _id=numnodes + 1, name="wlan1")
         self.net.verbose = verbose
         # self.session.emane.addobj(self.net)
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=nodes.CoreNode, _id=i, name="n%d" % i)
+            tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
             # tmp.setposition(i * 20, 50, None)
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])

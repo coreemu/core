@@ -1,7 +1,6 @@
 import logging
 
-from core.grpc import client
-from core.grpc import core_pb2
+from core.api.grpc import client, core_pb2
 
 
 def log_event(event):

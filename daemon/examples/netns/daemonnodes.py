@@ -14,23 +14,23 @@ import datetime
 import optparse
 import sys
 
-from core.api import coreapi
-from core.api import dataconversion
-from core.api.coreapi import CoreExecuteTlv
-from core.enumerations import CORE_API_PORT
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.misc import ipaddress
-from core.netns import nodes
+import core.nodes.base
+import core.nodes.network
+from core.api.tlv import coreapi, dataconversion
+from core.api.tlv.coreapi import CoreExecuteTlv
+from core.emulator.enumerations import CORE_API_PORT
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.nodes import ipaddress
 
 # declare classes for use with Broker
 
-from core.session import Session
+from core.emulator.session import Session
 
 # node list (count from 1)
 n = [None]
@@ -136,7 +136,7 @@ def main():
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
     flags = MessageFlags.ADD.value
-    switch = nodes.SwitchNode(session=session, name="switch", start=False)
+    switch = core.nodes.network.SwitchNode(session=session, name="switch", start=False)
     switch.setposition(x=80, y=50)
     switch.server = daemon
     switch_data = switch.data(flags)
@@ -149,7 +149,7 @@ def main():
 
     # create remote nodes via API
     for i in xrange(1, number_of_nodes + 1):
-        node = nodes.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
+        node = core.nodes.base.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
         node.setposition(x=150 * i, y=150)
         node.server = daemon
         node_data = node.data(flags)

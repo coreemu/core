@@ -7,7 +7,7 @@ import os
 
 from lxml import etree
 
-from core.conf import ConfigGroup
+from core.config import ConfigGroup
 from core.emane import emanemanifest
 from core.emane import emanemodel
 from core.xml import emanexml
@@ -80,7 +80,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_file = emanexml.transport_file_name(self.object_id, transport_type)
+        transport_file = emanexml.transport_file_name(self.id, transport_type)
         etree.SubElement(nem_element, "transport", definition=transport_file)
 
         # set shim configuration
@@ -125,7 +125,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
-        emane_node = self.session.get_object(self.object_id)
+        emane_node = self.session.get_node(self.id)
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
         mbw = bw

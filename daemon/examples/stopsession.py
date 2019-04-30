@@ -8,8 +8,8 @@
 import optparse
 import socket
 
-from core.api import coreapi
-from core.enumerations import MessageFlags, SessionTlvs, CORE_API_PORT
+from core.api.tlv import coreapi
+from core.emulator.enumerations import MessageFlags, SessionTlvs, CORE_API_PORT
 
 
 def main():

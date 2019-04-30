@@ -5,13 +5,13 @@ from Queue import Queue
 import grpc
 import pytest
 
-from core.conf import ConfigShim
-from core.data import EventData
+from core.config import ConfigShim
+from core.emulator.data import EventData
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
-from core.grpc import core_pb2
-from core.grpc.client import CoreGrpcClient
-from core.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.emulator.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
+from core.api.grpc import core_pb2
+from core.api.grpc.client import CoreGrpcClient
+from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 
 
 class TestGrpc:
@@ -182,7 +182,7 @@ class TestGrpc:
 
         # then
         assert response.id is not None
-        assert session.get_object(response.id) is not None
+        assert session.get_node(response.id) is not None
 
     def test_get_node(self, grpc_server):
         # given
@@ -237,7 +237,7 @@ class TestGrpc:
         assert response.result is expected
         if expected is True:
             with pytest.raises(KeyError):
-                assert session.get_object(node.id)
+                assert session.get_node(node.id)
 
     def test_get_hooks(self, grpc_server):
         # given
@@ -390,8 +390,8 @@ class TestGrpc:
         interface_two = ip_prefixes.create_interface(node_two)
         session.add_link(node_one.id, node_two.id, interface_one, interface_two)
         link_node = None
-        for node_id in session.objects:
-            node = session.objects[node_id]
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
             if node.id not in {node_one.id, node_two.id}:
                 link_node = node
                 break

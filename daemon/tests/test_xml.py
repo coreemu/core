@@ -4,8 +4,8 @@ import pytest
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.emudata import NodeOptions
-from core.enumerations import NodeTypes
-from core.mobility import BasicRangeModel
+from core.emulator.enumerations import NodeTypes
+from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
 
 
@@ -87,16 +87,16 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(KeyError):
-            assert not session.get_object(n1_id)
+            assert not session.get_node(n1_id)
         with pytest.raises(KeyError):
-            assert not session.get_object(n2_id)
+            assert not session.get_node(n2_id)
 
         # load saved xml
         session.open_xml(file_path, start=True)
 
         # verify nodes have been recreated
-        assert session.get_object(n1_id)
-        assert session.get_object(n2_id)
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
 
     def test_xml_ptp_services(self, session, tmpdir, ip_prefixes):
         """
@@ -147,9 +147,9 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(KeyError):
-            assert not session.get_object(n1_id)
+            assert not session.get_node(n1_id)
         with pytest.raises(KeyError):
-            assert not session.get_object(n2_id)
+            assert not session.get_node(n2_id)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -158,8 +158,8 @@ class TestXml:
         service = session.services.get_service(node_one.id, SshService.name)
 
         # verify nodes have been recreated
-        assert session.get_object(n1_id)
-        assert session.get_object(n2_id)
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
         assert service.config_data.get(service_file) == file_data
 
     def test_xml_mobility(self, session, tmpdir, ip_prefixes):
@@ -208,9 +208,9 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(KeyError):
-            assert not session.get_object(n1_id)
+            assert not session.get_node(n1_id)
         with pytest.raises(KeyError):
-            assert not session.get_object(n2_id)
+            assert not session.get_node(n2_id)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -219,9 +219,9 @@ class TestXml:
         value = str(session.mobility.get_config("test", wlan_id, BasicRangeModel.name))
 
         # verify nodes and configuration were restored
-        assert session.get_object(n1_id)
-        assert session.get_object(n2_id)
-        assert session.get_object(wlan_id)
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
+        assert session.get_node(wlan_id)
         assert value == "1"
 
     def test_xml_emane(self, session, tmpdir, ip_prefixes):
@@ -275,9 +275,9 @@ class TestXml:
 
         # verify nodes have been removed from session
         with pytest.raises(KeyError):
-            assert not session.get_object(n1_id)
+            assert not session.get_node(n1_id)
         with pytest.raises(KeyError):
-            assert not session.get_object(n2_id)
+            assert not session.get_node(n2_id)
 
         # load saved xml
         session.open_xml(file_path, start=True)
@@ -286,7 +286,7 @@ class TestXml:
         value = str(session.emane.get_config("test", emane_id, EmaneIeee80211abgModel.name))
 
         # verify nodes and configuration were restored
-        assert session.get_object(n1_id)
-        assert session.get_object(n2_id)
-        assert session.get_object(emane_id)
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
+        assert session.get_node(emane_id)
         assert value == "1"

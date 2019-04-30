@@ -8,19 +8,18 @@ import threading
 from socket import AF_INET
 from socket import AF_INET6
 
-from core import CoreCommandError
+from core import CoreCommandError, utils
 from core import constants
-from core.coreobj import PyCoreNet
-from core.data import LinkData
-from core.enumerations import LinkTypes
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
-from core.misc import ipaddress
-from core.misc import utils
-from core.netns.vif import GreTap
-from core.netns.vif import VEth
-from core.netns.vnet import EbtablesQueue
-from core.netns.vnet import GreTapBridge
+from core.nodes.base import CoreNetworkBase
+from core.emulator.data import LinkData
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
+from core.nodes import ipaddress
+from core.nodes.interface import GreTap
+from core.nodes.interface import Veth
+from core.nodes.network import EbtablesQueue
+from core.nodes.network import GreTapBridge
 
 # a global object because all WLANs share the same queue
 # cannot have multiple threads invoking the ebtables commnd
@@ -41,7 +40,7 @@ def ebtables_commands(call, commands):
             call(command)
 
 
-class OvsNet(PyCoreNet):
+class OvsNet(CoreNetworkBase):
     """
     Used to be LxBrNet.
 
@@ -62,7 +61,7 @@ class OvsNet(PyCoreNet):
         :return:
         """
 
-        PyCoreNet.__init__(self, session, _id, name, start)
+        CoreNetworkBase.__init__(self, session, _id, name, start)
 
         if policy:
             self.policy = policy
@@ -129,13 +128,13 @@ class OvsNet(PyCoreNet):
             utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, interface.localname])
             utils.check_cmd([constants.IP_BIN, "link", "set", interface.localname, "up"])
 
-        PyCoreNet.attach(self, interface)
+        CoreNetworkBase.attach(self, interface)
 
     def detach(self, interface):
         if self.up:
             utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, interface.localname])
 
-        PyCoreNet.detach(self, interface)
+        CoreNetworkBase.detach(self, interface)
 
     def linked(self, interface_one, interface_two):
         # check if the network interfaces are attached to this network
@@ -297,7 +296,7 @@ class OvsNet(PyCoreNet):
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
-        interface = VEth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
+        interface = Veth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
         self.attach(interface)
         if network.up:
             # this is similar to net.attach() but uses netif.name instead
@@ -598,7 +597,7 @@ class OvsWlanNode(OvsNet):
         logging.info("adding model %s", model.name)
 
         if model.type == RegisterTlvs.WIRELESS.value:
-            self.model = model(session=self.session, object_id=self.id, config=config)
+            self.model = model(session=self.session, _id=self.id, config=config)
             if self.model.position_callback:
                 for interface in self.netifs():
                     interface.poshook = self.model.position_callback
@@ -607,7 +606,7 @@ class OvsWlanNode(OvsNet):
                         interface.poshook(interface, x, y, z)
             self.model.setlinkparams()
         elif model.type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.id, config=config)
+            self.mobility = model(session=self.session, _id=self.id, config=config)
 
     def updatemodel(self, config):
         if not self.model:

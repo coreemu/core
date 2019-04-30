@@ -6,10 +6,10 @@ share the same MAC+PHY model.
 
 import logging
 
-from core.coreobj import PyCoreNet
-from core.enumerations import LinkTypes
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
+from core.nodes.base import CoreNetworkBase
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
 
 try:
     from emane.events import LocationEvent
@@ -20,7 +20,7 @@ except ImportError:
         logging.debug("compatible emane python bindings not installed")
 
 
-class EmaneNet(PyCoreNet):
+class EmaneNet(CoreNetworkBase):
     """
     EMANE network base class.
     """
@@ -80,10 +80,10 @@ class EmaneNode(EmaneNet):
         if model.config_type == RegisterTlvs.WIRELESS.value:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
-            self.model = model(session=self.session, object_id=self.id)
+            self.model = model(session=self.session, _id=self.id)
             self.model.update_config(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.id)
+            self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
     def setnemid(self, netif, nemid):

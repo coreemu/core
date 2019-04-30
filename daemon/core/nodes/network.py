@@ -5,15 +5,19 @@ Linux Ethernet bridging and ebtables rules.
 
 import logging
 import os
+import socket
 import threading
 import time
+from socket import AF_INET, AF_INET6
 
-from core import CoreCommandError
+from core import CoreCommandError, utils
 from core import constants
-from core.coreobj import PyCoreNet
-from core.misc import utils
-from core.netns.vif import GreTap
-from core.netns.vif import VEth
+from core.nodes.base import CoreNetworkBase
+from core.emulator.data import LinkData
+from core.emulator.enumerations import NodeTypes, LinkTypes, RegisterTlvs
+from core.nodes import ipaddress
+from core.nodes.interface import GreTap
+from core.nodes.interface import Veth
 
 utils.check_executables([
     constants.BRCTL_BIN,
@@ -236,9 +240,9 @@ def ebtablescmds(call, cmds):
             call(args)
 
 
-class LxBrNet(PyCoreNet):
+class CoreNetwork(CoreNetworkBase):
     """
-    Provides linux bridge network functionlity for core nodes.
+    Provides linux bridge network functionality for core nodes.
     """
     policy = "DROP"
 
@@ -252,7 +256,7 @@ class LxBrNet(PyCoreNet):
         :param bool start: start flag
         :param policy: network policy
         """
-        PyCoreNet.__init__(self, session, _id, name, start)
+        CoreNetworkBase.__init__(self, session, _id, name, start)
         if name is None:
             name = str(self.id)
         if policy is not None:
@@ -333,7 +337,7 @@ class LxBrNet(PyCoreNet):
             utils.check_cmd([constants.BRCTL_BIN, "addif", self.brname, netif.localname])
             utils.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "up"])
 
-        PyCoreNet.attach(self, netif)
+        CoreNetworkBase.attach(self, netif)
 
     def detach(self, netif):
         """
@@ -345,7 +349,7 @@ class LxBrNet(PyCoreNet):
         if self.up:
             utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, netif.localname])
 
-        PyCoreNet.detach(self, netif)
+        CoreNetworkBase.detach(self, netif)
 
     def linked(self, netif1, netif2):
         """
@@ -520,7 +524,7 @@ class LxBrNet(PyCoreNet):
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
-        netif = VEth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
+        netif = Veth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
         self.attach(netif)
         if net.up:
             # this is similar to net.attach() but uses netif.name instead
@@ -564,7 +568,7 @@ class LxBrNet(PyCoreNet):
             utils.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.brname])
 
 
-class GreTapBridge(LxBrNet):
+class GreTapBridge(CoreNetwork):
     """
     A network consisting of a bridge with a gretap device for tunneling to
     another system.
@@ -586,7 +590,7 @@ class GreTapBridge(LxBrNet):
         :param bool start: start flag
         :return:
         """
-        LxBrNet.__init__(self, session=session, _id=_id, name=name, policy=policy, start=False)
+        CoreNetwork.__init__(self, session=session, _id=_id, name=name, policy=policy, start=False)
         self.grekey = key
         if self.grekey is None:
             self.grekey = self.session.id ^ self.id
@@ -609,7 +613,7 @@ class GreTapBridge(LxBrNet):
 
         :return: nothing
         """
-        LxBrNet.startup(self)
+        CoreNetwork.startup(self)
         if self.gretap:
             self.attach(self.gretap)
 
@@ -623,7 +627,7 @@ class GreTapBridge(LxBrNet):
             self.detach(self.gretap)
             self.gretap.shutdown()
             self.gretap = None
-        LxBrNet.shutdown(self)
+        CoreNetwork.shutdown(self)
 
     def addrconfig(self, addrlist):
         """
@@ -654,3 +658,412 @@ class GreTapBridge(LxBrNet):
         :return: nothing
         """
         self.grekey = key
+
+
+class CtrlNet(CoreNetwork):
+    """
+    Control network functionality.
+    """
+    policy = "ACCEPT"
+    # base control interface index
+    CTRLIF_IDX_BASE = 99
+    DEFAULT_PREFIX_LIST = [
+        "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
+        "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
+        "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
+        "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"
+    ]
+
+    def __init__(self, session, _id="ctrlnet", name=None, prefix=None,
+                 hostid=None, start=True, assign_address=True,
+                 updown_script=None, serverintf=None):
+        """
+        Creates a CtrlNet instance.
+
+        :param core.session.Session session: core session instance
+        :param int _id: node id
+        :param str name: node namee
+        :param prefix: control network ipv4 prefix
+        :param hostid: host id
+        :param bool start: start flag
+        :param str assign_address: assigned address
+        :param str updown_script: updown script
+        :param serverintf: server interface
+        :return:
+        """
+        self.prefix = ipaddress.Ipv4Prefix(prefix)
+        self.hostid = hostid
+        self.assign_address = assign_address
+        self.updown_script = updown_script
+        self.serverintf = serverintf
+        CoreNetwork.__init__(self, session, _id=_id, name=name, start=start)
+
+    def startup(self):
+        """
+        Startup functionality for the control network.
+
+        :return: nothing
+        :raises CoreCommandError: when there is a command exception
+        """
+        if self.detectoldbridge():
+            return
+
+        CoreNetwork.startup(self)
+
+        if self.hostid:
+            addr = self.prefix.addr(self.hostid)
+        else:
+            addr = self.prefix.max_addr()
+
+        logging.info("added control network bridge: %s %s", self.brname, self.prefix)
+
+        if self.assign_address:
+            addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
+            self.addrconfig(addrlist=addrlist)
+            logging.info("address %s", addr)
+
+        if self.updown_script:
+            logging.info("interface %s updown script (%s startup) called", self.brname, self.updown_script)
+            utils.check_cmd([self.updown_script, self.brname, "startup"])
+
+        if self.serverintf:
+            # sets the interface as a port of the bridge
+            utils.check_cmd([constants.BRCTL_BIN, "addif", self.brname, self.serverintf])
+
+            # bring interface up
+            utils.check_cmd([constants.IP_BIN, "link", "set", self.serverintf, "up"])
+
+    def detectoldbridge(self):
+        """
+        Occassionally, control net bridges from previously closed sessions are not cleaned up.
+        Check if there are old control net bridges and delete them
+
+        :return: True if an old bridge was detected, False otherwise
+        :rtype: bool
+        """
+        status, output = utils.cmd_output([constants.BRCTL_BIN, "show"])
+        if status != 0:
+            logging.error("Unable to retrieve list of installed bridges")
+        else:
+            lines = output.split("\n")
+            for line in lines[1:]:
+                cols = line.split("\t")
+                oldbr = cols[0]
+                flds = cols[0].split(".")
+                if len(flds) == 3:
+                    if flds[0] == "b" and flds[1] == self.id:
+                        logging.error(
+                            "error: An active control net bridge (%s) found. "
+                            "An older session might still be running. "
+                            "Stop all sessions and, if needed, delete %s to continue.", oldbr, oldbr
+                        )
+                        return True
+        return False
+
+    def shutdown(self):
+        """
+        Control network shutdown.
+
+        :return: nothing
+        """
+        if self.serverintf is not None:
+            try:
+                utils.check_cmd([constants.BRCTL_BIN, "delif", self.brname, self.serverintf])
+            except CoreCommandError:
+                logging.exception("error deleting server interface %s from bridge %s", self.serverintf, self.brname)
+
+        if self.updown_script is not None:
+            try:
+                logging.info("interface %s updown script (%s shutdown) called", self.brname, self.updown_script)
+                utils.check_cmd([self.updown_script, self.brname, "shutdown"])
+            except CoreCommandError:
+                logging.exception("error issuing shutdown script shutdown")
+
+        CoreNetwork.shutdown(self)
+
+    def all_link_data(self, flags):
+        """
+        Do not include CtrlNet in link messages describing this session.
+
+        :param flags: message flags
+        :return: list of link data
+        :rtype: list[core.data.LinkData]
+        """
+        return []
+
+
+class PtpNet(CoreNetwork):
+    """
+    Peer to peer network node.
+    """
+    policy = "ACCEPT"
+
+    def attach(self, netif):
+        """
+        Attach a network interface, but limit attachment to two interfaces.
+
+        :param core.netns.vif.VEth netif: network interface
+        :return: nothing
+        """
+        if len(self._netif) >= 2:
+            raise ValueError("Point-to-point links support at most 2 network interfaces")
+
+        CoreNetwork.attach(self, netif)
+
+    def data(self, message_type, lat=None, lon=None, alt=None):
+        """
+        Do not generate a Node Message for point-to-point links. They are
+        built using a link message instead.
+
+        :param message_type: purpose for the data object we are creating
+        :param float lat: latitude
+        :param float lon: longitude
+        :param float alt: altitude
+        :return: node data object
+        :rtype: core.data.NodeData
+        """
+        return None
+
+    def all_link_data(self, flags):
+        """
+        Build CORE API TLVs for a point-to-point link. One Link message
+        describes this network.
+
+        :param flags: message flags
+        :return: list of link data
+        :rtype: list[core.data.LinkData]
+        """
+
+        all_links = []
+
+        if len(self._netif) != 2:
+            return all_links
+
+        if1, if2 = self._netif.values()
+
+        unidirectional = 0
+        if if1.getparams() != if2.getparams():
+            unidirectional = 1
+
+        interface1_ip4 = None
+        interface1_ip4_mask = None
+        interface1_ip6 = None
+        interface1_ip6_mask = None
+        for address in if1.addrlist:
+            ip, _sep, mask = address.partition("/")
+            mask = int(mask)
+            if ipaddress.is_ipv4_address(ip):
+                family = AF_INET
+                ipl = socket.inet_pton(family, ip)
+                interface1_ip4 = ipaddress.IpAddress(af=family, address=ipl)
+                interface1_ip4_mask = mask
+            else:
+                family = AF_INET6
+                ipl = socket.inet_pton(family, ip)
+                interface1_ip6 = ipaddress.IpAddress(af=family, address=ipl)
+                interface1_ip6_mask = mask
+
+        interface2_ip4 = None
+        interface2_ip4_mask = None
+        interface2_ip6 = None
+        interface2_ip6_mask = None
+        for address in if2.addrlist:
+            ip, _sep, mask = address.partition("/")
+            mask = int(mask)
+            if ipaddress.is_ipv4_address(ip):
+                family = AF_INET
+                ipl = socket.inet_pton(family, ip)
+                interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)
+                interface2_ip4_mask = mask
+            else:
+                family = AF_INET6
+                ipl = socket.inet_pton(family, ip)
+                interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
+                interface2_ip6_mask = mask
+
+        link_data = LinkData(
+            message_type=flags,
+            node1_id=if1.node.id,
+            node2_id=if2.node.id,
+            link_type=self.linktype,
+            unidirectional=unidirectional,
+            delay=if1.getparam("delay"),
+            bandwidth=if1.getparam("bw"),
+            dup=if1.getparam("duplicate"),
+            jitter=if1.getparam("jitter"),
+            interface1_id=if1.node.getifindex(if1),
+            interface1_mac=if1.hwaddr,
+            interface1_ip4=interface1_ip4,
+            interface1_ip4_mask=interface1_ip4_mask,
+            interface1_ip6=interface1_ip6,
+            interface1_ip6_mask=interface1_ip6_mask,
+            interface2_id=if2.node.getifindex(if2),
+            interface2_mac=if2.hwaddr,
+            interface2_ip4=interface2_ip4,
+            interface2_ip4_mask=interface2_ip4_mask,
+            interface2_ip6=interface2_ip6,
+            interface2_ip6_mask=interface2_ip6_mask,
+        )
+
+        all_links.append(link_data)
+
+        # build a 2nd link message for the upstream link parameters
+        # (swap if1 and if2)
+        if unidirectional:
+            link_data = LinkData(
+                message_type=0,
+                node1_id=if2.node.id,
+                node2_id=if1.node.id,
+                delay=if1.getparam("delay"),
+                bandwidth=if1.getparam("bw"),
+                dup=if1.getparam("duplicate"),
+                jitter=if1.getparam("jitter"),
+                unidirectional=1,
+                interface1_id=if2.node.getifindex(if2),
+                interface2_id=if1.node.getifindex(if1)
+            )
+            all_links.append(link_data)
+
+        return all_links
+
+
+class SwitchNode(CoreNetwork):
+    """
+    Provides switch functionality within a core node.
+    """
+    apitype = NodeTypes.SWITCH.value
+    policy = "ACCEPT"
+    type = "lanswitch"
+
+
+class HubNode(CoreNetwork):
+    """
+    Provides hub functionality within a core node, forwards packets to all bridge
+    ports by turning off MAC address learning.
+    """
+    apitype = NodeTypes.HUB.value
+    policy = "ACCEPT"
+    type = "hub"
+
+    def __init__(self, session, _id=None, name=None, start=True):
+        """
+        Creates a HubNode instance.
+
+        :param core.session.Session session: core session instance
+        :param int _id: node id
+        :param str name: node namee
+        :param bool start: start flag
+        :raises CoreCommandError: when there is a command exception
+        """
+        CoreNetwork.__init__(self, session, _id, name, start)
+
+        # TODO: move to startup method
+        if start:
+            utils.check_cmd([constants.BRCTL_BIN, "setageing", self.brname, "0"])
+
+
+class WlanNode(CoreNetwork):
+    """
+    Provides wireless lan functionality within a core node.
+    """
+    apitype = NodeTypes.WIRELESS_LAN.value
+    linktype = LinkTypes.WIRELESS.value
+    policy = "DROP"
+    type = "wlan"
+
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
+        """
+        Create a WlanNode instance.
+
+        :param core.session.Session session: core session instance
+        :param int _id: node id
+        :param str name: node name
+        :param bool start: start flag
+        :param policy: wlan policy
+        """
+        CoreNetwork.__init__(self, session, _id, name, start, policy)
+        # wireless model such as basic range
+        self.model = None
+        # mobility model such as scripted
+        self.mobility = None
+
+    def attach(self, netif):
+        """
+        Attach a network interface.
+
+        :param core.netns.vif.VEth netif: network interface
+        :return: nothing
+        """
+        CoreNetwork.attach(self, netif)
+        if self.model:
+            netif.poshook = self.model.position_callback
+            if netif.node is None:
+                return
+            x, y, z = netif.node.position.get()
+            # invokes any netif.poshook
+            netif.setposition(x, y, z)
+
+    def setmodel(self, model, config):
+        """
+        Sets the mobility and wireless model.
+
+        :param core.mobility.WirelessModel.cls model: wireless model to set to
+        :param dict config: configuration for model being set
+        :return: nothing
+        """
+        logging.info("adding model: %s", model.name)
+        if model.config_type == RegisterTlvs.WIRELESS.value:
+            self.model = model(session=self.session, _id=self.id)
+            self.model.update_config(config)
+            if self.model.position_callback:
+                for netif in self.netifs():
+                    netif.poshook = self.model.position_callback
+                    if netif.node is not None:
+                        x, y, z = netif.node.position.get()
+                        netif.poshook(netif, x, y, z)
+            self.model.setlinkparams()
+        elif model.config_type == RegisterTlvs.MOBILITY.value:
+            self.mobility = model(session=self.session, _id=self.id)
+            self.mobility.update_config(config)
+
+    def update_mobility(self, config):
+        if not self.mobility:
+            raise ValueError("no mobility set to update for node(%s)", self.id)
+        self.mobility.set_configs(config, node_id=self.id)
+
+    def updatemodel(self, config):
+        if not self.model:
+            raise ValueError("no model set to update for node(%s)", self.id)
+        logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
+        self.model.set_configs(config, node_id=self.id)
+        if self.model.position_callback:
+            for netif in self.netifs():
+                netif.poshook = self.model.position_callback
+                if netif.node is not None:
+                    x, y, z = netif.node.position.get()
+                    netif.poshook(netif, x, y, z)
+        self.model.updateconfig()
+
+    def all_link_data(self, flags):
+        """
+        Retrieve all link data.
+
+        :param flags: message flags
+        :return: list of link data
+        :rtype: list[core.data.LinkData]
+        """
+        all_links = CoreNetwork.all_link_data(self, flags)
+
+        if self.model:
+            all_links.extend(self.model.all_link_data(flags))
+
+        return all_links
+
+
+class TunnelNode(GreTapBridge):
+    """
+    Provides tunnel functionality in a core node.
+    """
+    apitype = NodeTypes.TUNNEL.value
+    policy = "ACCEPT"
+    type = "tunnel"

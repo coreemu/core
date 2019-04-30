@@ -5,6 +5,7 @@ that manages a CORE session.
 
 import logging
 import os
+import pwd
 import random
 import shutil
 import subprocess
@@ -13,31 +14,29 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
-import pwd
-
-from core import constants
-from core.api import coreapi
-from core.broker import CoreBroker
-from core.conf import ConfigurableManager
-from core.conf import ConfigurableOptions
-from core.conf import Configuration
-from core.data import EventData
-from core.data import ExceptionData
+import core.nodes.base
+from core import constants, utils
+from core.api.tlv import coreapi
+from core.api.tlv.broker import CoreBroker
+from core.config import ConfigurableManager
+from core.config import ConfigurableOptions
+from core.config import Configuration
 from core.emane.emanemanager import EmaneManager
-from core.enumerations import ConfigDataTypes
-from core.enumerations import EventTypes
-from core.enumerations import ExceptionLevels
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
-from core.location import CoreLocation
-from core.misc import nodeutils
-from core.misc import utils
-from core.misc.event import EventLoop
-from core.misc.ipaddress import MacAddress
-from core.mobility import MobilityManager
-from core.netns import nodes
-from core.sdt import Sdt
-from core.service import CoreServices
+from core.emulator.data import EventData
+from core.emulator.data import ExceptionData
+from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExceptionLevels
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
+from core.location.corelocation import CoreLocation
+from core.location.event import EventLoop
+from core.location.mobility import MobilityManager
+from core.nodes import nodeutils
+from core.nodes.base import CoreNodeBase
+from core.nodes.ipaddress import MacAddress
+from core.plugins.sdt import Sdt
+from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
 
 
@@ -67,9 +66,9 @@ class Session(object):
         self.user = None
         self.event_loop = EventLoop()
 
-        # dict of objects: all nodes and nets
-        self.objects = {}
-        self._objects_lock = threading.Lock()
+        # dict of nodes: all nodes and nets
+        self.nodes = {}
+        self._nodes_lock = threading.Lock()
 
         # TODO: should the default state be definition?
         self.state = EventTypes.NONE.value
@@ -110,15 +109,15 @@ class Session(object):
 
     def shutdown(self):
         """
-        Shutdown all emulation objects and remove the session directory.
+        Shutdown all session nodes and remove the session directory.
         """
         # shutdown/cleanup feature helpers
         self.emane.shutdown()
         self.broker.shutdown()
         self.sdt.shutdown()
 
-        # delete all current objects
-        self.delete_objects()
+        # delete all current nodes
+        self.delete_nodes()
 
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
@@ -464,93 +463,87 @@ class Session(object):
         """
         Return a unique, new node id.
         """
-        with self._objects_lock:
+        with self._nodes_lock:
             while True:
-                object_id = random.randint(1, 0xFFFF)
-                if object_id not in self.objects:
+                node_id = random.randint(1, 0xFFFF)
+                if node_id not in self.nodes:
                     break
 
-        return object_id
+        return node_id
 
-    def add_object(self, cls, *clsargs, **clskwds):
+    def create_node(self, cls, *clsargs, **clskwds):
         """
         Create an emulation node.
 
-        :param class cls: object class to add
+        :param class cls: node class to create
         :param list clsargs: list of arguments for the class to create
         :param dict clskwds: dictionary of arguments for the class to create
-        :return: the created class instance
+        :return: the created node instance
         """
         node = cls(self, *clsargs, **clskwds)
 
-        with self._objects_lock:
-            if node.id in self.objects:
+        with self._nodes_lock:
+            if node.id in self.nodes:
                 node.shutdown()
                 raise KeyError("duplicate node id %s for %s" % (node.id, node.name))
-            self.objects[node.id] = node
+            self.nodes[node.id] = node
 
         return node
 
-    def get_object(self, object_id):
+    def get_node(self, _id):
         """
-        Get an emulation object.
+        Get a session node.
 
-        :param int object_id: object id to retrieve
-        :return: object for the given id
-        :rtype: core.coreobj.PyCoreNode
+        :param int _id: node id to retrieve
+        :return: node for the given id
+        :rtype: core.nodes.base.CoreNode
         """
-        if object_id not in self.objects:
-            raise KeyError("unknown object id %s" % object_id)
-        return self.objects[object_id]
+        if _id not in self.nodes:
+            raise KeyError("unknown node id %s" % _id)
+        return self.nodes[_id]
 
-    def get_object_by_name(self, name):
+    def delete_node(self, _id):
         """
-        Get an emulation object using its name attribute.
+        Delete a node from the session and check if session should shutdown, if no nodes are left.
 
-        :param str name: name of object to retrieve
-        :return: object for the name given
+        :param int _id: id of node to delete
+        :return: True if node deleted, False otherwise
+        :rtype: bool
         """
-        with self._objects_lock:
-            for obj in self.objects.itervalues():
-                if hasattr(obj, "name") and obj.name == name:
-                    return obj
-        raise KeyError("unknown object with name %s" % name)
+        # delete node and check for session shutdown if a node was removed
+        result = False
+        with self._nodes_lock:
+            if _id in self.nodes:
+                node = self.nodes.pop(_id)
+                node.shutdown()
+                result = True
 
-    def delete_object(self, object_id):
-        """
-        Remove an emulation object.
+        if result:
+            self.check_shutdown()
 
-        :param int object_id: object id to remove
-        :return: nothing
-        """
-        with self._objects_lock:
-            try:
-                obj = self.objects.pop(object_id)
-                obj.shutdown()
-            except KeyError:
-                logging.error("failed to remove object, object with id was not found: %s", object_id)
+        return result
 
-    def delete_objects(self):
+    def delete_nodes(self):
         """
-        Clear the objects dictionary, and call shutdown for each object.
+        Clear the nodes dictionary, and call shutdown for each node.
         """
-        with self._objects_lock:
-            while self.objects:
-                _, obj = self.objects.popitem()
-                obj.shutdown()
+        with self._nodes_lock:
+            while self.nodes:
+                _, node = self.nodes.popitem()
+                node.shutdown()
 
-    def write_objects(self):
+    def write_nodes(self):
         """
-        Write objects to a 'nodes' file in the session dir.
+        Write nodes to a 'nodes' file in the session dir.
         The 'nodes' file lists: number, name, api-type, class-type
         """
         try:
-            nodes_file = open(os.path.join(self.session_dir, "nodes"), "w")
-            with self._objects_lock:
-                for object_id in sorted(self.objects.keys()):
-                    obj = self.objects[object_id]
-                    nodes_file.write("%s %s %s %s\n" % (object_id, obj.name, obj.apitype, type(obj)))
-            nodes_file.close()
+            with self._nodes_lock:
+                file_path = os.path.join(self.session_dir, "nodes")
+                with open(file_path, "w") as f:
+                    for _id in sorted(self.nodes.keys()):
+                        node = self.nodes[_id]
+                        f.write("%s %s %s %s\n" % (_id, node.name, node.apitype, type(node)))
         except IOError:
             logging.exception("error writing nodes file")
 
@@ -560,21 +553,21 @@ class Session(object):
         """
         logging.info("session id=%s name=%s state=%s", self.id, self.name, self.state)
         logging.info("file=%s thumbnail=%s node_count=%s/%s",
-                     self.file_name, self.thumbnail, self.get_node_count(), len(self.objects))
+                     self.file_name, self.thumbnail, self.get_node_count(), len(self.nodes))
 
-    def exception(self, level, source, object_id, text):
+    def exception(self, level, source, node_id, text):
         """
         Generate and broadcast an exception event.
 
         :param str level: exception level
         :param str source: source name
-        :param int object_id: object id
+        :param int node_id: node related to exception
         :param str text: exception message
         :return: nothing
         """
 
         exception_data = ExceptionData(
-            node=object_id,
+            node=node_id,
             session=str(self.id),
             level=level,
             source=source,
@@ -591,8 +584,8 @@ class Session(object):
         for transition to the runtime state.
         """
 
-        # write current objects out to session directory file
-        self.write_objects()
+        # write current nodes out to session directory file
+        self.write_nodes()
 
         # controlnet may be needed by some EMANE models
         self.add_remove_control_interface(node=None, remove=False)
@@ -626,12 +619,12 @@ class Session(object):
         that are not considered in the GUI's node count.
         """
 
-        with self._objects_lock:
-            count = len([x for x in self.objects.itervalues()
+        with self._nodes_lock:
+            count = len([x for x in self.nodes.itervalues()
                          if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
 
             # on Linux, GreTapBridges are auto-created, not part of GUI's node count
-            count -= len([x for x in self.objects.itervalues()
+            count -= len([x for x in self.nodes.itervalues()
                           if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
 
         return count
@@ -668,10 +661,10 @@ class Session(object):
         self.event_loop.stop()
 
         # stop node services
-        with self._objects_lock:
-            for obj in self.objects.itervalues():
+        with self._nodes_lock:
+            for obj in self.nodes.itervalues():
                 # TODO: determine if checking for CoreNode alone is ok
-                if isinstance(obj, nodes.PyCoreNode):
+                if isinstance(obj, core.nodes.base.CoreNodeBase):
                     self.services.stop_services(obj)
 
         # shutdown emane
@@ -715,14 +708,14 @@ class Session(object):
         messages to the GUI for node messages that had the status
         request flag.
         """
-        with self._objects_lock:
+        with self._nodes_lock:
             pool = ThreadPool()
             results = []
 
             start = time.time()
-            for obj in self.objects.itervalues():
+            for obj in self.nodes.itervalues():
                 # TODO: PyCoreNode is not the type to check
-                if isinstance(obj, nodes.PyCoreNode) and not nodeutils.is_node(obj, NodeTypes.RJ45):
+                if isinstance(obj, CoreNodeBase) and not nodeutils.is_node(obj, NodeTypes.RJ45):
                     # add a control interface if configured
                     logging.info("booting node: %s", obj.name)
                     self.add_remove_control_interface(node=obj, remove=False)
@@ -786,10 +779,10 @@ class Session(object):
                 return index
         return -1
 
-    def get_control_net_object(self, net_index):
+    def get_control_net(self, net_index):
         # TODO: all nodes use an integer id and now this wants to use a string
-        object_id = "ctrl%dnet" % net_index
-        return self.get_object(object_id)
+        _id = "ctrl%dnet" % net_index
+        return self.get_node(_id)
 
     def add_remove_control_net(self, net_index, remove=False, conf_required=True):
         """
@@ -801,8 +794,8 @@ class Session(object):
         :param int net_index: network index
         :param bool remove: flag to check if it should be removed
         :param bool conf_required: flag to check if conf is required
-        :return: control net object
-        :rtype: core.netns.nodes.CtrlNet
+        :return: control net node
+        :rtype: core.nodes.network.CtrlNet
         """
         logging.debug("add/remove control net: index(%s) remove(%s) conf_required(%s)", net_index, remove, conf_required)
         prefix_spec_list = self.get_control_net_prefixes()
@@ -820,10 +813,10 @@ class Session(object):
 
         # return any existing controlnet bridge
         try:
-            control_net = self.get_control_net_object(net_index)
+            control_net = self.get_control_net(net_index)
 
             if remove:
-                self.delete_object(control_net.id)
+                self.delete_node(control_net.id)
                 return None
 
             return control_net
@@ -832,7 +825,7 @@ class Session(object):
                 return None
 
         # build a new controlnet bridge
-        object_id = "ctrl%dnet" % net_index
+        _id = "ctrl%dnet" % net_index
 
         # use the updown script for control net 0 only.
         updown_script = None
@@ -887,16 +880,16 @@ class Session(object):
             prefix = prefixes[0]
 
         control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
-        control_net = self.add_object(cls=control_net_class, _id=object_id, prefix=prefix,
-                                      assign_address=assign_address,
-                                      updown_script=updown_script, serverintf=server_interface)
+        control_net = self.create_node(cls=control_net_class, _id=_id, prefix=prefix,
+                                       assign_address=assign_address,
+                                       updown_script=updown_script, serverintf=server_interface)
 
         # tunnels between controlnets will be built with Broker.addnettunnels()
-        # TODO: potentially remove documentation saying object ids are ints
+        # TODO: potentially remove documentation saying node ids are ints
         # TODO: need to move broker code out of the session object
-        self.broker.addnet(object_id)
+        self.broker.addnet(_id)
         for server in self.broker.getservers():
-            self.broker.addnodemap(server, object_id)
+            self.broker.addnodemap(server, _id)
 
         return control_net
 
@@ -908,7 +901,7 @@ class Session(object):
         If conf_reqd is False, the control network may be built even
         when the user has not configured one (e.g. for EMANE.)
 
-        :param core.netns.nodes.CoreNode node: node to add or remove control interface
+        :param core.netns.vnode.CoreNode node: node to add or remove control interface
         :param int net_index: network index
         :param bool remove: flag to check if it should be removed
         :param bool conf_required: flag to check if conf is required
@@ -954,9 +947,9 @@ class Session(object):
             return
 
         try:
-            control_net = self.get_control_net_object(net_index)
+            control_net = self.get_control_net(net_index)
         except KeyError:
-            logging.exception("error retrieving control net object")
+            logging.exception("error retrieving control net node")
             return
 
         header = "CORE session %s host entries" % self.id
@@ -991,7 +984,7 @@ class Session(object):
         start of the runtime state.
 
         :param event_time: event time
-        :param core.netns.nodes.CoreNode node: node to add event for
+        :param core.netns.vnode.CoreNode node: node to add event for
         :param str name: name of event
         :param data: data for event
         :return: nothing
@@ -1029,13 +1022,13 @@ class Session(object):
         if not node_id:
             utils.mute_detach(data)
         else:
-            node = self.get_object(node_id)
+            node = self.get_node(node_id)
             node.cmd(data, wait=False)
 
 
 class SessionConfig(ConfigurableManager, ConfigurableOptions):
     """
-    Session configuration object.
+    Provides session configuration.
     """
     name = "session"
     options = [

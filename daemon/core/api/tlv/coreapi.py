@@ -10,22 +10,22 @@ import struct
 
 from enum import Enum
 
-from core.enumerations import ConfigTlvs
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExceptionTlvs
-from core.enumerations import ExecuteTlvs
-from core.enumerations import FileTlvs
-from core.enumerations import InterfaceTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTlvs
-from core.enumerations import RegisterTlvs
-from core.enumerations import SessionTlvs
-from core.misc import structutils
-from core.misc.ipaddress import IpAddress
-from core.misc.ipaddress import MacAddress
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExceptionTlvs
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import FileTlvs
+from core.emulator.enumerations import InterfaceTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import SessionTlvs
+from core.api.tlv import structutils
+from core.nodes.ipaddress import IpAddress
+from core.nodes.ipaddress import MacAddress
 
 
 class CoreTlvData(object):

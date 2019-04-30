@@ -10,11 +10,11 @@ import pytest
 from mock import MagicMock
 
 from core.emulator.emudata import NodeOptions
-from core.enumerations import MessageFlags
-from core.enumerations import NodeTypes
-from core.mobility import BasicRangeModel
-from core.mobility import Ns2ScriptedMobility
-from core.netns.vnodeclient import VnodeClient
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import NodeTypes
+from core.location.mobility import BasicRangeModel
+from core.location.mobility import Ns2ScriptedMobility
+from core.nodes.client import VnodeClient
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")

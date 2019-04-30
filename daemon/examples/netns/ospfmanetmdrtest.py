@@ -15,14 +15,13 @@ import sys
 import time
 from string import Template
 
+import core.nodes.base
+import core.nodes.network
 from core.constants import QUAGGA_STATE_DIR
-
-from core.misc import ipaddress
-from core.misc.utils import check_cmd
-from core.netns import nodes
-
+from core.nodes import ipaddress
+from core.utils import check_cmd
 # this is the /etc/core/core.conf default
-from core.session import Session
+from core.emulator.session import Session
 
 quagga_sbin_search = ("/usr/local/sbin", "/usr/sbin", "/usr/lib/quagga")
 quagga_path = "zebra"
@@ -39,7 +38,7 @@ except OSError:
     sys.exit(1)
 
 
-class ManetNode(nodes.LxcNode):
+class ManetNode(core.nodes.base.CoreNode):
     """ An Lxc namespace node configured for Quagga OSPFv3 MANET MDR
     """
     conftemp = Template("""\
@@ -69,7 +68,7 @@ ip forwarding
             routerid = ipaddr.split("/")[0]
         self.ipaddr = ipaddr
         self.routerid = routerid
-        nodes.LxcNode.__init__(self, core, _id, name, nodedir)
+        core.nodes.base.CoreBaseNode.__init__(self, core, _id, name, nodedir)
         self.privatedir(self.confdir)
         self.privatedir(QUAGGA_STATE_DIR)
 
@@ -243,10 +242,10 @@ class ManetExperiment(object):
         prefix = ipaddress.Ipv4Prefix("10.14.0.0/16")
         self.session = Session(1)
         # emulated network
-        self.net = self.session.add_object(cls=nodes.WlanNode)
+        self.net = self.session.create_node(cls=core.nodes.network.WlanNode)
         for i in xrange(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=ManetNode, ipaddr=addr, _id="%d" % i, name="n%d" % i)
+            tmp = self.session.create_node(cls=ManetNode, ipaddr=addr, _id="%d" % i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
         # connect nodes with probability linkprob

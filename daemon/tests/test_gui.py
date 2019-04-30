@@ -4,17 +4,17 @@ Unit tests for testing with a CORE switch.
 
 import threading
 
-from core.api import coreapi, dataconversion
-from core.api.coreapi import CoreExecuteTlv
-from core.enumerations import CORE_API_PORT, NodeTypes
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.misc import ipaddress
+from core.api.tlv import coreapi, dataconversion
+from core.api.tlv.coreapi import CoreExecuteTlv
+from core.emulator.enumerations import CORE_API_PORT, NodeTypes
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.nodes import ipaddress
 
 
 def command_message(node, command):

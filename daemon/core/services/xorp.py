@@ -4,7 +4,7 @@ xorp.py: defines routing services provided by the XORP routing suite.
 
 import logging
 
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 
 class XorpRtrmgr(CoreService):

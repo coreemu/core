@@ -6,7 +6,7 @@
 # nodestep
 from core import load_logging_config
 from core.emulator.emudata import IpPrefixes
-from core.enumerations import NodeTypes, EventTypes
+from core.emulator.enumerations import NodeTypes, EventTypes
 
 load_logging_config()
 

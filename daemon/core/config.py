@@ -5,7 +5,7 @@ Common support for configurable CORE objects.
 import logging
 from collections import OrderedDict
 
-from core.data import ConfigData
+from core.emulator.data import ConfigData
 
 
 class ConfigShim(object):

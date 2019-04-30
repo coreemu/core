@@ -4,10 +4,9 @@ Assumes installation of FRR via https://deb.frrouting.org/
 """
 
 from core import constants
-from core.enumerations import LinkTypes, NodeTypes
-from core.misc import ipaddress
-from core.misc import nodeutils
-from core.service import CoreService
+from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.nodes import nodeutils, ipaddress
+from core.services.coreservices import CoreService
 
 
 class FRRZebra(CoreService):

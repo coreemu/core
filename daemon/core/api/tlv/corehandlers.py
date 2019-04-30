@@ -13,36 +13,34 @@ import threading
 import time
 from itertools import repeat
 
-from core.api import coreapi
-from core.api import dataconversion
-from core.conf import ConfigShim
-from core.data import ConfigData, ExceptionData
-from core.data import EventData
-from core.data import FileData
+from core.api.tlv import coreapi, dataconversion, structutils
+from core.config import ConfigShim
+from core.emulator.data import ConfigData, ExceptionData
+from core.emulator.data import EventData
+from core.emulator.data import FileData
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
-from core.enumerations import ConfigTlvs
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExceptionTlvs
-from core.enumerations import ExecuteTlvs
-from core.enumerations import FileTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTlvs
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
-from core.enumerations import SessionTlvs
-from core.misc import nodeutils
-from core.misc import structutils
-from core.misc import utils
-from core.service import ServiceManager
-from core.service import ServiceShim
+from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigFlags
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExceptionTlvs
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import FileTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import SessionTlvs
+from core.nodes import nodeutils
+from core import utils
+from core.services.coreservices import ServiceManager
+from core.services.coreservices import ServiceShim
 
 
 class CoreHandler(SocketServer.BaseRequestHandler):
@@ -774,7 +772,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             return ()
 
         try:
-            node = self.session.get_object(node_num)
+            node = self.session.get_node(node_num)
 
             # build common TLV items for reply
             tlv_data = ""
@@ -1135,7 +1133,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 if not node_id:
                     return replies
 
-                node = self.session.get_object(node_id)
+                node = self.session.get_node(node_id)
                 if node is None:
                     logging.warn("request to configure service for unknown node %s", node_id)
                     return replies
@@ -1418,7 +1416,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
                 try:
-                    node = self.session.get_object(node_id)
+                    node = self.session.get_node(node_id)
                 except KeyError:
                     raise KeyError("Event message for unknown node %d" % node_id)
 
@@ -1442,7 +1440,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             self.session.instantiate()
 
             # after booting nodes attempt to send emulation id for nodes waiting on status
-            for _id in self.session.objects:
+            for _id in self.session.nodes:
                 self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
             if self.session.master:
@@ -1508,7 +1506,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         name = event_data.name
 
         try:
-            node = self.session.get_object(node_id)
+            node = self.session.get_node(node_id)
         except KeyError:
             logging.warn("ignoring event for service '%s', unknown node '%s'", name, node_id)
             return
@@ -1679,13 +1677,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         nodes_data = []
         links_data = []
-        with self.session._objects_lock:
-            for obj in self.session.objects.itervalues():
-                node_data = obj.data(message_type=MessageFlags.ADD.value)
+        with self.session._nodes_lock:
+            for node in self.session.nodes.itervalues():
+                node_data = node.data(message_type=MessageFlags.ADD.value)
                 if node_data:
                     nodes_data.append(node_data)
 
-                node_links = obj.all_link_data(flags=MessageFlags.ADD.value)
+                node_links = node.all_link_data(flags=MessageFlags.ADD.value)
                 for link_data in node_links:
                     links_data.append(link_data)
 
@@ -1717,7 +1715,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         for node_id, service in service_configs:
             opaque = "service:%s" % service.name
             data_types = tuple(repeat(ConfigDataTypes.STRING.value, len(ServiceShim.keys)))
-            node = self.session.get_object(node_id)
+            node = self.session.get_node(node_id)
             values = ServiceShim.tovaluelist(node, service)
             config_data = ConfigData(
                 message_type=0,

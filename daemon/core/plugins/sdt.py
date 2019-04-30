@@ -7,16 +7,15 @@ import socket
 from urlparse import urlparse
 
 from core import constants
-from core.coreobj import PyCoreNet
-from core.coreobj import PyCoreObj
-from core.enumerations import EventTypes
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTlvs
-from core.enumerations import NodeTypes
-from core.misc import nodeutils
+from core.nodes.base import NodeBase, CoreNetworkBase
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this
@@ -321,22 +320,20 @@ class Sdt(object):
         :return: nothing
         """
         nets = []
-        with self.session._objects_lock:
-            for obj in self.session.objects.itervalues():
-                if isinstance(obj, PyCoreNet):
-                    nets.append(obj)
-                if not isinstance(obj, PyCoreObj):
+        with self.session._nodes_lock:
+            for node in self.session.nodes.itervalues():
+                if isinstance(node, CoreNetworkBase):
+                    nets.append(node)
+                if not isinstance(node, NodeBase):
                     continue
-                (x, y, z) = obj.getposition()
+                (x, y, z) = node.getposition()
                 if x is None or y is None:
                     continue
-                self.updatenode(obj.id, MessageFlags.ADD.value, x, y, z,
-                                obj.name, obj.type, obj.icon)
+                self.updatenode(node.id, MessageFlags.ADD.value, x, y, z, node.name, node.type, node.icon)
             for nodenum in sorted(self.remotes.keys()):
                 r = self.remotes[nodenum]
                 x, y, z = r.pos
-                self.updatenode(nodenum, MessageFlags.ADD.value, x, y, z,
-                                r.name, r.type, r.icon)
+                self.updatenode(nodenum, MessageFlags.ADD.value, x, y, z, r.name, r.type, r.icon)
 
             for net in nets:
                 all_links = net.all_link_data(flags=MessageFlags.ADD.value)
@@ -411,7 +408,7 @@ class Sdt(object):
             nodetype = None
 
         try:
-            node = self.session.get_object(nodenum)
+            node = self.session.get_node(nodenum)
         except KeyError:
             node = None
         if node:
@@ -472,7 +469,7 @@ class Sdt(object):
                 return True
         else:
             try:
-                n = self.session.get_object(nodenum)
+                n = self.session.get_node(nodenum)
             except KeyError:
                 return False
             if nodeutils.is_node(n, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):

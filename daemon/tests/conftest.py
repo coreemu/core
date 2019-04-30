@@ -9,30 +9,30 @@ import time
 import pytest
 from mock.mock import MagicMock
 
-from core.api.coreapi import CoreConfMessage
-from core.api.coreapi import CoreEventMessage
-from core.api.coreapi import CoreExecMessage
-from core.api.coreapi import CoreLinkMessage
-from core.api.coreapi import CoreNodeMessage
-from core.corehandlers import CoreHandler
-from core.coreserver import CoreServer
+from core.api.tlv.coreapi import CoreConfMessage
+from core.api.tlv.coreapi import CoreEventMessage
+from core.api.tlv.coreapi import CoreExecMessage
+from core.api.tlv.coreapi import CoreLinkMessage
+from core.api.tlv.coreapi import CoreNodeMessage
+from core.api.tlv.corehandlers import CoreHandler
+from core.api.tlv.coreserver import CoreServer
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.enumerations import CORE_API_PORT
-from core.enumerations import ConfigTlvs
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import NodeTlvs
-from core.enumerations import NodeTypes
-from core.grpc.client import InterfaceHelper
-from core.grpc.server import CoreGrpcServer
-from core.misc import ipaddress
-from core.misc.ipaddress import MacAddress
-from core.service import ServiceManager
+from core.emulator.enumerations import CORE_API_PORT
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import NodeTypes
+from core.api.grpc.client import InterfaceHelper
+from core.api.grpc.server import CoreGrpcServer
+from core.nodes import ipaddress
+from core.nodes.ipaddress import MacAddress
+from core.services.coreservices import ServiceManager
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 

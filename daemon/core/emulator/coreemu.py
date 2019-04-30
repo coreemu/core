@@ -5,18 +5,16 @@ import signal
 import sys
 
 import core.services
-from core.coreobj import PyCoreNet
-from core.coreobj import PyCoreNode
-from core.data import NodeData
+from core.nodes.base import CoreNodeBase, CoreNetworkBase
+from core.emulator.data import NodeData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import EventTypes
-from core.enumerations import LinkTypes
-from core.enumerations import NodeTypes
-from core.misc import nodemaps
-from core.misc import nodeutils
-from core.service import ServiceManager
-from core.session import Session
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils, nodemaps
+from core.services.coreservices import ServiceManager
+from core.emulator.session import Session
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
 
@@ -94,7 +92,7 @@ def is_net_node(node):
     :return: True if object is an instance of a network node, False otherwise
     :rtype: bool
     """
-    return isinstance(node, PyCoreNet)
+    return isinstance(node, CoreNetworkBase)
 
 
 def is_core_node(node):
@@ -105,7 +103,7 @@ def is_core_node(node):
     :return: True if object is an instance of a core node, False otherwise
     :rtype: bool
     """
-    return isinstance(node, PyCoreNode)
+    return isinstance(node, CoreNodeBase)
 
 
 class IdGen(object):
@@ -149,8 +147,8 @@ class EmuSession(Session):
         net_two = None
 
         # retrieve node one
-        node_one = self.get_object(node_one_id)
-        node_two = self.get_object(node_two_id)
+        node_one = self.get_node(node_one_id)
+        node_two = self.get_node(node_two_id)
 
         # both node ids are provided
         tunnel = self.broker.gettunnel(node_one_id, node_two_id)
@@ -245,7 +243,7 @@ class EmuSession(Session):
                     logging.info("adding link for peer to peer nodes: %s - %s", node_one.name, node_two.name)
                     ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
                     start = self.state > EventTypes.DEFINITION_STATE.value
-                    net_one = self.add_object(cls=ptp_class, start=start)
+                    net_one = self.create_node(cls=ptp_class, start=start)
 
                 # node to network
                 if node_one and net_one:
@@ -366,7 +364,7 @@ class EmuSession(Session):
                         interface_one.detachnet()
                         interface_two.detachnet()
                         if net_one.numnetif() == 0:
-                            self.delete_object(net_one.id)
+                            self.delete_node(net_one.id)
                         node_one.delnetif(interface_one.netindex)
                         node_two.delnetif(interface_two.netindex)
         finally:
@@ -483,7 +481,7 @@ class EmuSession(Session):
         if not _id:
             while True:
                 _id = self.node_id_gen.next()
-                if _id not in self.objects:
+                if _id not in self.nodes:
                     break
 
         # generate name if not provided
@@ -493,7 +491,7 @@ class EmuSession(Session):
 
         # create node
         logging.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
-        node = self.add_object(cls=node_class, _id=_id, name=name, start=start)
+        node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
 
         # set node attributes
         node.icon = node_options.icon
@@ -510,9 +508,9 @@ class EmuSession(Session):
             self.services.add_services(node, node.type, node_options.services)
 
         # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
-        is_boot_node = isinstance(node, PyCoreNode) and not nodeutils.is_node(node, NodeTypes.RJ45)
+        is_boot_node = isinstance(node, CoreNodeBase) and not nodeutils.is_node(node, NodeTypes.RJ45)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
-            self.write_objects()
+            self.write_nodes()
             self.add_remove_control_interface(node=node, remove=False)
             self.services.boot_services(node)
 
@@ -530,7 +528,7 @@ class EmuSession(Session):
         result = False
         try:
             # get node to update
-            node = self.get_object(node_id)
+            node = self.get_node(node_id)
 
             # set node position and broadcast it
             self.set_node_position(node, node_options)
@@ -544,20 +542,6 @@ class EmuSession(Session):
         except KeyError:
             logging.error("failure to update node that does not exist: %s", node_id)
 
-        return result
-
-    def delete_node(self, node_id):
-        """
-        Delete a node from the session and check if session should shutdown, if no nodes are left.
-
-        :param int node_id: id of node to delete
-        :return: True if node deleted, False otherwise
-        :rtype: bool
-        """
-        # delete node and check for session shutdown if a node was removed
-        result = self.custom_delete_object(node_id)
-        if result:
-            self.check_shutdown()
         return result
 
     def set_node_position(self, node, node_options):
@@ -625,21 +609,6 @@ class EmuSession(Session):
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         super(EmuSession, self).shutdown()
 
-    def custom_delete_object(self, object_id):
-        """
-        Remove an emulation object.
-
-        :param int object_id: object id to remove
-        :return: True if object deleted, False otherwise
-        """
-        result = False
-        with self._objects_lock:
-            if object_id in self.objects:
-                obj = self.objects.pop(object_id)
-                obj.shutdown()
-                result = True
-        return result
-
     def is_active(self):
         """
         Determine if this session is considered to be active. (Runtime or Data collect states)
@@ -704,7 +673,7 @@ class EmuSession(Session):
         :return: nothing
         """
 
-        node = self.get_object(node_id)
+        node = self.get_node(node_id)
 
         if source_name is not None:
             node.addfile(source_name, file_name)
@@ -717,7 +686,7 @@ class EmuSession(Session):
 
         :return: nothing
         """
-        self.delete_objects()
+        self.delete_nodes()
         self.del_hooks()
         self.broker.reset()
         self.emane.reset()

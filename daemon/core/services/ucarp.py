@@ -2,7 +2,7 @@
 ucarp.py: defines high-availability IP address controlled by ucarp
 """
 
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 UCARP_ETC = "/usr/local/etc/ucarp"
 

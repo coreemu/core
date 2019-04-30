@@ -1,5 +1,5 @@
 """
-vnodeclient.py: implementation of the VnodeClient class for issuing commands
+client.py: implementation of the VnodeClient class for issuing commands
 over a control channel to the vnoded process running in a network namespace.
 The control channel can be accessed via calls to the vcmd Python module or
 by invoking the vcmd shell command.
@@ -10,9 +10,8 @@ import os
 
 import vcmd
 
-from core import CoreCommandError
+from core import CoreCommandError, utils
 from core import constants
-from core.misc import utils
 
 
 class VnodeClient(object):

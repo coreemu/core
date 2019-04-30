@@ -28,9 +28,7 @@ import sys
 
 import ns.core
 
-from core.misc import ipaddress
-from core.misc import nodeutils
-from core.misc import nodemaps
+from core.nodes import nodeutils, nodemaps, ipaddress
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
 
@@ -59,7 +57,7 @@ def wifisession(opt):
     session.node_count = str(opt.numnodes + 1)
     add_to_server(session)
 
-    wifi = session.add_object(cls=Ns3WifiNet, name="wlan1")
+    wifi = session.create_node(cls=Ns3WifiNet, name="wlan1")
     wifi.setposition(30, 30, 0)
     wifi.phy.Set("RxGain", ns.core.DoubleValue(18.0))
 

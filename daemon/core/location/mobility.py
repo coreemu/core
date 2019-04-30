@@ -9,22 +9,22 @@ import os
 import threading
 import time
 
-from core.conf import ConfigGroup
-from core.conf import ConfigurableOptions
-from core.conf import Configuration
-from core.conf import ModelManager
-from core.coreobj import PyCoreNode
-from core.data import EventData
-from core.data import LinkData
-from core.enumerations import ConfigDataTypes
-from core.enumerations import EventTypes
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTlvs
-from core.enumerations import RegisterTlvs
-from core.misc import utils
-from core.misc.ipaddress import IpAddress
+from core.config import ConfigGroup
+from core.config import ConfigurableOptions
+from core.config import Configuration
+from core.config import ModelManager
+from core.nodes.base import CoreNodeBase
+from core.emulator.data import EventData
+from core.emulator.data import LinkData
+from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import RegisterTlvs
+from core import utils
+from core.nodes.ipaddress import IpAddress
 
 
 class MobilityManager(ModelManager):
@@ -67,7 +67,7 @@ class MobilityManager(ModelManager):
             logging.info("node mobility configurations: %s", self.get_all_configs(node_id))
 
             try:
-                node = self.session.get_object(node_id)
+                node = self.session.get_node(node_id)
             except KeyError:
                 logging.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
@@ -98,7 +98,7 @@ class MobilityManager(ModelManager):
         name = event_data.name
 
         try:
-            node = self.session.get_object(node_id)
+            node = self.session.get_node(node_id)
         except KeyError:
             logging.exception("Ignoring event for model '%s', unknown node '%s'", name, node_id)
             return
@@ -152,7 +152,7 @@ class MobilityManager(ModelManager):
         data += " end=%d" % int(model.endtime)
 
         event_data = EventData(
-            node=model.object_id,
+            node=model.id,
             event_type=event_type,
             name="mobility:%s" % model.name,
             data=data,
@@ -173,7 +173,7 @@ class MobilityManager(ModelManager):
         """
         for node_id in self.nodes():
             try:
-                node = self.session.get_object(node_id)
+                node = self.session.get_node(node_id)
             except KeyError:
                 continue
             if node.model:
@@ -213,7 +213,7 @@ class MobilityManager(ModelManager):
                 return
             if nn[1] in self.session.broker.physical_nodes:
                 # record the fact that this PhysicalNode is linked to a net
-                dummy = PyCoreNode(session=self.session, _id=nn[1], name="n%d" % nn[1], start=False)
+                dummy = CoreNodeBase(session=self.session, _id=nn[1], name="n%d" % nn[1], start=False)
                 self.addphys(nn[0], dummy)
 
     # TODO: remove need to handling old style messages
@@ -265,15 +265,15 @@ class WirelessModel(ConfigurableOptions):
     bitmap = None
     position_callback = None
 
-    def __init__(self, session, object_id):
+    def __init__(self, session, _id):
         """
         Create a WirelessModel instance.
 
         :param core.session.Session session: core session we are tied to
-        :param int object_id: object id
+        :param int _id: object id
         """
         self.session = session
-        self.object_id = object_id
+        self.id = _id
 
     def all_link_data(self, flags):
         """
@@ -329,17 +329,17 @@ class BasicRangeModel(WirelessModel):
             ConfigGroup("Basic Range Parameters", 1, len(cls.configurations()))
         ]
 
-    def __init__(self, session, object_id):
+    def __init__(self, session, _id):
         """
         Create a BasicRangeModel instance.
 
         :param core.session.Session session: related core session
-        :param int object_id: object id
+        :param int _id: object id
         :param dict config: values
         """
-        super(BasicRangeModel, self).__init__(session=session, object_id=object_id)
+        super(BasicRangeModel, self).__init__(session=session, _id=_id)
         self.session = session
-        self.wlan = session.get_object(object_id)
+        self.wlan = session.get_node(_id)
         self._netifs = {}
         self._netifslock = threading.Lock()
 
@@ -605,15 +605,15 @@ class WayPointMobility(WirelessModel):
     STATE_RUNNING = 1
     STATE_PAUSED = 2
 
-    def __init__(self, session, object_id):
+    def __init__(self, session, _id):
         """
         Create a WayPointMobility instance.
 
         :param core.session.Session session: CORE session instance
-        :param int object_id: object id
+        :param int _id: object id
         :return:
         """
-        super(WayPointMobility, self).__init__(session=session, object_id=object_id)
+        super(WayPointMobility, self).__init__(session=session, _id=_id)
 
         self.state = self.STATE_STOPPED
         self.queue = []
@@ -622,7 +622,7 @@ class WayPointMobility(WirelessModel):
         self.initial = {}
         self.lasttime = None
         self.endtime = None
-        self.wlan = session.get_object(object_id)
+        self.wlan = session.get_node(_id)
         # these are really set in child class via confmatrix
         self.loop = False
         self.refresh_ms = 50
@@ -700,7 +700,7 @@ class WayPointMobility(WirelessModel):
         Calculate next node location and update its coordinates.
         Returns True if the node's position has changed.
 
-        :param core.netns.nodes.CoreNode node: node to move
+        :param core.netns.vnode.CoreNode node: node to move
         :param dt: move factor
         :return: True if node was moved, False otherwise
         :rtype: bool
@@ -830,7 +830,7 @@ class WayPointMobility(WirelessModel):
         without invoking the interface poshook callback that may perform
         range calculation.
 
-        :param core.netns.nodes.CoreNode node: node to set position for
+        :param core.netns.vnode.CoreNode node: node to set position for
         :param x: x position
         :param y: y position
         :param z: z position
@@ -923,15 +923,15 @@ class Ns2ScriptedMobility(WayPointMobility):
             ConfigGroup("ns-2 Mobility Script Parameters", 1, len(cls.configurations()))
         ]
 
-    def __init__(self, session, object_id):
+    def __init__(self, session, _id):
         """
         Creates a Ns2ScriptedMobility instance.
 
         :param core.session.Session session: CORE session instance
-        :param int object_id: object id
+        :param int _id: object id
         :param config: values
         """
-        super(Ns2ScriptedMobility, self).__init__(session=session, object_id=object_id)
+        super(Ns2ScriptedMobility, self).__init__(session=session, _id=_id)
         self._netifs = {}
         self._netifslock = threading.Lock()
 
@@ -946,7 +946,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
     def update_config(self, config):
         self.file = config["file"]
-        logging.info("ns-2 scripted mobility configured for WLAN %d using file: %s", self.object_id, self.file)
+        logging.info("ns-2 scripted mobility configured for WLAN %d using file: %s", self.id, self.file)
         self.refresh_ms = int(config["refresh_ms"])
         self.loop = config["loop"].lower() == "on"
         self.autostart = config["autostart"]

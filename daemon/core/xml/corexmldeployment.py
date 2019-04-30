@@ -3,10 +3,10 @@ import socket
 
 from lxml import etree
 
-from core import constants
-from core.coreobj import PyCoreNode
-from core.enumerations import NodeTypes
-from core.misc import utils, nodeutils, ipaddress
+from core import constants, utils
+from core.nodes.base import CoreNodeBase
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils, ipaddress
 
 
 def add_type(parent_element, name):
@@ -100,8 +100,8 @@ class CoreXmlDeployment(object):
         #   servers = self.session.broker.getservernames()
         #   servers.remove("localhost")
 
-        for node in self.session.objects.itervalues():
-            if isinstance(node, PyCoreNode):
+        for node in self.session.nodes.itervalues():
+            if isinstance(node, CoreNodeBase):
                 self.add_virtual_host(physical_host, node)
 
     def add_physical_host(self, name):
@@ -119,7 +119,7 @@ class CoreXmlDeployment(object):
         return host_element
 
     def add_virtual_host(self, physical_host, node):
-        if not isinstance(node, PyCoreNode):
+        if not isinstance(node, CoreNodeBase):
             raise TypeError("invalid node type: %s" % node)
 
         # create virtual host element
