@@ -1,7 +1,77 @@
 from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils
+from core.nodes.base import CoreNetworkBase
 from core.nodes.ipaddress import Ipv4Prefix
 from core.nodes.ipaddress import Ipv6Prefix
 from core.nodes.ipaddress import MacAddress
+
+
+class IdGen(object):
+    def __init__(self, _id=0):
+        self.id = _id
+
+    def next(self):
+        self.id += 1
+        return self.id
+
+
+def is_net_node(node):
+    """
+    Convenience method for testing if a legacy core node is considered a network node.
+
+    :param object node: object to test against
+    :return: True if object is an instance of a network node, False otherwise
+    :rtype: bool
+    """
+    return isinstance(node, CoreNetworkBase)
+
+
+def create_interface(node, network, interface_data):
+    """
+    Create an interface for a node on a network using provided interface data.
+
+    :param node: node to create interface for
+    :param network: network to associate interface with
+    :param core.emulator.emudata.InterfaceData interface_data: interface data
+    :return: created interface
+    """
+    node.newnetif(
+        network,
+        addrlist=interface_data.get_addresses(),
+        hwaddr=interface_data.mac,
+        ifindex=interface_data.id,
+        ifname=interface_data.name
+    )
+    return node.netif(interface_data.id, network)
+
+
+def link_config(network, interface, link_options, devname=None, interface_two=None):
+    """
+    Convenience method for configuring a link,
+
+    :param network: network to configure link for
+    :param interface: interface to configure
+    :param core.emulator.emudata.LinkOptions link_options: data to configure link with
+    :param str devname: device name, default is None
+    :param interface_two: other interface associated, default is None
+    :return: nothing
+    """
+    config = {
+        "netif": interface,
+        "bw": link_options.bandwidth,
+        "delay": link_options.delay,
+        "loss": link_options.per,
+        "duplicate": link_options.dup,
+        "jitter": link_options.jitter,
+        "netif2": interface_two
+    }
+
+    # hacky check here, because physical and emane nodes do not conform to the same linkconfig interface
+    if not nodeutils.is_node(network, [NodeTypes.EMANE, NodeTypes.PHYSICAL]):
+        config["devname"] = devname
+
+    network.linkconfig(**config)
 
 
 class NodeOptions(object):
