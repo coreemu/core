@@ -11,8 +11,10 @@ import shutil
 import sys
 import threading
 import time
+from builtins import range
 from itertools import repeat
 
+from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
 from core.config import ConfigShim
 from core.emulator.data import ConfigData, ExceptionData
@@ -38,7 +40,6 @@ from core.emulator.enumerations import NodeTypes
 from core.emulator.enumerations import RegisterTlvs
 from core.emulator.enumerations import SessionTlvs
 from core.nodes import nodeutils
-from core import utils
 from core.services.coreservices import ServiceManager
 from core.services.coreservices import ServiceShim
 
@@ -79,7 +80,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             raise ValueError("invalid number of threads: %s" % num_threads)
 
         logging.debug("launching core server handler threads: %s", num_threads)
-        for _ in xrange(num_threads):
+        for _ in range(num_threads):
             thread = threading.Thread(target=self.handler_thread)
             self.handler_threads.append(thread)
             thread.start()

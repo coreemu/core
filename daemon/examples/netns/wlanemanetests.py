@@ -43,8 +43,8 @@ from core import emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
-from core.nodes import ipaddress
 from core.emulator.session import Session
+from core.nodes import ipaddress
 
 try:
     import emaneeventservice
@@ -416,7 +416,7 @@ class Experiment(object):
         # emulated network
         self.net = self.session.create_node(cls=core.nodes.network.WlanNode, name="wlan1")
         prev = None
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
             tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
@@ -444,7 +444,7 @@ class Experiment(object):
         self.net = self.session.create_node(cls=EmaneNode, _id=numnodes + 1, name="wlan1")
         self.net.verbose = verbose
         # self.session.emane.addobj(self.net)
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
             tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
             # tmp.setposition(i * 20, 50, None)
@@ -461,7 +461,7 @@ class Experiment(object):
         self.info("waiting %s sec (TAP bring-up)" % 2)
         time.sleep(2)
 
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             tmp = self.nodes[i - 1]
             self.session.services.boot_services(tmp)
             self.staticroutes(i, prefix, numnodes)
@@ -496,7 +496,7 @@ class Experiment(object):
                 self.warn("failed to add interface route: %s" % cmd)
 
         # add static routes to all other nodes via left/right neighbors
-        for j in xrange(1, numnodes + 1):
+        for j in range(1, numnodes + 1):
             if abs(j - i) < 2:
                 continue
             addr = "%s" % prefix.addr(j)
@@ -525,7 +525,7 @@ class Experiment(object):
                                    otachannel=None)
             old = False
 
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             rxnem = i
             # inform rxnem that it can hear node to the left with 10dB noise
             txnem = rxnem - 1

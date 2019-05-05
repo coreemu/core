@@ -6,6 +6,7 @@ import logging
 import random
 import socket
 import struct
+from builtins import range
 from socket import AF_INET
 from socket import AF_INET6
 
@@ -154,7 +155,7 @@ class IpAddress(object):
             return NotImplemented
 
         tmp = [ord(x) for x in self.addr]
-        for i in xrange(len(tmp) - 1, -1, -1):
+        for i in range(len(tmp) - 1, -1, -1):
             x = tmp[i] + carry
             tmp[i] = x & 0xff
             carry = x >> 8
@@ -235,7 +236,7 @@ class IpPrefix(object):
             addrbits = self.addrlen - self.prefixlen
             netmask = ((1L << self.prefixlen) - 1) << addrbits
             prefix = ""
-            for i in xrange(-1, -(addrbits >> 3) - 2, -1):
+            for i in range(-1, -(addrbits >> 3) - 2, -1):
                 prefix = chr(ord(self.prefix[i]) & (netmask & 0xff)) + prefix
                 netmask >>= 8
             self.prefix = self.prefix[:i] + prefix
@@ -319,7 +320,7 @@ class IpPrefix(object):
 
         addr = ""
         prefix_endpoint = -1
-        for i in xrange(-1, -(self.addrlen >> 3) - 1, -1):
+        for i in range(-1, -(self.addrlen >> 3) - 1, -1):
             prefix_endpoint = i
             addr = chr(ord(self.prefix[i]) | (tmp & 0xff)) + addr
             tmp >>= 8

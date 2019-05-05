@@ -11,16 +11,17 @@ import signal
 import socket
 import string
 import threading
+from builtins import range
 from socket import AF_INET, AF_INET6
 
 from core import CoreCommandError, utils
 from core import constants
 from core.emulator.data import NodeData, LinkData
 from core.emulator.enumerations import NodeTypes, LinkTypes
-from core.nodes.ipaddress import MacAddress
 from core.nodes import client, nodeutils, ipaddress
 from core.nodes.interface import TunTap, CoreInterface
 from core.nodes.interface import Veth
+from core.nodes.ipaddress import MacAddress
 
 _DEFAULT_MTU = 1500
 
@@ -868,8 +869,8 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         tmplen = 8
-        tmp1 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in xrange(tmplen)])
-        tmp2 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in xrange(tmplen)])
+        tmp1 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in range(tmplen)])
+        tmp2 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in range(tmplen)])
         utils.check_cmd([constants.IP_BIN, "link", "add", "name", tmp1, "type", "veth", "peer", "name", tmp2])
 
         utils.check_cmd([constants.IP_BIN, "link", "set", tmp1, "netns", str(self.pid)])

@@ -4,6 +4,7 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
+from builtins import range
 
 from core import CoreCommandError, utils
 from core import constants
@@ -300,7 +301,7 @@ class TunTap(CoreInterface):
         """
         delay = 0.01
         result = False
-        for i in xrange(1, attempts + 1):
+        for i in range(1, attempts + 1):
             r = func()
             if r == 0:
                 result = True

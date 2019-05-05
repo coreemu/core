@@ -4,6 +4,8 @@
 # n nodes are connected to a virtual wlan; run test for testsec
 # and repeat for minnodes <= n <= maxnodes with a step size of
 # nodestep
+from builtins import range
+
 from core import load_logging_config
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import NodeTypes, EventTypes
@@ -26,7 +28,7 @@ def example(nodes):
     switch = session.add_node(_type=NodeTypes.SWITCH)
 
     # create nodes
-    for _ in xrange(nodes):
+    for _ in range(nodes):
         node = session.add_node()
         interface = prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface_one=interface)

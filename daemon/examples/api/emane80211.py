@@ -3,6 +3,7 @@
 # Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
 
 import datetime
+from builtins import range
 
 import parser
 from core import load_logging_config
@@ -33,7 +34,7 @@ def example(options):
     emane_network.setposition(x=80, y=50)
 
     # create nodes
-    for i in xrange(options.nodes):
+    for i in range(options.nodes):
         node = session.create_wireless_node()
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)

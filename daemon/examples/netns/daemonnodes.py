@@ -13,6 +13,7 @@
 import datetime
 import optparse
 import sys
+from builtins import range
 
 import core.nodes.base
 import core.nodes.network
@@ -26,11 +27,10 @@ from core.emulator.enumerations import LinkTlvs
 from core.emulator.enumerations import LinkTypes
 from core.emulator.enumerations import MessageFlags
 from core.emulator.enumerations import MessageTypes
+from core.emulator.session import Session
 from core.nodes import ipaddress
 
 # declare classes for use with Broker
-
-from core.emulator.session import Session
 
 # node list (count from 1)
 n = [None]
@@ -148,7 +148,7 @@ def main():
     print "creating %d remote nodes with addresses from %s" % (options.numnodes, prefix)
 
     # create remote nodes via API
-    for i in xrange(1, number_of_nodes + 1):
+    for i in range(1, number_of_nodes + 1):
         node = core.nodes.base.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
         node.setposition(x=150 * i, y=150)
         node.server = daemon
@@ -158,7 +158,7 @@ def main():
         n.append(node)
 
     # create remote links via API
-    for i in xrange(1, number_of_nodes + 1):
+    for i in range(1, number_of_nodes + 1):
         tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)

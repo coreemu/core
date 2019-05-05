@@ -6,6 +6,7 @@
 # nodestep
 
 import datetime
+from builtins import range
 
 import parser
 from core import load_logging_config
@@ -35,7 +36,7 @@ def example(options):
     # create nodes, must set a position for wlan basic range model
     node_options = NodeOptions()
     node_options.set_position(0, 0)
-    for _ in xrange(options.nodes):
+    for _ in range(options.nodes):
         node = session.add_node(node_options=node_options)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, wlan.id, interface_one=interface)

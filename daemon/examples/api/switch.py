@@ -6,6 +6,7 @@
 # nodestep
 
 import datetime
+from builtins import range
 
 import parser
 from core import load_logging_config
@@ -31,7 +32,7 @@ def example(options):
     switch = session.add_node(_type=NodeTypes.SWITCH)
 
     # create nodes
-    for _ in xrange(options.nodes):
+    for _ in range(options.nodes):
         node = session.add_node()
         interface = prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface_one=interface)

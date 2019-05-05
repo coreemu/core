@@ -13,15 +13,16 @@ import os
 import random
 import sys
 import time
+from builtins import range
 from string import Template
 
 import core.nodes.base
 import core.nodes.network
 from core.constants import QUAGGA_STATE_DIR
-from core.nodes import ipaddress
-from core.utils import check_cmd
 # this is the /etc/core/core.conf default
 from core.emulator.session import Session
+from core.nodes import ipaddress
+from core.utils import check_cmd
 
 quagga_sbin_search = ("/usr/local/sbin", "/usr/sbin", "/usr/lib/quagga")
 quagga_path = "zebra"
@@ -243,14 +244,14 @@ class ManetExperiment(object):
         self.session = Session(1)
         # emulated network
         self.net = self.session.create_node(cls=core.nodes.network.WlanNode)
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
             tmp = self.session.create_node(cls=ManetNode, ipaddr=addr, _id="%d" % i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
         # connect nodes with probability linkprob
-        for i in xrange(numnodes):
-            for j in xrange(i + 1, numnodes):
+        for i in range(numnodes):
+            for j in range(i + 1, numnodes):
                 r = random.random()
                 if r < linkprob:
                     if self.verbose:
@@ -265,7 +266,7 @@ class ManetExperiment(object):
             self.net.link(self.nodes[i].netif(0), self.nodes[j].netif(0))
             self.nodes[i].boot()
         # run the boot.sh script on all nodes to start Quagga
-        for i in xrange(numnodes):
+        for i in range(numnodes):
             self.nodes[i].cmd(["./%s" % self.nodes[i].bootsh])
 
     def compareroutes(self, node, kr, zr):
@@ -472,7 +473,7 @@ class ZebraRoutes(VtyshCmd):
     args = "show ip route"
 
     def parse(self):
-        for i in xrange(0, 3):
+        for i in range(0, 3):
             # skip first three lines
             self.out.readline()
         r = []
