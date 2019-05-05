@@ -31,7 +31,7 @@ setup(
     name="core-netns",
     version="@PACKAGE_VERSION@",
     description="Extension modules to support virtual nodes using Linux network namespaces",
-    scripts=["vcmd", "vnoded", "netns"],
+    data_files=[("bin", ["vcmd", "vnoded", "netns"])],
     ext_modules=[
         netns,
         vcmd

@@ -42,6 +42,7 @@ install-exec-local:
 		--root=/$(DESTDIR) \
 		--prefix=$(prefix) \
 		--install-lib=$(pythondir) \
+		--install-data=$(prefix) \
 		--single-version-externally-managed \
 		--no-compile
 
