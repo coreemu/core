@@ -150,7 +150,7 @@ def main():
                 switch = session.create_node(cls=core.nodes.network.SwitchNode)
                 switchlist.append(switch)
                 print("\nAdded bridge %s (%d) for node %d." % (switch.brname, len(switchlist), i))
-        except Exception, e:
+        except Exception as e:
             print("At %d bridges (%d nodes) caught exception:\n%s\n" % (len(switchlist), i - 1, e))
             break
 
@@ -177,7 +177,7 @@ def main():
                 sys.stdout.write(".")
             sys.stdout.flush()
             time.sleep(options.waittime)
-        except Exception, e:
+        except Exception as e:
             print("At %d nodes caught exception:\n" % i, e)
             if retry_count > 0:
                 print("\nWill retry creating node %d." % i)

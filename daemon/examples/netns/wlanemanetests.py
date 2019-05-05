@@ -49,11 +49,11 @@ from core.nodes import ipaddress
 try:
     import emaneeventservice
     import emaneeventpathloss
-except Exception, e:
+except Exception as e:
     try:
         from emanesh.events import EventService
         from emanesh.events import PathlossEvent
-    except Exception, e2:
+    except Exception as e2:
         raise ImportError("failed to import EMANE Python bindings:\n%s\n%s" % (e, e2))
 
 # global Experiment object (for interaction with "python -i")
@@ -256,7 +256,7 @@ class IperfCmd(ClientServerCmd):
         lines = self.out.readlines()
         try:
             bps = int(lines[-1].split(",")[-1].strip("\n"))
-        except Exception, e:
+        except Exception as e:
             self.warn("iperf parsing exception: %s" % e)
             bps = 0
         return bps

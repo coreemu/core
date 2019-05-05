@@ -129,7 +129,7 @@ class Route(object):
     def __init__(self, prefix=None, gw=None, metric=None):
         try:
             self.prefix = ipaddress.Ipv4Prefix(prefix)
-        except Exception, e:
+        except Exception as e:
             raise ValueError("Invalid prefix given to Route object: %s\n%s" % (prefix, e))
         self.gw = gw
         self.metric = metric
