@@ -329,7 +329,7 @@ class Ns3WimaxNet(CoreNs3Net):
         netif1, ns3dev1 = self.findns3dev(node1)
         netif2, ns3dev2 = self.findns3dev(node2)
         if not netif1 or not netif2:
-            raise ValueError, "interface not found"
+            raise ValueError("interface not found")
         addr1, mask1 = self.ipv4netifaddr(netif1)
         addr2, mask2 = self.ipv4netifaddr(netif2)
         clargs1 = (addr1, mask1, addr2, mask2) + downclass

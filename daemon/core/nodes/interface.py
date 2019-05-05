@@ -432,7 +432,7 @@ class GreTap(CoreInterface):
             return
 
         if remoteip is None:
-            raise ValueError, "missing remote IP required for GRE TAP device"
+            raise ValueError("missing remote IP required for GRE TAP device")
         args = [constants.IP_BIN, "link", "add", self.localname, "type", "gretap",
                 "remote", str(remoteip)]
         if localip:
