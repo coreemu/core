@@ -82,7 +82,11 @@ static PyObject *netns_nsexecvp(PyObject *self, PyObject *args)
   if (pid < 0)
     return PyErr_SetFromErrno(PyExc_OSError);
   else
+#if PY_MAJOR_VERSION >= 3
+    return PyLong_FromLong(pid);
+#else
     return PyInt_FromLong(pid);
+#endif
 }
 
 static PyObject *netns_nsfork(PyObject *self, PyObject *args)
@@ -100,7 +104,11 @@ static PyObject *netns_nsfork(PyObject *self, PyObject *args)
   if (pid == 0)			/* child */
     PyOS_AfterFork();
 
+#if PY_MAJOR_VERSION >= 3
+  return PyLong_FromLong(pid);
+#else
   return PyInt_FromLong(pid);
+#endif
 }
 
 static PyMethodDef netns_methods[] = {
@@ -120,13 +128,35 @@ static PyMethodDef netns_methods[] = {
   {NULL, NULL, 0, NULL},
 };
 
+#if PY_MAJOR_VERSION >= 3
+#define INITERROR return NULL
+  static struct PyModuleDef moduledef = {
+      PyModuleDef_HEAD_INIT,
+      "netns",     /* m_name */
+      "netns module",  /* m_doc */
+      -1,                  /* m_size */
+      netns_methods,    /* m_methods */
+      NULL,                /* m_reload */
+      NULL,                /* m_traverse */
+      NULL,                /* m_clear */
+      NULL,                /* m_free */
+  };
+#else
+#define INITERROR return
+#endif
+
 PyMODINIT_FUNC initnetns(void)
 {
   PyObject *m;
 
-  m = Py_InitModule("netns", netns_methods);
+  #if PY_MAJOR_VERSION >= 3
+    m = PyModule_Create(&moduledef);
+  #else
+    m = Py_InitModule("netns", netns_methods);
+  #endif
+  
   if (m == NULL)
-    return;
+    INITERROR;
 
 #define MODADDINT(x)				\
   do {						\
@@ -142,5 +172,5 @@ PyMODINIT_FUNC initnetns(void)
 
 #undef MODADDINT
 
-  return;
+  INITERROR;
 }
