@@ -68,7 +68,7 @@ def main():
         port = int(slaveport[1])
     else:
         port = CORE_API_PORT
-    print "connecting to slave at %s:%d" % (slave, port)
+    print("connecting to slave at %s:%d" % (slave, port))
     session.broker.addserver(slave, slave, port)
     session.broker.setupserver(slave)
     session.set_state(EventTypes.CONFIGURATION_STATE)
@@ -79,8 +79,8 @@ def main():
     switch.setposition(x=80, y=50)
     num_local = options.numnodes / 2
     num_remote = options.numnodes / 2 + options.numnodes % 2
-    print "creating %d (%d local / %d remote) nodes with addresses from %s" % \
-          (options.numnodes, num_local, num_remote, prefix)
+    print("creating %d (%d local / %d remote) nodes with addresses from %s" % \
+          (options.numnodes, num_local, num_remote, prefix))
     for i in range(1, num_local + 1):
         node = session.create_node(cls=core.nodes.base.CoreNode, name="n%d" % i, _id=i)
         node.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
@@ -120,9 +120,9 @@ def main():
     # start a shell on node 1
     n[1].client.term("bash")
 
-    print "elapsed time: %s" % (datetime.datetime.now() - start)
-    print "To stop this session, use the 'core-cleanup' script on this server"
-    print "and on the remote slave server."
+    print("elapsed time: %s" % (datetime.datetime.now() - start))
+    print("To stop this session, use the 'core-cleanup' script on this server")
+    print("and on the remote slave server.")
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":

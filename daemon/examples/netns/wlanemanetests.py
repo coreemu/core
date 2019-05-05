@@ -114,12 +114,12 @@ class Cmd(object):
 
     def info(self, msg):
         """ Utility method for writing output to stdout."""
-        print msg
+        print(msg)
         sys.stdout.flush()
 
     def warn(self, msg):
         """ Utility method for writing output to stderr. """
-        print >> sys.stderr, "XXX %s:" % self.node.name, msg
+        sys.stderr.write("XXX %s:" % self.node.name, msg)
         sys.stderr.flush()
 
     def run(self):
@@ -358,13 +358,13 @@ class Experiment(object):
 
     def info(self, msg):
         """ Utility method for writing output to stdout. """
-        print msg
+        print(msg)
         sys.stdout.flush()
         self.log(msg)
 
     def warn(self, msg):
         """ Utility method for writing output to stderr. """
-        print >> sys.stderr, msg
+        sys.stderr.write(msg)
         sys.stderr.flush()
         self.log(msg)
 
@@ -394,7 +394,7 @@ class Experiment(object):
         """ Write to the log file, if any. """
         if not self.logfp:
             return
-        print >> self.logfp, msg
+        self.logfp.write(msg)
 
     def reset(self):
         """ Prepare for another experiment run.

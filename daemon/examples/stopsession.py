@@ -40,7 +40,7 @@ def main():
             data = sock.recv(msglen)
         message = coreapi.CoreMessage(msgflags, hdr, data)
         sessions = message.get_tlv(coreapi.SessionTlvs.NUMBER.value)
-        print "sessions:", sessions
+        print("sessions: {}".format(sessions))
 
     sock.close()
 

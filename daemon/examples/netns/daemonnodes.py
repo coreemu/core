@@ -65,7 +65,7 @@ def cmd(node, exec_cmd):
         msgdata = server.sock.recv(msglen)
 
         # If we get the right response return the results
-        print "received response message: %s" % MessageTypes(msgtype)
+        print("received response message: %s" % MessageTypes(msgtype))
         if msgtype == MessageTypes.EXECUTE.value:
             msg = coreapi.CoreExecMessage(msgflags, msghdr, msgdata)
             result = msg.get_tlv(ExecuteTlvs.RESULT.value)
@@ -120,7 +120,7 @@ def main():
         port = int(daemonport[1])
     else:
         port = CORE_API_PORT
-    print "connecting to daemon at %s:%d" % (daemon, port)
+    print("connecting to daemon at %s:%d" % (daemon, port))
     session.broker.addserver(daemon, daemonip, port)
 
     # Set the local session id to match the port.
@@ -145,7 +145,7 @@ def main():
 
     number_of_nodes = options.numnodes
 
-    print "creating %d remote nodes with addresses from %s" % (options.numnodes, prefix)
+    print("creating %d remote nodes with addresses from %s" % (options.numnodes, prefix))
 
     # create remote nodes via API
     for i in range(1, number_of_nodes + 1):
@@ -175,13 +175,11 @@ def main():
     session.broker.handlerawmsg(msg)
 
     # Get the ip or last node and ping it from the first
-    print "Pinging from the first to the last node"
+    print("Pinging from the first to the last node")
     pingip = cmd(n[-1], "ip -4 -o addr show dev eth0").split()[3].split("/")[0]
-    print cmd(n[1], "ping -c 5 " + pingip)
-
-    print "elapsed time: %s" % (datetime.datetime.now() - start)
-
-    print "To stop this session, use the core-cleanup script on the remote daemon server."
+    print(cmd(n[1], "ping -c 5 " + pingip))
+    print("elapsed time: %s" % (datetime.datetime.now() - start))
+    print("To stop this session, use the core-cleanup script on the remote daemon server.")
     raw_input("press enter to exit")
 
 

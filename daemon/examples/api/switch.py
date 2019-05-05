@@ -44,10 +44,10 @@ def example(options):
     first_node = session.get_node(2)
     last_node = session.get_node(options.nodes + 1)
 
-    print "starting iperf server on node: %s" % first_node.name
+    print("starting iperf server on node: %s" % first_node.name)
     first_node.cmd(["iperf", "-s", "-D"])
     first_node_address = prefixes.ip4_address(first_node)
-    print "node %s connecting to %s" % (last_node.name, first_node_address)
+    print("node %s connecting to %s" % (last_node.name, first_node_address))
     last_node.client.icmd(["iperf", "-t", str(options.time), "-c", first_node_address])
     first_node.cmd(["killall", "-9", "iperf"])
 
@@ -59,9 +59,9 @@ def main():
     options = parser.parse_options("switch")
 
     start = datetime.datetime.now()
-    print "running switch example: nodes(%s) time(%s)" % (options.nodes, options.time)
+    print("running switch example: nodes(%s) time(%s)" % (options.nodes, options.time))
     example(options)
-    print "elapsed time: %s" % (datetime.datetime.now() - start)
+    print("elapsed time: %s" % (datetime.datetime.now() - start))
 
 
 if __name__ == "__main__":
