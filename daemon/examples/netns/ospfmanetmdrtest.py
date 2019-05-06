@@ -84,7 +84,7 @@ ip forwarding
         f.close()
         tmp = self.bootscript()
         if tmp:
-            self.nodefile(self.bootsh, tmp, mode=0755)
+            self.nodefile(self.bootsh, tmp, mode=0o755)
 
     def boot(self):
         self.config()

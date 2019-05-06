@@ -4,17 +4,18 @@ import os
 import tempfile
 import time
 from Queue import Queue, Empty
+from builtins import int
 
 import grpc
 from concurrent import futures
 
-from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
-from core.emulator.enumerations import NodeTypes, EventTypes, LinkTypes
 from core.api.grpc import core_pb2
 from core.api.grpc import core_pb2_grpc
+from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
+from core.emulator.enumerations import NodeTypes, EventTypes, LinkTypes
+from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes import nodeutils
 from core.nodes.ipaddress import MacAddress
-from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24

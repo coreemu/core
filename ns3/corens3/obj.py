@@ -491,7 +491,7 @@ class Ns3Session(Session):
         net.mobility.setendtime()
         net.mobility.refresh_ms = 300
         net.mobility.empty_queue_stop = False
-        of = ns.network.OutputStreamWrapper(filename, filemode=777)
+        of = ns.network.OutputStreamWrapper(filename, filemode=0o777)
         self.mobhelper.EnableAsciiAll(of)
         self.mobilitytracethread = threading.Thread(
             target=self.mobilitytrace,

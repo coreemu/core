@@ -559,7 +559,6 @@ class CoreNode(CoreNodeBase):
             finally:
                 self.rmnodedir()
 
-
     def cmd(self, args, wait=True):
         """
         Runs shell command on node, with option to not wait for a result.
@@ -928,10 +927,10 @@ class CoreNode(CoreNodeBase):
         hostfilename = self.hostfilename(filename)
         dirname, _basename = os.path.split(hostfilename)
         if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode=0755)
+            os.makedirs(dirname, mode=0o755)
         return open(hostfilename, mode)
 
-    def nodefile(self, filename, contents, mode=0644):
+    def nodefile(self, filename, contents, mode=0o644):
         """
         Create a node file with a given mode.
 

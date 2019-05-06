@@ -234,12 +234,12 @@ class PhysicalNode(CoreNodeBase):
         dirname = dirname.replace("/", ".")
         dirname = os.path.join(self.nodedir, dirname)
         if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode=0755)
+            os.makedirs(dirname, mode=0o755)
 
         hostfilename = os.path.join(dirname, basename)
         return open(hostfilename, mode)
 
-    def nodefile(self, filename, contents, mode=0644):
+    def nodefile(self, filename, contents, mode=0o644):
         with self.opennodefile(filename, "w") as node_file:
             node_file.write(contents)
             os.chmod(node_file.name, mode)

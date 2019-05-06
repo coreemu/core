@@ -788,7 +788,7 @@ class CoreMessage(object):
         :rtype: str
         """
         message_flags = []
-        flag = 1L
+        flag = 1
 
         while True:
             if self.flags & flag:

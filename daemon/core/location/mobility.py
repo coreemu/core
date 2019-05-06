@@ -8,12 +8,13 @@ import math
 import os
 import threading
 import time
+from builtins import int
 
+from core import utils
 from core.config import ConfigGroup
 from core.config import ConfigurableOptions
 from core.config import Configuration
 from core.config import ModelManager
-from core.nodes.base import CoreNodeBase
 from core.emulator.data import EventData
 from core.emulator.data import LinkData
 from core.emulator.enumerations import ConfigDataTypes
@@ -23,7 +24,7 @@ from core.emulator.enumerations import MessageFlags
 from core.emulator.enumerations import MessageTypes
 from core.emulator.enumerations import NodeTlvs
 from core.emulator.enumerations import RegisterTlvs
-from core import utils
+from core.nodes.base import CoreNodeBase
 from core.nodes.ipaddress import IpAddress
 
 

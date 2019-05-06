@@ -520,7 +520,7 @@ class CoreServices(object):
             src = src.split('\n')[0]
             src = utils.expand_corepath(src, node.session, node)
             # TODO: glob here
-            node.nodefilecopy(filename, src, mode=0644)
+            node.nodefilecopy(filename, src, mode=0o644)
             return True
         return False
 

@@ -44,12 +44,12 @@ class MacAddress(object):
         if not self.addr:
             return IpAddress.from_string("::")
         tmp = struct.unpack("!Q", "\x00\x00" + self.addr)[0]
-        nic = long(tmp) & 0x000000FFFFFFL
-        oui = long(tmp) & 0xFFFFFF000000L
+        nic = long(tmp) & 0x000000FFFFFF
+        oui = long(tmp) & 0xFFFFFF000000
         # toggle U/L bit
-        oui ^= 0x020000000000L
+        oui ^= 0x020000000000
         # append EUI-48 octets
-        oui = (oui << 16) | 0xFFFE000000L
+        oui = (oui << 16) | 0xFFFE000000
         return IpAddress(AF_INET6, struct.pack("!QQ", 0xfe80 << 48, oui | nic))
 
     @classmethod
@@ -234,7 +234,7 @@ class IpPrefix(object):
         self.prefix = socket.inet_pton(self.af, tmp[0])
         if self.addrlen > self.prefixlen:
             addrbits = self.addrlen - self.prefixlen
-            netmask = ((1L << self.prefixlen) - 1) << addrbits
+            netmask = ((1 << self.prefixlen) - 1) << addrbits
             prefix = ""
             for i in range(-1, -(addrbits >> 3) - 2, -1):
                 prefix = chr(ord(self.prefix[i]) & (netmask & 0xff)) + prefix
@@ -376,7 +376,7 @@ class IpPrefix(object):
         :rtype: str
         """
         addrbits = self.addrlen - self.prefixlen
-        netmask = ((1L << self.prefixlen) - 1) << addrbits
+        netmask = ((1 << self.prefixlen) - 1) << addrbits
         netmaskbytes = struct.pack("!L", netmask)
         return IpAddress(af=AF_INET, address=netmaskbytes).__str__()
 
