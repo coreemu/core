@@ -466,7 +466,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node = self.get_node(session, request.id, context)
 
         interfaces = []
-        for interface_id, interface in node._netif.iteritems():
+        for interface_id in node._netif:
+            interface = node._netif[interface_id]
             net_id = None
             if interface.net:
                 net_id = interface.net.id
@@ -628,7 +629,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session, context)
         hooks = []
-        for state, state_hooks in session._hooks.iteritems():
+        for state in session._hooks:
+            state_hooks = session._hooks[state]
             for file_name, file_data in state_hooks:
                 hook = core_pb2.Hook(state=state, file=file_name, data=file_data)
                 hooks.append(hook)
@@ -645,10 +647,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get mobility configs: %s", request)
         session = self.get_session(request.session, context)
         response = core_pb2.GetMobilityConfigsResponse()
-        for node_id, model_config in session.mobility.node_configurations.iteritems():
+        for node_id in session.mobility.node_configurations:
+            model_config = session.mobility.node_configurations[node_id]
             if node_id == -1:
                 continue
-            for model_name in model_config.iterkeys():
+            for model_name in model_config:
                 if model_name != Ns2ScriptedMobility.name:
                     continue
                 config = session.mobility.get_model_config(node_id, model_name)
@@ -687,7 +690,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def GetServices(self, request, context):
         logging.debug("get services: %s", request)
         services = []
-        for service in ServiceManager.services.itervalues():
+        for name in ServiceManager.services:
+            service = ServiceManager.services[name]
             service_proto = core_pb2.Service(group=service.group, name=service.name)
             services.append(service_proto)
         return core_pb2.GetServicesResponse(services=services)
@@ -846,11 +850,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("get emane model configs: %s", request)
         session = self.get_session(request.session, context)
         response = core_pb2.GetEmaneModelConfigsResponse()
-        for node_id, model_config in session.emane.node_configurations.iteritems():
+        for node_id in session.emane.node_configurations:
+            model_config = session.emane.node_configurations[node_id]
             if node_id == -1:
                 continue
 
-            for model_name in model_config.iterkeys():
+            for model_name in model_config:
                 model = session.emane.models[model_name]
                 config = session.emane.get_model_config(node_id, model_name)
                 config_groups = get_config_groups(config, model)

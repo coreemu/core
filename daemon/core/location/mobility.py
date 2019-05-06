@@ -73,7 +73,7 @@ class MobilityManager(ModelManager):
                 logging.warn("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
-            for model_name in self.models.iterkeys():
+            for model_name in self.models:
                 config = self.get_configs(node_id, model_name)
                 if not config:
                     continue

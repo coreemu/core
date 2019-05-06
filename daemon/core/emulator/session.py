@@ -100,7 +100,8 @@ class Session(object):
         self.options = SessionConfig()
         if not config:
             config = {}
-        for key, value in config.iteritems():
+        for key in config:
+            value = config[key]
             self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
@@ -1244,12 +1245,15 @@ class Session(object):
         """
 
         with self._nodes_lock:
-            count = len([x for x in self.nodes.itervalues()
-                         if not nodeutils.is_node(x, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))])
+            count = 0
+            for node_id in self.nodes:
+                node = self.nodes[node_id]
+                is_p2p_ctrlnet = nodeutils.is_node(node, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))
+                is_tap = nodeutils.is_node(node, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)
+                if is_p2p_ctrlnet or is_tap:
+                    continue
 
-            # on Linux, GreTapBridges are auto-created, not part of GUI's node count
-            count -= len([x for x in self.nodes.itervalues()
-                          if nodeutils.is_node(x, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)])
+                count += 1
 
         return count
 
@@ -1286,10 +1290,11 @@ class Session(object):
 
         # stop node services
         with self._nodes_lock:
-            for obj in self.nodes.itervalues():
+            for node_id in self.nodes:
+                node = self.nodes[node_id]
                 # TODO: determine if checking for CoreNode alone is ok
-                if isinstance(obj, core.nodes.base.CoreNodeBase):
-                    self.services.stop_services(obj)
+                if isinstance(node, core.nodes.base.CoreNodeBase):
+                    self.services.stop_services(node)
 
         # shutdown emane
         self.emane.shutdown()

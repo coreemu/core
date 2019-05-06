@@ -250,7 +250,8 @@ class EmaneManager(ModelManager):
 
         # TODO: drive this from the session object
         with self.session._nodes_lock:
-            for node in self.session.nodes.itervalues():
+            for node_id in self.session.nodes:
+                node = self.session.nodes[node_id]
                 if nodeutils.is_node(node, NodeTypes.EMANE):
                     logging.debug("adding emane node: id(%s) name(%s)", node.id, node.name)
                     self.add_node(node)
@@ -318,7 +319,8 @@ class EmaneManager(ModelManager):
                 self.startdaemons()
                 self.installnetifs()
 
-            for emane_node in self._emane_nodes.itervalues():
+            for node_id in self._emane_nodes:
+                emane_node = self._emane_nodes[node_id]
                 for netif in emane_node.netifs():
                     nems.append((netif.node.name, netif.name, emane_node.getnemid(netif)))
 
@@ -552,7 +554,8 @@ class EmaneManager(ModelManager):
         Return the number of NEMs emulated locally.
         """
         count = 0
-        for emane_node in self._emane_nodes.itervalues():
+        for node_id in self._emane_nodes:
+            emane_node = self._emane_nodes[node_id]
             count += len(emane_node.netifs())
         return count
 

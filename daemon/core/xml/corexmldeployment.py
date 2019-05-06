@@ -100,7 +100,8 @@ class CoreXmlDeployment(object):
         #   servers = self.session.broker.getservernames()
         #   servers.remove("localhost")
 
-        for node in self.session.nodes.itervalues():
+        for node_id in self.session.nodes:
+            node = self.session.nodes[node_id]
             if isinstance(node, CoreNodeBase):
                 self.add_virtual_host(physical_host, node)
 

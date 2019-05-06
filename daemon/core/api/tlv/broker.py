@@ -160,7 +160,8 @@ class CoreBroker(object):
         logging.info("clearing state")
         self.nodemap_lock.acquire()
         self.nodemap.clear()
-        for server, count in self.nodecounts.iteritems():
+        for server in self.nodecounts:
+            count = self.nodecounts[server]
             if count < 1:
                 self.delserver(server)
         self.nodecounts.clear()
@@ -200,7 +201,8 @@ class CoreBroker(object):
             rlist = []
             with self.servers_lock:
                 # build a socket list for select call
-                for server in self.servers.itervalues():
+                for name in self.servers:
+                    server = self.servers[name]
                     if server.sock is not None:
                         rlist.append(server.sock)
             r, _w, _x = select.select(rlist, [], [], 1.0)
@@ -349,7 +351,8 @@ class CoreBroker(object):
         :rtype: CoreDistributedServer
         """
         with self.servers_lock:
-            for server in self.servers.itervalues():
+            for name in self.servers:
+                server = self.servers[name]
                 if server.sock == sock:
                     return server
         return None
@@ -1041,7 +1044,8 @@ class CoreBroker(object):
         :rtype: bool
         """
         with self.servers_lock:
-            for server in self.servers.itervalues():
+            for name in self.servers:
+                server = self.servers[name]
                 if not server.instantiation_complete:
                     return False
             return True

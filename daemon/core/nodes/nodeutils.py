@@ -9,7 +9,8 @@ _NODE_MAP = None
 
 def _log_map():
     global _NODE_MAP
-    for key, value in _NODE_MAP.iteritems():
+    for key in _NODE_MAP:
+        value = _NODE_MAP[key]
         name = None
         if value:
             name = value.__name__
@@ -72,7 +73,7 @@ def get_node_type(node_class):
     :rtype: core.enumerations.NodeTypes
     """
     global _NODE_MAP
-    node_type_map = {v: k for k, v in _NODE_MAP.iteritems()}
+    node_type_map = {_NODE_MAP[x]: x for x in _NODE_MAP}
     return node_type_map.get(node_class)
 
 

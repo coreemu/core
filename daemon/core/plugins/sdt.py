@@ -321,7 +321,8 @@ class Sdt(object):
         """
         nets = []
         with self.session._nodes_lock:
-            for node in self.session.nodes.itervalues():
+            for node_id in self.session.nodes:
+                node = self.session.nodes[node_id]
                 if isinstance(node, CoreNetworkBase):
                     nets.append(node)
                 if not isinstance(node, NodeBase):

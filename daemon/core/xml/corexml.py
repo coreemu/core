@@ -148,7 +148,8 @@ class ServiceElement(object):
     def add_files(self):
         # get custom files
         file_elements = etree.Element("files")
-        for file_name, data in self.service.config_data.iteritems():
+        for file_name in self.service.config_data:
+            data = self.service.config_data[file_name]
             file_element = etree.SubElement(file_elements, "file")
             add_attribute(file_element, "name", file_name)
             file_element.text = data
@@ -291,7 +292,9 @@ class CoreXmlWriter(object):
         if not options_config:
             return
 
-        for _id, default_value in self.session.options.default_values().iteritems():
+        default_options = self.session.options.default_values()
+        for _id in default_options:
+            default_value = default_options[_id]
             # TODO: should we just save the current config regardless, since it may change?
             value = options_config[_id]
             if value != default_value:
@@ -307,7 +310,8 @@ class CoreXmlWriter(object):
         if not config:
             return
 
-        for _id, value in config.iteritems():
+        for _id in config:
+            value = config[_id]
             add_configuration(metadata_elements, _id, value)
 
         if metadata_elements.getchildren():
@@ -320,7 +324,8 @@ class CoreXmlWriter(object):
             if not all_configs:
                 continue
 
-            for model_name, config in all_configs.iteritems():
+            for model_name in all_configs:
+                config = all_configs[model_name]
                 logging.info("writing emane config node(%s) model(%s)", node_id, model_name)
                 if model_name == -1:
                     emane_configuration = create_emane_config(node_id, self.session.emane.emane_config, config)
@@ -339,12 +344,14 @@ class CoreXmlWriter(object):
             if not all_configs:
                 continue
 
-            for model_name, config in all_configs.iteritems():
+            for model_name in all_configs:
+                config = all_configs[model_name]
                 logging.info("writing mobility config node(%s) model(%s)", node_id, model_name)
                 mobility_configuration = etree.SubElement(mobility_configurations, "mobility_configuration")
                 add_attribute(mobility_configuration, "node", node_id)
                 add_attribute(mobility_configuration, "model", model_name)
-                for name, value in config.iteritems():
+                for name in config:
+                    value = config[name]
                     add_configuration(mobility_configuration, name, value)
 
         if mobility_configurations.getchildren():
@@ -363,7 +370,8 @@ class CoreXmlWriter(object):
 
     def write_default_services(self):
         node_types = etree.Element("default_services")
-        for node_type, services in self.session.services.default_services.iteritems():
+        for node_type in self.session.services.default_services:
+            services = self.session.services.default_services[node_type]
             node_type = etree.SubElement(node_types, "node", type=node_type)
             for service in services:
                 etree.SubElement(node_type, "service", name=service)
@@ -376,9 +384,12 @@ class CoreXmlWriter(object):
         self.devices = etree.SubElement(self.scenario, "devices")
 
         links = []
-        for node in self.session.nodes.itervalues():
+        for node_id in self.session.nodes:
+            node = self.session.nodes[node_id]
             # network node
-            if isinstance(node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node)) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
+            is_network_or_rj45 = isinstance(node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node))
+            is_controlnet = nodeutils.is_node(node, NodeTypes.CONTROL_NET)
+            if is_network_or_rj45 and not is_controlnet:
                 self.write_network(node)
             # device node
             elif isinstance(node, core.nodes.base.CoreNodeBase):

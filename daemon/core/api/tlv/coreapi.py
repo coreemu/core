@@ -811,7 +811,8 @@ class CoreMessage(object):
         """
         result = "%s <msgtype = %s, flags = %s>" % (self.__class__.__name__, self.type_str(), self.flag_str())
 
-        for key, value in self.tlv_data.iteritems():
+        for key in self.tlv_data:
+            value = self.tlv_data[key]
             try:
                 tlv_type = self.tlv_class.tlv_type_map(key).name
             except ValueError:

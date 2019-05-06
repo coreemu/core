@@ -60,7 +60,8 @@ class ServiceDependencies(object):
         :rtype: list[core.coreservices.CoreService]
         """
         paths = []
-        for service in self.node_services.itervalues():
+        for name in self.node_services:
+            service = self.node_services[name]
             if service.name in self.booted:
                 logging.debug("skipping service that will already be booted: %s", service.name)
                 continue
@@ -69,7 +70,7 @@ class ServiceDependencies(object):
             if path:
                 paths.append(path)
 
-        if self.booted != set(self.node_services.iterkeys()):
+        if self.booted != set(self.node_services):
             raise ValueError("failure to boot all services: %s != %s" % (self.booted, self.node_services.keys()))
 
         return paths
@@ -389,8 +390,10 @@ class CoreServices(object):
         :rtype: list[tuple]
         """
         configs = []
-        for node_id in self.custom_services.iterkeys():
-            for service in self.custom_services[node_id].itervalues():
+        for node_id in self.custom_services:
+            custom_services = self.custom_services[node_id]
+            for name in custom_services:
+                service = custom_services[name]
                 configs.append((node_id, service))
         return configs
 

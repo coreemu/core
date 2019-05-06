@@ -150,7 +150,7 @@ class ConfigurableManager(object):
         :return: list of node ids
         :rtype: list
         """
-        return [node_id for node_id in self.node_configurations.iterkeys() if node_id != self._default_node]
+        return [x for x in self.node_configurations if x != self._default_node]
 
     def config_reset(self, node_id=None):
         """
@@ -329,7 +329,8 @@ class ModelManager(ConfigurableManager):
         model_config = self.get_model_config(node_id, model_name)
         if not config:
             config = {}
-        for key, value in config.iteritems():
+        for key in config:
+            value = config[key]
             model_config[key] = value
 
         # set as node model for startup
@@ -388,7 +389,8 @@ class ModelManager(ConfigurableManager):
             all_configs = {}
 
         models = []
-        for model_name, config in all_configs.iteritems():
+        for model_name in all_configs:
+            config = all_configs[model_name]
             if model_name == ModelManager._default_node:
                 continue
             model_class = self.models[model_name]

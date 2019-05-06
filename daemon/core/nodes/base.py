@@ -120,9 +120,9 @@ class NodeBase(object):
         :rtype: list
         """
         if sort:
-            return map(lambda k: self._netif[k], sorted(self._netif.keys()))
+            return [self._netif[x] for x in sorted(self._netif)]
         else:
-            return self._netif.itervalues()
+            return self._netif.values()
 
     def numnetif(self):
         """

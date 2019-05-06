@@ -158,7 +158,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         num_sessions = 0
 
         with self._sessions_lock:
-            for _id, session in self.coreemu.sessions.iteritems():
+            for _id in self.coreemu.sessions:
+                session = self.coreemu.sessions[_id]
                 num_sessions += 1
                 id_list.append(str(_id))
 
@@ -167,10 +168,10 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                     name = ""
                 name_list.append(name)
 
-                file = session.file_name
-                if not file:
-                    file = ""
-                file_list.append(file)
+                file_name = session.file_name
+                if not file_name:
+                    file_name = ""
+                file_list.append(file_name)
 
                 node_count_list.append(str(session.get_node_count()))
 
@@ -378,11 +379,13 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.location.config_type, self.session.location.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.mobility.config_type, self.session.mobility.name)
-        for model_class in self.session.mobility.models.itervalues():
+        for model_name in self.session.mobility.models:
+            model_class = self.session.mobility.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.services.config_type, self.session.services.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.emane.config_type, self.session.emane.name)
-        for model_class in self.session.emane.models.itervalues():
+        for model_name in self.session.emane.models:
+            model_class = self.session.emane.models[model_name]
             tlv_data += coreapi.CoreRegisterTlv.pack(model_class.config_type, model_class.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.options.config_type, self.session.options.name)
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.metadata.config_type, self.session.metadata.name)
@@ -904,7 +907,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             self.master = True
 
             # find the session containing this client and set the session to master
-            for session in self.coreemu.sessions.itervalues():
+            for _id in self.coreemu.sessions:
+                session = self.coreemu.sessions[_id]
                 if self in session.broker.session_clients:
                     logging.debug("setting session to master: %s", session.id)
                     session.master = True
@@ -995,7 +999,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET and config_data.data_values:
             values = ConfigShim.str_to_dict(config_data.data_values)
-            for key, value in values.iteritems():
+            for key in values:
+                value = values[key]
                 self.session.options.set_config(key, value)
         return replies
 
@@ -1025,7 +1030,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         replies = []
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
-            data_values = "|".join(["%s=%s" % item for item in self.session.metadata.get_configs().iteritems()])
+            metadata_configs = self.session.metadata.get_configs()
+            data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
             data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
             config_response = ConfigData(
                 message_type=0,
@@ -1038,7 +1044,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
             replies.append(config_response)
         elif message_type != ConfigFlags.RESET and config_data.data_values:
             values = ConfigShim.str_to_dict(config_data.data_values)
-            for key, value in values.iteritems():
+            for key in values:
+                value = values[key]
                 self.session.metadata.set_config(key, value)
         return replies
 
@@ -1097,7 +1104,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 # sort groups by name and map services to groups
                 groups = set()
                 group_map = {}
-                for service_name in ServiceManager.services.itervalues():
+                for name in ServiceManager.services:
+                    service_name = ServiceManager.services[name]
                     group = service_name.group
                     groups.add(group)
                     group_map.setdefault(group, []).append(service_name)
@@ -1212,7 +1220,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                             raise ValueError("custom service(%s) for node(%s) does not exist", service_name, node_id)
 
                         values = ConfigShim.str_to_dict(values)
-                        for name, value in values.iteritems():
+                        for name in values:
+                            value = values[name]
                             ServiceShim.setvalue(service, name, value)
 
         return replies
@@ -1679,7 +1688,8 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         nodes_data = []
         links_data = []
         with self.session._nodes_lock:
-            for node in self.session.nodes.itervalues():
+            for node_id in self.session.nodes:
+                node = self.session.nodes[node_id]
                 node_data = node.data(message_type=MessageFlags.ADD.value)
                 if node_data:
                     nodes_data.append(node_data)
@@ -1697,7 +1707,9 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         # send mobility model info
         for node_id in self.session.mobility.nodes():
-            for model_name, config in self.session.mobility.get_all_configs(node_id).iteritems():
+            mobility_configs = self.session.mobility.get_all_configs(node_id)
+            for model_name in mobility_configs:
+                config = mobility_configs[model_name]
                 model_class = self.session.mobility.models[model_name]
                 logging.debug("mobility config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
@@ -1705,7 +1717,9 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         # send emane model info
         for node_id in self.session.emane.nodes():
-            for model_name, config in self.session.emane.get_all_configs(node_id).iteritems():
+            emane_configs = self.session.emane.get_all_configs(node_id)
+            for model_name in emane_configs:
+                config = emane_configs[model_name]
                 model_class = self.session.emane.models[model_name]
                 logging.debug("emane config: node(%s) class(%s) values(%s)", node_id, model_class, config)
                 config_data = ConfigShim.config_data(0, node_id, ConfigFlags.UPDATE.value, model_class, config)
@@ -1761,7 +1775,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         # send session metadata
         metadata_configs = self.session.metadata.get_configs()
         if metadata_configs:
-            data_values = "|".join(["%s=%s" % item for item in metadata_configs.iteritems()])
+            data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
             data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
             config_data = ConfigData(
                 message_type=0,
