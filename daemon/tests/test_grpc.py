@@ -1,6 +1,6 @@
 import time
-from Queue import Queue
 from builtins import int
+from queue import Queue
 
 import grpc
 import pytest

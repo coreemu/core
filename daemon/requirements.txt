@@ -1,4 +1,5 @@
 enum34==1.1.6
+configparser=3.5.0
 future==0.17.1
 futures==3.2.0
 grpcio==1.18.0

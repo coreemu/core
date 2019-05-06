@@ -3,8 +3,8 @@ import logging
 import os
 import tempfile
 import time
-from Queue import Queue, Empty
 from builtins import int
+from queue import Queue, Empty
 
 import grpc
 from concurrent import futures
