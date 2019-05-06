@@ -2,12 +2,12 @@
 Defines core server for handling TCP connections.
 """
 
-import SocketServer
+import socketserver
 
 from core.emulator.coreemu import CoreEmu
 
 
-class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
+class CoreServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     """
     TCP server class, manages sessions and spawns request handlers for
     incoming connections.
@@ -18,7 +18,7 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
     def __init__(self, server_address, handler_class, config=None):
         """
         Server class initialization takes configuration data and calls
-        the SocketServer constructor
+        the socketserver constructor.
 
         :param tuple[str, int] server_address: server host and port to use
         :param class handler_class: request handler
@@ -27,4 +27,4 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         """
         self.coreemu = CoreEmu(config)
         self.config = config
-        SocketServer.TCPServer.__init__(self, server_address, handler_class)
+        socketserver.TCPServer.__init__(self, server_address, handler_class)

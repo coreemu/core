@@ -3,11 +3,11 @@ socket server request handlers leveraged by core servers.
 """
 
 import Queue
-import SocketServer
 import logging
 import os
 import shlex
 import shutil
+import socketserver
 import sys
 import threading
 import time
@@ -44,9 +44,9 @@ from core.services.coreservices import ServiceManager
 from core.services.coreservices import ServiceShim
 
 
-class CoreHandler(SocketServer.BaseRequestHandler):
+class CoreHandler(socketserver.BaseRequestHandler):
     """
-    The SocketServer class uses the RequestHandler class for servicing requests.
+    The CoreHandler class uses the RequestHandler class for servicing requests.
     """
 
     def __init__(self, request, client_address, server):
@@ -92,7 +92,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         self.coreemu = server.coreemu
 
         utils.close_onexec(request.fileno())
-        SocketServer.BaseRequestHandler.__init__(self, request, client_address, server)
+        socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def setup(self):
         """
@@ -140,7 +140,7 @@ class CoreHandler(SocketServer.BaseRequestHandler):
                 logging.info("no session clients left and not active, initiating shutdown")
                 self.coreemu.delete_session(self.session.id)
 
-        return SocketServer.BaseRequestHandler.finish(self)
+        return socketserver.BaseRequestHandler.finish(self)
 
     def session_message(self, flags=0):
         """
