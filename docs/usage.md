@@ -1,15 +1,25 @@
+
 # Using the CORE GUI
 
 * Table of Contents
 {:toc}
 
+The following image shows the CORE GUI:
+![](static/core_screenshot.png)
+
+
 ## Overview
 
 CORE can be used via the GUI or [Python_Scripting](scripting.md). Often the GUI is used to draw nodes and network devices on the canvas. A Python script could also be written, that imports the CORE Python module, to configure and instantiate nodes and networks. This chapter primarily covers usage of the CORE GUI.
 
+The following image shows the various phases of a CORE session:
 ![](static/core-workflow.jpg)
 
+After pressing the start button, CORE will proceed through these phases, staying in the **runtime** phase.  After the session is stopped, CORE will proceed to the **data collection** phase before tearing down the emulated state. 
+
 CORE can be customized to perform any action at each phase in the workflow above. See the *Hooks...* entry on the **Session Menu** for details about when these session states are reached.
+
+__Note: The CORE GUI is currently in a state of transition.  The replacement candidate is currently in an alpha version, and can be found [here](https://github.com/coreemu/core/wiki/CORE-GUI-Update).__
 
 ## Prerequisites
 
@@ -21,6 +31,12 @@ sudo systemctl start core-daemon
 
 # sysv
 sudo service core-daemon start
+```
+
+You can also invoke the daemon directly from the command line, which can be useful if you'd like to see the logging output directly.  
+```
+# direct invocation
+sudo core-daemon
 ```
 
 ## Modes of Operation
