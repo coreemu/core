@@ -486,7 +486,7 @@ address of the tunnel peer. This is the IP address of the other CORE machine or
 physical machine, not an IP address of another virtual node.
 
 **NOTE:**
-   Be aware of possible MTU issues with GRE devices. The *gretap* device
+   Be aware of possible MTU (Maximum Transmission Unit) issues with GRE devices. The *gretap* device
    has an interface MTU of 1,458 bytes; when joined to a Linux bridge, the
    bridge's MTU
    becomes 1,458 bytes. The Linux bridge will not perform fragmentation for
