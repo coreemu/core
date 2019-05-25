@@ -55,3 +55,6 @@ coverage.xml
 netns/setup.py
 daemon/setup.py
 ns3/setup.py
+
+# ignore corefx build
+corefx/target

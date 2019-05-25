@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXTextArea?>
+<?import com.jfoenix.controls.JFXTextField?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.VBox?>
+
+
+<VBox prefHeight="400.0" prefWidth="600.0" style="-fx-background-color: black;" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <JFXTextArea fx:id="outputTextArea" editable="false" styleClass="code" VBox.vgrow="ALWAYS" />
+      <HBox style="-fx-background-color: black;">
+         <children>
+            <JFXTextField editable="false" prefColumnCount="3" styleClass="code" text="\$&gt; " />
+            <JFXTextField fx:id="commandTextField" maxWidth="1.7976931348623157E308" styleClass="code" HBox.hgrow="ALWAYS" />
+         </children>
+      </HBox>
+   </children>
+</VBox>
