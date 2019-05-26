@@ -166,13 +166,13 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public boolean startThroughput() throws IOException {
-        // TODO: convert
+        // TODO: convert throughput
         return false;
     }
 
     @Override
     public boolean stopThroughput() throws IOException {
-        // TODO: convert
+        // TODO: convert throughput
         return false;
     }
 
@@ -602,7 +602,7 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public String nodeCommand(CoreNode node, String command) throws IOException {
-        // TODO: convert
+        // TODO: convert node command
         return null;
     }
 
@@ -713,14 +713,41 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public WlanConfig getWlanConfig(CoreNode node) throws IOException {
-        // TODO: convert
-        return null;
+        CoreProto.GetWlanConfigRequest request = CoreProto.GetWlanConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(node.getId())
+                .build();
+        CoreProto.GetWlanConfigResponse response = blockingStub.getWlanConfig(request);
+        Map<String, String> protoConfig = new HashMap<>();
+        for (CoreProto.ConfigGroup group : response.getGroupsList()) {
+            for (CoreProto.ConfigOption option : group.getOptionsList()) {
+                protoConfig.put(option.getName(), option.getValue());
+            }
+        }
+        WlanConfig config = new WlanConfig();
+        config.setBandwidth(protoConfig.get("bandwidth"));
+        config.setDelay(protoConfig.get("delay"));
+        config.setError(protoConfig.get("error"));
+        config.setJitter(protoConfig.get("jitter"));
+        config.setRange(protoConfig.get("range"));
+        return config;
     }
 
     @Override
     public boolean setWlanConfig(CoreNode node, WlanConfig config) throws IOException {
-        // TODO: convert
-        return false;
+        Map<String, String> protoConfig = new HashMap<>();
+        protoConfig.put("bandwidth", config.getBandwidth());
+        protoConfig.put("delay", config.getDelay());
+        protoConfig.put("error", config.getError());
+        protoConfig.put("jitter", config.getJitter());
+        protoConfig.put("range", config.getRange());
+        CoreProto.SetWlanConfigRequest request = CoreProto.SetWlanConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(node.getId())
+                .putAllConfig(protoConfig)
+                .build();
+        CoreProto.SetWlanConfigResponse response = blockingStub.setWlanConfig(request);
+        return response.getResult();
     }
 
     @Override
@@ -740,7 +767,20 @@ public class CoreGrpcClient implements ICoreClient {
             CoreProto.GetMobilityConfigsResponse.MobilityConfig protoMobilityConfig = response.getConfigsMap()
                     .get(nodeId);
             MobilityConfig mobilityConfig = new MobilityConfig();
-            CoreProto.ConfigGroup configGroup = protoMobilityConfig.getGroups(0);
+            Map<String, String> protoConfig = new HashMap<>();
+            for (CoreProto.ConfigGroup group : protoMobilityConfig.getGroupsList()) {
+                for (CoreProto.ConfigOption option : group.getOptionsList()) {
+                    protoConfig.put(option.getName(), option.getValue());
+                }
+            }
+            mobilityConfig.setFile(protoConfig.get("file"));
+            mobilityConfig.setRefresh(Integer.parseInt(protoConfig.get("refresh_ms")));
+            mobilityConfig.setAutostart(protoConfig.get("autostart"));
+            mobilityConfig.setLoop(protoConfig.get("loop"));
+            mobilityConfig.setPauseScript(protoConfig.get("script_pause"));
+            mobilityConfig.setStartScript(protoConfig.get("script_start"));
+            mobilityConfig.setStopScript(protoConfig.get("script_stop"));
+            mobilityConfig.setMap(protoConfig.get("map"));
             mobilityConfigs.put(nodeId, mobilityConfig);
         }
         return mobilityConfigs;
@@ -748,8 +788,24 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public boolean setMobilityConfig(CoreNode node, MobilityConfig config) throws IOException {
-        // TODO: convert
-        return false;
+        Map<String, String> protoConfig = new HashMap<>();
+        protoConfig.put("file", config.getFile());
+        if (config.getRefresh() != null) {
+            protoConfig.put("refresh_ms", config.getRefresh().toString());
+        }
+        protoConfig.put("autostart", config.getAutostart());
+        protoConfig.put("loop", config.getLoop());
+        protoConfig.put("map", config.getMap());
+        protoConfig.put("script_pause", config.getPauseScript());
+        protoConfig.put("script_start", config.getStartScript());
+        protoConfig.put("script_stop", config.getStopScript());
+        CoreProto.SetMobilityConfigRequest request = CoreProto.SetMobilityConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(node.getId())
+                .putAllConfig(protoConfig)
+                .build();
+        CoreProto.SetMobilityConfigResponse response = blockingStub.setMobilityConfig(request);
+        return response.getResult();
     }
 
     @Override
@@ -759,8 +815,22 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(node.getId())
                 .build();
         CoreProto.GetMobilityConfigResponse response = blockingStub.getMobilityConfig(request);
-        // TODO: convert
-        return null;
+        Map<String, String> protoConfig = new HashMap<>();
+        for (CoreProto.ConfigGroup group : response.getGroupsList()) {
+            for (CoreProto.ConfigOption option : group.getOptionsList()) {
+                protoConfig.put(option.getName(), option.getValue());
+            }
+        }
+        MobilityConfig config = new MobilityConfig();
+        config.setFile(protoConfig.get("file"));
+        config.setRefresh(Integer.parseInt(protoConfig.get("refresh_ms")));
+        config.setAutostart(protoConfig.get("autostart"));
+        config.setLoop(protoConfig.get("loop"));
+        config.setPauseScript(protoConfig.get("script_pause"));
+        config.setStartScript(protoConfig.get("script_start"));
+        config.setStopScript(protoConfig.get("script_stop"));
+        config.setMap(protoConfig.get("map"));
+        return config;
     }
 
     @Override
