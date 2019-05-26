@@ -132,6 +132,7 @@ public class Controller implements Initializable {
 
         // set emane models
         List<String> emaneModels = coreClient.getEmaneModels();
+        logger.info("emane models: {}", emaneModels);
         nodeEmaneDialog.setModels(emaneModels);
     }
 

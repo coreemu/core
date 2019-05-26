@@ -53,6 +53,25 @@ public class CoreGrpcClient implements ICoreClient {
         return builder.build();
     }
 
+    private List<ConfigGroup> protoToConfigGroups(List<CoreProto.ConfigGroup> protoConfigs) {
+        List<ConfigGroup> configs = new ArrayList<>();
+        for (CoreProto.ConfigGroup protoConfig : protoConfigs) {
+            ConfigGroup config = new ConfigGroup();
+            config.setName(protoConfig.getName());
+            for (CoreProto.ConfigOption protoOption : protoConfig.getOptionsList()) {
+                ConfigOption option = new ConfigOption();
+                option.setType(protoOption.getType());
+                option.setLabel(protoOption.getLabel());
+                option.setName(protoOption.getName());
+                option.setValue(protoOption.getValue());
+                option.setSelect(protoOption.getSelectList());
+                config.getOptions().add(option);
+            }
+            configs.add(config);
+        }
+        return configs;
+    }
+
     private CoreProto.LinkOptions linkOptionsToProto(CoreLinkOptions options) {
         CoreProto.LinkOptions.Builder builder = CoreProto.LinkOptions.newBuilder();
         boolean unidirectional = false;
@@ -116,6 +135,14 @@ public class CoreGrpcClient implements ICoreClient {
         return builder.build();
     }
 
+    private Map<String, String> configOptionListToMap(List<ConfigOption> options) {
+        Map<String, String> config = new HashMap<>();
+        for (ConfigOption option : options) {
+            config.put(option.getName(), option.getValue());
+        }
+        return config;
+    }
+
     @Override
     public void setConnection(String address, int port) {
         this.address = address;
@@ -139,11 +166,13 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public boolean startThroughput() throws IOException {
+        // TODO: convert
         return false;
     }
 
     @Override
     public boolean stopThroughput() throws IOException {
+        // TODO: convert
         return false;
     }
 
@@ -461,7 +490,11 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public List<ConfigGroup> getEmaneConfig(CoreNode node) throws IOException {
-        return null;
+        CoreProto.GetEmaneConfigRequest request = CoreProto.GetEmaneConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .build();
+        CoreProto.GetEmaneConfigResponse response = blockingStub.getEmaneConfig(request);
+        return protoToConfigGroups(response.getGroupsList());
     }
 
     @Override
@@ -470,22 +503,42 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSession(sessionId)
                 .build();
         CoreProto.GetEmaneModelsResponse response = blockingStub.getEmaneModels(request);
-        return response.getModelsList();
+        return new ArrayList<>(response.getModelsList());
     }
 
     @Override
     public boolean setEmaneConfig(CoreNode node, List<ConfigOption> options) throws IOException {
-        return false;
+        Map<String, String> config = configOptionListToMap(options);
+        CoreProto.SetEmaneConfigRequest request = CoreProto.SetEmaneConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .putAllConfig(config)
+                .build();
+        CoreProto.SetEmaneConfigResponse response = blockingStub.setEmaneConfig(request);
+        return response.getResult();
     }
 
     @Override
     public List<ConfigGroup> getEmaneModelConfig(Integer id, String model) throws IOException {
-        return null;
+        CoreProto.GetEmaneModelConfigRequest request = CoreProto.GetEmaneModelConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(id)
+                .setModel(model)
+                .build();
+        CoreProto.GetEmaneModelConfigResponse response = blockingStub.getEmaneModelConfig(request);
+        return protoToConfigGroups(response.getGroupsList());
     }
 
     @Override
     public boolean setEmaneModelConfig(Integer id, String model, List<ConfigOption> options) throws IOException {
-        return false;
+        Map<String, String> config = configOptionListToMap(options);
+        CoreProto.SetEmaneModelConfigRequest request = CoreProto.SetEmaneModelConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(id)
+                .setModel(model)
+                .putAllConfig(config)
+                .build();
+        CoreProto.SetEmaneModelConfigResponse response = blockingStub.setEmaneModelConfig(request);
+        return response.getResult();
     }
 
     @Override
@@ -518,12 +571,22 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public List<ConfigGroup> getSessionConfig() throws IOException {
-        return null;
+        CoreProto.GetSessionOptionsRequest request = CoreProto.GetSessionOptionsRequest.newBuilder()
+                .setId(sessionId)
+                .build();
+        CoreProto.GetSessionOptionsResponse response = blockingStub.getSessionOptions(request);
+        return protoToConfigGroups(response.getGroupsList());
     }
 
     @Override
     public boolean setSessionConfig(List<ConfigOption> configOptions) throws IOException {
-        return false;
+        Map<String, String> config = configOptionListToMap(configOptions);
+        CoreProto.SetSessionOptionsRequest request = CoreProto.SetSessionOptionsRequest.newBuilder()
+                .setId(sessionId)
+                .putAllConfig(config)
+                .build();
+        CoreProto.SetSessionOptionsResponse response = blockingStub.setSessionOptions(request);
+        return response.getResult();
     }
 
     @Override
@@ -539,6 +602,7 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public String nodeCommand(CoreNode node, String command) throws IOException {
+        // TODO: convert
         return null;
     }
 
@@ -649,16 +713,19 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public WlanConfig getWlanConfig(CoreNode node) throws IOException {
+        // TODO: convert
         return null;
     }
 
     @Override
     public boolean setWlanConfig(CoreNode node, WlanConfig config) throws IOException {
+        // TODO: convert
         return false;
     }
 
     @Override
     public String getTerminalCommand(CoreNode node) throws IOException {
+        // TODO: convert
         return null;
     }
 
@@ -681,26 +748,41 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public boolean setMobilityConfig(CoreNode node, MobilityConfig config) throws IOException {
+        // TODO: convert
         return false;
     }
 
     @Override
     public MobilityConfig getMobilityConfig(CoreNode node) throws IOException {
+        CoreProto.GetMobilityConfigRequest request = CoreProto.GetMobilityConfigRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(node.getId())
+                .build();
+        CoreProto.GetMobilityConfigResponse response = blockingStub.getMobilityConfig(request);
+        // TODO: convert
         return null;
     }
 
     @Override
     public boolean mobilityAction(CoreNode node, String action) throws IOException {
-        return false;
+        CoreProto.MobilityActionRequest request = CoreProto.MobilityActionRequest.newBuilder()
+                .setSession(sessionId)
+                .setId(node.getId())
+                .setAction(CoreProto.MobilityAction.valueOf(action))
+                .build();
+        CoreProto.MobilityActionResponse response = blockingStub.mobilityAction(request);
+        return response.getResult();
     }
 
     @Override
     public LocationConfig getLocationConfig() throws IOException {
+        // TODO: convert
         return null;
     }
 
     @Override
     public boolean setLocationConfig(LocationConfig config) throws IOException {
+        // TODO: convert
         return false;
     }
 }
