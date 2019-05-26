@@ -776,13 +776,48 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public LocationConfig getLocationConfig() throws IOException {
-        // TODO: convert
-        return null;
+        CoreProto.GetSessionLocationRequest request = CoreProto.GetSessionLocationRequest.newBuilder()
+                .setId(sessionId)
+                .build();
+        CoreProto.GetSessionLocationResponse response = blockingStub.getSessionLocation(request);
+        LocationConfig config = new LocationConfig();
+        config.setScale((double) response.getScale());
+        config.getPosition().setX((double) response.getPosition().getX());
+        config.getPosition().setY((double) response.getPosition().getY());
+        config.getPosition().setZ((double) response.getPosition().getZ());
+        config.getLocation().setLatitude((double) response.getPosition().getLat());
+        config.getLocation().setLongitude((double) response.getPosition().getLon());
+        config.getLocation().setAltitude((double) response.getPosition().getAlt());
+        return config;
     }
 
     @Override
     public boolean setLocationConfig(LocationConfig config) throws IOException {
-        // TODO: convert
-        return false;
+        CoreProto.SetSessionLocationRequest.Builder builder = CoreProto.SetSessionLocationRequest.newBuilder()
+                .setId(sessionId);
+        if (config.getScale() != null) {
+            builder.setScale(config.getScale().floatValue());
+        }
+        CoreProto.Position.Builder positionBuilder = CoreProto.Position.newBuilder();
+        if (config.getPosition().getX() != null) {
+            positionBuilder.setX(config.getPosition().getX().floatValue());
+        }
+        if (config.getPosition().getY() != null) {
+            positionBuilder.setY(config.getPosition().getY().floatValue());
+        }
+        if (config.getPosition().getZ() != null) {
+            positionBuilder.setZ(config.getPosition().getZ().floatValue());
+        }
+        if (config.getLocation().getLongitude() != null) {
+            positionBuilder.setLon(config.getLocation().getLongitude().floatValue());
+        }
+        if (config.getLocation().getLatitude() != null) {
+            positionBuilder.setLat(config.getLocation().getLatitude().floatValue());
+        }
+        if (config.getLocation().getAltitude() != null) {
+            positionBuilder.setAlt(config.getLocation().getAltitude().floatValue());
+        }
+        CoreProto.SetSessionLocationResponse response = blockingStub.setSessionLocation(builder.build());
+        return response.getResult();
     }
 }
