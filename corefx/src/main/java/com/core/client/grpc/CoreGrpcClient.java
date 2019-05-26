@@ -11,7 +11,9 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.util.*;
 
 public class CoreGrpcClient implements ICoreClient {
@@ -189,10 +191,16 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public Session getSession(Integer sessionId) throws IOException {
+        logger.info("getting session: {}", sessionId);
         CoreProto.GetSessionRequest request = CoreProto.GetSessionRequest.newBuilder().setId(sessionId).build();
         CoreProto.GetSessionResponse response = blockingStub.getSession(request);
         Session session = new Session();
         for (CoreProto.Node protoNode : response.getSession().getNodesList()) {
+            if (CoreProto.NodeType.NODE_PEER_TO_PEER == protoNode.getType()) {
+                continue;
+            }
+
+            logger.info("adding node: {}", protoNode);
             CoreNode node = new CoreNode(protoNode.getId());
             node.setName(protoNode.getName());
             node.setEmane(protoNode.getEmane());
@@ -201,13 +209,14 @@ public class CoreGrpcClient implements ICoreClient {
             node.setServices(new HashSet<>(protoNode.getServicesList()));
             node.getPosition().setX((double) protoNode.getPosition().getX());
             node.getPosition().setY((double) protoNode.getPosition().getY());
-            node.getPosition().setZ((double) protoNode.getPosition().getZ());
-            node.setNodeType(NodeType.get(protoNode.getTypeValue()));
+            node.setType(protoNode.getTypeValue());
+            session.getNodes().add(node);
         }
         for (CoreProto.Link linkProto : response.getSession().getLinksList()) {
+            logger.info("adding link: {} - {}", linkProto.getNodeOne(), linkProto.getNodeTwo());
             CoreLink link = new CoreLink();
             link.setNodeOne(linkProto.getNodeOne());
-            link.setNodeTwo(linkProto.getNodeOne());
+            link.setNodeTwo(linkProto.getNodeTwo());
             CoreProto.Interface interfaceOneProto = linkProto.getInterfaceOne();
             CoreInterface interfaceOne = new CoreInterface();
             interfaceOne.setId(interfaceOneProto.getId());
@@ -238,12 +247,15 @@ public class CoreGrpcClient implements ICoreClient {
             options.setJitter((double) protoOptions.getJitter());
             options.setPer((double) protoOptions.getPer());
             options.setBurst((double) protoOptions.getBurst());
-            options.setKey(Integer.parseInt(protoOptions.getKey()));
+            if (!protoOptions.getKey().isEmpty()) {
+                options.setKey(Integer.parseInt(protoOptions.getKey()));
+            }
             options.setMburst((double) protoOptions.getMburst());
             options.setMer((double) protoOptions.getMer());
             options.setOpaque(protoOptions.getOpaque());
             options.setUnidirectional(protoOptions.getUnidirectional() ? 1 : 0);
             link.setOptions(options);
+            session.getLinks().add(link);
         }
         session.setState(response.getSession().getStateValue());
         return session;
@@ -454,7 +466,11 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public List<String> getEmaneModels() throws IOException {
-        return null;
+        CoreProto.GetEmaneModelsRequest request = CoreProto.GetEmaneModelsRequest.newBuilder()
+                .setSession(sessionId)
+                .build();
+        CoreProto.GetEmaneModelsResponse response = blockingStub.getEmaneModels(request);
+        return response.getModelsList();
     }
 
     @Override
@@ -479,12 +495,25 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public void saveSession(File file) throws IOException {
-
+        CoreProto.SaveXmlRequest request = CoreProto.SaveXmlRequest.newBuilder()
+                .setSession(sessionId)
+                .build();
+        CoreProto.SaveXmlResponse response = blockingStub.saveXml(request);
+        try (PrintWriter writer = new PrintWriter(file)) {
+            writer.print(response.getData().toStringUtf8());
+        }
     }
 
     @Override
     public SessionOverview openSession(File file) throws IOException {
-        return null;
+        ByteString data = ByteString.readFrom(new FileInputStream(file));
+        CoreProto.OpenXmlRequest request = CoreProto.OpenXmlRequest.newBuilder()
+                .setData(data)
+                .build();
+        CoreProto.OpenXmlResponse response = blockingStub.openXml(request);
+        SessionOverview sessionOverview = new SessionOverview();
+        sessionOverview.setId(response.getSession());
+        return sessionOverview;
     }
 
     @Override
