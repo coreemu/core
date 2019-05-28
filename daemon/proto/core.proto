@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package core;
 
+option java_package = "com.core.client.grpc";
+option java_outer_classname = "CoreProto";
+
 service CoreApi {
     // session rpc
     rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
