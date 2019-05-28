@@ -38,7 +38,6 @@ setup(
     ],
     url="https://github.com/coreemu/core",
     author="Boeing Research & Technology",
-    author_email="core-dev@nrl.navy.mil",
     license="BSD",
     long_description="Extension modules and utilities to support virtual nodes using Linux network namespaces",
 )

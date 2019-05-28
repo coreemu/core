@@ -56,7 +56,6 @@ setup(
     description="Python components of CORE",
     url="https://github.com/coreemu/core",
     author="Boeing Research & Technology",
-    author_email="core-dev@nrl.navy.mil",
     license="BSD",
     long_description="Python scripts and modules for building virtual emulated networks.",
 )
