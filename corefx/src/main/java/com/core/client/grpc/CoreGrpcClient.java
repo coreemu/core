@@ -193,7 +193,7 @@ public class CoreGrpcClient implements ICoreClient {
         try {
             CoreProto.CreateSessionResponse response = blockingStub.createSession(request);
             SessionOverview overview = new SessionOverview();
-            overview.setId(response.getId());
+            overview.setId(response.getSessionId());
             overview.setState(response.getStateValue());
             overview.setNodes(0);
             return overview;
@@ -204,7 +204,8 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public boolean deleteSession(Integer sessionId) throws IOException {
-        CoreProto.DeleteSessionRequest request = CoreProto.DeleteSessionRequest.newBuilder().setId(sessionId).build();
+        CoreProto.DeleteSessionRequest request = CoreProto.DeleteSessionRequest.newBuilder()
+                .setSessionId(sessionId).build();
         try {
             return blockingStub.deleteSession(request).getResult();
         } catch (StatusRuntimeException ex) {
@@ -234,7 +235,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public Session getSession(Integer sessionId) throws IOException {
         logger.info("getting session: {}", sessionId);
-        CoreProto.GetSessionRequest request = CoreProto.GetSessionRequest.newBuilder().setId(sessionId).build();
+        CoreProto.GetSessionRequest request = CoreProto.GetSessionRequest.newBuilder().setSessionId(sessionId).build();
         try {
             CoreProto.GetSessionResponse response = blockingStub.getSession(request);
             Session session = new Session();
@@ -256,10 +257,10 @@ public class CoreGrpcClient implements ICoreClient {
                 session.getNodes().add(node);
             }
             for (CoreProto.Link linkProto : response.getSession().getLinksList()) {
-                logger.info("adding link: {} - {}", linkProto.getNodeOne(), linkProto.getNodeTwo());
+                logger.info("adding link: {} - {}", linkProto.getNodeOneId(), linkProto.getNodeTwoId());
                 CoreLink link = new CoreLink();
-                link.setNodeOne(linkProto.getNodeOne());
-                link.setNodeTwo(linkProto.getNodeTwo());
+                link.setNodeOne(linkProto.getNodeOneId());
+                link.setNodeTwo(linkProto.getNodeTwoId());
                 CoreProto.Interface interfaceOneProto = linkProto.getInterfaceOne();
                 CoreInterface interfaceOne = new CoreInterface();
                 interfaceOne.setId(interfaceOneProto.getId());
@@ -354,11 +355,14 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean setState(SessionState state) throws IOException {
         CoreProto.SetSessionStateRequest request = CoreProto.SetSessionStateRequest.newBuilder()
-                .setId(sessionId)
+                .setSessionId(sessionId)
                 .setStateValue(state.getValue())
                 .build();
         try {
             CoreProto.SetSessionStateResponse response = blockingStub.setSessionState(request);
+            if (response.getResult()) {
+                sessionState = state;
+            }
             return response.getResult();
         } catch (StatusRuntimeException ex) {
             throw new IOException(ex);
@@ -409,7 +413,7 @@ public class CoreGrpcClient implements ICoreClient {
             allDefaults.add(serviceDefaults);
         }
         CoreProto.SetServiceDefaultsRequest request = CoreProto.SetServiceDefaultsRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .addAllDefaults(allDefaults)
                 .build();
         try {
@@ -446,8 +450,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean setService(CoreNode node, String serviceName, CoreService service) throws IOException {
         CoreProto.SetNodeServiceRequest request = CoreProto.SetNodeServiceRequest.newBuilder()
-                .setId(node.getId())
-                .setSession(sessionId)
+                .setNodeId(node.getId())
+                .setSessionId(sessionId)
                 .setService(serviceName)
                 .build();
         request.getShutdownList().addAll(service.getShutdown());
@@ -463,8 +467,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public String getServiceFile(CoreNode node, String serviceName, String fileName) throws IOException {
         CoreProto.GetNodeServiceFileRequest request = CoreProto.GetNodeServiceFileRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setService(serviceName)
                 .build();
         try {
@@ -478,8 +482,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean startService(CoreNode node, String serviceName) throws IOException {
         CoreProto.ServiceActionRequest request = CoreProto.ServiceActionRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_START)
                 .build();
@@ -493,8 +497,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean stopService(CoreNode node, String serviceName) throws IOException {
         CoreProto.ServiceActionRequest request = CoreProto.ServiceActionRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_STOP)
                 .build();
@@ -508,8 +512,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean restartService(CoreNode node, String serviceName) throws IOException {
         CoreProto.ServiceActionRequest request = CoreProto.ServiceActionRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_RESTART)
                 .build();
@@ -523,8 +527,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean validateService(CoreNode node, String serviceName) throws IOException {
         CoreProto.ServiceActionRequest request = CoreProto.ServiceActionRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_VALIDATE)
                 .build();
@@ -538,8 +542,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean setServiceFile(CoreNode node, String serviceName, ServiceFile serviceFile) throws IOException {
         CoreProto.SetNodeServiceFileRequest request = CoreProto.SetNodeServiceFileRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setService(serviceName)
                 .setFile(serviceFile.getName())
                 .setData(ByteString.copyFromUtf8(serviceFile.getData()))
@@ -555,7 +559,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public List<ConfigGroup> getEmaneConfig(CoreNode node) throws IOException {
         CoreProto.GetEmaneConfigRequest request = CoreProto.GetEmaneConfigRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .build();
         try {
             CoreProto.GetEmaneConfigResponse response = blockingStub.getEmaneConfig(request);
@@ -568,7 +572,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public List<String> getEmaneModels() throws IOException {
         CoreProto.GetEmaneModelsRequest request = CoreProto.GetEmaneModelsRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .build();
         try {
             CoreProto.GetEmaneModelsResponse response = blockingStub.getEmaneModels(request);
@@ -582,7 +586,7 @@ public class CoreGrpcClient implements ICoreClient {
     public boolean setEmaneConfig(CoreNode node, List<ConfigOption> options) throws IOException {
         Map<String, String> config = configOptionListToMap(options);
         CoreProto.SetEmaneConfigRequest request = CoreProto.SetEmaneConfigRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .putAllConfig(config)
                 .build();
         try {
@@ -596,8 +600,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public List<ConfigGroup> getEmaneModelConfig(Integer id, String model) throws IOException {
         CoreProto.GetEmaneModelConfigRequest request = CoreProto.GetEmaneModelConfigRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(id)
+                .setSessionId(sessionId)
+                .setNodeId(id)
                 .setModel(model)
                 .build();
         try {
@@ -612,8 +616,8 @@ public class CoreGrpcClient implements ICoreClient {
     public boolean setEmaneModelConfig(Integer id, String model, List<ConfigOption> options) throws IOException {
         Map<String, String> config = configOptionListToMap(options);
         CoreProto.SetEmaneModelConfigRequest request = CoreProto.SetEmaneModelConfigRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(id)
+                .setSessionId(sessionId)
+                .setNodeId(id)
                 .setModel(model)
                 .putAllConfig(config)
                 .build();
@@ -633,7 +637,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public void saveSession(File file) throws IOException {
         CoreProto.SaveXmlRequest request = CoreProto.SaveXmlRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .build();
         try {
             CoreProto.SaveXmlResponse response = blockingStub.saveXml(request);
@@ -654,7 +658,7 @@ public class CoreGrpcClient implements ICoreClient {
         try {
             CoreProto.OpenXmlResponse response = blockingStub.openXml(request);
             SessionOverview sessionOverview = new SessionOverview();
-            sessionOverview.setId(response.getSession());
+            sessionOverview.setId(response.getSessionId());
             return sessionOverview;
         } catch (StatusRuntimeException ex) {
             throw new IOException(ex);
@@ -664,7 +668,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public List<ConfigGroup> getSessionConfig() throws IOException {
         CoreProto.GetSessionOptionsRequest request = CoreProto.GetSessionOptionsRequest.newBuilder()
-                .setId(sessionId)
+                .setSessionId(sessionId)
                 .build();
         try {
             CoreProto.GetSessionOptionsResponse response = blockingStub.getSessionOptions(request);
@@ -678,7 +682,7 @@ public class CoreGrpcClient implements ICoreClient {
     public boolean setSessionConfig(List<ConfigOption> configOptions) throws IOException {
         Map<String, String> config = configOptionListToMap(configOptions);
         CoreProto.SetSessionOptionsRequest request = CoreProto.SetSessionOptionsRequest.newBuilder()
-                .setId(sessionId)
+                .setSessionId(sessionId)
                 .putAllConfig(config)
                 .build();
         try {
@@ -693,7 +697,7 @@ public class CoreGrpcClient implements ICoreClient {
     public boolean createNode(CoreNode node) throws IOException {
         CoreProto.Node protoNode = nodeToProto(node);
         CoreProto.AddNodeRequest request = CoreProto.AddNodeRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .setNode(protoNode)
                 .build();
         try {
@@ -717,8 +721,8 @@ public class CoreGrpcClient implements ICoreClient {
                 .setY(node.getPosition().getY().floatValue())
                 .build();
         CoreProto.EditNodeRequest request = CoreProto.EditNodeRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setPosition(position)
                 .build();
         try {
@@ -746,10 +750,10 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.Link.Builder builder = CoreProto.Link.newBuilder()
                 .setTypeValue(link.getType());
         if (link.getNodeOne() != null) {
-            builder.setNodeOne(link.getNodeOne());
+            builder.setNodeOneId(link.getNodeOne());
         }
         if (link.getNodeTwo() != null) {
-            builder.setNodeTwo(link.getNodeTwo());
+            builder.setNodeTwoId(link.getNodeTwo());
         }
         if (link.getInterfaceOne() != null) {
             builder.setInterfaceOne(interfaceToProto(link.getInterfaceOne()));
@@ -762,7 +766,7 @@ public class CoreGrpcClient implements ICoreClient {
         }
         CoreProto.Link protoLink = builder.build();
         CoreProto.AddLinkRequest request = CoreProto.AddLinkRequest.newBuilder()
-                .setSession(sessionId)
+                .setSessionId(sessionId)
                 .setLink(protoLink)
                 .build();
         try {
@@ -776,18 +780,18 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean editLink(CoreLink link) throws IOException {
         CoreProto.EditLinkRequest.Builder builder = CoreProto.EditLinkRequest.newBuilder()
-                .setSession(sessionId);
+                .setSessionId(sessionId);
         if (link.getNodeOne() != null) {
-            builder.setNodeOne(link.getNodeOne());
+            builder.setNodeOneId(link.getNodeOne());
         }
         if (link.getNodeTwo() != null) {
-            builder.setNodeTwo(link.getNodeTwo());
+            builder.setNodeTwoId(link.getNodeTwo());
         }
         if (link.getInterfaceOne() != null) {
-            builder.setInterfaceOne(link.getInterfaceOne().getId());
+            builder.setInterfaceOneId(link.getInterfaceOne().getId());
         }
         if (link.getInterfaceTwo() != null) {
-            builder.setInterfaceTwo(link.getInterfaceTwo().getId());
+            builder.setInterfaceTwoId(link.getInterfaceTwo().getId());
         }
         if (link.getOptions() != null) {
             CoreProto.LinkOptions protoOptions = linkOptionsToProto(link.getOptions());
@@ -822,7 +826,7 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public List<Hook> getHooks() throws IOException {
-        CoreProto.GetHooksRequest request = CoreProto.GetHooksRequest.newBuilder().setSession(sessionId).build();
+        CoreProto.GetHooksRequest request = CoreProto.GetHooksRequest.newBuilder().setSessionId(sessionId).build();
         try {
             CoreProto.GetHooksResponse response = blockingStub.getHooks(request);
             List<Hook> hooks = new ArrayList<>();
@@ -842,8 +846,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public WlanConfig getWlanConfig(CoreNode node) throws IOException {
         CoreProto.GetWlanConfigRequest request = CoreProto.GetWlanConfigRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .build();
         try {
             CoreProto.GetWlanConfigResponse response = blockingStub.getWlanConfig(request);
@@ -874,8 +878,8 @@ public class CoreGrpcClient implements ICoreClient {
         protoConfig.put("jitter", config.getJitter());
         protoConfig.put("range", config.getRange());
         CoreProto.SetWlanConfigRequest request = CoreProto.SetWlanConfigRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .putAllConfig(protoConfig)
                 .build();
         try {
@@ -895,7 +899,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public Map<Integer, MobilityConfig> getMobilityConfigs() throws IOException {
         CoreProto.GetMobilityConfigsRequest request = CoreProto.GetMobilityConfigsRequest.newBuilder()
-                .setSession(sessionId).build();
+                .setSessionId(sessionId).build();
         try {
             CoreProto.GetMobilityConfigsResponse response = blockingStub.getMobilityConfigs(request);
 
@@ -940,8 +944,8 @@ public class CoreGrpcClient implements ICoreClient {
         protoConfig.put("script_start", config.getStartScript());
         protoConfig.put("script_stop", config.getStopScript());
         CoreProto.SetMobilityConfigRequest request = CoreProto.SetMobilityConfigRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .putAllConfig(protoConfig)
                 .build();
         try {
@@ -955,8 +959,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public MobilityConfig getMobilityConfig(CoreNode node) throws IOException {
         CoreProto.GetMobilityConfigRequest request = CoreProto.GetMobilityConfigRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .build();
         try {
             CoreProto.GetMobilityConfigResponse response = blockingStub.getMobilityConfig(request);
@@ -984,8 +988,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean mobilityAction(CoreNode node, String action) throws IOException {
         CoreProto.MobilityActionRequest request = CoreProto.MobilityActionRequest.newBuilder()
-                .setSession(sessionId)
-                .setId(node.getId())
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .setAction(CoreProto.MobilityAction.valueOf(action))
                 .build();
         try {
@@ -999,7 +1003,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public LocationConfig getLocationConfig() throws IOException {
         CoreProto.GetSessionLocationRequest request = CoreProto.GetSessionLocationRequest.newBuilder()
-                .setId(sessionId)
+                .setSessionId(sessionId)
                 .build();
         try {
             CoreProto.GetSessionLocationResponse response = blockingStub.getSessionLocation(request);
@@ -1020,7 +1024,7 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean setLocationConfig(LocationConfig config) throws IOException {
         CoreProto.SetSessionLocationRequest.Builder builder = CoreProto.SetSessionLocationRequest.newBuilder()
-                .setId(sessionId);
+                .setSessionId(sessionId);
         if (config.getScale() != null) {
             builder.setScale(config.getScale().floatValue());
         }
