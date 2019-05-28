@@ -25,13 +25,13 @@ class TestGrpc:
             response = client.create_session(session_id)
 
         # then
-        assert isinstance(response.id, int)
+        assert isinstance(response.session_id, int)
         assert isinstance(response.state, int)
-        session = grpc_server.coreemu.sessions.get(response.id)
+        session = grpc_server.coreemu.sessions.get(response.session_id)
         assert session is not None
         assert session.state == response.state
         if session_id is not None:
-            assert response.id == session_id
+            assert response.session_id == session_id
             assert session.id == session_id
 
     @pytest.mark.parametrize("session_id, expected", [
@@ -181,8 +181,8 @@ class TestGrpc:
             response = client.add_node(session.id, node)
 
         # then
-        assert response.id is not None
-        assert session.get_object(response.id) is not None
+        assert response.node_id is not None
+        assert session.get_object(response.node_id) is not None
 
     def test_get_node(self, grpc_server):
         # given
@@ -298,7 +298,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert response.session is not None
+        assert response.session_id is not None
 
     def test_get_node_links(self, grpc_server, ip_prefixes):
         # given
