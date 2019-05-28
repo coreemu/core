@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.2.1, core-dev@nrl.navy.mil)
+AC_INIT(core, 5.2.1)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -146,7 +146,7 @@ if test "x$enable_daemon" = "xyes"; then
   CFLAGS_save=$CFLAGS
   CPPFLAGS_save=$CPPFLAGS
   if test "x$PYTHON_INCLUDE_DIR" = "x"; then
-    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_python_inc()"`
+    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())"`
   fi
   CFLAGS="-I$PYTHON_INCLUDE_DIR"
   CPPFLAGS="-I$PYTHON_INCLUDE_DIR"
