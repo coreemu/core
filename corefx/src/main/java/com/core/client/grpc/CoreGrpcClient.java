@@ -7,6 +7,7 @@ import com.core.data.*;
 import com.google.protobuf.ByteString;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
+import io.grpc.StatusRuntimeException;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -189,105 +190,121 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public SessionOverview createSession() throws IOException {
         CoreProto.CreateSessionRequest request = CoreProto.CreateSessionRequest.newBuilder().build();
-        CoreProto.CreateSessionResponse response = blockingStub.createSession(request);
-        SessionOverview overview = new SessionOverview();
-        overview.setId(response.getId());
-        overview.setState(response.getStateValue());
-        overview.setNodes(0);
-        return overview;
+        try {
+            CoreProto.CreateSessionResponse response = blockingStub.createSession(request);
+            SessionOverview overview = new SessionOverview();
+            overview.setId(response.getId());
+            overview.setState(response.getStateValue());
+            overview.setNodes(0);
+            return overview;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public boolean deleteSession(Integer sessionId) throws IOException {
         CoreProto.DeleteSessionRequest request = CoreProto.DeleteSessionRequest.newBuilder().setId(sessionId).build();
-        return blockingStub.deleteSession(request).getResult();
+        try {
+            return blockingStub.deleteSession(request).getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public List<SessionOverview> getSessions() throws IOException {
         CoreProto.GetSessionsRequest request = CoreProto.GetSessionsRequest.newBuilder().build();
-        CoreProto.GetSessionsResponse response = blockingStub.getSessions(request);
-        List<SessionOverview> sessions = new ArrayList<>();
-        for (CoreProto.SessionSummary summary : response.getSessionsList()) {
-            SessionOverview overview = new SessionOverview();
-            overview.setId(summary.getId());
-            overview.setNodes(summary.getNodes());
-            overview.setState(summary.getStateValue());
-            sessions.add(overview);
+        try {
+            CoreProto.GetSessionsResponse response = blockingStub.getSessions(request);
+            List<SessionOverview> sessions = new ArrayList<>();
+            for (CoreProto.SessionSummary summary : response.getSessionsList()) {
+                SessionOverview overview = new SessionOverview();
+                overview.setId(summary.getId());
+                overview.setNodes(summary.getNodes());
+                overview.setState(summary.getStateValue());
+                sessions.add(overview);
+            }
+            return sessions;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        return sessions;
     }
 
     @Override
     public Session getSession(Integer sessionId) throws IOException {
         logger.info("getting session: {}", sessionId);
         CoreProto.GetSessionRequest request = CoreProto.GetSessionRequest.newBuilder().setId(sessionId).build();
-        CoreProto.GetSessionResponse response = blockingStub.getSession(request);
-        Session session = new Session();
-        for (CoreProto.Node protoNode : response.getSession().getNodesList()) {
-            if (CoreProto.NodeType.NODE_PEER_TO_PEER == protoNode.getType()) {
-                continue;
+        try {
+            CoreProto.GetSessionResponse response = blockingStub.getSession(request);
+            Session session = new Session();
+            for (CoreProto.Node protoNode : response.getSession().getNodesList()) {
+                if (CoreProto.NodeType.NODE_PEER_TO_PEER == protoNode.getType()) {
+                    continue;
+                }
+
+                logger.info("adding node: {}", protoNode);
+                CoreNode node = new CoreNode(protoNode.getId());
+                node.setName(protoNode.getName());
+                node.setEmane(protoNode.getEmane());
+                node.setIcon(protoNode.getIcon());
+                node.setModel(protoNode.getModel());
+                node.setServices(new HashSet<>(protoNode.getServicesList()));
+                node.getPosition().setX((double) protoNode.getPosition().getX());
+                node.getPosition().setY((double) protoNode.getPosition().getY());
+                node.setType(protoNode.getTypeValue());
+                session.getNodes().add(node);
             }
+            for (CoreProto.Link linkProto : response.getSession().getLinksList()) {
+                logger.info("adding link: {} - {}", linkProto.getNodeOne(), linkProto.getNodeTwo());
+                CoreLink link = new CoreLink();
+                link.setNodeOne(linkProto.getNodeOne());
+                link.setNodeTwo(linkProto.getNodeTwo());
+                CoreProto.Interface interfaceOneProto = linkProto.getInterfaceOne();
+                CoreInterface interfaceOne = new CoreInterface();
+                interfaceOne.setId(interfaceOneProto.getId());
+                interfaceOne.setName(interfaceOneProto.getName());
+                interfaceOne.setMac(interfaceOneProto.getMac());
+                interfaceOne.setIp4(interfaceOneProto.getIp4());
+                interfaceOne.setIp4Mask(interfaceOneProto.getIp4Mask());
+                interfaceOne.setIp6(interfaceOneProto.getIp6());
+                interfaceOne.setIp6Mask(Integer.toString(interfaceOneProto.getIp6Mask()));
+                link.setInterfaceOne(interfaceOne);
 
-            logger.info("adding node: {}", protoNode);
-            CoreNode node = new CoreNode(protoNode.getId());
-            node.setName(protoNode.getName());
-            node.setEmane(protoNode.getEmane());
-            node.setIcon(protoNode.getIcon());
-            node.setModel(protoNode.getModel());
-            node.setServices(new HashSet<>(protoNode.getServicesList()));
-            node.getPosition().setX((double) protoNode.getPosition().getX());
-            node.getPosition().setY((double) protoNode.getPosition().getY());
-            node.setType(protoNode.getTypeValue());
-            session.getNodes().add(node);
-        }
-        for (CoreProto.Link linkProto : response.getSession().getLinksList()) {
-            logger.info("adding link: {} - {}", linkProto.getNodeOne(), linkProto.getNodeTwo());
-            CoreLink link = new CoreLink();
-            link.setNodeOne(linkProto.getNodeOne());
-            link.setNodeTwo(linkProto.getNodeTwo());
-            CoreProto.Interface interfaceOneProto = linkProto.getInterfaceOne();
-            CoreInterface interfaceOne = new CoreInterface();
-            interfaceOne.setId(interfaceOneProto.getId());
-            interfaceOne.setName(interfaceOneProto.getName());
-            interfaceOne.setMac(interfaceOneProto.getMac());
-            interfaceOne.setIp4(interfaceOneProto.getIp4());
-            interfaceOne.setIp4Mask(interfaceOneProto.getIp4Mask());
-            interfaceOne.setIp6(interfaceOneProto.getIp6());
-            interfaceOne.setIp6Mask(Integer.toString(interfaceOneProto.getIp6Mask()));
-            link.setInterfaceOne(interfaceOne);
+                CoreProto.Interface interfaceTwoProto = linkProto.getInterfaceTwo();
+                CoreInterface interfaceTwo = new CoreInterface();
+                interfaceTwo.setId(interfaceTwoProto.getId());
+                interfaceTwo.setName(interfaceTwoProto.getName());
+                interfaceTwo.setMac(interfaceTwoProto.getMac());
+                interfaceTwo.setIp4(interfaceTwoProto.getIp4());
+                interfaceTwo.setIp4Mask(interfaceTwoProto.getIp4Mask());
+                interfaceTwo.setIp6(interfaceTwoProto.getIp6());
+                interfaceTwo.setIp6Mask(Integer.toString(interfaceTwoProto.getIp6Mask()));
+                link.setInterfaceTwo(interfaceTwo);
 
-            CoreProto.Interface interfaceTwoProto = linkProto.getInterfaceTwo();
-            CoreInterface interfaceTwo = new CoreInterface();
-            interfaceTwo.setId(interfaceTwoProto.getId());
-            interfaceTwo.setName(interfaceTwoProto.getName());
-            interfaceTwo.setMac(interfaceTwoProto.getMac());
-            interfaceTwo.setIp4(interfaceTwoProto.getIp4());
-            interfaceTwo.setIp4Mask(interfaceTwoProto.getIp4Mask());
-            interfaceTwo.setIp6(interfaceTwoProto.getIp6());
-            interfaceTwo.setIp6Mask(Integer.toString(interfaceTwoProto.getIp6Mask()));
-            link.setInterfaceTwo(interfaceTwo);
-
-            CoreLinkOptions options = new CoreLinkOptions();
-            CoreProto.LinkOptions protoOptions = linkProto.getOptions();
-            options.setBandwidth((double) protoOptions.getBandwidth());
-            options.setDelay((double) protoOptions.getDelay());
-            options.setDup((double) protoOptions.getDup());
-            options.setJitter((double) protoOptions.getJitter());
-            options.setPer((double) protoOptions.getPer());
-            options.setBurst((double) protoOptions.getBurst());
-            if (!protoOptions.getKey().isEmpty()) {
-                options.setKey(Integer.parseInt(protoOptions.getKey()));
+                CoreLinkOptions options = new CoreLinkOptions();
+                CoreProto.LinkOptions protoOptions = linkProto.getOptions();
+                options.setBandwidth((double) protoOptions.getBandwidth());
+                options.setDelay((double) protoOptions.getDelay());
+                options.setDup((double) protoOptions.getDup());
+                options.setJitter((double) protoOptions.getJitter());
+                options.setPer((double) protoOptions.getPer());
+                options.setBurst((double) protoOptions.getBurst());
+                if (!protoOptions.getKey().isEmpty()) {
+                    options.setKey(Integer.parseInt(protoOptions.getKey()));
+                }
+                options.setMburst((double) protoOptions.getMburst());
+                options.setMer((double) protoOptions.getMer());
+                options.setOpaque(protoOptions.getOpaque());
+                options.setUnidirectional(protoOptions.getUnidirectional() ? 1 : 0);
+                link.setOptions(options);
+                session.getLinks().add(link);
             }
-            options.setMburst((double) protoOptions.getMburst());
-            options.setMer((double) protoOptions.getMer());
-            options.setOpaque(protoOptions.getOpaque());
-            options.setUnidirectional(protoOptions.getUnidirectional() ? 1 : 0);
-            link.setOptions(options);
-            session.getLinks().add(link);
+            session.setState(response.getSession().getStateValue());
+            return session;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        session.setState(response.getSession().getStateValue());
-        return session;
     }
 
     @Override
@@ -340,31 +357,43 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(sessionId)
                 .setStateValue(state.getValue())
                 .build();
-        CoreProto.SetSessionStateResponse response = blockingStub.setSessionState(request);
-        return response.getResult();
+        try {
+            CoreProto.SetSessionStateResponse response = blockingStub.setSessionState(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public Map<String, List<String>> getServices() throws IOException {
         CoreProto.GetServicesRequest request = CoreProto.GetServicesRequest.newBuilder().build();
-        CoreProto.GetServicesResponse response = blockingStub.getServices(request);
-        Map<String, List<String>> servicesMap = new HashMap<>();
-        for (CoreProto.Service protoService : response.getServicesList()) {
-            List<String> services = servicesMap.computeIfAbsent(protoService.getGroup(), x -> new ArrayList<>());
-            services.add(protoService.getName());
+        try {
+            CoreProto.GetServicesResponse response = blockingStub.getServices(request);
+            Map<String, List<String>> servicesMap = new HashMap<>();
+            for (CoreProto.Service protoService : response.getServicesList()) {
+                List<String> services = servicesMap.computeIfAbsent(protoService.getGroup(), x -> new ArrayList<>());
+                services.add(protoService.getName());
+            }
+            return servicesMap;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        return servicesMap;
     }
 
     @Override
     public Map<String, List<String>> getDefaultServices() throws IOException {
         CoreProto.GetServiceDefaultsRequest request = CoreProto.GetServiceDefaultsRequest.newBuilder().build();
-        CoreProto.GetServiceDefaultsResponse response = blockingStub.getServiceDefaults(request);
-        Map<String, List<String>> servicesMap = new HashMap<>();
-        for (CoreProto.ServiceDefaults serviceDefaults : response.getDefaultsList()) {
-            servicesMap.put(serviceDefaults.getNodeType(), serviceDefaults.getServicesList());
+        try {
+            CoreProto.GetServiceDefaultsResponse response = blockingStub.getServiceDefaults(request);
+            Map<String, List<String>> servicesMap = new HashMap<>();
+            for (CoreProto.ServiceDefaults serviceDefaults : response.getDefaultsList()) {
+                servicesMap.put(serviceDefaults.getNodeType(), serviceDefaults.getServicesList());
+            }
+            return servicesMap;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        return servicesMap;
     }
 
     @Override
@@ -379,32 +408,39 @@ public class CoreGrpcClient implements ICoreClient {
                     .build();
             allDefaults.add(serviceDefaults);
         }
-
         CoreProto.SetServiceDefaultsRequest request = CoreProto.SetServiceDefaultsRequest.newBuilder()
                 .setSession(sessionId)
                 .addAllDefaults(allDefaults)
                 .build();
-        CoreProto.SetServiceDefaultsResponse response = blockingStub.setServiceDefaults(request);
-        return response.getResult();
+        try {
+            CoreProto.SetServiceDefaultsResponse response = blockingStub.setServiceDefaults(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public CoreService getService(CoreNode node, String serviceName) throws IOException {
         CoreProto.GetNodeServiceRequest request = CoreProto.GetNodeServiceRequest.newBuilder().build();
-        CoreProto.GetNodeServiceResponse response = blockingStub.getNodeService(request);
-        CoreProto.NodeServiceData nodeServiceData = response.getService();
-        CoreService service = new CoreService();
-        service.setShutdown(nodeServiceData.getShutdownList());
-        service.setStartup(nodeServiceData.getStartupList());
-        service.setValidate(nodeServiceData.getValidateList());
-        service.setConfigs(nodeServiceData.getConfigsList());
-        service.setDependencies(nodeServiceData.getDependenciesList());
-        service.setDirs(nodeServiceData.getDirsList());
-        service.setExecutables(nodeServiceData.getExecutablesList());
-        service.setMeta(nodeServiceData.getMeta());
-        service.setValidationMode(nodeServiceData.getValidationMode().name());
-        service.setValidationTimer(Integer.toString(nodeServiceData.getValidationTimer()));
-        return service;
+        try {
+            CoreProto.GetNodeServiceResponse response = blockingStub.getNodeService(request);
+            CoreProto.NodeServiceData nodeServiceData = response.getService();
+            CoreService service = new CoreService();
+            service.setShutdown(nodeServiceData.getShutdownList());
+            service.setStartup(nodeServiceData.getStartupList());
+            service.setValidate(nodeServiceData.getValidateList());
+            service.setConfigs(nodeServiceData.getConfigsList());
+            service.setDependencies(nodeServiceData.getDependenciesList());
+            service.setDirs(nodeServiceData.getDirsList());
+            service.setExecutables(nodeServiceData.getExecutablesList());
+            service.setMeta(nodeServiceData.getMeta());
+            service.setValidationMode(nodeServiceData.getValidationMode().name());
+            service.setValidationTimer(Integer.toString(nodeServiceData.getValidationTimer()));
+            return service;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -417,7 +453,11 @@ public class CoreGrpcClient implements ICoreClient {
         request.getShutdownList().addAll(service.getShutdown());
         request.getValidateList().addAll(service.getValidate());
         request.getStartupList().addAll(service.getStartup());
-        return blockingStub.setNodeService(request).getResult();
+        try {
+            return blockingStub.setNodeService(request).getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -427,8 +467,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(node.getId())
                 .setService(serviceName)
                 .build();
-        CoreProto.GetNodeServiceFileResponse response = blockingStub.getNodeServiceFile(request);
-        return response.getData().toStringUtf8();
+        try {
+            CoreProto.GetNodeServiceFileResponse response = blockingStub.getNodeServiceFile(request);
+            return response.getData().toStringUtf8();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -439,7 +483,11 @@ public class CoreGrpcClient implements ICoreClient {
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_START)
                 .build();
-        return blockingStub.serviceAction(request).getResult();
+        try {
+            return blockingStub.serviceAction(request).getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -450,7 +498,11 @@ public class CoreGrpcClient implements ICoreClient {
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_STOP)
                 .build();
-        return blockingStub.serviceAction(request).getResult();
+        try {
+            return blockingStub.serviceAction(request).getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -461,7 +513,11 @@ public class CoreGrpcClient implements ICoreClient {
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_RESTART)
                 .build();
-        return blockingStub.serviceAction(request).getResult();
+        try {
+            return blockingStub.serviceAction(request).getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -472,7 +528,11 @@ public class CoreGrpcClient implements ICoreClient {
                 .setService(serviceName)
                 .setAction(CoreProto.ServiceAction.SERVICE_VALIDATE)
                 .build();
-        return blockingStub.serviceAction(request).getResult();
+        try {
+            return blockingStub.serviceAction(request).getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -484,8 +544,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setFile(serviceFile.getName())
                 .setData(ByteString.copyFromUtf8(serviceFile.getData()))
                 .build();
-        CoreProto.SetNodeServiceFileResponse response = blockingStub.setNodeServiceFile(request);
-        return response.getResult();
+        try {
+            CoreProto.SetNodeServiceFileResponse response = blockingStub.setNodeServiceFile(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -493,8 +557,12 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.GetEmaneConfigRequest request = CoreProto.GetEmaneConfigRequest.newBuilder()
                 .setSession(sessionId)
                 .build();
-        CoreProto.GetEmaneConfigResponse response = blockingStub.getEmaneConfig(request);
-        return protoToConfigGroups(response.getGroupsList());
+        try {
+            CoreProto.GetEmaneConfigResponse response = blockingStub.getEmaneConfig(request);
+            return protoToConfigGroups(response.getGroupsList());
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -502,8 +570,12 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.GetEmaneModelsRequest request = CoreProto.GetEmaneModelsRequest.newBuilder()
                 .setSession(sessionId)
                 .build();
-        CoreProto.GetEmaneModelsResponse response = blockingStub.getEmaneModels(request);
-        return new ArrayList<>(response.getModelsList());
+        try {
+            CoreProto.GetEmaneModelsResponse response = blockingStub.getEmaneModels(request);
+            return new ArrayList<>(response.getModelsList());
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -513,8 +585,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSession(sessionId)
                 .putAllConfig(config)
                 .build();
-        CoreProto.SetEmaneConfigResponse response = blockingStub.setEmaneConfig(request);
-        return response.getResult();
+        try {
+            CoreProto.SetEmaneConfigResponse response = blockingStub.setEmaneConfig(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -524,8 +600,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(id)
                 .setModel(model)
                 .build();
-        CoreProto.GetEmaneModelConfigResponse response = blockingStub.getEmaneModelConfig(request);
-        return protoToConfigGroups(response.getGroupsList());
+        try {
+            CoreProto.GetEmaneModelConfigResponse response = blockingStub.getEmaneModelConfig(request);
+            return protoToConfigGroups(response.getGroupsList());
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -537,8 +617,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setModel(model)
                 .putAllConfig(config)
                 .build();
-        CoreProto.SetEmaneModelConfigResponse response = blockingStub.setEmaneModelConfig(request);
-        return response.getResult();
+        try {
+            CoreProto.SetEmaneModelConfigResponse response = blockingStub.setEmaneModelConfig(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -551,9 +635,13 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.SaveXmlRequest request = CoreProto.SaveXmlRequest.newBuilder()
                 .setSession(sessionId)
                 .build();
-        CoreProto.SaveXmlResponse response = blockingStub.saveXml(request);
-        try (PrintWriter writer = new PrintWriter(file)) {
-            writer.print(response.getData().toStringUtf8());
+        try {
+            CoreProto.SaveXmlResponse response = blockingStub.saveXml(request);
+            try (PrintWriter writer = new PrintWriter(file)) {
+                writer.print(response.getData().toStringUtf8());
+            }
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
     }
 
@@ -563,10 +651,14 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.OpenXmlRequest request = CoreProto.OpenXmlRequest.newBuilder()
                 .setData(data)
                 .build();
-        CoreProto.OpenXmlResponse response = blockingStub.openXml(request);
-        SessionOverview sessionOverview = new SessionOverview();
-        sessionOverview.setId(response.getSession());
-        return sessionOverview;
+        try {
+            CoreProto.OpenXmlResponse response = blockingStub.openXml(request);
+            SessionOverview sessionOverview = new SessionOverview();
+            sessionOverview.setId(response.getSession());
+            return sessionOverview;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -574,8 +666,12 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.GetSessionOptionsRequest request = CoreProto.GetSessionOptionsRequest.newBuilder()
                 .setId(sessionId)
                 .build();
-        CoreProto.GetSessionOptionsResponse response = blockingStub.getSessionOptions(request);
-        return protoToConfigGroups(response.getGroupsList());
+        try {
+            CoreProto.GetSessionOptionsResponse response = blockingStub.getSessionOptions(request);
+            return protoToConfigGroups(response.getGroupsList());
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -585,8 +681,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(sessionId)
                 .putAllConfig(config)
                 .build();
-        CoreProto.SetSessionOptionsResponse response = blockingStub.setSessionOptions(request);
-        return response.getResult();
+        try {
+            CoreProto.SetSessionOptionsResponse response = blockingStub.setSessionOptions(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -596,8 +696,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSession(sessionId)
                 .setNode(protoNode)
                 .build();
-        blockingStub.addNode(request);
-        return true;
+        try {
+            blockingStub.addNode(request);
+            return true;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -617,16 +721,24 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(node.getId())
                 .setPosition(position)
                 .build();
-        CoreProto.EditNodeResponse response = blockingStub.editNode(request);
-        return response.getResult();
+        try {
+            CoreProto.EditNodeResponse response = blockingStub.editNode(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public boolean deleteNode(CoreNode node) throws IOException {
         CoreProto.DeleteNodeRequest request = CoreProto.DeleteNodeRequest.newBuilder()
                 .build();
-        CoreProto.DeleteNodeResponse response = blockingStub.deleteNode(request);
-        return response.getResult();
+        try {
+            CoreProto.DeleteNodeResponse response = blockingStub.deleteNode(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -653,8 +765,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSession(sessionId)
                 .setLink(protoLink)
                 .build();
-        CoreProto.AddLinkResponse response = blockingStub.addLink(request);
-        return response.getResult();
+        try {
+            CoreProto.AddLinkResponse response = blockingStub.addLink(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -678,8 +794,12 @@ public class CoreGrpcClient implements ICoreClient {
             builder.setOptions(protoOptions);
         }
         CoreProto.EditLinkRequest request = builder.build();
-        CoreProto.EditLinkResponse response = blockingStub.editLink(request);
-        return response.getResult();
+        try {
+            CoreProto.EditLinkResponse response = blockingStub.editLink(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -692,23 +812,31 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.AddHookRequest request = CoreProto.AddHookRequest.newBuilder()
                 .setHook(hookProto)
                 .build();
-        CoreProto.AddHookResponse response = blockingStub.addHook(request);
-        return response.getResult();
+        try {
+            CoreProto.AddHookResponse response = blockingStub.addHook(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
     public List<Hook> getHooks() throws IOException {
         CoreProto.GetHooksRequest request = CoreProto.GetHooksRequest.newBuilder().setSession(sessionId).build();
-        CoreProto.GetHooksResponse response = blockingStub.getHooks(request);
-        List<Hook> hooks = new ArrayList<>();
-        for (CoreProto.Hook protoHook : response.getHooksList()) {
-            Hook hook = new Hook();
-            hook.setFile(protoHook.getFile());
-            hook.setData(protoHook.getData().toStringUtf8());
-            hook.setState(protoHook.getStateValue());
-            hooks.add(hook);
+        try {
+            CoreProto.GetHooksResponse response = blockingStub.getHooks(request);
+            List<Hook> hooks = new ArrayList<>();
+            for (CoreProto.Hook protoHook : response.getHooksList()) {
+                Hook hook = new Hook();
+                hook.setFile(protoHook.getFile());
+                hook.setData(protoHook.getData().toStringUtf8());
+                hook.setState(protoHook.getStateValue());
+                hooks.add(hook);
+            }
+            return hooks;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        return hooks;
     }
 
     @Override
@@ -717,20 +845,24 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSession(sessionId)
                 .setId(node.getId())
                 .build();
-        CoreProto.GetWlanConfigResponse response = blockingStub.getWlanConfig(request);
-        Map<String, String> protoConfig = new HashMap<>();
-        for (CoreProto.ConfigGroup group : response.getGroupsList()) {
-            for (CoreProto.ConfigOption option : group.getOptionsList()) {
-                protoConfig.put(option.getName(), option.getValue());
+        try {
+            CoreProto.GetWlanConfigResponse response = blockingStub.getWlanConfig(request);
+            Map<String, String> protoConfig = new HashMap<>();
+            for (CoreProto.ConfigGroup group : response.getGroupsList()) {
+                for (CoreProto.ConfigOption option : group.getOptionsList()) {
+                    protoConfig.put(option.getName(), option.getValue());
+                }
             }
+            WlanConfig config = new WlanConfig();
+            config.setBandwidth(protoConfig.get("bandwidth"));
+            config.setDelay(protoConfig.get("delay"));
+            config.setError(protoConfig.get("error"));
+            config.setJitter(protoConfig.get("jitter"));
+            config.setRange(protoConfig.get("range"));
+            return config;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        WlanConfig config = new WlanConfig();
-        config.setBandwidth(protoConfig.get("bandwidth"));
-        config.setDelay(protoConfig.get("delay"));
-        config.setError(protoConfig.get("error"));
-        config.setJitter(protoConfig.get("jitter"));
-        config.setRange(protoConfig.get("range"));
-        return config;
     }
 
     @Override
@@ -746,8 +878,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(node.getId())
                 .putAllConfig(protoConfig)
                 .build();
-        CoreProto.SetWlanConfigResponse response = blockingStub.setWlanConfig(request);
-        return response.getResult();
+        try {
+            CoreProto.SetWlanConfigResponse response = blockingStub.setWlanConfig(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -760,30 +896,34 @@ public class CoreGrpcClient implements ICoreClient {
     public Map<Integer, MobilityConfig> getMobilityConfigs() throws IOException {
         CoreProto.GetMobilityConfigsRequest request = CoreProto.GetMobilityConfigsRequest.newBuilder()
                 .setSession(sessionId).build();
-        CoreProto.GetMobilityConfigsResponse response = blockingStub.getMobilityConfigs(request);
+        try {
+            CoreProto.GetMobilityConfigsResponse response = blockingStub.getMobilityConfigs(request);
 
-        Map<Integer, MobilityConfig> mobilityConfigs = new HashMap<>();
-        for (Integer nodeId : response.getConfigsMap().keySet()) {
-            CoreProto.GetMobilityConfigsResponse.MobilityConfig protoMobilityConfig = response.getConfigsMap()
-                    .get(nodeId);
-            MobilityConfig mobilityConfig = new MobilityConfig();
-            Map<String, String> protoConfig = new HashMap<>();
-            for (CoreProto.ConfigGroup group : protoMobilityConfig.getGroupsList()) {
-                for (CoreProto.ConfigOption option : group.getOptionsList()) {
-                    protoConfig.put(option.getName(), option.getValue());
+            Map<Integer, MobilityConfig> mobilityConfigs = new HashMap<>();
+            for (Integer nodeId : response.getConfigsMap().keySet()) {
+                CoreProto.GetMobilityConfigsResponse.MobilityConfig protoMobilityConfig = response.getConfigsMap()
+                        .get(nodeId);
+                MobilityConfig mobilityConfig = new MobilityConfig();
+                Map<String, String> protoConfig = new HashMap<>();
+                for (CoreProto.ConfigGroup group : protoMobilityConfig.getGroupsList()) {
+                    for (CoreProto.ConfigOption option : group.getOptionsList()) {
+                        protoConfig.put(option.getName(), option.getValue());
+                    }
                 }
+                mobilityConfig.setFile(protoConfig.get("file"));
+                mobilityConfig.setRefresh(Integer.parseInt(protoConfig.get("refresh_ms")));
+                mobilityConfig.setAutostart(protoConfig.get("autostart"));
+                mobilityConfig.setLoop(protoConfig.get("loop"));
+                mobilityConfig.setPauseScript(protoConfig.get("script_pause"));
+                mobilityConfig.setStartScript(protoConfig.get("script_start"));
+                mobilityConfig.setStopScript(protoConfig.get("script_stop"));
+                mobilityConfig.setMap(protoConfig.get("map"));
+                mobilityConfigs.put(nodeId, mobilityConfig);
             }
-            mobilityConfig.setFile(protoConfig.get("file"));
-            mobilityConfig.setRefresh(Integer.parseInt(protoConfig.get("refresh_ms")));
-            mobilityConfig.setAutostart(protoConfig.get("autostart"));
-            mobilityConfig.setLoop(protoConfig.get("loop"));
-            mobilityConfig.setPauseScript(protoConfig.get("script_pause"));
-            mobilityConfig.setStartScript(protoConfig.get("script_start"));
-            mobilityConfig.setStopScript(protoConfig.get("script_stop"));
-            mobilityConfig.setMap(protoConfig.get("map"));
-            mobilityConfigs.put(nodeId, mobilityConfig);
+            return mobilityConfigs;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        return mobilityConfigs;
     }
 
     @Override
@@ -804,8 +944,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(node.getId())
                 .putAllConfig(protoConfig)
                 .build();
-        CoreProto.SetMobilityConfigResponse response = blockingStub.setMobilityConfig(request);
-        return response.getResult();
+        try {
+            CoreProto.SetMobilityConfigResponse response = blockingStub.setMobilityConfig(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -814,23 +958,27 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSession(sessionId)
                 .setId(node.getId())
                 .build();
-        CoreProto.GetMobilityConfigResponse response = blockingStub.getMobilityConfig(request);
-        Map<String, String> protoConfig = new HashMap<>();
-        for (CoreProto.ConfigGroup group : response.getGroupsList()) {
-            for (CoreProto.ConfigOption option : group.getOptionsList()) {
-                protoConfig.put(option.getName(), option.getValue());
+        try {
+            CoreProto.GetMobilityConfigResponse response = blockingStub.getMobilityConfig(request);
+            Map<String, String> protoConfig = new HashMap<>();
+            for (CoreProto.ConfigGroup group : response.getGroupsList()) {
+                for (CoreProto.ConfigOption option : group.getOptionsList()) {
+                    protoConfig.put(option.getName(), option.getValue());
+                }
             }
+            MobilityConfig config = new MobilityConfig();
+            config.setFile(protoConfig.get("file"));
+            config.setRefresh(Integer.parseInt(protoConfig.get("refresh_ms")));
+            config.setAutostart(protoConfig.get("autostart"));
+            config.setLoop(protoConfig.get("loop"));
+            config.setPauseScript(protoConfig.get("script_pause"));
+            config.setStartScript(protoConfig.get("script_start"));
+            config.setStopScript(protoConfig.get("script_stop"));
+            config.setMap(protoConfig.get("map"));
+            return config;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
         }
-        MobilityConfig config = new MobilityConfig();
-        config.setFile(protoConfig.get("file"));
-        config.setRefresh(Integer.parseInt(protoConfig.get("refresh_ms")));
-        config.setAutostart(protoConfig.get("autostart"));
-        config.setLoop(protoConfig.get("loop"));
-        config.setPauseScript(protoConfig.get("script_pause"));
-        config.setStartScript(protoConfig.get("script_start"));
-        config.setStopScript(protoConfig.get("script_stop"));
-        config.setMap(protoConfig.get("map"));
-        return config;
     }
 
     @Override
@@ -840,8 +988,12 @@ public class CoreGrpcClient implements ICoreClient {
                 .setId(node.getId())
                 .setAction(CoreProto.MobilityAction.valueOf(action))
                 .build();
-        CoreProto.MobilityActionResponse response = blockingStub.mobilityAction(request);
-        return response.getResult();
+        try {
+            CoreProto.MobilityActionResponse response = blockingStub.mobilityAction(request);
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -849,16 +1001,20 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.GetSessionLocationRequest request = CoreProto.GetSessionLocationRequest.newBuilder()
                 .setId(sessionId)
                 .build();
-        CoreProto.GetSessionLocationResponse response = blockingStub.getSessionLocation(request);
-        LocationConfig config = new LocationConfig();
-        config.setScale((double) response.getScale());
-        config.getPosition().setX((double) response.getPosition().getX());
-        config.getPosition().setY((double) response.getPosition().getY());
-        config.getPosition().setZ((double) response.getPosition().getZ());
-        config.getLocation().setLatitude((double) response.getPosition().getLat());
-        config.getLocation().setLongitude((double) response.getPosition().getLon());
-        config.getLocation().setAltitude((double) response.getPosition().getAlt());
-        return config;
+        try {
+            CoreProto.GetSessionLocationResponse response = blockingStub.getSessionLocation(request);
+            LocationConfig config = new LocationConfig();
+            config.setScale((double) response.getScale());
+            config.getPosition().setX((double) response.getPosition().getX());
+            config.getPosition().setY((double) response.getPosition().getY());
+            config.getPosition().setZ((double) response.getPosition().getZ());
+            config.getLocation().setLatitude((double) response.getPosition().getLat());
+            config.getLocation().setLongitude((double) response.getPosition().getLon());
+            config.getLocation().setAltitude((double) response.getPosition().getAlt());
+            return config;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
@@ -887,7 +1043,11 @@ public class CoreGrpcClient implements ICoreClient {
         if (config.getLocation().getAltitude() != null) {
             positionBuilder.setAlt(config.getLocation().getAltitude().floatValue());
         }
-        CoreProto.SetSessionLocationResponse response = blockingStub.setSessionLocation(builder.build());
-        return response.getResult();
+        try {
+            CoreProto.SetSessionLocationResponse response = blockingStub.setSessionLocation(builder.build());
+            return response.getResult();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 }
