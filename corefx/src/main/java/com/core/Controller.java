@@ -154,6 +154,9 @@ public class Controller implements Initializable {
         coreClient.updateSession(sessionId);
         coreClient.updateState(sessionState);
 
+        // setup event handlers
+        coreClient.setupEventHandlers(this);
+
         // display all nodes
         logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
         for (CoreNode node : session.getNodes()) {

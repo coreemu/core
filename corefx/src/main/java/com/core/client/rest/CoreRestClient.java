@@ -1,5 +1,6 @@
 package com.core.client.rest;
 
+import com.core.Controller;
 import com.core.client.ICoreClient;
 import com.core.data.*;
 import com.core.utils.WebUtils;
@@ -411,5 +412,9 @@ public class CoreRestClient implements ICoreClient {
     public boolean mobilityAction(CoreNode node, String action) throws IOException {
         String url = getUrl(String.format("sessions/%s/nodes/%s/mobility/%s", sessionId, node.getId(), action));
         return WebUtils.putJson(url);
+    }
+
+    @Override
+    public void setupEventHandlers(Controller controller) throws IOException {
     }
 }

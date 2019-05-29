@@ -1,5 +1,6 @@
 package com.core.client;
 
+import com.core.Controller;
 import com.core.client.rest.ServiceFile;
 import com.core.client.rest.WlanConfig;
 import com.core.data.*;
@@ -115,4 +116,6 @@ public interface ICoreClient {
     LocationConfig getLocationConfig() throws IOException;
 
     boolean setLocationConfig(LocationConfig config) throws IOException;
+
+    void setupEventHandlers(Controller controller) throws IOException;
 }
