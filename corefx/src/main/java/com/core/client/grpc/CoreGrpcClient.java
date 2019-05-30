@@ -1073,149 +1073,103 @@ public class CoreGrpcClient implements ICoreClient {
         logger.info("setting up event handlers");
         handlingEvents = true;
         try {
-            handleSessionEvents(controller);
-            handleNodeEvents(controller);
-            handleExceptionEvents(controller);
-            handleConfigEvents(controller);
-            handleLinkEvents(controller);
-            handleFileEvents(controller);
+            CoreProto.EventsRequest request = CoreProto.EventsRequest.newBuilder()
+                    .setSessionId(sessionId)
+                    .build();
+
+            Iterator<CoreProto.Event> events = blockingStub.events(request);
+            executorService.submit(() -> {
+                try {
+                    while (handlingEvents) {
+                        CoreProto.Event event = events.next();
+                        logger.info("handling event: {}", event);
+                        switch (event.getEventTypeCase()) {
+                            case SESSION_EVENT:
+                                handleSessionEvents(controller, event.getSessionEvent());
+                                break;
+                            case NODE_EVENT:
+                                handleNodeEvents(controller, event.getNodeEvent());
+                                break;
+                            case LINK_EVENT:
+                                handleLinkEvents(controller, event.getLinkEvent());
+                                break;
+                            case CONFIG_EVENT:
+                                handleConfigEvents(controller, event.getConfigEvent());
+                                break;
+                            case EXCEPTION_EVENT:
+                                handleExceptionEvents(controller, event.getExceptionEvent());
+                                break;
+                            case FILE_EVENT:
+                                handleFileEvents(controller, event.getFileEvent());
+                                break;
+                            default:
+                                logger.error("unknown event type: {}", event.getEventTypeCase());
+                        }
+                    }
+                } catch (StatusRuntimeException ex) {
+                    logger.error("error handling session events", ex);
+                }
+            });
         } catch (StatusRuntimeException ex) {
             throw new IOException("setup event handlers error", ex);
         }
     }
 
-    private void handleSessionEvents(Controller controller) {
-        CoreProto.SessionEventsRequest request = CoreProto.SessionEventsRequest.newBuilder()
-                .setSessionId(sessionId)
-                .build();
-        Iterator<CoreProto.SessionEvent> events = blockingStub.sessionEvents(request);
-        executorService.submit(() -> {
-            try {
-                while (handlingEvents) {
-                    CoreProto.SessionEvent event = events.next();
-                    logger.info("session event: {}", event);
-                    SessionState state = SessionState.get(event.getEvent());
-                    if (state == null) {
-                        logger.warn("unknown event type: {}", event.getEvent());
-                        continue;
-                    }
+    private void handleSessionEvents(Controller controller, CoreProto.SessionEvent event) {
+        logger.info("session event: {}", event);
+        SessionState state = SessionState.get(event.getEvent());
+        if (state == null) {
+            logger.warn("unknown session event: {}", event.getEvent());
+            return;
+        }
 
-                    // session state event
-                    if (state.getValue() <= 6) {
-                        logger.info("event updating session state: {}", state);
-                        updateState(state);
-                        // mobility script event
-                    } else if (state.getValue() <= 9) {
-                        Integer nodeId = event.getNodeId();
-                        String[] values = event.getData().toStringUtf8().split("\\s+");
-                        Integer start = Integer.parseInt(values[0].split("=")[1]);
-                        Integer end = Integer.parseInt(values[1].split("=")[1]);
-                        logger.info(String.format("node(%s) mobility event (%s) - start(%s) stop(%s)",
-                                nodeId, state, start, end));
-                        logger.info("all dialogs: {}", controller.getMobilityPlayerDialogs().keySet());
-                        MobilityPlayerDialog mobilityPlayerDialog = controller.getMobilityPlayerDialogs().get(nodeId);
-                        mobilityPlayerDialog.event(state, start, end);
-                    }
-                }
-            } catch (StatusRuntimeException ex) {
-                logger.error("error handling session events", ex);
-            }
-        });
+        // session state event
+        if (state.getValue() <= 6) {
+            logger.info("event updating session state: {}", state);
+            updateState(state);
+            // mobility script event
+        } else if (state.getValue() <= 9) {
+            Integer nodeId = event.getNodeId();
+            String[] values = event.getData().toStringUtf8().split("\\s+");
+            Integer start = Integer.parseInt(values[0].split("=")[1]);
+            Integer end = Integer.parseInt(values[1].split("=")[1]);
+            logger.info(String.format("node(%s) mobility event (%s) - start(%s) stop(%s)",
+                    nodeId, state, start, end));
+            logger.info("all dialogs: {}", controller.getMobilityPlayerDialogs().keySet());
+            MobilityPlayerDialog mobilityPlayerDialog = controller.getMobilityPlayerDialogs().get(nodeId);
+            mobilityPlayerDialog.event(state, start, end);
+        }
     }
 
-    private void handleNodeEvents(Controller controller) {
-        CoreProto.NodeEventsRequest request = CoreProto.NodeEventsRequest.newBuilder().setSessionId(sessionId)
-                .build();
-        Iterator<CoreProto.NodeEvent> events = blockingStub.nodeEvents(request);
-        executorService.submit(() -> {
-            try {
-                while (handlingEvents) {
-                    CoreProto.NodeEvent event = events.next();
-                    logger.info("node event: {}", event);
-                    CoreNode node = protoToNode(event.getNode());
-                    controller.getNetworkGraph().setNodeLocation(node);
-                }
-            } catch (StatusRuntimeException ex) {
-                logger.error("error handling node events", ex);
-            }
-        });
+    private void handleNodeEvents(Controller controller, CoreProto.NodeEvent event) {
+        logger.info("node event: {}", event);
+        CoreNode node = protoToNode(event.getNode());
+        controller.getNetworkGraph().setNodeLocation(node);
     }
 
-    private void handleExceptionEvents(Controller controller) {
-        CoreProto.ExceptionEventsRequest request = CoreProto.ExceptionEventsRequest.newBuilder()
-                .setSessionId(sessionId)
-                .build();
-        Iterator<CoreProto.ExceptionEvent> events = blockingStub.exceptionEvents(request);
-        executorService.submit(() -> {
-            try {
-                while (handlingEvents) {
-                    CoreProto.ExceptionEvent event = events.next();
-                    logger.info("exception event: {}", event);
-                }
-            } catch (StatusRuntimeException ex) {
-                logger.error("error handling exception events", ex);
-            }
-        });
+    private void handleExceptionEvents(Controller controller, CoreProto.ExceptionEvent event) {
+        logger.info("exception event: {}", event);
     }
 
-    private void handleConfigEvents(Controller controller) {
-        CoreProto.ConfigEventsRequest request = CoreProto.ConfigEventsRequest.newBuilder()
-                .setSessionId(sessionId)
-                .build();
-        Iterator<CoreProto.ConfigEvent> events = blockingStub.configEvents(request);
-        executorService.submit(() -> {
-            try {
-                while (handlingEvents) {
-                    CoreProto.ConfigEvent event = events.next();
-                    logger.info("config event: {}", event);
-                }
-            } catch (StatusRuntimeException ex) {
-                logger.error("error handling config events", ex);
-            }
-        });
+    private void handleConfigEvents(Controller controller, CoreProto.ConfigEvent event) {
+        logger.info("config event: {}", event);
     }
 
-    private void handleLinkEvents(Controller controller) {
-        CoreProto.LinkEventsRequest request = CoreProto.LinkEventsRequest.newBuilder()
-                .setSessionId(sessionId)
-                .build();
-        Iterator<CoreProto.LinkEvent> events = blockingStub.linkEvents(request);
-        executorService.submit(() -> {
-            try {
-                while (handlingEvents) {
-                    CoreProto.LinkEvent event = events.next();
-                    logger.info("link event: {}", event);
-                    CoreLink link = protoToLink(event.getLink());
-                    MessageFlags flag = MessageFlags.get(event.getMessageTypeValue());
-                    if (MessageFlags.DELETE == flag) {
-                        logger.info("delete");
-                        controller.getNetworkGraph().removeWirelessLink(link);
-                    } else if (MessageFlags.ADD == flag) {
-                        link.setLoaded(true);
-                        controller.getNetworkGraph().addLink(link);
-                    }
-                    controller.getNetworkGraph().getGraphViewer().repaint();
-                }
-            } catch (StatusRuntimeException ex) {
-                logger.error("error handling link events", ex);
-            }
-        });
+    private void handleLinkEvents(Controller controller, CoreProto.LinkEvent event) {
+        logger.info("link event: {}", event);
+        CoreLink link = protoToLink(event.getLink());
+        MessageFlags flag = MessageFlags.get(event.getMessageTypeValue());
+        if (MessageFlags.DELETE == flag) {
+            logger.info("delete");
+            controller.getNetworkGraph().removeWirelessLink(link);
+        } else if (MessageFlags.ADD == flag) {
+            link.setLoaded(true);
+            controller.getNetworkGraph().addLink(link);
+        }
+        controller.getNetworkGraph().getGraphViewer().repaint();
     }
 
-    private void handleFileEvents(Controller controller) {
-        CoreProto.FileEventsRequest request = CoreProto.FileEventsRequest.newBuilder()
-                .setSessionId(sessionId)
-                .build();
-        Iterator<CoreProto.FileEvent> events = blockingStub.fileEvents(request);
-        executorService.submit(() -> {
-            try {
-                while (handlingEvents) {
-                    CoreProto.FileEvent event = events.next();
-                    logger.info("file event: {}", event);
-                }
-            } catch (StatusRuntimeException ex) {
-                logger.error("error handling file events", ex);
-            }
-        });
+    private void handleFileEvents(Controller controller, CoreProto.FileEvent event) {
+        logger.info("file event: {}", event);
     }
 }
