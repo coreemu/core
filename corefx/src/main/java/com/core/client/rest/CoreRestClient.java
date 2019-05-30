@@ -4,12 +4,14 @@ import com.core.Controller;
 import com.core.client.ICoreClient;
 import com.core.data.*;
 import com.core.utils.WebUtils;
+import com.core.websocket.CoreWebSocket;
 import lombok.Data;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.*;
 
 @Data
@@ -19,6 +21,7 @@ public class CoreRestClient implements ICoreClient {
     private int port;
     private Integer sessionId;
     private SessionState sessionState;
+    private CoreWebSocket coreWebSocket;
 
     @Override
     public void setConnection(String address, int port) {
@@ -416,5 +419,12 @@ public class CoreRestClient implements ICoreClient {
 
     @Override
     public void setupEventHandlers(Controller controller) throws IOException {
+        coreWebSocket.stop();
+        coreWebSocket = new CoreWebSocket(controller);
+        try {
+            coreWebSocket.start(address, port);
+        } catch (URISyntaxException ex) {
+            throw new IOException("error starting web socket", ex);
+        }
     }
 }

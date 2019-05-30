@@ -9,7 +9,6 @@ import com.core.ui.dialogs.*;
 import com.core.utils.ConfigUtils;
 import com.core.utils.Configuration;
 import com.core.utils.NodeTypeConfig;
-import com.core.websocket.CoreWebSocket;
 import com.jfoenix.controls.JFXDecorator;
 import com.jfoenix.controls.JFXProgressBar;
 import javafx.application.Application;
@@ -33,7 +32,6 @@ import org.apache.logging.log4j.Logger;
 import java.awt.event.ItemEvent;
 import java.io.File;
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
@@ -63,7 +61,6 @@ public class Controller implements Initializable {
 
     // core client utilities
     private ICoreClient coreClient = new CoreGrpcClient();
-    private CoreWebSocket coreWebSocket;
 
     // ui elements
     private NetworkGraph networkGraph = new NetworkGraph(this);
@@ -91,15 +88,12 @@ public class Controller implements Initializable {
     private NodeTypeCreateDialog nodeTypeCreateDialog = new NodeTypeCreateDialog(this);
 
     public void connectToCore(String address, int port) {
-        coreWebSocket.stop();
-
-        ExecutorService executorService = Executors.newSingleThreadExecutor();
+//        ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() -> {
             try {
-                coreWebSocket.start(address, port);
                 coreClient.setConnection(address, port);
                 initialJoin();
-            } catch (IOException | URISyntaxException ex) {
+            } catch (IOException ex) {
                 Toast.error(String.format("Connection failure: %s", ex.getMessage()), ex);
                 Platform.runLater(() -> connectDialog.showDialog());
             }
@@ -456,7 +450,6 @@ public class Controller implements Initializable {
 
     @Override
     public void initialize(URL location, ResourceBundle resources) {
-        coreWebSocket = new CoreWebSocket(this);
         configuration = ConfigUtils.load();
         String address = configuration.getCoreAddress();
         int port = configuration.getCorePort();

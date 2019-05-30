@@ -39,7 +39,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .build();
         CoreProto.Node.Builder builder = CoreProto.Node.newBuilder()
                 .addAllServices(node.getServices())
-                .setType(CoreProto.NodeType.forNumber(node.getType()))
+                .setType(CoreProto.NodeType.Enum.forNumber(node.getType()))
                 .setPosition(position);
         if (node.getId() != null) {
             builder.setId(node.getId());
@@ -300,7 +300,7 @@ public class CoreGrpcClient implements ICoreClient {
             CoreProto.GetSessionResponse response = blockingStub.getSession(request);
             Session session = new Session();
             for (CoreProto.Node protoNode : response.getSession().getNodesList()) {
-                if (CoreProto.NodeType.NODE_PEER_TO_PEER == protoNode.getType()) {
+                if (CoreProto.NodeType.Enum.PEER_TO_PEER == protoNode.getType()) {
                     continue;
                 }
 
@@ -498,7 +498,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSessionId(sessionId)
                 .setNodeId(node.getId())
                 .setService(serviceName)
-                .setAction(CoreProto.ServiceAction.SERVICE_START)
+                .setAction(CoreProto.ServiceAction.Enum.START)
                 .build();
         try {
             return blockingStub.serviceAction(request).getResult();
@@ -513,7 +513,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSessionId(sessionId)
                 .setNodeId(node.getId())
                 .setService(serviceName)
-                .setAction(CoreProto.ServiceAction.SERVICE_STOP)
+                .setAction(CoreProto.ServiceAction.Enum.STOP)
                 .build();
         try {
             return blockingStub.serviceAction(request).getResult();
@@ -528,7 +528,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSessionId(sessionId)
                 .setNodeId(node.getId())
                 .setService(serviceName)
-                .setAction(CoreProto.ServiceAction.SERVICE_RESTART)
+                .setAction(CoreProto.ServiceAction.Enum.RESTART)
                 .build();
         try {
             return blockingStub.serviceAction(request).getResult();
@@ -543,7 +543,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .setSessionId(sessionId)
                 .setNodeId(node.getId())
                 .setService(serviceName)
-                .setAction(CoreProto.ServiceAction.SERVICE_VALIDATE)
+                .setAction(CoreProto.ServiceAction.Enum.VALIDATE)
                 .build();
         try {
             return blockingStub.serviceAction(request).getResult();
@@ -1003,7 +1003,7 @@ public class CoreGrpcClient implements ICoreClient {
         CoreProto.MobilityActionRequest request = CoreProto.MobilityActionRequest.newBuilder()
                 .setSessionId(sessionId)
                 .setNodeId(node.getId())
-                .setAction(CoreProto.MobilityAction.valueOf(action))
+                .setAction(CoreProto.MobilityAction.Enum.valueOf(action))
                 .build();
         try {
             CoreProto.MobilityActionResponse response = blockingStub.mobilityAction(request);
