@@ -57,7 +57,8 @@ def cored(cfg):
     # initialize grpc api
     if cfg["grpc"] == "True":
         grpc_server = CoreGrpcServer(server.coreemu)
-        grpc_thread = threading.Thread(target=grpc_server.listen)
+        grpc_address = "%s:%s" % (cfg["grpcaddress"], cfg["grpcport"])
+        grpc_thread = threading.Thread(target=grpc_server.listen, args=(grpc_address,))
         grpc_thread.daemon = True
         grpc_thread.start()
 
@@ -80,6 +81,8 @@ def get_merged_config(filename):
         "listenaddr": "localhost",
         "xmlfilever": "1.0",
         "numthreads": "1",
+        "grpcport": "50051",
+        "grpcaddress": "localhost"
     }
 
     parser = argparse.ArgumentParser(
@@ -92,6 +95,10 @@ def get_merged_config(filename):
                         help="number of server threads; default = %s" % defaults["numthreads"])
     parser.add_argument("--ovs", action="store_true", help="enable experimental ovs mode, default is false")
     parser.add_argument("--grpc", action="store_true", help="enable grpc api, default is false")
+    parser.add_argument("--grpc-port", dest="grpcport",
+                        help="grpc port to listen on; default %s" % defaults["grpcport"])
+    parser.add_argument("--grpc-address", dest="grpcaddress",
+                        help="grpc address to listen on; default %s" % defaults["grpcaddress"])
 
     # parse command line options
     args = parser.parse_args()

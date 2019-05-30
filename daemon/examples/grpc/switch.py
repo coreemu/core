@@ -18,19 +18,14 @@ def main():
 
         # handle events session may broadcast
         session_id = response.session_id
-        core.exception_events(session_id, log_event)
-        core.node_events(session_id, log_event)
-        core.session_events(session_id, log_event)
-        core.link_events(session_id, log_event)
-        core.file_events(session_id, log_event)
-        core.config_events(session_id, log_event)
+        core.events(session_id, log_event)
 
         # change session state
-        response = core.set_session_state(session_id, core_pb2.STATE_CONFIGURATION)
+        response = core.set_session_state(session_id, core_pb2.SessionState.CONFIGURATION)
         logging.info("set session state: %s", response)
 
         # create switch node
-        switch = core_pb2.Node(type=core_pb2.NODE_SWITCH)
+        switch = core_pb2.Node(type=core_pb2.NodeType.SWITCH)
         response = core.add_node(session_id, switch)
         logging.info("created switch: %s", response)
         switch_id = response.node_id
@@ -52,7 +47,7 @@ def main():
             logging.info("created link: %s", response)
 
         # change session state
-        response = core.set_session_state(session_id, core_pb2.STATE_INSTANTIATION)
+        response = core.set_session_state(session_id, core_pb2.SessionState.INSTANTIATION)
         logging.info("set session state: %s", response)
 
 
