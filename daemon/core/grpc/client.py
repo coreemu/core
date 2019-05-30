@@ -263,33 +263,7 @@ class CoreGrpcClient(object):
         request = core_pb2.SetSessionStateRequest(session_id=session_id, state=state)
         return self.stub.SetSessionState(request)
 
-    def node_events(self, session_id, handler):
-        """
-        Listen for session node events.
-
-        :param int session_id: id of session
-        :param handler: handler for every event
-        :return: nothing
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.NodeEventsRequest(session_id=session_id)
-        stream = self.stub.NodeEvents(request)
-        start_streamer(stream, handler)
-
-    def link_events(self, session_id, handler):
-        """
-        Listen for session link events.
-
-        :param int session_id: id of session
-        :param handler: handler for every event
-        :return: nothing
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.LinkEventsRequest(session_id=session_id)
-        stream = self.stub.LinkEvents(request)
-        start_streamer(stream, handler)
-
-    def session_events(self, session_id, handler):
+    def events(self, session_id, handler):
         """
         Listen for session events.
 
@@ -298,47 +272,8 @@ class CoreGrpcClient(object):
         :return: nothing
         :raises grpc.RpcError: when session doesn't exist
         """
-        request = core_pb2.SessionEventsRequest(session_id=session_id)
-        stream = self.stub.SessionEvents(request)
-        start_streamer(stream, handler)
-
-    def config_events(self, session_id, handler):
-        """
-        Listen for session config events.
-
-        :param int session_id: id of session
-        :param handler: handler for every event
-        :return: nothing
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.ConfigEventsRequest(session_id=session_id)
-        stream = self.stub.ConfigEvents(request)
-        start_streamer(stream, handler)
-
-    def exception_events(self, session_id, handler):
-        """
-        Listen for session exception events.
-
-        :param int session_id: id of session
-        :param handler: handler for every event
-        :return: nothing
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.ExceptionEventsRequest(session_id=session_id)
-        stream = self.stub.ExceptionEvents(request)
-        start_streamer(stream, handler)
-
-    def file_events(self, session_id, handler):
-        """
-        Listen for session file events.
-
-        :param int session_id: id of session
-        :param handler: handler for every event
-        :return: nothing
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.FileEventsRequest(session_id=session_id)
-        stream = self.stub.FileEvents(request)
+        request = core_pb2.EventsRequest(session_id=session_id)
+        stream = self.stub.Events(request)
         start_streamer(stream, handler)
 
     def add_node(self, session_id, node):

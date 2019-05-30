@@ -718,11 +718,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("node_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.node_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session.broadcast_node(node_data)
 
@@ -741,11 +742,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("link_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.link_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session.broadcast_link(link_data)
 
@@ -759,11 +761,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("session_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.session_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(event_type=EventTypes.RUNTIME_STATE.value, time="%s" % time.time())
             session.broadcast_event(event)
@@ -778,11 +781,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("config_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.config_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session_config = session.options.get_configs()
             config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, session.options, session_config)
@@ -798,11 +802,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("exception_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.exception_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session.exception(ExceptionLevels.FATAL, "test", None, "exception message")
 
@@ -817,11 +822,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("file_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.file_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             file_data = session.services.get_service_file(node, "IPForward", "ipforward.sh")
             session.broadcast_file(file_data)
