@@ -128,7 +128,7 @@ message CreateSessionRequest {
 
 message CreateSessionResponse {
     int32 session_id = 1;
-    SessionState state = 2;
+    SessionState.Enum state = 2;
 }
 
 message DeleteSessionRequest {
@@ -192,7 +192,7 @@ message SetSessionLocationResponse {
 
 message SetSessionStateRequest {
     int32 session_id = 1;
-    SessionState state = 2;
+    SessionState.Enum state = 2;
 }
 
 message SetSessionStateResponse {
@@ -212,7 +212,7 @@ message LinkEventsRequest {
 }
 
 message LinkEvent {
-    MessageType message_type = 1;
+    MessageType.Enum message_type = 1;
     Link link = 2;
 }
 
@@ -234,7 +234,7 @@ message ConfigEventsRequest {
 }
 
 message ConfigEvent {
-    MessageType message_type = 1;
+    MessageType.Enum message_type = 1;
     int32 node_id = 2;
     string object = 3;
     int32 type = 4;
@@ -257,7 +257,7 @@ message ExceptionEventsRequest {
 message ExceptionEvent {
     int32 node_id = 1;
     int32 session_id = 2;
-    ExceptionLevel level = 3;
+    ExceptionLevel.Enum level = 3;
     string source = 4;
     string date = 5;
     string text = 6;
@@ -269,7 +269,7 @@ message FileEventsRequest {
 }
 
 message FileEvent {
-    MessageType message_type = 1;
+    MessageType.Enum message_type = 1;
     int32 node_id = 2;
     string name = 3;
     string mode = 4;
@@ -412,7 +412,7 @@ message SetMobilityConfigResponse {
 message MobilityActionRequest {
     int32 session_id = 1;
     int32 node_id = 2;
-    MobilityAction action = 3;
+    MobilityAction.Enum action = 3;
 }
 
 message MobilityActionResponse {
@@ -494,7 +494,7 @@ message ServiceActionRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     string service = 3;
-    ServiceAction action = 4;
+    ServiceAction.Enum action = 4;
 }
 
 message ServiceActionResponse {
@@ -598,78 +598,94 @@ message OpenXmlResponse {
 }
 
 // data structures for messages below
-enum MessageType {
-    MESSAGE_NONE = 0;
-    MESSAGE_ADD = 1;
-    MESSAGE_DELETE = 2;
-    MESSAGE_CRI = 4;
-    MESSAGE_LOCAL = 8;
-    MESSAGE_STRING = 16;
-    MESSAGE_TEXT = 32;
-    MESSAGE_TTY = 64;
+message MessageType {
+    enum Enum {
+        NONE = 0;
+        ADD = 1;
+        DELETE = 2;
+        CRI = 4;
+        LOCAL = 8;
+        STRING = 16;
+        TEXT = 32;
+        TTY = 64;
+    }
 }
 
-enum LinkType {
-    LINK_WIRELESS = 0;
-    LINK_WIRED = 1;
+message LinkType {
+    enum Enum {
+        WIRELESS = 0;
+        WIRED = 1;
+    }
 }
 
-enum SessionState {
-    STATE_NONE = 0;
-    STATE_DEFINITION = 1;
-    STATE_CONFIGURATION = 2;
-    STATE_INSTANTIATION = 3;
-    STATE_RUNTIME = 4;
-    STATE_DATACOLLECT = 5;
-    STATE_SHUTDOWN = 6;
+message SessionState {
+    enum Enum {
+        NONE = 0;
+        DEFINITION = 1;
+        CONFIGURATION = 2;
+        INSTANTIATION = 3;
+        RUNTIME = 4;
+        DATACOLLECT = 5;
+        SHUTDOWN = 6;
+    }
 }
 
-enum NodeType {
-    NODE_DEFAULT = 0;
-    NODE_PHYSICAL = 1;
-    NODE_TBD = 3;
-    NODE_SWITCH = 4;
-    NODE_HUB = 5;
-    NODE_WIRELESS_LAN = 6;
-    NODE_RJ45 = 7;
-    NODE_TUNNEL = 8;
-    NODE_KTUNNEL = 9;
-    NODE_EMANE = 10;
-    NODE_TAP_BRIDGE = 11;
-    NODE_PEER_TO_PEER = 12;
-    NODE_CONTROL_NET = 13;
-    NODE_EMANE_NET = 14;
+message NodeType {
+    enum Enum {
+        DEFAULT = 0;
+        PHYSICAL = 1;
+        TBD = 3;
+        SWITCH = 4;
+        HUB = 5;
+        WIRELESS_LAN = 6;
+        RJ45 = 7;
+        TUNNEL = 8;
+        KTUNNEL = 9;
+        EMANE = 10;
+        TAP_BRIDGE = 11;
+        PEER_TO_PEER = 12;
+        CONTROL_NET = 13;
+        EMANE_NET = 14;
+    }
 }
 
-enum ServiceValidationMode {
-    VALIDATION_BLOCKING = 0;
-    VALIDATION_NON_BLOCKING = 1;
-    VALIDATION_TIMER = 2;
+message ServiceValidationMode {
+    enum Enum {
+        BLOCKING = 0;
+        NON_BLOCKING = 1;
+        TIMER = 2;
+    }
 }
 
-enum ServiceAction {
-    SERVICE_START = 0;
-    SERVICE_STOP = 1;
-    SERVICE_RESTART = 2;
-    SERVICE_VALIDATE = 3;
+message ServiceAction {
+    enum Enum {
+        START = 0;
+        STOP = 1;
+        RESTART = 2;
+        VALIDATE = 3;
+    }
 }
 
-enum MobilityAction {
-    MOBILITY_START = 0;
-    MOBILITY_PAUSE = 1;
-    MOBILITY_STOP = 2;
+message MobilityAction {
+    enum Enum {
+        START = 0;
+        PAUSE = 1;
+        STOP = 2;
+    }
 }
 
-enum ExceptionLevel {
-    EXCEPTION_DEFAULT = 0;
-    EXCEPTION_FATAL = 1;
-    EXCEPTION_ERROR = 2;
-    EXCEPTION_WARNING = 3;
-    EXCEPTION_NOTICE = 4;
+message ExceptionLevel {
+    enum Enum {
+        DEFAULT = 0;
+        FATAL = 1;
+        ERROR = 2;
+        WARNING = 3;
+        NOTICE = 4;
+    }
 }
 
 message Hook {
-    SessionState state = 1;
+    SessionState.Enum state = 1;
     string file = 2;
     bytes data = 3;
 }
@@ -691,7 +707,7 @@ message NodeServiceData {
     repeated string configs = 4;
     repeated string startup = 5;
     repeated string validate = 6;
-    ServiceValidationMode validation_mode = 7;
+    ServiceValidationMode.Enum validation_mode = 7;
     int32 validation_timer = 8;
     repeated string shutdown = 9;
     string meta = 10;
@@ -712,21 +728,21 @@ message ConfigOption {
 
 message Session {
     int32 id = 1;
-    SessionState state = 2;
+    SessionState.Enum state = 2;
     repeated Node nodes = 3;
     repeated Link links = 4;
 }
 
 message SessionSummary {
     int32 id = 1;
-    SessionState state = 2;
+    SessionState.Enum state = 2;
     int32 nodes = 3;
 }
 
 message Node {
     int32 id = 1;
     string name = 2;
-    NodeType type = 3;
+    NodeType.Enum type = 3;
     string model = 4;
     Position position = 5;
     repeated string services = 6;
@@ -738,7 +754,7 @@ message Node {
 message Link {
     int32 node_one_id = 1;
     int32 node_two_id = 2;
-    LinkType type = 3;
+    LinkType.Enum type = 3;
     Interface interface_one = 4;
     Interface interface_two = 5;
     LinkOptions options = 6;

@@ -422,7 +422,7 @@ class CoreGrpcClient(object):
         :raises grpc.RpcError: when session or one of the nodes don't exist
         """
         link = core_pb2.Link(
-            node_one_id=node_one_id, node_two_id=node_two_id, type=core_pb2.LINK_WIRED,
+            node_one_id=node_one_id, node_two_id=node_two_id, type=core_pb2.LinkType.WIRED,
             interface_one=interface_one, interface_two=interface_two, options=options)
         request = core_pb2.AddLinkRequest(session_id=session_id, link=link)
         return self.stub.AddLink(request)

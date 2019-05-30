@@ -65,7 +65,7 @@ class TestGrpc:
             response = client.get_session(session.id)
 
         # then
-        assert response.session.state == core_pb2.STATE_DEFINITION
+        assert response.session.state == core_pb2.SessionState.DEFINITION
         assert len(response.session.nodes) == 1
         assert len(response.session.links) == 0
 
@@ -164,11 +164,11 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_session_state(session.id, core_pb2.STATE_DEFINITION)
+            response = client.set_session_state(session.id, core_pb2.SessionState.DEFINITION)
 
         # then
         assert response.result is True
-        assert session.state == core_pb2.STATE_DEFINITION
+        assert session.state == core_pb2.SessionState.DEFINITION
 
     def test_add_node(self, grpc_server):
         # given
@@ -254,7 +254,7 @@ class TestGrpc:
         # then
         assert len(response.hooks) == 1
         hook = response.hooks[0]
-        assert hook.state == EventTypes.RUNTIME_STATE.value
+        assert hook.state == core_pb2.SessionState.RUNTIME
         assert hook.file == file_name
         assert hook.data == file_data
 
@@ -267,7 +267,7 @@ class TestGrpc:
         file_name = "test"
         file_data = "echo hello"
         with client.context_connect():
-            response = client.add_hook(session.id, core_pb2.STATE_RUNTIME, file_name, file_data)
+            response = client.add_hook(session.id, core_pb2.SessionState.RUNTIME, file_name, file_data)
 
         # then
         assert response.result is True
@@ -591,7 +591,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.mobility_action(session.id, wlan.objid, core_pb2.MOBILITY_STOP)
+            response = client.mobility_action(session.id, wlan.objid, core_pb2.MobilityAction.STOP)
 
         # then
         assert response.result is True
@@ -666,16 +666,16 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
         service_name = "IPForward"
-        validate = ("echo hello",)
+        validate = ["echo hello"]
 
         # then
         with client.context_connect():
-            response = client.set_node_service(session.id, node.objid, service_name, (), validate, ())
+            response = client.set_node_service(session.id, node.objid, service_name, [], validate, [])
 
         # then
         assert response.result is True
         service = session.services.get_service(node.objid, service_name, default_service=True)
-        assert service.validate == validate
+        assert service.validate == tuple(validate)
 
     def test_set_node_service_file(self, grpc_server):
         # given
@@ -704,7 +704,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.service_action(session.id, node.objid, service_name, core_pb2.SERVICE_STOP)
+            response = client.service_action(session.id, node.objid, service_name, core_pb2.ServiceAction.STOP)
 
         # then
         assert response.result is True

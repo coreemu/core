@@ -676,11 +676,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         result = True
-        if request.action == core_pb2.MOBILITY_START:
+        if request.action == core_pb2.MobilityAction.START:
             node.mobility.start()
-        elif request.action == core_pb2.MOBILITY_PAUSE:
+        elif request.action == core_pb2.MobilityAction.PAUSE:
             node.mobility.pause()
-        elif request.action == core_pb2.MOBILITY_STOP:
+        elif request.action == core_pb2.MobilityAction.STOP:
             node.mobility.stop(move_initial=True)
         else:
             result = False
@@ -774,15 +774,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             context.abort(grpc.StatusCode.NOT_FOUND, "service not found")
 
         status = -1
-        if request.action == core_pb2.SERVICE_START:
+        if request.action == core_pb2.ServiceAction.START:
             status = session.services.startup_service(node, service, wait=True)
-        elif request.action == core_pb2.SERVICE_STOP:
+        elif request.action == core_pb2.ServiceAction.STOP:
             status = session.services.stop_service(node, service)
-        elif request.action == core_pb2.SERVICE_RESTART:
+        elif request.action == core_pb2.ServiceAction.RESTART:
             status = session.services.stop_service(node, service)
             if not status:
                 status = session.services.startup_service(node, service, wait=True)
-        elif request.action == core_pb2.SERVICE_VALIDATE:
+        elif request.action == core_pb2.ServiceAction.VALIDATE:
             status = session.services.validate_service(node, service)
 
         result = False
