@@ -51,7 +51,6 @@
                                 <items>
                               <MenuItem mnemonicParsing="false" onAction="#onHelpMenuWebsite" text="CORE Website" />
                                     <MenuItem mnemonicParsing="false" onAction="#onHelpMenuDocumentation" text="CORE Documentation" />
-                              <MenuItem mnemonicParsing="false" onAction="#onHelpMenuMailingList" text="CORE Mailing List" />
                                 </items>
                             </Menu>
                         <Menu mnemonicParsing="false" text="Test">

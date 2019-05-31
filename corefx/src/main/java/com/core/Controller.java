@@ -88,7 +88,6 @@ public class Controller implements Initializable {
     private NodeTypeCreateDialog nodeTypeCreateDialog = new NodeTypeCreateDialog(this);
 
     public void connectToCore(String address, int port) {
-//        ExecutorService executorService = Executors.newSingleThreadExecutor();
         executorService.submit(() -> {
             try {
                 coreClient.setConnection(address, port);
@@ -343,11 +342,6 @@ public class Controller implements Initializable {
     @FXML
     private void onHelpMenuDocumentation(ActionEvent event) {
         application.getHostServices().showDocument("http://coreemu.github.io/core/");
-    }
-
-    @FXML
-    private void onHelpMenuMailingList(ActionEvent event) {
-        application.getHostServices().showDocument("https://publists.nrl.navy.mil/mailman/listinfo/core-users");
     }
 
     @FXML

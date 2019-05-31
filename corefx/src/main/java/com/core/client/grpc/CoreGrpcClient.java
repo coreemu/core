@@ -723,8 +723,17 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public String nodeCommand(CoreNode node, String command) throws IOException {
-        // TODO: convert node command
-        return null;
+        CoreProto.NodeCommandRequest request = CoreProto.NodeCommandRequest.newBuilder()
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
+                .setCommand(command)
+                .build();
+        try {
+            CoreProto.NodeCommandResponse response = blockingStub.nodeCommand(request);
+            return response.getOutput();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override
