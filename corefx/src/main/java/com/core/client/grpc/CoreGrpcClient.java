@@ -7,6 +7,7 @@ import com.core.client.rest.WlanConfig;
 import com.core.data.*;
 import com.core.ui.dialogs.MobilityPlayerDialog;
 import com.google.protobuf.ByteString;
+import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
 import io.grpc.StatusRuntimeException;
@@ -31,6 +32,7 @@ public class CoreGrpcClient implements ICoreClient {
     private ManagedChannel channel;
     private final ExecutorService executorService = Executors.newFixedThreadPool(6);
     private boolean handlingEvents = false;
+    private boolean handlingThroughputs = false;
 
     private CoreProto.Node nodeToProto(CoreNode node) {
         CoreProto.Position position = CoreProto.Position.newBuilder()
@@ -226,15 +228,54 @@ public class CoreGrpcClient implements ICoreClient {
     }
 
     @Override
-    public boolean startThroughput() throws IOException {
-        // TODO: convert throughput
-        return false;
+    public boolean startThroughput(Controller controller) throws IOException {
+        CoreProto.ThroughputsRequest request = CoreProto.ThroughputsRequest.newBuilder().build();
+        try {
+            handlingThroughputs = true;
+            executorService.submit(() -> {
+                Context.CancellableContext context = Context.current().withCancellation();
+                context.run(() -> {
+                    try {
+                        Iterator<CoreProto.ThroughputsEvent> iterator = blockingStub.throughputs(request);
+                        while (handlingThroughputs) {
+                            CoreProto.ThroughputsEvent event = iterator.next();
+                            logger.info("handling throughputs: {}", event);
+                            Throughputs throughputs = new Throughputs();
+                            for (CoreProto.BridgeThroughput protoBridge : event.getBridgeThroughputsList()) {
+                                BridgeThroughput bridge = new BridgeThroughput();
+                                bridge.setNode(protoBridge.getNodeId());
+                                bridge.setThroughput(protoBridge.getThroughput());
+                                throughputs.getBridges().add(bridge);
+                            }
+                            for (CoreProto.InterfaceThroughput protoInterface : event.getInterfaceThroughputsList()) {
+                                InterfaceThroughput interfaceThroughput = new InterfaceThroughput();
+                                interfaceThroughput.setNode(protoInterface.getNodeId());
+                                interfaceThroughput.setNodeInterface(protoInterface.getInterfaceId());
+                                interfaceThroughput.setThroughput(protoInterface.getThroughput());
+                                throughputs.getInterfaces().add(interfaceThroughput);
+                            }
+                            controller.handleThroughputs(throughputs);
+                        }
+                        logger.info("exiting handling throughputs");
+                    } catch (StatusRuntimeException ex) {
+                        logger.error("error handling session events", ex);
+                    } finally {
+                        context.cancel(null);
+                        context.close();
+                    }
+                });
+            });
+            return true;
+        } catch (StatusRuntimeException ex) {
+            throw new IOException("setup event handlers error", ex);
+        }
     }
 
     @Override
     public boolean stopThroughput() throws IOException {
-        // TODO: convert throughput
-        return false;
+        logger.info("cancelling throughputs");
+        handlingThroughputs = false;
+        return true;
     }
 
     @Override

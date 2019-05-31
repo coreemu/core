@@ -19,7 +19,7 @@ public interface ICoreClient {
 
     Integer currentSession();
 
-    boolean startThroughput() throws IOException;
+    boolean startThroughput(Controller controller) throws IOException;
 
     boolean stopThroughput() throws IOException;
 

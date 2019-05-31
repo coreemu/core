@@ -401,11 +401,6 @@ public class Controller implements Initializable {
     }
 
     @FXML
-    private void onSessionNodesMenu(ActionEvent event) {
-
-    }
-
-    @FXML
     private void onSessionHooksMenu(ActionEvent event) {
         hooksDialog.showDialog();
     }
@@ -505,7 +500,7 @@ public class Controller implements Initializable {
         @Override
         protected Boolean call() throws Exception {
             if (throughputMenuItem.isSelected()) {
-                return coreClient.startThroughput();
+                return coreClient.startThroughput(Controller.this);
             } else {
                 return coreClient.stopThroughput();
             }

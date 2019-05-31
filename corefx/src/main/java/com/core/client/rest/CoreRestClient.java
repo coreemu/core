@@ -149,7 +149,7 @@ public class CoreRestClient implements ICoreClient {
     }
 
     @Override
-    public boolean startThroughput() throws IOException {
+    public boolean startThroughput(Controller controller) throws IOException {
         String url = getUrl("throughput/start");
         return WebUtils.putJson(url);
     }

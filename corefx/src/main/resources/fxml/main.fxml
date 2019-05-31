@@ -35,7 +35,6 @@
                         </Menu>
                         <Menu mnemonicParsing="false" text="Session">
                           <items>
-                              <MenuItem mnemonicParsing="false" onAction="#onSessionNodesMenu" text="Nodes" />
                               <MenuItem mnemonicParsing="false" onAction="#onSessionHooksMenu" text="Hooks" />
                               <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuLocation" text="Location" />
                               <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuBackground" text="Background" />
