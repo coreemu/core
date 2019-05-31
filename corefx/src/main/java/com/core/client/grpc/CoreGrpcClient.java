@@ -1129,36 +1129,42 @@ public class CoreGrpcClient implements ICoreClient {
 
             Iterator<CoreProto.Event> events = blockingStub.events(request);
             executorService.submit(() -> {
-                try {
-                    while (handlingEvents) {
-                        CoreProto.Event event = events.next();
-                        logger.info("handling event: {}", event);
-                        switch (event.getEventTypeCase()) {
-                            case SESSION_EVENT:
-                                handleSessionEvents(controller, event.getSessionEvent());
-                                break;
-                            case NODE_EVENT:
-                                handleNodeEvents(controller, event.getNodeEvent());
-                                break;
-                            case LINK_EVENT:
-                                handleLinkEvents(controller, event.getLinkEvent());
-                                break;
-                            case CONFIG_EVENT:
-                                handleConfigEvents(controller, event.getConfigEvent());
-                                break;
-                            case EXCEPTION_EVENT:
-                                handleExceptionEvents(controller, event.getExceptionEvent());
-                                break;
-                            case FILE_EVENT:
-                                handleFileEvents(controller, event.getFileEvent());
-                                break;
-                            default:
-                                logger.error("unknown event type: {}", event.getEventTypeCase());
+                Context.CancellableContext context = Context.current().withCancellation();
+                context.run(() -> {
+                    try {
+                        while (handlingEvents) {
+                            CoreProto.Event event = events.next();
+                            logger.info("handling event: {}", event);
+                            switch (event.getEventTypeCase()) {
+                                case SESSION_EVENT:
+                                    handleSessionEvents(controller, event.getSessionEvent());
+                                    break;
+                                case NODE_EVENT:
+                                    handleNodeEvents(controller, event.getNodeEvent());
+                                    break;
+                                case LINK_EVENT:
+                                    handleLinkEvents(controller, event.getLinkEvent());
+                                    break;
+                                case CONFIG_EVENT:
+                                    handleConfigEvents(controller, event.getConfigEvent());
+                                    break;
+                                case EXCEPTION_EVENT:
+                                    handleExceptionEvents(controller, event.getExceptionEvent());
+                                    break;
+                                case FILE_EVENT:
+                                    handleFileEvents(controller, event.getFileEvent());
+                                    break;
+                                default:
+                                    logger.error("unknown event type: {}", event.getEventTypeCase());
+                            }
                         }
+                    } catch (StatusRuntimeException ex) {
+                        logger.error("error handling session events", ex);
+                    } finally {
+                        context.cancel(null);
+                        context.close();
                     }
-                } catch (StatusRuntimeException ex) {
-                    logger.error("error handling session events", ex);
-                }
+                });
             });
         } catch (StatusRuntimeException ex) {
             throw new IOException("setup event handlers error", ex);
