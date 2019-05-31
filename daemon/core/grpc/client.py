@@ -276,6 +276,17 @@ class CoreGrpcClient(object):
         stream = self.stub.Events(request)
         start_streamer(stream, handler)
 
+    def throughputs(self, handler):
+        """
+        Listen for throughput events with information for interfaces and bridges.
+
+        :param handler: handler for every event
+        :return: nothing
+        """
+        request = core_pb2.ThroughputsRequest()
+        stream = self.stub.Throughputs(request)
+        start_streamer(stream, handler)
+
     def add_node(self, session_id, node):
         """
         Add node to session.

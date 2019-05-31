@@ -1,14 +1,15 @@
 import atexit
 import logging
 import os
+import re
 import tempfile
 import time
 from Queue import Queue, Empty
-from core.data import NodeData, LinkData, EventData, ConfigData, ExceptionData, FileData
 
 import grpc
 from concurrent import futures
 
+from core.data import NodeData, LinkData, EventData, ConfigData, ExceptionData, FileData
 from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
 from core.enumerations import NodeTypes, EventTypes, LinkTypes
 from core.grpc import core_pb2
@@ -19,6 +20,7 @@ from core.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.service import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
+_INTERFACE_REGEX = re.compile("\d+")
 
 
 def convert_value(value):
@@ -103,6 +105,22 @@ def convert_link(session, link_data):
         type=link_data.link_type, node_one_id=link_data.node1_id, node_two_id=link_data.node2_id,
         interface_one=interface_one, interface_two=interface_two, options=options
     )
+
+
+def get_net_stats():
+    with open("/proc/net/dev", "r") as f:
+        data = f.readlines()[2:]
+
+    stats = {}
+    for line in data:
+        line = line.strip()
+        if not line:
+            continue
+        line = line.split()
+        line[0] = line[0].strip(":")
+        stats[line[0]] = {"rx": float(line[1]), "tx": float(line[9])}
+
+    return stats
 
 
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
@@ -406,6 +424,46 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             data=event.data,
             compressed_data=event.compressed_data
         )
+
+    def Throughputs(self, request, context):
+        delay = 3
+        last_check = None
+        last_stats = None
+        while self._is_running(context):
+            now = time.time()
+            stats = get_net_stats()
+
+            # calculate average
+            if last_check is not None:
+                interval = now - last_check
+                throughputs_event = core_pb2.ThroughputsEvent()
+                for key, current_rxtx in stats.iteritems():
+                    previous_rxtx = last_stats.get(key)
+                    if not previous_rxtx:
+                        continue
+                    rx_kbps = (current_rxtx["rx"] - previous_rxtx["rx"]) * 8.0 / interval
+                    tx_kbps = (current_rxtx["tx"] - previous_rxtx["tx"]) * 8.0 / interval
+                    throughput = rx_kbps + tx_kbps
+                    print "%s - %s" % (key, throughput)
+                    if key.startswith("veth"):
+                        key = key.split(".")
+                        node_id = int(_INTERFACE_REGEX.search(key[0]).group())
+                        interface_id = int(key[1])
+                        interface_throughput = throughputs_event.interface_throughputs.add()
+                        interface_throughput.node_id = node_id
+                        interface_throughput.interface_id = interface_id
+                        interface_throughput.throughput = throughput
+                    elif key.startswith("b."):
+                        node_id = int(key.split(".")[1])
+                        bridge_throughput = throughputs_event.bridge_throughputs.add()
+                        bridge_throughput.node_id = node_id
+                        bridge_throughput.throughput = throughput
+
+                yield throughputs_event
+
+            last_check = now
+            last_stats = stats
+            time.sleep(delay)
 
     def AddNode(self, request, context):
         logging.debug("add node: %s", request)
