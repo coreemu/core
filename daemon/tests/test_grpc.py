@@ -1,5 +1,4 @@
 import time
-
 from Queue import Queue
 
 import grpc
@@ -8,6 +7,7 @@ import pytest
 from core.conf import ConfigShim
 from core.data import EventData
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emulator.emudata import NodeOptions
 from core.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
 from core.grpc import core_pb2
 from core.grpc.client import CoreGrpcClient
@@ -238,6 +238,24 @@ class TestGrpc:
         if expected is True:
             with pytest.raises(KeyError):
                 assert session.get_object(node.objid)
+
+    def test_node_command(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+        node_options = NodeOptions(model="Host")
+        node = session.add_node(node_options=node_options)
+        session.instantiate()
+        output = "hello world"
+
+        # then
+        command = "echo %s" % output
+        with client.context_connect():
+            response = client.node_command(session.id, node.objid, command)
+
+        # then
+        assert response.output == output
 
     def test_get_hooks(self, grpc_server):
         # given

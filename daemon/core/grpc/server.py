@@ -484,6 +484,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         result = session.delete_node(request.node_id)
         return core_pb2.DeleteNodeResponse(result=result)
 
+    def NodeCommand(self, request, context):
+        logging.debug("sending node command: %s", request)
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        _, output = node.cmd_output(request.command)
+        return core_pb2.NodeCommandResponse(output=output)
+
     def GetNodeLinks(self, request, context):
         logging.debug("get node links: %s", request)
         session = self.get_session(request.session_id, context)

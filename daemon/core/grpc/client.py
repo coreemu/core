@@ -329,6 +329,19 @@ class CoreGrpcClient(object):
         request = core_pb2.DeleteNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.DeleteNode(request)
 
+    def node_command(self, session_id, node_id, command):
+        """
+        Send command to a node and get the output.
+
+        :param int session_id: session id
+        :param int node_id: node id
+        :return: response with command combined stdout/stderr
+        :rtype: core_pb2.NodeCommandResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
+        request = core_pb2.NodeCommandRequest(session_id=session_id, node_id=node_id, command=command)
+        return self.stub.NodeCommand(request)
+
     def get_node_links(self, session_id, node_id):
         """
         Get current links for a node.
