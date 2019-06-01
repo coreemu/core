@@ -955,8 +955,15 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public String getTerminalCommand(CoreNode node) throws IOException {
-        // TODO: convert
-        return null;
+        CoreProto.GetNodeTerminalRequest request = CoreProto.GetNodeTerminalRequest.newBuilder()
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
+                .build();
+        try {
+            return blockingStub.getNodeTerminal(request).getTerminal();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 
     @Override

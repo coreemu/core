@@ -257,6 +257,22 @@ class TestGrpc:
         # then
         assert response.output == output
 
+    def test_get_node_terminal(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+        node_options = NodeOptions(model="Host")
+        node = session.add_node(node_options=node_options)
+        session.instantiate()
+
+        # then
+        with client.context_connect():
+            response = client.get_node_terminal(session.id, node.objid)
+
+        # then
+        assert response.terminal is not None
+
     def test_get_hooks(self, grpc_server):
         # given
         client = CoreGrpcClient()

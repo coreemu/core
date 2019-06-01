@@ -454,10 +454,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                         interface_throughput.interface_id = interface_id
                         interface_throughput.throughput = throughput
                     elif key.startswith("b."):
-                        node_id = int(key.split(".")[1])
-                        bridge_throughput = throughputs_event.bridge_throughputs.add()
-                        bridge_throughput.node_id = node_id
-                        bridge_throughput.throughput = throughput
+                        try:
+                            node_id = int(key.split(".")[1])
+                            bridge_throughput = throughputs_event.bridge_throughputs.add()
+                            bridge_throughput.node_id = node_id
+                            bridge_throughput.throughput = throughput
+                        except ValueError:
+                            pass
 
                 yield throughputs_event
 
@@ -548,6 +551,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node = self.get_node(session, request.node_id, context)
         _, output = node.cmd_output(request.command)
         return core_pb2.NodeCommandResponse(output=output)
+
+    def GetNodeTerminal(self, request, context):
+        logging.debug("getting node terminal: %s", request)
+        session = self.get_session(request.session_id, context)
+        node = self.get_node(session, request.node_id, context)
+        terminal = node.termcmdstring("/bin/bash")
+        return core_pb2.GetNodeTerminalResponse(terminal=terminal)
 
     def GetNodeLinks(self, request, context):
         logging.debug("get node links: %s", request)

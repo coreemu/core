@@ -353,6 +353,19 @@ class CoreGrpcClient(object):
         request = core_pb2.NodeCommandRequest(session_id=session_id, node_id=node_id, command=command)
         return self.stub.NodeCommand(request)
 
+    def get_node_terminal(self, session_id, node_id):
+        """
+        Retrieve terminal command string for launching a local terminal.
+
+        :param int session_id: session id
+        :param int node_id: node id
+        :return: response with a node terminal command
+        :rtype: core_pb2.GetNodeTerminalResponse
+        :raises grpc.RpcError: when session or node doesn't exist
+        """
+        request = core_pb2.GetNodeTerminalRequest(session_id=session_id, node_id=node_id)
+        return self.stub.GetNodeTerminal(request)
+
     def get_node_links(self, session_id, node_id):
         """
         Get current links for a node.
