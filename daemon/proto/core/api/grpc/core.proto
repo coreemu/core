@@ -2,6 +2,9 @@ syntax = "proto3";
 
 package core;
 
+option java_package = "com.core.client.grpc";
+option java_outer_classname = "CoreProto";
+
 service CoreApi {
     // session rpc
     rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
@@ -23,18 +26,10 @@ service CoreApi {
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
 
-    // event streams
-    rpc NodeEvents (NodeEventsRequest) returns (stream NodeEvent) {
+    // streams
+    rpc Events (EventsRequest) returns (stream Event) {
     }
-    rpc LinkEvents (LinkEventsRequest) returns (stream LinkEvent) {
-    }
-    rpc SessionEvents (SessionEventsRequest) returns (stream SessionEvent) {
-    }
-    rpc ConfigEvents (ConfigEventsRequest) returns (stream ConfigEvent) {
-    }
-    rpc ExceptionEvents (ExceptionEventsRequest) returns (stream ExceptionEvent) {
-    }
-    rpc FileEvents (FileEventsRequest) returns (stream FileEvent) {
+    rpc Throughputs (ThroughputsRequest) returns (stream ThroughputsEvent) {
     }
 
     // node rpc
@@ -45,6 +40,10 @@ service CoreApi {
     rpc EditNode (EditNodeRequest) returns (EditNodeResponse) {
     }
     rpc DeleteNode (DeleteNodeRequest) returns (DeleteNodeResponse) {
+    }
+    rpc NodeCommand (NodeCommandRequest) returns (NodeCommandResponse) {
+    }
+    rpc GetNodeTerminal (GetNodeTerminalRequest) returns (GetNodeTerminalResponse) {
     }
 
     // link rpc
@@ -120,16 +119,16 @@ service CoreApi {
 
 // rpc request/response messages
 message CreateSessionRequest {
-    int32 id = 1;
+    int32 session_id = 1;
 }
 
 message CreateSessionResponse {
-    int32 id = 1;
-    SessionState state = 2;
+    int32 session_id = 1;
+    SessionState.Enum state = 2;
 }
 
 message DeleteSessionRequest {
-    int32 id = 1;
+    int32 session_id = 1;
 }
 
 message DeleteSessionResponse {
@@ -144,7 +143,7 @@ message GetSessionsResponse {
 }
 
 message GetSessionRequest {
-    int32 id = 1;
+    int32 session_id = 1;
 }
 
 message GetSessionResponse {
@@ -152,7 +151,7 @@ message GetSessionResponse {
 }
 
 message GetSessionOptionsRequest {
-    int32 id = 1;
+    int32 session_id = 1;
 }
 
 message GetSessionOptionsResponse {
@@ -160,7 +159,7 @@ message GetSessionOptionsResponse {
 }
 
 message SetSessionOptionsRequest {
-    int32 id = 1;
+    int32 session_id = 1;
     map<string, string> config = 2;
 }
 
@@ -169,7 +168,7 @@ message SetSessionOptionsResponse {
 }
 
 message GetSessionLocationRequest {
-    int32 id = 1;
+    int32 session_id = 1;
 }
 
 message GetSessionLocationResponse {
@@ -178,7 +177,7 @@ message GetSessionLocationResponse {
 }
 
 message SetSessionLocationRequest {
-    int32 id = 1;
+    int32 session_id = 1;
     Position position = 2;
     float scale = 3;
 }
@@ -188,51 +187,69 @@ message SetSessionLocationResponse {
 }
 
 message SetSessionStateRequest {
-    int32 id = 1;
-    SessionState state = 2;
+    int32 session_id = 1;
+    SessionState.Enum state = 2;
 }
 
 message SetSessionStateResponse {
     bool result = 1;
 }
 
-message NodeEventsRequest {
-    int32 id = 1;
+message EventsRequest {
+    int32 session_id = 1;
+}
+
+message ThroughputsRequest {
+}
+
+message ThroughputsEvent {
+    repeated BridgeThroughput bridge_throughputs = 1;
+    repeated InterfaceThroughput interface_throughputs = 2;
+}
+
+message InterfaceThroughput {
+    int32 node_id = 1;
+    int32 interface_id = 2;
+    double throughput = 3;
+}
+
+message BridgeThroughput {
+    int32 node_id = 1;
+    double throughput = 2;
+}
+
+message Event {
+    oneof event_type {
+        SessionEvent session_event = 1;
+        NodeEvent node_event = 2;
+        LinkEvent link_event = 3;
+        ConfigEvent config_event = 4;
+        ExceptionEvent exception_event = 5;
+        FileEvent file_event = 6;
+    }
 }
 
 message NodeEvent {
     Node node = 1;
 }
 
-message LinkEventsRequest {
-    int32 id = 1;
-}
-
 message LinkEvent {
-    MessageType message_type = 1;
+    MessageType.Enum message_type = 1;
     Link link = 2;
 }
 
-message SessionEventsRequest {
-    int32 id = 1;
-}
-
 message SessionEvent {
-    int32 node = 1;
+    int32 node_id = 1;
     int32 event = 2;
     string name = 3;
     bytes data = 4;
     float time = 5;
-    int32 session = 6;
-}
-
-message ConfigEventsRequest {
-    int32 id = 1;
+    int32 session_id = 6;
 }
 
 message ConfigEvent {
-    MessageType message_type = 1;
-    int32 node = 2;
+    MessageType.Enum message_type = 1;
+    int32 node_id = 2;
     string object = 3;
     int32 type = 4;
     repeated int32 data_types = 5;
@@ -241,55 +258,47 @@ message ConfigEvent {
     string bitmap = 8;
     string possible_values = 9;
     string groups = 10;
-    string session = 11;
+    int32 session_id = 11;
     int32 interface = 12;
     int32 network_id = 13;
     string opaque = 14;
 }
 
-message ExceptionEventsRequest {
-    int32 id = 1;
-}
-
 message ExceptionEvent {
-    int32 node = 1;
-    int32 session = 2;
-    ExceptionLevel level = 3;
+    int32 node_id = 1;
+    int32 session_id = 2;
+    ExceptionLevel.Enum level = 3;
     string source = 4;
     string date = 5;
     string text = 6;
     string opaque = 7;
 }
 
-message FileEventsRequest {
-    int32 id = 1;
-}
-
 message FileEvent {
-    MessageType message_type = 1;
-    int32 node = 2;
+    MessageType.Enum message_type = 1;
+    int32 node_id = 2;
     string name = 3;
     string mode = 4;
     int32 number = 5;
     string type = 6;
     string source = 7;
-    int32 session = 8;
+    int32 session_id = 8;
     bytes data = 9;
     bytes compressed_data = 10;
 }
 
 message AddNodeRequest {
-    int32 session = 1;
+    int32 session_id = 1;
     Node node = 2;
 }
 
 message AddNodeResponse {
-    int32 id = 1;
+    int32 node_id = 1;
 }
 
 message GetNodeRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
 }
 
 message GetNodeResponse {
@@ -298,8 +307,8 @@ message GetNodeResponse {
 }
 
 message EditNodeRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     Position position = 3;
 }
 
@@ -308,17 +317,36 @@ message EditNodeResponse {
 }
 
 message DeleteNodeRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
 }
 
 message DeleteNodeResponse {
     bool result = 1;
 }
 
+message GetNodeTerminalRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+}
+
+message GetNodeTerminalResponse {
+    string terminal = 1;
+}
+
+message NodeCommandRequest {
+    int32 session_id = 1;
+    int32 node_id = 2;
+    string command = 3;
+}
+
+message NodeCommandResponse {
+    string output = 1;
+}
+
 message GetNodeLinksRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
 }
 
 message GetNodeLinksResponse {
@@ -326,7 +354,7 @@ message GetNodeLinksResponse {
 }
 
 message AddLinkRequest {
-    int32 session = 1;
+    int32 session_id = 1;
     Link link = 2;
 }
 
@@ -335,11 +363,11 @@ message AddLinkResponse {
 }
 
 message EditLinkRequest {
-    int32 session = 1;
-    int32 node_one = 2;
-    int32 node_two = 3;
-    int32 interface_one = 4;
-    int32 interface_two = 5;
+    int32 session_id = 1;
+    int32 node_one_id = 2;
+    int32 node_two_id = 3;
+    int32 interface_one_id = 4;
+    int32 interface_two_id = 5;
     LinkOptions options = 6;
 }
 
@@ -348,11 +376,11 @@ message EditLinkResponse {
 }
 
 message DeleteLinkRequest {
-    int32 session = 1;
-    int32 node_one = 2;
-    int32 node_two = 3;
-    int32 interface_one = 4;
-    int32 interface_two = 5;
+    int32 session_id = 1;
+    int32 node_one_id = 2;
+    int32 node_two_id = 3;
+    int32 interface_one_id = 4;
+    int32 interface_two_id = 5;
 }
 
 message DeleteLinkResponse {
@@ -360,7 +388,7 @@ message DeleteLinkResponse {
 }
 
 message GetHooksRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message GetHooksResponse {
@@ -368,7 +396,7 @@ message GetHooksResponse {
 }
 
 message AddHookRequest {
-    int32 session = 1;
+    int32 session_id = 1;
     Hook hook = 2;
 }
 
@@ -377,7 +405,7 @@ message AddHookResponse {
 }
 
 message GetMobilityConfigsRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message GetMobilityConfigsResponse {
@@ -388,8 +416,8 @@ message GetMobilityConfigsResponse {
 }
 
 message GetMobilityConfigRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
 }
 
 message GetMobilityConfigResponse {
@@ -397,8 +425,8 @@ message GetMobilityConfigResponse {
 }
 
 message SetMobilityConfigRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     map<string, string> config = 3;
 }
 
@@ -407,9 +435,9 @@ message SetMobilityConfigResponse {
 }
 
 message MobilityActionRequest {
-    int32 session = 1;
-    int32 id = 2;
-    MobilityAction action = 3;
+    int32 session_id = 1;
+    int32 node_id = 2;
+    MobilityAction.Enum action = 3;
 }
 
 message MobilityActionResponse {
@@ -425,7 +453,7 @@ message GetServicesResponse {
 }
 
 message GetServiceDefaultsRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message GetServiceDefaultsResponse {
@@ -433,7 +461,7 @@ message GetServiceDefaultsResponse {
 }
 
 message SetServiceDefaultsRequest {
-    int32 session = 1;
+    int32 session_id = 1;
     repeated ServiceDefaults defaults = 2;
 }
 
@@ -442,8 +470,8 @@ message SetServiceDefaultsResponse {
 }
 
 message GetNodeServiceRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     string service = 3;
 }
 
@@ -452,8 +480,8 @@ message GetNodeServiceResponse {
 }
 
 message GetNodeServiceFileRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     string service = 3;
     string file = 4;
 }
@@ -463,8 +491,8 @@ message GetNodeServiceFileResponse {
 }
 
 message SetNodeServiceRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     string service = 3;
     repeated string startup = 4;
     repeated string validate = 5;
@@ -476,8 +504,8 @@ message SetNodeServiceResponse {
 }
 
 message SetNodeServiceFileRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     string service = 3;
     string file = 4;
     bytes data = 5;
@@ -488,10 +516,10 @@ message SetNodeServiceFileResponse {
 }
 
 message ServiceActionRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     string service = 3;
-    ServiceAction action = 4;
+    ServiceAction.Enum action = 4;
 }
 
 message ServiceActionResponse {
@@ -499,8 +527,8 @@ message ServiceActionResponse {
 }
 
 message GetWlanConfigRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
 }
 
 message GetWlanConfigResponse {
@@ -508,8 +536,8 @@ message GetWlanConfigResponse {
 }
 
 message SetWlanConfigRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     map<string, string> config = 3;
 }
 
@@ -518,7 +546,7 @@ message SetWlanConfigResponse {
 }
 
 message GetEmaneConfigRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message GetEmaneConfigResponse {
@@ -526,7 +554,7 @@ message GetEmaneConfigResponse {
 }
 
 message SetEmaneConfigRequest {
-    int32 session = 1;
+    int32 session_id = 1;
     map<string, string> config = 2;
 }
 
@@ -535,7 +563,7 @@ message SetEmaneConfigResponse {
 }
 
 message GetEmaneModelsRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message GetEmaneModelsResponse {
@@ -543,8 +571,8 @@ message GetEmaneModelsResponse {
 }
 
 message GetEmaneModelConfigRequest {
-    int32 session = 1;
-    int32 id = 2;
+    int32 session_id = 1;
+    int32 node_id = 2;
     int32 interface = 3;
     string model = 4;
 }
@@ -554,9 +582,9 @@ message GetEmaneModelConfigResponse {
 }
 
 message SetEmaneModelConfigRequest {
-    int32 session = 1;
-    int32 id = 2;
-    int32 interface = 3;
+    int32 session_id = 1;
+    int32 node_id = 2;
+    int32 interface_id = 3;
     string model = 4;
     map<string, string> config = 5;
 }
@@ -566,7 +594,7 @@ message SetEmaneModelConfigResponse {
 }
 
 message GetEmaneModelConfigsRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message GetEmaneModelConfigsResponse {
@@ -578,7 +606,7 @@ message GetEmaneModelConfigsResponse {
 }
 
 message SaveXmlRequest {
-    int32 session = 1;
+    int32 session_id = 1;
 }
 
 message SaveXmlResponse {
@@ -591,82 +619,98 @@ message OpenXmlRequest {
 
 message OpenXmlResponse {
     bool result = 1;
-    int32 session = 2;
+    int32 session_id = 2;
 }
 
 // data structures for messages below
-enum MessageType {
-    MESSAGE_NONE = 0;
-    MESSAGE_ADD = 1;
-    MESSAGE_DELETE = 2;
-    MESSAGE_CRI = 4;
-    MESSAGE_LOCAL = 8;
-    MESSAGE_STRING = 16;
-    MESSAGE_TEXT = 32;
-    MESSAGE_TTY = 64;
+message MessageType {
+    enum Enum {
+        NONE = 0;
+        ADD = 1;
+        DELETE = 2;
+        CRI = 4;
+        LOCAL = 8;
+        STRING = 16;
+        TEXT = 32;
+        TTY = 64;
+    }
 }
 
-enum LinkType {
-    LINK_WIRELESS = 0;
-    LINK_WIRED = 1;
+message LinkType {
+    enum Enum {
+        WIRELESS = 0;
+        WIRED = 1;
+    }
 }
 
-enum SessionState {
-    STATE_NONE = 0;
-    STATE_DEFINITION = 1;
-    STATE_CONFIGURATION = 2;
-    STATE_INSTANTIATION = 3;
-    STATE_RUNTIME = 4;
-    STATE_DATACOLLECT = 5;
-    STATE_SHUTDOWN = 6;
+message SessionState {
+    enum Enum {
+        NONE = 0;
+        DEFINITION = 1;
+        CONFIGURATION = 2;
+        INSTANTIATION = 3;
+        RUNTIME = 4;
+        DATACOLLECT = 5;
+        SHUTDOWN = 6;
+    }
 }
 
-enum NodeType {
-    NODE_DEFAULT = 0;
-    NODE_PHYSICAL = 1;
-    NODE_TBD = 3;
-    NODE_SWITCH = 4;
-    NODE_HUB = 5;
-    NODE_WIRELESS_LAN = 6;
-    NODE_RJ45 = 7;
-    NODE_TUNNEL = 8;
-    NODE_KTUNNEL = 9;
-    NODE_EMANE = 10;
-    NODE_TAP_BRIDGE = 11;
-    NODE_PEER_TO_PEER = 12;
-    NODE_CONTROL_NET = 13;
-    NODE_EMANE_NET = 14;
+message NodeType {
+    enum Enum {
+        DEFAULT = 0;
+        PHYSICAL = 1;
+        TBD = 3;
+        SWITCH = 4;
+        HUB = 5;
+        WIRELESS_LAN = 6;
+        RJ45 = 7;
+        TUNNEL = 8;
+        KTUNNEL = 9;
+        EMANE = 10;
+        TAP_BRIDGE = 11;
+        PEER_TO_PEER = 12;
+        CONTROL_NET = 13;
+        EMANE_NET = 14;
+    }
 }
 
-enum ServiceValidationMode {
-    VALIDATION_BLOCKING = 0;
-    VALIDATION_NON_BLOCKING = 1;
-    VALIDATION_TIMER = 2;
+message ServiceValidationMode {
+    enum Enum {
+        BLOCKING = 0;
+        NON_BLOCKING = 1;
+        TIMER = 2;
+    }
 }
 
-enum ServiceAction {
-    SERVICE_START = 0;
-    SERVICE_STOP = 1;
-    SERVICE_RESTART = 2;
-    SERVICE_VALIDATE = 3;
+message ServiceAction {
+    enum Enum {
+        START = 0;
+        STOP = 1;
+        RESTART = 2;
+        VALIDATE = 3;
+    }
 }
 
-enum MobilityAction {
-    MOBILITY_START = 0;
-    MOBILITY_PAUSE = 1;
-    MOBILITY_STOP = 2;
+message MobilityAction {
+    enum Enum {
+        START = 0;
+        PAUSE = 1;
+        STOP = 2;
+    }
 }
 
-enum ExceptionLevel {
-    EXCEPTION_DEFAULT = 0;
-    EXCEPTION_FATAL = 1;
-    EXCEPTION_ERROR = 2;
-    EXCEPTION_WARNING = 3;
-    EXCEPTION_NOTICE = 4;
+message ExceptionLevel {
+    enum Enum {
+        DEFAULT = 0;
+        FATAL = 1;
+        ERROR = 2;
+        WARNING = 3;
+        NOTICE = 4;
+    }
 }
 
 message Hook {
-    SessionState state = 1;
+    SessionState.Enum state = 1;
     string file = 2;
     bytes data = 3;
 }
@@ -688,7 +732,7 @@ message NodeServiceData {
     repeated string configs = 4;
     repeated string startup = 5;
     repeated string validate = 6;
-    ServiceValidationMode validation_mode = 7;
+    ServiceValidationMode.Enum validation_mode = 7;
     int32 validation_timer = 8;
     repeated string shutdown = 9;
     string meta = 10;
@@ -709,21 +753,21 @@ message ConfigOption {
 
 message Session {
     int32 id = 1;
-    SessionState state = 2;
+    SessionState.Enum state = 2;
     repeated Node nodes = 3;
     repeated Link links = 4;
 }
 
 message SessionSummary {
     int32 id = 1;
-    SessionState state = 2;
+    SessionState.Enum state = 2;
     int32 nodes = 3;
 }
 
 message Node {
     int32 id = 1;
     string name = 2;
-    NodeType type = 3;
+    NodeType.Enum type = 3;
     string model = 4;
     Position position = 5;
     repeated string services = 6;
@@ -733,9 +777,9 @@ message Node {
 }
 
 message Link {
-    int32 node_one = 1;
-    int32 node_two = 2;
-    LinkType type = 3;
+    int32 node_one_id = 1;
+    int32 node_two_id = 2;
+    LinkType.Enum type = 3;
     Interface interface_one = 4;
     Interface interface_two = 5;
     LinkOptions options = 6;

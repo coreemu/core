@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXButton?>
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.layout.VBox?>
+
+<fx:root prefWidth="100.0" spacing="5.0" type="VBox" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1">
+   <children>
+      <JFXButton id="run-button" fx:id="runButton" onAction="#onRunButtonAction" styleClass="toolbar-button" />
+      <JFXButton fx:id="pickingButton" styleClass="toolbar-button" />
+      <JFXButton fx:id="nodesButton" styleClass="toolbar-button" text="Nodes" />
+      <JFXButton fx:id="devicesButton" styleClass="toolbar-button" text="Devices" />
+      <JFXButton fx:id="drawingButton" styleClass="toolbar-button" />
+   </children>
+   <padding>
+      <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+   </padding>
+</fx:root>

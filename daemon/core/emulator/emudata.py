@@ -79,7 +79,7 @@ class NodeOptions(object):
     Options for creating and updating nodes within core.
     """
 
-    def __init__(self, name=None, model="router"):
+    def __init__(self, name=None, model="PC"):
         """
         Create a NodeOptions object.
 

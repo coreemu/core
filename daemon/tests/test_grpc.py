@@ -1,15 +1,16 @@
 import time
-from builtins import int
-from queue import Queue
 
 import grpc
 import pytest
+from builtins import int
+from queue import Queue
 
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient
 from core.config import ConfigShim
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.data import EventData
+from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 
@@ -25,13 +26,13 @@ class TestGrpc:
             response = client.create_session(session_id)
 
         # then
-        assert isinstance(response.id, int)
+        assert isinstance(response.session_id, int)
         assert isinstance(response.state, int)
-        session = grpc_server.coreemu.sessions.get(response.id)
+        session = grpc_server.coreemu.sessions.get(response.session_id)
         assert session is not None
         assert session.state == response.state
         if session_id is not None:
-            assert response.id == session_id
+            assert response.session_id == session_id
             assert session.id == session_id
 
     @pytest.mark.parametrize("session_id, expected", [
@@ -65,7 +66,7 @@ class TestGrpc:
             response = client.get_session(session.id)
 
         # then
-        assert response.session.state == core_pb2.STATE_DEFINITION
+        assert response.session.state == core_pb2.SessionState.DEFINITION
         assert len(response.session.nodes) == 1
         assert len(response.session.links) == 0
 
@@ -164,11 +165,11 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.set_session_state(session.id, core_pb2.STATE_DEFINITION)
+            response = client.set_session_state(session.id, core_pb2.SessionState.DEFINITION)
 
         # then
         assert response.result is True
-        assert session.state == core_pb2.STATE_DEFINITION
+        assert session.state == core_pb2.SessionState.DEFINITION
 
     def test_add_node(self, grpc_server):
         # given
@@ -181,8 +182,8 @@ class TestGrpc:
             response = client.add_node(session.id, node)
 
         # then
-        assert response.id is not None
-        assert session.get_node(response.id) is not None
+        assert response.node_id is not None
+        assert session.get_node(response.node_id) is not None
 
     def test_get_node(self, grpc_server):
         # given
@@ -239,6 +240,40 @@ class TestGrpc:
             with pytest.raises(KeyError):
                 assert session.get_node(node.id)
 
+    def test_node_command(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+        node_options = NodeOptions(model="Host")
+        node = session.add_node(node_options=node_options)
+        session.instantiate()
+        output = "hello world"
+
+        # then
+        command = "echo %s" % output
+        with client.context_connect():
+            response = client.node_command(session.id, node.id, command)
+
+        # then
+        assert response.output == output
+
+    def test_get_node_terminal(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+        node_options = NodeOptions(model="Host")
+        node = session.add_node(node_options=node_options)
+        session.instantiate()
+
+        # then
+        with client.context_connect():
+            response = client.get_node_terminal(session.id, node.id)
+
+        # then
+        assert response.terminal is not None
+
     def test_get_hooks(self, grpc_server):
         # given
         client = CoreGrpcClient()
@@ -254,7 +289,7 @@ class TestGrpc:
         # then
         assert len(response.hooks) == 1
         hook = response.hooks[0]
-        assert hook.state == EventTypes.RUNTIME_STATE.value
+        assert hook.state == core_pb2.SessionState.RUNTIME
         assert hook.file == file_name
         assert hook.data == file_data
 
@@ -267,7 +302,7 @@ class TestGrpc:
         file_name = "test"
         file_data = "echo hello"
         with client.context_connect():
-            response = client.add_hook(session.id, core_pb2.STATE_RUNTIME, file_name, file_data)
+            response = client.add_hook(session.id, core_pb2.SessionState.RUNTIME, file_name, file_data)
 
         # then
         assert response.result is True
@@ -298,7 +333,7 @@ class TestGrpc:
 
         # then
         assert response.result is True
-        assert response.session is not None
+        assert response.session_id is not None
 
     def test_get_node_links(self, grpc_server, ip_prefixes):
         # given
@@ -373,7 +408,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.edit_link(session.id, node.id, switch.id, options, interface_one=interface.id)
+            response = client.edit_link(session.id, node.id, switch.id, options, interface_one_id=interface.id)
 
         # then
         assert response.result is True
@@ -591,7 +626,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.mobility_action(session.id, wlan.id, core_pb2.MOBILITY_STOP)
+            response = client.mobility_action(session.id, wlan.id, core_pb2.MobilityAction.STOP)
 
         # then
         assert response.result is True
@@ -666,16 +701,16 @@ class TestGrpc:
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
         service_name = "IPForward"
-        validate = ("echo hello",)
+        validate = ["echo hello"]
 
         # then
         with client.context_connect():
-            response = client.set_node_service(session.id, node.id, service_name, (), validate, ())
+            response = client.set_node_service(session.id, node.id, service_name, [], validate, [])
 
         # then
         assert response.result is True
         service = session.services.get_service(node.id, service_name, default_service=True)
-        assert service.validate == validate
+        assert service.validate == tuple(validate)
 
     def test_set_node_service_file(self, grpc_server):
         # given
@@ -704,7 +739,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.service_action(session.id, node.id, service_name, core_pb2.SERVICE_STOP)
+            response = client.service_action(session.id, node.id, service_name, core_pb2.ServiceAction.STOP)
 
         # then
         assert response.result is True
@@ -718,11 +753,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("node_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.node_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session.broadcast_node(node_data)
 
@@ -741,13 +777,31 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("link_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.link_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session.broadcast_link(link_data)
+
+            # then
+            queue.get(timeout=5)
+
+    def test_throughputs(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        queue = Queue()
+
+        def handle_event(event_data):
+            queue.put(event_data)
+
+        # then
+        with client.context_connect():
+            client.throughputs(handle_event)
+            time.sleep(0.1)
 
             # then
             queue.get(timeout=5)
@@ -759,11 +813,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("session_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.session_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(event_type=EventTypes.RUNTIME_STATE.value, time="%s" % time.time())
             session.broadcast_event(event)
@@ -778,11 +833,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("config_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.config_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session_config = session.options.get_configs()
             config_data = ConfigShim.config_data(0, None, ConfigFlags.UPDATE.value, session.options, session_config)
@@ -798,11 +854,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("exception_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.exception_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             session.exception(ExceptionLevels.FATAL, "test", None, "exception message")
 
@@ -817,11 +874,12 @@ class TestGrpc:
         queue = Queue()
 
         def handle_event(event_data):
+            assert event_data.HasField("file_event")
             queue.put(event_data)
 
         # then
         with client.context_connect():
-            client.file_events(session.id, handle_event)
+            client.events(session.id, handle_event)
             time.sleep(0.1)
             file_data = session.services.get_service_file(node, "IPForward", "ipforward.sh")
             session.broadcast_file(file_data)

@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import com.jfoenix.controls.JFXProgressBar?>
+<?import javafx.embed.swing.SwingNode?>
+<?import javafx.scene.control.CheckMenuItem?>
+<?import javafx.scene.control.Menu?>
+<?import javafx.scene.control.MenuBar?>
+<?import javafx.scene.control.MenuItem?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.BorderPane?>
+<?import javafx.scene.layout.StackPane?>
+<?import javafx.scene.layout.VBox?>
+
+<StackPane fx:id="stackPane" xmlns="http://javafx.com/javafx/8.0.171" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.core.Controller">
+   <children>
+      <BorderPane fx:id="borderPane" maxHeight="1.7976931348623157E308" maxWidth="1.7976931348623157E308" minHeight="-Infinity" minWidth="-Infinity" prefHeight="400.0" prefWidth="600.0">
+          <top>
+            <VBox fx:id="top" BorderPane.alignment="CENTER">
+               <children>
+                    <MenuBar>
+                        <menus>
+                        <Menu mnemonicParsing="false" text="Menu">
+                          <items>
+                              <MenuItem mnemonicParsing="false" onAction="#onCoreMenuConnect" text="Connection" />
+                                  <Menu mnemonicParsing="false" text="File">
+                                      <items>
+                                    <MenuItem fx:id="saveXmlMenuItem" disable="true" mnemonicParsing="false" onAction="#onSaveXmlAction" text="Save XML" />
+                                    <MenuItem mnemonicParsing="false" onAction="#onOpenXmlAction" text="Open XML" />
+                                      </items>
+                                  </Menu>
+                            <MenuItem mnemonicParsing="false" onAction="#onSessionMenu" text="Sessions" />
+                            <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuNodeTypes" text="Nodes" />
+                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuPreferences" text="Preferences" />
+                          </items>
+                        </Menu>
+                        <Menu mnemonicParsing="false" text="Session">
+                          <items>
+                              <MenuItem mnemonicParsing="false" onAction="#onSessionHooksMenu" text="Hooks" />
+                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuLocation" text="Location" />
+                              <MenuItem mnemonicParsing="false" onAction="#onOptionsMenuBackground" text="Background" />
+                              <MenuItem mnemonicParsing="false" onAction="#onSessionOptionsMenu" text="Options" />
+                          </items>
+                        </Menu>
+                        <Menu mnemonicParsing="false" text="Widgets">
+                          <items>
+                              <CheckMenuItem fx:id="throughputMenuItem" mnemonicParsing="false" text="Throughput" />
+                          </items>
+                        </Menu>
+                            <Menu mnemonicParsing="false" text="Help">
+                                <items>
+                              <MenuItem mnemonicParsing="false" onAction="#onHelpMenuWebsite" text="CORE Website" />
+                                    <MenuItem mnemonicParsing="false" onAction="#onHelpMenuDocumentation" text="CORE Documentation" />
+                                </items>
+                            </Menu>
+                        <Menu mnemonicParsing="false" text="Test">
+                          <items>
+                            <MenuItem mnemonicParsing="false" onAction="#onTestMenuCharts" text="Charts" />
+                              <MenuItem mnemonicParsing="false" onAction="#onTestMenuGeo" text="Geo" />
+                          </items>
+                        </Menu>
+                        </menus>
+                    </MenuBar>
+                  <JFXProgressBar fx:id="progressBar" maxWidth="1.7976931348623157E308" visible="false" />
+               </children>
+            </VBox>
+          </top>
+          <center>
+            <AnchorPane>
+               <children>
+                    <SwingNode fx:id="swingNode" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0" AnchorPane.topAnchor="0.0" BorderPane.alignment="CENTER" />
+               </children>
+            </AnchorPane>
+          </center>
+         <bottom>
+            <VBox fx:id="bottom" spacing="5.0" BorderPane.alignment="CENTER" />
+         </bottom>
+      </BorderPane>
+   </children>
+</StackPane>

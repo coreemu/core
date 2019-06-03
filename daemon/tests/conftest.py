@@ -212,7 +212,7 @@ class CoreServerTest(object):
 def grpc_server():
     coremu = CoreEmu()
     grpc_server = CoreGrpcServer(coremu)
-    thread = threading.Thread(target=grpc_server.listen)
+    thread = threading.Thread(target=grpc_server.listen, args=("localhost:50051",))
     thread.daemon = True
     thread.start()
     time.sleep(0.1)
