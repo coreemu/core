@@ -4,7 +4,11 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-from urlparse import urlparse
+
+from future.standard_library import install_aliases
+install_aliases()
+
+from urllib.parse import urlparse
 
 from core import constants
 from core.nodes.base import NodeBase, CoreNetworkBase

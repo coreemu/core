@@ -8,7 +8,7 @@ by invoking the vcmd shell command.
 import logging
 import os
 
-import vcmd
+from subprocess import Popen, PIPE
 
 from core import CoreCommandError, utils
 from core import constants
@@ -28,7 +28,6 @@ class VnodeClient(object):
         """
         self.name = name
         self.ctrlchnlname = ctrlchnlname
-        self.cmdchnl = vcmd.VCmd(self.ctrlchnlname)
         self._addr = {}
 
     def _verify_connection(self):
@@ -48,7 +47,7 @@ class VnodeClient(object):
         :return: True if connected, False otherwise
         :rtype: bool
         """
-        return self.cmdchnl.connected()
+        return True
 
     def close(self):
         """
@@ -56,7 +55,10 @@ class VnodeClient(object):
 
         :return: nothing
         """
-        self.cmdchnl.close()
+        pass
+
+    def _cmd_args(self):
+        return [constants.VCMD_BIN, "-c", self.ctrlchnlname, "--"]
 
     def cmd(self, args, wait=True):
         """
@@ -71,7 +73,9 @@ class VnodeClient(object):
         args = utils.split_args(args)
 
         # run command, return process when not waiting
-        p = self.cmdchnl.qcmd(args)
+        cmd = self._cmd_args() + args
+        logging.info("cmd wait(%s): %s", wait, cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         if not wait:
             return 0
 
@@ -94,7 +98,7 @@ class VnodeClient(object):
         stdout.close()
         stderr.close()
         status = p.wait()
-        return status, output.strip()
+        return status, output.decode("utf-8").strip()
 
     def check_cmd(self, args):
         """
@@ -120,7 +124,12 @@ class VnodeClient(object):
         """
         self._verify_connection()
         args = utils.split_args(args)
-        return self.cmdchnl.popen(args)
+        # if isinstance(args, list):
+        #     args = " ".join(args)
+        cmd = self._cmd_args() + args
+        logging.info("popen: %s", cmd)
+        p = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
+        return p, p.stdin, p.stdout, p.stderr
 
     def icmd(self, args):
         """
@@ -150,7 +159,10 @@ class VnodeClient(object):
 
         # run command, return process when not waiting
         args = utils.split_args(args)
-        p = self.cmdchnl.redircmd(infd, outfd, errfd, args)
+        cmd = self._cmd_args() + args
+        logging.info("redircmd: %s", cmd)
+        p = Popen(cmd, stdin=infd, stdout=outfd, stderr=errfd)
+
         if not wait:
             return p
 

@@ -1509,6 +1509,7 @@ class Session(object):
             assign_address = self.master
             prefix = prefixes[0]
 
+        logging.info("controlnet prefix: %s - %s", type(prefix), prefix)
         control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
         control_net = self.create_node(cls=control_net_class, _id=_id, prefix=prefix,
                                        assign_address=assign_address,

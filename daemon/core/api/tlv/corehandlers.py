@@ -190,7 +190,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         thumbs = "|".join(thumb_list)
 
         if num_sessions > 0:
-            tlv_data = ""
+            tlv_data = b""
             if len(session_ids) > 0:
                 tlv_data += coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session_ids)
             if len(names) > 0:
@@ -224,7 +224,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (EventTlvs.NAME, event_data.name),
             (EventTlvs.DATA, event_data.data),
             (EventTlvs.TIME, event_data.time),
-            (EventTlvs.TIME, event_data.session)
+            (EventTlvs.SESSION, event_data.session)
         ])
         message = coreapi.CoreEventMessage.pack(0, tlv_data)
 
@@ -373,7 +373,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         logging.info("GUI has connected to session %d at %s", self.session.id, time.ctime())
 
-        tlv_data = ""
+        tlv_data = b""
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EXECUTE_SERVER.value, "core-daemon")
         tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.EMULATION_SERVER.value, "core-daemon")
         tlv_data += coreapi.CoreRegisterTlv.pack(self.session.broker.config_type, self.session.broker.name)
@@ -424,7 +424,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_len == 0:
             logging.warn("received message with no data")
 
-        data = ""
+        data = b""
         while len(data) < message_len:
             data += self.request.recv(message_len - len(data))
             if len(data) > message_len:
@@ -504,7 +504,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
-        logging.debug("dispatching replies")
+        logging.debug("dispatching replies: %s", replies)
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -682,7 +682,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
                 # if we deleted a node broadcast out its removal
                 if result and message.flags & MessageFlags.STRING.value:
-                    tlvdata = ""
+                    tlvdata = b""
                     tlvdata += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
                     flags = MessageFlags.DELETE.value | MessageFlags.LOCAL.value
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
@@ -779,7 +779,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             node = self.session.get_node(node_num)
 
             # build common TLV items for reply
-            tlv_data = ""
+            tlv_data = b""
             if node_num is not None:
                 tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node_num)
             tlv_data += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execute_num)
@@ -1667,7 +1667,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :return: nothing
         """
         if node_id in self.node_status_request:
-            tlv_data = ""
+            tlv_data = b""
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.NUMBER.value, node_id)
             tlv_data += coreapi.CoreNodeTlv.pack(NodeTlvs.EMULATION_ID.value, node_id)
             reply = coreapi.CoreNodeMessage.pack(MessageFlags.ADD.value | MessageFlags.LOCAL.value, tlv_data)

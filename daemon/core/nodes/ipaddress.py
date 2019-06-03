@@ -31,7 +31,9 @@ class MacAddress(object):
         :return: string representation
         :rtype: str
         """
-        return ":".join("%02x" % ord(x) for x in self.addr)
+        logging.info("mac addr: %s", type(self.addr))
+        addr = self.addr.decode("ISO-8859-1")
+        return ":".join("%02x" % ord(x) for x in addr)
 
     def to_link_local(self):
         """
@@ -93,7 +95,9 @@ class IpAddress(object):
         :return:
         """
         # check if (af, addr) is valid
+        logging.info("ip address: %s", type(address))
         if not socket.inet_ntop(af, address):
+        # if not socket.inet_ntop(af, address.encode("ISO-8859-1")):
             raise ValueError("invalid af/addr")
         self.af = af
         self.addr = address
@@ -124,6 +128,7 @@ class IpAddress(object):
         :rtype: str
         """
         return socket.inet_ntop(self.af, self.addr)
+        # return socket.inet_ntop(self.af, self.addr.encode("ISO-8859-1"))
 
     def __eq__(self, other):
         """
@@ -231,7 +236,7 @@ class IpPrefix(object):
             self.prefixlen = int(tmp[1])
         else:
             self.prefixlen = self.addrlen
-        self.prefix = socket.inet_pton(self.af, tmp[0])
+        self.prefix = socket.inet_pton(self.af, tmp[0]).decode("ISO-8859-1")
         if self.addrlen > self.prefixlen:
             addrbits = self.addrlen - self.prefixlen
             netmask = ((1 << self.prefixlen) - 1) << addrbits

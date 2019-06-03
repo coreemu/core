@@ -692,7 +692,7 @@ class CoreBroker(object):
 
         # send a Configuration message for the broker object and inform the
         # server of its local name
-        tlvdata = ""
+        tlvdata = b""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "broker")
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, ConfigFlags.UPDATE.value)
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.DATA_TYPES.value, (ConfigDataTypes.STRING.value,))
@@ -722,7 +722,7 @@ class CoreBroker(object):
         cmd = msg.get_tlv(ExecuteTlvs.COMMAND.value)
         res = msg.get_tlv(ExecuteTlvs.RESULT.value)
 
-        tlvdata = ""
+        tlvdata = b""
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, nodenum)
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, execnum)
         tlvdata += coreapi.CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, cmd)
@@ -1029,7 +1029,7 @@ class CoreBroker(object):
                 server.instantiation_complete = True
 
         # broadcast out instantiate complete
-        tlvdata = ""
+        tlvdata = b""
         tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value)
         message = coreapi.CoreEventMessage.pack(0, tlvdata)
         for session_client in self.session_clients:

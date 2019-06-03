@@ -157,7 +157,7 @@ class CoreTlvDataUint64(CoreTlvData):
     Helper class for packing uint64 data.
     """
     data_format = "!2xQ"
-    data_type = long
+    data_type = int
     pad_len = 2
 
 
@@ -178,6 +178,7 @@ class CoreTlvDataString(CoreTlvData):
         """
         if not isinstance(value, str):
             raise ValueError("value not a string: %s" % value)
+        value = value.encode("utf-8")
 
         if len(value) < 256:
             header_len = CoreTlv.header_len
@@ -185,7 +186,7 @@ class CoreTlvDataString(CoreTlvData):
             header_len = CoreTlv.long_header_len
 
         pad_len = -(header_len + len(value)) % 4
-        return len(value), value + "\0" * pad_len
+        return len(value), value + b"\0" * pad_len
 
     @classmethod
     def unpack(cls, data):
@@ -195,7 +196,7 @@ class CoreTlvDataString(CoreTlvData):
         :param str data: unpack string data
         :return: unpacked string data
         """
-        return data.rstrip("\0")
+        return data.rstrip(b"\0").decode("utf-8")
 
 
 class CoreTlvDataUint16List(CoreTlvData):
@@ -266,7 +267,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         return obj.addr
 
     @staticmethod
-    def new_obj(obj):
+    def new_obj(value):
         """
         Retrieve Ipv4 address from a string representation.
 
@@ -274,7 +275,9 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
-        return IpAddress(af=socket.AF_INET, address=obj)
+        # value = value.decode("ISO-8859-1")
+        # value = socket.inet_ntoa(value)
+        return IpAddress(af=socket.AF_INET, address=value)
 
 
 class CoreTlvDataIPv6Addr(CoreTlvDataObj):
@@ -304,6 +307,8 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
+        # value = value.decode("ISO-8859-1")
+        # value = socket.inet_ntoa(value)
         return IpAddress(af=socket.AF_INET6, address=value)
 
 
@@ -336,6 +341,8 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         :rtype: core.misc.ipaddress.MacAddress
         """
         # only use 48 bits
+        # value = value.decode("ISO-8859-1")
+        # value = socket.inet_ntoa(value)
         return MacAddress(address=value[2:])
 
 
@@ -397,12 +404,10 @@ class CoreTlv(object):
         :return: header and packed data
         """
         tlv_len, tlv_data = cls.tlv_data_class_map[tlv_type].pack(value)
-
         if tlv_len < 256:
             hdr = struct.pack(cls.header_format, tlv_type, tlv_len)
         else:
             hdr = struct.pack(cls.long_header_format, tlv_type, 0, tlv_len)
-
         return hdr + tlv_data
 
     @classmethod

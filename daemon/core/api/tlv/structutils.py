@@ -15,7 +15,8 @@ def pack_values(clazz, packers):
     """
 
     # iterate through tuples of values to pack
-    data = ""
+    logging.debug("packing: %s", packers)
+    data = b""
     for packer in packers:
         # check if a transformer was provided for valid values
         transformer = None
@@ -25,10 +26,6 @@ def pack_values(clazz, packers):
             tlv_type, value, transformer = packer
         else:
             raise RuntimeError("packer had more than 3 arguments")
-
-        # convert unicode to normal str for packing
-        if isinstance(value, unicode):
-            value = str(value)
 
         # only pack actual values and avoid packing empty strings
         # protobuf defaults to empty strings and does no imply a value to set

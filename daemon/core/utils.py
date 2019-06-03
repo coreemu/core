@@ -2,6 +2,7 @@
 Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
+import fcntl
 import importlib
 import inspect
 import logging
@@ -9,8 +10,6 @@ import os
 import shlex
 import subprocess
 import sys
-
-import fcntl
 
 from core import CoreCommandError
 
@@ -126,7 +125,7 @@ def make_tuple_fromstr(s, value_type):
     """
     Create a tuple from a string.
 
-    :param str|unicode s: string to convert to a tuple
+    :param str s: string to convert to a tuple
     :param value_type: type of values to be contained within tuple
     :return: tuple from string
     :rtype: tuple
@@ -148,7 +147,9 @@ def split_args(args):
     :return: shell-like syntax list
     :rtype: list
     """
-    if isinstance(args, basestring):
+    logging.info("split args: %s - %s", args, type(args))
+    if isinstance(args, str):
+        logging.info("splitting args")
         args = shlex.split(args)
     return args
 
@@ -231,7 +232,7 @@ def check_cmd(args, **kwargs):
         status = p.wait()
         if status != 0:
             raise CoreCommandError(status, args, stdout)
-        return stdout.strip()
+        return stdout.decode("utf-8").strip()
     except OSError:
         raise CoreCommandError(-1, args)
 

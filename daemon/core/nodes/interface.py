@@ -31,7 +31,7 @@ class CoreInterface(object):
 
         self.node = node
         self.name = name
-        if not isinstance(mtu, (int, long)):
+        if not isinstance(mtu, int):
             raise ValueError
         self.mtu = mtu
         self.net = None
@@ -142,7 +142,7 @@ class CoreInterface(object):
         """
         # treat None and 0 as unchanged values
         current_value = self._params.get(key)
-        if current_value == value or current_value <= 0 and value <= 0:
+        if current_value is None or current_value == value or current_value <= 0 and value <= 0:
             return False
 
         self._params[key] = value
@@ -173,6 +173,16 @@ class CoreInterface(object):
         :return: nothing
         """
         self.poshook(self, x, y, z)
+
+    def __lt__(self, other):
+        """
+        Used for comparisons of this object.
+
+        :param other: other interface
+        :return: true if less than, false otherwise
+        :rtype: bool
+        """
+        return id(self) < id(other)
 
 
 class Veth(CoreInterface):

@@ -146,7 +146,7 @@ if test "x$enable_daemon" = "xyes"; then
   CFLAGS_save=$CFLAGS
   CPPFLAGS_save=$CPPFLAGS
   if test "x$PYTHON_INCLUDE_DIR" = "x"; then
-    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_python_inc()"`
+    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())"`
   fi
   CFLAGS="-I$PYTHON_INCLUDE_DIR"
   CPPFLAGS="-I$PYTHON_INCLUDE_DIR"

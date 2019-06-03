@@ -687,7 +687,8 @@ class CoreNode(CoreNodeBase):
                 output = output.split("\n")
                 veth.flow_id = int(output[0].strip().split(":")[0]) + 1
                 logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
+                # TODO: mimic packed hwaddr
+                # veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
                 logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
@@ -1062,11 +1063,13 @@ class CoreNetworkBase(NodeBase):
                 if ipaddress.is_ipv4_address(ip):
                     family = AF_INET
                     ipl = socket.inet_pton(family, ip)
+                    # ipl = ipl.decode("ISO-8859-1")
                     interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)
                     interface2_ip4_mask = mask
                 else:
                     family = AF_INET6
                     ipl = socket.inet_pton(family, ip)
+                    # ipl = ipl.decode("ISO-8859-1")
                     interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
                     interface2_ip6_mask = mask
 

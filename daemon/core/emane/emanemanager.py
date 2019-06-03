@@ -497,7 +497,7 @@ class EmaneManager(ModelManager):
         logging.info("Setting up default controlnet prefixes for distributed (%d configured)" % len(prefixes))
         prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]
         vals = 'controlnet="%s"' % prefixes
-        tlvdata = ""
+        tlvdata = b""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value, vals)

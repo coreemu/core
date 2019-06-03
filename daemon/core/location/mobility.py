@@ -9,6 +9,7 @@ import os
 import threading
 import time
 from builtins import int
+from past.builtins import cmp
 
 from core import utils
 from core.config import ConfigGroup
