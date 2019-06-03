@@ -4,10 +4,10 @@ Unit tests for testing basic CORE networks.
 
 import os
 import stat
+import subprocess
 import threading
 
 import pytest
-from mock import MagicMock
 
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import MessageFlags
@@ -113,9 +113,9 @@ class TestCore:
         status, output = client.cmd_output(command)
         assert not status
         p, stdin, stdout, stderr = client.popen(command)
-        assert not p.status()
+        assert not p.wait()
         assert not client.icmd(command)
-        assert not client.redircmd(MagicMock(), MagicMock(), MagicMock(), command)
+        assert not client.redircmd(subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, command)
         assert not client.shcmd(command[0])
 
         # check various command using command line
