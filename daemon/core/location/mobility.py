@@ -71,7 +71,7 @@ class MobilityManager(ModelManager):
             try:
                 node = self.session.get_node(node_id)
             except KeyError:
-                logging.warn("skipping mobility configuration for unknown node: %s", node_id)
+                logging.warning("skipping mobility configuration for unknown node: %s", node_id)
                 continue
 
             for model_name in self.models:
@@ -111,7 +111,7 @@ class MobilityManager(ModelManager):
             try:
                 cls = self.models[model]
             except KeyError:
-                logging.warn("Ignoring event for unknown model '%s'", model)
+                logging.warning("Ignoring event for unknown model '%s'", model)
                 continue
 
             if cls.config_type in [RegisterTlvs.WIRELESS.value, RegisterTlvs.MOBILITY.value]:
@@ -120,11 +120,11 @@ class MobilityManager(ModelManager):
                 continue
 
             if model is None:
-                logging.warn("Ignoring event, %s has no model", node.name)
+                logging.warning("Ignoring event, %s has no model", node.name)
                 continue
 
             if cls.name != model.name:
-                logging.warn("Ignoring event for %s wrong model %s,%s", node.name, cls.name, model.name)
+                logging.warning("Ignoring event for %s wrong model %s,%s", node.name, cls.name, model.name)
                 continue
 
             if event_type == EventTypes.STOP.value or event_type == EventTypes.RESTART.value:

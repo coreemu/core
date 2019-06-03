@@ -31,7 +31,7 @@ def iperf(from_node, to_node, ip_prefixes):
     vcmd, stdin, stdout, stderr = to_node.client.popen(["iperf", "-s", "-u", "-y", "C"])
     from_node.cmd(["iperf", "-u", "-t", "5", "-c", address])
     to_node.cmd(["killall", "-9", "iperf"])
-    return stdout.read().strip()
+    return stdout.read().decode("utf-8").strip()
 
 
 class TestLinks:

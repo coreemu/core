@@ -115,11 +115,11 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         """
         service = self.session.emane.service
         if service is None:
-            logging.warn("%s: EMANE event service unavailable", self.name)
+            logging.warning("%s: EMANE event service unavailable", self.name)
             return
 
         if netif is None or netif2 is None:
-            logging.warn("%s: missing NEM information", self.name)
+            logging.warning("%s: missing NEM information", self.name)
             return
 
         # TODO: batch these into multiple events per transmission

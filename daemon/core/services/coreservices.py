@@ -7,14 +7,13 @@ a list of available services to the GUI and for configuring individual
 services.
 """
 
+import enum
 import logging
 import time
 from multiprocessing.pool import ThreadPool
 
-import enum
-from core.constants import which
-
 from core import CoreCommandError, utils
+from core.constants import which
 from core.emulator.data import FileData
 from core.emulator.enumerations import MessageFlags
 from core.emulator.enumerations import RegisterTlvs
@@ -318,7 +317,7 @@ class CoreServices(object):
             logging.debug("checking for service with service manager: %s", name)
             service = ServiceManager.get(name)
             if not service:
-                logging.warn("default service %s is unknown", name)
+                logging.warning("default service %s is unknown", name)
             else:
                 results.append(service)
         return results
@@ -376,7 +375,7 @@ class CoreServices(object):
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)
             if not service:
-                logging.warn("unknown service(%s) for node(%s)", service_name, node.name)
+                logging.warning("unknown service(%s) for node(%s)", service_name, node.name)
                 continue
             logging.info("adding service to node(%s): %s", node.name, service_name)
             node.addservice(service)
@@ -464,15 +463,15 @@ class CoreServices(object):
         :return: nothing
         """
         logging.info("starting node(%s) service(%s) validation(%s)", node.name, service.name,
-                    service.validation_mode.name)
+                     service.validation_mode.name)
 
         # create service directories
         for directory in service.dirs:
             try:
                 node.privatedir(directory)
             except (CoreCommandError, ValueError) as e:
-                logging.warn("error mounting private dir '%s' for service '%s': %s",
-                            directory, service.name, e)
+                logging.warning("error mounting private dir '%s' for service '%s': %s",
+                                directory, service.name, e)
 
         # create service files
         self.create_service_files(node, service)
@@ -640,13 +639,13 @@ class CoreServices(object):
         # retrieve custom service
         service = self.get_service(node_id, service_name)
         if service is None:
-            logging.warn("received file name for unknown service: %s", service_name)
+            logging.warning("received file name for unknown service: %s", service_name)
             return
 
         # validate file being set is valid
         config_files = service.configs
         if file_name not in config_files:
-            logging.warn("received unknown file(%s) for service(%s)", file_name, service_name)
+            logging.warning("received unknown file(%s) for service(%s)", file_name, service_name)
             return
 
         # set custom service file data

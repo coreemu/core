@@ -481,7 +481,12 @@ class CoreNetwork(CoreNetworkBase):
             netem += ["loss", "%s%%" % min(loss, 100)]
         if duplicate is not None and duplicate > 0:
             netem += ["duplicate", "%s%%" % min(duplicate, 100)]
-        if delay <= 0 and jitter <= 0 and loss <= 0 and duplicate <= 0:
+
+        delay_check = delay is None or delay <= 0
+        jitter_check = jitter is None or jitter <= 0
+        loss_check = loss is None or loss <= 0
+        duplicate_check = duplicate is None or duplicate <= 0
+        if all([delay_check, jitter_check, loss_check, duplicate_check]):
             # possibly remove netem if it exists and parent queue wasn't removed
             if not netif.getparam("has_netem"):
                 return

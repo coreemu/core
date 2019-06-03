@@ -156,4 +156,4 @@ class EmaneModel(WirelessModel):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        logging.warn("emane model(%s) does not support link configuration", self.name)
+        logging.warning("emane model(%s) does not support link configuration", self.name)

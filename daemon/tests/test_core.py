@@ -36,9 +36,9 @@ def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
     :rtype: list
     """
     direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
-    cmdchnls = filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries)
+    cmdchnls = list(filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries))
     if cmdchnlfilterfunc:
-        cmdchnls = filter(cmdchnlfilterfunc, cmdchnls)
+        cmdchnls = list(filter(cmdchnlfilterfunc, cmdchnls))
     cmdchnls.sort()
     return map(lambda x: clientcls(os.path.basename(x), x), cmdchnls)
 

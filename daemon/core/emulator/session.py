@@ -1038,7 +1038,7 @@ class Session(object):
             if os.path.isfile(environment_config_file):
                 utils.load_config(environment_config_file, env)
         except IOError:
-            logging.warn("environment configuration file does not exist: %s", environment_config_file)
+            logging.warning("environment configuration file does not exist: %s", environment_config_file)
 
         # attempt to read and add user environment file
         if self.user:
@@ -1625,7 +1625,7 @@ class Session(object):
 
         if current_time > 0:
             if event_time <= current_time:
-                logging.warn("could not schedule past event for time %s (run time is now %s)", event_time, current_time)
+                logging.warning("could not schedule past event for time %s (run time is now %s)", event_time, current_time)
                 return
             event_time = event_time - current_time
 

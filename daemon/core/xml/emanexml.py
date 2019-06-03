@@ -112,7 +112,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     nem_entries = {}
 
     if node.model is None:
-        logging.warn("warning: EmaneNode %s has no associated model", node.name)
+        logging.warning("warning: EmaneNode %s has no associated model", node.name)
         return nem_entries
 
     for netif in node.netifs():

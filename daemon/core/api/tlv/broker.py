@@ -236,7 +236,7 @@ class CoreBroker(object):
             return 0
 
         if len(msghdr) != coreapi.CoreMessage.header_len:
-            logging.warn("warning: broker received not enough data len=%s", len(msghdr))
+            logging.warning("warning: broker received not enough data len=%s", len(msghdr))
             return len(msghdr)
 
         msgtype, msgflags, msglen = coreapi.CoreMessage.unpack_header(msghdr)
@@ -413,7 +413,7 @@ class CoreBroker(object):
             remotenum = n2num
 
         if key in self.tunnels.keys():
-            logging.warn("tunnel with key %s (%s-%s) already exists!", key, n1num, n2num)
+            logging.warning("tunnel with key %s (%s-%s) already exists!", key, n1num, n2num)
         else:
             _id = key & ((1 << 16) - 1)
             logging.info("adding tunnel for %s-%s to %s with key %s", n1num, n2num, remoteip, key)
@@ -452,17 +452,17 @@ class CoreBroker(object):
 
         # add other nets here that do not require tunnels
         if nodeutils.is_node(net, NodeTypes.EMANE_NET):
-            logging.warn("emane network does not require a tunnel")
+            logging.warning("emane network does not require a tunnel")
             return None
 
         server_interface = getattr(net, "serverintf", None)
         if nodeutils.is_node(net, NodeTypes.CONTROL_NET) and server_interface is not None:
-            logging.warn("control networks with server interfaces do not need a tunnel")
+            logging.warning("control networks with server interfaces do not need a tunnel")
             return None
 
         servers = self.getserversbynode(node_id)
         if len(servers) < 2:
-            logging.warn("not enough servers to create a tunnel: %s", servers)
+            logging.warning("not enough servers to create a tunnel: %s", servers)
             return None
 
         hosts = []
@@ -678,7 +678,7 @@ class CoreBroker(object):
         """
         server = self.getserverbyname(servername)
         if server is None:
-            logging.warn("ignoring unknown server: %s", servername)
+            logging.warning("ignoring unknown server: %s", servername)
             return
 
         if server.sock is None or server.host is None or server.port is None:
@@ -754,10 +754,10 @@ class CoreBroker(object):
             try:
                 nodecls = nodeutils.get_node_class(NodeTypes(nodetype))
             except KeyError:
-                logging.warn("broker invalid node type %s", nodetype)
+                logging.warning("broker invalid node type %s", nodetype)
                 return handle_locally, servers
             if nodecls is None:
-                logging.warn("broker unimplemented node type %s", nodetype)
+                logging.warning("broker unimplemented node type %s", nodetype)
                 return handle_locally, servers
             if issubclass(nodecls, CoreNetworkBase) and nodetype != NodeTypes.WIRELESS_LAN.value:
                 # network node replicated on all servers; could be optimized
@@ -1091,12 +1091,12 @@ class CoreBroker(object):
         control_nets = value.split()
 
         if len(control_nets) < 2:
-            logging.warn("multiple controlnet prefixes do not exist")
+            logging.warning("multiple controlnet prefixes do not exist")
             return
 
         servers = self.session.broker.getservernames()
         if len(servers) < 2:
-            logging.warn("not distributed")
+            logging.warning("not distributed")
             return
 
         servers.remove("localhost")

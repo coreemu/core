@@ -377,7 +377,7 @@ def load_classes(path, clazz):
     # validate path exists
     logging.debug("attempting to load modules from path: %s", path)
     if not os.path.isdir(path):
-        logging.warn("invalid custom module directory specified" ": %s" % path)
+        logging.warning("invalid custom module directory specified" ": %s" % path)
     # check if path is in sys.path
     parent_path = os.path.dirname(path)
     if parent_path not in sys.path:

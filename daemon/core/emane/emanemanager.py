@@ -807,7 +807,7 @@ class EmaneManager(ModelManager):
         for event in events:
             txnemid, attrs = event
             if "latitude" not in attrs or "longitude" not in attrs or "altitude" not in attrs:
-                logging.warn("dropped invalid location event")
+                logging.warning("dropped invalid location event")
                 continue
 
             # yaw,pitch,roll,azimuth,elevation,velocity are unhandled

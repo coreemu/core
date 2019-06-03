@@ -169,7 +169,7 @@ class VnodeClient(object):
         # wait for and return exit status
         status = p.wait()
         if status:
-            logging.warn("cmd exited with status %s: %s", status, args)
+            logging.warning("cmd exited with status %s: %s", status, args)
         return status
 
     def term(self, sh="/bin/sh"):
@@ -247,16 +247,16 @@ class VnodeClient(object):
                 elif line[3] == "link":
                     interface["inet6link"].append(line[1])
                 else:
-                    logging.warn("unknown scope: %s" % line[3])
+                    logging.warning("unknown scope: %s" % line[3])
 
         err = stderr.read()
         stdout.close()
         stderr.close()
         status = p.wait()
         if status:
-            logging.warn("nonzero exist status (%s) for cmd: %s", status, args)
+            logging.warning("nonzero exist status (%s) for cmd: %s", status, args)
         if err:
-            logging.warn("error output: %s", err)
+            logging.warning("error output: %s", err)
         self._addr[ifname] = interface
         return interface
 
@@ -275,11 +275,11 @@ class VnodeClient(object):
         # ignore first line
         stdout.readline()
         # second line has count names
-        tmp = stdout.readline().strip().split("|")
+        tmp = stdout.readline().decode("utf-8").strip().split("|")
         rxkeys = tmp[1].split()
         txkeys = tmp[2].split()
         for line in stdout:
-            line = line.strip().split()
+            line = line.decode("utf-8").strip().split()
             devname, tmp = line[0].split(":")
             if tmp:
                 line.insert(1, tmp)
@@ -296,9 +296,9 @@ class VnodeClient(object):
         stderr.close()
         status = p.wait()
         if status:
-            logging.warn("nonzero exist status (%s) for cmd: %s", status, args)
+            logging.warning("nonzero exist status (%s) for cmd: %s", status, args)
         if err:
-            logging.warn("error output: %s", err)
+            logging.warning("error output: %s", err)
         if ifname is not None:
             return stats[ifname]
         else:
