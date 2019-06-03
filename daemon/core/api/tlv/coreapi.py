@@ -7,9 +7,11 @@ CORE API messaging is leveraged for communication with the GUI.
 
 import socket
 import struct
+from past.builtins import basestring
 
 from enum import Enum
 
+from core.api.tlv import structutils
 from core.emulator.enumerations import ConfigTlvs
 from core.emulator.enumerations import EventTlvs
 from core.emulator.enumerations import EventTypes
@@ -23,7 +25,6 @@ from core.emulator.enumerations import MessageTypes
 from core.emulator.enumerations import NodeTlvs
 from core.emulator.enumerations import RegisterTlvs
 from core.emulator.enumerations import SessionTlvs
-from core.api.tlv import structutils
 from core.nodes.ipaddress import IpAddress
 from core.nodes.ipaddress import MacAddress
 
@@ -176,8 +177,8 @@ class CoreTlvDataString(CoreTlvData):
         :return: length of data packed and the packed data
         :rtype: tuple
         """
-        if not isinstance(value, str):
-            raise ValueError("value not a string: %s" % value)
+        if not isinstance(value, basestring):
+            raise ValueError("value not a string: %s" % type(value))
         value = value.encode("utf-8")
 
         if len(value) < 256:

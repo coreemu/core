@@ -10,6 +10,7 @@ import os
 import shlex
 import subprocess
 import sys
+from past.builtins import basestring
 
 from core import CoreCommandError
 
@@ -148,7 +149,7 @@ def split_args(args):
     :rtype: list
     """
     logging.info("split args: %s - %s", args, type(args))
-    if isinstance(args, str):
+    if isinstance(args, basestring):
         logging.info("splitting args")
         args = shlex.split(args)
     return args

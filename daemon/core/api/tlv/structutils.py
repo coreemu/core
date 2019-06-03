@@ -3,6 +3,7 @@ Utilities for working with python struct data.
 """
 
 import logging
+from past.builtins import basestring
 
 
 def pack_values(clazz, packers):
@@ -29,7 +30,7 @@ def pack_values(clazz, packers):
 
         # only pack actual values and avoid packing empty strings
         # protobuf defaults to empty strings and does no imply a value to set
-        if value is None or (isinstance(value, str) and not value):
+        if value is None or (isinstance(value, basestring) and not value):
             continue
 
         # transform values as needed

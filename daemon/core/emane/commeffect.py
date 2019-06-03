@@ -4,8 +4,8 @@ commeffect.py: EMANE CommEffect model for CORE
 
 import logging
 import os
-
 from lxml import etree
+from past.builtins import basestring
 
 from core.config import ConfigGroup
 from core.emane import emanemanifest
