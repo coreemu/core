@@ -142,7 +142,7 @@ class CoreInterface(object):
         """
         # treat None and 0 as unchanged values
         current_value = self._params.get(key)
-        if current_value is None or current_value == value or current_value <= 0 and value <= 0:
+        if value is None or current_value == value or current_value <= 0 and value <= 0:
             return False
 
         self._params[key] = value

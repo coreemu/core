@@ -373,7 +373,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.edit_link(session.id, node.id, switch.id, options)
+            response = client.edit_link(session.id, node.id, switch.id, options, interface_one=interface.id)
 
         # then
         assert response.result is True
