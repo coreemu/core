@@ -242,7 +242,7 @@ message SessionEvent {
     int32 node_id = 1;
     int32 event = 2;
     string name = 3;
-    bytes data = 4;
+    string data = 4;
     float time = 5;
     int32 session_id = 6;
 }
@@ -283,8 +283,8 @@ message FileEvent {
     string type = 6;
     string source = 7;
     int32 session_id = 8;
-    bytes data = 9;
-    bytes compressed_data = 10;
+    string data = 9;
+    string compressed_data = 10;
 }
 
 message AddNodeRequest {
@@ -487,7 +487,7 @@ message GetNodeServiceFileRequest {
 }
 
 message GetNodeServiceFileResponse {
-    bytes data = 1;
+    string data = 1;
 }
 
 message SetNodeServiceRequest {
@@ -508,7 +508,7 @@ message SetNodeServiceFileRequest {
     int32 node_id = 2;
     string service = 3;
     string file = 4;
-    bytes data = 5;
+    string data = 5;
 }
 
 message SetNodeServiceFileResponse {
@@ -610,11 +610,11 @@ message SaveXmlRequest {
 }
 
 message SaveXmlResponse {
-    bytes data = 1;
+    string data = 1;
 }
 
 message OpenXmlRequest {
-    bytes data = 1;
+    string data = 1;
 }
 
 message OpenXmlResponse {
@@ -712,7 +712,7 @@ message ExceptionLevel {
 message Hook {
     SessionState.Enum state = 1;
     string file = 2;
-    bytes data = 3;
+    string data = 3;
 }
 
 message ServiceDefaults {

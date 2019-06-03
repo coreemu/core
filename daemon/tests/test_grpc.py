@@ -677,7 +677,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_service(session.id, node.id, "IPForward")
+            response = client.get_node_service(session.id, node.id, "DefaultRoute")
 
         # then
         assert len(response.service.configs) > 0
@@ -690,7 +690,7 @@ class TestGrpc:
 
         # then
         with client.context_connect():
-            response = client.get_node_service_file(session.id, node.id, "IPForward", "ipforward.sh")
+            response = client.get_node_service_file(session.id, node.id, "DefaultRoute", "defaultroute.sh")
 
         # then
         assert response.data is not None
@@ -700,7 +700,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
-        service_name = "IPForward"
+        service_name = "DefaultRoute"
         validate = ["echo hello"]
 
         # then
@@ -717,8 +717,8 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
-        service_name = "IPForward"
-        file_name = "ipforward.sh"
+        service_name = "DefaultRoute"
+        file_name = "defaultroute.sh"
         file_data = "echo hello"
 
         # then
@@ -735,7 +735,7 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         node = session.add_node()
-        service_name = "IPForward"
+        service_name = "DefaultRoute"
 
         # then
         with client.context_connect():
@@ -881,7 +881,7 @@ class TestGrpc:
         with client.context_connect():
             client.events(session.id, handle_event)
             time.sleep(0.1)
-            file_data = session.services.get_service_file(node, "IPForward", "ipforward.sh")
+            file_data = session.services.get_service_file(node, "DefaultRoute", "defaultroute.sh")
             session.broadcast_file(file_data)
 
             # then

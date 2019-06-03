@@ -219,12 +219,12 @@ class CoreTlvDataUint16List(CoreTlvData):
         if not isinstance(values, tuple):
             raise ValueError("value not a tuple: %s" % values)
 
-        data = ""
+        data = b""
         for value in values:
             data += struct.pack(cls.data_format, value)
 
         pad_len = -(CoreTlv.header_len + len(data)) % 4
-        return len(data), data + "\0" * pad_len
+        return len(data), data + b"\0" * pad_len
 
     @classmethod
     def unpack(cls, data):

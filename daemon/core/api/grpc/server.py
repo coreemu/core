@@ -438,14 +438,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if last_check is not None:
                 interval = now - last_check
                 throughputs_event = core_pb2.ThroughputsEvent()
-                for key, current_rxtx in stats.iteritems():
+                for key in stats:
+                    current_rxtx = stats[key]
                     previous_rxtx = last_stats.get(key)
                     if not previous_rxtx:
                         continue
                     rx_kbps = (current_rxtx["rx"] - previous_rxtx["rx"]) * 8.0 / interval
                     tx_kbps = (current_rxtx["tx"] - previous_rxtx["tx"]) * 8.0 / interval
                     throughput = rx_kbps + tx_kbps
-                    print "%s - %s" % (key, throughput)
                     if key.startswith("veth"):
                         key = key.split(".")
                         node_id = int(_INTERFACE_REGEX.search(key[0]).group())
@@ -922,7 +922,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         _, temp_path = tempfile.mkstemp()
         session.save_xml(temp_path)
 
-        with open(temp_path, "rb") as xml_file:
+        with open(temp_path, "r") as xml_file:
             data = xml_file.read()
 
         return core_pb2.SaveXmlResponse(data=data)
@@ -933,7 +933,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.set_state(EventTypes.CONFIGURATION_STATE)
 
         _, temp_path = tempfile.mkstemp()
-        with open(temp_path, "wb") as xml_file:
+        with open(temp_path, "w") as xml_file:
             xml_file.write(request.data)
 
         try:
