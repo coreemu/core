@@ -276,8 +276,6 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
-        # value = value.decode("ISO-8859-1")
-        # value = socket.inet_ntoa(value)
         return IpAddress(af=socket.AF_INET, address=value)
 
 
@@ -308,8 +306,6 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
         :return: Ipv4 address
         :rtype: core.misc.ipaddress.IpAddress
         """
-        # value = value.decode("ISO-8859-1")
-        # value = socket.inet_ntoa(value)
         return IpAddress(af=socket.AF_INET6, address=value)
 
 
@@ -342,8 +338,6 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         :rtype: core.misc.ipaddress.MacAddress
         """
         # only use 48 bits
-        # value = value.decode("ISO-8859-1")
-        # value = socket.inet_ntoa(value)
         return MacAddress(address=value[2:])
 
 

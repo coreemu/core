@@ -6,6 +6,7 @@ import logging
 import random
 import socket
 import struct
+from builtins import bytes
 from builtins import range
 from socket import AF_INET
 from socket import AF_INET6
@@ -31,9 +32,7 @@ class MacAddress(object):
         :return: string representation
         :rtype: str
         """
-        logging.info("mac addr: %s", type(self.addr))
-        addr = self.addr.decode("ISO-8859-1")
-        return ":".join("%02x" % ord(x) for x in addr)
+        return ":".join("%02x" % x for x in bytearray(self.addr))
 
     def to_link_local(self):
         """
@@ -63,7 +62,7 @@ class MacAddress(object):
         :return: mac address class
         :rtype: MacAddress
         """
-        addr = "".join(chr(int(x, 16)) for x in s.split(":"))
+        addr = b"".join(bytes([int(x, 16)]) for x in s.split(":"))
         return cls(addr)
 
     @classmethod
@@ -95,9 +94,7 @@ class IpAddress(object):
         :return:
         """
         # check if (af, addr) is valid
-        logging.info("ip address: %s", type(address))
         if not socket.inet_ntop(af, address):
-        # if not socket.inet_ntop(af, address.encode("ISO-8859-1")):
             raise ValueError("invalid af/addr")
         self.af = af
         self.addr = address
@@ -128,7 +125,6 @@ class IpAddress(object):
         :rtype: str
         """
         return socket.inet_ntop(self.af, self.addr)
-        # return socket.inet_ntop(self.af, self.addr.encode("ISO-8859-1"))
 
     def __eq__(self, other):
         """
@@ -159,14 +155,14 @@ class IpAddress(object):
             logging.exception("error during addition")
             return NotImplemented
 
-        tmp = [ord(x) for x in self.addr]
+        tmp = [x for x in bytearray(self.addr)]
         for i in range(len(tmp) - 1, -1, -1):
             x = tmp[i] + carry
             tmp[i] = x & 0xff
             carry = x >> 8
             if carry == 0:
                 break
-        addr = "".join(chr(x) for x in tmp)
+        addr = bytes(tmp)
         return self.__class__(self.af, addr)
 
     def __sub__(self, other):
@@ -237,12 +233,13 @@ class IpPrefix(object):
         else:
             self.prefixlen = self.addrlen
         self.prefix = socket.inet_pton(self.af, tmp[0])
+        self.prefix = bytes(self.prefix)
         if self.addrlen > self.prefixlen:
             addrbits = self.addrlen - self.prefixlen
             netmask = ((1 << self.prefixlen) - 1) << addrbits
-            prefix = ""
+            prefix = bytes(b"")
             for i in range(-1, -(addrbits >> 3) - 2, -1):
-                prefix = chr(ord(self.prefix[i]) & (netmask & 0xff)) + prefix
+                prefix = bytes([self.prefix[i] & (netmask & 0xff)]) + prefix
                 netmask >>= 8
             self.prefix = self.prefix[:i] + prefix
 
@@ -323,11 +320,11 @@ class IpPrefix(object):
                     self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
             raise ValueError("invalid hostid for prefix %s: %s" % (self, hostid))
 
-        addr = ""
+        addr = bytes(b"")
         prefix_endpoint = -1
         for i in range(-1, -(self.addrlen >> 3) - 1, -1):
             prefix_endpoint = i
-            addr = chr(ord(self.prefix[i]) | (tmp & 0xff)) + addr
+            addr = bytes([self.prefix[i] | (tmp & 0xff)]) + addr
             tmp >>= 8
             if not tmp:
                 break

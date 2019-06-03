@@ -855,13 +855,11 @@ class PtpNet(CoreNetwork):
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
                 ipl = socket.inet_pton(family, ip)
-                # ipl = ipl.decode("ISO-8859-1")
                 interface1_ip4 = ipaddress.IpAddress(af=family, address=ipl)
                 interface1_ip4_mask = mask
             else:
                 family = AF_INET6
                 ipl = socket.inet_pton(family, ip)
-                # ipl = ipl.decode("ISO-8859-1")
                 interface1_ip6 = ipaddress.IpAddress(af=family, address=ipl)
                 interface1_ip6_mask = mask
 
@@ -875,13 +873,11 @@ class PtpNet(CoreNetwork):
             if ipaddress.is_ipv4_address(ip):
                 family = AF_INET
                 ipl = socket.inet_pton(family, ip)
-                # ipl = ipl.decode("ISO-8859-1")
                 interface2_ip4 = ipaddress.IpAddress(af=family, address=ipl)
                 interface2_ip4_mask = mask
             else:
                 family = AF_INET6
                 ipl = socket.inet_pton(family, ip)
-                # ipl = ipl.decode("ISO-8859-1")
                 interface2_ip6 = ipaddress.IpAddress(af=family, address=ipl)
                 interface2_ip6_mask = mask
 
