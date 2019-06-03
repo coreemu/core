@@ -207,7 +207,7 @@ def cmd_output(args):
         p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
         stdout, _ = p.communicate()
         status = p.wait()
-        return status, stdout.strip()
+        return status, stdout.decode("utf-8").strip()
     except OSError:
         raise CoreCommandError(-1, args)
 
