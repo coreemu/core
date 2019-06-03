@@ -236,7 +236,7 @@ class IpPrefix(object):
             self.prefixlen = int(tmp[1])
         else:
             self.prefixlen = self.addrlen
-        self.prefix = socket.inet_pton(self.af, tmp[0]).decode("ISO-8859-1")
+        self.prefix = socket.inet_pton(self.af, tmp[0])
         if self.addrlen > self.prefixlen:
             addrbits = self.addrlen - self.prefixlen
             netmask = ((1 << self.prefixlen) - 1) << addrbits

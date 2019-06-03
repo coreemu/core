@@ -141,8 +141,11 @@ class CoreInterface(object):
         :return: True if parameter changed, False otherwise
         """
         # treat None and 0 as unchanged values
+        if value is None or value <= 0:
+            return False
+
         current_value = self._params.get(key)
-        if value is None or current_value == value or current_value <= 0 and value <= 0:
+        if current_value is not None and current_value == value:
             return False
 
         self._params[key] = value
