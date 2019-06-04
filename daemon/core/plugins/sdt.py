@@ -4,14 +4,9 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-
-from future.standard_library import install_aliases
-install_aliases()
-
-from urllib.parse import urlparse
+from future.moves.urllib.parse import urlparse
 
 from core import constants
-from core.nodes.base import NodeBase, CoreNetworkBase
 from core.emulator.enumerations import EventTypes
 from core.emulator.enumerations import LinkTlvs
 from core.emulator.enumerations import LinkTypes
@@ -20,6 +15,7 @@ from core.emulator.enumerations import MessageTypes
 from core.emulator.enumerations import NodeTlvs
 from core.emulator.enumerations import NodeTypes
 from core.nodes import nodeutils
+from core.nodes.base import NodeBase, CoreNetworkBase
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this

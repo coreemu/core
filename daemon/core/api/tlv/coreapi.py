@@ -748,13 +748,11 @@ class CoreMessage(object):
         :return: packed data
         :rtype: str
         """
-        tlv_data = ""
         keys = sorted(self.tlv_data.keys())
-
+        tlv_data = b""
         for key in keys:
             value = self.tlv_data[key]
             tlv_data += self.tlv_class.pack(key, value)
-
         return tlv_data
 
     def repack(self):
