@@ -4,7 +4,7 @@ socket server request handlers leveraged by core servers.
 
 import logging
 import os
-import queue
+from queue import Queue, Empty
 import shlex
 import shutil
 import socketserver
@@ -69,7 +69,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             MessageTypes.EVENT.value: self.handle_event_message,
             MessageTypes.SESSION.value: self.handle_session_message,
         }
-        self.message_queue = queue.Queue()
+        self.message_queue = Queue()
         self.node_status_request = {}
         self._shutdown_lock = threading.Lock()
         self._sessions_lock = threading.Lock()
@@ -466,7 +466,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             try:
                 message = self.message_queue.get(timeout=1)
                 self.handle_message(message)
-            except queue.Empty:
+            except Empty:
                 pass
 
     def handle_message(self, message):

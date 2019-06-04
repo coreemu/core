@@ -6,7 +6,7 @@ message handlers are defined and some support for sending messages.
 """
 
 import argparse
-import configparser
+from configparser import ConfigParser
 import logging
 import sys
 import threading
@@ -107,7 +107,7 @@ def get_merged_config(filename):
     if args.configfile is not None:
         filename = args.configfile
     del args.configfile
-    cfg = configparser.ConfigParser(defaults)
+    cfg = ConfigParser(defaults)
     cfg.read(filename)
 
     section = "core-daemon"
