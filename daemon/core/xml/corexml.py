@@ -390,10 +390,13 @@ class CoreXmlWriter(object):
             is_network_or_rj45 = isinstance(node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node))
             is_controlnet = nodeutils.is_node(node, NodeTypes.CONTROL_NET)
             if is_network_or_rj45 and not is_controlnet:
+                logging.info("network node: %s", node)
                 self.write_network(node)
             # device node
             elif isinstance(node, core.nodes.base.CoreNodeBase):
                 self.write_device(node)
+            else:
+                logging.error("unknown node: %s", node)
 
             # add known links
             links.extend(node.all_link_data(0))
@@ -409,7 +412,7 @@ class CoreXmlWriter(object):
         if nodeutils.is_node(node, (NodeTypes.SWITCH, NodeTypes.HUB)):
             for netif in node.netifs(sort=True):
                 othernet = getattr(netif, "othernet", None)
-                if othernet and othernet.id != node.id:
+                if othernet and othernet.id == node.id:
                     logging.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
                     return
 
@@ -434,6 +437,29 @@ class CoreXmlWriter(object):
         device = DeviceElement(self.session, node)
         self.devices.append(device.element)
 
+    def create_interface_element(self, element_name, node_id, interface_id, mac, ip4, ip4_mask, ip6, ip6_mask):
+        interface = etree.Element(element_name)
+        node = self.session.get_node(node_id)
+        interface_name = None
+        if not nodeutils.is_node(node, NodeTypes.TUNNEL):
+            node_interface = node.netif(interface_id)
+            interface_name = node_interface.name
+
+            # check if emane interface
+            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
+                nem = node_interface.net.getnemid(node_interface)
+                add_attribute(interface, "nem", nem)
+
+        add_attribute(interface, "id", interface_id)
+        add_attribute(interface, "name", interface_name)
+        add_attribute(interface, "mac", mac)
+        add_attribute(interface, "ip4", ip4)
+        add_attribute(interface, "ip4_mask", ip4_mask)
+        add_attribute(interface, "ip6", ip6)
+        add_attribute(interface, "ip6_mask", ip6_mask)
+
+        return interface
+
     def create_link_element(self, link_data):
         link_element = etree.Element("link")
         add_attribute(link_element, "node_one", link_data.node1_id)
@@ -441,44 +467,30 @@ class CoreXmlWriter(object):
 
         # check for interface one
         if link_data.interface1_id is not None:
-            interface_one = etree.Element("interface_one")
-            node = self.session.get_node(link_data.node1_id)
-            node_interface = node.netif(link_data.interface1_id)
-
-            add_attribute(interface_one, "id", link_data.interface1_id)
-            add_attribute(interface_one, "name", node_interface.name)
-            add_attribute(interface_one, "mac", link_data.interface1_mac)
-            add_attribute(interface_one, "ip4", link_data.interface1_ip4)
-            add_attribute(interface_one, "ip4_mask", link_data.interface1_ip4_mask)
-            add_attribute(interface_one, "ip6", link_data.interface1_ip6)
-            add_attribute(interface_one, "ip6_mask", link_data.interface1_ip6_mask)
-
-            # check if emane interface
-            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
-                nem = node_interface.net.getnemid(node_interface)
-                add_attribute(interface_one, "nem", nem)
-
+            interface_one = self.create_interface_element(
+                "interface_one",
+                link_data.node1_id,
+                link_data.interface1_id,
+                link_data.interface1_mac,
+                link_data.interface1_ip4,
+                link_data.interface1_ip4_mask,
+                link_data.interface1_ip6,
+                link_data.interface1_ip6_mask
+            )
             link_element.append(interface_one)
 
         # check for interface two
         if link_data.interface2_id is not None:
-            interface_two = etree.Element("interface_two")
-            node = self.session.get_node(link_data.node2_id)
-            node_interface = node.netif(link_data.interface2_id)
-
-            add_attribute(interface_two, "id", link_data.interface2_id)
-            add_attribute(interface_two, "name", node_interface.name)
-            add_attribute(interface_two, "mac", link_data.interface2_mac)
-            add_attribute(interface_two, "ip4", link_data.interface2_ip4)
-            add_attribute(interface_two, "ip4_mask", link_data.interface2_ip4_mask)
-            add_attribute(interface_two, "ip6", link_data.interface2_ip6)
-            add_attribute(interface_two, "ip6_mask", link_data.interface2_ip6_mask)
-
-            # check if emane interface
-            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
-                nem = node_interface.net.getnemid(node_interface)
-                add_attribute(interface_two, "nem", nem)
-
+            interface_two = self.create_interface_element(
+                "interface_two",
+                link_data.node2_id,
+                link_data.interface2_id,
+                link_data.interface2_mac,
+                link_data.interface2_ip4,
+                link_data.interface2_ip4_mask,
+                link_data.interface2_ip6,
+                link_data.interface2_ip6_mask
+            )
             link_element.append(interface_two)
 
         # check for options
@@ -709,8 +721,8 @@ class CoreXmlReader(object):
 
         position_element = device_element.find("position")
         if position_element is not None:
-            x = get_float(position_element, "x")
-            y = get_float(position_element, "y")
+            x = get_int(position_element, "x")
+            y = get_int(position_element, "y")
             if all([x, y]):
                 node_options.set_position(x, y)
 
@@ -731,8 +743,8 @@ class CoreXmlReader(object):
 
         position_element = network_element.find("position")
         if position_element is not None:
-            x = get_float(position_element, "x")
-            y = get_float(position_element, "y")
+            x = get_int(position_element, "x")
+            y = get_int(position_element, "y")
             if all([x, y]):
                 node_options.set_position(x, y)
 
