@@ -326,7 +326,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         :return:
         """
         # extend to 64 bits
-        return "\0\0" + obj.addr
+        return b"\0\0" + obj.addr
 
     @staticmethod
     def new_obj(value):
