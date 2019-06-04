@@ -1,4 +1,5 @@
 import logging
+from core.nodes.base import CoreNetworkBase
 from lxml import etree
 
 import core.nodes.base
@@ -390,7 +391,6 @@ class CoreXmlWriter(object):
             is_network_or_rj45 = isinstance(node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node))
             is_controlnet = nodeutils.is_node(node, NodeTypes.CONTROL_NET)
             if is_network_or_rj45 and not is_controlnet:
-                logging.info("network node: %s", node)
                 self.write_network(node)
             # device node
             elif isinstance(node, core.nodes.base.CoreNodeBase):
@@ -406,15 +406,8 @@ class CoreXmlWriter(object):
     def write_network(self, node):
         # ignore p2p and other nodes that are not part of the api
         if not node.apitype:
+            logging.warning("ignoring node with no apitype: %s", node)
             return
-
-        # ignore nodes tied to a different network
-        if nodeutils.is_node(node, (NodeTypes.SWITCH, NodeTypes.HUB)):
-            for netif in node.netifs(sort=True):
-                othernet = getattr(netif, "othernet", None)
-                if othernet and othernet.id == node.id:
-                    logging.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
-                    return
 
         network = NetworkElement(self.session, node)
         self.networks.append(network.element)
@@ -441,7 +434,7 @@ class CoreXmlWriter(object):
         interface = etree.Element(element_name)
         node = self.session.get_node(node_id)
         interface_name = None
-        if not nodeutils.is_node(node, NodeTypes.TUNNEL):
+        if not isinstance(node, CoreNetworkBase):
             node_interface = node.netif(interface_id)
             interface_name = node_interface.name
 
