@@ -20,7 +20,7 @@ SRC_VCMD = vcmd_main.c vnode_client.c \
 	   vnode_client.h
 SRC_NETNS = netns_main.c netns.c netns.h
 
-noinst_PROGRAMS	= vnoded vcmd netns
+bin_PROGRAMS	= vnoded vcmd netns
 vnoded_LDADD = @libev_LIBS@
 vnoded_SOURCES = $(SRC_COMMON) $(SRC_VNODED)
 vcmd_LDADD = @libev_LIBS@
