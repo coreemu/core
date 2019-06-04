@@ -1249,7 +1249,7 @@ class Session(object):
             for node_id in self.nodes:
                 node = self.nodes[node_id]
                 is_p2p_ctrlnet = nodeutils.is_node(node, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET))
-                is_tap = nodeutils.is_node(node, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(x, NodeTypes.TUNNEL)
+                is_tap = nodeutils.is_node(node, NodeTypes.TAP_BRIDGE) and not nodeutils.is_node(node, NodeTypes.TUNNEL)
                 if is_p2p_ctrlnet or is_tap:
                     continue
 
