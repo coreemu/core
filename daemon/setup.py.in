@@ -5,8 +5,7 @@ Defines how CORE will be built for installation.
 import glob
 import os
 
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
 
 _CORE_DIR = "/etc/core"
 _MAN_DIR = "share/man/man1"
