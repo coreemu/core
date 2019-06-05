@@ -159,7 +159,6 @@ class ConfigurableManager(object):
         :param int node_id: node id to clear configurations for, default is None and clears all configurations
         :return: nothing
         """
-        logging.debug("resetting all configurations: %s", self.__class__.__name__)
         if not node_id:
             self.node_configurations.clear()
         elif node_id in self.node_configurations:
@@ -175,7 +174,6 @@ class ConfigurableManager(object):
         :param str config_type: configuration type to store configuration for
         :return: nothing
         """
-        logging.debug("setting config for node(%s) type(%s): %s=%s", node_id, config_type, _id, value)
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_type_configs = node_configs.setdefault(config_type, OrderedDict())
         node_type_configs[_id] = value
@@ -204,7 +202,6 @@ class ConfigurableManager(object):
         :return: configuration value
         :rtype str
         """
-        logging.debug("getting config for node(%s) type(%s): %s", node_id, config_type, _id)
         result = default
         node_type_configs = self.get_configs(node_id, config_type)
         if node_type_configs:
@@ -220,7 +217,6 @@ class ConfigurableManager(object):
         :return: configurations
         :rtype: dict
         """
-        logging.debug("getting configs for node(%s) type(%s)", node_id, config_type)
         result = None
         node_configs = self.node_configurations.get(node_id)
         if node_configs:
@@ -235,7 +231,6 @@ class ConfigurableManager(object):
         :return: all configuration types for a node
         :rtype: dict
         """
-        logging.debug("getting all configs for node(%s)", node_id)
         return self.node_configurations.get(node_id)
 
 

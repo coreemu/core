@@ -141,6 +141,7 @@ class CoreInterface(object):
         :return: True if parameter changed, False otherwise
         """
         # treat None and 0 as unchanged values
+        logging.debug("setting param: %s - %s", key, value)
         if value is None or value <= 0:
             return False
 

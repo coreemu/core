@@ -894,6 +894,7 @@ class PtpNet(CoreNetwork):
             unidirectional=unidirectional,
             delay=if1.getparam("delay"),
             bandwidth=if1.getparam("bw"),
+            per=if1.getparam("loss"),
             dup=if1.getparam("duplicate"),
             jitter=if1.getparam("jitter"),
             interface1_id=if1.node.getifindex(if1),
