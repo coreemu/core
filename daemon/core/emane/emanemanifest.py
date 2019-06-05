@@ -1,7 +1,7 @@
 import logging
 
-from core.conf import Configuration
-from core.enumerations import ConfigDataTypes
+from core.config import Configuration
+from core.emulator.enumerations import ConfigDataTypes
 
 manifest = None
 try:

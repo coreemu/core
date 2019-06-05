@@ -2,8 +2,8 @@
 Sample user-defined service.
 """
 
-from core.service import CoreService
-from core.service import ServiceMode
+from core.services.coreservices import CoreService
+from core.services.coreservices import ServiceMode
 
 
 ## Custom CORE Service

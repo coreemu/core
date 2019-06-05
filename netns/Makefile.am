@@ -20,7 +20,7 @@ SRC_VCMD = vcmd_main.c vnode_client.c \
 	   vnode_client.h
 SRC_NETNS = netns_main.c netns.c netns.h
 
-noinst_PROGRAMS	= vnoded vcmd netns
+bin_PROGRAMS	= vnoded vcmd netns
 vnoded_LDADD = @libev_LIBS@
 vnoded_SOURCES = $(SRC_COMMON) $(SRC_VNODED)
 vcmd_LDADD = @libev_LIBS@
@@ -30,38 +30,38 @@ netns_SOURCES = $(SRC_NETNS)
 # this triggers automake to run setup.py for building the Python libraries
 #   actual library names are netns.so and vcmd.so
 #   SOURCES line prevents 'make dist' from looking for a 'libnetns.c' file
-if WANT_PYTHON
-noinst_LIBRARIES = libnetns.a
-libnetns_a_SOURCES = netnsmodule.c vcmdmodule.c
-libnetns.a:
-	LDFLAGS="$(LDFLAGS) @libev_LIBS@" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build_ext
-
-# Python libraries install
-install-exec-local:
-	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
-		--root=/$(DESTDIR) \
-		--prefix=$(prefix) \
-		--install-lib=$(pythondir) \
-		--single-version-externally-managed \
-		--no-compile
-
-# Python libraries uninstall
-uninstall-hook:
-	rm -rf core_netns.egg-info
-	rm -rf $(DESTDIR)/$(pythondir)/core_netns-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
-	rm -f $(DESTDIR)/$(bindir)/{vnoded,vcmd,netns}
-	rm -f $(DESTDIR)/$(pythondir)/{netns.so,vcmd.so}
-
-# Python libraries cleanup
-clean-local: clean-local-check
-.PHONY: clean-local-check
-clean-local-check:
-	-rm -rf build
-
-distclean-local:
-	-rm -rf core_netns.egg-info
-
-endif
+#if WANT_PYTHON
+#noinst_LIBRARIES = libnetns.a
+#libnetns_a_SOURCES = netnsmodule.c vcmdmodule.c
+#libnetns.a:
+#	LDFLAGS="$(LDFLAGS) @libev_LIBS@" CFLAGS="$(CFLAGS) @libev_CFLAGS@" $(PYTHON) setup.py build_ext
+#
+## Python libraries install
+#install-exec-local:
+#	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
+#		--root=/$(DESTDIR) \
+#		--prefix=$(prefix) \
+#		--install-lib=$(pythondir) \
+#		--single-version-externally-managed \
+#		--no-compile
+#
+## Python libraries uninstall
+#uninstall-hook:
+#	rm -rf core_netns.egg-info
+#	rm -rf $(DESTDIR)/$(pythondir)/core_netns-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
+#	rm -f $(DESTDIR)/$(bindir)/{vnoded,vcmd,netns}
+#	rm -f $(DESTDIR)/$(pythondir)/{netns.so,vcmd.so}
+#
+## Python libraries cleanup
+#clean-local: clean-local-check
+#.PHONY: clean-local-check
+#clean-local-check:
+#	-rm -rf build
+#
+#distclean-local:
+#	-rm -rf core_netns.egg-info
+#
+#endif
 # endif WANT_PYTHON
 
 # extra cruft to remove

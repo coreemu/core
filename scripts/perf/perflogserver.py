@@ -23,8 +23,8 @@ def readfile(fname):
         f = open(fname, "r")
     except IOError:
         if options.timestamp == True:
-            print str(time.time()),
-        print "ERROR: failed to open file %s\n" % fname
+            print(str(time.time()),)
+        print("ERROR: failed to open file %s\n" % fname)
     else:
         lines = f.readlines()
         f.close()
@@ -42,8 +42,7 @@ def numcpus():
 
 
 def handler(signum, frame):
-    print "stop timestamp:", str(
-        time.time()) + ", cyclecount=", cyclecount, ", caught signal", signum
+    print("stop timestamp:", str(time.time()) + ", cyclecount=", cyclecount, ", caught signal", signum)
     sys.exit(0)
 
 
@@ -120,15 +119,15 @@ def checkserverthreshold(metricval):
                     alarm = ["server", os.uname()[1], str(ind) + key,
                              "%.2f" % pcpus[ind], ">", serverthresholds.getvalue(key)]
                     if options.timestamp:
-                        print str(time.time()) + ",",
-                    print ", ".join(str(x) for x in alarm)
+                        print(str(time.time()) + ",",)
+                    print(", ".join(str(x) for x in alarm))
         else:
             if metricval.getvalue(key) > serverthresholds.getvalue(key):
                 alarm = ["server", os.uname()[1], key,
                          "%.2f" % metricval.getvalue(key), ">", serverthresholds.getvalue(key)]
                 if options.timestamp:
-                    print str(time.time()) + ",",
-                print ", ".join(str(x) for x in alarm)
+                    print(str(time.time()) + ",",)
+                print(", ".join(str(x) for x in alarm))
 
 
 def collectservercputimes():
@@ -310,8 +309,8 @@ class LogSession(object):
         for nname in self.pids:
             if self.pids[nname] == "":
                 if options.timestamp == True:
-                    print str(time.time()),
-                print "ERROR: null vnoded pid of node: %s" % nname
+                    print(str(time.time()),)
+                print("ERROR: null vnoded pid of node: %s" % nname)
             else:
                 childprocs = []
                 ppid = self.pids[nname]
@@ -331,13 +330,13 @@ class LogSession(object):
             if self.pids[pp] != []:
                 for ap in range(len(self.pids[pp]) - 1):
                     # ap pid
-                    print ", " + self.pids[pp][ap][0],
+                    print(", " + self.pids[pp][ap][0],)
                     # ap cmd
-                    print ", " + self.pids[pp][ap][1],
+                    print(", " + self.pids[pp][ap][1],)
                     procmetrics = [str(x) for x in self.pids[pp][ap][-1]]
-                    print ", " + ", ".join(procmetrics),
+                    print(", " + ", ".join(procmetrics),)
                 nodemetrics = [str(x) for x in self.pids[pp][-1]]
-                print ", " + ", ".join(nodemetrics)
+                print(", " + ", ".join(nodemetrics))
 
     def getprocessmetrics(self, pid):
         """
@@ -401,9 +400,9 @@ class LogSession(object):
                 procm = self.getprocessmetrics(self.pids[nod][ap][0])
                 if procm == []:
                     if options.timestamp == True:
-                        print str(time.time()),
-                    print "WARNING: transient process", self.pids[nod][ap][1], \
-                          "/", self.pids[nod][ap][0], "on node %s" % nod
+                        print(str(time.time()),)
+                    print("WARNING: transient process", self.pids[nod][ap][1],
+                          "/", self.pids[nod][ap][0], "on node %s" % nod)
                 else:
                     nodeapps[ap] = procm
                     self.pids[nod][ap].append(nodeapps[ap])
@@ -436,8 +435,8 @@ class LogSession(object):
 
         for k in self.nodemetricsC:
             if options.timestamp:
-                print str(time.time()) + ",",
-            print k, ",", mm[k].tocsv()
+                print(str(time.time()) + ",",)
+            print(k, ",", mm[k].tocsv())
 
     def readnodethresholds(self, filename):
         if filename is None:
@@ -458,8 +457,8 @@ class LogSession(object):
                 alarm = ["node", nname + "/" + self.pids[nname][0][0], keyname,
                          calcm.getvalue(keyname), ">", self.nodethresholds.getvalue(keyname)]
                 if options.timestamp:
-                    print str(time.time()) + ",",
-                print ", ".join(str(x) for x in alarm)
+                    print(str(time.time()) + ",",)
+                print(", ".join(str(x) for x in alarm))
 
     def calcnodemetrics(self, cputimea, cputimeb, mems):
         """
@@ -472,10 +471,10 @@ class LogSession(object):
         hostusedcpu = p[0] + p[1]
         hostusedmem = mems[0] - mems[1]
         if hostusedcpu == 0:
-            print "WARNING: host used cpu = 0, ", p[0], p[1]
+            print("WARNING: host used cpu = 0, ", p[0], p[1])
             hostusedcpu = 1
         if hostusedmem == 0:
-            print "WARNING: host used mem = 0, ", mems[0], mems[1]
+            print("WARNING: host used mem = 0, ", mems[0], mems[1])
             hostusedmem = 1
 
         nodesa = self.nodemetricsA
@@ -490,8 +489,8 @@ class LogSession(object):
                        (False == isinstance(nodesb[nod], NodeMetrics)) |  \
                        (False == isinstance(nodesa[nod], NodeMetrics)):
                         if options.timestamp == True:
-                            print str(time.time()),
-                        print "Warning: nodes %s is not fully instanciated" % nod
+                            print(str(time.time()),)
+                        print("Warning: nodes %s is not fully instanciated" % nod)
                     else:
                         # calc throughput kbps
                         calcm.setvalue("nodethroughput", "%.2f" % (8 * (nodesb[nod].getvalue("nodethroughput")
@@ -519,7 +518,7 @@ class LogSession(object):
                 except IndexError:
                     pass
             else:
-                print "Warning: transient node %s " % nod
+                print("Warning: transient node %s " % nod)
 
         return nodesb
 
@@ -531,21 +530,18 @@ def main():
                         configfile="/etc/core/perflogserver.conf",
                         alarm=True, session=None)
     parser.add_option("-i", "--interval", dest="interval", type=int,
-                      help="seconds to wait between samples; default=%s" %
-                      parser.defaults["interval"])
+                      help="seconds to wait between samples; default=%s" % parser.defaults["interval"])
     parser.add_option("-t", "--timestamp", action="store_true",
                       dest="timestamp",
                       help="include timestamp on each line")
     parser.add_option("-c", "--configfile", dest="configfile",
                       type="string",
-                      help="read threshold values from the specified file;\
-  		      default=%s" % parser.defaults["configfile"])
+                      help="read threshold values from the specified file;default=%s" % parser.defaults["configfile"])
     parser.add_option("-a", "--alarm", action="store_true",
                       dest="alarm",
                       help="generate alarms based threshold check on each cycle")
     parser.add_option("-s", "--session", dest="session", type=int,
-                      help="CORE session id; default=%s" %
-                      parser.defaults["session"])
+                      help="CORE session id; default=%s" % parser.defaults["session"])
     global options
     global ncpus
     global serverthresholds
@@ -573,12 +569,12 @@ def main():
         logsession = LogSession()
 
     # mark host log baseline
-    print "server: ", ", ".join(str(x) for x in os.uname()), ",", ncpus, "CPU cores"
-    print "start timestamp:", time.time(), ", baseline data: "
-    print csvserverbaseline()
-    print "server metrics: ", ", ".join(str(x) for x in serverthresholds.getkeys())
+    print("server: ", ", ".join(str(x) for x in os.uname()), ",", ncpus, "CPU cores")
+    print("start timestamp:", time.time(), ", baseline data: ")
+    print(csvserverbaseline())
+    print("server metrics: ", ", ".join(str(x) for x in serverthresholds.getkeys()))
     if options.session is not None:
-        print "node metrics: nodename, ", ", ".join(str(x) for x in logsession.nodethresholds.getkeys())
+        print("node metrics: nodename, ", ", ".join(str(x) for x in logsession.nodethresholds.getkeys()))
 
     cyclecount = 0
     while True:
@@ -591,7 +587,7 @@ def main():
         calccputime = calcservercputimes(cputimea, cputimeb)
         m = csvservermetrics(collectservermetrics(
             calccputime, mems, options.alarm))
-        print m
+        print(m)
 
         if options.session is not None:
             nodesb = logsession.getnodemetrics('b')

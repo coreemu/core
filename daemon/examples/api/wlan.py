@@ -6,13 +6,14 @@
 # nodestep
 
 import datetime
+from builtins import range
 
 import parser
 from core import load_logging_config
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.enumerations import NodeTypes, EventTypes
-from core.mobility import BasicRangeModel
+from core.emulator.enumerations import NodeTypes, EventTypes
+from core.location.mobility import BasicRangeModel
 
 load_logging_config()
 
@@ -35,22 +36,22 @@ def example(options):
     # create nodes, must set a position for wlan basic range model
     node_options = NodeOptions()
     node_options.set_position(0, 0)
-    for _ in xrange(options.nodes):
+    for _ in range(options.nodes):
         node = session.add_node(node_options=node_options)
         interface = prefixes.create_interface(node)
-        session.add_link(node.objid, wlan.objid, interface_one=interface)
+        session.add_link(node.id, wlan.id, interface_one=interface)
 
     # instantiate session
     session.instantiate()
 
     # get nodes for example run
-    first_node = session.get_object(2)
-    last_node = session.get_object(options.nodes + 1)
+    first_node = session.get_node(2)
+    last_node = session.get_node(options.nodes + 1)
 
-    print "starting iperf server on node: %s" % first_node.name
+    print("starting iperf server on node: %s" % first_node.name)
     first_node.cmd(["iperf", "-s", "-D"])
     address = prefixes.ip4_address(first_node)
-    print "node %s connecting to %s" % (last_node.name, address)
+    print("node %s connecting to %s" % (last_node.name, address))
     last_node.client.icmd(["iperf", "-t", str(options.time), "-c", address])
     first_node.cmd(["killall", "-9", "iperf"])
 
@@ -62,9 +63,9 @@ def main():
     options = parser.parse_options("wlan")
 
     start = datetime.datetime.now()
-    print "running wlan example: nodes(%s) time(%s)" % (options.nodes, options.time)
+    print("running wlan example: nodes(%s) time(%s)" % (options.nodes, options.time))
     example(options)
-    print "elapsed time: %s" % (datetime.datetime.now() - start)
+    print("elapsed time: %s" % (datetime.datetime.now() - start))
 
 
 if __name__ == "__main__":

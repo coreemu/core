@@ -1,7 +1,7 @@
 import logging
+from builtins import range
 
-from core.grpc import client
-from core.grpc import core_pb2
+from core.api.grpc import client, core_pb2
 
 
 def log_event(event):
@@ -33,7 +33,7 @@ def main():
         # helper to create interfaces
         interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
-        for i in xrange(2):
+        for i in range(2):
             # create node
             position = core_pb2.Position(x=50 + 50 * i, y=50)
             node = core_pb2.Node(position=position)

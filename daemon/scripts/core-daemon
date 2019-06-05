@@ -6,7 +6,7 @@ message handlers are defined and some support for sending messages.
 """
 
 import argparse
-import ConfigParser
+from configparser import ConfigParser
 import logging
 import sys
 import threading
@@ -14,11 +14,11 @@ import time
 
 from core import load_logging_config
 from core import constants
-from core import enumerations
-from core.corehandlers import CoreHandler
-from core.coreserver import CoreServer
-from core.grpc.server import CoreGrpcServer
-from core.misc.utils import close_onexec
+from core.emulator import enumerations
+from core.api.tlv.corehandlers import CoreHandler
+from core.api.tlv.coreserver import CoreServer
+from core.api.grpc.server import CoreGrpcServer
+from core.utils import close_onexec
 
 load_logging_config()
 
@@ -48,7 +48,7 @@ def cored(cfg):
     try:
         server = CoreServer((host, port), CoreHandler, cfg)
         if cfg["ovs"] == "True":
-            from core.netns.openvswitch import OVS_NODES
+            from core.nodes.openvswitch import OVS_NODES
             server.coreemu.update_nodes(OVS_NODES)
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
@@ -107,7 +107,7 @@ def get_merged_config(filename):
     if args.configfile is not None:
         filename = args.configfile
     del args.configfile
-    cfg = ConfigParser.SafeConfigParser(defaults)
+    cfg = ConfigParser(defaults)
     cfg.read(filename)
 
     section = "core-daemon"

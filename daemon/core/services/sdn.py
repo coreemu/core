@@ -4,7 +4,7 @@ sdn.py defines services to start Open vSwitch and the Ryu SDN Controller.
 
 import re
 
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 
 class SdnService(CoreService):

@@ -1,4 +1,4 @@
-from core.misc import utils
+from core import utils
 
 
 class TestUtils:

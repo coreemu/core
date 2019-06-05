@@ -2,7 +2,7 @@
 Sample user-defined services for testing.
 """
 
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 
 class MyService(CoreService):

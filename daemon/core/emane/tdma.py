@@ -5,11 +5,10 @@ tdma.py: EMANE TDMA model bindings for CORE
 import logging
 import os
 
-from core import constants
-from core.conf import Configuration
+from core import constants, utils
+from core.config import Configuration
 from core.emane import emanemodel
-from core.enumerations import ConfigDataTypes
-from core.misc import utils
+from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneTdmaModel(emanemodel.EmaneModel):
@@ -49,7 +48,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # get configured schedule
-        config = self.session.emane.get_configs(node_id=self.object_id, config_type=self.name)
+        config = self.session.emane.get_configs(node_id=self.id, config_type=self.name)
         if not config:
             return
         schedule = config[self.schedule_name]

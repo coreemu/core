@@ -37,22 +37,23 @@ import os
 import sys
 import time
 
+import core.nodes.base
+import core.nodes.network
 from core import emane
 from core.emane.bypass import EmaneBypassModel
 from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
-from core.misc import ipaddress
-from core.netns import nodes
-from core.session import Session
+from core.emulator.session import Session
+from core.nodes import ipaddress
 
 try:
     import emaneeventservice
     import emaneeventpathloss
-except Exception, e:
+except Exception as e:
     try:
         from emanesh.events import EventService
         from emanesh.events import PathlossEvent
-    except Exception, e2:
+    except Exception as e2:
         raise ImportError("failed to import EMANE Python bindings:\n%s\n%s" % (e, e2))
 
 # global Experiment object (for interaction with "python -i")
@@ -113,12 +114,12 @@ class Cmd(object):
 
     def info(self, msg):
         """ Utility method for writing output to stdout."""
-        print msg
+        print(msg)
         sys.stdout.flush()
 
     def warn(self, msg):
         """ Utility method for writing output to stderr. """
-        print >> sys.stderr, "XXX %s:" % self.node.name, msg
+        sys.stderr.write("XXX %s:" % self.node.name, msg)
         sys.stderr.flush()
 
     def run(self):
@@ -255,7 +256,7 @@ class IperfCmd(ClientServerCmd):
         lines = self.out.readlines()
         try:
             bps = int(lines[-1].split(",")[-1].strip("\n"))
-        except Exception, e:
+        except Exception as e:
             self.warn("iperf parsing exception: %s" % e)
             bps = 0
         return bps
@@ -357,13 +358,13 @@ class Experiment(object):
 
     def info(self, msg):
         """ Utility method for writing output to stdout. """
-        print msg
+        print(msg)
         sys.stdout.flush()
         self.log(msg)
 
     def warn(self, msg):
         """ Utility method for writing output to stderr. """
-        print >> sys.stderr, msg
+        sys.stderr.write(msg)
         sys.stderr.flush()
         self.log(msg)
 
@@ -393,7 +394,7 @@ class Experiment(object):
         """ Write to the log file, if any. """
         if not self.logfp:
             return
-        print >> self.logfp, msg
+        self.logfp.write(msg)
 
     def reset(self):
         """ Prepare for another experiment run.
@@ -413,11 +414,11 @@ class Experiment(object):
         prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
         self.session = Session(1)
         # emulated network
-        self.net = self.session.add_object(cls=nodes.WlanNode, name="wlan1")
+        self.net = self.session.create_node(cls=core.nodes.network.WlanNode, name="wlan1")
         prev = None
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=nodes.CoreNode, objid=i, name="n%d" % i)
+            tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
             self.session.services.add_services(tmp, "router", "IPForward")
@@ -440,13 +441,12 @@ class Experiment(object):
         self.session.location.setrefgeo(47.57917, -122.13232, 2.00000)
         self.session.location.refscale = 150.0
         self.session.emane.loadmodels()
-        self.net = self.session.add_object(cls=EmaneNode, objid=numnodes + 1, name="wlan1")
+        self.net = self.session.create_node(cls=EmaneNode, _id=numnodes + 1, name="wlan1")
         self.net.verbose = verbose
         # self.session.emane.addobj(self.net)
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=nodes.CoreNode, objid=i,
-                                          name="n%d" % i)
+            tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
             # tmp.setposition(i * 20, 50, None)
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])
@@ -455,13 +455,13 @@ class Experiment(object):
 
         if values is None:
             values = cls.getdefaultvalues()
-        self.session.emane.setconfig(self.net.objid, cls.name, values)
+        self.session.emane.setconfig(self.net.id, cls.name, values)
         self.session.instantiate()
 
         self.info("waiting %s sec (TAP bring-up)" % 2)
         time.sleep(2)
 
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             tmp = self.nodes[i - 1]
             self.session.services.boot_services(tmp)
             self.staticroutes(i, prefix, numnodes)
@@ -496,7 +496,7 @@ class Experiment(object):
                 self.warn("failed to add interface route: %s" % cmd)
 
         # add static routes to all other nodes via left/right neighbors
-        for j in xrange(1, numnodes + 1):
+        for j in range(1, numnodes + 1):
             if abs(j - i) < 2:
                 continue
             addr = "%s" % prefix.addr(j)
@@ -525,7 +525,7 @@ class Experiment(object):
                                    otachannel=None)
             old = False
 
-        for i in xrange(1, numnodes + 1):
+        for i in range(1, numnodes + 1):
             rxnem = i
             # inform rxnem that it can hear node to the left with 10dB noise
             txnem = rxnem - 1

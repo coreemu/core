@@ -119,13 +119,13 @@ class FileUpdater(object):
             search = "emane_models ="
         elif target == "nodetype":
             if self.options.userpath is None:
-                raise ValueError, "missing user path"
+                raise ValueError("missing user path")
             filename = os.path.join(self.options.userpath, "nodes.conf")
             search = self.data
         else:
-            raise ValueError, "unknown target"
+            raise ValueError("unknown target")
         if not os.path.exists(filename):
-            raise ValueError, "file %s does not exist" % filename
+            raise ValueError("file %s does not exist" % filename)
         return search, filename
 
     def update_file(self, fn=None):
@@ -236,7 +236,7 @@ def main():
     try:
         up = FileUpdater(action, target, data, options)
         r = up.process()
-    except Exception, e:
+    except Exception as e:
         sys.stderr.write("Exception: %s\n" % e)
         sys.exit(1)
     if not r:

@@ -3,8 +3,8 @@ import os
 
 from lxml import etree
 
-from core.misc import utils
-from core.misc.ipaddress import MacAddress
+from core import utils
+from core.nodes.ipaddress import MacAddress
 from core.xml import corexml
 
 _hwaddr_prefix = "02:02"
@@ -101,7 +101,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     Create platform xml for a specific node.
 
     :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane configurations
-    :param core.netns.nodes.CtrlNet control_net: control net node for this emane network
+    :param core.nodes.network.CtrlNet control_net: control net node for this emane network
     :param core.emane.nodes.EmaneNode node: node to write platform xml for
     :param int nem_id: nem id to use for interfaces for this node
     :param dict platform_xmls: stores platform xml elements to append nem entries to
@@ -112,7 +112,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     nem_entries = {}
 
     if node.model is None:
-        logging.warn("warning: EmaneNode %s has no associated model", node.name)
+        logging.warning("warning: EmaneNode %s has no associated model", node.name)
         return nem_entries
 
     for netif in node.netifs():
@@ -121,7 +121,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         nem_element = etree.Element("nem", id=str(nem_id), name=netif.localname, definition=nem_definition)
 
         # check if this is an external transport, get default config if an interface specific one does not exist
-        config = emane_manager.getifcconfig(node.model.object_id, netif, node.model.name)
+        config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
 
         if is_external(config):
             nem_element.set("transport", "external")
@@ -135,7 +135,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             if not transport_type:
                 logging.info("warning: %s interface type unsupported!", netif.name)
                 transport_type = "raw"
-            transport_file = transport_file_name(node.objid, transport_type)
+            transport_file = transport_file_name(node.id, transport_type)
             transport_element = etree.SubElement(nem_element, "transport", definition=transport_file)
 
             # add transport parameter
@@ -145,7 +145,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         nem_entries[netif] = nem_element
 
         # merging code
-        key = netif.node.objid
+        key = netif.node.id
         if netif.transport_type == "raw":
             key = "host"
             otadev = control_net.brname
@@ -214,7 +214,7 @@ def build_xml_files(emane_manager, node):
         return
 
     # get model configurations
-    config = emane_manager.get_configs(node.model.object_id, node.model.name)
+    config = emane_manager.get_configs(node.model.id, node.model.name)
     if not config:
         return
 
@@ -229,7 +229,7 @@ def build_xml_files(emane_manager, node):
 
     for netif in node.netifs():
         # check for interface specific emane configuration and write xml files, if needed
-        config = emane_manager.getifcconfig(node.model.object_id, netif, node.model.name)
+        config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
         if config:
             node.model.build_xml_files(config, netif)
 
@@ -267,7 +267,7 @@ def build_transport_xml(emane_manager, node, transport_type):
     add_param(transport_element, "bitrate", "0")
 
     # get emane model cnfiguration
-    config = emane_manager.get_configs(node.objid, node.model.name)
+    config = emane_manager.get_configs(node.id, node.model.name)
     flowcontrol = config.get("flowcontrolenable", "0") == "1"
 
     if "virtual" in transport_type.lower():
@@ -280,7 +280,7 @@ def build_transport_xml(emane_manager, node, transport_type):
             add_param(transport_element, "flowcontrolenable", "on")
 
     doc_name = "transport"
-    file_name = transport_file_name(node.objid, transport_type)
+    file_name = transport_file_name(node.id, transport_type)
     file_path = os.path.join(emane_manager.session.session_dir, file_name)
     create_file(transport_element, doc_name, file_path)
 
@@ -379,10 +379,10 @@ def _basename(emane_model, interface=None):
     :return: basename used for file creation
     :rtype: str
     """
-    name = "n%s" % emane_model.object_id
+    name = "n%s" % emane_model.id
 
     if interface:
-        node_id = interface.node.objid
+        node_id = interface.node.id
         if emane_model.session.emane.getifcconfig(node_id, interface, emane_model.name):
             name = interface.localname.replace(".", "_")
 

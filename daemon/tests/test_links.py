@@ -1,6 +1,6 @@
 from core.emulator.emudata import LinkOptions
-from core.enumerations import NodeTypes
-from core.misc import utils
+from core.emulator.enumerations import NodeTypes
+from core import utils
 
 
 def create_ptp_network(session, ip_prefixes):
@@ -11,7 +11,7 @@ def create_ptp_network(session, ip_prefixes):
     # link nodes to net node
     interface_one = ip_prefixes.create_interface(node_one)
     interface_two = ip_prefixes.create_interface(node_two)
-    session.add_link(node_one.objid, node_two.objid, interface_one, interface_two)
+    session.add_link(node_one.id, node_two.id, interface_one, interface_two)
 
     # instantiate session
     session.instantiate()
@@ -31,7 +31,7 @@ def iperf(from_node, to_node, ip_prefixes):
     vcmd, stdin, stdout, stderr = to_node.client.popen(["iperf", "-s", "-u", "-y", "C"])
     from_node.cmd(["iperf", "-u", "-t", "5", "-c", address])
     to_node.cmd(["killall", "-9", "iperf"])
-    return stdout.read().strip()
+    return stdout.read().decode("utf-8").strip()
 
 
 class TestLinks:
@@ -43,7 +43,7 @@ class TestLinks:
         inteface_two = ip_prefixes.create_interface(node_two)
 
         # when
-        session.add_link(node_one.objid, node_two.objid, interface_one, inteface_two)
+        session.add_link(node_one.id, node_two.id, interface_one, inteface_two)
 
         # then
         assert node_one.netif(interface_one.id)
@@ -56,7 +56,7 @@ class TestLinks:
         interface_one = ip_prefixes.create_interface(node_one)
 
         # when
-        session.add_link(node_one.objid, node_two.objid, interface_one)
+        session.add_link(node_one.id, node_two.id, interface_one)
 
         # then
         assert node_two.all_link_data(0)
@@ -69,7 +69,7 @@ class TestLinks:
         interface_two = ip_prefixes.create_interface(node_two)
 
         # when
-        session.add_link(node_one.objid, node_two.objid, interface_two=interface_two)
+        session.add_link(node_one.id, node_two.id, interface_two=interface_two)
 
         # then
         assert node_one.all_link_data(0)
@@ -81,7 +81,7 @@ class TestLinks:
         node_two = session.add_node(_type=NodeTypes.SWITCH)
 
         # when
-        session.add_link(node_one.objid, node_two.objid)
+        session.add_link(node_one.id, node_two.id)
 
         # then
         assert node_one.all_link_data(0)
@@ -91,7 +91,7 @@ class TestLinks:
         node_one = session.add_node()
         node_two = session.add_node(_type=NodeTypes.SWITCH)
         interface_one = ip_prefixes.create_interface(node_one)
-        session.add_link(node_one.objid, node_two.objid, interface_one)
+        session.add_link(node_one.id, node_two.id, interface_one)
         interface = node_one.netif(interface_one.id)
         output = utils.check_cmd(["tc", "qdisc", "show", "dev", interface.localname])
         assert "delay" not in output
@@ -105,7 +105,7 @@ class TestLinks:
         link_options.bandwidth = 5000000
         link_options.per = 25
         link_options.dup = 25
-        session.update_link(node_one.objid, node_two.objid,
+        session.update_link(node_one.id, node_two.id,
                             interface_one_id=interface_one.id, link_options=link_options)
 
         # then
@@ -121,12 +121,12 @@ class TestLinks:
         node_two = session.add_node()
         interface_one = ip_prefixes.create_interface(node_one)
         interface_two = ip_prefixes.create_interface(node_two)
-        session.add_link(node_one.objid, node_two.objid, interface_one, interface_two)
+        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
         assert node_one.netif(interface_one.id)
         assert node_two.netif(interface_two.id)
 
         # when
-        session.delete_link(node_one.objid, node_two.objid, interface_one.id, interface_two.id)
+        session.delete_link(node_one.id, node_two.id, interface_one.id, interface_two.id)
 
         # then
         assert not node_one.netif(interface_one.id)
@@ -155,7 +155,7 @@ class TestLinks:
         # change bandwidth in bits per second
         link_options = LinkOptions()
         link_options.bandwidth = 500000
-        session.update_link(node_one.objid, node_two.objid, link_options=link_options)
+        session.update_link(node_one.id, node_two.id, link_options=link_options)
 
         # run iperf again
         stdout = iperf(node_one, node_two, ip_prefixes)
@@ -186,7 +186,7 @@ class TestLinks:
         # change bandwidth in bits per second
         link_options = LinkOptions()
         link_options.per = 50
-        session.update_link(node_one.objid, node_two.objid, link_options=link_options)
+        session.update_link(node_one.id, node_two.id, link_options=link_options)
 
         # run iperf again
         stdout = iperf(node_one, node_two, ip_prefixes)
@@ -216,7 +216,7 @@ class TestLinks:
         # change delay in microseconds
         link_options = LinkOptions()
         link_options.delay = 1000000
-        session.update_link(node_one.objid, node_two.objid, link_options=link_options)
+        session.update_link(node_one.id, node_two.id, link_options=link_options)
 
         # run ping for delay information again
         stdout = ping_output(node_one, node_two, ip_prefixes)
@@ -249,7 +249,7 @@ class TestLinks:
         # change jitter in microseconds
         link_options = LinkOptions()
         link_options.jitter = 1000000
-        session.update_link(node_one.objid, node_two.objid, link_options=link_options)
+        session.update_link(node_one.id, node_two.id, link_options=link_options)
 
         # run iperf again
         stdout = iperf(node_one, node_two, ip_prefixes)

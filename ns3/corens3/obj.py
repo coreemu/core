@@ -17,14 +17,13 @@ import ns.wifi
 import ns.wimax
 
 from core import constants
-from core.coreobj import PyCoreNet
-from core.enumerations import EventTypes
-from core.enumerations import LinkTypes
-from core.enumerations import NodeTypes
-from core.misc.utils import make_tuple
-from core.mobility import WayPointMobility
-from core.netns.nodes import CoreNode
-from core.session import Session
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.utils import make_tuple
+from core.location.mobility import WayPointMobility
+from core.nodes.base import CoreNode, CoreNetworkBase
+from core.emulator.session import Session
 
 ns.core.GlobalValue.Bind(
     "SimulatorImplementationType",
@@ -46,9 +45,9 @@ class CoreNs3Node(CoreNode, ns.network.Node):
     def __init__(self, *args, **kwds):
         ns.network.Node.__init__(self)
         # ns-3 ID starts at 0, CORE uses 1
-        objid = self.GetId() + 1
-        if 'objid' not in kwds:
-            kwds['objid'] = objid
+        _id = self.GetId() + 1
+        if '_id' not in kwds:
+            kwds['_id'] = _id
         CoreNode.__init__(self, *args, **kwds)
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
@@ -107,7 +106,7 @@ class CoreNs3Node(CoreNode, ns.network.Node):
             self.warn("ns-3 mobility model not found, not setting position")
 
 
-class CoreNs3Net(PyCoreNet):
+class CoreNs3Net(CoreNetworkBase):
     """
     The CoreNs3Net is a helper PyCoreNet object. Networks are represented
     entirely in simulation with the TunTap device bridging the emulated and
@@ -118,8 +117,8 @@ class CoreNs3Net(PyCoreNet):
     # icon used
     type = "wlan"
 
-    def __init__(self, session, objid=None, name=None, start=True, policy=None):
-        PyCoreNet.__init__(self, session, objid, name)
+    def __init__(self, session, _id=None, name=None, start=True, policy=None):
+        CoreNetworkBase.__init__(self, session, _id, name)
         self.tapbridge = ns.tap_bridge.TapBridgeHelper()
         self._ns3devs = {}
         self._tapdevs = {}
@@ -330,7 +329,7 @@ class Ns3WimaxNet(CoreNs3Net):
         netif1, ns3dev1 = self.findns3dev(node1)
         netif2, ns3dev2 = self.findns3dev(node2)
         if not netif1 or not netif2:
-            raise ValueError, "interface not found"
+            raise ValueError("interface not found")
         addr1, mask1 = self.ipv4netifaddr(netif1)
         addr2, mask2 = self.ipv4netifaddr(netif2)
         clargs1 = (addr1, mask1, addr2, mask2) + downclass
@@ -402,7 +401,7 @@ class Ns3Session(Session):
         A convenience helper for Session.addobj(), for adding CoreNs3Nodes
         to this session. Keeps a NodeContainer for later use.
         """
-        n = self.add_object(cls=CoreNs3Node, name=name)
+        n = self.create_node(cls=CoreNs3Node, name=name)
         self.nodes.Add(n)
         return n
 
@@ -480,7 +479,7 @@ class Ns3Session(Session):
                 node.position.set(x, y, z)
                 node_data = node.data(0)
                 self.broadcast_node(node_data)
-                self.sdt.updatenode(node.objid, flags=0, x=x, y=y, z=z)
+                self.sdt.updatenode(node.id, flags=0, x=x, y=y, z=z)
             time.sleep(0.001 * refresh_ms)
 
     def setupmobilitytracing(self, net, filename, nodes):
@@ -488,11 +487,11 @@ class Ns3Session(Session):
         Start a tracing thread using the ASCII output from the ns3
         mobility helper.
         """
-        net.mobility = WayPointMobility(session=self, object_id=net.objid)
+        net.mobility = WayPointMobility(session=self, _id=net.id)
         net.mobility.setendtime()
         net.mobility.refresh_ms = 300
         net.mobility.empty_queue_stop = False
-        of = ns.network.OutputStreamWrapper(filename, filemode=777)
+        of = ns.network.OutputStreamWrapper(filename, filemode=0o777)
         self.mobhelper.EnableAsciiAll(of)
         self.mobilitytracethread = threading.Thread(
             target=self.mobilitytrace,
@@ -533,8 +532,7 @@ class Ns3Session(Session):
                 x, y, z = map(float, items['pos'].split(':'))
                 vel = map(float, items['vel'].split(':'))
                 node = nodemap[int(items['node'])]
-                net.mobility.addwaypoint(time=0, nodenum=node.objid,
-                                         x=x, y=y, z=z, speed=vel)
+                net.mobility.addwaypoint(time=0, nodenum=node.id, x=x, y=y, z=z, speed=vel)
                 if kickstart:
                     kickstart = False
                     self.event_loop.add_event(0, net.mobility.start)

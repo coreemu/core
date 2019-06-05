@@ -18,6 +18,8 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
+import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.util.*;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
@@ -527,7 +529,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .build();
         try {
             CoreProto.GetNodeServiceFileResponse response = blockingStub.getNodeServiceFile(request);
-            return response.getData().toStringUtf8();
+            return response.getData();
         } catch (StatusRuntimeException ex) {
             throw new IOException(ex);
         }
@@ -600,7 +602,7 @@ public class CoreGrpcClient implements ICoreClient {
                 .setNodeId(node.getId())
                 .setService(serviceName)
                 .setFile(serviceFile.getName())
-                .setData(ByteString.copyFromUtf8(serviceFile.getData()))
+                .setData(serviceFile.getData())
                 .build();
         try {
             CoreProto.SetNodeServiceFileResponse response = blockingStub.setNodeServiceFile(request);
@@ -696,7 +698,7 @@ public class CoreGrpcClient implements ICoreClient {
         try {
             CoreProto.SaveXmlResponse response = blockingStub.saveXml(request);
             try (PrintWriter writer = new PrintWriter(file)) {
-                writer.print(response.getData().toStringUtf8());
+                writer.print(response.getData());
             }
         } catch (StatusRuntimeException ex) {
             throw new IOException(ex);
@@ -705,16 +707,18 @@ public class CoreGrpcClient implements ICoreClient {
 
     @Override
     public SessionOverview openSession(File file) throws IOException {
-        ByteString data = ByteString.readFrom(new FileInputStream(file));
-        CoreProto.OpenXmlRequest request = CoreProto.OpenXmlRequest.newBuilder()
-                .setData(data)
-                .build();
         try {
+            byte[] encoded = Files.readAllBytes(file.toPath());
+            String data = new String(encoded, StandardCharsets.UTF_8);
+            CoreProto.OpenXmlRequest request = CoreProto.OpenXmlRequest.newBuilder()
+                    .setData(data)
+                    .build();
+
             CoreProto.OpenXmlResponse response = blockingStub.openXml(request);
             SessionOverview sessionOverview = new SessionOverview();
             sessionOverview.setId(response.getSessionId());
             return sessionOverview;
-        } catch (StatusRuntimeException ex) {
+        } catch (IOException | StatusRuntimeException ex) {
             throw new IOException(ex);
         }
     }
@@ -873,7 +877,7 @@ public class CoreGrpcClient implements ICoreClient {
     public boolean createHook(Hook hook) throws IOException {
         CoreProto.Hook hookProto = CoreProto.Hook.newBuilder()
                 .setStateValue(hook.getState())
-                .setData(ByteString.copyFromUtf8(hook.getData()))
+                .setData(hook.getData())
                 .setFile(hook.getFile())
                 .build();
         CoreProto.AddHookRequest request = CoreProto.AddHookRequest.newBuilder()
@@ -896,7 +900,7 @@ public class CoreGrpcClient implements ICoreClient {
             for (CoreProto.Hook protoHook : response.getHooksList()) {
                 Hook hook = new Hook();
                 hook.setFile(protoHook.getFile());
-                hook.setData(protoHook.getData().toStringUtf8());
+                hook.setData(protoHook.getData());
                 hook.setState(protoHook.getStateValue());
                 hooks.add(hook);
             }
@@ -1193,7 +1197,7 @@ public class CoreGrpcClient implements ICoreClient {
             // mobility script event
         } else if (state.getValue() <= 9) {
             Integer nodeId = event.getNodeId();
-            String[] values = event.getData().toStringUtf8().split("\\s+");
+            String[] values = event.getData().split("\\s+");
             Integer start = Integer.parseInt(values[0].split("=")[1]);
             Integer end = Integer.parseInt(values[1].split("=")[1]);
             logger.info(String.format("node(%s) mobility event (%s) - start(%s) stop(%s)",

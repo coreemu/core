@@ -1,5 +1,9 @@
+configparser==3.7.4
 enum34==1.1.6
+future==0.17.1
 futures==3.2.0
-grpcio==1.18.0
-lxml==3.5.0
+grpcio==1.21.1
+grpcio-tools==1.21.1
+lxml==4.3.3
+protobuf==3.8.0
 six==1.12.0

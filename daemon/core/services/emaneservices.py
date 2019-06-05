@@ -1,6 +1,6 @@
-from core.enumerations import NodeTypes
-from core.misc import nodeutils
-from core.service import CoreService
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils
+from core.services.coreservices import CoreService
 from core.xml import emanexml
 
 
@@ -21,9 +21,9 @@ class EmaneTransportService(CoreService):
         if filename == cls.configs[0]:
             transport_commands = []
             for interface in node.netifs(sort=True):
-                network_node = node.session.get_object(interface.net.objid)
+                network_node = node.session.get_node(interface.net.id)
                 if nodeutils.is_node(network_node, NodeTypes.EMANE):
-                    config = node.session.emane.get_configs(network_node.objid, network_node.model.name)
+                    config = node.session.emane.get_configs(network_node.id, network_node.model.name)
                     if config and emanexml.is_external(config):
                         nem_id = network_node.getnemid(interface)
                         command = "emanetransportd -r -l 0 -d ../transportdaemon%s.xml" % nem_id
@@ -32,6 +32,6 @@ class EmaneTransportService(CoreService):
             return """
 emanegentransportxml -o ../ ../platform%s.xml
 %s
-""" % (node.objid, transport_commands)
+""" % (node.id, transport_commands)
         else:
             raise ValueError

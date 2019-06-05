@@ -6,7 +6,7 @@ firewall)
 import logging
 
 from core import constants
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 
 class VPNClient(CoreService):

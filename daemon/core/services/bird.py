@@ -2,7 +2,7 @@
 bird.py: defines routing services provided by the BIRD Internet Routing Daemon.
 """
 
-from core.service import CoreService
+from core.services.coreservices import CoreService
 
 
 class Bird(CoreService):

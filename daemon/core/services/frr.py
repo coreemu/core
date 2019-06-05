@@ -4,10 +4,9 @@ Assumes installation of FRR via https://deb.frrouting.org/
 """
 
 from core import constants
-from core.enumerations import LinkTypes, NodeTypes
-from core.misc import ipaddress
-from core.misc import nodeutils
-from core.service import CoreService
+from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.nodes import nodeutils, ipaddress
+from core.services.coreservices import CoreService
 
 
 class FRRZebra(CoreService):
@@ -525,7 +524,7 @@ class FRRBgp(FrrService):
         cfg = "!\n! BGP configuration\n!\n"
         cfg += "! You should configure the AS number below,\n"
         cfg += "! along with this router's peers.\n!\n"
-        cfg += "router bgp %s\n" % node.objid
+        cfg += "router bgp %s\n" % node.id
         rtrid = cls.routerid(node)
         cfg += "  bgp router-id %s\n" % rtrid
         cfg += "  redistribute connected\n"

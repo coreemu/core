@@ -42,7 +42,10 @@ setup(
     version="@PACKAGE_VERSION@",
     packages=find_packages(),
     install_requires=[
+        "configparser",
         "enum34",
+        "future",
+        "grpcio",
         "lxml"
     ],
     tests_require=[

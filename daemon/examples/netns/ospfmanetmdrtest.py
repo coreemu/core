@@ -13,16 +13,16 @@ import os
 import random
 import sys
 import time
+from builtins import range
 from string import Template
 
+import core.nodes.base
+import core.nodes.network
 from core.constants import QUAGGA_STATE_DIR
-
-from core.misc import ipaddress
-from core.misc.utils import check_cmd
-from core.netns import nodes
-
 # this is the /etc/core/core.conf default
-from core.session import Session
+from core.emulator.session import Session
+from core.nodes import ipaddress
+from core.utils import check_cmd
 
 quagga_sbin_search = ("/usr/local/sbin", "/usr/sbin", "/usr/lib/quagga")
 quagga_path = "zebra"
@@ -39,7 +39,7 @@ except OSError:
     sys.exit(1)
 
 
-class ManetNode(nodes.LxcNode):
+class ManetNode(core.nodes.base.CoreNode):
     """ An Lxc namespace node configured for Quagga OSPFv3 MANET MDR
     """
     conftemp = Template("""\
@@ -64,12 +64,12 @@ ip forwarding
     confdir = "/usr/local/etc/quagga"
 
     def __init__(self, core, ipaddr, routerid=None,
-                 objid=None, name=None, nodedir=None):
+                 _id=None, name=None, nodedir=None):
         if routerid is None:
             routerid = ipaddr.split("/")[0]
         self.ipaddr = ipaddr
         self.routerid = routerid
-        nodes.LxcNode.__init__(self, core, objid, name, nodedir)
+        core.nodes.base.CoreBaseNode.__init__(self, core, _id, name, nodedir)
         self.privatedir(self.confdir)
         self.privatedir(QUAGGA_STATE_DIR)
 
@@ -84,7 +84,7 @@ ip forwarding
         f.close()
         tmp = self.bootscript()
         if tmp:
-            self.nodefile(self.bootsh, tmp, mode=0755)
+            self.nodefile(self.bootsh, tmp, mode=0o755)
 
     def boot(self):
         self.config()
@@ -129,9 +129,8 @@ class Route(object):
     def __init__(self, prefix=None, gw=None, metric=None):
         try:
             self.prefix = ipaddress.Ipv4Prefix(prefix)
-        except Exception, e:
-            raise ValueError, "Invalid prefix given to Route object: %s\n%s" % \
-                              (prefix, e)
+        except Exception as e:
+            raise ValueError("Invalid prefix given to Route object: %s\n%s" % (prefix, e))
         self.gw = gw
         self.metric = metric
 
@@ -171,13 +170,13 @@ class ManetExperiment(object):
 
     def info(self, msg):
         ''' Utility method for writing output to stdout. '''
-        print msg
+        print(msg)
         sys.stdout.flush()
         self.log(msg)
 
     def warn(self, msg):
         ''' Utility method for writing output to stderr. '''
-        print >> sys.stderr, msg
+        sys.stderr.write(msg)
         sys.stderr.flush()
         self.log(msg)
 
@@ -204,7 +203,7 @@ class ManetExperiment(object):
         """ Write to the log file, if any. """
         if not self.logfp:
             return
-        print >> self.logfp, msg
+        self.logfp.write(msg)
 
     def logdata(self, nbrs, mdrs, lsdbs, krs, zrs):
         """ Dump experiment parameters and data to the log file. """
@@ -243,15 +242,15 @@ class ManetExperiment(object):
         prefix = ipaddress.Ipv4Prefix("10.14.0.0/16")
         self.session = Session(1)
         # emulated network
-        self.net = self.session.add_object(cls=nodes.WlanNode)
-        for i in xrange(1, numnodes + 1):
+        self.net = self.session.create_node(cls=core.nodes.network.WlanNode)
+        for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.add_object(cls=ManetNode, ipaddr=addr, objid="%d" % i, name="n%d" % i)
+            tmp = self.session.create_node(cls=ManetNode, ipaddr=addr, _id="%d" % i, name="n%d" % i)
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
         # connect nodes with probability linkprob
-        for i in xrange(numnodes):
-            for j in xrange(i + 1, numnodes):
+        for i in range(numnodes):
+            for j in range(i + 1, numnodes):
                 r = random.random()
                 if r < linkprob:
                     if self.verbose:
@@ -266,7 +265,7 @@ class ManetExperiment(object):
             self.net.link(self.nodes[i].netif(0), self.nodes[j].netif(0))
             self.nodes[i].boot()
         # run the boot.sh script on all nodes to start Quagga
-        for i in xrange(numnodes):
+        for i in range(numnodes):
             self.nodes[i].cmd(["./%s" % self.nodes[i].bootsh])
 
     def compareroutes(self, node, kr, zr):
@@ -368,12 +367,12 @@ class Cmd:
 
     def info(self, msg):
         ''' Utility method for writing output to stdout.'''
-        print msg
+        print(msg)
         sys.stdout.flush()
 
     def warn(self, msg):
         ''' Utility method for writing output to stderr. '''
-        print >> sys.stderr, "XXX %s:" % self.node.routerid, msg
+        sys.stderr.write("XXX %s:" % self.node.routerid, msg)
         sys.stderr.flush()
 
     def run(self):
@@ -473,7 +472,7 @@ class ZebraRoutes(VtyshCmd):
     args = "show ip route"
 
     def parse(self):
-        for i in xrange(0, 3):
+        for i in range(0, 3):
             # skip first three lines
             self.out.readline()
         r = []

@@ -1,20 +1,20 @@
 import logging
-
+from core.nodes.base import CoreNetworkBase
 from lxml import etree
 
-from core import coreobj
+import core.nodes.base
+import core.nodes.physical
 from core.emulator.emudata import InterfaceData
 from core.emulator.emudata import LinkOptions
 from core.emulator.emudata import NodeOptions
-from core.enumerations import NodeTypes
-from core.misc import nodeutils
-from core.misc.ipaddress import MacAddress
-from core.netns import nodes
+from core.emulator.enumerations import NodeTypes
+from core.nodes import nodeutils
+from core.nodes.ipaddress import MacAddress
 
 
 def write_xml_file(xml_element, file_path, doctype=None):
     xml_data = etree.tostring(xml_element, xml_declaration=True, pretty_print=True, encoding="UTF-8", doctype=doctype)
-    with open(file_path, "w") as xml_file:
+    with open(file_path, "wb") as xml_file:
         xml_file.write(xml_data)
 
 
@@ -103,7 +103,7 @@ class NodeElement(object):
         self.session = session
         self.node = node
         self.element = etree.Element(element_name)
-        add_attribute(self.element, "id", node.objid)
+        add_attribute(self.element, "id", node.id)
         add_attribute(self.element, "name", node.name)
         add_attribute(self.element, "icon", node.icon)
         add_attribute(self.element, "canvas", node.canvas)
@@ -149,7 +149,8 @@ class ServiceElement(object):
     def add_files(self):
         # get custom files
         file_elements = etree.Element("files")
-        for file_name, data in self.service.config_data.iteritems():
+        for file_name in self.service.config_data:
+            data = self.service.config_data[file_name]
             file_element = etree.SubElement(file_elements, "file")
             add_attribute(file_element, "name", file_name)
             file_element.text = data
@@ -292,7 +293,9 @@ class CoreXmlWriter(object):
         if not options_config:
             return
 
-        for _id, default_value in self.session.options.default_values().iteritems():
+        default_options = self.session.options.default_values()
+        for _id in default_options:
+            default_value = default_options[_id]
             # TODO: should we just save the current config regardless, since it may change?
             value = options_config[_id]
             if value != default_value:
@@ -308,7 +311,8 @@ class CoreXmlWriter(object):
         if not config:
             return
 
-        for _id, value in config.iteritems():
+        for _id in config:
+            value = config[_id]
             add_configuration(metadata_elements, _id, value)
 
         if metadata_elements.getchildren():
@@ -321,7 +325,8 @@ class CoreXmlWriter(object):
             if not all_configs:
                 continue
 
-            for model_name, config in all_configs.iteritems():
+            for model_name in all_configs:
+                config = all_configs[model_name]
                 logging.info("writing emane config node(%s) model(%s)", node_id, model_name)
                 if model_name == -1:
                     emane_configuration = create_emane_config(node_id, self.session.emane.emane_config, config)
@@ -340,12 +345,14 @@ class CoreXmlWriter(object):
             if not all_configs:
                 continue
 
-            for model_name, config in all_configs.iteritems():
+            for model_name in all_configs:
+                config = all_configs[model_name]
                 logging.info("writing mobility config node(%s) model(%s)", node_id, model_name)
                 mobility_configuration = etree.SubElement(mobility_configurations, "mobility_configuration")
                 add_attribute(mobility_configuration, "node", node_id)
                 add_attribute(mobility_configuration, "model", model_name)
-                for name, value in config.iteritems():
+                for name in config:
+                    value = config[name]
                     add_configuration(mobility_configuration, name, value)
 
         if mobility_configurations.getchildren():
@@ -364,7 +371,8 @@ class CoreXmlWriter(object):
 
     def write_default_services(self):
         node_types = etree.Element("default_services")
-        for node_type, services in self.session.services.default_services.iteritems():
+        for node_type in self.session.services.default_services:
+            services = self.session.services.default_services[node_type]
             node_type = etree.SubElement(node_types, "node", type=node_type)
             for service in services:
                 etree.SubElement(node_type, "service", name=service)
@@ -377,13 +385,18 @@ class CoreXmlWriter(object):
         self.devices = etree.SubElement(self.scenario, "devices")
 
         links = []
-        for node in self.session.objects.itervalues():
+        for node_id in self.session.nodes:
+            node = self.session.nodes[node_id]
             # network node
-            if isinstance(node, (coreobj.PyCoreNet, nodes.RJ45Node)) and not nodeutils.is_node(node, NodeTypes.CONTROL_NET):
+            is_network_or_rj45 = isinstance(node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node))
+            is_controlnet = nodeutils.is_node(node, NodeTypes.CONTROL_NET)
+            if is_network_or_rj45 and not is_controlnet:
                 self.write_network(node)
             # device node
-            elif isinstance(node, nodes.PyCoreNode):
+            elif isinstance(node, core.nodes.base.CoreNodeBase):
                 self.write_device(node)
+            else:
+                logging.error("unknown node: %s", node)
 
             # add known links
             links.extend(node.all_link_data(0))
@@ -393,15 +406,8 @@ class CoreXmlWriter(object):
     def write_network(self, node):
         # ignore p2p and other nodes that are not part of the api
         if not node.apitype:
+            logging.warning("ignoring node with no apitype: %s", node)
             return
-
-        # ignore nodes tied to a different network
-        if nodeutils.is_node(node, (NodeTypes.SWITCH, NodeTypes.HUB)):
-            for netif in node.netifs(sort=True):
-                othernet = getattr(netif, "othernet", None)
-                if othernet and othernet.objid != node.objid:
-                    logging.info("writer ignoring node(%s) othernet(%s)", node.name, othernet.name)
-                    return
 
         network = NetworkElement(self.session, node)
         self.networks.append(network.element)
@@ -424,6 +430,29 @@ class CoreXmlWriter(object):
         device = DeviceElement(self.session, node)
         self.devices.append(device.element)
 
+    def create_interface_element(self, element_name, node_id, interface_id, mac, ip4, ip4_mask, ip6, ip6_mask):
+        interface = etree.Element(element_name)
+        node = self.session.get_node(node_id)
+        interface_name = None
+        if not isinstance(node, CoreNetworkBase):
+            node_interface = node.netif(interface_id)
+            interface_name = node_interface.name
+
+            # check if emane interface
+            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
+                nem = node_interface.net.getnemid(node_interface)
+                add_attribute(interface, "nem", nem)
+
+        add_attribute(interface, "id", interface_id)
+        add_attribute(interface, "name", interface_name)
+        add_attribute(interface, "mac", mac)
+        add_attribute(interface, "ip4", ip4)
+        add_attribute(interface, "ip4_mask", ip4_mask)
+        add_attribute(interface, "ip6", ip6)
+        add_attribute(interface, "ip6_mask", ip6_mask)
+
+        return interface
+
     def create_link_element(self, link_data):
         link_element = etree.Element("link")
         add_attribute(link_element, "node_one", link_data.node1_id)
@@ -431,44 +460,30 @@ class CoreXmlWriter(object):
 
         # check for interface one
         if link_data.interface1_id is not None:
-            interface_one = etree.Element("interface_one")
-            node = self.session.get_object(link_data.node1_id)
-            node_interface = node.netif(link_data.interface1_id)
-
-            add_attribute(interface_one, "id", link_data.interface1_id)
-            add_attribute(interface_one, "name", node_interface.name)
-            add_attribute(interface_one, "mac", link_data.interface1_mac)
-            add_attribute(interface_one, "ip4", link_data.interface1_ip4)
-            add_attribute(interface_one, "ip4_mask", link_data.interface1_ip4_mask)
-            add_attribute(interface_one, "ip6", link_data.interface1_ip6)
-            add_attribute(interface_one, "ip6_mask", link_data.interface1_ip6_mask)
-
-            # check if emane interface
-            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
-                nem = node_interface.net.getnemid(node_interface)
-                add_attribute(interface_one, "nem", nem)
-
+            interface_one = self.create_interface_element(
+                "interface_one",
+                link_data.node1_id,
+                link_data.interface1_id,
+                link_data.interface1_mac,
+                link_data.interface1_ip4,
+                link_data.interface1_ip4_mask,
+                link_data.interface1_ip6,
+                link_data.interface1_ip6_mask
+            )
             link_element.append(interface_one)
 
         # check for interface two
         if link_data.interface2_id is not None:
-            interface_two = etree.Element("interface_two")
-            node = self.session.get_object(link_data.node2_id)
-            node_interface = node.netif(link_data.interface2_id)
-
-            add_attribute(interface_two, "id", link_data.interface2_id)
-            add_attribute(interface_two, "name", node_interface.name)
-            add_attribute(interface_two, "mac", link_data.interface2_mac)
-            add_attribute(interface_two, "ip4", link_data.interface2_ip4)
-            add_attribute(interface_two, "ip4_mask", link_data.interface2_ip4_mask)
-            add_attribute(interface_two, "ip6", link_data.interface2_ip6)
-            add_attribute(interface_two, "ip6_mask", link_data.interface2_ip6_mask)
-
-            # check if emane interface
-            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
-                nem = node_interface.net.getnemid(node_interface)
-                add_attribute(interface_two, "nem", nem)
-
+            interface_two = self.create_interface_element(
+                "interface_two",
+                link_data.node2_id,
+                link_data.interface2_id,
+                link_data.interface2_mac,
+                link_data.interface2_ip4,
+                link_data.interface2_ip4_mask,
+                link_data.interface2_ip6,
+                link_data.interface2_ip6_mask
+            )
             link_element.append(interface_two)
 
         # check for options
@@ -699,8 +714,8 @@ class CoreXmlReader(object):
 
         position_element = device_element.find("position")
         if position_element is not None:
-            x = get_float(position_element, "x")
-            y = get_float(position_element, "y")
+            x = get_int(position_element, "x")
+            y = get_int(position_element, "y")
             if all([x, y]):
                 node_options.set_position(x, y)
 
@@ -721,8 +736,8 @@ class CoreXmlReader(object):
 
         position_element = network_element.find("position")
         if position_element is not None:
-            x = get_float(position_element, "x")
-            y = get_float(position_element, "y")
+            x = get_int(position_element, "x")
+            y = get_int(position_element, "y")
             if all([x, y]):
                 node_options.set_position(x, y)
 

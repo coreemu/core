@@ -4,11 +4,11 @@ Defines Emane Models used within CORE.
 import logging
 import os
 
-from core.conf import ConfigGroup
-from core.conf import Configuration
+from core.config import ConfigGroup
+from core.config import Configuration
 from core.emane import emanemanifest
-from core.enumerations import ConfigDataTypes
-from core.mobility import WirelessModel
+from core.emulator.enumerations import ConfigDataTypes
+from core.location.mobility import WirelessModel
 from core.xml import emanexml
 
 
@@ -105,7 +105,7 @@ class EmaneModel(WirelessModel):
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_name = emanexml.transport_file_name(self.object_id, transport_type)
+        transport_name = emanexml.transport_file_name(self.id, transport_type)
 
         # create nem xml file
         nem_file = os.path.join(self.session.session_dir, nem_name)
@@ -138,7 +138,7 @@ class EmaneModel(WirelessModel):
         :return:
         """
         try:
-            wlan = self.session.get_object(self.object_id)
+            wlan = self.session.get_node(self.id)
             wlan.setnempositions(moved_netifs)
         except KeyError:
             logging.exception("error during update")
@@ -156,4 +156,4 @@ class EmaneModel(WirelessModel):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        logging.warn("emane model(%s) does not support link configuration", self.name)
+        logging.warning("emane model(%s) does not support link configuration", self.name)

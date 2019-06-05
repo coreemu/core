@@ -1,10 +1,10 @@
 """
 EMANE Bypass model for CORE
 """
-from core.conf import ConfigGroup
-from core.conf import Configuration
+from core.config import ConfigGroup
+from core.config import Configuration
 from core.emane import emanemodel
-from core.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneBypassModel(emanemodel.EmaneModel):

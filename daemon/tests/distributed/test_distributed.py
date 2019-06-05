@@ -4,12 +4,12 @@ Unit tests for testing CORE with distributed networks.
 
 import conftest
 
-from core.api.coreapi import CoreExecMessage
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import MessageFlags
-from core.enumerations import NodeTypes
-from core.misc.ipaddress import IpAddress
+from core.api.tlv.coreapi import CoreExecMessage
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import NodeTypes
+from core.nodes.ipaddress import IpAddress
 
 
 def validate_response(replies, _):
@@ -40,7 +40,7 @@ class TestDistributed:
 
         # create local node
         message = conftest.node_message(
-            objid=1,
+            _id=1,
             name="n1",
             model="host"
         )
@@ -48,7 +48,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = conftest.node_message(
-            objid=2,
+            _id=2,
             name="n2",
             emulation_server=cored.distributed_server,
             model="host"
@@ -57,7 +57,7 @@ class TestDistributed:
 
         # create distributed switch and assign to distributed server
         message = conftest.node_message(
-            objid=3,
+            _id=3,
             name="n3",
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.SWITCH
@@ -89,7 +89,7 @@ class TestDistributed:
         cored.request_handler.handle_message(message)
 
         # test a ping command
-        node_one = cored.session.get_object(1)
+        node_one = cored.session.get_node(1)
         message = conftest.command_message(node_one, "ping -c 5 %s" % ip4_address)
         cored.request_handler.dispatch_replies = validate_response
         cored.request_handler.handle_message(message)
@@ -106,7 +106,7 @@ class TestDistributed:
 
         # create local node
         message = conftest.node_message(
-            objid=1,
+            _id=1,
             name="n1",
             model="host"
         )
@@ -114,7 +114,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = conftest.node_message(
-            objid=2,
+            _id=2,
             name="n2",
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.PHYSICAL,
@@ -124,7 +124,7 @@ class TestDistributed:
 
         # create distributed switch and assign to distributed server
         message = conftest.node_message(
-            objid=3,
+            _id=3,
             name="n3",
             node_type=NodeTypes.SWITCH
         )
@@ -155,7 +155,7 @@ class TestDistributed:
         cored.request_handler.handle_message(message)
 
         # test a ping command
-        node_one = cored.session.get_object(1)
+        node_one = cored.session.get_node(1)
         message = conftest.command_message(node_one, "ping -c 5 %s" % ip4_address)
         cored.request_handler.dispatch_replies = validate_response
         cored.request_handler.handle_message(message)
@@ -173,7 +173,7 @@ class TestDistributed:
 
         # create local node
         message = conftest.node_message(
-            objid=1,
+            _id=1,
             name="n1",
             model="host"
         )
@@ -181,7 +181,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = conftest.node_message(
-            objid=2,
+            _id=2,
             name=distributed_address,
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.TUNNEL
