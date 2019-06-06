@@ -65,18 +65,18 @@ def cored(cfg, use_ovs):
         if use_ovs:
             from core.netns.openvswitch import OVS_NODES
             server.coreemu.update_nodes(OVS_NODES)
-
-        # start udp server
-        start_udp(server, address)
-
-        # close handlers
-        close_onexec(server.fileno())
-
-        logging.info("tcp/udp servers started, listening on: %s:%s", host, port)
-        server.serve_forever()
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
+
+    # start udp server
+    start_udp(server, address)
+
+    # close handlers
+    close_onexec(server.fileno())
+
+    logging.info("tcp/udp servers started, listening on: %s:%s", host, port)
+    server.serve_forever()
 
 
 def get_merged_config(filename):
