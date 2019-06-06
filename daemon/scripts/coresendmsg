@@ -186,6 +186,8 @@ def main():
                       help="Listen for a response message and print it.")
     parser.add_option("-t", "--list-tlvs", dest="tlvs", action="store_true",
                       help="List TLVs for the specified message type.")
+    parser.add_option("--tcp", dest="tcp", action="store_true",
+                      help="Use TCP instead of UDP and connect to a session default: %s" % parser.defaults["tcp"])
 
     def usage(msg=None, err=0):
         sys.stdout.write("\n")
@@ -249,7 +251,12 @@ def main():
 
     msg = msg_cls.pack(flags, tlvdata)
 
-    sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    if opt.tcp:
+        protocol = socket.SOCK_STREAM
+    else:
+        protocol = socket.SOCK_DGRAM
+
+    sock = socket.socket(socket.AF_INET, protocol)
     sock.setblocking(True)
 
     try:
@@ -258,7 +265,7 @@ def main():
         print "Error connecting to %s:%s:\n\t%s" % (opt.address, opt.port, e)
         sys.exit(1)
 
-    if not connect_to_session(sock, opt.session):
+    if opt.tcp and not connect_to_session(sock, opt.session):
         print "warning: continuing without joining a session!"
 
     sock.sendall(msg)

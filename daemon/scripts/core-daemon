@@ -9,13 +9,14 @@ import ConfigParser
 import logging
 import optparse
 import sys
+import threading
 import time
 
-from core import load_logging_config
 from core import constants
 from core import enumerations
-from core.corehandlers import CoreHandler
-from core.coreserver import CoreServer
+from core import load_logging_config
+from core.corehandlers import CoreHandler, CoreUdpHandler
+from core.coreserver import CoreServer, CoreUdpServer
 from core.misc.utils import close_onexec
 
 load_logging_config()
@@ -28,6 +29,21 @@ def banner():
     :return: nothing
     """
     logging.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
+
+
+def start_udp(mainserver, server_address):
+    """
+    Start a thread running a UDP server on the same host,port for
+        connectionless requests.
+
+    :param CoreServer mainserver: main core tcp server to piggy back off of
+    :param server_address:
+    :return: CoreUdpServer
+    """
+    mainserver.udpserver = CoreUdpServer(server_address, CoreUdpHandler, mainserver)
+    mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start)
+    mainserver.udpthread.daemon = True
+    mainserver.udpthread.start()
 
 
 def cored(cfg, use_ovs):
@@ -44,17 +60,23 @@ def cored(cfg, use_ovs):
         host = "localhost"
 
     try:
-        server = CoreServer((host, port), CoreHandler, cfg)
+        address = (host, port)
+        server = CoreServer(address, CoreHandler, cfg)
         if use_ovs:
             from core.netns.openvswitch import OVS_NODES
             server.coreemu.update_nodes(OVS_NODES)
+
+        # start udp server
+        start_udp(server, address)
+
+        # close handlers
+        close_onexec(server.fileno())
+
+        logging.info("tcp/udp servers started, listening on: %s:%s", host, port)
+        server.serve_forever()
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
-
-    close_onexec(server.fileno())
-    logging.info("server started, listening on: %s:%s", host, port)
-    server.serve_forever()
 
 
 def get_merged_config(filename):
