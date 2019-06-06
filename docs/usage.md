@@ -69,51 +69,51 @@ The toolbar is a row of buttons that runs vertically along the left side of the 
 
 When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on the left side of the CORE window. Below are brief descriptions for each toolbar item, starting from the top. Most of the tools are grouped into related sub-menus, which appear when you click on their group icon.
 
-* |select| *Selection Tool* - default tool for selecting, moving, configuring nodes
-* |start| *Start button* - starts Execute mode, instantiates the emulation
-* |link| *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
-* |router| *Network-layer virtual nodes*
-  * |router| *Router* - runs Quagga OSPFv2 and OSPFv3 routing to forward packets
-  * |host| *Host* - emulated server machine having a default route, runs SSH server
-  * |pc| *PC* - basic emulated machine having a default route, runs no processes by default
-  * |mdr| *MDR* - runs Quagga OSPFv3 MDR routing for MANET-optimized routing
-  * |router_green| *PRouter* - physical router represents a real testbed machine
-  * |document_properties| *Edit* - edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here.
-* |hub| *Link-layer nodes*
-  * |hub|  *Hub* - the Ethernet hub forwards incoming packets to every connected node
-  * |lanswitch| *Switch* - the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table
-  * |wlan| *Wireless LAN* - when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them
-  * |rj45| *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation
-  * |tunnel| *Tunnel* - the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/select.gif) *Selection Tool* - default tool for selecting, moving, configuring nodes
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/start.gif) *Start button* - starts Execute mode, instantiates the emulation
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/link.gif) *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router.gif) *Network-layer virtual nodes*
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router.gif) *Router* - runs Quagga OSPFv2 and OSPFv3 routing to forward packets
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/host.gif) *Host* - emulated server machine having a default route, runs SSH server
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/pc.gif) *PC* - basic emulated machine having a default route, runs no processes by default
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/mdr.gif) *MDR* - runs Quagga OSPFv3 MDR routing for MANET-optimized routing
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router_green.gif) *PRouter* - physical router represents a real testbed machine
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/document-properties.gif) *Edit* - edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here.
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/hub.gif) *Link-layer nodes*
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/hub.gif)  *Hub* - the Ethernet hub forwards incoming packets to every connected node
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/lanswitch.gif) *Switch* - the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/wlan.gif) *Wireless LAN* - when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/rj45.gif) *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/tunnel.gif) *Tunnel* - the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels
 * *Annotation Tools*
-  * |marker| *Marker* - for drawing marks on the canvas
-  * |oval| *Oval* - for drawing circles on the canvas that appear in the background
-  * |rectangle| *Rectangle* - for drawing rectangles on the canvas that appear in the background
-  * |text| *Text* - for placing text captions on the canvas
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/marker.gif) *Marker* - for drawing marks on the canvas
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/oval.gif) *Oval* - for drawing circles on the canvas that appear in the background
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/rectangle.gif) *Rectangle* - for drawing rectangles on the canvas that appear in the background
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/text.gif) *Text* - for placing text captions on the canvas
 
 ### Execution Toolbar
 
 When the Start button is pressed, CORE switches to Execute mode, and the Edit toolbar on the left of the CORE window is replaced with the Execution toolbar Below are the items on this toolbar, starting from the top.
 
-* |select| *Selection Tool* - in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node
-* |stop| *Stop button* - stops Execute mode, terminates the emulation, returns CORE to edit mode.
-* |observe| *Observer Widgets Tool* - clicking on this magnifying glass icon
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/select.gif) *Selection Tool* - in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/stop.gif) *Stop button* - stops Execute mode, terminates the emulation, returns CORE to edit mode.
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/observe.gif) *Observer Widgets Tool* - clicking on this magnifying glass icon
   invokes a menu for easily selecting an Observer Widget. The icon has a darker
   gray background when an Observer Widget is active, during which time moving
   the mouse over a node will pop up an information display for that node.
-* |plot| *Plot Tool* - with this tool enabled, clicking on any link will
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/plot.gif) *Plot Tool* - with this tool enabled, clicking on any link will
   activate the Throughput Widget and draw a small, scrolling throughput plot
   on the canvas. The plot shows the real-time kbps traffic for that link.
   The plots may be dragged around the canvas; right-click on a
   plot to remove it.
-* |marker| *Marker* - for drawing freehand lines on the canvas, useful during
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/marker.gif) *Marker* - for drawing freehand lines on the canvas, useful during
   demonstrations; markings are not saved
-* |twonode| *Two-node Tool* - click to choose a starting and ending node, and
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/twonode.gif) *Two-node Tool* - click to choose a starting and ending node, and
   run a one-time *traceroute* between those nodes or a continuous *ping -R*
   between nodes. The output is displayed in real time in a results box, while
   the IP addresses are parsed and the complete network path is highlighted on
   the  CORE display.
-* |run| *Run Tool* - this tool allows easily running a command on all or a
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/run.gif) *Run Tool* - this tool allows easily running a command on all or a
   subset of all nodes. A list box allows selecting any of the nodes. A text
   entry box allows entering any command. The command should return immediately,
   otherwise the display will block awaiting response. The *ping* command, for
