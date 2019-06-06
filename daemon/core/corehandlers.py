@@ -136,8 +136,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
         logging.info("connection closed: %s", self.client_address)
         if self.session:
             # remove client from session broker and shutdown if there are no clients
-            clients = self.server.session_clients.setdefault(self.session.session_id, [])
-            clients.remove(self)
             self.remove_session_handlers()
             self.session.broker.session_clients.remove(self)
             if not self.session.broker.session_clients and not self.session.is_active():
@@ -537,8 +535,6 @@ class CoreHandler(SocketServer.BaseRequestHandler):
 
         # TODO: add shutdown handler for session
         self.session = self.coreemu.create_session(port, master=False)
-        clients = self.server.session_clients.setdefault(self.session.session_id, [])
-        clients.append(self)
         logging.debug("created new session for client: %s", self.session.session_id)
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
@@ -1798,7 +1794,7 @@ class CoreUdpHandler(CoreHandler):
         Client has connected, set up a new connection.
         :return: nothing
         """
-        logging.info("new UDP connection: %s", self.client_address)
+        pass
 
     def receive_message(self):
         data = self.request[0]
@@ -1861,8 +1857,7 @@ class CoreUdpHandler(CoreHandler):
         if not isinstance(message, (coreapi.CoreNodeMessage, coreapi.CoreLinkMessage)):
             return
 
-        clients = self.server.mainserver.session_clients.setdefault(self.session.session_id, [])
-        for client in clients:
+        for client in self.session.broker.session_clients:
             try:
                 client.sendall(message.raw_message)
             except IOError:

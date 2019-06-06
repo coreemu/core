@@ -26,7 +26,6 @@ class CoreServer(SocketServer.ThreadingMixIn, SocketServer.TCPServer):
         """
         self.coreemu = CoreEmu(config)
         self.config = config
-        self.session_clients = {}
         SocketServer.TCPServer.__init__(self, server_address, handler_class)
 
 
