@@ -314,7 +314,7 @@ class Session(object):
         :param int node_two_id: node two id
         :param int interface_one_id: interface id for node one
         :param int interface_two_id: interface id for node two
-        :param core.enumerations.LinkTypes link_type: link type to delete
+        :param core.emulator.enumerations.LinkTypes link_type: link type to delete
         :return: nothing
         """
         # get node objects identified by link data
@@ -452,7 +452,7 @@ class Session(object):
         """
         Add a node to the session, based on the provided node data.
 
-        :param core.enumerations.NodeTypes _type: type of node to create
+        :param core.emulator.enumerations.NodeTypes _type: type of node to create
         :param int _id: id for node, defaults to None for generated id
         :param core.emulator.emudata.NodeOptions node_options: data to create node with
         :return: created node
@@ -574,7 +574,7 @@ class Session(object):
         """
         Broadcast node location to all listeners.
 
-        :param core.netns.nodes.PyCoreObj node: node to broadcast location for
+        :param core.nodes.base.NodeBase node: node to broadcast location for
         :return: nothing
         """
         node_data = NodeData(
@@ -688,7 +688,7 @@ class Session(object):
         """
         Handle a mobility event.
 
-        :param core.data.EventData event_data: event data to handle
+        :param core.emulator.data.EventData event_data: event data to handle
         :return: nothing
         """
         self.mobility.handleevent(event_data)
@@ -700,7 +700,7 @@ class Session(object):
         :param int _id: int for node, defaults to None and will be generated
         :param core.emulator.emudata.NodeOptions node_options: options for emane node, model will always be "mdr"
         :return: new emane node
-        :rtype: core.netns.nodes.CoreNode
+        :rtype: core.nodes.network.WlanNode
         """
         if not node_options:
             node_options = NodeOptions()
@@ -768,7 +768,7 @@ class Session(object):
         """
         Handle exception data that should be provided to exception handlers.
 
-        :param core.data.ExceptionData exception_data: exception data to send out
+        :param core.emulator.data.ExceptionData exception_data: exception data to send out
         :return: nothing
         """
 
@@ -779,7 +779,7 @@ class Session(object):
         """
         Handle node data that should be provided to node handlers.
 
-        :param core.data.ExceptionData node_data: node data to send out
+        :param core.emulator.data.ExceptionData node_data: node data to send out
         :return: nothing
         """
 
@@ -801,7 +801,7 @@ class Session(object):
         """
         Handle config data that should be provided to config handlers.
 
-        :param core.data.ConfigData config_data: config data to send out
+        :param core.emulator.data.ConfigData config_data: config data to send out
         :return: nothing
         """
 
@@ -812,7 +812,7 @@ class Session(object):
         """
         Handle link data that should be provided to link handlers.
 
-        :param core.data.ExceptionData link_data: link data to send out
+        :param core.emulator.data.ExceptionData link_data: link data to send out
         :return: nothing
         """
 
@@ -889,7 +889,7 @@ class Session(object):
         :param str hook_type: hook type
         :param str file_name: file name for hook
         :param str source_name: source name
-        :param data: hook data
+        :param str data: hook data
         :return: nothing
         """
         logging.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
@@ -1018,7 +1018,8 @@ class Session(object):
         variables.
 
         :param bool state: flag to determine if session state should be included
-        :return:
+        :return: environment variables
+        :rtype: dict
         """
         env = os.environ.copy()
         env["SESSION"] = "%s" % self.id
@@ -1532,7 +1533,7 @@ class Session(object):
         If conf_reqd is False, the control network may be built even
         when the user has not configured one (e.g. for EMANE.)
 
-        :param core.netns.vnode.CoreNode node: node to add or remove control interface
+        :param core.nodes.base.CoreNode node: node to add or remove control interface
         :param int net_index: network index
         :param bool remove: flag to check if it should be removed
         :param bool conf_required: flag to check if conf is required
@@ -1615,7 +1616,7 @@ class Session(object):
         start of the runtime state.
 
         :param event_time: event time
-        :param core.netns.vnode.CoreNode node: node to add event for
+        :param core.nodes.base.CoreNode node: node to add event for
         :param str name: name of event
         :param data: data for event
         :return: nothing

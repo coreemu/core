@@ -611,7 +611,7 @@ class WayPointMobility(WirelessModel):
         """
         Create a WayPointMobility instance.
 
-        :param core.session.Session session: CORE session instance
+        :param core.emulator.session.Session session: CORE session instance
         :param int _id: object id
         :return:
         """

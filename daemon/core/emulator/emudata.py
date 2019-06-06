@@ -32,7 +32,7 @@ def create_interface(node, network, interface_data):
     Create an interface for a node on a network using provided interface data.
 
     :param node: node to create interface for
-    :param network: network to associate interface with
+    :param core.nodes.base.CoreNetworkBase network: network to associate interface with
     :param core.emulator.emudata.InterfaceData interface_data: interface data
     :return: created interface
     """
@@ -134,7 +134,7 @@ class LinkOptions(object):
         """
         Create a LinkOptions object.
 
-        :param core.enumerations.LinkTypes _type: type of link, defaults to wired
+        :param core.emulator.enumerations.LinkTypes _type: type of link, defaults to wired
         """
         self.type = _type
         self.session = None
@@ -206,7 +206,7 @@ class IpPrefixes(object):
         Creates interface data for linking nodes, using the nodes unique id for generation, along with a random
         mac address, unless provided.
 
-        :param core.coreobj.PyCoreNode node: node to create interface for
+        :param core.nodes.base.CoreNode node: node to create interface for
         :param str name: name to set for interface, default is eth{id}
         :param str mac: mac address to use for this interface, default is random generation
         :return: new interface data for the provided node
@@ -255,7 +255,7 @@ class InterfaceData(object):
 
         :param int _id: interface id
         :param str name: name for interface
-        :param core.misc.ipaddress.MacAddress mac: mac address
+        :param core.nodes.ipaddress.MacAddress mac: mac address
         :param str ip4: ipv4 address
         :param int ip4_mask: ipv4 bit mask
         :param str ip6: ipv6 address
@@ -270,24 +270,50 @@ class InterfaceData(object):
         self.ip6_mask = ip6_mask
 
     def has_ip4(self):
+        """
+        Determines if interface has an ip4 address.
+
+        :return: True if has ip4, False otherwise
+        """
         return all([self.ip4, self.ip4_mask])
 
     def has_ip6(self):
+        """
+        Determines if interface has an ip6 address.
+
+        :return: True if has ip6, False otherwise
+        """
         return all([self.ip6, self.ip6_mask])
 
     def ip4_address(self):
+        """
+        Retrieve a string representation of the ip4 address and netmask.
+
+        :return: ip4 string or None
+        """
         if self.has_ip4():
             return "%s/%s" % (self.ip4, self.ip4_mask)
         else:
             return None
 
     def ip6_address(self):
+        """
+        Retrieve a string representation of the ip6 address and netmask.
+
+        :return: ip4 string or None
+        """
         if self.has_ip6():
             return "%s/%s" % (self.ip6, self.ip6_mask)
         else:
             return None
 
     def get_addresses(self):
+        """
+        Returns a list of ip4 and ip6 address when present.
+
+        :return: list of addresses
+        :rtype: list
+        """
         ip4 = self.ip4_address()
         ip6 = self.ip6_address()
         return [i for i in [ip4, ip6] if i]
