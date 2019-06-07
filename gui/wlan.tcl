@@ -243,7 +243,6 @@ proc moveNode { c node img xpos ypos dx dy } {
       "wlanlink && need_redraw"] {
         redrawWlanLink $wlanlink
     }
-    $c dtag node selected
     $c delete -withtags selectmark
     $c dtag link need_redraw
     $c dtag wlanlink need_redraw

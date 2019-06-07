@@ -6,18 +6,21 @@ message handlers are defined and some support for sending messages.
 """
 
 import argparse
-from configparser import ConfigParser
 import logging
 import sys
 import threading
 import time
 
-from core import load_logging_config
+from configparser import ConfigParser
+
 from core import constants
-from core.emulator import enumerations
-from core.api.tlv.corehandlers import CoreHandler
-from core.api.tlv.coreserver import CoreServer
+from core import load_logging_config
 from core.api.grpc.server import CoreGrpcServer
+from core.api.tlv.corehandlers import CoreHandler
+from core.api.tlv.corehandlers import CoreUdpHandler
+from core.api.tlv.coreserver import CoreServer
+from core.api.tlv.coreserver import CoreUdpServer
+from core.emulator import enumerations
 from core.utils import close_onexec
 
 load_logging_config()
@@ -32,7 +35,22 @@ def banner():
     logging.info("CORE daemon v.%s started %s", constants.COREDPY_VERSION, time.ctime())
 
 
-def cored(cfg):
+def start_udp(mainserver, server_address):
+    """
+    Start a thread running a UDP server on the same host,port for
+        connectionless requests.
+
+    :param CoreServer mainserver: main core tcp server to piggy back off of
+    :param server_address:
+    :return: CoreUdpServer
+    """
+    mainserver.udpserver = CoreUdpServer(server_address, CoreUdpHandler, mainserver)
+    mainserver.udpthread = threading.Thread(target=mainserver.udpserver.start)
+    mainserver.udpthread.daemon = True
+    mainserver.udpthread.start()
+
+
+def cored(cfg, use_ovs):
     """
     Start the CoreServer object and enter the server loop.
 
@@ -46,8 +64,9 @@ def cored(cfg):
         host = "localhost"
 
     try:
-        server = CoreServer((host, port), CoreHandler, cfg)
-        if cfg["ovs"] == "True":
+        address = (host, port)
+        server = CoreServer(address, CoreHandler, cfg)
+        if use_ovs:
             from core.nodes.openvswitch import OVS_NODES
             server.coreemu.update_nodes(OVS_NODES)
     except:
@@ -62,8 +81,13 @@ def cored(cfg):
         grpc_thread.daemon = True
         grpc_thread.start()
 
+    # start udp server
+    start_udp(server, address)
+
+    # close handlers
     close_onexec(server.fileno())
-    logging.info("server started, listening on: %s:%s", host, port)
+
+    logging.info("tcp/udp servers started, listening on: %s:%s", host, port)
     server.serve_forever()
 
 
@@ -133,8 +157,11 @@ def main():
     cfg = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     banner()
 
+    # check if ovs flag was provided
+    use_ovs = len(sys.argv) == 2 and sys.argv[1] == "ovs"
+
     try:
-        cored(cfg)
+        cored(cfg, use_ovs)
     except KeyboardInterrupt:
         logging.info("keyboard interrupt, stopping core daemon")
 
