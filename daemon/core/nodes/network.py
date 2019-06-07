@@ -1,6 +1,5 @@
 """
-PyCoreNet and LxBrNet classes that implement virtual networks using
-Linux Ethernet bridging and ebtables rules.
+Defines network nodes used within core.
 """
 
 import logging
@@ -343,7 +342,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         Detach a network interface.
 
-        :param core.netns.vif.Veth netif: network interface to detach
+        :param core.nodes.interface.Veth netif: network interface to detach
         :return: nothing
         """
         if self.up:
@@ -355,8 +354,8 @@ class CoreNetwork(CoreNetworkBase):
         """
         Determine if the provided network interfaces are linked.
 
-        :param core.netns.vif.Veth netif1: interface one
-        :param core.netns.vif.Veth netif2: interface two
+        :param core.nodes.interface.CoreInterface netif1: interface one
+        :param core.nodes.interface.CoreInterface netif2: interface two
         :return: True if interfaces are linked, False otherwise
         :rtype: bool
         """
@@ -385,8 +384,8 @@ class CoreNetwork(CoreNetworkBase):
         Unlink two PyCoreNetIfs, resulting in adding or removing ebtables
         filtering rules.
 
-        :param core.netns.vif.Veth netif1: interface one
-        :param core.netns.vif.Veth netif2: interface two
+        :param core.nodes.interface.CoreInterface netif1: interface one
+        :param core.nodes.interface.CoreInterface netif2: interface two
         :return: nothing
         """
         with self._linked_lock:
@@ -401,8 +400,8 @@ class CoreNetwork(CoreNetworkBase):
         Link two PyCoreNetIfs together, resulting in adding or removing
         ebtables filtering rules.
 
-        :param core.netns.vif.Veth netif1: interface one
-        :param core.netns.vif.Veth netif2: interface two
+        :param core.nodes.interface.CoreInterface netif1: interface one
+        :param core.nodes.interface.CoreInterface netif2: interface two
         :return: nothing
         """
         with self._linked_lock:
@@ -417,7 +416,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         Configure link parameters by applying tc queuing disciplines on the interface.
 
-        :param core.netns.vif.Veth netif: interface one
+        :param core.nodes.interface.Veth netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to
@@ -549,9 +548,9 @@ class CoreNetwork(CoreNetworkBase):
         Return the interface of that links this net with another net
         (that were linked using linknet()).
 
-        :param core.netns.vnet.LxBrNet net: interface to get link for
+        :param core.nodes.base.CoreNetworkBase net: interface to get link for
         :return: interface the provided network is linked to
-        :rtype: core.netns.vnet.LxBrNet
+        :rtype: core.nodes.interface.CoreInterface
         """
         for netif in self.netifs():
             if hasattr(netif, "othernet") and netif.othernet == net:
@@ -584,7 +583,7 @@ class GreTapBridge(CoreNetwork):
         """
         Create a GreTapBridge instance.
 
-        :param core.session.Session session: core session instance
+        :param core.emulator.session.Session session: core session instance
         :param str remoteip: remote address
         :param int _id: object id
         :param str name: object name
@@ -593,7 +592,6 @@ class GreTapBridge(CoreNetwork):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
-        :return:
         """
         CoreNetwork.__init__(self, session=session, _id=_id, name=name, policy=policy, start=False)
         self.grekey = key
@@ -685,7 +683,7 @@ class CtrlNet(CoreNetwork):
         """
         Creates a CtrlNet instance.
 
-        :param core.session.Session session: core session instance
+        :param core.emulator.session.Session session: core session instance
         :param int _id: node id
         :param str name: node namee
         :param prefix: control network ipv4 prefix
@@ -740,7 +738,7 @@ class CtrlNet(CoreNetwork):
 
     def detectoldbridge(self):
         """
-        Occassionally, control net bridges from previously closed sessions are not cleaned up.
+        Occasionally, control net bridges from previously closed sessions are not cleaned up.
         Check if there are old control net bridges and delete them
 
         :return: True if an old bridge was detected, False otherwise
@@ -825,7 +823,7 @@ class PtpNet(CoreNetwork):
         :param float lon: longitude
         :param float alt: altitude
         :return: node data object
-        :rtype: core.data.NodeData
+        :rtype: core.emulator.data.NodeData
         """
         return None
 
@@ -836,7 +834,7 @@ class PtpNet(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: list[core.data.LinkData]
+        :rtype: list[core.emulator.data.LinkData]
         """
 
         all_links = []
@@ -997,7 +995,7 @@ class WlanNode(CoreNetwork):
         """
         Attach a network interface.
 
-        :param core.netns.vif.VEth netif: network interface
+        :param core.nodes.interface.CoreInterface netif: network interface
         :return: nothing
         """
         CoreNetwork.attach(self, netif)
@@ -1013,7 +1011,7 @@ class WlanNode(CoreNetwork):
         """
         Sets the mobility and wireless model.
 
-        :param core.mobility.WirelessModel.cls model: wireless model to set to
+        :param core.location.mobility.WirelessModel.cls model: wireless model to set to
         :param dict config: configuration for model being set
         :return: nothing
         """
@@ -1056,7 +1054,7 @@ class WlanNode(CoreNetwork):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: list[core.data.LinkData]
+        :rtype: list[core.emulator.data.LinkData]
         """
         all_links = CoreNetwork.all_link_data(self, flags)
 

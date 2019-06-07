@@ -61,7 +61,7 @@ class Sdt(object):
         """
         Creates a Sdt instance.
 
-        :param core.session.Session session: session this manager is tied to
+        :param core.emulator.session.Session session: session this manager is tied to
         """
         self.session = session
         self.sock = None
@@ -83,7 +83,7 @@ class Sdt(object):
         """
         Handler for node updates, specifically for updating their location.
 
-        :param core.data.NodeData node_data: node data being updated
+        :param core.emulator.data.NodeData node_data: node data being updated
         :return: nothing
         """
         x = node_data.x_position
@@ -103,7 +103,7 @@ class Sdt(object):
         """
         Handler for link updates, checking for wireless link/unlink messages.
 
-        :param core.data.LinkData link_data: link data being updated
+        :param core.emulator.data.LinkData link_data: link data being updated
         :return: nothing
         """
         if link_data.link_type == LinkTypes.WIRELESS.value:

@@ -147,7 +147,7 @@ class EmaneModel(WirelessModel):
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
-        :param core.netns.vif.Veth netif: interface one
+        :param core.nodes.interface.Veth netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to

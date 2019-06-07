@@ -213,7 +213,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an event broadcast out from a session.
 
-        :param core.data.EventData event_data: event data to handle
+        :param core.emulator.data.EventData event_data: event data to handle
         :return: nothing
         """
         logging.debug("handling broadcast event: %s", event_data)
@@ -237,7 +237,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle a file broadcast out from a session.
 
-        :param core.data.FileData file_data: file data to handle
+        :param core.emulator.data.FileData file_data: file data to handle
         :return: nothing
         """
         logging.debug("handling broadcast file: %s", file_data)
@@ -264,7 +264,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle a config broadcast out from a session.
 
-        :param core.data.ConfigData config_data: config data to handle
+        :param core.emulator.data.ConfigData config_data: config data to handle
         :return: nothing
         """
         logging.debug("handling broadcast config: %s", config_data)
@@ -278,7 +278,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an exception broadcast out from a session.
 
-        :param core.data.ExceptionData exception_data: exception data to handle
+        :param core.emulator.data.ExceptionData exception_data: exception data to handle
         :return: nothing
         """
         logging.debug("handling broadcast exception: %s", exception_data)
@@ -301,7 +301,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an node broadcast out from a session.
 
-        :param core.data.NodeData node_data: node data to handle
+        :param core.emulator.data.NodeData node_data: node data to handle
         :return: nothing
         """
         logging.debug("handling broadcast node: %s", node_data)
@@ -315,7 +315,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an link broadcast out from a session.
 
-        :param core.data.LinkData link_data: link data to handle
+        :param core.emulator.data.LinkData link_data: link data to handle
         :return: nothing
         """
         logging.debug("handling broadcast link: %s", link_data)
@@ -407,7 +407,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         Receive data and return a CORE API message object.
 
         :return: received message
-        :rtype: coreapi.CoreMessage
+        :rtype: core.api.tlv.coreapi.CoreMessage
         """
         try:
             header = self.request.recv(coreapi.CoreMessage.header_len)
@@ -586,7 +586,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Sends an exception for display within the GUI.
 
-        :param core.enumerations.ExceptionLevel level: level for exception
+        :param core.emulator.enumerations.ExceptionLevel level: level for exception
         :param str source: source where exception came from
         :param str text: details about exception
         :param int node: node id, if related to a specific node
@@ -624,7 +624,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Node Message handler
 
-        :param coreapi.CoreNodeMessage message: node message
+        :param core.api.coreapi.CoreNodeMessage message: node message
         :return: replies to node message
         """
         replies = []
@@ -696,7 +696,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Link Message handler
 
-        :param coreapi.CoreLinkMessage message: link message to handle
+        :param core.api.tlv.coreapi.CoreLinkMessage message: link message to handle
         :return: link message replies
         """
         node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
@@ -756,7 +756,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Execute Message handler
 
-        :param coreapi.CoreExecMessage message: execute message to handle
+        :param core.api.tlv.coreapi.CoreExecMessage message: execute message to handle
         :return: reply messages
         """
         node_num = message.get_tlv(ExecuteTlvs.NODE.value)
@@ -831,7 +831,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Register Message Handler
 
-        :param coreapi.CoreRegMessage message: register message to handle
+        :param core.api.tlv.coreapi.CoreRegMessage message: register message to handle
         :return: reply messages
         """
         replies = []
@@ -923,7 +923,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Configuration Message handler
 
-        :param coreapi.CoreConfMessage message: configuration message to handle
+        :param core.api.tlv.coreapi.CoreConfMessage message: configuration message to handle
         :return: reply messages
         """
         # convert config message to standard config data object
@@ -1341,7 +1341,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         File Message handler
 
-        :param coreapi.CoreFileMessage message: file message to handle
+        :param core.api.tlv.coreapi.CoreFileMessage message: file message to handle
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
@@ -1405,7 +1405,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Event Message handler
 
-        :param coreapi.CoreEventMessage message: event message to handle
+        :param core.api.tlv.coreapi.CoreEventMessage message: event message to handle
         :return: reply messages
         """
         event_data = EventData(
@@ -1508,7 +1508,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         Handle an Event Message used to start, stop, restart, or validate
         a service on a given node.
 
-        :param EventData event_data: event data to handle
+        :param core.emulator.enumerations.EventData event_data: event data to handle
         :return: nothing
         """
         event_type = event_data.event_type
@@ -1573,7 +1573,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Session Message handler
 
-        :param coreapi.CoreSessionMessage message: session message to handle
+        :param core.api.tlv.coreapi.CoreSessionMessage message: session message to handle
         :return: reply messages
         """
         session_id_str = message.get_tlv(SessionTlvs.NUMBER.value)

@@ -243,7 +243,7 @@ class CoreTlvDataUint16List(CoreTlvData):
         Retrieves a unint 16 list from a string
 
         :param str value: string representation of a uint 16 list
-        :return: unint 16 list
+        :return: uint 16 list
         :rtype: list
         """
         return tuple(int(x) for x in value.split())
@@ -274,7 +274,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
 
         :param str value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.misc.ipaddress.IpAddress
+        :rtype: core.nodes.ipaddress.IpAddress
         """
         return IpAddress(af=socket.AF_INET, address=value)
 
@@ -292,7 +292,7 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
         """
         Retrieve Ipv6 address value from object.
 
-        :param core.misc.ipaddress.IpAddress obj: ip address to get value from
+        :param core.nodes.ipaddress.IpAddress obj: ip address to get value from
         :return:
         """
         return obj.addr
@@ -304,7 +304,7 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
 
         :param str value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.misc.ipaddress.IpAddress
+        :rtype: core.nodes.ipaddress.IpAddress
         """
         return IpAddress(af=socket.AF_INET6, address=value)
 
@@ -322,7 +322,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         """
         Retrieve Ipv6 address value from object.
 
-        :param core.misc.ipaddress.MacAddress obj: mac address to get value from
+        :param core.nodes.ipaddress.MacAddress obj: mac address to get value from
         :return:
         """
         # extend to 64 bits
@@ -335,7 +335,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
 
         :param str value: value to get Ipv4 address from
         :return: Ipv4 address
-        :rtype: core.misc.ipaddress.MacAddress
+        :rtype: core.nodes.ipaddress.MacAddress
         """
         # only use 48 bits
         return MacAddress(address=value[2:])

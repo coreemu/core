@@ -11,7 +11,7 @@ def convert_node(node_data):
     """
     Convenience method for converting NodeData to a packed TLV message.
 
-    :param core.data.NodeData node_data: node data to convert
+    :param core.emulator.data.NodeData node_data: node data to convert
     :return: packed node message
     """
     tlv_data = structutils.pack_values(coreapi.CoreNodeTlv, [
@@ -43,7 +43,7 @@ def convert_config(config_data):
     """
     Convenience method for converting ConfigData to a packed TLV message.
 
-    :param core.data.ConfigData config_data: config data to convert
+    :param core.emulator.data.ConfigData config_data: config data to convert
     :return: packed message
     """
     tlv_data = structutils.pack_values(coreapi.CoreConfigTlv, [

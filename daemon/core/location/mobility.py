@@ -41,7 +41,7 @@ class MobilityManager(ModelManager):
         """
         Creates a MobilityManager instance.
 
-        :param core.session.Session session: session this manager is tied to
+        :param core.emulator.session.Session session: session this manager is tied to
         """
         super(MobilityManager, self).__init__()
         self.session = session
@@ -468,8 +468,6 @@ class BasicRangeModel(WirelessModel):
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
 
-            logging.debug("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
-                         a.name, b.name, linked, d, self.range)
             if d > self.range:
                 if linked:
                     logging.debug("was linked, unlinking")
@@ -533,8 +531,8 @@ class BasicRangeModel(WirelessModel):
         """
         Send a wireless link/unlink API message to the GUI.
 
-        :param core.coreobj.PyCoreNetIf netif: interface one
-        :param core.coreobj.PyCoreNetIf netif2: interface two
+        :param core.nodes.interface.CoreInterface netif: interface one
+        :param core.nodes.interface.CoreInterface netif2: interface two
         :param bool unlink: unlink or not
         :return: nothing
         """
@@ -702,7 +700,7 @@ class WayPointMobility(WirelessModel):
         Calculate next node location and update its coordinates.
         Returns True if the node's position has changed.
 
-        :param core.netns.vnode.CoreNode node: node to move
+        :param core.nodes.base.CoreNode node: node to move
         :param dt: move factor
         :return: True if node was moved, False otherwise
         :rtype: bool
@@ -929,9 +927,8 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         Creates a Ns2ScriptedMobility instance.
 
-        :param core.session.Session session: CORE session instance
+        :param core.emulator.session.Session session: CORE session instance
         :param int _id: object id
-        :param config: values
         """
         super(Ns2ScriptedMobility, self).__init__(session=session, _id=_id)
         self._netifs = {}

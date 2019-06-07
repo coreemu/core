@@ -125,7 +125,7 @@ class ServiceShim(object):
         Convert service properties into a string list of key=value pairs,
         separated by "|".
 
-        :param core.netns.vnode.CoreNode node: node to get value list for
+        :param core.nodes.base.CoreNode node: node to get value list for
         :param CoreService service: service to get value list for
         :return: value list string
         :rtype: str
@@ -441,7 +441,7 @@ class CoreServices(object):
         """
         Start all service boot paths found, based on dependencies.
 
-        :param core.netns.vnode.LxcNode node: node to start services on
+        :param core.nodes.base.CoreNode node: node to start services on
         :param list[CoreService] boot_path: service to start in dependent order
         :return: nothing
         """
@@ -458,7 +458,7 @@ class CoreServices(object):
         Start a service on a node. Create private dirs, generate config
         files, and execute startup commands.
 
-        :param core.netns.vnode.LxcNode node: node to boot services on
+        :param core.nodes.base.CoreNode node: node to boot services on
         :param CoreService service: service to start
         :return: nothing
         """
@@ -511,7 +511,7 @@ class CoreServices(object):
         config references an existing file that should be copied.
         Returns True for local files, False for generated.
 
-        :param core.netns.vnode.LxcNode node: node to copy service for
+        :param core.nodes.base.CoreNode node: node to copy service for
         :param str filename: file name for a configured service
         :param str cfg: configuration string
         :return: True if successful, False otherwise
@@ -530,7 +530,7 @@ class CoreServices(object):
         """
         Run the validation command(s) for a service.
 
-        :param core.netns.vnode.LxcNode node: node to validate service for
+        :param core.nodes.base.CoreNode node: node to validate service for
         :param CoreService service: service to validate
         :return: service validation status
         :rtype: int
@@ -567,7 +567,7 @@ class CoreServices(object):
         """
         Stop a service on a node.
 
-        :param core.netns.vnode.LxcNode node: node to stop a service on
+        :param core.nodes.base.CoreNode node: node to stop a service on
         :param CoreService service: service to stop
         :return: status for stopping the services
         :rtype: str
@@ -586,7 +586,7 @@ class CoreServices(object):
         Send a File Message when the GUI has requested a service file.
         The file data is either auto-generated or comes from an existing config.
 
-        :param core.netns.vnode.LxcNode node: node to get service file from
+        :param core.nodes.base.CoreNode node: node to get service file from
         :param str service_name: service to get file from
         :param str filename: file name to retrieve
         :return: file message for node
@@ -655,7 +655,7 @@ class CoreServices(object):
         """
         Startup a node service.
 
-        :param PyCoreNode node: node to reconfigure service for
+        :param core.nodes.base.CoreNode node: node to reconfigure service for
         :param CoreService service: service to reconfigure
         :param bool wait: determines if we should wait to validate startup
         :return: status of startup
@@ -682,7 +682,7 @@ class CoreServices(object):
         """
         Creates node service files.
 
-        :param PyCoreNode node: node to reconfigure service for
+        :param core.nodes.base.CoreNode node: node to reconfigure service for
         :param CoreService service: service to reconfigure
         :return: nothing
         """
@@ -715,7 +715,7 @@ class CoreServices(object):
         """
         Reconfigure a node service.
 
-        :param PyCoreNode node: node to reconfigure service for
+        :param core.nodes.base.CoreNode node: node to reconfigure service for
         :param CoreService service: service to reconfigure
         :return: nothing
         """
@@ -805,7 +805,7 @@ class CoreService(object):
         returns the cls._configs tuple, but this method may be overriden to
         provide node-specific filenames that may be based on other services.
 
-        :param core.netns.vnode.LxcNode node: node to generate config for
+        :param core.nodes.base.CoreNode node: node to generate config for
         :return: configuration files
         :rtype: tuple
         """
@@ -819,7 +819,7 @@ class CoreService(object):
         Return the configuration string to be written to a file or sent
         to the GUI for customization.
 
-        :param core.netns.vnode.LxcNode node: node to generate config for
+        :param core.nodes.base.CoreNode node: node to generate config for
         :param str filename: file name to generate config for
         :return: nothing
         """
@@ -833,7 +833,7 @@ class CoreService(object):
         overridden to provide node-specific commands that may be
         based on other services.
 
-        :param core.netns.vnode.LxcNode node: node to get startup for
+        :param core.nodes.base.CoreNode node: node to get startup for
         :return: startup commands
         :rtype: tuple
         """
@@ -847,7 +847,7 @@ class CoreService(object):
         overridden to provide node-specific commands that may be
         based on other services.
 
-        :param core.netns.vnode.LxcNode node: node to validate
+        :param core.nodes.base.CoreNode node: node to validate
         :return: validation commands
         :rtype: tuple
         """

@@ -96,7 +96,7 @@ class CoreBroker(object):
         """
         Creates a CoreBroker instance.
 
-        :param core.session.Session session: session this manager is tied to
+        :param core.emulator.session.Session session: session this manager is tied to
         :return: nothing
         """
 
@@ -901,7 +901,7 @@ class CoreBroker(object):
         opaque data in the link message, otherwise use the IP of the message
         sender (the master server).
 
-        :param coreapi.CoreLinkMessage msg:
+        :param core.api.tlv.coreapi.CoreLinkMessage msg: link message
         :param bool first_is_local: is first local
         :return: host address
         :rtype: str

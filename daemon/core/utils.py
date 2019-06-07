@@ -313,8 +313,8 @@ def expand_corepath(pathname, session=None, node=None):
     Expand a file path given session information.
 
     :param str pathname: file path to expand
-    :param core.session.Session session: core session object to expand path with
-    :param core.netns.LxcNode node: node to expand path with
+    :param core.emulator.session.Session session: core session object to expand path with
+    :param core.nodes.base.CoreNode node: node to expand path with
     :return: expanded path
     :rtype: str
     """

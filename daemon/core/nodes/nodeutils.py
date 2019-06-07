@@ -23,7 +23,7 @@ def _convert_map(x, y):
 
     :param dict x: dictionary to reduce node items into
     :param tuple y: current node item
-    :return:
+    :return: human readable name mapping of the node map
     """
     x[y[0].name] = y[1]
     return x
@@ -32,7 +32,6 @@ def _convert_map(x, y):
 def update_node_map(node_map):
     """
     Update the current node map with the provided node map values.
-
 
     :param dict node_map: node map to update with
     """
@@ -70,7 +69,7 @@ def get_node_type(node_class):
 
     :param class node_class: node class to get type for
     :return: node type
-    :rtype: core.enumerations.NodeTypes
+    :rtype: core.emulator.enumerations.NodeTypes
     """
     global _NODE_MAP
     node_type_map = {_NODE_MAP[x]: x for x in _NODE_MAP}
