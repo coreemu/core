@@ -755,9 +755,11 @@ class CoreXmlReader(object):
         if link_elements is None:
             return
 
+        node_sets = set()
         for link_element in link_elements.iterchildren():
             node_one = get_int(link_element, "node_one")
             node_two = get_int(link_element, "node_two")
+            node_set = frozenset((node_one, node_two))
 
             interface_one_element = link_element.find("interface_one")
             interface_one = None
@@ -772,15 +774,15 @@ class CoreXmlReader(object):
             options_element = link_element.find("options")
             link_options = LinkOptions()
             if options_element is not None:
-                link_options.bandwidth = get_float(options_element, "bandwidth")
-                link_options.burst = get_float(options_element, "burst")
-                link_options.delay = get_float(options_element, "delay")
-                link_options.dup = get_float(options_element, "dup")
-                link_options.mer = get_float(options_element, "mer")
-                link_options.mburst = get_float(options_element, "mburst")
-                link_options.jitter = get_float(options_element, "jitter")
-                link_options.key = get_float(options_element, "key")
-                link_options.per = get_float(options_element, "per")
+                link_options.bandwidth = get_int(options_element, "bandwidth")
+                link_options.burst = get_int(options_element, "burst")
+                link_options.delay = get_int(options_element, "delay")
+                link_options.dup = get_int(options_element, "dup")
+                link_options.mer = get_int(options_element, "mer")
+                link_options.mburst = get_int(options_element, "mburst")
+                link_options.jitter = get_int(options_element, "jitter")
+                link_options.key = get_int(options_element, "key")
+                link_options.per = get_int(options_element, "per")
                 link_options.unidirectional = get_int(options_element, "unidirectional")
                 link_options.session = options_element.get("session")
                 link_options.emulation_id = get_int(options_element, "emulation_id")
@@ -788,5 +790,11 @@ class CoreXmlReader(object):
                 link_options.opaque = options_element.get("opaque")
                 link_options.gui_attributes = options_element.get("gui_attributes")
 
-            logging.info("reading link node_one(%s) node_two(%s)", node_one, node_two)
-            self.session.add_link(node_one, node_two, interface_one, interface_two, link_options)
+            if link_options.unidirectional == 1 and node_set in node_sets:
+                logging.info("updating link node_one(%s) node_two(%s): %s", node_one, node_two, link_options)
+                self.session.update_link(node_one, node_two, interface_one, interface_two, link_options)
+            else:
+                logging.info("adding link node_one(%s) node_two(%s): %s", node_one, node_two, link_options)
+                self.session.add_link(node_one, node_two, interface_one, interface_two, link_options)
+
+            node_sets.add(node_set)

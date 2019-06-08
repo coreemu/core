@@ -246,7 +246,7 @@ class CoreGrpcClient(object):
         :rtype: core_pb2.SetSessionLocationResponse
         :raises grpc.RpcError: when session doesn't exist
         """
-        position = core_pb2.Position(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
+        position = core_pb2.SessionPosition(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
         request = core_pb2.SetSessionLocationRequest(session_id=session_id, position=position, scale=scale)
         return self.stub.SetSessionLocation(request)
 

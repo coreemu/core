@@ -318,11 +318,11 @@ class BasicRangeModel(WirelessModel):
     name = "basic_range"
     options = [
         Configuration(_id="range", _type=ConfigDataTypes.UINT32, default="275", label="wireless range (pixels)"),
-        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000000", label="bandwidth (bps)"),
-        Configuration(_id="jitter", _type=ConfigDataTypes.FLOAT, default="0.0", label="transmission jitter (usec)"),
-        Configuration(_id="delay", _type=ConfigDataTypes.FLOAT, default="5000.0",
+        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT64, default="54000000", label="bandwidth (bps)"),
+        Configuration(_id="jitter", _type=ConfigDataTypes.UINT64, default="0", label="transmission jitter (usec)"),
+        Configuration(_id="delay", _type=ConfigDataTypes.UINT64, default="5000",
                       label="transmission delay (usec)"),
-        Configuration(_id="error", _type=ConfigDataTypes.FLOAT, default="0.0", label="error rate (%)")
+        Configuration(_id="error", _type=ConfigDataTypes.STRING, default="0", label="error rate (%)")
     ]
 
     @classmethod
@@ -358,19 +358,19 @@ class BasicRangeModel(WirelessModel):
         :param dict config: values to convert
         :return: nothing
         """
-        self.range = float(config["range"])
+        self.range = int(config["range"])
         logging.info("basic range model configured for WLAN %d using range %d", self.wlan.id, self.range)
         self.bw = int(config["bandwidth"])
-        if self.bw == 0.0:
+        if self.bw == 0:
             self.bw = None
-        self.delay = float(config["delay"])
-        if self.delay == 0.0:
+        self.delay = int(config["delay"])
+        if self.delay == 0:
             self.delay = None
-        self.loss = float(config["error"])
-        if self.loss == 0.0:
+        self.loss = int(config["error"])
+        if self.loss == 0:
             self.loss = None
-        self.jitter = float(config["jitter"])
-        if self.jitter == 0.0:
+        self.jitter = int(config["jitter"])
+        if self.jitter == 0:
             self.jitter = None
 
     def setlinkparams(self):

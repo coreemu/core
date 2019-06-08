@@ -195,7 +195,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         x, y, z = session.location.refxyz
         lat, lon, alt = session.location.refgeo
-        position = core_pb2.Position(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
+        position = core_pb2.SessionPosition(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
         return core_pb2.GetSessionLocationResponse(position=position, scale=session.location.refscale)
 
     def SetSessionLocation(self, request, context):

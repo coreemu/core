@@ -225,11 +225,11 @@ class OvsNet(CoreNetworkBase):
         delay_changed = netif.setparam("delay", delay)
 
         if loss is not None:
-            loss = float(loss)
+            loss = int(loss)
         loss_changed = netif.setparam("loss", loss)
 
         if duplicate is not None:
-            duplicate = float(duplicate)
+            duplicate = int(duplicate)
         duplicate_changed = netif.setparam("duplicate", duplicate)
         jitter_changed = netif.setparam("jitter", jitter)
 

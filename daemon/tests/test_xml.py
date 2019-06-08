@@ -463,3 +463,68 @@ class TestXml:
         assert link_options.jitter == link.jitter
         assert link_options.delay == link.delay
         assert link_options.dup == link.dup
+
+    def test_link_options_bidirectional(self, session, tmpdir, ip_prefixes):
+        """
+        Test xml client methods for a ptp network.
+
+        :param session: session for test
+        :param tmpdir: tmpdir to create data in
+        :param ip_prefixes: generates ip addresses for nodes
+        """
+        # create nodes
+        node_one = session.add_node()
+        interface_one = ip_prefixes.create_interface(node_one)
+        node_two = session.add_node()
+        interface_two = ip_prefixes.create_interface(node_two)
+
+        # create link
+        link_options_one = LinkOptions()
+        link_options_one.bandwidth = 5000
+        link_options_one.unidirectional = 1
+        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options_one)
+        link_options_two = LinkOptions()
+        link_options_two.bandwidth = 10000
+        link_options_two.unidirectional = 1
+        session.update_link(node_two.id, node_one.id, interface_two.id, interface_one.id, link_options_two)
+
+        # instantiate session
+        session.instantiate()
+
+        # get ids for nodes
+        n1_id = node_one.id
+        n2_id = node_two.id
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(KeyError):
+            assert not session.get_node(n1_id)
+        with pytest.raises(KeyError):
+            assert not session.get_node(n2_id)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
+        links = []
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
+            links += node.all_link_data(0)
+        assert len(links) == 2
+        link_one = links[0]
+        link_two = links[1]
+        assert link_options_one.bandwidth == link_one.bandwidth
+        assert link_options_two.bandwidth == link_two.bandwidth

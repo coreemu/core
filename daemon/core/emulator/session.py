@@ -367,8 +367,7 @@ class Session(object):
             if node_two:
                 node_two.lock.release()
 
-    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None,
-                    link_options=LinkOptions()):
+    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None, link_options=None):
         """
         Update link information between nodes.
 
@@ -379,6 +378,9 @@ class Session(object):
         :param core.emulator.emudata.LinkOptions link_options: data to update link with
         :return: nothing
         """
+        if not link_options:
+            link_options = LinkOptions()
+
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(node_one_id, node_two_id)
 
@@ -441,7 +443,6 @@ class Session(object):
                         link_config(net_one, interface_one, link_options, interface_two=interface_two)
                         if not link_options.unidirectional:
                             link_config(net_one, interface_two, link_options, interface_two=interface_one)
-
         finally:
             if node_one:
                 node_one.lock.release()

@@ -324,6 +324,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
         per = ""
         if link_data.per is not None:
             per = str(link_data.per)
+        dup = ""
+        if link_data.dup is not None:
+            dup = str(link_data.dup)
 
         tlv_data = structutils.pack_values(coreapi.CoreLinkTlv, [
             (LinkTlvs.N1_NUMBER, link_data.node1_id),
@@ -331,7 +334,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (LinkTlvs.DELAY, link_data.delay),
             (LinkTlvs.BANDWIDTH, link_data.bandwidth),
             (LinkTlvs.PER, per),
-            (LinkTlvs.DUP, link_data.dup),
+            (LinkTlvs.DUP, dup),
             (LinkTlvs.JITTER, link_data.jitter),
             (LinkTlvs.MER, link_data.mer),
             (LinkTlvs.BURST, link_data.burst),

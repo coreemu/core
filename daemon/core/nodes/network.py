@@ -459,10 +459,10 @@ class CoreNetwork(CoreNetworkBase):
         netem = ["netem"]
         changed = max(changed, netif.setparam("delay", delay))
         if loss is not None:
-            loss = float(loss)
+            loss = int(loss)
         changed = max(changed, netif.setparam("loss", loss))
         if duplicate is not None:
-            duplicate = float(duplicate)
+            duplicate = int(duplicate)
         changed = max(changed, netif.setparam("duplicate", duplicate))
         changed = max(changed, netif.setparam("jitter", jitter))
         if not changed:

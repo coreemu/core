@@ -172,13 +172,13 @@ message GetSessionLocationRequest {
 }
 
 message GetSessionLocationResponse {
-    Position position = 1;
+    SessionPosition position = 1;
     float scale = 2;
 }
 
 message SetSessionLocationRequest {
     int32 session_id = 1;
-    Position position = 2;
+    SessionPosition position = 2;
     float scale = 3;
 }
 
@@ -787,15 +787,15 @@ message Link {
 
 message LinkOptions {
     string opaque = 1;
-    float jitter = 2;
-    string key = 3;
-    float mburst = 4;
-    float mer = 5;
-    float per = 6;
-    float bandwidth = 7;
-    float burst = 8;
-    float delay = 9;
-    float dup = 10;
+    int64 jitter = 2;
+    int32 key = 3;
+    int32 mburst = 4;
+    int32 mer = 5;
+    int32 per = 6;
+    int64 bandwidth = 7;
+    int32 burst = 8;
+    int64 delay = 9;
+    int32 dup = 10;
     bool unidirectional = 11;
 }
 
@@ -812,10 +812,19 @@ message Interface {
     int32 mtu = 10;
 }
 
-message Position {
+message SessionPosition {
     float x = 1;
     float y = 2;
     float z = 3;
+    float lat = 4;
+    float lon = 5;
+    float alt = 6;
+}
+
+message Position {
+    int32 x = 1;
+    int32 y = 2;
+    int32 z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;
