@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.2.2)
+AC_INIT(core, 5.3.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -14,7 +14,7 @@ AM_INIT_AUTOMAKE([tar-ustar])
 # define variables used for packaging and date display
 PACKAGE_DATE=m4_esyscmd_s([date +%Y%m%d])
 PACKAGE_VENDOR="CORE Developers"
-PACKAGE_MAINTAINERS="$PACKAGE_VENDOR <$PACKAGE_BUGREPORT>"
+PACKAGE_MAINTAINERS="$PACKAGE_VENDOR"
 
 # core specific variables
 CORE_LIB_DIR="\${prefix}/lib/core"
