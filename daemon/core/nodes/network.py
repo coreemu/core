@@ -843,7 +843,6 @@ class PtpNet(CoreNetwork):
             return all_links
 
         if1, if2 = self._netif.values()
-
         unidirectional = 0
         if if1.getparams() != if2.getparams():
             unidirectional = 1
@@ -918,10 +917,11 @@ class PtpNet(CoreNetwork):
                 message_type=0,
                 node1_id=if2.node.id,
                 node2_id=if1.node.id,
-                delay=if1.getparam("delay"),
-                bandwidth=if1.getparam("bw"),
-                dup=if1.getparam("duplicate"),
-                jitter=if1.getparam("jitter"),
+                delay=if2.getparam("delay"),
+                bandwidth=if2.getparam("bw"),
+                per=if2.getparam("loss"),
+                dup=if2.getparam("duplicate"),
+                jitter=if2.getparam("jitter"),
                 unidirectional=1,
                 interface1_id=if2.node.getifindex(if2),
                 interface2_id=if1.node.getifindex(if1)

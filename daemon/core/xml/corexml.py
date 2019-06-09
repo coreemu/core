@@ -792,7 +792,7 @@ class CoreXmlReader(object):
 
             if link_options.unidirectional == 1 and node_set in node_sets:
                 logging.info("updating link node_one(%s) node_two(%s): %s", node_one, node_two, link_options)
-                self.session.update_link(node_one, node_two, interface_one, interface_two, link_options)
+                self.session.update_link(node_one, node_two, interface_one.id, interface_two.id, link_options)
             else:
                 logging.info("adding link node_one(%s) node_two(%s): %s", node_one, node_two, link_options)
                 self.session.add_link(node_one, node_two, interface_one, interface_two, link_options)

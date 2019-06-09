@@ -480,12 +480,20 @@ class TestXml:
 
         # create link
         link_options_one = LinkOptions()
-        link_options_one.bandwidth = 5000
         link_options_one.unidirectional = 1
+        link_options_one.bandwidth = 5000
+        link_options_one.delay = 10
+        link_options_one.per = 5
+        link_options_one.dup = 5
+        link_options_one.jitter = 5
         session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options_one)
         link_options_two = LinkOptions()
-        link_options_two.bandwidth = 10000
         link_options_two.unidirectional = 1
+        link_options_two.bandwidth = 10000
+        link_options_two.delay = 20
+        link_options_two.per = 10
+        link_options_two.dup = 10
+        link_options_two.jitter = 10
         session.update_link(node_two.id, node_one.id, interface_two.id, interface_one.id, link_options_two)
 
         # instantiate session
@@ -527,4 +535,12 @@ class TestXml:
         link_one = links[0]
         link_two = links[1]
         assert link_options_one.bandwidth == link_one.bandwidth
+        assert link_options_one.delay == link_one.delay
+        assert link_options_one.per == link_one.per
+        assert link_options_one.dup == link_one.dup
+        assert link_options_one.jitter == link_one.jitter
         assert link_options_two.bandwidth == link_two.bandwidth
+        assert link_options_two.delay == link_two.delay
+        assert link_options_two.per == link_two.per
+        assert link_options_two.dup == link_two.dup
+        assert link_options_two.jitter == link_two.jitter
