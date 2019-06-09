@@ -46,7 +46,7 @@ MAINTAINERCLEANFILES = .version	\
 
 
 if PYTHON3
-PYTHON_DEP = python >= 3.0
+PYTHON_DEP = python3 >= 3.0
 else
 PYTHON_DEP = python >= 2.7, python < 3.0
 endif
