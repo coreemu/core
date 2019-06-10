@@ -42,6 +42,26 @@ Install Path | Description
 /etc/init.d/core-daemon|SysV startup script for daemon
 /etc/systemd/system/core-daemon.service|Systemd startup script for daemon
 
+# Pre-Req Python Requirements
+
+The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
+To account for this it would be recommended to install the python dependencies using the **requirements.txt** found in
+the latest release.
+
+```shell
+sudo pip install -r requirements.txt
+```
+
+## Ubuntu 19.04
+
+Ubuntu 19.04 can provide all the packages needed at the system level and can be installed as follows:
+```shell
+# python 2
+sudo apt install python-configparser python-enum34 python-future python-grpcio python-lxml
+# python 3
+sudo apt install python3-configparser python3-enum34 python3-future python3-grpcio python3-lxml
+```
+
 # Pre-Req Installing OSPF MDR
 
 Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing 
@@ -172,6 +192,17 @@ After running the *core-gui* command, a GUI should appear with a canvas for draw
 This option is listed here for developers and advanced users who are comfortable patching and building source code. 
 Please consider using the binary packages instead for a simplified install experience.
 
+## Pre-Req All
+
+Python module grpcio-tools is currently needed to generate code from the CORE protobuf file during the build.
+
+```shell
+# python2
+pip2 install grpcio-tools
+# python3
+pip3 install grpcio-tools 
+```
+
 ## Pre-Reqs Ubuntu 18.04
 
 ```shell
@@ -184,7 +215,7 @@ sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-
 sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img
 ```
 
-### CentOS 7 with Gnome Desktop Requirements
+## Pre-Reqs CentOS 7
 
 ```shell
 sudo yum -y install automake gcc python-devel libev-devel tk
@@ -222,7 +253,7 @@ PYTHON=python3 ./configure
 make doc
 ```
 
-### Build Packages
+## Build Packages
 Build package commands, DESTDIR is used for gui packaging only
 
 * Install [fpm](http://fpm.readthedocs.io/en/latest/installing.html)
