@@ -204,7 +204,7 @@ tar xzf core-*.tar.gz
 cd core-*
 ```
 
-#### Tradional Autotools Build
+#### Traditional Autotools Build
 ```shell
 ./bootstrap.sh
 ./configure
