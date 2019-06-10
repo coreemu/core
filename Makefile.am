@@ -28,7 +28,7 @@ EXTRA_DIST = bootstrap.sh \
 	     LICENSE \
 	     README.md \
 	     ASSIGNMENT_OF_COPYRIGHT.pdf \
-	     Changelog \
+	     CHANGELOG.md \
 	     .version \
 	     .version.date
 

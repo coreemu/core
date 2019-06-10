@@ -1,53 +1,89 @@
-2019-03-25 CORE 5.2.1
-  * Packaging:
-   - documentation no longer builds by default, must use configure flag
-   - added configure flag to allow only building vcmd
-   - sphinx will no long be required when not building documentation
-  * Services:
-   - Added source NAT service
-   - Fixed DHCP service for Ubuntu 18.04
-  * BUGFIXES:
-   - #188 - properly remove session on delete TLV API call
-   - #192 - updated default gnome terminal command for nodes to be Ubuntu 18.04 compatible
-   - #193 - updates to service validation, will retry on failure and better exception logging
-   - #195 - TLV link message data fix
-   - #196 - fix to avoid clearing out default services
-   - #197 - removed wireless_link_all API from EmuSession
-   - #216 - updated default WLAN bandwidth to 54Mbps
-   - #223 - fix to saving RJ45 to session XML files
+## 2019-06-10 CORE 5.3.0
+  * Enhancements
+    - python 2 / 3 support
+    - added new API using [gRPC](https://grpc.io/)
+    - --grpc --grpc-port --grpc-address flags added to core-daemon
+    - core.api.grpc.client.CoreGrpcClient, provides a convenience wrapper for leveraging the API
+  * Docs
+    - Updates to installation instructions for latest changes
+  * Services
+    - Added FRR service
+  * EMANE
+    - Added EMANE prefix configuration when looking for emane model manifest files
+    - requires configuring **emane_prefix** in /etc/core/core.conf
+  * Cleanup
+    - Refactoring of the core python package structure, trying to help provide better organization and 
+    logical groupings
+  * Issues
+    - \#246 - Fixed network to network link handling when reading xml files
+    - \#236 - Fixed storing/reading of link configuration values within xml files 
+    - \#170 - FRR Service
+    - \#155 - EMANE path configuration
+    - \#233 - Python 3 support
+    - \#245 - Fixed bidirectional link configurations when reading from xml files
+    - \#208 - gRPC API
+    - Fixed link configuration dup handling when loaded from xml files
 
-2018-05-22 CORE 5.1
-  * DAEMON:
-   - removed and cleared out code that is either legacy or no longer supported (Xen, BSD, Kernel patching, RPM/DEB specific files)
-   - default nodes are now set in the node map
-   - moved ns3 and netns directories to the top of the repo
-   - changes to make use of fpm as the tool for building packages
-   - removed usage of logzero to avoid dependency issues for built packages
-   - removed daemon addons directory
-   - added CoreEmu to core.emulator.coreemu to help begin serving as the basis for a more formal API for scripting and creating new external APIs out of
-   - cleaned up logging, moved more logging to DEBUG from INFO, tried to mold INFO message to be more simple and informative
-   - EMANE 1.0.1-1.21 supported
-   - updates to leverage EMANE python bindings for dynamically parsing phy/mac manifest files
-   - example custom EMANE model lives under /usr/share/core/examples/myemane/examplemodel.py
-   - EMANE TDMA model now supports an option to start a TDMA schedule when running
-   - fixed issues with coresendmsg script due to code refactoring
-   - added make target for generating documentation "make doc"
-   - Python 2.7+ is now required
-   - ns3 is no longer bundled by default, but will be produced as a separate package for installation
-  * GUI:
-   - updated broken help links in GUI Help->About
+## 2019-06-07 CORE 5.2.2
+  * Enhancements:
+    - adds back in core-daemon udp support for coresendmsg, people may have depended on previously for certain scenarios
+  * Bug Fixes:
+    - fixes issue in GUI that would prevent moving nodes during mobility scenarios
+
+## 2019-03-25 CORE 5.2.1
   * Packaging:
-   - fixed PYTHON_PATH to PYTHONPATH in sysv script
-   - added make command to leverage FPM as the tool for creating deb/rpm packages going forward, there is documentation within README.md to try it out
-  * TEST:
-   - fixed some broken tests
-   - new test cases based on CoreEmu usage
+    - documentation no longer builds by default, must use configure flag
+    - added configure flag to allow only building vcmd
+    - sphinx will no long be required when not building documentation
+  * Services:
+    - Added source NAT service
+    - Fixed DHCP service for Ubuntu 18.04
   * BUGFIXES:
-   - #142 - duplication of custom services
-   - #136 - sphinx-apidoc command not found
-   - #137 - make command fails when using distclean
+    - \#188 - properly remove session on delete TLV API call
+    - \#192 - updated default gnome terminal command for nodes to be Ubuntu 18.04 compatible
+    - \#193 - updates to service validation, will retry on failure and better exception logging
+    - \#195 - TLV link message data fix
+    - \#196 - fix to avoid clearing out default services
+    - \#197 - removed wireless_link_all API from EmuSession
+    - \#216 - updated default WLAN bandwidth to 54Mbps
+    - \#223 - fix to saving RJ45 to session XML files
+
+## 2018-05-22 CORE 5.1
+  * DAEMON:
+    - removed and cleared out code that is either legacy or no longer supported (Xen, BSD, Kernel patching, RPM/DEB 
+   specific files)
+    - default nodes are now set in the node map
+    - moved ns3 and netns directories to the top of the repo
+    - changes to make use of fpm as the tool for building packages
+    - removed usage of logzero to avoid dependency issues for built packages
+    - removed daemon addons directory
+    - added CoreEmu to core.emulator.coreemu to help begin serving as the basis for a more formal API for scripting 
+   and creating new external APIs out of
+    - cleaned up logging, moved more logging to DEBUG from INFO, tried to mold INFO message to be more simple and 
+   informative
+    - EMANE 1.0.1-1.21 supported
+    - updates to leverage EMANE python bindings for dynamically parsing phy/mac manifest files
+    - example custom EMANE model lives under /usr/share/core/examples/myemane/examplemodel.py
+    - EMANE TDMA model now supports an option to start a TDMA schedule when running
+    - fixed issues with coresendmsg script due to code refactoring
+    - added make target for generating documentation "make doc"
+    - Python 2.7+ is now required
+    - ns3 is no longer bundled by default, but will be produced as a separate package for installation
+  * GUI:
+    - updated broken help links in GUI Help->About
+  * Packaging:
+    - fixed PYTHON_PATH to PYTHONPATH in sysv script
+    - added make command to leverage FPM as the tool for creating deb/rpm packages going forward, there is documentation 
+   within README.md to try it out
+  * TEST:
+    - fixed some broken tests
+    - new test cases based on CoreEmu usage
+  * BUGFIXES:
+    - \#142 - duplication of custom services
+    - \#136 - sphinx-apidoc command not found
+    - \#137 - make command fails when using distclean
    
-2017-09-01 CORE 5.0
+## 2017-09-01 CORE 5.0
   * DEVELOPMENT:
     - support for editorconfig to help standardize development across IDEs, from the defined configuration file
     - support for sonarqube analysis, from the defined configuration file
@@ -65,7 +101,7 @@
   * BUGFIXES:
     - merged pull requests for: #115, #110, #109, #107, #106, #105, #103, #102, #101, #96
 
-2015-06-05 CORE 4.8
+## 2015-06-05 CORE 4.8
   * EMANE:
     - support for EMANE 0.9.2
     - run emane in each container when using EMANE 0.9.2
@@ -101,8 +137,7 @@
     - improved detecting when a distributed emulation is already running
     - improved documentation
 
-2014-08-06 CORE 4.7
-
+## 2014-08-06 CORE 4.7
   * EMANE:
     - support for EMANE 0.9.1
     - fix error when using Comm Effect model with loss/duplicate string values
@@ -145,12 +180,9 @@
     - fixed the following bugs: #150, 169, 188, 220, 225, 230, 231, 242, 244,
       247, 248, 250, 251
 
-2013-09-25 CORE 4.6
-
-  * NOTE: cored is now core-daemon, and core is now core-gui (for Debian
-    acceptance)
-  * NOTE: /etc/init.d/core is now /etc/init.d/core-daemon (for insserv
-    compatibility)
+## 2013-09-25 CORE 4.6
+  * NOTE: cored is now core-daemon, and core is now core-gui (for Debian acceptance)
+  * NOTE: /etc/init.d/core is now /etc/init.d/core-daemon (for insserv compatibility)
   * EMANE:
     - don't start EMANE locally if no local NEMs
     - EMANE poststartup() to re-transmit location events during initialization
@@ -163,7 +195,6 @@
     - added EMANE model to CORE converter
     - parse lat/long/alt from node messages, for moving nodes using command-line
     - fix bug #196 incorrect distance when traversing UTM zones
-
   * GUI:
     - added Cut, Copy, and Paste options to the Edit menu
     - paste will copy selected services and take care of node and interface
@@ -173,7 +204,6 @@
     -  "~", "%SESSION%", "%SESSION_DIR%", "%SESSION_USER%", "%NODE%", "%NODENAME%"
     - use CORE_DATA_DIR insteadof LIBDIR
     - fix Adjacency Widget to work with OSPFv2 only networks
-
   * BUILD:
     - build/packaging improvements for inclusion on Debian
     - fix error when running scenario with a mobility script in batch mode
@@ -181,7 +211,6 @@
     - renamed core-cleanup.sh to core-cleanup for Debian conformance
     - don't always generate man pages from Makefile; new manpages for
     coresendmsg and core-daemon
-
   * BUGFIXES:
     - don't auto-assign IPv4/IPv6 addresses when none received in Link Messages (session reconnect)
     - fixed lock view
@@ -195,8 +224,7 @@
     - fix the following bugs: 166, 172, 177, 178, 192, 194, 196, 201, 202,
     205, 206, 210, 212, 213, 214, 221
 
-2013-04-13 CORE 4.5
-
+## 2013-04-13 CORE 4.5
   * GUI:
     - improved behavior when starting GUI without daemon, or using File New after connection with daemon is lost
     - fix various GUI issues when reconnecting to a session
@@ -209,7 +237,8 @@
     - added "--addons" startup mode to pass control to code included from addons dir
     - added "Locked" entry to View menu to prevent moving items
     - use currently selected node type when invoking a topology generator
-    - updated throughput plots with resizing, color picker, plot labels, locked scales, and save/load plot configuration with imn file
+    - updated throughput plots with resizing, color picker, plot labels, locked scales, and save/load plot 
+    configuration with imn file
     - improved session dialog
   * EMANE:
     - EMANE 0.8.1 support with backwards-compatibility for 0.7.4
@@ -225,10 +254,12 @@
     - XML import and export
     - renamed "cored.py" to "cored", "coresendmsg.py" to "coresendmsg"
     - code reorganization and clean-up
-    - updated XML export to write NetworkPlan, MotionPlan, and ServicePlan within a Scenario tag, added new "Save As XML..." File menu entry
+    - updated XML export to write NetworkPlan, MotionPlan, and ServicePlan within a Scenario tag, added new 
+    "Save As XML..." File menu entry
     - added script_start/pause/stop options to Ns2ScriptedMobility
     - "python" source sub-directory renamed to "daemon"
-    - added "cored -e" option to execute a Python script, adding its session to the active sessions list, allowing for GUI connection
+    - added "cored -e" option to execute a Python script, adding its session to the active sessions list, allowing for 
+    GUI connection
     - support comma-separated list for custom_services_dir in core.conf file
     - updated kernel patches for Linux kernel 3.5
     - support RFC 6164-style IPv6 /127 addressing
@@ -236,10 +267,10 @@
     - integrate ns-3 node location between CORE and ns-3 simulation
     - added ns-3 random walk mobility example
     - updated ns-3 Wifi example to allow GUI connection and moving of nodes
-  * fixed the following bugs: 54, 103, 111, 136, 145, 153, 157, 160, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176, 184, 190, 193
+  * fixed the following bugs: 54, 103, 111, 136, 145, 153, 157, 160, 161, 162, 164, 165, 168, 170, 171, 173, 174, 176, 
+  184, 190, 193
 
-2012-09-25 CORE 4.4
-
+## 2012-09-25 CORE 4.4
   * GUI:
     - real-time bandwidth plotting tool
     - added Wireshark and tshark right-click menu items
@@ -277,11 +308,10 @@
     - support /etc/core/environment and ~/.core/environment files
     - added Ns2ScriptedMobility model to Python, removed from the GUI
     - namespace nodes mount a private /sys
+    - fixed the following bugs: 80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 143, 144, 146, 
+    147, 151, 154, 155
 
-    - fixed the following bugs: 80, 81, 84, 99, 104, 109, 110, 122, 124, 131, 133, 134, 135, 137, 140, 143, 144, 146, 147, 151, 154, 155
-
-2012-03-07 CORE 4.3
-
+## 2012-03-07 CORE 4.3
   * EMANE 0.7.2 and 0.7.3 support
   * hook scripts: customize actions at any of six different session states
   * Check Emulation Light (CEL) exception feedback system
@@ -298,8 +328,7 @@
   * added PhysicalNode class for joining real nodes with emulated networks
   * fixed the following bugs: 50, 75, 76, 79, 82, 83, 85, 86, 89, 90, 92, 94, 96, 98, 100, 112, 113, 116, 119, 120
 
-2011-08-19 CORE 4.2
-
+## 2011-08-19 CORE 4.2
   * EMANE 0.7.1 support
     - support for Bypass model, Universal PHY, logging, realtime
   * configurable MAC addresses
@@ -311,9 +340,10 @@
   * new security services, custom service becomes UserDefined
   * new services and Python scripting chapters in manual
   * fixes to distributed emulation, linking tunnels/RJ45s with WLANs/hubs/switches
-  * fixed the following bugs: 18, 32, 34, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 52, 53, 55, 57, 58, 60, 62, 64, 65, 66, 68, 71, 72, 74
+  * fixed the following bugs: 18, 32, 34, 38, 40, 41, 42, 43, 44, 45, 46, 47, 48, 49, 52, 53, 55, 57, 58, 60, 62, 64,
+  65, 66, 68, 71, 72, 74
 
-2011-01-05 CORE 4.1
+## 2011-01-05 CORE 4.1
   * new icons for toolbars and nodes
   * node services introduced, node models deprecated
   * customizable node types
@@ -325,7 +355,7 @@
   * EMANE 0.6.4 support
   * numerous bugfixes
 
-2010-08-17 CORE 4.0
+## 2010-08-17 CORE 4.0
   * Python framework with Linux network namespace (netns) support (Linux netns is now the primary supported platform)
   * ability to close the GUI and later reconnect to a running session (netns only)
   * EMANE integration (netns only)
@@ -334,9 +364,8 @@
   * use of /etc/core instead of /usr/local/etc/core
   * various bugfixes
 
-2009-09-15 CORE 3.5
+## 2009-09-15 CORE 3.5
 
-2009-06-23 CORE 3.4
+## 2009-06-23 CORE 3.4
 
-2009-03-11 CORE 3.3
-
+## 2009-03-11 CORE 3.3
