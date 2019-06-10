@@ -147,9 +147,19 @@ yum install ./core_python_$VERSION_x86_64.rpm
 yum install ./core_python3_$VERSION_x86_64.rpm
 ```
 
-Turn off SELINUX by setting *SELINUX=disabled* in the */etc/sysconfig/selinux* file, and adding *selinux=0* to the 
-kernel line in your */etc/grub.conf* file; on Fedora 15 and newer, disable sandboxd using ```chkconfig sandbox off```; 
-you need to reboot in order for this change to take effect
+Disabling SELINUX:
+
+```shell
+# change the following in /etc/sysconfig/selinux
+SELINUX=disabled
+
+# add the following to the kernel line in /etc/grub.conf
+selinux=0
+
+# Fedora 15 and newer, disable sandboxd
+# reboot in order for this change to take effect
+chkconfig sandbox off
+```
 
 Turn off firewalls:
 
@@ -254,7 +264,9 @@ make doc
 ```
 
 ## Build Packages
-Build package commands, DESTDIR is used for gui packaging only
+Build package commands, DESTDIR is used to make install into and then for packaging by fpm.
+
+**NOTE: clean the DESTDIR if re-using the same directory**
 
 * Install [fpm](http://fpm.readthedocs.io/en/latest/installing.html)
 
