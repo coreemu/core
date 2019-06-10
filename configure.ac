@@ -110,8 +110,7 @@ if test "x$enable_daemon" = "xyes"; then
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
   AM_PATH_PYTHON(2.7)
-  pythondir=`echo ${pythondir} | sed s,site-packages,dist-packages,`
-  AC_SUBST(pythondir,$pythondir)
+  AM_CONDITIONAL([PYTHON3], [test "$PYTHON" == "python3"])
 
   AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
   if test "x$brctl_path" = "xno" ; then
@@ -266,6 +265,7 @@ GUI:
 Daemon:
   Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
+  Python:                     ${PYTHON}
   Python modules:             ${pythondir}
   Logs:                       ${CORE_STATE_DIR}/log
 

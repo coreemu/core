@@ -44,6 +44,13 @@ DISTCLEANFILES = aclocal.m4 \
 MAINTAINERCLEANFILES = .version	\
 		       .version.date
 
+
+if PYTHON3
+PYTHON_DEP = python >= 3.0
+else
+PYTHON_DEP = python >= 2.7, python < 3.0
+endif
+
 define fpm-rpm =
 fpm -s dir -t rpm -n core \
 	-m "$(PACKAGE_MAINTAINERS)" \
@@ -51,7 +58,7 @@ fpm -s dir -t rpm -n core \
 	--description "Common Open Research Emulator" \
 	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
-	-p core_python$(FPM_PYTHON)_VERSION_ARCH.rpm \
+	-p core_$(PYTHON)_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
 	--rpm-init scripts/core-daemon \
 	-d "tcl" \
@@ -63,7 +70,7 @@ fpm -s dir -t rpm -n core \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
-	-d "python >= $(FPM_PYTHON)" \
+	-d "$(PYTHON_DEP)" \
 	-C $(DESTDIR)
 endef
 
@@ -74,7 +81,7 @@ fpm -s dir -t deb -n core \
 	--description "Common Open Research Emulator" \
 	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
-	-p core_python$(FPM_PYTHON)_VERSION_ARCH.deb \
+	-p core_$(PYTHON)_VERSION_ARCH.deb \
 	-v $(PACKAGE_VERSION) \
 	--deb-systemd scripts/core-daemon.service \
 	-d "tcl" \
@@ -87,7 +94,7 @@ fpm -s dir -t deb -n core \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
-	-d "python >= $(FPM_PYTHON)" \
+	-d "$(PYTHON_DEP)" \
 	-C $(DESTDIR)
 endef
 

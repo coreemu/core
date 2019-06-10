@@ -8,8 +8,6 @@
 #
 
 AM_CFLAGS = -Wall -fno-strict-aliasing -O3 -g @libev_CFLAGS@
-SETUPPY	= setup.py
-SETUPPYFLAGS = -v
 
 SRC_COMMON = vnode_msg.c vnode_cmd.c vnode_chnl.c vnode_io.c \
 	     vnode_msg.h vnode_cmd.h vnode_chnl.h vnode_io.h \
@@ -29,7 +27,3 @@ netns_SOURCES = $(SRC_NETNS)
 
 # extra cruft to remove
 DISTCLEANFILES = Makefile.in MANIFEST
-
-# include source files for Python libraries with distribution tarball
-EXTRA_DIST = setup.py MANIFEST.in
-
