@@ -23,7 +23,7 @@ __Note: The CORE GUI is currently in a state of transition.  The replacement can
 
 ## Prerequisites
 
-Beyond instaling CORE, you must have the CORE daemon running.  This is done on the command line with either Systemd or SysV
+Beyond installing CORE, you must have the CORE daemon running.  This is done on the command line with either Systemd or SysV
 ```shell
 # systed
 sudo systemctl daemon-reload
