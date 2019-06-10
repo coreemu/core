@@ -170,27 +170,35 @@ This option is listed here for developers and advanced users who are comfortable
 
 To build CORE from source on Ubuntu, first install these development packages. These packages are not required for normal binary package installs.
 
-#### Ubuntu 18.04 pre-reqs
+You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu/core) page. Choose either a stable release version or the development snapshot available in the *nightly_snapshots* directory.
+
+#### Install Requirements
+
+##### Ubuntu 18.04 Requirements
 
 ```shell
 sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-sphinx python-setuptools python-lxml python-enum34 tk libtk-img
 ```
 
-#### Ubuntu 16.04 Requirements
+##### Ubuntu 16.04 Requirements
 
 ```shell
 sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-sphinx python-setuptools python-enum34 python-lxml libtk-img
 ```
 
 
-#### CentOS 7 with Gnome Desktop Requirements
+##### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
 sudo yum -y install automake gcc python-devel libev-devel python-sphinx tk python-lxml python-enum34
 ```
 
-You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu/core) page. Choose either a stable release version or the development snapshot available in the *nightly_snapshots* directory.
+#### Download and Extract Source Code
 
+##### Download
+You can obtain the CORE source code from the [CORE GitHub](https://github.com/coreemu/core) page.
+
+##### Extract
 ```shell
 tar xzf core-*.tar.gz
 cd core-*
