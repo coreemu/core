@@ -1,4 +1,3 @@
-
 # CORE Installation
 
 * Table of Contents
@@ -35,7 +34,7 @@ Install Path | Description
 /usr/bin/core-daemon|Daemon startup command
 /usr/bin/{core-cleanup, coresendmsg, core-manage}|Misc. helper commands/scripts
 /usr/lib/core|GUI files
-/usr/lib/python{2.7,3.X}/dist-packages/core|Python modules for daemon/scripts
+/usr/lib/python{2.7,3}/dist-packages/core|Python modules for daemon/scripts
 /etc/core/|Daemon and log configuration files
 ~/.core/|User-specific GUI preferences and scenario files
 /usr/share/core/|Example scripts and scenarios
@@ -195,8 +194,10 @@ sudo yum -y install automake gcc python-devel libev-devel tk
 
 ```shell
 ./bootstrap.sh
-# point at desired python version binary for use
-PYTHON=python ./configure 
+# for python2
+PYTHON=python2 ./configure
+# for python3
+PYTHON=python3 ./configure 
 make
 sudo make install
 ```
@@ -206,12 +207,18 @@ sudo make install
 Building documentation requires python-sphinx not noted above.
 
 ```shell
-# install python sphinx
-sudo apt install python(3)-sphinx
-sudo yum install python(3)-sphinx
+# install python2 sphinx
+sudo apt install python-sphinx
+sudo yum install python-sphinx
+# install python3 sphinx
+sudo apt install python3-sphinx
+sudo yum install python3-sphinx
 
 ./bootstrap.sh
-./configure
+# for python2
+PYTHON=python2 ./configure
+# for python3
+PYTHON=python3 ./configure
 make doc
 ```
 
@@ -222,8 +229,10 @@ Build package commands, DESTDIR is used for gui packaging only
 
 ```shell
 ./bootstrap.sh
-# point at desired python version binary for use
-PYTHON=python ./configure
+# for python2
+PYTHON=python2 ./configure
+# for python3
+PYTHON=python3 ./configure
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build
