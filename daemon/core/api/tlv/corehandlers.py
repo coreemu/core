@@ -1269,10 +1269,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 parsed_config = ConfigShim.str_to_dict(values_str)
 
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
-            if self.session.state == EventTypes.RUNTIME_STATE.value and object_name == BasicRangeModel.name:
+            if self.session.state == EventTypes.RUNTIME_STATE.value:
                 try:
                     node = self.session.get_node(node_id)
-                    node.updatemodel(parsed_config)
+                    if object_name == BasicRangeModel.name:
+                        node.updatemodel(parsed_config)
                 except KeyError:
                     logging.error("skipping mobility configuration for unknown node: %s", node_id)
 

@@ -1026,7 +1026,7 @@ class WlanNode(CoreNetwork):
     def update_mobility(self, config):
         if not self.mobility:
             raise ValueError("no mobility set to update for node(%s)", self.id)
-        self.mobility.set_configs(config, node_id=self.id)
+        self.mobility.update_config(config)
 
     def updatemodel(self, config):
         if not self.model:
