@@ -20,9 +20,7 @@ import ns.network
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
 
-from core.misc import ipaddress
-from core.misc import nodemaps
-from core.misc import nodeutils
+from core.nodes import nodeutils, nodemaps, ipaddress
 
 
 def add_to_server(session):
@@ -48,7 +46,7 @@ def wifisession(opt):
     session.filename = session.name + ".py"
     session.node_count = str(opt.numnodes + 1)
     add_to_server(session)
-    wifi = session.add_object(cls=Ns3WifiNet, name="wlan1", rate="OfdmRate12Mbps")
+    wifi = session.create_node(cls=Ns3WifiNet, name="wlan1", rate="OfdmRate12Mbps")
     wifi.setposition(30, 30, 0)
     # for improved connectivity
     wifi.phy.Set("RxGain", ns.core.DoubleValue(18.0))

@@ -28,7 +28,7 @@ EXTRA_DIST = bootstrap.sh \
 	     LICENSE \
 	     README.md \
 	     ASSIGNMENT_OF_COPYRIGHT.pdf \
-	     Changelog \
+	     CHANGELOG.md \
 	     .version \
 	     .version.date
 
@@ -44,38 +44,25 @@ DISTCLEANFILES = aclocal.m4 \
 MAINTAINERCLEANFILES = .version	\
 		       .version.date
 
-define fpm-python =
-fpm -s python -t $1 \
-	-m "$(PACKAGE_MAINTAINERS)" \
-	--vendor "$(PACKAGE_VENDOR)" \
-	$2
-endef
 
-define fpm-gui =
-fpm -s dir -t $1 -n core-gui \
+if PYTHON3
+PYTHON_DEP = python3 >= 3.0
+else
+PYTHON_DEP = python >= 2.7, python < 3.0
+endif
+
+define fpm-rpm =
+fpm -s dir -t rpm -n core \
 	-m "$(PACKAGE_MAINTAINERS)" \
 	--license "BSD" \
-	--description "Common Open Research Emulator GUI front-end" \
-	--url http://www.nrl.navy.mil/itd/ncs/products/core \
+	--description "Common Open Research Emulator" \
+	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
-	-p core-gui_VERSION_ARCH.$1 \
+	-p core_$(PYTHON)_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
-	-d "bash" \
+	--rpm-init scripts/core-daemon \
 	-d "tcl" \
 	-d "tk" \
-	$2 \
-	-C $(DESTDIR)
-endef
-
-define fpm-daemon-rpm =
-fpm -s python -t rpm \
-	-p NAME_sysv_VERSION_ARCH.rpm \
-	--rpm-init scripts/core-daemon \
-	--python-install-bin $(bindir) \
-	--python-install-data $(prefix) \
-	--python-install-lib $(pythondir) \
-	-m "$(PACKAGE_MAINTAINERS)" \
-	--vendor "$(PACKAGE_VENDOR)" \
 	-d "procps-ng" \
 	-d "bash >= 3.0" \
 	-d "bridge-utils" \
@@ -83,19 +70,23 @@ fpm -s python -t rpm \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
-	-d "python >= 2.7, python < 3.0" \
-	netns/setup.py daemon/setup.py
+	-d "$(PYTHON_DEP)" \
+	-C $(DESTDIR)
 endef
 
-define fpm-daemon-deb =
-fpm -s python -t deb \
-	-p NAME_$1_VERSION_ARCH.deb \
-	--python-install-bin $(bindir) \
-	--python-install-data $(prefix) \
-	--python-install-lib $(pythondir) \
-	$2 $3 \
+define fpm-deb =
+fpm -s dir -t deb -n core \
 	-m "$(PACKAGE_MAINTAINERS)" \
+	--license "BSD" \
+	--description "Common Open Research Emulator" \
+	--url https://github.com/coreemu/core \
 	--vendor "$(PACKAGE_VENDOR)" \
+	-p core_$(PYTHON)_VERSION_ARCH.deb \
+	-v $(PACKAGE_VERSION) \
+	--deb-systemd scripts/core-daemon.service \
+	-d "tcl" \
+	-d "tk" \
+	-d "libtk-img" \
 	-d "procps" \
 	-d "libc6 >= 2.14" \
 	-d "bash >= 3.0" \
@@ -103,21 +94,15 @@ fpm -s python -t deb \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
-	-d "python (>= 2.7), python (<< 3.0)" \
-	--deb-recommends quagga \
-	netns/setup.py daemon/setup.py
+	-d "$(PYTHON_DEP)" \
+	-C $(DESTDIR)
 endef
 
 .PHONY: fpm
 fpm: clean-local-fpm
-	$(MAKE) -C gui install DESTDIR=$(DESTDIR)
-	$(call fpm-gui,rpm)
-	$(call fpm-gui,deb,-d "libtk-img")
-	$(call fpm-python,rpm,ns3/setup.py)
-	$(call fpm-python,deb,ns3/setup.py)
-	$(call fpm-daemon-rpm)
-	$(call fpm-daemon-deb,sysv,--deb-init,scripts/core-daemon)
-	$(call fpm-daemon-deb,systemd,--deb-systemd,scripts/core-daemon.service)
+	$(MAKE) install DESTDIR=$(DESTDIR)
+	$(call fpm-deb)
+	$(call fpm-rpm)
 
 .PHONY: clean-local-fpm
 clean-local-fpm:

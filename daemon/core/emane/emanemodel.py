@@ -4,11 +4,11 @@ Defines Emane Models used within CORE.
 import logging
 import os
 
-from core.conf import ConfigGroup
-from core.conf import Configuration
+from core.config import ConfigGroup
+from core.config import Configuration
 from core.emane import emanemanifest
-from core.enumerations import ConfigDataTypes
-from core.mobility import WirelessModel
+from core.emulator.enumerations import ConfigDataTypes
+from core.location.mobility import WirelessModel
 from core.xml import emanexml
 
 
@@ -26,13 +26,13 @@ class EmaneModel(WirelessModel):
 
     # default phy configuration settings, using the universal model
     phy_library = None
-    phy_xml = "/usr/share/emane/manifest/emanephy.xml"
+    phy_xml = "emanephy.xml"
     phy_defaults = {
         "subid": "1",
         "propagationmodel": "2ray",
         "noisemode": "none"
     }
-    phy_config = emanemanifest.parse(phy_xml, phy_defaults)
+    phy_config = []
 
     # support for external configurations
     external_config = [
@@ -44,11 +44,41 @@ class EmaneModel(WirelessModel):
     config_ignore = set()
 
     @classmethod
+    def load(cls, emane_prefix):
+        """
+        Called after being loaded within the EmaneManager. Provides configured emane_prefix for
+        parsing xml files.
+
+        :param str emane_prefix: configured emane prefix path
+        :return: nothing
+        """
+        manifest_path = "share/emane/manifest"
+        # load mac configuration
+        mac_xml_path = os.path.join(emane_prefix, manifest_path, cls.mac_xml)
+        cls.mac_config = emanemanifest.parse(mac_xml_path, cls.mac_defaults)
+
+        # load phy configuration
+        phy_xml_path = os.path.join(emane_prefix, manifest_path, cls.phy_xml)
+        cls.phy_config = emanemanifest.parse(phy_xml_path, cls.phy_defaults)
+
+    @classmethod
     def configurations(cls):
+        """
+        Returns the combination all all configurations (mac, phy, and external).
+
+        :return: all configurations
+        :rtype: list[Configuration]
+        """
         return cls.mac_config + cls.phy_config + cls.external_config
 
     @classmethod
     def config_groups(cls):
+        """
+        Returns the defined configuration groups.
+
+        :return: list of configuration groups.
+        :rtype: list[ConfigGroup]
+        """
         mac_len = len(cls.mac_config)
         phy_len = len(cls.phy_config) + mac_len
         config_len = len(cls.configurations())
@@ -75,7 +105,7 @@ class EmaneModel(WirelessModel):
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_name = emanexml.transport_file_name(self.object_id, transport_type)
+        transport_name = emanexml.transport_file_name(self.id, transport_type)
 
         # create nem xml file
         nem_file = os.path.join(self.session.session_dir, nem_name)
@@ -108,7 +138,7 @@ class EmaneModel(WirelessModel):
         :return:
         """
         try:
-            wlan = self.session.get_object(self.object_id)
+            wlan = self.session.get_node(self.id)
             wlan.setnempositions(moved_netifs)
         except KeyError:
             logging.exception("error during update")
@@ -117,7 +147,7 @@ class EmaneModel(WirelessModel):
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
-        :param core.netns.vif.Veth netif: interface one
+        :param core.nodes.interface.Veth netif: interface one
         :param bw: bandwidth to set to
         :param delay: packet delay to set to
         :param loss: packet loss to set to
@@ -126,4 +156,4 @@ class EmaneModel(WirelessModel):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        logging.warn("emane model(%s) does not support link configuration", self.name)
+        logging.warning("emane model(%s) does not support link configuration", self.name)

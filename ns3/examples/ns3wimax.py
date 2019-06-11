@@ -13,9 +13,7 @@ import logging
 import optparse
 import sys
 
-from core.misc import ipaddress
-from core.misc import nodemaps
-from core.misc import nodeutils
+from core.nodes import nodeutils, nodemaps, ipaddress
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WimaxNet
 
@@ -26,7 +24,7 @@ def wimaxsession(opt):
     """
     nodeutils.set_node_map(nodemaps.NODES)
     session = Ns3Session(1, persistent=True, duration=opt.duration)
-    wimax = session.add_object(cls=Ns3WimaxNet, name="wlan1")
+    wimax = session.create_node(cls=Ns3WimaxNet, name="wlan1")
     # wimax.wimax.EnableLogComponents()
 
     prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")

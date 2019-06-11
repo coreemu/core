@@ -598,8 +598,6 @@ menu .menubar.help -tearoff 0
   "_launchBrowser https://github.com/coreemu/core"
 .menubar.help add command -label "CORE Documentation (www)" -command \
   "_launchBrowser https://coreemu.github.io/core/"
-.menubar.help add command -label "Mailing list (www)" -command \
-  "_launchBrowser https://publists.nrl.navy.mil/mailman/listinfo/core-users"
 .menubar.help add command -label "About" -command popupAbout
 
 #

@@ -8,8 +8,8 @@
 import optparse
 import socket
 
-from core.api import coreapi
-from core.enumerations import MessageFlags, SessionTlvs, CORE_API_PORT
+from core.api.tlv import coreapi
+from core.emulator.enumerations import MessageFlags, SessionTlvs, CORE_API_PORT
 
 
 def main():
@@ -40,7 +40,7 @@ def main():
             data = sock.recv(msglen)
         message = coreapi.CoreMessage(msgflags, hdr, data)
         sessions = message.get_tlv(coreapi.SessionTlvs.NUMBER.value)
-        print "sessions:", sessions
+        print("sessions: {}".format(sessions))
 
     sock.close()
 

@@ -6,10 +6,10 @@ share the same MAC+PHY model.
 
 import logging
 
-from core.coreobj import PyCoreNet
-from core.enumerations import LinkTypes
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
+from core.nodes.base import CoreNetworkBase
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
 
 try:
     from emane.events import LocationEvent
@@ -20,7 +20,7 @@ except ImportError:
         logging.debug("compatible emane python bindings not installed")
 
 
-class EmaneNet(PyCoreNet):
+class EmaneNet(CoreNetworkBase):
     """
     EMANE network base class.
     """
@@ -37,8 +37,8 @@ class EmaneNode(EmaneNet):
     Emane controller object that exists in a session.
     """
 
-    def __init__(self, session, objid=None, name=None, start=True):
-        super(EmaneNode, self).__init__(session, objid, name, start)
+    def __init__(self, session, _id=None, name=None, start=True):
+        super(EmaneNode, self).__init__(session, _id, name, start)
         self.conf = ""
         self.up = False
         self.nemidmap = {}
@@ -68,9 +68,9 @@ class EmaneNode(EmaneNet):
 
     def updatemodel(self, config):
         if not self.model:
-            raise ValueError("no model set to update for node(%s)", self.objid)
-        logging.info("node(%s) updating model(%s): %s", self.objid, self.model.name, config)
-        self.model.set_configs(config, node_id=self.objid)
+            raise ValueError("no model set to update for node(%s)", self.id)
+        logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
+        self.model.set_configs(config, node_id=self.id)
 
     def setmodel(self, model, config):
         """
@@ -80,10 +80,10 @@ class EmaneNode(EmaneNet):
         if model.config_type == RegisterTlvs.WIRELESS.value:
             # EmaneModel really uses values from ConfigurableManager
             #  when buildnemxml() is called, not during init()
-            self.model = model(session=self.session, object_id=self.objid)
+            self.model = model(session=self.session, _id=self.id)
             self.model.update_config(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
-            self.mobility = model(session=self.session, object_id=self.objid)
+            self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
 
     def setnemid(self, netif, nemid):
@@ -116,7 +116,7 @@ class EmaneNode(EmaneNet):
         """
         Retrieve list of linked interfaces sorted by node number.
         """
-        return sorted(self._netif.values(), key=lambda ifc: ifc.node.objid)
+        return sorted(self._netif.values(), key=lambda ifc: ifc.node.id)
 
     def installnetifs(self):
         """
@@ -130,7 +130,7 @@ class EmaneNode(EmaneNet):
             logging.error(warntxt)
 
         for netif in self.netifs():
-            external = self.session.emane.get_config("external", self.objid, self.model.name)
+            external = self.session.emane.get_config("external", self.id, self.model.name)
             if external == "0":
                 netif.setaddrs()
 

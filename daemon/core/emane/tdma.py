@@ -5,12 +5,10 @@ tdma.py: EMANE TDMA model bindings for CORE
 import logging
 import os
 
-from core import constants
-from core.conf import Configuration
-from core.emane import emanemanifest
+from core import constants, utils
+from core.config import Configuration
 from core.emane import emanemodel
-from core.enumerations import ConfigDataTypes
-from core.misc import utils
+from core.emulator.enumerations import ConfigDataTypes
 
 
 class EmaneTdmaModel(emanemodel.EmaneModel):
@@ -19,25 +17,29 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
 
     # mac configuration
     mac_library = "tdmaeventschedulerradiomodel"
-    mac_xml = "/usr/share/emane/manifest/tdmaeventschedulerradiomodel.xml"
-    mac_defaults = {
-        "pcrcurveuri": "/usr/share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
-    }
-    mac_config = emanemanifest.parse(mac_xml, mac_defaults)
+    mac_xml = "tdmaeventschedulerradiomodel.xml"
 
     # add custom schedule options and ignore it when writing emane xml
     schedule_name = "schedule"
     default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
-    mac_config.insert(
-        0,
-        Configuration(
-            _id=schedule_name,
-            _type=ConfigDataTypes.STRING,
-            default=default_schedule,
-            label="TDMA schedule file (core)"
-        )
-    )
     config_ignore = {schedule_name}
+
+    @classmethod
+    def load(cls, emane_prefix):
+        cls.mac_defaults["pcrcurveuri"] = os.path.join(
+            emane_prefix,
+            "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml"
+        )
+        super(EmaneTdmaModel, cls).load(emane_prefix)
+        cls.mac_config.insert(
+            0,
+            Configuration(
+                _id=cls.schedule_name,
+                _type=ConfigDataTypes.STRING,
+                default=cls.default_schedule,
+                label="TDMA schedule file (core)"
+            )
+        )
 
     def post_startup(self):
         """
@@ -46,7 +48,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         :return: nothing
         """
         # get configured schedule
-        config = self.session.emane.get_configs(node_id=self.object_id, config_type=self.name)
+        config = self.session.emane.get_configs(node_id=self.id, config_type=self.name)
         if not config:
             return
         schedule = config[self.schedule_name]

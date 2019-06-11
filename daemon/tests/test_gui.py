@@ -4,17 +4,17 @@ Unit tests for testing with a CORE switch.
 
 import threading
 
-from core.api import coreapi, dataconversion
-from core.api.coreapi import CoreExecuteTlv
-from core.enumerations import CORE_API_PORT, NodeTypes
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.misc import ipaddress
+from core.api.tlv import coreapi, dataconversion
+from core.api.tlv.coreapi import CoreExecuteTlv
+from core.emulator.enumerations import CORE_API_PORT, NodeTypes
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.nodes import ipaddress
 
 
 def command_message(node, command):
@@ -25,7 +25,7 @@ def command_message(node, command):
     :param command: command to execute
     :return: packed execute message
     """
-    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
     tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
     return coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
@@ -52,8 +52,8 @@ def switch_link_message(switch, node, address, prefix_len):
     :param prefix_len: prefix length of address
     :return: packed link message
     """
-    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.objid)
+    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
+    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.id)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
     tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, address)
@@ -70,7 +70,7 @@ def run_cmd(node, exec_cmd):
     :return: Returns the result of the command
     """
     # Set up the command api message
-    # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.objid)
+    # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
     # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
     # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
@@ -90,7 +90,7 @@ def run_cmd(node, exec_cmd):
         message_data = server.sock.recv(message_length)
 
         # If we get the right response return the results
-        print "received response message: %s" % message_type
+        print("received response message: %s" % message_type)
         if message_type == MessageTypes.EXECUTE.value:
             message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
             result = message.get_tlv(ExecuteTlvs.RESULT.value)

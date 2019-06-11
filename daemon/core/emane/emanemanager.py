@@ -6,14 +6,13 @@ import logging
 import os
 import threading
 
-from core import CoreCommandError
+from core import CoreCommandError, utils
 from core import constants
-from core.api import coreapi
-from core.api import dataconversion
-from core.conf import ConfigGroup
-from core.conf import ConfigShim
-from core.conf import Configuration
-from core.conf import ModelManager
+from core.api.tlv import coreapi, dataconversion
+from core.config import ConfigGroup
+from core.config import ConfigShim
+from core.config import Configuration
+from core.config import ModelManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -21,15 +20,14 @@ from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.enumerations import ConfigDataTypes
-from core.enumerations import ConfigFlags
-from core.enumerations import ConfigTlvs
-from core.enumerations import MessageFlags
-from core.enumerations import MessageTypes
-from core.enumerations import NodeTypes
-from core.enumerations import RegisterTlvs
-from core.misc import nodeutils
-from core.misc import utils
+from core.emulator.enumerations import ConfigDataTypes
+from core.emulator.enumerations import ConfigFlags
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import RegisterTlvs
+from core.nodes import nodeutils
 from core.xml import emanexml
 
 try:
@@ -51,6 +49,7 @@ EMANE_MODELS = [
     EmaneBypassModel,
     EmaneTdmaModel
 ]
+DEFAULT_EMANE_PREFIX = "/usr"
 
 
 class EmaneManager(ModelManager):
@@ -108,14 +107,14 @@ class EmaneManager(ModelManager):
             return self.get_configs(node_id=node_id, config_type=model_name)
         else:
             # don"t use default values when interface config is the same as net
-            # note here that using ifc.node.objid as key allows for only one type
+            # note here that using ifc.node.id as key allows for only one type
             # of each model per node;
             # TODO: use both node and interface as key
 
             # Adamson change: first check for iface config keyed by "node:ifc.name"
             # (so that nodes w/ multiple interfaces of same conftype can have
             #  different configs for each separate interface)
-            key = 1000 * interface.node.objid
+            key = 1000 * interface.node.id
             if interface.netindex is not None:
                 key += interface.netindex
 
@@ -124,7 +123,7 @@ class EmaneManager(ModelManager):
 
             # otherwise retrieve the interfaces node configuration, avoid using defaults
             if not config:
-                config = self.get_configs(node_id=interface.node.objid, config_type=model_name)
+                config = self.get_configs(node_id=interface.node.id, config_type=model_name)
 
             # get non interface config, when none found
             if not config:
@@ -212,6 +211,8 @@ class EmaneManager(ModelManager):
         """
         for emane_model in emane_models:
             logging.info("loading emane model: %s", emane_model.__name__)
+            emane_prefix = self.session.options.get_config("emane_prefix", default=DEFAULT_EMANE_PREFIX)
+            emane_model.load(emane_prefix)
             self.models[emane_model.name] = emane_model
 
     def add_node(self, emane_node):
@@ -222,9 +223,9 @@ class EmaneManager(ModelManager):
         :return: nothing
         """
         with self._emane_node_lock:
-            if emane_node.objid in self._emane_nodes:
-                raise KeyError("non-unique EMANE object id %s for %s" % (emane_node.objid, emane_node))
-            self._emane_nodes[emane_node.objid] = emane_node
+            if emane_node.id in self._emane_nodes:
+                raise KeyError("non-unique EMANE object id %s for %s" % (emane_node.id, emane_node))
+            self._emane_nodes[emane_node.id] = emane_node
 
     def getnodes(self):
         """
@@ -248,10 +249,11 @@ class EmaneManager(ModelManager):
         logging.debug("emane setup")
 
         # TODO: drive this from the session object
-        with self.session._objects_lock:
-            for node in self.session.objects.itervalues():
+        with self.session._nodes_lock:
+            for node_id in self.session.nodes:
+                node = self.session.nodes[node_id]
                 if nodeutils.is_node(node, NodeTypes.EMANE):
-                    logging.debug("adding emane node: id(%s) name(%s)", node.objid, node.name)
+                    logging.debug("adding emane node: id(%s) name(%s)", node.id, node.name)
                     self.add_node(node)
 
             if not self._emane_nodes:
@@ -317,7 +319,8 @@ class EmaneManager(ModelManager):
                 self.startdaemons()
                 self.installnetifs()
 
-            for emane_node in self._emane_nodes.itervalues():
+            for node_id in self._emane_nodes:
+                emane_node = self._emane_nodes[node_id]
                 for netif in emane_node.netifs():
                     nems.append((netif.node.name, netif.name, emane_node.getnemid(netif)))
 
@@ -342,7 +345,7 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             for key in sorted(self._emane_nodes.keys()):
                 emane_node = self._emane_nodes[key]
-                logging.debug("post startup for emane node: %s - %s", emane_node.objid, emane_node.name)
+                logging.debug("post startup for emane node: %s - %s", emane_node.id, emane_node.name)
                 emane_node.model.post_startup()
                 for netif in emane_node.netifs():
                     x, y, z = netif.node.position.get()
@@ -494,7 +497,7 @@ class EmaneManager(ModelManager):
         logging.info("Setting up default controlnet prefixes for distributed (%d configured)" % len(prefixes))
         prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]
         vals = 'controlnet="%s"' % prefixes
-        tlvdata = ""
+        tlvdata = b""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value, vals)
@@ -514,7 +517,7 @@ class EmaneManager(ModelManager):
 
             # skip nodes that already have a model set
             if emane_node.model:
-                logging.debug("node(%s) already has model(%s)", emane_node.objid, emane_node.model.name)
+                logging.debug("node(%s) already has model(%s)", emane_node.id, emane_node.model.name)
                 continue
 
             # set model configured for node, due to legacy messaging configuration before nodes exist
@@ -551,7 +554,8 @@ class EmaneManager(ModelManager):
         Return the number of NEMs emulated locally.
         """
         count = 0
-        for emane_node in self._emane_nodes.itervalues():
+        for node_id in self._emane_nodes:
+            emane_node = self._emane_nodes[node_id]
             count += len(emane_node.netifs())
         return count
 
@@ -641,7 +645,7 @@ class EmaneManager(ModelManager):
                 run_emane_on_host = True
                 continue
             path = self.session.session_dir
-            n = node.objid
+            n = node.id
 
             # control network not yet started here
             self.session.add_remove_control_interface(node, 0, remove=False, conf_required=False)
@@ -803,7 +807,7 @@ class EmaneManager(ModelManager):
         for event in events:
             txnemid, attrs = event
             if "latitude" not in attrs or "longitude" not in attrs or "altitude" not in attrs:
-                logging.warn("dropped invalid location event")
+                logging.warning("dropped invalid location event")
                 continue
 
             # yaw,pitch,roll,azimuth,elevation,velocity are unhandled
@@ -825,7 +829,7 @@ class EmaneManager(ModelManager):
             logging.info("location event for unknown NEM %s", nemid)
             return False
 
-        n = netif.node.objid
+        n = netif.node.id
         # convert from lat/long/alt to x,y,z coordinates
         x, y, z = self.session.location.getxyz(lat, lon, alt)
         x = int(x)
@@ -842,7 +846,7 @@ class EmaneManager(ModelManager):
 
         # generate a node message for this location update
         try:
-            node = self.session.get_object(n)
+            node = self.session.get_node(n)
         except KeyError:
             logging.exception("location event NEM %s has no corresponding node %s" % (nemid, n))
             return False
@@ -903,8 +907,8 @@ class EmaneGlobalModel(EmaneModel):
             ConfigGroup("NEM Parameters", emulator_len + 1, config_len)
         ]
 
-    def __init__(self, session, object_id=None):
-        super(EmaneGlobalModel, self).__init__(session, object_id)
+    def __init__(self, session, _id=None):
+        super(EmaneGlobalModel, self).__init__(session, _id)
 
     def build_xml_files(self, config, interface=None):
         raise NotImplementedError

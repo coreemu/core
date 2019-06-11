@@ -2,9 +2,9 @@ import os
 
 import pytest
 
-from core.service import CoreService
-from core.service import ServiceDependencies
-from core.service import ServiceManager
+from core.services.coreservices import CoreService
+from core.services.coreservices import ServiceDependencies
+from core.services.coreservices import ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _SERVICES_PATH = os.path.join(_PATH, "myservices")
@@ -55,10 +55,10 @@ class TestServices:
         node = session.add_node()
 
         # when
-        session.services.set_service_file(node.objid, SERVICE_ONE, file_name, "# test")
+        session.services.set_service_file(node.id, SERVICE_ONE, file_name, "# test")
 
         # then
-        service = session.services.get_service(node.objid, SERVICE_ONE)
+        service = session.services.get_service(node.id, SERVICE_ONE)
         all_files = session.services.all_files(service)
         assert service
         assert all_files and len(all_files) == 1
@@ -69,8 +69,8 @@ class TestServices:
         node = session.add_node()
 
         # when
-        session.services.set_service(node.objid, SERVICE_ONE)
-        session.services.set_service(node.objid, SERVICE_TWO)
+        session.services.set_service(node.id, SERVICE_ONE)
+        session.services.set_service(node.id, SERVICE_TWO)
 
         # then
         all_configs = session.services.all_configs()
@@ -189,8 +189,8 @@ class TestServices:
         node = session.add_node()
 
         # when
-        session.services.set_service(node.objid, my_service.name)
-        custom_my_service = session.services.get_service(node.objid, my_service.name)
+        session.services.set_service(node.id, my_service.name)
+        custom_my_service = session.services.get_service(node.id, my_service.name)
         custom_my_service.startup = ("sh custom.sh",)
 
         # then
@@ -205,13 +205,13 @@ class TestServices:
         file_name = my_service.configs[0]
         file_data_one = "# custom file one"
         file_data_two = "# custom file two"
-        session.services.set_service_file(node_one.objid, my_service.name, file_name, file_data_one)
-        session.services.set_service_file(node_two.objid, my_service.name, file_name, file_data_two)
+        session.services.set_service_file(node_one.id, my_service.name, file_name, file_data_one)
+        session.services.set_service_file(node_two.id, my_service.name, file_name, file_data_two)
 
         # when
-        custom_service_one = session.services.get_service(node_one.objid, my_service.name)
+        custom_service_one = session.services.get_service(node_one.id, my_service.name)
         session.services.create_service_files(node_one, custom_service_one)
-        custom_service_two = session.services.get_service(node_two.objid, my_service.name)
+        custom_service_two = session.services.get_service(node_two.id, my_service.name)
         session.services.create_service_files(node_two, custom_service_two)
 
         # then
@@ -240,10 +240,10 @@ class TestServices:
         node = session.add_node()
 
         # when
-        no_service = session.services.get_service(node.objid, SERVICE_ONE)
-        default_service = session.services.get_service(node.objid, SERVICE_ONE, default_service=True)
-        session.services.set_service(node.objid, SERVICE_ONE)
-        custom_service = session.services.get_service(node.objid, SERVICE_ONE, default_service=True)
+        no_service = session.services.get_service(node.id, SERVICE_ONE)
+        default_service = session.services.get_service(node.id, SERVICE_ONE, default_service=True)
+        session.services.set_service(node.id, SERVICE_ONE)
+        custom_service = session.services.get_service(node.id, SERVICE_ONE, default_service=True)
 
         # then
         assert no_service is None

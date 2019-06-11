@@ -4,10 +4,10 @@ commeffect.py: EMANE CommEffect model for CORE
 
 import logging
 import os
-
 from lxml import etree
+from past.builtins import basestring
 
-from core.conf import ConfigGroup
+from core.config import ConfigGroup
 from core.emane import emanemanifest
 from core.emane import emanemodel
 from core.xml import emanexml
@@ -37,13 +37,18 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
     name = "emane_commeffect"
 
     shim_library = "commeffectshim"
-    shim_xml = "/usr/share/emane/manifest/commeffectshim.xml"
+    shim_xml = "commeffectshim.xml"
     shim_defaults = {}
-    config_shim = emanemanifest.parse(shim_xml, shim_defaults)
+    config_shim = []
 
     # comm effect does not need the default phy and external configurations
-    phy_config = ()
-    external_config = ()
+    phy_config = []
+    external_config = []
+
+    @classmethod
+    def load(cls, emane_prefix):
+        shim_xml_path = os.path.join(emane_prefix, "share/emane/manifest", cls.shim_xml)
+        cls.config_shim = emanemanifest.parse(shim_xml_path, cls.shim_defaults)
 
     @classmethod
     def configurations(cls):
@@ -75,7 +80,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
-        transport_file = emanexml.transport_file_name(self.object_id, transport_type)
+        transport_file = emanexml.transport_file_name(self.id, transport_type)
         etree.SubElement(nem_element, "transport", definition=transport_file)
 
         # set shim configuration
@@ -110,17 +115,17 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         """
         service = self.session.emane.service
         if service is None:
-            logging.warn("%s: EMANE event service unavailable", self.name)
+            logging.warning("%s: EMANE event service unavailable", self.name)
             return
 
         if netif is None or netif2 is None:
-            logging.warn("%s: missing NEM information", self.name)
+            logging.warning("%s: missing NEM information", self.name)
             return
 
         # TODO: batch these into multiple events per transmission
         # TODO: may want to split out seconds portion of delay and jitter
         event = CommEffectEvent()
-        emane_node = self.session.get_object(self.object_id)
+        emane_node = self.session.get_node(self.id)
         nemid = emane_node.getnemid(netif)
         nemid2 = emane_node.getnemid(netif2)
         mbw = bw

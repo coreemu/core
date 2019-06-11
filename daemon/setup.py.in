@@ -5,8 +5,7 @@ Defines how CORE will be built for installation.
 import glob
 import os
 
-from setuptools import find_packages
-from distutils.core import setup
+from setuptools import find_packages, setup
 
 _CORE_DIR = "/etc/core"
 _MAN_DIR = "share/man/man1"
@@ -42,7 +41,10 @@ setup(
     version="@PACKAGE_VERSION@",
     packages=find_packages(),
     install_requires=[
+        "configparser",
         "enum34",
+        "future",
+        "grpcio",
         "lxml"
     ],
     tests_require=[
@@ -54,9 +56,8 @@ setup(
     data_files=data_files,
     scripts=glob.glob("scripts/*"),
     description="Python components of CORE",
-    url="http://www.nrl.navy.mil/itd/ncs/products/core",
+    url="https://github.com/coreemu/core",
     author="Boeing Research & Technology",
-    author_email="core-dev@nrl.navy.mil",
     license="BSD",
     long_description="Python scripts and modules for building virtual emulated networks.",
 )

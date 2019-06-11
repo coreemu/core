@@ -1,7 +1,7 @@
 import logging
 import time
 
-from core.misc.event import EventLoop
+from core.location.event import EventLoop
 
 
 def main():

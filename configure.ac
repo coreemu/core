@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.2.2, core-dev@nrl.navy.mil)
+AC_INIT(core, 5.3.0)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -14,7 +14,7 @@ AM_INIT_AUTOMAKE([tar-ustar])
 # define variables used for packaging and date display
 PACKAGE_DATE=m4_esyscmd_s([date +%Y%m%d])
 PACKAGE_VENDOR="CORE Developers"
-PACKAGE_MAINTAINERS="$PACKAGE_VENDOR <$PACKAGE_BUGREPORT>"
+PACKAGE_MAINTAINERS="$PACKAGE_VENDOR"
 
 # core specific variables
 CORE_LIB_DIR="\${prefix}/lib/core"
@@ -110,6 +110,8 @@ if test "x$enable_daemon" = "xyes"; then
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
   AM_PATH_PYTHON(2.7)
+  AM_CONDITIONAL([PYTHON3], [test "x$PYTHON" == "xpython3"])
+  AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
   AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
   if test "x$brctl_path" = "xno" ; then
@@ -146,7 +148,7 @@ if test "x$enable_daemon" = "xyes"; then
   CFLAGS_save=$CFLAGS
   CPPFLAGS_save=$CPPFLAGS
   if test "x$PYTHON_INCLUDE_DIR" = "x"; then
-    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print distutils.sysconfig.get_python_inc()"`
+    PYTHON_INCLUDE_DIR=`$PYTHON -c "import distutils.sysconfig; print(distutils.sysconfig.get_python_inc())"`
   fi
   CFLAGS="-I$PYTHON_INCLUDE_DIR"
   CPPFLAGS="-I$PYTHON_INCLUDE_DIR"
@@ -240,6 +242,7 @@ AC_CONFIG_FILES([Makefile
 		daemon/Makefile
 		daemon/doc/Makefile
 		daemon/doc/conf.py
+		daemon/proto/Makefile
 		netns/Makefile
 		netns/version.h
 		ns3/Makefile],)
@@ -263,7 +266,7 @@ GUI:
 Daemon:
   Daemon path:                ${bindir}
   Daemon config:              ${CORE_CONF_DIR}
-  Python modules:             ${pythondir}
+  Python:                     ${PYTHON}
   Logs:                       ${CORE_STATE_DIR}/log
 
 Startup:                      ${with_startup}

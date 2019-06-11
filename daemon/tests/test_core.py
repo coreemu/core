@@ -4,17 +4,17 @@ Unit tests for testing basic CORE networks.
 
 import os
 import stat
+import subprocess
 import threading
 
 import pytest
-from mock import MagicMock
 
 from core.emulator.emudata import NodeOptions
-from core.enumerations import MessageFlags
-from core.enumerations import NodeTypes
-from core.mobility import BasicRangeModel
-from core.mobility import Ns2ScriptedMobility
-from core.netns.vnodeclient import VnodeClient
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import NodeTypes
+from core.location.mobility import BasicRangeModel
+from core.location.mobility import Ns2ScriptedMobility
+from core.nodes.client import VnodeClient
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
@@ -36,9 +36,9 @@ def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
     :rtype: list
     """
     direntries = map(lambda x: os.path.join(sessiondir, x), os.listdir(sessiondir))
-    cmdchnls = filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries)
+    cmdchnls = list(filter(lambda x: stat.S_ISSOCK(os.stat(x).st_mode), direntries))
     if cmdchnlfilterfunc:
-        cmdchnls = filter(cmdchnlfilterfunc, cmdchnls)
+        cmdchnls = list(filter(cmdchnlfilterfunc, cmdchnls))
     cmdchnls.sort()
     return map(lambda x: clientcls(os.path.basename(x), x), cmdchnls)
 
@@ -69,7 +69,7 @@ class TestCore:
         # link nodes to net node
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, net_node.objid, interface_one=interface)
+            session.add_link(node.id, net_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
@@ -96,7 +96,7 @@ class TestCore:
         # link nodes to ptp net
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface_one=interface)
 
         # get node client for testing
         client = node_one.client
@@ -113,9 +113,9 @@ class TestCore:
         status, output = client.cmd_output(command)
         assert not status
         p, stdin, stdout, stderr = client.popen(command)
-        assert not p.status()
+        assert not p.wait()
         assert not client.icmd(command)
-        assert not client.redircmd(MagicMock(), MagicMock(), MagicMock(), command)
+        assert not client.redircmd(subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, command)
         assert not client.shcmd(command[0])
 
         # check various command using command line
@@ -152,7 +152,7 @@ class TestCore:
         # link nodes to ptp net
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, ptp_node.objid, interface_one=interface)
+            session.add_link(node.id, ptp_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
@@ -199,7 +199,7 @@ class TestCore:
         # link nodes
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, wlan_node.objid, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface_one=interface)
 
         # instantiate session
         session.instantiate()
@@ -229,7 +229,7 @@ class TestCore:
         # link nodes
         for node in [node_one, node_two]:
             interface = ip_prefixes.create_interface(node)
-            session.add_link(node.objid, wlan_node.objid, interface_one=interface)
+            session.add_link(node.id, wlan_node.id, interface_one=interface)
 
         # configure mobility script for session
         config = {

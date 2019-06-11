@@ -12,13 +12,15 @@
 import datetime
 import optparse
 import sys
+from builtins import range
 
+import core.nodes.base
+import core.nodes.network
 from core import constants
-from core.api import coreapi, dataconversion
-from core.enumerations import CORE_API_PORT, EventTypes, EventTlvs, LinkTlvs, LinkTypes, MessageFlags
-from core.misc import ipaddress
-from core.netns import nodes
-from core.session import Session
+from core.api.tlv import coreapi, dataconversion
+from core.emulator.enumerations import CORE_API_PORT, EventTypes, EventTlvs, LinkTlvs, LinkTypes, MessageFlags
+from core.emulator.session import Session
+from core.nodes import ipaddress
 
 # node list (count from 1)
 n = [None]
@@ -66,21 +68,21 @@ def main():
         port = int(slaveport[1])
     else:
         port = CORE_API_PORT
-    print "connecting to slave at %s:%d" % (slave, port)
+    print("connecting to slave at %s:%d" % (slave, port))
     session.broker.addserver(slave, slave, port)
     session.broker.setupserver(slave)
     session.set_state(EventTypes.CONFIGURATION_STATE)
     tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
-    switch = session.add_object(cls=nodes.SwitchNode, name="switch")
+    switch = session.create_node(cls=core.nodes.network.SwitchNode, name="switch")
     switch.setposition(x=80, y=50)
     num_local = options.numnodes / 2
     num_remote = options.numnodes / 2 + options.numnodes % 2
-    print "creating %d (%d local / %d remote) nodes with addresses from %s" % \
-          (options.numnodes, num_local, num_remote, prefix)
-    for i in xrange(1, num_local + 1):
-        node = session.add_object(cls=nodes.CoreNode, name="n%d" % i, objid=i)
+    print("creating %d (%d local / %d remote) nodes with addresses from %s" % \
+          (options.numnodes, num_local, num_remote, prefix))
+    for i in range(1, num_local + 1):
+        node = session.create_node(cls=core.nodes.base.CoreNode, name="n%d" % i, _id=i)
         node.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         node.cmd([constants.SYSCTL_BIN, "net.ipv4.icmp_echo_ignore_broadcasts=0"])
         node.setposition(x=150 * i, y=150)
@@ -90,8 +92,8 @@ def main():
     session.broker.handlerawmsg(switch.tonodemsg(flags=flags))
 
     # create remote nodes via API
-    for i in xrange(num_local + 1, options.numnodes + 1):
-        node = nodes.CoreNode(session=session, objid=i, name="n%d" % i, start=False)
+    for i in range(num_local + 1, options.numnodes + 1):
+        node = core.nodes.base.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
         node.setposition(x=150 * i, y=150)
         node.server = slave
         n.append(node)
@@ -100,8 +102,8 @@ def main():
         session.broker.handlerawmsg(node_message)
 
     # create remote links via API
-    for i in xrange(num_local + 1, options.numnodes + 1):
-        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.objid)
+    for i in range(num_local + 1, options.numnodes + 1):
+        tlvdata = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
@@ -118,9 +120,9 @@ def main():
     # start a shell on node 1
     n[1].client.term("bash")
 
-    print "elapsed time: %s" % (datetime.datetime.now() - start)
-    print "To stop this session, use the 'core-cleanup' script on this server"
-    print "and on the remote slave server."
+    print("elapsed time: %s" % (datetime.datetime.now() - start))
+    print("To stop this session, use the 'core-cleanup' script on this server")
+    print("and on the remote slave server.")
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":

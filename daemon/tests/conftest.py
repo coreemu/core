@@ -3,41 +3,45 @@ Unit test fixture module.
 """
 
 import os
+import threading
+import time
 
 import pytest
 from mock.mock import MagicMock
 
-from core.api.coreapi import CoreConfMessage
-from core.api.coreapi import CoreEventMessage
-from core.api.coreapi import CoreExecMessage
-from core.api.coreapi import CoreLinkMessage
-from core.api.coreapi import CoreNodeMessage
-from core.corehandlers import CoreHandler
-from core.coreserver import CoreServer
+from core.api.tlv.coreapi import CoreConfMessage
+from core.api.tlv.coreapi import CoreEventMessage
+from core.api.tlv.coreapi import CoreExecMessage
+from core.api.tlv.coreapi import CoreLinkMessage
+from core.api.tlv.coreapi import CoreNodeMessage
+from core.api.tlv.corehandlers import CoreHandler
+from core.api.tlv.coreserver import CoreServer
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.enumerations import CORE_API_PORT
-from core.enumerations import ConfigTlvs
-from core.enumerations import EventTlvs
-from core.enumerations import EventTypes
-from core.enumerations import ExecuteTlvs
-from core.enumerations import LinkTlvs
-from core.enumerations import LinkTypes
-from core.enumerations import MessageFlags
-from core.enumerations import NodeTlvs
-from core.enumerations import NodeTypes
-from core.misc import ipaddress
-from core.misc.ipaddress import MacAddress
-from core.service import ServiceManager
+from core.emulator.enumerations import CORE_API_PORT
+from core.emulator.enumerations import ConfigTlvs
+from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import ExecuteTlvs
+from core.emulator.enumerations import LinkTlvs
+from core.emulator.enumerations import LinkTypes
+from core.emulator.enumerations import MessageFlags
+from core.emulator.enumerations import NodeTlvs
+from core.emulator.enumerations import NodeTypes
+from core.api.grpc.client import InterfaceHelper
+from core.api.grpc.server import CoreGrpcServer
+from core.nodes import ipaddress
+from core.nodes.ipaddress import MacAddress
+from core.services.coreservices import ServiceManager
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
 
-def node_message(objid, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None):
+def node_message(_id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None):
     """
     Convenience method for creating a node TLV messages.
 
-    :param int objid: node id
+    :param int _id: node id
     :param str name: node name
     :param str emulation_server: distributed server name, if desired
     :param core.enumerations.NodeTypes node_type: node type
@@ -46,7 +50,7 @@ def node_message(objid, name, emulation_server=None, node_type=NodeTypes.DEFAULT
     :rtype: core.api.coreapi.CoreNodeMessage
     """
     values = [
-        (NodeTlvs.NUMBER, objid),
+        (NodeTlvs.NUMBER, _id),
         (NodeTlvs.TYPE, node_type.value),
         (NodeTlvs.NAME, name),
         (NodeTlvs.EMULATION_SERVER, emulation_server),
@@ -114,7 +118,7 @@ def command_message(node, command):
     """
     flags = MessageFlags.STRING.value | MessageFlags.TEXT.value
     return CoreExecMessage.create(flags, [
-        (ExecuteTlvs.NODE, node.objid),
+        (ExecuteTlvs.NODE, node.id),
         (ExecuteTlvs.NUMBER, 1),
         (ExecuteTlvs.COMMAND, command)
     ])
@@ -190,7 +194,7 @@ class CoreServerTest(object):
 
         # set services for host nodes
         message = CoreConfMessage.create(0, [
-            (ConfigTlvs.SESSION, str(self.session.session_id)),
+            (ConfigTlvs.SESSION, str(self.session.id)),
             (ConfigTlvs.OBJECT, "services"),
             (ConfigTlvs.TYPE, 0),
             (ConfigTlvs.DATA_TYPES, (10, 10, 10)),
@@ -205,9 +209,22 @@ class CoreServerTest(object):
 
 
 @pytest.fixture
+def grpc_server():
+    coremu = CoreEmu()
+    grpc_server = CoreGrpcServer(coremu)
+    thread = threading.Thread(target=grpc_server.listen, args=("localhost:50051",))
+    thread.daemon = True
+    thread.start()
+    time.sleep(0.1)
+    yield grpc_server
+    coremu.shutdown()
+    grpc_server.server.stop(None)
+
+
+@pytest.fixture
 def session():
     # use coreemu and create a session
-    coreemu = CoreEmu()
+    coreemu = CoreEmu(config={"emane_prefix": "/usr"})
     session_fixture = coreemu.create_session()
     session_fixture.set_state(EventTypes.CONFIGURATION_STATE)
     assert os.path.exists(session_fixture.session_dir)
@@ -233,6 +250,11 @@ def ip_prefixes():
     return IpPrefixes(ip4_prefix="10.83.0.0/16")
 
 
+@pytest.fixture(scope="module")
+def interface_helper():
+    return InterfaceHelper(ip4_prefix="10.83.0.0/16")
+
+
 @pytest.fixture()
 def cored():
     # create and return server
@@ -241,8 +263,6 @@ def cored():
 
     # cleanup
     server.shutdown()
-
-    #
 
     # cleanup services
     ServiceManager.services.clear()
