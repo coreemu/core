@@ -1039,14 +1039,14 @@ class WlanNode(CoreNetwork):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.id)
         logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
-        self.model.set_configs(config, node_id=self.id)
+        self.model.update_config(config)
         if self.model.position_callback:
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
                 if netif.node is not None:
                     x, y, z = netif.node.position.get()
                     netif.poshook(netif, x, y, z)
-        self.model.updateconfig()
+        self.model.setlinkparams()
 
     def all_link_data(self, flags):
         """

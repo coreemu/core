@@ -854,7 +854,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def SetWlanConfig(self, request, context):
         logging.debug("set wlan config: %s", request)
         session = self.get_session(request.session_id, context)
-        session.mobility.set_model_config(request.node_id, BasicRangeModel.name, request.config)
+        node = self.get_node(session, request.node_id, context)
+        session.mobility.set_model_config(node.id, BasicRangeModel.name, request.config)
+        if session.state == EventTypes.RUNTIME_STATE.value:
+            node.updatemodel(request.config)
         return core_pb2.SetWlanConfigResponse(result=True)
 
     def GetEmaneConfig(self, request, context):
