@@ -358,7 +358,7 @@ class BasicRangeModel(WirelessModel):
         :param dict config: values to convert
         :return: nothing
         """
-        self.range = int(config["range"])
+        self.range = int(float(config["range"]))
         logging.info("basic range model configured for WLAN %d using range %d", self.wlan.id, self.range)
         self.bw = int(config["bandwidth"])
         if self.bw == 0:
