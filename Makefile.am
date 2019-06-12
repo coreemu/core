@@ -61,6 +61,7 @@ fpm -s dir -t rpm -n core \
 	-p core_$(PYTHON)_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
 	--rpm-init scripts/core-daemon \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
 	-d "procps-ng" \
@@ -84,6 +85,7 @@ fpm -s dir -t deb -n core \
 	-p core_$(PYTHON)_VERSION_ARCH.deb \
 	-v $(PACKAGE_VERSION) \
 	--deb-systemd scripts/core-daemon.service \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
 	-d "libtk-img" \

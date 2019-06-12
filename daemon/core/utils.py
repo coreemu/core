@@ -148,9 +148,7 @@ def split_args(args):
     :return: shell-like syntax list
     :rtype: list
     """
-    logging.info("split args: %s - %s", args, type(args))
     if isinstance(args, basestring):
-        logging.info("splitting args")
         args = shlex.split(args)
     return args
 

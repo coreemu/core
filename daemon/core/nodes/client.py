@@ -73,7 +73,7 @@ class VnodeClient(object):
 
         # run command, return process when not waiting
         cmd = self._cmd_args() + args
-        logging.info("cmd wait(%s): %s", wait, cmd)
+        logging.debug("cmd wait(%s): %s", wait, cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         if not wait:
             return 0
@@ -124,7 +124,7 @@ class VnodeClient(object):
         self._verify_connection()
         args = utils.split_args(args)
         cmd = self._cmd_args() + args
-        logging.info("popen: %s", cmd)
+        logging.debug("popen: %s", cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         return p, p.stdin, p.stdout, p.stderr
 
@@ -157,7 +157,7 @@ class VnodeClient(object):
         # run command, return process when not waiting
         args = utils.split_args(args)
         cmd = self._cmd_args() + args
-        logging.info("redircmd: %s", cmd)
+        logging.debug("redircmd: %s", cmd)
         p = Popen(cmd, stdin=infd, stdout=outfd, stderr=errfd)
 
         if not wait:
