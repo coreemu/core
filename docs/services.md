@@ -160,7 +160,7 @@ Here is an example service with documentation describing functionality:
 #### BIRD Internet Routing Daemon
 The [BIRD Internet Routing Daemon](https://bird.network.cz/) is a routing daemon; i.e., a software responsible for managing kernel packet forwarding tables. It aims to develop a dynamic IP routing daemon with full support of all modern routing protocols, easy to use configuration interface and powerful route filtering language, primarily targeted on (but not limited to) Linux and other UNIX-like systems and distributed under the GNU General Public License. BIRD has a free implementation of several well known and common routing and router-supplemental protocols, namely RIP, RIPng, OSPFv2, OSPFv3, BGP, BFD, and NDP/RA. BIRD supports IPv4 and IPv6 address families, Linux kernel and several BSD variants (tested on FreeBSD, NetBSD and OpenBSD). BIRD consists of bird daemon and birdc interactive CLI client used for supervision.
 
-In order to be able to use the BIRD Internet Routing Protocol, you must first install project on your machine.
+In order to be able to use the BIRD Internet Routing Protocol, you must first install the project on your machine.
 
 
 ##### BIRD Package Install
@@ -179,4 +179,64 @@ vi /usr/local/etc/bird.conf
 ```
 The installation will place the bird directory inside */etc* where you will also find its config file.
 
-In order to be able to do use the Bird Internet Routing Protocol, you must modify *bird.conf* due to the fact that the given configuration file is not configured beyond allowing the bird daemon to start, which means that nothing else will happen if you run it. Keeran Marquis has a very detailed example on [Configuring BGP using Bird on Ubuntu](https://blog.marquis.co/configuring-bgp-using-bird-on-ubuntu-14-04lts/) which can be used as a building block to implement your custom routing daemon. 
+In order to be able to do use the Bird Internet Routing Protocol, you must modify *bird.conf* due to the fact that the given configuration file is not configured beyond allowing the bird daemon to start, which means that nothing else will happen if you run it. Keeran Marquis has a very detailed example on [Configuring BGP using Bird on Ubuntu](https://blog.marquis.co/configuring-bgp-using-bird-on-ubuntu-14-04lts/) which can be used as a building block to implement your custom routing daemon.
+
+
+#### FRRouting
+FRRouting is a routing software package that provides TCP/IP based routing services with routing protocols support such as BGP, RIP, OSPF, IS-IS and more. FRR also supports special BGP Route Reflector and Route Server behavior. In addition to traditional IPv4 routing protocols, FRR also supports IPv6 routing protocols. With an SNMP daemon that supports the AgentX protocol, FRR provides routing protocol MIB read-only access (SNMP Support).
+
+FRR currently supports the following protocols:
+* BGP
+* OSPFv2
+* OSPFv3
+* RIPv1
+* RIPv2
+* RIPng
+* IS-IS
+* PIM-SM/MSDP
+* LDP
+* BFD
+* Babel
+* PBR
+* OpenFabric
+* EIGRP (alpha)
+* NHRP (alpha)
+
+##### FRRouting Package Install
+```shell
+sudo apt install curl
+curl -s https://deb.frrouting.org/frr/keys.asc | sudo apt-key add -
+FRRVER="frr-stable"
+echo deb https://deb.frrouting.org/frr $(lsb_release -s -c) $FRRVER | sudo tee -a /etc/apt/sources.list.d/frr.list
+sudo apt update && sudo apt install frr frr-pythontools
+```
+
+##### FRRouting Source Code Install
+Building FRR from source is the best way to ensure you have the latest features and bug fixes. Details for each supported platform, including dependency package listings, permissions, and other gotchas, are in the developer’s documentation. 
+
+FRR’s source is available on the project [GitHub page](https://github.com/FRRouting/frr).
+```shell
+git clone https://github.com/FRRouting/frr.git
+```
+
+Change into your FRR source directory and issue:
+```shell
+./bootstrap.sh
+```
+Then, choose the configuration options that you wish to use for the installation. You can find these options on FRR's [official webpage](http://docs.frrouting.org/en/latest/installation.html). Once you have chosen your configure options, run the configure script and pass the options you chose:
+```shell
+./configure \
+    --prefix=/usr \
+    --enable-exampledir=/usr/share/doc/frr/examples/ \
+    --localstatedir=/var/run/frr \
+    --sbindir=/usr/lib/frr \
+    --sysconfdir=/etc/frr \
+    --enable-pimd \
+    --enable-watchfrr \
+    ...
+```
+After configuring the software, you are ready to build and install it in your system.
+```shell
+make && sudo make install
+```
+If everything finishes successfully, FRR should be installed.
