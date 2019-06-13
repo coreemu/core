@@ -175,7 +175,7 @@ You can download BIRD source code from it's [official repository.](https://gitla
 make
 su
 make install
-vi /usr/local/etc/bird.conf
+vi /etc/bird/bird.conf
 ```
 The installation will place the bird directory inside */etc* where you will also find its config file.
 
