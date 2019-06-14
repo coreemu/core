@@ -2,8 +2,6 @@ package com.core.client.grpc;
 
 import com.core.Controller;
 import com.core.client.ICoreClient;
-import com.core.client.rest.ServiceFile;
-import com.core.client.rest.WlanConfig;
 import com.core.data.*;
 import com.core.ui.dialogs.MobilityPlayerDialog;
 import inet.ipaddr.IPAddress;

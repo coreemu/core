@@ -1,7 +1,7 @@
 package com.core.ui.dialogs;
 
 import com.core.Controller;
-import com.core.client.rest.WlanConfig;
+import com.core.data.WlanConfig;
 import com.core.data.CoreNode;
 import com.core.ui.Toast;
 import com.jfoenix.controls.JFXButton;
