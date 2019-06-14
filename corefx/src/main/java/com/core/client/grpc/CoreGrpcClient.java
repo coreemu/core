@@ -6,6 +6,8 @@ import com.core.client.rest.ServiceFile;
 import com.core.client.rest.WlanConfig;
 import com.core.data.*;
 import com.core.ui.dialogs.MobilityPlayerDialog;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
 import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -123,6 +125,9 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreProto.Interface interfaceToProto(CoreInterface coreInterface) {
         CoreProto.Interface.Builder builder = CoreProto.Interface.newBuilder();
+        if (coreInterface.getId() != null) {
+            builder.setId(coreInterface.getId());
+        }
         if (coreInterface.getName() != null) {
             builder.setName(coreInterface.getName());
         }
@@ -130,16 +135,16 @@ public class CoreGrpcClient implements ICoreClient {
             builder.setMac(coreInterface.getMac());
         }
         if (coreInterface.getIp4() != null) {
-            builder.setIp4(coreInterface.getIp4());
+            builder.setIp4(coreInterface.getIp4().toAddressString().getHostAddress().toString());
         }
-        if (coreInterface.getIp4Mask() != null) {
-            builder.setIp4Mask(coreInterface.getIp4Mask());
+        if (coreInterface.getIp4() != null) {
+            builder.setIp4Mask(coreInterface.getIp4().getPrefixLength());
         }
         if (coreInterface.getIp6() != null) {
-            builder.setIp6(coreInterface.getIp6());
+            builder.setIp6(coreInterface.getIp6().toAddressString().getHostAddress().toString());
         }
-        if (coreInterface.getIp6Mask() != null) {
-            builder.setIp6Mask(Integer.parseInt(coreInterface.getIp6Mask()));
+        if (coreInterface.getIp6() != null) {
+            builder.setIp6Mask(coreInterface.getIp6().getPrefixLength());
         }
         return builder.build();
     }
@@ -170,10 +175,12 @@ public class CoreGrpcClient implements ICoreClient {
         coreInterface.setId(protoInterface.getId());
         coreInterface.setName(protoInterface.getName());
         coreInterface.setMac(protoInterface.getMac());
-        coreInterface.setIp4(protoInterface.getIp4());
-        coreInterface.setIp4Mask(protoInterface.getIp4Mask());
-        coreInterface.setIp6(protoInterface.getIp6());
-        coreInterface.setIp6Mask(Integer.toString(protoInterface.getIp6Mask()));
+        String ip4String = String.format("%s/%s", protoInterface.getIp4(), protoInterface.getIp4Mask());
+        IPAddress ip4 = new IPAddressString(ip4String).getAddress();
+        coreInterface.setIp4(ip4);
+        String ip6String = String.format("%s/%s", protoInterface.getIp6(), protoInterface.getIp6Mask());
+        IPAddress ip6 = new IPAddressString(ip6String).getAddress();
+        coreInterface.setIp6(ip6);
         return coreInterface;
     }
 
