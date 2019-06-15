@@ -286,6 +286,13 @@ public class NetworkGraph {
     private void handleEdgeAdded(GraphEvent.Edge<CoreNode, CoreLink> edgeEvent) {
         CoreLink link = edgeEvent.getEdge();
         if (link.isLoaded()) {
+            // load addresses to avoid duplication
+            if (link.getInterfaceOne().getIp4() != null) {
+                coreAddresses.usedAddress(link.getInterfaceOne().getIp4());
+            }
+            if (link.getInterfaceTwo().getIp4() != null) {
+                coreAddresses.usedAddress(link.getInterfaceTwo().getIp4());
+            }
             return;
         }
         Pair<CoreNode> endpoints = graph.getEndpoints(link);
@@ -508,7 +515,7 @@ public class NetworkGraph {
     }
 
     private boolean isWirelessNode(CoreNode node) {
-        return node.getType() == NodeType.EMANE || node.getType() == NodeType.WLAN;
+        return node != null && (node.getType() == NodeType.EMANE || node.getType() == NodeType.WLAN);
     }
 
     private boolean checkForWirelessNode(CoreNode nodeOne, CoreNode nodeTwo) {
