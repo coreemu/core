@@ -248,6 +248,7 @@ public class NetworkGraph {
         }
         nodeMap.clear();
         graphViewer.repaint();
+        coreAddresses.reset();
     }
 
     public void updatePositions() {
@@ -417,6 +418,38 @@ public class NetworkGraph {
     private void handleEdgeRemoved(GraphEvent.Edge<CoreNode, CoreLink> edgeEvent) {
         CoreLink link = edgeEvent.getEdge();
         logger.info("removed edge: {}", link);
+        CoreNode nodeOne = getVertex(link.getNodeOne());
+        CoreInterface interfaceOne = link.getInterfaceOne();
+        CoreNode nodeTwo = getVertex(link.getNodeTwo());
+        CoreInterface interfaceTwo = link.getInterfaceTwo();
+        boolean nodeOneIsDefault = isNode(nodeOne);
+        boolean nodeTwoIsDefault = isNode(nodeTwo);
+
+        // check what we are unlinking
+        Set<CoreInterface> interfaces;
+        IPAddress subnet = null;
+        if (nodeOneIsDefault && nodeTwoIsDefault) {
+            subnet = interfaceOne.getIp4().toPrefixBlock();
+            logger.info("unlinking node to node reuse subnet: {}", subnet);
+        } else if (nodeOneIsDefault) {
+            interfaces = getNetworkInterfaces(nodeTwo, new HashSet<>());
+            if (interfaces.isEmpty()) {
+                subnet = interfaceOne.getIp4().toPrefixBlock();
+                logger.info("unlinking node one from network reuse subnet: {}", subnet);
+            }
+        } else if (nodeTwoIsDefault) {
+           interfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
+            if (interfaces.isEmpty()) {
+                subnet = interfaceTwo.getIp4().toPrefixBlock();
+                logger.info("unlinking node two from network reuse subnet: {}", subnet);
+            }
+        } else {
+            logger.info("nothing to do when unlinking networks");
+        }
+
+        if (subnet != null) {
+            coreAddresses.reuseSubnet(subnet);
+        }
     }
 
     private void handleVertexAdded(GraphEvent.Vertex<CoreNode, CoreLink> vertexEvent) {
