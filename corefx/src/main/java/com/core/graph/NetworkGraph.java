@@ -75,9 +75,8 @@ public class NetworkGraph {
         graphViewer.setBackground(Color.WHITE);
         graphViewer.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.S);
 
-        RenderContext<CoreNode, CoreLink> renderContext = graphViewer.getRenderContext();
-
         // node render properties
+        RenderContext<CoreNode, CoreLink> renderContext = graphViewer.getRenderContext();
         renderContext.setVertexLabelTransformer(CoreNode::getName);
         renderContext.setVertexLabelRenderer(nodeLabelRenderer);
         renderContext.setVertexShapeTransformer(node -> {
@@ -288,44 +287,39 @@ public class NetworkGraph {
         if (link.isLoaded()) {
             return;
         }
-
         Pair<CoreNode> endpoints = graph.getEndpoints(link);
-
         CoreNode nodeOne = endpoints.getFirst();
         CoreNode nodeTwo = endpoints.getSecond();
+        boolean nodeOneIsDefault = isNode(nodeOne);
+        boolean nodeTwoIsDefault = isNode(nodeTwo);
 
-        // check if a node being linked is a network node
-        Set<CoreInterface> nodeOneInterfaces;
-        boolean nodeOneIsNetwork = false;
-        if (isNode(nodeOne)) {
-            nodeOneInterfaces = getNodeInterfaces(nodeOne);
+        // check what we are linking together
+        IPAddress subnet = null;
+        Set<CoreInterface> interfaces;
+        if (nodeOneIsDefault && nodeTwoIsDefault) {
+            subnet = coreAddresses.nextSubnet();
+            logger.info("linking node to node using subnet: {}", subnet);
+        } else if (nodeOneIsDefault) {
+            interfaces = getNetworkInterfaces(nodeTwo, new HashSet<>());
+            subnet = coreAddresses.findSubnet(interfaces);
+            logger.info("linking node one to network using subnet: {}", subnet);
+        } else if (nodeTwoIsDefault) {
+            interfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
+            subnet = coreAddresses.findSubnet(interfaces);
+            logger.info("linking node two to network using subnet: {}", subnet);
         } else {
-            nodeOneInterfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
-            nodeOneIsNetwork = true;
+            logger.info("subnet not needed for linking networks together");
         }
-
-        Set<CoreInterface> nodeTwoInterfaces;
-        boolean nodeTwoIsNetwork = false;
-        if (isNode(nodeTwo)) {
-            nodeTwoInterfaces = getNodeInterfaces(nodeTwo);
-        } else {
-            nodeTwoInterfaces = getNetworkInterfaces(nodeTwo, new HashSet<>());
-            nodeTwoIsNetwork = true;
-        }
-
-        // create interfaces for nodes
-        IPAddress subnet = coreAddresses.getSubnet(nodeOneInterfaces, nodeTwoInterfaces,
-                nodeOneIsNetwork, nodeTwoIsNetwork);
 
         link.setNodeOne(nodeOne.getId());
-        if (isNode(nodeOne)) {
+        if (nodeOneIsDefault) {
             int interfaceOneId = nextInterfaceId(nodeOne);
             CoreInterface interfaceOne = createInterface(nodeOne, interfaceOneId, subnet);
             link.setInterfaceOne(interfaceOne);
         }
 
         link.setNodeTwo(nodeTwo.getId());
-        if (isNode(nodeTwo)) {
+        if (nodeTwoIsDefault) {
             int interfaceTwoId = nextInterfaceId(nodeTwo);
             CoreInterface interfaceTwo = createInterface(nodeTwo, interfaceTwoId, subnet);
             link.setInterfaceTwo(interfaceTwo);
@@ -414,6 +408,7 @@ public class NetworkGraph {
         coreInterface.setId(interfaceId);
         coreInterface.setName(String.format("eth%s", interfaceId));
         IPAddress address = subnet.increment(node.getId());
+        logger.info("creating interface for node({}): {}", node.getId(), address);
         coreInterface.setIp4(address);
         coreInterface.setIp6(address.toIPv6());
         return coreInterface;
