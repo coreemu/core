@@ -330,3 +330,13 @@ The security services offer a wide variety of protocols capable of satisfying th
 ```shell
 sudo apt-get install ipsec-tools racoon openvpn
 ```
+
+#### UCARP
+UCARP allows a couple of hosts to share common virtual IP addresses in order to provide automatic failover. It is a portable userland implementation of the secure and patent-free Common Address Redundancy Protocol (CARP, OpenBSD's alternative to the patents-bloated VRRP).
+
+Strong points of the CARP protocol are: very low overhead, cryptographically signed messages, interoperability between different operating systems and no need for any dedicated extra network link between redundant hosts.
+
+##### Installation
+```shell
+sudo apt-get install ucarp
+```
