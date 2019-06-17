@@ -340,3 +340,24 @@ Strong points of the CARP protocol are: very low overhead, cryptographically sig
 ```shell
 sudo apt-get install ucarp
 ```
+
+
+#### Utilities Services
+The following services are provided as utilities:
+* Default Routing
+* Default Muticast Routing
+* Static Routing
+* SSH
+* DHCP
+* DHCP Client
+* FTP
+* HTTP
+* PCAP
+* RADVD
+* ATD
+
+##### Installation
+To install the functionality of the previously metioned services you can run the following command:
+```shell
+sudo apt-get install isc-dhcp-server apache2 libpcap-dev radvd at
+```
