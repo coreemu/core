@@ -44,10 +44,9 @@ public class LinkDetails extends ScrollPane {
     public void setLink(CoreLink link) {
         NetworkGraph graph = controller.getNetworkGraph();
         ICoreClient coreClient = controller.getCoreClient();
-
         clear();
-
         addSeparator();
+
         CoreNode nodeOne = graph.getVertex(link.getNodeOne());
         CoreInterface interfaceOne = link.getInterfaceOne();
         addLabel(nodeOne.getName());
@@ -55,7 +54,6 @@ public class LinkDetails extends ScrollPane {
             addInterface(interfaceOne);
         }
 
-        addSeparator();
         CoreNode nodeTwo = graph.getVertex(link.getNodeTwo());
         CoreInterface interfaceTwo = link.getInterfaceTwo();
         addLabel(nodeTwo.getName());
@@ -63,7 +61,6 @@ public class LinkDetails extends ScrollPane {
             addInterface(interfaceTwo);
         }
 
-        addSeparator();
         addLabel("Properties");
         JFXTextField bandwidthField = addRow("Bandwidth (bps)", link.getOptions().getBandwidth());
         JFXTextField delayField = addRow("Delay (us)", link.getOptions().getDelay());
@@ -127,14 +124,15 @@ public class LinkDetails extends ScrollPane {
 
     private void addInterface(CoreInterface coreInterface) {
         addRow("Interface", coreInterface.getName(), true);
-        if (coreInterface.getMac() != null) {
-            addRow("MAC", coreInterface.getMac(), true);
-        }
-        addIp4Address(coreInterface.getIp4());
-        addIp6Address(coreInterface.getIp6());
+        addRow("MAC", coreInterface.getMac(), true);
+        addAddress("IP4", coreInterface.getIp4());
+        addAddress("IP6", coreInterface.getIp6());
     }
 
     private void addRow(String labelText, String value, boolean disabled) {
+        if (value == null) {
+            return;
+        }
         Label label = new Label(labelText);
         JFXTextField textField = new JFXTextField(value);
         textField.setDisable(disabled);
@@ -156,18 +154,11 @@ public class LinkDetails extends ScrollPane {
         return textField;
     }
 
-    private void addIp4Address(IPAddress ip) {
+    private void addAddress(String label, IPAddress ip) {
         if (ip == null) {
             return;
         }
-        addRow("IP4", ip.toString(), true);
-    }
-
-    private void addIp6Address(IPAddress ip) {
-        if (ip == null) {
-            return;
-        }
-        addRow("IP6", ip.toString(), true);
+        addRow(label, ip.toString(), true);
     }
 
     private void clear() {

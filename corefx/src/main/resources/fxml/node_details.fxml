@@ -19,13 +19,16 @@
           <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
         </rowConstraints>
          <padding>
-            <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+            <Insets bottom="5.0" left="10.0" right="10.0" top="5.0" />
          </padding>
          <children>
             <Label fx:id="title" styleClass="details-title" text="Node Details" GridPane.columnSpan="2147483647">
                <font>
                   <Font name="System Bold" size="17.0" />
                </font>
+               <GridPane.margin>
+                  <Insets />
+               </GridPane.margin>
             </Label>
          </children>
       </GridPane>
