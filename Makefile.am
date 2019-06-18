@@ -64,6 +64,7 @@ fpm -s dir -t rpm -n core \
 	-v $(PACKAGE_VERSION) \
 	--rpm-init scripts/core-daemon \
 	--config-files "/etc/core" \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
 	-d "procps-ng" \
@@ -89,6 +90,7 @@ fpm -s dir -t deb -n core \
 	--deb-systemd scripts/core-daemon.service \
 	--deb-no-default-config-files \
 	--config-files "/etc/core" \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
 	-d "libtk-img" \

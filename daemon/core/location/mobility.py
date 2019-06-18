@@ -9,7 +9,7 @@ import os
 import threading
 import time
 from builtins import int
-from past.builtins import cmp
+from functools import total_ordering
 
 from core import utils
 from core.config import ConfigGroup
@@ -358,7 +358,7 @@ class BasicRangeModel(WirelessModel):
         :param dict config: values to convert
         :return: nothing
         """
-        self.range = int(config["range"])
+        self.range = int(float(config["range"]))
         logging.info("basic range model configured for WLAN %d using range %d", self.wlan.id, self.range)
         self.bw = int(config["bandwidth"])
         if self.bw == 0:
@@ -561,6 +561,7 @@ class BasicRangeModel(WirelessModel):
         return all_links
 
 
+@total_ordering
 class WayPoint(object):
     """
     Maintains information regarding waypoints.
@@ -580,18 +581,17 @@ class WayPoint(object):
         self.coords = coords
         self.speed = speed
 
-    def __cmp__(self, other):
-        """
-        Custom comparison method for waypoints.
+    def __eq__(self, other):
+        return (self.time, self.nodenum) == (other.time, other.nodedum)
 
-        :param WayPoint other: waypoint to compare to
-        :return: the comparison result against the other waypoint
-        :rtype: int
-        """
-        tmp = cmp(self.time, other.time)
-        if tmp == 0:
-            tmp = cmp(self.nodenum, other.nodenum)
-        return tmp
+    def __ne__(self, other):
+        return not self == other
+
+    def __lt__(self, other):
+        result = self.time < other.time
+        if result:
+            result = self.nodenum < other.nodenum
+        return result
 
 
 class WayPointMobility(WirelessModel):
@@ -836,7 +836,12 @@ class WayPointMobility(WirelessModel):
         :param z: z position
         :return: nothing
         """
-        # this would cause PyCoreNetIf.poshook() callback (range calculation)
+        if x is not None:
+            x = int(x)
+        if y is not None:
+            y = int(y)
+        if z is not None:
+            z = int(z)
         node.position.set(x, y, z)
         node_data = node.data(message_type=0)
         self.session.broadcast_node(node_data)

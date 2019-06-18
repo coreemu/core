@@ -1018,14 +1018,7 @@ class WlanNode(CoreNetwork):
         logging.info("adding model: %s", model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
             self.model = model(session=self.session, _id=self.id)
-            self.model.update_config(config)
-            if self.model.position_callback:
-                for netif in self.netifs():
-                    netif.poshook = self.model.position_callback
-                    if netif.node is not None:
-                        x, y, z = netif.node.position.get()
-                        netif.poshook(netif, x, y, z)
-            self.model.setlinkparams()
+            self.updatemodel(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
             self.mobility = model(session=self.session, _id=self.id)
             self.mobility.update_config(config)
@@ -1033,20 +1026,19 @@ class WlanNode(CoreNetwork):
     def update_mobility(self, config):
         if not self.mobility:
             raise ValueError("no mobility set to update for node(%s)", self.id)
-        self.mobility.set_configs(config, node_id=self.id)
+        self.mobility.update_config(config)
 
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.id)
         logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
-        self.model.set_configs(config, node_id=self.id)
+        self.model.update_config(config)
         if self.model.position_callback:
             for netif in self.netifs():
                 netif.poshook = self.model.position_callback
                 if netif.node is not None:
                     x, y, z = netif.node.position.get()
                     netif.poshook(netif, x, y, z)
-        self.model.updateconfig()
 
     def all_link_data(self, flags):
         """

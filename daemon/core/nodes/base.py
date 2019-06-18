@@ -668,6 +668,7 @@ class CoreNode(CoreNodeBase):
             if self.up:
                 utils.check_cmd([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
                 self.check_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
+                self.check_cmd([constants.ETHTOOL_BIN, "-K", ifname, "rx", "off", "tx", "off"])
 
             veth.name = ifname
 

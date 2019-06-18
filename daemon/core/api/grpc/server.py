@@ -17,6 +17,7 @@ from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
 from core.emulator.enumerations import NodeTypes, EventTypes, LinkTypes
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes import nodeutils
+from core.nodes.base import CoreNetworkBase
 from core.nodes.ipaddress import MacAddress
 from core.services.coreservices import ServiceManager
 
@@ -73,18 +74,24 @@ def convert_link(session, link_data):
     interface_one = None
     if link_data.interface1_id is not None:
         node = session.get_node(link_data.node1_id)
-        interface = node.netif(link_data.interface1_id)
+        interface_name = None
+        if not isinstance(node, CoreNetworkBase):
+            interface = node.netif(link_data.interface1_id)
+            interface_name = interface.name
         interface_one = core_pb2.Interface(
-            id=link_data.interface1_id, name=interface.name, mac=convert_value(link_data.interface1_mac),
+            id=link_data.interface1_id, name=interface_name, mac=convert_value(link_data.interface1_mac),
             ip4=convert_value(link_data.interface1_ip4), ip4mask=link_data.interface1_ip4_mask,
             ip6=convert_value(link_data.interface1_ip6), ip6mask=link_data.interface1_ip6_mask)
 
     interface_two = None
     if link_data.interface2_id is not None:
         node = session.get_node(link_data.node2_id)
-        interface = node.netif(link_data.interface2_id)
+        interface_name = None
+        if not isinstance(node, CoreNetworkBase):
+            interface = node.netif(link_data.interface2_id)
+            interface_name = interface.name
         interface_two = core_pb2.Interface(
-            id=link_data.interface2_id, name=interface.name, mac=convert_value(link_data.interface2_mac),
+            id=link_data.interface2_id, name=interface_name, mac=convert_value(link_data.interface2_mac),
             ip4=convert_value(link_data.interface2_ip4), ip4mask=link_data.interface2_ip4_mask,
             ip6=convert_value(link_data.interface2_ip6), ip6mask=link_data.interface2_ip6_mask)
 
@@ -855,6 +862,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("set wlan config: %s", request)
         session = self.get_session(request.session_id, context)
         session.mobility.set_model_config(request.node_id, BasicRangeModel.name, request.config)
+        if session.state == EventTypes.RUNTIME_STATE.value:
+            node = self.get_node(session, request.node_id, context)
+            node.updatemodel(request.config)
         return core_pb2.SetWlanConfigResponse(result=True)
 
     def GetEmaneConfig(self, request, context):

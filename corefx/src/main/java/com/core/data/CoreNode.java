@@ -2,7 +2,6 @@ package com.core.data;
 
 import com.core.graph.RadioIcon;
 import com.core.utils.IconUtils;
-import com.fasterxml.jackson.annotation.JsonIgnore;
 import edu.uci.ics.jung.visualization.LayeredIcon;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -27,15 +26,10 @@ public class CoreNode {
     private Set<String> services = new HashSet<>();
     private String emane;
     private String url;
-    @JsonIgnore
     private NodeType nodeType;
-    @JsonIgnore
     private String icon;
-    @JsonIgnore
     private boolean loaded = true;
-    @JsonIgnore
     private LayeredIcon graphIcon;
-    @JsonIgnore
     private RadioIcon radioIcon = new RadioIcon();
 
     public CoreNode(Integer id) {

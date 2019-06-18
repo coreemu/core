@@ -40,6 +40,7 @@ from core.emulator.enumerations import NodeTlvs
 from core.emulator.enumerations import NodeTypes
 from core.emulator.enumerations import RegisterTlvs
 from core.emulator.enumerations import SessionTlvs
+from core.location.mobility import BasicRangeModel
 from core.nodes import nodeutils
 from core.services.coreservices import ServiceManager
 from core.services.coreservices import ServiceShim
@@ -1268,6 +1269,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 parsed_config = ConfigShim.str_to_dict(values_str)
 
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
+            if self.session.state == EventTypes.RUNTIME_STATE.value:
+                try:
+                    node = self.session.get_node(node_id)
+                    if object_name == BasicRangeModel.name:
+                        node.updatemodel(parsed_config)
+                except KeyError:
+                    logging.error("skipping mobility configuration for unknown node: %s", node_id)
 
         return replies
 
