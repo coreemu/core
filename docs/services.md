@@ -280,6 +280,61 @@ sudo service core-daemon restart
 ```
 
 
+#### NRL Services
+The Protean Protocol Prototyping Library (ProtoLib) is a cross-platform library that allows applications to be built while supporting a variety of platforms including Linux, Windows, WinCE/PocketPC, MacOS, FreeBSD, Solaris, etc as well as the simulation environments of NS2 and Opnet. The goal of the Protolib is to provide a set of simple, cross-platform C++ classes that allow development of network protocols and applications that can run on different platforms and in network simulation environments. While Protolib provides an overall framework for developing working protocol implementations, applications, and simulation modules, the individual classes are designed for use as stand-alone components when possible. Although Protolib is principally for research purposes, the code has been constructed to provide robust, efficient performance and adaptability to real applications. In some cases, the code consists of data structures, etc useful in protocol implementations and, in other cases, provides common, cross-platform interfaces to system services and functions (e.g., sockets, timers, routing tables, etc).
+
+Currently the Naval Research Laboratory uses this library to develop a wide variety of protocols.The NRL Protolib currently supports the following protocols:
+* MGEN_Sink
+* NHDP
+* SMF
+* OLSR
+* OLSRv2
+* OLSRORG
+* MgenActor
+* arouted
+
+#### NRL Installation
+In order to be able to use the different protocols that NRL offers, you must first download the support library itself. You can get the source code from their [official nightly snapshots website](https://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/).
+
+##### Multi-Generator (MGEN)
+Download MGEN from the [NRL MGEN nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/), unpack it and copy the protolib library into the main folder *mgen*. Execute the following commands to build the protocol.
+```shell
+cd mgen/makefiles
+make -f Makefile.{os} mgen
+```
+
+##### Neighborhood Discovery Protocol (NHDP)
+Download NHDP from the [NRL NHDP nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/nhdp/nightly_snapshots/).
+```shell
+sudo apt-get install libpcap-dev libboost-all-dev
+wget https://github.com/protocolbuffers/protobuf/releases/download/v3.8.0/protoc-3.8.0-linux-x86_64.zip
+unzip protoc-3.8.0-linux-x86_64.zip
+``` 
+Then place the binaries in your $PATH. To know your paths you can issue the following command
+```shell
+echo $PATH
+```
+Go to the downloaded *NHDP* tarball, unpack it and place the protolib library inside the NHDP main folder. Now, compile the NHDP Protocol.
+```shell
+cd nhdp/unix
+make -f Makefile.{os}
+```
+
+##### Simplified Multicast Forwarding (SMF)
+Download SMF from the [NRL SMF nightly snapshot](https://downloads.pf.itd.nrl.navy.mil/smf/nightly_snapshots/) , unpack it and place the protolib library inside the *smf* main folder.
+```shell
+cd mgen/makefiles
+make -f Makefile.{os}
+```
+
+##### Optimized Link State Routing Protocol (OLSR)
+To install the OLSR protocol, download their source code from their [nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/olsr/nightly_snapshots/nrlolsr-svnsnap.tgz). Unpack it and place the previously downloaded protolib library inside the *nrlolsr* main directory. Then execute the following commands:
+```shell
+cd ./unix
+make -f Makefile.{os}
+```
+
+
 #### Quagga Routing Suite
  Quagga is a routing software suite, providing implementations of OSPFv2, OSPFv3, RIP v1 and v2, RIPng and BGP-4 for Unix platforms, particularly FreeBSD, Linux, Solaris and NetBSD. Quagga is a fork of GNU Zebra which was developed by Kunihiro Ishiguro.
 The Quagga architecture consists of a core daemon, zebra, which acts as an abstraction layer to the underlying Unix kernel and presents the Zserv API over a Unix or TCP stream to Quagga clients. It is these Zserv clients which typically implement a routing protocol and communicate routing updates to the zebra daemon.
