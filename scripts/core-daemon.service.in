@@ -4,7 +4,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=@PYTHON@ @bindir@/core-daemon
+ExecStart=@bindir@/core-daemon
 TasksMax=infinity
 
 [Install]
