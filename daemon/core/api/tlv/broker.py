@@ -121,7 +121,6 @@ class CoreBroker(object):
         self.physical_nodes = set()
         # allows for other message handlers to process API messages (e.g. EMANE)
         self.handlers = set()
-        self.handlers.add(self.handle_distributed)
         # dict with tunnel key to tunnel device mapping
         self.tunnels = {}
         self.dorecvloop = False
@@ -1049,62 +1048,3 @@ class CoreBroker(object):
                 if not server.instantiation_complete:
                     return False
             return True
-
-    def handle_distributed(self, message):
-        """
-        Handle the session options config message as it has reached the
-        broker. Options requiring modification for distributed operation should
-        be handled here.
-
-        :param message: message to handle
-        :return: nothing
-        """
-        if not self.session.master:
-            return
-
-        if message.message_type != MessageTypes.CONFIG.value or message.get_tlv(ConfigTlvs.OBJECT.value) != "session":
-            return
-
-        values_str = message.get_tlv(ConfigTlvs.VALUES.value)
-        if values_str is None:
-            return
-
-        value_strings = values_str.split("|")
-        for value_string in value_strings:
-            key, _value = value_string.split("=", 1)
-            if key == "controlnet":
-                self.handle_distributed_control_net(message, value_strings, value_strings.index(value_string))
-
-    def handle_distributed_control_net(self, message, values, index):
-        """
-        Modify Config Message if multiple control network prefixes are
-        defined. Map server names to prefixes and repack the message before
-        it is forwarded to slave servers.
-
-        :param message: message to handle
-        :param list values: values to handle
-        :param int index: index ti get key value from
-        :return: nothing
-        """
-        key_value = values[index]
-        _key, value = key_value.split("=", 1)
-        control_nets = value.split()
-
-        if len(control_nets) < 2:
-            logging.warning("multiple controlnet prefixes do not exist")
-            return
-
-        servers = self.session.broker.getservernames()
-        if len(servers) < 2:
-            logging.warning("not distributed")
-            return
-
-        servers.remove("localhost")
-        # master always gets first prefix
-        servers.insert(0, "localhost")
-        # create list of "server1:ctrlnet1 server2:ctrlnet2 ..."
-        control_nets = map(lambda x: "%s:%s" % (x[0], x[1]), zip(servers, control_nets))
-        values[index] = "controlnet=%s" % (" ".join(control_nets))
-        values_str = "|".join(values)
-        message.tlv_data[ConfigTlvs.VALUES.value] = values_str
-        message.repack()

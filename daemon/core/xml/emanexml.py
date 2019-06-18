@@ -108,7 +108,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     :return: the next nem id that can be used for creating platform xml files
     :rtype: int
     """
-    logging.debug("building emane platform xml for node(%s): %s", node, node.name)
+    logging.debug("building emane platform xml for node(%s) nem_id(%s): %s", node, nem_id, node.name)
     nem_entries = {}
 
     if node.model is None:
@@ -116,6 +116,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         return nem_entries
 
     for netif in node.netifs():
+        logging.debug("building platform xml for interface(%s) nem_id(%s)", netif.name, nem_id)
         # build nem xml
         nem_definition = nem_file_name(node.model, netif)
         nem_element = etree.Element("nem", id=str(nem_id), name=netif.localname, definition=nem_definition)

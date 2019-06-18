@@ -1498,7 +1498,7 @@ class Session(object):
                         break
 
                 if not prefix:
-                    logging.error("Control network prefix not found for server '%s'" % servers[0])
+                    logging.error("control network prefix not found for server: %s", servers[0])
                     assign_address = False
                     try:
                         prefix = prefixes[0].split(':', 1)[1]

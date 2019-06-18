@@ -165,16 +165,16 @@ class EmaneNode(EmaneNet):
         nemid = self.getnemid(netif)
         ifname = netif.localname
         if nemid is None:
-            logging.info("nemid for %s is unknown" % ifname)
+            logging.info("nemid for %s is unknown", ifname)
             return
-        lat, long, alt = self.session.location.getgeo(x, y, z)
-        logging.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)", ifname, nemid, x, y, z, lat, long, alt)
+        lat, lon, alt = self.session.location.getgeo(x, y, z)
+        logging.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)", ifname, nemid, x, y, z, lat, lon, alt)
         event = LocationEvent()
 
         # altitude must be an integer or warning is printed
         # unused: yaw, pitch, roll, azimuth, elevation, velocity
         alt = int(round(alt))
-        event.append(nemid, latitude=lat, longitude=long, altitude=alt)
+        event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
         self.session.emane.service.publish(0, event)
 
     def setnempositions(self, moved_netifs):

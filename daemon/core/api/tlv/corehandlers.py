@@ -510,7 +510,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
-        logging.debug("dispatching replies: %s", replies)
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -524,7 +523,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 reply_message = "CoreMessage (type %d flags %d length %d)" % (
                     message_type, message_flags, message_length)
 
-            logging.debug("dispatch reply:\n%s", reply_message)
+            logging.debug("sending reply:\n%s", reply_message)
 
             try:
                 self.sendall(reply)
