@@ -46,10 +46,13 @@ Install Path | Description
 
 The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
 To account for this it would be recommended to install the python dependencies using the **requirements.txt** found in
-the latest release.
+the latest [CORE Release](https://github.com/coreemu/core/releases).
 
 ```shell
-sudo pip install -r requirements.txt
+# for python 2
+sudo python -m pip install -r requirements.txt
+# for python 3
+sudo python3 -m pip install -r requirements.txt
 ```
 
 ## Ubuntu 19.04
@@ -121,9 +124,9 @@ Ubuntu package defaults to using systemd for running as a service.
 
 ```shell
 # python2
-sudo apt ./core_python_$VERSION_amd64.deb
+sudo apt install ./core_python_$VERSION_amd64.deb
 # python3
-sudo apt ./core_python3_$VERSION_amd64.deb
+sudo apt install ./core_python3_$VERSION_amd64.deb
 ```
 
 Run the CORE GUI as a normal user:
