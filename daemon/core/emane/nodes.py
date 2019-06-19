@@ -199,12 +199,12 @@ class EmaneNode(EmaneNet):
                 logging.info("nemid for %s is unknown" % ifname)
                 continue
             x, y, z = netif.node.getposition()
-            lat, long, alt = self.session.location.getgeo(x, y, z)
+            lat, lon, alt = self.session.location.getgeo(x, y, z)
             logging.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
-                        i, ifname, nemid, x, y, z, lat, long, alt)
+                         i, ifname, nemid, x, y, z, lat, lon, alt)
             # altitude must be an integer or warning is printed
             alt = int(round(alt))
-            event.append(nemid, latitude=lat, longitude=long, altitude=alt)
+            event.append(nemid, latitude=lat, longitude=lon, altitude=alt)
             i += 1
 
         self.session.emane.service.publish(0, event)
