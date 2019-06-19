@@ -1214,19 +1214,19 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # controlnet may be needed by some EMANE models
+        # create control net interfaces and broker network tunnels
+        # which need to exist for emane to sync on location events
+        # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
+        self.broker.startup()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
             return
 
-        # start feature helpers
-        self.broker.startup()
-        self.mobility.startup()
-
-        # boot the services on each node
+        # boot node services and then start mobility
         self.boot_nodes()
+        self.mobility.startup()
 
         # set broker local instantiation to complete
         self.broker.local_instantiation_complete()
