@@ -145,7 +145,15 @@ to arrange the topology such that the number of tunnels is minimized. The
 tunnels carry data between servers to connect nodes as specified in the topology.
 These tunnels are created using GRE tunneling, similar to the Tunnel Tool.
 
-### EMANE Issues
+### EMANE Configuration and Issues
+
+EMANE needs to have controlnet configured in **core.conf** in order to startup correctly.
+The names before the addresses need to match the servers configured in 
+**~/.core/servers.conf** previously.
+
+```shell
+controlnet = core1:172.16.1.0/24 core2:172.16.2.0/24 core3:172.16.3.0/24 core4:172.16.4.0/24 core5:172.16.5.0/24
+```
 
 EMANE appears to require location events for nodes to be sync'ed across
 all EMANE instances for nodes to find each other. Using an EMANE eel file
