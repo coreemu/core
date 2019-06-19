@@ -497,6 +497,10 @@ class EmaneManager(ModelManager):
         if len(prefixes) < len(servers):
             logging.info("setting up default controlnet prefixes for distributed (%d configured)", len(prefixes))
             prefix = ctrlnet.DEFAULT_PREFIX_LIST[0]
+            prefixes = prefix.split()
+            servers.remove("localhost")
+            servers.insert(0, "localhost")
+            prefix = " ".join("%s:%s" % (s, prefixes[i]) for i, s in enumerate(servers))
 
         # this generates a config message having controlnet prefix assignments
         logging.info("setting up controlnet prefixes for distributed: %s", prefix)
