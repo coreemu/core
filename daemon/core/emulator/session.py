@@ -22,10 +22,10 @@ from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emulator.data import EventData, NodeData
 from core.emulator.data import ExceptionData
-from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import IdGen
-from core.emulator.emudata import is_net_node
+from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import create_interface
+from core.emulator.emudata import is_net_node
 from core.emulator.emudata import link_config
 from core.emulator.enumerations import EventTypes, LinkTypes
 from core.emulator.enumerations import ExceptionLevels
@@ -1168,7 +1168,7 @@ class Session(object):
             with self._nodes_lock:
                 file_path = os.path.join(self.session_dir, "nodes")
                 with open(file_path, "w") as f:
-                    for _id in sorted(self.nodes.keys()):
+                    for _id in self.nodes.keys():
                         node = self.nodes[_id]
                         f.write("%s %s %s %s\n" % (_id, node.name, node.apitype, type(node)))
         except IOError:
