@@ -10,6 +10,7 @@ import select
 import socket
 import threading
 
+from core import utils
 from core.api.tlv import coreapi
 from core.nodes.base import CoreNodeBase, CoreNetworkBase
 from core.emulator.enumerations import ConfigDataTypes
@@ -387,12 +388,13 @@ class CoreBroker(object):
         :return: tunnel key for the node pair
         :rtype: int
         """
+        logging.debug("creating tunnel key for: %s, %s", n1num, n2num)
         sid = self.session_id_master
         if sid is None:
             # this is the master session
             sid = self.session.id
 
-        key = (sid << 16) ^ hash(n1num) ^ (hash(n2num) << 8)
+        key = (sid << 16) ^ utils.hash(n1num) ^ (utils.hash(n2num) << 8)
         return key & 0xFFFFFFFF
 
     def addtunnel(self, remoteip, n1num, n2num, localnum):
