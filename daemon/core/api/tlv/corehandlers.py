@@ -628,7 +628,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Node Message handler
 
-        :param core.api.coreapi.CoreNodeMessage message: node message
+        :param core.api.tlv.coreapi.CoreNodeMessage message: node message
         :return: replies to node message
         """
         replies = []
