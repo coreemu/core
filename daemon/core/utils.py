@@ -18,7 +18,7 @@ from core import CoreCommandError
 DEVNULL = open(os.devnull, "wb")
 
 
-def hash(value):
+def hashkey(value):
     """
     Provide a consistent hash that can be used in place
     of the builtin hash, that no longer behaves consistently
