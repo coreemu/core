@@ -89,9 +89,13 @@ sudo dpkg -i quagga-mr_0.99.21mr2.2_amd64.deb
 Requires building from source, from the latest nightly snapshot.
 
 ```shell
+# packages needed beyond what's normally required to build core on ubuntu
+sudo apt install libtool libreadline-dev
+
 wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/nightly_snapshots/quagga-svnsnap.tgz
 tar xzf quagga-svnsnap.tgz
 cd quagga
+./bootstrap.sh
 ./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
     --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
     --localstatedir=/var/run/quagga
