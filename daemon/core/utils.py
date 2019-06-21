@@ -18,6 +18,27 @@ from core import CoreCommandError
 DEVNULL = open(os.devnull, "wb")
 
 
+def execute_file(path, exec_globals=None, exec_locals=None):
+    """
+    Provides an alternative way to run execfile to be compatible for
+    both python2/3.
+
+    :param str path: path of file to execute
+    :param dict exec_globals: globals values to pass to execution
+    :param dict exec_locals:  local values to pass to execution
+    :return: nothing
+    """
+    if exec_globals is None:
+        exec_globals = {}
+    exec_globals.update({
+        "__file__": path,
+        "__name__": "__main__"
+    })
+    with open(path, "rb") as f:
+        data = compile(f.read(), path, "exec")
+        exec(data, exec_globals, exec_locals)
+
+
 def hashkey(value):
     """
     Provide a consistent hash that can be used in place

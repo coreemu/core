@@ -859,7 +859,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         raise
                 else:
                     thread = threading.Thread(
-                        target=execfile,
+                        target=utils.execute_file,
                         args=(file_name, {"__file__": file_name, "coreemu": self.coreemu})
                     )
                     thread.daemon = True
