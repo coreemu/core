@@ -96,7 +96,7 @@ wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/nightly_snapshots/quagga-s
 tar xzf quagga-svnsnap.tgz
 cd quagga
 ./bootstrap.sh
-./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
+./configure --disable-doc --enable-user=root --enable-group=root --with-cflags=-ggdb \
     --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
     --localstatedir=/var/run/quagga
 make
