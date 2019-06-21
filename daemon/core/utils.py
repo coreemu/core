@@ -3,6 +3,7 @@ Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
 import fcntl
+import hashlib
 import importlib
 import inspect
 import logging
@@ -15,6 +16,22 @@ from past.builtins import basestring
 from core import CoreCommandError
 
 DEVNULL = open(os.devnull, "wb")
+
+
+def hashkey(value):
+    """
+    Provide a consistent hash that can be used in place
+    of the builtin hash, that no longer behaves consistently
+    in python3.
+
+    :param str/int value: value to hash
+    :return: hash value
+    :rtype: int
+    """
+    if isinstance(value, int):
+        value = str(value)
+    value = value.encode("utf-8")
+    return int(hashlib.sha256(value).hexdigest(), 16)
 
 
 def _detach_init():

@@ -22,10 +22,10 @@ from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emulator.data import EventData, NodeData
 from core.emulator.data import ExceptionData
-from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import IdGen
-from core.emulator.emudata import is_net_node
+from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import create_interface
+from core.emulator.emudata import is_net_node
 from core.emulator.emudata import link_config
 from core.emulator.enumerations import EventTypes, LinkTypes
 from core.emulator.enumerations import ExceptionLevels
@@ -1168,7 +1168,7 @@ class Session(object):
             with self._nodes_lock:
                 file_path = os.path.join(self.session_dir, "nodes")
                 with open(file_path, "w") as f:
-                    for _id in sorted(self.nodes.keys()):
+                    for _id in self.nodes.keys():
                         node = self.nodes[_id]
                         f.write("%s %s %s %s\n" % (_id, node.name, node.apitype, type(node)))
         except IOError:
@@ -1214,19 +1214,19 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # controlnet may be needed by some EMANE models
+        # create control net interfaces and broker network tunnels
+        # which need to exist for emane to sync on location events
+        # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
+        self.broker.startup()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
             return
 
-        # start feature helpers
-        self.broker.startup()
-        self.mobility.startup()
-
-        # boot the services on each node
+        # boot node services and then start mobility
         self.boot_nodes()
+        self.mobility.startup()
 
         # set broker local instantiation to complete
         self.broker.local_instantiation_complete()
@@ -1498,7 +1498,7 @@ class Session(object):
                         break
 
                 if not prefix:
-                    logging.error("Control network prefix not found for server '%s'" % servers[0])
+                    logging.error("control network prefix not found for server: %s", servers[0])
                     assign_address = False
                     try:
                         prefix = prefixes[0].split(':', 1)[1]
