@@ -361,6 +361,18 @@ class Session(object):
                             self.delete_node(net_one.id)
                         node_one.delnetif(interface_one.netindex)
                         node_two.delnetif(interface_two.netindex)
+                elif node_one and net_one:
+                    interface = node_one.netif(interface_one_id)
+                    logging.info("deleting link node(%s):interface(%s) node(%s)",
+                                 node_one.name, interface.name, net_one.name)
+                    interface.detachnet()
+                    node_one.delnetif(interface.netindex)
+                elif node_two and net_one:
+                    interface = node_two.netif(interface_two_id)
+                    logging.info("deleting link node(%s):interface(%s) node(%s)",
+                                 node_two.name, interface.name, net_one.name)
+                    interface.detachnet()
+                    node_two.delnetif(interface.netindex)
         finally:
             if node_one:
                 node_one.lock.release()

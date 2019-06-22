@@ -40,6 +40,14 @@ class CoreServerTest(object):
         self.session = None
         self.request_handler = None
 
+    def setup_handler(self):
+        self.session = self.server.coreemu.create_session(1)
+        request_mock = MagicMock()
+        request_mock.fileno = MagicMock(return_value=1)
+        self.request_handler = CoreHandler(request_mock, "", self.server)
+        self.request_handler.session = self.session
+        self.request_handler.add_session_handlers()
+
     def setup(self, distributed_address):
         # validate address
         assert distributed_address, "distributed server address was not provided"
@@ -145,6 +153,20 @@ def interface_helper():
 def cored():
     # create and return server
     server = CoreServerTest()
+    yield server
+
+    # cleanup
+    server.shutdown()
+
+    # cleanup services
+    ServiceManager.services.clear()
+
+
+@pytest.fixture()
+def coreserver():
+    # create and return server
+    server = CoreServerTest()
+    server.setup_handler()
     yield server
 
     # cleanup
