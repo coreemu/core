@@ -1396,7 +1396,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         open_file.write(data)
                 return ()
 
-            self.session.node_add_file(node_num, source_name, file_name, data)
+            self.session.add_node_file(node_num, source_name, file_name, data)
         else:
             raise NotImplementedError
 
@@ -1639,10 +1639,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.info("request to connect to session %s", session_id)
 
                     # remove client from session broker and shutdown if needed
-                    self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
                     if not self.session.broker.session_clients and not self.session.is_active():
                         self.coreemu.delete_session(self.session.id)
+                    self.remove_session_handlers()
 
                     # set session to join
                     self.session = session

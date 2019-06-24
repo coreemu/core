@@ -628,6 +628,9 @@ class Session(object):
         # clear out existing session
         self.clear()
 
+        if start:
+            self.set_state(EventTypes.CONFIGURATION_STATE)
+
         # write out xml file
         CoreXmlReader(self).read(file_name)
 

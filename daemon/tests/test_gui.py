@@ -1,102 +1,19 @@
 """
-Unit tests for testing with a CORE switch.
+Tests for testing tlv message handling.
 """
+import os
+import time
 
+import mock
 import pytest
 
 from core.api.tlv import coreapi
-from core.api.tlv.coreapi import CoreExecuteTlv
-from core.emulator.enumerations import EventTlvs
+from core.emulator.enumerations import EventTlvs, SessionTlvs, EventTypes, FileTlvs, RegisterTlvs
 from core.emulator.enumerations import ExecuteTlvs
 from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import LinkTypes
 from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
 from core.emulator.enumerations import NodeTypes, NodeTlvs
 from core.nodes.ipaddress import Ipv4Prefix
-
-
-def command_message(node, command):
-    """
-    Create an execute command TLV message.
-
-    :param node: node to execute command for
-    :param command: command to execute
-    :return: packed execute message
-    """
-    tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
-    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
-    tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, command)
-    return coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
-
-
-def state_message(state):
-    """
-    Create a event TLV message for a new state.
-
-    :param core.enumerations.EventTypes state: state to create message for
-    :return: packed event message
-    """
-    tlv_data = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, state.value)
-    return coreapi.CoreEventMessage.pack(0, tlv_data)
-
-
-def switch_link_message(switch, node, address, prefix_len):
-    """
-    Create a link TLV message for node to a switch, with the provided address and prefix length.
-
-    :param switch: switch for link
-    :param node: node for link
-    :param address: address node on link
-    :param prefix_len: prefix length of address
-    :return: packed link message
-    """
-    tlv_data = coreapi.CoreLinkTlv.pack(LinkTlvs.N1_NUMBER.value, switch.id)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, node.id)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, address)
-    tlv_data += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix_len)
-    return coreapi.CoreLinkMessage.pack(MessageFlags.ADD.value, tlv_data)
-
-
-def run_cmd(node, exec_cmd):
-    """
-    Convenience method for sending commands to a node using the legacy API.
-
-    :param node: The node the command should be issued too
-    :param exec_cmd: A string with the command to be run
-    :return: Returns the result of the command
-    """
-    # Set up the command api message
-    # tlv_data = CoreExecuteTlv.pack(ExecuteTlvs.NODE.value, node.id)
-    # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.NUMBER.value, 1)
-    # tlv_data += CoreExecuteTlv.pack(ExecuteTlvs.COMMAND.value, exec_cmd)
-    # message = coreapi.CoreExecMessage.pack(MessageFlags.STRING.value | MessageFlags.TEXT.value, tlv_data)
-    message = command_message(node, exec_cmd)
-    node.session.broker.handlerawmsg(message)
-
-    # Now wait for the response
-    server = node.session.broker.servers["localhost"]
-    server.sock.settimeout(50.0)
-
-    # receive messages until we get our execute response
-    result = None
-    status = False
-    while True:
-        message_header = server.sock.recv(coreapi.CoreMessage.header_len)
-        message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(message_header)
-        message_data = server.sock.recv(message_length)
-
-        # If we get the right response return the results
-        print("received response message: %s" % message_type)
-        if message_type == MessageTypes.EXECUTE.value:
-            message = coreapi.CoreExecMessage(message_flags, message_header, message_data)
-            result = message.get_tlv(ExecuteTlvs.RESULT.value)
-            status = message.get_tlv(ExecuteTlvs.STATUS.value)
-            break
-
-    return result, status
 
 
 class TestGui:
@@ -154,14 +71,13 @@ class TestGui:
         with pytest.raises(KeyError):
             coreserver.session.get_node(node_id)
 
-    def test_link_add(self, coreserver):
+    def test_link_add_node_to_net(self, coreserver):
         node_one = 1
         coreserver.session.add_node(_id=node_one)
         switch = 2
         coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
-        coreserver.session.add_link(node_one, switch, interface_one)
         message = coreapi.CoreLinkMessage.create(MessageFlags.ADD.value, [
             (LinkTlvs.N1_NUMBER, node_one),
             (LinkTlvs.N2_NUMBER, switch),
@@ -174,6 +90,54 @@ class TestGui:
 
         switch_node = coreserver.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
+        assert len(all_links) == 1
+
+    def test_link_add_net_to_node(self, coreserver):
+        node_one = 1
+        coreserver.session.add_node(_id=node_one)
+        switch = 2
+        coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        ip_prefix = Ipv4Prefix("10.0.0.0/24")
+        interface_one = ip_prefix.addr(node_one)
+        message = coreapi.CoreLinkMessage.create(MessageFlags.ADD.value, [
+            (LinkTlvs.N1_NUMBER, switch),
+            (LinkTlvs.N2_NUMBER, node_one),
+            (LinkTlvs.INTERFACE2_NUMBER, 0),
+            (LinkTlvs.INTERFACE2_IP4, interface_one),
+            (LinkTlvs.INTERFACE2_IP4_MASK, 24),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        switch_node = coreserver.session.get_node(switch)
+        all_links = switch_node.all_link_data(0)
+        assert len(all_links) == 1
+
+    def test_link_add_node_to_node(self, coreserver):
+        node_one = 1
+        coreserver.session.add_node(_id=node_one)
+        node_two = 2
+        coreserver.session.add_node(_id=node_two)
+        ip_prefix = Ipv4Prefix("10.0.0.0/24")
+        interface_one = ip_prefix.addr(node_one)
+        interface_two = ip_prefix.addr(node_two)
+        message = coreapi.CoreLinkMessage.create(MessageFlags.ADD.value, [
+            (LinkTlvs.N1_NUMBER, node_one),
+            (LinkTlvs.N2_NUMBER, node_two),
+            (LinkTlvs.INTERFACE1_NUMBER, 0),
+            (LinkTlvs.INTERFACE1_IP4, interface_one),
+            (LinkTlvs.INTERFACE1_IP4_MASK, 24),
+            (LinkTlvs.INTERFACE2_NUMBER, 0),
+            (LinkTlvs.INTERFACE2_IP4, interface_two),
+            (LinkTlvs.INTERFACE2_IP4_MASK, 24),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        all_links = []
+        for node_id in coreserver.session.nodes:
+            node = coreserver.session.nodes[node_id]
+            all_links += node.all_link_data(0)
         assert len(all_links) == 1
 
     def test_link_update(self, coreserver):
@@ -309,3 +273,288 @@ class TestGui:
         switch_node = coreserver.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 0
+
+    def test_session_update(self, coreserver):
+        session_id = coreserver.session.id
+        name = "test"
+        message = coreapi.CoreSessionMessage.create(0, [
+            (SessionTlvs.NUMBER, str(session_id)),
+            (SessionTlvs.NAME, name),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.name == name
+
+    def test_session_query(self, coreserver):
+        coreserver.request_handler.dispatch_replies = mock.MagicMock()
+        message = coreapi.CoreSessionMessage.create(MessageFlags.STRING.value, [])
+
+        coreserver.request_handler.handle_message(message)
+
+        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        replies = args[0]
+        assert len(replies) == 1
+
+    def test_session_join(self, coreserver):
+        coreserver.request_handler.dispatch_replies = mock.MagicMock()
+        session_id = coreserver.session.id
+        message = coreapi.CoreSessionMessage.create(MessageFlags.ADD.value, [
+            (SessionTlvs.NUMBER, str(session_id)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.request_handler.session.id == session_id
+
+    def test_session_delete(self, coreserver):
+        assert len(coreserver.server.coreemu.sessions) == 1
+        session_id = coreserver.session.id
+        message = coreapi.CoreSessionMessage.create(MessageFlags.DELETE.value, [
+            (SessionTlvs.NUMBER, str(session_id)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert len(coreserver.server.coreemu.sessions) == 0
+
+    def test_file_hook_add(self, coreserver):
+        state = EventTypes.DATACOLLECT_STATE.value
+        assert coreserver.session._hooks.get(state) is None
+        file_name = "test.sh"
+        file_data = "echo hello"
+        message = coreapi.CoreFileMessage.create(MessageFlags.ADD.value, [
+            (FileTlvs.TYPE, "hook:%s" % state),
+            (FileTlvs.NAME, file_name),
+            (FileTlvs.DATA, file_data),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        hooks = coreserver.session._hooks.get(state)
+        assert len(hooks) == 1
+        name, data = hooks[0]
+        assert file_name == name
+        assert file_data == data
+
+    def test_file_service_file_set(self, coreserver):
+        node = coreserver.session.add_node()
+        service = "DefaultRoute"
+        file_name = "defaultroute.sh"
+        file_data = "echo hello"
+        message = coreapi.CoreFileMessage.create(MessageFlags.ADD.value, [
+            (FileTlvs.NODE, node.id),
+            (FileTlvs.TYPE, "service:%s" % service),
+            (FileTlvs.NAME, file_name),
+            (FileTlvs.DATA, file_data),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        service_file = coreserver.session.services.get_service_file(node, service, file_name)
+        assert file_data == service_file.data
+
+    def test_file_node_file_copy(self, coreserver):
+        file_name = "/var/log/test/node.log"
+        node = coreserver.session.add_node()
+        node.makenodedir()
+        file_data = "echo hello"
+        message = coreapi.CoreFileMessage.create(MessageFlags.ADD.value, [
+            (FileTlvs.NODE, node.id),
+            (FileTlvs.NAME, file_name),
+            (FileTlvs.DATA, file_data),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        directory, basename = os.path.split(file_name)
+        created_directory = directory[1:].replace("/", ".")
+        create_path = os.path.join(node.nodedir, created_directory, basename)
+        assert os.path.exists(create_path)
+
+    def test_exec_node_tty(self, coreserver):
+        coreserver.request_handler.dispatch_replies = mock.MagicMock()
+        node = coreserver.session.add_node()
+        node.startup()
+        message = coreapi.CoreExecMessage.create(MessageFlags.TTY.value, [
+            (ExecuteTlvs.NODE, node.id),
+            (ExecuteTlvs.NUMBER, 1),
+            (ExecuteTlvs.COMMAND, "bash")
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        replies = args[0]
+        assert len(replies) == 1
+
+    def test_exec_local_command(self, coreserver):
+        coreserver.request_handler.dispatch_replies = mock.MagicMock()
+        node = coreserver.session.add_node()
+        node.startup()
+        message = coreapi.CoreExecMessage.create(
+            MessageFlags.TEXT.value | MessageFlags.LOCAL.value, [
+                (ExecuteTlvs.NODE, node.id),
+                (ExecuteTlvs.NUMBER, 1),
+                (ExecuteTlvs.COMMAND, "echo hello")
+            ])
+
+        coreserver.request_handler.handle_message(message)
+
+        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        replies = args[0]
+        assert len(replies) == 1
+
+    def test_exec_node_command(self, coreserver):
+        coreserver.request_handler.dispatch_replies = mock.MagicMock()
+        node = coreserver.session.add_node()
+        node.startup()
+        message = coreapi.CoreExecMessage.create(
+            MessageFlags.TEXT.value, [
+                (ExecuteTlvs.NODE, node.id),
+                (ExecuteTlvs.NUMBER, 1),
+                (ExecuteTlvs.COMMAND, "echo hello")
+            ])
+
+        coreserver.request_handler.handle_message(message)
+
+        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        replies = args[0]
+        assert len(replies) == 1
+
+    @pytest.mark.parametrize("state", [
+        EventTypes.SHUTDOWN_STATE,
+        EventTypes.RUNTIME_STATE,
+        EventTypes.DATACOLLECT_STATE,
+        EventTypes.CONFIGURATION_STATE,
+        EventTypes.DEFINITION_STATE
+    ])
+    def test_event_state(self, coreserver, state):
+        message = coreapi.CoreEventMessage.create(0, [
+            (EventTlvs.TYPE, state.value),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.state == state.value
+
+    def test_event_schedule(self, coreserver):
+        coreserver.session.add_event = mock.MagicMock()
+        node = coreserver.session.add_node()
+        message = coreapi.CoreEventMessage.create(MessageFlags.ADD.value, [
+            (EventTlvs.TYPE, EventTypes.SCHEDULED.value),
+            (EventTlvs.TIME, str(time.time() + 100)),
+            (EventTlvs.NODE, node.id),
+            (EventTlvs.NAME, "event"),
+            (EventTlvs.DATA, "data"),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.session.add_event.assert_called_once()
+
+    def test_event_save_xml(self, coreserver, tmpdir):
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        coreserver.session.add_node()
+        message = coreapi.CoreEventMessage.create(0, [
+            (EventTlvs.TYPE, EventTypes.FILE_SAVE.value),
+            (EventTlvs.NAME, file_path),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert os.path.exists(file_path)
+
+    def test_event_open_xml(self, coreserver, tmpdir):
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        node = coreserver.session.add_node()
+        coreserver.session.save_xml(file_path)
+        coreserver.session.delete_node(node.id)
+        message = coreapi.CoreEventMessage.create(0, [
+            (EventTlvs.TYPE, EventTypes.FILE_OPEN.value),
+            (EventTlvs.NAME, file_path),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.get_node(node.id)
+
+    @pytest.mark.parametrize("state", [
+        EventTypes.START,
+        EventTypes.STOP,
+        EventTypes.RESTART,
+        EventTypes.PAUSE,
+        EventTypes.RECONFIGURE
+    ])
+    def test_event_service(self, coreserver, state):
+        coreserver.session.broadcast_event = mock.MagicMock()
+        node = coreserver.session.add_node()
+        node.startup()
+        message = coreapi.CoreEventMessage.create(0, [
+            (EventTlvs.TYPE, state.value),
+            (EventTlvs.NODE, node.id),
+            (EventTlvs.NAME, "service:DefaultRoute"),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.session.broadcast_event.assert_called_once()
+
+    @pytest.mark.parametrize("state", [
+        EventTypes.START,
+        EventTypes.STOP,
+        EventTypes.RESTART,
+        EventTypes.PAUSE,
+        EventTypes.RECONFIGURE
+    ])
+    def test_event_mobility(self, coreserver, state):
+        coreserver.session.broadcast_event = mock.MagicMock()
+        message = coreapi.CoreEventMessage.create(0, [
+            (EventTlvs.TYPE, state.value),
+            (EventTlvs.NAME, "mobility:ns2script"),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+    def test_register_gui(self, coreserver):
+        coreserver.request_handler.master = False
+        message = coreapi.CoreRegMessage.create(0, [
+            (RegisterTlvs.GUI, "gui"),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.request_handler.master is True
+
+    def test_register_xml(self, coreserver, tmpdir):
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        node = coreserver.session.add_node()
+        coreserver.session.save_xml(file_path)
+        coreserver.session.delete_node(node.id)
+        message = coreapi.CoreRegMessage.create(0, [
+            (RegisterTlvs.EXECUTE_SERVER, file_path),
+        ])
+        coreserver.session.instantiate()
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.server.coreemu.sessions[2].get_node(node.id)
+
+    def test_register_python(self, coreserver, tmpdir):
+        xml_file = tmpdir.join("test.py")
+        file_path = xml_file.strpath
+        with open(file_path, "w") as f:
+            f.write("coreemu = globals()['coreemu']\n")
+            f.write("session = coreemu.sessions[1]\n")
+            f.write("session.add_node()\n")
+        message = coreapi.CoreRegMessage.create(0, [
+            (RegisterTlvs.EXECUTE_SERVER, file_path),
+        ])
+        coreserver.session.instantiate()
+
+        coreserver.request_handler.handle_message(message)
+
+        assert len(coreserver.session.nodes) == 1
