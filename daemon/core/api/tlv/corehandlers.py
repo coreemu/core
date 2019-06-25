@@ -1035,8 +1035,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
             metadata_configs = self.session.metadata.get_configs()
+            if metadata_configs is None:
+                metadata_configs = {}
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
-            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in metadata_configs)
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,

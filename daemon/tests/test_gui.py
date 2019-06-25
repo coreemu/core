@@ -8,12 +8,19 @@ import mock
 import pytest
 
 from core.api.tlv import coreapi
-from core.emulator.enumerations import EventTlvs, SessionTlvs, EventTypes, FileTlvs, RegisterTlvs
+from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emulator.enumerations import EventTlvs, SessionTlvs, EventTypes, FileTlvs, RegisterTlvs, ConfigTlvs, \
+    ConfigFlags
 from core.emulator.enumerations import ExecuteTlvs
 from core.emulator.enumerations import LinkTlvs
 from core.emulator.enumerations import MessageFlags
 from core.emulator.enumerations import NodeTypes, NodeTlvs
+from core.location.mobility import BasicRangeModel
 from core.nodes.ipaddress import Ipv4Prefix
+
+
+def dict_to_str(values):
+    return "|".join("%s=%s" % (x, values[x]) for x in values)
 
 
 class TestGui:
@@ -510,7 +517,6 @@ class TestGui:
         EventTypes.RECONFIGURE
     ])
     def test_event_mobility(self, coreserver, state):
-        coreserver.session.broadcast_event = mock.MagicMock()
         message = coreapi.CoreEventMessage.create(0, [
             (EventTlvs.TYPE, state.value),
             (EventTlvs.NAME, "mobility:ns2script"),
@@ -558,3 +564,288 @@ class TestGui:
         coreserver.request_handler.handle_message(message)
 
         assert len(coreserver.session.nodes) == 1
+
+    def test_config_all(self, coreserver):
+        node = coreserver.session.add_node()
+        message = coreapi.CoreConfMessage.create(MessageFlags.ADD.value, [
+            (ConfigTlvs.OBJECT, "all"),
+            (ConfigTlvs.NODE, node.id),
+            (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
+        ])
+        coreserver.session.location.reset = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.session.location.reset.assert_called_once()
+
+    def test_config_options_request(self, coreserver):
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "session"),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_options_update(self, coreserver):
+        test_key = "test"
+        test_value = "test"
+        values = {
+            test_key: test_value
+        }
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "session"),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, dict_to_str(values)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.options.get_config(test_key) == test_value
+
+    def test_config_location_reset(self, coreserver):
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "location"),
+            (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
+        ])
+        coreserver.session.location.refxyz = (10, 10, 10)
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.location.refxyz == (0, 0, 0)
+
+    def test_config_location_update(self, coreserver):
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "location"),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, "10|10|70|50|0|0.5"),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.location.refxyz == (10, 10, 0.0)
+        assert coreserver.session.location.refgeo == (70, 50, 0)
+        assert coreserver.session.location.refscale == 0.5
+
+    def test_config_metadata_request(self, coreserver):
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "metadata"),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_metadata_update(self, coreserver):
+        test_key = "test"
+        test_value = "test"
+        values = {
+            test_key: test_value
+        }
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "metadata"),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, dict_to_str(values)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.metadata.get_config(test_key) == test_value
+
+    def test_config_broker_request(self, coreserver):
+        server = "test"
+        host = "10.0.0.1"
+        port = 50000
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "broker"),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, "%s:%s:%s" % (server, host, port)),
+        ])
+        coreserver.session.broker.addserver = mock.MagicMock()
+        coreserver.session.broker.setupserver = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.session.broker.addserver.assert_called_once_with(server, host, port)
+        coreserver.session.broker.setupserver.assert_called_once_with(server)
+
+    def test_config_services_request_all(self, coreserver):
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "services"),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_services_request_specific(self, coreserver):
+        node = coreserver.session.add_node()
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, node.id),
+            (ConfigTlvs.OBJECT, "services"),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+            (ConfigTlvs.OPAQUE, "service:DefaultRoute"),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_services_request_specific_file(self, coreserver):
+        node = coreserver.session.add_node()
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, node.id),
+            (ConfigTlvs.OBJECT, "services"),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+            (ConfigTlvs.OPAQUE, "service:DefaultRoute:defaultroute.sh"),
+        ])
+        coreserver.session.broadcast_file = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.session.broadcast_file.assert_called_once()
+
+    def test_config_services_reset(self, coreserver):
+        node = coreserver.session.add_node()
+        service = "DefaultRoute"
+        coreserver.session.services.set_service(node.id, service)
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "services"),
+            (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
+        ])
+        assert coreserver.session.services.get_service(node.id, service) is not None
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.services.get_service(node.id, service) is None
+
+    def test_config_services_set(self, coreserver):
+        node = coreserver.session.add_node()
+        service = "DefaultRoute"
+        values = {
+            "meta": "metadata"
+        }
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, node.id),
+            (ConfigTlvs.OBJECT, "services"),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.OPAQUE, "service:%s" % service),
+            (ConfigTlvs.VALUES, dict_to_str(values)),
+        ])
+        assert coreserver.session.services.get_service(node.id, service) is None
+
+        coreserver.request_handler.handle_message(message)
+
+        assert coreserver.session.services.get_service(node.id, service) is not None
+
+    def test_config_mobility_reset(self, coreserver):
+        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "MobilityManager"),
+            (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
+        ])
+        coreserver.session.mobility.set_model_config(wlan.id, BasicRangeModel.name, {})
+        assert len(coreserver.session.mobility.node_configurations) == 1
+
+        coreserver.request_handler.handle_message(message)
+
+        assert len(coreserver.session.mobility.node_configurations) == 0
+
+    def test_config_mobility_model_request(self, coreserver):
+        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, wlan.id),
+            (ConfigTlvs.OBJECT, BasicRangeModel.name),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_mobility_model_update(self, coreserver):
+        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        config_key = "range"
+        config_value = "1000"
+        values = {
+            config_key: config_value
+        }
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, wlan.id),
+            (ConfigTlvs.OBJECT, BasicRangeModel.name),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, dict_to_str(values)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        config = coreserver.session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
+        assert config[config_key] == config_value
+
+    def test_config_emane_model_request(self, coreserver):
+        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, wlan.id),
+            (ConfigTlvs.OBJECT, EmaneIeee80211abgModel.name),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_emane_model_update(self, coreserver):
+        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        config_key = "distance"
+        config_value = "50051"
+        values = {
+            config_key: config_value
+        }
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.NODE, wlan.id),
+            (ConfigTlvs.OBJECT, EmaneIeee80211abgModel.name),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, dict_to_str(values)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        config = coreserver.session.emane.get_model_config(wlan.id, EmaneIeee80211abgModel.name)
+        assert config[config_key] == config_value
+
+    def test_config_emane_request(self, coreserver):
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "emane"),
+            (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
+        ])
+        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+
+        coreserver.request_handler.handle_message(message)
+
+        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+
+    def test_config_emane_update(self, coreserver):
+        config_key = "eventservicedevice"
+        config_value = "eth4"
+        values = {
+            config_key: config_value
+        }
+        message = coreapi.CoreConfMessage.create(0, [
+            (ConfigTlvs.OBJECT, "emane"),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+            (ConfigTlvs.VALUES, dict_to_str(values)),
+        ])
+
+        coreserver.request_handler.handle_message(message)
+
+        config = coreserver.session.emane.get_configs()
+        assert config[config_key] == config_value

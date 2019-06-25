@@ -53,6 +53,14 @@ class MobilityManager(ModelManager):
         self.physnets = {}
         self.session.broker.handlers.add(self.physnodehandlelink)
 
+    def reset(self):
+        """
+        Clear out all current configurations.
+
+        :return: nothing
+        """
+        self.config_reset()
+
     def startup(self, node_ids=None):
         """
         Session is transitioning from instantiation to runtime state.
