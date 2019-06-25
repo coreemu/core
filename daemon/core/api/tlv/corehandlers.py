@@ -1035,8 +1035,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
             metadata_configs = self.session.metadata.get_configs()
+            if metadata_configs is None:
+                metadata_configs = {}
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
-            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in metadata_configs)
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
@@ -1396,7 +1398,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         open_file.write(data)
                 return ()
 
-            self.session.node_add_file(node_num, source_name, file_name, data)
+            self.session.add_node_file(node_num, source_name, file_name, data)
         else:
             raise NotImplementedError
 
@@ -1639,10 +1641,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.info("request to connect to session %s", session_id)
 
                     # remove client from session broker and shutdown if needed
-                    self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
                     if not self.session.broker.session_clients and not self.session.is_active():
                         self.coreemu.delete_session(self.session.id)
+                    self.remove_session_handlers()
 
                     # set session to join
                     self.session = session
