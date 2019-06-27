@@ -81,6 +81,7 @@ class NodeTypes(Enum):
     PEER_TO_PEER = 12
     CONTROL_NET = 13
     EMANE_NET = 14
+    DOCKER = 15
 
 
 class Rj45Models(Enum):
