@@ -26,6 +26,7 @@ if __name__ == "__main__":
         print(node_one.cmd_output("ifconfig"))
         print(node_two.cmd_output("ifconfig"))
         input("press key to continue")
+        session.instantiate()
     finally:
         input("continue to shutdown")
         coreemu.shutdown()
