@@ -41,14 +41,25 @@ class DockerClient(object):
             cmd=cmd
         ))
 
-    def ns_cmd(self, cmd):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        logging.info("ns cmd: %s", cmd)
-        return utils.cmd_output("nsenter -t {pid} -m -u -i -p -n {cmd}".format(
+    def _ns_args(self, cmd):
+        return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(
             pid=self.pid,
             cmd=cmd
-        ))
+        )
+
+    def ns_cmd_output(self, cmd):
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+        args = self._ns_args(cmd)
+        logging.info("ns cmd: %s", args)
+        return utils.cmd_output(args)
+
+    def ns_cmd(self, cmd, wait=True):
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+        args = self._ns_args(cmd)
+        logging.info("ns cmd: %s", args)
+        return utils.cmd(args, wait)
 
     def get_pid(self):
         args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
@@ -83,7 +94,7 @@ class DockerClient(object):
 
         interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
         args = ["ip", "addr", "show", "dev", ifname]
-        status, output = self.ns_cmd(args)
+        status, output = self.ns_cmd_output(args)
         for line in output:
             line = line.strip().split()
             if line[0] == "link/ether":
@@ -180,10 +191,7 @@ class DockerNode(CoreNode):
         :return: exit status for command
         :rtype: int
         """
-        status, output = self.client.ns_cmd(args)
-        if status:
-            raise CoreCommandError(status, args, output)
-        return status
+        return self.client.ns_cmd(args, wait)
 
     def cmd_output(self, args):
         """
@@ -193,7 +201,7 @@ class DockerNode(CoreNode):
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         """
-        return self.client.ns_cmd(args)
+        return self.client.ns_cmd_output(args)
 
     def check_cmd(self, args):
         """
@@ -204,7 +212,7 @@ class DockerNode(CoreNode):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        status, output = self.client.ns_cmd(args)
+        status, output = self.client.ns_cmd_output(args)
         if status:
             raise CoreCommandError(status, args, output)
         return output
