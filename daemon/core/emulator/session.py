@@ -1364,7 +1364,7 @@ class Session(object):
                 # TODO: PyCoreNode is not the type to check
                 if isinstance(node, CoreNodeBase) and not nodeutils.is_node(node, NodeTypes.RJ45):
                     # add a control interface if configured
-                    logging.info("booting node: %s", node.name)
+                    logging.info("booting node(%s): %s", node.name, node.services)
                     self.add_remove_control_interface(node=node, remove=False)
                     result = pool.apply_async(self.services.boot_services, (node,))
                     results.append(result)

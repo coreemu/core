@@ -35,6 +35,7 @@ class DockerClient(object):
     def run_cmd(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
+        logging.info("docker cmd: %s", cmd)
         return utils.cmd_output("docker exec -it {name} {cmd}".format(
             name=self.name,
             cmd=cmd
@@ -43,18 +44,30 @@ class DockerClient(object):
     def ns_cmd(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
+        logging.info("ns cmd: %s", cmd)
         return utils.cmd_output("nsenter -t {pid} -m -u -i -p -n {cmd}".format(
             pid=self.pid,
             cmd=cmd
         ))
 
     def get_pid(self):
-        status, output = utils.cmd_output("docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name))
+        args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
+        status, output = utils.cmd_output(args)
         if status:
-            raise CoreCommandError(status, output)
+            raise CoreCommandError(status, args, output)
         self.pid = output
         logging.debug("node(%s) pid: %s", self.name, self.pid)
         return output
+
+    def copy_file(self, source, destination):
+        args = "docker cp {source} {name}:{destination}".format(
+            source=source,
+            name=self.name,
+            destination=destination
+        )
+        status, output = utils.cmd_output(args)
+        if status:
+            raise CoreCommandError(status, args, output)
 
     def getaddr(self, ifname, rescan=False):
         """
@@ -139,6 +152,7 @@ class DockerNode(CoreNode):
         with self.lock:
             if self.up:
                 raise ValueError("starting a node that is already up")
+            self.makenodedir()
             self.pid = self.client.create_container("ubuntu:ifconfig")
             self.up = True
 
@@ -166,7 +180,9 @@ class DockerNode(CoreNode):
         :return: exit status for command
         :rtype: int
         """
-        status, _ = self.client.ns_cmd(args)
+        status, output = self.client.ns_cmd(args)
+        if status:
+            raise CoreCommandError(status, args, output)
         return status
 
     def cmd_output(self, args):
@@ -190,7 +206,7 @@ class DockerNode(CoreNode):
         """
         status, output = self.client.ns_cmd(args)
         if status:
-            raise CoreCommandError(status, output)
+            raise CoreCommandError(status, args, output)
         return output
 
     def termcmdstring(self, sh="/bin/sh"):
@@ -209,7 +225,11 @@ class DockerNode(CoreNode):
         :param str path: path to create
         :return: nothing
         """
-        pass
+        logging.info("creating node dir: %s", path)
+        args = "mkdir -p {path}".format(path=path)
+        status, output = self.client.run_cmd(args)
+        if status:
+            raise CoreCommandError(status, args, output)
 
     def mount(self, source, target):
         """
@@ -220,4 +240,35 @@ class DockerNode(CoreNode):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        pass
+        logging.info("mounting source(%s) target(%s)", source, target)
+        raise Exception("you found a docker node")
+
+    def nodefile(self, filename, contents, mode=0o644):
+        """
+        Create a node file with a given mode.
+
+        :param str filename: name of file to create
+        :param contents: contents of file
+        :param int mode: mode for file
+        :return: nothing
+        """
+        logging.info("node dir(%s) ctrlchannel(%s)", self.nodedir, self.ctrlchnlname)
+        logging.info("nodefile filename(%s) mode(%s)", filename, mode)
+        file_path = os.path.join(self.nodedir, filename)
+        with open(file_path, "w") as f:
+            os.chmod(f.name, mode)
+            f.write(contents)
+        self.client.copy_file(file_path, filename)
+
+    def nodefilecopy(self, filename, srcfilename, mode=None):
+        """
+        Copy a file to a node, following symlinks and preserving metadata.
+        Change file mode if specified.
+
+        :param str filename: file name to copy file to
+        :param str srcfilename: file to copy
+        :param int mode: mode to copy to
+        :return: nothing
+        """
+        logging.info("node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode)
+        raise Exception("you found a docker node")
