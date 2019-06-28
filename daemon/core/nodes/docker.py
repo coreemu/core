@@ -8,15 +8,16 @@ from core.nodes.base import CoreNode
 
 
 class DockerClient(object):
-    def __init__(self, name):
+    def __init__(self, name, image):
         self.name = name
+        self.image = image
         self.pid = None
         self._addr = {}
 
-    def create_container(self, image):
+    def create_container(self):
         utils.check_cmd("docker run -td --net=none --hostname {name} --name {name} {image} /bin/bash".format(
             name=self.name,
-            image=image
+            image=self.image
         ))
         self.pid = self.get_pid()
         return self.pid
@@ -119,7 +120,7 @@ class DockerNode(CoreNode):
     apitype = NodeTypes.DOCKER.value
     valid_address_types = {"inet", "inet6", "inet6link"}
 
-    def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
+    def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True, image=None):
         """
         Create a CoreNode instance.
 
@@ -133,7 +134,9 @@ class DockerNode(CoreNode):
         super(CoreNode, self).__init__(session, _id, name, start=start)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
-        self.client = DockerClient(self.name)
+        if image is None:
+            image = "ubuntu"
+        self.client = DockerClient(self.name, image)
         self.pid = None
         self.up = False
         self.lock = threading.RLock()
@@ -164,7 +167,7 @@ class DockerNode(CoreNode):
             if self.up:
                 raise ValueError("starting a node that is already up")
             self.makenodedir()
-            self.pid = self.client.create_container("ubuntu:ifconfig")
+            self.pid = self.client.create_container()
             self.up = True
 
     def shutdown(self):
