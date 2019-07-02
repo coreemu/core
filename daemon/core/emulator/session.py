@@ -500,7 +500,7 @@ class Session(object):
 
         # create node
         logging.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
-        if _type == NodeTypes.DOCKER:
+        if _type in [NodeTypes.DOCKER, NodeTypes.LXC]:
             node = self.create_node(cls=node_class, _id=_id, name=name, start=start, image=node_options.image)
         else:
             node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
@@ -514,7 +514,7 @@ class Session(object):
         self.set_node_position(node, node_options)
 
         # add services to default and physical nodes only
-        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL, NodeTypes.DOCKER]:
+        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL, NodeTypes.DOCKER, NodeTypes.LXC]:
             node.type = node_options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
