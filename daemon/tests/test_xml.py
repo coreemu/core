@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 import pytest
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.emudata import NodeOptions
+from core.emulator.emudata import NodeOptions, LinkOptions
 from core.emulator.enumerations import NodeTypes
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
@@ -16,7 +16,6 @@ class TestXml:
 
         :param session: session for test
         :param tmpdir: tmpdir to create data in
-        :param str version: xml version to write and parse
         """
         # create hook
         file_name = "runtime_hook.sh"
@@ -51,7 +50,6 @@ class TestXml:
 
         :param session: session for test
         :param tmpdir: tmpdir to create data in
-        :param str version: xml version to write and parse
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create ptp
@@ -104,7 +102,6 @@ class TestXml:
 
         :param session: session for test
         :param tmpdir: tmpdir to create data in
-        :param str version: xml version to write and parse
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create ptp
@@ -168,7 +165,6 @@ class TestXml:
 
         :param session: session for test
         :param tmpdir: tmpdir to create data in
-        :param str version: xml version to write and parse
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create wlan
@@ -230,7 +226,6 @@ class TestXml:
 
         :param session: session for test
         :param tmpdir: tmpdir to create data in
-        :param str version: xml version to write and parse
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create emane node for networking the core nodes
@@ -290,3 +285,262 @@ class TestXml:
         assert session.get_node(n2_id)
         assert session.get_node(emane_id)
         assert value == "1"
+
+    def test_network_to_network(self, session, tmpdir):
+        """
+        Test xml generation when dealing with network to network nodes.
+
+        :param session: session for test
+        :param tmpdir: tmpdir to create data in
+        """
+        # create nodes
+        switch_one = session.add_node(_type=NodeTypes.SWITCH)
+        switch_two = session.add_node(_type=NodeTypes.SWITCH)
+
+        # link nodes
+        session.add_link(switch_one.id, switch_two.id)
+
+        # instantiate session
+        session.instantiate()
+
+        # get ids for nodes
+        n1_id = switch_one.id
+        n2_id = switch_two.id
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(KeyError):
+            assert not session.get_node(n1_id)
+        with pytest.raises(KeyError):
+            assert not session.get_node(n2_id)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        switch_one = session.get_node(n1_id)
+        switch_two = session.get_node(n2_id)
+        assert switch_one
+        assert switch_two
+        assert len(switch_one.all_link_data(0) + switch_two.all_link_data(0)) == 1
+
+    def test_link_options(self, session, tmpdir, ip_prefixes):
+        """
+        Test xml client methods for a ptp network.
+
+        :param session: session for test
+        :param tmpdir: tmpdir to create data in
+        :param ip_prefixes: generates ip addresses for nodes
+        """
+        # create nodes
+        node_one = session.add_node()
+        interface_one = ip_prefixes.create_interface(node_one)
+        switch = session.add_node(_type=NodeTypes.SWITCH)
+
+        # create link
+        link_options = LinkOptions()
+        link_options.per = 20
+        link_options.bandwidth = 50000
+        link_options.jitter = 10
+        link_options.delay = 30
+        link_options.dup = 5
+        session.add_link(node_one.id, switch.id, interface_one, link_options=link_options)
+
+        # instantiate session
+        session.instantiate()
+
+        # get ids for nodes
+        n1_id = node_one.id
+        n2_id = switch.id
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(KeyError):
+            assert not session.get_node(n1_id)
+        with pytest.raises(KeyError):
+            assert not session.get_node(n2_id)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
+        links = []
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
+            links += node.all_link_data(0)
+        link = links[0]
+        assert link_options.per == link.per
+        assert link_options.bandwidth == link.bandwidth
+        assert link_options.jitter == link.jitter
+        assert link_options.delay == link.delay
+        assert link_options.dup == link.dup
+
+    def test_link_options_ptp(self, session, tmpdir, ip_prefixes):
+        """
+        Test xml client methods for a ptp network.
+
+        :param session: session for test
+        :param tmpdir: tmpdir to create data in
+        :param ip_prefixes: generates ip addresses for nodes
+        """
+        # create nodes
+        node_one = session.add_node()
+        interface_one = ip_prefixes.create_interface(node_one)
+        node_two = session.add_node()
+        interface_two = ip_prefixes.create_interface(node_two)
+
+        # create link
+        link_options = LinkOptions()
+        link_options.per = 20
+        link_options.bandwidth = 50000
+        link_options.jitter = 10
+        link_options.delay = 30
+        link_options.dup = 5
+        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options)
+
+        # instantiate session
+        session.instantiate()
+
+        # get ids for nodes
+        n1_id = node_one.id
+        n2_id = node_two.id
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(KeyError):
+            assert not session.get_node(n1_id)
+        with pytest.raises(KeyError):
+            assert not session.get_node(n2_id)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
+        links = []
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
+            links += node.all_link_data(0)
+        link = links[0]
+        assert link_options.per == link.per
+        assert link_options.bandwidth == link.bandwidth
+        assert link_options.jitter == link.jitter
+        assert link_options.delay == link.delay
+        assert link_options.dup == link.dup
+
+    def test_link_options_bidirectional(self, session, tmpdir, ip_prefixes):
+        """
+        Test xml client methods for a ptp network.
+
+        :param session: session for test
+        :param tmpdir: tmpdir to create data in
+        :param ip_prefixes: generates ip addresses for nodes
+        """
+        # create nodes
+        node_one = session.add_node()
+        interface_one = ip_prefixes.create_interface(node_one)
+        node_two = session.add_node()
+        interface_two = ip_prefixes.create_interface(node_two)
+
+        # create link
+        link_options_one = LinkOptions()
+        link_options_one.unidirectional = 1
+        link_options_one.bandwidth = 5000
+        link_options_one.delay = 10
+        link_options_one.per = 5
+        link_options_one.dup = 5
+        link_options_one.jitter = 5
+        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options_one)
+        link_options_two = LinkOptions()
+        link_options_two.unidirectional = 1
+        link_options_two.bandwidth = 10000
+        link_options_two.delay = 20
+        link_options_two.per = 10
+        link_options_two.dup = 10
+        link_options_two.jitter = 10
+        session.update_link(node_two.id, node_one.id, interface_two.id, interface_one.id, link_options_two)
+
+        # instantiate session
+        session.instantiate()
+
+        # get ids for nodes
+        n1_id = node_one.id
+        n2_id = node_two.id
+
+        # save xml
+        xml_file = tmpdir.join("session.xml")
+        file_path = xml_file.strpath
+        session.save_xml(file_path)
+
+        # verify xml file was created and can be parsed
+        assert xml_file.isfile()
+        assert ElementTree.parse(file_path)
+
+        # stop current session, clearing data
+        session.shutdown()
+
+        # verify nodes have been removed from session
+        with pytest.raises(KeyError):
+            assert not session.get_node(n1_id)
+        with pytest.raises(KeyError):
+            assert not session.get_node(n2_id)
+
+        # load saved xml
+        session.open_xml(file_path, start=True)
+
+        # verify nodes have been recreated
+        assert session.get_node(n1_id)
+        assert session.get_node(n2_id)
+        links = []
+        for node_id in session.nodes:
+            node = session.nodes[node_id]
+            links += node.all_link_data(0)
+        assert len(links) == 2
+        link_one = links[0]
+        link_two = links[1]
+        assert link_options_one.bandwidth == link_one.bandwidth
+        assert link_options_one.delay == link_one.delay
+        assert link_options_one.per == link_one.per
+        assert link_options_one.dup == link_one.dup
+        assert link_options_one.jitter == link_one.jitter
+        assert link_options_two.bandwidth == link_two.bandwidth
+        assert link_options_two.delay == link_two.delay
+        assert link_options_two.per == link_two.per
+        assert link_options_two.dup == link_two.dup
+        assert link_options_two.jitter == link_two.jitter

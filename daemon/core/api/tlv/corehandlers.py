@@ -4,15 +4,16 @@ socket server request handlers leveraged by core servers.
 
 import logging
 import os
-from queue import Queue, Empty
 import shlex
 import shutil
-import socketserver
 import sys
 import threading
 import time
-from builtins import range
 from itertools import repeat
+
+import socketserver
+from builtins import range
+from queue import Queue, Empty
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
@@ -39,6 +40,7 @@ from core.emulator.enumerations import NodeTlvs
 from core.emulator.enumerations import NodeTypes
 from core.emulator.enumerations import RegisterTlvs
 from core.emulator.enumerations import SessionTlvs
+from core.location.mobility import BasicRangeModel
 from core.nodes import nodeutils
 from core.services.coreservices import ServiceManager
 from core.services.coreservices import ServiceShim
@@ -213,7 +215,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an event broadcast out from a session.
 
-        :param core.data.EventData event_data: event data to handle
+        :param core.emulator.data.EventData event_data: event data to handle
         :return: nothing
         """
         logging.debug("handling broadcast event: %s", event_data)
@@ -237,7 +239,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle a file broadcast out from a session.
 
-        :param core.data.FileData file_data: file data to handle
+        :param core.emulator.data.FileData file_data: file data to handle
         :return: nothing
         """
         logging.debug("handling broadcast file: %s", file_data)
@@ -264,7 +266,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle a config broadcast out from a session.
 
-        :param core.data.ConfigData config_data: config data to handle
+        :param core.emulator.data.ConfigData config_data: config data to handle
         :return: nothing
         """
         logging.debug("handling broadcast config: %s", config_data)
@@ -278,7 +280,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an exception broadcast out from a session.
 
-        :param core.data.ExceptionData exception_data: exception data to handle
+        :param core.emulator.data.ExceptionData exception_data: exception data to handle
         :return: nothing
         """
         logging.debug("handling broadcast exception: %s", exception_data)
@@ -301,11 +303,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an node broadcast out from a session.
 
-        :param core.data.NodeData node_data: node data to handle
+        :param core.emulator.data.NodeData node_data: node data to handle
         :return: nothing
         """
         logging.debug("handling broadcast node: %s", node_data)
         message = dataconversion.convert_node(node_data)
+
         try:
             self.sendall(message)
         except IOError:
@@ -315,13 +318,16 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Callback to handle an link broadcast out from a session.
 
-        :param core.data.LinkData link_data: link data to handle
+        :param core.emulator.data.LinkData link_data: link data to handle
         :return: nothing
         """
         logging.debug("handling broadcast link: %s", link_data)
         per = ""
         if link_data.per is not None:
             per = str(link_data.per)
+        dup = ""
+        if link_data.dup is not None:
+            dup = str(link_data.dup)
 
         tlv_data = structutils.pack_values(coreapi.CoreLinkTlv, [
             (LinkTlvs.N1_NUMBER, link_data.node1_id),
@@ -329,7 +335,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             (LinkTlvs.DELAY, link_data.delay),
             (LinkTlvs.BANDWIDTH, link_data.bandwidth),
             (LinkTlvs.PER, per),
-            (LinkTlvs.DUP, link_data.dup),
+            (LinkTlvs.DUP, dup),
             (LinkTlvs.JITTER, link_data.jitter),
             (LinkTlvs.MER, link_data.mer),
             (LinkTlvs.BURST, link_data.burst),
@@ -407,7 +413,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         Receive data and return a CORE API message object.
 
         :return: received message
-        :rtype: coreapi.CoreMessage
+        :rtype: core.api.tlv.coreapi.CoreMessage
         """
         try:
             header = self.request.recv(coreapi.CoreMessage.header_len)
@@ -504,7 +510,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
-        logging.debug("dispatching replies: %s", replies)
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -518,7 +523,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 reply_message = "CoreMessage (type %d flags %d length %d)" % (
                     message_type, message_flags, message_length)
 
-            logging.debug("dispatch reply:\n%s", reply_message)
+            logging.debug("sending reply:\n%s", reply_message)
 
             try:
                 self.sendall(reply)
@@ -538,7 +543,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         # TODO: add shutdown handler for session
         self.session = self.coreemu.create_session(port, master=False)
-        # self.session.shutdown_handlers.append(self.session_shutdown)
         logging.debug("created new session for client: %s", self.session.id)
 
         # TODO: hack to associate this handler with this sessions broker for broadcasting
@@ -586,7 +590,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Sends an exception for display within the GUI.
 
-        :param core.enumerations.ExceptionLevel level: level for exception
+        :param core.emulator.enumerations.ExceptionLevel level: level for exception
         :param str source: source where exception came from
         :param str text: details about exception
         :param int node: node id, if related to a specific node
@@ -624,7 +628,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Node Message handler
 
-        :param coreapi.CoreNodeMessage message: node message
+        :param core.api.tlv.coreapi.CoreNodeMessage message: node message
         :return: replies to node message
         """
         replies = []
@@ -696,7 +700,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Link Message handler
 
-        :param coreapi.CoreLinkMessage message: link message to handle
+        :param core.api.tlv.coreapi.CoreLinkMessage message: link message to handle
         :return: link message replies
         """
         node_one_id = message.get_tlv(LinkTlvs.N1_NUMBER.value)
@@ -756,7 +760,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Execute Message handler
 
-        :param coreapi.CoreExecMessage message: execute message to handle
+        :param core.api.tlv.coreapi.CoreExecMessage message: execute message to handle
         :return: reply messages
         """
         node_num = message.get_tlv(ExecuteTlvs.NODE.value)
@@ -831,7 +835,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Register Message Handler
 
-        :param coreapi.CoreRegMessage message: register message to handle
+        :param core.api.tlv.coreapi.CoreRegMessage message: register message to handle
         :return: reply messages
         """
         replies = []
@@ -855,7 +859,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         raise
                 else:
                     thread = threading.Thread(
-                        target=execfile,
+                        target=utils.execute_file,
                         args=(file_name, {"__file__": file_name, "coreemu": self.coreemu})
                     )
                     thread.daemon = True
@@ -923,7 +927,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Configuration Message handler
 
-        :param coreapi.CoreConfMessage message: configuration message to handle
+        :param core.api.tlv.coreapi.CoreConfMessage message: configuration message to handle
         :return: reply messages
         """
         # convert config message to standard config data object
@@ -1023,7 +1027,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 self.session.location.setrefgeo(lat, lon, alt)
                 self.session.location.refscale = values[5]
                 logging.info("location configured: %s = %s scale=%s", self.session.location.refxyz,
-                            self.session.location.refgeo, self.session.location.refscale)
+                             self.session.location.refgeo, self.session.location.refscale)
                 logging.info("location configured: UTM%s", self.session.location.refutm)
 
     def handle_config_metadata(self, message_type, config_data):
@@ -1031,8 +1035,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
             metadata_configs = self.session.metadata.get_configs()
+            if metadata_configs is None:
+                metadata_configs = {}
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
-            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in metadata_configs)
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
@@ -1264,6 +1270,13 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 parsed_config = ConfigShim.str_to_dict(values_str)
 
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
+            if self.session.state == EventTypes.RUNTIME_STATE.value:
+                try:
+                    node = self.session.get_node(node_id)
+                    if object_name == BasicRangeModel.name:
+                        node.updatemodel(parsed_config)
+                except KeyError:
+                    logging.error("skipping mobility configuration for unknown node: %s", node_id)
 
         return replies
 
@@ -1341,7 +1354,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         File Message handler
 
-        :param coreapi.CoreFileMessage message: file message to handle
+        :param core.api.tlv.coreapi.CoreFileMessage message: file message to handle
         :return: reply messages
         """
         if message.flags & MessageFlags.ADD.value:
@@ -1385,7 +1398,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         open_file.write(data)
                 return ()
 
-            self.session.node_add_file(node_num, source_name, file_name, data)
+            self.session.add_node_file(node_num, source_name, file_name, data)
         else:
             raise NotImplementedError
 
@@ -1405,7 +1418,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Event Message handler
 
-        :param coreapi.CoreEventMessage message: event message to handle
+        :param core.api.tlv.coreapi.CoreEventMessage message: event message to handle
         :return: reply messages
         """
         event_data = EventData(
@@ -1508,7 +1521,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         Handle an Event Message used to start, stop, restart, or validate
         a service on a given node.
 
-        :param EventData event_data: event data to handle
+        :param core.emulator.enumerations.EventData event_data: event data to handle
         :return: nothing
         """
         event_type = event_data.event_type
@@ -1573,7 +1586,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Session Message handler
 
-        :param coreapi.CoreSessionMessage message: session message to handle
+        :param core.api.tlv.coreapi.CoreSessionMessage message: session message to handle
         :return: reply messages
         """
         session_id_str = message.get_tlv(SessionTlvs.NUMBER.value)
@@ -1628,10 +1641,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.info("request to connect to session %s", session_id)
 
                     # remove client from session broker and shutdown if needed
-                    self.remove_session_handlers()
                     self.session.broker.session_clients.remove(self)
                     if not self.session.broker.session_clients and not self.session.is_active():
                         self.coreemu.delete_session(self.session.id)
+                    self.remove_session_handlers()
 
                     # set session to join
                     self.session = session
@@ -1787,3 +1800,116 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.session.broadcast_config(config_data)
 
         logging.info("informed GUI about %d nodes and %d links", len(nodes_data), len(links_data))
+
+
+class CoreUdpHandler(CoreHandler):
+    def __init__(self, request, client_address, server):
+        self.message_handlers = {
+            MessageTypes.NODE.value: self.handle_node_message,
+            MessageTypes.LINK.value: self.handle_link_message,
+            MessageTypes.EXECUTE.value: self.handle_execute_message,
+            MessageTypes.REGISTER.value: self.handle_register_message,
+            MessageTypes.CONFIG.value: self.handle_config_message,
+            MessageTypes.FILE.value: self.handle_file_message,
+            MessageTypes.INTERFACE.value: self.handle_interface_message,
+            MessageTypes.EVENT.value: self.handle_event_message,
+            MessageTypes.SESSION.value: self.handle_session_message,
+        }
+        self.master = False
+        self.session = None
+        socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
+
+    def setup(self):
+        """
+        Client has connected, set up a new connection.
+        :return: nothing
+        """
+        pass
+
+    def receive_message(self):
+        data = self.request[0]
+        header = data[:coreapi.CoreMessage.header_len]
+        if len(header) < coreapi.CoreMessage.header_len:
+            raise IOError("error receiving header (received %d bytes)" % len(header))
+
+        message_type, message_flags, message_len = coreapi.CoreMessage.unpack_header(header)
+        if message_len == 0:
+            logging.warning("received message with no data")
+            return
+
+        if len(data) != coreapi.CoreMessage.header_len + message_len:
+            logging.error("received message length does not match received data (%s != %s)",
+                          len(data), coreapi.CoreMessage.header_len + message_len)
+            raise IOError
+
+        try:
+            message_class = coreapi.CLASS_MAP[message_type]
+            message = message_class(message_flags, header, data[coreapi.CoreMessage.header_len:])
+            return message
+        except KeyError:
+            message = coreapi.CoreMessage(message_flags, header, data[coreapi.CoreMessage.header_len:])
+            message.msgtype = message_type
+            logging.exception("unimplemented core message type: %s", message.type_str())
+
+    def handle(self):
+        message = self.receive_message()
+        sessions = message.session_numbers()
+        message.queuedtimes = 0
+        if sessions:
+            for session_id in sessions:
+                session = self.server.mainserver.coreemu.sessions.get(session_id)
+                if session:
+                    logging.debug("session handling message: %s", session.session_id)
+                    self.session = session
+                    self.handle_message(message)
+                    self.broadcast(message)
+                else:
+                    logging.error("session %d in %s message not found.", session_id, message.type_str())
+        else:
+            # no session specified, find an existing one
+            session = None
+            node_count = 0
+            for session_id in self.server.mainserver.coreemu.sessions:
+                current_session = self.server.mainserver.coreemu.sessions[session_id]
+                current_node_count = current_session.get_node_count()
+                if current_session.state == EventTypes.RUNTIME_STATE.value and current_node_count > node_count:
+                    node_count = current_node_count
+                    session = current_session
+
+            if session or message.message_type == MessageTypes.REGISTER.value:
+                self.session = session
+                self.handle_message(message)
+                self.broadcast(message)
+            else:
+                logging.error("no active session, dropping %s message.", message.type_str())
+
+    def broadcast(self, message):
+        if not isinstance(message, (coreapi.CoreNodeMessage, coreapi.CoreLinkMessage)):
+            return
+
+        for client in self.session.broker.session_clients:
+            try:
+                client.sendall(message.raw_message)
+            except IOError:
+                logging.error("error broadcasting")
+
+    def finish(self):
+        return socketserver.BaseRequestHandler.finish(self)
+
+    def queuemsg(self, msg):
+        """
+        UDP handlers are short-lived and do not have message queues.
+
+        :param bytes msg: message to queue
+        :return:
+        """
+        raise Exception("Unable to queue %s message for later processing using UDP!" % msg)
+
+    def sendall(self, data):
+        """
+        Use sendto() on the connectionless UDP socket.
+
+        :param data:
+        :return:
+        """
+        self.request[1].sendto(data, self.client_address)

@@ -22,10 +22,10 @@ from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emulator.data import EventData, NodeData
 from core.emulator.data import ExceptionData
-from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import IdGen
-from core.emulator.emudata import is_net_node
+from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import create_interface
+from core.emulator.emudata import is_net_node
 from core.emulator.emudata import link_config
 from core.emulator.enumerations import EventTypes, LinkTypes
 from core.emulator.enumerations import ExceptionLevels
@@ -314,7 +314,7 @@ class Session(object):
         :param int node_two_id: node two id
         :param int interface_one_id: interface id for node one
         :param int interface_two_id: interface id for node two
-        :param core.enumerations.LinkTypes link_type: link type to delete
+        :param core.emulator.enumerations.LinkTypes link_type: link type to delete
         :return: nothing
         """
         # get node objects identified by link data
@@ -361,14 +361,25 @@ class Session(object):
                             self.delete_node(net_one.id)
                         node_one.delnetif(interface_one.netindex)
                         node_two.delnetif(interface_two.netindex)
+                elif node_one and net_one:
+                    interface = node_one.netif(interface_one_id)
+                    logging.info("deleting link node(%s):interface(%s) node(%s)",
+                                 node_one.name, interface.name, net_one.name)
+                    interface.detachnet()
+                    node_one.delnetif(interface.netindex)
+                elif node_two and net_one:
+                    interface = node_two.netif(interface_two_id)
+                    logging.info("deleting link node(%s):interface(%s) node(%s)",
+                                 node_two.name, interface.name, net_one.name)
+                    interface.detachnet()
+                    node_two.delnetif(interface.netindex)
         finally:
             if node_one:
                 node_one.lock.release()
             if node_two:
                 node_two.lock.release()
 
-    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None,
-                    link_options=LinkOptions()):
+    def update_link(self, node_one_id, node_two_id, interface_one_id=None, interface_two_id=None, link_options=None):
         """
         Update link information between nodes.
 
@@ -379,6 +390,9 @@ class Session(object):
         :param core.emulator.emudata.LinkOptions link_options: data to update link with
         :return: nothing
         """
+        if not link_options:
+            link_options = LinkOptions()
+
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(node_one_id, node_two_id)
 
@@ -441,7 +455,6 @@ class Session(object):
                         link_config(net_one, interface_one, link_options, interface_two=interface_two)
                         if not link_options.unidirectional:
                             link_config(net_one, interface_two, link_options, interface_two=interface_one)
-
         finally:
             if node_one:
                 node_one.lock.release()
@@ -452,7 +465,7 @@ class Session(object):
         """
         Add a node to the session, based on the provided node data.
 
-        :param core.enumerations.NodeTypes _type: type of node to create
+        :param core.emulator.enumerations.NodeTypes _type: type of node to create
         :param int _id: id for node, defaults to None for generated id
         :param core.emulator.emudata.NodeOptions node_options: data to create node with
         :return: created node
@@ -574,7 +587,7 @@ class Session(object):
         """
         Broadcast node location to all listeners.
 
-        :param core.netns.nodes.PyCoreObj node: node to broadcast location for
+        :param core.nodes.base.NodeBase node: node to broadcast location for
         :return: nothing
         """
         node_data = NodeData(
@@ -614,6 +627,9 @@ class Session(object):
         """
         # clear out existing session
         self.clear()
+
+        if start:
+            self.set_state(EventTypes.CONFIGURATION_STATE)
 
         # write out xml file
         CoreXmlReader(self).read(file_name)
@@ -688,7 +704,7 @@ class Session(object):
         """
         Handle a mobility event.
 
-        :param core.data.EventData event_data: event data to handle
+        :param core.emulator.data.EventData event_data: event data to handle
         :return: nothing
         """
         self.mobility.handleevent(event_data)
@@ -700,7 +716,7 @@ class Session(object):
         :param int _id: int for node, defaults to None and will be generated
         :param core.emulator.emudata.NodeOptions node_options: options for emane node, model will always be "mdr"
         :return: new emane node
-        :rtype: core.netns.nodes.CoreNode
+        :rtype: core.nodes.network.WlanNode
         """
         if not node_options:
             node_options = NodeOptions()
@@ -768,7 +784,7 @@ class Session(object):
         """
         Handle exception data that should be provided to exception handlers.
 
-        :param core.data.ExceptionData exception_data: exception data to send out
+        :param core.emulator.data.ExceptionData exception_data: exception data to send out
         :return: nothing
         """
 
@@ -779,7 +795,7 @@ class Session(object):
         """
         Handle node data that should be provided to node handlers.
 
-        :param core.data.ExceptionData node_data: node data to send out
+        :param core.emulator.data.ExceptionData node_data: node data to send out
         :return: nothing
         """
 
@@ -801,7 +817,7 @@ class Session(object):
         """
         Handle config data that should be provided to config handlers.
 
-        :param core.data.ConfigData config_data: config data to send out
+        :param core.emulator.data.ConfigData config_data: config data to send out
         :return: nothing
         """
 
@@ -812,7 +828,7 @@ class Session(object):
         """
         Handle link data that should be provided to link handlers.
 
-        :param core.data.ExceptionData link_data: link data to send out
+        :param core.emulator.data.ExceptionData link_data: link data to send out
         :return: nothing
         """
 
@@ -889,7 +905,7 @@ class Session(object):
         :param str hook_type: hook type
         :param str file_name: file name for hook
         :param str source_name: source name
-        :param data: hook data
+        :param str data: hook data
         :return: nothing
         """
         logging.info("setting state hook: %s - %s from %s", hook_type, file_name, source_name)
@@ -1018,7 +1034,8 @@ class Session(object):
         variables.
 
         :param bool state: flag to determine if session state should be included
-        :return:
+        :return: environment variables
+        :rtype: dict
         """
         env = os.environ.copy()
         env["SESSION"] = "%s" % self.id
@@ -1166,7 +1183,7 @@ class Session(object):
             with self._nodes_lock:
                 file_path = os.path.join(self.session_dir, "nodes")
                 with open(file_path, "w") as f:
-                    for _id in sorted(self.nodes.keys()):
+                    for _id in self.nodes.keys():
                         node = self.nodes[_id]
                         f.write("%s %s %s %s\n" % (_id, node.name, node.apitype, type(node)))
         except IOError:
@@ -1212,19 +1229,19 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # controlnet may be needed by some EMANE models
+        # create control net interfaces and broker network tunnels
+        # which need to exist for emane to sync on location events
+        # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
+        self.broker.startup()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
             return
 
-        # start feature helpers
-        self.broker.startup()
-        self.mobility.startup()
-
-        # boot the services on each node
+        # boot node services and then start mobility
         self.boot_nodes()
+        self.mobility.startup()
 
         # set broker local instantiation to complete
         self.broker.local_instantiation_complete()
@@ -1496,7 +1513,7 @@ class Session(object):
                         break
 
                 if not prefix:
-                    logging.error("Control network prefix not found for server '%s'" % servers[0])
+                    logging.error("control network prefix not found for server: %s", servers[0])
                     assign_address = False
                     try:
                         prefix = prefixes[0].split(':', 1)[1]
@@ -1532,7 +1549,7 @@ class Session(object):
         If conf_reqd is False, the control network may be built even
         when the user has not configured one (e.g. for EMANE.)
 
-        :param core.netns.vnode.CoreNode node: node to add or remove control interface
+        :param core.nodes.base.CoreNode node: node to add or remove control interface
         :param int net_index: network index
         :param bool remove: flag to check if it should be removed
         :param bool conf_required: flag to check if conf is required
@@ -1615,7 +1632,7 @@ class Session(object):
         start of the runtime state.
 
         :param event_time: event time
-        :param core.netns.vnode.CoreNode node: node to add event for
+        :param core.nodes.base.CoreNode node: node to add event for
         :param str name: name of event
         :param data: data for event
         :return: nothing

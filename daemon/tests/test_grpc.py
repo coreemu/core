@@ -458,18 +458,29 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
         wlan = session.add_node(_type=NodeTypes.WIRELESS_LAN)
+        wlan.setmodel(BasicRangeModel, BasicRangeModel.default_values())
+        session.instantiate()
         range_key = "range"
-        range_value = "300"
+        range_value = "50"
 
         # then
         with client.context_connect():
-            response = client.set_wlan_config(session.id, wlan.id, {range_key: range_value})
+            response = client.set_wlan_config(session.id, wlan.id, {
+                range_key: range_value,
+                "delay": "0",
+                "loss": "0",
+                "bandwidth": "50000",
+                "error": "0",
+                "jitter": "0"
+            })
 
         # then
         assert response.result is True
         config = session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
         assert config[range_key] == range_value
+        assert wlan.model.range == int(range_value)
 
     def test_get_emane_config(self, grpc_server):
         # given

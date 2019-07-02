@@ -215,7 +215,7 @@ class IpPrefix(object):
         Create a IpPrefix instance.
 
         :param int af: address family for ip prefix
-        :param prefixstr: ip prefix string
+        :param str prefixstr: ip prefix string
         """
         # prefixstr format: address/prefixlen
         tmp = prefixstr.split("/")

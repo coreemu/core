@@ -1,5 +1,5 @@
 """
-PyCoreNode and LxcNode classes that implement the network namespac virtual node.
+Defines the base logic for nodes used within core.
 """
 
 import errno
@@ -11,8 +11,9 @@ import signal
 import socket
 import string
 import threading
-from builtins import range
 from socket import AF_INET, AF_INET6
+
+from builtins import range
 
 from core import CoreCommandError, utils
 from core import constants
@@ -21,7 +22,6 @@ from core.emulator.enumerations import NodeTypes, LinkTypes
 from core.nodes import client, nodeutils, ipaddress
 from core.nodes.interface import TunTap, CoreInterface
 from core.nodes.interface import Veth
-from core.nodes.ipaddress import MacAddress
 
 _DEFAULT_MTU = 1500
 
@@ -39,7 +39,7 @@ class NodeBase(object):
         """
         Creates a PyCoreObj instance.
 
-        :param core.session.Session session: CORE session object
+        :param core.emulator.session.Session session: CORE session object
         :param int _id: id
         :param str name: object name
         :param bool start: start value
@@ -226,7 +226,7 @@ class CoreNodeBase(NodeBase):
         """
         Create a CoreNodeBase instance.
 
-        :param core.session.Session session: CORE session object
+        :param core.emulator.session.Session session: CORE session object
         :param int _id: object id
         :param str name: object name
         :param bool start: boolean for starting
@@ -417,14 +417,6 @@ class CoreNodeBase(NodeBase):
 class CoreNode(CoreNodeBase):
     """
     Provides standard core node logic.
-
-    :var nodedir: str
-    :var ctrlchnlname: str
-    :var client: core.netns.vnodeclient.VnodeClient
-    :var pid: int
-    :var up: bool
-    :var lock: threading.RLock
-    :var _mounts: list[tuple[str, str]]
     """
     apitype = NodeTypes.DEFAULT.value
     valid_address_types = {"inet", "inet6", "inet6link"}
@@ -433,7 +425,7 @@ class CoreNode(CoreNodeBase):
         """
         Create a CoreNode instance.
 
-        :param core.session.Session session: core session instance
+        :param core.emulator.session.Session session: core session instance
         :param int _id: object id
         :param str name: object name
         :param str nodedir: node directory
@@ -646,7 +638,7 @@ class CoreNode(CoreNodeBase):
 
         :param int ifindex: index for the new interface
         :param str ifname: name for the new interface
-        :param net: network to associate interface with
+        :param core.nodes.base.CoreNetworkBase net: network to associate interface with
         :return: nothing
         """
         with self.lock:
@@ -676,6 +668,7 @@ class CoreNode(CoreNodeBase):
             if self.up:
                 utils.check_cmd([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
                 self.check_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
+                self.check_cmd([constants.ETHTOOL_BIN, "-K", ifname, "rx", "off", "tx", "off"])
 
             veth.name = ifname
 
@@ -736,7 +729,7 @@ class CoreNode(CoreNodeBase):
         Set hardware addres for an interface.
 
         :param int ifindex: index of interface to set hardware address for
-        :param core.misc.ipaddress.MacAddress addr: hardware address to set
+        :param core.nodes.ipaddress.MacAddress addr: hardware address to set
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
@@ -819,9 +812,9 @@ class CoreNode(CoreNodeBase):
         """
         Create a new network interface.
 
-        :param net: network to associate with
+        :param core.nodes.base.CoreNetworkBase net: network to associate with
         :param list addrlist: addresses to add on the interface
-        :param core.misc.ipaddress.MacAddress hwaddr: hardware address to set for interface
+        :param core.nodes.ipaddress.MacAddress hwaddr: hardware address to set for interface
         :param int ifindex: index of interface to create
         :param str ifname: name for interface
         :return: interface index
@@ -864,7 +857,7 @@ class CoreNode(CoreNodeBase):
         Connect a node.
 
         :param str ifname: name of interface to connect
-        :param core.netns.nodes.LxcNode othernode: node to connect to
+        :param core.nodes.CoreNodeBase othernode: node to connect to
         :param str otherifname: interface name to connect to
         :return: nothing
         """
@@ -970,9 +963,9 @@ class CoreNetworkBase(NodeBase):
 
     def __init__(self, session, _id, name, start=True):
         """
-        Create a PyCoreNet instance.
+        Create a CoreNetworkBase instance.
 
-        :param core.session.Session session: CORE session object
+        :param core.emulator.session.Session session: CORE session object
         :param int _id: object id
         :param str name: object name
         :param bool start: should object start

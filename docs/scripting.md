@@ -17,8 +17,8 @@ Here are the basic elements of a CORE Python script:
 ```python
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.enumerations import EventTypes
-from core.enumerations import NodeTypes
+from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import NodeTypes
 
 # ip generator for example
 prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
@@ -34,7 +34,7 @@ session.set_state(EventTypes.CONFIGURATION_STATE)
 switch = session.add_node(_type=NodeTypes.SWITCH)
 
 # create nodes
-for _ in xrange(options.nodes):
+for _ in range(2):
     node = session.add_node()
     interface = prefixes.create_interface(node)
     session.add_link(node.id, switch.id, interface_one=interface)

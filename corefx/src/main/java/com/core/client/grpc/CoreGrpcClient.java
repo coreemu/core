@@ -2,11 +2,10 @@ package com.core.client.grpc;
 
 import com.core.Controller;
 import com.core.client.ICoreClient;
-import com.core.client.rest.ServiceFile;
-import com.core.client.rest.WlanConfig;
 import com.core.data.*;
 import com.core.ui.dialogs.MobilityPlayerDialog;
-import com.google.protobuf.ByteString;
+import inet.ipaddr.IPAddress;
+import inet.ipaddr.IPAddressString;
 import io.grpc.Context;
 import io.grpc.ManagedChannel;
 import io.grpc.ManagedChannelBuilder;
@@ -15,7 +14,6 @@ import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.StandardCharsets;
@@ -38,8 +36,8 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreProto.Node nodeToProto(CoreNode node) {
         CoreProto.Position position = CoreProto.Position.newBuilder()
-                .setX(node.getPosition().getX().floatValue())
-                .setY(node.getPosition().getY().floatValue())
+                .setX(node.getPosition().getX().intValue())
+                .setY(node.getPosition().getY().intValue())
                 .build();
         CoreProto.Node.Builder builder = CoreProto.Node.newBuilder()
                 .addAllServices(node.getServices())
@@ -90,31 +88,31 @@ public class CoreGrpcClient implements ICoreClient {
             unidirectional = true;
         }
         if (options.getBandwidth() != null) {
-            builder.setBandwidth(options.getBandwidth().floatValue());
+            builder.setBandwidth(options.getBandwidth().intValue());
         }
         if (options.getBurst() != null) {
-            builder.setBurst(options.getBurst().floatValue());
+            builder.setBurst(options.getBurst().intValue());
         }
         if (options.getDelay() != null) {
-            builder.setDelay(options.getDelay().floatValue());
+            builder.setDelay(options.getDelay().intValue());
         }
         if (options.getDup() != null) {
-            builder.setDup(options.getDup().floatValue());
+            builder.setDup(options.getDup().intValue());
         }
         if (options.getJitter() != null) {
-            builder.setJitter(options.getJitter().floatValue());
+            builder.setJitter(options.getJitter().intValue());
         }
         if (options.getMburst() != null) {
-            builder.setMburst(options.getMburst().floatValue());
+            builder.setMburst(options.getMburst().intValue());
         }
         if (options.getMer() != null) {
-            builder.setMer(options.getMer().floatValue());
+            builder.setMer(options.getMer().intValue());
         }
         if (options.getPer() != null) {
-            builder.setPer(options.getPer().floatValue());
+            builder.setPer(options.getPer().intValue());
         }
         if (options.getKey() != null) {
-            builder.setKey(options.getKey().toString());
+            builder.setKey(options.getKey());
         }
         if (options.getOpaque() != null) {
             builder.setOpaque(options.getOpaque());
@@ -125,6 +123,9 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreProto.Interface interfaceToProto(CoreInterface coreInterface) {
         CoreProto.Interface.Builder builder = CoreProto.Interface.newBuilder();
+        if (coreInterface.getId() != null) {
+            builder.setId(coreInterface.getId());
+        }
         if (coreInterface.getName() != null) {
             builder.setName(coreInterface.getName());
         }
@@ -132,16 +133,16 @@ public class CoreGrpcClient implements ICoreClient {
             builder.setMac(coreInterface.getMac());
         }
         if (coreInterface.getIp4() != null) {
-            builder.setIp4(coreInterface.getIp4());
+            builder.setIp4(coreInterface.getIp4().toAddressString().getHostAddress().toString());
         }
-        if (coreInterface.getIp4Mask() != null) {
-            builder.setIp4Mask(coreInterface.getIp4Mask());
+        if (coreInterface.getIp4() != null) {
+            builder.setIp4Mask(coreInterface.getIp4().getPrefixLength());
         }
         if (coreInterface.getIp6() != null) {
-            builder.setIp6(coreInterface.getIp6());
+            builder.setIp6(coreInterface.getIp6().toAddressString().getHostAddress().toString());
         }
-        if (coreInterface.getIp6Mask() != null) {
-            builder.setIp6Mask(Integer.parseInt(coreInterface.getIp6Mask()));
+        if (coreInterface.getIp6() != null) {
+            builder.setIp6Mask(coreInterface.getIp6().getPrefixLength());
         }
         return builder.build();
     }
@@ -172,10 +173,12 @@ public class CoreGrpcClient implements ICoreClient {
         coreInterface.setId(protoInterface.getId());
         coreInterface.setName(protoInterface.getName());
         coreInterface.setMac(protoInterface.getMac());
-        coreInterface.setIp4(protoInterface.getIp4());
-        coreInterface.setIp4Mask(protoInterface.getIp4Mask());
-        coreInterface.setIp6(protoInterface.getIp6());
-        coreInterface.setIp6Mask(Integer.toString(protoInterface.getIp6Mask()));
+        String ip4String = String.format("%s/%s", protoInterface.getIp4(), protoInterface.getIp4Mask());
+        IPAddress ip4 = new IPAddressString(ip4String).getAddress();
+        coreInterface.setIp4(ip4);
+        String ip6String = String.format("%s/%s", protoInterface.getIp6(), protoInterface.getIp6Mask());
+        IPAddress ip6 = new IPAddressString(ip6String).getAddress();
+        coreInterface.setIp6(ip6);
         return coreInterface;
     }
 
@@ -196,8 +199,8 @@ public class CoreGrpcClient implements ICoreClient {
         options.setJitter((double) protoOptions.getJitter());
         options.setPer((double) protoOptions.getPer());
         options.setBurst((double) protoOptions.getBurst());
-        if (!protoOptions.getKey().isEmpty()) {
-            options.setKey(Integer.parseInt(protoOptions.getKey()));
+        if (protoOptions.hasField(CoreProto.LinkOptions.getDescriptor().findFieldByName("key"))) {
+            options.setKey(protoOptions.getKey());
         }
         options.setMburst((double) protoOptions.getMburst());
         options.setMer((double) protoOptions.getMer());
@@ -784,8 +787,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean editNode(CoreNode node) throws IOException {
         CoreProto.Position position = CoreProto.Position.newBuilder()
-                .setX(node.getPosition().getX().floatValue())
-                .setY(node.getPosition().getY().floatValue())
+                .setX(node.getPosition().getX().intValue())
+                .setY(node.getPosition().getY().intValue())
                 .build();
         CoreProto.EditNodeRequest request = CoreProto.EditNodeRequest.newBuilder()
                 .setSessionId(sessionId)
@@ -1104,13 +1107,13 @@ public class CoreGrpcClient implements ICoreClient {
         }
         CoreProto.Position.Builder positionBuilder = CoreProto.Position.newBuilder();
         if (config.getPosition().getX() != null) {
-            positionBuilder.setX(config.getPosition().getX().floatValue());
+            positionBuilder.setX(config.getPosition().getX().intValue());
         }
         if (config.getPosition().getY() != null) {
-            positionBuilder.setY(config.getPosition().getY().floatValue());
+            positionBuilder.setY(config.getPosition().getY().intValue());
         }
         if (config.getPosition().getZ() != null) {
-            positionBuilder.setZ(config.getPosition().getZ().floatValue());
+            positionBuilder.setZ(config.getPosition().getZ().intValue());
         }
         if (config.getLocation().getLongitude() != null) {
             positionBuilder.setLon(config.getLocation().getLongitude().floatValue());

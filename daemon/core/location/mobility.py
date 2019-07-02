@@ -9,7 +9,7 @@ import os
 import threading
 import time
 from builtins import int
-from past.builtins import cmp
+from functools import total_ordering
 
 from core import utils
 from core.config import ConfigGroup
@@ -41,7 +41,7 @@ class MobilityManager(ModelManager):
         """
         Creates a MobilityManager instance.
 
-        :param core.session.Session session: session this manager is tied to
+        :param core.emulator.session.Session session: session this manager is tied to
         """
         super(MobilityManager, self).__init__()
         self.session = session
@@ -52,6 +52,14 @@ class MobilityManager(ModelManager):
         self.phys = {}
         self.physnets = {}
         self.session.broker.handlers.add(self.physnodehandlelink)
+
+    def reset(self):
+        """
+        Clear out all current configurations.
+
+        :return: nothing
+        """
+        self.config_reset()
 
     def startup(self, node_ids=None):
         """
@@ -318,11 +326,11 @@ class BasicRangeModel(WirelessModel):
     name = "basic_range"
     options = [
         Configuration(_id="range", _type=ConfigDataTypes.UINT32, default="275", label="wireless range (pixels)"),
-        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT32, default="54000000", label="bandwidth (bps)"),
-        Configuration(_id="jitter", _type=ConfigDataTypes.FLOAT, default="0.0", label="transmission jitter (usec)"),
-        Configuration(_id="delay", _type=ConfigDataTypes.FLOAT, default="5000.0",
+        Configuration(_id="bandwidth", _type=ConfigDataTypes.UINT64, default="54000000", label="bandwidth (bps)"),
+        Configuration(_id="jitter", _type=ConfigDataTypes.UINT64, default="0", label="transmission jitter (usec)"),
+        Configuration(_id="delay", _type=ConfigDataTypes.UINT64, default="5000",
                       label="transmission delay (usec)"),
-        Configuration(_id="error", _type=ConfigDataTypes.FLOAT, default="0.0", label="error rate (%)")
+        Configuration(_id="error", _type=ConfigDataTypes.STRING, default="0", label="error rate (%)")
     ]
 
     @classmethod
@@ -358,19 +366,19 @@ class BasicRangeModel(WirelessModel):
         :param dict config: values to convert
         :return: nothing
         """
-        self.range = float(config["range"])
+        self.range = int(float(config["range"]))
         logging.info("basic range model configured for WLAN %d using range %d", self.wlan.id, self.range)
         self.bw = int(config["bandwidth"])
-        if self.bw == 0.0:
+        if self.bw == 0:
             self.bw = None
-        self.delay = float(config["delay"])
-        if self.delay == 0.0:
+        self.delay = int(config["delay"])
+        if self.delay == 0:
             self.delay = None
-        self.loss = float(config["error"])
-        if self.loss == 0.0:
+        self.loss = int(config["error"])
+        if self.loss == 0:
             self.loss = None
-        self.jitter = float(config["jitter"])
-        if self.jitter == 0.0:
+        self.jitter = int(config["jitter"])
+        if self.jitter == 0:
             self.jitter = None
 
     def setlinkparams(self):
@@ -468,8 +476,6 @@ class BasicRangeModel(WirelessModel):
             with self.wlan._linked_lock:
                 linked = self.wlan.linked(a, b)
 
-            logging.debug("checking range netif1(%s) netif2(%s): linked(%s) actual(%s) > config(%s)",
-                         a.name, b.name, linked, d, self.range)
             if d > self.range:
                 if linked:
                     logging.debug("was linked, unlinking")
@@ -533,8 +539,8 @@ class BasicRangeModel(WirelessModel):
         """
         Send a wireless link/unlink API message to the GUI.
 
-        :param core.coreobj.PyCoreNetIf netif: interface one
-        :param core.coreobj.PyCoreNetIf netif2: interface two
+        :param core.nodes.interface.CoreInterface netif: interface one
+        :param core.nodes.interface.CoreInterface netif2: interface two
         :param bool unlink: unlink or not
         :return: nothing
         """
@@ -563,6 +569,7 @@ class BasicRangeModel(WirelessModel):
         return all_links
 
 
+@total_ordering
 class WayPoint(object):
     """
     Maintains information regarding waypoints.
@@ -582,18 +589,17 @@ class WayPoint(object):
         self.coords = coords
         self.speed = speed
 
-    def __cmp__(self, other):
-        """
-        Custom comparison method for waypoints.
+    def __eq__(self, other):
+        return (self.time, self.nodenum) == (other.time, other.nodedum)
 
-        :param WayPoint other: waypoint to compare to
-        :return: the comparison result against the other waypoint
-        :rtype: int
-        """
-        tmp = cmp(self.time, other.time)
-        if tmp == 0:
-            tmp = cmp(self.nodenum, other.nodenum)
-        return tmp
+    def __ne__(self, other):
+        return not self == other
+
+    def __lt__(self, other):
+        result = self.time < other.time
+        if result:
+            result = self.nodenum < other.nodenum
+        return result
 
 
 class WayPointMobility(WirelessModel):
@@ -611,7 +617,7 @@ class WayPointMobility(WirelessModel):
         """
         Create a WayPointMobility instance.
 
-        :param core.session.Session session: CORE session instance
+        :param core.emulator.session.Session session: CORE session instance
         :param int _id: object id
         :return:
         """
@@ -702,7 +708,7 @@ class WayPointMobility(WirelessModel):
         Calculate next node location and update its coordinates.
         Returns True if the node's position has changed.
 
-        :param core.netns.vnode.CoreNode node: node to move
+        :param core.nodes.base.CoreNode node: node to move
         :param dt: move factor
         :return: True if node was moved, False otherwise
         :rtype: bool
@@ -838,7 +844,12 @@ class WayPointMobility(WirelessModel):
         :param z: z position
         :return: nothing
         """
-        # this would cause PyCoreNetIf.poshook() callback (range calculation)
+        if x is not None:
+            x = int(x)
+        if y is not None:
+            y = int(y)
+        if z is not None:
+            z = int(z)
         node.position.set(x, y, z)
         node_data = node.data(message_type=0)
         self.session.broadcast_node(node_data)
@@ -929,9 +940,8 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         Creates a Ns2ScriptedMobility instance.
 
-        :param core.session.Session session: CORE session instance
+        :param core.emulator.session.Session session: CORE session instance
         :param int _id: object id
-        :param config: values
         """
         super(Ns2ScriptedMobility, self).__init__(session=session, _id=_id)
         self._netifs = {}

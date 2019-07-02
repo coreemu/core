@@ -11,6 +11,7 @@ import com.core.ui.textfields.DoubleFilter;
 import com.core.utils.FxmlUtils;
 import com.jfoenix.controls.JFXButton;
 import com.jfoenix.controls.JFXTextField;
+import inet.ipaddr.IPAddress;
 import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.fxml.FXML;
@@ -129,8 +130,8 @@ public class LinkDetails extends ScrollPane {
         if (coreInterface.getMac() != null) {
             addRow("MAC", coreInterface.getMac(), true);
         }
-        addIp4Address(coreInterface.getIp4(), coreInterface.getIp4Mask());
-        addIp6Address(coreInterface.getIp6(), coreInterface.getIp6Mask());
+        addIp4Address(coreInterface.getIp4());
+        addIp6Address(coreInterface.getIp6());
     }
 
     private void addRow(String labelText, String value, boolean disabled) {
@@ -155,18 +156,18 @@ public class LinkDetails extends ScrollPane {
         return textField;
     }
 
-    private void addIp4Address(String ip, Integer mask) {
+    private void addIp4Address(IPAddress ip) {
         if (ip == null) {
             return;
         }
-        addRow("IP4", String.format("%s/%s", ip, mask), true);
+        addRow("IP4", ip.toString(), true);
     }
 
-    private void addIp6Address(String ip, String mask) {
+    private void addIp6Address(IPAddress ip) {
         if (ip == null) {
             return;
         }
-        addRow("IP6", String.format("%s/%s", ip, mask), true);
+        addRow("IP6", ip.toString(), true);
     }
 
     private void clear() {

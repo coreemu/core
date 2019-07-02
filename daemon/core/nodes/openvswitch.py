@@ -53,12 +53,11 @@ class OvsNet(CoreNetworkBase):
         """
         Creates an OvsNet instance.
 
-        :param core.session.Session session: session this object is a part of
-        :param _id:
-        :param name:
-        :param start:
-        :param policy:
-        :return:
+        :param core.emulator.session.Session session: session this object is a part of
+        :param int _id: object id
+        :param str name: object name
+        :param bool start: start flag
+        :param policy: network policy
         """
 
         CoreNetworkBase.__init__(self, session, _id, name, start)
@@ -173,7 +172,7 @@ class OvsNet(CoreNetworkBase):
 
     def link(self, interface_one, interface_two):
         """
-        Link two PyCoreNetIfs together, resulting in adding or removing
+        Link two interfaces together, resulting in adding or removing
         ebtables filtering rules.
         """
         with self._linked_lock:
@@ -226,11 +225,11 @@ class OvsNet(CoreNetworkBase):
         delay_changed = netif.setparam("delay", delay)
 
         if loss is not None:
-            loss = float(loss)
+            loss = int(loss)
         loss_changed = netif.setparam("loss", loss)
 
         if duplicate is not None:
-            duplicate = float(duplicate)
+            duplicate = int(duplicate)
         duplicate_changed = netif.setparam("duplicate", duplicate)
         jitter_changed = netif.setparam("jitter", jitter)
 
@@ -299,19 +298,11 @@ class OvsNet(CoreNetworkBase):
         interface = Veth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
         self.attach(interface)
         if network.up:
-            # this is similar to net.attach() but uses netif.name instead
-            # of localname
+            # this is similar to net.attach() but uses netif.name instead of localname
             utils.check_cmd([constants.OVS_BIN, "add-port", network.bridge_name, interface.name])
             utils.check_cmd([constants.IP_BIN, "link", "set", interface.name, "up"])
 
-        # TODO: is there a native method for this? see if this causes issues
-        # i = network.newifindex()
-        # network._netif[i] = interface
-        # with network._linked_lock:
-        #     network._linked[interface] = {}
-        # this method call is equal to the above, with a interface.netifi = call
         network.attach(interface)
-
         interface.net = self
         interface.othernet = network
         return interface

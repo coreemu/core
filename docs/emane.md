@@ -68,9 +68,7 @@ sudo ln -s /usr/local/share/emane /usr/share/emane
 CORE supports custom developed EMANE models by way of dynamically loading user created python files that represent the model. Custom EMANE models should be placed within the path defined by **emane_models_dir** in the CORE configuration file. This path cannot end in **/emane**.
 
 Here is an example model with documentation describing functionality:
-[Example Model](examplemodel.html)
-
-
+[Example Model](/daemon/examples/myemane/examplemodel.py)
 
 ## Single PC with EMANE
 

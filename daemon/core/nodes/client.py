@@ -1,8 +1,7 @@
 """
 client.py: implementation of the VnodeClient class for issuing commands
 over a control channel to the vnoded process running in a network namespace.
-The control channel can be accessed via calls to the vcmd Python module or
-by invoking the vcmd shell command.
+The control channel can be accessed via calls using the vcmd shell.
 """
 
 import logging
@@ -74,7 +73,7 @@ class VnodeClient(object):
 
         # run command, return process when not waiting
         cmd = self._cmd_args() + args
-        logging.info("cmd wait(%s): %s", wait, cmd)
+        logging.debug("cmd wait(%s): %s", wait, cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE)
         if not wait:
             return 0
@@ -124,10 +123,8 @@ class VnodeClient(object):
         """
         self._verify_connection()
         args = utils.split_args(args)
-        # if isinstance(args, list):
-        #     args = " ".join(args)
         cmd = self._cmd_args() + args
-        logging.info("popen: %s", cmd)
+        logging.debug("popen: %s", cmd)
         p = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
         return p, p.stdin, p.stdout, p.stderr
 
@@ -160,7 +157,7 @@ class VnodeClient(object):
         # run command, return process when not waiting
         args = utils.split_args(args)
         cmd = self._cmd_args() + args
-        logging.info("redircmd: %s", cmd)
+        logging.debug("redircmd: %s", cmd)
         p = Popen(cmd, stdin=infd, stdout=outfd, stderr=errfd)
 
         if not wait:

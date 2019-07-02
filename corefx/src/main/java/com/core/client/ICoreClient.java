@@ -1,8 +1,8 @@
 package com.core.client;
 
 import com.core.Controller;
-import com.core.client.rest.ServiceFile;
-import com.core.client.rest.WlanConfig;
+import com.core.data.ServiceFile;
+import com.core.data.WlanConfig;
 import com.core.data.*;
 
 import java.io.File;

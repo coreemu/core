@@ -3,6 +3,7 @@ Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
 import fcntl
+import hashlib
 import importlib
 import inspect
 import logging
@@ -15,6 +16,43 @@ from past.builtins import basestring
 from core import CoreCommandError
 
 DEVNULL = open(os.devnull, "wb")
+
+
+def execute_file(path, exec_globals=None, exec_locals=None):
+    """
+    Provides an alternative way to run execfile to be compatible for
+    both python2/3.
+
+    :param str path: path of file to execute
+    :param dict exec_globals: globals values to pass to execution
+    :param dict exec_locals:  local values to pass to execution
+    :return: nothing
+    """
+    if exec_globals is None:
+        exec_globals = {}
+    exec_globals.update({
+        "__file__": path,
+        "__name__": "__main__"
+    })
+    with open(path, "rb") as f:
+        data = compile(f.read(), path, "exec")
+        exec(data, exec_globals, exec_locals)
+
+
+def hashkey(value):
+    """
+    Provide a consistent hash that can be used in place
+    of the builtin hash, that no longer behaves consistently
+    in python3.
+
+    :param str/int value: value to hash
+    :return: hash value
+    :rtype: int
+    """
+    if isinstance(value, int):
+        value = str(value)
+    value = value.encode("utf-8")
+    return int(hashlib.sha256(value).hexdigest(), 16)
 
 
 def _detach_init():
@@ -148,9 +186,7 @@ def split_args(args):
     :return: shell-like syntax list
     :rtype: list
     """
-    logging.info("split args: %s - %s", args, type(args))
     if isinstance(args, basestring):
-        logging.info("splitting args")
         args = shlex.split(args)
     return args
 
@@ -313,8 +349,8 @@ def expand_corepath(pathname, session=None, node=None):
     Expand a file path given session information.
 
     :param str pathname: file path to expand
-    :param core.session.Session session: core session object to expand path with
-    :param core.netns.LxcNode node: node to expand path with
+    :param core.emulator.session.Session session: core session object to expand path with
+    :param core.nodes.base.CoreNode node: node to expand path with
     :return: expanded path
     :rtype: str
     """

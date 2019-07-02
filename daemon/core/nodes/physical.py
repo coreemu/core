@@ -99,7 +99,7 @@ class PhysicalNode(CoreNodeBase):
 
     def sethwaddr(self, ifindex, addr):
         """
-        same as SimpleLxcNode.sethwaddr()
+        Set hardware address for an interface.
         """
         self._netif[ifindex].sethwaddr(addr)
         ifname = self.ifname(ifindex)
@@ -108,7 +108,7 @@ class PhysicalNode(CoreNodeBase):
 
     def addaddr(self, ifindex, addr):
         """
-        same as SimpleLxcNode.addaddr()
+        Add an address to an interface.
         """
         if self.up:
             self.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)])
@@ -117,7 +117,7 @@ class PhysicalNode(CoreNodeBase):
 
     def deladdr(self, ifindex, addr):
         """
-        same as SimpleLxcNode.deladdr()
+        Delete an address from an interface.
         """
         try:
             self._netif[ifindex].deladdr(addr)
@@ -258,7 +258,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Create an RJ45Node instance.
 
-        :param core.session.Session session: core session instance
+        :param core.emulator.session.Session session: core session instance
         :param int _id: node id
         :param str name: node name
         :param mtu: rj45 mtu
@@ -336,7 +336,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         represents an interface, we do not create another object here,
         but attach ourselves to the given network.
 
-        :param core.coreobj.PyCoreNet net: new network instance
+        :param core.nodes.base.CoreNetworkBase net: new network instance
         :param list[str] addrlist: address list
         :param str hwaddr: hardware address
         :param int ifindex: interface index
@@ -392,7 +392,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param int ifindex: interface index to retrieve
         :param net: network to retrieve
         :return: a network interface
-        :rtype: core.coreobj.PyCoreNetIf
+        :rtype: core.nodes.interface,CoreInterface
         """
         if net is not None and net == self.net:
             return self
@@ -409,7 +409,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         Retrieve network interface index.
 
-        :param core.coreobj.PyCoreNetIf netif: network interface to retrieve index for
+        :param core.nodes.interface.CoreInterface netif: network interface to retrieve index for
         :return: interface index, None otherwise
         :rtype: int
         """

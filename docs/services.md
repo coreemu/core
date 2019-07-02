@@ -20,7 +20,7 @@ shutdown commands, and meta-data associated with a node.
    using the **init**, **upstart**, or **systemd** frameworks. These
    lightweight nodes use configured CORE *services*.
 
-### Default Services and Node Types
+## Default Services and Node Types
 
 Here are the default node types and their services:
 
@@ -61,7 +61,7 @@ recommended that you do not change the default built-in node types. The
 **nodes.conf** file can be copied between CORE machines to save your custom
 types.
 
-### Customizing a Service
+## Customizing a Service
 
 A service can be fully customized for a particular node. From the node's
 configuration dialog, click on the button next to the service name to invoke
@@ -124,51 +124,65 @@ an error to be displayed in the Check Emulation Light.
    To start, stop, and restart services during run-time, right-click a
    node and use the *Services...* menu.
 
-### Creating new Services
+## New Services
 
 Services can save time required to configure nodes, especially if a number
 of nodes require similar configuration procedures. New services can be
 introduced to automate tasks.
+
+### Leveraging UserDefined
 
 The easiest way to capture the configuration of a new process into a service
 is by using the **UserDefined** service. This is a blank service where any
 aspect may be customized. The UserDefined service is convenient for testing
 ideas for a service before adding a new service type.
 
-To introduce new service types, a **myservices/** directory exists in the
-user's CORE configuration directory, at **~/.core/myservices/**. A detailed
-**README.txt** file exists in that directory to outline the steps necessary
-for adding a new service. First, you need to create a small Python file that
-defines the service; then the **custom_services_dir** entry must be set
-in the **/etc/core/core.conf** configuration file. A sample is provided in
-the **myservices/** directory.
+### Creating New Service
 
-**NOTE:**
+1. Modify the [Example Service File](/daemon/examples/myservices/sample.py)
+   to do what you want. It could generate config/script files, mount per-node
+   directories, start processes/scripts, etc. sample.py is a Python file that
+   defines one or more classes to be imported. You can create multiple Python
+   files that will be imported. Add any new filenames to the __init__.py file.
+
+2. Put these files in a directory such as /home/username/.core/myservices
+   Note that the last component of this directory name **myservices** should not
+   be named something like **services** which conflicts with an existing Python
+   name (the syntax 'from myservices import *' is used).
+
+3. Add a **custom_services_dir = /home/username/.core/myservices** entry to the
+   /etc/core/core.conf file.
+   
+   **NOTE:**
    The directory name used in **custom_services_dir** should be unique and
    should not correspond to
    any existing Python module name. For example, don't use the name **subprocess**
    or **services**.
 
+4. Restart the CORE daemon (core-daemon). Any import errors (Python syntax)
+   should be displayed in the /var/log/core-daemon.log log file (or on screen).
+
+5. Start using your custom service on your nodes. You can create a new node
+   type that uses your service, or change the default services for an existing
+   node type, or change individual nodes.
+
 If you have created a new service type that may be useful to others, please
 consider contributing it to the CORE project.
 
-Here is an example service with documentation describing functionality:
-[Example Service](exampleservice.html)
+## Available Services
 
-### Available Services
-
-#### BIRD Internet Routing Daemon
+### BIRD Internet Routing Daemon
 The [BIRD Internet Routing Daemon](https://bird.network.cz/) is a routing daemon; i.e., a software responsible for managing kernel packet forwarding tables. It aims to develop a dynamic IP routing daemon with full support of all modern routing protocols, easy to use configuration interface and powerful route filtering language, primarily targeted on (but not limited to) Linux and other UNIX-like systems and distributed under the GNU General Public License. BIRD has a free implementation of several well known and common routing and router-supplemental protocols, namely RIP, RIPng, OSPFv2, OSPFv3, BGP, BFD, and NDP/RA. BIRD supports IPv4 and IPv6 address families, Linux kernel and several BSD variants (tested on FreeBSD, NetBSD and OpenBSD). BIRD consists of bird daemon and birdc interactive CLI client used for supervision.
 
 In order to be able to use the BIRD Internet Routing Protocol, you must first install the project on your machine.
 
 
-##### BIRD Package Install
+#### BIRD Package Install
 ```shell
 sudo apt-get install bird
 ```
 
-##### BIRD Source Code Install
+#### BIRD Source Code Install
 You can download BIRD source code from it's [official repository.](https://gitlab.labs.nic.cz/labs/bird/)
 ```shell
 ./configure
@@ -182,7 +196,7 @@ The installation will place the bird directory inside */etc* where you will also
 In order to be able to do use the Bird Internet Routing Protocol, you must modify *bird.conf* due to the fact that the given configuration file is not configured beyond allowing the bird daemon to start, which means that nothing else will happen if you run it. Keeran Marquis has a very detailed example on [Configuring BGP using Bird on Ubuntu](https://blog.marquis.co/configuring-bgp-using-bird-on-ubuntu-14-04lts/) which can be used as a building block to implement your custom routing daemon.
 
 
-#### FRRouting
+### FRRouting
 FRRouting is a routing software package that provides TCP/IP based routing services with routing protocols support such as BGP, RIP, OSPF, IS-IS and more. FRR also supports special BGP Route Reflector and Route Server behavior. In addition to traditional IPv4 routing protocols, FRR also supports IPv6 routing protocols. With an SNMP daemon that supports the AgentX protocol, FRR provides routing protocol MIB read-only access (SNMP Support).
 
 FRR currently supports the following protocols:
@@ -202,7 +216,7 @@ FRR currently supports the following protocols:
 * EIGRP (alpha)
 * NHRP (alpha)
 
-##### FRRouting Package Install
+#### FRRouting Package Install
 ```shell
 sudo apt install curl
 curl -s https://deb.frrouting.org/frr/keys.asc | sudo apt-key add -
@@ -211,7 +225,7 @@ echo deb https://deb.frrouting.org/frr $(lsb_release -s -c) $FRRVER | sudo tee -
 sudo apt update && sudo apt install frr frr-pythontools
 ```
 
-##### FRRouting Source Code Install
+#### FRRouting Source Code Install
 Building FRR from source is the best way to ensure you have the latest features and bug fixes. Details for each supported platform, including dependency package listings, permissions, and other gotchas, are in the developer’s documentation. 
 
 FRR’s source is available on the project [GitHub page](https://github.com/FRRouting/frr).
@@ -242,7 +256,7 @@ make && sudo make install
 If everything finishes successfully, FRR should be installed.
 
 
-#### Docker
+### Docker
 Docker service allows running docker containers within CORE nodes.
 The running of Docker within a CORE node allows for additional extensibility to
 the CORE services. This allows network applications and protocols to be easily
@@ -252,7 +266,7 @@ This service will add a new group to the services list. This will have a service
 
 This requires a recent version of Docker. This was tested using a PPA on Ubuntu with version 1.2.0. The version in the standard Ubuntu repo is to old for this purpose (we need --net host).
 
-##### Docker Installation
+#### Docker Installation
 To use Docker services, you must first install the Docker python image. This is used to interface with Docker from the python service.
 
 ```shell
@@ -279,8 +293,7 @@ This image will be listed in the services after we restart the core-daemon:
 sudo service core-daemon restart
 ```
 
-
-#### NRL Services
+### NRL Services
 The Protean Protocol Prototyping Library (ProtoLib) is a cross-platform library that allows applications to be built while supporting a variety of platforms including Linux, Windows, WinCE/PocketPC, MacOS, FreeBSD, Solaris, etc as well as the simulation environments of NS2 and Opnet. The goal of the Protolib is to provide a set of simple, cross-platform C++ classes that allow development of network protocols and applications that can run on different platforms and in network simulation environments. While Protolib provides an overall framework for developing working protocol implementations, applications, and simulation modules, the individual classes are designed for use as stand-alone components when possible. Although Protolib is principally for research purposes, the code has been constructed to provide robust, efficient performance and adaptability to real applications. In some cases, the code consists of data structures, etc useful in protocol implementations and, in other cases, provides common, cross-platform interfaces to system services and functions (e.g., sockets, timers, routing tables, etc).
 
 Currently the Naval Research Laboratory uses this library to develop a wide variety of protocols.The NRL Protolib currently supports the following protocols:
@@ -296,14 +309,14 @@ Currently the Naval Research Laboratory uses this library to develop a wide vari
 #### NRL Installation
 In order to be able to use the different protocols that NRL offers, you must first download the support library itself. You can get the source code from their [official nightly snapshots website](https://downloads.pf.itd.nrl.navy.mil/protolib/nightly_snapshots/).
 
-##### Multi-Generator (MGEN)
+#### Multi-Generator (MGEN)
 Download MGEN from the [NRL MGEN nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/mgen/nightly_snapshots/), unpack it and copy the protolib library into the main folder *mgen*. Execute the following commands to build the protocol.
 ```shell
 cd mgen/makefiles
 make -f Makefile.{os} mgen
 ```
 
-##### Neighborhood Discovery Protocol (NHDP)
+#### Neighborhood Discovery Protocol (NHDP)
 Download NHDP from the [NRL NHDP nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/nhdp/nightly_snapshots/).
 ```shell
 sudo apt-get install libpcap-dev libboost-all-dev
@@ -320,31 +333,30 @@ cd nhdp/unix
 make -f Makefile.{os}
 ```
 
-##### Simplified Multicast Forwarding (SMF)
+#### Simplified Multicast Forwarding (SMF)
 Download SMF from the [NRL SMF nightly snapshot](https://downloads.pf.itd.nrl.navy.mil/smf/nightly_snapshots/) , unpack it and place the protolib library inside the *smf* main folder.
 ```shell
 cd mgen/makefiles
 make -f Makefile.{os}
 ```
 
-##### Optimized Link State Routing Protocol (OLSR)
+#### Optimized Link State Routing Protocol (OLSR)
 To install the OLSR protocol, download their source code from their [nightly snapshots](https://downloads.pf.itd.nrl.navy.mil/olsr/nightly_snapshots/nrlolsr-svnsnap.tgz). Unpack it and place the previously downloaded protolib library inside the *nrlolsr* main directory. Then execute the following commands:
 ```shell
 cd ./unix
 make -f Makefile.{os}
 ```
 
-
-#### Quagga Routing Suite
+### Quagga Routing Suite
  Quagga is a routing software suite, providing implementations of OSPFv2, OSPFv3, RIP v1 and v2, RIPng and BGP-4 for Unix platforms, particularly FreeBSD, Linux, Solaris and NetBSD. Quagga is a fork of GNU Zebra which was developed by Kunihiro Ishiguro.
 The Quagga architecture consists of a core daemon, zebra, which acts as an abstraction layer to the underlying Unix kernel and presents the Zserv API over a Unix or TCP stream to Quagga clients. It is these Zserv clients which typically implement a routing protocol and communicate routing updates to the zebra daemon.
 
-##### Quagga Package Install
+#### Quagga Package Install
 ```shell
 sudo apt-get install quagga
 ```
 
-##### Quagga Source Install
+#### Quagga Source Install
 First, download the source code from their [official webpage](https://www.quagga.net/).
 ```shell
 sudo apt-get install gawk
@@ -356,48 +368,45 @@ make
 sudo make install
 ```
 
-
-#### Software Defined Networking
+### Software Defined Networking
 Ryu is a component-based software defined networking framework. Ryu provides software components with well defined API that make it easy for developers to create new network management and control applications. Ryu supports various protocols for managing network devices, such as OpenFlow, Netconf, OF-config, etc. About OpenFlow, Ryu supports fully 1.0, 1.2, 1.3, 1.4, 1.5 and Nicira Extensions. All of the code is freely available under the Apache 2.0 license.
 ```shell
 ```
 
-##### Installation
-###### Prerequisites
+#### Installation
+##### Prerequisites
 ```shell
 sudo apt-get install gcc python-dev libffi-dev libssl-dev libxml2-dev libxslt1-dev zlib1g-dev
 ```
-###### Ryu Package Install
+##### Ryu Package Install
 ```shell
 pip install ryu
 ```
-###### Ryu Source Install
+##### Ryu Source Install
 ```shell
 git clone git://github.com/osrg/ryu.git
 cd ryu; pip install .
 ```
 
-
-#### Security Services
+### Security Services
 The security services offer a wide variety of protocols capable of satisfying the most use cases available. Security services such as IP security protocols, for providing security at the IP layer, as well as the suite of protocols designed to provide that security, through authentication and encryption of IP network packets. Virtual Private Networks (VPNs) and Firewalls are also available for use to the user.
 
-##### Installation
+#### Installation
 ```shell
 sudo apt-get install ipsec-tools racoon openvpn
 ```
 
-#### UCARP
+### UCARP
 UCARP allows a couple of hosts to share common virtual IP addresses in order to provide automatic failover. It is a portable userland implementation of the secure and patent-free Common Address Redundancy Protocol (CARP, OpenBSD's alternative to the patents-bloated VRRP).
 
 Strong points of the CARP protocol are: very low overhead, cryptographically signed messages, interoperability between different operating systems and no need for any dedicated extra network link between redundant hosts.
 
-##### Installation
+#### Installation
 ```shell
 sudo apt-get install ucarp
 ```
 
-
-#### Utilities Services
+### Utilities Services
 The following services are provided as utilities:
 * Default Routing
 * Default Muticast Routing
@@ -411,13 +420,13 @@ The following services are provided as utilities:
 * RADVD
 * ATD
 
-##### Installation
+#### Installation
 To install the functionality of the previously metioned services you can run the following command:
 ```shell
 sudo apt-get install isc-dhcp-server apache2 libpcap-dev radvd at
 ```
 
-#### XORP routing suite
+### XORP routing suite
 XORP is an open networking platform that supports OSPF, RIP, BGP, OLSR, VRRP, PIM, IGMP (Multicast) and other routing protocols.  Most protocols support IPv4 and IPv6 where applicable.  It is known to work on various Linux distributions and flavors of BSD.
 
 XORP started life as a project at the ICSI Center for Open Networking (ICON) at the International Computer Science Institute in Berkeley, California, USA, and spent some time with the team at XORP, Inc.  It is now maintained and improved on a volunteer basis by a core of long-term XORP developers and some newer contributors.
@@ -437,7 +446,7 @@ User-level XORP uses multi-process architecture with one process per routing pro
 
 The lower-level subsystem can use traditional UNIX kernel forwarding, or Click modular router. The modularity and independency of the lower-level from the user-level subsystem allows for its easily replacement with other solutions including high-end hardware-based forwarding engines.
 
-##### Installation
+#### Installation
 In order to be able to install the XORP Routing Suite, you must first install scons in order to compile it.
 ```shell
 sudo apt-get install scons
@@ -450,5 +459,3 @@ sudo apt-get install libssl-dev ncurses-dev
 scons
 scons install
 ```
-
-

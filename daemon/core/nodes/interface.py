@@ -24,7 +24,7 @@ class CoreInterface(object):
         """
         Creates a PyCoreNetIf instance.
 
-        :param core.coreobj.PyCoreNode node: node for interface
+        :param core.nodes.base.CoreNode node: node for interface
         :param str name: interface name
         :param mtu: mtu value
         """
@@ -67,7 +67,7 @@ class CoreInterface(object):
         """
         Attach network.
 
-        :param core.coreobj.PyCoreNet net: network to attach
+        :param core.nodes.base.CoreNetworkBase net: network to attach
         :return: nothing
         """
         if self.net:
@@ -109,7 +109,7 @@ class CoreInterface(object):
         """
         Set hardware address.
 
-        :param core.misc.ipaddress.MacAddress addr: hardware address to set to.
+        :param core.nodes.ipaddress.MacAddress addr: hardware address to set to.
         :return: nothing
         """
         self.hwaddr = addr
@@ -199,7 +199,7 @@ class Veth(CoreInterface):
         """
         Creates a VEth instance.
 
-        :param core.netns.vnode.SimpleLxcNode node: related core node
+        :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param str localname: interface local name
         :param mtu: interface mtu
@@ -260,11 +260,11 @@ class TunTap(CoreInterface):
         """
         Create a TunTap instance.
 
-        :param core.netns.vnode.SimpleLxcNode node: related core node
+        :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param str localname: local interface name
         :param mtu: interface mtu
-        :param net: related network
+        :param core.nodes.base.CoreNetworkBase net: related network
         :param bool start: start flag
         """
         CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
@@ -420,9 +420,9 @@ class GreTap(CoreInterface):
         """
         Creates a GreTap instance.
 
-        :param core.netns.vnode.SimpleLxcNode node: related core node
+        :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
-        :param core.session.Session session: core session instance
+        :param core.emulator.session.Session session: core session instance
         :param mtu: interface mtu
         :param str remoteip: remote address
         :param int _id: object id
@@ -493,6 +493,6 @@ class GreTap(CoreInterface):
 
         :param flags: link flags
         :return: link data
-        :rtype: list[core.data.LinkData]
+        :rtype: list[core.emulator.data.LinkData]
         """
         return []
