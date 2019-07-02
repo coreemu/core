@@ -1,6 +1,6 @@
+import json
 import logging
 import os
-import threading
 
 from core import utils, CoreCommandError
 from core.emulator.enumerations import NodeTypes
@@ -15,52 +15,65 @@ class DockerClient(object):
         self._addr = {}
 
     def create_container(self):
-        utils.check_cmd("docker run -td --net=none --hostname {name} --name {name} {image} /bin/bash".format(
-            name=self.name,
-            image=self.image
-        ))
+        utils.check_cmd(
+            "docker run -td --init --net=none --hostname {name} --name {name} "
+            "--sysctl net.ipv6.conf.all.disable_ipv6=0 "
+            "{image} /bin/bash".format(
+                name=self.name,
+                image=self.image
+            ))
         self.pid = self.get_pid()
         return self.pid
 
+    def get_info(self):
+        args = "docker inspect {name}".format(name=self.name)
+        status, output = utils.cmd_output(args)
+        if status:
+            raise CoreCommandError(status, args, output)
+        data = json.loads(output)
+        if not data:
+            raise CoreCommandError(status, args, "docker({name}) not present".format(name=self.name))
+        return data[0]
+
     def is_alive(self):
-        status, output = utils.cmd_output("docker containers ls -f name={name}".format(
-            name=self.name
-        ))
-        return not status and len(output.split("\n")) == 2
+        try:
+            data = self.get_info()
+            return data["State"]["Running"]
+        except CoreCommandError:
+            return False
 
     def stop_container(self):
         utils.check_cmd("docker rm -f {name}".format(
             name=self.name
         ))
 
-    def run_cmd(self, cmd):
+    def cmd(self, cmd, wait=True):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
-        logging.info("docker cmd: %s", cmd)
-        return utils.cmd_output("docker exec -it {name} {cmd}".format(
+        logging.info("docker cmd wait(%s): %s", wait, cmd)
+        return utils.cmd("docker exec {name} {cmd}".format(
+            name=self.name,
+            cmd=cmd
+        ), wait)
+
+    def cmd_output(self, cmd):
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+        logging.info("docker cmd output: %s", cmd)
+        return utils.cmd_output("docker exec {name} {cmd}".format(
             name=self.name,
             cmd=cmd
         ))
 
-    def _ns_args(self, cmd):
-        return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(
+    def ns_cmd(self, cmd):
+        if isinstance(cmd, list):
+            cmd = " ".join(cmd)
+        args = "nsenter -t {pid} -u -i -p -n {cmd}".format(
             pid=self.pid,
             cmd=cmd
         )
-
-    def ns_cmd_output(self, cmd):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        args = self._ns_args(cmd)
         logging.info("ns cmd: %s", args)
         return utils.cmd_output(args)
-
-    def ns_cmd(self, cmd, wait=True):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        args = self._ns_args(cmd)
-        logging.info("ns cmd: %s", args)
-        return utils.cmd(args, wait)
 
     def get_pid(self):
         args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
@@ -95,7 +108,7 @@ class DockerClient(object):
 
         interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
         args = ["ip", "addr", "show", "dev", ifname]
-        status, output = self.ns_cmd_output(args)
+        status, output = self.ns_cmd(args)
         for line in output:
             line = line.strip().split()
             if line[0] == "link/ether":
@@ -118,11 +131,10 @@ class DockerClient(object):
 
 class DockerNode(CoreNode):
     apitype = NodeTypes.DOCKER.value
-    valid_address_types = {"inet", "inet6", "inet6link"}
 
     def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True, image=None):
         """
-        Create a CoreNode instance.
+        Create a DockerNode instance.
 
         :param core.emulator.session.Session session: core session instance
         :param int _id: object id
@@ -130,21 +142,12 @@ class DockerNode(CoreNode):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
+        :param str image: image to start container with
         """
-        super(CoreNode, self).__init__(session, _id, name, start=start)
-        self.nodedir = nodedir
-        self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
         if image is None:
             image = "ubuntu"
-        self.client = DockerClient(self.name, image)
-        self.pid = None
-        self.up = False
-        self.lock = threading.RLock()
-        self._mounts = []
-        self.bootsh = bootsh
-        logging.debug("docker services: %s", self.services)
-        if start:
-            self.startup()
+        self.image = image
+        super(DockerNode, self).__init__(session, _id, name, nodedir, bootsh, start)
 
     def alive(self):
         """
@@ -167,6 +170,7 @@ class DockerNode(CoreNode):
             if self.up:
                 raise ValueError("starting a node that is already up")
             self.makenodedir()
+            self.client = DockerClient(self.name, self.image)
             self.pid = self.client.create_container()
             self.up = True
 
@@ -194,7 +198,7 @@ class DockerNode(CoreNode):
         :return: exit status for command
         :rtype: int
         """
-        return self.client.ns_cmd(args, wait)
+        return self.client.cmd(args, wait)
 
     def cmd_output(self, args):
         """
@@ -204,7 +208,7 @@ class DockerNode(CoreNode):
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         """
-        return self.client.ns_cmd_output(args)
+        return self.client.cmd_output(args)
 
     def check_cmd(self, args):
         """
@@ -215,7 +219,17 @@ class DockerNode(CoreNode):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        status, output = self.client.ns_cmd_output(args)
+        status, output = self.client.cmd_output(args)
+        if status:
+            raise CoreCommandError(status, args, output)
+        return output
+
+    def network_cmd(self, args):
+        if not self.up:
+            logging.debug("node down, not running network command: %s", args)
+            return 0
+
+        status, output = self.client.ns_cmd(args)
         if status:
             raise CoreCommandError(status, args, output)
         return output
@@ -227,7 +241,7 @@ class DockerNode(CoreNode):
         :param str sh: shell to execute command in
         :return: str
         """
-        return ""
+        return "docker exec -it {name} bash".format(name=self.name)
 
     def privatedir(self, path):
         """
@@ -238,9 +252,7 @@ class DockerNode(CoreNode):
         """
         logging.info("creating node dir: %s", path)
         args = "mkdir -p {path}".format(path=path)
-        status, output = self.client.run_cmd(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        self.check_cmd(args)
 
     def mount(self, source, target):
         """
@@ -252,7 +264,7 @@ class DockerNode(CoreNode):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.info("mounting source(%s) target(%s)", source, target)
-        raise Exception("you found a docker node")
+        raise Exception("not supported")
 
     def nodefile(self, filename, contents, mode=0o644):
         """
@@ -282,4 +294,4 @@ class DockerNode(CoreNode):
         :return: nothing
         """
         logging.info("node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode)
-        raise Exception("you found a docker node")
+        raise Exception("not supported")

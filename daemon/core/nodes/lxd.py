@@ -1,7 +1,6 @@
 import json
 import logging
 import os
-import threading
 import time
 
 from core import utils, CoreCommandError
@@ -21,43 +20,46 @@ class LxdClient(object):
             name=self.name,
             image=self.image
         ))
-        data = self._get_data()[0]
+        data = self.get_info()
         self.pid = data["state"]["pid"]
         return self.pid
 
-    def _get_data(self):
+    def get_info(self):
         args = "lxc list {name} --format json".format(name=self.name)
         status, output = utils.cmd_output(args)
         if status:
             raise CoreCommandError(status, args, output)
-        return json.loads(output)
-
-    def _cmd_args(self, cmd):
-        return "lxc exec {name} -- {cmd}".format(
-            name=self.name,
-            cmd=cmd
-        )
+        data = json.loads(output)
+        if not data:
+            raise CoreCommandError(status, args, "LXC({name}) not present".format(name=self.name))
+        return data[0]
 
     def is_alive(self):
-        data = self._get_data()
-        if not data:
+        try:
+            data = self.get_info()
+            return data["state"]["status"] == "Running"
+        except CoreCommandError:
             return False
-        data = data[0]
-        return data["state"]["status"] == "Running"
 
     def stop_container(self):
         utils.check_cmd("lxc delete --force {name}".format(
             name=self.name
         ))
 
-    def run_cmd_output(self, cmd):
+    def _cmd_args(self, cmd):
+        return "lxc exec -nT {name} -- {cmd}".format(
+            name=self.name,
+            cmd=cmd
+        )
+
+    def cmd_output(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         args = self._cmd_args(cmd)
         logging.info("lxc cmd output: %s", args)
         return utils.cmd_output(args)
 
-    def run_cmd(self, cmd, wait=True):
+    def cmd(self, cmd, wait=True):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         args = self._cmd_args(cmd)
@@ -134,11 +136,10 @@ class LxdClient(object):
 
 class LxcNode(CoreNode):
     apitype = NodeTypes.LXC.value
-    valid_address_types = {"inet", "inet6", "inet6link"}
 
     def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True, image=None):
         """
-        Create a CoreNode instance.
+        Create a LxcNode instance.
 
         :param core.emulator.session.Session session: core session instance
         :param int _id: object id
@@ -146,20 +147,12 @@ class LxcNode(CoreNode):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
+        :param str image: image to start container with
         """
-        super(CoreNode, self).__init__(session, _id, name, start=start)
-        self.nodedir = nodedir
-        self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
         if image is None:
             image = "ubuntu"
-        self.client = LxdClient(self.name, image)
-        self.pid = None
-        self.up = False
-        self.lock = threading.RLock()
-        self._mounts = []
-        self.bootsh = bootsh
-        if start:
-            self.startup()
+        self.image = image
+        super(LxcNode, self).__init__(session, _id, name, nodedir, bootsh, start)
 
     def alive(self):
         """
@@ -180,6 +173,7 @@ class LxcNode(CoreNode):
             if self.up:
                 raise ValueError("starting a node that is already up")
             self.makenodedir()
+            self.client = LxdClient(self.name, self.image)
             self.pid = self.client.create_container()
             self.up = True
 
@@ -207,7 +201,7 @@ class LxcNode(CoreNode):
         :return: exit status for command
         :rtype: int
         """
-        return self.client.run_cmd(args, wait)
+        return self.client.cmd(args, wait)
 
     def cmd_output(self, args):
         """
@@ -217,7 +211,7 @@ class LxcNode(CoreNode):
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         """
-        return self.client.run_cmd_output(args)
+        return self.client.cmd_output(args)
 
     def check_cmd(self, args):
         """
@@ -228,10 +222,16 @@ class LxcNode(CoreNode):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        status, output = self.client.run_cmd_output(args)
+        status, output = self.client.cmd_output(args)
         if status:
             raise CoreCommandError(status, args, output)
         return output
+
+    def network_cmd(self, args):
+        if not self.up:
+            logging.debug("node down, not running network command: %s", args)
+            return 0
+        return self.check_cmd(args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -240,7 +240,7 @@ class LxcNode(CoreNode):
         :param str sh: shell to execute command in
         :return: str
         """
-        return ""
+        return "lxc exec {name} -- bash".format(name=self.name)
 
     def privatedir(self, path):
         """
@@ -251,9 +251,7 @@ class LxcNode(CoreNode):
         """
         logging.info("creating node dir: %s", path)
         args = "mkdir -p {path}".format(path=path)
-        status, output = self.client.run_cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        self.check_cmd(args)
 
     def mount(self, source, target):
         """
@@ -265,7 +263,7 @@ class LxcNode(CoreNode):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.info("mounting source(%s) target(%s)", source, target)
-        raise Exception("you found a lxc node")
+        raise Exception("not supported")
 
     def nodefile(self, filename, contents, mode=0o644):
         """
@@ -295,37 +293,9 @@ class LxcNode(CoreNode):
         :return: nothing
         """
         logging.info("node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode)
-        raise Exception("you found a lxc node")
+        raise Exception("not supported")
 
-    def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
-        """
-        Create a new network interface.
-
-        :param core.nodes.base.CoreNetworkBase net: network to associate with
-        :param list addrlist: addresses to add on the interface
-        :param core.nodes.ipaddress.MacAddress hwaddr: hardware address to set for interface
-        :param int ifindex: index of interface to create
-        :param str ifname: name for interface
-        :return: interface index
-        :rtype: int
-        """
-        if not addrlist:
-            addrlist = []
-
-        with self.lock:
-            ifindex = self.newveth(ifindex=ifindex, ifname=ifname, net=net)
-
-            if net is not None:
-                self.attachnet(ifindex, net)
-
-            if hwaddr:
-                self.sethwaddr(ifindex, hwaddr)
-
-            # delay required for lxc nodes
-            time.sleep(0.5)
-
-            for address in utils.make_tuple(addrlist):
-                self.addaddr(ifindex, address)
-
-            self.ifup(ifindex)
-            return ifindex
+    def addnetif(self, netif, ifindex):
+        super(LxcNode, self).addnetif(netif, ifindex)
+        # adding small delay to allow time for adding addresses to work correctly
+        time.sleep(0.5)

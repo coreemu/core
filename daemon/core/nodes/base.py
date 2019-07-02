@@ -493,11 +493,11 @@ class CoreNode(CoreNodeBase):
 
             # bring up the loopback interface
             logging.debug("bringing up loopback interface")
-            self.check_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
+            self.network_cmd([constants.IP_BIN, "link", "set", "lo", "up"])
 
             # set hostname for node
             logging.debug("setting hostname: %s", self.name)
-            self.check_cmd(["hostname", self.name])
+            self.network_cmd(["hostname", self.name])
 
             # mark node as up
             self.up = True
@@ -571,6 +571,17 @@ class CoreNode(CoreNodeBase):
         :rtype: tuple[int, str]
         """
         return self.client.cmd_output(args)
+
+    def network_cmd(self, args):
+        """
+        Runs a command for a node that is used to configure and setup network interfaces.
+
+        :param list[str]|str args: command to run
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        return self.check_cmd(args)
 
     def check_cmd(self, args):
         """
@@ -667,15 +678,15 @@ class CoreNode(CoreNodeBase):
 
             if self.up:
                 utils.check_cmd([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
-                self.check_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
-                self.check_cmd([constants.ETHTOOL_BIN, "-K", ifname, "rx", "off", "tx", "off"])
+                self.network_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
+                self.network_cmd([constants.ETHTOOL_BIN, "-K", ifname, "rx", "off", "tx", "off"])
 
             veth.name = ifname
 
             if self.up:
                 # TODO: potentially find better way to query interface ID
                 # retrieve interface information
-                output = self.check_cmd(["ip", "link", "show", veth.name])
+                output = self.network_cmd([constants.IP_BIN, "link", "show", veth.name])
                 logging.debug("interface command output: %s", output)
                 output = output.split("\n")
                 veth.flow_id = int(output[0].strip().split(":")[0]) + 1
@@ -736,7 +747,7 @@ class CoreNode(CoreNodeBase):
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
             args = [constants.IP_BIN, "link", "set", "dev", self.ifname(ifindex), "address", str(addr)]
-            self.check_cmd(args)
+            self.network_cmd(args)
 
     def addaddr(self, ifindex, addr):
         """
@@ -750,10 +761,10 @@ class CoreNode(CoreNodeBase):
             # check if addr is ipv6
             if ":" in str(addr):
                 args = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
-                self.check_cmd(args)
+                self.network_cmd(args)
             else:
                 args = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
-                self.check_cmd(args)
+                self.network_cmd(args)
 
         self._netif[ifindex].addaddr(addr)
 
@@ -772,7 +783,7 @@ class CoreNode(CoreNodeBase):
             logging.exception("trying to delete unknown address: %s" % addr)
 
         if self.up:
-            self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            self.network_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
 
     def delalladdr(self, ifindex, address_types=None):
         """
@@ -806,7 +817,7 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         if self.up:
-            self.check_cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
+            self.network_cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
@@ -867,12 +878,12 @@ class CoreNode(CoreNodeBase):
         utils.check_cmd([constants.IP_BIN, "link", "add", "name", tmp1, "type", "veth", "peer", "name", tmp2])
 
         utils.check_cmd([constants.IP_BIN, "link", "set", tmp1, "netns", str(self.pid)])
-        self.check_cmd([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
+        self.network_cmd([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
         interface = CoreInterface(node=self, name=ifname, mtu=_DEFAULT_MTU)
         self.addnetif(interface, self.newifindex())
 
         utils.check_cmd([constants.IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
-        othernode.check_cmd([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
+        othernode.network_cmd([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
         other_interface = CoreInterface(node=othernode, name=otherifname, mtu=_DEFAULT_MTU)
         othernode.addnetif(other_interface, othernode.newifindex())
 

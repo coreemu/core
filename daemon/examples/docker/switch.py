@@ -14,7 +14,7 @@ if __name__ == "__main__":
 
     try:
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
-        options = NodeOptions(image="ubuntu:ifconfig")
+        options = NodeOptions(model=None, image="ubuntu")
 
         # create switch
         switch = session.add_node(_type=NodeTypes.SWITCH)
