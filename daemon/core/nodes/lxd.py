@@ -172,9 +172,7 @@ class LxcNode(CoreNode):
 
     def startup(self):
         """
-        Start a new namespace node by invoking the vnoded process that
-        allocates a new namespace. Bring up the loopback device and set
-        the hostname.
+        Startup logic.
 
         :return: nothing
         """
@@ -209,7 +207,6 @@ class LxcNode(CoreNode):
         :return: exit status for command
         :rtype: int
         """
-        # return self.client.ns_cmd(args, wait)
         return self.client.run_cmd(args, wait)
 
     def cmd_output(self, args):
@@ -220,7 +217,6 @@ class LxcNode(CoreNode):
         :return: exit status and combined stdout and stderr
         :rtype: tuple[int, str]
         """
-        # return self.client.ns_cmd_output(args)
         return self.client.run_cmd_output(args)
 
     def check_cmd(self, args):
@@ -232,7 +228,6 @@ class LxcNode(CoreNode):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        # status, output = self.client.ns_cmd_output(args)
         status, output = self.client.run_cmd_output(args)
         if status:
             raise CoreCommandError(status, args, output)

@@ -14,7 +14,6 @@ if __name__ == "__main__":
     try:
         prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
         options = NodeOptions(image="ubuntu")
-        options.services = ["SSH"]
 
         # create node one
         node_one = session.add_node(_type=NodeTypes.LXC, node_options=options)
