@@ -669,12 +669,12 @@ class EmaneManager(ModelManager):
 
             # multicast route is needed for OTA data
             args = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
-            node.check_cmd(args)
+            node.network_cmd(args)
 
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 args = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
-                node.check_cmd(args)
+                node.network_cmd(args)
 
             # start emane
             args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]

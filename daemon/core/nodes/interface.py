@@ -237,7 +237,7 @@ class Veth(CoreInterface):
 
         if self.node:
             try:
-                self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+                self.node.network_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
             except CoreCommandError:
                 logging.exception("error shutting down interface")
 
@@ -245,7 +245,7 @@ class Veth(CoreInterface):
             try:
                 utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
             except CoreCommandError:
-                logging.exception("error deleting link")
+                logging.info("link already removed: %s", self.localname)
 
         self.up = False
 
@@ -298,7 +298,7 @@ class TunTap(CoreInterface):
             return
 
         try:
-            self.node.check_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            self.node.network_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
         except CoreCommandError:
             logging.exception("error shutting down tunnel tap")
 
@@ -361,7 +361,11 @@ class TunTap(CoreInterface):
 
         def nodedevexists():
             args = [constants.IP_BIN, "link", "show", self.name]
-            return self.node.cmd(args)
+            try:
+                self.node.network_cmd(args)
+                return 0
+            except CoreCommandError:
+                return 1
 
         count = 0
         while True:
@@ -393,8 +397,8 @@ class TunTap(CoreInterface):
         self.waitfordevicelocal()
         netns = str(self.node.pid)
         utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
-        self.node.check_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
-        self.node.check_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
+        self.node.network_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
+        self.node.network_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
         """
@@ -404,7 +408,7 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            self.node.network_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
 
 
 class GreTap(CoreInterface):

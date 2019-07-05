@@ -79,12 +79,13 @@ class NodeOptions(object):
     Options for creating and updating nodes within core.
     """
 
-    def __init__(self, name=None, model="PC"):
+    def __init__(self, name=None, model="PC", image=None):
         """
         Create a NodeOptions object.
 
         :param str name: name of node, defaults to node class name postfix with its id
         :param str model: defines services for default and physical nodes, defaults to "router"
+        :param str image: image to use for docker nodes
         """
         self.name = name
         self.model = model
@@ -99,6 +100,7 @@ class NodeOptions(object):
         self.alt = None
         self.emulation_id = None
         self.emulation_server = None
+        self.image = image
 
     def set_position(self, x, y):
         """

@@ -500,7 +500,10 @@ class Session(object):
 
         # create node
         logging.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
-        node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
+        if _type in [NodeTypes.DOCKER, NodeTypes.LXC]:
+            node = self.create_node(cls=node_class, _id=_id, name=name, start=start, image=node_options.image)
+        else:
+            node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
 
         # set node attributes
         node.icon = node_options.icon
@@ -511,7 +514,7 @@ class Session(object):
         self.set_node_position(node, node_options)
 
         # add services to default and physical nodes only
-        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
+        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL, NodeTypes.DOCKER, NodeTypes.LXC]:
             node.type = node_options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
@@ -1364,7 +1367,7 @@ class Session(object):
                 # TODO: PyCoreNode is not the type to check
                 if isinstance(node, CoreNodeBase) and not nodeutils.is_node(node, NodeTypes.RJ45):
                     # add a control interface if configured
-                    logging.info("booting node: %s", node.name)
+                    logging.info("booting node(%s): %s", node.name, node.services)
                     self.add_remove_control_interface(node=node, remove=False)
                     result = pool.apply_async(self.services.boot_services, (node,))
                     results.append(result)
