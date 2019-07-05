@@ -20,9 +20,9 @@ import edu.uci.ics.jung.visualization.control.GraphMouseListener;
 import edu.uci.ics.jung.visualization.control.ModalGraphMouse;
 import edu.uci.ics.jung.visualization.decorators.EdgeShape;
 import edu.uci.ics.jung.visualization.renderers.Renderer;
+import inet.ipaddr.IPAddress;
 import javafx.application.Platform;
 import lombok.Data;
-import org.apache.commons.net.util.SubnetUtils;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 
@@ -32,7 +32,6 @@ import java.awt.event.MouseEvent;
 import java.awt.geom.Ellipse2D;
 import java.io.IOException;
 import java.util.*;
-import java.util.List;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.TimeUnit;
 import java.util.stream.Collectors;
@@ -50,8 +49,7 @@ public class NetworkGraph {
     private EditingModalGraphMouse<CoreNode, CoreLink> graphMouse;
     private AnnotationControls<CoreNode, CoreLink> annotationControls;
 
-    private SubnetUtils subnetUtils = new SubnetUtils("10.0.0.0/24");
-    private CoreAddresses coreAddresses = new CoreAddresses("10.0");
+    private CoreAddresses coreAddresses = new CoreAddresses();
     private NodeType nodeType;
     private Map<Integer, CoreNode> nodeMap = new ConcurrentHashMap<>();
     private int vertexId = 1;
@@ -77,9 +75,8 @@ public class NetworkGraph {
         graphViewer.setBackground(Color.WHITE);
         graphViewer.getRenderer().getVertexLabelRenderer().setPosition(Renderer.VertexLabel.Position.S);
 
-        RenderContext<CoreNode, CoreLink> renderContext = graphViewer.getRenderContext();
-
         // node render properties
+        RenderContext<CoreNode, CoreLink> renderContext = graphViewer.getRenderContext();
         renderContext.setVertexLabelTransformer(CoreNode::getName);
         renderContext.setVertexLabelRenderer(nodeLabelRenderer);
         renderContext.setVertexShapeTransformer(node -> {
@@ -251,6 +248,7 @@ public class NetworkGraph {
         }
         nodeMap.clear();
         graphViewer.repaint();
+        coreAddresses.reset();
     }
 
     public void updatePositions() {
@@ -287,40 +285,93 @@ public class NetworkGraph {
 
     private void handleEdgeAdded(GraphEvent.Edge<CoreNode, CoreLink> edgeEvent) {
         CoreLink link = edgeEvent.getEdge();
-        if (!link.isLoaded()) {
-            Pair<CoreNode> endpoints = graph.getEndpoints(link);
-
-            CoreNode nodeOne = endpoints.getFirst();
-            CoreNode nodeTwo = endpoints.getSecond();
-
-            // create interfaces for nodes
-            int sub = coreAddresses.getSubnet(
-                    getInterfaces(nodeOne),
-                    getInterfaces(nodeTwo)
-            );
-
-            link.setNodeOne(nodeOne.getId());
-            if (isNode(nodeOne)) {
-                int interfaceOneId = nextInterfaceId(nodeOne);
-                CoreInterface interfaceOne = createInterface(nodeOne, sub, interfaceOneId);
-                link.setInterfaceOne(interfaceOne);
+        if (link.isLoaded()) {
+            // load addresses to avoid duplication
+            if (link.getInterfaceOne().getIp4() != null) {
+                coreAddresses.usedAddress(link.getInterfaceOne().getIp4());
             }
-
-            link.setNodeTwo(nodeTwo.getId());
-            if (isNode(nodeTwo)) {
-                int interfaceTwoId = nextInterfaceId(nodeTwo);
-                CoreInterface interfaceTwo = createInterface(nodeTwo, sub, interfaceTwoId);
-                link.setInterfaceTwo(interfaceTwo);
+            if (link.getInterfaceTwo().getIp4() != null) {
+                coreAddresses.usedAddress(link.getInterfaceTwo().getIp4());
             }
-
-            boolean isVisible = !checkForWirelessNode(nodeOne, nodeTwo);
-            link.setVisible(isVisible);
-
-            logger.info("adding user created edge: {}", link);
+            return;
         }
+        Pair<CoreNode> endpoints = graph.getEndpoints(link);
+        CoreNode nodeOne = endpoints.getFirst();
+        CoreNode nodeTwo = endpoints.getSecond();
+        boolean nodeOneIsDefault = isNode(nodeOne);
+        boolean nodeTwoIsDefault = isNode(nodeTwo);
+
+        // check what we are linking together
+        IPAddress subnet = null;
+        Set<CoreInterface> interfaces;
+        if (nodeOneIsDefault && nodeTwoIsDefault) {
+            subnet = coreAddresses.nextSubnet();
+            logger.info("linking node to node using subnet: {}", subnet);
+        } else if (nodeOneIsDefault) {
+            interfaces = getNetworkInterfaces(nodeTwo, new HashSet<>());
+            subnet = coreAddresses.findSubnet(interfaces);
+            logger.info("linking node one to network using subnet: {}", subnet);
+        } else if (nodeTwoIsDefault) {
+            interfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
+            subnet = coreAddresses.findSubnet(interfaces);
+            logger.info("linking node two to network using subnet: {}", subnet);
+        } else {
+            logger.info("subnet not needed for linking networks together");
+        }
+
+        link.setNodeOne(nodeOne.getId());
+        if (nodeOneIsDefault) {
+            int interfaceOneId = nextInterfaceId(nodeOne);
+            CoreInterface interfaceOne = createInterface(nodeOne, interfaceOneId, subnet);
+            link.setInterfaceOne(interfaceOne);
+        }
+
+        link.setNodeTwo(nodeTwo.getId());
+        if (nodeTwoIsDefault) {
+            int interfaceTwoId = nextInterfaceId(nodeTwo);
+            CoreInterface interfaceTwo = createInterface(nodeTwo, interfaceTwoId, subnet);
+            link.setInterfaceTwo(interfaceTwo);
+        }
+
+        boolean isVisible = !checkForWirelessNode(nodeOne, nodeTwo);
+        link.setVisible(isVisible);
+        logger.info("adding user created edge: {}", link);
     }
 
-    public List<CoreInterface> getInterfaces(CoreNode node) {
+    public Set<CoreInterface> getNetworkInterfaces(CoreNode node, Set<CoreNode> visited) {
+        Set<CoreInterface> interfaces = new HashSet<>();
+        if (visited.contains(node)) {
+            return interfaces;
+        }
+        visited.add(node);
+
+        logger.info("checking network node links: {}", node);
+        for (CoreLink link : graph.getIncidentEdges(node)) {
+            logger.info("checking link: {}", link);
+            if (link.getNodeOne() == null && link.getNodeTwo() == null) {
+                continue;
+            }
+
+            // ignore oneself
+            CoreNode currentNode = getVertex(link.getNodeOne());
+            CoreInterface currentInterface = link.getInterfaceOne();
+            if (node.getId().equals(link.getNodeOne())) {
+                currentNode = getVertex(link.getNodeTwo());
+                currentInterface = link.getInterfaceTwo();
+            }
+
+            if (isNode(currentNode)) {
+                interfaces.add(currentInterface);
+            } else {
+                Set<CoreInterface> nextInterfaces = getNetworkInterfaces(currentNode, visited);
+                interfaces.addAll(nextInterfaces);
+            }
+        }
+
+        return interfaces;
+    }
+
+    public Set<CoreInterface> getNodeInterfaces(CoreNode node) {
         return graph.getIncidentEdges(node).stream()
                 .map(link -> {
                     if (node.getId().equals(link.getNodeOne())) {
@@ -330,7 +381,7 @@ public class NetworkGraph {
                     }
                 })
                 .filter(Objects::nonNull)
-                .collect(Collectors.toList());
+                .collect(Collectors.toSet());
     }
 
     private int nextInterfaceId(CoreNode node) {
@@ -360,19 +411,52 @@ public class NetworkGraph {
         return node.getType() == NodeType.DEFAULT;
     }
 
-    private CoreInterface createInterface(CoreNode node, int sub, int interfaceId) {
+    private CoreInterface createInterface(CoreNode node, int interfaceId, IPAddress subnet) {
         CoreInterface coreInterface = new CoreInterface();
         coreInterface.setId(interfaceId);
         coreInterface.setName(String.format("eth%s", interfaceId));
-        String nodeOneIp4 = coreAddresses.getIp4Address(sub, node.getId());
-        coreInterface.setIp4(nodeOneIp4);
-        coreInterface.setIp4Mask(CoreAddresses.IP4_MASK);
+        IPAddress address = subnet.increment(node.getId());
+        logger.info("creating interface for node({}): {}", node.getId(), address);
+        coreInterface.setIp4(address);
+        coreInterface.setIp6(address.toIPv6());
         return coreInterface;
     }
 
     private void handleEdgeRemoved(GraphEvent.Edge<CoreNode, CoreLink> edgeEvent) {
         CoreLink link = edgeEvent.getEdge();
         logger.info("removed edge: {}", link);
+        CoreNode nodeOne = getVertex(link.getNodeOne());
+        CoreInterface interfaceOne = link.getInterfaceOne();
+        CoreNode nodeTwo = getVertex(link.getNodeTwo());
+        CoreInterface interfaceTwo = link.getInterfaceTwo();
+        boolean nodeOneIsDefault = isNode(nodeOne);
+        boolean nodeTwoIsDefault = isNode(nodeTwo);
+
+        // check what we are unlinking
+        Set<CoreInterface> interfaces;
+        IPAddress subnet = null;
+        if (nodeOneIsDefault && nodeTwoIsDefault) {
+            subnet = interfaceOne.getIp4().toPrefixBlock();
+            logger.info("unlinking node to node reuse subnet: {}", subnet);
+        } else if (nodeOneIsDefault) {
+            interfaces = getNetworkInterfaces(nodeTwo, new HashSet<>());
+            if (interfaces.isEmpty()) {
+                subnet = interfaceOne.getIp4().toPrefixBlock();
+                logger.info("unlinking node one from network reuse subnet: {}", subnet);
+            }
+        } else if (nodeTwoIsDefault) {
+           interfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
+            if (interfaces.isEmpty()) {
+                subnet = interfaceTwo.getIp4().toPrefixBlock();
+                logger.info("unlinking node two from network reuse subnet: {}", subnet);
+            }
+        } else {
+            logger.info("nothing to do when unlinking networks");
+        }
+
+        if (subnet != null) {
+            coreAddresses.reuseSubnet(subnet);
+        }
     }
 
     private void handleVertexAdded(GraphEvent.Vertex<CoreNode, CoreLink> vertexEvent) {
@@ -431,7 +515,7 @@ public class NetworkGraph {
     }
 
     private boolean isWirelessNode(CoreNode node) {
-        return node.getType() == NodeType.EMANE || node.getType() == NodeType.WLAN;
+        return node != null && (node.getType() == NodeType.EMANE || node.getType() == NodeType.WLAN);
     }
 
     private boolean checkForWirelessNode(CoreNode nodeOne, CoreNode nodeTwo) {

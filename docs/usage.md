@@ -23,7 +23,7 @@ __Note: The CORE GUI is currently in a state of transition.  The replacement can
 
 ## Prerequisites
 
-Beyond instaling CORE, you must have the CORE daemon running.  This is done on the command line with either Systemd or SysV
+Beyond installing CORE, you must have the CORE daemon running.  This is done on the command line with either Systemd or SysV
 ```shell
 # systed
 sudo systemctl daemon-reload
@@ -69,51 +69,51 @@ The toolbar is a row of buttons that runs vertically along the left side of the 
 
 When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on the left side of the CORE window. Below are brief descriptions for each toolbar item, starting from the top. Most of the tools are grouped into related sub-menus, which appear when you click on their group icon.
 
-* |select| *Selection Tool* - default tool for selecting, moving, configuring nodes
-* |start| *Start button* - starts Execute mode, instantiates the emulation
-* |link| *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
-* |router| *Network-layer virtual nodes*
-  * |router| *Router* - runs Quagga OSPFv2 and OSPFv3 routing to forward packets
-  * |host| *Host* - emulated server machine having a default route, runs SSH server
-  * |pc| *PC* - basic emulated machine having a default route, runs no processes by default
-  * |mdr| *MDR* - runs Quagga OSPFv3 MDR routing for MANET-optimized routing
-  * |router_green| *PRouter* - physical router represents a real testbed machine
-  * |document_properties| *Edit* - edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here.
-* |hub| *Link-layer nodes*
-  * |hub|  *Hub* - the Ethernet hub forwards incoming packets to every connected node
-  * |lanswitch| *Switch* - the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table
-  * |wlan| *Wireless LAN* - when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them
-  * |rj45| *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation
-  * |tunnel| *Tunnel* - the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/select.gif) *Selection Tool* - default tool for selecting, moving, configuring nodes
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/start.gif) *Start button* - starts Execute mode, instantiates the emulation
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/link.gif) *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router.gif) *Network-layer virtual nodes*
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router.gif) *Router* - runs Quagga OSPFv2 and OSPFv3 routing to forward packets
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/host.gif) *Host* - emulated server machine having a default route, runs SSH server
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/pc.gif) *PC* - basic emulated machine having a default route, runs no processes by default
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/mdr.gif) *MDR* - runs Quagga OSPFv3 MDR routing for MANET-optimized routing
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router_green.gif) *PRouter* - physical router represents a real testbed machine
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/document-properties.gif) *Edit* - edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here.
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/hub.gif) *Link-layer nodes*
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/hub.gif)  *Hub* - the Ethernet hub forwards incoming packets to every connected node
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/lanswitch.gif) *Switch* - the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/wlan.gif) *Wireless LAN* - when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/rj45.gif) *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/tunnel.gif) *Tunnel* - the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels
 * *Annotation Tools*
-  * |marker| *Marker* - for drawing marks on the canvas
-  * |oval| *Oval* - for drawing circles on the canvas that appear in the background
-  * |rectangle| *Rectangle* - for drawing rectangles on the canvas that appear in the background
-  * |text| *Text* - for placing text captions on the canvas
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/marker.gif) *Marker* - for drawing marks on the canvas
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/oval.gif) *Oval* - for drawing circles on the canvas that appear in the background
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/rectangle.gif) *Rectangle* - for drawing rectangles on the canvas that appear in the background
+  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/text.gif) *Text* - for placing text captions on the canvas
 
 ### Execution Toolbar
 
 When the Start button is pressed, CORE switches to Execute mode, and the Edit toolbar on the left of the CORE window is replaced with the Execution toolbar Below are the items on this toolbar, starting from the top.
 
-* |select| *Selection Tool* - in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node
-* |stop| *Stop button* - stops Execute mode, terminates the emulation, returns CORE to edit mode.
-* |observe| *Observer Widgets Tool* - clicking on this magnifying glass icon
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/select.gif) *Selection Tool* - in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/stop.gif) *Stop button* - stops Execute mode, terminates the emulation, returns CORE to edit mode.
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/observe.gif) *Observer Widgets Tool* - clicking on this magnifying glass icon
   invokes a menu for easily selecting an Observer Widget. The icon has a darker
   gray background when an Observer Widget is active, during which time moving
   the mouse over a node will pop up an information display for that node.
-* |plot| *Plot Tool* - with this tool enabled, clicking on any link will
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/plot.gif) *Plot Tool* - with this tool enabled, clicking on any link will
   activate the Throughput Widget and draw a small, scrolling throughput plot
   on the canvas. The plot shows the real-time kbps traffic for that link.
   The plots may be dragged around the canvas; right-click on a
   plot to remove it.
-* |marker| *Marker* - for drawing freehand lines on the canvas, useful during
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/marker.gif) *Marker* - for drawing freehand lines on the canvas, useful during
   demonstrations; markings are not saved
-* |twonode| *Two-node Tool* - click to choose a starting and ending node, and
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/twonode.gif) *Two-node Tool* - click to choose a starting and ending node, and
   run a one-time *traceroute* between those nodes or a continuous *ping -R*
   between nodes. The output is displayed in real time in a results box, while
   the IP addresses are parsed and the complete network path is highlighted on
   the  CORE display.
-* |run| *Run Tool* - this tool allows easily running a command on all or a
+* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/run.gif) *Run Tool* - this tool allows easily running a command on all or a
   subset of all nodes. A list box allows selecting any of the nodes. A text
   entry box allows entering any command. The command should return immediately,
   otherwise the display will block awaiting response. The *ping* command, for
@@ -727,155 +727,6 @@ the target canvas from the list, and from that submenu the desired node. A
 pseudo-link will be drawn, representing the link between the two nodes on
 different canvases. Double-clicking on the label at the end of the arrow will
 jump to the canvas that it links.
-
-## Services
-
-CORE uses the concept of services to specify what processes or scripts run on a
-node when it is started. Layer-3 nodes such as routers and PCs are defined by
-the services that they run.
-
-Services may be customized for each node, or new custom services can be
-created. New node types can be created each having a different name, icon, and
-set of default services. Each service defines the per-node directories,
-configuration files, startup index, starting commands, validation commands,
-shutdown commands, and meta-data associated with a node.
-
-**NOTE:**
-   Network namespace nodes do not undergo the normal Linux boot process
-   using the **init**, **upstart**, or **systemd** frameworks. These
-   lightweight nodes use configured CORE *services*.
-
-### Default Services and Node Types
-
-Here are the default node types and their services:
-
-* *router* - zebra, OSFPv2, OSPFv3, and IPForward services for IGP
-  link-state routing.
-* *host* - DefaultRoute and SSH services, representing an SSH server having a
-  default route when connected directly to a router.
-* *PC* - DefaultRoute service for having a default route when connected
-  directly to a router.
-* *mdr* - zebra, OSPFv3MDR, and IPForward services for
-  wireless-optimized MANET Designated Router routing.
-* *prouter* - a physical router, having the same default services as the
-  *router* node type; for incorporating Linux testbed machines into an
-  emulation.
-
-Configuration files can be automatically generated by each service. For
-example, CORE automatically generates routing protocol configuration for the
-router nodes in order to simplify the creation of virtual networks.
-
-To change the services associated with a node, double-click on the node to
-invoke its configuration dialog and click on the *Services...* button,
-or right-click a node a choose *Services...* from the menu.
-Services are enabled or disabled by clicking on their names. The button next to
-each service name allows you to customize all aspects of this service for this
-node. For example, special route redistribution commands could be inserted in
-to the Quagga routing configuration associated with the zebra service.
-
-To change the default services associated with a node type, use the Node Types
-dialog available from the *Edit* button at the end of the Layer-3 nodes
-toolbar, or choose *Node types...* from the  *Session* menu. Note that
-any new services selected are not applied to existing nodes if the nodes have
-been customized.
-
-The node types are saved in a **~/.core/nodes.conf** file, not with the
-**.imn** file. Keep this in mind when changing the default services for
-existing node types; it may be better to simply create a new node type. It is
-recommended that you do not change the default built-in node types. The
-**nodes.conf** file can be copied between CORE machines to save your custom
-types.
-
-### Customizing a Service
-
-A service can be fully customized for a particular node. From the node's
-configuration dialog, click on the button next to the service name to invoke
-the service customization dialog for that service.
-The dialog has three tabs for configuring the different aspects of the service:
-files, directories, and startup/shutdown.
-
-**NOTE:**
-   A **yellow** customize icon next to a service indicates that service
-   requires customization (e.g. the *Firewall* service).
-   A **green** customize icon indicates that a custom configuration exists.
-   Click the *Defaults* button when customizing a service to remove any
-   customizations.
-
-The Files tab is used to display or edit the configuration files or scripts that
-are used for this service. Files can be selected from a drop-down list, and
-their contents are displayed in a text entry below. The file contents are
-generated by the CORE daemon based on the network topology that exists at
-the time the customization dialog is invoked.
-
-The Directories tab shows the per-node directories for this service. For the
-default types, CORE nodes share the same filesystem tree, except for these
-per-node directories that are defined by the services. For example, the
-**/var/run/quagga** directory needs to be unique for each node running
-the Zebra service, because Quagga running on each node needs to write separate
-PID files to that directory.
-
-**NOTE:**
-   The **/var/log** and **/var/run** directories are
-   mounted uniquely per-node by default.
-   Per-node mount targets can be found in **/tmp/pycore.nnnnn/nN.conf/**
-   (where *nnnnn* is the session number and *N* is the node number.)
-
-The Startup/shutdown tab lists commands that are used to start and stop this
-service. The startup index allows configuring when this service starts relative
-to the other services enabled for this node; a service with a lower startup
-index value is started before those with higher values. Because shell scripts
-generated by the Files tab will not have execute permissions set, the startup
-commands should include the shell name, with
-something like ```sh script.sh```.
-
-Shutdown commands optionally terminate the process(es) associated with this
-service. Generally they send a kill signal to the running process using the
-*kill* or *killall* commands. If the service does not terminate
-the running processes using a shutdown command, the processes will be killed
-when the *vnoded* daemon is terminated (with *kill -9*) and
-the namespace destroyed. It is a good practice to
-specify shutdown commands, which will allow for proper process termination, and
-for run-time control of stopping and restarting services.
-
-Validate commands are executed following the startup commands. A validate
-command can execute a process or script that should return zero if the service
-has started successfully, and have a non-zero return value for services that
-have had a problem starting. For example, the *pidof* command will check
-if a process is running and return zero when found. When a validate command
-produces a non-zero return value, an exception is generated, which will cause
-an error to be displayed in the Check Emulation Light.
-
-**TIP:**
-   To start, stop, and restart services during run-time, right-click a
-   node and use the *Services...* menu.
-
-### Creating new Services
-
-Services can save time required to configure nodes, especially if a number
-of nodes require similar configuration procedures. New services can be
-introduced to automate tasks.
-
-The easiest way to capture the configuration of a new process into a service
-is by using the **UserDefined** service. This is a blank service where any
-aspect may be customized. The UserDefined service is convenient for testing
-ideas for a service before adding a new service type.
-
-To introduce new service types, a **myservices/** directory exists in the
-user's CORE configuration directory, at **~/.core/myservices/**. A detailed
-**README.txt** file exists in that directory to outline the steps necessary
-for adding a new service. First, you need to create a small Python file that
-defines the service; then the **custom_services_dir** entry must be set
-in the **/etc/core/core.conf** configuration file. A sample is provided in
-the **myservices/** directory.
-
-**NOTE:**
-   The directory name used in **custom_services_dir** should be unique and
-   should not correspond to
-   any existing Python module name. For example, don't use the name **subprocess**
-   or **services**.
-
-If you have created a new service type that may be useful to others, please
-consider contributing it to the CORE project.
 
 ## Check Emulation Light
 

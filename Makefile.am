@@ -46,9 +46,11 @@ MAINTAINERCLEANFILES = .version	\
 
 
 if PYTHON3
-PYTHON_DEP = python3 >= 3.0
+PYTHON_DEB_DEP = python3 >= 3.0
+PYTHON_RPM_DEP = python3 >= 3.0
 else
-PYTHON_DEP = python >= 2.7, python < 3.0
+PYTHON_DEB_DEP = python (>= 2.7), python (<< 3.0)
+PYTHON_RPM_DEP = python >= 2.7, python < 3.0
 endif
 
 define fpm-rpm =
@@ -61,6 +63,8 @@ fpm -s dir -t rpm -n core \
 	-p core_$(PYTHON)_VERSION_ARCH.rpm \
 	-v $(PACKAGE_VERSION) \
 	--rpm-init scripts/core-daemon \
+	--config-files "/etc/core" \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
 	-d "procps-ng" \
@@ -70,7 +74,7 @@ fpm -s dir -t rpm -n core \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
-	-d "$(PYTHON_DEP)" \
+	-d "$(PYTHON_RPM_DEP)" \
 	-C $(DESTDIR)
 endef
 
@@ -84,6 +88,9 @@ fpm -s dir -t deb -n core \
 	-p core_$(PYTHON)_VERSION_ARCH.deb \
 	-v $(PACKAGE_VERSION) \
 	--deb-systemd scripts/core-daemon.service \
+	--deb-no-default-config-files \
+	--config-files "/etc/core" \
+	-d "ethtool" \
 	-d "tcl" \
 	-d "tk" \
 	-d "libtk-img" \
@@ -94,7 +101,7 @@ fpm -s dir -t deb -n core \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
-	-d "$(PYTHON_DEP)" \
+	-d "$(PYTHON_DEB_DEP)" \
 	-C $(DESTDIR)
 endef
 

@@ -58,11 +58,23 @@ sudo python3 -m pip install -r requirements.txt
 ## Ubuntu 19.04
 
 Ubuntu 19.04 can provide all the packages needed at the system level and can be installed as follows:
+
 ```shell
 # python 2
 sudo apt install python-configparser python-enum34 python-future python-grpcio python-lxml
 # python 3
 sudo apt install python3-configparser python3-enum34 python3-future python3-grpcio python3-lxml
+```
+
+## Other Distros
+
+The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
+To account for this it would be recommended to install the python dependencies using the **requirements.txt** found in
+the latest release.
+
+```shell
+# will need to pip3 for python3 usage
+sudo pip install -r requirements.txt
 ```
 
 # Pre-Req Installing OSPF MDR
@@ -209,7 +221,11 @@ After running the *core-gui* command, a GUI should appear with a canvas for draw
 This option is listed here for developers and advanced users who are comfortable patching and building source code. 
 Please consider using the binary packages instead for a simplified install experience.
 
-## Pre-Req All
+## Download and Extract Source Code
+
+You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu/core) page.
+
+## Install grpcio-tools
 
 Python module grpcio-tools is currently needed to generate code from the CORE protobuf file during the build.
 
@@ -220,19 +236,21 @@ pip2 install grpcio-tools
 pip3 install grpcio-tools 
 ```
 
-## Pre-Reqs Ubuntu 18.04
+## Distro Requirements
+
+### Ubuntu 18.04 Requirements
 
 ```shell
 sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img
 ```
 
-## Pre-Reqs Ubuntu 16.04
+### Ubuntu 16.04 Requirements
 
 ```shell
 sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img
 ```
 
-## Pre-Reqs CentOS 7
+### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
 sudo yum -y install automake gcc python-devel libev-devel tk
@@ -242,15 +260,13 @@ sudo yum -y install automake gcc python-devel libev-devel tk
 
 ```shell
 ./bootstrap.sh
-# for python2
-PYTHON=python2 ./configure
-# for python3
-PYTHON=python3 ./configure 
+# use python2 or python3 depending on desired version
+PYTHON=$VERSION ./configure
 make
 sudo make install
 ```
 
-## Build Documentation
+# Building Documentation
 
 Building documentation requires python-sphinx not noted above.
 
@@ -263,14 +279,12 @@ sudo apt install python3-sphinx
 sudo yum install python3-sphinx
 
 ./bootstrap.sh
-# for python2
-PYTHON=python2 ./configure
-# for python3
-PYTHON=python3 ./configure
+# use python2 or python3 depending on desired version
+PYTHON=$VERSION ./configure
 make doc
 ```
 
-## Build Packages
+# Building Packages
 Build package commands, DESTDIR is used to make install into and then for packaging by fpm.
 
 **NOTE: clean the DESTDIR if re-using the same directory**
@@ -279,10 +293,8 @@ Build package commands, DESTDIR is used to make install into and then for packag
 
 ```shell
 ./bootstrap.sh
-# for python2
-PYTHON=python2 ./configure
-# for python3
-PYTHON=python3 ./configure
+# use python2 or python3 depending on desired version
+PYTHON=$VERSION ./configure
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build

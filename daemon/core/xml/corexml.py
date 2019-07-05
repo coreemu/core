@@ -782,7 +782,7 @@ class CoreXmlReader(object):
                 link_options.mburst = get_int(options_element, "mburst")
                 link_options.jitter = get_int(options_element, "jitter")
                 link_options.key = get_int(options_element, "key")
-                link_options.per = get_int(options_element, "per")
+                link_options.per = get_float(options_element, "per")
                 link_options.unidirectional = get_int(options_element, "unidirectional")
                 link_options.session = options_element.get("session")
                 link_options.emulation_id = get_int(options_element, "emulation_id")

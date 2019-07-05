@@ -26,7 +26,7 @@ A CORE node is a lightweight virtual machine. The CORE framework runs on Linux. 
 
 ### Linux
 
-Linux network namespaces (also known as netns, LXC, or [Linux containers](http://lxc.sourceforge.net/)) is the primary virtualization technique used by CORE. LXC has been part of the mainline Linux kernel since 2.6.24. Most recent Linux distributions have namespaces-enabled kernels out of the box. A namespace is created using the ```clone()``` system call. Each namespace has its own process environment and private network stack. Network namespaces share the same filesystem in CORE.
+Linux network namespaces (also known as netns) is the primary virtualization technique used by CORE. Most recent Linux distributions have namespaces-enabled kernels out of the box. A namespace is created using the ```clone()``` system call. Each namespace has its own process environment and private network stack. Network namespaces share the same filesystem in CORE.
 
 CORE combines these namespaces with Linux Ethernet bridging to form networks. Link characteristics are applied using Linux Netem queuing disciplines. Ebtables is Ethernet frame filtering on Linux bridges. Wireless networks are emulated by controlling which interfaces can send and receive with ebtables rules.
 
