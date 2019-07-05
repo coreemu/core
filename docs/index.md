@@ -23,6 +23,7 @@ networking scenarios, security studies, and increasing the size of physical test
 |[Architecture](architecture.md)|Overview of the architecture|
 |[Installation](install.md)|Installing from source, packages, & other dependencies| 
 |[Using the GUI](usage.md)|Details on the different node types and options in the GUI|
+|[Distributed](distributed.md)|Overview and detals for running CORE across multiple servers|
 |[Python Scripting](scripting.md)|How to write python scripts for creating a CORE session|
 |[gRPC API](grpc.md)|How to enable and use the gRPC API|
 |[Node Types](machine.md)|Overview of node types supported within CORE|

@@ -44,6 +44,17 @@ Install Path | Description
 
 # Pre-Req Python Requirements
 
+The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
+To account for this it would be recommended to install the python dependencies using the **requirements.txt** found in
+the latest [CORE Release](https://github.com/coreemu/core/releases).
+
+```shell
+# for python 2
+sudo python -m pip install -r requirements.txt
+# for python 3
+sudo python3 -m pip install -r requirements.txt
+```
+
 ## Ubuntu 19.04
 
 Ubuntu 19.04 can provide all the packages needed at the system level and can be installed as follows:
@@ -90,10 +101,14 @@ sudo dpkg -i quagga-mr_0.99.21mr2.2_amd64.deb
 Requires building from source, from the latest nightly snapshot.
 
 ```shell
+# packages needed beyond what's normally required to build core on ubuntu
+sudo apt install libtool libreadline-dev
+
 wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/nightly_snapshots/quagga-svnsnap.tgz
 tar xzf quagga-svnsnap.tgz
 cd quagga
-./configure --enable-user=root --enable-group=root --with-cflags=-ggdb \
+./bootstrap.sh
+./configure --disable-doc --enable-user=root --enable-group=root --with-cflags=-ggdb \
     --sysconfdir=/usr/local/etc/quagga --enable-vtysh \
     --localstatedir=/var/run/quagga
 make
