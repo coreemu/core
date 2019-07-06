@@ -142,7 +142,7 @@ class CoreInterface(object):
         """
         # treat None and 0 as unchanged values
         logging.debug("setting param: %s - %s", key, value)
-        if value is None or value <= 0:
+        if value is None or value < 0:
             return False
 
         current_value = self._params.get(key)
