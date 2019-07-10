@@ -490,6 +490,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_options = NodeOptions(name=node_proto.name, model=node_proto.model)
         node_options.icon = node_proto.icon
         node_options.opaque = node_proto.opaque
+        node_options.image = node_proto.image
         node_options.services = node_proto.services
 
         position = node_proto.position

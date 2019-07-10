@@ -671,6 +671,8 @@ message NodeType {
         PEER_TO_PEER = 12;
         CONTROL_NET = 13;
         EMANE_NET = 14;
+        DOCKER = 15;
+        LXC = 16;
     }
 }
 
@@ -774,6 +776,7 @@ message Node {
     string emane = 7;
     string icon = 8;
     string opaque = 9;
+    string image = 10;
 }
 
 message Link {
