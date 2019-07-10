@@ -44,31 +44,28 @@ public class NodeDetails extends ScrollPane {
     public void setNode(CoreNode node) {
         clear();
         title.setText(node.getName());
-
         addSeparator();
+
         addLabel("Properties");
+        addRow("ID", node.getId().toString(), true);
         if (node.getType() == NodeType.DEFAULT) {
             addRow("Model", node.getModel(), true);
         } else {
             addRow("Type", node.getNodeType().getDisplay(), true);
         }
+        addRow("EMANE", node.getEmane(), true);
+        addRow("X", node.getPosition().getX().toString(), true);
+        addRow("Y", node.getPosition().getY().toString(), true);
 
-        if (node.getEmane() != null) {
-            addRow("EMANE", node.getEmane(), true);
-        }
-
-        addSeparator();
-        addLabel("Position");
-        if (node.getPosition().getX() != null) {
-            addRow("X", node.getPosition().getX().toString(), true);
-        }
-        if (node.getPosition().getY() != null) {
-            addRow("Y", node.getPosition().getY().toString(), true);
-        }
-
-        addSeparator();
         addLabel("Interfaces");
+        boolean firstInterface = true;
         for (CoreLink link : controller.getNetworkGraph().getGraph().getIncidentEdges(node)) {
+            if (firstInterface) {
+                firstInterface = false;
+            } else {
+                addSeparator();
+            }
+
             CoreNode linkedNode;
             CoreInterface coreInterface;
             if (node.getId().equals(link.getNodeOne())) {
@@ -83,7 +80,6 @@ public class NodeDetails extends ScrollPane {
                 continue;
             }
 
-            addSeparator();
             if (linkedNode.getType() == NodeType.EMANE) {
                 String emaneModel = linkedNode.getEmane();
                 String linkedLabel = String.format("%s - %s", linkedNode.getName(), emaneModel);
@@ -109,8 +105,8 @@ public class NodeDetails extends ScrollPane {
         if (services.isEmpty()) {
             services = controller.getDefaultServices().getOrDefault(node.getModel(), Collections.emptySet());
         }
+
         if (!services.isEmpty()) {
-            addSeparator();
             addLabel("Services");
             JFXListView<String> listView = new JFXListView<>();
             listView.setMouseTransparent(true);
@@ -145,32 +141,26 @@ public class NodeDetails extends ScrollPane {
     private void addInterface(CoreInterface coreInterface, CoreNode linkedNode) {
         addRow("Linked To", linkedNode.getName(), true);
         addRow("Interface", coreInterface.getName(), true);
-        if (coreInterface.getMac() != null) {
-            addRow("MAC", coreInterface.getMac(), true);
-        }
-        addIp4Address(coreInterface.getIp4());
-        addIp6Address(coreInterface.getIp6());
+        addRow("MAC", coreInterface.getMac(), true);
+        addAddress("IP4", coreInterface.getIp4());
+        addAddress("IP6", coreInterface.getIp6());
     }
 
     private void addRow(String labelText, String value, boolean disabled) {
+        if (value == null) {
+            return;
+        }
         Label label = new Label(labelText);
         JFXTextField textField = new JFXTextField(value);
         textField.setDisable(disabled);
         gridPane.addRow(index++, label, textField);
     }
 
-    private void addIp4Address(IPAddress ip) {
+    private void addAddress(String label, IPAddress ip) {
         if (ip == null) {
             return;
         }
-        addRow("IP4", ip.toString(), true);
-    }
-
-    private void addIp6Address(IPAddress ip) {
-        if (ip == null) {
-            return;
-        }
-        addRow("IP6", ip.toString(), true);
+        addRow(label, ip.toString(), true);
     }
 
     private void clear() {
