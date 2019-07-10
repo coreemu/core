@@ -2,6 +2,7 @@
 emane.py: definition of an Emane class for implementing configuration control of an EMANE emulation.
 """
 
+import copy
 import logging
 import os
 import threading
@@ -443,10 +444,13 @@ class EmaneManager(ModelManager):
                 continue
 
             platformid += 1
+
+            # create temporary config for updating distributed nodes
             typeflags = ConfigFlags.UPDATE.value
-            self.set_config("platform_id_start", str(platformid))
-            self.set_config("nem_id_start", str(nemid))
-            config_data = ConfigShim.config_data(0, None, typeflags, self.emane_config, self.get_configs())
+            config = copy.deepcopy(self.get_configs())
+            config["platform_id_start"] = str(platformid)
+            config["nem_id_start"] = str(nemid)
+            config_data = ConfigShim.config_data(0, None, typeflags, self.emane_config, config)
             message = dataconversion.convert_config(config_data)
             server.sock.send(message)
             # increment nemid for next server by number of interfaces
@@ -477,26 +481,30 @@ class EmaneManager(ModelManager):
         be configured. This generates configuration for slave control nets
         using the default list of prefixes.
         """
-        session = self.session
         # slave server
+        session = self.session
         if not session.master:
             return
 
-        servers = session.broker.getservernames()
         # not distributed
+        servers = session.broker.getservernames()
         if len(servers) < 2:
             return
 
-        prefix = session.options.get_config("controlnet")
-        prefixes = prefix.split()
         # normal Config messaging will distribute controlnets
-        if len(prefixes) >= len(servers):
-            return
+        prefix = session.options.get_config("controlnet", default="")
+        prefixes = prefix.split()
+        if len(prefixes) < len(servers):
+            logging.info("setting up default controlnet prefixes for distributed (%d configured)", len(prefixes))
+            prefix = ctrlnet.DEFAULT_PREFIX_LIST[0]
+            prefixes = prefix.split()
+            servers.remove("localhost")
+            servers.insert(0, "localhost")
+            prefix = " ".join("%s:%s" % (s, prefixes[i]) for i, s in enumerate(servers))
 
         # this generates a config message having controlnet prefix assignments
-        logging.info("Setting up default controlnet prefixes for distributed (%d configured)" % len(prefixes))
-        prefixes = ctrlnet.DEFAULT_PREFIX_LIST[0]
-        vals = 'controlnet="%s"' % prefixes
+        logging.info("setting up controlnet prefixes for distributed: %s", prefix)
+        vals = "controlnet=%s" % prefix
         tlvdata = b""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
@@ -504,6 +512,7 @@ class EmaneManager(ModelManager):
         rawmsg = coreapi.CoreConfMessage.pack(0, tlvdata)
         msghdr = rawmsg[:coreapi.CoreMessage.header_len]
         msg = coreapi.CoreConfMessage(flags=0, hdr=msghdr, data=rawmsg[coreapi.CoreMessage.header_len:])
+        logging.debug("sending controlnet message:\n%s", msg)
         self.session.broker.handle_message(msg)
 
     def check_node_models(self):
@@ -660,12 +669,12 @@ class EmaneManager(ModelManager):
 
             # multicast route is needed for OTA data
             args = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
-            node.check_cmd(args)
+            node.network_cmd(args)
 
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
                 args = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
-                node.check_cmd(args)
+                node.network_cmd(args)
 
             # start emane
             args = emanecmd + ["-f", os.path.join(path, "emane%d.log" % n), os.path.join(path, "platform%d.xml" % n)]

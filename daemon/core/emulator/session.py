@@ -22,10 +22,10 @@ from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emulator.data import EventData, NodeData
 from core.emulator.data import ExceptionData
-from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import IdGen
-from core.emulator.emudata import is_net_node
+from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.emudata import create_interface
+from core.emulator.emudata import is_net_node
 from core.emulator.emudata import link_config
 from core.emulator.enumerations import EventTypes, LinkTypes
 from core.emulator.enumerations import ExceptionLevels
@@ -361,6 +361,18 @@ class Session(object):
                             self.delete_node(net_one.id)
                         node_one.delnetif(interface_one.netindex)
                         node_two.delnetif(interface_two.netindex)
+                elif node_one and net_one:
+                    interface = node_one.netif(interface_one_id)
+                    logging.info("deleting link node(%s):interface(%s) node(%s)",
+                                 node_one.name, interface.name, net_one.name)
+                    interface.detachnet()
+                    node_one.delnetif(interface.netindex)
+                elif node_two and net_one:
+                    interface = node_two.netif(interface_two_id)
+                    logging.info("deleting link node(%s):interface(%s) node(%s)",
+                                 node_two.name, interface.name, net_one.name)
+                    interface.detachnet()
+                    node_two.delnetif(interface.netindex)
         finally:
             if node_one:
                 node_one.lock.release()
@@ -488,7 +500,10 @@ class Session(object):
 
         # create node
         logging.info("creating node(%s) id(%s) name(%s) start(%s)", node_class.__name__, _id, name, start)
-        node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
+        if _type in [NodeTypes.DOCKER, NodeTypes.LXC]:
+            node = self.create_node(cls=node_class, _id=_id, name=name, start=start, image=node_options.image)
+        else:
+            node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
 
         # set node attributes
         node.icon = node_options.icon
@@ -499,7 +514,7 @@ class Session(object):
         self.set_node_position(node, node_options)
 
         # add services to default and physical nodes only
-        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL]:
+        if _type in [NodeTypes.DEFAULT, NodeTypes.PHYSICAL, NodeTypes.DOCKER, NodeTypes.LXC]:
             node.type = node_options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
@@ -615,6 +630,9 @@ class Session(object):
         """
         # clear out existing session
         self.clear()
+
+        if start:
+            self.set_state(EventTypes.CONFIGURATION_STATE)
 
         # write out xml file
         CoreXmlReader(self).read(file_name)
@@ -1168,7 +1186,7 @@ class Session(object):
             with self._nodes_lock:
                 file_path = os.path.join(self.session_dir, "nodes")
                 with open(file_path, "w") as f:
-                    for _id in sorted(self.nodes.keys()):
+                    for _id in self.nodes.keys():
                         node = self.nodes[_id]
                         f.write("%s %s %s %s\n" % (_id, node.name, node.apitype, type(node)))
         except IOError:
@@ -1214,19 +1232,19 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # controlnet may be needed by some EMANE models
+        # create control net interfaces and broker network tunnels
+        # which need to exist for emane to sync on location events
+        # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
+        self.broker.startup()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
             return
 
-        # start feature helpers
-        self.broker.startup()
-        self.mobility.startup()
-
-        # boot the services on each node
+        # boot node services and then start mobility
         self.boot_nodes()
+        self.mobility.startup()
 
         # set broker local instantiation to complete
         self.broker.local_instantiation_complete()
@@ -1349,7 +1367,7 @@ class Session(object):
                 # TODO: PyCoreNode is not the type to check
                 if isinstance(node, CoreNodeBase) and not nodeutils.is_node(node, NodeTypes.RJ45):
                     # add a control interface if configured
-                    logging.info("booting node: %s", node.name)
+                    logging.info("booting node(%s): %s", node.name, node.services)
                     self.add_remove_control_interface(node=node, remove=False)
                     result = pool.apply_async(self.services.boot_services, (node,))
                     results.append(result)
@@ -1498,7 +1516,7 @@ class Session(object):
                         break
 
                 if not prefix:
-                    logging.error("Control network prefix not found for server '%s'" % servers[0])
+                    logging.error("control network prefix not found for server: %s", servers[0])
                     assign_address = False
                     try:
                         prefix = prefixes[0].split(':', 1)[1]

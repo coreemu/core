@@ -225,7 +225,7 @@ class OvsNet(CoreNetworkBase):
         delay_changed = netif.setparam("delay", delay)
 
         if loss is not None:
-            loss = int(loss)
+            loss = float(loss)
         loss_changed = netif.setparam("loss", loss)
 
         if duplicate is not None:

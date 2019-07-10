@@ -510,7 +510,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
         :param message: message for replies
         :return: nothing
         """
-        logging.debug("dispatching replies: %s", replies)
         for reply in replies:
             message_type, message_flags, message_length = coreapi.CoreMessage.unpack_header(reply)
             try:
@@ -524,7 +523,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 reply_message = "CoreMessage (type %d flags %d length %d)" % (
                     message_type, message_flags, message_length)
 
-            logging.debug("dispatch reply:\n%s", reply_message)
+            logging.debug("sending reply:\n%s", reply_message)
 
             try:
                 self.sendall(reply)
@@ -629,7 +628,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         """
         Node Message handler
 
-        :param core.api.coreapi.CoreNodeMessage message: node message
+        :param core.api.tlv.coreapi.CoreNodeMessage message: node message
         :return: replies to node message
         """
         replies = []
@@ -860,7 +859,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         raise
                 else:
                     thread = threading.Thread(
-                        target=execfile,
+                        target=utils.execute_file,
                         args=(file_name, {"__file__": file_name, "coreemu": self.coreemu})
                     )
                     thread.daemon = True
@@ -1036,8 +1035,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
             metadata_configs = self.session.metadata.get_configs()
+            if metadata_configs is None:
+                metadata_configs = {}
             data_values = "|".join(["%s=%s" % (x, metadata_configs[x]) for x in metadata_configs])
-            data_types = tuple(ConfigDataTypes.STRING.value for _ in self.session.metadata.get_configs())
+            data_types = tuple(ConfigDataTypes.STRING.value for _ in metadata_configs)
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
@@ -1397,7 +1398,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         open_file.write(data)
                 return ()
 
-            self.session.node_add_file(node_num, source_name, file_name, data)
+            self.session.add_node_file(node_num, source_name, file_name, data)
         else:
             raise NotImplementedError
 

@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.3.0)
+AC_INIT(core, 5.3.1)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])

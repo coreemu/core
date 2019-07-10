@@ -73,11 +73,9 @@ public class NodeType {
         return ID_LOOKUP.values().stream()
                 .filter(nodeType -> {
                     boolean sameType = nodeType.getValue() == type;
-                    boolean sameModel;
-                    if (model != null) {
+                    boolean sameModel = true;
+                    if (!model.isEmpty()) {
                         sameModel = model.equals(nodeType.getModel());
-                    } else {
-                        sameModel = nodeType.getModel() == null;
                     }
                     return sameType && sameModel;
                 })
