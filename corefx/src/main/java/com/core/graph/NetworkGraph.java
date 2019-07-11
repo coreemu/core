@@ -298,8 +298,8 @@ public class NetworkGraph {
         Pair<CoreNode> endpoints = graph.getEndpoints(link);
         CoreNode nodeOne = endpoints.getFirst();
         CoreNode nodeTwo = endpoints.getSecond();
-        boolean nodeOneIsDefault = isNode(nodeOne);
-        boolean nodeTwoIsDefault = isNode(nodeTwo);
+        boolean nodeOneIsDefault = NodeType.isDefault(nodeOne.getNodeType());
+        boolean nodeTwoIsDefault = NodeType.isDefault(nodeTwo.getNodeType());
 
         // check what we are linking together
         IPAddress subnet = null;
@@ -360,7 +360,7 @@ public class NetworkGraph {
                 currentInterface = link.getInterfaceTwo();
             }
 
-            if (isNode(currentNode)) {
+            if (NodeType.isDefault(currentNode.getNodeType())) {
                 interfaces.add(currentInterface);
             } else {
                 Set<CoreInterface> nextInterfaces = getNetworkInterfaces(currentNode, visited);
@@ -407,10 +407,6 @@ public class NetworkGraph {
         }
     }
 
-    private boolean isNode(CoreNode node) {
-        return node.getType() == NodeType.DEFAULT;
-    }
-
     private CoreInterface createInterface(CoreNode node, int interfaceId, IPAddress subnet) {
         CoreInterface coreInterface = new CoreInterface();
         coreInterface.setId(interfaceId);
@@ -429,8 +425,8 @@ public class NetworkGraph {
         CoreInterface interfaceOne = link.getInterfaceOne();
         CoreNode nodeTwo = getVertex(link.getNodeTwo());
         CoreInterface interfaceTwo = link.getInterfaceTwo();
-        boolean nodeOneIsDefault = isNode(nodeOne);
-        boolean nodeTwoIsDefault = isNode(nodeTwo);
+        boolean nodeOneIsDefault = NodeType.isDefault(nodeOne.getNodeType());
+        boolean nodeTwoIsDefault = NodeType.isDefault(nodeTwo.getNodeType());
 
         // check what we are unlinking
         Set<CoreInterface> interfaces;
@@ -445,7 +441,7 @@ public class NetworkGraph {
                 logger.info("unlinking node one from network reuse subnet: {}", subnet);
             }
         } else if (nodeTwoIsDefault) {
-           interfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
+            interfaces = getNetworkInterfaces(nodeOne, new HashSet<>());
             if (interfaces.isEmpty()) {
                 subnet = interfaceTwo.getIp4().toPrefixBlock();
                 logger.info("unlinking node two from network reuse subnet: {}", subnet);
@@ -461,16 +457,20 @@ public class NetworkGraph {
 
     private void handleVertexAdded(GraphEvent.Vertex<CoreNode, CoreLink> vertexEvent) {
         CoreNode node = vertexEvent.getVertex();
-        if (!node.isLoaded()) {
-            node.setNodeType(nodeType);
-            if (node.getType() == NodeType.EMANE) {
-                String emaneModel = controller.getNodeEmaneDialog().getModels().get(0);
-                node.setEmane(emaneModel);
-            }
-
-            logger.info("adding user created node: {}", node);
-            nodeMap.put(node.getId(), node);
+        if (node.isLoaded()) {
+            return;
         }
+
+        node.setNodeType(nodeType);
+        if (node.getType() == NodeType.EMANE) {
+            String emaneModel = controller.getNodeEmaneDialog().getModels().get(0);
+            node.setEmane(emaneModel);
+        } else if (node.getType() == NodeType.DOCKER || node.getType() == NodeType.LXC) {
+            node.setImage("ubuntu");
+        }
+
+        logger.info("adding user created node: {}", node);
+        nodeMap.put(node.getId(), node);
     }
 
     private void handleVertexRemoved(GraphEvent.Vertex<CoreNode, CoreLink> vertexEvent) {
@@ -506,7 +506,7 @@ public class NetworkGraph {
         try {
             controller.getCoreClient().deleteNode(node);
         } catch (IOException ex) {
-            logger.error("error deleting node");
+            logger.error("error deleting node", ex);
             Toast.error(String.format("Error deleting node: %s", node.getName()));
         }
         graphViewer.getPickedVertexState().pick(node, false);

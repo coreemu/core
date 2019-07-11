@@ -10,6 +10,7 @@
       <JFXButton fx:id="pickingButton" styleClass="toolbar-button" />
       <JFXButton fx:id="nodesButton" styleClass="toolbar-button" text="Nodes" />
       <JFXButton fx:id="devicesButton" styleClass="toolbar-button" text="Devices" />
+      <JFXButton fx:id="containersButton" styleClass="toolbar-button" text="Containers" />
       <JFXButton fx:id="drawingButton" styleClass="toolbar-button" />
    </children>
    <padding>
