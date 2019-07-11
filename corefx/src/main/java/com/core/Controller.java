@@ -140,36 +140,15 @@ public class Controller implements Initializable {
         Platform.runLater(() -> borderPane.setRight(null));
 
         // get session to join
-        Session session = coreClient.getSession(sessionId);
-        SessionState sessionState = SessionState.get(session.getState());
-
-        // update client to use this session
-        coreClient.updateSession(sessionId);
-        coreClient.updateState(sessionState);
-
-        // setup event handlers
-        coreClient.setupEventHandlers(this);
+        Session session = coreClient.joinSession(sessionId);
 
         // display all nodes
-        logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
         for (CoreNode node : session.getNodes()) {
-            NodeType nodeType = NodeType.find(node.getType(), node.getModel());
-            if (nodeType == null) {
-                logger.info(String.format("failed to find node type(%s) model(%s): %s",
-                        node.getType(), node.getModel(), node.getName()));
-                continue;
-            }
-
-            node.setNodeType(nodeType);
             networkGraph.addNode(node);
         }
 
         // display all links
         for (CoreLink link : session.getLinks()) {
-            if (link.getInterfaceOne() != null || link.getInterfaceTwo() != null) {
-                link.setType(LinkTypes.WIRED.getValue());
-            }
-
             networkGraph.addLink(link);
         }
 
@@ -448,6 +427,7 @@ public class Controller implements Initializable {
         connectToCore(address, port);
 
         logger.info("controller initialize");
+        coreClient.initialize(this);
         swingNode.setContent(networkGraph.getGraphViewer());
 
         // update graph preferences

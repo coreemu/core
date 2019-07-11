@@ -54,6 +54,7 @@ public class NodeDetails extends ScrollPane {
             addRow("Type", node.getNodeType().getDisplay(), true);
         }
         addRow("EMANE", node.getEmane(), true);
+        addRow("Image", node.getImage(), true);
         addRow("X", node.getPosition().getX().toString(), true);
         addRow("Y", node.getPosition().getY().toString(), true);
 

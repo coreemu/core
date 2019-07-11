@@ -60,6 +60,8 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
         ContextMenu contextMenu = new ContextMenu();
         switch (node.getType()) {
             case NodeType.DEFAULT:
+            case NodeType.DOCKER:
+            case NodeType.LXC:
                 contextMenu = new NodeContextMenu(controller, node);
                 break;
             case NodeType.WLAN:

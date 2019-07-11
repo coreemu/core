@@ -40,6 +40,7 @@ public class GraphToolbar extends VBox {
     private SVGGlyph stopIcon;
     private JFXListView<Label> nodesList = new JFXListView<>();
     private JFXListView<Label> devicesList = new JFXListView<>();
+    private JFXListView<Label> containersList = new JFXListView<>();
     private JFXButton selectedEditButton;
     private NodeType selectedNodeType;
     private boolean isEditing = false;
@@ -49,6 +50,7 @@ public class GraphToolbar extends VBox {
     @FXML private ComboBox<String> graphModeCombo;
     @FXML private JFXButton nodesButton;
     @FXML private JFXButton devicesButton;
+    @FXML private JFXButton containersButton;
 
     public GraphToolbar(Controller controller) {
         this.controller = controller;
@@ -63,6 +65,7 @@ public class GraphToolbar extends VBox {
         setupDrawingButton();
         setupNodesButton();
         setupDevicesButton();
+        setupContainersButton();
 
         // initial state
         setSelected(true, pickingButton);
@@ -113,28 +116,20 @@ public class GraphToolbar extends VBox {
 
     public void setupNodeTypes() {
         // clear existing configuration
-        labelMap.clear();
+        for (Label label : nodesList.getItems()) {
+            int id = (int) label.getUserData();
+            labelMap.remove(id);
+        }
         nodesList.getItems().clear();
-        devicesList.getItems().clear();
 
+        // add current default nodes
         for (NodeType nodeType : NodeType.getAll()) {
-            ImageView icon = new ImageView(nodeType.getIcon());
-            icon.setFitWidth(NODES_ICON_SIZE);
-            icon.setFitHeight(NODES_ICON_SIZE);
-            Label label = new Label(nodeType.getDisplay(), icon);
-            label.setUserData(nodeType.getId());
-            labelMap.put(nodeType.getId(), label);
-
-            if (nodeType.getValue() == NodeType.DEFAULT) {
-                nodesList.getItems().add(label);
-            } else {
-                devicesList.getItems().add(label);
+            if (NodeType.DEFAULT == nodeType.getValue()) {
+                addNodeType(nodeType.getValue(), nodeType.getModel(), nodesList);
             }
         }
-
         Comparator<Label> comparator = Comparator.comparing(Label::getText);
         nodesList.getItems().sort(comparator);
-        devicesList.getItems().sort(comparator);
 
         // initial node
         nodesList.getSelectionModel().selectFirst();
@@ -143,9 +138,6 @@ public class GraphToolbar extends VBox {
         selectedEditButton = nodesButton;
         controller.getNetworkGraph().setNodeType(selectedNodeType);
         updateButtonValues(nodesButton, selectedNodeLabel);
-
-        // initial device
-        updateButtonValues(devicesButton, devicesList.getItems().get(0));
     }
 
     private void updateButtonValues(JFXButton button, Label label) {
@@ -167,49 +159,53 @@ public class GraphToolbar extends VBox {
     }
 
     private void setupNodesButton() {
-        nodesButton.setTooltip(new Tooltip("Network Nodes (host, pc, etc)"));
-        nodesList.setOnMouseClicked(event -> {
-            Label selectedLabel = nodesList.getSelectionModel().getSelectedItem();
+        setupButtonSelection("CORE Nodes", nodesButton, nodesList);
+    }
+
+    private void setupDevicesButton() {
+        addNodeType(NodeType.HUB, "hub", devicesList);
+        addNodeType(NodeType.SWITCH, "lanswitch", devicesList);
+        addNodeType(NodeType.WLAN, "wlan", devicesList);
+        addNodeType(NodeType.EMANE, "wlan", devicesList);
+        devicesList.getSelectionModel().selectFirst();
+        updateButtonValues(devicesButton, devicesList.getSelectionModel().getSelectedItem());
+        setupButtonSelection("Network Nodes", devicesButton, devicesList);
+    }
+
+    private void setupContainersButton() {
+        addNodeType(NodeType.DOCKER, null, containersList);
+        addNodeType(NodeType.LXC, null, containersList);
+        containersList.getSelectionModel().selectFirst();
+        updateButtonValues(containersButton, containersList.getSelectionModel().getSelectedItem());
+        setupButtonSelection("Container Nodes", containersButton, containersList);
+    }
+
+    private void addNodeType(int type, String model, JFXListView<Label> list) {
+        NodeType nodeType = NodeType.find(type, model);
+        Label label = nodeType.createLabel(NODES_ICON_SIZE);
+        labelMap.put(nodeType.getId(), label);
+        list.getItems().add(label);
+    }
+
+    private void setupButtonSelection(String tooltipText, JFXButton button, JFXListView<Label> list) {
+        button.setTooltip(new Tooltip(tooltipText));
+        list.setOnMouseClicked(event -> {
+            Label selectedLabel = list.getSelectionModel().getSelectedItem();
             if (selectedLabel == null) {
                 return;
             }
 
-            updateButtonValues(nodesButton, selectedLabel);
+            updateButtonValues(button, selectedLabel);
             selectedNodeType = NodeType.get((int) selectedLabel.getUserData());
-            logger.info("selected node type: {}", selectedNodeType);
-            setSelectedEditButton(nodesButton);
-            devicesList.getSelectionModel().clearSelection();
             controller.getNetworkGraph().setNodeType(selectedNodeType);
+            setSelectedEditButton(button);
             logger.info("node selected: {} - type: {}", selectedLabel, selectedNodeType);
             setEditMode();
         });
 
-        JFXPopup popup = new JFXPopup(nodesList);
-        nodesButton.setOnAction(event -> popup.show(nodesButton, JFXPopup.PopupVPosition.TOP,
-                JFXPopup.PopupHPosition.LEFT, nodesButton.getWidth(), 0));
-    }
-
-    private void setupDevicesButton() {
-        devicesButton.setTooltip(new Tooltip("Device Nodes (WLAN, EMANE, Switch, etc)"));
-        devicesList.setOnMouseClicked(event -> {
-            Label selectedLabel = devicesList.getSelectionModel().getSelectedItem();
-            if (selectedLabel == null) {
-                return;
-            }
-
-            updateButtonValues(devicesButton, selectedLabel);
-            selectedNodeType = NodeType.get((int) selectedLabel.getUserData());
-            logger.info("selected node type: {}", selectedNodeType);
-            controller.getNetworkGraph().setNodeType(selectedNodeType);
-            setSelectedEditButton(devicesButton);
-            nodesList.getSelectionModel().clearSelection();
-            logger.info("device selected: {} - type: {}", selectedLabel, selectedNodeType);
-            setEditMode();
-        });
-
-        JFXPopup popup = new JFXPopup(devicesList);
-        devicesButton.setOnAction(event -> popup.show(devicesButton, JFXPopup.PopupVPosition.TOP,
-                JFXPopup.PopupHPosition.LEFT, devicesButton.getWidth(), 0));
+        JFXPopup popup = new JFXPopup(list);
+        button.setOnAction(event -> popup.show(button, JFXPopup.PopupVPosition.TOP,
+                JFXPopup.PopupHPosition.LEFT, button.getWidth(), 0));
     }
 
     @FXML

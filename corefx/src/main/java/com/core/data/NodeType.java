@@ -1,5 +1,7 @@
 package com.core.data;
 
+import javafx.scene.control.Label;
+import javafx.scene.image.ImageView;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.apache.logging.log4j.LogManager;
@@ -19,6 +21,8 @@ public class NodeType {
     public static final int HUB = 5;
     public static final int WLAN = 6;
     public static final int EMANE = 10;
+    public static final int DOCKER = 15;
+    public static final int LXC = 16;
     @EqualsAndHashCode.Include
     private final int id;
     private final int value;
@@ -27,21 +31,13 @@ public class NodeType {
     private String model;
     private String icon;
 
-    //    PHYSICAL = 1
-//    RJ45 = 7
-//    TUNNEL = 8
-//    KTUNNEL = 9
-//    EMANE = 10
-//    TAP_BRIDGE = 11
-//    PEER_TO_PEER = 12
-//    CONTROL_NET = 13
-//    EMANE_NET = 14;
-
     static {
         add(new NodeType(SWITCH, "lanswitch", "Switch", "/icons/switch-100.png"));
         add(new NodeType(HUB, "hub", "Hub", "/icons/hub-100.png"));
         add(new NodeType(WLAN, "wlan", "WLAN", "/icons/wlan-100.png"));
         add(new NodeType(EMANE, "wlan", "EMANE", "/icons/emane-100.png"));
+        add(new NodeType(NodeType.DOCKER, null, "DockerNode", "/icons/dockernode-100.png"));
+        add(new NodeType(NodeType.LXC, null, "LxcNode", "/icons/lxcnode-100.png"));
     }
 
 
@@ -51,6 +47,19 @@ public class NodeType {
         this.model = model;
         this.display = display;
         this.icon = icon;
+    }
+
+    public Label createLabel(int size) {
+        ImageView labelIcon = new ImageView(icon);
+        labelIcon.setFitWidth(size);
+        labelIcon.setFitHeight(size);
+        Label label = new Label(display, labelIcon);
+        label.setUserData(id);
+        return label;
+    }
+
+    public static boolean isDefault(NodeType nodeType) {
+        return nodeType.value == DEFAULT || nodeType.value == DOCKER || nodeType.value == LXC;
     }
 
     public static void add(NodeType nodeType) {
@@ -74,7 +83,7 @@ public class NodeType {
                 .filter(nodeType -> {
                     boolean sameType = nodeType.getValue() == type;
                     boolean sameModel = true;
-                    if (!model.isEmpty()) {
+                    if (model != null && !model.isEmpty()) {
                         sameModel = model.equals(nodeType.getModel());
                     }
                     return sameType && sameModel;
