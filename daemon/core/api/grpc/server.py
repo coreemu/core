@@ -18,7 +18,9 @@ from core.emulator.enumerations import NodeTypes, EventTypes, LinkTypes
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase
+from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
+from core.nodes.lxd import LxcNode
 from core.services.coreservices import ServiceManager
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
@@ -281,6 +283,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node_proto = core_pb2.Node(
                 id=node.id, name=node.name, emane=emane_model, model=model,
                 type=node_type, position=position, services=services)
+            if isinstance(node, (DockerNode, LxcNode)):
+                node_proto.image = node.image
             nodes.append(node_proto)
 
             node_links = get_links(session, node)
@@ -528,11 +532,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         services = [x.name for x in getattr(node, "services", [])]
         position = core_pb2.Position(x=node.position.x, y=node.position.y, z=node.position.z)
         node_type = nodeutils.get_node_type(node.__class__).value
-        node = core_pb2.Node(
+        node_proto = core_pb2.Node(
             id=node.id, name=node.name, type=node_type, emane=emane_model, model=node.type, position=position,
             services=services)
+        if isinstance(node, (DockerNode, LxcNode)):
+            node_proto.image = node.image
 
-        return core_pb2.GetNodeResponse(node=node, interfaces=interfaces)
+        return core_pb2.GetNodeResponse(node=node_proto, interfaces=interfaces)
 
     def EditNode(self, request, context):
         logging.debug("edit node: %s", request)
