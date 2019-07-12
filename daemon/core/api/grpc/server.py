@@ -960,3 +960,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             logging.exception("error opening session file")
             self.coreemu.delete_session(session.id)
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
+
+    def GetInterfaces(self, request, context):
+        interfaces = []
+        for interface in os.listdir("/sys/class/net"):
+            if interface.startswith("b.") or interface.startswith("veth") or interface == "lo":
+                continue
+            interfaces.append(interface)
+        return core_pb2.GetInterfacesResponse(interfaces=interfaces)

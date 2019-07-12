@@ -115,6 +115,10 @@ service CoreApi {
     }
     rpc OpenXml (OpenXmlRequest) returns (OpenXmlResponse) {
     }
+
+    // utilities
+    rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -620,6 +624,13 @@ message OpenXmlRequest {
 message OpenXmlResponse {
     bool result = 1;
     int32 session_id = 2;
+}
+
+message GetInterfacesRequest {
+}
+
+message GetInterfacesResponse {
+    repeated string interfaces = 1;
 }
 
 // data structures for messages below
