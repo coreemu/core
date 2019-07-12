@@ -70,6 +70,9 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
             case NodeType.EMANE:
                 contextMenu = new EmaneContextMenu(controller, node);
                 break;
+            case NodeType.RJ45:
+                contextMenu = new Rj45ContextMenu(controller, node);
+                break;
             default:
                 logger.warn("no context menu for node: {}", node.getType());
                 break;

@@ -20,6 +20,7 @@ public class NodeType {
     public static final int SWITCH = 4;
     public static final int HUB = 5;
     public static final int WLAN = 6;
+    public static final int RJ45 = 7;
     public static final int EMANE = 10;
     public static final int DOCKER = 15;
     public static final int LXC = 16;
@@ -35,9 +36,10 @@ public class NodeType {
         add(new NodeType(SWITCH, "lanswitch", "Switch", "/icons/switch-100.png"));
         add(new NodeType(HUB, "hub", "Hub", "/icons/hub-100.png"));
         add(new NodeType(WLAN, "wlan", "WLAN", "/icons/wlan-100.png"));
+        add(new NodeType(RJ45, "rj45", "RJ45", "/icons/rj45-80.png"));
         add(new NodeType(EMANE, "wlan", "EMANE", "/icons/emane-100.png"));
-        add(new NodeType(NodeType.DOCKER, null, "DockerNode", "/icons/dockernode-100.png"));
-        add(new NodeType(NodeType.LXC, null, "LxcNode", "/icons/lxcnode-100.png"));
+        add(new NodeType(DOCKER, null, "DockerNode", "/icons/dockernode-100.png"));
+        add(new NodeType(LXC, null, "LxcNode", "/icons/lxcnode-100.png"));
     }
 
 

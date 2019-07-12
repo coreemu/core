@@ -167,6 +167,7 @@ public class GraphToolbar extends VBox {
         addNodeType(NodeType.SWITCH, "lanswitch", devicesList);
         addNodeType(NodeType.WLAN, "wlan", devicesList);
         addNodeType(NodeType.EMANE, "wlan", devicesList);
+        addNodeType(NodeType.RJ45, "rj45", devicesList);
         devicesList.getSelectionModel().selectFirst();
         updateButtonValues(devicesButton, devicesList.getSelectionModel().getSelectedItem());
         setupButtonSelection("Network Nodes", devicesButton, devicesList);
@@ -237,15 +238,11 @@ public class GraphToolbar extends VBox {
     private void startSession() {
         runButton.setDisable(true);
         new Thread(() -> {
-            try {
-                boolean result = controller.startSession();
-                if (result) {
-                    Toast.success("Session Started");
-                    setRunButton(true);
-                }
-            } catch (IOException ex) {
-                Toast.error("Failure Starting Session", ex);
+            boolean result = controller.startSession();
+            if (result) {
+                Toast.success("Session Started");
             }
+            setRunButton(result);
         }).start();
     }
 

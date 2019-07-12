@@ -170,7 +170,7 @@ public class Controller implements Initializable {
         Platform.runLater(() -> decorator.setTitle(String.format("CORE (Session %s)", sessionId)));
     }
 
-    public boolean startSession() throws IOException {
+    public boolean startSession() {
         // force nodes to get latest positions
         networkGraph.updatePositions();
 
@@ -180,12 +180,18 @@ public class Controller implements Initializable {
         List<Hook> hooks = hooksDialog.getHooks();
 
         // start/create session
+        boolean result = false;
         progressBar.setVisible(true);
-        boolean result = coreClient.start(nodes, links, hooks);
-        progressBar.setVisible(false);
-        if (result) {
-            showMobilityScriptDialogs();
-            saveXmlMenuItem.setDisable(false);
+        try {
+            result = coreClient.start(nodes, links, hooks);
+            if (result) {
+                showMobilityScriptDialogs();
+                saveXmlMenuItem.setDisable(false);
+            }
+        } catch (IOException ex) {
+            Toast.error("Failure Starting Session", ex);
+        } finally {
+            progressBar.setVisible(false);
         }
         return result;
     }

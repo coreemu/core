@@ -43,6 +43,8 @@ public class NodeDetails extends ScrollPane {
 
     public void setNode(CoreNode node) {
         clear();
+        boolean sessionRunning = controller.getCoreClient().isRunning();
+
         title.setText(node.getName());
         addSeparator();
 
@@ -54,15 +56,18 @@ public class NodeDetails extends ScrollPane {
             addRow("Type", node.getNodeType().getDisplay(), true);
         }
         addRow("EMANE", node.getEmane(), true);
-        addRow("Image", node.getImage(), true);
         addRow("X", node.getPosition().getX().toString(), true);
         addRow("Y", node.getPosition().getY().toString(), true);
 
-        addLabel("Interfaces");
+        if (node.getType() == NodeType.DOCKER || node.getType() == NodeType.LXC) {
+            setContainerDetails(node, sessionRunning);
+        }
+
         boolean firstInterface = true;
         for (CoreLink link : controller.getNetworkGraph().getGraph().getIncidentEdges(node)) {
             if (firstInterface) {
                 firstInterface = false;
+                addLabel("Interfaces");
             } else {
                 addSeparator();
             }
@@ -119,6 +124,15 @@ public class NodeDetails extends ScrollPane {
         JFXScrollPane.smoothScrolling(scrollPane);
     }
 
+    private void setContainerDetails(CoreNode node, boolean sessionRunning) {
+        JFXTextField imageField = addRow("Image", node.getImage(), sessionRunning);
+        addButton("Update", event -> {
+            if (node.getType() == NodeType.DOCKER || node.getType() == NodeType.LXC) {
+                node.setImage(imageField.getText());
+            }
+        });
+    }
+
     private void addButton(String text, EventHandler<ActionEvent> handler) {
         JFXButton emaneButton = new JFXButton(text);
         emaneButton.getStyleClass().add("core-button");
@@ -147,14 +161,12 @@ public class NodeDetails extends ScrollPane {
         addAddress("IP6", coreInterface.getIp6());
     }
 
-    private void addRow(String labelText, String value, boolean disabled) {
-        if (value == null) {
-            return;
-        }
+    private JFXTextField addRow(String labelText, String value, boolean disabled) {
         Label label = new Label(labelText);
         JFXTextField textField = new JFXTextField(value);
         textField.setDisable(disabled);
         gridPane.addRow(index++, label, textField);
+        return textField;
     }
 
     private void addAddress(String label, IPAddress ip) {
