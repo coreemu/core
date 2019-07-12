@@ -87,33 +87,32 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreProto.LinkOptions linkOptionsToProto(CoreLinkOptions options) {
         CoreProto.LinkOptions.Builder builder = CoreProto.LinkOptions.newBuilder();
-        boolean unidirectional = false;
-        if (options.getUnidirectional() != null && options.getUnidirectional() == 1) {
-            unidirectional = true;
+        if (options.getUnidirectional() != null) {
+            builder.setUnidirectional(options.getUnidirectional());
         }
         if (options.getBandwidth() != null) {
-            builder.setBandwidth(options.getBandwidth().intValue());
+            builder.setBandwidth(options.getBandwidth());
         }
         if (options.getBurst() != null) {
-            builder.setBurst(options.getBurst().intValue());
+            builder.setBurst(options.getBurst());
         }
         if (options.getDelay() != null) {
-            builder.setDelay(options.getDelay().intValue());
+            builder.setDelay(options.getDelay());
         }
         if (options.getDup() != null) {
-            builder.setDup(options.getDup().intValue());
+            builder.setDup(options.getDup());
         }
         if (options.getJitter() != null) {
-            builder.setJitter(options.getJitter().intValue());
+            builder.setJitter(options.getJitter());
         }
         if (options.getMburst() != null) {
-            builder.setMburst(options.getMburst().intValue());
+            builder.setMburst(options.getMburst());
         }
         if (options.getMer() != null) {
-            builder.setMer(options.getMer().intValue());
+            builder.setMer(options.getMer());
         }
         if (options.getPer() != null) {
-            builder.setPer(options.getPer().intValue());
+            builder.setPer(options.getPer().floatValue());
         }
         if (options.getKey() != null) {
             builder.setKey(options.getKey());
@@ -121,7 +120,6 @@ public class CoreGrpcClient implements ICoreClient {
         if (options.getOpaque() != null) {
             builder.setOpaque(options.getOpaque());
         }
-        builder.setUnidirectional(unidirectional);
         return builder.build();
     }
 
@@ -212,19 +210,19 @@ public class CoreGrpcClient implements ICoreClient {
 
         CoreLinkOptions options = new CoreLinkOptions();
         CoreProto.LinkOptions protoOptions = linkProto.getOptions();
-        options.setBandwidth((double) protoOptions.getBandwidth());
-        options.setDelay((double) protoOptions.getDelay());
-        options.setDup((double) protoOptions.getDup());
-        options.setJitter((double) protoOptions.getJitter());
+        options.setBandwidth((int) protoOptions.getBandwidth());
+        options.setDelay((int) protoOptions.getDelay());
+        options.setDup((int) protoOptions.getDup());
+        options.setJitter((int) protoOptions.getJitter());
         options.setPer((double) protoOptions.getPer());
-        options.setBurst((double) protoOptions.getBurst());
+        options.setBurst((int) protoOptions.getBurst());
         if (protoOptions.hasField(CoreProto.LinkOptions.getDescriptor().findFieldByName("key"))) {
             options.setKey(protoOptions.getKey());
         }
-        options.setMburst((double) protoOptions.getMburst());
-        options.setMer((double) protoOptions.getMer());
+        options.setMburst((int) protoOptions.getMburst());
+        options.setMer((int) protoOptions.getMer());
         options.setOpaque(protoOptions.getOpaque());
-        options.setUnidirectional(protoOptions.getUnidirectional() ? 1 : 0);
+        options.setUnidirectional(protoOptions.getUnidirectional());
         link.setOptions(options);
 
         return link;

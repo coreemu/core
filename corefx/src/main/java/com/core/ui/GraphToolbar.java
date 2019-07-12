@@ -267,6 +267,7 @@ public class GraphToolbar extends VBox {
                 pickingButton.fire();
                 devicesButton.setDisable(true);
                 nodesButton.setDisable(true);
+                containersButton.setDisable(true);
                 runButton.pseudoClassStateChanged(START_CLASS, false);
                 runButton.pseudoClassStateChanged(STOP_CLASS, true);
                 if (runButton.getGraphic() != stopIcon) {
@@ -278,6 +279,7 @@ public class GraphToolbar extends VBox {
             Platform.runLater(() -> {
                 devicesButton.setDisable(false);
                 nodesButton.setDisable(false);
+                containersButton.setDisable(false);
                 runButton.pseudoClassStateChanged(START_CLASS, true);
                 runButton.pseudoClassStateChanged(STOP_CLASS, false);
                 if (runButton.getGraphic() != startIcon) {
