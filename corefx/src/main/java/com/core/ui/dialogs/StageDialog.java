@@ -28,6 +28,8 @@ import java.io.IOException;
 @Data
 public class StageDialog {
     private static final Logger logger = LogManager.getLogger();
+    private static final int STAGE_WIDTH = 800;
+    private static final int STAGE_HEIGHT = 600;
     private final Controller controller;
     private final Stage stage = new Stage(StageStyle.DECORATED);
     private final Scene scene;
@@ -35,10 +37,18 @@ public class StageDialog {
     private final HBox buttonBar = new HBox();
 
     public StageDialog(Controller controller, String fxmlPath) {
-        this(controller, fxmlPath, Modality.APPLICATION_MODAL);
+        this(controller, fxmlPath, Modality.APPLICATION_MODAL, STAGE_WIDTH, STAGE_HEIGHT);
+    }
+
+    public StageDialog(Controller controller, String fxmlPath, int width, int height) {
+        this(controller, fxmlPath, Modality.APPLICATION_MODAL, width, height);
     }
 
     public StageDialog(Controller controller, String fxmlPath, Modality modality) {
+        this(controller, fxmlPath, modality, STAGE_WIDTH, STAGE_HEIGHT);
+    }
+
+    public StageDialog(Controller controller, String fxmlPath, Modality modality, int width, int height) {
         this.controller = controller;
 
         JFXDecorator decorator = new JFXDecorator(stage, gridPane);
@@ -49,8 +59,8 @@ public class StageDialog {
         scene = new Scene(decorator);
         stage.setScene(scene);
 
-        stage.setWidth(800);
-        stage.setHeight(600);
+        stage.setWidth(width);
+        stage.setHeight(height);
         scene.setOnKeyPressed(event -> {
             if (KeyCode.ESCAPE == event.getCode()) {
                 stage.close();

@@ -70,6 +70,7 @@ public class Controller implements Initializable {
     private GraphToolbar graphToolbar = new GraphToolbar(this);
 
     // dialogs
+    private Rj45Dialog rj45Dialog = new Rj45Dialog(this);
     private SessionsDialog sessionsDialog = new SessionsDialog(this);
     private ServiceDialog serviceDialog = new ServiceDialog(this);
     private NodeServicesDialog nodeServicesDialog = new NodeServicesDialog(this);
@@ -277,6 +278,7 @@ public class Controller implements Initializable {
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
         nodeTypeCreateDialog.setOwner(window);
+        rj45Dialog.setOwner(window);
     }
 
     private void showMobilityScriptDialogs() {

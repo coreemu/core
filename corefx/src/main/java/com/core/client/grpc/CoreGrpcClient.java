@@ -1280,4 +1280,15 @@ public class CoreGrpcClient implements ICoreClient {
     private void handleFileEvents(CoreProto.FileEvent event) {
         logger.info("file event: {}", event);
     }
+
+    @Override
+    public List<String> getInterfaces() throws IOException {
+        CoreProto.GetInterfacesRequest request = CoreProto.GetInterfacesRequest.newBuilder().build();
+        try {
+            CoreProto.GetInterfacesResponse response = blockingStub.getInterfaces(request);
+            return response.getInterfacesList();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
+    }
 }

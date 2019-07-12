@@ -467,6 +467,8 @@ public class NetworkGraph {
             node.setEmane(emaneModel);
         } else if (node.getType() == NodeType.DOCKER || node.getType() == NodeType.LXC) {
             node.setImage("ubuntu");
+        } else if (node.getType() == NodeType.RJ45) {
+            Platform.runLater(() -> controller.getRj45Dialog().showDialog(node));
         }
 
         logger.info("adding user created node: {}", node);
