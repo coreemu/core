@@ -236,7 +236,6 @@ AC_CONFIG_FILES([Makefile
 		gui/Makefile
 		gui/icons/Makefile
 		scripts/Makefile
-		scripts/perf/Makefile
 		man/Makefile
 		docs/Makefile
 		daemon/Makefile
