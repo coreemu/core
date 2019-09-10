@@ -1,0 +1,20 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[scripts]
+coredev = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
+
+[dev-packages]
+grpcio-tools = "*"
+core = {editable = true,path = "."}
+
+[packages]
+configparser = "*"
+enum34 = "*"
+future = "*"
+futures = {markers = "python_version < '3.2'"}
+grpcio = "*"
+lxml = "*"
+protobuf = "*"

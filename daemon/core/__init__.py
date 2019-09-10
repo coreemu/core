@@ -9,14 +9,17 @@ from core import constants
 logging.getLogger(__name__).addHandler(logging.NullHandler())
 
 
-def load_logging_config():
+def load_logging_config(config_path=None):
     """
     Load CORE logging configuration file.
 
+    :param str config_path: path to logging config file,
+        when None defaults to /etc/core/logging.conf
     :return: nothing
     """
-    log_config_path = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
-    with open(log_config_path, "r") as log_config_file:
+    if config_path is None:
+        config_path = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
+    with open(config_path, "r") as log_config_file:
         log_config = json.load(log_config_file)
         logging.config.dictConfig(log_config)
 
