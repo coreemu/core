@@ -12,7 +12,11 @@ class Ucarp(CoreService):
     group = "Utility"
     dirs = (UCARP_ETC,)
     configs = (
-        UCARP_ETC + "/default.sh", UCARP_ETC + "/default-up.sh", UCARP_ETC + "/default-down.sh", "ucarpboot.sh",)
+        UCARP_ETC + "/default.sh",
+        UCARP_ETC + "/default-up.sh",
+        UCARP_ETC + "/default-down.sh",
+        "ucarpboot.sh",
+    )
     startup = ("sh ucarpboot.sh",)
     shutdown = ("killall ucarp",)
     validate = ("pidof ucarp",)
@@ -39,7 +43,7 @@ class Ucarp(CoreService):
         Returns configuration file text.
         """
         try:
-            ucarp_bin = node.session.cfg['ucarp_bin']
+            ucarp_bin = node.session.cfg["ucarp_bin"]
         except KeyError:
             ucarp_bin = "/usr/sbin/ucarp"
 
@@ -100,14 +104,18 @@ STOP_SCRIPT=${UCARP_CFGDIR}/default-down.sh
 UCARP_OPTS="$OPTIONS -b $UCARP_BASE -k $SKEW -i $INTERFACE -v $INSTANCE_ID -p $PASSWORD -u $START_SCRIPT -d $STOP_SCRIPT -a $VIRTUAL_ADDRESS -s $SOURCE_ADDRESS -f $FACILITY $XPARAM"
 
 ${UCARP_EXEC} -B ${UCARP_OPTS}
-""" % (ucarp_bin, UCARP_ETC)
+""" % (
+            ucarp_bin,
+            UCARP_ETC,
+        )
 
     @classmethod
     def generateUcarpBoot(cls, node):
         """
         Generate a shell script used to boot the Ucarp daemons.
         """
-        return """\
+        return (
+            """\
 #!/bin/sh
 # Location of the UCARP config directory
 UCARP_CFGDIR=%s
@@ -117,7 +125,9 @@ chmod a+x ${UCARP_CFGDIR}/*.sh
 # Start the default ucarp daemon configuration
 ${UCARP_CFGDIR}/default.sh
 
-""" % UCARP_ETC
+"""
+            % UCARP_ETC
+        )
 
     @classmethod
     def generateVipUp(cls, node):

@@ -39,15 +39,11 @@ class ExampleModel(emanemodel.EmaneModel):
     mac_library = "rfpipemaclayer"
     mac_xml = "/usr/share/emane/manifest/rfpipemaclayer.xml"
     mac_defaults = {
-        "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml",
+        "pcrcurveuri": "/usr/share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
     }
     mac_config = emanemanifest.parse(mac_xml, mac_defaults)
     phy_library = None
     phy_xml = "/usr/share/emane/manifest/emanephy.xml"
-    phy_defaults = {
-        "subid": "1",
-        "propagationmodel": "2ray",
-        "noisemode": "none"
-    }
+    phy_defaults = {"subid": "1", "propagationmodel": "2ray", "noisemode": "none"}
     phy_config = emanemanifest.parse(phy_xml, phy_defaults)
     config_ignore = set()

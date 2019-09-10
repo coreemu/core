@@ -29,6 +29,7 @@ class NodeBase(object):
     """
     Base class for CORE nodes (nodes and networks)
     """
+
     apitype = None
 
     # TODO: appears start has no usage, verify and remove
@@ -196,7 +197,7 @@ class NodeBase(object):
             altitude=alt,
             model=model,
             emulation_server=emulation_server,
-            services=services
+            services=services,
         )
 
         return node_data
@@ -415,10 +416,13 @@ class CoreNode(CoreNodeBase):
     """
     Provides standard core node logic.
     """
+
     apitype = NodeTypes.DEFAULT.value
     valid_address_types = {"inet", "inet6", "inet6link"}
 
-    def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True):
+    def __init__(
+        self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True
+    ):
         """
         Create a CoreNode instance.
 
@@ -431,7 +435,9 @@ class CoreNode(CoreNodeBase):
         """
         super(CoreNode, self).__init__(session, _id, name, start)
         self.nodedir = nodedir
-        self.ctrlchnlname = os.path.abspath(os.path.join(self.session.session_dir, self.name))
+        self.ctrlchnlname = os.path.abspath(
+            os.path.join(self.session.session_dir, self.name)
+        )
         self.client = None
         self.pid = None
         self.up = False
@@ -472,9 +478,12 @@ class CoreNode(CoreNodeBase):
             vnoded = [
                 constants.VNODED_BIN,
                 "-v",
-                "-c", self.ctrlchnlname,
-                "-l", self.ctrlchnlname + ".log",
-                "-p", self.ctrlchnlname + ".pid"
+                "-c",
+                self.ctrlchnlname,
+                "-l",
+                self.ctrlchnlname + ".log",
+                "-p",
+                self.ctrlchnlname + ".pid",
             ]
             if self.nodedir:
                 vnoded += ["-C", self.nodedir]
@@ -609,7 +618,9 @@ class CoreNode(CoreNodeBase):
         """
         if path[0] != "/":
             raise ValueError("path not fully qualified: %s" % path)
-        hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip("/").replace("/", "."))
+        hostpath = os.path.join(
+            self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
+        )
         os.mkdir(hostpath)
         self.mount(hostpath, path)
 
@@ -624,7 +635,12 @@ class CoreNode(CoreNodeBase):
         """
         source = os.path.abspath(source)
         logging.info("node(%s) mounting: %s at %s", self.name, source, target)
-        cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (target, constants.MOUNT_BIN, source, target)
+        cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (
+            target,
+            constants.MOUNT_BIN,
+            source,
+            target,
+        )
         status, output = self.client.shcmd_result(cmd)
         if status:
             raise CoreCommandError(status, cmd, output)
@@ -671,12 +687,20 @@ class CoreNode(CoreNodeBase):
             if len(name) >= 16:
                 raise ValueError("interface name (%s) too long" % name)
 
-            veth = Veth(node=self, name=name, localname=localname, net=net, start=self.up)
+            veth = Veth(
+                node=self, name=name, localname=localname, net=net, start=self.up
+            )
 
             if self.up:
-                utils.check_cmd([constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)])
-                self.network_cmd([constants.IP_BIN, "link", "set", veth.name, "name", ifname])
-                self.network_cmd([constants.ETHTOOL_BIN, "-K", ifname, "rx", "off", "tx", "off"])
+                utils.check_cmd(
+                    [constants.IP_BIN, "link", "set", veth.name, "netns", str(self.pid)]
+                )
+                self.network_cmd(
+                    [constants.IP_BIN, "link", "set", veth.name, "name", ifname]
+                )
+                self.network_cmd(
+                    [constants.ETHTOOL_BIN, "-K", ifname, "rx", "off", "tx", "off"]
+                )
 
             veth.name = ifname
 
@@ -721,7 +745,9 @@ class CoreNode(CoreNodeBase):
             sessionid = self.session.short_session_id()
             localname = "tap%s.%s.%s" % (self.id, ifindex, sessionid)
             name = ifname
-            tuntap = TunTap(node=self, name=name, localname=localname, net=net, start=self.up)
+            tuntap = TunTap(
+                node=self, name=name, localname=localname, net=net, start=self.up
+            )
 
             try:
                 self.addnetif(tuntap, ifindex)
@@ -743,7 +769,15 @@ class CoreNode(CoreNodeBase):
         """
         self._netif[ifindex].sethwaddr(addr)
         if self.up:
-            args = [constants.IP_BIN, "link", "set", "dev", self.ifname(ifindex), "address", str(addr)]
+            args = [
+                constants.IP_BIN,
+                "link",
+                "set",
+                "dev",
+                self.ifname(ifindex),
+                "address",
+                str(addr),
+            ]
             self.network_cmd(args)
 
     def addaddr(self, ifindex, addr):
@@ -757,10 +791,26 @@ class CoreNode(CoreNodeBase):
         if self.up:
             # check if addr is ipv6
             if ":" in str(addr):
-                args = [constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)]
+                args = [
+                    constants.IP_BIN,
+                    "addr",
+                    "add",
+                    str(addr),
+                    "dev",
+                    self.ifname(ifindex),
+                ]
                 self.network_cmd(args)
             else:
-                args = [constants.IP_BIN, "addr", "add", str(addr), "broadcast", "+", "dev", self.ifname(ifindex)]
+                args = [
+                    constants.IP_BIN,
+                    "addr",
+                    "add",
+                    str(addr),
+                    "broadcast",
+                    "+",
+                    "dev",
+                    self.ifname(ifindex),
+                ]
                 self.network_cmd(args)
 
         self._netif[ifindex].addaddr(addr)
@@ -780,7 +830,16 @@ class CoreNode(CoreNodeBase):
             logging.exception("trying to delete unknown address: %s" % addr)
 
         if self.up:
-            self.network_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            self.network_cmd(
+                [
+                    constants.IP_BIN,
+                    "addr",
+                    "del",
+                    str(addr),
+                    "dev",
+                    self.ifname(ifindex),
+                ]
+            )
 
     def delalladdr(self, ifindex, address_types=None):
         """
@@ -799,7 +858,9 @@ class CoreNode(CoreNodeBase):
 
         for address_type in address_types:
             if address_type not in self.valid_address_types:
-                raise ValueError("addr type must be in: %s" % " ".join(self.valid_address_types))
+                raise ValueError(
+                    "addr type must be in: %s" % " ".join(self.valid_address_types)
+                )
             for address in addresses[address_type]:
                 self.deladdr(ifindex, address)
 
@@ -814,7 +875,9 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         if self.up:
-            self.network_cmd([constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"])
+            self.network_cmd(
+                [constants.IP_BIN, "link", "set", self.ifname(ifindex), "up"]
+            )
 
     def newnetif(self, net=None, addrlist=None, hwaddr=None, ifindex=None, ifname=None):
         """
@@ -870,18 +933,41 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         tmplen = 8
-        tmp1 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in range(tmplen)])
-        tmp2 = "tmp." + "".join([random.choice(string.ascii_lowercase) for _ in range(tmplen)])
-        utils.check_cmd([constants.IP_BIN, "link", "add", "name", tmp1, "type", "veth", "peer", "name", tmp2])
+        tmp1 = "tmp." + "".join(
+            [random.choice(string.ascii_lowercase) for _ in range(tmplen)]
+        )
+        tmp2 = "tmp." + "".join(
+            [random.choice(string.ascii_lowercase) for _ in range(tmplen)]
+        )
+        utils.check_cmd(
+            [
+                constants.IP_BIN,
+                "link",
+                "add",
+                "name",
+                tmp1,
+                "type",
+                "veth",
+                "peer",
+                "name",
+                tmp2,
+            ]
+        )
 
         utils.check_cmd([constants.IP_BIN, "link", "set", tmp1, "netns", str(self.pid)])
         self.network_cmd([constants.IP_BIN, "link", "set", tmp1, "name", ifname])
         interface = CoreInterface(node=self, name=ifname, mtu=_DEFAULT_MTU)
         self.addnetif(interface, self.newifindex())
 
-        utils.check_cmd([constants.IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)])
-        othernode.network_cmd([constants.IP_BIN, "link", "set", tmp2, "name", otherifname])
-        other_interface = CoreInterface(node=othernode, name=otherifname, mtu=_DEFAULT_MTU)
+        utils.check_cmd(
+            [constants.IP_BIN, "link", "set", tmp2, "netns", str(othernode.pid)]
+        )
+        othernode.network_cmd(
+            [constants.IP_BIN, "link", "set", tmp2, "name", otherifname]
+        )
+        other_interface = CoreInterface(
+            node=othernode, name=otherifname, mtu=_DEFAULT_MTU
+        )
         othernode.addnetif(other_interface, othernode.newifindex())
 
     def addfile(self, srcname, filename):
@@ -944,7 +1030,9 @@ class CoreNode(CoreNodeBase):
         with self.opennodefile(filename, "w") as open_file:
             open_file.write(contents)
             os.chmod(open_file.name, mode)
-            logging.info("node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode)
+            logging.info(
+                "node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode
+            )
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -960,13 +1048,16 @@ class CoreNode(CoreNodeBase):
         shutil.copy2(srcfilename, hostfilename)
         if mode is not None:
             os.chmod(hostfilename, mode)
-        logging.info("node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode)
+        logging.info(
+            "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
+        )
 
 
 class CoreNetworkBase(NodeBase):
     """
     Base class for networks
     """
+
     linktype = LinkTypes.WIRED.value
 
     def __init__(self, session, _id, name, start=True):
@@ -1044,9 +1135,9 @@ class CoreNetworkBase(NodeBase):
                 linked_node = netif.othernet
                 if linked_node.id == self.id:
                     continue
-                netif.swapparams('_params_up')
+                netif.swapparams("_params_up")
                 upstream_params = netif.getparams()
-                netif.swapparams('_params_up')
+                netif.swapparams("_params_up")
                 if netif.getparams() != upstream_params:
                     uni = True
 
@@ -1088,7 +1179,7 @@ class CoreNetworkBase(NodeBase):
                 bandwidth=netif.getparam("bw"),
                 dup=netif.getparam("duplicate"),
                 jitter=netif.getparam("jitter"),
-                per=netif.getparam("loss")
+                per=netif.getparam("loss"),
             )
 
             all_links.append(link_data)
@@ -1096,7 +1187,7 @@ class CoreNetworkBase(NodeBase):
             if not uni:
                 continue
 
-            netif.swapparams('_params_up')
+            netif.swapparams("_params_up")
             link_data = LinkData(
                 message_type=0,
                 node1_id=linked_node.id,
@@ -1106,9 +1197,9 @@ class CoreNetworkBase(NodeBase):
                 bandwidth=netif.getparam("bw"),
                 dup=netif.getparam("duplicate"),
                 jitter=netif.getparam("jitter"),
-                per=netif.getparam("loss")
+                per=netif.getparam("loss"),
             )
-            netif.swapparams('_params_up')
+            netif.swapparams("_params_up")
 
             all_links.append(link_data)
 

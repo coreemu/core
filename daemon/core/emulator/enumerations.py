@@ -12,6 +12,7 @@ class MessageTypes(Enum):
     """
     CORE message types.
     """
+
     NODE = 0x01
     LINK = 0x02
     EXECUTE = 0x03
@@ -28,6 +29,7 @@ class MessageFlags(Enum):
     """
     CORE message flags.
     """
+
     ADD = 0x01
     DELETE = 0x02
     CRI = 0x04
@@ -41,6 +43,7 @@ class NodeTlvs(Enum):
     """
     Node type, length, value enumerations.
     """
+
     NUMBER = 0x01
     TYPE = 0x02
     NAME = 0x03
@@ -67,6 +70,7 @@ class NodeTypes(Enum):
     """
     Node types.
     """
+
     DEFAULT = 0
     PHYSICAL = 1
     TBD = 3
@@ -89,6 +93,7 @@ class Rj45Models(Enum):
     """
     RJ45 model types.
     """
+
     LINKED = 0
     WIRELESS = 1
     INSTALLED = 2
@@ -99,6 +104,7 @@ class LinkTlvs(Enum):
     """
     Link type, length, value enumerations.
     """
+
     N1_NUMBER = 0x01
     N2_NUMBER = 0x02
     DELAY = 0x03
@@ -137,6 +143,7 @@ class LinkTypes(Enum):
     """
     Link types.
     """
+
     WIRELESS = 0
     WIRED = 1
 
@@ -145,6 +152,7 @@ class ExecuteTlvs(Enum):
     """
     Execute type, length, value enumerations.
     """
+
     NODE = 0x01
     NUMBER = 0x02
     TIME = 0x03
@@ -158,6 +166,7 @@ class RegisterTlvs(Enum):
     """
     Register type, length, value enumerations.
     """
+
     WIRELESS = 0x01
     MOBILITY = 0x02
     UTILITY = 0x03
@@ -171,6 +180,7 @@ class ConfigTlvs(Enum):
     """
     Configuration type, length, value enumerations.
     """
+
     NODE = 0x01
     OBJECT = 0x02
     TYPE = 0x03
@@ -190,6 +200,7 @@ class ConfigFlags(Enum):
     """
     Configuration flags.
     """
+
     NONE = 0x00
     REQUEST = 0x01
     UPDATE = 0x02
@@ -200,6 +211,7 @@ class ConfigDataTypes(Enum):
     """
     Configuration data types.
     """
+
     UINT8 = 0x01
     UINT16 = 0x02
     UINT32 = 0x03
@@ -217,6 +229,7 @@ class FileTlvs(Enum):
     """
     File type, length, value enumerations.
     """
+
     NODE = 0x01
     NAME = 0x02
     MODE = 0x03
@@ -232,6 +245,7 @@ class InterfaceTlvs(Enum):
     """
     Interface type, length, value enumerations.
     """
+
     NODE = 0x01
     NUMBER = 0x02
     NAME = 0x03
@@ -251,6 +265,7 @@ class EventTlvs(Enum):
     """
     Event type, length, value enumerations.
     """
+
     NODE = 0x01
     TYPE = 0x02
     NAME = 0x03
@@ -263,6 +278,7 @@ class EventTypes(Enum):
     """
     Event types.
     """
+
     NONE = 0
     DEFINITION_STATE = 1
     CONFIGURATION_STATE = 2
@@ -285,6 +301,7 @@ class SessionTlvs(Enum):
     """
     Session type, length, value enumerations.
     """
+
     NUMBER = 0x01
     NAME = 0x02
     FILE = 0x03
@@ -299,6 +316,7 @@ class ExceptionTlvs(Enum):
     """
     Exception type, length, value enumerations.
     """
+
     NODE = 0x01
     SESSION = 0x02
     LEVEL = 0x03
@@ -312,6 +330,7 @@ class ExceptionLevels(Enum):
     """
     Exception levels.
     """
+
     NONE = 0
     FATAL = 1
     ERROR = 2

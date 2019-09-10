@@ -20,7 +20,7 @@ class EmaneBypassModel(emanemodel.EmaneModel):
             _type=ConfigDataTypes.BOOL,
             default="0",
             options=["True", "False"],
-            label="There are no parameters for the bypass model."
+            label="There are no parameters for the bypass model.",
         )
     ]
 
@@ -36,6 +36,4 @@ class EmaneBypassModel(emanemodel.EmaneModel):
     # override config groups
     @classmethod
     def config_groups(cls):
-        return [
-            ConfigGroup("Bypass Parameters", 1, 1),
-        ]
+        return [ConfigGroup("Bypass Parameters", 1, 1)]

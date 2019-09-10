@@ -202,8 +202,12 @@ class TestServices:
         file_name = my_service.configs[0]
         file_data_one = "# custom file one"
         file_data_two = "# custom file two"
-        session.services.set_service_file(node_one.id, my_service.name, file_name, file_data_one)
-        session.services.set_service_file(node_two.id, my_service.name, file_name, file_data_two)
+        session.services.set_service_file(
+            node_one.id, my_service.name, file_name, file_data_one
+        )
+        session.services.set_service_file(
+            node_two.id, my_service.name, file_name, file_data_two
+        )
 
         # when
         custom_service_one = session.services.get_service(node_one.id, my_service.name)
@@ -238,9 +242,13 @@ class TestServices:
 
         # when
         no_service = session.services.get_service(node.id, SERVICE_ONE)
-        default_service = session.services.get_service(node.id, SERVICE_ONE, default_service=True)
+        default_service = session.services.get_service(
+            node.id, SERVICE_ONE, default_service=True
+        )
         session.services.set_service(node.id, SERVICE_ONE)
-        custom_service = session.services.get_service(node.id, SERVICE_ONE, default_service=True)
+        custom_service = session.services.get_service(
+            node.id, SERVICE_ONE, default_service=True
+        )
 
         # then
         assert no_service is None
@@ -249,13 +257,7 @@ class TestServices:
 
     def test_services_dependencies(self):
         # given
-        services = [
-            ServiceA,
-            ServiceB,
-            ServiceC,
-            ServiceD,
-            ServiceF
-        ]
+        services = [ServiceA, ServiceB, ServiceC, ServiceD, ServiceF]
 
         # when
         boot_paths = ServiceDependencies(services).boot_paths()
@@ -271,7 +273,7 @@ class TestServices:
             ServiceC,
             ServiceD,
             ServiceF,
-            ServiceBadDependency
+            ServiceBadDependency,
         ]
 
         # when, then
@@ -282,13 +284,7 @@ class TestServices:
         # given
         service_d = ServiceD()
         service_d.dependencies = ("C",)
-        services = [
-            ServiceA,
-            ServiceB,
-            ServiceC,
-            service_d,
-            ServiceF
-        ]
+        services = [ServiceA, ServiceB, ServiceC, service_d, ServiceF]
 
         # when, then
         with pytest.raises(ValueError):

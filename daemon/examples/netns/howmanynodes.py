@@ -78,27 +78,57 @@ switchlist = []
 def main():
     usagestr = "usage: %prog [-h] [options] [args]"
     parser = optparse.OptionParser(usage=usagestr)
-    parser.set_defaults(waittime=0.2, numnodes=0, bridges=0, retries=0,
-                        logfile=None, services=None)
+    parser.set_defaults(
+        waittime=0.2, numnodes=0, bridges=0, retries=0, logfile=None, services=None
+    )
 
-    parser.add_option("-w", "--waittime", dest="waittime", type=float,
-                      help="number of seconds to wait between node creation" \
-                           " (default = %s)" % parser.defaults["waittime"])
-    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
-                      help="number of nodes (default = unlimited)")
-    parser.add_option("-b", "--bridges", dest="bridges", type=int,
-                      help="number of nodes per bridge; 0 = one bridge " \
-                           "(def. = %s)" % parser.defaults["bridges"])
-    parser.add_option("-r", "--retry", dest="retries", type=int,
-                      help="number of retries on error (default = %s)" % \
-                           parser.defaults["retries"])
-    parser.add_option("-l", "--log", dest="logfile", type=str,
-                      help="log memory usage to this file (default = %s)" % \
-                           parser.defaults["logfile"])
-    parser.add_option("-s", "--services", dest="services", type=str,
-                      help="pipe-delimited list of services added to each "
-                           "node (default = %s)\n(Example: zebra|OSPFv2|OSPFv3|"
-                           "IPForward)" % parser.defaults["services"])
+    parser.add_option(
+        "-w",
+        "--waittime",
+        dest="waittime",
+        type=float,
+        help="number of seconds to wait between node creation"
+        " (default = %s)" % parser.defaults["waittime"],
+    )
+    parser.add_option(
+        "-n",
+        "--numnodes",
+        dest="numnodes",
+        type=int,
+        help="number of nodes (default = unlimited)",
+    )
+    parser.add_option(
+        "-b",
+        "--bridges",
+        dest="bridges",
+        type=int,
+        help="number of nodes per bridge; 0 = one bridge "
+        "(def. = %s)" % parser.defaults["bridges"],
+    )
+    parser.add_option(
+        "-r",
+        "--retry",
+        dest="retries",
+        type=int,
+        help="number of retries on error (default = %s)" % parser.defaults["retries"],
+    )
+    parser.add_option(
+        "-l",
+        "--log",
+        dest="logfile",
+        type=str,
+        help="log memory usage to this file (default = %s)"
+        % parser.defaults["logfile"],
+    )
+    parser.add_option(
+        "-s",
+        "--services",
+        dest="services",
+        type=str,
+        help="pipe-delimited list of services added to each "
+        "node (default = %s)\n(Example: zebra|OSPFv2|OSPFv3|"
+        "IPForward)" % parser.defaults["services"],
+    )
 
     def usage(msg=None, err=0):
         sys.stdout.write("\n")
@@ -118,7 +148,10 @@ def main():
     print("Testing how many network namespace nodes this machine can create.")
     print(" - %s" % linuxversion())
     mem = memfree()
-    print(" - %.02f GB total memory (%.02f GB swap)" % (mem["total"] / GBD, mem["stotal"] / GBD))
+    print(
+        " - %.02f GB total memory (%.02f GB swap)"
+        % (mem["total"] / GBD, mem["stotal"] / GBD)
+    )
     print(" - using IPv4 network prefix %s" % prefix)
     print(" - using wait time of %s" % options.waittime)
     print(" - using %d nodes per bridge" % options.bridges)
@@ -149,9 +182,15 @@ def main():
             if 0 < options.bridges <= switch.numnetif():
                 switch = session.create_node(cls=core.nodes.network.SwitchNode)
                 switchlist.append(switch)
-                print("\nAdded bridge %s (%d) for node %d." % (switch.brname, len(switchlist), i))
+                print(
+                    "\nAdded bridge %s (%d) for node %d."
+                    % (switch.brname, len(switchlist), i)
+                )
         except Exception as e:
-            print("At %d bridges (%d nodes) caught exception:\n%s\n" % (len(switchlist), i - 1, e))
+            print(
+                "At %d bridges (%d nodes) caught exception:\n%s\n"
+                % (len(switchlist), i - 1, e)
+            )
             break
 
         # create a node
@@ -164,11 +203,11 @@ def main():
                 session.services.boot_services(n)
             nodelist.append(n)
             if i % 25 == 0:
-                print("\n%s nodes created " % i,)
+                print("\n%s nodes created " % i)
                 mem = memfree()
                 free = mem["free"] + mem["buff"] + mem["cached"]
                 swap = mem["stotal"] - mem["sfree"]
-                print("(%.02f/%.02f GB free/swap)" % (free / GBD, swap / GBD),)
+                print("(%.02f/%.02f GB free/swap)" % (free / GBD, swap / GBD))
                 if lfp:
                     lfp.write("%d," % i)
                     lfp.write("%s\n" % ",".join(str(mem[x]) for x in MEMKEYS))

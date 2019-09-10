@@ -31,10 +31,7 @@ def execute_file(path, exec_globals=None, exec_locals=None):
     """
     if exec_globals is None:
         exec_globals = {}
-    exec_globals.update({
-        "__file__": path,
-        "__name__": "__main__"
-    })
+    exec_globals.update({"__file__": path, "__name__": "__main__"})
     with open(path, "rb") as f:
         data = compile(f.read(), path, "exec")
         exec(data, exec_globals, exec_locals)
@@ -158,7 +155,7 @@ def make_tuple(obj):
     if hasattr(obj, "__iter__"):
         return tuple(obj)
     else:
-        return obj,
+        return (obj,)
 
 
 def make_tuple_fromstr(s, value_type):
@@ -291,7 +288,10 @@ def hex_dump(s, bytes_per_word=2, words_per_line=8):
     while s:
         line = s[:total_bytes]
         s = s[total_bytes:]
-        tmp = map(lambda x: ("%02x" * bytes_per_word) % x, zip(*[iter(map(ord, line))] * bytes_per_word))
+        tmp = map(
+            lambda x: ("%02x" * bytes_per_word) % x,
+            zip(*[iter(map(ord, line))] * bytes_per_word),
+        )
         if len(line) % 2:
             tmp.append("%x" % ord(line[-1]))
         dump += "0x%08x: %s\n" % (count, " ".join(tmp))
@@ -439,6 +439,8 @@ def load_classes(path, clazz):
                 valid_class = member[1]
                 classes.append(valid_class)
         except:
-            logging.exception("unexpected error during import, skipping: %s", import_statement)
+            logging.exception(
+                "unexpected error during import, skipping: %s", import_statement
+            )
 
     return classes

@@ -21,11 +21,7 @@ ebtables_queue = EbtablesQueue()
 
 ebtables_lock = threading.Lock()
 
-utils.check_executables([
-    constants.IP_BIN,
-    constants.EBTABLES_BIN,
-    constants.TC_BIN
-])
+utils.check_executables([constants.IP_BIN, constants.EBTABLES_BIN, constants.TC_BIN])
 
 
 def ebtables_commands(call, commands):
@@ -83,10 +79,21 @@ class OvsNet(CoreNetworkBase):
         utils.check_cmd([constants.IP_BIN, "link", "set", self.bridge_name, "up"])
 
         # create a new ebtables chain for this bridge
-        ebtables_commands(utils.check_cmd, [
-            [constants.EBTABLES_BIN, "-N", self.bridge_name, "-P", self.policy],
-            [constants.EBTABLES_BIN, "-A", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name]
-        ])
+        ebtables_commands(
+            utils.check_cmd,
+            [
+                [constants.EBTABLES_BIN, "-N", self.bridge_name, "-P", self.policy],
+                [
+                    constants.EBTABLES_BIN,
+                    "-A",
+                    "FORWARD",
+                    "--logical-in",
+                    self.bridge_name,
+                    "-j",
+                    self.bridge_name,
+                ],
+            ],
+        )
 
         self.up = True
 
@@ -100,10 +107,21 @@ class OvsNet(CoreNetworkBase):
         try:
             utils.check_cmd([constants.IP_BIN, "link", "set", self.bridge_name, "down"])
             utils.check_cmd([constants.OVS_BIN, "del-br", self.bridge_name])
-            ebtables_commands(utils.check_cmd, [
-                [constants.EBTABLES_BIN, "-D", "FORWARD", "--logical-in", self.bridge_name, "-j", self.bridge_name],
-                [constants.EBTABLES_BIN, "-X", self.bridge_name]
-            ])
+            ebtables_commands(
+                utils.check_cmd,
+                [
+                    [
+                        constants.EBTABLES_BIN,
+                        "-D",
+                        "FORWARD",
+                        "--logical-in",
+                        self.bridge_name,
+                        "-j",
+                        self.bridge_name,
+                    ],
+                    [constants.EBTABLES_BIN, "-X", self.bridge_name],
+                ],
+            )
         except CoreCommandError:
             logging.exception("error bringing bridge down and removing it")
 
@@ -118,14 +136,20 @@ class OvsNet(CoreNetworkBase):
 
     def attach(self, interface):
         if self.up:
-            utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, interface.localname])
-            utils.check_cmd([constants.IP_BIN, "link", "set", interface.localname, "up"])
+            utils.check_cmd(
+                [constants.OVS_BIN, "add-port", self.bridge_name, interface.localname]
+            )
+            utils.check_cmd(
+                [constants.IP_BIN, "link", "set", interface.localname, "up"]
+            )
 
         CoreNetworkBase.attach(self, interface)
 
     def detach(self, interface):
         if self.up:
-            utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, interface.localname])
+            utils.check_cmd(
+                [constants.OVS_BIN, "del-port", self.bridge_name, interface.localname]
+            )
 
         CoreNetworkBase.detach(self, interface)
 
@@ -177,8 +201,17 @@ class OvsNet(CoreNetworkBase):
 
         ebtables_queue.ebchange(self)
 
-    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None,
-                   jitter=None, netif2=None, devname=None):
+    def linkconfig(
+        self,
+        netif,
+        bw=None,
+        delay=None,
+        loss=None,
+        duplicate=None,
+        jitter=None,
+        netif2=None,
+        devname=None,
+    ):
         """
         Configure link parameters by applying tc queuing disciplines on the
         interface.
@@ -196,9 +229,19 @@ class OvsNet(CoreNetworkBase):
             if bw > 0:
                 if self.up:
                     burst = max(2 * netif.mtu, bw / 1000)
-                    limit = 0xffff  # max IP payload
-                    tbf = ["tbf", "rate", str(bw), "burst", str(burst), "limit", str(limit)]
-                    logging.info("linkconfig: %s" % [tc + parent + ["handle", "1:"] + tbf])
+                    limit = 0xFFFF  # max IP payload
+                    tbf = [
+                        "tbf",
+                        "rate",
+                        str(bw),
+                        "burst",
+                        str(burst),
+                        "limit",
+                        str(limit),
+                    ]
+                    logging.info(
+                        "linkconfig: %s" % [tc + parent + ["handle", "1:"] + tbf]
+                    )
                     utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
             elif netif.getparam("has_tbf") and bw <= 0:
@@ -228,7 +271,15 @@ class OvsNet(CoreNetworkBase):
         jitter_changed = netif.setparam("jitter", jitter)
 
         # if nothing changed return
-        if not any([bandwidth_changed, delay_changed, loss_changed, duplicate_changed, jitter_changed]):
+        if not any(
+            [
+                bandwidth_changed,
+                delay_changed,
+                loss_changed,
+                duplicate_changed,
+                jitter_changed,
+            ]
+        ):
             return
 
         # jitter and delay use the same delay statement
@@ -259,7 +310,9 @@ class OvsNet(CoreNetworkBase):
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                logging.info("linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],))
+                logging.info(
+                    "linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],)
+                )
                 utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 
@@ -289,11 +342,15 @@ class OvsNet(CoreNetworkBase):
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
-        interface = Veth(node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up)
+        interface = Veth(
+            node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up
+        )
         self.attach(interface)
         if network.up:
             # this is similar to net.attach() but uses netif.name instead of localname
-            utils.check_cmd([constants.OVS_BIN, "add-port", network.bridge_name, interface.name])
+            utils.check_cmd(
+                [constants.OVS_BIN, "add-port", network.bridge_name, interface.name]
+            )
             utils.check_cmd([constants.IP_BIN, "link", "set", interface.name, "up"])
 
         network.attach(interface)
@@ -320,7 +377,9 @@ class OvsNet(CoreNetworkBase):
             return
 
         for address in addresses:
-            utils.check_cmd([constants.IP_BIN, "addr", "add", str(address), "dev", self.bridge_name])
+            utils.check_cmd(
+                [constants.IP_BIN, "addr", "add", str(address), "dev", self.bridge_name]
+            )
 
 
 class OvsCtrlNet(OvsNet):
@@ -330,11 +389,21 @@ class OvsCtrlNet(OvsNet):
         "172.16.0.0/24 172.16.1.0/24 172.16.2.0/24 172.16.3.0/24 172.16.4.0/24",
         "172.17.0.0/24 172.17.1.0/24 172.17.2.0/24 172.17.3.0/24 172.17.4.0/24",
         "172.18.0.0/24 172.18.1.0/24 172.18.2.0/24 172.18.3.0/24 172.18.4.0/24",
-        "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24"
+        "172.19.0.0/24 172.19.1.0/24 172.19.2.0/24 172.19.3.0/24 172.19.4.0/24",
     ]
 
-    def __init__(self, session, _id="ctrlnet", name=None, prefix=None, hostid=None,
-                 start=True, assign_address=True, updown_script=None, serverintf=None):
+    def __init__(
+        self,
+        session,
+        _id="ctrlnet",
+        name=None,
+        prefix=None,
+        hostid=None,
+        start=True,
+        assign_address=True,
+        updown_script=None,
+        serverintf=None,
+    ):
         self.prefix = ipaddress.Ipv4Prefix(prefix)
         self.hostid = hostid
         self.assign_address = assign_address
@@ -352,7 +421,10 @@ class OvsCtrlNet(OvsNet):
         else:
             addr = self.prefix.max_addr()
 
-        message = "Added control network bridge: %s %s" % (self.bridge_name, self.prefix)
+        message = "Added control network bridge: %s %s" % (
+            self.bridge_name,
+            self.prefix,
+        )
         addresses = ["%s/%s" % (addr, self.prefix.prefixlen)]
         if self.assign_address:
             self.addrconfig(addresses=addresses)
@@ -360,11 +432,16 @@ class OvsCtrlNet(OvsNet):
         logging.info(message)
 
         if self.updown_script:
-            logging.info("interface %s updown script %s startup called" % (self.bridge_name, self.updown_script))
+            logging.info(
+                "interface %s updown script %s startup called"
+                % (self.bridge_name, self.updown_script)
+            )
             utils.check_cmd([self.updown_script, self.bridge_name, "startup"])
 
         if self.serverintf:
-            utils.check_cmd([constants.OVS_BIN, "add-port", self.bridge_name, self.serverintf])
+            utils.check_cmd(
+                [constants.OVS_BIN, "add-port", self.bridge_name, self.serverintf]
+            )
             utils.check_cmd([constants.IP_BIN, "link", "set", self.serverintf, "up"])
 
     def detectoldbridge(self):
@@ -379,7 +456,10 @@ class OvsCtrlNet(OvsNet):
             for line in output.split("\n"):
                 bride_name = line.split(".")
                 if bride_name[0] == "b" and bride_name[1] == self.id:
-                    logging.error("older session may still be running with conflicting id for bridge: %s", line)
+                    logging.error(
+                        "older session may still be running with conflicting id for bridge: %s",
+                        line,
+                    )
                     return True
 
         return False
@@ -387,14 +467,23 @@ class OvsCtrlNet(OvsNet):
     def shutdown(self):
         if self.serverintf:
             try:
-                utils.check_cmd([constants.OVS_BIN, "del-port", self.bridge_name, self.serverintf])
+                utils.check_cmd(
+                    [constants.OVS_BIN, "del-port", self.bridge_name, self.serverintf]
+                )
             except CoreCommandError:
-                logging.exception("error deleting server interface %s to controlnet bridge %s",
-                                 self.serverintf, self.bridge_name)
+                logging.exception(
+                    "error deleting server interface %s to controlnet bridge %s",
+                    self.serverintf,
+                    self.bridge_name,
+                )
 
         if self.updown_script:
             try:
-                logging.info("interface %s updown script (%s shutdown) called", self.bridge_name, self.updown_script)
+                logging.info(
+                    "interface %s updown script (%s shutdown) called",
+                    self.bridge_name,
+                    self.updown_script,
+                )
                 utils.check_cmd([self.updown_script, self.bridge_name, "shutdown"])
             except CoreCommandError:
                 logging.exception("error during updown script shutdown")
@@ -413,7 +502,9 @@ class OvsPtpNet(OvsNet):
 
     def attach(self, interface):
         if len(self._netif) >= 2:
-            raise ValueError("point-to-point links support at most 2 network interfaces")
+            raise ValueError(
+                "point-to-point links support at most 2 network interfaces"
+            )
         OvsNet.attach(self, interface)
 
     def data(self, message_type, lat=None, lon=None, alt=None):
@@ -516,7 +607,7 @@ class OvsPtpNet(OvsNet):
                 jitter=if1.getparam("jitter"),
                 unidirectional=1,
                 interface1_id=if2.node.getifindex(if2),
-                interface2_id=if1.node.getifindex(if1)
+                interface2_id=if1.node.getifindex(if1),
             )
             all_links.append(link_data)
 
@@ -544,7 +635,9 @@ class OvsHubNode(OvsNet):
         if start:
             # TODO: verify that the below flow accomplishes what is desired for a "HUB"
             # TODO: replace "brctl setageing 0"
-            utils.check_cmd([constants.OVS_FLOW_BIN, "add-flow", self.bridge_name, "action=flood"])
+            utils.check_cmd(
+                [constants.OVS_FLOW_BIN, "add-flow", self.bridge_name, "action=flood"]
+            )
 
 
 class OvsWlanNode(OvsNet):
@@ -596,7 +689,9 @@ class OvsWlanNode(OvsNet):
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.id)
-        logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
+        logging.info(
+            "node(%s) updating model(%s): %s", self.id, self.model.name, config
+        )
         self.model.set_configs(config, node_id=self.id)
         if self.model.position_callback:
             for netif in self.netifs():
@@ -627,9 +722,21 @@ class OvsGreTapBridge(OvsNet):
     another system.
     """
 
-    def __init__(self, session, remoteip=None, _id=None, name=None, policy="ACCEPT",
-                 localip=None, ttl=255, key=None, start=True):
-        OvsNet.__init__(self, session=session, _id=_id, name=name, policy=policy, start=False)
+    def __init__(
+        self,
+        session,
+        remoteip=None,
+        _id=None,
+        name=None,
+        policy="ACCEPT",
+        localip=None,
+        ttl=255,
+        key=None,
+        start=True,
+    ):
+        OvsNet.__init__(
+            self, session=session, _id=_id, name=name, policy=policy, start=False
+        )
         self.grekey = key
         if self.grekey is None:
             self.grekey = self.session.id ^ self.id
@@ -643,8 +750,14 @@ class OvsGreTapBridge(OvsNet):
         if remoteip is None:
             self.gretap = None
         else:
-            self.gretap = GreTap(node=self, session=session, remoteip=remoteip,
-                                 localip=localip, ttl=ttl, key=self.grekey)
+            self.gretap = GreTap(
+                node=self,
+                session=session,
+                remoteip=remoteip,
+                localip=localip,
+                ttl=ttl,
+                key=self.grekey,
+            )
         if start:
             self.startup()
 
@@ -684,8 +797,13 @@ class OvsGreTapBridge(OvsNet):
         if len(addresses) > 1:
             localip = addresses[1].split("/")[0]
 
-        self.gretap = GreTap(session=self.session, remoteip=remoteip,
-                             localip=localip, ttl=self.ttl, key=self.grekey)
+        self.gretap = GreTap(
+            session=self.session,
+            remoteip=remoteip,
+            localip=localip,
+            ttl=self.ttl,
+            key=self.grekey,
+        )
         self.attach(self.gretap)
 
     def setkey(self, key):
@@ -703,5 +821,5 @@ OVS_NODES = {
     NodeTypes.TUNNEL: OvsTunnelNode,
     NodeTypes.TAP_BRIDGE: OvsGreTapBridge,
     NodeTypes.PEER_TO_PEER: OvsPtpNet,
-    NodeTypes.CONTROL_NET: OvsCtrlNet
+    NodeTypes.CONTROL_NET: OvsCtrlNet,
 }

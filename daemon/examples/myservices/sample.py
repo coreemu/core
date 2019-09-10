@@ -30,6 +30,7 @@ class MyService(CoreService):
         only used in NON_BLOCKING mode
     :var tuple shutdown: shutdown commands to stop this service
     """
+
     name = "MyService"
     group = "Utility"
     executables = ()

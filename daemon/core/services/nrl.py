@@ -12,7 +12,8 @@ class NrlService(CoreService):
     """
     Parent class for NRL services. Defines properties and methods
     common to NRL's routing daemons.
-    """""
+    """ ""
+
     name = None
     group = "ProtoSvc"
     dirs = ()
@@ -32,11 +33,11 @@ class NrlService(CoreService):
         interface's prefix length, so e.g. '/32' can turn into '/24'.
         """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
-                    addr = a.split('/')[0]
+                    addr = a.split("/")[0]
                     pre = Ipv4Prefix("%s/%s" % (addr, prefixlen))
                     return str(pre)
         # raise ValueError,  "no IPv4 address found"
@@ -63,13 +64,14 @@ class MgenSinkService(NrlService):
     def get_startup(cls, node):
         cmd = cls.startup[0]
         cmd += " output /tmp/mgen_%s.log" % node.name
-        return cmd,
+        return (cmd,)
 
 
 class NrlNhdp(NrlService):
     """
     NeighborHood Discovery Protocol for MANET networks.
     """
+
     name = "NHDP"
     executables = ("nrlnhdp",)
     startup = ("nrlnhdp",)
@@ -90,19 +92,20 @@ class NrlNhdp(NrlService):
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
 
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
             cmd += " -i ".join(interfacenames)
 
-        return cmd,
+        return (cmd,)
 
 
 class NrlSmf(NrlService):
     """
     Simplified Multicast Forwarding for MANET networks.
     """
+
     name = "SMF"
     executables = ("nrlsmf",)
     startup = ("sh startsmf.sh",)
@@ -111,7 +114,7 @@ class NrlSmf(NrlService):
     configs = ("startsmf.sh",)
 
     @classmethod
-    def generate_config(cls, node, filename, ):
+    def generate_config(cls, node, filename):
         """
         Generate a startup script for SMF. Because nrlsmf does not
         daemonize, it can cause problems in some situations when launched
@@ -123,7 +126,7 @@ class NrlSmf(NrlService):
         cmd = "nrlsmf instance %s_smf" % node.name
 
         servicenames = map(lambda x: x.name, node.services)
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
         if len(netifs) == 0:
             return ""
 
@@ -155,6 +158,7 @@ class NrlOlsr(NrlService):
     """
     Optimized Link State Routing protocol for MANET networks.
     """
+
     name = "OLSR"
     executables = ("nrlolsrd",)
     startup = ("nrlolsrd",)
@@ -182,13 +186,14 @@ class NrlOlsr(NrlService):
         if "zebra" in servicenames:
             cmd += " -z"
 
-        return cmd,
+        return (cmd,)
 
 
 class NrlOlsrv2(NrlService):
     """
     Optimized Link State Routing protocol version 2 for MANET networks.
     """
+
     name = "OLSRv2"
     executables = ("nrlolsrv2",)
     startup = ("nrlolsrv2",)
@@ -211,19 +216,20 @@ class NrlOlsrv2(NrlService):
 
         cmd += " -p olsr"
 
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
             cmd += " -i ".join(interfacenames)
 
-        return cmd,
+        return (cmd,)
 
 
 class OlsrOrg(NrlService):
     """
     Optimized Link State Routing protocol from olsr.org for MANET networks.
     """
+
     name = "OLSRORG"
     executables = ("olsrd",)
     configs = ("/etc/olsrd/olsrd.conf",)
@@ -238,13 +244,13 @@ class OlsrOrg(NrlService):
         Generate the appropriate command-line based on node interfaces.
         """
         cmd = cls.startup[0]
-        netifs = filter(lambda x: not getattr(x, 'control', False), node.netifs())
+        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
             cmd += " -i ".join(interfacenames)
 
-        return cmd,
+        return (cmd,)
 
     @classmethod
     def generate_config(cls, node, filename):
@@ -582,7 +588,7 @@ class MgenActor(NrlService):
     dirs = ()
     # generated files (without a full path this file goes in the node's dir,
     #  e.g. /tmp/pycore.12345/n1.conf/)
-    configs = ('start_mgen_actor.sh',)
+    configs = ("start_mgen_actor.sh",)
     # list of startup commands, also may be generated during startup
     startup = ("sh start_mgen_actor.sh",)
     # list of validation commands
@@ -614,6 +620,7 @@ class Arouted(NrlService):
     """
     Adaptive Routing
     """
+
     name = "arouted"
     executables = ("arouted",)
     configs = ("startarouted.sh",)
@@ -626,7 +633,8 @@ class Arouted(NrlService):
         """
         Return the Quagga.conf or quaggaboot.sh file contents.
         """
-        cfg = """
+        cfg = (
+            """
 #!/bin/sh
 for f in "/tmp/%s_smf"; do
     count=1
@@ -640,7 +648,9 @@ for f in "/tmp/%s_smf"; do
     done
 done
 
-""" % node.name
+"""
+            % node.name
+        )
         cfg += "ip route add %s dev lo\n" % cls.firstipv4prefix(node, 24)
         cfg += "arouted instance %s_smf tap %s_tap" % (node.name, node.name)
         # seconds to consider a new route valid

@@ -11,6 +11,8 @@ grpcio-tools = "*"
 core = {editable = true,path = "."}
 isort = "*"
 pre-commit = "*"
+flake8 = "*"
+black = "==19.3b0"
 
 [packages]
 configparser = "*"

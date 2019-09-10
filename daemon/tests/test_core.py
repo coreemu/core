@@ -15,11 +15,7 @@ from core.nodes.client import VnodeClient
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _MOBILITY_FILE = os.path.join(_PATH, "mobility.scen")
-_WIRED = [
-    NodeTypes.PEER_TO_PEER,
-    NodeTypes.HUB,
-    NodeTypes.SWITCH
-]
+_WIRED = [NodeTypes.PEER_TO_PEER, NodeTypes.HUB, NodeTypes.SWITCH]
 
 
 def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
@@ -112,7 +108,9 @@ class TestCore:
         p, stdin, stdout, stderr = client.popen(command)
         assert not p.wait()
         assert not client.icmd(command)
-        assert not client.redircmd(subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, command)
+        assert not client.redircmd(
+            subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, command
+        )
         assert not client.shcmd(command[0])
 
         # check various command using command line

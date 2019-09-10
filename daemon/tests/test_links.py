@@ -105,8 +105,12 @@ class TestLinks:
         link_options.bandwidth = 5000000
         link_options.per = 25
         link_options.dup = 25
-        session.update_link(node_one.id, node_two.id,
-                            interface_one_id=interface_one.id, link_options=link_options)
+        session.update_link(
+            node_one.id,
+            node_two.id,
+            interface_one_id=interface_one.id,
+            link_options=link_options,
+        )
 
         # then
         output = utils.check_cmd(["tc", "qdisc", "show", "dev", interface.localname])
@@ -126,7 +130,9 @@ class TestLinks:
         assert node_two.netif(interface_two.id)
 
         # when
-        session.delete_link(node_one.id, node_two.id, interface_one.id, interface_two.id)
+        session.delete_link(
+            node_one.id, node_two.id, interface_one.id, interface_two.id
+        )
 
         # then
         assert not node_one.netif(interface_one.id)
@@ -149,7 +155,7 @@ class TestLinks:
         # run iperf, validate normal bandwidth
         stdout = iperf(node_one, node_two, ip_prefixes)
         assert stdout
-        value = int(stdout.split(',')[bandwidth_index])
+        value = int(stdout.split(",")[bandwidth_index])
         assert 900000 <= value <= 1100000
 
         # change bandwidth in bits per second
@@ -160,7 +166,7 @@ class TestLinks:
         # run iperf again
         stdout = iperf(node_one, node_two, ip_prefixes)
         assert stdout
-        value = int(stdout.split(',')[bandwidth_index])
+        value = int(stdout.split(",")[bandwidth_index])
         assert 400000 <= value <= 600000
 
     def test_link_loss(self, session, ip_prefixes):
@@ -180,7 +186,7 @@ class TestLinks:
         # run iperf, validate normal bandwidth
         stdout = iperf(node_one, node_two, ip_prefixes)
         assert stdout
-        value = float(stdout.split(',')[loss_index])
+        value = float(stdout.split(",")[loss_index])
         assert 0 <= value <= 0.5
 
         # change bandwidth in bits per second
@@ -191,7 +197,7 @@ class TestLinks:
         # run iperf again
         stdout = iperf(node_one, node_two, ip_prefixes)
         assert stdout
-        value = float(stdout.split(',')[loss_index])
+        value = float(stdout.split(",")[loss_index])
         assert 40 <= value <= 60
 
     def test_link_delay(self, session, ip_prefixes):

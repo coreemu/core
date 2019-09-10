@@ -56,9 +56,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
     @classmethod
     def config_groups(cls):
-        return [
-            ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))
-        ]
+        return [ConfigGroup("CommEffect SHIM Parameters", 1, len(cls.configurations()))]
 
     def build_xml_files(self, config, interface=None):
         """
@@ -76,7 +74,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         shim_name = emanexml.shim_file_name(self, interface)
 
         # create and write nem document
-        nem_element = etree.Element("nem", name="%s NEM" % self.name, type="unstructured")
+        nem_element = etree.Element(
+            "nem", name="%s NEM" % self.name, type="unstructured"
+        )
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
@@ -90,7 +90,9 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         emanexml.create_file(nem_element, "nem", nem_file)
 
         # create and write shim document
-        shim_element = etree.Element("shim", name="%s SHIM" % self.name, library=self.shim_library)
+        shim_element = etree.Element(
+            "shim", name="%s SHIM" % self.name, library=self.shim_library
+        )
 
         # append all shim options (except filterfile) to shimdoc
         for configuration in self.config_shim:
@@ -108,7 +110,16 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         shim_file = os.path.join(self.session.session_dir, shim_name)
         emanexml.create_file(shim_element, "shim", shim_file)
 
-    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(
+        self,
+        netif,
+        bw=None,
+        delay=None,
+        loss=None,
+        duplicate=None,
+        jitter=None,
+        netif2=None,
+    ):
         """
         Generate CommEffect events when a Link Message is received having
         link parameters.
@@ -137,6 +148,6 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             loss=convert_none(loss),
             duplicate=convert_none(duplicate),
             unicast=long(convert_none(bw)),
-            broadcast=long(convert_none(mbw))
+            broadcast=long(convert_none(mbw)),
         )
         service.publish(nemid2, event)

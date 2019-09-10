@@ -102,14 +102,25 @@ class PhysicalNode(CoreNodeBase):
         self._netif[ifindex].sethwaddr(addr)
         ifname = self.ifname(ifindex)
         if self.up:
-            self.check_cmd([constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)])
+            self.check_cmd(
+                [constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)]
+            )
 
     def addaddr(self, ifindex, addr):
         """
         Add an address to an interface.
         """
         if self.up:
-            self.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.ifname(ifindex)])
+            self.check_cmd(
+                [
+                    constants.IP_BIN,
+                    "addr",
+                    "add",
+                    str(addr),
+                    "dev",
+                    self.ifname(ifindex),
+                ]
+            )
 
         self._netif[ifindex].addaddr(addr)
 
@@ -123,7 +134,16 @@ class PhysicalNode(CoreNodeBase):
             logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.ifname(ifindex)])
+            self.check_cmd(
+                [
+                    constants.IP_BIN,
+                    "addr",
+                    "del",
+                    str(addr),
+                    "dev",
+                    self.ifname(ifindex),
+                ]
+            )
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         """
@@ -138,8 +158,12 @@ class PhysicalNode(CoreNodeBase):
 
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
-            self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "down"])
-            self.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "name", netif.name])
+            self.check_cmd(
+                [constants.IP_BIN, "link", "set", "dev", netif.localname, "down"]
+            )
+            self.check_cmd(
+                [constants.IP_BIN, "link", "set", netif.localname, "name", netif.name]
+            )
 
         netif.localname = netif.name
 
@@ -150,16 +174,35 @@ class PhysicalNode(CoreNodeBase):
             self.addaddr(ifindex, addr)
 
         if self.up:
-            self.check_cmd([constants.IP_BIN, "link", "set", "dev", netif.localname, "up"])
+            self.check_cmd(
+                [constants.IP_BIN, "link", "set", "dev", netif.localname, "up"]
+            )
 
-    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(
+        self,
+        netif,
+        bw=None,
+        delay=None,
+        loss=None,
+        duplicate=None,
+        jitter=None,
+        netif2=None,
+    ):
         """
         Apply tc queing disciplines using LxBrNet.linkconfig()
         """
         # borrow the tc qdisc commands from LxBrNet.linkconfig()
         linux_bridge = CoreNetwork(session=self.session, start=False)
         linux_bridge.up = True
-        linux_bridge.linkconfig(netif, bw=bw, delay=delay, loss=loss, duplicate=duplicate, jitter=jitter, netif2=netif2)
+        linux_bridge.linkconfig(
+            netif,
+            bw=bw,
+            delay=delay,
+            loss=loss,
+            duplicate=duplicate,
+            jitter=jitter,
+            netif2=netif2,
+        )
         del linux_bridge
 
     def newifindex(self):
@@ -186,7 +229,9 @@ class PhysicalNode(CoreNodeBase):
             # tunnel to net not built yet, so build it now and adopt it
             gt = self.session.broker.addnettunnel(net.id)
             if gt is None or len(gt) != 1:
-                raise ValueError("error building tunnel from adding a new network interface: %s" % gt)
+                raise ValueError(
+                    "error building tunnel from adding a new network interface: %s" % gt
+                )
             gt = gt[0]
             net.detach(gt)
             self.adoptnetif(gt, ifindex, hwaddr, addrlist)
@@ -203,7 +248,9 @@ class PhysicalNode(CoreNodeBase):
     def privatedir(self, path):
         if path[0] != "/":
             raise ValueError("path not fully qualified: %s" % path)
-        hostpath = os.path.join(self.nodedir, os.path.normpath(path).strip('/').replace('/', '.'))
+        hostpath = os.path.join(
+            self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
+        )
         os.mkdir(hostpath)
         self.mount(hostpath, path)
 
@@ -249,6 +296,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     RJ45Node is a physical interface on the host linked to the emulated
     network.
     """
+
     apitype = NodeTypes.RJ45.value
     type = "rj45"
 
@@ -302,7 +350,9 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         try:
             utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "down"])
             utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
-            utils.check_cmd([constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"])
+            utils.check_cmd(
+                [constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"]
+            )
         except CoreCommandError:
             logging.exception("error shutting down")
 
@@ -425,7 +475,9 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            utils.check_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            utils.check_cmd(
+                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.name]
+            )
 
         CoreInterface.addaddr(self, addr)
 
@@ -438,7 +490,9 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            utils.check_cmd([constants.IP_BIN, "addr", "del", str(addr), "dev", self.name])
+            utils.check_cmd(
+                [constants.IP_BIN, "addr", "del", str(addr), "dev", self.name]
+            )
 
         CoreInterface.deladdr(self, addr)
 
@@ -479,9 +533,22 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         for addr in self.old_addrs:
             if addr[1] is None:
-                utils.check_cmd([constants.IP_BIN, "addr", "add", addr[0], "dev", self.localname])
+                utils.check_cmd(
+                    [constants.IP_BIN, "addr", "add", addr[0], "dev", self.localname]
+                )
             else:
-                utils.check_cmd([constants.IP_BIN, "addr", "add", addr[0], "brd", addr[1], "dev", self.localname])
+                utils.check_cmd(
+                    [
+                        constants.IP_BIN,
+                        "addr",
+                        "add",
+                        addr[0],
+                        "brd",
+                        addr[1],
+                        "dev",
+                        self.localname,
+                    ]
+                )
 
         if self.old_up:
             utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])

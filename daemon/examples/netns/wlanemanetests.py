@@ -80,7 +80,7 @@ def getcputimes(line):
     # assume columns are:
     # cpu# user nice sys idle iowait irq softirq steal guest (man 5 proc)
     items = line.split()
-    (user, nice, sys, idle) = map(lambda (x): int(x), items[1:5])
+    (user, nice, sys, idle) = map(lambda x: int(x), items[1:5])
     return [user, nice, sys, idle]
 
 
@@ -97,8 +97,10 @@ def calculatecpu(timesa, timesb):
 
 # end move these to core.misc.utils
 
+
 class Cmd(object):
     """ Helper class for running a command on a node and parsing the result. """
+
     args = ""
 
     def __init__(self, node, verbose=False):
@@ -149,6 +151,7 @@ class Cmd(object):
 
 class ClientServerCmd(Cmd):
     """ Helper class for running a command on a node and parsing the result. """
+
     args = ""
     client_args = ""
 
@@ -171,8 +174,9 @@ class ClientServerCmd(Cmd):
 
     def client_open(self):
         """ Exceute call to client_node.popen(). """
-        self.client_id, self.client_stdin, self.client_out, self.client_err = \
-            self.client_node.client.popen(self.client_args)
+        self.client_id, self.client_stdin, self.client_out, self.client_err = self.client_node.client.popen(
+            self.client_args
+        )
 
     def parse(self):
         """ This method is overloaded by child classes and should return some
@@ -195,7 +199,7 @@ class PingCmd(Cmd):
     """ Test latency using ping.
     """
 
-    def __init__(self, node, verbose=False, addr=None, count=50, interval=0.1, ):
+    def __init__(self, node, verbose=False, addr=None, count=50, interval=0.1):
         Cmd.__init__(self, node, verbose)
         self.addr = addr
         self.count = count
@@ -205,14 +209,20 @@ class PingCmd(Cmd):
     def run(self):
         if self.verbose:
             self.info("%s initial test ping (max 1 second)..." % self.node.name)
-        (status, result) = self.node.cmd_output(["ping", "-q", "-c", "1", "-w", "1", self.addr])
+        (status, result) = self.node.cmd_output(
+            ["ping", "-q", "-c", "1", "-w", "1", self.addr]
+        )
         if status != 0:
-            self.warn("initial ping from %s to %s failed! result:\n%s" %
-                      (self.node.name, self.addr, result))
+            self.warn(
+                "initial ping from %s to %s failed! result:\n%s"
+                % (self.node.name, self.addr, result)
+            )
             return 0.0, 0.0
         if self.verbose:
-            self.info("%s pinging %s (%d seconds)..." %
-                      (self.node.name, self.addr, self.count * self.interval))
+            self.info(
+                "%s pinging %s (%d seconds)..."
+                % (self.node.name, self.addr, self.count * self.interval)
+            )
         return Cmd.run(self)
 
     def parse(self):
@@ -245,8 +255,10 @@ class IperfCmd(ClientServerCmd):
     def run(self):
         if self.verbose:
             self.info("Launching the iperf server on %s..." % self.node.name)
-            self.info("Running the iperf client on %s (%s seconds)..." % \
-                      (self.client_node.name, self.time))
+            self.info(
+                "Running the iperf client on %s (%s seconds)..."
+                % (self.client_node.name, self.time)
+            )
         return ClientServerCmd.run(self)
 
     def parse(self):
@@ -263,19 +275,26 @@ class MgenCmd(ClientServerCmd):
     """ Run a test traffic flow using an MGEN sender and receiver.
     """
 
-    def __init__(self, node, client_node, verbose=False, addr=None, time=10,
-                 rate=512):
+    def __init__(self, node, client_node, verbose=False, addr=None, time=10, rate=512):
         ClientServerCmd.__init__(self, node, client_node, verbose)
         self.addr = addr
         self.time = time
-        self.args = ["mgen", "event", "listen udp 5000", "output",
-                     "/var/log/mgen.log"]
+        self.args = ["mgen", "event", "listen udp 5000", "output", "/var/log/mgen.log"]
         self.rate = rate
-        sendevent = "ON 1 UDP DST %s/5000 PERIODIC [%s]" % \
-                    (addr, self.mgenrate(self.rate))
+        sendevent = "ON 1 UDP DST %s/5000 PERIODIC [%s]" % (
+            addr,
+            self.mgenrate(self.rate),
+        )
         stopevent = "%s OFF 1" % time
-        self.client_args = ["mgen", "event", sendevent, "event", stopevent,
-                            "output", "/var/log/mgen.log"]
+        self.client_args = [
+            "mgen",
+            "event",
+            sendevent,
+            "event",
+            stopevent,
+            "output",
+            "/var/log/mgen.log",
+        ]
 
     @staticmethod
     def mgenrate(kbps):
@@ -291,8 +310,10 @@ class MgenCmd(ClientServerCmd):
     def run(self):
         if self.verbose:
             self.info("Launching the MGEN receiver on %s..." % self.node.name)
-            self.info("Running the MGEN sender on %s (%s seconds)..." % \
-                      (self.client_node.name, self.time))
+            self.info(
+                "Running the MGEN sender on %s (%s seconds)..."
+                % (self.client_node.name, self.time)
+            )
         return ClientServerCmd.run(self)
 
     def cleanup(self):
@@ -328,8 +349,7 @@ class MgenCmd(ClientServerCmd):
         else:
             loss = 0
         if self.verbose:
-            self.info("Receiver log shows %d of %d packets lost" % \
-                      (numlost, lastseq))
+            self.info("Receiver log shows %d of %d packets lost" % (numlost, lastseq))
         return loss
 
 
@@ -381,8 +401,7 @@ class Experiment(object):
         if not self.logfp:
             return
         end = datetime.datetime.now()
-        self.log("%s end: %s (%s)\n" % \
-                 (sys.argv[0], end.ctime(), end - self.start))
+        self.log("%s end: %s (%s)\n" % (sys.argv[0], end.ctime(), end - self.start))
         self.logfp.flush()
         self.logfp.close()
         self.logfp = None
@@ -411,11 +430,15 @@ class Experiment(object):
         prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
         self.session = Session(1)
         # emulated network
-        self.net = self.session.create_node(cls=core.nodes.network.WlanNode, name="wlan1")
+        self.net = self.session.create_node(
+            cls=core.nodes.network.WlanNode, name="wlan1"
+        )
         prev = None
         for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
+            tmp = self.session.create_node(
+                cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i
+            )
             tmp.newnetif(self.net, [addr])
             self.nodes.append(tmp)
             self.session.services.add_services(tmp, "router", "IPForward")
@@ -438,12 +461,16 @@ class Experiment(object):
         self.session.location.setrefgeo(47.57917, -122.13232, 2.00000)
         self.session.location.refscale = 150.0
         self.session.emane.loadmodels()
-        self.net = self.session.create_node(cls=EmaneNode, _id=numnodes + 1, name="wlan1")
+        self.net = self.session.create_node(
+            cls=EmaneNode, _id=numnodes + 1, name="wlan1"
+        )
         self.net.verbose = verbose
         # self.session.emane.addobj(self.net)
         for i in range(1, numnodes + 1):
             addr = "%s/%s" % (prefix.addr(i), 32)
-            tmp = self.session.create_node(cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i)
+            tmp = self.session.create_node(
+                cls=core.nodes.base.CoreNode, _id=i, name="n%d" % i
+            )
             # tmp.setposition(i * 20, 50, None)
             tmp.setposition(50, 50, None)
             tmp.newnetif(self.net, [addr])
@@ -518,8 +545,9 @@ class Experiment(object):
                 dev = "lo"
             else:
                 dev = self.session.obj("ctrlnet").brname
-            service = EventService(eventchannel=("224.1.2.8", 45703, dev),
-                                   otachannel=None)
+            service = EventService(
+                eventchannel=("224.1.2.8", 45703, dev), otachannel=None
+            )
             old = False
 
         for i in range(1, numnodes + 1):
@@ -529,9 +557,13 @@ class Experiment(object):
             if txnem > 0:
                 if old:
                     e.set(0, txnem, 10.0, 10.0)
-                    service.publish(emaneeventpathloss.EVENT_ID,
-                                    emaneeventservice.PLATFORMID_ANY, rxnem,
-                                    emaneeventservice.COMPONENTID_ANY, e.export())
+                    service.publish(
+                        emaneeventpathloss.EVENT_ID,
+                        emaneeventservice.PLATFORMID_ANY,
+                        rxnem,
+                        emaneeventservice.COMPONENTID_ANY,
+                        e.export(),
+                    )
                 else:
                     e = PathlossEvent()
                     e.append(txnem, forward=10.0, reverse=10.0)
@@ -542,9 +574,13 @@ class Experiment(object):
                 continue
             if old:
                 e.set(0, txnem, 10.0, 10.0)
-                service.publish(emaneeventpathloss.EVENT_ID,
-                                emaneeventservice.PLATFORMID_ANY, rxnem,
-                                emaneeventservice.COMPONENTID_ANY, e.export())
+                service.publish(
+                    emaneeventpathloss.EVENT_ID,
+                    emaneeventservice.PLATFORMID_ANY,
+                    rxnem,
+                    emaneeventservice.COMPONENTID_ANY,
+                    e.export(),
+                )
             else:
                 e = PathlossEvent()
                 e.append(txnem, forward=10.0, reverse=10.0)
@@ -567,12 +603,16 @@ class Experiment(object):
         duration = self.opt.duration
         rate = self.opt.rate
         if len(title) > 0:
-            self.info("----- running %s tests (duration=%s, rate=%s) -----" % \
-                      (title, duration, rate))
+            self.info(
+                "----- running %s tests (duration=%s, rate=%s) -----"
+                % (title, duration, rate)
+            )
         (latency, mdev, throughput, cpu, loss) = (0, 0, 0, 0, 0)
 
-        self.info("number of runs: ping=%d, iperf=%d, mgen=%d" % \
-                  (self.numping, self.numiperf, self.nummgen))
+        self.info(
+            "number of runs: ping=%d, iperf=%d, mgen=%d"
+            % (self.numping, self.numiperf, self.nummgen)
+        )
 
         if self.numping > 0:
             (latency, mdev) = self.pingtest(count=self.numping)
@@ -595,8 +635,8 @@ class Experiment(object):
             for i in range(1, self.nummgen + 1):
                 (cpu, loss) = self.cputest(time=duration, rate=rate)
                 if self.nummgen > 1:
-                    cpus += cpu,
-                    losses += loss,
+                    cpus += (cpu,)
+                    losses += (loss,)
             if self.nummgen > 1:
                 cpu = sum(cpus) / len(cpus)
                 loss = sum(losses) / len(losses)
@@ -608,8 +648,13 @@ class Experiment(object):
     def pingtest(self, count=50):
         """ Ping through a chain of nodes and report the average latency.
         """
-        p = PingCmd(node=self.firstnode, verbose=self.verbose,
-                    addr=self.lastaddr, count=count, interval=0.1).run()
+        p = PingCmd(
+            node=self.firstnode,
+            verbose=self.verbose,
+            addr=self.lastaddr,
+            count=count,
+            interval=0.1,
+        ).run()
         (latency, mdev) = p
         self.info("latency (ms): %.03f, %.03f" % (latency, mdev))
         return p
@@ -618,8 +663,13 @@ class Experiment(object):
         """ Run iperf through a chain of nodes and report the maximum
             throughput.
         """
-        bps = IperfCmd(node=self.lastnode, client_node=self.firstnode,
-                       verbose=False, addr=self.lastaddr, time=time).run()
+        bps = IperfCmd(
+            node=self.lastnode,
+            client_node=self.firstnode,
+            verbose=False,
+            addr=self.lastaddr,
+            time=time,
+        ).run()
         self.info("throughput (bps): %s" % bps)
         return bps
 
@@ -628,19 +678,26 @@ class Experiment(object):
             percent of lost packets. Rate is in kbps.
         """
         if self.verbose:
-            self.info("%s initial test ping (max 1 second)..." % \
-                      self.firstnode.name)
-        (status, result) = self.firstnode.cmd_output(["ping", "-q", "-c", "1",
-                                                      "-w", "1", self.lastaddr])
+            self.info("%s initial test ping (max 1 second)..." % self.firstnode.name)
+        (status, result) = self.firstnode.cmd_output(
+            ["ping", "-q", "-c", "1", "-w", "1", self.lastaddr]
+        )
         if status != 0:
-            self.warn("initial ping from %s to %s failed! result:\n%s" % \
-                      (self.firstnode.name, self.lastaddr, result))
+            self.warn(
+                "initial ping from %s to %s failed! result:\n%s"
+                % (self.firstnode.name, self.lastaddr, result)
+            )
             return 0.0, 0.0
         lines = readstat()
         cpustart = getcputimes(lines[0])
-        loss = MgenCmd(node=self.lastnode, client_node=self.firstnode,
-                       verbose=False, addr=self.lastaddr,
-                       time=time, rate=rate).run()
+        loss = MgenCmd(
+            node=self.lastnode,
+            client_node=self.firstnode,
+            verbose=False,
+            addr=self.lastaddr,
+            time=time,
+            rate=rate,
+        ).run()
         lines = readstat()
         cpuend = getcputimes(lines[0])
         percent = calculatecpu(cpustart, cpuend)
@@ -653,28 +710,59 @@ def main():
     """
     usagestr = "usage: %prog [-h] [options] [args]"
     parser = optparse.OptionParser(usage=usagestr)
-    parser.set_defaults(numnodes=10, delay=3, duration=10, rate=512,
-                        verbose=False,
-                        numping=50, numiperf=1, nummgen=1)
+    parser.set_defaults(
+        numnodes=10,
+        delay=3,
+        duration=10,
+        rate=512,
+        verbose=False,
+        numping=50,
+        numiperf=1,
+        nummgen=1,
+    )
 
-    parser.add_option("-d", "--delay", dest="delay", type=float,
-                      help="wait time before testing")
-    parser.add_option("-l", "--logfile", dest="logfile", type=str,
-                      help="log detailed output to the specified file")
-    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
-                      help="number of nodes")
-    parser.add_option("-r", "--rate", dest="rate", type=float,
-                      help="kbps rate to use for MGEN CPU tests")
-    parser.add_option("--numping", dest="numping", type=int,
-                      help="number of ping latency test runs")
-    parser.add_option("--numiperf", dest="numiperf", type=int,
-                      help="number of iperf throughput test runs")
-    parser.add_option("--nummgen", dest="nummgen", type=int,
-                      help="number of MGEN CPU tests runs")
-    parser.add_option("-t", "--time", dest="duration", type=int,
-                      help="duration in seconds of throughput and CPU tests")
-    parser.add_option("-v", "--verbose", dest="verbose",
-                      action="store_true", help="be more verbose")
+    parser.add_option(
+        "-d", "--delay", dest="delay", type=float, help="wait time before testing"
+    )
+    parser.add_option(
+        "-l",
+        "--logfile",
+        dest="logfile",
+        type=str,
+        help="log detailed output to the specified file",
+    )
+    parser.add_option(
+        "-n", "--numnodes", dest="numnodes", type=int, help="number of nodes"
+    )
+    parser.add_option(
+        "-r",
+        "--rate",
+        dest="rate",
+        type=float,
+        help="kbps rate to use for MGEN CPU tests",
+    )
+    parser.add_option(
+        "--numping", dest="numping", type=int, help="number of ping latency test runs"
+    )
+    parser.add_option(
+        "--numiperf",
+        dest="numiperf",
+        type=int,
+        help="number of iperf throughput test runs",
+    )
+    parser.add_option(
+        "--nummgen", dest="nummgen", type=int, help="number of MGEN CPU tests runs"
+    )
+    parser.add_option(
+        "-t",
+        "--time",
+        dest="duration",
+        type=int,
+        help="duration in seconds of throughput and CPU tests",
+    )
+    parser.add_option(
+        "-v", "--verbose", dest="verbose", action="store_true", help="be more verbose"
+    )
 
     def usage(msg=None, err=0):
         sys.stdout.write("\n")
@@ -735,7 +823,12 @@ def main():
 
         # EMANE bypass model
         exp.info("setting up EMANE tests 1/2 with bypass model")
-        exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose, cls=EmaneBypassModel, values=None)
+        exp.createemanesession(
+            numnodes=opt.numnodes,
+            verbose=opt.verbose,
+            cls=EmaneBypassModel,
+            values=None,
+        )
         exp.setnodes()
         exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
         time.sleep(opt.delay)
@@ -757,7 +850,12 @@ def main():
             rfpipevals[rfpnames.index("defaultconnectivitymode")] = "1"
         else:
             rfpipevals[rfpnames.index("propagationmodel")] = "2ray"
-        exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose, cls=EmaneRfPipeModel, values=rfpipevals)
+        exp.createemanesession(
+            numnodes=opt.numnodes,
+            verbose=opt.verbose,
+            cls=EmaneRfPipeModel,
+            values=rfpipevals,
+        )
         exp.setnodes()
         exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
         time.sleep(opt.delay)
@@ -777,8 +875,12 @@ def main():
             rfpipevals[rfpnames.index("defaultconnectivitymode")] = "1"
         else:
             rfpipevals[rfpnames.index("propagationmodel")] = "2ray"
-        exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
-                               cls=EmaneRfPipeModel, values=rfpipevals)
+        exp.createemanesession(
+            numnodes=opt.numnodes,
+            verbose=opt.verbose,
+            cls=EmaneRfPipeModel,
+            values=rfpipevals,
+        )
         exp.setnodes()
         exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
         time.sleep(opt.delay)
@@ -796,8 +898,12 @@ def main():
             rfpipevals[rfpnames.index("defaultconnectivitymode")] = "0"
         else:
             rfpipevals[rfpnames.index("propagationmodel")] = "precomputed"
-        exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
-                               cls=EmaneRfPipeModel, values=rfpipevals)
+        exp.createemanesession(
+            numnodes=opt.numnodes,
+            verbose=opt.verbose,
+            cls=EmaneRfPipeModel,
+            values=rfpipevals,
+        )
         exp.setnodes()
         exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
         time.sleep(opt.delay)
@@ -815,8 +921,12 @@ def main():
         rfpipevals[rfpnames.index("delay")] = "200"
         rfpipevals[rfpnames.index("pathlossmode")] = "pathloss"
         rfpipevals[rfpnames.index("defaultconnectivitymode")] = "0"
-        exp.createemanesession(numnodes=opt.numnodes, verbose=opt.verbose,
-                               cls=EmaneRfPipeModel, values=rfpipevals)
+        exp.createemanesession(
+            numnodes=opt.numnodes,
+            verbose=opt.verbose,
+            cls=EmaneRfPipeModel,
+            values=rfpipevals,
+        )
         exp.setnodes()
         exp.info("waiting %s sec (node/route bring-up)" % opt.delay)
         time.sleep(opt.delay)
@@ -827,14 +937,18 @@ def main():
         exp.reset()
 
         # summary of results in CSV format
-        exp.info("----- summary of results (%s nodes, rate=%s, duration=%s) -----" \
-                 % (opt.numnodes, opt.rate, opt.duration))
+        exp.info(
+            "----- summary of results (%s nodes, rate=%s, duration=%s) -----"
+            % (opt.numnodes, opt.rate, opt.duration)
+        )
         exp.info("netname:latency,mdev,throughput,cpu,loss")
 
         for test in sorted(results.keys()):
             (latency, mdev, throughput, cpu, loss) = results[test]
-            exp.info("%s:%.03f,%.03f,%d,%.02f,%.02f" % \
-                     (test, latency, mdev, throughput, cpu, loss))
+            exp.info(
+                "%s:%.03f,%.03f,%d,%.02f,%.02f"
+                % (test, latency, mdev, throughput, cpu, loss)
+            )
 
         exp.logend()
         return exp

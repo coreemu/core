@@ -28,8 +28,7 @@ def example(options):
 
     # create emane network node
     emane_network = session.create_emane_network(
-        model=EmaneIeee80211abgModel,
-        geo_reference=(47.57917, -122.13232, 2.00000)
+        model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
     )
     emane_network.setposition(x=80, y=50)
 
@@ -55,7 +54,10 @@ def example(options):
 def main():
     options = parser.parse_options("emane80211")
     start = datetime.datetime.now()
-    print("running emane 80211 example: nodes(%s) time(%s)" % (options.nodes, options.time))
+    print(
+        "running emane 80211 example: nodes(%s) time(%s)"
+        % (options.nodes, options.time)
+    )
     example(options)
     print("elapsed time: %s" % (datetime.datetime.now() - start))
 

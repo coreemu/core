@@ -140,6 +140,7 @@ class CoreTlvDataUint16(CoreTlvData):
     """
     Helper class for packing uint16 data.
     """
+
     data_format = "!H"
     data_type = int
     pad_len = 0
@@ -149,6 +150,7 @@ class CoreTlvDataUint32(CoreTlvData):
     """
     Helper class for packing uint32 data.
     """
+
     data_format = "!2xI"
     data_type = int
     pad_len = 2
@@ -158,6 +160,7 @@ class CoreTlvDataUint64(CoreTlvData):
     """
     Helper class for packing uint64 data.
     """
+
     data_format = "!2xQ"
     data_type = int
     pad_len = 2
@@ -167,6 +170,7 @@ class CoreTlvDataString(CoreTlvData):
     """
     Helper class for packing string data.
     """
+
     data_type = str
 
     @classmethod
@@ -205,6 +209,7 @@ class CoreTlvDataUint16List(CoreTlvData):
     """
     List of unsigned 16-bit values.
     """
+
     data_type = tuple
     data_format = "!H"
 
@@ -254,6 +259,7 @@ class CoreTlvDataIpv4Addr(CoreTlvDataObj):
     """
     Utility class for packing/unpacking Ipv4 addresses.
     """
+
     data_type = IpAddress.from_string
     data_format = "!2x4s"
     pad_len = 2
@@ -284,6 +290,7 @@ class CoreTlvDataIPv6Addr(CoreTlvDataObj):
     """
     Utility class for packing/unpacking Ipv6 addresses.
     """
+
     data_format = "!16s2x"
     data_type = IpAddress.from_string
     pad_len = 2
@@ -314,6 +321,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
     """
     Utility class for packing/unpacking mac addresses.
     """
+
     data_format = "!2x8s"
     data_type = MacAddress.from_string
     pad_len = 2
@@ -346,6 +354,7 @@ class CoreTlv(object):
     """
     Base class for representing CORE TLVs.
     """
+
     header_format = "!BB"
     header_len = struct.calcsize(header_format)
 
@@ -380,10 +389,12 @@ class CoreTlv(object):
         :param data: data to unpack
         :return: unpacked data class
         """
-        tlv_type, tlv_len = struct.unpack(cls.header_format, data[:cls.header_len])
+        tlv_type, tlv_len = struct.unpack(cls.header_format, data[: cls.header_len])
         header_len = cls.header_len
         if tlv_len == 0:
-            tlv_type, _zero, tlv_len = struct.unpack(cls.long_header_format, data[:cls.long_header_len])
+            tlv_type, _zero, tlv_len = struct.unpack(
+                cls.long_header_format, data[: cls.long_header_len]
+            )
             header_len = cls.long_header_len
         tlv_size = header_len + tlv_len
         # for 32-bit alignment
@@ -436,7 +447,11 @@ class CoreTlv(object):
         :return: string representation
         :rtype: str
         """
-        return "%s <tlvtype = %s, value = %s>" % (self.__class__.__name__, self.type_str(), self.value)
+        return "%s <tlvtype = %s, value = %s>" % (
+            self.__class__.__name__,
+            self.type_str(),
+            self.value,
+        )
 
 
 class CoreNodeTlv(CoreTlv):
@@ -687,14 +702,16 @@ class CoreMessage(object):
         :return: unpacked tuple
         :rtype: tuple
         """
-        message_type, message_flags, message_len = struct.unpack(cls.header_format, data[:cls.header_len])
+        message_type, message_flags, message_len = struct.unpack(
+            cls.header_format, data[: cls.header_len]
+        )
         return message_type, message_flags, message_len
 
     @classmethod
     def create(cls, flags, values):
         tlv_data = structutils.pack_values(cls.tlv_class, values)
         packed = cls.pack(flags, tlv_data)
-        header_data = packed[:cls.header_len]
+        header_data = packed[: cls.header_len]
         return cls(flags, header_data, tlv_data)
 
     @classmethod
@@ -706,7 +723,9 @@ class CoreMessage(object):
         :param tlv_data: data to get length from for packing
         :return: combined header and tlv data
         """
-        header = struct.pack(cls.header_format, cls.message_type, message_flags, len(tlv_data))
+        header = struct.pack(
+            cls.header_format, cls.message_type, message_flags, len(tlv_data)
+        )
         return header + tlv_data
 
     def add_tlv_data(self, key, value):
@@ -808,7 +827,11 @@ class CoreMessage(object):
         :return: string representation
         :rtype: str
         """
-        result = "%s <msgtype = %s, flags = %s>" % (self.__class__.__name__, self.type_str(), self.flag_str())
+        result = "%s <msgtype = %s, flags = %s>" % (
+            self.__class__.__name__,
+            self.type_str(),
+            self.flag_str(),
+        )
 
         for key in self.tlv_data:
             value = self.tlv_data[key]
@@ -880,6 +903,7 @@ class CoreNodeMessage(CoreMessage):
     """
     CORE node message class.
     """
+
     message_type = MessageTypes.NODE.value
     tlv_class = CoreNodeTlv
 
@@ -888,6 +912,7 @@ class CoreLinkMessage(CoreMessage):
     """
     CORE link message class.
     """
+
     message_type = MessageTypes.LINK.value
     tlv_class = CoreLinkTlv
 
@@ -896,6 +921,7 @@ class CoreExecMessage(CoreMessage):
     """
     CORE execute message class.
     """
+
     message_type = MessageTypes.EXECUTE.value
     tlv_class = CoreExecuteTlv
 
@@ -904,6 +930,7 @@ class CoreRegMessage(CoreMessage):
     """
     CORE register message class.
     """
+
     message_type = MessageTypes.REGISTER.value
     tlv_class = CoreRegisterTlv
 
@@ -912,6 +939,7 @@ class CoreConfMessage(CoreMessage):
     """
     CORE configuration message class.
     """
+
     message_type = MessageTypes.CONFIG.value
     tlv_class = CoreConfigTlv
 
@@ -920,6 +948,7 @@ class CoreFileMessage(CoreMessage):
     """
     CORE file message class.
     """
+
     message_type = MessageTypes.FILE.value
     tlv_class = CoreFileTlv
 
@@ -928,6 +957,7 @@ class CoreIfaceMessage(CoreMessage):
     """
     CORE interface message class.
     """
+
     message_type = MessageTypes.INTERFACE.value
     tlv_class = CoreInterfaceTlv
 
@@ -936,6 +966,7 @@ class CoreEventMessage(CoreMessage):
     """
     CORE event message class.
     """
+
     message_type = MessageTypes.EVENT.value
     tlv_class = CoreEventTlv
 
@@ -944,6 +975,7 @@ class CoreSessionMessage(CoreMessage):
     """
     CORE session message class.
     """
+
     message_type = MessageTypes.SESSION.value
     tlv_class = CoreSessionTlv
 
@@ -952,6 +984,7 @@ class CoreExceptionMessage(CoreMessage):
     """
     CORE exception message class.
     """
+
     message_type = MessageTypes.EXCEPTION.value
     tlv_class = CoreExceptionTlv
 

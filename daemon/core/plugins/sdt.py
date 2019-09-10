@@ -43,6 +43,7 @@ class Sdt(object):
     The connect() method initializes the display, and can be invoked
     when a node position or link has changed.
     """
+
     DEFAULT_SDT_URL = "tcp://127.0.0.1:50000/"
     # default altitude (in meters) for flyto view
     DEFAULT_ALT = 2500
@@ -96,7 +97,12 @@ class Sdt(object):
         alt = node_data.altitude
 
         if all([lat, lon, alt]):
-            self.updatenodegeo(node_data.id, node_data.latitude, node_data.longitude, node_data.altitude)
+            self.updatenodegeo(
+                node_data.id,
+                node_data.latitude,
+                node_data.longitude,
+                node_data.altitude,
+            )
 
         if node_data.message_type == 0:
             # TODO: z is not currently supported by node messages
@@ -110,7 +116,12 @@ class Sdt(object):
         :return: nothing
         """
         if link_data.link_type == LinkTypes.WIRELESS.value:
-            self.updatelink(link_data.node1_id, link_data.node2_id, link_data.message_type, wireless=True)
+            self.updatelink(
+                link_data.node1_id,
+                link_data.node2_id,
+                link_data.message_type,
+                wireless=True,
+            )
 
     def is_enabled(self):
         """
@@ -182,7 +193,7 @@ class Sdt(object):
         :return: initialize command status
         :rtype: bool
         """
-        if not self.cmd("path \"%s/icons/normal\"" % constants.CORE_DATA_DIR):
+        if not self.cmd('path "%s/icons/normal"' % constants.CORE_DATA_DIR):
             return False
         # send node type to icon mappings
         for node_type, icon in self.DEFAULT_SPRITES:
@@ -269,7 +280,9 @@ class Sdt(object):
                 icon = icon.replace("$CORE_DATA_DIR", constants.CORE_DATA_DIR)
                 icon = icon.replace("$CORE_CONF_DIR", constants.CORE_CONF_DIR)
                 self.cmd("sprite %s image %s" % (type, icon))
-            self.cmd("node %d type %s label on,\"%s\" %s" % (nodenum, node_type, name, pos))
+            self.cmd(
+                'node %d type %s label on,"%s" %s' % (nodenum, node_type, name, pos)
+            )
         else:
             self.cmd("node %d %s" % (nodenum, pos))
 
@@ -333,16 +346,29 @@ class Sdt(object):
                 (x, y, z) = node.getposition()
                 if x is None or y is None:
                     continue
-                self.updatenode(node.id, MessageFlags.ADD.value, x, y, z, node.name, node.type, node.icon)
+                self.updatenode(
+                    node.id,
+                    MessageFlags.ADD.value,
+                    x,
+                    y,
+                    z,
+                    node.name,
+                    node.type,
+                    node.icon,
+                )
             for nodenum in sorted(self.remotes.keys()):
                 r = self.remotes[nodenum]
                 x, y, z = r.pos
-                self.updatenode(nodenum, MessageFlags.ADD.value, x, y, z, r.name, r.type, r.icon)
+                self.updatenode(
+                    nodenum, MessageFlags.ADD.value, x, y, z, r.name, r.type, r.icon
+                )
 
             for net in nets:
                 all_links = net.all_link_data(flags=MessageFlags.ADD.value)
                 for link_data in all_links:
-                    is_wireless = nodeutils.is_node(net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE))
+                    is_wireless = nodeutils.is_node(
+                        net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)
+                    )
                     wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
                     if is_wireless and link_data.node1_id == net.id:
                         continue
@@ -351,7 +377,7 @@ class Sdt(object):
                         link_data.node1_id,
                         link_data.node2_id,
                         MessageFlags.ADD.value,
-                        wireless_link
+                        wireless_link,
                     )
 
             for n1num in sorted(self.remotes.keys()):
@@ -400,8 +426,7 @@ class Sdt(object):
         icon = msg.get_tlv(NodeTlvs.ICON.value)
 
         net = False
-        if nodetype == NodeTypes.DEFAULT.value or \
-                nodetype == NodeTypes.PHYSICAL.value:
+        if nodetype == NodeTypes.DEFAULT.value or nodetype == NodeTypes.PHYSICAL.value:
             if model is None:
                 model = "router"
             nodetype = model
@@ -416,7 +441,9 @@ class Sdt(object):
         except KeyError:
             node = None
         if node:
-            self.updatenode(node.id, msg.flags, x, y, z, node.name, node.type, node.icon)
+            self.updatenode(
+                node.id, msg.flags, x, y, z, node.name, node.type, node.icon
+            )
         else:
             if nodenum in self.remotes:
                 remote = self.remotes[nodenum]
@@ -427,7 +454,14 @@ class Sdt(object):
                 if icon is None:
                     icon = remote.icon
             else:
-                remote = Bunch(_id=nodenum, type=nodetype, icon=icon, name=name, net=net, links=set())
+                remote = Bunch(
+                    _id=nodenum,
+                    type=nodetype,
+                    icon=icon,
+                    name=name,
+                    net=net,
+                    links=set(),
+                )
                 self.remotes[nodenum] = remote
             remote.pos = (x, y, z)
             self.updatenode(nodenum, msg.flags, x, y, z, name, nodetype, icon)

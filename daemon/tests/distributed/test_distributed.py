@@ -25,14 +25,19 @@ from core.nodes.ipaddress import IpAddress, Ipv4Prefix, MacAddress
 
 
 def set_emane_model(node_id, model):
-    return CoreConfMessage.create(0, [
-        (ConfigTlvs.NODE, node_id),
-        (ConfigTlvs.OBJECT, model),
-        (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
-    ])
+    return CoreConfMessage.create(
+        0,
+        [
+            (ConfigTlvs.NODE, node_id),
+            (ConfigTlvs.OBJECT, model),
+            (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
+        ],
+    )
 
 
-def node_message(_id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None):
+def node_message(
+    _id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None
+):
     """
     Convenience method for creating a node TLV messages.
 
@@ -59,7 +64,16 @@ def node_message(_id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, 
     return CoreNodeMessage.create(MessageFlags.ADD.value, values)
 
 
-def link_message(n1, n2, intf_one=None, address_one=None, intf_two=None, address_two=None, key=None, mask=24):
+def link_message(
+    n1,
+    n2,
+    intf_one=None,
+    address_one=None,
+    intf_two=None,
+    address_two=None,
+    key=None,
+    mask=24,
+):
     """
     Convenience method for creating link TLV messages.
 
@@ -115,11 +129,14 @@ def command_message(node, command):
     :rtype: core.api.tlv.coreapi.CoreExecMessage
     """
     flags = MessageFlags.STRING.value | MessageFlags.TEXT.value
-    return CoreExecMessage.create(flags, [
-        (ExecuteTlvs.NODE, node.id),
-        (ExecuteTlvs.NUMBER, 1),
-        (ExecuteTlvs.COMMAND, command)
-    ])
+    return CoreExecMessage.create(
+        flags,
+        [
+            (ExecuteTlvs.NODE, node.id),
+            (ExecuteTlvs.NUMBER, 1),
+            (ExecuteTlvs.COMMAND, command),
+        ],
+    )
 
 
 def state_message(state):
@@ -130,9 +147,7 @@ def state_message(state):
     :return: tlv message
     :rtype: core.api.tlv.coreapi.CoreEventMessage
     """
-    return CoreEventMessage.create(0, [
-        (EventTlvs.TYPE, state.value)
-    ])
+    return CoreEventMessage.create(0, [(EventTlvs.TYPE, state.value)])
 
 
 def validate_response(replies, _):
@@ -144,8 +159,8 @@ def validate_response(replies, _):
     :return: nothing
     """
     response = replies[0]
-    header = response[:CoreExecMessage.header_len]
-    tlv_data = response[CoreExecMessage.header_len:]
+    header = response[: CoreExecMessage.header_len]
+    tlv_data = response[CoreExecMessage.header_len :]
     response = CoreExecMessage(MessageFlags.TEXT, header, tlv_data)
     assert not response.get_tlv(ExecuteTlvs.STATUS.value)
 
@@ -162,48 +177,27 @@ class TestDistributed:
         cored.setup(distributed_address)
 
         # create local node
-        message = node_message(
-            _id=1,
-            name="n1",
-            model="host"
-        )
+        message = node_message(_id=1, name="n1", model="host")
         cored.request_handler.handle_message(message)
 
         # create distributed node and assign to distributed server
         message = node_message(
-            _id=2,
-            name="n2",
-            emulation_server=cored.distributed_server,
-            model="host"
+            _id=2, name="n2", emulation_server=cored.distributed_server, model="host"
         )
         cored.request_handler.handle_message(message)
 
         # create distributed switch and assign to distributed server
-        message = node_message(
-            _id=3,
-            name="n3",
-            node_type=NodeTypes.SWITCH
-        )
+        message = node_message(_id=3, name="n3", node_type=NodeTypes.SWITCH)
         cored.request_handler.handle_message(message)
 
         # link message one
         ip4_address = cored.prefix.addr(1)
-        message = link_message(
-            n1=1,
-            n2=3,
-            intf_one=0,
-            address_one=ip4_address
-        )
+        message = link_message(n1=1, n2=3, intf_one=0, address_one=ip4_address)
         cored.request_handler.handle_message(message)
 
         # link message two
         ip4_address = cored.prefix.addr(2)
-        message = link_message(
-            n1=3,
-            n2=2,
-            intf_two=0,
-            address_two=ip4_address
-        )
+        message = link_message(n1=3, n2=2, intf_two=0, address_two=ip4_address)
         cored.request_handler.handle_message(message)
 
         # change session to instantiation state
@@ -227,31 +221,22 @@ class TestDistributed:
         cored.setup(distributed_address)
 
         # configure required controlnet
-        cored.session.options.set_config("controlnet", "core1:172.16.1.0/24 core2:172.16.2.0/24")
+        cored.session.options.set_config(
+            "controlnet", "core1:172.16.1.0/24 core2:172.16.2.0/24"
+        )
 
         # create local node
-        message = node_message(
-            _id=1,
-            name="n1",
-            model="mdr"
-        )
+        message = node_message(_id=1, name="n1", model="mdr")
         cored.request_handler.handle_message(message)
 
         # create distributed node and assign to distributed server
         message = node_message(
-            _id=2,
-            name="n2",
-            emulation_server=cored.distributed_server,
-            model="mdr"
+            _id=2, name="n2", emulation_server=cored.distributed_server, model="mdr"
         )
         cored.request_handler.handle_message(message)
 
         # create distributed switch and assign to distributed server
-        message = node_message(
-            _id=3,
-            name="n3",
-            node_type=NodeTypes.EMANE
-        )
+        message = node_message(_id=3, name="n3", node_type=NodeTypes.EMANE)
         cored.request_handler.handle_message(message)
 
         # set emane model
@@ -260,24 +245,12 @@ class TestDistributed:
 
         # link message one
         ip4_address = cored.prefix.addr(1)
-        message = link_message(
-            n1=1,
-            n2=3,
-            intf_one=0,
-            address_one=ip4_address,
-            mask=32
-        )
+        message = link_message(n1=1, n2=3, intf_one=0, address_one=ip4_address, mask=32)
         cored.request_handler.handle_message(message)
 
         # link message two
         ip4_address = cored.prefix.addr(2)
-        message = link_message(
-            n1=2,
-            n2=3,
-            intf_one=0,
-            address_one=ip4_address,
-            mask=32
-        )
+        message = link_message(n1=2, n2=3, intf_one=0, address_one=ip4_address, mask=32)
         cored.request_handler.handle_message(message)
 
         # change session to instantiation state
@@ -301,11 +274,7 @@ class TestDistributed:
         cored.setup(distributed_address)
 
         # create local node
-        message = node_message(
-            _id=1,
-            name="n1",
-            model="host"
-        )
+        message = node_message(_id=1, name="n1", model="host")
         cored.request_handler.handle_message(message)
 
         # create distributed node and assign to distributed server
@@ -314,36 +283,22 @@ class TestDistributed:
             name="n2",
             emulation_server=cored.distributed_server,
             node_type=NodeTypes.PHYSICAL,
-            model="prouter"
+            model="prouter",
         )
         cored.request_handler.handle_message(message)
 
         # create distributed switch and assign to distributed server
-        message = node_message(
-            _id=3,
-            name="n3",
-            node_type=NodeTypes.SWITCH
-        )
+        message = node_message(_id=3, name="n3", node_type=NodeTypes.SWITCH)
         cored.request_handler.handle_message(message)
 
         # link message one
         ip4_address = cored.prefix.addr(1)
-        message = link_message(
-            n1=1,
-            n2=3,
-            intf_one=0,
-            address_one=ip4_address
-        )
+        message = link_message(n1=1, n2=3, intf_one=0, address_one=ip4_address)
         cored.request_handler.handle_message(message)
 
         # link message two
         ip4_address = cored.prefix.addr(2)
-        message = link_message(
-            n1=3,
-            n2=2,
-            intf_two=0,
-            address_two=ip4_address
-        )
+        message = link_message(n1=3, n2=2, intf_two=0, address_two=ip4_address)
         cored.request_handler.handle_message(message)
 
         # change session to instantiation state
@@ -368,11 +323,7 @@ class TestDistributed:
         cored.setup(distributed_address)
 
         # create local node
-        message = node_message(
-            _id=1,
-            name="n1",
-            model="host"
-        )
+        message = node_message(_id=1, name="n1", model="host")
         cored.request_handler.handle_message(message)
 
         # create distributed node and assign to distributed server
@@ -380,7 +331,7 @@ class TestDistributed:
             _id=2,
             name=distributed_address,
             emulation_server=cored.distributed_server,
-            node_type=NodeTypes.TUNNEL
+            node_type=NodeTypes.TUNNEL,
         )
         cored.request_handler.handle_message(message)
 
@@ -394,7 +345,7 @@ class TestDistributed:
             address_one=ip4_address,
             intf_two=0,
             address_two=address_two,
-            key=1
+            key=1,
         )
         cored.request_handler.handle_message(message)
 

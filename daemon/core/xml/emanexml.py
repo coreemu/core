@@ -53,7 +53,10 @@ def create_file(xml_element, doc_name, file_path):
     :param str file_path: file path to write xml file to
     :return: nothing
     """
-    doctype = '<!DOCTYPE %(doc_name)s SYSTEM "file:///usr/share/emane/dtd/%(doc_name)s.dtd">' % {"doc_name": doc_name}
+    doctype = (
+        '<!DOCTYPE %(doc_name)s SYSTEM "file:///usr/share/emane/dtd/%(doc_name)s.dtd">'
+        % {"doc_name": doc_name}
+    )
     corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
 
@@ -108,7 +111,12 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     :return: the next nem id that can be used for creating platform xml files
     :rtype: int
     """
-    logging.debug("building emane platform xml for node(%s) nem_id(%s): %s", node, nem_id, node.name)
+    logging.debug(
+        "building emane platform xml for node(%s) nem_id(%s): %s",
+        node,
+        nem_id,
+        node.name,
+    )
     nem_entries = {}
 
     if node.model is None:
@@ -116,10 +124,14 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         return nem_entries
 
     for netif in node.netifs():
-        logging.debug("building platform xml for interface(%s) nem_id(%s)", netif.name, nem_id)
+        logging.debug(
+            "building platform xml for interface(%s) nem_id(%s)", netif.name, nem_id
+        )
         # build nem xml
         nem_definition = nem_file_name(node.model, netif)
-        nem_element = etree.Element("nem", id=str(nem_id), name=netif.localname, definition=nem_definition)
+        nem_element = etree.Element(
+            "nem", id=str(nem_id), name=netif.localname, definition=nem_definition
+        )
 
         # check if this is an external transport, get default config if an interface specific one does not exist
         config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
@@ -137,7 +149,9 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
                 logging.info("warning: %s interface type unsupported!", netif.name)
                 transport_type = "raw"
             transport_file = transport_file_name(node.id, transport_type)
-            transport_element = etree.SubElement(nem_element, "transport", definition=transport_file)
+            transport_element = etree.SubElement(
+                nem_element, "transport", definition=transport_file
+            )
 
             # add transport parameter
             add_param(transport_element, "device", netif.name)
@@ -261,7 +275,7 @@ def build_transport_xml(emane_manager, node, transport_type):
     transport_element = etree.Element(
         "transport",
         name="%s Transport" % transport_type.capitalize(),
-        library="trans%s" % transport_type.lower()
+        library="trans%s" % transport_type.lower(),
     )
 
     # add bitrate
@@ -299,7 +313,9 @@ def create_phy_xml(emane_model, config, file_path):
     if emane_model.phy_library:
         phy_element.set("library", emane_model.phy_library)
 
-    add_configurations(phy_element, emane_model.phy_config, config, emane_model.config_ignore)
+    add_configurations(
+        phy_element, emane_model.phy_config, config, emane_model.config_ignore
+    )
     create_file(phy_element, "phy", file_path)
 
 
@@ -315,12 +331,18 @@ def create_mac_xml(emane_model, config, file_path):
     if not emane_model.mac_library:
         raise ValueError("must define emane model library")
 
-    mac_element = etree.Element("mac", name="%s MAC" % emane_model.name, library=emane_model.mac_library)
-    add_configurations(mac_element, emane_model.mac_config, config, emane_model.config_ignore)
+    mac_element = etree.Element(
+        "mac", name="%s MAC" % emane_model.name, library=emane_model.mac_library
+    )
+    add_configurations(
+        mac_element, emane_model.mac_config, config, emane_model.config_ignore
+    )
     create_file(mac_element, "mac", file_path)
 
 
-def create_nem_xml(emane_model, config, nem_file, transport_definition, mac_definition, phy_definition):
+def create_nem_xml(
+    emane_model, config, nem_file, transport_definition, mac_definition, phy_definition
+):
     """
     Create the nem xml document.
 
@@ -353,7 +375,13 @@ def create_event_service_xml(group, port, device, file_directory):
     :return: nothing
     """
     event_element = etree.Element("emaneeventmsgsvc")
-    for name, value in (("group", group), ("port", port), ("device", device), ("mcloop", "1"), ("ttl", "32")):
+    for name, value in (
+        ("group", group),
+        ("port", port),
+        ("device", device),
+        ("mcloop", "1"),
+        ("ttl", "32"),
+    ):
         sub_element = etree.SubElement(event_element, name)
         sub_element.text = value
     file_name = "libemaneeventservice.xml"

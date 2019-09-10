@@ -28,5 +28,5 @@ NODES = {
     NodeTypes.PEER_TO_PEER: core.nodes.network.PtpNet,
     NodeTypes.CONTROL_NET: core.nodes.network.CtrlNet,
     NodeTypes.DOCKER: core.nodes.docker.DockerNode,
-    NodeTypes.LXC: core.nodes.lxd.LxcNode
+    NodeTypes.LXC: core.nodes.lxd.LxcNode,
 }

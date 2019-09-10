@@ -49,7 +49,7 @@ class MacAddress(object):
         oui ^= 0x020000000000
         # append EUI-48 octets
         oui = (oui << 16) | 0xFFFE000000
-        return IpAddress(AF_INET6, struct.pack("!QQ", 0xfe80 << 48, oui | nic))
+        return IpAddress(AF_INET6, struct.pack("!QQ", 0xFE80 << 48, oui | nic))
 
     @classmethod
     def from_string(cls, s):
@@ -156,7 +156,7 @@ class IpAddress(object):
         tmp = [x for x in bytearray(self.addr)]
         for i in range(len(tmp) - 1, -1, -1):
             x = tmp[i] + carry
-            tmp[i] = x & 0xff
+            tmp[i] = x & 0xFF
             carry = x >> 8
             if carry == 0:
                 break
@@ -237,7 +237,7 @@ class IpPrefix(object):
             netmask = ((1 << self.prefixlen) - 1) << addrbits
             prefix = bytes(b"")
             for i in range(-1, -(addrbits >> 3) - 2, -1):
-                prefix = bytes([self.prefix[i] & (netmask & 0xff)]) + prefix
+                prefix = bytes([self.prefix[i] & (netmask & 0xFF)]) + prefix
                 netmask >>= 8
             self.prefix = self.prefix[:i] + prefix
 
@@ -263,7 +263,11 @@ class IpPrefix(object):
         elif self is other:
             return True
         else:
-            return other.af == self.af and other.prefixlen == self.prefixlen and other.prefix == self.prefix
+            return (
+                other.af == self.af
+                and other.prefixlen == self.prefixlen
+                and other.prefix == self.prefix
+            )
 
     def __add__(self, other):
         """
@@ -314,15 +318,20 @@ class IpPrefix(object):
         if tmp in [-1, 0, 1] and self.addrlen == self.prefixlen:
             return IpAddress(self.af, self.prefix)
 
-        if tmp == 0 or tmp > (1 << (self.addrlen - self.prefixlen)) - 1 or (
-                    self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1):
+        if (
+            tmp == 0
+            or tmp > (1 << (self.addrlen - self.prefixlen)) - 1
+            or (
+                self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1
+            )
+        ):
             raise ValueError("invalid hostid for prefix %s: %s" % (self, hostid))
 
         addr = bytes(b"")
         prefix_endpoint = -1
         for i in range(-1, -(self.addrlen >> 3) - 1, -1):
             prefix_endpoint = i
-            addr = bytes([self.prefix[i] | (tmp & 0xff)]) + addr
+            addr = bytes([self.prefix[i] | (tmp & 0xFF)]) + addr
             tmp >>= 8
             if not tmp:
                 break

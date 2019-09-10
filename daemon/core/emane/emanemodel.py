@@ -17,6 +17,7 @@ class EmaneModel(WirelessModel):
     handling configuration messages based on the list of
     configurable parameters. Helper functions also live here.
     """
+
     # default mac configuration settings
     mac_library = None
     mac_xml = None
@@ -26,18 +27,18 @@ class EmaneModel(WirelessModel):
     # default phy configuration settings, using the universal model
     phy_library = None
     phy_xml = "emanephy.xml"
-    phy_defaults = {
-        "subid": "1",
-        "propagationmodel": "2ray",
-        "noisemode": "none"
-    }
+    phy_defaults = {"subid": "1", "propagationmodel": "2ray", "noisemode": "none"}
     phy_config = []
 
     # support for external configurations
     external_config = [
         Configuration("external", ConfigDataTypes.BOOL, default="0"),
-        Configuration("platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"),
-        Configuration("transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002")
+        Configuration(
+            "platformendpoint", ConfigDataTypes.STRING, default="127.0.0.1:40001"
+        ),
+        Configuration(
+            "transportendpoint", ConfigDataTypes.STRING, default="127.0.0.1:50002"
+        ),
     ]
 
     config_ignore = set()
@@ -84,7 +85,7 @@ class EmaneModel(WirelessModel):
         return [
             ConfigGroup("MAC Parameters", 1, mac_len),
             ConfigGroup("PHY Parameters", mac_len + 1, phy_len),
-            ConfigGroup("External Parameters", phy_len + 1, config_len)
+            ConfigGroup("External Parameters", phy_len + 1, config_len),
         ]
 
     def build_xml_files(self, config, interface=None):
@@ -108,7 +109,9 @@ class EmaneModel(WirelessModel):
 
         # create nem xml file
         nem_file = os.path.join(self.session.session_dir, nem_name)
-        emanexml.create_nem_xml(self, config, nem_file, transport_name, mac_name, phy_name)
+        emanexml.create_nem_xml(
+            self, config, nem_file, transport_name, mac_name, phy_name
+        )
 
         # create mac xml file
         mac_file = os.path.join(self.session.session_dir, mac_name)
@@ -142,7 +145,16 @@ class EmaneModel(WirelessModel):
         except KeyError:
             logging.exception("error during update")
 
-    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(
+        self,
+        netif,
+        bw=None,
+        delay=None,
+        loss=None,
+        duplicate=None,
+        jitter=None,
+        netif2=None,
+    ):
         """
         Invoked when a Link Message is received. Default is unimplemented.
 
@@ -155,4 +167,6 @@ class EmaneModel(WirelessModel):
         :param core.netns.vif.Veth netif2: interface two
         :return: nothing
         """
-        logging.warning("emane model(%s) does not support link configuration", self.name)
+        logging.warning(
+            "emane model(%s) does not support link configuration", self.name
+        )

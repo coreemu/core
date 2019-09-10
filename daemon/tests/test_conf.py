@@ -1,5 +1,10 @@
 import pytest
-from core.config import ConfigurableManager, ConfigurableOptions, Configuration, ModelManager
+from core.config import (
+    ConfigurableManager,
+    ConfigurableOptions,
+    Configuration,
+    ModelManager,
+)
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import ConfigDataTypes, NodeTypes
 from core.location.mobility import BasicRangeModel
@@ -9,16 +14,8 @@ class TestConfigurableOptions(ConfigurableOptions):
     name_one = "value1"
     name_two = "value2"
     options = [
-        Configuration(
-            _id=name_one,
-            _type=ConfigDataTypes.STRING,
-            label=name_one
-        ),
-        Configuration(
-            _id=name_two,
-            _type=ConfigDataTypes.STRING,
-            label=name_two
-        )
+        Configuration(_id=name_one, _type=ConfigDataTypes.STRING, label=name_one),
+        Configuration(_id=name_two, _type=ConfigDataTypes.STRING, label=name_two),
     ]
 
 

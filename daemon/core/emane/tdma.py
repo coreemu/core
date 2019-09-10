@@ -21,14 +21,16 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
 
     # add custom schedule options and ignore it when writing emane xml
     schedule_name = "schedule"
-    default_schedule = os.path.join(constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml")
+    default_schedule = os.path.join(
+        constants.CORE_DATA_DIR, "examples", "tdma", "schedule.xml"
+    )
     config_ignore = {schedule_name}
 
     @classmethod
     def load(cls, emane_prefix):
         cls.mac_defaults["pcrcurveuri"] = os.path.join(
             emane_prefix,
-            "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml"
+            "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
         )
         super(EmaneTdmaModel, cls).load(emane_prefix)
         cls.mac_config.insert(
@@ -37,8 +39,8 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
                 _id=cls.schedule_name,
                 _type=ConfigDataTypes.STRING,
                 default=cls.default_schedule,
-                label="TDMA schedule file (core)"
-            )
+                label="TDMA schedule file (core)",
+            ),
         )
 
     def post_startup(self):
@@ -57,5 +59,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
         event_device = self.session.emane.event_device
 
         # initiate tdma schedule
-        logging.info("setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device)
+        logging.info(
+            "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
+        )
         utils.check_cmd(["emaneevent-tdmaschedule", "-i", event_device, schedule])

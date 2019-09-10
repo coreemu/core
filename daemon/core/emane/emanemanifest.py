@@ -122,7 +122,7 @@ def parse(manifest_path, defaults):
             _type=config_type_value,
             default=config_default,
             options=possible,
-            label=config_descriptions
+            label=config_descriptions,
         )
         configurations.append(configuration)
 
