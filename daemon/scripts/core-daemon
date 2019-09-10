@@ -23,8 +23,6 @@ from core.api.tlv.coreserver import CoreUdpServer
 from core.emulator import enumerations
 from core.utils import close_onexec
 
-load_logging_config()
-
 
 def banner():
     """
@@ -106,7 +104,8 @@ def get_merged_config(filename):
         "xmlfilever": "1.0",
         "numthreads": "1",
         "grpcport": "50051",
-        "grpcaddress": "localhost"
+        "grpcaddress": "localhost",
+        "logfile": None
     }
 
     parser = argparse.ArgumentParser(
@@ -123,6 +122,7 @@ def get_merged_config(filename):
                         help="grpc port to listen on; default %s" % defaults["grpcport"])
     parser.add_argument("--grpc-address", dest="grpcaddress",
                         help="grpc address to listen on; default %s" % defaults["grpcaddress"])
+    parser.add_argument("-l", "--logfile", help="core logging configuration; default %s" % defaults["logfile"])
 
     # parse command line options
     args = parser.parse_args()
@@ -133,6 +133,9 @@ def get_merged_config(filename):
     del args.configfile
     cfg = ConfigParser(defaults)
     cfg.read(filename)
+
+    # load logging configuration
+    load_logging_config(args.logfile)
 
     section = "core-daemon"
     if not cfg.has_section(section):

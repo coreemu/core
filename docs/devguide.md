@@ -3,44 +3,115 @@
 * Table of Contents
 {:toc}
 
-## Source Code Guide
+## Repository Overview
 
-The CORE source consists of several different programming languages for historical reasons. Current development focuses on the Python modules and daemon. Here is a brief description of the source directories.
+The CORE source consists of several different programming languages for historical reasons.
+Current development focuses on the Python modules and daemon. Here is a brief description of the source directories.
 
-These are being actively developed as of CORE 5.1:
+| Directory | Description |
+|---|---|
+|corefx|JavaFX based GUI using gRPC API to replace legacy GUI|
+|daemon|Python CORE daemon code that handles receiving API calls and creating containers|
+|docs|Markdown Documentation currently hosted on GitHub|
+|gui|Tcl/Tk GUI|
+|man|Template files for creating man pages for various CORE command line utilities|
+|netns|Python C extension modules for creating CORE containers|
+|ns3|Experimental python ns3 script support for running CORE|
+|scripts|Template files used for running CORE as a service|
 
-* *gui* - Tcl/Tk GUI. This uses Tcl/Tk because of its roots with the IMUNES
-  project.
-* *daemon* - Python modules are found in the :file:`daemon/core` directory, the
-  daemon under :file:`daemon/scripts/core-daemon`
-* *netns* - Python extension modules for Linux Network Namespace support are in :file:`netns`.
-* *doc* - Documentation for the manual lives here in reStructuredText format.
+## Getting started
 
-Not actively being developed:
+Overview for setting up the pipenv environment, building core, installing the GUI and netns, then running
+the core-daemon for development.
 
-* *ns3* - Python ns3 script support for running CORE.
+### Setup Python Environment
+
+Use python 2 or python 3 as desired with their respective utilities used below.
+
+```shell
+# change to daemon directory
+cd $REPO/daemon
+
+# install pipenv
+pip install pipenv
+
+# setup a virtual environment and install all required development dependencies
+python -m pipenv install --dev
+
+# setup python variable using pipenv created python
+export PYTHON=$(python -m pipenv --py)
+```
+
+### Build CORE
+
+```shell
+# clone core
+git clone https://github.com/coreemu/core.git
+cd core
+
+# build core
+./bootstrap.sh
+./configure --prefix=/usr
+make
+```
+
+### Install netns and GUI
+
+Below commands assume your development will be focused on the daemon.
+
+```shell
+# install GUI
+cd $REPO/gui
+sudo make install
+
+# install netns scripts
+cd $REPO/netns
+sudo make install
+```
+
+### Running CORE
+
+This will run the core-daemon server using the configuration files within the repo.
+
+```shell
+python -m pipenv run coredev
+```
 
 ## The CORE API
 
-The CORE API is used between different components of CORE for communication. The GUI communicates with the CORE daemon using the API. One emulation server communicates with another using the API. The API also allows other systems to interact with the CORE emulation. The API allows another system to add, remove, or modify nodes and links, and enables executing commands on the emulated systems. Wireless link parameters are updated on-the-fly based on node positions.
+The CORE API is used between different components of CORE for communication. The GUI communicates with the CORE daemon 
+using the API. One emulation server communicates with another using the API. The API also allows other systems to 
+interact with the CORE emulation. The API allows another system to add, remove, or modify nodes and links, and enables 
+executing commands on the emulated systems. Wireless link parameters are updated on-the-fly based on node positions.
 
-CORE listens on a local TCP port for API messages. The other system could be software running locally or another machine accessible across the network.
+CORE listens on a local TCP port for API messages. The other system could be software running locally or another 
+machine accessible across the network.
 
 The CORE API is currently specified in a separate document, available from the CORE website.
 
-## Linux network namespace Commands
+## Linux Network Namespace Commands
 
-Linux network namespace containers are often managed using the *Linux Container Tools* or *lxc-tools* package. The lxc-tools website is available here http://lxc.sourceforge.net/ for more information.  CORE does not use these management utilities, but includes its own set of tools for instantiating and configuring network namespace containers. This section describes these tools.
+Linux network namespace containers are often managed using the *Linux Container Tools* or *lxc-tools* package. 
+The lxc-tools website is available here http://lxc.sourceforge.net/ for more information.  CORE does not use these 
+management utilities, but includes its own set of tools for instantiating and configuring network namespace containers. 
+This section describes these tools.
 
-### vnoded command
+### vnoded
 
-The *vnoded* daemon is the program used to create a new namespace, and listen on a control channel for commands that may instantiate other processes. This daemon runs as PID 1 in the container. It is launched automatically by the CORE daemon. The control channel is a UNIX domain socket usually named */tmp/pycore.23098/n3*, for node 3 running on CORE session 23098, for example. Root privileges are required for creating a new namespace.
+The *vnoded* daemon is the program used to create a new namespace, and listen on a control channel for commands that 
+may instantiate other processes. This daemon runs as PID 1 in the container. It is launched automatically by the CORE 
+daemon. The control channel is a UNIX domain socket usually named */tmp/pycore.23098/n3*, for node 3 running on CORE 
+session 23098, for example. Root privileges are required for creating a new namespace.
 
-### vcmd command
+### vcmd
 
-The *vcmd* program is used to connect to the *vnoded* daemon in a Linux network namespace, for running commands in the namespace. The CORE daemon uses the same channel for setting up a node and running processes within it. This program has two required arguments, the control channel name, and the command line to be run within the namespace. This command does not need to run with root privileges.
+The *vcmd* program is used to connect to the *vnoded* daemon in a Linux network namespace, for running commands in the 
+namespace. The CORE daemon uses the same channel for setting up a node and running processes within it. This program 
+has two required arguments, the control channel name, and the command line to be run within the namespace. This command 
+does not need to run with root privileges.
 
-When you double-click on a node in a running emulation, CORE will open a shell window for that node using a command such as:
+When you double-click on a node in a running emulation, CORE will open a shell window for that node using a command 
+such as:
 
 ```shell
 gnome-terminal -e vcmd -c /tmp/pycore.50160/n1 -- bash
@@ -54,11 +125,14 @@ vcmd -c /tmp/pycore.50160/n1 -- /sbin/ip -4 ro
 
 ### core-cleanup script
 
-A script named *core-cleanup* is provided to clean up any running CORE emulations. It will attempt to kill any remaining vnoded processes, kill any EMANE processes, remove the :file:`/tmp/pycore.*` session directories, and remove any bridges or *ebtables* rules.  With a *-d* option, it will also kill any running CORE daemon.
+A script named *core-cleanup* is provided to clean up any running CORE emulations. It will attempt to kill any 
+remaining vnoded processes, kill any EMANE processes, remove the :file:`/tmp/pycore.*` session directories, and remove 
+any bridges or *ebtables* rules.  With a *-d* option, it will also kill any running CORE daemon.
 
 ### netns command
 
-The *netns* command is not used by CORE directly. This utility can be used to run a command in a new network namespace for testing purposes. It does not open a control channel for receiving further commands.
+The *netns* command is not used by CORE directly. This utility can be used to run a command in a new network namespace 
+for testing purposes. It does not open a control channel for receiving further commands.
 
 ### Other Useful Commands
 
@@ -110,4 +184,5 @@ brctl show
 vcmd -c /tmp/n1.ctl -- ping 10.0.0.2
 ```
 
-The above example script can be found as *twonodes.sh* in the *examples/netns* directory. Use *core-cleanup* to clean up after the script.
+The above example script can be found as *twonodes.sh* in the *examples/netns* directory. Use *core-cleanup* to clean 
+up after the script.
