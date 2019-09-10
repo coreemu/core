@@ -1,0 +1,9 @@
+repos:
+- repo: local
+  hooks:
+  - id: isort
+    name: isort
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd daemon && pipenv run isort --atomic'
+    types: [python]
