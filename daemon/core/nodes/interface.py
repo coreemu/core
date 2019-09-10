@@ -4,11 +4,9 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
-from builtins import int
-from builtins import range
+from builtins import int, range
 
-from core import CoreCommandError, utils
-from core import constants
+from core import CoreCommandError, constants, utils
 from core.emulator.enumerations import NodeTypes
 from core.nodes import nodeutils
 

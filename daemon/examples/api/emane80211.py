@@ -3,9 +3,9 @@
 # Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
 
 import datetime
+import parser
 from builtins import range
 
-import parser
 from core import load_logging_config
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu

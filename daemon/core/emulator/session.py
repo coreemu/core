@@ -15,23 +15,21 @@ import time
 from multiprocessing.pool import ThreadPool
 
 import core.nodes.base
-from core import constants
-from core import utils
+from core import constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
-from core.emulator.data import EventData, NodeData
-from core.emulator.data import ExceptionData
-from core.emulator.emudata import IdGen
-from core.emulator.emudata import LinkOptions, NodeOptions
-from core.emulator.emudata import create_interface
-from core.emulator.emudata import is_net_node
-from core.emulator.emudata import link_config
-from core.emulator.enumerations import EventTypes, LinkTypes
-from core.emulator.enumerations import ExceptionLevels
-from core.emulator.enumerations import NodeTypes
-from core.emulator.sessionconfig import SessionConfig
-from core.emulator.sessionconfig import SessionMetaData
+from core.emulator.data import EventData, ExceptionData, NodeData
+from core.emulator.emudata import (
+    IdGen,
+    LinkOptions,
+    NodeOptions,
+    create_interface,
+    is_net_node,
+    link_config,
+)
+from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
+from core.emulator.sessionconfig import SessionConfig, SessionMetaData
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
@@ -40,8 +38,7 @@ from core.nodes.base import CoreNodeBase
 from core.nodes.ipaddress import MacAddress
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
-from core.xml import corexml
-from core.xml import corexmldeployment
+from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 
 

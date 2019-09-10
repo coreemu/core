@@ -7,13 +7,9 @@ import logging
 import os
 import threading
 
-from core import CoreCommandError, utils
-from core import constants
+from core import CoreCommandError, constants, utils
 from core.api.tlv import coreapi, dataconversion
-from core.config import ConfigGroup
-from core.config import ConfigShim
-from core.config import Configuration
-from core.config import ModelManager
+from core.config import ConfigGroup, ConfigShim, Configuration, ModelManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -21,13 +17,15 @@ from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.enumerations import ConfigDataTypes
-from core.emulator.enumerations import ConfigFlags
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    ConfigFlags,
+    ConfigTlvs,
+    MessageFlags,
+    MessageTypes,
+    NodeTypes,
+    RegisterTlvs,
+)
 from core.nodes import nodeutils
 from core.xml import emanexml
 

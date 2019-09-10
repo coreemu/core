@@ -1,6 +1,6 @@
+from core import utils
 from core.emulator.emudata import LinkOptions
 from core.emulator.enumerations import NodeTypes
-from core import utils
 
 
 def create_ptp_network(session, ip_prefixes):

@@ -9,14 +9,12 @@ import threading
 import time
 from socket import AF_INET, AF_INET6
 
-from core import CoreCommandError, utils
-from core import constants
-from core.nodes.base import CoreNetworkBase
+from core import CoreCommandError, constants, utils
 from core.emulator.data import LinkData
-from core.emulator.enumerations import NodeTypes, LinkTypes, RegisterTlvs
+from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes import ipaddress
-from core.nodes.interface import GreTap
-from core.nodes.interface import Veth
+from core.nodes.base import CoreNetworkBase
+from core.nodes.interface import GreTap, Veth
 
 utils.check_executables([
     constants.BRCTL_BIN,

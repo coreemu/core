@@ -6,13 +6,13 @@
 # nodestep
 
 import datetime
+import parser
 from builtins import range
 
-import parser
 from core import load_logging_config
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import NodeTypes, EventTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 from core.location.mobility import BasicRangeModel
 
 load_logging_config()

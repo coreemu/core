@@ -7,8 +7,7 @@ import sys
 import core.services
 from core.emulator.emudata import IdGen
 from core.emulator.session import Session
-from core.nodes import nodemaps
-from core.nodes import nodeutils
+from core.nodes import nodemaps, nodeutils
 from core.services.coreservices import ServiceManager
 
 

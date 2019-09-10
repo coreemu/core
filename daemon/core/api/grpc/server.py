@@ -4,17 +4,16 @@ import os
 import re
 import tempfile
 import time
-
-import grpc
 from builtins import int
 from concurrent import futures
-from queue import Queue, Empty
+from queue import Empty, Queue
 
-from core.api.grpc import core_pb2
-from core.api.grpc import core_pb2_grpc
-from core.emulator.data import NodeData, LinkData, EventData, ConfigData, ExceptionData, FileData
-from core.emulator.emudata import NodeOptions, InterfaceData, LinkOptions
-from core.emulator.enumerations import NodeTypes, EventTypes, LinkTypes
+import grpc
+
+from core.api.grpc import core_pb2, core_pb2_grpc
+from core.emulator.data import ConfigData, EventData, ExceptionData, FileData, LinkData, NodeData
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.enumerations import EventTypes, LinkTypes, NodeTypes
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase

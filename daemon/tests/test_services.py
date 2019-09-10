@@ -1,10 +1,7 @@
 import os
 
 import pytest
-
-from core.services.coreservices import CoreService
-from core.services.coreservices import ServiceDependencies
-from core.services.coreservices import ServiceManager
+from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
 _SERVICES_PATH = os.path.join(_PATH, "myservices")

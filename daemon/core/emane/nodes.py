@@ -6,10 +6,8 @@ share the same MAC+PHY model.
 
 import logging
 
+from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes.base import CoreNetworkBase
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
 
 try:
     from emane.events import LocationEvent

@@ -4,7 +4,7 @@ quagga.py: defines routing services provided by Quagga.
 
 from core import constants
 from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import nodeutils, ipaddress
+from core.nodes import ipaddress, nodeutils
 from core.services.coreservices import CoreService
 
 

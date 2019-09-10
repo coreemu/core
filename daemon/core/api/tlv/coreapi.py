@@ -7,26 +7,27 @@ CORE API messaging is leveraged for communication with the GUI.
 
 import socket
 import struct
-from past.builtins import basestring
-
 from enum import Enum
 
+from past.builtins import basestring
+
 from core.api.tlv import structutils
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import EventTlvs
-from core.emulator.enumerations import EventTypes
-from core.emulator.enumerations import ExceptionTlvs
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import FileTlvs
-from core.emulator.enumerations import InterfaceTlvs
-from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
-from core.emulator.enumerations import NodeTlvs
-from core.emulator.enumerations import RegisterTlvs
-from core.emulator.enumerations import SessionTlvs
-from core.nodes.ipaddress import IpAddress
-from core.nodes.ipaddress import MacAddress
+from core.emulator.enumerations import (
+    ConfigTlvs,
+    EventTlvs,
+    EventTypes,
+    ExceptionTlvs,
+    ExecuteTlvs,
+    FileTlvs,
+    InterfaceTlvs,
+    LinkTlvs,
+    MessageFlags,
+    MessageTypes,
+    NodeTlvs,
+    RegisterTlvs,
+    SessionTlvs,
+)
+from core.nodes.ipaddress import IpAddress, MacAddress
 
 
 class CoreTlvData(object):

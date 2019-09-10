@@ -6,44 +6,40 @@ import logging
 import os
 import shlex
 import shutil
+import socketserver
 import sys
 import threading
 import time
-from itertools import repeat
-
-import socketserver
 from builtins import range
-from queue import Queue, Empty
+from itertools import repeat
+from queue import Empty, Queue
 
 from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
 from core.config import ConfigShim
-from core.emulator.data import ConfigData, ExceptionData
-from core.emulator.data import EventData
-from core.emulator.data import FileData
-from core.emulator.emudata import InterfaceData
-from core.emulator.emudata import LinkOptions
-from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import ConfigDataTypes
-from core.emulator.enumerations import ConfigFlags
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import EventTlvs
-from core.emulator.enumerations import EventTypes
-from core.emulator.enumerations import ExceptionTlvs
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import FileTlvs
-from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
-from core.emulator.enumerations import NodeTlvs
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
-from core.emulator.enumerations import SessionTlvs
+from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    ConfigFlags,
+    ConfigTlvs,
+    EventTlvs,
+    EventTypes,
+    ExceptionTlvs,
+    ExecuteTlvs,
+    FileTlvs,
+    LinkTlvs,
+    LinkTypes,
+    MessageFlags,
+    MessageTypes,
+    NodeTlvs,
+    NodeTypes,
+    RegisterTlvs,
+    SessionTlvs,
+)
 from core.location.mobility import BasicRangeModel
 from core.nodes import nodeutils
-from core.services.coreservices import ServiceManager
-from core.services.coreservices import ServiceShim
+from core.services.coreservices import ServiceManager, ServiceShim
 
 
 class CoreHandler(socketserver.BaseRequestHandler):

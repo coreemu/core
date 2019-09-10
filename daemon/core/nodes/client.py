@@ -6,11 +6,9 @@ The control channel can be accessed via calls using the vcmd shell.
 
 import logging
 import os
+from subprocess import PIPE, Popen
 
-from subprocess import Popen, PIPE
-
-from core import CoreCommandError, utils
-from core import constants
+from core import CoreCommandError, constants, utils
 
 
 class VnodeClient(object):

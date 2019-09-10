@@ -5,21 +5,15 @@ TODO: probably goes away, or implement the usage of "unshare", or docker formal.
 import logging
 import socket
 import threading
-from socket import AF_INET
-from socket import AF_INET6
+from socket import AF_INET, AF_INET6
 
-from core import CoreCommandError, utils
-from core import constants
-from core.nodes.base import CoreNetworkBase
+from core import CoreCommandError, constants, utils
 from core.emulator.data import LinkData
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes import ipaddress
-from core.nodes.interface import GreTap
-from core.nodes.interface import Veth
-from core.nodes.network import EbtablesQueue
-from core.nodes.network import GreTapBridge
+from core.nodes.base import CoreNetworkBase
+from core.nodes.interface import GreTap, Veth
+from core.nodes.network import EbtablesQueue, GreTapBridge
 
 # a global object because all WLANs share the same queue
 # cannot have multiple threads invoking the ebtables commnd

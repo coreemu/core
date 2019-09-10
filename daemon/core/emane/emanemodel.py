@@ -4,8 +4,7 @@ Defines Emane Models used within CORE.
 import logging
 import os
 
-from core.config import ConfigGroup
-from core.config import Configuration
+from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emulator.enumerations import ConfigDataTypes
 from core.location.mobility import WirelessModel

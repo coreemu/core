@@ -159,4 +159,3 @@ class Nat(CoreService):
                 cfg += cls.generateifcnatrule(ifc)
                 cfg += "\n"
         return cfg
-

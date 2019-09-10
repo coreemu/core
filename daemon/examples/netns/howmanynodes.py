@@ -22,8 +22,8 @@ import time
 import core.nodes.base
 import core.nodes.network
 from core import constants
-from core.nodes import ipaddress
 from core.emulator.session import Session
+from core.nodes import ipaddress
 
 GBD = 1024.0 * 1024.0
 

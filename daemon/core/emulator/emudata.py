@@ -1,10 +1,7 @@
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase
-from core.nodes.ipaddress import Ipv4Prefix
-from core.nodes.ipaddress import Ipv6Prefix
-from core.nodes.ipaddress import MacAddress
+from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 
 
 class IdGen(object):

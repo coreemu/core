@@ -2,8 +2,7 @@
 Example custom emane model.
 """
 
-from core.emane import emanemanifest
-from core.emane import emanemodel
+from core.emane import emanemanifest, emanemodel
 
 
 class ExampleModel(emanemodel.EmaneModel):

@@ -47,14 +47,11 @@ from core.emulator.session import Session
 from core.nodes import ipaddress
 
 try:
-    import emaneeventservice
-    import emaneeventpathloss
-except Exception as e:
-    try:
-        from emanesh.events import EventService
-        from emanesh.events import PathlossEvent
-    except Exception as e2:
-        raise ImportError("failed to import EMANE Python bindings:\n%s\n%s" % (e, e2))
+    from emane.events import EventService
+    from emane.events import PathlossEvent
+except ImportError:
+    from emanesh.events import EventService
+    from emanesh.events import PathlossEvent
 
 # global Experiment object (for interaction with "python -i")
 exp = None

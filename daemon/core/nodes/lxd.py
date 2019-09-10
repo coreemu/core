@@ -3,7 +3,7 @@ import logging
 import os
 import time
 
-from core import utils, CoreCommandError
+from core import CoreCommandError, utils
 from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNode
 

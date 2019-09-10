@@ -8,12 +8,9 @@ import subprocess
 import threading
 
 import pytest
-
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import NodeTypes
-from core.location.mobility import BasicRangeModel
-from core.location.mobility import Ns2ScriptedMobility
+from core.emulator.enumerations import MessageFlags, NodeTypes
+from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.client import VnodeClient
 
 _PATH = os.path.abspath(os.path.dirname(__file__))

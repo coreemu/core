@@ -5,5 +5,5 @@ repos:
     name: isort
     stages: [commit]
     language: system
-    entry: bash -c 'cd daemon && pipenv run isort --atomic'
+    entry: bash -c 'cd daemon && pipenv run isort --atomic -y'
     types: [python]

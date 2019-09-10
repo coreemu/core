@@ -1,8 +1,5 @@
-from core.config import ConfigurableManager
-from core.config import ConfigurableOptions
-from core.config import Configuration
-from core.emulator.enumerations import ConfigDataTypes
-from core.emulator.enumerations import RegisterTlvs
+from core.config import ConfigurableManager, ConfigurableOptions, Configuration
+from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
 from core.plugins.sdt import Sdt
 
 

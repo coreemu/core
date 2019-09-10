@@ -6,10 +6,8 @@ import logging
 import random
 import socket
 import struct
-from builtins import bytes
-from builtins import range
-from socket import AF_INET
-from socket import AF_INET6
+from builtins import bytes, range
+from socket import AF_INET, AF_INET6
 
 
 class MacAddress(object):

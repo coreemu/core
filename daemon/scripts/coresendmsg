@@ -9,10 +9,7 @@ import socket
 import sys
 
 from core.api.tlv import coreapi
-from core.emulator.enumerations import CORE_API_PORT
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
-from core.emulator.enumerations import SessionTlvs
+from core.emulator.enumerations import CORE_API_PORT, MessageFlags, MessageTypes, SessionTlvs
 
 
 def print_available_tlvs(t, tlv_class):

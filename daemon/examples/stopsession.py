@@ -9,7 +9,7 @@ import optparse
 import socket
 
 from core.api.tlv import coreapi
-from core.emulator.enumerations import MessageFlags, SessionTlvs, CORE_API_PORT
+from core.emulator.enumerations import CORE_API_PORT, MessageFlags, SessionTlvs
 
 
 def main():

@@ -11,17 +11,14 @@ import signal
 import socket
 import string
 import threading
+from builtins import range
 from socket import AF_INET, AF_INET6
 
-from builtins import range
-
-from core import CoreCommandError, utils
-from core import constants
-from core.emulator.data import NodeData, LinkData
-from core.emulator.enumerations import NodeTypes, LinkTypes
-from core.nodes import client, nodeutils, ipaddress
-from core.nodes.interface import TunTap, CoreInterface
-from core.nodes.interface import Veth
+from core import CoreCommandError, constants, utils
+from core.emulator.data import LinkData, NodeData
+from core.emulator.enumerations import LinkTypes, NodeTypes
+from core.nodes import client, ipaddress, nodeutils
+from core.nodes.interface import CoreInterface, TunTap, Veth
 
 _DEFAULT_MTU = 1500
 

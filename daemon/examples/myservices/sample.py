@@ -2,8 +2,7 @@
 Simple example for a user-defined service.
 """
 
-from core.services.coreservices import CoreService
-from core.services.coreservices import ServiceMode
+from core.services.coreservices import CoreService, ServiceMode
 
 
 class MyService(CoreService):

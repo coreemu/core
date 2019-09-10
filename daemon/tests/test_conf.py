@@ -1,12 +1,7 @@
 import pytest
-
-from core.config import ConfigurableManager
-from core.config import ConfigurableOptions
-from core.config import Configuration
-from core.config import ModelManager
+from core.config import ConfigurableManager, ConfigurableOptions, Configuration, ModelManager
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.enumerations import ConfigDataTypes
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import ConfigDataTypes, NodeTypes
 from core.location.mobility import BasicRangeModel
 
 

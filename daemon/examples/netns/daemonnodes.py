@@ -19,14 +19,16 @@ import core.nodes.base
 import core.nodes.network
 from core.api.tlv import coreapi, dataconversion
 from core.api.tlv.coreapi import CoreExecuteTlv
-from core.emulator.enumerations import CORE_API_PORT
-from core.emulator.enumerations import EventTlvs
-from core.emulator.enumerations import EventTypes
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
+from core.emulator.enumerations import (
+    CORE_API_PORT,
+    EventTlvs,
+    EventTypes,
+    ExecuteTlvs,
+    LinkTlvs,
+    LinkTypes,
+    MessageFlags,
+    MessageTypes,
+)
 from core.emulator.session import Session
 from core.nodes import ipaddress
 

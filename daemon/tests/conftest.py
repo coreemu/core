@@ -7,8 +7,6 @@ import threading
 import time
 
 import pytest
-from mock.mock import MagicMock
-
 from core.api.grpc.client import InterfaceHelper
 from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.coreapi import CoreConfMessage, CoreEventMessage
@@ -16,11 +14,10 @@ from core.api.tlv.corehandlers import CoreHandler
 from core.api.tlv.coreserver import CoreServer
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.emulator.enumerations import CORE_API_PORT, EventTlvs
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import CORE_API_PORT, ConfigTlvs, EventTlvs, EventTypes
 from core.nodes import ipaddress
 from core.services.coreservices import ServiceManager
+from mock.mock import MagicMock
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 

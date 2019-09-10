@@ -1,14 +1,27 @@
 """
 Unit tests for testing CORE with distributed networks.
 """
+from core.api.tlv.coreapi import (
+    CoreConfMessage,
+    CoreEventMessage,
+    CoreExecMessage,
+    CoreLinkMessage,
+    CoreNodeMessage,
+)
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-
-from core.api.tlv.coreapi import CoreExecMessage, CoreNodeMessage, CoreLinkMessage, CoreEventMessage, CoreConfMessage
-from core.emulator.enumerations import EventTypes, NodeTlvs, LinkTlvs, LinkTypes, EventTlvs, ConfigTlvs, ConfigFlags
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import NodeTypes
-from core.nodes.ipaddress import IpAddress, MacAddress, Ipv4Prefix
+from core.emulator.enumerations import (
+    ConfigFlags,
+    ConfigTlvs,
+    EventTlvs,
+    EventTypes,
+    ExecuteTlvs,
+    LinkTlvs,
+    LinkTypes,
+    MessageFlags,
+    NodeTlvs,
+    NodeTypes,
+)
+from core.nodes.ipaddress import IpAddress, Ipv4Prefix, MacAddress
 
 
 def set_emane_model(node_id, model):

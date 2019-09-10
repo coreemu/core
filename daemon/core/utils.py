@@ -11,6 +11,7 @@ import os
 import shlex
 import subprocess
 import sys
+
 from past.builtins import basestring
 
 from core import CoreCommandError

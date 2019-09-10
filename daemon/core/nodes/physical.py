@@ -7,13 +7,11 @@ import os
 import subprocess
 import threading
 
-from core import CoreCommandError, utils
-from core import constants
+from core import CoreCommandError, constants, utils
+from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNodeBase
 from core.nodes.interface import CoreInterface
-from core.emulator.enumerations import NodeTypes
-from core.nodes.network import GreTap
-from core.nodes.network import CoreNetwork
+from core.nodes.network import CoreNetwork, GreTap
 
 
 class PhysicalNode(CoreNodeBase):

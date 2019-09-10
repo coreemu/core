@@ -10,8 +10,7 @@ from contextlib import contextmanager
 
 import grpc
 
-from core.api.grpc import core_pb2
-from core.api.grpc import core_pb2_grpc
+from core.api.grpc import core_pb2, core_pb2_grpc
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 
 

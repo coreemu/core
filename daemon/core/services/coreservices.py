@@ -15,8 +15,7 @@ from multiprocessing.pool import ThreadPool
 from core import CoreCommandError, utils
 from core.constants import which
 from core.emulator.data import FileData
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import MessageFlags, RegisterTlvs
 
 
 class ServiceBootError(Exception):

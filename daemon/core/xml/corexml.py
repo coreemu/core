@@ -1,14 +1,13 @@
 import logging
-from core.nodes.base import CoreNetworkBase
+
 from lxml import etree
 
 import core.nodes.base
 import core.nodes.physical
-from core.emulator.emudata import InterfaceData
-from core.emulator.emudata import LinkOptions
-from core.emulator.emudata import NodeOptions
+from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.nodes import nodeutils
+from core.nodes.base import CoreNetworkBase
 from core.nodes.ipaddress import MacAddress
 
 

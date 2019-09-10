@@ -1,17 +1,17 @@
 import time
-
-import grpc
-import pytest
 from builtins import int
 from queue import Queue
 
+import grpc
+
+import pytest
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient
 from core.config import ConfigShim
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.data import EventData
 from core.emulator.emudata import NodeOptions
-from core.emulator.enumerations import NodeTypes, EventTypes, ConfigFlags, ExceptionLevels
+from core.emulator.enumerations import ConfigFlags, EventTypes, ExceptionLevels, NodeTypes
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 
 

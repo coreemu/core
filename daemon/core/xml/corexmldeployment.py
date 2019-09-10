@@ -4,9 +4,9 @@ import socket
 from lxml import etree
 
 from core import constants, utils
-from core.nodes.base import CoreNodeBase
 from core.emulator.enumerations import NodeTypes
-from core.nodes import nodeutils, ipaddress
+from core.nodes import ipaddress, nodeutils
+from core.nodes.base import CoreNodeBase
 
 
 def add_type(parent_element, name):

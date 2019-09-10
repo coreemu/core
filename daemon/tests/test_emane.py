@@ -4,7 +4,6 @@ Unit tests for testing CORE EMANE networks.
 import os
 
 import pytest
-
 from conftest import ping
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel

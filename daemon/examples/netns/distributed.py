@@ -18,7 +18,14 @@ import core.nodes.base
 import core.nodes.network
 from core import constants
 from core.api.tlv import coreapi, dataconversion
-from core.emulator.enumerations import CORE_API_PORT, EventTypes, EventTlvs, LinkTlvs, LinkTypes, MessageFlags
+from core.emulator.enumerations import (
+    CORE_API_PORT,
+    EventTlvs,
+    EventTypes,
+    LinkTlvs,
+    LinkTypes,
+    MessageFlags,
+)
 from core.emulator.session import Session
 from core.nodes import ipaddress
 

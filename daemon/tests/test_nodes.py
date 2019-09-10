@@ -2,10 +2,9 @@ import os
 import time
 
 import pytest
-
+from core import utils
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
-from core import utils
 
 MODELS = [
     "router",

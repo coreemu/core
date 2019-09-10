@@ -12,23 +12,25 @@ import threading
 
 from core import utils
 from core.api.tlv import coreapi
-from core.nodes.base import CoreNodeBase, CoreNetworkBase
-from core.emulator.enumerations import ConfigDataTypes
-from core.emulator.enumerations import ConfigFlags
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import EventTlvs
-from core.emulator.enumerations import EventTypes
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import FileTlvs
-from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
-from core.emulator.enumerations import NodeTlvs
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    ConfigFlags,
+    ConfigTlvs,
+    EventTlvs,
+    EventTypes,
+    ExecuteTlvs,
+    FileTlvs,
+    LinkTlvs,
+    MessageFlags,
+    MessageTypes,
+    NodeTlvs,
+    NodeTypes,
+    RegisterTlvs,
+)
 from core.nodes import nodeutils
-from core.nodes.ipaddress import IpAddress
+from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import GreTap
+from core.nodes.ipaddress import IpAddress
 from core.nodes.network import GreTapBridge
 from core.nodes.physical import PhysicalNode
 

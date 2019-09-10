@@ -6,15 +6,22 @@ import time
 
 import mock
 import pytest
-
 from core.api.tlv import coreapi
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.enumerations import EventTlvs, SessionTlvs, EventTypes, FileTlvs, RegisterTlvs, ConfigTlvs, \
-    ConfigFlags
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import NodeTypes, NodeTlvs
+from core.emulator.enumerations import (
+    ConfigFlags,
+    ConfigTlvs,
+    EventTlvs,
+    EventTypes,
+    ExecuteTlvs,
+    FileTlvs,
+    LinkTlvs,
+    MessageFlags,
+    NodeTlvs,
+    NodeTypes,
+    RegisterTlvs,
+    SessionTlvs,
+)
 from core.location.mobility import BasicRangeModel
 from core.nodes.ipaddress import Ipv4Prefix
 
