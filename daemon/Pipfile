@@ -5,6 +5,7 @@ verify_ssl = true
 
 [scripts]
 coredev = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
+coretest = "python -m pytest -v tests"
 
 [dev-packages]
 grpcio-tools = "*"

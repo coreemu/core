@@ -7,6 +7,7 @@ import time
 import mock
 import pytest
 
+from core import CoreError
 from core.api.tlv import coreapi
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import (
@@ -92,7 +93,7 @@ class TestGui:
 
         coreserver.request_handler.handle_message(message)
 
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             coreserver.session.get_node(node_id)
 
     def test_link_add_node_to_net(self, coreserver):

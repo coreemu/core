@@ -415,7 +415,7 @@ class CoreServices(object):
                 )
                 continue
             logging.info("adding service to node(%s): %s", node.name, service_name)
-            node.addservice(service)
+            node.services.append(service)
 
     def all_configs(self):
         """
