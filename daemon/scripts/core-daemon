@@ -101,7 +101,7 @@ def get_merged_config(filename):
         "numthreads": "1",
         "grpcport": "50051",
         "grpcaddress": "localhost",
-        "logfile": None
+        "logfile": ""
     }
 
     parser = argparse.ArgumentParser(

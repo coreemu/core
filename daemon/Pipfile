@@ -8,7 +8,6 @@ coredev = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
 
 [dev-packages]
 grpcio-tools = "*"
-core = {editable = true,path = "."}
 isort = "*"
 pre-commit = "*"
 flake8 = "*"
@@ -17,10 +16,4 @@ pytest = "*"
 mock = "*"
 
 [packages]
-configparser = "*"
-enum34 = {markers = "python_version < '3.4'"}
-future = "*"
-futures = {markers = "python_version < '3.2'"}
-grpcio = "*"
-lxml = "*"
-protobuf = "*"
+core = {editable = true,path = "."}
