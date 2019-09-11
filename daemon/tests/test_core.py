@@ -8,6 +8,7 @@ import subprocess
 import threading
 
 import pytest
+
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import MessageFlags, NodeTypes
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility

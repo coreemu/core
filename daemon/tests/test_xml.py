@@ -1,6 +1,7 @@
 from xml.etree import ElementTree
 
 import pytest
+
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes

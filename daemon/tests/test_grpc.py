@@ -3,8 +3,8 @@ from builtins import int
 from queue import Queue
 
 import grpc
-
 import pytest
+
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient
 from core.config import ConfigShim

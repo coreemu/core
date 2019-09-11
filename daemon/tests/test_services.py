@@ -1,6 +1,7 @@
 import os
 
 import pytest
+
 from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
