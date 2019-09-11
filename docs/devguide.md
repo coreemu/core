@@ -26,20 +26,20 @@ the core-daemon for development.
 
 ### Setup Python Environment
 
-Use python 2 or python 3 as desired with their respective utilities used below.
+To leverage the dev environment you need python 3.6+.
 
 ```shell
 # change to daemon directory
 cd $REPO/daemon
 
 # install pipenv
-pip install pipenv
+pip3 install pipenv
 
 # setup a virtual environment and install all required development dependencies
-python -m pipenv install --dev
+python3 -m pipenv install --dev
 
 # setup python variable using pipenv created python
-export PYTHON=$(python -m pipenv --py)
+export PYTHON=$(python3 -m pipenv --py)
 ```
 
 ### Build CORE
@@ -74,7 +74,7 @@ sudo make install
 This will run the core-daemon server using the configuration files within the repo.
 
 ```shell
-python -m pipenv run coredev
+python3 -m pipenv run coredev
 ```
 
 ## The CORE API
