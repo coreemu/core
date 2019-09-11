@@ -438,7 +438,7 @@ def load_classes(path, clazz):
             for member in members:
                 valid_class = member[1]
                 classes.append(valid_class)
-        except:
+        except Exception:
             logging.exception(
                 "unexpected error during import, skipping: %s", import_statement
             )

@@ -180,7 +180,7 @@ class NrlOlsr(NrlService):
         cmd += " -rpipe %s_olsr" % node.name
 
         servicenames = map(lambda x: x.name, node.services)
-        if "SMF" in servicenames and not "NHDP" in servicenames:
+        if "SMF" in servicenames and "NHDP" not in servicenames:
             cmd += " -flooding s-mpr"
             cmd += " -smfClient %s_smf" % node.name
         if "zebra" in servicenames:

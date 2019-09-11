@@ -47,7 +47,7 @@ def example(options):
     node.client.term("bash")
 
     # shutdown session
-    raw_input("press enter to exit...")
+    input("press enter to exit...")
     coreemu.shutdown()
 
 

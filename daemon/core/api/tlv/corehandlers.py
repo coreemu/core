@@ -550,7 +550,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             # TODO: this needs to be removed, make use of the broadcast message methods
             replies = message_handler(message)
             self.dispatch_replies(replies, message)
-        except:
+        except Exception:
             logging.exception(
                 "%s: exception while handling message: %s",
                 threading.currentThread().getName(),
@@ -946,7 +946,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     session = self.coreemu.create_session(master=False)
                     try:
                         session.open_xml(file_name, start=True)
-                    except:
+                    except Exception:
                         self.coreemu.delete_session(session.id)
                         raise
                 else:

@@ -199,7 +199,7 @@ bootquagga()
 
     bootdaemon "zebra"
     for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \<${r}\>" $QUAGGA_CONF; then
+        if grep -q "^router \\<${r}\\>" $QUAGGA_CONF; then
             bootdaemon "${r}d"
         fi
     done

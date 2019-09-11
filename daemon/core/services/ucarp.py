@@ -143,7 +143,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr add ${IP}/${NET} dev "$1"
@@ -165,7 +165,7 @@ exec 2> /dev/null
 IP="${2}"
 NET="${3}"
 if [ -z "$NET" ]; then
-	NET="24"
+    NET="24"
 fi
 
 /sbin/ip addr del ${IP}/${NET} dev "$1"

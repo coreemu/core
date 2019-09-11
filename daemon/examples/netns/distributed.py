@@ -67,7 +67,8 @@ def main():
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
     session = Session(1)
-    if "server" in globals():
+    server = globals().get("server")
+    if server is not None:
         server.addsession(session)
 
     # distributed setup - connect to slave server

@@ -179,9 +179,8 @@ bootdaemon()
         flags="$flags -6"
     fi
 
-    
     #force FRR to use CORE generated conf file
-	flags="$flags -d -f $FRR_CONF"
+    flags="$flags -d -f $FRR_CONF"
     $FRR_SBIN_DIR/$1 $flags
 
     if [ "$?" != "0" ]; then
@@ -207,7 +206,7 @@ bootfrr()
 
     bootdaemon "zebra"
     for r in rip ripng ospf6 ospf bgp babel; do
-        if grep -q "^router \<${r}\>" $FRR_CONF; then
+        if grep -q "^router \\<${r}\\>" $FRR_CONF; then
             bootdaemon "${r}d"
         fi
     done

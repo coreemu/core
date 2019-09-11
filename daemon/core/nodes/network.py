@@ -147,7 +147,7 @@ class EbtablesQueue(object):
                     # TODO: if these are WlanNodes, this will never throw an exception
                     try:
                         wlan.session
-                    except:
+                    except Exception:
                         # Just mark as updated to remove from self.updates.
                         self.updated(wlan)
                         continue

@@ -1136,7 +1136,7 @@ class Session(object):
         for hook in self._state_hooks.get(state, []):
             try:
                 hook(state)
-            except:
+            except Exception:
                 message = "exception occured when running %s state hook: %s" % (
                     coreapi.state_name(state),
                     hook,

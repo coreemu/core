@@ -116,7 +116,8 @@ def main():
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
     session = Session(1)
-    if "server" in globals():
+    server = globals().get("server")
+    if server:
         server.addsession(session)
 
     # distributed setup - connect to daemon server
@@ -204,7 +205,7 @@ def main():
     print(
         "To stop this session, use the core-cleanup script on the remote daemon server."
     )
-    raw_input("press enter to exit")
+    input("press enter to exit")
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":

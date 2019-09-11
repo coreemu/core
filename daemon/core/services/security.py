@@ -156,7 +156,7 @@ class Nat(CoreService):
         cfg += "# NAT out the first interface by default\n"
         have_nat = False
         for ifc in node.netifs():
-            if hasattr(ifc, "control") and ifc.control == True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             if have_nat:
                 cfg += cls.generateifcnatrule(ifc, line_prefix="#")

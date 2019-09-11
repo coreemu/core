@@ -6,7 +6,7 @@ import logging
 import random
 import socket
 import struct
-from builtins import bytes, range
+from builtins import bytes, int, range
 from socket import AF_INET, AF_INET6
 
 
@@ -43,8 +43,8 @@ class MacAddress(object):
         if not self.addr:
             return IpAddress.from_string("::")
         tmp = struct.unpack("!Q", "\x00\x00" + self.addr)[0]
-        nic = long(tmp) & 0x000000FFFFFF
-        oui = long(tmp) & 0xFFFFFF000000
+        nic = int(tmp) & 0x000000FFFFFF
+        oui = int(tmp) & 0xFFFFFF000000
         # toggle U/L bit
         oui ^= 0x020000000000
         # append EUI-48 octets

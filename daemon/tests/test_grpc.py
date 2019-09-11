@@ -834,7 +834,7 @@ class TestGrpc:
     def test_throughputs(self, grpc_server):
         # given
         client = CoreGrpcClient()
-        session = grpc_server.coreemu.create_session()
+        grpc_server.coreemu.create_session()
         queue = Queue()
 
         def handle_event(event_data):

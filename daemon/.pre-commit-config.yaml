@@ -21,4 +21,3 @@ repos:
     language: system
     entry: bash -c 'cd daemon && pipenv run flake8'
     types: [python]
-    exclude: setup.py

@@ -21,7 +21,7 @@ from core.emulator.enumerations import (
     NodeTlvs,
     NodeTypes,
 )
-from core.nodes.ipaddress import IpAddress, Ipv4Prefix, MacAddress
+from core.nodes.ipaddress import IpAddress, MacAddress
 
 
 def set_emane_model(node_id, model):

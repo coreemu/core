@@ -488,7 +488,7 @@ class CoreServices(object):
         for service in boot_path:
             try:
                 self.boot_service(node, service)
-            except:
+            except Exception:
                 logging.exception("exception booting service: %s", service.name)
                 raise
 

@@ -19,8 +19,6 @@ from string import Template
 import core.nodes.base
 import core.nodes.network
 from core.constants import QUAGGA_STATE_DIR
-
-# this is the /etc/core/core.conf default
 from core.emulator.session import Session
 from core.nodes import ipaddress
 from core.utils import check_cmd
@@ -149,7 +147,7 @@ class Route(object):
                 and self.gw == other.gw
                 and self.metric == other.metric
             )
-        except:
+        except Exception:
             return False
 
     def __str__(self):
@@ -459,7 +457,7 @@ class Ospf6MdrLevel(VtyshCmd):
         # TODO: handle multiple interfaces
         field = line.split()
         mdrlevel = field[4]
-        if not mdrlevel in ("MDR", "BMDR", "OTHER"):
+        if mdrlevel not in ("MDR", "BMDR", "OTHER"):
             self.warn("mdrlevel: %s" % mdrlevel)
         if self.verbose:
             self.info("  %s is %s" % (self.node.routerid, mdrlevel))

@@ -4,6 +4,7 @@ commeffect.py: EMANE CommEffect model for CORE
 
 import logging
 import os
+from builtins import int
 
 from lxml import etree
 from past.builtins import basestring
@@ -147,7 +148,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
             jitter=convert_none(jitter),
             loss=convert_none(loss),
             duplicate=convert_none(duplicate),
-            unicast=long(convert_none(bw)),
-            broadcast=long(convert_none(mbw)),
+            unicast=int(convert_none(bw)),
+            broadcast=int(convert_none(mbw)),
         )
         service.publish(nemid2, event)

@@ -495,7 +495,7 @@ Group ${APACHE_RUN_GROUP}
 
 AccessFileName .htaccess
 
-<Files ~ "^\.ht">
+<Files ~ "^\\.ht">
 """
         cfg += permstr[version]
         cfg += """\
@@ -542,22 +542,22 @@ ServerSignature On
 TraceEnable Off
 
 <VirtualHost *:80>
-	ServerAdmin webmaster@localhost
-	DocumentRoot /var/www
-	<Directory />
-		Options FollowSymLinks
-		AllowOverride None
-	</Directory>
-	<Directory /var/www/>
-		Options Indexes FollowSymLinks MultiViews
-		AllowOverride None
+    ServerAdmin webmaster@localhost
+    DocumentRoot /var/www
+    <Directory />
+        Options FollowSymLinks
+        AllowOverride None
+    </Directory>
+    <Directory /var/www/>
+        Options Indexes FollowSymLinks MultiViews
+        AllowOverride None
 """
         cfg += permstr2[version]
         cfg += """\
-	</Directory>
-	ErrorLog ${APACHE_LOG_DIR}/error.log
-	LogLevel warn
-	CustomLog ${APACHE_LOG_DIR}/access.log combined
+    </Directory>
+    ErrorLog ${APACHE_LOG_DIR}/error.log
+    LogLevel warn
+    CustomLog ${APACHE_LOG_DIR}/access.log combined
 </VirtualHost>
 
 """
