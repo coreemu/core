@@ -1321,6 +1321,7 @@ class Session(object):
         :rtype: bool
         """
         # delete node and check for session shutdown if a node was removed
+        logging.info("deleting node(%s)", _id)
         result = False
         with self._nodes_lock:
             if _id in self.nodes:
