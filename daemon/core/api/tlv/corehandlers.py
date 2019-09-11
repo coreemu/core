@@ -1611,7 +1611,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     self.session.start_mobility(node_ids=(node.id,))
                     return ()
 
-                logging.warning("dropping unhandled Event message with node number")
+                logging.warning(
+                    "dropping unhandled event message for node: %s", node_id
+                )
                 return ()
             self.session.set_state(event_type)
 
@@ -1663,7 +1665,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     handled = True
             if not handled:
                 logging.warning(
-                    "Unhandled event message: event type %s ", event_type.name
+                    "unhandled event message: event type %s, name %s ",
+                    event_type.name,
+                    name,
                 )
         elif event_type == EventTypes.FILE_OPEN:
             filename = event_data.name
@@ -1685,8 +1689,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 self.session.add_event(float(etime), node=node, name=name, data=data)
             else:
                 raise NotImplementedError
-        else:
-            logging.warning("unhandled event message: event type %s", event_type)
 
         return ()
 
@@ -1797,7 +1799,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     logging.warning("session %s not found", session_id)
                     continue
 
-                logging.info("request to modify to session: %s", session.id)
                 if names is not None:
                     session.name = names[index]
 

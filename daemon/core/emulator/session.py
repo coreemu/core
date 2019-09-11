@@ -1462,7 +1462,7 @@ class Session(object):
         # this is called from instantiate() after receiving an event message
         # for the instantiation state, and from the broker when distributed
         # nodes have been started
-        logging.info(
+        logging.debug(
             "session(%s) checking if not in runtime state, current state: %s",
             self.id,
             coreapi.state_name(self.state),
@@ -1513,7 +1513,7 @@ class Session(object):
         and links remain.
         """
         node_count = self.get_node_count()
-        logging.info(
+        logging.debug(
             "session(%s) checking shutdown: %s nodes remaining", self.id, node_count
         )
 
@@ -1550,7 +1550,11 @@ class Session(object):
                     node, NodeTypes.RJ45
                 ):
                     # add a control interface if configured
-                    logging.info("booting node(%s): %s", node.name, node.services)
+                    logging.info(
+                        "booting node(%s): %s",
+                        node.name,
+                        [x.name for x in node.services],
+                    )
                     self.add_remove_control_interface(node=node, remove=False)
                     result = pool.apply_async(self.services.boot_services, (node,))
                     results.append(result)

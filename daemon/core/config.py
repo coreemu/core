@@ -380,11 +380,8 @@ class ModelManager(ConfigurableManager):
         :param dict config: model configuration, None for default configuration
         :return: nothing
         """
-        logging.info(
-            "setting mobility model(%s) for node(%s): %s",
-            model_class.name,
-            node.id,
-            config,
+        logging.debug(
+            "setting model(%s) for node(%s): %s", model_class.name, node.id, config
         )
         self.set_model_config(node.id, model_class.name, config)
         config = self.get_model_config(node.id, model_class.name)

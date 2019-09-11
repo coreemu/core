@@ -72,8 +72,8 @@ class MobilityManager(ModelManager):
             node_ids = self.nodes()
 
         for node_id in node_ids:
-            logging.info("checking mobility startup for node: %s", node_id)
-            logging.info(
+            logging.debug("checking mobility startup for node: %s", node_id)
+            logging.debug(
                 "node mobility configurations: %s", self.get_all_configs(node_id)
             )
 
@@ -415,7 +415,7 @@ class BasicRangeModel(WirelessModel):
         :return: nothing
         """
         self.range = int(float(config["range"]))
-        logging.info(
+        logging.debug(
             "basic range model configured for WLAN %d using range %d",
             self.wlan.id,
             self.range,

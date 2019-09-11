@@ -360,7 +360,7 @@ class CoreXmlWriter(object):
 
             for model_name in all_configs:
                 config = all_configs[model_name]
-                logging.info(
+                logging.debug(
                     "writing mobility config node(%s) model(%s)", node_id, model_name
                 )
                 mobility_configuration = etree.SubElement(

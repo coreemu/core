@@ -1153,7 +1153,7 @@ class WlanNode(CoreNetwork):
         :param dict config: configuration for model being set
         :return: nothing
         """
-        logging.info("adding model: %s", model.name)
+        logging.debug("node(%s) setting model: %s", self.name, model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
             self.model = model(session=self.session, _id=self.id)
             self.updatemodel(config)
@@ -1169,7 +1169,7 @@ class WlanNode(CoreNetwork):
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.id)
-        logging.info(
+        logging.debug(
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
         self.model.update_config(config)

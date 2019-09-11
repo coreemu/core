@@ -624,7 +624,7 @@ class CoreNode(CoreNodeBase):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         source = os.path.abspath(source)
-        logging.info("node(%s) mounting: %s at %s", self.name, source, target)
+        logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
         cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (
             target,
             constants.MOUNT_BIN,
@@ -1020,7 +1020,7 @@ class CoreNode(CoreNodeBase):
         with self.opennodefile(filename, "w") as open_file:
             open_file.write(contents)
             os.chmod(open_file.name, mode)
-            logging.info(
+            logging.debug(
                 "node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode
             )
 

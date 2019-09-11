@@ -220,7 +220,7 @@ class EmaneManager(ModelManager):
         Load EMANE models and make them available.
         """
         for emane_model in emane_models:
-            logging.info("loading emane model: %s", emane_model.__name__)
+            logging.debug("loading emane model: %s", emane_model.__name__)
             emane_prefix = self.session.options.get_config(
                 "emane_prefix", default=DEFAULT_EMANE_PREFIX
             )
