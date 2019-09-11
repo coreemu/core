@@ -234,16 +234,6 @@ class CoreNodeBase(NodeBase):
         self.nodedir = None
         self.tmpnodedir = False
 
-    def addservice(self, service):
-        """
-        Add a services to the service list.
-
-        :param core.services.coreservices.CoreService service: service to add
-        :return: nothing
-        """
-        if service is not None:
-            self.services.append(service)
-
     def makenodedir(self):
         """
         Create the node directory.

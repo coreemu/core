@@ -10,6 +10,7 @@ from queue import Empty, Queue
 
 import grpc
 
+from core import CoreError
 from core.api.grpc import core_pb2, core_pb2_grpc
 from core.emulator.data import (
     ConfigData,
@@ -638,7 +639,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         lon = request.position.lon
         alt = request.position.alt
         node_options.set_location(lat, lon, alt)
-        result = session.update_node(node_id, node_options)
+        result = True
+        try:
+            session.update_node(node_id, node_options)
+        except CoreError:
+            result = False
         return core_pb2.EditNodeResponse(result=result)
 
     def DeleteNode(self, request, context):

@@ -5,6 +5,7 @@ from queue import Queue
 import grpc
 import pytest
 
+from core import CoreError
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient
 from core.config import ConfigShim
@@ -239,7 +240,7 @@ class TestGrpc:
         # then
         assert response.result is expected
         if expected is True:
-            with pytest.raises(KeyError):
+            with pytest.raises(CoreError):
                 assert session.get_node(node.id)
 
     def test_node_command(self, grpc_server):

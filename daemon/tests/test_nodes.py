@@ -3,7 +3,7 @@ import time
 
 import pytest
 
-from core import utils
+from core import CoreError, utils
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
 
@@ -53,7 +53,7 @@ class TestNodes:
         session.delete_node(node.id)
 
         # then
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             session.get_node(node.id)
 
     @pytest.mark.parametrize("net_type", NET_TYPES)

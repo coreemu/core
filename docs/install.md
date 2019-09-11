@@ -66,17 +66,6 @@ sudo apt install python-configparser python-enum34 python-future python-grpcio p
 sudo apt install python3-configparser python3-enum34 python3-future python3-grpcio python3-lxml
 ```
 
-## Other Distros
-
-The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
-To account for this it would be recommended to install the python dependencies using the **requirements.txt** found in
-the latest release.
-
-```shell
-# will need to pip3 for python3 usage
-sudo pip install -r requirements.txt
-```
-
 # Pre-Req Installing OSPF MDR
 
 Virtual networks generally require some form of routing in order to work (e.g. to automatically populate routing 

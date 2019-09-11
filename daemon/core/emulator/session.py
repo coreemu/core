@@ -15,7 +15,7 @@ import time
 from multiprocessing.pool import ThreadPool
 
 import core.nodes.base
-from core import constants, utils
+from core import CoreError, constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
@@ -190,16 +190,17 @@ class Session(object):
         :param list objects: possible objects to deal with
         :param bool connect: link interfaces if True, unlink otherwise
         :return: nothing
+        :raises core.CoreError: when objects to link is less than 2, or no common networks are found
         """
         objects = [x for x in objects if x]
         if len(objects) < 2:
-            raise ValueError("wireless link failure: %s", objects)
+            raise CoreError("wireless link failure: %s" % objects)
         logging.debug(
             "handling wireless linking objects(%s) connect(%s)", objects, connect
         )
         common_networks = objects[0].commonnets(objects[1])
         if not common_networks:
-            raise ValueError("no common network found for wireless link/unlink")
+            raise CoreError("no common network found for wireless link/unlink")
 
         for common_network, interface_one, interface_two in common_networks:
             if not nodeutils.is_node(
@@ -238,7 +239,7 @@ class Session(object):
         :param core.emulator.emudata.InterfaceData interface_one: node one interface data, defaults to none
         :param core.emulator.emudata.InterfaceData interface_two: node two interface data, defaults to none
         :param core.emulator.emudata.LinkOptions link_options: data for creating link, defaults to no options
-        :return:
+        :return: nothing
         """
         if not link_options:
             link_options = LinkOptions()
@@ -373,6 +374,7 @@ class Session(object):
         :param int interface_two_id: interface id for node two
         :param core.emulator.enumerations.LinkTypes link_type: link type to delete
         :return: nothing
+        :raises core.CoreError: when no common network is found for link being deleted
         """
         # get node objects identified by link data
         node_one, node_two, net_one, net_two, _tunnel = self._link_nodes(
@@ -417,7 +419,7 @@ class Session(object):
                         if interface_one.net != interface_two.net and all(
                             [interface_one.up, interface_two.up]
                         ):
-                            raise ValueError("no common network found")
+                            raise CoreError("no common network found")
 
                         logging.info(
                             "deleting link node(%s):interface(%s) node(%s):interface(%s)",
@@ -478,6 +480,8 @@ class Session(object):
         :param int interface_two_id: interface id for node two
         :param core.emulator.emudata.LinkOptions link_options: data to update link with
         :return: nothing
+        :raises core.CoreError: when updating a wireless type link, when there is a unknown
+            link between networks
         """
         if not link_options:
             link_options = LinkOptions()
@@ -495,7 +499,7 @@ class Session(object):
         try:
             # wireless link
             if link_options.type == LinkTypes.WIRELESS.value:
-                raise ValueError("cannot update wireless link")
+                raise CoreError("cannot update wireless link")
             else:
                 if not node_one and not node_two:
                     if net_one and net_two:
@@ -508,7 +512,7 @@ class Session(object):
                             interface = net_two.getlinknetif(net_one)
 
                         if not interface:
-                            raise ValueError("modify unknown link between nets")
+                            raise CoreError("modify unknown link between nets")
 
                         if upstream:
                             interface.swapparams("_params_up")
@@ -532,7 +536,7 @@ class Session(object):
                                 )
                                 interface.swapparams("_params_up")
                     else:
-                        raise ValueError("modify link for unknown nodes")
+                        raise CoreError("modify link for unknown nodes")
                 elif not node_one:
                     # node1 = layer 2node, node2 = layer3 node
                     interface = node_two.netif(interface_two_id, net_one)
@@ -544,7 +548,7 @@ class Session(object):
                 else:
                     common_networks = node_one.commonnets(node_two)
                     if not common_networks:
-                        raise ValueError("no common network found")
+                        raise CoreError("no common network found")
 
                     for net_one, interface_one, interface_two in common_networks:
                         if (
@@ -666,25 +670,17 @@ class Session(object):
         :param core.emulator.emudata.NodeOptions node_options: data to update node with
         :return: True if node updated, False otherwise
         :rtype: bool
+        :raises core.CoreError: when node to update does not exist
         """
-        result = False
-        try:
-            # get node to update
-            node = self.get_node(node_id)
+        # get node to update
+        node = self.get_node(node_id)
 
-            # set node position and broadcast it
-            self.set_node_position(node, node_options)
+        # set node position and broadcast it
+        self.set_node_position(node, node_options)
 
-            # update attributes
-            node.canvas = node_options.canvas
-            node.icon = node_options.icon
-
-            # set node as updated successfully
-            result = True
-        except KeyError:
-            logging.error("failure to update node that does not exist: %s", node_id)
-
-        return result
+        # update attributes
+        node.canvas = node_options.canvas
+        node.icon = node_options.icon
 
     def set_node_position(self, node, node_options):
         """
@@ -1156,7 +1152,7 @@ class Session(object):
         """
         hooks = self._state_hooks.setdefault(state, [])
         if hook in hooks:
-            raise ValueError("attempting to add duplicate state hook")
+            raise CoreError("attempting to add duplicate state hook")
         hooks.append(hook)
 
         if self.state == state:
@@ -1283,21 +1279,22 @@ class Session(object):
 
         return node_id
 
-    def create_node(self, cls, *clsargs, **clskwds):
+    def create_node(self, cls, *args, **kwargs):
         """
         Create an emulation node.
 
         :param class cls: node class to create
-        :param list clsargs: list of arguments for the class to create
-        :param dict clskwds: dictionary of arguments for the class to create
+        :param list args: list of arguments for the class to create
+        :param dict kwargs: dictionary of arguments for the class to create
         :return: the created node instance
+        :raises core.CoreError: when id of the node to create already exists
         """
-        node = cls(self, *clsargs, **clskwds)
+        node = cls(self, *args, **kwargs)
 
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
-                raise KeyError("duplicate node id %s for %s" % (node.id, node.name))
+                raise CoreError("duplicate node id %s for %s" % (node.id, node.name))
             self.nodes[node.id] = node
 
         return node
@@ -1309,9 +1306,10 @@ class Session(object):
         :param int _id: node id to retrieve
         :return: node for the given id
         :rtype: core.nodes.base.CoreNode
+        :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
-            raise KeyError("unknown node id %s" % _id)
+            raise CoreError("unknown node id %s" % _id)
         return self.nodes[_id]
 
     def delete_node(self, _id):
