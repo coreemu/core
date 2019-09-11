@@ -24,14 +24,14 @@ class TestLinks:
         node_one = session.add_node()
         node_two = session.add_node()
         interface_one = ip_prefixes.create_interface(node_one)
-        inteface_two = ip_prefixes.create_interface(node_two)
+        interface_two = ip_prefixes.create_interface(node_two)
 
         # when
-        session.add_link(node_one.id, node_two.id, interface_one, inteface_two)
+        session.add_link(node_one.id, node_two.id, interface_one, interface_two)
 
         # then
         assert node_one.netif(interface_one.id)
-        assert node_two.netif(inteface_two.id)
+        assert node_two.netif(interface_two.id)
 
     def test_node_to_net(self, session, ip_prefixes):
         # given
