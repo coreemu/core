@@ -175,7 +175,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         context.abort(grpc.StatusCode.CANCELLED, "server stopping")
 
     def listen(self, address):
-        logging.info("starting grpc api: %s", address)
+        logging.info("CORE gRPC API listening on: %s", address)
         self.server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
         core_pb2_grpc.add_CoreApiServicer_to_server(self, self.server)
         self.server.add_insecure_port(address)

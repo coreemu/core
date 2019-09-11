@@ -414,7 +414,6 @@ class CoreServices(object):
                     "unknown service(%s) for node(%s)", service_name, node.name
                 )
                 continue
-            logging.info("adding service to node(%s): %s", node.name, service_name)
             node.services.append(service)
 
     def all_configs(self):
@@ -483,7 +482,9 @@ class CoreServices(object):
         :return: nothing
         """
         logging.info(
-            "booting node services: %s", " -> ".join([x.name for x in boot_path])
+            "booting node(%s) services: %s",
+            node.name,
+            " -> ".join([x.name for x in boot_path]),
         )
         for service in boot_path:
             try:
@@ -743,9 +744,6 @@ class CoreServices(object):
         :param CoreService service: service to reconfigure
         :return: nothing
         """
-        logging.info(
-            "node(%s) service(%s) creating config files", node.name, service.name
-        )
         # get values depending on if custom or not
         config_files = service.configs
         if not service.custom:

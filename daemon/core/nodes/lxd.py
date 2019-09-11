@@ -262,7 +262,7 @@ class LxcNode(CoreNode):
         :return: nothing
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.info("mounting source(%s) target(%s)", source, target)
+        logging.debug("mounting source(%s) target(%s)", source, target)
         raise Exception("not supported")
 
     def nodefile(self, filename, contents, mode=0o644):
@@ -274,8 +274,8 @@ class LxcNode(CoreNode):
         :param int mode: mode for file
         :return: nothing
         """
-        logging.info("node dir(%s) ctrlchannel(%s)", self.nodedir, self.ctrlchnlname)
-        logging.info("nodefile filename(%s) mode(%s)", filename, mode)
+        logging.debug("node dir(%s) ctrlchannel(%s)", self.nodedir, self.ctrlchnlname)
+        logging.debug("nodefile filename(%s) mode(%s)", filename, mode)
         file_path = os.path.join(self.nodedir, filename)
         with open(file_path, "w") as f:
             os.chmod(f.name, mode)

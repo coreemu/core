@@ -81,7 +81,7 @@ def cored(cfg, use_ovs):
     # close handlers
     close_onexec(server.fileno())
 
-    logging.info("tcp/udp servers started, listening on: %s:%s", host, port)
+    logging.info("CORE TLV API TCP/UDP listening on: %s:%s", host, port)
     server.serve_forever()
 
 

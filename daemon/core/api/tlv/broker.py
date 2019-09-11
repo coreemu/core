@@ -164,7 +164,7 @@ class CoreBroker(object):
         """
         Reset to initial state.
         """
-        logging.info("clearing state")
+        logging.debug("broker reset")
         self.nodemap_lock.acquire()
         self.nodemap.clear()
         for server in self.nodecounts:
