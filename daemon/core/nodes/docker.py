@@ -2,7 +2,7 @@ import json
 import logging
 import os
 
-from core import utils, CoreCommandError
+from core import CoreCommandError, utils
 from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNode
 

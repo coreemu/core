@@ -16,9 +16,7 @@ from core.api.tlv.corehandlers import CoreHandler
 from core.api.tlv.coreserver import CoreServer
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
-from core.emulator.enumerations import CORE_API_PORT, EventTlvs
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import CORE_API_PORT, ConfigTlvs, EventTlvs, EventTypes
 from core.nodes import ipaddress
 from core.services.coreservices import ServiceManager
 
@@ -30,10 +28,9 @@ class CoreServerTest(object):
         self.host = "localhost"
         self.port = port
         address = (self.host, self.port)
-        self.server = CoreServer(address, CoreHandler, {
-            "numthreads": 1,
-            "daemonize": False,
-        })
+        self.server = CoreServer(
+            address, CoreHandler, {"numthreads": 1, "daemonize": False}
+        )
 
         self.distributed_server = "core2"
         self.prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
@@ -65,36 +62,51 @@ class CoreServerTest(object):
 
         # have broker handle a configuration state change
         self.session.set_state(EventTypes.DEFINITION_STATE)
-        message = CoreEventMessage.create(0, [(EventTlvs.TYPE, EventTypes.CONFIGURATION_STATE.value)])
+        message = CoreEventMessage.create(
+            0, [(EventTlvs.TYPE, EventTypes.CONFIGURATION_STATE.value)]
+        )
         self.request_handler.handle_message(message)
 
         # add broker server for distributed core
-        distributed = "%s:%s:%s" % (self.distributed_server, distributed_address, self.port)
-        message = CoreConfMessage.create(0, [
-            (ConfigTlvs.OBJECT, "broker"),
-            (ConfigTlvs.TYPE, 0),
-            (ConfigTlvs.DATA_TYPES, (10,)),
-            (ConfigTlvs.VALUES, distributed)
-        ])
+        distributed = "%s:%s:%s" % (
+            self.distributed_server,
+            distributed_address,
+            self.port,
+        )
+        message = CoreConfMessage.create(
+            0,
+            [
+                (ConfigTlvs.OBJECT, "broker"),
+                (ConfigTlvs.TYPE, 0),
+                (ConfigTlvs.DATA_TYPES, (10,)),
+                (ConfigTlvs.VALUES, distributed),
+            ],
+        )
         self.request_handler.handle_message(message)
 
         # set session location
-        message = CoreConfMessage.create(0, [
-            (ConfigTlvs.OBJECT, "location"),
-            (ConfigTlvs.TYPE, 0),
-            (ConfigTlvs.DATA_TYPES, (9, 9, 9, 9, 9, 9)),
-            (ConfigTlvs.VALUES, "0|0| 47.5766974863|-122.125920191|0.0|150.0")
-        ])
+        message = CoreConfMessage.create(
+            0,
+            [
+                (ConfigTlvs.OBJECT, "location"),
+                (ConfigTlvs.TYPE, 0),
+                (ConfigTlvs.DATA_TYPES, (9, 9, 9, 9, 9, 9)),
+                (ConfigTlvs.VALUES, "0|0| 47.5766974863|-122.125920191|0.0|150.0"),
+            ],
+        )
         self.request_handler.handle_message(message)
 
         # set services for host nodes
-        message = CoreConfMessage.create(0, [
-            (ConfigTlvs.SESSION, str(self.session.id)),
-            (ConfigTlvs.OBJECT, "services"),
-            (ConfigTlvs.TYPE, 0),
-            (ConfigTlvs.DATA_TYPES, (10, 10, 10)),
-            (ConfigTlvs.VALUES, "host|DefaultRoute|SSH")
-        ])
+        message = CoreConfMessage.create(
+            0,
+            [
+                (ConfigTlvs.SESSION, str(self.session.id)),
+                (ConfigTlvs.OBJECT, "services"),
+                (ConfigTlvs.TYPE, 0),
+                (ConfigTlvs.DATA_TYPES, (10, 10, 10)),
+                (ConfigTlvs.VALUES, "host|DefaultRoute|SSH"),
+            ],
+        )
         self.request_handler.handle_message(message)
 
     def shutdown(self):

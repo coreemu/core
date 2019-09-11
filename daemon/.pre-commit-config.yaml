@@ -1,0 +1,23 @@
+repos:
+- repo: local
+  hooks:
+  - id: isort
+    name: isort
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd daemon && pipenv run isort --atomic -y'
+    types: [python]
+
+  - id: black
+    name: black
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd daemon && pipenv run black --exclude ".+_pb2.*.py|doc|build|utm\.py" .'
+    types: [python]
+
+  - id: flake8
+    name: flake8
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd daemon && pipenv run flake8'
+    types: [python]

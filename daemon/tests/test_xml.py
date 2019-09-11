@@ -3,7 +3,7 @@ from xml.etree import ElementTree
 import pytest
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.emudata import NodeOptions, LinkOptions
+from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
@@ -121,7 +121,9 @@ class TestXml:
         session.services.set_service(node_one.id, SshService.name)
         service_file = SshService.configs[0]
         file_data = "# test"
-        session.services.set_service_file(node_one.id, SshService.name, service_file, file_data)
+        session.services.set_service_file(
+            node_one.id, SshService.name, service_file, file_data
+        )
 
         # instantiate session
         session.instantiate()
@@ -232,7 +234,7 @@ class TestXml:
         emane_network = session.create_emane_network(
             EmaneIeee80211abgModel,
             geo_reference=(47.57917, -122.13232, 2.00000),
-            config={"test": "1"}
+            config={"test": "1"},
         )
         emane_network.setposition(x=80, y=50)
 
@@ -278,7 +280,9 @@ class TestXml:
         session.open_xml(file_path, start=True)
 
         # retrieve configuration we set originally
-        value = str(session.emane.get_config("test", emane_id, EmaneIeee80211abgModel.name))
+        value = str(
+            session.emane.get_config("test", emane_id, EmaneIeee80211abgModel.name)
+        )
 
         # verify nodes and configuration were restored
         assert session.get_node(n1_id)
@@ -355,7 +359,9 @@ class TestXml:
         link_options.jitter = 10
         link_options.delay = 30
         link_options.dup = 5
-        session.add_link(node_one.id, switch.id, interface_one, link_options=link_options)
+        session.add_link(
+            node_one.id, switch.id, interface_one, link_options=link_options
+        )
 
         # instantiate session
         session.instantiate()
@@ -420,7 +426,9 @@ class TestXml:
         link_options.jitter = 10
         link_options.delay = 30
         link_options.dup = 5
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options)
+        session.add_link(
+            node_one.id, node_two.id, interface_one, interface_two, link_options
+        )
 
         # instantiate session
         session.instantiate()
@@ -486,7 +494,9 @@ class TestXml:
         link_options_one.per = 10.5
         link_options_one.dup = 5
         link_options_one.jitter = 5
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options_one)
+        session.add_link(
+            node_one.id, node_two.id, interface_one, interface_two, link_options_one
+        )
         link_options_two = LinkOptions()
         link_options_two.unidirectional = 1
         link_options_two.bandwidth = 10000
@@ -494,7 +504,13 @@ class TestXml:
         link_options_two.per = 10
         link_options_two.dup = 10
         link_options_two.jitter = 10
-        session.update_link(node_two.id, node_one.id, interface_two.id, interface_one.id, link_options_two)
+        session.update_link(
+            node_two.id,
+            node_one.id,
+            interface_two.id,
+            interface_one.id,
+            link_options_two,
+        )
 
         # instantiate session
         session.instantiate()

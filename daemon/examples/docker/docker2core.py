@@ -2,8 +2,7 @@ import logging
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import NodeTypes, EventTypes
-
+from core.emulator.enumerations import EventTypes, NodeTypes
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)

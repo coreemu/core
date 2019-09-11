@@ -3,6 +3,7 @@ Utilities for working with python struct data.
 """
 
 import logging
+
 from past.builtins import basestring
 
 

@@ -12,6 +12,7 @@ class CoreServer(socketserver.ThreadingMixIn, socketserver.TCPServer):
     TCP server class, manages sessions and spawns request handlers for
     incoming connections.
     """
+
     daemon_threads = True
     allow_reuse_address = True
 
@@ -34,6 +35,7 @@ class CoreUdpServer(socketserver.ThreadingMixIn, socketserver.UDPServer):
     UDP server class, manages sessions and spawns request handlers for
     incoming connections.
     """
+
     daemon_threads = True
     allow_reuse_address = True
 

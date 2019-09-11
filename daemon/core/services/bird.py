@@ -9,6 +9,7 @@ class Bird(CoreService):
     """
     Bird router support
     """
+
     name = "bird"
     executables = ("bird",)
     group = "BIRD"
@@ -34,11 +35,11 @@ class Bird(CoreService):
         Helper to return the first IPv4 address of a node as its router ID.
         """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
-                    return a.split('/')[0]
+                    return a.split("/")[0]
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
@@ -72,7 +73,10 @@ protocol device {
     scan time 10;           # Scan interfaces every 10 seconds
 }
 
-""" % (cls.name, cls.routerid(node))
+""" % (
+            cls.name,
+            cls.routerid(node),
+        )
 
         # Generate protocol specific configurations
         for s in node.services:
@@ -113,7 +117,7 @@ class BirdService(CoreService):
         cfg = ""
 
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += '        interface "%s";\n' % ifc.name
 
@@ -160,18 +164,18 @@ class BirdOspf(BirdService):
 
     @classmethod
     def generatebirdconfig(cls, node):
-        cfg = 'protocol ospf {\n'
-        cfg += '    export filter {\n'
-        cfg += '        if source = RTS_BGP then {\n'
-        cfg += '            ospf_metric1 = 100;\n'
-        cfg += '            accept;\n'
-        cfg += '        }\n'
-        cfg += '        accept;\n'
-        cfg += '    };\n'
-        cfg += '    area 0.0.0.0 {\n'
+        cfg = "protocol ospf {\n"
+        cfg += "    export filter {\n"
+        cfg += "        if source = RTS_BGP then {\n"
+        cfg += "            ospf_metric1 = 100;\n"
+        cfg += "            accept;\n"
+        cfg += "        }\n"
+        cfg += "        accept;\n"
+        cfg += "    };\n"
+        cfg += "    area 0.0.0.0 {\n"
         cfg += cls.generatebirdifcconfig(node)
-        cfg += '    };\n'
-        cfg += '}\n\n'
+        cfg += "    };\n"
+        cfg += "}\n\n"
 
         return cfg
 
@@ -185,21 +189,21 @@ class BirdRadv(BirdService):
 
     @classmethod
     def generatebirdconfig(cls, node):
-        cfg = '/* This is a sample config that must be customized */\n'
+        cfg = "/* This is a sample config that must be customized */\n"
 
-        cfg += 'protocol radv {\n'
-        cfg += '    # auto configuration on all interfaces\n'
+        cfg += "protocol radv {\n"
+        cfg += "    # auto configuration on all interfaces\n"
         cfg += cls.generatebirdifcconfig(node)
-        cfg += '    # Advertise DNS\n'
-        cfg += '    rdnss {\n'
-        cfg += '#        lifetime mult 10;\n'
-        cfg += '#        lifetime mult 10;\n'
-        cfg += '#        ns 2001:0DB8:1234::11;\n'
-        cfg += '#        ns 2001:0DB8:1234::11;\n'
-        cfg += '#        ns 2001:0DB8:1234::12;\n'
-        cfg += '#        ns 2001:0DB8:1234::12;\n'
-        cfg += '    };\n'
-        cfg += '}\n\n'
+        cfg += "    # Advertise DNS\n"
+        cfg += "    rdnss {\n"
+        cfg += "#        lifetime mult 10;\n"
+        cfg += "#        lifetime mult 10;\n"
+        cfg += "#        ns 2001:0DB8:1234::11;\n"
+        cfg += "#        ns 2001:0DB8:1234::11;\n"
+        cfg += "#        ns 2001:0DB8:1234::12;\n"
+        cfg += "#        ns 2001:0DB8:1234::12;\n"
+        cfg += "    };\n"
+        cfg += "}\n\n"
 
         return cfg
 
@@ -213,15 +217,15 @@ class BirdRip(BirdService):
 
     @classmethod
     def generatebirdconfig(cls, node):
-        cfg = 'protocol rip {\n'
-        cfg += '    period 10;\n'
-        cfg += '    garbage time 60;\n'
+        cfg = "protocol rip {\n"
+        cfg += "    period 10;\n"
+        cfg += "    garbage time 60;\n"
         cfg += cls.generatebirdifcconfig(node)
-        cfg += '    honor neighbor;\n'
-        cfg += '    authentication none;\n'
-        cfg += '    import all;\n'
-        cfg += '    export all;\n'
-        cfg += '}\n\n'
+        cfg += "    honor neighbor;\n"
+        cfg += "    authentication none;\n"
+        cfg += "    import all;\n"
+        cfg += "    export all;\n"
+        cfg += "}\n\n"
 
         return cfg
 
@@ -236,10 +240,10 @@ class BirdStatic(BirdService):
 
     @classmethod
     def generatebirdconfig(cls, node):
-        cfg = '/* This is a sample config that must be customized */\n'
-        cfg += 'protocol static {\n'
-        cfg += '#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n'
-        cfg += '#    route 203.0.113.0/24 reject;        # Sink route\n'
+        cfg = "/* This is a sample config that must be customized */\n"
+        cfg += "protocol static {\n"
+        cfg += "#    route 0.0.0.0/0 via 198.51.100.130; # Default route. Do NOT advertise on BGP !\n"
+        cfg += "#    route 203.0.113.0/24 reject;        # Sink route\n"
         cfg += '#    route 10.2.0.0/24 via "arc0";       # Secondary network\n'
-        cfg += '}\n\n'
+        cfg += "}\n\n"
         return cfg

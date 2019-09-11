@@ -3,7 +3,7 @@ import logging
 import os
 import time
 
-from core import utils, CoreCommandError
+from core import CoreCommandError, utils
 from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNode
 
@@ -16,10 +16,9 @@ class LxdClient(object):
         self._addr = {}
 
     def create_container(self):
-        utils.check_cmd("lxc launch {image} {name}".format(
-            name=self.name,
-            image=self.image
-        ))
+        utils.check_cmd(
+            "lxc launch {image} {name}".format(name=self.name, image=self.image)
+        )
         data = self.get_info()
         self.pid = data["state"]["pid"]
         return self.pid
@@ -31,7 +30,9 @@ class LxdClient(object):
             raise CoreCommandError(status, args, output)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(status, args, "LXC({name}) not present".format(name=self.name))
+            raise CoreCommandError(
+                status, args, "LXC({name}) not present".format(name=self.name)
+            )
         return data[0]
 
     def is_alive(self):
@@ -42,15 +43,10 @@ class LxdClient(object):
             return False
 
     def stop_container(self):
-        utils.check_cmd("lxc delete --force {name}".format(
-            name=self.name
-        ))
+        utils.check_cmd("lxc delete --force {name}".format(name=self.name))
 
     def _cmd_args(self, cmd):
-        return "lxc exec -nT {name} -- {cmd}".format(
-            name=self.name,
-            cmd=cmd
-        )
+        return "lxc exec -nT {name} -- {cmd}".format(name=self.name, cmd=cmd)
 
     def cmd_output(self, cmd):
         if isinstance(cmd, list):
@@ -67,10 +63,7 @@ class LxdClient(object):
         return utils.cmd(args, wait)
 
     def _ns_args(self, cmd):
-        return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(
-            pid=self.pid,
-            cmd=cmd
-        )
+        return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
 
     def ns_cmd_output(self, cmd):
         if isinstance(cmd, list):
@@ -91,9 +84,7 @@ class LxdClient(object):
             destination = os.path.join("/root/", destination)
 
         args = "lxc file push {source} {name}/{destination}".format(
-            source=source,
-            name=self.name,
-            destination=destination
+            source=source, name=self.name, destination=destination
         )
         status, output = utils.cmd_output(args)
         if status:
@@ -137,7 +128,16 @@ class LxdClient(object):
 class LxcNode(CoreNode):
     apitype = NodeTypes.LXC.value
 
-    def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True, image=None):
+    def __init__(
+        self,
+        session,
+        _id=None,
+        name=None,
+        nodedir=None,
+        bootsh="boot.sh",
+        start=True,
+        image=None,
+    ):
         """
         Create a LxcNode instance.
 
@@ -292,7 +292,9 @@ class LxcNode(CoreNode):
         :param int mode: mode to copy to
         :return: nothing
         """
-        logging.info("node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode)
+        logging.info(
+            "node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode
+        )
         raise Exception("not supported")
 
     def addnetif(self, netif, ifindex):

@@ -3,22 +3,13 @@ import time
 
 import pytest
 
+from core import utils
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
-from core import utils
 
-MODELS = [
-    "router",
-    "host",
-    "PC",
-    "mdr",
-]
+MODELS = ["router", "host", "PC", "mdr"]
 
-NET_TYPES = [
-    NodeTypes.SWITCH,
-    NodeTypes.HUB,
-    NodeTypes.WIRELESS_LAN
-]
+NET_TYPES = [NodeTypes.SWITCH, NodeTypes.HUB, NodeTypes.WIRELESS_LAN]
 
 
 class TestNodes:

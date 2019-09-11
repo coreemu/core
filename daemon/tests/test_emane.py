@@ -36,16 +36,17 @@ class TestEmane:
 
         # create emane node for networking the core nodes
         emane_network = session.create_emane_network(
-            model,
-            geo_reference=(47.57917, -122.13232, 2.00000)
+            model, geo_reference=(47.57917, -122.13232, 2.00000)
         )
         emane_network.setposition(x=80, y=50)
 
         # configure tdma
         if model == EmaneTdmaModel:
-            session.emane.set_model_config(emane_network.id, EmaneTdmaModel.name, {
-                "schedule": os.path.join(_DIR, "../examples/tdma/schedule.xml")
-            })
+            session.emane.set_model_config(
+                emane_network.id,
+                EmaneTdmaModel.name,
+                {"schedule": os.path.join(_DIR, "../examples/tdma/schedule.xml")},
+            )
 
         # create nodes
         node_options = NodeOptions()

@@ -10,16 +10,12 @@ import logging
 import sys
 import threading
 import time
-
 from configparser import ConfigParser
 
-from core import constants
-from core import load_logging_config
+from core import constants, load_logging_config
 from core.api.grpc.server import CoreGrpcServer
-from core.api.tlv.corehandlers import CoreHandler
-from core.api.tlv.corehandlers import CoreUdpHandler
-from core.api.tlv.coreserver import CoreServer
-from core.api.tlv.coreserver import CoreUdpServer
+from core.api.tlv.corehandlers import CoreHandler, CoreUdpHandler
+from core.api.tlv.coreserver import CoreServer, CoreUdpServer
 from core.emulator import enumerations
 from core.utils import close_onexec
 
@@ -105,7 +101,7 @@ def get_merged_config(filename):
         "numthreads": "1",
         "grpcport": "50051",
         "grpcaddress": "localhost",
-        "logfile": None
+        "logfile": ""
     }
 
     parser = argparse.ArgumentParser(

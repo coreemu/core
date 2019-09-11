@@ -17,7 +17,7 @@ def load_logging_config(config_path=None):
         when None defaults to /etc/core/logging.conf
     :return: nothing
     """
-    if config_path is None:
+    if not config_path:
         config_path = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
     with open(config_path, "r") as log_config_file:
         log_config = json.load(log_config_file)

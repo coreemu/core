@@ -6,10 +6,8 @@ share the same MAC+PHY model.
 
 import logging
 
+from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes.base import CoreNetworkBase
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
 
 try:
     from emane.events import LocationEvent
@@ -24,6 +22,7 @@ class EmaneNet(CoreNetworkBase):
     """
     EMANE network base class.
     """
+
     apitype = NodeTypes.EMANE.value
     linktype = LinkTypes.WIRELESS.value
     # icon used
@@ -45,14 +44,30 @@ class EmaneNode(EmaneNet):
         self.model = None
         self.mobility = None
 
-    def linkconfig(self, netif, bw=None, delay=None, loss=None, duplicate=None, jitter=None, netif2=None):
+    def linkconfig(
+        self,
+        netif,
+        bw=None,
+        delay=None,
+        loss=None,
+        duplicate=None,
+        jitter=None,
+        netif2=None,
+    ):
         """
         The CommEffect model supports link configuration.
         """
         if not self.model:
             return
-        return self.model.linkconfig(netif=netif, bw=bw, delay=delay, loss=loss,
-                                     duplicate=duplicate, jitter=jitter, netif2=netif2)
+        return self.model.linkconfig(
+            netif=netif,
+            bw=bw,
+            delay=delay,
+            loss=loss,
+            duplicate=duplicate,
+            jitter=jitter,
+            netif2=netif2,
+        )
 
     def config(self, conf):
         self.conf = conf
@@ -69,7 +84,9 @@ class EmaneNode(EmaneNet):
     def updatemodel(self, config):
         if not self.model:
             raise ValueError("no model set to update for node(%s)", self.id)
-        logging.info("node(%s) updating model(%s): %s", self.id, self.model.name, config)
+        logging.info(
+            "node(%s) updating model(%s): %s", self.id, self.model.name, config
+        )
         self.model.set_configs(config, node_id=self.id)
 
     def setmodel(self, model, config):
@@ -124,13 +141,18 @@ class EmaneNode(EmaneNet):
         EMANE daemons have been started, because that is their only chance
         to bind to the TAPs.
         """
-        if self.session.emane.genlocationevents() and self.session.emane.service is None:
+        if (
+            self.session.emane.genlocationevents()
+            and self.session.emane.service is None
+        ):
             warntxt = "unable to publish EMANE events because the eventservice "
             warntxt += "Python bindings failed to load"
             logging.error(warntxt)
 
         for netif in self.netifs():
-            external = self.session.emane.get_config("external", self.id, self.model.name)
+            external = self.session.emane.get_config(
+                "external", self.id, self.model.name
+            )
             if external == "0":
                 netif.setaddrs()
 
@@ -168,7 +190,17 @@ class EmaneNode(EmaneNet):
             logging.info("nemid for %s is unknown", ifname)
             return
         lat, lon, alt = self.session.location.getgeo(x, y, z)
-        logging.info("setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)", ifname, nemid, x, y, z, lat, lon, alt)
+        logging.info(
+            "setnemposition %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
+            ifname,
+            nemid,
+            x,
+            y,
+            z,
+            lat,
+            lon,
+            alt,
+        )
         event = LocationEvent()
 
         # altitude must be an integer or warning is printed
@@ -200,8 +232,18 @@ class EmaneNode(EmaneNet):
                 continue
             x, y, z = netif.node.getposition()
             lat, lon, alt = self.session.location.getgeo(x, y, z)
-            logging.info("setnempositions %d %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
-                         i, ifname, nemid, x, y, z, lat, lon, alt)
+            logging.info(
+                "setnempositions %d %s (%s) x,y,z=(%d,%d,%s)(%.6f,%.6f,%.6f)",
+                i,
+                ifname,
+                nemid,
+                x,
+                y,
+                z,
+                lat,
+                lon,
+                alt,
+            )
             # altitude must be an integer or warning is printed
             alt = int(round(alt))
             event.append(nemid, latitude=lat, longitude=lon, altitude=alt)

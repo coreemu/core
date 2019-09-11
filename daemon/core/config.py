@@ -40,7 +40,11 @@ class ConfigShim(object):
         """
         group_strings = []
         for config_group in config_groups:
-            group_string = "%s:%s-%s" % (config_group.name, config_group.start, config_group.stop)
+            group_string = "%s:%s-%s" % (
+                config_group.name,
+                config_group.start,
+                config_group.stop,
+            )
             group_strings.append(group_string)
         return "|".join(group_strings)
 
@@ -96,7 +100,7 @@ class ConfigShim(object):
             captions=captions,
             possible_values="|".join(possible_values),
             bitmap=configurable_options.bitmap,
-            groups=groups_str
+            groups=groups_str,
         )
 
 
@@ -127,13 +131,19 @@ class Configuration(object):
 
     def __str__(self):
         return "%s(id=%s, type=%s, default=%s, options=%s)" % (
-            self.__class__.__name__, self.id, self.type, self.default, self.options)
+            self.__class__.__name__,
+            self.id,
+            self.type,
+            self.default,
+            self.options,
+        )
 
 
 class ConfigurableManager(object):
     """
     Provides convenience methods for storing and retrieving configuration options for nodes.
     """
+
     _default_node = -1
     _default_type = _default_node
 
@@ -187,11 +197,15 @@ class ConfigurableManager(object):
         :param str config_type: configuration type to store configuration for
         :return: nothing
         """
-        logging.debug("setting config for node(%s) type(%s): %s", node_id, config_type, config)
+        logging.debug(
+            "setting config for node(%s) type(%s): %s", node_id, config_type, config
+        )
         node_configs = self.node_configurations.setdefault(node_id, OrderedDict())
         node_configs[config_type] = config
 
-    def get_config(self, _id, node_id=_default_node, config_type=_default_type, default=None):
+    def get_config(
+        self, _id, node_id=_default_node, config_type=_default_type, default=None
+    ):
         """
         Retrieves a specific configuration for a node and configuration type.
 
@@ -256,6 +270,7 @@ class ConfigurableOptions(object):
     """
     Provides a base for defining configuration options within CORE.
     """
+
     name = None
     bitmap = None
     options = []
@@ -278,9 +293,7 @@ class ConfigurableOptions(object):
         :return: configuration group definition
         :rtype: list[ConfigGroup]
         """
-        return [
-            ConfigGroup("Options", 1, len(cls.configurations()))
-        ]
+        return [ConfigGroup("Options", 1, len(cls.configurations()))]
 
     @classmethod
     def default_values(cls):
@@ -290,7 +303,9 @@ class ConfigurableOptions(object):
         :return: ordered configuration mapping default values
         :rtype: OrderedDict
         """
-        return OrderedDict([(config.id, config.default) for config in cls.configurations()])
+        return OrderedDict(
+            [(config.id, config.default) for config in cls.configurations()]
+        )
 
 
 class ModelManager(ConfigurableManager):
@@ -365,7 +380,12 @@ class ModelManager(ConfigurableManager):
         :param dict config: model configuration, None for default configuration
         :return: nothing
         """
-        logging.info("setting mobility model(%s) for node(%s): %s", model_class.name, node.id, config)
+        logging.info(
+            "setting mobility model(%s) for node(%s): %s",
+            model_class.name,
+            node.id,
+            config,
+        )
         self.set_model_config(node.id, model_class.name, config)
         config = self.get_model_config(node.id, model_class.name)
         node.setmodel(model_class, config)

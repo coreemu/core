@@ -4,11 +4,9 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
-from builtins import int
-from builtins import range
+from builtins import int, range
 
-from core import CoreCommandError, utils
-from core import constants
+from core import CoreCommandError, constants, utils
 from core.emulator.enumerations import NodeTypes
 from core.nodes import nodeutils
 
@@ -221,8 +219,20 @@ class Veth(CoreInterface):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        utils.check_cmd([constants.IP_BIN, "link", "add", "name", self.localname,
-                         "type", "veth", "peer", "name", self.name])
+        utils.check_cmd(
+            [
+                constants.IP_BIN,
+                "link",
+                "add",
+                "name",
+                self.localname,
+                "type",
+                "veth",
+                "peer",
+                "name",
+                self.name,
+            ]
+        )
         utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
         self.up = True
 
@@ -237,7 +247,9 @@ class Veth(CoreInterface):
 
         if self.node:
             try:
-                self.node.network_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+                self.node.network_cmd(
+                    [constants.IP_BIN, "-6", "addr", "flush", "dev", self.name]
+                )
             except CoreCommandError:
                 logging.exception("error shutting down interface")
 
@@ -298,7 +310,9 @@ class TunTap(CoreInterface):
             return
 
         try:
-            self.node.network_cmd([constants.IP_BIN, "-6", "addr", "flush", "dev", self.name])
+            self.node.network_cmd(
+                [constants.IP_BIN, "-6", "addr", "flush", "dev", self.name]
+            )
         except CoreCommandError:
             logging.exception("error shutting down tunnel tap")
 
@@ -396,8 +410,12 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
-        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "netns", netns])
-        self.node.network_cmd([constants.IP_BIN, "link", "set", self.localname, "name", self.name])
+        utils.check_cmd(
+            [constants.IP_BIN, "link", "set", self.localname, "netns", netns]
+        )
+        self.node.network_cmd(
+            [constants.IP_BIN, "link", "set", self.localname, "name", self.name]
+        )
         self.node.network_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
 
     def setaddrs(self):
@@ -408,7 +426,9 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.network_cmd([constants.IP_BIN, "addr", "add", str(addr), "dev", self.name])
+            self.node.network_cmd(
+                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.name]
+            )
 
 
 class GreTap(CoreInterface):
@@ -418,9 +438,19 @@ class GreTap(CoreInterface):
     having a MAC address. The MAC address is required for bridging.
     """
 
-    def __init__(self, node=None, name=None, session=None, mtu=1458,
-                 remoteip=None, _id=None, localip=None, ttl=255,
-                 key=None, start=True):
+    def __init__(
+        self,
+        node=None,
+        name=None,
+        session=None,
+        mtu=1458,
+        remoteip=None,
+        _id=None,
+        localip=None,
+        ttl=255,
+        key=None,
+        start=True,
+    ):
         """
         Creates a GreTap instance.
 
@@ -440,7 +470,7 @@ class GreTap(CoreInterface):
         self.session = session
         if _id is None:
             # from PyCoreObj
-            _id = ((id(self) >> 16) ^ (id(self) & 0xffff)) & 0xffff
+            _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF
         self.id = _id
         sessionid = self.session.short_session_id()
         # interface name on the local host machine
@@ -452,8 +482,16 @@ class GreTap(CoreInterface):
 
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
-        args = [constants.IP_BIN, "link", "add", self.localname, "type", "gretap",
-                "remote", str(remoteip)]
+        args = [
+            constants.IP_BIN,
+            "link",
+            "add",
+            self.localname,
+            "type",
+            "gretap",
+            "remote",
+            str(remoteip),
+        ]
         if localip:
             args += ["local", str(localip)]
         if ttl:
