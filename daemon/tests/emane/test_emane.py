@@ -6,7 +6,6 @@ from xml.etree import ElementTree
 
 import pytest
 
-from conftest import ping
 from core import CoreError
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -23,6 +22,11 @@ _EMANE_MODELS = [
     EmaneTdmaModel,
 ]
 _DIR = os.path.dirname(os.path.abspath(__file__))
+
+
+def ping(from_node, to_node, ip_prefixes, count=3):
+    address = ip_prefixes.ip4_address(to_node)
+    return from_node.cmd(["ping", "-c", str(count), address])
 
 
 class TestEmane:

@@ -188,11 +188,6 @@ def coreserver():
     ServiceManager.services.clear()
 
 
-def ping(from_node, to_node, ip_prefixes, count=3):
-    address = ip_prefixes.ip4_address(to_node)
-    return from_node.cmd(["ping", "-c", str(count), address])
-
-
 def pytest_addoption(parser):
     parser.addoption("--distributed", help="distributed server address")
 
