@@ -7,7 +7,7 @@ import logging
 import os
 import threading
 
-from core import CoreCommandError, constants, utils
+from core import CoreCommandError, CoreError, constants, utils
 from core.api.tlv import coreapi, dataconversion
 from core.config import ConfigGroup, ConfigShim, Configuration, ModelManager
 from core.emane import emanemanifest
@@ -950,7 +950,7 @@ class EmaneManager(ModelManager):
         # generate a node message for this location update
         try:
             node = self.session.get_node(n)
-        except KeyError:
+        except CoreError:
             logging.exception(
                 "location event NEM %s has no corresponding node %s" % (nemid, n)
             )
