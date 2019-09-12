@@ -170,7 +170,7 @@ class NodeBase(object):
         :param str lon: longitude
         :param str alt: altitude
         :return: node data object
-        :rtype: core.data.NodeData
+        :rtype: core.emulator.data.NodeData
         """
         if self.apitype is None:
             return None
@@ -696,6 +696,7 @@ class CoreNode(CoreNodeBase):
                 logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
+                # add network interface to the node. If unsuccessful, destroy the network interface and raise exception.
                 self.addnetif(veth, ifindex)
             except ValueError as e:
                 veth.shutdown()

@@ -58,6 +58,12 @@ def get_config_groups(config, configurable_options):
 
 
 def get_links(session, node):
+    """
+    Get
+    :param session:
+    :param node:
+    :return:
+    """
     links = []
     for link_data in node.all_link_data(0):
         link = convert_link(session, link_data)
