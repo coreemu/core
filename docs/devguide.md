@@ -42,6 +42,14 @@ python3 -m pipenv install --dev
 export PYTHON=$(python3 -m pipenv --py)
 ```
 
+### Setup pre-commit
+
+Install pre-commit hooks to help automate running tool checks against code.
+
+```shell
+python3 -m pipenv run pre-commit install
+```
+
 ### Build CORE
 
 ```shell
