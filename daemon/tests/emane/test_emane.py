@@ -51,7 +51,7 @@ class TestEmane:
             session.emane.set_model_config(
                 emane_network.id,
                 EmaneTdmaModel.name,
-                {"schedule": os.path.join(_DIR, "../examples/tdma/schedule.xml")},
+                {"schedule": os.path.join(_DIR, "../../examples/tdma/schedule.xml")},
             )
 
         # create nodes
