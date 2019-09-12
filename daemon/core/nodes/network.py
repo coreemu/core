@@ -1156,6 +1156,11 @@ class WlanNode(CoreNetwork):
         logging.debug("node(%s) setting model: %s", self.name, model.name)
         if model.config_type == RegisterTlvs.WIRELESS.value:
             self.model = model(session=self.session, _id=self.id)
+            for netif in self.netifs():
+                netif.poshook = self.model.position_callback
+                if netif.poshook and netif.node:
+                    x, y, z = netif.node.position.get()
+                    netif.poshook(netif, x, y, z)
             self.updatemodel(config)
         elif model.config_type == RegisterTlvs.MOBILITY.value:
             self.mobility = model(session=self.session, _id=self.id)
@@ -1173,12 +1178,10 @@ class WlanNode(CoreNetwork):
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
         self.model.update_config(config)
-        if self.model.position_callback:
-            for netif in self.netifs():
-                netif.poshook = self.model.position_callback
-                if netif.node is not None:
-                    x, y, z = netif.node.position.get()
-                    netif.poshook(netif, x, y, z)
+        for netif in self.netifs():
+            if netif.poshook and netif.node:
+                x, y, z = netif.node.position.get()
+                netif.poshook(netif, x, y, z)
 
     def all_link_data(self, flags):
         """

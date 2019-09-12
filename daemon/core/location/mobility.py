@@ -393,7 +393,6 @@ class BasicRangeModel(WirelessModel):
 
         :param core.session.Session session: related core session
         :param int _id: object id
-        :param dict config: values
         """
         super(BasicRangeModel, self).__init__(session=session, _id=_id)
         self.session = session
@@ -401,7 +400,7 @@ class BasicRangeModel(WirelessModel):
         self._netifs = {}
         self._netifslock = threading.Lock()
 
-        self.range = None
+        self.range = 0
         self.bw = None
         self.delay = None
         self.loss = None
