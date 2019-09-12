@@ -2,8 +2,8 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emulator.emudata import NodeOptions, LinkOptions
+from core import CoreError
+from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
@@ -84,9 +84,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml
@@ -121,7 +121,9 @@ class TestXml:
         session.services.set_service(node_one.id, SshService.name)
         service_file = SshService.configs[0]
         file_data = "# test"
-        session.services.set_service_file(node_one.id, SshService.name, service_file, file_data)
+        session.services.set_service_file(
+            node_one.id, SshService.name, service_file, file_data
+        )
 
         # instantiate session
         session.instantiate()
@@ -143,9 +145,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml
@@ -203,9 +205,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml
@@ -218,72 +220,6 @@ class TestXml:
         assert session.get_node(n1_id)
         assert session.get_node(n2_id)
         assert session.get_node(wlan_id)
-        assert value == "1"
-
-    def test_xml_emane(self, session, tmpdir, ip_prefixes):
-        """
-        Test xml client methods for emane.
-
-        :param session: session for test
-        :param tmpdir: tmpdir to create data in
-        :param ip_prefixes: generates ip addresses for nodes
-        """
-        # create emane node for networking the core nodes
-        emane_network = session.create_emane_network(
-            EmaneIeee80211abgModel,
-            geo_reference=(47.57917, -122.13232, 2.00000),
-            config={"test": "1"}
-        )
-        emane_network.setposition(x=80, y=50)
-
-        # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(150, 150)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_options.set_position(300, 150)
-        node_two = session.create_wireless_node(node_options=node_options)
-
-        for i, node in enumerate([node_one, node_two]):
-            node.setposition(x=150 * (i + 1), y=150)
-            interface = ip_prefixes.create_interface(node)
-            session.add_link(node.id, emane_network.id, interface_one=interface)
-
-        # instantiate session
-        session.instantiate()
-
-        # get ids for nodes
-        emane_id = emane_network.id
-        n1_id = node_one.id
-        n2_id = node_two.id
-
-        # save xml
-        xml_file = tmpdir.join("session.xml")
-        file_path = xml_file.strpath
-        session.save_xml(file_path)
-
-        # verify xml file was created and can be parsed
-        assert xml_file.isfile()
-        assert ElementTree.parse(file_path)
-
-        # stop current session, clearing data
-        session.shutdown()
-
-        # verify nodes have been removed from session
-        with pytest.raises(KeyError):
-            assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
-            assert not session.get_node(n2_id)
-
-        # load saved xml
-        session.open_xml(file_path, start=True)
-
-        # retrieve configuration we set originally
-        value = str(session.emane.get_config("test", emane_id, EmaneIeee80211abgModel.name))
-
-        # verify nodes and configuration were restored
-        assert session.get_node(n1_id)
-        assert session.get_node(n2_id)
-        assert session.get_node(emane_id)
         assert value == "1"
 
     def test_network_to_network(self, session, tmpdir):
@@ -320,9 +256,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml
@@ -355,7 +291,9 @@ class TestXml:
         link_options.jitter = 10
         link_options.delay = 30
         link_options.dup = 5
-        session.add_link(node_one.id, switch.id, interface_one, link_options=link_options)
+        session.add_link(
+            node_one.id, switch.id, interface_one, link_options=link_options
+        )
 
         # instantiate session
         session.instantiate()
@@ -377,9 +315,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml
@@ -420,7 +358,9 @@ class TestXml:
         link_options.jitter = 10
         link_options.delay = 30
         link_options.dup = 5
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options)
+        session.add_link(
+            node_one.id, node_two.id, interface_one, interface_two, link_options
+        )
 
         # instantiate session
         session.instantiate()
@@ -442,9 +382,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml
@@ -486,7 +426,9 @@ class TestXml:
         link_options_one.per = 10.5
         link_options_one.dup = 5
         link_options_one.jitter = 5
-        session.add_link(node_one.id, node_two.id, interface_one, interface_two, link_options_one)
+        session.add_link(
+            node_one.id, node_two.id, interface_one, interface_two, link_options_one
+        )
         link_options_two = LinkOptions()
         link_options_two.unidirectional = 1
         link_options_two.bandwidth = 10000
@@ -494,7 +436,13 @@ class TestXml:
         link_options_two.per = 10
         link_options_two.dup = 10
         link_options_two.jitter = 10
-        session.update_link(node_two.id, node_one.id, interface_two.id, interface_one.id, link_options_two)
+        session.update_link(
+            node_two.id,
+            node_one.id,
+            interface_two.id,
+            interface_one.id,
+            link_options_two,
+        )
 
         # instantiate session
         session.instantiate()
@@ -516,9 +464,9 @@ class TestXml:
         session.shutdown()
 
         # verify nodes have been removed from session
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n1_id)
-        with pytest.raises(KeyError):
+        with pytest.raises(CoreError):
             assert not session.get_node(n2_id)
 
         # load saved xml

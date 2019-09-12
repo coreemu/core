@@ -6,11 +6,10 @@ import core.nodes.docker
 import core.nodes.lxd
 import core.nodes.network
 import core.nodes.physical
-from core.emane.nodes import EmaneNet
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet, EmaneNode
 from core.emulator.enumerations import NodeTypes
-from core.nodes.network import GreTapBridge
 from core.nodes import physical
+from core.nodes.network import GreTapBridge
 
 # legacy core nodes, that leverage linux bridges
 NODES = {
@@ -29,5 +28,5 @@ NODES = {
     NodeTypes.PEER_TO_PEER: core.nodes.network.PtpNet,
     NodeTypes.CONTROL_NET: core.nodes.network.CtrlNet,
     NodeTypes.DOCKER: core.nodes.docker.DockerNode,
-    NodeTypes.LXC: core.nodes.lxd.LxcNode
+    NodeTypes.LXC: core.nodes.lxd.LxcNode,
 }

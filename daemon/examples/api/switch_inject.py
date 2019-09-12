@@ -8,7 +8,7 @@ from builtins import range
 
 from core import load_logging_config
 from core.emulator.emudata import IpPrefixes
-from core.emulator.enumerations import NodeTypes, EventTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 
 load_logging_config()
 

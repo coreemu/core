@@ -17,6 +17,7 @@ class CoreLocation(object):
     track of a latitude/longitude/altitude reference point and scale in
     order to convert between X,Y and geo coordinates.
     """
+
     name = "location"
     config_type = RegisterTlvs.UTILITY.value
 
@@ -118,7 +119,14 @@ class CoreLocation(object):
         try:
             lat, lon = utm.to_latlon(e, n, zone[0], zone[1])
         except utm.OutOfRangeError:
-            logging.exception("UTM out of range error for n=%s zone=%s xyz=(%s,%s,%s)", n, zone, x, y, z)
+            logging.exception(
+                "UTM out of range error for n=%s zone=%s xyz=(%s,%s,%s)",
+                n,
+                zone,
+                x,
+                y,
+                z,
+            )
             lat, lon = self.refgeo[:2]
         # self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
         #          "%.3f,%.3f,%.3f" % (x, y, z, e, n, zone, lat, lon, alt))
@@ -265,9 +273,9 @@ class CoreLocation(object):
         if n < 0:
             # refpt in northern hemisphere and we crossed south of equator
             n += 10000000
-            zone = (zone[0], 'M')
+            zone = (zone[0], "M")
         elif n > 10000000:
             # refpt in southern hemisphere and we crossed north of equator
             n -= 10000000
-            zone = (zone[0], 'N')
+            zone = (zone[0], "N")
         return e, n, zone

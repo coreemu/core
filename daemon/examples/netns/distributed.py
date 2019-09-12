@@ -18,7 +18,14 @@ import core.nodes.base
 import core.nodes.network
 from core import constants
 from core.api.tlv import coreapi, dataconversion
-from core.emulator.enumerations import CORE_API_PORT, EventTypes, EventTlvs, LinkTlvs, LinkTypes, MessageFlags
+from core.emulator.enumerations import (
+    CORE_API_PORT,
+    EventTlvs,
+    EventTypes,
+    LinkTlvs,
+    LinkTypes,
+    MessageFlags,
+)
 from core.emulator.session import Session
 from core.nodes import ipaddress
 
@@ -31,10 +38,12 @@ def main():
     parser = optparse.OptionParser(usage=usagestr)
     parser.set_defaults(numnodes=5, slave=None)
 
-    parser.add_option("-n", "--numnodes", dest="numnodes", type=int,
-                      help="number of nodes")
-    parser.add_option("-s", "--slave-server", dest="slave", type=str,
-                      help="slave server IP address")
+    parser.add_option(
+        "-n", "--numnodes", dest="numnodes", type=int, help="number of nodes"
+    )
+    parser.add_option(
+        "-s", "--slave-server", dest="slave", type=str, help="slave server IP address"
+    )
 
     def usage(msg=None, err=0):
         sys.stdout.write("\n")
@@ -58,11 +67,12 @@ def main():
 
     prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
     session = Session(1)
-    if 'server' in globals():
+    server = globals().get("server")
+    if server is not None:
         server.addsession(session)
 
     # distributed setup - connect to slave server
-    slaveport = options.slave.split(':')
+    slaveport = options.slave.split(":")
     slave = slaveport[0]
     if len(slaveport) > 1:
         port = int(slaveport[1])
@@ -72,15 +82,19 @@ def main():
     session.broker.addserver(slave, slave, port)
     session.broker.setupserver(slave)
     session.set_state(EventTypes.CONFIGURATION_STATE)
-    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value)
+    tlvdata = coreapi.CoreEventTlv.pack(
+        EventTlvs.TYPE.value, EventTypes.CONFIGURATION_STATE.value
+    )
     session.broker.handlerawmsg(coreapi.CoreEventMessage.pack(0, tlvdata))
 
     switch = session.create_node(cls=core.nodes.network.SwitchNode, name="switch")
     switch.setposition(x=80, y=50)
     num_local = options.numnodes / 2
     num_remote = options.numnodes / 2 + options.numnodes % 2
-    print("creating %d (%d local / %d remote) nodes with addresses from %s" % \
-          (options.numnodes, num_local, num_remote, prefix))
+    print(
+        "creating %d (%d local / %d remote) nodes with addresses from %s"
+        % (options.numnodes, num_local, num_remote, prefix)
+    )
     for i in range(1, num_local + 1):
         node = session.create_node(cls=core.nodes.base.CoreNode, name="n%d" % i, _id=i)
         node.newnetif(switch, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
@@ -93,7 +107,9 @@ def main():
 
     # create remote nodes via API
     for i in range(num_local + 1, options.numnodes + 1):
-        node = core.nodes.base.CoreNode(session=session, _id=i, name="n%d" % i, start=False)
+        node = core.nodes.base.CoreNode(
+            session=session, _id=i, name="n%d" % i, start=False
+        )
         node.setposition(x=150 * i, y=150)
         node.server = slave
         n.append(node)
@@ -107,13 +123,19 @@ def main():
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.N2_NUMBER.value, i)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.TYPE.value, LinkTypes.WIRED.value)
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_NUMBER.value, 0)
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4.value, prefix.addr(i))
-        tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.INTERFACE2_IP4_MASK.value, prefix.prefixlen)
+        tlvdata += coreapi.CoreLinkTlv.pack(
+            LinkTlvs.INTERFACE2_IP4.value, prefix.addr(i)
+        )
+        tlvdata += coreapi.CoreLinkTlv.pack(
+            LinkTlvs.INTERFACE2_IP4_MASK.value, prefix.prefixlen
+        )
         msg = coreapi.CoreLinkMessage.pack(flags, tlvdata)
         session.broker.handlerawmsg(msg)
 
     session.instantiate()
-    tlvdata = coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_STATE.value)
+    tlvdata = coreapi.CoreEventTlv.pack(
+        EventTlvs.TYPE.value, EventTypes.INSTANTIATION_STATE.value
+    )
     msg = coreapi.CoreEventMessage.pack(0, tlvdata)
     session.broker.handlerawmsg(msg)
 

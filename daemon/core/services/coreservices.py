@@ -15,8 +15,7 @@ from multiprocessing.pool import ThreadPool
 from core import CoreCommandError, utils
 from core.constants import which
 from core.emulator.data import FileData
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import MessageFlags, RegisterTlvs
 
 
 class ServiceBootError(Exception):
@@ -62,7 +61,9 @@ class ServiceDependencies(object):
         for name in self.node_services:
             service = self.node_services[name]
             if service.name in self.booted:
-                logging.debug("skipping service that will already be booted: %s", service.name)
+                logging.debug(
+                    "skipping service that will already be booted: %s", service.name
+                )
                 continue
 
             path = self._start(service)
@@ -70,7 +71,10 @@ class ServiceDependencies(object):
                 paths.append(path)
 
         if self.booted != set(self.node_services):
-            raise ValueError("failure to boot all services: %s != %s" % (self.booted, self.node_services.keys()))
+            raise ValueError(
+                "failure to boot all services: %s != %s"
+                % (self.booted, self.node_services.keys())
+            )
 
         return paths
 
@@ -92,10 +96,16 @@ class ServiceDependencies(object):
         # dive down
         for service_name in current_service.dependencies:
             if service_name not in self.node_services:
-                raise ValueError("required dependency was not included in node services: %s" % service_name)
+                raise ValueError(
+                    "required dependency was not included in node services: %s"
+                    % service_name
+                )
 
             if service_name in self.visiting:
-                raise ValueError("cyclic dependency at service(%s): %s" % (current_service.name, service_name))
+                raise ValueError(
+                    "cyclic dependency at service(%s): %s"
+                    % (current_service.name, service_name)
+                )
 
             if service_name not in self.visited:
                 service = self.node_services[service_name]
@@ -117,7 +127,16 @@ class ServiceDependencies(object):
 
 
 class ServiceShim(object):
-    keys = ["dirs", "files", "startidx", "cmdup", "cmddown", "cmdval", "meta", "starttime"]
+    keys = [
+        "dirs",
+        "files",
+        "startidx",
+        "cmdup",
+        "cmddown",
+        "cmdval",
+        "meta",
+        "starttime",
+    ]
 
     @classmethod
     def tovaluelist(cls, node, service):
@@ -132,8 +151,16 @@ class ServiceShim(object):
         """
         start_time = 0
         start_index = 0
-        valmap = [service.dirs, service.configs, start_index, service.startup,
-                  service.shutdown, service.validate, service.meta, start_time]
+        valmap = [
+            service.dirs,
+            service.configs,
+            start_index,
+            service.startup,
+            service.shutdown,
+            service.validate,
+            service.meta,
+            start_time,
+        ]
         if not service.custom:
             valmap[1] = service.get_configs(node)
             valmap[3] = service.get_startup(node)
@@ -201,16 +228,17 @@ class ServiceShim(object):
         :return: services
         :rtype: list
         """
-        servicesstring = opaque.split(':')
+        servicesstring = opaque.split(":")
         if servicesstring[0] != "service":
             return []
-        return servicesstring[1].split(',')
+        return servicesstring[1].split(",")
 
 
 class ServiceManager(object):
     """
     Manages services available for CORE nodes to use.
     """
+
     services = {}
 
     @classmethod
@@ -231,8 +259,12 @@ class ServiceManager(object):
         # validate dependent executables are present
         for executable in service.executables:
             if not which(executable):
-                logging.debug("service(%s) missing executable: %s", service.name, executable)
-                raise ValueError("service(%s) missing executable: %s" % (service.name, executable))
+                logging.debug(
+                    "service(%s) missing executable: %s", service.name, executable
+                )
+                raise ValueError(
+                    "service(%s) missing executable: %s" % (service.name, executable)
+                )
 
         # make service available
         cls.services[name] = service
@@ -280,6 +312,7 @@ class CoreServices(object):
     the default services configured for each node type, and any
     custom service configuration. A CoreService is not a Configurable.
     """
+
     name = "services"
     config_type = RegisterTlvs.UTILITY.value
 
@@ -368,17 +401,20 @@ class CoreServices(object):
         :return: nothing
         """
         if not services:
-            logging.info("using default services for node(%s) type(%s)", node.name, node_type)
+            logging.info(
+                "using default services for node(%s) type(%s)", node.name, node_type
+            )
             services = self.default_services.get(node_type, [])
 
         logging.info("setting services for node(%s): %s", node.name, services)
         for service_name in services:
             service = self.get_service(node.id, service_name, default_service=True)
             if not service:
-                logging.warning("unknown service(%s) for node(%s)", service_name, node.name)
+                logging.warning(
+                    "unknown service(%s) for node(%s)", service_name, node.name
+                )
                 continue
-            logging.info("adding service to node(%s): %s", node.name, service_name)
-            node.addservice(service)
+            node.services.append(service)
 
     def all_configs(self):
         """
@@ -445,11 +481,15 @@ class CoreServices(object):
         :param list[CoreService] boot_path: service to start in dependent order
         :return: nothing
         """
-        logging.info("booting node services: %s", " -> ".join([x.name for x in boot_path]))
+        logging.info(
+            "booting node(%s) services: %s",
+            node.name,
+            " -> ".join([x.name for x in boot_path]),
+        )
         for service in boot_path:
             try:
                 self.boot_service(node, service)
-            except:
+            except Exception:
                 logging.exception("exception booting service: %s", service.name)
                 raise
 
@@ -462,16 +502,24 @@ class CoreServices(object):
         :param CoreService service: service to start
         :return: nothing
         """
-        logging.info("starting node(%s) service(%s) validation(%s)", node.name, service.name,
-                     service.validation_mode.name)
+        logging.info(
+            "starting node(%s) service(%s) validation(%s)",
+            node.name,
+            service.name,
+            service.validation_mode.name,
+        )
 
         # create service directories
         for directory in service.dirs:
             try:
                 node.privatedir(directory)
             except (CoreCommandError, ValueError) as e:
-                logging.warning("error mounting private dir '%s' for service '%s': %s",
-                                directory, service.name, e)
+                logging.warning(
+                    "error mounting private dir '%s' for service '%s': %s",
+                    directory,
+                    service.name,
+                    e,
+                )
 
         # create service files
         self.create_service_files(node, service)
@@ -480,7 +528,9 @@ class CoreServices(object):
         wait = service.validation_mode == ServiceMode.BLOCKING
         status = self.startup_service(node, service, wait)
         if status:
-            raise ServiceBootError("node(%s) service(%s) error during startup" % (node.name, service.name))
+            raise ServiceBootError(
+                "node(%s) service(%s) error during startup" % (node.name, service.name)
+            )
 
         # blocking mode is finished
         if wait:
@@ -503,7 +553,9 @@ class CoreServices(object):
                 time.sleep(service.validation_period)
 
             if status:
-                raise ServiceBootError("node(%s) service(%s) failed validation" % (node.name, service.name))
+                raise ServiceBootError(
+                    "node(%s) service(%s) failed validation" % (node.name, service.name)
+                )
 
     def copy_service_file(self, node, filename, cfg):
         """
@@ -517,9 +569,9 @@ class CoreServices(object):
         :return: True if successful, False otherwise
         :rtype: bool
         """
-        if cfg[:7] == 'file://':
+        if cfg[:7] == "file://":
             src = cfg[7:]
-            src = src.split('\n')[0]
+            src = src.split("\n")[0]
             src = utils.expand_corepath(src, node.session, node)
             # TODO: glob here
             node.nodefilecopy(filename, src, mode=0o644)
@@ -546,7 +598,9 @@ class CoreServices(object):
             try:
                 node.check_cmd(cmd)
             except CoreCommandError as e:
-                logging.error("node(%s) service(%s) validate failed", node.name, service.name)
+                logging.error(
+                    "node(%s) service(%s) validate failed", node.name, service.name
+                )
                 logging.error("cmd(%s): %s", e.cmd, e.output)
                 status = -1
                 break
@@ -603,7 +657,9 @@ class CoreServices(object):
             config_files = service.get_configs(node)
 
         if filename not in config_files:
-            raise ValueError("unknown service(%s) config file: %s", service_name, filename)
+            raise ValueError(
+                "unknown service(%s) config file: %s", service_name, filename
+            )
 
         # get the file data
         data = service.config_data.get(filename)
@@ -618,7 +674,7 @@ class CoreServices(object):
             node=node.id,
             name=filename,
             type=filetypestr,
-            data=data
+            data=data,
         )
 
     def set_service_file(self, node_id, service_name, file_name, data):
@@ -645,7 +701,9 @@ class CoreServices(object):
         # validate file being set is valid
         config_files = service.configs
         if file_name not in config_files:
-            logging.warning("received unknown file(%s) for service(%s)", file_name, service_name)
+            logging.warning(
+                "received unknown file(%s) for service(%s)", file_name, service_name
+            )
             return
 
         # set custom service file data
@@ -686,7 +744,6 @@ class CoreServices(object):
         :param CoreService service: service to reconfigure
         :return: nothing
         """
-        logging.info("node(%s) service(%s) creating config files", node.name, service.name)
         # get values depending on if custom or not
         config_files = service.configs
         if not service.custom:
@@ -739,6 +796,7 @@ class CoreService(object):
     """
     Parent class used for defining services.
     """
+
     # service name should not include spaces
     name = None
 

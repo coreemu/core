@@ -23,15 +23,23 @@ class EmaneTransportService(CoreService):
             for interface in node.netifs(sort=True):
                 network_node = node.session.get_node(interface.net.id)
                 if nodeutils.is_node(network_node, NodeTypes.EMANE):
-                    config = node.session.emane.get_configs(network_node.id, network_node.model.name)
+                    config = node.session.emane.get_configs(
+                        network_node.id, network_node.model.name
+                    )
                     if config and emanexml.is_external(config):
                         nem_id = network_node.getnemid(interface)
-                        command = "emanetransportd -r -l 0 -d ../transportdaemon%s.xml" % nem_id
+                        command = (
+                            "emanetransportd -r -l 0 -d ../transportdaemon%s.xml"
+                            % nem_id
+                        )
                         transport_commands.append(command)
             transport_commands = "\n".join(transport_commands)
             return """
 emanegentransportxml -o ../ ../platform%s.xml
 %s
-""" % (node.id, transport_commands)
+""" % (
+                node.id,
+                transport_commands,
+            )
         else:
             raise ValueError

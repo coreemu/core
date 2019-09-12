@@ -12,23 +12,25 @@ import threading
 
 from core import utils
 from core.api.tlv import coreapi
-from core.nodes.base import CoreNodeBase, CoreNetworkBase
-from core.emulator.enumerations import ConfigDataTypes
-from core.emulator.enumerations import ConfigFlags
-from core.emulator.enumerations import ConfigTlvs
-from core.emulator.enumerations import EventTlvs
-from core.emulator.enumerations import EventTypes
-from core.emulator.enumerations import ExecuteTlvs
-from core.emulator.enumerations import FileTlvs
-from core.emulator.enumerations import LinkTlvs
-from core.emulator.enumerations import MessageFlags
-from core.emulator.enumerations import MessageTypes
-from core.emulator.enumerations import NodeTlvs
-from core.emulator.enumerations import NodeTypes
-from core.emulator.enumerations import RegisterTlvs
+from core.emulator.enumerations import (
+    ConfigDataTypes,
+    ConfigFlags,
+    ConfigTlvs,
+    EventTlvs,
+    EventTypes,
+    ExecuteTlvs,
+    FileTlvs,
+    LinkTlvs,
+    MessageFlags,
+    MessageTypes,
+    NodeTlvs,
+    NodeTypes,
+    RegisterTlvs,
+)
 from core.nodes import nodeutils
-from core.nodes.ipaddress import IpAddress
+from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import GreTap
+from core.nodes.ipaddress import IpAddress
 from core.nodes.network import GreTapBridge
 from core.nodes.physical import PhysicalNode
 
@@ -147,7 +149,12 @@ class CoreBroker(object):
             while len(self.servers) > 0:
                 name, server = self.servers.popitem()
                 if server.sock is not None:
-                    logging.info("closing connection with %s: %s:%s", name, server.host, server.port)
+                    logging.info(
+                        "closing connection with %s: %s:%s",
+                        name,
+                        server.host,
+                        server.port,
+                    )
                     server.close()
         self.dorecvloop = False
         if self.recvthread is not None:
@@ -157,7 +164,7 @@ class CoreBroker(object):
         """
         Reset to initial state.
         """
-        logging.info("clearing state")
+        logging.debug("broker reset")
         self.nodemap_lock.acquire()
         self.nodemap.clear()
         for server in self.nodecounts:
@@ -208,14 +215,22 @@ class CoreBroker(object):
             r, _w, _x = select.select(rlist, [], [], 1.0)
             for sock in r:
                 server = self.getserverbysock(sock)
-                logging.info("attempting to receive from server: peer:%s remote:%s",
-                            server.sock.getpeername(), server.sock.getsockname())
+                logging.info(
+                    "attempting to receive from server: peer:%s remote:%s",
+                    server.sock.getpeername(),
+                    server.sock.getsockname(),
+                )
                 if server is None:
                     # servers may have changed; loop again
                     continue
                 rcvlen = self.recv(server)
                 if rcvlen == 0:
-                    logging.info("connection with server(%s) closed: %s:%s", server.name, server.host, server.port)
+                    logging.info(
+                        "connection with server(%s) closed: %s:%s",
+                        server.name,
+                        server.host,
+                        server.port,
+                    )
 
     def recv(self, server):
         """
@@ -236,7 +251,9 @@ class CoreBroker(object):
             return 0
 
         if len(msghdr) != coreapi.CoreMessage.header_len:
-            logging.warning("warning: broker received not enough data len=%s", len(msghdr))
+            logging.warning(
+                "warning: broker received not enough data len=%s", len(msghdr)
+            )
             return len(msghdr)
 
         msgtype, msgflags, msglen = coreapi.CoreMessage.unpack_header(msghdr)
@@ -293,11 +310,17 @@ class CoreBroker(object):
         with self.servers_lock:
             server = self.servers.get(name)
             if server is not None:
-                if host == server.host and port == server.port and server.sock is not None:
+                if (
+                    host == server.host
+                    and port == server.port
+                    and server.sock is not None
+                ):
                     # leave this socket connected
                     return
 
-                logging.info("closing connection with %s @ %s:%s", name, server.host, server.port)
+                logging.info(
+                    "closing connection with %s @ %s:%s", name, server.host, server.port
+                )
                 server.close()
                 del self.servers[name]
 
@@ -307,7 +330,9 @@ class CoreBroker(object):
                 try:
                     server.connect()
                 except IOError:
-                    logging.exception("error connecting to server(%s): %s:%s", name, host, port)
+                    logging.exception(
+                        "error connecting to server(%s): %s:%s", name, host, port
+                    )
                 if server.sock is not None:
                     self.startrecvloop()
             self.servers[name] = server
@@ -328,7 +353,12 @@ class CoreBroker(object):
                 logging.exception("error deleting server")
 
         if server.sock is not None:
-            logging.info("closing connection with %s @ %s:%s", server.name, server.host, server.port)
+            logging.info(
+                "closing connection with %s @ %s:%s",
+                server.name,
+                server.host,
+                server.port,
+            )
             server.close()
 
     def getserverbyname(self, name):
@@ -414,16 +444,31 @@ class CoreBroker(object):
             remotenum = n2num
 
         if key in self.tunnels.keys():
-            logging.warning("tunnel with key %s (%s-%s) already exists!", key, n1num, n2num)
+            logging.warning(
+                "tunnel with key %s (%s-%s) already exists!", key, n1num, n2num
+            )
         else:
             _id = key & ((1 << 16) - 1)
-            logging.info("adding tunnel for %s-%s to %s with key %s", n1num, n2num, remoteip, key)
+            logging.info(
+                "adding tunnel for %s-%s to %s with key %s", n1num, n2num, remoteip, key
+            )
             if localnum in self.physical_nodes:
                 # no bridge is needed on physical nodes; use the GreTap directly
-                gt = GreTap(node=None, name=None, session=self.session,
-                            remoteip=remoteip, key=key)
+                gt = GreTap(
+                    node=None,
+                    name=None,
+                    session=self.session,
+                    remoteip=remoteip,
+                    key=key,
+                )
             else:
-                gt = self.session.create_node(cls=GreTapBridge, _id=_id, policy="ACCEPT", remoteip=remoteip, key=key)
+                gt = self.session.create_node(
+                    cls=GreTapBridge,
+                    _id=_id,
+                    policy="ACCEPT",
+                    remoteip=remoteip,
+                    key=key,
+                )
             gt.localnum = localnum
             gt.remotenum = remotenum
             self.tunnels[key] = gt
@@ -457,8 +502,13 @@ class CoreBroker(object):
             return None
 
         server_interface = getattr(net, "serverintf", None)
-        if nodeutils.is_node(net, NodeTypes.CONTROL_NET) and server_interface is not None:
-            logging.warning("control networks with server interfaces do not need a tunnel")
+        if (
+            nodeutils.is_node(net, NodeTypes.CONTROL_NET)
+            and server_interface is not None
+        ):
+            logging.warning(
+                "control networks with server interfaces do not need a tunnel"
+            )
             return None
 
         servers = self.getserversbynode(node_id)
@@ -491,12 +541,18 @@ class CoreBroker(object):
                 myip = host
             key = self.tunnelkey(node_id, IpAddress.to_int(myip))
             if key in self.tunnels.keys():
-                logging.info("tunnel already exists, returning existing tunnel: %s", key)
+                logging.info(
+                    "tunnel already exists, returning existing tunnel: %s", key
+                )
                 gt = self.tunnels[key]
                 r.append(gt)
                 continue
-            logging.info("adding tunnel for net %s to %s with key %s", node_id, host, key)
-            gt = GreTap(node=None, name=None, session=self.session, remoteip=host, key=key)
+            logging.info(
+                "adding tunnel for net %s to %s with key %s", node_id, host, key
+            )
+            gt = GreTap(
+                node=None, name=None, session=self.session, remoteip=host, key=key
+            )
             self.tunnels[key] = gt
             r.append(gt)
             # attaching to net will later allow gt to be destroyed
@@ -515,7 +571,9 @@ class CoreBroker(object):
         """
         key = self.tunnelkey(n1num, n2num)
         try:
-            logging.info("deleting tunnel between %s - %s with key: %s", n1num, n2num, key)
+            logging.info(
+                "deleting tunnel between %s - %s with key: %s", n1num, n2num, key
+            )
             gt = self.tunnels.pop(key)
         except KeyError:
             gt = None
@@ -643,12 +701,19 @@ class CoreBroker(object):
         elif message.message_type == MessageTypes.CONFIG.value:
             # broadcast location and services configuration everywhere
             confobj = message.get_tlv(ConfigTlvs.OBJECT.value)
-            if confobj == "location" or confobj == "services" or confobj == "session" or confobj == "all":
+            if (
+                confobj == "location"
+                or confobj == "services"
+                or confobj == "session"
+                or confobj == "all"
+            ):
                 servers = self.getservers()
         elif message.message_type == MessageTypes.FILE.value:
             # broadcast hook scripts and custom service files everywhere
             filetype = message.get_tlv(FileTlvs.TYPE.value)
-            if filetype is not None and (filetype[:5] == "hook:" or filetype[:8] == "service:"):
+            if filetype is not None and (
+                filetype[:5] == "hook:" or filetype[:8] == "service:"
+            ):
                 servers = self.getservers()
         if message.message_type == MessageTypes.LINK.value:
             # prepare a server list from two node numbers in link message
@@ -695,11 +760,19 @@ class CoreBroker(object):
         # server of its local name
         tlvdata = b""
         tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "broker")
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, ConfigFlags.UPDATE.value)
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.DATA_TYPES.value, (ConfigDataTypes.STRING.value,))
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value,
-                                              "%s:%s:%s" % (server.name, server.host, server.port))
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.SESSION.value, "%s" % self.session.id)
+        tlvdata += coreapi.CoreConfigTlv.pack(
+            ConfigTlvs.TYPE.value, ConfigFlags.UPDATE.value
+        )
+        tlvdata += coreapi.CoreConfigTlv.pack(
+            ConfigTlvs.DATA_TYPES.value, (ConfigDataTypes.STRING.value,)
+        )
+        tlvdata += coreapi.CoreConfigTlv.pack(
+            ConfigTlvs.VALUES.value,
+            "%s:%s:%s" % (server.name, server.host, server.port),
+        )
+        tlvdata += coreapi.CoreConfigTlv.pack(
+            ConfigTlvs.SESSION.value, "%s" % self.session.id
+        )
         msg = coreapi.CoreConfMessage.pack(0, tlvdata)
         server.sock.send(msg)
 
@@ -760,7 +833,10 @@ class CoreBroker(object):
             if nodecls is None:
                 logging.warning("broker unimplemented node type %s", nodetype)
                 return handle_locally, servers
-            if issubclass(nodecls, CoreNetworkBase) and nodetype != NodeTypes.WIRELESS_LAN.value:
+            if (
+                issubclass(nodecls, CoreNetworkBase)
+                and nodetype != NodeTypes.WIRELESS_LAN.value
+            ):
                 # network node replicated on all servers; could be optimized
                 # don"t replicate WLANs, because ebtables rules won"t work
                 servers = self.getservers()
@@ -810,7 +886,9 @@ class CoreBroker(object):
 
         # determine link message destination using non-network nodes
         nn = message.node_numbers()
-        logging.debug("checking link nodes (%s) with network nodes (%s)", nn, self.network_nodes)
+        logging.debug(
+            "checking link nodes (%s) with network nodes (%s)", nn, self.network_nodes
+        )
         if nn[0] in self.network_nodes:
             if nn[1] in self.network_nodes:
                 # two network nodes linked together - prevent loops caused by
@@ -854,7 +932,9 @@ class CoreBroker(object):
                 if host is None:
                     host = self.getlinkendpoint(message, localn == nn[0])
 
-                logging.debug("handle locally(%s) and local node(%s)", handle_locally, localn)
+                logging.debug(
+                    "handle locally(%s) and local node(%s)", handle_locally, localn
+                )
                 if localn is None:
                     message = self.addlinkendpoints(message, servers1, servers2)
                 elif message.flags & MessageFlags.ADD.value:
@@ -889,10 +969,10 @@ class CoreBroker(object):
             if server.host is not None:
                 ip2 = server.host
                 break
-        tlvdata = message.raw_message[coreapi.CoreMessage.header_len:]
+        tlvdata = message.raw_message[coreapi.CoreMessage.header_len :]
         tlvdata += coreapi.CoreLinkTlv.pack(LinkTlvs.OPAQUE.value, "%s:%s" % (ip1, ip2))
         newraw = coreapi.CoreLinkMessage.pack(message.flags, tlvdata)
-        msghdr = newraw[:coreapi.CoreMessage.header_len]
+        msghdr = newraw[: coreapi.CoreMessage.header_len]
         return coreapi.CoreLinkMessage(message.flags, msghdr, tlvdata)
 
     def getlinkendpoint(self, msg, first_is_local):
@@ -934,10 +1014,12 @@ class CoreBroker(object):
         :return: should handle locally or not
         :rtype: bool
         """
-        hdr = msg[:coreapi.CoreMessage.header_len]
+        hdr = msg[: coreapi.CoreMessage.header_len]
         msgtype, flags, _msglen = coreapi.CoreMessage.unpack_header(hdr)
         msgcls = coreapi.CLASS_MAP[msgtype]
-        return self.handle_message(msgcls(flags, hdr, msg[coreapi.CoreMessage.header_len:]))
+        return self.handle_message(
+            msgcls(flags, hdr, msg[coreapi.CoreMessage.header_len :])
+        )
 
     def forwardmsg(self, message, servers):
         """
@@ -957,9 +1039,19 @@ class CoreBroker(object):
                 # local emulation server, handle this locally
                 handle_locally = True
             elif server.sock is None:
-                logging.info("server %s @ %s:%s is disconnected", server.name, server.host, server.port)
+                logging.info(
+                    "server %s @ %s:%s is disconnected",
+                    server.name,
+                    server.host,
+                    server.port,
+                )
             else:
-                logging.info("forwarding message to server(%s): %s:%s", server.name, server.host, server.port)
+                logging.info(
+                    "forwarding message to server(%s): %s:%s",
+                    server.name,
+                    server.host,
+                    server.port,
+                )
                 logging.debug("message being forwarded:\n%s", message)
                 server.sock.send(message.raw_message)
         return handle_locally
@@ -986,7 +1078,10 @@ class CoreBroker(object):
                     lhost, lport = None, None
                     if server.sock:
                         lhost, lport = server.sock.getsockname()
-                    f.write("%s %s %s %s %s\n" % (server.name, server.host, server.port, lhost, lport))
+                    f.write(
+                        "%s %s %s %s %s\n"
+                        % (server.name, server.host, server.port, lhost, lport)
+                    )
         except IOError:
             logging.exception("error writing server list to the file: %s", filename)
 
@@ -1015,7 +1110,9 @@ class CoreBroker(object):
             with open(filename, "w") as f:
                 f.write("%s\n%s\n" % (serverstr, nodestr))
         except IOError:
-            logging.exception("error writing server file %s for node %s", filename, name)
+            logging.exception(
+                "error writing server file %s for node %s", filename, name
+            )
 
     def local_instantiation_complete(self):
         """
@@ -1031,7 +1128,9 @@ class CoreBroker(object):
 
         # broadcast out instantiate complete
         tlvdata = b""
-        tlvdata += coreapi.CoreEventTlv.pack(EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value)
+        tlvdata += coreapi.CoreEventTlv.pack(
+            EventTlvs.TYPE.value, EventTypes.INSTANTIATION_COMPLETE.value
+        )
         message = coreapi.CoreEventMessage.pack(0, tlvdata)
         for session_client in self.session_clients:
             session_client.sendall(message)

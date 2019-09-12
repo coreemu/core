@@ -1,0 +1,20 @@
+[[source]]
+name = "pypi"
+url = "https://pypi.org/simple"
+verify_ssl = true
+
+[scripts]
+coredev = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
+coretest = "python -m pytest -v tests"
+
+[dev-packages]
+grpcio-tools = "*"
+isort = "*"
+pre-commit = "*"
+flake8 = "*"
+black = "==19.3b0"
+pytest = "*"
+mock = "*"
+
+[packages]
+core = {editable = true,path = "."}

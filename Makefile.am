@@ -46,8 +46,8 @@ MAINTAINERCLEANFILES = .version	\
 
 
 if PYTHON3
-PYTHON_DEB_DEP = python3 >= 3.0
-PYTHON_RPM_DEP = python3 >= 3.0
+PYTHON_DEB_DEP = python3 >= 3.6
+PYTHON_RPM_DEP = python3 >= 3.6
 else
 PYTHON_DEB_DEP = python (>= 2.7), python (<< 3.0)
 PYTHON_RPM_DEP = python >= 2.7, python < 3.0

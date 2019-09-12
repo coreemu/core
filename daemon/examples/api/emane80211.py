@@ -3,9 +3,9 @@
 # Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
 
 import datetime
+import parser
 from builtins import range
 
-import parser
 from core import load_logging_config
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
@@ -28,8 +28,7 @@ def example(options):
 
     # create emane network node
     emane_network = session.create_emane_network(
-        model=EmaneIeee80211abgModel,
-        geo_reference=(47.57917, -122.13232, 2.00000)
+        model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
     )
     emane_network.setposition(x=80, y=50)
 
@@ -48,14 +47,17 @@ def example(options):
     node.client.term("bash")
 
     # shutdown session
-    raw_input("press enter to exit...")
+    input("press enter to exit...")
     coreemu.shutdown()
 
 
 def main():
     options = parser.parse_options("emane80211")
     start = datetime.datetime.now()
-    print("running emane 80211 example: nodes(%s) time(%s)" % (options.nodes, options.time))
+    print(
+        "running emane 80211 example: nodes(%s) time(%s)"
+        % (options.nodes, options.time)
+    )
     example(options)
     print("elapsed time: %s" % (datetime.datetime.now() - start))
 

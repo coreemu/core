@@ -23,16 +23,9 @@ def recursive_files(data_path, files_path):
     return all_files
 
 
-def glob_files(glob_path):
-    return glob.glob(glob_path)
-
-
 data_files = [
-    (_CORE_DIR, [
-        "data/core.conf",
-        "data/logging.conf",
-    ]),
-    (_MAN_DIR, glob_files("../man/**.1")),
+    (_CORE_DIR, glob.glob("data/*")),
+    (_MAN_DIR, glob.glob("../man/**.1")),
 ]
 data_files.extend(recursive_files(_EXAMPLES_DIR, "examples"))
 
@@ -42,15 +35,17 @@ setup(
     packages=find_packages(),
     install_requires=[
         "configparser",
-        "enum34",
         "future",
         "grpcio",
-        "lxml"
+        "lxml",
+        "protobuf",
     ],
+    extra_require={
+        ":python_version<'3.2'": ["futures"],
+        ":python_version<'3.4'": ["enum34"],
+    },
     tests_require=[
         "pytest",
-        "pytest-runner",
-        "pytest-cov",
         "mock",
     ],
     data_files=data_files,

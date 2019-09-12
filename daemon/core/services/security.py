@@ -30,7 +30,9 @@ class VPNClient(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logging.exception("Error opening VPN client configuration template (%s)", fname)
+            logging.exception(
+                "Error opening VPN client configuration template (%s)", fname
+            )
 
         return cfg
 
@@ -57,7 +59,9 @@ class VPNServer(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logging.exception("Error opening VPN server configuration template (%s)", fname)
+            logging.exception(
+                "Error opening VPN server configuration template (%s)", fname
+            )
 
         return cfg
 
@@ -108,7 +112,9 @@ class Firewall(CoreService):
         try:
             cfg += open(fname, "rb").read()
         except IOError:
-            logging.exception("Error opening Firewall configuration template (%s)", fname)
+            logging.exception(
+                "Error opening Firewall configuration template (%s)", fname
+            )
 
         return cfg
 
@@ -117,10 +123,11 @@ class Nat(CoreService):
     """
     IPv4 source NAT service.
     """
+
     name = "NAT"
     executables = ("iptables",)
     group = "Security"
-    configs = ("nat.sh", )
+    configs = ("nat.sh",)
     startup = ("sh nat.sh",)
     custom_needed = False
 
@@ -130,7 +137,7 @@ class Nat(CoreService):
         Generate a NAT line for one interface.
         """
         cfg = line_prefix + "iptables -t nat -A POSTROUTING -o "
-        cfg +=ifc.name + " -j MASQUERADE\n"
+        cfg += ifc.name + " -j MASQUERADE\n"
 
         cfg += line_prefix + "iptables -A FORWARD -i " + ifc.name
         cfg += " -m state --state RELATED,ESTABLISHED -j ACCEPT\n"
@@ -149,7 +156,7 @@ class Nat(CoreService):
         cfg += "# NAT out the first interface by default\n"
         have_nat = False
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control == True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             if have_nat:
                 cfg += cls.generateifcnatrule(ifc, line_prefix="#")
@@ -159,4 +166,3 @@ class Nat(CoreService):
                 cfg += cls.generateifcnatrule(ifc)
                 cfg += "\n"
         return cfg
-

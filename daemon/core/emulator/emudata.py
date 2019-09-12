@@ -1,10 +1,7 @@
-from core.emulator.enumerations import LinkTypes
-from core.emulator.enumerations import NodeTypes
+from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase
-from core.nodes.ipaddress import Ipv4Prefix
-from core.nodes.ipaddress import Ipv6Prefix
-from core.nodes.ipaddress import MacAddress
+from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 
 
 class IdGen(object):
@@ -41,7 +38,7 @@ def create_interface(node, network, interface_data):
         addrlist=interface_data.get_addresses(),
         hwaddr=interface_data.mac,
         ifindex=interface_data.id,
-        ifname=interface_data.name
+        ifname=interface_data.name,
     )
     return node.netif(interface_data.id, network)
 
@@ -64,7 +61,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
         "loss": link_options.per,
         "duplicate": link_options.dup,
         "jitter": link_options.jitter,
-        "netif2": interface_two
+        "netif2": interface_two,
     }
 
     # hacky check here, because physical and emane nodes do not conform to the same linkconfig interface
@@ -242,7 +239,7 @@ class IpPrefixes(object):
             ip4_mask=ip4_mask,
             ip6=ip6,
             ip6_mask=ip6_mask,
-            mac=mac
+            mac=mac,
         )
 
 
