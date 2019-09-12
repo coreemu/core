@@ -77,6 +77,18 @@ cd $REPO/netns
 sudo make install
 ```
 
+### Adding EMANE to Pipenv
+
+EMANE bindings are not available through pip, you will need to build and install from source.
+
+[Build EMANE](https://github.com/adjacentlink/emane/wiki/Build#general-build-instructions)
+
+```shell
+# after building emane above
+# ./autogen.sh && ./configure --prefix=/usr && make
+python3 -m pipenv install --skip-lock $EMANEREPO/src/python
+```
+
 ### Running CORE
 
 This will run the core-daemon server using the configuration files within the repo.
