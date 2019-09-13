@@ -334,7 +334,7 @@ class CoreXmlWriter(object):
 
             for model_name in all_configs:
                 config = all_configs[model_name]
-                logging.info(
+                logging.debug(
                     "writing emane config node(%s) model(%s)", node_id, model_name
                 )
                 if model_name == -1:
@@ -414,8 +414,6 @@ class CoreXmlWriter(object):
             # device node
             elif isinstance(node, core.nodes.base.CoreNodeBase):
                 self.write_device(node)
-            else:
-                logging.error("unknown node: %s", node)
 
             # add known links
             links.extend(node.all_link_data(0))

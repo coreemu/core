@@ -128,7 +128,7 @@ class EmaneModel(WirelessModel):
 
         :return: nothing
         """
-        logging.info("emane model(%s) has no post setup tasks", self.name)
+        logging.debug("emane model(%s) has no post setup tasks", self.name)
 
     def update(self, moved, moved_netifs):
         """
