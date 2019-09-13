@@ -72,24 +72,34 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 * ![alt text](../gui/icons/tiny/select.gif) *Selection Tool* - default tool for selecting, moving, configuring nodes
 * ![alt text](../gui/icons/tiny/start.gif) *Start button* - starts Execute mode, instantiates the emulation
 * ![alt text](../gui/icons/tiny/link.gif) *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
-* ![alt text](../gui/icons/tiny/router.gif) *Network-layer virtual nodes*
-  * ![alt text](../gui/icons/tiny/router.gif) *Router* - runs Quagga OSPFv2 and OSPFv3 routing to forward packets
-  * ![alt text](../gui/icons/tiny/host.gif) *Host* - emulated server machine having a default route, runs SSH server
-  * ![alt text](../gui/icons/tiny/pc.gif) *PC* - basic emulated machine having a default route, runs no processes by default
-  * ![alt text](../gui/icons/tiny/mdr.gif) *MDR* - runs Quagga OSPFv3 MDR routing for MANET-optimized routing
-  * ![alt text](../gui/icons/tiny/router_green.gif) *PRouter* - physical router represents a real testbed machine
-  * ![alt text](../gui/icons/tiny/document-properties.gif) *Edit* - edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here.
-* ![alt text](../gui/icons/tiny/hub.gif) *Link-layer nodes*
-  * ![alt text](../gui/icons/tiny/hub.gif)  *Hub* - the Ethernet hub forwards incoming packets to every connected node
-  * ![alt text](../gui/icons/tiny/lanswitch.gif) *Switch* - the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table
-  * ![alt text](../gui/icons/tiny/wlan.gif) *Wireless LAN* - when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them
-  * ![alt text](../gui/icons/tiny/rj45.gif) *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation
-  * ![alt text](../gui/icons/tiny/tunnel.gif) *Tunnel* - the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels
+* ![alt text](../gui/icons/tiny/router.gif) *Network-layer virtual nodes consist of the following:*
+
+|||
+|---|---|
+| ![alt text](../gui/icons/tiny/router.gif) *Router* | runs Quagga OSPFv2 and OSPFv3 routing to forward packets. |
+| ![alt text](../gui/icons/tiny/host.gif) *Host* | emulated server machine having a default route, runs SSH server. |
+| ![alt text](../gui/icons/tiny/pc.gif) *PC* | basic emulated machine having a default route, runs no processes by default. |
+| ![alt text](../gui/icons/tiny/mdr.gif) *MDR* | runs Quagga OSPFv3 MDR routing for MANET-optimized routing. |
+| ![alt text](../gui/icons/tiny/router_green.gif) *PRouter* | physical router represents a real testbed machine. |
+| ![alt text](../gui/icons/tiny/document-properties.gif) *Edit* | edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here. |
+* ![alt text](../gui/icons/tiny/hub.gif) *Link-layer nodes consist of the following:*
+
+|||
+|---|---|
+| ![alt text](../gui/icons/tiny/hub.gif)  *Hub* | the Ethernet hub forwards incoming packets to every connected node. |
+| ![alt text](../gui/icons/tiny/lanswitch.gif) *Switch* | the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table. |
+| ![alt text](../gui/icons/tiny/wlan.gif) *Wireless LAN* | when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them. |
+| ![alt text](../gui/icons/tiny/rj45.gif) *RJ45* | with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation. |
+| ![alt text](../gui/icons/tiny/tunnel.gif) *Tunnel* | the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels. |
+
 * *Annotation Tools*
-  * ![alt text](../gui/icons/tiny/marker.gif) *Marker* - for drawing marks on the canvas
-  * ![alt text](../gui/icons/tiny/oval.gif) *Oval* - for drawing circles on the canvas that appear in the background
-  * ![alt text](../gui/icons/tiny/rectangle.gif) *Rectangle* - for drawing rectangles on the canvas that appear in the background
-  * ![alt text](../gui/icons/tiny/text.gif) *Text* - for placing text captions on the canvas
+
+|||
+|---|---|
+| ![alt text](../gui/icons/tiny/marker.gif) *Marker* - for drawing marks on the canvas. |
+| ![alt text](../gui/icons/tiny/oval.gif) *Oval* - for drawing circles on the canvas that appear in the background. |
+| ![alt text](../gui/icons/tiny/rectangle.gif) *Rectangle* - for drawing rectangles on the canvas that appear in the background. |
+| ![alt text](../gui/icons/tiny/text.gif) *Text* - for placing text captions on the canvas. |
 
 ### Execution Toolbar
 
@@ -259,50 +269,26 @@ The Session Menu has entries for starting, stopping, and managing sessions,
 in addition to global options such as node types, comments, hooks, servers,
 and options.
 
-* *Start* or *Stop* - this starts or stops the emulation, performing the same
-  function as the green Start or red Stop button.
-* *Change sessions...* - invokes the CORE Sessions dialog box containing a list
-  of active CORE sessions in the daemon. Basic session information such as
-  name, node count, start time, and a thumbnail are displayed. This dialog
-  allows connecting to different sessions, shutting them down, or starting
-  a new session.
-* *Node types...* - invokes the CORE Node Types dialog, performing the same
-  function as the Edit button on the Network-Layer Nodes toolbar.
-* *Comments...* - invokes the CORE Session Comments window where optional
-  text comments may be specified. These comments are saved at the top of the
-  configuration file, and can be useful for describing the topology or how
-  to use the network.
-* *Hooks...* - invokes the CORE Session Hooks window where scripts may be
-  configured for a particular session state. The top of the window has a list
-  of configured hooks, and buttons on the bottom left allow adding, editing,
-  and removing hook scripts. The new or edit button will open a hook script
-  editing window.  A hook script is a shell script invoked on the host (not
-  within a virtual node).
-  * *definition* - used by the GUI to tell the backend to clear any state.
-  * *configuration* - when the user presses the *Start* button, node, link, and
-    other configuration data is sent to the backend. This state is also
-    reached when the user customizes a service.
-  * *instantiation* - after configuration data has been sent, just before the nodes are created.
-  * *runtime* - all nodes and networks have been
-    built and are running. (This is the same state at which
-    the previously-named *global experiment script* was run.)
-  * *datacollect* - the user has pressed the
-    *Stop* button, but before services have been stopped and nodes have been
-    shut down. This is a good time to collect log files and other data from the
-    nodes.
-  * *shutdown* - all nodes and networks have been shut down and destroyed.
-* *Reset node positions* - if you have moved nodes around
-  using the mouse or by using a mobility module, choosing this item will reset
-  all nodes to their original position on the canvas. The node locations are
-  remembered when you first press the Start button.
-* *Emulation servers...* - invokes the CORE emulation
-  servers dialog for configuring.
-* *Change Sessions...* - invokes the Sessions dialog for switching between different
-  running sessions. This dialog is presented during startup when one or
-  more sessions are already running.
-* *Options...* - presents per-session options, such as the IPv4 prefix to be
-  used, if any, for a control network the ability to preserve
-  the session directory; and an on/off switch for SDT3D support.
+|||
+|---|---|
+| *Start* or *Stop* | this starts or stops the emulation, performing the same function as the green Start or red Stop button. |
+| *Change sessions...* | invokes the CORE Sessions dialog box containing a list of active CORE sessions in the daemon. Basic session information such as name, node count, start time, and a thumbnail are displayed. This dialog allows connecting to different sessions, shutting them down, or starting a new session. |
+| *Node types...* | invokes the CORE Node Types dialog, performing the same function as the Edit button on the Network-Layer Nodes toolbar. |
+| *Comments...* | invokes the CORE Session Comments window where optional text comments may be specified. These comments are saved at the top of the configuration file, and can be useful for describing the topology or how to use the network. |
+| *Hooks...* | invokes the CORE Session Hooks window where scripts may be configured for a particular session state. The session states are defined in the table right below. The top of the window has a list of configured hooks, and buttons on the bottom left allow adding, editing, and removing hook scripts. The new or edit button will open a hook script editing window.  A hook script is a shell script invoked on the host (not within a virtual node). |
+| *Reset node positions* | if you have moved nodes around using the mouse or by using a mobility module, choosing this item will reset all nodes to their original position on the canvas. The node locations are remembered when you first press the Start button. |
+| *Emulation servers...* | invokes the CORE emulation servers dialog for configuring. |
+| *Change Sessions...* | invokes the Sessions dialog for switching between different running sessions. This dialog is presented during startup when one or more sessions are already running. |
+| *Options...* | presents per-session options, such as the IPv4 prefix to be used, if any, for a control network the ability to preserve the session directory; and an on/off switch for SDT3D support. |
+
+| |Session states|
+|---|---|
+| *definition* | used by the GUI to tell the backend to clear any state. |
+| *configuration* | when the user presses the *Start* button, node, link, and other configuration data is sent to the backend. This state is also reached when the user customizes a service. |
+| *instantiation* | after configuration data has been sent, just before the nodes are created. |
+| *runtime* | all nodes and networks have been built and are running. (This is the same state at which the previously-named *global experiment script* was run.)
+| *datacollect* | the user has pressed the *Stop* button, but before services have been stopped and nodes have been shut down. This is a good time to collect log files and other data from the nodes. |
+| *shutdown* | all nodes and networks have been shut down and destroyed. |
 
 ### Help Menu
 

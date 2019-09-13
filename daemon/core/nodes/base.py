@@ -210,7 +210,7 @@ class NodeBase(object):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: core.data.LinkData
+        :rtype: [core.data.LinkData]
         """
         return []
 
@@ -1109,6 +1109,11 @@ class CoreNetworkBase(NodeBase):
         """
         Build link data objects for this network. Each link object describes a link
         between this network and a node.
+
+        :param int flags: message type
+        :return: list of link data
+        :rtype: [core.data.LinkData]
+
         """
         all_links = []
 

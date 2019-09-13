@@ -351,7 +351,7 @@ class ModelManager(ConfigurableManager):
 
     def get_model_config(self, node_id, model_name):
         """
-        Set configuration data for a model.
+        Retrieve configuration data for a model.
 
         :param int node_id: node id to set model configuration for
         :param str model_name: model to set configuration for
