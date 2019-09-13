@@ -587,7 +587,7 @@ class CoreServices(object):
         :return: service validation status
         :rtype: int
         """
-        logging.info("validating node(%s) service(%s)", node.name, service.name)
+        logging.debug("validating node(%s) service(%s)", node.name, service.name)
         cmds = service.validate
         if not service.custom:
             cmds = service.get_validate(node)
@@ -598,10 +598,10 @@ class CoreServices(object):
             try:
                 node.check_cmd(cmd)
             except CoreCommandError as e:
-                logging.error(
+                logging.debug(
                     "node(%s) service(%s) validate failed", node.name, service.name
                 )
-                logging.error("cmd(%s): %s", e.cmd, e.output)
+                logging.debug("cmd(%s): %s", e.cmd, e.output)
                 status = -1
                 break
 

@@ -224,7 +224,6 @@ class Sdt(object):
 
         :return: nothing
         """
-        logging.info("SDT shutdown!")
         self.cmd("clear all")
         self.disconnect()
         self.showerror = True
