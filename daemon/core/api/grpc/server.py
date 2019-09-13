@@ -47,14 +47,14 @@ def convert_value(value):
     return value
 
 
-# TODO add comments
 def get_config_groups(config, configurable_options):
     """
-    ???
+    Retrieve configuration groups in a form that is used by the grpc server
 
     :param core.config.Configuration config: configuration
     :param core.config.ConfigurableOptions configurable_options: configurable options
-    :return:
+    :return: list of configuration groups
+    :rtype: [core.api.grpc.core_pb2.ConfigGroup]
     """
     groups = []
     config_options = []
@@ -81,14 +81,13 @@ def get_config_groups(config, configurable_options):
     return groups
 
 
-# TODO add comments
 def get_links(session, node):
     """
-    Get
+    Retrieve a list of links for grpc to use
 
     :param core.emulator.Session session: node's section
     :param core.nodes.base.CoreNode node: node to get links from
-    :return:
+    :return: [core.api.grpc.core_pb2.Link]
     """
     links = []
     for link_data in node.all_link_data(0):
@@ -179,8 +178,13 @@ def convert_link(session, link_data):
     )
 
 
-# TODO add comments
 def get_net_stats():
+    """
+    Retrieve status about the current interfaces in the system
+
+    :return: send and receive status of the interfaces in the system
+    :rtype: dict
+    """
     with open("/proc/net/dev", "r") as f:
         data = f.readlines()[2:]
 
@@ -196,7 +200,6 @@ def get_net_stats():
     return stats
 
 
-# TODO add comment
 class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     """
     Create CoreGrpcServer instance
@@ -506,14 +509,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session.event_handlers.remove(queue.put)
         self._cancel_stream(context)
 
-    # TODO add comment
     def _handle_node_event(self, event):
         """
         Handle node event when there is a node event
 
-        :param event: an event in the event queue
+        :param core.emulator.data.NodeData event: node data
         :return: node event that contains node id, name, model, position, and services
-        :rtype: core.api.grpc.core_pb2.Node Event
+        :rtype: core.api.grpc.core_pb2.NodeEvent
         """
         position = core_pb2.Position(x=event.x_position, y=event.y_position)
         services = event.services or ""
@@ -527,12 +529,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.NodeEvent(node=node_proto)
 
-    # TODO add comments
     def _handle_link_event(self, event):
         """
         Handle link event when there is a link event
 
-        :param event: an event from the event queue
+        :param core.emulator.data.LinkData event: link data
         :return: link event that has message type and link information
         :rtype: core.api.grpc.core_pb2.LinkEvent
         """
@@ -583,12 +584,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         )
         return core_pb2.LinkEvent(message_type=event.message_type, link=link)
 
-    # TODO add comments
     def _handle_session_event(self, event):
         """
         Handle session event when there is a session event
 
-        :param event:
+        :param core.emulator.data.EventData event: event data
         :return: session event
         :rtype: core.api.grpc.core_pb2.SessionEvent
         """
@@ -604,12 +604,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             session_id=event.session,
         )
 
-    # TODO add comments
     def _handle_config_event(self, event):
         """
         Handle configuration event when there is configuration event
 
-        :param event:
+        :param core.emulator.data.ConfigData event: configuration data
         :return: configuration event
         :rtype: core.api.grpc.core_pb2.ConfigEvent
         """
@@ -633,11 +632,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             data_types=event.data_types,
         )
 
-    # TODO add comments
     def _handle_exception_event(self, event):
         """
-        :param event:
-        :return:
+        Handle exception event when there is exception event
+
+        :param core.emulator.data.ExceptionData event: exception data
+        :return: exception event
+        :rtype: core.api.grpc.core_pb2.ExceptionEvent
         """
         return core_pb2.ExceptionEvent(
             node_id=event.node,
@@ -649,8 +650,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             opaque=event.opaque,
         )
 
-    # TODO add comments
     def _handle_file_event(self, event):
+        """
+        Handle file event
+
+        :param core.emulator.data.FileData event: file data
+        :return: file event
+        :rtype: core.api.grpc.core_pb2.FileEvent
+        """
         return core_pb2.FileEvent(
             message_type=event.message_type,
             node_id=event.node,
@@ -664,8 +671,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             compressed_data=event.compressed_data,
         )
 
-    # TODO add comments
     def Throughputs(self, request, context):
+        """
+        Calculate average throughput after every certain amount of delay time
+
+        :param core.api.grpc.core_pb2.ThroughputsRequest request: throughputs request
+        :param grpc.SrevicerContext context: context object
+        :return: nothing
+        """
         delay = 3
         last_check = None
         last_stats = None
@@ -1032,6 +1045,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return core_pb2.DeleteLinkResponse(result=True)
 
     def GetHooks(self, request, context):
+        """
+        Retrieve all hooks from a session
+
+        :param core.api.grpc.core_pb2.GetHooksRequest request: get-hook request
+        :param grpc.ServicerContext context: context object
+        :return: get-hooks response about all the hooks in all session states
+        :rtype: core.api.grpc.core_pb2.GetHooksResponse
+        """
         logging.debug("get hooks: %s", request)
         session = self.get_session(request.session_id, context)
         hooks = []
@@ -1174,8 +1195,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             all_service_defaults.append(service_defaults)
         return core_pb2.GetServiceDefaultsResponse(defaults=all_service_defaults)
 
-    # TODO add comments
     def SetServiceDefaults(self, request, context):
+        """
+        Set new default services to the session after whipping out the old ones
+        :param core.api.grpc.core_pb2.SetServiceDefaults request: set-service-defaults request
+        :param grpc.ServicerContext context: context object
+        :return: set-service-defaults response
+        :rtype: core.api.grpc.core_pb2 SetServiceDefaultsResponse
+        """
         logging.debug("set service defaults: %s", request)
         session = self.get_session(request.session_id, context)
         session.services.default_services.clear()
@@ -1377,14 +1404,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config.update(request.config)
         return core_pb2.SetEmaneConfigResponse(result=True)
 
-    # TODO add comment
     def GetEmaneModels(self, request, context):
         """
         Retrieve all the EMANE models in the session
 
-        :param request:
-        :param context:
-        :return:
+        :param core.api.grpc.core_pb2.GetEmaneModelRequest request: get-emane-model request
+        :param grpc.ServicerContext context: context object
+        :return: get-EMANE-models response that has all the models
+        :rtype: core.api.grpc.core_pb2.GetEmaneModelsResponse
         """
         logging.debug("get emane models: %s", request)
         session = self.get_session(request.session_id, context)
@@ -1396,6 +1423,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return core_pb2.GetEmaneModelsResponse(models=models)
 
     def GetEmaneModelConfig(self, request, context):
+        """
+        Retrieve EMANE model configuration of a node
+
+        :param core.api.grpc.core_pb2.GetEmaneModelConfigRequest request: get-EMANE-model-configuration request
+        :param grpc.ServicerContext context: context object
+        :return: get-EMANE-model-configuration response
+        :rtype: core.api.grpc.core_pb2.GetEmaneModelConfigResponse
+        """
         logging.debug("get emane model config: %s", request)
         session = self.get_session(request.session_id, context)
         model = session.emane.models[request.model]
@@ -1405,6 +1440,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return core_pb2.GetEmaneModelConfigResponse(groups=groups)
 
     def SetEmaneModelConfig(self, request, context):
+        """
+        Set EMANE model configuration of a node
+
+        :param core.api.grpc.core_pb2.SetEmaneModelConfigRequest request: set-EMANE-model-configuration request
+        :param grpc.ServicerContext context: context object
+        :return: set-EMANE-model-configuration response
+        :rtype: core.api.grpc.core_pb2.SetEmaneModelConfigResponse
+        """
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session_id, context)
         _id = get_emane_model_id(request.node_id, request.interface_id)
@@ -1412,6 +1455,14 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         return core_pb2.SetEmaneModelConfigResponse(result=True)
 
     def GetEmaneModelConfigs(self, request, context):
+        """
+        Retrieve all EMANE model configurations of a session
+
+        :param core.api.grpc.core_pb2.GetEmaneModelConfigsRequest request: get-EMANE-model-configurations request
+        :param grpc.ServicerContext context: context object
+        :return: get-EMANE-model-configurations response that has all the EMANE configurations
+        :rtype: core.api.grpc.core_pb2.GetEmaneModelConfigsResponse
+        """
         logging.debug("get emane model configs: %s", request)
         session = self.get_session(request.session_id, context)
         response = core_pb2.GetEmaneModelConfigsResponse()
@@ -1474,8 +1525,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             self.coreemu.delete_session(session.id)
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
 
-    # TODO add comment
     def GetInterfaces(self, request, context):
+        """
+        Retrieve all the interfaces of the system including bridges, virtual ethernet, and loopback
+
+        :param core.api.grpc.core_pb2.GetInterfacesRequest request: get-interfaces request
+        :param grpc.ServicerContext context: context object
+        :return: get-interfaces response that has all the system's interfaces
+        :rtype: core.api.grpc.core_pb2.GetInterfacesResponse
+        """
         interfaces = []
         for interface in os.listdir("/sys/class/net"):
             if (
