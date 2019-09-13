@@ -11,7 +11,7 @@ import time
 from builtins import int
 from functools import total_ordering
 
-from core import utils
+from core import CoreError, utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
 from core.emulator.data import EventData, LinkData
 from core.emulator.enumerations import (
@@ -79,7 +79,7 @@ class MobilityManager(ModelManager):
 
             try:
                 node = self.session.get_node(node_id)
-            except KeyError:
+            except CoreError:
                 logging.warning(
                     "skipping mobility configuration for unknown node: %s", node_id
                 )
@@ -112,7 +112,7 @@ class MobilityManager(ModelManager):
 
         try:
             node = self.session.get_node(node_id)
-        except KeyError:
+        except CoreError:
             logging.exception(
                 "Ignoring event for model '%s', unknown node '%s'", name, node_id
             )
@@ -203,7 +203,7 @@ class MobilityManager(ModelManager):
         for node_id in self.nodes():
             try:
                 node = self.session.get_node(node_id)
-            except KeyError:
+            except CoreError:
                 continue
             if node.model:
                 node.model.update(moved, moved_netifs)

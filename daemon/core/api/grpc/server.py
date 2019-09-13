@@ -262,7 +262,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         try:
             return session.get_node(node_id)
-        except KeyError:
+        except CoreError:
             context.abort(
                 grpc.StatusCode.NOT_FOUND, "node {} not found".format(node_id)
             )

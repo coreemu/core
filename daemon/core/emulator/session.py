@@ -1663,7 +1663,7 @@ class Session(object):
                 return None
 
             return control_net
-        except KeyError:
+        except CoreError:
             if remove:
                 return None
 
@@ -1807,7 +1807,7 @@ class Session(object):
 
         try:
             control_net = self.get_control_net(net_index)
-        except KeyError:
+        except CoreError:
             logging.exception("error retrieving control net node")
             return
 

@@ -42,6 +42,14 @@ python3 -m pipenv install --dev
 export PYTHON=$(python3 -m pipenv --py)
 ```
 
+### Setup pre-commit
+
+Install pre-commit hooks to help automate running tool checks against code.
+
+```shell
+python3 -m pipenv run pre-commit install
+```
+
 ### Build CORE
 
 ```shell
@@ -67,6 +75,18 @@ sudo make install
 # install netns scripts
 cd $REPO/netns
 sudo make install
+```
+
+### Adding EMANE to Pipenv
+
+EMANE bindings are not available through pip, you will need to build and install from source.
+
+[Build EMANE](https://github.com/adjacentlink/emane/wiki/Build#general-build-instructions)
+
+```shell
+# after building emane above
+# ./autogen.sh && ./configure --prefix=/usr && make
+python3 -m pipenv install --skip-lock $EMANEREPO/src/python
 ```
 
 ### Running CORE

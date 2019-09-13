@@ -4,6 +4,7 @@ Defines Emane Models used within CORE.
 import logging
 import os
 
+from core import CoreError
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emulator.enumerations import ConfigDataTypes
@@ -142,7 +143,7 @@ class EmaneModel(WirelessModel):
         try:
             wlan = self.session.get_node(self.id)
             wlan.setnempositions(moved_netifs)
-        except KeyError:
+        except CoreError:
             logging.exception("error during update")
 
     def linkconfig(

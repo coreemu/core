@@ -14,7 +14,7 @@ from builtins import range
 from itertools import repeat
 from queue import Empty, Queue
 
-from core import utils
+from core import CoreError, utils
 from core.api.tlv import coreapi, dataconversion, structutils
 from core.config import ConfigShim
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
@@ -913,7 +913,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                         utils.mute_detach(command)
                     else:
                         node.cmd(command, wait=False)
-        except KeyError:
+        except CoreError:
             logging.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later
             # XXX maybe this should be done differently
@@ -1420,7 +1420,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     node = self.session.get_node(node_id)
                     if object_name == BasicRangeModel.name:
                         node.updatemodel(parsed_config)
-                except KeyError:
+                except CoreError:
                     logging.error(
                         "skipping mobility configuration for unknown node: %s", node_id
                     )
@@ -1581,6 +1581,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         :param core.api.tlv.coreapi.CoreEventMessage message: event message to handle
         :return: reply messages
+        :raises core.CoreError: when event type <= SHUTDOWN_STATE and not a known node id
         """
         event_data = EventData(
             node=message.get_tlv(EventTlvs.NODE.value),
@@ -1599,10 +1600,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         logging.debug("handling event %s at %s", event_type.name, time.ctime())
         if event_type.value <= EventTypes.SHUTDOWN_STATE.value:
             if node_id is not None:
-                try:
-                    node = self.session.get_node(node_id)
-                except KeyError:
-                    raise KeyError("Event message for unknown node %d" % node_id)
+                node = self.session.get_node(node_id)
 
                 # configure mobility models for WLAN added during runtime
                 if event_type == EventTypes.INSTANTIATION_STATE and nodeutils.is_node(
@@ -1706,7 +1704,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         try:
             node = self.session.get_node(node_id)
-        except KeyError:
+        except CoreError:
             logging.warning(
                 "ignoring event for service '%s', unknown node '%s'", name, node_id
             )

@@ -7,7 +7,7 @@ import socket
 
 from future.moves.urllib.parse import urlparse
 
-from core import constants
+from core import CoreError, constants
 from core.emulator.enumerations import (
     EventTypes,
     LinkTlvs,
@@ -438,7 +438,7 @@ class Sdt(object):
 
         try:
             node = self.session.get_node(nodenum)
-        except KeyError:
+        except CoreError:
             node = None
         if node:
             self.updatenode(
@@ -508,7 +508,7 @@ class Sdt(object):
         else:
             try:
                 n = self.session.get_node(nodenum)
-            except KeyError:
+            except CoreError:
                 return False
             if nodeutils.is_node(n, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
                 return True

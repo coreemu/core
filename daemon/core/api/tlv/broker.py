@@ -489,12 +489,10 @@ class CoreBroker(object):
         :param int node_id: node id of network to add tunnel to
         :return: list of gre taps
         :rtype: list
+        :raises core.CoreError: when node to add net tunnel to does not exist
         """
-        try:
-            net = self.session.get_node(node_id)
-            logging.info("adding net tunnel for: id(%s) %s", node_id, net)
-        except KeyError:
-            raise KeyError("network node %s not found" % node_id)
+        net = self.session.get_node(node_id)
+        logging.info("adding net tunnel for: id(%s) %s", node_id, net)
 
         # add other nets here that do not require tunnels
         if nodeutils.is_node(net, NodeTypes.EMANE_NET):
