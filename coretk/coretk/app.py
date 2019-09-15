@@ -1,4 +1,5 @@
 import tkinter as tk
+from PIL import Image, ImageTk
 
 from coretk.graph import CanvasGraph
 
@@ -6,18 +7,27 @@ from coretk.graph import CanvasGraph
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
+        self.master.title("CORE")
+        self.master.geometry("800x600")
+        self.master.state("zoomed")
+        self.set_icon()
         self.pack(fill=tk.BOTH, expand=1)
         self.images = []
         self.menubar = None
         self.create_menu()
         self.create_widgets()
 
+    def set_icon(self):
+        image = Image.open("core-icon.png")
+        tk_image = ImageTk.PhotoImage(image)
+        self.master.tk.call("wm", "iconphoto", self.master._w, tk_image)
+
     def create_menu(self):
         self.master.option_add("*tearOff", tk.FALSE)
         self.menubar = tk.Menu(self.master)
         file_menu = tk.Menu(self.menubar)
         file_menu.add_command(label="Open")
-        file_menu.add_command(label="Exit", command=root.quit)
+        file_menu.add_command(label="Exit", command=self.master.quit)
         self.menubar.add_cascade(label="File", menu=file_menu)
         help_menu = tk.Menu(self.menubar)
         self.menubar.add_cascade(label="Help", menu=help_menu)
@@ -60,9 +70,5 @@ class Application(tk.Frame):
 
 
 if __name__ == "__main__":
-    root = tk.Tk()
-    root.title("Graph Canvas")
-    root.geometry("800x600")
-    root.state("zoomed")
-    app = Application(master=root)
+    app = Application()
     app.mainloop()
