@@ -36,11 +36,16 @@ class Application(tk.Frame):
     def create_widgets(self):
         edit_frame = tk.Frame(self)
         edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
-        b = tk.Button(edit_frame, text="Button 1")
+        radio_value = tk.IntVar()
+        b = tk.Radiobutton(edit_frame, text="Button 1", indicatoron=False, variable=radio_value, value=1)
         b.pack(side=tk.TOP, pady=1)
-        b = tk.Button(edit_frame, text="Button 2")
+        b = tk.Radiobutton(edit_frame, text="Button 2", indicatoron=False, variable=radio_value, value=2)
         b.pack(side=tk.TOP, pady=1)
-        b = tk.Button(edit_frame, text="Button 3")
+        b = tk.Radiobutton(edit_frame, text="Button 3", indicatoron=False, variable=radio_value, value=3)
+        b.pack(side=tk.TOP, pady=1)
+        b = tk.Radiobutton(edit_frame, text="Button 4", indicatoron=False, variable=radio_value, value=4)
+        b.pack(side=tk.TOP, pady=1)
+        b = tk.Radiobutton(edit_frame, text="Button 5", indicatoron=False, variable=radio_value, value=5)
         b.pack(side=tk.TOP, pady=1)
 
         self.canvas = CanvasGraph(
