@@ -257,7 +257,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve node given session and node id
 
-        :param core.emulator.session.Session session: session that contains the node
+        :param core.emulator.session.Session session: session that has the node
         :param int node_id: node id
         :param grpc.ServicerContext context:
         :return: node object that satisfies. If node not found then raise an exception.
@@ -393,8 +393,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         return core_pb2.SetSessionStateResponse(result=result)
 
-    # TODO add comments
     def GetSessionOptions(self, request, context):
+        """
+        Retrieve session options
+
+        :param core.api.grpc.core_pb2.GetSessionOptions request: get-session-options request
+        :param grpc.ServicerContext context: context object
+        :return: get-session-options response about all session's options
+        :rtype: core.api.grpc.core_pb2.GetSessionOptions
+        """
         logging.debug("get session options: %s", request)
         session = self.get_session(request.session_id, context)
         config = session.options.get_configs()
@@ -403,8 +410,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         groups = get_config_groups(defaults, session.options)
         return core_pb2.GetSessionOptionsResponse(groups=groups)
 
-    # TODO add comments
     def SetSessionOptions(self, request, context):
+        """
+        Update a session's configuration
+
+        :param core.api.grpc.core_pb2.SetSessionOptions request: set-session-options request
+        :param grpc.ServicerContext context: context object
+        :return: set-session-options response
+        :rtype: core.api.grpc.core_pb2.SetSessionOptionsResponse
+        """
         logging.debug("set session options: %s", request)
         session = self.get_session(request.session_id, context)
         config = session.options.get_configs()
@@ -464,7 +478,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
         return core_pb2.GetSessionResponse(session=session_proto)
 
-    # TODO add comments
     def Events(self, request, context):
         session = self.get_session(request.session_id, context)
         queue = Queue()
