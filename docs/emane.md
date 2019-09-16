@@ -9,8 +9,8 @@ The Extendable Mobile Ad-hoc Network Emulator (EMANE) allows heterogeneous netwo
 
 EMANE is developed by U.S. Naval Research Labs (NRL) Code 5522 and Adjacent Link LLC, who maintain these websites:
 
-* http://www.nrl.navy.mil/itd/ncs/products/emane
-* http://www.adjacentlink.com/
+* <http://www.nrl.navy.mil/itd/ncs/products/emane>
+* <http://www.adjacentlink.com/>
 
 Instead of building Linux Ethernet bridging networks with CORE, higher-fidelity wireless networks can be emulated using EMANE bound to virtual devices. CORE emulates layers 3 and above (network, session, application) with its virtual network stacks and process space for protocols and applications, while EMANE emulates layers 1 and 2 (physical and data link) using its pluggable PHY and MAC models.
 
@@ -68,7 +68,7 @@ sudo ln -s /usr/local/share/emane /usr/share/emane
 CORE supports custom developed EMANE models by way of dynamically loading user created python files that represent the model. Custom EMANE models should be placed within the path defined by **emane_models_dir** in the CORE configuration file. This path cannot end in **/emane**.
 
 Here is an example model with documentation describing functionality:
-[Example Model](/daemon/examples/myemane/examplemodel.py)
+[Example Model](../daemon/examples/myemane/examplemodel.py)
 
 ## Single PC with EMANE
 

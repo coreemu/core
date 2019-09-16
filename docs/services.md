@@ -135,7 +135,7 @@ ideas for a service before adding a new service type.
 
 ### Creating New Service
 
-1. Modify the [Example Service File](/daemon/examples/myservices/sample.py)
+1. Modify the [Example Service File](../daemon/examples/myservices/sample.py)
    to do what you want. It could generate config/script files, mount per-node
    directories, start processes/scripts, etc. sample.py is a Python file that
    defines one or more classes to be imported. You can create multiple Python
