@@ -69,59 +69,53 @@ The toolbar is a row of buttons that runs vertically along the left side of the 
 
 When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on the left side of the CORE window. Below are brief descriptions for each toolbar item, starting from the top. Most of the tools are grouped into related sub-menus, which appear when you click on their group icon.
 
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/select.gif) *Selection Tool* - default tool for selecting, moving, configuring nodes
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/start.gif) *Start button* - starts Execute mode, instantiates the emulation
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/link.gif) *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router.gif) *Network-layer virtual nodes*
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router.gif) *Router* - runs Quagga OSPFv2 and OSPFv3 routing to forward packets
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/host.gif) *Host* - emulated server machine having a default route, runs SSH server
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/pc.gif) *PC* - basic emulated machine having a default route, runs no processes by default
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/mdr.gif) *MDR* - runs Quagga OSPFv3 MDR routing for MANET-optimized routing
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/router_green.gif) *PRouter* - physical router represents a real testbed machine
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/document-properties.gif) *Edit* - edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here.
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/hub.gif) *Link-layer nodes*
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/hub.gif)  *Hub* - the Ethernet hub forwards incoming packets to every connected node
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/lanswitch.gif) *Switch* - the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/wlan.gif) *Wireless LAN* - when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/rj45.gif) *RJ45* - with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/tunnel.gif) *Tunnel* - the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels
-* *Annotation Tools*
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/marker.gif) *Marker* - for drawing marks on the canvas
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/oval.gif) *Oval* - for drawing circles on the canvas that appear in the background
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/rectangle.gif) *Rectangle* - for drawing rectangles on the canvas that appear in the background
-  * ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/text.gif) *Text* - for placing text captions on the canvas
+| Toolbar item | Functionality |
+|---|---|
+| ![alt text](../gui/icons/tiny/select.gif) *Selection Tool* | default tool for selecting, moving, configuring nodes. |
+| ![alt text](../gui/icons/tiny/start.gif) *Start button* | starts Execute mode, instantiates the emulation. |
+| ![alt text](../gui/icons/tiny/link.gif) *Link* | the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse. |
+### ![alt text](../gui/icons/tiny/router.gif) Network-layer virtual nodes
+
+| Network-layer node | Description |
+|---|---|
+| ![alt text](../gui/icons/tiny/router.gif) *Router* | runs Quagga OSPFv2 and OSPFv3 routing to forward packets. |
+| ![alt text](../gui/icons/tiny/host.gif) *Host* | emulated server machine having a default route, runs SSH server. |
+| ![alt text](../gui/icons/tiny/pc.gif) *PC* | basic emulated machine having a default route, runs no processes by default. |
+| ![alt text](../gui/icons/tiny/mdr.gif) *MDR* | runs Quagga OSPFv3 MDR routing for MANET-optimized routing. |
+| ![alt text](../gui/icons/tiny/router_green.gif) *PRouter* | physical router represents a real testbed machine. |
+| ![alt text](../gui/icons/tiny/document-properties.gif) *Edit* | edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here. |
+### ![alt text](../gui/icons/tiny/hub.gif) Link-layer nodes
+
+| Link-layer node | Description |
+|---|---|
+| ![alt text](../gui/icons/tiny/hub.gif)  *Hub* | the Ethernet hub forwards incoming packets to every connected node. |
+| ![alt text](../gui/icons/tiny/lanswitch.gif) *Switch* | the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table. |
+| ![alt text](../gui/icons/tiny/wlan.gif) *Wireless LAN* | when routers are connected to this WLAN node, they join a wireless network and an antenna is drawn instead of a connecting line; the WLAN node typically controls connectivity between attached wireless nodes based on the distance between them. |
+| ![alt text](../gui/icons/tiny/rj45.gif) *RJ45* | with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation. |
+| ![alt text](../gui/icons/tiny/tunnel.gif) *Tunnel* | the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels. |
+
+### Anotation Tools 
+
+| Tool | Functionality |
+|---|---|
+| ![alt text](../gui/icons/tiny/marker.gif) *Marker* | for drawing marks on the canvas. |
+| ![alt text](../gui/icons/tiny/oval.gif) *Oval* | for drawing circles on the canvas that appear in the background. |
+| ![alt text](../gui/icons/tiny/rectangle.gif) *Rectangle* | for drawing rectangles on the canvas that appear in the background. |
+| ![alt text](../gui/icons/tiny/text.gif) *Text* | for placing text captions on the canvas. |
 
 ### Execution Toolbar
 
 When the Start button is pressed, CORE switches to Execute mode, and the Edit toolbar on the left of the CORE window is replaced with the Execution toolbar Below are the items on this toolbar, starting from the top.
 
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/select.gif) *Selection Tool* - in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/stop.gif) *Stop button* - stops Execute mode, terminates the emulation, returns CORE to edit mode.
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/observe.gif) *Observer Widgets Tool* - clicking on this magnifying glass icon
-  invokes a menu for easily selecting an Observer Widget. The icon has a darker
-  gray background when an Observer Widget is active, during which time moving
-  the mouse over a node will pop up an information display for that node.
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/plot.gif) *Plot Tool* - with this tool enabled, clicking on any link will
-  activate the Throughput Widget and draw a small, scrolling throughput plot
-  on the canvas. The plot shows the real-time kbps traffic for that link.
-  The plots may be dragged around the canvas; right-click on a
-  plot to remove it.
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/marker.gif) *Marker* - for drawing freehand lines on the canvas, useful during
-  demonstrations; markings are not saved
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/twonode.gif) *Two-node Tool* - click to choose a starting and ending node, and
-  run a one-time *traceroute* between those nodes or a continuous *ping -R*
-  between nodes. The output is displayed in real time in a results box, while
-  the IP addresses are parsed and the complete network path is highlighted on
-  the  CORE display.
-* ![alt text](https://github.com/coreemu/core/blob/master/gui/icons/tiny/run.gif) *Run Tool* - this tool allows easily running a command on all or a
-  subset of all nodes. A list box allows selecting any of the nodes. A text
-  entry box allows entering any command. The command should return immediately,
-  otherwise the display will block awaiting response. The *ping* command, for
-  example, with no parameters, is not a good idea. The result of each command
-  is displayed in a results box. The first occurrence of the special text
-  "NODE" will be replaced with the node name. The command will not be attempted
-  to run on nodes that are not routers, PCs, or hosts, even if they are
-  selected.
+| Tool | Functionality |
+|---|---|
+| ![alt text](../gui/icons/tiny/select.gif) *Selection Tool* | in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node. |
+| ![alt text](../gui/icons/tiny/stop.gif) *Stop button* | stops Execute mode, terminates the emulation, returns CORE to edit mode. |
+| ![alt text](../gui/icons/tiny/observe.gif) *Observer Widgets Tool* | clicking on this magnifying glass icon  invokes a menu for easily selecting an Observer Widget. The icon has a darker gray background when an Observer Widget is active, during which time moving the mouse over a node will pop up an information display for that node. |
+| ![alt text](../gui/icons/tiny/plot.gif) *Plot Tool* | with this tool enabled, clicking on any link will activate the Throughput Widget and draw a small, scrolling throughput plot on the canvas. The plot shows the real-time kbps traffic for that link. The plots may be dragged around the canvas; right-click on a plot to remove it. |
+| ![alt text](../gui/icons/tiny/marker.gif) *Marker* | for drawing freehand lines on the canvas, useful during demonstrations; markings are not saved. |
+| ![alt text](../gui/icons/tiny/twonode.gif) *Two-node Tool* | click to choose a starting and ending node, and run a one-time *traceroute* between those nodes or a continuous *ping -R* between nodes. The output is displayed in real time in a results box, while the IP addresses are parsed and the complete network path is highlighted on the  CORE display. |
+| ![alt text](../gui/icons/tiny/run.gif) *Run Tool* | this tool allows easily running a command on all or a subset of all nodes. A list box allows selecting any of the nodes. A text entry box allows entering any command. The command should return immediately, otherwise the display will block awaiting response. The *ping* command, for example, with no parameters, is not a good idea. The result of each command is displayed in a results box. The first occurrence of the special text "NODE" will be replaced with the node name. The command will not be attempted to run on nodes that are not routers, PCs, or hosts, even if they are selected. |
 
 ## Menubar
 
@@ -134,175 +128,92 @@ menu, by clicking the dashed line at the top.
 The File menu contains options for manipulating the **.imn** Configuration Files. Generally, these menu items should not be used in
 Execute mode.
 
-* *New* - this starts a new file with an empty canvas.
-* *Open* - invokes the File Open dialog box for selecting a new **.imn**
-  or XML file to open. You can change the default path used for this dialog
-  in the Preferences Dialog.
-* *Save* - saves the current topology. If you have not yet specified a file
-  name, the Save As dialog box is invoked.
-* *Save As XML* - invokes the Save As dialog box for selecting a new
-  **.xml** file for saving the current configuration in the XML file.
-* *Save As imn* - invokes the Save As dialog box for selecting a new
-  **.imn** topology file for saving the current configuration. Files are saved in the
-  *IMUNES network configuration* file
-* *Export Python script* - prints Python snippets to the console, for inclusion
-  in a CORE Python script.
-* *Execute XML or Python script* - invokes a File Open dialog box for selecting an XML file to run or a
-  Python script to run and automatically connect to. If a Python script, the script must create
-  a new CORE Session and add this session to the daemon's list of sessions
-  in order for this to work
-* *Execute Python script with options* - invokes a File Open dialog box for selecting a
-  Python script to run and automatically connect to. After a selection is made,
-  a Python Script Options dialog box is invoked to allow for command-line options to be added.
-  The Python script must create a new CORE Session and add this session to the daemon's list of sessions
-  in order for this to work
-* *Open current file in editor* - this opens the current topology file in the
-  **vim** text editor. First you need to save the file. Once the file has been
-  edited with a text editor, you will need to reload the file to see your
-  changes. The text editor can be changed from the Preferences Dialog.
-* *Print* - this uses the Tcl/Tk postscript command to print the current canvas
-  to a printer. A dialog is invoked where you can specify a printing command,
-  the default being **lpr**. The postscript output is piped to the print
-  command.
-* *Save screenshot* - saves the current canvas as a postscript graphic file.
-* Recently used files - above the Quit menu command is a list of recently use
-  files, if any have been opened. You can clear this list in the
-  Preferences dialog box. You can specify the number of files to keep in
-  this list from the Preferences dialog. Click on one of the file names
-  listed to open that configuration file.
-* *Quit* - the Quit command should be used to exit the CORE GUI. CORE may
-  prompt for termination if you are currently in Execute mode. Preferences and
-  the recently-used files list are saved.
+| Option | Functionality |
+|---|---|
+| *New* |this starts a new file with an empty canvas. |
+| *Open* | invokes the File Open dialog box for selecting a new **.imn** or XML file to open. You can change the default path used for this dialog in the Preferences Dialog. |
+| *Save* | saves the current topology. If you have not yet specified a file name, the Save As dialog box is invoked. |
+| *Save As XML* | invokes the Save As dialog box for selecting a new **.xml** file for saving the current configuration in the XML file. |
+| *Save As imn* | invokes the Save As dialog box for selecting a new **.imn** topology file for saving the current configuration. Files are saved in the *IMUNES network configuration* file. |
+| *Export Python script* | prints Python snippets to the console, for inclusion in a CORE Python script. |
+| *Execute XML or Python script* | invokes a File Open dialog box for selecting an XML file to run or a Python script to run and automatically connect to. If a Python script, the script must create a new CORE Session and add this session to the daemon's list of sessions in order for this to work. |
+| *Execute Python script with options* | invokes a File Open dialog box for selecting a Python script to run and automatically connect to. After a selection is made, a Python Script Options dialog box is invoked to allow for command-line options to be added. The Python script must create a new CORE Session and add this session to the daemon's list of sessions in order for this to work. |
+| *Open current file in editor* | this opens the current topology file in the **vim** text editor. First you need to save the file. Once the file has been edited with a text editor, you will need to reload the file to see your changes. The text editor can be changed from the Preferences Dialog. |
+| *Print* | this uses the Tcl/Tk postscript command to print the current canvas to a printer. A dialog is invoked where you can specify a printing command, the default being **lpr**. The postscript output is piped to the print command. |
+| *Save screenshot* | saves the current canvas as a postscript graphic file. |
+| *Recently used files* | above the Quit menu command is a list of recently use files, if any have been opened. You can clear this list in the Preferences dialog box. You can specify the number of files to keep in this list from the Preferences dialog. Click on one of the file names listed to open that configuration file. |
+| *Quit* | the Quit command should be used to exit the CORE GUI. CORE may prompt for termination if you are currently in Execute mode. Preferences and the recently-used files list are saved. |
 
 ### Edit Menu
 
-* *Undo* - attempts to undo the last edit in edit mode.
-* *Redo* - attempts to redo an edit that has been undone.
-* *Cut*, *Copy*, *Paste* - used to cut, copy, and paste a selection. When nodes
-  are pasted, their node numbers are automatically incremented, and existing
-  links are preserved with new IP addresses assigned. Services and their
-  customizations are copied to the new node, but care should be taken as
-  node IP addresses have changed with possibly old addresses remaining in any
-  custom service configurations. Annotations may also be copied and pasted.
-* *Select All* - selects all items on the canvas. Selected items can be moved
-  as a group.
-* *Select Adjacent* - select all nodes that are linked to the already selected
-  node(s). For wireless nodes this simply selects the WLAN node(s) that the
-  wireless node belongs to. You can use this by clicking on a node and pressing
-  CTRL+N to select the adjacent nodes.
-* *Find...* - invokes the *Find* dialog box. The Find dialog can be used to
-  search for nodes by name or number. Results are listed in a table that
-  includes the node or link location and details such as IP addresses or
-  link parameters. Clicking on a result will focus the canvas on that node
-  or link, switching canvases if necessary.
-* *Clear marker* - clears any annotations drawn with the marker tool. Also
-  clears any markings used to indicate a node's status.
-* *Preferences...* - invokes the Preferences dialog box.
+| Option | Functionality |
+|---|---|
+| *Undo* | attempts to undo the last edit in edit mode. |
+| *Redo* | attempts to redo an edit that has been undone. |
+| *Cut*, *Copy*, *Paste* | used to cut, copy, and paste a selection. When nodes are pasted, their node numbers are automatically incremented, and existing links are preserved with new IP addresses assigned. Services and their customizations are copied to the new node, but care should be taken as node IP addresses have changed with possibly old addresses remaining in any custom service configurations. Annotations may also be copied and pasted.
+| *Select All* | selects all items on the canvas. Selected items can be moved as a group. |
+| *Select Adjacent* | select all nodes that are linked to the already selected node(s). For wireless nodes this simply selects the WLAN node(s) that the wireless node belongs to. You can use this by clicking on a node and pressing CTRL+N to select the adjacent nodes. |
+| *Find...* | invokes the *Find* dialog box. The Find dialog can be used to search for nodes by name or number. Results are listed in a table that includes the node or link location and details such as IP addresses or link parameters. Clicking on a result will focus the canvas on that node or link, switching canvases if necessary. |
+| *Clear marker* | clears any annotations drawn with the marker tool. Also clears any markings used to indicate a node's status. |
+| *Preferences...* | invokes the Preferences dialog box. |
 
 ### Canvas Menu
 
 The canvas menu provides commands for adding, removing, changing, and switching to different editing canvases.
 
-* *New* - creates a new empty canvas at the right of all existing canvases.
-* *Manage...* - invokes the *Manage Canvases* dialog box, where canvases may be
-  renamed and reordered, and you can easily switch to one of the canvases by
-  selecting it.
-* *Delete* - deletes the current canvas and all items that it contains.
-* *Size/scale...* - invokes a Canvas Size and Scale dialog that allows
-  configuring the canvas size, scale, and geographic reference point. The size
-  controls allow changing the width and height of the current canvas, in pixels
-  or meters. The scale allows specifying how many meters are equivalent to 100
-  pixels. The reference point controls specify the latitude, longitude, and
-  altitude reference point used to convert between geographic and Cartesian
-  coordinate systems. By clicking the *Save as default* option, all new
-  canvases will be created with these properties. The default canvas size can
-  also be changed in the Preferences dialog box.
-* *Wallpaper...* - used for setting the canvas background image,
-* *Previous*, *Next*, *First*, *Last* - used for switching the active canvas to
-  the first, last, or adjacent canvas.
+| Option | Functionality |
+|---|---|
+| *New* | creates a new empty canvas at the right of all existing canvases. |
+| *Manage...* | invokes the *Manage Canvases* dialog box, where canvases may be renamed and reordered, and you can easily switch to one of the canvases by selecting it. |
+| *Delete* | deletes the current canvas and all items that it contains. |
+| *Size/scale...* | invokes a Canvas Size and Scale dialog that allows configuring the canvas size, scale, and geographic reference point. The size controls allow changing the width and height of the current canvas, in pixels or meters. The scale allows specifying how many meters are equivalent to 100 pixels. The reference point controls specify the latitude, longitude, and altitude reference point used to convert between geographic and Cartesian coordinate systems. By clicking the *Save as default* option, all new canvases will be created with these properties. The default canvas size can also be changed in the Preferences dialog box.
+| *Wallpaper...* | used for setting the canvas background image. |
+| *Previous*, *Next*, *First*, *Last* | used for switching the active canvas to the first, last, or adjacent canvas. |
 
 ### View Menu
 
 The View menu features items for controlling what is displayed on the drawing
 canvas.
 
-* *Show* - opens a submenu of items that can be displayed or hidden, such as
-  interface names, addresses, and labels. Use these options to help declutter
-  the display. These options are generally saved in the topology
-  files, so scenarios have a more consistent look when copied from one computer
-  to another.
-* *Show hidden nodes* - reveal nodes that have been hidden. Nodes are hidden by
-  selecting one or more nodes, right-clicking one and choosing *hide*.
-* *Locked* - toggles locked view; when the view is locked, nodes cannot be
-  moved around on the canvas with the mouse. This could be useful when
-  sharing the topology with someone and you do not expect them to change
-  things.
-* *3D GUI...* - launches a 3D GUI by running the command defined under
-  Preferences, *3D GUI command*. This is typically a script that runs
-  the SDT3D display. SDT is the Scripted Display Tool from NRL that is based on
-  NASA's Java-based WorldWind virtual globe software.
-* *Zoom In* - magnifies the display. You can also zoom in by clicking *zoom
-  100%* label in the status bar, or by pressing the **+** (plus) key.
-* *Zoom Out* - reduces the size of the display. You can also zoom out by
-  right-clicking *zoom 100%* label in the status bar or by pressing the **-**
-  (minus) key.
+| Option | Functionality |
+|---|---|
+| *Show* | opens a submenu of items that can be displayed or hidden, such as interface names, addresses, and labels. Use these options to help declutter the display. These options are generally saved in the topology files, so scenarios have a more consistent look when copied from one computer to another. |
+| *Show hidden nodes* | reveal nodes that have been hidden. Nodes are hidden by selecting one or more nodes, right-clicking one and choosing *hide*. |
+| *Locked* | toggles locked view; when the view is locked, nodes cannot be moved around on the canvas with the mouse. This could be useful when sharing the topology with someone and you do not expect them to change things. |
+| *3D GUI...* | launches a 3D GUI by running the command defined under Preferences, *3D GUI command*. This is typically a script that runs the SDT3D display. SDT is the Scripted Display Tool from NRL that is based on NASA's Java-based WorldWind virtual globe software. |
+| *Zoom In* | magnifies the display. You can also zoom in by clicking *zoom 100%* label in the status bar, or by pressing the **+** (plus) key. |
+| *Zoom Out* | reduces the size of the display. You can also zoom out by right-clicking *zoom 100%* label in the status bar or by pressing the **-** (minus) key. |
 
 ### Tools Menu
 
 The tools menu lists different utility functions.
 
-* *Autorearrange all* - automatically arranges all nodes on the canvas. Nodes
-  having a greater number of links are moved to the center. This mode can
-  continue to run while placing nodes. To turn off this autorearrange mode,
-  click on a blank area of the canvas with the select tool, or choose this menu
-  option again.
-* *Autorearrange selected* - automatically arranges the selected nodes on the
-  canvas.
-* *Align to grid* - moves nodes into a grid formation, starting with the
-  smallest-numbered node in the upper-left corner of the canvas, arranging
-  nodes in vertical columns.
-* *Traffic...* - invokes the CORE Traffic Flows dialog box, which allows
-  configuring, starting, and stopping MGEN traffic flows for the emulation.
-* *IP addresses...* - invokes the IP Addresses dialog box for configuring which
-  IPv4/IPv6 prefixes are used when automatically addressing new interfaces.
-* *MAC addresses...* - invokes the MAC Addresses dialog box for configuring the
-  starting number used as the lowest byte when generating each interface MAC
-  address. This value should be changed when tunneling between CORE emulations
-  to prevent MAC address conflicts.
-* *Build hosts file...* - invokes the Build hosts File dialog box for
-  generating **/etc/hosts** file entries based on IP addresses used in the
-  emulation.
-* *Renumber nodes...* - invokes the Renumber Nodes dialog box, which allows
-  swapping one node number with another in a few clicks.
-* *Experimental...* - menu of experimental options, such as a tool to convert
-  ns-2 scripts to IMUNES imn topologies, supporting only basic ns-2
-  functionality, and a tool for automatically dividing up a topology into
-  partitions.
-* *Topology generator* - opens a submenu of topologies to generate. You can
-  first select the type of node that the topology should consist of, or routers
-  will be chosen by default. Nodes may be randomly placed, aligned in grids, or
-  various other topology patterns.
-  * *Random* - nodes are randomly placed about the canvas, but are not linked
-    together. This can be used in conjunction with a WLAN node to quickly create a wireless network.
-  * *Grid* - nodes are placed in horizontal rows starting in the upper-left
-    corner, evenly spaced to the right; nodes are not linked to each other.
-  * *Connected Grid* - nodes are placed in an N x M (width and height)
-    rectangular grid, and each node is linked to the node above, below, left
-    and right of itself.
-  * *Chain* - nodes are linked together one after the other in a chain.
-  * *Star* - one node is placed in the center with N nodes surrounding it in a
-    circular pattern, with each node linked to the center node
-  * *Cycle* - nodes are arranged in a circular pattern with every node
-    connected to its neighbor to form a closed circular path.
-  * *Wheel* - the wheel pattern links nodes in a combination of both Star and
-    Cycle patterns.
-  * *Cube* - generate a cube graph of nodes
-  * *Clique* - creates a clique graph of nodes, where every node is connected
-    to every other node
-  * *Bipartite* - creates a bipartite graph of nodes, having two disjoint sets
-    of vertices.
-* *Debugger...* - opens the CORE Debugger window for executing arbitrary Tcl/Tk
-  commands.
+| Option | Functionality |
+|---|---|
+| *Autorearrange all* |automatically arranges all nodes on the canvas. Nodes having a greater number of links are moved to the center. This mode can continue to run while placing nodes. To turn off this autorearrange mode, click on a blank area of the canvas with the select tool, or choose this menu option again. |
+| *Autorearrange selected* | automatically arranges the selected nodes on the canvas. |
+| *Align to grid* | moves nodes into a grid formation, starting with the smallest-numbered node in the upper-left corner of the canvas, arranging nodes in vertical columns. |
+| *Traffic...* | invokes the CORE Traffic Flows dialog box, which allows configuring, starting, and stopping MGEN traffic flows for the emulation. |
+| *IP addresses...* | invokes the IP Addresses dialog box for configuring which IPv4/IPv6 prefixes are used when automatically addressing new interfaces. |
+| *MAC addresses...* | invokes the MAC Addresses dialog box for configuring the starting number used as the lowest byte when generating each interface MAC address. This value should be changed when tunneling between CORE emulations to prevent MAC address conflicts. |
+| *Build hosts file...* | invokes the Build hosts File dialog box for generating **/etc/hosts** file entries based on IP addresses used in the emulation. |
+| *Renumber nodes...* | invokes the Renumber Nodes dialog box, which allows swapping one node number with another in a few clicks. |
+| *Experimental...* |  menu of experimental options, such as a tool to convert ns-2 scripts to IMUNES imn topologies, supporting only basic ns-2 functionality, and a tool for automatically dividing up a topology into partitions. |
+| *Topology generator* | opens a submenu of topologies to generate. You can first select the type of node that the topology should consist of, or routers will be chosen by default. Nodes may be randomly placed, aligned in grids, or various other topology patterns. All of the supported patterns are listed in the table below. |
+| *Debugger...* | opens the CORE Debugger window for executing arbitrary Tcl/Tk commands. |
+
+| Pattern | Description |
+|---|---|
+| *Random* | nodes are randomly placed about the canvas, but are not linked together. This can be used in conjunction with a WLAN node to quickly create a wireless network. |
+| *Grid* | nodes are placed in horizontal rows starting in the upper-left corner, evenly spaced to the right; nodes are not linked to each other. |
+| *Connected Grid* | nodes are placed in an N x M (width and height) rectangular grid, and each node is linked to the node above, below, left and right of itself. | 
+| *Chain* | nodes are linked together one after the other in a chain. |
+| *Star* |  one node is placed in the center with N nodes surrounding it in a circular pattern, with each node linked to the center node. |
+| *Cycle* | nodes are arranged in a circular pattern with every node connected to its neighbor to form a closed circular path. |
+| *Wheel* | the wheel pattern links nodes in a combination of both Star and Cycle patterns. |
+| *Cube* | generate a cube graph of nodes. |
+| *Clique* | creates a clique graph of nodes, where every node is connected to every other node. |
+| *Bipartite* | creates a bipartite graph of nodes, having two disjoint sets of vertices. |
 
 ### Widgets Menu
 
@@ -360,50 +271,26 @@ The Session Menu has entries for starting, stopping, and managing sessions,
 in addition to global options such as node types, comments, hooks, servers,
 and options.
 
-* *Start* or *Stop* - this starts or stops the emulation, performing the same
-  function as the green Start or red Stop button.
-* *Change sessions...* - invokes the CORE Sessions dialog box containing a list
-  of active CORE sessions in the daemon. Basic session information such as
-  name, node count, start time, and a thumbnail are displayed. This dialog
-  allows connecting to different sessions, shutting them down, or starting
-  a new session.
-* *Node types...* - invokes the CORE Node Types dialog, performing the same
-  function as the Edit button on the Network-Layer Nodes toolbar.
-* *Comments...* - invokes the CORE Session Comments window where optional
-  text comments may be specified. These comments are saved at the top of the
-  configuration file, and can be useful for describing the topology or how
-  to use the network.
-* *Hooks...* - invokes the CORE Session Hooks window where scripts may be
-  configured for a particular session state. The top of the window has a list
-  of configured hooks, and buttons on the bottom left allow adding, editing,
-  and removing hook scripts. The new or edit button will open a hook script
-  editing window.  A hook script is a shell script invoked on the host (not
-  within a virtual node).
-  * *definition* - used by the GUI to tell the backend to clear any state.
-  * *configuration* - when the user presses the *Start* button, node, link, and
-    other configuration data is sent to the backend. This state is also
-    reached when the user customizes a service.
-  * *instantiation* - after configuration data has been sent, just before the nodes are created.
-  * *runtime* - all nodes and networks have been
-    built and are running. (This is the same state at which
-    the previously-named *global experiment script* was run.)
-  * *datacollect* - the user has pressed the
-    *Stop* button, but before services have been stopped and nodes have been
-    shut down. This is a good time to collect log files and other data from the
-    nodes.
-  * *shutdown* - all nodes and networks have been shut down and destroyed.
-* *Reset node positions* - if you have moved nodes around
-  using the mouse or by using a mobility module, choosing this item will reset
-  all nodes to their original position on the canvas. The node locations are
-  remembered when you first press the Start button.
-* *Emulation servers...* - invokes the CORE emulation
-  servers dialog for configuring.
-* *Change Sessions...* - invokes the Sessions dialog for switching between different
-  running sessions. This dialog is presented during startup when one or
-  more sessions are already running.
-* *Options...* - presents per-session options, such as the IPv4 prefix to be
-  used, if any, for a control network the ability to preserve
-  the session directory; and an on/off switch for SDT3D support.
+| Option | Functionality |
+|---|---|
+| *Start* or *Stop* | this starts or stops the emulation, performing the same function as the green Start or red Stop button. |
+| *Change sessions...* | invokes the CORE Sessions dialog box containing a list of active CORE sessions in the daemon. Basic session information such as name, node count, start time, and a thumbnail are displayed. This dialog allows connecting to different sessions, shutting them down, or starting a new session. |
+| *Node types...* | invokes the CORE Node Types dialog, performing the same function as the Edit button on the Network-Layer Nodes toolbar. |
+| *Comments...* | invokes the CORE Session Comments window where optional text comments may be specified. These comments are saved at the top of the configuration file, and can be useful for describing the topology or how to use the network. |
+| *Hooks...* | invokes the CORE Session Hooks window where scripts may be configured for a particular session state. The session states are defined in the table right below. The top of the window has a list of configured hooks, and buttons on the bottom left allow adding, editing, and removing hook scripts. The new or edit button will open a hook script editing window.  A hook script is a shell script invoked on the host (not within a virtual node). |
+| *Reset node positions* | if you have moved nodes around using the mouse or by using a mobility module, choosing this item will reset all nodes to their original position on the canvas. The node locations are remembered when you first press the Start button. |
+| *Emulation servers...* | invokes the CORE emulation servers dialog for configuring. |
+| *Change Sessions...* | invokes the Sessions dialog for switching between different running sessions. This dialog is presented during startup when one or more sessions are already running. |
+| *Options...* | presents per-session options, such as the IPv4 prefix to be used, if any, for a control network the ability to preserve the session directory; and an on/off switch for SDT3D support. |
+
+| Session state | Description |
+|---|---|
+| *definition* | used by the GUI to tell the backend to clear any state. |
+| *configuration* | when the user presses the *Start* button, node, link, and other configuration data is sent to the backend. This state is also reached when the user customizes a service. |
+| *instantiation* | after configuration data has been sent, just before the nodes are created. |
+| *runtime* | all nodes and networks have been built and are running. (This is the same state at which the previously-named *global experiment script* was run.)
+| *datacollect* | the user has pressed the *Stop* button, but before services have been stopped and nodes have been shut down. This is a good time to collect log files and other data from the nodes. |
+| *shutdown* | all nodes and networks have been shut down and destroyed. |
 
 ### Help Menu
 
@@ -611,9 +498,10 @@ The wireless LAN (WLAN) is covered in the next section.
 ### Wireless Networks
 
 The wireless LAN node allows you to build wireless networks where moving nodes
-around affects the connectivity between them. The wireless LAN, or WLAN, node
-appears as a small cloud. The WLAN offers several levels of wireless emulation
-fidelity, depending on your modeling needs.
+around affects the connectivity between them. Connection between a pair of nodes is stronger
+when the nodes are closer while connection is weaker when the nodes are further away.
+The wireless LAN, or WLAN, node appears as a small cloud. The WLAN offers 
+several levels of wireless emulation fidelity, depending on your modeling needs.
 
 The WLAN tool can be extended with plug-ins for different levels of wireless
 fidelity. The basic on/off range is the default setting available on all
@@ -622,10 +510,10 @@ complexity and CPU usage. The availability of certain plug-ins varies depending
 on platform. See the table below for a brief overview of wireless model types.
 
 
-Model|Type|Supported Platform(s)|Fidelity|Description
------|----|---------------------|--------|-----------
-|Basic|on/off|Linux|Low|Ethernet bridging with ebtables
-|EMANE|Plug-in|Linux|High|TAP device connected to EMANE emulator with pluggable MAC and PHY radio types
+|Model|Type|Supported Platform(s)|Fidelity|Description|
+|-----|----|---------------------|--------|-----------|
+|Basic|on/off|Linux|Low|Ethernet bridging with ebtables|
+|EMANE|Plug-in|Linux|High|TAP device connected to EMANE emulator with pluggable MAC and PHY radio types|
 
 To quickly build a wireless network, you can first place several router nodes
 onto the canvas. If you have the
@@ -661,14 +549,11 @@ See the [EMANE](emane.md) chapter for details on using EMANE.
 
 CORE has a few ways to script mobility.
 
-* ns-2 script - the script specifies either absolute positions
-  or waypoints with a velocity. Locations are given with Cartesian coordinates.
-* CORE API - an external entity can move nodes by sending CORE API Node
-  messages with updated X,Y coordinates; the **coresendmsg** utility
-  allows a shell script to generate these messages.
-* EMANE events - see [EMANE](emane.md) for details on using EMANE scripts to move
-  nodes around. Location information is typically given as latitude, longitude,
-  and altitude.
+| Option | Description |
+|---|---|
+| ns-2 script | the script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates. |
+| CORE API | an external entity can move nodes by sending CORE API Node messages with updated X,Y coordinates; the **coresendmsg** utility allows a shell script to generate these messages. |
+| EMANE events | see [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude. |
 
 For the first method, you can create a mobility script using a text
 editor, or using a tool such as [BonnMotion](http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/),  and associate the script with one of the wireless
@@ -774,19 +659,13 @@ that CORE will create.
 In version 1.0, the XML file is also referred to as the Scenario Plan. The Scenario Plan will be logically
 made up of the following:
 
-* **Network Plan** - describes nodes, hosts, interfaces, and the networks to
-  which they belong.
-* **Motion Plan** - describes position and motion patterns for nodes in an
-  emulation.
-* **Services Plan** - describes services (protocols, applications) and traffic
-  flows that are associated with certain nodes.
-* **Visualization Plan** - meta-data that is not part of the NRL XML schema but
-  used only by CORE. For example, GUI options, canvas and annotation info, etc.
-  are contained here.
-* **Test Bed Mappings** - describes mappings of nodes, interfaces and EMANE modules in the scenario to
-  test bed hardware.
-  CORE includes Test Bed Mappings in XML files that are saved while the scenario is running.
-
+| Plan | Description |
+|---|---|
+| **Network Plan** | describes nodes. hosts, interfaces, and the networks to which they belong. |
+| **Motion Plan** | describes position and motion patterns for nodes in an emulation. |
+| **Services Plan** | describes services (protocols, applications) and traffic flows that are associated with certain nodes. |
+| **Visualization Plan** | meta-data that is not part of the NRL XML schema but used only by CORE. For example, GUI options, canvas and annotation info, etc. are contained here. |
+| **Test Bed Mappings** | describes mappings of nodes, interfaces and EMANE modules in the scenario to test bed hardware. CORE includes Test Bed Mappings in XML files that are saved while the scenario is running. |
 
 The **.imn** file format comes from IMUNES, and is
 basically Tcl lists of nodes, links, etc.
