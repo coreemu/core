@@ -69,10 +69,12 @@ The toolbar is a row of buttons that runs vertically along the left side of the 
 
 When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on the left side of the CORE window. Below are brief descriptions for each toolbar item, starting from the top. Most of the tools are grouped into related sub-menus, which appear when you click on their group icon.
 
-* ![alt text](../gui/icons/tiny/select.gif) *Selection Tool* - default tool for selecting, moving, configuring nodes
-* ![alt text](../gui/icons/tiny/start.gif) *Start button* - starts Execute mode, instantiates the emulation
-* ![alt text](../gui/icons/tiny/link.gif) *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
-* ![alt text](../gui/icons/tiny/router.gif) *Network-layer virtual nodes consist of the following:*
+| Toolbar item | Functionality |
+|---|---|
+| ![alt text](../gui/icons/tiny/select.gif) *Selection Tool* | default tool for selecting, moving, configuring nodes. |
+| ![alt text](../gui/icons/tiny/start.gif) *Start button* | starts Execute mode, instantiates the emulation. |
+| ![alt text](../gui/icons/tiny/link.gif) *Link* | the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse. |
+### ![alt text](../gui/icons/tiny/router.gif) Network-layer virtual nodes
 
 | Network-layer node | Description |
 |---|---|
@@ -82,7 +84,7 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 | ![alt text](../gui/icons/tiny/mdr.gif) *MDR* | runs Quagga OSPFv3 MDR routing for MANET-optimized routing. |
 | ![alt text](../gui/icons/tiny/router_green.gif) *PRouter* | physical router represents a real testbed machine. |
 | ![alt text](../gui/icons/tiny/document-properties.gif) *Edit* | edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here. |
-* ![alt text](../gui/icons/tiny/hub.gif) *Link-layer nodes consist of the following:*
+### ![alt text](../gui/icons/tiny/hub.gif) Link-layer nodes
 
 | Link-layer node | Description |
 |---|---|
@@ -92,7 +94,7 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 | ![alt text](../gui/icons/tiny/rj45.gif) *RJ45* | with the RJ45 Physical Interface Tool, emulated nodes can be linked to real physical interfaces; using this tool, real networks and devices can be physically connected to the live-running emulation. |
 | ![alt text](../gui/icons/tiny/tunnel.gif) *Tunnel* | the Tunnel Tool allows connecting together more than one CORE emulation using GRE tunnels. |
 
-* *Annotation Tools*
+### Anotation Tools 
 
 | Tool | Functionality |
 |---|---|
@@ -547,14 +549,11 @@ See the [EMANE](emane.md) chapter for details on using EMANE.
 
 CORE has a few ways to script mobility.
 
-* ns-2 script - the script specifies either absolute positions
-  or waypoints with a velocity. Locations are given with Cartesian coordinates.
-* CORE API - an external entity can move nodes by sending CORE API Node
-  messages with updated X,Y coordinates; the **coresendmsg** utility
-  allows a shell script to generate these messages.
-* EMANE events - see [EMANE](emane.md) for details on using EMANE scripts to move
-  nodes around. Location information is typically given as latitude, longitude,
-  and altitude.
+| Option | Description |
+|---|---|
+| ns-2 script | the script specifies either absolute positions or waypoints with a velocity. Locations are given with Cartesian coordinates. |
+| CORE API | an external entity can move nodes by sending CORE API Node messages with updated X,Y coordinates; the **coresendmsg** utility allows a shell script to generate these messages. |
+| EMANE events | see [EMANE](emane.md) for details on using EMANE scripts to move nodes around. Location information is typically given as latitude, longitude, and altitude. |
 
 For the first method, you can create a mobility script using a text
 editor, or using a tool such as [BonnMotion](http://net.cs.uni-bonn.de/wg/cs/applications/bonnmotion/),  and associate the script with one of the wireless
