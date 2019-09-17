@@ -10,6 +10,3 @@ black = "==19.3b0"
 
 [packages]
 pillow = "*"
-
-[requires]
-python_version = "3.7"
