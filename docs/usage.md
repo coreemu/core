@@ -74,7 +74,7 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 * ![alt text](../gui/icons/tiny/link.gif) *Link* - the Link Tool allows network links to be drawn between two nodes by clicking and dragging the mouse
 * ![alt text](../gui/icons/tiny/router.gif) *Network-layer virtual nodes consist of the following:*
 
-|||
+| Network-layer node | Description |
 |---|---|
 | ![alt text](../gui/icons/tiny/router.gif) *Router* | runs Quagga OSPFv2 and OSPFv3 routing to forward packets. |
 | ![alt text](../gui/icons/tiny/host.gif) *Host* | emulated server machine having a default route, runs SSH server. |
@@ -84,7 +84,7 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 | ![alt text](../gui/icons/tiny/document-properties.gif) *Edit* | edit node types button invokes the CORE Node Types dialog. New types of nodes may be created having different icons and names. The default services that are started with each node type can be changed here. |
 * ![alt text](../gui/icons/tiny/hub.gif) *Link-layer nodes consist of the following:*
 
-|||
+| Link-layer node | Description |
 |---|---|
 | ![alt text](../gui/icons/tiny/hub.gif)  *Hub* | the Ethernet hub forwards incoming packets to every connected node. |
 | ![alt text](../gui/icons/tiny/lanswitch.gif) *Switch* | the Ethernet switch intelligently forwards incoming packets to attached hosts using an Ethernet address hash table. |
@@ -94,18 +94,18 @@ When CORE is in Edit mode (the default), the vertical Editing Toolbar exists on 
 
 * *Annotation Tools*
 
-|||
+| Tool | Functionality |
 |---|---|
-| ![alt text](../gui/icons/tiny/marker.gif) *Marker* - for drawing marks on the canvas. |
-| ![alt text](../gui/icons/tiny/oval.gif) *Oval* - for drawing circles on the canvas that appear in the background. |
-| ![alt text](../gui/icons/tiny/rectangle.gif) *Rectangle* - for drawing rectangles on the canvas that appear in the background. |
-| ![alt text](../gui/icons/tiny/text.gif) *Text* - for placing text captions on the canvas. |
+| ![alt text](../gui/icons/tiny/marker.gif) *Marker* | for drawing marks on the canvas. |
+| ![alt text](../gui/icons/tiny/oval.gif) *Oval* | for drawing circles on the canvas that appear in the background. |
+| ![alt text](../gui/icons/tiny/rectangle.gif) *Rectangle* | for drawing rectangles on the canvas that appear in the background. |
+| ![alt text](../gui/icons/tiny/text.gif) *Text* | for placing text captions on the canvas. |
 
 ### Execution Toolbar
 
 When the Start button is pressed, CORE switches to Execute mode, and the Edit toolbar on the left of the CORE window is replaced with the Execution toolbar Below are the items on this toolbar, starting from the top.
 
-|||
+| Tool | Functionality |
 |---|---|
 | ![alt text](../gui/icons/tiny/select.gif) *Selection Tool* | in Execute mode, the Selection Tool can be used for moving nodes around the canvas, and double-clicking on a node will open a shell window for that node; right-clicking on a node invokes a pop-up menu of run-time options for that node. |
 | ![alt text](../gui/icons/tiny/stop.gif) *Stop button* | stops Execute mode, terminates the emulation, returns CORE to edit mode. |
@@ -126,7 +126,7 @@ menu, by clicking the dashed line at the top.
 The File menu contains options for manipulating the **.imn** Configuration Files. Generally, these menu items should not be used in
 Execute mode.
 
-|||
+| Option | Functionality |
 |---|---|
 | *New* |this starts a new file with an empty canvas. |
 | *Open* | invokes the File Open dialog box for selecting a new **.imn** or XML file to open. You can change the default path used for this dialog in the Preferences Dialog. |
@@ -144,7 +144,7 @@ Execute mode.
 
 ### Edit Menu
 
-|||
+| Option | Functionality |
 |---|---|
 | *Undo* | attempts to undo the last edit in edit mode. |
 | *Redo* | attempts to redo an edit that has been undone. |
@@ -159,7 +159,7 @@ Execute mode.
 
 The canvas menu provides commands for adding, removing, changing, and switching to different editing canvases.
 
-|||
+| Option | Functionality |
 |---|---|
 | *New* | creates a new empty canvas at the right of all existing canvases. |
 | *Manage...* | invokes the *Manage Canvases* dialog box, where canvases may be renamed and reordered, and you can easily switch to one of the canvases by selecting it. |
@@ -173,7 +173,7 @@ The canvas menu provides commands for adding, removing, changing, and switching 
 The View menu features items for controlling what is displayed on the drawing
 canvas.
 
-|||
+| Option | Functionality |
 |---|---|
 | *Show* | opens a submenu of items that can be displayed or hidden, such as interface names, addresses, and labels. Use these options to help declutter the display. These options are generally saved in the topology files, so scenarios have a more consistent look when copied from one computer to another. |
 | *Show hidden nodes* | reveal nodes that have been hidden. Nodes are hidden by selecting one or more nodes, right-clicking one and choosing *hide*. |
@@ -186,7 +186,7 @@ canvas.
 
 The tools menu lists different utility functions.
 
-|||
+| Option | Functionality |
 |---|---|
 | *Autorearrange all* |automatically arranges all nodes on the canvas. Nodes having a greater number of links are moved to the center. This mode can continue to run while placing nodes. To turn off this autorearrange mode, click on a blank area of the canvas with the select tool, or choose this menu option again. |
 | *Autorearrange selected* | automatically arranges the selected nodes on the canvas. |
@@ -200,7 +200,7 @@ The tools menu lists different utility functions.
 | *Topology generator* | opens a submenu of topologies to generate. You can first select the type of node that the topology should consist of, or routers will be chosen by default. Nodes may be randomly placed, aligned in grids, or various other topology patterns. All of the supported patterns are listed in the table below. |
 | *Debugger...* | opens the CORE Debugger window for executing arbitrary Tcl/Tk commands. |
 
-| |Different topology patterns|
+| Pattern | Description |
 |---|---|
 | *Random* | nodes are randomly placed about the canvas, but are not linked together. This can be used in conjunction with a WLAN node to quickly create a wireless network. |
 | *Grid* | nodes are placed in horizontal rows starting in the upper-left corner, evenly spaced to the right; nodes are not linked to each other. |
@@ -269,7 +269,7 @@ The Session Menu has entries for starting, stopping, and managing sessions,
 in addition to global options such as node types, comments, hooks, servers,
 and options.
 
-|||
+| Option | Functionality |
 |---|---|
 | *Start* or *Stop* | this starts or stops the emulation, performing the same function as the green Start or red Stop button. |
 | *Change sessions...* | invokes the CORE Sessions dialog box containing a list of active CORE sessions in the daemon. Basic session information such as name, node count, start time, and a thumbnail are displayed. This dialog allows connecting to different sessions, shutting them down, or starting a new session. |
@@ -281,7 +281,7 @@ and options.
 | *Change Sessions...* | invokes the Sessions dialog for switching between different running sessions. This dialog is presented during startup when one or more sessions are already running. |
 | *Options...* | presents per-session options, such as the IPv4 prefix to be used, if any, for a control network the ability to preserve the session directory; and an on/off switch for SDT3D support. |
 
-| |Session states|
+| Session state | Description |
 |---|---|
 | *definition* | used by the GUI to tell the backend to clear any state. |
 | *configuration* | when the user presses the *Start* button, node, link, and other configuration data is sent to the backend. This state is also reached when the user customizes a service. |
@@ -660,7 +660,7 @@ that CORE will create.
 In version 1.0, the XML file is also referred to as the Scenario Plan. The Scenario Plan will be logically
 made up of the following:
 
-|||
+| Plan | Description |
 |---|---|
 | **Network Plan** | describes nodes. hosts, interfaces, and the networks to which they belong. |
 | **Motion Plan** | describes position and motion patterns for nodes in an emulation. |

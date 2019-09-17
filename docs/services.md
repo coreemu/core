@@ -24,7 +24,7 @@ shutdown commands, and meta-data associated with a node.
 
 Here are the default node types and their services:
 
-|||
+| Node type | Services |
 |---|---|
 | *router* | zebra, OSFPv2, OSPFv3, and IPForward services for IGP link-state routing. |
 | *host* | DefaultRoute and SSH services, representing an SSH server having a default route when connected directly to a router. |

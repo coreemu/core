@@ -115,7 +115,7 @@ class NodeBase(object):
 
         :param bool sort: boolean used to determine if interfaces should be sorted
         :return: network interfaces
-        :rtype: list
+        :rtype: list[core.nodes.interfaces.CoreInterface]
         """
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
@@ -210,7 +210,7 @@ class NodeBase(object):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: [core.data.LinkData]
+        :rtype: list[core.data.LinkData]
         """
         return []
 
@@ -308,7 +308,7 @@ class CoreNodeBase(NodeBase):
 
         :param int ifindex: interface of index to attach
         :param core.nodes.interface.CoreInterface net: network to attach
-        :return:
+        :return: nothing
         """
         if ifindex not in self._netif:
             raise ValueError("ifindex %s does not exist" % ifindex)
@@ -1112,7 +1112,7 @@ class CoreNetworkBase(NodeBase):
 
         :param int flags: message type
         :return: list of link data
-        :rtype: [core.data.LinkData]
+        :rtype: list[core.data.LinkData]
 
         """
         all_links = []

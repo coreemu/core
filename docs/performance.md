@@ -7,30 +7,14 @@
 
 The top question about the performance of CORE is often *how many nodes can it handle?* The answer depends on several factors:
 
-<table>
-  <tbody>
-    <tr>
-        <td>Hardware</td>
-        <td>the number and speed of processors in the computer, the available processor cache, RAM memory, and front-side bus speed may greatly affect overall performance.</td>
-    </tr>
-    <tr>
-        <td>Operating system version</td>
-        <td>distribution of Linux and the specific kernel versions used will affect overall performance.</td>
-    </tr>
-    <tr>
-        <td>Active processes</td>
-        <td>all nodes share the same CPU resources, so if one or more nodes is performing a CPU-intensive task, overall performance will suffer.</td>
-    </tr>
-    <tr>
-        <td>Network traffic</td>
-        <td>the more packets that are sent around the virtual network increases the amount of CPU usage.</td>
-    </tr>
-    <tr>
-        <td>GUI usage</td>
-        <td>widgets that run periodically, mobility scenarios, and other GUI interactions generally consume CPU cycles that may be needed for emulation.</td>
-    </tr>
-  </tbody>
-</table>
+| Factor | How that factor might affect performance |
+|---|---|
+| Hardware | the number and speed of processors in the computer, the available processor cache, RAM memory, and front-side bus speed may greatly affect overall performance. |
+| Operating system version | distribution of Linux and the specific kernel versions used will affect overall performance. |
+| Active processes | all nodes share the same CPU resources, so if one or more nodes is performing a CPU-intensive task, overall performance will suffer. |
+| Network traffic | the more packets that are sent around the virtual network increases the amount of CPU usage. |
+| GUI usage | widgets that run periodically, mobility scenarios, and other GUI interactions generally consume CPU cycles that may be needed for emulation. |
+
 
 On a typical single-CPU Xeon 3.0GHz server machine with 2GB RAM running Linux, we have found it reasonable to run 30-75 nodes running OSPFv2 and OSPFv3 routing. On this hardware CORE can instantiate 100 or more nodes, but at that point it becomes critical as to what each of the nodes is doing.
 

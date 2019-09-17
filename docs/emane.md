@@ -9,7 +9,7 @@ The Extendable Mobile Ad-hoc Network Emulator (EMANE) allows heterogeneous netwo
 
 EMANE is developed by U.S. Naval Research Labs (NRL) Code 5522 and Adjacent Link LLC, who maintain these websites:
 
-* <http://www.nrl.navy.mil/itd/ncs/products/emane>
+* <https://github.com/adjacentlink/emane>
 * <http://www.adjacentlink.com/>
 
 Instead of building Linux Ethernet bridging networks with CORE, higher-fidelity wireless networks can be emulated using EMANE bound to virtual devices. CORE emulates layers 3 and above (network, session, application) with its virtual network stacks and process space for protocols and applications, while EMANE emulates layers 1 and 2 (physical and data link) using its pluggable PHY and MAC models.
