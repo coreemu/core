@@ -1,4 +1,5 @@
 import os
+
 from PIL import Image, ImageTk
 
 PATH = os.path.abspath(os.path.dirname(__file__))
