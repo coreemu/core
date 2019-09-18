@@ -20,7 +20,6 @@ class Application(tk.Frame):
     def setup_app(self):
         self.master.title("CORE")
         self.master.geometry("800x600")
-        self.master.state("zoomed")
         image = Images.get("core")
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
