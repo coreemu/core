@@ -21,3 +21,24 @@ repos:
     language: system
     entry: bash -c 'cd daemon && pipenv run flake8'
     types: [python]
+
+  - id: isort-tk
+    name: coretk-isort
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd coretk && pipenv run isort --atomic -y'
+    types: [python]
+
+  - id: black-tk
+    name: coretk-black
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd coretk && pipenv run black .'
+    types: [python]
+
+  - id: flake8-tk
+    name: coretk-flake8
+    stages: [commit]
+    language: system
+    entry: bash -c 'cd coretk && pipenv run flake8'
+    types: [python]

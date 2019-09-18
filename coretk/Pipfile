@@ -10,6 +10,7 @@ coretk = "python coretk/app.py"
 flake8 = "*"
 isort = "*"
 black = "==19.3b0"
+pre-commit = "*"
 
 [packages]
 coretk = {editable = true,path = "."}
