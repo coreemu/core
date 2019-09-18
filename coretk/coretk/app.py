@@ -1,7 +1,7 @@
 import tkinter as tk
 
 from coretk.graph import CanvasGraph
-from coretk.icons import Images
+from coretk.images import Images
 
 
 class Application(tk.Frame):

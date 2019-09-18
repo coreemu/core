@@ -1,7 +1,7 @@
 import enum
 import tkinter as tk
 
-from coretk.icons import Images
+from coretk.images import Images
 
 
 class GraphMode(enum.Enum):
