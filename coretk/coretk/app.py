@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 
 from coretk.graph import CanvasGraph
@@ -85,5 +86,6 @@ class Application(tk.Frame):
 
 
 if __name__ == "__main__":
+    logging.basicConfig(level=logging.DEBUG)
     app = Application()
     app.mainloop()

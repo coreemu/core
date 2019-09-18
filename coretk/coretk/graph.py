@@ -1,4 +1,5 @@
 import enum
+import logging
 import tkinter as tk
 
 from coretk.images import Images
@@ -65,7 +66,7 @@ class CanvasGraph(tk.Canvas):
     def click_release(self, event):
         self.focus_set()
         self.selected = self.get_selected(event)
-        print(f"click release selected: {self.selected}")
+        logging.debug(f"click release selected: {self.selected}")
         if self.mode == GraphMode.EDGE:
             self.handle_edge_release(event)
         elif self.mode == GraphMode.NODE:
@@ -81,8 +82,8 @@ class CanvasGraph(tk.Canvas):
             return
 
         # edge dst must be a node
-        print(f"current selected: {self.selected}")
-        print(f"current nodes: {self.find_withtag('node')}")
+        logging.debug(f"current selected: {self.selected}")
+        logging.debug(f"current nodes: {self.find_withtag('node')}")
         is_node = self.selected in self.find_withtag("node")
         if not is_node:
             edge.delete()
@@ -95,7 +96,7 @@ class CanvasGraph(tk.Canvas):
         # set dst node and snap edge to center
         x, y = self.coords(self.selected)
         edge.complete(self.selected, x, y)
-        print(f"drawing edge token: {edge.token}")
+        logging.debug(f"drawing edge token: {edge.token}")
         if edge.token in self.edges:
             edge.delete()
         else:
@@ -105,10 +106,10 @@ class CanvasGraph(tk.Canvas):
             node_dst = self.nodes[edge.dst]
             node_dst.edges.add(edge)
 
-        print(f"edges: {self.find_withtag('edge')}")
+        logging.debug(f"edges: {self.find_withtag('edge')}")
 
     def click_press(self, event):
-        print(f"click press: {event}")
+        logging.debug(f"click press: {event}")
         selected = self.get_selected(event)
         is_node = selected in self.find_withtag("node")
         if self.mode == GraphMode.EDGE and is_node:
@@ -125,18 +126,18 @@ class CanvasGraph(tk.Canvas):
         selected = self.get_selected(event)
         nodes = self.find_withtag("node")
         if selected in nodes:
-            print(f"node context: {selected}")
+            logging.debug(f"node context: {selected}")
             self.node_context.post(event.x_root, event.y_root)
 
     def set_mode(self, event):
-        print(f"mode event: {event}")
+        logging.debug(f"mode event: {event}")
         if event.char == "e":
             self.mode = GraphMode.EDGE
         elif event.char == "s":
             self.mode = GraphMode.SELECT
         elif event.char == "n":
             self.mode = GraphMode.NODE
-        print(f"graph mode: {self.mode}")
+        logging.debug(f"graph mode: {self.mode}")
 
     def add_node(self, x, y, image_name):
         image = Images.get(image_name)
@@ -183,11 +184,11 @@ class CanvasNode:
         self.moving = None
 
     def click_press(self, event):
-        print(f"click press {self.name}: {event}")
+        logging.debug(f"click press {self.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
 
     def click_release(self, event):
-        print(f"click release {self.name}: {event}")
+        logging.debug(f"click release {self.name}: {event}")
         self.moving = None
 
     def motion(self, event):
@@ -210,4 +211,4 @@ class CanvasNode:
                 self.canvas.coords(edge.id, x1, y1, new_x, new_y)
 
     def context(self, event):
-        print(f"context click {self.name}: {event}")
+        logging.debug(f"context click {self.name}: {event}")
