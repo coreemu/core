@@ -115,7 +115,7 @@ class NodeBase(object):
 
         :param bool sort: boolean used to determine if interfaces should be sorted
         :return: network interfaces
-        :rtype: list
+        :rtype: list[core.nodes.interfaces.CoreInterface]
         """
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
@@ -168,7 +168,7 @@ class NodeBase(object):
         :param str lon: longitude
         :param str alt: altitude
         :return: node data object
-        :rtype: core.data.NodeData
+        :rtype: core.emulator.data.NodeData
         """
         if self.apitype is None:
             return None
@@ -210,7 +210,7 @@ class NodeBase(object):
 
         :param flags: message flags
         :return: list of link data
-        :rtype: core.data.LinkData
+        :rtype: list[core.data.LinkData]
         """
         return []
 
@@ -308,7 +308,7 @@ class CoreNodeBase(NodeBase):
 
         :param int ifindex: interface of index to attach
         :param core.nodes.interface.CoreInterface net: network to attach
-        :return:
+        :return: nothing
         """
         if ifindex not in self._netif:
             raise ValueError("ifindex %s does not exist" % ifindex)
@@ -707,6 +707,7 @@ class CoreNode(CoreNodeBase):
                 logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
 
             try:
+                # add network interface to the node. If unsuccessful, destroy the network interface and raise exception.
                 self.addnetif(veth, ifindex)
             except ValueError as e:
                 veth.shutdown()
@@ -1108,6 +1109,11 @@ class CoreNetworkBase(NodeBase):
         """
         Build link data objects for this network. Each link object describes a link
         between this network and a node.
+
+        :param int flags: message type
+        :return: list of link data
+        :rtype: list[core.data.LinkData]
+
         """
         all_links = []
 

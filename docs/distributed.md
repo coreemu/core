@@ -110,7 +110,7 @@ be emulated locally on the master. When entering Execute mode, the CORE GUI
 will deploy the node on its assigned emulation server.
 
 Another way to assign emulation servers is to select one or more nodes using
-the select tool (shift-click to select multiple), and right-click one of the
+the select tool (ctrl-click to select multiple), and right-click one of the
 nodes and choose *Assign to...*.
 
 The **CORE emulation servers** dialog box may also be used to assign nodes to
@@ -176,5 +176,6 @@ emane_event_generate = True
 then start (or restart) the daemon.
 1. Installed and configure public-key SSH access on all servers (if you want to use
 double-click shells or Widgets.)
-1. Assign nodes to desired servers, empty for master server
+1. Choose the servers that participate in distributed emulation.
+1. Assign nodes to desired servers, empty for master server.
 1. Press the **Start** button to launch the distributed emulation.

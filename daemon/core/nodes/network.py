@@ -1129,6 +1129,10 @@ class WlanNode(CoreNetwork):
         # mobility model such as scripted
         self.mobility = None
 
+        # TODO: move to startup method
+        if start:
+            utils.check_cmd([constants.BRCTL_BIN, "setageing", self.brname, "0"])
+
     def attach(self, netif):
         """
         Attach a network interface.
