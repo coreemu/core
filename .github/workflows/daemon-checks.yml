@@ -21,7 +21,7 @@ jobs:
       - name: isort
         run: |
           cd daemon
-          pipenv run isort
+          pipenv run isort -c
       - name: black
         run: |
           cd daemon
