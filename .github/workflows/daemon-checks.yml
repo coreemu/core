@@ -25,7 +25,7 @@ jobs:
       - name: black
         run: |
           cd daemon
-          pipenv run black --exclude ".+_pb2.*.py|doc|build|utm\.py" .
+          pipenv run black --check --exclude ".+_pb2.*.py|doc|build|utm\.py|setup\.py" .
       - name: flake8
         run: |
           cd daemon
