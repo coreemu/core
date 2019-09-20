@@ -34,14 +34,14 @@ class Application(tk.Frame):
         """
         file_menu = tk.Menu(self.menubar)
         file_menu.add_command(
-            label="New", command=action.file_new, accelerator="Ctrl+N"
+            label="New", command=action.file_new, accelerator="Ctrl+N", underline=0
         )
         file_menu.add_command(
-            label="Open...", command=action.file_open, accelerator="Ctrl+O"
+            label="Open...", command=action.file_open, accelerator="Ctrl+O", underline=0
         )
-        file_menu.add_command(label="Reload", command=action.file_reload)
+        file_menu.add_command(label="Reload", command=action.file_reload, underline=0)
         file_menu.add_command(
-            label="Save", command=action.file_save, accelerator="Ctrl+S"
+            label="Save", command=action.file_save, accelerator="Ctrl+S", underline=0
         )
         file_menu.add_command(label="Save As XML...", command=action.file_save_as_xml)
         file_menu.add_command(label="Save As imn...", command=action.file_save_as_imn)
@@ -66,7 +66,7 @@ class Application(tk.Frame):
             label="Open current file in editor...",
             command=action.file_open_current_file_in_editor,
         )
-        file_menu.add_command(label="Print...", command=action.file_print)
+        file_menu.add_command(label="Print...", command=action.file_print, underline=0)
         file_menu.add_command(
             label="Save screenshot...", command=action.file_save_screenshot
         )
@@ -80,8 +80,8 @@ class Application(tk.Frame):
 
         file_menu.add_separator()
 
-        file_menu.add_command(label="Quit", command=self.master.quit)
-        self.menubar.add_cascade(label="File", menu=file_menu)
+        file_menu.add_command(label="Quit", command=self.master.quit, underline=0)
+        self.menubar.add_cascade(label="File", menu=file_menu, underline=0)
 
     def create_edit_menu(self):
         """
@@ -91,22 +91,22 @@ class Application(tk.Frame):
         """
         edit_menu = tk.Menu(self.menubar)
         edit_menu.add_command(
-            label="Undo", command=action.edit_undo, accelerator="Ctrl+Z"
+            label="Undo", command=action.edit_undo, accelerator="Ctrl+Z", underline=0
         )
         edit_menu.add_command(
-            label="Redo", command=action.edit_redo, accelerator="Ctrl+Y"
+            label="Redo", command=action.edit_redo, accelerator="Ctrl+Y", underline=0
         )
 
         edit_menu.add_separator()
 
         edit_menu.add_command(
-            label="Cut", command=action.edit_cut, accelerator="Ctrl+X"
+            label="Cut", command=action.edit_cut, accelerator="Ctrl+X", underline=0
         )
         edit_menu.add_command(
-            label="Copy", command=action.edit_copy, accelerator="Ctrl+C"
+            label="Copy", command=action.edit_copy, accelerator="Ctrl+C", underline=0
         )
         edit_menu.add_command(
-            label="Paste", command=action.edit_paste, accelerator="Ctrl+V"
+            label="Paste", command=action.edit_paste, accelerator="Ctrl+V", underline=0
         )
 
         edit_menu.add_separator()
@@ -123,12 +123,12 @@ class Application(tk.Frame):
         edit_menu.add_separator()
 
         edit_menu.add_command(
-            label="Find...", command=action.edit_find, accelerator="Ctrl+F"
+            label="Find...", command=action.edit_find, accelerator="Ctrl+F", underline=0
         )
         edit_menu.add_command(label="Clear marker", command=action.edit_clear_marker)
         edit_menu.add_command(label="Preferences...", command=action.edit_preferences)
 
-        self.menubar.add_cascade(label="Edit", menu=edit_menu)
+        self.menubar.add_cascade(label="Edit", menu=edit_menu, underline=0)
 
     def create_canvas_menu(self):
         """
@@ -161,7 +161,7 @@ class Application(tk.Frame):
             label="Last", command=action.canvas_last, accelerator="End"
         )
 
-        self.menubar.add_cascade(label="Canvas", menu=canvas_menu)
+        self.menubar.add_cascade(label="Canvas", menu=canvas_menu, underline=0)
 
     def create_show_menu(self, view_menu):
         """
@@ -207,7 +207,7 @@ class Application(tk.Frame):
             label="Zoom out", command=action.view_zoom_out, accelerator="-"
         )
 
-        self.menubar.add_cascade(label="View", menu=view_menu)
+        self.menubar.add_cascade(label="View", menu=view_menu, underline=0)
 
     def create_experimental_menu(self, tools_menu):
         """
@@ -217,15 +217,19 @@ class Application(tk.Frame):
         :return: nothing
         """
         experimental_menu = tk.Menu(tools_menu, tearoff=True)
-        experimental_menu.add_command(label="Plugins...", command=action.sub_menu_items)
         experimental_menu.add_command(
-            label="ns2immunes converter...", command=action.sub_menu_items
+            label="Plugins...", command=action.sub_menu_items, underline=0
+        )
+        experimental_menu.add_command(
+            label="ns2immunes converter...", command=action.sub_menu_items, underline=0
         )
         experimental_menu.add_command(
             label="Topology partitioning...", command=action.sub_menu_items
         )
 
-        tools_menu.add_cascade(label="Experimental", menu=experimental_menu)
+        tools_menu.add_cascade(
+            label="Experimental", menu=experimental_menu, underline=0
+        )
 
     def create_random_menu(self, topology_generator_menu):
         """
@@ -241,7 +245,9 @@ class Application(tk.Frame):
             the_label = "R(" + str(i) + ")"
             random_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Random", menu=random_menu)
+        topology_generator_menu.add_cascade(
+            label="Random", menu=random_menu, underline=0
+        )
 
     def create_grid_menu(self, topology_generator_menu):
         """
@@ -259,7 +265,7 @@ class Application(tk.Frame):
             the_label = "G(" + str(i) + ")"
             grid_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Grid", menu=grid_menu)
+        topology_generator_menu.add_cascade(label="Grid", menu=grid_menu, underline=0)
 
     def create_connected_grid_menu(self, topology_generator_menu):
         """
@@ -276,7 +282,9 @@ class Application(tk.Frame):
                 i_n_menu.add_command(label=i_j_label, command=action.sub_menu_items)
             i_n_label = str(i) + " X N"
             grid_menu.add_cascade(label=i_n_label, menu=i_n_menu)
-        topology_generator_menu.add_cascade(label="Connected Grid", menu=grid_menu)
+        topology_generator_menu.add_cascade(
+            label="Connected Grid", menu=grid_menu, underline=0
+        )
 
     def create_chain_menu(self, topology_generator_menu):
         """
@@ -292,7 +300,7 @@ class Application(tk.Frame):
             the_label = "P(" + str(i) + ")"
             chain_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Chain", menu=chain_menu)
+        topology_generator_menu.add_cascade(label="Chain", menu=chain_menu, underline=0)
 
     def create_star_menu(self, topology_generator_menu):
         """
@@ -306,7 +314,7 @@ class Application(tk.Frame):
             the_label = "C(" + str(i) + ")"
             star_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Star", menu=star_menu)
+        topology_generator_menu.add_cascade(label="Star", menu=star_menu, underline=0)
 
     def create_cycle_menu(self, topology_generator_menu):
         """
@@ -320,7 +328,7 @@ class Application(tk.Frame):
             the_label = "C(" + str(i) + ")"
             cycle_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Cycle", menu=cycle_menu)
+        topology_generator_menu.add_cascade(label="Cycle", menu=cycle_menu, underline=0)
 
     def create_wheel_menu(self, topology_generator_menu):
         """
@@ -334,7 +342,7 @@ class Application(tk.Frame):
             the_label = "W(" + str(i) + ")"
             wheel_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Wheel", menu=wheel_menu)
+        topology_generator_menu.add_cascade(label="Wheel", menu=wheel_menu, underline=0)
 
     def create_cube_menu(self, topology_generator_menu):
         """
@@ -348,7 +356,7 @@ class Application(tk.Frame):
             the_label = "Q(" + str(i) + ")"
             cube_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Cube", menu=cube_menu)
+        topology_generator_menu.add_cascade(label="Cube", menu=cube_menu, underline=0)
 
     def create_clique_menu(self, topology_generator_menu):
         """
@@ -362,7 +370,9 @@ class Application(tk.Frame):
             the_label = "K(" + str(i) + ")"
             clique_menu.add_command(label=the_label, command=action.sub_menu_items)
 
-        topology_generator_menu.add_cascade(label="Clique", menu=clique_menu)
+        topology_generator_menu.add_cascade(
+            label="Clique", menu=clique_menu, underline=0
+        )
 
     def create_bipartite_menu(self, topology_generator_menu):
         """
@@ -381,7 +391,9 @@ class Application(tk.Frame):
             i_n_label = "K(" + str(i) + " X N)"
             bipartite_menu.add_cascade(label=i_n_label, menu=i_n_menu)
             temp = temp - 1
-        topology_generator_menu.add_cascade(label="Bipartite", menu=bipartite_menu)
+        topology_generator_menu.add_cascade(
+            label="Bipartite", menu=bipartite_menu, underline=0
+        )
 
     def create_topology_generator_menu(self, tools_menu):
         """
@@ -404,7 +416,9 @@ class Application(tk.Frame):
         self.create_clique_menu(topology_generator_menu)
         self.create_bipartite_menu(topology_generator_menu)
 
-        tools_menu.add_cascade(label="Topology generator", menu=topology_generator_menu)
+        tools_menu.add_cascade(
+            label="Topology generator", menu=topology_generator_menu, underline=0
+        )
 
     def create_tools_menu(self):
         """
@@ -415,38 +429,43 @@ class Application(tk.Frame):
 
         tools_menu = tk.Menu(self.menubar)
         tools_menu.add_command(
-            label="Auto rearrange all", command=action.tools_auto_rearrange_all
+            label="Auto rearrange all",
+            command=action.tools_auto_rearrange_all,
+            underline=0,
         )
         tools_menu.add_command(
             label="Auto rearrange selected",
             command=action.tools_auto_rearrange_selected,
+            underline=0,
         )
         tools_menu.add_separator()
 
         tools_menu.add_command(
-            label="Align to grid", command=action.tools_align_to_grid
+            label="Align to grid", command=action.tools_align_to_grid, underline=0
         )
 
         tools_menu.add_separator()
 
         tools_menu.add_command(label="Traffic...", command=action.tools_traffic)
         tools_menu.add_command(
-            label="IP addresses...", command=action.tools_ip_addresses
+            label="IP addresses...", command=action.tools_ip_addresses, underline=0
         )
         tools_menu.add_command(
-            label="MAC addresses...", command=action.tools_mac_addresses
+            label="MAC addresses...", command=action.tools_mac_addresses, underline=0
         )
         tools_menu.add_command(
-            label="Build hosts file...", command=action.tools_build_hosts_file
+            label="Build hosts file...",
+            command=action.tools_build_hosts_file,
+            underline=0,
         )
         tools_menu.add_command(
-            label="Renumber nodes...", command=action.tools_renumber_nodes
+            label="Renumber nodes...", command=action.tools_renumber_nodes, underline=0
         )
         self.create_experimental_menu(tools_menu)
         self.create_topology_generator_menu(tools_menu)
         tools_menu.add_command(label="Debugger...", command=action.tools_debugger)
 
-        self.menubar.add_cascade(label="Tools", menu=tools_menu)
+        self.menubar.add_cascade(label="Tools", menu=tools_menu, underline=0)
 
     def create_observer_widgets_menu(self, widget_menu):
         """
@@ -538,7 +557,7 @@ class Application(tk.Frame):
             label="Configure Throughput...", command=action.widgets_configure_throughput
         )
 
-        self.menubar.add_cascade(label="Widgets", menu=widget_menu)
+        self.menubar.add_cascade(label="Widgets", menu=widget_menu, underline=0)
 
     def create_session_menu(self):
         """
@@ -547,27 +566,41 @@ class Application(tk.Frame):
         :return: nothing
         """
         session_menu = tk.Menu(self.menubar, tearoff=True)
-        session_menu.add_command(label="Start", command=action.session_start)
         session_menu.add_command(
-            label="Change sessions...", command=action.session_change_sessions
+            label="Start", command=action.session_start, underline=0
+        )
+        session_menu.add_command(
+            label="Change sessions...",
+            command=action.session_change_sessions,
+            underline=0,
         )
 
         session_menu.add_separator()
 
         session_menu.add_command(
-            label="Node types...", command=action.session_node_types
-        )
-        session_menu.add_command(label="Comments...", command=action.session_comments)
-        session_menu.add_command(label="Hooks...", command=action.session_hooks)
-        session_menu.add_command(
-            label="Reset node positions", command=action.session_reset_node_positions
+            label="Node types...", command=action.session_node_types, underline=0
         )
         session_menu.add_command(
-            label="Emulation servers...", command=action.session_emulation_servers
+            label="Comments...", command=action.session_comments, underline=0
         )
-        session_menu.add_command(label="Options...", command=action.session_options)
+        session_menu.add_command(
+            label="Hooks...", command=action.session_hooks, underline=0
+        )
+        session_menu.add_command(
+            label="Reset node positions",
+            command=action.session_reset_node_positions,
+            underline=0,
+        )
+        session_menu.add_command(
+            label="Emulation servers...",
+            command=action.session_emulation_servers,
+            underline=0,
+        )
+        session_menu.add_command(
+            label="Options...", command=action.session_options, underline=0
+        )
 
-        self.menubar.add_cascade(label="Session", menu=session_menu)
+        self.menubar.add_cascade(label="Session", menu=session_menu, underline=0)
 
     def create_help_menu(self):
         """
