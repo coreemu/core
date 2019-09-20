@@ -190,7 +190,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        view_menu = tk.Menu(self.menubar, tearoff=True)
+        view_menu = tk.Menu(self.menubar)
         self.create_show_menu(view_menu)
         view_menu.add_command(
             label="Show hidden nodes", command=action.view_show_hidden_nodes
@@ -216,7 +216,7 @@ class Application(tk.Frame):
         :param tkinter.Menu tools_menu: tools menu
         :return: nothing
         """
-        experimental_menu = tk.Menu(tools_menu, tearoff=True)
+        experimental_menu = tk.Menu(tools_menu)
         experimental_menu.add_command(
             label="Plugins...", command=action.sub_menu_items, underline=0
         )
@@ -403,7 +403,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        topology_generator_menu = tk.Menu(tools_menu, tearoff=True)
+        topology_generator_menu = tk.Menu(tools_menu)
 
         self.create_random_menu(topology_generator_menu)
         self.create_grid_menu(topology_generator_menu)
@@ -474,7 +474,7 @@ class Application(tk.Frame):
         :param tkinter.Menu widget_menu: widget_menu
         :return: nothing
         """
-        observer_widget_menu = tk.Menu(widget_menu, tearoff=True)
+        observer_widget_menu = tk.Menu(widget_menu)
         observer_widget_menu.add_command(label="None", command=action.sub_menu_items)
         observer_widget_menu.add_command(
             label="processes", command=action.sub_menu_items
@@ -529,7 +529,7 @@ class Application(tk.Frame):
         :param tkinter.Menu widget_menu: widget menu
         :return: nothing
         """
-        adjacency_menu = tk.Menu(widget_menu, tearoff=True)
+        adjacency_menu = tk.Menu(widget_menu)
         adjacency_menu.add_command(label="OSPFv2", command=action.sub_menu_items)
         adjacency_menu.add_command(label="OSPFv3", command=action.sub_menu_items)
         adjacency_menu.add_command(label="OSLR", command=action.sub_menu_items)
@@ -543,7 +543,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        widget_menu = tk.Menu(self.menubar, tearoff=True)
+        widget_menu = tk.Menu(self.menubar)
         self.create_observer_widgets_menu(widget_menu)
         self.create_adjacency_menu(widget_menu)
         widget_menu.add_command(label="Throughput", command=action.widgets_throughput)
@@ -565,7 +565,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        session_menu = tk.Menu(self.menubar, tearoff=True)
+        session_menu = tk.Menu(self.menubar)
         session_menu.add_command(
             label="Start", command=action.session_start, underline=0
         )
