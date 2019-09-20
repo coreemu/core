@@ -32,7 +32,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        file_menu = tk.Menu(self.master)
+        file_menu = tk.Menu(self.menubar)
         file_menu.add_command(
             label="New", command=action.file_new, accelerator="Ctrl+N"
         )
@@ -89,7 +89,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        edit_menu = tk.Menu(self.master)
+        edit_menu = tk.Menu(self.menubar)
         edit_menu.add_command(
             label="Undo", command=action.edit_undo, accelerator="Ctrl+Z"
         )
@@ -136,7 +136,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        canvas_menu = tk.Menu(self.master)
+        canvas_menu = tk.Menu(self.menubar)
         canvas_menu.add_command(label="New", command=action.canvas_new)
         canvas_menu.add_command(label="Manage...", command=action.canvas_manage)
         canvas_menu.add_command(label="Delete", command=action.canvas_delete)
@@ -170,17 +170,17 @@ class Application(tk.Frame):
         :param tkinter.Menu view_menu: the view menu
         :return: nothing
         """
-        show_menu = tk.Menu(self.master)
-        show_menu.add_command(label="All")
-        show_menu.add_command(label="None")
+        show_menu = tk.Menu(view_menu)
+        show_menu.add_command(label="All", command=action.sub_menu_items)
+        show_menu.add_command(label="None", command=action.sub_menu_items)
         show_menu.add_separator()
-        show_menu.add_command(label="Interface Names")
-        show_menu.add_command(label="IPv4 Addresses")
-        show_menu.add_command(label="IPv6 Addresses")
-        show_menu.add_command(label="Node Labels")
-        show_menu.add_command(label="Annotations")
-        show_menu.add_command(label="Grid")
-        show_menu.add_command(label="API Messages")
+        show_menu.add_command(label="Interface Names", command=action.sub_menu_items)
+        show_menu.add_command(label="IPv4 Addresses", command=action.sub_menu_items)
+        show_menu.add_command(label="IPv6 Addresses", command=action.sub_menu_items)
+        show_menu.add_command(label="Node Labels", command=action.sub_menu_items)
+        show_menu.add_command(label="Annotations", command=action.sub_menu_items)
+        show_menu.add_command(label="Grid", command=action.sub_menu_items)
+        show_menu.add_command(label="API Messages", command=action.sub_menu_items)
 
         view_menu.add_cascade(label="Show", menu=show_menu)
 
@@ -190,7 +190,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        view_menu = tk.Menu(self.master)
+        view_menu = tk.Menu(self.menubar, tearoff=True)
         self.create_show_menu(view_menu)
         view_menu.add_command(
             label="Show hidden nodes", command=action.view_show_hidden_nodes
@@ -210,10 +210,20 @@ class Application(tk.Frame):
         self.menubar.add_cascade(label="View", menu=view_menu)
 
     def create_experimental_menu(self, tools_menu):
-        experimental_menu = tk.Menu(self.master)
-        experimental_menu.add_command(label="Plugins...")
-        experimental_menu.add_command(label="ns2immunes converter...")
-        experimental_menu.add_command(label="Topology partitioning...")
+        """
+        Create experimental menu item and the sub menu items inside
+
+        :param tkinter.Menu tools_menu: tools menu
+        :return: nothing
+        """
+        experimental_menu = tk.Menu(tools_menu, tearoff=True)
+        experimental_menu.add_command(label="Plugins...", command=action.sub_menu_items)
+        experimental_menu.add_command(
+            label="ns2immunes converter...", command=action.sub_menu_items
+        )
+        experimental_menu.add_command(
+            label="Topology partitioning...", command=action.sub_menu_items
+        )
 
         tools_menu.add_cascade(label="Experimental", menu=experimental_menu)
 
@@ -224,17 +234,12 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        random_menu = tk.Menu(self.master)
-        random_menu.add_command(label="R(1)")
-        random_menu.add_command(label="R(5)")
-        random_menu.add_command(label="R(10)")
-        random_menu.add_command(label="R(15)")
-        random_menu.add_command(label="R(20)")
-        random_menu.add_command(label="R(30)")
-        random_menu.add_command(label="R(40)")
-        random_menu.add_command(label="R(50)")
-        random_menu.add_command(label="R(75)")
-        random_menu.add_command(label="R(100)")
+        random_menu = tk.Menu(topology_generator_menu)
+        # list of number of random nodes to create
+        nums = [1, 5, 10, 15, 20, 30, 40, 50, 75, 100]
+        for i in nums:
+            the_label = "R(" + str(i) + ")"
+            random_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Random", menu=random_menu)
 
@@ -245,26 +250,17 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology_generator_menu
         :return: nothing
         """
-        grid_menu = tk.Menu(self.master)
-        grid_menu.add_command(label="G(1)")
-        grid_menu.add_command(label="G(5)")
-        grid_menu.add_command(label="G(10)")
-        grid_menu.add_command(label="G(15)")
-        grid_menu.add_command(label="G(20)")
-        grid_menu.add_command(label="G(25)")
-        grid_menu.add_command(label="G(30)")
-        grid_menu.add_command(label="G(35)")
-        grid_menu.add_command(label="G(40)")
-        grid_menu.add_command(label="G(50)")
-        grid_menu.add_command(label="G(60)")
-        grid_menu.add_command(label="G(70)")
-        grid_menu.add_command(label="G(80)")
-        grid_menu.add_command(label="G(90)")
-        grid_menu.add_command(label="G(100)")
+        grid_menu = tk.Menu(topology_generator_menu)
+
+        # list of number of nodes to create
+        nums = [1, 5, 10, 15, 20, 25, 30, 35, 40, 50, 60, 70, 80, 90, 100]
+
+        for i in nums:
+            the_label = "G(" + str(i) + ")"
+            grid_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Grid", menu=grid_menu)
 
-    # TODO do later
     def create_connected_grid_menu(self, topology_generator_menu):
         """
         Create connected grid menu items and the sub menu items inside
@@ -272,7 +268,15 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        return
+        grid_menu = tk.Menu(topology_generator_menu)
+        for i in range(1, 11, 1):
+            i_n_menu = tk.Menu(grid_menu)
+            for j in range(1, 11, 1):
+                i_j_label = str(i) + " X " + str(j)
+                i_n_menu.add_command(label=i_j_label, command=action.sub_menu_items)
+            i_n_label = str(i) + " X N"
+            grid_menu.add_cascade(label=i_n_label, menu=i_n_menu)
+        topology_generator_menu.add_cascade(label="Connected Grid", menu=grid_menu)
 
     def create_chain_menu(self, topology_generator_menu):
         """
@@ -281,33 +285,13 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        chain_menu = tk.Menu(self.master)
-        chain_menu.add_command(label="P(2)")
-        chain_menu.add_command(label="P(3)")
-        chain_menu.add_command(label="P(4)")
-        chain_menu.add_command(label="P(5)")
-        chain_menu.add_command(label="P(6)")
-        chain_menu.add_command(label="P(7)")
-        chain_menu.add_command(label="P(8)")
-        chain_menu.add_command(label="P(9)")
-        chain_menu.add_command(label="P(10)")
-        chain_menu.add_command(label="P(11)")
-        chain_menu.add_command(label="P(12)")
-        chain_menu.add_command(label="P(13)")
-        chain_menu.add_command(label="P(14)")
-        chain_menu.add_command(label="P(15)")
-        chain_menu.add_command(label="P(16)")
-        chain_menu.add_command(label="P(17)")
-        chain_menu.add_command(label="P(18)")
-        chain_menu.add_command(label="P(19)")
-        chain_menu.add_command(label="P(20)")
-        chain_menu.add_command(label="P(21)")
-        chain_menu.add_command(label="P(22)")
-        chain_menu.add_command(label="P(23)")
-        chain_menu.add_command(label="P(24)")
-        chain_menu.add_command(label="P(32)")
-        chain_menu.add_command(label="P(64)")
-        chain_menu.add_command(label="P(128)")
+        chain_menu = tk.Menu(topology_generator_menu)
+        # number of nodes to create
+        nums = list(range(2, 25, 1)) + [32, 64, 128]
+        for i in nums:
+            the_label = "P(" + str(i) + ")"
+            chain_menu.add_command(label=the_label, command=action.sub_menu_items)
+
         topology_generator_menu.add_cascade(label="Chain", menu=chain_menu)
 
     def create_star_menu(self, topology_generator_menu):
@@ -317,10 +301,10 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        star_menu = tk.Menu(self.master)
+        star_menu = tk.Menu(topology_generator_menu)
         for i in range(3, 26, 1):
             the_label = "C(" + str(i) + ")"
-            star_menu.add_command(label=the_label)
+            star_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Star", menu=star_menu)
 
@@ -331,10 +315,10 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        cycle_menu = tk.Menu(self.master)
+        cycle_menu = tk.Menu(topology_generator_menu)
         for i in range(3, 25, 1):
             the_label = "C(" + str(i) + ")"
-            cycle_menu.add_command(label=the_label)
+            cycle_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Cycle", menu=cycle_menu)
 
@@ -345,10 +329,10 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        wheel_menu = tk.Menu(self.master)
+        wheel_menu = tk.Menu(topology_generator_menu)
         for i in range(4, 26, 1):
             the_label = "W(" + str(i) + ")"
-            wheel_menu.add_command(label=the_label)
+            wheel_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Wheel", menu=wheel_menu)
 
@@ -359,10 +343,10 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        cube_menu = tk.Menu(self.master)
+        cube_menu = tk.Menu(topology_generator_menu)
         for i in range(2, 7, 1):
             the_label = "Q(" + str(i) + ")"
-            cube_menu.add_command(label=the_label)
+            cube_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Cube", menu=cube_menu)
 
@@ -373,14 +357,13 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology generator menu
         :return: nothing
         """
-        clique_menu = tk.Menu(self.master)
+        clique_menu = tk.Menu(topology_generator_menu)
         for i in range(3, 25, 1):
             the_label = "K(" + str(i) + ")"
-            clique_menu.add_command(label=the_label)
+            clique_menu.add_command(label=the_label, command=action.sub_menu_items)
 
         topology_generator_menu.add_cascade(label="Clique", menu=clique_menu)
 
-    # TODO do later
     def create_bipartite_menu(self, topology_generator_menu):
         """
         Create bipartite menu item and the sub menu items inside
@@ -388,8 +371,17 @@ class Application(tk.Frame):
         :param tkinter.Menu topology_generator_menu: topology_generator_menu
         :return: nothing
         """
-        # bipartite_menu = tk.Menu(self.master)
-        return
+        bipartite_menu = tk.Menu(topology_generator_menu)
+        temp = 24
+        for i in range(1, 13, 1):
+            i_n_menu = tk.Menu(bipartite_menu)
+            for j in range(i, temp, 1):
+                i_j_label = "K(" + str(i) + " X " + str(j) + ")"
+                i_n_menu.add_command(label=i_j_label, command=action.sub_menu_items)
+            i_n_label = "K(" + str(i) + " X N)"
+            bipartite_menu.add_cascade(label=i_n_label, menu=i_n_menu)
+            temp = temp - 1
+        topology_generator_menu.add_cascade(label="Bipartite", menu=bipartite_menu)
 
     def create_topology_generator_menu(self, tools_menu):
         """
@@ -399,25 +391,18 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        topology_generator_menu = tk.Menu(self.master)
-        # topology_generator_menu.add_command(label="Random")
+        topology_generator_menu = tk.Menu(tools_menu, tearoff=True)
+
         self.create_random_menu(topology_generator_menu)
-        # topology_generator_menu.add_command(label="Grid")
         self.create_grid_menu(topology_generator_menu)
-        topology_generator_menu.add_command(label="Connected Grid")
+        self.create_connected_grid_menu(topology_generator_menu)
         self.create_chain_menu(topology_generator_menu)
-        # topology_generator_menu.add_command(label="Chain")
-        # topology_generator_menu.add_command(label="Star")
         self.create_star_menu(topology_generator_menu)
-        # topology_generator_menu.add_command(label="Cycle")
         self.create_cycle_menu(topology_generator_menu)
-        # topology_generator_menu.add_command(label="Wheel")
         self.create_wheel_menu(topology_generator_menu)
-        # topology_generator_menu.add_command(label="Cube")
         self.create_cube_menu(topology_generator_menu)
-        # topology_generator_menu.add_command(label="Clique")
         self.create_clique_menu(topology_generator_menu)
-        topology_generator_menu.add_command(label="Bipartite")
+        self.create_bipartite_menu(topology_generator_menu)
 
         tools_menu.add_cascade(label="Topology generator", menu=topology_generator_menu)
 
@@ -428,7 +413,7 @@ class Application(tk.Frame):
         :return: nothing
         """
 
-        tools_menu = tk.Menu(self.master)
+        tools_menu = tk.Menu(self.menubar)
         tools_menu.add_command(
             label="Auto rearrange all", command=action.tools_auto_rearrange_all
         )
@@ -470,23 +455,51 @@ class Application(tk.Frame):
         :param tkinter.Menu widget_menu: widget_menu
         :return: nothing
         """
-        observer_widget_menu = tk.Menu(self.master)
-        observer_widget_menu.add_command(label="None")
-        observer_widget_menu.add_command(label="processes")
-        observer_widget_menu.add_command(label="ifconfig")
-        observer_widget_menu.add_command(label="IPv4 routes")
-        observer_widget_menu.add_command(label="IPv6 routes")
-        observer_widget_menu.add_command(label="OSPFv2 neighbors")
-        observer_widget_menu.add_command(label="OSPFv3 neighbors")
-        observer_widget_menu.add_command(label="Listening sockets")
-        observer_widget_menu.add_command(label="IPv4 MFC entries")
-        observer_widget_menu.add_command(label="IPv6 MFC entries")
-        observer_widget_menu.add_command(label="firewall rules")
-        observer_widget_menu.add_command(label="IPsec policies")
-        observer_widget_menu.add_command(label="docker logs")
-        observer_widget_menu.add_command(label="OSPFv3 MDR level")
-        observer_widget_menu.add_command(label="PIM neighbors")
-        observer_widget_menu.add_command(label="Edit...")
+        observer_widget_menu = tk.Menu(widget_menu, tearoff=True)
+        observer_widget_menu.add_command(label="None", command=action.sub_menu_items)
+        observer_widget_menu.add_command(
+            label="processes", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="ifconfig", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="IPv4 routes", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="IPv6 routes", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="OSPFv2 neighbors", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="OSPFv3 neighbors", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="Listening sockets", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="IPv4 MFC entries", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="IPv6 MFC entries", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="firewall rules", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="IPsec policies", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="docker logs", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="OSPFv3 MDR level", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(
+            label="PIM neighbors", command=action.sub_menu_items
+        )
+        observer_widget_menu.add_command(label="Edit...", command=action.sub_menu_items)
 
         widget_menu.add_cascade(label="Observer Widgets", menu=observer_widget_menu)
 
@@ -497,11 +510,11 @@ class Application(tk.Frame):
         :param tkinter.Menu widget_menu: widget menu
         :return: nothing
         """
-        adjacency_menu = tk.Menu(self.master)
-        adjacency_menu.add_command(label="OSPFv2")
-        adjacency_menu.add_command(label="OSPFv3")
-        adjacency_menu.add_command(label="OSLR")
-        adjacency_menu.add_command(label="OSLRv2")
+        adjacency_menu = tk.Menu(widget_menu, tearoff=True)
+        adjacency_menu.add_command(label="OSPFv2", command=action.sub_menu_items)
+        adjacency_menu.add_command(label="OSPFv3", command=action.sub_menu_items)
+        adjacency_menu.add_command(label="OSLR", command=action.sub_menu_items)
+        adjacency_menu.add_command(label="OSLRv2", command=action.sub_menu_items)
 
         widget_menu.add_cascade(label="Adjacency", menu=adjacency_menu)
 
@@ -511,7 +524,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        widget_menu = tk.Menu(self.master)
+        widget_menu = tk.Menu(self.menubar, tearoff=True)
         self.create_observer_widgets_menu(widget_menu)
         self.create_adjacency_menu(widget_menu)
         widget_menu.add_command(label="Throughput", command=action.widgets_throughput)
@@ -533,7 +546,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        session_menu = tk.Menu(self.master)
+        session_menu = tk.Menu(self.menubar, tearoff=True)
         session_menu.add_command(label="Start", command=action.session_start)
         session_menu.add_command(
             label="Change sessions...", command=action.session_change_sessions
@@ -562,7 +575,7 @@ class Application(tk.Frame):
 
         :return: nothing
         """
-        help_menu = tk.Menu(self.master)
+        help_menu = tk.Menu(self.menubar)
         help_menu.add_command(
             label="Core Github (www)", command=action.help_core_github
         )
@@ -574,6 +587,11 @@ class Application(tk.Frame):
         self.menubar.add_cascade(label="Help", menu=help_menu)
 
     def bind_menubar_shortcut(self):
+        """
+        Bind hot keys to matching command
+
+        :return: nothing
+        """
         self.bind_all("<Control-n>", action.file_new_shortcut)
         self.bind_all("<Control-o>", action.file_open_shortcut)
         self.bind_all("<Control-s>", action.file_save_shortcut)

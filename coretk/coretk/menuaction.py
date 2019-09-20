@@ -6,6 +6,10 @@ import logging
 import webbrowser
 
 
+def sub_menu_items():
+    logging.debug("Click on sub menu items")
+
+
 def file_new():
     logging.debug("Click file New")
 
