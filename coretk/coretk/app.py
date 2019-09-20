@@ -15,8 +15,14 @@ class Application(tk.Frame):
         self.create_widgets()
 
     def load_images(self):
-        Images.load("switch", "switch.png")
+        # Images.load("switch", "switch.png")
         Images.load("core", "core-icon.png")
+        Images.load("start", "start.gif")
+        Images.load("switch", "lanswitch.gif")
+        Images.load("marker", "marker.gif")
+        Images.load("router", "router.gif")
+        Images.load("select", "select.gif")
+        Images.load("link", "link.gif")
 
     def setup_app(self):
         self.master.title("CORE")
@@ -37,28 +43,62 @@ class Application(tk.Frame):
         self.master.config(menu=self.menubar)
 
     def create_widgets(self):
-        image = Images.get("switch")
+        select_image = Images.get("select")
+        start_image = Images.get("start")
+        link_image = Images.get("link")
+        router_image = Images.get("router")
+        switch_image = Images.get("switch")
+        marker_image = Images.get("marker")
+
         edit_frame = tk.Frame(self)
         edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
         radio_value = tk.IntVar()
         b = tk.Radiobutton(
-            edit_frame, indicatoron=False, variable=radio_value, value=1, image=image
+            edit_frame,
+            indicatoron=False,
+            variable=radio_value,
+            value=1,
+            image=select_image,
         )
         b.pack(side=tk.TOP, pady=1)
         b = tk.Radiobutton(
-            edit_frame, indicatoron=False, variable=radio_value, value=2, image=image
+            edit_frame,
+            indicatoron=False,
+            variable=radio_value,
+            value=2,
+            image=start_image,
         )
         b.pack(side=tk.TOP, pady=1)
         b = tk.Radiobutton(
-            edit_frame, indicatoron=False, variable=radio_value, value=3, image=image
+            edit_frame,
+            indicatoron=False,
+            variable=radio_value,
+            value=3,
+            image=link_image,
         )
         b.pack(side=tk.TOP, pady=1)
         b = tk.Radiobutton(
-            edit_frame, indicatoron=False, variable=radio_value, value=4, image=image
+            edit_frame,
+            indicatoron=False,
+            variable=radio_value,
+            value=4,
+            image=router_image,
         )
         b.pack(side=tk.TOP, pady=1)
         b = tk.Radiobutton(
-            edit_frame, indicatoron=False, variable=radio_value, value=5, image=image
+            edit_frame,
+            indicatoron=False,
+            variable=radio_value,
+            value=5,
+            image=switch_image,
+        )
+        b.pack(side=tk.TOP, pady=1)
+        b = tk.Radiobutton(
+            edit_frame,
+            indicatoron=False,
+            variable=radio_value,
+            value=6,
+            image=marker_image,
         )
         b.pack(side=tk.TOP, pady=1)
 
