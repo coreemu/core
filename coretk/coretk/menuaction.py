@@ -1,0 +1,338 @@
+"""
+The actions taken when each menubar option is clicked
+"""
+
+import logging
+import webbrowser
+
+
+def sub_menu_items():
+    logging.debug("Click on sub menu items")
+
+
+def file_new():
+    logging.debug("Click file New")
+
+
+def file_new_shortcut(event):
+    logging.debug("Shortcut for file new shortcut")
+
+
+def file_open():
+    logging.debug("Click file Open")
+
+
+def file_open_shortcut(event):
+    logging.debug("Shortcut for file open")
+
+
+def file_reload():
+    logging.debug("Click file Reload")
+
+
+def file_save():
+    logging.debug("Click file save")
+
+
+def file_save_shortcut(event):
+    logging.debug("Shortcut for file save")
+
+
+def file_save_as_xml():
+    logging.debug("Click save as XML")
+
+
+def file_save_as_imn():
+    logging.debug("Click save as imn")
+
+
+def file_export_python_script():
+    logging.debug("Click file export python script")
+
+
+def file_execute_xml_or_python_script():
+    logging.debug("Execute XML or Python script")
+
+
+def file_execute_python_script_with_options():
+    logging.debug("Click execute Python script with options")
+
+
+def file_open_current_file_in_editor():
+    logging.debug("Click file open current in editor")
+
+
+def file_print():
+    logging.debug("Click file Print")
+
+
+def file_save_screenshot():
+    logging.debug("Click file save screenshot")
+
+
+def file_example_link():
+    logging.debug("Click file example link")
+
+
+def edit_undo():
+    logging.debug("Click edit undo")
+
+
+def edit_undo_shortcut(event):
+    logging.debug("Shortcut for edit undo")
+
+
+def edit_redo():
+    logging.debug("Click edit redo")
+
+
+def edit_redo_shortcut(event):
+    logging.debug("Shortcut for edit redo")
+
+
+def edit_cut():
+    logging.debug("Click edit cut")
+
+
+def edit_cut_shortcut(event):
+    logging.debug("Shortcut for edit cut")
+
+
+def edit_copy():
+    logging.debug("Click edit copy")
+
+
+def edit_copy_shortcut(event):
+    logging.debug("Shortcut for edit copy")
+
+
+def edit_paste():
+    logging.debug("Click edit paste")
+
+
+def edit_paste_shortcut(event):
+    logging.debug("Shortcut for edit paste")
+
+
+def edit_select_all():
+    logging.debug("Click edit select all")
+
+
+def edit_select_all_shortcut(event):
+    logging.debug("Shortcut for edit select all")
+
+
+def edit_select_adjacent():
+    logging.debug("Click edit select adjacent")
+
+
+def edit_select_adjacent_shortcut(event):
+    logging.debug("Shortcut for edit select adjacent")
+
+
+def edit_find():
+    logging.debug("CLick edit find")
+
+
+def edit_find_shortcut(event):
+    logging.debug("Shortcut for edit find")
+
+
+def edit_clear_marker():
+    logging.debug("Click edit clear marker")
+
+
+def edit_preferences():
+    logging.debug("Click preferences")
+
+
+def canvas_new():
+    logging.debug("Click canvas new")
+
+
+def canvas_manage():
+    logging.debug("Click canvas manage")
+
+
+def canvas_delete():
+    logging.debug("Click canvas delete")
+
+
+def canvas_size_scale():
+    logging.debug("Click canvas size/scale")
+
+
+def canvas_wallpaper():
+    logging.debug("CLick canvas wallpaper")
+
+
+def canvas_previous():
+    logging.debug("Click canvas previous")
+
+
+def canvas_previous_shortcut(event):
+    logging.debug("Shortcut for canvas previous")
+
+
+def canvas_next():
+    logging.debug("Click canvas next")
+
+
+def canvas_next_shortcut(event):
+    logging.debug("Shortcut for canvas next")
+
+
+def canvas_first():
+    logging.debug("CLick canvas first")
+
+
+def canvas_first_shortcut(event):
+    logging.debug("Shortcut for canvas first")
+
+
+def canvas_last():
+    logging.debug("CLick canvas last")
+
+
+def canvas_last_shortcut(event):
+    logging.debug("Shortcut canvas last")
+
+
+def view_show():
+    logging.debug("Click view show")
+
+
+def view_show_hidden_nodes():
+    logging.debug("Click view show hidden nodes")
+
+
+def view_locked():
+    logging.debug("Click view locked")
+
+
+def view_3d_gui():
+    logging.debug("CLick view 3D GUI")
+
+
+def view_zoom_in():
+    logging.debug("Click view zoom in")
+
+
+def view_zoom_in_shortcut(event):
+    logging.debug("Shortcut view zoom in")
+
+
+def view_zoom_out():
+    logging.debug("Click view zoom out")
+
+
+def view_zoom_out_shortcut(event):
+    logging.debug("Shortcut view zoom out")
+
+
+def tools_auto_rearrange_all():
+    logging.debug("Click tools, auto rearrange all")
+
+
+def tools_auto_rearrange_selected():
+    logging.debug("CLick tools auto rearrange selected")
+
+
+def tools_align_to_grid():
+    logging.debug("Click tools align to grid")
+
+
+def tools_traffic():
+    logging.debug("Click tools traffic")
+
+
+def tools_ip_addresses():
+    logging.debug("Click tools ip addresses")
+
+
+def tools_mac_addresses():
+    logging.debug("Click tools mac addresses")
+
+
+def tools_build_hosts_file():
+    logging.debug("Click tools build hosts file")
+
+
+def tools_renumber_nodes():
+    logging.debug("Click tools renumber nodes")
+
+
+def tools_experimental():
+    logging.debug("Click tools experimental")
+
+
+def tools_topology_generator():
+    logging.debug("Click tools topology generator")
+
+
+def tools_debugger():
+    logging.debug("Click tools debugger")
+
+
+def widgets_observer_widgets():
+    logging.debug("Click widgets observer widgets")
+
+
+def widgets_adjacency():
+    logging.debug("Click widgets adjacency")
+
+
+def widgets_throughput():
+    logging.debug("Click widgets throughput")
+
+
+def widgets_configure_adjacency():
+    logging.debug("Click widgets configure adjacency")
+
+
+def widgets_configure_throughput():
+    logging.debug("Click widgets configure throughput")
+
+
+def session_start():
+    logging.debug("Click session start")
+
+
+def session_change_sessions():
+    logging.debug("Click session change sessions")
+
+
+def session_node_types():
+    logging.debug("Click session node types")
+
+
+def session_comments():
+    logging.debug("Click session comments")
+
+
+def session_hooks():
+    logging.debug("Click session hooks")
+
+
+def session_reset_node_positions():
+    logging.debug("Click session reset node positions")
+
+
+def session_emulation_servers():
+    logging.debug("Click session emulation servers")
+
+
+def session_options():
+    logging.debug("Click session options")
+
+
+def help_core_github():
+    webbrowser.open_new("https://github.com/coreemu/core")
+
+
+def help_core_documentation():
+    webbrowser.open_new("http://coreemu.github.io/core/")
+
+
+def help_about():
+    logging.debug("Click help About")
