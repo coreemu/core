@@ -32,7 +32,7 @@ CORE combines these namespaces with Linux Ethernet bridging to form networks. Li
 
 ## Prior Work
 
-The Tcl/Tk CORE GUI was originally derived from the open source [IMUNES](http://imunes.net) project from the University of Zagreb as a custom project within Boeing Research and Technology's Network Technology research group in 2004. Since then they have developed the CORE framework to use Linux virtualization, have developed a Python framework, and made numerous user- and kernel-space developments, such as support for wireless networks, IPsec, the ability to distribute emulations, simulation integration, and more. The IMUNES project also consists of userspace and kernel components.
+The Tcl/Tk CORE GUI was originally derived from the open source [IMUNES](http://imunes.net) project from the University of Zagreb as a custom project within Boeing Research and Technology's Network Technology research group in 2004. Since then they have developed the CORE framework to use Linux virtualization, have developed a Python framework, and made numerous user- and kernel-space developments, such as support for wireless networks, IPsec, distribute emulation, simulation integration, and more. The IMUNES project also consists of userspace and kernel components.
 
 ## Open Source Project and Resources
 

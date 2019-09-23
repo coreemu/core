@@ -423,7 +423,6 @@ class CoreXmlWriter(object):
     def write_network(self, node):
         # ignore p2p and other nodes that are not part of the api
         if not node.apitype:
-            logging.warning("ignoring node with no apitype: %s", node)
             return
 
         network = NetworkElement(self.session, node)

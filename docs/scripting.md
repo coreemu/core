@@ -46,7 +46,7 @@ session.instantiate()
 coreemu.shutdown()
 ```
 
-The above script creates a CORE session having two nodes connected with a hub. The first node pings the second node with 5 ping packets; the result is displayed on screen.
+The above script creates a CORE session having two nodes connected with a switch. The first node pings the second node with 5 ping packets; the result is displayed on screen.
 
 A good way to learn about the CORE Python modules is via interactive Python. Scripts can be run using *python -i*. Cut and paste the simple script above and you will have two nodes connected by a hub, with one node running a test ping to the other.
 

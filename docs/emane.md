@@ -9,14 +9,14 @@ The Extendable Mobile Ad-hoc Network Emulator (EMANE) allows heterogeneous netwo
 
 EMANE is developed by U.S. Naval Research Labs (NRL) Code 5522 and Adjacent Link LLC, who maintain these websites:
 
-* http://www.nrl.navy.mil/itd/ncs/products/emane
-* http://www.adjacentlink.com/
+* <https://github.com/adjacentlink/emane>
+* <http://www.adjacentlink.com/>
 
 Instead of building Linux Ethernet bridging networks with CORE, higher-fidelity wireless networks can be emulated using EMANE bound to virtual devices. CORE emulates layers 3 and above (network, session, application) with its virtual network stacks and process space for protocols and applications, while EMANE emulates layers 1 and 2 (physical and data link) using its pluggable PHY and MAC models.
 
 The interface between CORE and EMANE is a TAP device. CORE builds the virtual node using Linux network namespaces, installs the TAP device into the namespace and instantiates one EMANE process in the namespace. The EMANE process binds a user space socket to the TAP device for sending and receiving data from CORE.
 
-An EMANE instance sends and receives OTA traffic to and from other EMANE instances via a control port (e.g. *ctrl0*, *ctrl1*).  It also sends and receives Events to and from the Event Service using the same or a different control port. EMANE models are configured through CORE's WLAN configuration dialog. A corresponding EmaneModel Python class is sub-classed for each supported EMANE model, to provide configuration items and their mapping to XML files. This way new models can be easily supported. When CORE starts the emulation, it generates the appropriate XML files that specify the EMANE NEM configuration, and launches the EMANE daemons.
+An EMANE instance sends and receives OTA (Over-The-Air) traffic to and from other EMANE instances via a control port (e.g. *ctrl0*, *ctrl1*).  It also sends and receives Events to and from the Event Service using the same or a different control port. EMANE models are configured through CORE's WLAN configuration dialog. A corresponding EmaneModel Python class is sub-classed for each supported EMANE model, to provide configuration items and their mapping to XML files. This way new models can be easily supported. When CORE starts the emulation, it generates the appropriate XML files that specify the EMANE NEM configuration, and launches the EMANE daemons.
 
 Some EMANE models support location information to determine when packets should be dropped. EMANE has an event system where location events are broadcast to all NEMs. CORE can generate these location events when nodes are moved on the canvas. The canvas size and scale dialog has controls for mapping the X,Y coordinate system to a latitude, longitude geographic system that EMANE uses. When specified in the *core.conf* configuration file, CORE can also subscribe to EMANE location events and move the nodes on the canvas as they are moved in the EMANE emulation. This would occur when an Emulation Script Generator, for example, is running a mobility script.
 
@@ -68,7 +68,7 @@ sudo ln -s /usr/local/share/emane /usr/share/emane
 CORE supports custom developed EMANE models by way of dynamically loading user created python files that represent the model. Custom EMANE models should be placed within the path defined by **emane_models_dir** in the CORE configuration file. This path cannot end in **/emane**.
 
 Here is an example model with documentation describing functionality:
-[Example Model](/daemon/examples/myemane/examplemodel.py)
+[Example Model](../daemon/examples/myemane/examplemodel.py)
 
 ## Single PC with EMANE
 
