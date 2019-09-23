@@ -23,6 +23,7 @@ class Application(tk.Frame):
         Images.load("router", "router.gif")
         Images.load("select", "select.gif")
         Images.load("link", "link.gif")
+        Images.load("hub", "hub.gif")
 
     def setup_app(self):
         self.master.title("CORE")
@@ -42,11 +43,35 @@ class Application(tk.Frame):
         self.menubar.add_cascade(label="Help", menu=help_menu)
         self.master.config(menu=self.menubar)
 
+    def create_network_layer_node(
+        self, edit_frame, radio_value, hub_image, switch_image
+    ):
+        menu_button = tk.Menubutton(
+            edit_frame,
+            direction=tk.RIGHT,
+            image=hub_image,
+            width=32,
+            height=32,
+            relief=tk.RAISED,
+        )
+        # menu_button.grid()
+        menu_button.menu = tk.Menu(menu_button)
+        menu_button["menu"] = menu_button.menu
+
+        menu_button.menu.add_radiobutton(
+            image=hub_image, variable=radio_value, value=7, indicatoron=False
+        )
+        menu_button.menu.add_radiobutton(
+            image=switch_image, variable=radio_value, value=8, indicatoron=False
+        )
+        menu_button.pack(side=tk.TOP, pady=1)
+
     def create_widgets(self):
         select_image = Images.get("select")
         start_image = Images.get("start")
         link_image = Images.get("link")
         router_image = Images.get("router")
+        hub_image = Images.get("hub")
         switch_image = Images.get("switch")
         marker_image = Images.get("marker")
 
@@ -58,6 +83,8 @@ class Application(tk.Frame):
             indicatoron=False,
             variable=radio_value,
             value=1,
+            width=32,
+            height=32,
             image=select_image,
         )
         b.pack(side=tk.TOP, pady=1)
@@ -66,6 +93,8 @@ class Application(tk.Frame):
             indicatoron=False,
             variable=radio_value,
             value=2,
+            width=32,
+            height=32,
             image=start_image,
         )
         b.pack(side=tk.TOP, pady=1)
@@ -74,6 +103,8 @@ class Application(tk.Frame):
             indicatoron=False,
             variable=radio_value,
             value=3,
+            width=32,
+            height=32,
             image=link_image,
         )
         b.pack(side=tk.TOP, pady=1)
@@ -82,15 +113,21 @@ class Application(tk.Frame):
             indicatoron=False,
             variable=radio_value,
             value=4,
+            width=32,
+            height=32,
             image=router_image,
         )
+
         b.pack(side=tk.TOP, pady=1)
+
         b = tk.Radiobutton(
             edit_frame,
             indicatoron=False,
             variable=radio_value,
             value=5,
-            image=switch_image,
+            width=32,
+            height=32,
+            image=hub_image,
         )
         b.pack(side=tk.TOP, pady=1)
         b = tk.Radiobutton(
@@ -98,9 +135,13 @@ class Application(tk.Frame):
             indicatoron=False,
             variable=radio_value,
             value=6,
+            width=32,
+            height=32,
             image=marker_image,
         )
         b.pack(side=tk.TOP, pady=1)
+
+        self.create_network_layer_node(edit_frame, radio_value, hub_image, switch_image)
 
         self.canvas = CanvasGraph(
             self, background="#cccccc", scrollregion=(0, 0, 1000, 1000)
