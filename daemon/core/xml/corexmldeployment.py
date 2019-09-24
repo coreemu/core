@@ -4,9 +4,9 @@ import socket
 from lxml import etree
 
 from core import constants, utils
-from core.nodes.base import CoreNodeBase
 from core.emulator.enumerations import NodeTypes
-from core.nodes import nodeutils, ipaddress
+from core.nodes import ipaddress, nodeutils
+from core.nodes.base import CoreNodeBase
 
 
 def add_type(parent_element, name):
@@ -31,16 +31,22 @@ def add_emane_interface(host_element, netif, platform_name="p1", transport_name=
 
     # platform data
     platform_id = "%s/%s" % (host_id, platform_name)
-    platform_element = etree.SubElement(host_element, "emanePlatform", id=platform_id, name=platform_name)
+    platform_element = etree.SubElement(
+        host_element, "emanePlatform", id=platform_id, name=platform_name
+    )
 
     # transport data
     transport_id = "%s/%s" % (host_id, transport_name)
-    etree.SubElement(platform_element, "transport", id=transport_id, name=transport_name)
+    etree.SubElement(
+        platform_element, "transport", id=transport_id, name=transport_name
+    )
 
     # nem data
     nem_name = "nem%s" % nem_id
     nem_element_id = "%s/%s" % (host_id, nem_name)
-    nem_element = etree.SubElement(platform_element, "nem", id=nem_element_id, name=nem_name)
+    nem_element = etree.SubElement(
+        platform_element, "nem", id=nem_element_id, name=nem_name
+    )
     nem_id_element = etree.SubElement(nem_element, "parameter", name="nemid")
     nem_id_element.text = str(nem_id)
 
@@ -81,7 +87,9 @@ class CoreXmlDeployment(object):
     def __init__(self, session, scenario):
         self.session = session
         self.scenario = scenario
-        self.root = etree.SubElement(scenario, "container", id="TestBed", name="TestBed")
+        self.root = etree.SubElement(
+            scenario, "container", id="TestBed", name="TestBed"
+        )
         self.add_deployment()
 
     def find_device(self, name):
@@ -89,8 +97,10 @@ class CoreXmlDeployment(object):
         return device
 
     def find_interface(self, device, name):
-        interface = self.scenario.find("devices/device[@name='%s']/interfaces/interface[@name='%s']" % (
-            device.name, name))
+        interface = self.scenario.find(
+            "devices/device[@name='%s']/interfaces/interface[@name='%s']"
+            % (device.name, name)
+        )
         return interface
 
     def add_deployment(self):
@@ -125,7 +135,9 @@ class CoreXmlDeployment(object):
 
         # create virtual host element
         host_id = "%s/%s" % (physical_host.get("id"), node.name)
-        host_element = etree.SubElement(physical_host, "testHost", id=host_id, name=node.name)
+        host_element = etree.SubElement(
+            physical_host, "testHost", id=host_id, name=node.name
+        )
 
         # add host type
         add_type(host_element, "virtual")

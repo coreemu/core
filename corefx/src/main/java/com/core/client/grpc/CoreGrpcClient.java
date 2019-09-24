@@ -33,6 +33,7 @@ public class CoreGrpcClient implements ICoreClient {
     private final ExecutorService executorService = Executors.newFixedThreadPool(6);
     private boolean handlingEvents = false;
     private boolean handlingThroughputs = false;
+    private Controller controller;
 
     private CoreProto.Node nodeToProto(CoreNode node) {
         CoreProto.Position position = CoreProto.Position.newBuilder()
@@ -57,6 +58,9 @@ public class CoreGrpcClient implements ICoreClient {
         }
         if (node.getIcon() != null) {
             builder.setIcon(node.getIcon());
+        }
+        if (node.getImage() != null) {
+            builder.setImage(node.getImage());
         }
 
         return builder.build();
@@ -83,33 +87,32 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreProto.LinkOptions linkOptionsToProto(CoreLinkOptions options) {
         CoreProto.LinkOptions.Builder builder = CoreProto.LinkOptions.newBuilder();
-        boolean unidirectional = false;
-        if (options.getUnidirectional() != null && options.getUnidirectional() == 1) {
-            unidirectional = true;
+        if (options.getUnidirectional() != null) {
+            builder.setUnidirectional(options.getUnidirectional());
         }
         if (options.getBandwidth() != null) {
-            builder.setBandwidth(options.getBandwidth().intValue());
+            builder.setBandwidth(options.getBandwidth());
         }
         if (options.getBurst() != null) {
-            builder.setBurst(options.getBurst().intValue());
+            builder.setBurst(options.getBurst());
         }
         if (options.getDelay() != null) {
-            builder.setDelay(options.getDelay().intValue());
+            builder.setDelay(options.getDelay());
         }
         if (options.getDup() != null) {
-            builder.setDup(options.getDup().intValue());
+            builder.setDup(options.getDup());
         }
         if (options.getJitter() != null) {
-            builder.setJitter(options.getJitter().intValue());
+            builder.setJitter(options.getJitter());
         }
         if (options.getMburst() != null) {
-            builder.setMburst(options.getMburst().intValue());
+            builder.setMburst(options.getMburst());
         }
         if (options.getMer() != null) {
-            builder.setMer(options.getMer().intValue());
+            builder.setMer(options.getMer());
         }
         if (options.getPer() != null) {
-            builder.setPer(options.getPer().intValue());
+            builder.setPer(options.getPer().floatValue());
         }
         if (options.getKey() != null) {
             builder.setKey(options.getKey());
@@ -117,7 +120,6 @@ public class CoreGrpcClient implements ICoreClient {
         if (options.getOpaque() != null) {
             builder.setOpaque(options.getOpaque());
         }
-        builder.setUnidirectional(unidirectional);
         return builder.build();
     }
 
@@ -157,14 +159,26 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreNode protoToNode(CoreProto.Node protoNode) {
         CoreNode node = new CoreNode(protoNode.getId());
+        node.setType(protoNode.getTypeValue());
         node.setName(protoNode.getName());
-        node.setEmane(protoNode.getEmane());
         node.setIcon(protoNode.getIcon());
         node.setModel(protoNode.getModel());
+        if (!protoNode.getEmane().isEmpty()) {
+            node.setEmane(protoNode.getEmane());
+        }
+        if (!protoNode.getImage().isEmpty()) {
+            node.setImage(protoNode.getImage());
+        }
         node.setServices(new HashSet<>(protoNode.getServicesList()));
         node.getPosition().setX((double) protoNode.getPosition().getX());
         node.getPosition().setY((double) protoNode.getPosition().getY());
-        node.setType(protoNode.getTypeValue());
+        NodeType nodeType = NodeType.find(node.getType(), node.getModel());
+        if (nodeType == null) {
+            logger.error("failed to find node type({}) model({}): {}",
+                    node.getType(), node.getModel(), node.getName());
+        }
+        node.setNodeType(nodeType);
+        node.setLoaded(true);
         return node;
     }
 
@@ -172,7 +186,9 @@ public class CoreGrpcClient implements ICoreClient {
         CoreInterface coreInterface = new CoreInterface();
         coreInterface.setId(protoInterface.getId());
         coreInterface.setName(protoInterface.getName());
-        coreInterface.setMac(protoInterface.getMac());
+        if (!protoInterface.getMac().isEmpty()) {
+            coreInterface.setMac(protoInterface.getMac());
+        }
         String ip4String = String.format("%s/%s", protoInterface.getIp4(), protoInterface.getIp4Mask());
         IPAddress ip4 = new IPAddressString(ip4String).getAddress();
         coreInterface.setIp4(ip4);
@@ -184,6 +200,7 @@ public class CoreGrpcClient implements ICoreClient {
 
     private CoreLink protoToLink(CoreProto.Link linkProto) {
         CoreLink link = new CoreLink();
+        link.setType(linkProto.getTypeValue());
         link.setNodeOne(linkProto.getNodeOneId());
         link.setNodeTwo(linkProto.getNodeTwoId());
         CoreInterface interfaceOne = protoToInterface(linkProto.getInterfaceOne());
@@ -193,22 +210,27 @@ public class CoreGrpcClient implements ICoreClient {
 
         CoreLinkOptions options = new CoreLinkOptions();
         CoreProto.LinkOptions protoOptions = linkProto.getOptions();
-        options.setBandwidth((double) protoOptions.getBandwidth());
-        options.setDelay((double) protoOptions.getDelay());
-        options.setDup((double) protoOptions.getDup());
-        options.setJitter((double) protoOptions.getJitter());
+        options.setBandwidth((int) protoOptions.getBandwidth());
+        options.setDelay((int) protoOptions.getDelay());
+        options.setDup((int) protoOptions.getDup());
+        options.setJitter((int) protoOptions.getJitter());
         options.setPer((double) protoOptions.getPer());
-        options.setBurst((double) protoOptions.getBurst());
+        options.setBurst((int) protoOptions.getBurst());
         if (protoOptions.hasField(CoreProto.LinkOptions.getDescriptor().findFieldByName("key"))) {
             options.setKey(protoOptions.getKey());
         }
-        options.setMburst((double) protoOptions.getMburst());
-        options.setMer((double) protoOptions.getMer());
+        options.setMburst((int) protoOptions.getMburst());
+        options.setMer((int) protoOptions.getMer());
         options.setOpaque(protoOptions.getOpaque());
-        options.setUnidirectional(protoOptions.getUnidirectional() ? 1 : 0);
+        options.setUnidirectional(protoOptions.getUnidirectional());
         link.setOptions(options);
 
         return link;
+    }
+
+    @Override
+    public void initialize(Controller controller) {
+        this.controller = controller;
     }
 
     @Override
@@ -284,16 +306,6 @@ public class CoreGrpcClient implements ICoreClient {
     }
 
     @Override
-    public void updateSession(Integer sessionId) {
-        this.sessionId = sessionId;
-    }
-
-    @Override
-    public void updateState(SessionState state) {
-        sessionState = state;
-    }
-
-    @Override
     public SessionOverview createSession() throws IOException {
         CoreProto.CreateSessionRequest request = CoreProto.CreateSessionRequest.newBuilder().build();
         try {
@@ -345,6 +357,7 @@ public class CoreGrpcClient implements ICoreClient {
         try {
             CoreProto.GetSessionResponse response = blockingStub.getSession(request);
             Session session = new Session();
+            session.setId(sessionId);
             for (CoreProto.Node protoNode : response.getSession().getNodesList()) {
                 if (CoreProto.NodeType.Enum.PEER_TO_PEER == protoNode.getType()) {
                     continue;
@@ -355,11 +368,12 @@ public class CoreGrpcClient implements ICoreClient {
                 session.getNodes().add(node);
             }
             for (CoreProto.Link linkProto : response.getSession().getLinksList()) {
-                logger.info("adding link: {} - {}", linkProto.getNodeOneId(), linkProto.getNodeTwoId());
+                logger.info("adding link: {}", linkProto);
                 CoreLink link = protoToLink(linkProto);
                 session.getLinks().add(link);
             }
-            session.setState(response.getSession().getStateValue());
+            SessionState state = SessionState.get(response.getSession().getStateValue());
+            session.setState(state);
             return session;
         } catch (StatusRuntimeException ex) {
             throw new IOException(ex);
@@ -367,7 +381,30 @@ public class CoreGrpcClient implements ICoreClient {
     }
 
     @Override
+    public Session joinSession(Integer sessionId) throws IOException {
+        // stop handling previous session events if currently running
+        if (isRunning()) {
+            handlingEvents = false;
+        }
+
+        // join desired session
+        Session session = getSession(sessionId);
+        this.sessionId = session.getId();
+        sessionState = session.getState();
+        logger.info("joining session({}) state({})", this.sessionId, sessionState);
+
+        // setup event handlers if joined session is running
+        if (isRunning()) {
+            setupEventHandlers();
+        }
+
+        return session;
+    }
+
+    @Override
     public boolean start(Collection<CoreNode> nodes, Collection<CoreLink> links, List<Hook> hooks) throws IOException {
+        setupEventHandlers();
+
         boolean result = setState(SessionState.DEFINITION);
         if (!result) {
             return false;
@@ -806,6 +843,8 @@ public class CoreGrpcClient implements ICoreClient {
     @Override
     public boolean deleteNode(CoreNode node) throws IOException {
         CoreProto.DeleteNodeRequest request = CoreProto.DeleteNodeRequest.newBuilder()
+                .setSessionId(sessionId)
+                .setNodeId(node.getId())
                 .build();
         try {
             CoreProto.DeleteNodeResponse response = blockingStub.deleteNode(request);
@@ -1132,8 +1171,7 @@ public class CoreGrpcClient implements ICoreClient {
         }
     }
 
-    @Override
-    public void setupEventHandlers(Controller controller) throws IOException {
+    private void setupEventHandlers() throws IOException {
         logger.info("setting up event handlers");
         handlingEvents = true;
         try {
@@ -1151,22 +1189,22 @@ public class CoreGrpcClient implements ICoreClient {
                             logger.info("handling event: {}", event);
                             switch (event.getEventTypeCase()) {
                                 case SESSION_EVENT:
-                                    handleSessionEvents(controller, event.getSessionEvent());
+                                    handleSessionEvents(event.getSessionEvent());
                                     break;
                                 case NODE_EVENT:
-                                    handleNodeEvents(controller, event.getNodeEvent());
+                                    handleNodeEvents(event.getNodeEvent());
                                     break;
                                 case LINK_EVENT:
-                                    handleLinkEvents(controller, event.getLinkEvent());
+                                    handleLinkEvents(event.getLinkEvent());
                                     break;
                                 case CONFIG_EVENT:
-                                    handleConfigEvents(controller, event.getConfigEvent());
+                                    handleConfigEvents(event.getConfigEvent());
                                     break;
                                 case EXCEPTION_EVENT:
-                                    handleExceptionEvents(controller, event.getExceptionEvent());
+                                    handleExceptionEvents(event.getExceptionEvent());
                                     break;
                                 case FILE_EVENT:
-                                    handleFileEvents(controller, event.getFileEvent());
+                                    handleFileEvents(event.getFileEvent());
                                     break;
                                 default:
                                     logger.error("unknown event type: {}", event.getEventTypeCase());
@@ -1185,7 +1223,7 @@ public class CoreGrpcClient implements ICoreClient {
         }
     }
 
-    private void handleSessionEvents(Controller controller, CoreProto.SessionEvent event) {
+    private void handleSessionEvents(CoreProto.SessionEvent event) {
         logger.info("session event: {}", event);
         SessionState state = SessionState.get(event.getEvent());
         if (state == null) {
@@ -1196,7 +1234,7 @@ public class CoreGrpcClient implements ICoreClient {
         // session state event
         if (state.getValue() <= 6) {
             logger.info("event updating session state: {}", state);
-            updateState(state);
+            sessionState = state;
             // mobility script event
         } else if (state.getValue() <= 9) {
             Integer nodeId = event.getNodeId();
@@ -1211,21 +1249,21 @@ public class CoreGrpcClient implements ICoreClient {
         }
     }
 
-    private void handleNodeEvents(Controller controller, CoreProto.NodeEvent event) {
+    private void handleNodeEvents(CoreProto.NodeEvent event) {
         logger.info("node event: {}", event);
         CoreNode node = protoToNode(event.getNode());
         controller.getNetworkGraph().setNodeLocation(node);
     }
 
-    private void handleExceptionEvents(Controller controller, CoreProto.ExceptionEvent event) {
+    private void handleExceptionEvents(CoreProto.ExceptionEvent event) {
         logger.info("exception event: {}", event);
     }
 
-    private void handleConfigEvents(Controller controller, CoreProto.ConfigEvent event) {
+    private void handleConfigEvents(CoreProto.ConfigEvent event) {
         logger.info("config event: {}", event);
     }
 
-    private void handleLinkEvents(Controller controller, CoreProto.LinkEvent event) {
+    private void handleLinkEvents(CoreProto.LinkEvent event) {
         logger.info("link event: {}", event);
         CoreLink link = protoToLink(event.getLink());
         MessageFlags flag = MessageFlags.get(event.getMessageTypeValue());
@@ -1239,7 +1277,18 @@ public class CoreGrpcClient implements ICoreClient {
         controller.getNetworkGraph().getGraphViewer().repaint();
     }
 
-    private void handleFileEvents(Controller controller, CoreProto.FileEvent event) {
+    private void handleFileEvents(CoreProto.FileEvent event) {
         logger.info("file event: {}", event);
+    }
+
+    @Override
+    public List<String> getInterfaces() throws IOException {
+        CoreProto.GetInterfacesRequest request = CoreProto.GetInterfacesRequest.newBuilder().build();
+        try {
+            CoreProto.GetInterfacesResponse response = blockingStub.getInterfaces(request);
+            return response.getInterfacesList();
+        } catch (StatusRuntimeException ex) {
+            throw new IOException(ex);
+        }
     }
 }

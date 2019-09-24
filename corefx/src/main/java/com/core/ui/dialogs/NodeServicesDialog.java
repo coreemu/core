@@ -129,7 +129,7 @@ public class NodeServicesDialog extends StageDialog {
 
         Set<String> nodeServices = node.getServices();
         if (nodeServices.isEmpty()) {
-            nodeServices = getController().getDefaultServices().get(node.getModel());
+            nodeServices = getController().getDefaultServices().getOrDefault(node.getModel(), new HashSet<>());
         }
 
         for (List<ServiceItem> items : serviceItemGroups.values()) {

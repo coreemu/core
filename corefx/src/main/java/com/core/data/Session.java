@@ -9,7 +9,8 @@ import java.util.List;
 @Data
 @NoArgsConstructor
 public class Session {
-    private Integer state;
+    private Integer id;
+    private SessionState state;
     private List<CoreNode> nodes = new ArrayList<>();
     private List<CoreLink> links = new ArrayList<>();
 }

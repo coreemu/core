@@ -2,8 +2,7 @@
 Simple example for a user-defined service.
 """
 
-from core.services.coreservices import CoreService
-from core.services.coreservices import ServiceMode
+from core.services.coreservices import CoreService, ServiceMode
 
 
 class MyService(CoreService):
@@ -31,6 +30,7 @@ class MyService(CoreService):
         only used in NON_BLOCKING mode
     :var tuple shutdown: shutdown commands to stop this service
     """
+
     name = "MyService"
     group = "Utility"
     executables = ()

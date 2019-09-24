@@ -13,7 +13,7 @@ DISTCLEANFILES	= Makefile.in core-daemon.service core-daemon
 
 EXTRA_DIST	= core-daemon.in core-daemon.service.in
 
-SUBDIRS		= perf
+SUBDIRS		= 
 
 # install startup scripts based on --with-startup=option configure option
 # init.d (default), systemd

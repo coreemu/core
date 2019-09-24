@@ -1,8 +1,6 @@
 package com.core.client;
 
 import com.core.Controller;
-import com.core.data.ServiceFile;
-import com.core.data.WlanConfig;
 import com.core.data.*;
 
 import java.io.File;
@@ -23,15 +21,13 @@ public interface ICoreClient {
 
     boolean stopThroughput() throws IOException;
 
-    void updateSession(Integer sessionId);
-
-    void updateState(SessionState state);
-
     SessionOverview createSession() throws IOException;
 
     boolean deleteSession(Integer sessionId) throws IOException;
 
     List<SessionOverview> getSessions() throws IOException;
+
+    Session joinSession(Integer sessionId) throws IOException;
 
     Session getSession(Integer sessionId) throws IOException;
 
@@ -117,5 +113,7 @@ public interface ICoreClient {
 
     boolean setLocationConfig(LocationConfig config) throws IOException;
 
-    void setupEventHandlers(Controller controller) throws IOException;
+    void initialize(Controller controller);
+
+    List<String> getInterfaces() throws IOException;
 }

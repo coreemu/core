@@ -6,11 +6,9 @@ The control channel can be accessed via calls using the vcmd shell.
 
 import logging
 import os
+from subprocess import PIPE, Popen
 
-from subprocess import Popen, PIPE
-
-from core import CoreCommandError, utils
-from core import constants
+from core import CoreCommandError, constants, utils
 
 
 class VnodeClient(object):
@@ -137,7 +135,15 @@ class VnodeClient(object):
         :rtype: int
         """
         args = utils.split_args(args)
-        return os.spawnlp(os.P_WAIT, constants.VCMD_BIN, constants.VCMD_BIN, "-c", self.ctrlchnlname, "--", *args)
+        return os.spawnlp(
+            os.P_WAIT,
+            constants.VCMD_BIN,
+            constants.VCMD_BIN,
+            "-c",
+            self.ctrlchnlname,
+            "--",
+            *args
+        )
 
     def redircmd(self, infd, outfd, errfd, args, wait=True):
         """
@@ -177,11 +183,27 @@ class VnodeClient(object):
         :return: terminal command result
         :rtype: int
         """
-        args = ("xterm", "-ut", "-title", self.name, "-e", constants.VCMD_BIN, "-c", self.ctrlchnlname, "--", sh)
+        args = (
+            "xterm",
+            "-ut",
+            "-title",
+            self.name,
+            "-e",
+            constants.VCMD_BIN,
+            "-c",
+            self.ctrlchnlname,
+            "--",
+            sh,
+        )
         if "SUDO_USER" in os.environ:
-            args = ("su", "-s", "/bin/sh", "-c",
-                    "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
-                    os.environ["SUDO_USER"])
+            args = (
+                "su",
+                "-s",
+                "/bin/sh",
+                "-c",
+                "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
+                os.environ["SUDO_USER"],
+            )
         return os.spawnvp(os.P_NOWAIT, args[0], args)
 
     def termcmdstring(self, sh="/bin/sh"):

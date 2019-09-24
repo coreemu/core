@@ -8,14 +8,14 @@ import lombok.NoArgsConstructor;
 public class CoreLinkOptions {
     private String opaque;
     private Integer session;
-    private Double jitter;
+    private Integer jitter;
     private Integer key;
-    private Double mburst;
-    private Double mer;
+    private Integer mburst;
+    private Integer mer;
     private Double per;
-    private Double bandwidth;
-    private Double burst;
-    private Double delay;
-    private Double dup;
-    private Integer unidirectional;
+    private Integer bandwidth;
+    private Integer burst;
+    private Integer delay;
+    private Integer dup;
+    private Boolean unidirectional;
 }

@@ -60,6 +60,8 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
         ContextMenu contextMenu = new ContextMenu();
         switch (node.getType()) {
             case NodeType.DEFAULT:
+            case NodeType.DOCKER:
+            case NodeType.LXC:
                 contextMenu = new NodeContextMenu(controller, node);
                 break;
             case NodeType.WLAN:
@@ -67,6 +69,9 @@ public class CorePopupGraphMousePlugin<V, E> extends EditingPopupGraphMousePlugi
                 break;
             case NodeType.EMANE:
                 contextMenu = new EmaneContextMenu(controller, node);
+                break;
+            case NodeType.RJ45:
+                contextMenu = new Rj45ContextMenu(controller, node);
                 break;
             default:
                 logger.warn("no context menu for node: {}", node.getType());

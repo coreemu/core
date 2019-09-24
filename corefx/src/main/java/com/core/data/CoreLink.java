@@ -15,7 +15,7 @@ public class CoreLink {
     private double throughput;
     private boolean visible = true;
     private Integer messageType;
-    private Integer type = 1;
+    private Integer type = LinkTypes.WIRED.getValue();
     private Integer nodeOne;
     private Integer nodeTwo;
     private CoreInterface interfaceOne;

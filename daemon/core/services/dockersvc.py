@@ -99,8 +99,7 @@ Limitations:
 
 import logging
 
-from core.services.coreservices import CoreService
-from core.services.coreservices import ServiceManager
+from core.services.coreservices import CoreService, ServiceManager
 
 try:
     from docker import Client

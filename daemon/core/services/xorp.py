@@ -12,12 +12,16 @@ class XorpRtrmgr(CoreService):
     XORP router manager service builds a config.boot file based on other
     enabled XORP services, and launches necessary daemons upon startup.
     """
+
     name = "xorp_rtrmgr"
     executables = ("xorp_rtrmgr",)
     group = "XORP"
     dirs = ("/etc/xorp",)
     configs = ("/etc/xorp/config.boot",)
-    startup = ("xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid" % (configs[0], name, name),)
+    startup = (
+        "xorp_rtrmgr -d -b %s -l /var/log/%s.log -P /var/run/%s.pid"
+        % (configs[0], name, name),
+    )
     shutdown = ("killall xorp_rtrmgr",)
     validate = ("pidof xorp_rtrmgr",)
 
@@ -74,6 +78,7 @@ class XorpService(CoreService):
     Parent class for XORP services. Defines properties and methods
     common to XORP's routing daemons.
     """
+
     name = None
     executables = ("xorp_rtrmgr",)
     group = "XORP"
@@ -103,7 +108,7 @@ class XorpService(CoreService):
         """
         names = []
         for ifc in ifcs:
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             names.append(ifc.name)
         names.append("register_vif")
@@ -129,7 +134,7 @@ class XorpService(CoreService):
         cfg += "    policy-statement export-connected {\n"
         cfg += "\tterm 100 {\n"
         cfg += "\t    from {\n"
-        cfg += "\t\tprotocol: \"connected\"\n"
+        cfg += '\t\tprotocol: "connected"\n'
         cfg += "\t    }\n"
         cfg += "\t}\n"
         cfg += "    }\n"
@@ -142,11 +147,11 @@ class XorpService(CoreService):
         Helper to return the first IPv4 address of a node as its router ID.
         """
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
                 if a.find(".") >= 0:
-                    return a.split('/')[0]
+                    return a.split("/")[0]
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
@@ -165,6 +170,7 @@ class XorpOspfv2(XorpService):
     not build its own configuration file but has hooks for adding to the
     unified XORP configuration file.
     """
+
     name = "XORP_OSPFv2"
 
     @classmethod
@@ -176,7 +182,7 @@ class XorpOspfv2(XorpService):
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
@@ -200,6 +206,7 @@ class XorpOspfv3(XorpService):
     not build its own configuration file but has hooks for adding to the
     unified XORP configuration file.
     """
+
     name = "XORP_OSPFv3"
 
     @classmethod
@@ -211,7 +218,7 @@ class XorpOspfv3(XorpService):
         cfg += "\trouter-id: %s\n" % rtrid
         cfg += "\tarea 0.0.0.0 {\n"
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "\t    interface %s {\n" % ifc.name
             cfg += "\t\tvif %s {\n" % ifc.name
@@ -227,6 +234,7 @@ class XorpBgp(XorpService):
     """
     IPv4 inter-domain routing. AS numbers and peers must be customized.
     """
+
     name = "XORP_BGP"
     custom_needed = True
 
@@ -241,7 +249,7 @@ class XorpBgp(XorpService):
         cfg += "    bgp {\n"
         cfg += "\tbgp-id: %s\n" % rtrid
         cfg += "\tlocal-as: 65001 /* change this */\n"
-        cfg += "\texport: \"export-connected\"\n"
+        cfg += '\texport: "export-connected"\n'
         cfg += "\tpeer 10.0.1.1 { /* change this */\n"
         cfg += "\t    local-ip: 10.0.1.1\n"
         cfg += "\t    as: 65002\n"
@@ -265,9 +273,9 @@ class XorpRip(XorpService):
         cfg += cls.policyexportconnected()
         cfg += "\nprotocols {\n"
         cfg += "    rip {\n"
-        cfg += "\texport: \"export-connected\"\n"
+        cfg += '\texport: "export-connected"\n'
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -289,6 +297,7 @@ class XorpRipng(XorpService):
     """
     RIP NG IPv6 unicast routing.
     """
+
     name = "XORP_RIPNG"
 
     @classmethod
@@ -297,9 +306,9 @@ class XorpRipng(XorpService):
         cfg += cls.policyexportconnected()
         cfg += "\nprotocols {\n"
         cfg += "    ripng {\n"
-        cfg += "\texport: \"export-connected\"\n"
+        cfg += '\texport: "export-connected"\n'
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
@@ -324,6 +333,7 @@ class XorpPimSm4(XorpService):
     """
     PIM Sparse Mode IPv4 multicast routing.
     """
+
     name = "XORP_PIMSM4"
 
     @classmethod
@@ -334,7 +344,7 @@ class XorpPimSm4(XorpService):
         cfg += "    igmp {\n"
         names = []
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             names.append(ifc.name)
             cfg += "\tinterface %s {\n" % ifc.name
@@ -358,12 +368,12 @@ class XorpPimSm4(XorpService):
         cfg += "\tbootstrap {\n"
         cfg += "\t    cand-bsr {\n"
         cfg += "\t\tscope-zone 224.0.0.0/4 {\n"
-        cfg += "\t\t    cand-bsr-by-vif-name: \"%s\"\n" % names[0]
+        cfg += '\t\t    cand-bsr-by-vif-name: "%s"\n' % names[0]
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t    cand-rp {\n"
         cfg += "\t\tgroup-prefix 224.0.0.0/4 {\n"
-        cfg += "\t\t    cand-rp-by-vif-name: \"%s\"\n" % names[0]
+        cfg += '\t\t    cand-rp-by-vif-name: "%s"\n' % names[0]
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
@@ -383,6 +393,7 @@ class XorpPimSm6(XorpService):
     """
     PIM Sparse Mode IPv6 multicast routing.
     """
+
     name = "XORP_PIMSM6"
 
     @classmethod
@@ -393,7 +404,7 @@ class XorpPimSm6(XorpService):
         cfg += "    mld {\n"
         names = []
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             names.append(ifc.name)
             cfg += "\tinterface %s {\n" % ifc.name
@@ -417,12 +428,12 @@ class XorpPimSm6(XorpService):
         cfg += "\tbootstrap {\n"
         cfg += "\t    cand-bsr {\n"
         cfg += "\t\tscope-zone ff00::/8 {\n"
-        cfg += "\t\t    cand-bsr-by-vif-name: \"%s\"\n" % names[0]
+        cfg += '\t\t    cand-bsr-by-vif-name: "%s"\n' % names[0]
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t    cand-rp {\n"
         cfg += "\t\tgroup-prefix ff00::/8 {\n"
-        cfg += "\t\t    cand-rp-by-vif-name: \"%s\"\n" % names[0]
+        cfg += '\t\t    cand-rp-by-vif-name: "%s"\n' % names[0]
         cfg += "\t\t}\n"
         cfg += "\t    }\n"
         cfg += "\t}\n"
@@ -442,6 +453,7 @@ class XorpOlsr(XorpService):
     """
     OLSR IPv4 unicast MANET routing.
     """
+
     name = "XORP_OLSR"
 
     @classmethod
@@ -452,7 +464,7 @@ class XorpOlsr(XorpService):
         cfg += "    olsr4 {\n"
         cfg += "\tmain-address: %s\n" % rtrid
         for ifc in node.netifs():
-            if hasattr(ifc, 'control') and ifc.control is True:
+            if hasattr(ifc, "control") and ifc.control is True:
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name

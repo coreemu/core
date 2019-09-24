@@ -7,8 +7,7 @@ import sys
 import core.services
 from core.emulator.emudata import IdGen
 from core.emulator.session import Session
-from core.nodes import nodemaps
-from core.nodes import nodeutils
+from core.nodes import nodemaps, nodeutils
 from core.services.coreservices import ServiceManager
 
 
@@ -73,7 +72,7 @@ class CoreEmu(object):
         service_paths = self.config.get("custom_services_dir")
         logging.debug("custom service paths: %s", service_paths)
         if service_paths:
-            for service_path in service_paths.split(','):
+            for service_path in service_paths.split(","):
                 service_path = service_path.strip()
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)

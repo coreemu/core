@@ -28,6 +28,7 @@ public class CoreNode {
     private String url;
     private NodeType nodeType;
     private String icon;
+    private String image;
     private boolean loaded = true;
     private LayeredIcon graphIcon;
     private RadioIcon radioIcon = new RadioIcon();

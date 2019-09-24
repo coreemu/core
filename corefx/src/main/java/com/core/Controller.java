@@ -70,6 +70,7 @@ public class Controller implements Initializable {
     private GraphToolbar graphToolbar = new GraphToolbar(this);
 
     // dialogs
+    private Rj45Dialog rj45Dialog = new Rj45Dialog(this);
     private SessionsDialog sessionsDialog = new SessionsDialog(this);
     private ServiceDialog serviceDialog = new ServiceDialog(this);
     private NodeServicesDialog nodeServicesDialog = new NodeServicesDialog(this);
@@ -140,36 +141,15 @@ public class Controller implements Initializable {
         Platform.runLater(() -> borderPane.setRight(null));
 
         // get session to join
-        Session session = coreClient.getSession(sessionId);
-        SessionState sessionState = SessionState.get(session.getState());
-
-        // update client to use this session
-        coreClient.updateSession(sessionId);
-        coreClient.updateState(sessionState);
-
-        // setup event handlers
-        coreClient.setupEventHandlers(this);
+        Session session = coreClient.joinSession(sessionId);
 
         // display all nodes
-        logger.info("joining core session({}) state({}): {}", sessionId, sessionState, session);
         for (CoreNode node : session.getNodes()) {
-            NodeType nodeType = NodeType.find(node.getType(), node.getModel());
-            if (nodeType == null) {
-                logger.info(String.format("failed to find node type(%s) model(%s): %s",
-                        node.getType(), node.getModel(), node.getName()));
-                continue;
-            }
-
-            node.setNodeType(nodeType);
             networkGraph.addNode(node);
         }
 
         // display all links
         for (CoreLink link : session.getLinks()) {
-            if (link.getInterfaceOne() != null || link.getInterfaceTwo() != null) {
-                link.setType(LinkTypes.WIRED.getValue());
-            }
-
             networkGraph.addLink(link);
         }
 
@@ -191,7 +171,7 @@ public class Controller implements Initializable {
         Platform.runLater(() -> decorator.setTitle(String.format("CORE (Session %s)", sessionId)));
     }
 
-    public boolean startSession() throws IOException {
+    public boolean startSession() {
         // force nodes to get latest positions
         networkGraph.updatePositions();
 
@@ -201,12 +181,18 @@ public class Controller implements Initializable {
         List<Hook> hooks = hooksDialog.getHooks();
 
         // start/create session
+        boolean result = false;
         progressBar.setVisible(true);
-        boolean result = coreClient.start(nodes, links, hooks);
-        progressBar.setVisible(false);
-        if (result) {
-            showMobilityScriptDialogs();
-            saveXmlMenuItem.setDisable(false);
+        try {
+            result = coreClient.start(nodes, links, hooks);
+            if (result) {
+                showMobilityScriptDialogs();
+                saveXmlMenuItem.setDisable(false);
+            }
+        } catch (IOException ex) {
+            Toast.error("Failure Starting Session", ex);
+        } finally {
+            progressBar.setVisible(false);
         }
         return result;
     }
@@ -292,6 +278,7 @@ public class Controller implements Initializable {
         connectDialog.setOwner(window);
         guiPreferencesDialog.setOwner(window);
         nodeTypeCreateDialog.setOwner(window);
+        rj45Dialog.setOwner(window);
     }
 
     private void showMobilityScriptDialogs() {
@@ -448,6 +435,7 @@ public class Controller implements Initializable {
         connectToCore(address, port);
 
         logger.info("controller initialize");
+        coreClient.initialize(this);
         swingNode.setContent(networkGraph.getGraphViewer());
 
         // update graph preferences

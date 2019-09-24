@@ -21,7 +21,9 @@ def main():
         core.events(session_id, log_event)
 
         # change session state
-        response = core.set_session_state(session_id, core_pb2.SessionState.CONFIGURATION)
+        response = core.set_session_state(
+            session_id, core_pb2.SessionState.CONFIGURATION
+        )
         logging.info("set session state: %s", response)
 
         # create switch node
@@ -47,7 +49,9 @@ def main():
             logging.info("created link: %s", response)
 
         # change session state
-        response = core.set_session_state(session_id, core_pb2.SessionState.INSTANTIATION)
+        response = core.set_session_state(
+            session_id, core_pb2.SessionState.INSTANTIATION
+        )
         logging.info("set session state: %s", response)
 
 
