@@ -32,6 +32,9 @@ To leverage the dev environment you need python 3.6+.
 # change to daemon directory
 cd $REPO/daemon
 
+# copy setup.py for installation
+cp setup.py.in setup.py
+
 # install pipenv
 pip3 install pipenv
 
