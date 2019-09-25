@@ -747,15 +747,12 @@ proc newLink { lnode1 lnode2 } {
     global defLinkColor defLinkWidth
     global curcanvas
     global systype
-    if { ([nodeType $lnode1] == "lanswitch" ||[nodeType $lnode1] == "OVS") && \
+    if { [nodeType $lnode1] == "lanswitch" && \
 	[nodeType $lnode2] != "router" && \
-	([nodeType $lnode2] != "lanswitch" || [nodeType $lnode2] != "OVS") } {
-		set regular no }
-    if { ([nodeType $lnode2] == "lanswitch" || [nodeType $lnode2] == "OVS") && \
+	[nodeType $lnode2] != "lanswitch" } { set regular no }
+    if { [nodeType $lnode2] == "lanswitch" && \
 	[nodeType $lnode1] != "router" && \
-	([nodeType $lnode1] != "lanswitch" || [nodeType $lnode1] != "OVS" )} {
-		#Khaled: puts "connecting '$lnode1' (type: '[nodeType $lnode1]') to '$lnode2' (type: '[nodeType $lnode2]') "
-		set regular no }
+	[nodeType $lnode1] != "lanswitch" } { set regular no }
     if { [nodeType $lnode1] == "hub" && \
 	[nodeType $lnode2] == "hub" } { set regular no }
     # Boeing: added tunnel, ktunnel types to behave as rj45
@@ -771,7 +768,7 @@ proc newLink { lnode1 lnode2 } {
 	    set othernode $lnode1
 	}
 	# only allowed to link with certain types
-	if { [lsearch {router lanswitch hub pc host wlan OVS} \
+	if { [lsearch {router lanswitch hub pc host wlan} \
 	    [nodeType $othernode]] < 0} {
 	    return
 	}
@@ -836,18 +833,13 @@ proc newLink { lnode1 lnode2 } {
 	} elseif {$delay != ""} {
 		lappend $link "delay $delay"
 	}
-	# Exclude OVS from network layer nodes IP address asignments
-	if { ([[typemodel $lnode2].layer] == "NETWORK") && ([nodeType $lnode2] != "OVS")  } {
-
-	    #Khaled: puts "Assigning '$lnode2' (type: '[nodeType $lnode2]') an automatic IP address"
-
+	if { [[typemodel $lnode2].layer] == "NETWORK" } {
 	    if { $ipv4_addr2 == "" } { autoIPv4addr $lnode2 $ifname2 }
 	    if { $ipv6_addr2 == "" } { autoIPv6addr $lnode2 $ifname2 }
 	}
     # tunnels also excluded from link settings
-    # OVS and Lanswitch should go side by side
-    } elseif { (([nodeType $lnode1] == "lanswitch" || [nodeType $lnode1] == "OVS" )|| \
-	([nodeType $lnode2] == "lanswitch"|| [nodeType $lnode2] == "OVS") || \
+    } elseif { ([nodeType $lnode1] == "lanswitch" || \
+	[nodeType $lnode2] == "lanswitch" || \
 	[string first eth "$ifname1 $ifname2"] != -1) && \
 	[nodeType $lnode1] != "rj45" && [nodeType $lnode2] != "rj45" && \
 	[nodeType $lnode1] != "tunnel" && [nodeType $lnode2] != "tunnel" && \
@@ -859,13 +851,11 @@ proc newLink { lnode1 lnode2 } {
     }
 
     lappend link_list $link
-    # Exclude OVS from Network layer node configs
     if { [nodeType $lnode2] != "pseudo" &&
 	 [nodeType $lnode1] != "wlan" &&
-	([[typemodel $lnode1].layer] == "NETWORK" && [nodeType $lnode1] != "OVS")  } {
-
+	[[typemodel $lnode1].layer] == "NETWORK" } {
 	if { $ipv4_addr1 == "" && $do_auto_addressing } {
-            autoIPv4addr $lnode1 $ifname1
+        autoIPv4addr $lnode1 $ifname1
 	}
 	if { $ipv6_addr1 == "" && $do_auto_addressing } {
 	    autoIPv6addr $lnode1 $ifname1
@@ -874,8 +864,7 @@ proc newLink { lnode1 lnode2 } {
     # assume wlan is always lnode1
     if { [nodeType $lnode1] != "pseudo" &&
 	 [nodeType $lnode1] != "wlan" &&
-	([[typemodel $lnode2].layer] == "NETWORK" && [nodeType $lnode2] != "OVS")  } {
-
+	[[typemodel $lnode2].layer] == "NETWORK" } {
 	if { $ipv4_addr2 == "" && $do_auto_addressing } {
 	    autoIPv4addr $lnode2 $ifname2
 	}
