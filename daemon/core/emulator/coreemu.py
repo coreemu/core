@@ -44,7 +44,7 @@ class CoreEmu(object):
         os.umask(0)
 
         # configuration
-        if not config:
+        if config is None:
             config = {}
         self.config = config
 
