@@ -25,7 +25,6 @@ class EmaneNet(CoreNetworkBase):
 
     apitype = NodeTypes.EMANE.value
     linktype = LinkTypes.WIRELESS.value
-    # icon used
     type = "wlan"
 
 
@@ -35,6 +34,8 @@ class EmaneNode(EmaneNet):
     to have TAP interfaces (instead of VEth). These are managed by the
     Emane controller object that exists in a session.
     """
+
+    is_emane = True
 
     def __init__(self, session, _id=None, name=None, start=True):
         super(EmaneNode, self).__init__(session, _id, name, start)

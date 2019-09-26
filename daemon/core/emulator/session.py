@@ -14,11 +14,11 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
-import core.nodes.base
 from core import CoreError, constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
+from core.emane.nodes import EmaneNet, EmaneNode
 from core.emulator.data import EventData, ExceptionData, NodeData
 from core.emulator.emudata import (
     IdGen,
@@ -33,13 +33,45 @@ from core.emulator.sessionconfig import SessionConfig, SessionMetaData
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
-from core.nodes import nodeutils
-from core.nodes.base import CoreNodeBase
+from core.nodes.base import CoreNode, CoreNodeBase
+from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
+from core.nodes.lxd import LxcNode
+from core.nodes.network import (
+    CtrlNet,
+    GreTapBridge,
+    HubNode,
+    PtpNet,
+    SwitchNode,
+    TunnelNode,
+    WlanNode,
+)
+from core.nodes.physical import PhysicalNode, Rj45Node
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
+
+# maps for converting from API call node type values to classes and vice versa
+NODES = {
+    NodeTypes.DEFAULT: CoreNode,
+    NodeTypes.PHYSICAL: PhysicalNode,
+    NodeTypes.TBD: None,
+    NodeTypes.SWITCH: SwitchNode,
+    NodeTypes.HUB: HubNode,
+    NodeTypes.WIRELESS_LAN: WlanNode,
+    NodeTypes.RJ45: Rj45Node,
+    NodeTypes.TUNNEL: TunnelNode,
+    NodeTypes.KTUNNEL: None,
+    NodeTypes.EMANE: EmaneNode,
+    NodeTypes.EMANE_NET: EmaneNet,
+    NodeTypes.TAP_BRIDGE: GreTapBridge,
+    NodeTypes.PEER_TO_PEER: PtpNet,
+    NodeTypes.CONTROL_NET: CtrlNet,
+    NodeTypes.DOCKER: DockerNode,
+    NodeTypes.LXC: LxcNode,
+}
+NODES_TYPE = {NODES[x]: x for x in NODES}
 
 
 class Session(object):
@@ -121,6 +153,33 @@ class Session(object):
             "host": ("DefaultRoute", "SSH"),
         }
 
+    @classmethod
+    def get_node_class(cls, _type):
+        """
+        Retrieve the class for a given node type.
+
+        :param core.emulator.enumerations.NodeTypes _type: node type to get class for
+        :return: node class
+        """
+        node_class = NODES.get(_type)
+        if node_class is None:
+            raise CoreError("invalid node type: %s" % _type)
+        return node_class
+
+    @classmethod
+    def get_node_type(cls, _class):
+        """
+        Retrieve node type for a given node class.
+
+        :param _class: node class to get a node type for
+        :return: node type
+        :rtype: core.emulator.enumerations.NodeTypes
+        """
+        node_type = NODES_TYPE.get(_class)
+        if node_type is None:
+            raise CoreError("invalid node class: %s" % _class)
+        return node_type
+
     def _link_nodes(self, node_one_id, node_two_id):
         """
         Convenience method for retrieving nodes within link data.
@@ -145,7 +204,7 @@ class Session(object):
         # both node ids are provided
         tunnel = self.broker.gettunnel(node_one_id, node_two_id)
         logging.debug("tunnel between nodes: %s", tunnel)
-        if nodeutils.is_node(tunnel, NodeTypes.TAP_BRIDGE):
+        if isinstance(tunnel, GreTapBridge):
             net_one = tunnel
             if tunnel.remotenum == node_one_id:
                 node_one = None
@@ -203,9 +262,7 @@ class Session(object):
             raise CoreError("no common network found for wireless link/unlink")
 
         for common_network, interface_one, interface_two in common_networks:
-            if not nodeutils.is_node(
-                common_network, [NodeTypes.WIRELESS_LAN, NodeTypes.EMANE]
-            ):
+            if not isinstance(common_network, (WlanNode, EmaneNode)):
                 logging.info(
                     "skipping common network that is not wireless/emane: %s",
                     common_network,
@@ -268,9 +325,8 @@ class Session(object):
                         node_one.name,
                         node_two.name,
                     )
-                    ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
                     start = self.state > EventTypes.DEFINITION_STATE.value
-                    net_one = self.create_node(cls=ptp_class, start=start)
+                    net_one = self.create_node(cls=PtpNet, start=start)
 
                 # node to network
                 if node_one and net_one:
@@ -300,7 +356,7 @@ class Session(object):
                         net_one.name,
                         net_two.name,
                     )
-                    if nodeutils.is_node(net_two, NodeTypes.RJ45):
+                    if isinstance(net_two, Rj45Node):
                         interface = net_two.linknet(net_one)
                     else:
                         interface = net_one.linknet(net_two)
@@ -324,12 +380,12 @@ class Session(object):
 
                 # tunnel node logic
                 key = link_options.key
-                if key and nodeutils.is_node(net_one, NodeTypes.TUNNEL):
+                if key and isinstance(net_one, TunnelNode):
                     logging.info("setting tunnel key for: %s", net_one.name)
                     net_one.setkey(key)
                     if addresses:
                         net_one.addrconfig(addresses)
-                if key and nodeutils.is_node(net_two, NodeTypes.TUNNEL):
+                if key and isinstance(net_two, TunnelNode):
                     logging.info("setting tunnel key for: %s", net_two.name)
                     net_two.setkey(key)
                     if addresses:
@@ -337,14 +393,14 @@ class Session(object):
 
                 # physical node connected with tunnel
                 if not net_one and not net_two and (node_one or node_two):
-                    if node_one and nodeutils.is_node(node_one, NodeTypes.PHYSICAL):
+                    if node_one and isinstance(node_one, PhysicalNode):
                         logging.info("adding link for physical node: %s", node_one.name)
                         addresses = interface_one.get_addresses()
                         node_one.adoptnetif(
                             tunnel, interface_one.id, interface_one.mac, addresses
                         )
                         link_config(node_one, tunnel, link_options)
-                    elif node_two and nodeutils.is_node(node_two, NodeTypes.PHYSICAL):
+                    elif node_two and isinstance(node_two, PhysicalNode):
                         logging.info("adding link for physical node: %s", node_two.name)
                         addresses = interface_two.get_addresses()
                         node_two.adoptnetif(
@@ -584,14 +640,11 @@ class Session(object):
         :param int _id: id for node, defaults to None for generated id
         :param core.emulator.emudata.NodeOptions node_options: data to create node with
         :return: created node
+        :raises core.CoreError: when an invalid node type is given
         """
 
-        # retrieve node class for given node type
-        try:
-            node_class = nodeutils.get_node_class(_type)
-        except KeyError:
-            logging.error("invalid node type to create: %s", _type)
-            return None
+        # validate node type, get class, or throw error
+        node_class = self.get_node_class(_type)
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
@@ -651,10 +704,8 @@ class Session(object):
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
 
-        # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
-        is_boot_node = isinstance(node, CoreNodeBase) and not nodeutils.is_node(
-            node, NodeTypes.RJ45
-        )
+        # boot nodes if created after runtime, CoreNodes, Physical, and RJ45 are all nodes
+        is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_nodes()
             self.add_remove_control_interface(node=node, remove=False)
@@ -1441,12 +1492,10 @@ class Session(object):
             count = 0
             for node_id in self.nodes:
                 node = self.nodes[node_id]
-                is_p2p_ctrlnet = nodeutils.is_node(
-                    node, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET)
+                is_p2p_ctrlnet = isinstance(node, (PtpNet, CtrlNet))
+                is_tap = isinstance(node, GreTapBridge) and not isinstance(
+                    node, TunnelNode
                 )
-                is_tap = nodeutils.is_node(
-                    node, NodeTypes.TAP_BRIDGE
-                ) and not nodeutils.is_node(node, NodeTypes.TUNNEL)
                 if is_p2p_ctrlnet or is_tap:
                     continue
 
@@ -1493,7 +1542,7 @@ class Session(object):
             for node_id in self.nodes:
                 node = self.nodes[node_id]
                 # TODO: determine if checking for CoreNode alone is ok
-                if isinstance(node, core.nodes.base.CoreNodeBase):
+                if isinstance(node, CoreNodeBase):
                     self.services.stop_services(node)
 
         # shutdown emane
@@ -1546,10 +1595,7 @@ class Session(object):
             start = time.time()
             for _id in self.nodes:
                 node = self.nodes[_id]
-                # TODO: PyCoreNode is not the type to check
-                if isinstance(node, CoreNodeBase) and not nodeutils.is_node(
-                    node, NodeTypes.RJ45
-                ):
+                if isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node):
                     # add a control interface if configured
                     logging.info(
                         "booting node(%s): %s",
@@ -1648,8 +1694,7 @@ class Session(object):
                 # no controlnet needed
                 return None
             else:
-                control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
-                prefix_spec = control_net_class.DEFAULT_PREFIX_LIST[net_index]
+                prefix_spec = CtrlNet.DEFAULT_PREFIX_LIST[net_index]
         logging.debug("prefix spec: %s", prefix_spec)
 
         server_interface = self.get_control_net_server_interfaces()[net_index]
@@ -1725,9 +1770,8 @@ class Session(object):
             prefix = prefixes[0]
 
         logging.info("controlnet prefix: %s - %s", type(prefix), prefix)
-        control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
         control_net = self.create_node(
-            cls=control_net_class,
+            cls=CtrlNet,
             _id=_id,
             prefix=prefix,
             assign_address=assign_address,

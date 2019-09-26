@@ -17,7 +17,7 @@ from socket import AF_INET, AF_INET6
 from core import CoreCommandError, constants, utils
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import client, ipaddress, nodeutils
+from core.nodes import client, ipaddress
 from core.nodes.interface import CoreInterface, TunTap, Veth
 
 _DEFAULT_MTU = 1500
@@ -886,8 +886,8 @@ class CoreNode(CoreNodeBase):
             addrlist = []
 
         with self.lock:
-            # TODO: see if you can move this to emane specific code
-            if nodeutils.is_node(net, NodeTypes.EMANE):
+            # TODO: emane specific code
+            if net.is_emane is True:
                 ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
@@ -1050,6 +1050,7 @@ class CoreNetworkBase(NodeBase):
     """
 
     linktype = LinkTypes.WIRED.value
+    is_emane = False
 
     def __init__(self, session, _id, name, start=True):
         """

@@ -15,6 +15,7 @@ from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
+from core.emane.nodes import EmaneNode
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.enumerations import (
@@ -23,10 +24,8 @@ from core.emulator.enumerations import (
     ConfigTlvs,
     MessageFlags,
     MessageTypes,
-    NodeTypes,
     RegisterTlvs,
 )
-from core.nodes import nodeutils
 from core.xml import emanexml
 
 try:
@@ -266,7 +265,7 @@ class EmaneManager(ModelManager):
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
-                if nodeutils.is_node(node, NodeTypes.EMANE):
+                if isinstance(node, EmaneNode):
                     logging.debug(
                         "adding emane node: id(%s) name(%s)", node.id, node.name
                     )

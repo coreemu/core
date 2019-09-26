@@ -12,6 +12,7 @@ import threading
 
 from core import utils
 from core.api.tlv import coreapi
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import (
     ConfigDataTypes,
     ConfigFlags,
@@ -27,11 +28,10 @@ from core.emulator.enumerations import (
     NodeTypes,
     RegisterTlvs,
 )
-from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import GreTap
 from core.nodes.ipaddress import IpAddress
-from core.nodes.network import GreTapBridge
+from core.nodes.network import CtrlNet, GreTapBridge
 from core.nodes.physical import PhysicalNode
 
 
@@ -495,15 +495,12 @@ class CoreBroker(object):
         logging.info("adding net tunnel for: id(%s) %s", node_id, net)
 
         # add other nets here that do not require tunnels
-        if nodeutils.is_node(net, NodeTypes.EMANE_NET):
+        if isinstance(net, EmaneNet):
             logging.warning("emane network does not require a tunnel")
             return None
 
         server_interface = getattr(net, "serverintf", None)
-        if (
-            nodeutils.is_node(net, NodeTypes.CONTROL_NET)
-            and server_interface is not None
-        ):
+        if isinstance(net, CtrlNet) and server_interface is not None:
             logging.warning(
                 "control networks with server interfaces do not need a tunnel"
             )
@@ -824,7 +821,8 @@ class CoreBroker(object):
         nodetype = message.get_tlv(NodeTlvs.TYPE.value)
         if nodetype is not None:
             try:
-                nodecls = nodeutils.get_node_class(NodeTypes(nodetype))
+                nodetype = NodeTypes(nodetype)
+                nodecls = self.session.get_node_class(nodetype)
             except KeyError:
                 logging.warning("broker invalid node type %s", nodetype)
                 return handle_locally, servers

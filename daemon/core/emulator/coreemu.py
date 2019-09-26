@@ -7,7 +7,6 @@ import sys
 import core.services
 from core.emulator.emudata import IdGen
 from core.emulator.session import Session
-from core.nodes import nodemaps, nodeutils
 from core.services.coreservices import ServiceManager
 
 
@@ -53,10 +52,6 @@ class CoreEmu(object):
         self.session_id_gen = IdGen(_id=0)
         self.sessions = {}
 
-        # set default nodes
-        node_map = nodemaps.NODES
-        nodeutils.set_node_map(node_map)
-
         # load services
         self.service_errors = []
         self.load_services()
@@ -76,15 +71,6 @@ class CoreEmu(object):
                 service_path = service_path.strip()
                 custom_service_errors = ServiceManager.add_services(service_path)
                 self.service_errors.extend(custom_service_errors)
-
-    def update_nodes(self, node_map):
-        """
-        Updates node map used by core.
-
-        :param dict node_map: node map to update existing node map with
-        :return: nothing
-        """
-        nodeutils.update_node_map(node_map)
 
     def shutdown(self):
         """

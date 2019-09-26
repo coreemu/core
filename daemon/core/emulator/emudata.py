@@ -1,7 +1,8 @@
-from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import nodeutils
+from core.emane.nodes import EmaneNode
+from core.emulator.enumerations import LinkTypes
 from core.nodes.base import CoreNetworkBase
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+from core.nodes.physical import PhysicalNode
 
 
 class IdGen(object):
@@ -65,7 +66,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
     }
 
     # hacky check here, because physical and emane nodes do not conform to the same linkconfig interface
-    if not nodeutils.is_node(network, [NodeTypes.EMANE, NodeTypes.PHYSICAL]):
+    if not isinstance(network, (EmaneNode, PhysicalNode)):
         config["devname"] = devname
 
     network.linkconfig(**config)
