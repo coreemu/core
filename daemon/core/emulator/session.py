@@ -25,7 +25,6 @@ from core.emulator.emudata import (
     LinkOptions,
     NodeOptions,
     create_interface,
-    is_net_node,
     link_config,
 )
 from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
@@ -33,7 +32,7 @@ from core.emulator.sessionconfig import SessionConfig, SessionMetaData
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
-from core.nodes.base import CoreNode, CoreNodeBase
+from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
 from core.nodes.lxd import LxcNode
@@ -217,14 +216,14 @@ class Session(object):
             else:
                 node_two = None
 
-        if is_net_node(node_one):
+        if isinstance(node_one, CoreNetworkBase):
             if not net_one:
                 net_one = node_one
             else:
                 net_two = node_one
             node_one = None
 
-        if is_net_node(node_two):
+        if isinstance(node_two, CoreNetworkBase):
             if not net_one:
                 net_one = node_two
             else:
