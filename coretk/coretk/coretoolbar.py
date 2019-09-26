@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 
+import coretk.toolbaraction as tbaction
 from coretk.images import Images
 
 
@@ -9,8 +10,7 @@ class CoreToolbar(object):
     Core toolbar class
     """
 
-    # TODO Temporarily have a radio_value instance here, might have to include the run frame
-    def __init__(self, master, edit_frame):
+    def __init__(self, master, edit_frame, exec_frame, menubar):
         """
         Create a CoreToolbar instance
 
@@ -18,14 +18,24 @@ class CoreToolbar(object):
         """
         self.master = master
         self.edit_frame = edit_frame
+        self.execution_frame = exec_frame
+        self.menubar = menubar
         self.radio_value = tk.IntVar()
+        self.exec_radio_value = tk.IntVar()
+
+        # button dimension
+        self.width = 32
+        self.height = 32
 
         # Used for drawing the horizontally displayed menu items for network-layer nodes and link-layer node
         self.selection_tool_button = None
+
         # Reference to the option menus
         self.link_layer_option_menu = None
         self.marker_option_menu = None
         self.network_layer_option_menu = None
+
+        self.execution_frame = None
 
     def load_toolbar_images(self):
         """
@@ -47,23 +57,70 @@ class CoreToolbar(object):
         Images.load("oval", "oval.gif")
         Images.load("rectangle", "rectangle.gif")
         Images.load("text", "text.gif")
+        Images.load("host", "host.gif")
+        Images.load("pc", "pc.gif")
+        Images.load("mdr", "mdr.gif")
+        Images.load("prouter", "router_green.gif")
+        Images.load("ovs", "OVS.gif")
+        Images.load("editnode", "document-properties.gif")
+        Images.load("run", "run.gif")
+        Images.load("plot", "plot.gif")
+        Images.load("twonode", "twonode.gif")
+        Images.load("stop", "stop.gif")
+        Images.load("observe", "observe.gif")
 
-    def hide_all_option_menu_frames(self):
+    def destroy_previous_frame(self):
         """
-        Hide any option menu frame that is displayed on screen so that when a new option menu frame is drawn, only
-        one frame is displayed
+        Destroy any extra frame from previous before drawing a new one
 
         :return: nothing
         """
-        if self.marker_option_menu:
-            self.marker_option_menu.place_forget()
-        if self.link_layer_option_menu:
-            self.link_layer_option_menu.place_forget()
-        if self.network_layer_option_menu:
-            self.network_layer_option_menu.place_forget()
+        if (
+            self.network_layer_option_menu
+            and self.network_layer_option_menu.winfo_exists()
+        ):
+            self.network_layer_option_menu.destroy()
+        if self.link_layer_option_menu and self.link_layer_option_menu.winfo_exists():
+            self.link_layer_option_menu.destroy()
+        if self.marker_option_menu and self.marker_option_menu.winfo_exists():
+            self.marker_option_menu.destroy()
+
+    def create_buttons(self, img, func, frame, main_button):
+        """
+        Create button and put it on the frame
+
+        :param PIL.Image img: button image
+        :param func: the command that is executed when button is clicked
+        :param tkinter.Frame frame: frame that contains the button
+        :param tkinter.Radiobutton main_button: main button
+        :return: nothing
+        """
+        button = tk.Button(frame, width=self.width, height=self.height, image=img)
+        button.pack(side=tk.LEFT, pady=1)
+        button.bind("<Button-1>", lambda mb: func(main_button))
+
+    def bind_widgets_before_frame_hide(self, frame):
+        """
+        Bind the widgets to a left click, when any of the widgets is clicked, the menu option frame is destroyed before
+        any further action is performed
+
+        :param tkinter.Frame frame: the frame to be destroyed
+        :return: nothing
+        """
+        self.menubar.bind("<Button-1>", lambda e: frame.destroy())
+        self.master.bind("<Button-1>", lambda e: frame.destroy())
+
+    def unbind_widgets_after_frame_hide(self):
+        """
+        Unbind the widgets to make sure everything works normally again after the menu option frame is destroyed
+
+        :return: nothing
+        """
+        self.master.unbind("<Button-1>")
+        self.menubar.unbind("Button-1>")
 
     def click_selection_tool(self):
-        logging.debug("Click selection tool")
+        logging.debug("Click SELECTION TOOL")
 
     def create_selection_tool_button(self):
         """
@@ -77,12 +134,18 @@ class CoreToolbar(object):
             indicatoron=False,
             variable=self.radio_value,
             value=1,
-            width=32,
-            height=32,
+            width=self.width,
+            height=self.height,
             image=selection_tool_image,
-            command=self.click_selection_tool,
+            command=lambda: self.click_selection_tool(),
         )
         self.selection_tool_button.pack(side=tk.TOP, pady=1)
+
+    def click_start_stop_session_tool(self):
+        logging.debug("Click START STOP SESSION button")
+        for i in self.edit_frame.winfo_children():
+            i.destroy()
+        self.create_runtime_tool_bar()
 
     def create_start_stop_session_button(self):
         """
@@ -96,9 +159,10 @@ class CoreToolbar(object):
             indicatoron=False,
             variable=self.radio_value,
             value=2,
-            width=32,
-            height=32,
+            width=self.width,
+            height=self.height,
             image=start_image,
+            command=lambda: self.click_start_stop_session_tool(),
         )
         start_button.pack(side=tk.TOP, pady=1)
 
@@ -114,11 +178,99 @@ class CoreToolbar(object):
             indicatoron=False,
             variable=self.radio_value,
             value=3,
-            width=32,
-            height=32,
+            width=self.width,
+            height=self.height,
             image=link_image,
+            command=lambda: tbaction.click_link_tool(),
         )
         link_button.pack(side=tk.TOP, pady=1)
+
+    def pick_router(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("router"))
+        logging.debug("Pick router option")
+
+    def pick_host(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("host"))
+        logging.debug("Pick host option")
+
+    def pick_pc(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("pc"))
+        logging.debug("Pick PC option")
+
+    def pick_mdr(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("mdr"))
+        logging.debug("Pick MDR option")
+
+    def pick_prouter(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("prouter"))
+        logging.debug("Pick prouter option")
+
+    def pick_ovs(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("ovs"))
+        logging.debug("Pick OVS option")
+
+    def pick_editnode(self, main_button):
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get("editnode"))
+        logging.debug("Pick editnode option")
+
+    def draw_network_layer_options(self, network_layer_button):
+        """
+        Draw the options for network-layer button
+
+        :param tkinter.Radiobutton network_layer_button: network-layer button
+        :return: nothing
+        """
+        # create a frame and add buttons to it
+        self.destroy_previous_frame()
+        option_frame = tk.Frame(self.master)
+        img_list = [
+            Images.get("router"),
+            Images.get("host"),
+            Images.get("pc"),
+            Images.get("mdr"),
+            Images.get("prouter"),
+            Images.get("ovs"),
+            Images.get("editnode"),
+        ]
+        func_list = [
+            self.pick_router,
+            self.pick_host,
+            self.pick_pc,
+            self.pick_mdr,
+            self.pick_prouter,
+            self.pick_ovs,
+            self.pick_editnode,
+        ]
+        for i in range(len(img_list)):
+            self.create_buttons(
+                img_list[i], func_list[i], option_frame, network_layer_button
+            )
+
+        # place frame at a calculated position as well as keep a reference of that frame
+        _x = (
+            network_layer_button.winfo_rootx()
+            - self.selection_tool_button.winfo_rootx()
+            + 40
+        )
+        _y = (
+            network_layer_button.winfo_rooty()
+            - self.selection_tool_button.winfo_rooty()
+            - 1
+        )
+        option_frame.place(x=_x, y=_y)
+        self.network_layer_option_menu = option_frame
+
+        # destroy the frame before any further actions on other widgets
+        self.bind_widgets_before_frame_hide(option_frame)
+        option_frame.wait_window(option_frame)
+        self.unbind_widgets_after_frame_hide()
 
     def create_network_layer_button(self):
         """
@@ -132,140 +284,86 @@ class CoreToolbar(object):
             indicatoron=False,
             variable=self.radio_value,
             value=4,
-            width=32,
-            height=32,
+            width=self.width,
+            height=self.height,
             image=router_image,
+            command=lambda: self.draw_network_layer_options(network_layer_button),
         )
         network_layer_button.pack(side=tk.TOP, pady=1)
 
-    def pick_hub(self, frame, main_button):
-        frame.place_forget()
+    def pick_hub(self, main_button):
+        self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("hub"))
-        if self.radio_value.get() != 5:
-            self.radio_value.set(5)
         logging.debug("Pick link-layer node HUB")
 
-    def pick_switch(self, frame, main_button):
-        frame.place_forget()
+    def pick_switch(self, main_button):
+        self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("switch"))
-        if self.radio_value.get() != 5:
-            self.radio_value.set(5)
         logging.debug("Pick link-layer node SWITCH")
 
-    def pick_wlan(self, frame, main_button):
-        frame.place_forget()
+    def pick_wlan(self, main_button):
+        self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("wlan"))
-        if self.radio_value.get() != 5:
-            self.radio_value.set(5)
         logging.debug("Pick link-layer node WLAN")
 
-    def pick_rj45(self, frame, main_button):
-        frame.place_forget()
+    def pick_rj45(self, main_button):
+        self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("rj45"))
-        if self.radio_value.get() != 5:
-            self.radio_value.set(5)
         logging.debug("Pick link-layer node RJ45")
 
-    def pick_tunnel(self, frame, main_button):
-        frame.place_forget()
+    def pick_tunnel(self, main_button):
+        self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("tunnel"))
-        if self.radio_value.get() != 5:
-            self.radio_value.set(5)
         logging.debug("Pick link-layer node TUNNEL")
 
     def draw_link_layer_options(self, link_layer_button):
-        # TODO if other buttons are press or nothing is pressed or the button is pressed but frame is forgotten/hidden
+        """
+        Draw the options for link-layer button
+
+        :param tkinter.RadioButton link_layer_button: link-layer button
+        :return: nothing
+        """
+        # create a frame and add buttons to it
+        self.destroy_previous_frame()
         option_frame = tk.Frame(self.master)
-        current_choice = self.radio_value.get()
-        self.hide_all_option_menu_frames()
-        if (
-            current_choice == 0
-            or current_choice != 5
-            or (current_choice == 5 and not option_frame.winfo_manager())
-        ):
-            hub_image = Images.get("hub")
-            switch_image = Images.get("switch")
-            wlan_image = Images.get("wlan")
-            rj45_image = Images.get("rj45")
-            tunnel_image = Images.get("tunnel")
+        img_list = [
+            Images.get("hub"),
+            Images.get("switch"),
+            Images.get("wlan"),
+            Images.get("rj45"),
+            Images.get("tunnel"),
+        ]
+        func_list = [
+            self.pick_hub,
+            self.pick_switch,
+            self.pick_wlan,
+            self.pick_rj45,
+            self.pick_tunnel,
+        ]
+        for i in range(len(img_list)):
+            self.create_buttons(
+                img_list[i], func_list[i], option_frame, link_layer_button
+            )
 
-            hub_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=7,
-                width=32,
-                height=32,
-                image=hub_image,
-                command=lambda: self.pick_hub(
-                    frame=option_frame, main_button=link_layer_button
-                ),
-            )
-            hub_button.pack(side=tk.LEFT, pady=1)
-            switch_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=8,
-                width=32,
-                height=32,
-                image=switch_image,
-                command=lambda: self.pick_switch(
-                    frame=option_frame, main_button=link_layer_button
-                ),
-            )
-            switch_button.pack(side=tk.LEFT, pady=1)
-            wlan_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=9,
-                width=32,
-                height=32,
-                image=wlan_image,
-                command=lambda: self.pick_wlan(
-                    frame=option_frame, main_button=link_layer_button
-                ),
-            )
-            wlan_button.pack(side=tk.LEFT, pady=1)
-            rj45_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=10,
-                width=32,
-                height=32,
-                image=rj45_image,
-                command=lambda: self.pick_rj45(
-                    frame=option_frame, main_button=link_layer_button
-                ),
-            )
-            rj45_button.pack(side=tk.LEFT, pady=1)
-            tunnel_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=11,
-                width=32,
-                height=32,
-                image=tunnel_image,
-                command=lambda: self.pick_tunnel(
-                    frame=option_frame, main_button=link_layer_button
-                ),
-            )
-            tunnel_button.pack(side=tk.LEFT, pady=1)
+        # place frame at a calculated position as well as keep a reference of the frame
+        _x = (
+            link_layer_button.winfo_rootx()
+            - self.selection_tool_button.winfo_rootx()
+            + 40
+        )
+        _y = (
+            link_layer_button.winfo_rooty()
+            - self.selection_tool_button.winfo_rooty()
+            - 1
+        )
+        option_frame.place(x=_x, y=_y)
+        self.master.update()
+        self.link_layer_option_menu = option_frame
 
-            _x = (
-                link_layer_button.winfo_rootx()
-                - self.selection_tool_button.winfo_rootx()
-                + 33
-            )
-            _y = (
-                link_layer_button.winfo_rooty()
-                - self.selection_tool_button.winfo_rooty()
-            )
-            option_frame.place(x=_x, y=_y)
-            self.link_layer_option_menu = option_frame
+        # destroy the frame before any further actions on other widgets
+        self.bind_widgets_before_frame_hide(option_frame)
+        option_frame.wait_window(option_frame)
+        self.unbind_widgets_after_frame_hide()
 
     def create_link_layer_button(self):
         """
@@ -279,118 +377,70 @@ class CoreToolbar(object):
             indicatoron=False,
             variable=self.radio_value,
             value=5,
-            width=32,
-            height=32,
+            width=self.width,
+            height=self.height,
             image=hub_image,
             command=lambda: self.draw_link_layer_options(link_layer_button),
         )
         link_layer_button.pack(side=tk.TOP, pady=1)
 
-    def pick_marker(self, frame, main_button):
-        frame.place_forget()
+    def pick_marker(self, main_button):
+        self.marker_option_menu.destroy()
         main_button.configure(image=Images.get("marker"))
-        if self.radio_value.get() != 6:
-            self.radio_value.set(6)
-        logging.debug("Pick marker")
+        logging.debug("Pick MARKER")
+        return "break"
 
-    def pick_oval(self, frame, main_button):
-        frame.place_forget()
+    def pick_oval(self, main_button):
+        self.marker_option_menu.destroy()
         main_button.configure(image=Images.get("oval"))
-        if self.radio_value.get() != 6:
-            self.radio_value.set(6)
-        logging.debug("Pick frame")
+        logging.debug("Pick OVAL")
 
-    def pick_rectangle(self, frame, main_button):
-        frame.place_forget()
+    def pick_rectangle(self, main_button):
+        self.marker_option_menu.destroy()
         main_button.configure(image=Images.get("rectangle"))
-        if self.radio_value.get() != 6:
-            self.radio_value.set(6)
-        logging.debug("Pick rectangle")
+        logging.debug("Pick RECTANGLE")
 
-    def pick_text(self, frame, main_button):
-        frame.place_forget()
+    def pick_text(self, main_button):
+        self.marker_option_menu.destroy()
         main_button.configure(image=Images.get("text"))
-        if self.radio_value.get() != 6:
-            self.radio_value.set(6)
-        logging.debug("Pick text")
+        logging.debug("Pick TEXT")
 
     def draw_marker_options(self, main_button):
-        # TODO if no button pressed, or other buttons being pressed, or marker button is being pressed but no frame is drawn
-        option_frame = tk.Frame(self.master)
-        current_choice = self.radio_value.get()
-        self.hide_all_option_menu_frames()
-        # TODO might need to find better way to write this, or might not
-        if (
-            current_choice == 0
-            or current_choice != 6
-            or (current_choice == 6 and not option_frame.winfo_manager())
-        ):
-            marker_image = Images.get("marker")
-            oval_image = Images.get("oval")
-            rectangle_image = Images.get("rectangle")
-            text_image = Images.get("text")
+        """
+        Draw the options for marker button
 
-            marker_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=12,
-                width=32,
-                height=32,
-                image=marker_image,
-                command=lambda: self.pick_marker(
-                    frame=option_frame, main_button=main_button
-                ),
-            )
-            marker_button.pack(side=tk.LEFT, pady=1)
-            oval_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=13,
-                width=32,
-                height=32,
-                image=oval_image,
-                command=lambda: self.pick_oval(
-                    frame=option_frame, main_button=main_button
-                ),
-            )
-            oval_button.pack(side=tk.LEFT, pady=1)
-            rectangle_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=14,
-                width=32,
-                height=32,
-                image=rectangle_image,
-                command=lambda: self.pick_rectangle(
-                    frame=option_frame, main_button=main_button
-                ),
-            )
-            rectangle_button.pack(side=tk.LEFT, pady=1)
-            text_button = tk.Radiobutton(
-                option_frame,
-                indicatoron=False,
-                variable=self.radio_value,
-                value=15,
-                width=32,
-                height=32,
-                image=text_image,
-                command=lambda: self.pick_text(
-                    frame=option_frame, main_button=main_button
-                ),
-            )
-            text_button.pack(side=tk.LEFT, pady=1)
-            self.master.update()
-            _x = (
-                main_button.winfo_rootx()
-                - self.selection_tool_button.winfo_rootx()
-                + 33
-            )
-            _y = main_button.winfo_rooty() - self.selection_tool_button.winfo_rooty()
-            option_frame.place(x=_x, y=_y)
-            self.marker_option_menu = option_frame
+        :param tkinter.Radiobutton main_button: the main button
+        :return: nothing
+        """
+        # create a frame and add buttons to it
+        self.destroy_previous_frame()
+        option_frame = tk.Frame(self.master)
+        img_list = [
+            Images.get("marker"),
+            Images.get("oval"),
+            Images.get("rectangle"),
+            Images.get("text"),
+        ]
+        func_list = [
+            self.pick_marker,
+            self.pick_oval,
+            self.pick_rectangle,
+            self.pick_text,
+        ]
+        for i in range(len(img_list)):
+            self.create_buttons(img_list[i], func_list[i], option_frame, main_button)
+
+        # place the frame at a calculated position as well as keep a reference of that frame
+        _x = main_button.winfo_rootx() - self.selection_tool_button.winfo_rootx() + 40
+        _y = main_button.winfo_rooty() - self.selection_tool_button.winfo_rooty() - 1
+        option_frame.place(x=_x, y=_y)
+        self.master.update()
+        self.marker_option_menu = option_frame
+
+        # destroy the frame before any further actions on other widgets
+        self.bind_widgets_before_frame_hide(option_frame)
+        option_frame.wait_window(option_frame)
+        self.unbind_widgets_after_frame_hide()
 
     def create_marker_button(self):
         """
@@ -404,12 +454,29 @@ class CoreToolbar(object):
             indicatoron=False,
             variable=self.radio_value,
             value=6,
-            width=32,
-            height=32,
+            width=self.width,
+            height=self.height,
             image=marker_image,
             command=lambda: self.draw_marker_options(marker_main_button),
         )
         marker_main_button.pack(side=tk.TOP, pady=1)
+
+    def create_selection_tool_button_for_exec(self):
+        for i in self.edit_frame.winfo_children():
+            i.destroy()
+        selection_tool_image = Images.get("select")
+        for i in range(7):
+            button = tk.Radiobutton(
+                self.edit_frame,
+                indicatoron=False,
+                variable=self.radio_value,
+                value=1,
+                width=self.width,
+                height=self.height,
+                image=selection_tool_image,
+                command=lambda: tbaction.click_selection_tool(),
+            )
+            button.pack(side=tk.TOP, pady=1)
 
     def create_toolbar(self):
         self.load_toolbar_images()
@@ -419,3 +486,80 @@ class CoreToolbar(object):
         self.create_network_layer_button()
         self.create_link_layer_button()
         self.create_marker_button()
+
+    def create_radio_button(self, frame, image, func, value):
+        button = tk.Radiobutton(
+            frame,
+            indicatoron=False,
+            width=self.width,
+            height=self.height,
+            image=image,
+            value=value,
+            variable=self.exec_radio_value,
+        )
+        button.pack(side=tk.TOP, pady=1)
+
+    def create_regular_button(self, frame, image, func):
+        button = tk.Button(
+            frame, width=self.width, height=self.height, image=image, command=func
+        )
+        button.pack(side=tk.TOP, pady=1)
+
+    def create_observe_button(self):
+        menu_button = tk.Menubutton(
+            self.edit_frame,
+            image=Images.get("observe"),
+            width=self.width,
+            height=self.height,
+            direction=tk.RIGHT,
+        )
+        menu_button.menu = tk.Menu(menu_button, tearoff=0)
+        menu_button["menu"] = menu_button.menu
+        menu_button.pack(side=tk.TOP, pady=1)
+
+        menu_button.menu.add_command(label="None")
+        menu_button.menu.add_command(label="processes")
+        menu_button.menu.add_command(label="ifconfig")
+        menu_button.menu.add_command(label="IPv4 routes")
+        menu_button.menu.add_command(label="IPv6 routes")
+        menu_button.menu.add_command(label="OSPFv2 neighbors")
+        menu_button.menu.add_command(label="OSPFv3 neighbors")
+        menu_button.menu.add_command(label="Listening sockets")
+        menu_button.menu.add_command(label="IPv4 MFC entries")
+        menu_button.menu.add_command(label="IPv6 MFC entries")
+        menu_button.menu.add_command(label="firewall rules")
+        menu_button.menu.add_command(label="IPSec policies")
+        menu_button.menu.add_command(label="docker logs")
+        menu_button.menu.add_command(label="OSPFv3 MDR level")
+        menu_button.menu.add_command(label="PIM neighbors")
+        menu_button.menu.add_command(label="Edit...")
+
+    def click_run_button(self):
+        logging.debug("Click on RUN button")
+
+    def click_stop_button(self):
+        logging.debug("Click on STOP button ")
+        for i in self.edit_frame.winfo_children():
+            i.destroy()
+        self.create_toolbar()
+
+    def create_runtime_tool_bar(self):
+        self.create_radio_button(
+            self.edit_frame, Images.get("select"), self.click_selection_tool, 1
+        )
+        self.create_regular_button(
+            self.edit_frame, Images.get("stop"), self.click_stop_button
+        )
+        self.create_observe_button()
+        self.create_radio_button(
+            self.edit_frame, Images.get("plot"), self.click_selection_tool, 2
+        )
+        self.create_radio_button(
+            self.edit_frame, Images.get("marker"), self.click_selection_tool, 3
+        )
+        self.create_radio_button(
+            self.edit_frame, Images.get("twonode"), self.click_selection_tool, 4
+        )
+        self.create_regular_button(
+            self.edit_frame, Images.get("run"), self.click_run_button
+        )
