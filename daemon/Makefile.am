@@ -14,11 +14,7 @@ if WANT_DOCS
 DOCS = doc
 endif
 
-if PYTHON3
-PYTHONLIBDIR=$(libdir)/python3/dist-packages
-else
-PYTHONLIBDIR=$(pythondir)
-endif
+PYTHONLIBDIR=$(subst site-packages,dist-packages,$(pythondir))
 
 SUBDIRS = proto $(DOCS)
 

@@ -249,7 +249,7 @@ sudo yum -y install automake gcc python-devel libev-devel tk
 
 ```shell
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
+# $VERSION should be path to python2/3
 PYTHON=$VERSION ./configure
 make
 sudo make install
@@ -268,7 +268,7 @@ sudo apt install python3-sphinx
 sudo yum install python3-sphinx
 
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
+# $VERSION should be path to python2/3
 PYTHON=$VERSION ./configure
 make doc
 ```
@@ -282,8 +282,10 @@ Build package commands, DESTDIR is used to make install into and then for packag
 
 ```shell
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
-PYTHON=$VERSION ./configure
+# for python2
+PYTHON=python2 ./configure
+# for python3
+PYTHON=python3 ./configure --enable-python3
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build
