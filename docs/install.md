@@ -230,19 +230,19 @@ pip3 install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img
+sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img ethtool
 ```
 
 ### Ubuntu 16.04 Requirements
 
 ```shell
-sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img
+sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img ethtool
 ```
 
 ### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
-sudo yum -y install automake gcc python-devel libev-devel tk
+sudo yum -y install automake gcc python-devel libev-devel tk ethtool
 ```
 
 ## Build and Install
