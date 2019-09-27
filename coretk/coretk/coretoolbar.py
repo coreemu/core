@@ -2,8 +2,7 @@ import logging
 import tkinter as tk
 
 from coretk.images import Images
-
-# from coretk.tooltip import CreateToolTip
+from coretk.tooltip import CreateToolTip
 
 
 class CoreToolbar(object):
@@ -109,7 +108,7 @@ class CoreToolbar(object):
         button.pack(side=tk.LEFT, pady=1)
         button.bind("<Button-1>", lambda mb: func(main_button))
 
-    def create_radio_button(self, frame, image, func, variable, value):
+    def create_radio_button(self, frame, image, func, variable, value, tooltip_msg):
         button = tk.Radiobutton(
             frame,
             indicatoron=False,
@@ -121,6 +120,7 @@ class CoreToolbar(object):
             command=func,
         )
         button.pack(side=tk.TOP, pady=1)
+        CreateToolTip(button, tooltip_msg)
 
     def create_regular_button(self, frame, image, func):
         button = tk.Button(
@@ -269,7 +269,7 @@ class CoreToolbar(object):
             command=lambda: self.draw_network_layer_options(network_layer_button),
         )
         network_layer_button.pack(side=tk.TOP, pady=1)
-        # network_layer_btt = CreateToolTip(network_layer_button, "Network-layer virtual nodes")
+        CreateToolTip(network_layer_button, "Network-layer virtual nodes")
 
     def pick_hub(self, main_button):
         self.link_layer_option_menu.destroy()
@@ -352,6 +352,7 @@ class CoreToolbar(object):
             command=lambda: self.draw_link_layer_options(link_layer_button),
         )
         link_layer_button.pack(side=tk.TOP, pady=1)
+        CreateToolTip(link_layer_button, "link-layer nodes")
 
     def pick_marker(self, main_button):
         self.marker_option_menu.destroy()
@@ -426,6 +427,7 @@ class CoreToolbar(object):
             command=lambda: self.draw_marker_options(marker_main_button),
         )
         marker_main_button.pack(side=tk.TOP, pady=1)
+        CreateToolTip(marker_main_button, "background annotation tools")
 
     def create_toolbar(self):
         self.load_toolbar_images()
@@ -438,6 +440,7 @@ class CoreToolbar(object):
             self.click_selection_tool,
             self.radio_value,
             1,
+            "selection tool",
         )
         self.create_radio_button(
             self.edit_frame,
@@ -445,6 +448,7 @@ class CoreToolbar(object):
             self.click_link_tool,
             self.radio_value,
             2,
+            "link tool",
         )
         self.create_network_layer_button()
         self.create_link_layer_button()
@@ -507,6 +511,7 @@ class CoreToolbar(object):
             self.click_selection_tool,
             self.exec_radio_value,
             1,
+            "selection tool",
         )
         self.create_observe_button()
         self.create_radio_button(
@@ -515,6 +520,7 @@ class CoreToolbar(object):
             self.click_plot_button,
             self.exec_radio_value,
             2,
+            "plot",
         )
         self.create_radio_button(
             self.edit_frame,
@@ -522,6 +528,7 @@ class CoreToolbar(object):
             self.click_marker_button,
             self.exec_radio_value,
             3,
+            "marker",
         )
         self.create_radio_button(
             self.edit_frame,
@@ -529,6 +536,7 @@ class CoreToolbar(object):
             self.click_two_node_button,
             self.exec_radio_value,
             4,
+            "run command from one node to another",
         )
         self.create_regular_button(
             self.edit_frame, Images.get("run"), self.click_run_button

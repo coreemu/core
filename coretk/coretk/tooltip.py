@@ -27,7 +27,7 @@ class CreateToolTip(object):
             self.tw,
             text=self.text,
             justify=tk.LEFT,
-            background="yellow",
+            background="#ffffe6",
             relief="solid",
             borderwidth=1,
         )
