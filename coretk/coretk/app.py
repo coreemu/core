@@ -36,15 +36,16 @@ class Application(tk.Frame):
     def create_widgets(self):
         edit_frame = tk.Frame(self)
         edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
-        exec_frame = tk.Frame(edit_frame)
-        exec_frame.pack(side=tk.TOP)
-        core_editbar = CoreToolbar(self.master, edit_frame, exec_frame, self.menubar)
+        core_editbar = CoreToolbar(self.master, edit_frame, self.menubar)
         core_editbar.create_toolbar()
 
         self.canvas = CanvasGraph(
             self, background="#cccccc", scrollregion=(0, 0, 1000, 1000)
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
+
+        # self.canvas.create_line(0, 0, 10, 10)
+
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview
         )
