@@ -54,6 +54,13 @@ if test "x$enable_python" = "xyes" ; then
 else
   want_python=no
 fi
+
+AC_ARG_ENABLE([python3],
+	       [AS_HELP_STRING([--enable-python3],
+		[enable python3 default is python2])],
+		[enable_python3=yes], [enable_python3=no])
+AM_CONDITIONAL([PYTHON3], [test "x$enable_python3" == "xyes"])
+
 AC_ARG_ENABLE([daemon],
 	       [AS_HELP_STRING([--enable-daemon[=ARG]],
 		[build and install the daemon with Python modules
@@ -156,7 +163,6 @@ if test "x$enable_daemon" = "xyes"; then
   CFLAGS=$CFLAGS_save
   CPPFLAGS=$CPPFLAGS_save
 fi
-AM_CONDITIONAL([PYTHON3], [test "x$PYTHON" == "xpython3"])
 
 if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
   want_linux_netns=yes
