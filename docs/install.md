@@ -230,26 +230,26 @@ pip3 install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img
+sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img ethtool
 ```
 
 ### Ubuntu 16.04 Requirements
 
 ```shell
-sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img
+sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img ethtool
 ```
 
 ### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
-sudo yum -y install automake gcc python-devel libev-devel tk
+sudo yum -y install automake gcc python-devel libev-devel tk ethtool
 ```
 
 ## Build and Install
 
 ```shell
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
+# $VERSION should be path to python2/3
 PYTHON=$VERSION ./configure
 make
 sudo make install
@@ -268,7 +268,7 @@ sudo apt install python3-sphinx
 sudo yum install python3-sphinx
 
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
+# $VERSION should be path to python2/3
 PYTHON=$VERSION ./configure
 make doc
 ```
@@ -282,8 +282,10 @@ Build package commands, DESTDIR is used to make install into and then for packag
 
 ```shell
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
-PYTHON=$VERSION ./configure
+# for python2
+PYTHON=python2 ./configure
+# for python3
+PYTHON=python3 ./configure --enable-python3
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build

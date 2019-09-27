@@ -4,8 +4,10 @@ Assumes installation of FRR via https://deb.frrouting.org/
 """
 
 from core import constants
-from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import ipaddress, nodeutils
+from core.emulator.enumerations import LinkTypes
+from core.nodes import ipaddress
+from core.nodes.network import PtpNet
+from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
 
 
@@ -341,7 +343,7 @@ class FrrService(CoreService):
             for peerifc in ifc.net.netifs():
                 if peerifc == ifc:
                     continue
-                if nodeutils.is_node(peerifc, NodeTypes.RJ45):
+                if isinstance(peerifc, Rj45Node):
                     return True
         return False
 
@@ -395,7 +397,7 @@ class FRROspfv2(FrrService):
         Helper to detect whether interface is connected to a notional
         point-to-point link.
         """
-        if nodeutils.is_node(ifc.net, NodeTypes.PEER_TO_PEER):
+        if isinstance(ifc.net, PtpNet):
             return "  ip ospf network point-to-point\n"
         return ""
 
@@ -481,7 +483,7 @@ class FRROspfv3(FrrService):
         Helper to detect whether interface is connected to a notional
         point-to-point link.
         """
-        if nodeutils.is_node(ifc.net, NodeTypes.PEER_TO_PEER):
+        if isinstance(ifc.net, PtpNet):
             return "  ipv6 ospf6 network point-to-point\n"
         return ""
 

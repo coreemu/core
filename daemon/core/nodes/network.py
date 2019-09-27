@@ -9,7 +9,7 @@ import threading
 import time
 from socket import AF_INET, AF_INET6
 
-from core import CoreCommandError, constants, utils
+from core import CoreCommandError, CoreError, constants, utils
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes import ipaddress
@@ -314,12 +314,8 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        utils.check_cmd([constants.BRCTL_BIN, "addbr", self.brname])
+        self.net_client.create_bridge(self.brname)
 
-        # turn off spanning tree protocol and forwarding delay
-        utils.check_cmd([constants.BRCTL_BIN, "stp", self.brname, "off"])
-        utils.check_cmd([constants.BRCTL_BIN, "setfd", self.brname, "0"])
-        utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "up"])
         # create a new ebtables chain for this bridge
         ebtablescmds(
             utils.check_cmd,
@@ -336,11 +332,6 @@ class CoreNetwork(CoreNetworkBase):
                 ],
             ],
         )
-        # turn off multicast snooping so mcast forwarding occurs w/o IGMP joins
-        snoop = "/sys/devices/virtual/net/%s/bridge/multicast_snooping" % self.brname
-        if os.path.exists(snoop):
-            with open(snoop, "w") as snoop_file:
-                snoop_file.write("0")
 
         self.up = True
 
@@ -356,8 +347,7 @@ class CoreNetwork(CoreNetworkBase):
         ebq.stopupdateloop(self)
 
         try:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.brname, "down"])
-            utils.check_cmd([constants.BRCTL_BIN, "delbr", self.brname])
+            self.net_client.delete_bridge(self.brname)
             ebtablescmds(
                 utils.check_cmd,
                 [
@@ -385,7 +375,8 @@ class CoreNetwork(CoreNetworkBase):
         del self.session
         self.up = False
 
-    # TODO: this depends on a subtype with localname defined, seems like the wrong place for this to live
+    # TODO: this depends on a subtype with localname defined, seems like the
+    #  wrong place for this to live
     def attach(self, netif):
         """
         Attach a network interface.
@@ -394,10 +385,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         """
         if self.up:
-            utils.check_cmd(
-                [constants.BRCTL_BIN, "addif", self.brname, netif.localname]
-            )
-            utils.check_cmd([constants.IP_BIN, "link", "set", netif.localname, "up"])
+            self.net_client.create_interface(self.brname, netif.localname)
 
         CoreNetworkBase.attach(self, netif)
 
@@ -409,9 +397,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         """
         if self.up:
-            utils.check_cmd(
-                [constants.BRCTL_BIN, "delif", self.brname, netif.localname]
-            )
+            self.net_client.delete_interface(self.brname, netif.localname)
 
         CoreNetworkBase.detach(self, netif)
 
@@ -610,10 +596,8 @@ class CoreNetwork(CoreNetworkBase):
         )
         self.attach(netif)
         if net.up:
-            # this is similar to net.attach() but uses netif.name instead
-            # of localname
-            utils.check_cmd([constants.BRCTL_BIN, "addif", net.brname, netif.name])
-            utils.check_cmd([constants.IP_BIN, "link", "set", netif.name, "up"])
+            # this is similar to net.attach() but uses netif.name instead of localname
+            self.net_client.create_interface(net.brname, netif.name)
         i = net.newifindex()
         net._netif[i] = netif
         with net._linked_lock:
@@ -822,8 +806,8 @@ class CtrlNet(CoreNetwork):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        if self.detectoldbridge():
-            return
+        if self.net_client.existing_bridges(self.id):
+            raise CoreError("old bridges exist for node: %s" % self.id)
 
         CoreNetwork.startup(self)
 
@@ -848,42 +832,7 @@ class CtrlNet(CoreNetwork):
             utils.check_cmd([self.updown_script, self.brname, "startup"])
 
         if self.serverintf:
-            # sets the interface as a port of the bridge
-            utils.check_cmd(
-                [constants.BRCTL_BIN, "addif", self.brname, self.serverintf]
-            )
-
-            # bring interface up
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.serverintf, "up"])
-
-    def detectoldbridge(self):
-        """
-        Occasionally, control net bridges from previously closed sessions are not cleaned up.
-        Check if there are old control net bridges and delete them
-
-        :return: True if an old bridge was detected, False otherwise
-        :rtype: bool
-        """
-        status, output = utils.cmd_output([constants.BRCTL_BIN, "show"])
-        if status != 0:
-            logging.error("Unable to retrieve list of installed bridges")
-        else:
-            lines = output.split("\n")
-            for line in lines[1:]:
-                cols = line.split("\t")
-                oldbr = cols[0]
-                flds = cols[0].split(".")
-                if len(flds) == 3:
-                    if flds[0] == "b" and flds[1] == self.id:
-                        logging.error(
-                            "error: An active control net bridge (%s) found. "
-                            "An older session might still be running. "
-                            "Stop all sessions and, if needed, delete %s to continue.",
-                            oldbr,
-                            oldbr,
-                        )
-                        return True
-        return False
+            self.net_client.create_interface(self.brname, self.serverintf)
 
     def shutdown(self):
         """
@@ -893,9 +842,7 @@ class CtrlNet(CoreNetwork):
         """
         if self.serverintf is not None:
             try:
-                utils.check_cmd(
-                    [constants.BRCTL_BIN, "delif", self.brname, self.serverintf]
-                )
+                self.net_client.delete_interface(self.brname, self.serverintf)
             except CoreCommandError:
                 logging.exception(
                     "error deleting server interface %s from bridge %s",
@@ -1100,7 +1047,7 @@ class HubNode(CoreNetwork):
 
         # TODO: move to startup method
         if start:
-            utils.check_cmd([constants.BRCTL_BIN, "setageing", self.brname, "0"])
+            self.net_client.disable_mac_learning(self.brname)
 
 
 class WlanNode(CoreNetwork):
@@ -1131,7 +1078,7 @@ class WlanNode(CoreNetwork):
 
         # TODO: move to startup method
         if start:
-            utils.check_cmd([constants.BRCTL_BIN, "setageing", self.brname, "0"])
+            self.net_client.disable_mac_learning(self.brname)
 
     def attach(self, netif):
         """

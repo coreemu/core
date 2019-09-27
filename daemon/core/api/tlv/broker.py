@@ -12,6 +12,7 @@ import threading
 
 from core import utils
 from core.api.tlv import coreapi
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import (
     ConfigDataTypes,
     ConfigFlags,
@@ -27,11 +28,10 @@ from core.emulator.enumerations import (
     NodeTypes,
     RegisterTlvs,
 )
-from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase, CoreNodeBase
 from core.nodes.interface import GreTap
 from core.nodes.ipaddress import IpAddress
-from core.nodes.network import GreTapBridge
+from core.nodes.network import CtrlNet, GreTapBridge
 from core.nodes.physical import PhysicalNode
 
 
@@ -318,13 +318,13 @@ class CoreBroker(object):
                     # leave this socket connected
                     return
 
-                logging.info(
+                logging.debug(
                     "closing connection with %s @ %s:%s", name, server.host, server.port
                 )
                 server.close()
                 del self.servers[name]
 
-            logging.info("adding broker server(%s): %s:%s", name, host, port)
+            logging.debug("adding broker server(%s): %s:%s", name, host, port)
             server = CoreDistributedServer(name, host, port)
             if host is not None and port is not None:
                 try:
@@ -492,33 +492,30 @@ class CoreBroker(object):
         :raises core.CoreError: when node to add net tunnel to does not exist
         """
         net = self.session.get_node(node_id)
-        logging.info("adding net tunnel for: id(%s) %s", node_id, net)
+        logging.debug("adding net tunnel for: id(%s) %s", node_id, net.name)
 
         # add other nets here that do not require tunnels
-        if nodeutils.is_node(net, NodeTypes.EMANE_NET):
+        if isinstance(net, EmaneNet):
             logging.warning("emane network does not require a tunnel")
             return None
 
         server_interface = getattr(net, "serverintf", None)
-        if (
-            nodeutils.is_node(net, NodeTypes.CONTROL_NET)
-            and server_interface is not None
-        ):
-            logging.warning(
+        if isinstance(net, CtrlNet) and server_interface is not None:
+            logging.debug(
                 "control networks with server interfaces do not need a tunnel"
             )
             return None
 
         servers = self.getserversbynode(node_id)
         if len(servers) < 2:
-            logging.warning("not enough servers to create a tunnel: %s", servers)
+            logging.debug("not enough servers to create a tunnel for node: %s", node_id)
             return None
 
         hosts = []
         for server in servers:
             if server.host is None:
                 continue
-            logging.info("adding server host for net tunnel: %s", server.host)
+            logging.debug("adding server host for net tunnel: %s", server.host)
             hosts.append(server.host)
 
         if len(hosts) == 0:
@@ -526,7 +523,7 @@ class CoreBroker(object):
                 # get IP address from API message sender (master)
                 if session_client.client_address != "":
                     address = session_client.client_address[0]
-                    logging.info("adding session_client host: %s", address)
+                    logging.debug("adding session_client host: %s", address)
                     hosts.append(address)
 
         r = []
@@ -539,7 +536,7 @@ class CoreBroker(object):
                 myip = host
             key = self.tunnelkey(node_id, IpAddress.to_int(myip))
             if key in self.tunnels.keys():
-                logging.info(
+                logging.debug(
                     "tunnel already exists, returning existing tunnel: %s", key
                 )
                 gt = self.tunnels[key]
@@ -658,9 +655,9 @@ class CoreBroker(object):
         :param int nodenum: node id to add
         :return: nothing
         """
-        logging.info("adding net to broker: %s", nodenum)
+        logging.debug("adding net to broker: %s", nodenum)
         self.network_nodes.add(nodenum)
-        logging.info("broker network nodes: %s", self.network_nodes)
+        logging.debug("broker network nodes: %s", self.network_nodes)
 
     def addphys(self, nodenum):
         """
@@ -824,7 +821,8 @@ class CoreBroker(object):
         nodetype = message.get_tlv(NodeTlvs.TYPE.value)
         if nodetype is not None:
             try:
-                nodecls = nodeutils.get_node_class(NodeTypes(nodetype))
+                nodetype = NodeTypes(nodetype)
+                nodecls = self.session.get_node_class(nodetype)
             except KeyError:
                 logging.warning("broker invalid node type %s", nodetype)
                 return handle_locally, servers
