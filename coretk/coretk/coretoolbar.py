@@ -3,6 +3,8 @@ import tkinter as tk
 
 from coretk.images import Images
 
+# from coretk.tooltip import CreateToolTip
+
 
 class CoreToolbar(object):
     """
@@ -267,6 +269,7 @@ class CoreToolbar(object):
             command=lambda: self.draw_network_layer_options(network_layer_button),
         )
         network_layer_button.pack(side=tk.TOP, pady=1)
+        # network_layer_btt = CreateToolTip(network_layer_button, "Network-layer virtual nodes")
 
     def pick_hub(self, main_button):
         self.link_layer_option_menu.destroy()
