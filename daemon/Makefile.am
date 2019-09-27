@@ -15,7 +15,7 @@ DOCS = doc
 endif
 
 if PYTHON3
-PYTHONLIBDIR=$(libdir)/python3/dist-packages
+PYTHONLIBDIR=$(shell echo $(pythondir) | sed -e 's/site-packages/dist-packages/')
 else
 PYTHONLIBDIR=$(pythondir)
 endif
