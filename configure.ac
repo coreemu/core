@@ -57,7 +57,7 @@ fi
 
 AC_ARG_ENABLE([python3],
 	       [AS_HELP_STRING([--enable-python3],
-		[enable python3 default is python2])],
+		[sets python3 flag for building packages])],
 		[enable_python3=yes], [enable_python3=no])
 AM_CONDITIONAL([PYTHON3], [test "x$enable_python3" == "xyes"])
 
