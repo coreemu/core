@@ -3,8 +3,11 @@ quagga.py: defines routing services provided by Quagga.
 """
 
 from core import constants
-from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import ipaddress, nodeutils
+from core.emane.nodes import EmaneNode
+from core.emulator.enumerations import LinkTypes
+from core.nodes import ipaddress
+from core.nodes.network import PtpNet, WlanNode
+from core.nodes.physical import Rj45Node
 from core.services.coreservices import CoreService
 
 
@@ -267,7 +270,7 @@ class QuaggaService(CoreService):
             for peerifc in ifc.net.netifs():
                 if peerifc == ifc:
                     continue
-                if nodeutils.is_node(peerifc, NodeTypes.RJ45):
+                if isinstance(peerifc, Rj45Node):
                     return True
         return False
 
@@ -321,7 +324,7 @@ class Ospfv2(QuaggaService):
         Helper to detect whether interface is connected to a notional
         point-to-point link.
         """
-        if nodeutils.is_node(ifc.net, NodeTypes.PEER_TO_PEER):
+        if isinstance(ifc.net, PtpNet):
             return "  ip ospf network point-to-point\n"
         return ""
 
@@ -407,7 +410,7 @@ class Ospfv3(QuaggaService):
         Helper to detect whether interface is connected to a notional
         point-to-point link.
         """
-        if nodeutils.is_node(ifc.net, NodeTypes.PEER_TO_PEER):
+        if isinstance(ifc.net, PtpNet):
             return "  ipv6 ospf6 network point-to-point\n"
         return ""
 
@@ -457,9 +460,7 @@ class Ospfv3mdr(Ospfv3):
         cfg = cls.mtucheck(ifc)
         # Uncomment the following line to use Address Family Translation for IPv4
         cfg += "  ipv6 ospf6 instance-id 65\n"
-        if ifc.net is not None and nodeutils.is_node(
-            ifc.net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)
-        ):
+        if ifc.net is not None and isinstance(ifc.net, (WlanNode, EmaneNode)):
             return (
                 cfg
                 + """\

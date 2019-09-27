@@ -7,8 +7,6 @@ import time
 from builtins import int, range
 
 from core import CoreCommandError, constants, utils
-from core.emulator.enumerations import NodeTypes
-from core.nodes import nodeutils
 
 utils.check_executables([constants.IP_BIN])
 
@@ -387,13 +385,12 @@ class TunTap(CoreInterface):
             if result:
                 break
 
+            # TODO: emane specific code
             # check if this is an EMANE interface; if so, continue
             # waiting if EMANE is still running
-            # TODO: remove emane code
             should_retry = count < 5
-            is_emane_node = nodeutils.is_node(self.net, NodeTypes.EMANE)
             is_emane_running = self.node.session.emane.emanerunning(self.node)
-            if all([should_retry, is_emane_node, is_emane_running]):
+            if all([should_retry, self.net.is_emane, is_emane_running]):
                 count += 1
             else:
                 raise RuntimeError("node device failed to exist")

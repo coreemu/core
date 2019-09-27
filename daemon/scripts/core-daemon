@@ -44,12 +44,11 @@ def start_udp(mainserver, server_address):
     mainserver.udpthread.start()
 
 
-def cored(cfg, use_ovs):
+def cored(cfg):
     """
     Start the CoreServer object and enter the server loop.
 
     :param dict cfg: core configuration
-    :param bool use_ovs: flag to determine if ovs nodes should be used
     :return: nothing
     """
     host = cfg["listenaddr"]
@@ -60,9 +59,6 @@ def cored(cfg, use_ovs):
     try:
         address = (host, port)
         server = CoreServer(address, CoreHandler, cfg)
-        if use_ovs:
-            from core.nodes.openvswitch import OVS_NODES
-            server.coreemu.update_nodes(OVS_NODES)
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
@@ -156,11 +152,8 @@ def main():
     cfg = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     banner()
 
-    # check if ovs flag was provided
-    use_ovs = len(sys.argv) == 2 and sys.argv[1] == "ovs"
-
     try:
-        cored(cfg, use_ovs)
+        cored(cfg)
     except KeyboardInterrupt:
         logging.info("keyboard interrupt, stopping core daemon")
 

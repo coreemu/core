@@ -1,7 +1,7 @@
-from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import nodeutils
-from core.nodes.base import CoreNetworkBase
+from core.emane.nodes import EmaneNode
+from core.emulator.enumerations import LinkTypes
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+from core.nodes.physical import PhysicalNode
 
 
 class IdGen(object):
@@ -11,17 +11,6 @@ class IdGen(object):
     def next(self):
         self.id += 1
         return self.id
-
-
-def is_net_node(node):
-    """
-    Convenience method for testing if a legacy core node is considered a network node.
-
-    :param object node: object to test against
-    :return: True if object is an instance of a network node, False otherwise
-    :rtype: bool
-    """
-    return isinstance(node, CoreNetworkBase)
 
 
 def create_interface(node, network, interface_data):
@@ -65,7 +54,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
     }
 
     # hacky check here, because physical and emane nodes do not conform to the same linkconfig interface
-    if not nodeutils.is_node(network, [NodeTypes.EMANE, NodeTypes.PHYSICAL]):
+    if not isinstance(network, (EmaneNode, PhysicalNode)):
         config["devname"] = devname
 
     network.linkconfig(**config)

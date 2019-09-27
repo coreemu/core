@@ -38,7 +38,7 @@ from core.emulator.enumerations import (
     SessionTlvs,
 )
 from core.location.mobility import BasicRangeModel
-from core.nodes import nodeutils
+from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
 
 
@@ -1603,8 +1603,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 node = self.session.get_node(node_id)
 
                 # configure mobility models for WLAN added during runtime
-                if event_type == EventTypes.INSTANTIATION_STATE and nodeutils.is_node(
-                    node, NodeTypes.WIRELESS_LAN
+                if event_type == EventTypes.INSTANTIATION_STATE and isinstance(
+                    node, WlanNode
                 ):
                     self.session.start_mobility(node_ids=(node.id,))
                     return ()
