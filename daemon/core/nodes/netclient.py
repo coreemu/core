@@ -70,18 +70,27 @@ class NetClientBase(with_metaclass(abc.ABCMeta)):
     @abc.abstractmethod
     def disable_mac_learning(self, name):
         """
-        Disable mac learning for a branch.
+        Disable mac learning for a bridge.
 
-        :param str name: branch name
+        :param str name: bridge name
         :return: nothing
         """
         pass
 
 
 class LinuxNetClient(NetClientBase):
+    """
+    Client for creating Linux bridges and ip interfaces for nodes.
+    """
+
     def create_bridge(self, name):
+        """
+        Create a Linux bridge and bring it up.
+
+        :param str name: bridge name
+        :return: nothing
+        """
         check_cmd([BRCTL_BIN, "addbr", name])
-        # disable spanning tree protocol and set forward delay to 0
         check_cmd([BRCTL_BIN, "stp", name, "off"])
         check_cmd([BRCTL_BIN, "setfd", name, "0"])
         check_cmd([IP_BIN, "link", "set", name, "up"])
@@ -93,17 +102,42 @@ class LinuxNetClient(NetClientBase):
                 f.write("0")
 
     def delete_bridge(self, name):
+        """
+        Bring down and delete a Linux bridge.
+
+        :param str name: bridge name
+        :return: nothing
+        """
         check_cmd([IP_BIN, "link", "set", name, "down"])
         check_cmd([BRCTL_BIN, "delbr", name])
 
     def create_interface(self, bridge_name, interface_name):
+        """
+        Create an interface associated with a Linux bridge.
+
+        :param str bridge_name: bridge name
+        :param str interface_name: interface name
+        :return: nothing
+        """
         check_cmd([BRCTL_BIN, "addif", bridge_name, interface_name])
         check_cmd([IP_BIN, "link", "set", interface_name, "up"])
 
     def delete_interface(self, bridge_name, interface_name):
+        """
+        Delete an interface associated with a Linux bridge.
+
+        :param str bridge_name: bridge name
+        :param str interface_name: interface name
+        :return: nothing
+        """
         check_cmd([BRCTL_BIN, "delif", bridge_name, interface_name])
 
     def existing_bridges(self, _id):
+        """
+        Checks if there are any existing Linux bridges for a node.
+
+        :param _id: node id to check bridges for
+        """
         output = check_cmd([BRCTL_BIN, "show"])
         lines = output.split("\n")
         for line in lines[1:]:
@@ -117,29 +151,70 @@ class LinuxNetClient(NetClientBase):
         return False
 
     def disable_mac_learning(self, name):
+        """
+        Disable mac learning for a Linux bridge.
+
+        :param str name: bridge name
+        :return: nothing
+        """
         check_cmd([BRCTL_BIN, "setageing", name, "0"])
 
 
 class OvsNetClient(NetClientBase):
+    """
+    Client for creating OVS bridges and ip interfaces for nodes.
+    """
+
     def create_bridge(self, name):
-        # turn off spanning tree protocol and forwarding delay
-        # TODO: verify stp and rstp are always off by default
-        # TODO: ovs only supports rstp forward delay and again it's off by default
+        """
+        Create a OVS bridge and bring it up.
+
+        :param str name: bridge name
+        :return: nothing
+        """
         check_cmd([OVS_BIN, "add-br", name])
+        check_cmd([OVS_BIN, "set", "bridge", name, "stp_enable=false"])
+        check_cmd([OVS_BIN, "set", "bridge", name, "other_config:stp-max-age=6"])
+        check_cmd([OVS_BIN, "set", "bridge", name, "other_config:stp-forward-delay=4"])
         check_cmd([IP_BIN, "link", "set", name, "up"])
 
     def delete_bridge(self, name):
+        """
+        Bring down and delete a OVS bridge.
+
+        :param str name: bridge name
+        :return: nothing
+        """
         check_cmd([IP_BIN, "link", "set", name, "down"])
         check_cmd([OVS_BIN, "del-br", name])
 
     def create_interface(self, bridge_name, interface_name):
+        """
+        Create an interface associated with a network bridge.
+
+        :param str bridge_name: bridge name
+        :param str interface_name: interface name
+        :return: nothing
+        """
         check_cmd([OVS_BIN, "add-port", bridge_name, interface_name])
         check_cmd([IP_BIN, "link", "set", interface_name, "up"])
 
     def delete_interface(self, bridge_name, interface_name):
+        """
+        Delete an interface associated with a OVS bridge.
+
+        :param str bridge_name: bridge name
+        :param str interface_name: interface name
+        :return: nothing
+        """
         check_cmd([OVS_BIN, "del-port", bridge_name, interface_name])
 
     def existing_bridges(self, _id):
+        """
+        Checks if there are any existing OVS bridges for a node.
+
+        :param _id: node id to check bridges for
+        """
         output = check_cmd([OVS_BIN, "list-br"])
         if output:
             for line in output.split("\n"):
@@ -149,4 +224,10 @@ class OvsNetClient(NetClientBase):
         return False
 
     def disable_mac_learning(self, name):
+        """
+        Disable mac learning for a OVS bridge.
+
+        :param str name: bridge name
+        :return: nothing
+        """
         check_cmd([OVS_BIN, "set", "bridge", name, "other_config:mac-aging-time=0"])
