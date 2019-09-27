@@ -110,7 +110,6 @@ if test "x$enable_daemon" = "xyes"; then
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
   AM_PATH_PYTHON(2.7)
-  AM_CONDITIONAL([PYTHON3], [test "x$PYTHON" == "xpython3"])
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
   AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
@@ -157,6 +156,8 @@ if test "x$enable_daemon" = "xyes"; then
   CFLAGS=$CFLAGS_save
   CPPFLAGS=$CPPFLAGS_save
 fi
+AM_CONDITIONAL([PYTHON3], [test "x$PYTHON" == "xpython3"])
+
 if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
   want_linux_netns=yes
   PKG_CHECK_MODULES(libev, libev,
