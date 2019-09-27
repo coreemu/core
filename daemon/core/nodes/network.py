@@ -9,7 +9,7 @@ import threading
 import time
 from socket import AF_INET, AF_INET6
 
-from core import CoreCommandError, constants, utils
+from core import CoreCommandError, CoreError, constants, utils
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.nodes import ipaddress
@@ -806,8 +806,8 @@ class CtrlNet(CoreNetwork):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        if self.detectoldbridge():
-            return
+        if self.net_client.existing_bridges(self.id):
+            raise CoreError("old bridges exist for node: %s" % self.id)
 
         CoreNetwork.startup(self)
 
@@ -833,32 +833,6 @@ class CtrlNet(CoreNetwork):
 
         if self.serverintf:
             self.net_client.create_interface(self.brname, self.serverintf)
-
-    def detectoldbridge(self):
-        """
-        Occasionally, control net bridges from previously closed sessions are not
-        cleaned up. Check if there are old control net bridges and delete them
-
-        :return: True if an old bridge was detected, False otherwise
-        :rtype: bool
-        """
-        output = self.net_client.get_bridges()
-        lines = output.split("\n")
-        for line in lines[1:]:
-            cols = line.split("\t")
-            oldbr = cols[0]
-            flds = cols[0].split(".")
-            if len(flds) == 3:
-                if flds[0] == "b" and flds[1] == self.id:
-                    logging.error(
-                        "error: An active control net bridge (%s) found. "
-                        "An older session might still be running. "
-                        "Stop all sessions and, if needed, delete %s to continue.",
-                        oldbr,
-                        oldbr,
-                    )
-                    return True
-        return False
 
     def shutdown(self):
         """

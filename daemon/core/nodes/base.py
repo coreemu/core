@@ -19,7 +19,7 @@ from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.nodes import client, ipaddress
 from core.nodes.interface import CoreInterface, TunTap, Veth
-from core.nodes.netclient import BrctlClient, OvsClient
+from core.nodes.netclient import LinuxNetClient, OvsNetClient
 
 _DEFAULT_MTU = 1500
 
@@ -1065,10 +1065,10 @@ class CoreNetworkBase(NodeBase):
         super(CoreNetworkBase, self).__init__(session, _id, name, start=start)
         self._linked = {}
         self._linked_lock = threading.Lock()
-        if session.options.get_config("ovs"):
-            self.net_client = OvsClient()
+        if session.options.get_config("ovs") == "True":
+            self.net_client = OvsNetClient()
         else:
-            self.net_client = BrctlClient()
+            self.net_client = LinuxNetClient()
 
     def startup(self):
         """
