@@ -10,7 +10,6 @@ from queue import Empty, Queue
 
 import grpc
 
-from core import CoreError
 from core.api.grpc import core_pb2, core_pb2_grpc
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
@@ -23,6 +22,7 @@ from core.emulator.data import (
 )
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, NodeTypes
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNetworkBase
 from core.nodes.docker import DockerNode

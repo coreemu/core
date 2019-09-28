@@ -4,7 +4,8 @@ utility.py: defines miscellaneous utility services.
 
 import os
 
-from core import CoreCommandError, constants, utils
+from core import constants, utils
+from core.errors import CoreCommandError
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
 from core.services.coreservices import CoreService
 

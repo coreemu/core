@@ -2,8 +2,9 @@ import json
 import logging
 import os
 
-from core import CoreCommandError, utils
+from core import utils
 from core.emulator.enumerations import NodeTypes
+from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 
 

@@ -14,7 +14,7 @@ from builtins import range
 from itertools import repeat
 from queue import Empty, Queue
 
-from core import CoreError, utils
+from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
 from core.config import ConfigShim
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
@@ -37,6 +37,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim

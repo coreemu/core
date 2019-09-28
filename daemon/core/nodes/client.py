@@ -8,7 +8,8 @@ import logging
 import os
 from subprocess import PIPE, Popen
 
-from core import CoreCommandError, constants, utils
+from core import constants, utils
+from core.errors import CoreCommandError
 
 
 class VnodeClient(object):

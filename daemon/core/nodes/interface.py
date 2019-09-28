@@ -6,9 +6,8 @@ import logging
 import time
 from builtins import int, range
 
-from core import CoreCommandError, constants, utils
-
-utils.check_executables([constants.IP_BIN])
+from core import constants, utils
+from core.errors import CoreCommandError
 
 
 class CoreInterface(object):

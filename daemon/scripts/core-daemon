@@ -12,12 +12,12 @@ import threading
 import time
 from configparser import ConfigParser
 
-from core import constants, load_logging_config
+from core import constants
 from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler, CoreUdpHandler
 from core.api.tlv.coreserver import CoreServer, CoreUdpServer
 from core.emulator import enumerations
-from core.utils import close_onexec
+from core.utils import close_onexec, load_logging_config
 
 
 def banner():

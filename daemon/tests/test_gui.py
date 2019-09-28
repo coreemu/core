@@ -7,7 +7,6 @@ import time
 import mock
 import pytest
 
-from core import CoreError
 from core.api.tlv import coreapi
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import (
@@ -24,6 +23,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.ipaddress import Ipv4Prefix
 

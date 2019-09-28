@@ -6,13 +6,13 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core import CoreError
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.emudata import NodeOptions
+from core.errors import CoreError
 
 _EMANE_MODELS = [
     EmaneIeee80211abgModel,
