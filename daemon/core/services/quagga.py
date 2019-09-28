@@ -3,7 +3,7 @@ quagga.py: defines routing services provided by Quagga.
 """
 
 from core import constants
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
 from core.nodes import ipaddress
 from core.nodes.network import PtpNet, WlanNode
@@ -460,7 +460,7 @@ class Ospfv3mdr(Ospfv3):
         cfg = cls.mtucheck(ifc)
         # Uncomment the following line to use Address Family Translation for IPv4
         cfg += "  ipv6 ospf6 instance-id 65\n"
-        if ifc.net is not None and isinstance(ifc.net, (WlanNode, EmaneNode)):
+        if ifc.net is not None and isinstance(ifc.net, (WlanNode, EmaneNet)):
             return (
                 cfg
                 + """\

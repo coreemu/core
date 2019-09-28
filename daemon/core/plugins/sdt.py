@@ -8,7 +8,7 @@ import socket
 from future.moves.urllib.parse import urlparse
 
 from core import CoreError, constants
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import (
     EventTypes,
     LinkTlvs,
@@ -365,7 +365,7 @@ class Sdt(object):
             for net in nets:
                 all_links = net.all_link_data(flags=MessageFlags.ADD.value)
                 for link_data in all_links:
-                    is_wireless = isinstance(net, (WlanNode, EmaneNode))
+                    is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
                     if is_wireless and link_data.node1_id == net.id:
                         continue
@@ -493,7 +493,7 @@ class Sdt(object):
 
     def wlancheck(self, nodenum):
         """
-        Helper returns True if a node number corresponds to a WlanNode or EmaneNode.
+        Helper returns True if a node number corresponds to a WLAN or EMANE node.
 
         :param int nodenum: node id to check
         :return: True if node is wlan or emane, False otherwise
@@ -508,6 +508,6 @@ class Sdt(object):
                 n = self.session.get_node(nodenum)
             except CoreError:
                 return False
-            if isinstance(n, (WlanNode, EmaneNode)):
+            if isinstance(n, (WlanNode, EmaneNet)):
                 return True
         return False

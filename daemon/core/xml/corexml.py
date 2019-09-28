@@ -4,7 +4,7 @@ from lxml import etree
 
 import core.nodes.base
 import core.nodes.physical
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.nodes.base import CoreNetworkBase
@@ -458,7 +458,7 @@ class CoreXmlWriter(object):
             interface_name = node_interface.name
 
             # check if emane interface
-            if isinstance(node_interface.net, EmaneNode):
+            if isinstance(node_interface.net, EmaneNet):
                 nem = node_interface.net.getnemid(node_interface)
                 add_attribute(interface, "nem", nem)
 
