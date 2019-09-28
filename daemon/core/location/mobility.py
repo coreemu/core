@@ -11,7 +11,7 @@ import time
 from builtins import int
 from functools import total_ordering
 
-from core import CoreError, utils
+from core import utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
 from core.emulator.data import EventData, LinkData
 from core.emulator.enumerations import (
@@ -23,6 +23,7 @@ from core.emulator.enumerations import (
     NodeTlvs,
     RegisterTlvs,
 )
+from core.errors import CoreError
 from core.nodes.base import CoreNodeBase
 from core.nodes.ipaddress import IpAddress
 

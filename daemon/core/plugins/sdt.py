@@ -7,7 +7,7 @@ import socket
 
 from future.moves.urllib.parse import urlparse
 
-from core import CoreError, constants
+from core import constants
 from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import (
     EventTypes,
@@ -18,6 +18,7 @@ from core.emulator.enumerations import (
     NodeTlvs,
     NodeTypes,
 )
+from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, NodeBase
 from core.nodes.network import WlanNode
 

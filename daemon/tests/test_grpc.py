@@ -5,7 +5,6 @@ from queue import Queue
 import grpc
 import pytest
 
-from core import CoreError
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient
 from core.config import ConfigShim
@@ -18,6 +17,7 @@ from core.emulator.enumerations import (
     ExceptionLevels,
     NodeTypes,
 )
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 
 

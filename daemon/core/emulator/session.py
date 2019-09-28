@@ -14,7 +14,7 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
-from core import CoreError, constants, utils
+from core import constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
@@ -29,6 +29,7 @@ from core.emulator.emudata import (
 )
 from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
 from core.emulator.sessionconfig import SessionConfig, SessionMetaData
+from core.errors import CoreError
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
 from core.location.mobility import MobilityManager

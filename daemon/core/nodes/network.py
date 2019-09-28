@@ -9,16 +9,13 @@ import threading
 import time
 from socket import AF_INET, AF_INET6
 
-from core import CoreCommandError, CoreError, constants, utils
+from core import constants, utils
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
+from core.errors import CoreCommandError, CoreError
 from core.nodes import ipaddress
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import GreTap, Veth
-
-utils.check_executables(
-    [constants.BRCTL_BIN, constants.IP_BIN, constants.EBTABLES_BIN, constants.TC_BIN]
-)
 
 ebtables_lock = threading.Lock()
 

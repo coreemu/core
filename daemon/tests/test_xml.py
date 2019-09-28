@@ -2,9 +2,9 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core import CoreError
 from core.emulator.emudata import LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.services.utility import SshService
 

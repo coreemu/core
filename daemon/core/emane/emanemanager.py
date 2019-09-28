@@ -7,7 +7,7 @@ import logging
 import os
 import threading
 
-from core import CoreCommandError, CoreError, constants, utils
+from core import constants, utils
 from core.api.tlv import coreapi, dataconversion
 from core.config import ConfigGroup, ConfigShim, Configuration, ModelManager
 from core.emane import emanemanifest
@@ -26,6 +26,7 @@ from core.emulator.enumerations import (
     MessageTypes,
     RegisterTlvs,
 )
+from core.errors import CoreCommandError, CoreError
 from core.xml import emanexml
 
 try:

@@ -4,10 +4,10 @@ Defines Emane Models used within CORE.
 import logging
 import os
 
-from core import CoreError
 from core.config import ConfigGroup, Configuration
 from core.emane import emanemanifest
 from core.emulator.enumerations import ConfigDataTypes
+from core.errors import CoreError
 from core.location.mobility import WirelessModel
 from core.xml import emanexml
 
