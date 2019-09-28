@@ -12,7 +12,7 @@ import grpc
 
 from core import CoreError
 from core.api.grpc import core_pb2, core_pb2_grpc
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -456,7 +456,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             services = [x.name for x in services]
 
             emane_model = None
-            if isinstance(node, EmaneNode):
+            if isinstance(node, EmaneNet):
                 emane_model = node.model.name
 
             node_proto = core_pb2.Node(
@@ -809,7 +809,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interfaces.append(interface_proto)
 
         emane_model = None
-        if isinstance(node, EmaneNode):
+        if isinstance(node, EmaneNet):
             emane_model = node.model.name
 
         services = [x.name for x in getattr(node, "services", [])]

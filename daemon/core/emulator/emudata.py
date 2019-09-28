@@ -1,4 +1,4 @@
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import LinkTypes
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 from core.nodes.physical import PhysicalNode
@@ -53,8 +53,9 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
         "netif2": interface_two,
     }
 
-    # hacky check here, because physical and emane nodes do not conform to the same linkconfig interface
-    if not isinstance(network, (EmaneNode, PhysicalNode)):
+    # hacky check here, because physical and emane nodes do not conform to the same
+    # linkconfig interface
+    if not isinstance(network, (EmaneNet, PhysicalNode)):
         config["devname"] = devname
 
     network.linkconfig(**config)
@@ -70,7 +71,8 @@ class NodeOptions(object):
         Create a NodeOptions object.
 
         :param str name: name of node, defaults to node class name postfix with its id
-        :param str model: defines services for default and physical nodes, defaults to "router"
+        :param str model: defines services for default and physical nodes, defaults to
+            "router"
         :param str image: image to use for docker nodes
         """
         self.name = name
@@ -122,7 +124,8 @@ class LinkOptions(object):
         """
         Create a LinkOptions object.
 
-        :param core.emulator.enumerations.LinkTypes _type: type of link, defaults to wired
+        :param core.emulator.enumerations.LinkTypes _type: type of link, defaults to
+            wired
         """
         self.type = _type
         self.session = None
@@ -191,12 +194,13 @@ class IpPrefixes(object):
 
     def create_interface(self, node, name=None, mac=None):
         """
-        Creates interface data for linking nodes, using the nodes unique id for generation, along with a random
-        mac address, unless provided.
+        Creates interface data for linking nodes, using the nodes unique id for
+        generation, along with a random mac address, unless provided.
 
         :param core.nodes.base.CoreNode node: node to create interface for
         :param str name: name to set for interface, default is eth{id}
-        :param str mac: mac address to use for this interface, default is random generation
+        :param str mac: mac address to use for this interface, default is random
+            generation
         :return: new interface data for the provided node
         :rtype: InterfaceData
         """

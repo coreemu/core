@@ -18,7 +18,7 @@ from core import CoreError, constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
-from core.emane.nodes import EmaneNet, EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, ExceptionData, NodeData
 from core.emulator.emudata import (
     IdGen,
@@ -62,8 +62,8 @@ NODES = {
     NodeTypes.RJ45: Rj45Node,
     NodeTypes.TUNNEL: TunnelNode,
     NodeTypes.KTUNNEL: None,
-    NodeTypes.EMANE: EmaneNode,
-    NodeTypes.EMANE_NET: EmaneNet,
+    NodeTypes.EMANE: EmaneNet,
+    NodeTypes.EMANE_NET: None,
     NodeTypes.TAP_BRIDGE: GreTapBridge,
     NodeTypes.PEER_TO_PEER: PtpNet,
     NodeTypes.CONTROL_NET: CtrlNet,
@@ -261,7 +261,7 @@ class Session(object):
             raise CoreError("no common network found for wireless link/unlink")
 
         for common_network, interface_one, interface_two in common_networks:
-            if not isinstance(common_network, (WlanNode, EmaneNode)):
+            if not isinstance(common_network, (WlanNode, EmaneNet)):
                 logging.info(
                     "skipping common network that is not wireless/emane: %s",
                     common_network,

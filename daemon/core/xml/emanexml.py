@@ -103,9 +103,11 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     """
     Create platform xml for a specific node.
 
-    :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane configurations
-    :param core.nodes.network.CtrlNet control_net: control net node for this emane network
-    :param core.emane.nodes.EmaneNode node: node to write platform xml for
+    :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane
+        configurations
+    :param core.nodes.network.CtrlNet control_net: control net node for this emane
+        network
+    :param core.emane.nodes.EmaneNet node: node to write platform xml for
     :param int nem_id: nem id to use for interfaces for this node
     :param dict platform_xmls: stores platform xml elements to append nem entries to
     :return: the next nem id that can be used for creating platform xml files
@@ -120,7 +122,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
     nem_entries = {}
 
     if node.model is None:
-        logging.warning("warning: EmaneNode %s has no associated model", node.name)
+        logging.warning("warning: EMANE network %s has no associated model", node.name)
         return nem_entries
 
     for netif in node.netifs():
@@ -133,7 +135,8 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             "nem", id=str(nem_id), name=netif.localname, definition=nem_definition
         )
 
-        # check if this is an external transport, get default config if an interface specific one does not exist
+        # check if this is an external transport, get default config if an interface
+        # specific one does not exist
         config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
 
         if is_external(config):
@@ -220,8 +223,9 @@ def build_xml_files(emane_manager, node):
     """
     Generate emane xml files required for node.
 
-    :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane configurations
-    :param core.emane.nodes.EmaneNode node: node to write platform xml for
+    :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane
+        configurations
+    :param core.emane.nodes.EmaneNet node: node to write platform xml for
     :return: nothing
     """
     logging.debug("building all emane xml for node(%s): %s", node, node.name)
@@ -233,7 +237,7 @@ def build_xml_files(emane_manager, node):
     if not config:
         return
 
-    # build XML for overall network (EmaneNode) configs
+    # build XML for overall network EMANE configs
     node.model.build_xml_files(config)
 
     # build XML for specific interface (NEM) configs
@@ -243,7 +247,7 @@ def build_xml_files(emane_manager, node):
     rtype = "raw"
 
     for netif in node.netifs():
-        # check for interface specific emane configuration and write xml files, if needed
+        # check for interface specific emane configuration and write xml files
         config = emane_manager.getifcconfig(node.model.id, netif, node.model.name)
         if config:
             node.model.build_xml_files(config, netif)
@@ -267,8 +271,9 @@ def build_transport_xml(emane_manager, node, transport_type):
     """
     Build transport xml file for node and transport type.
 
-    :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane configurations
-    :param core.emane.nodes.EmaneNode node: node to write platform xml for
+    :param core.emane.emanemanager.EmaneManager emane_manager: emane manager with emane
+        configurations
+    :param core.emane.nodes.EmaneNet node: node to write platform xml for
     :param str transport_type: transport type to build xml for
     :return: nothing
     """
@@ -304,7 +309,7 @@ def create_phy_xml(emane_model, config, file_path):
     """
     Create the phy xml document.
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str file_path: path to write file to
     :return: nothing
@@ -323,7 +328,7 @@ def create_mac_xml(emane_model, config, file_path):
     """
     Create the mac xml document.
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str file_path: path to write file to
     :return: nothing
@@ -346,7 +351,7 @@ def create_nem_xml(
     """
     Create the nem xml document.
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str nem_file: nem file path to write
     :param str transport_definition: transport file definition path
@@ -422,7 +427,7 @@ def nem_file_name(emane_model, interface=None):
     """
     Return the string name for the NEM XML file, e.g. "n3rfpipenem.xml"
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create file
     :param interface: interface for this model
     :return: nem xml filename
     :rtype: str
@@ -438,7 +443,7 @@ def shim_file_name(emane_model, interface=None):
     """
     Return the string name for the SHIM XML file, e.g. "commeffectshim.xml"
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create file
     :param interface: interface for this model
     :return: shim xml filename
     :rtype: str
@@ -450,7 +455,7 @@ def mac_file_name(emane_model, interface=None):
     """
     Return the string name for the MAC XML file, e.g. "n3rfpipemac.xml"
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create file
     :param interface: interface for this model
     :return: mac xml filename
     :rtype: str
@@ -462,7 +467,7 @@ def phy_file_name(emane_model, interface=None):
     """
     Return the string name for the PHY XML file, e.g. "n3rfpipephy.xml"
 
-    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create phy xml for
+    :param core.emane.emanemodel.EmaneModel emane_model: emane model to create file
     :param interface: interface for this model
     :return: phy xml filename
     :rtype: str
