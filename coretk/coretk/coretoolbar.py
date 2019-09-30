@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 
+from coretk.graph import GraphMode
 from coretk.images import Images
 from coretk.tooltip import CreateToolTip
 
@@ -34,6 +35,9 @@ class CoreToolbar(object):
         self.marker_option_menu = None
         self.network_layer_option_menu = None
 
+        # variables used by canvas graph
+        self.mode = GraphMode.SELECT
+
     def load_toolbar_images(self):
         """
         Load the images that appear in core toolbar
@@ -66,6 +70,24 @@ class CoreToolbar(object):
         Images.load("stop", "stop.gif")
         Images.load("observe", "observe.gif")
 
+    def get_graph_mode(self):
+        """
+        Retrieve current graph mode
+
+        :rtype: int
+        :return: current graph mode
+        """
+        return self.mode
+
+    def set_graph_mode(self, mode):
+        """
+        Set graph mode
+
+        :param int mode: graph mode
+        :return: nothing
+        """
+        self.mode = mode
+
     def destroy_previous_frame(self):
         """
         Destroy any extra frame from previous before drawing a new one
@@ -94,7 +116,7 @@ class CoreToolbar(object):
             if i.winfo_name() != "!frame":
                 i.destroy()
 
-    def create_button(self, img, func, frame, main_button):
+    def create_button(self, img, func, frame, main_button, btt_message):
         """
         Create button and put it on the frame
 
@@ -106,6 +128,7 @@ class CoreToolbar(object):
         """
         button = tk.Button(frame, width=self.width, height=self.height, image=img)
         button.pack(side=tk.LEFT, pady=1)
+        CreateToolTip(button, btt_message)
         button.bind("<Button-1>", lambda mb: func(main_button))
 
     def create_radio_button(self, frame, image, func, variable, value, tooltip_msg):
@@ -122,11 +145,12 @@ class CoreToolbar(object):
         button.pack(side=tk.TOP, pady=1)
         CreateToolTip(button, tooltip_msg)
 
-    def create_regular_button(self, frame, image, func):
+    def create_regular_button(self, frame, image, func, btt_message):
         button = tk.Button(
             frame, width=self.width, height=self.height, image=image, command=func
         )
         button.pack(side=tk.TOP, pady=1)
+        CreateToolTip(button, btt_message)
 
     def draw_button_menu_frame(self, edit_frame, option_frame, main_button):
         """
@@ -165,6 +189,7 @@ class CoreToolbar(object):
 
     def click_selection_tool(self):
         logging.debug("Click SELECTION TOOL")
+        self.set_graph_mode(GraphMode.SELECT)
 
     def click_start_stop_session_tool(self):
         logging.debug("Click START STOP SESSION button")
@@ -173,6 +198,7 @@ class CoreToolbar(object):
 
     def click_link_tool(self):
         logging.debug("Click LINK button")
+        self.set_graph_mode(GraphMode.EDGE)
 
     def pick_router(self, main_button):
         self.network_layer_option_menu.destroy()
@@ -237,9 +263,22 @@ class CoreToolbar(object):
             self.pick_ovs,
             self.pick_editnode,
         ]
+        tooltip_list = [
+            "router",
+            "host",
+            "PC",
+            "mdr",
+            "prouter",
+            "OVS",
+            "edit node types",
+        ]
         for i in range(len(img_list)):
             self.create_button(
-                img_list[i], func_list[i], option_frame, network_layer_button
+                img_list[i],
+                func_list[i],
+                option_frame,
+                network_layer_button,
+                tooltip_list[i],
             )
 
         # place frame at a calculated position as well as keep a reference of that frame
@@ -320,9 +359,20 @@ class CoreToolbar(object):
             self.pick_rj45,
             self.pick_tunnel,
         ]
+        tooltip_list = [
+            "ethernet hub",
+            "ethernet switch",
+            "wireless LAN",
+            "rj45 physical interface tool",
+            "tunnel tool",
+        ]
         for i in range(len(img_list)):
             self.create_button(
-                img_list[i], func_list[i], option_frame, link_layer_button
+                img_list[i],
+                func_list[i],
+                option_frame,
+                link_layer_button,
+                tooltip_list[i],
             )
 
         # place frame at a calculated position as well as keep a reference of the frame
@@ -358,7 +408,6 @@ class CoreToolbar(object):
         self.marker_option_menu.destroy()
         main_button.configure(image=Images.get("marker"))
         logging.debug("Pick MARKER")
-        return "break"
 
     def pick_oval(self, main_button):
         self.marker_option_menu.destroy()
@@ -397,8 +446,11 @@ class CoreToolbar(object):
             self.pick_rectangle,
             self.pick_text,
         ]
+        tooltip_list = ["marker", "oval", "rectangle", "text"]
         for i in range(len(img_list)):
-            self.create_button(img_list[i], func_list[i], option_frame, main_button)
+            self.create_button(
+                img_list[i], func_list[i], option_frame, main_button, tooltip_list[i]
+            )
 
         # place the frame at a calculated position as well as keep a reference of that frame
         self.draw_button_menu_frame(self.edit_frame, option_frame, main_button)
@@ -432,7 +484,10 @@ class CoreToolbar(object):
     def create_toolbar(self):
         self.load_toolbar_images()
         self.create_regular_button(
-            self.edit_frame, Images.get("start"), self.click_start_stop_session_tool
+            self.edit_frame,
+            Images.get("start"),
+            self.click_start_stop_session_tool,
+            "start the session",
         )
         self.create_radio_button(
             self.edit_frame,
@@ -503,7 +558,10 @@ class CoreToolbar(object):
 
     def create_runtime_toolbar(self):
         self.create_regular_button(
-            self.edit_frame, Images.get("stop"), self.click_stop_button
+            self.edit_frame,
+            Images.get("stop"),
+            self.click_stop_button,
+            "stop the session",
         )
         self.create_radio_button(
             self.edit_frame,
@@ -539,5 +597,5 @@ class CoreToolbar(object):
             "run command from one node to another",
         )
         self.create_regular_button(
-            self.edit_frame, Images.get("run"), self.click_run_button
+            self.edit_frame, Images.get("run"), self.click_run_button, "run"
         )

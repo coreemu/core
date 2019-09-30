@@ -21,7 +21,7 @@ class Application(tk.Frame):
 
     def setup_app(self):
         self.master.title("CORE")
-        self.master.geometry("800x600")
+        self.master.geometry("1000x800")
         image = Images.get("core")
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
@@ -40,11 +40,11 @@ class Application(tk.Frame):
         core_editbar.create_toolbar()
 
         self.canvas = CanvasGraph(
-            self, background="#cccccc", scrollregion=(0, 0, 1000, 1000)
+            master=self, background="#cccccc", scrollregion=(0, 0, 1000, 1000)
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        # self.canvas.create_line(0, 0, 10, 10)
+        # self.canvas.create_rectangle(0, 0, 1000, 750, outline="#000000", fill="#ffffff", width=1)
 
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview

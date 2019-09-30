@@ -17,14 +17,42 @@ class CanvasGraph(tk.Canvas):
             cnf = {}
         kwargs["highlightthickness"] = 0
         super().__init__(master, cnf, **kwargs)
+
         self.mode = GraphMode.SELECT
         self.selected = None
         self.node_context = None
         self.nodes = {}
         self.edges = {}
         self.drawing_edge = None
+
         self.setup_menus()
         self.setup_bindings()
+        self.draw_grid()
+
+    def draw_grid(self, width=1000, height=750):
+        """
+        Create grid
+
+        :param int width: the width
+        :param int height: the height
+
+        :return: nothing
+        """
+        rectangle_id = self.create_rectangle(
+            0,
+            0,
+            width,
+            height,
+            outline="#000000",
+            fill="#ffffff",
+            width=1,
+            tags="rectangle",
+        )
+        self.tag_lower(rectangle_id)
+        for i in range(0, width, 27):
+            self.create_line(i, 0, i, height, dash=(2, 4), tags="grid line")
+        for i in range(0, height, 27):
+            self.create_line(0, i, width, i, dash=(2, 4), tags="grid line")
 
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
@@ -33,6 +61,11 @@ class CanvasGraph(tk.Canvas):
         self.node_context.add_command(label="Three")
 
     def setup_bindings(self):
+        """
+        Bind any mouse events or hot keys to the matching action
+
+        :return: nothing
+        """
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
@@ -42,11 +75,25 @@ class CanvasGraph(tk.Canvas):
         self.bind("n", self.set_mode)
 
     def canvas_xy(self, event):
+        """
+        Convert window coordinate to canvas coordinate
+
+        :param event:
+        :rtype: (int, int)
+        :return: x, y canvas coordinate
+        """
         x = self.canvasx(event.x)
         y = self.canvasy(event.y)
         return x, y
 
     def get_selected(self, event):
+        """
+        Retrieve the item id that is on the mouse position
+
+        :param event: mouse event
+        :rtype: int
+        :return: the item that the mouse point to
+        """
         overlapping = self.find_overlapping(event.x, event.y, event.x, event.y)
         nodes = set(self.find_withtag("node"))
         selected = None
@@ -64,6 +111,12 @@ class CanvasGraph(tk.Canvas):
         return selected
 
     def click_release(self, event):
+        """
+        Draw a node or finish drawing an edge according to the current graph mode
+
+        :param event: mouse event
+        :return: nothing
+        """
         self.focus_set()
         self.selected = self.get_selected(event)
         logging.debug(f"click release selected: {self.selected}")
@@ -109,6 +162,12 @@ class CanvasGraph(tk.Canvas):
         logging.debug(f"edges: {self.find_withtag('edge')}")
 
     def click_press(self, event):
+        """
+        Start drawing an edge if mouse click is on a node
+
+        :param event: mouse event
+        :return: nothing
+        """
         logging.debug(f"click press: {event}")
         selected = self.get_selected(event)
         is_node = selected in self.find_withtag("node")
@@ -117,6 +176,12 @@ class CanvasGraph(tk.Canvas):
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
 
     def click_motion(self, event):
+        """
+        Redraw drawing edge according to the current position of the mouse
+
+        :param event: mouse event
+        :return: nothing
+        """
         if self.mode == GraphMode.EDGE and self.drawing_edge is not None:
             x2, y2 = self.canvas_xy(event)
             x1, y1, _, _ = self.coords(self.drawing_edge.id)
@@ -130,6 +195,12 @@ class CanvasGraph(tk.Canvas):
             self.node_context.post(event.x_root, event.y_root)
 
     def set_mode(self, event):
+        """
+        Set canvas mode according to the hot key that has been pressed
+
+        :param event: key event
+        :return: nothing
+        """
         logging.debug(f"mode event: {event}")
         if event.char == "e":
             self.mode = GraphMode.EDGE
@@ -147,21 +218,41 @@ class CanvasGraph(tk.Canvas):
 
 
 class CanvasEdge:
+    """
+    Canvas edge class
+    """
+
     width = 3
 
     def __init__(self, x1, y1, x2, y2, src, canvas):
+        """
+        Create an instance of canvas edge object
+        :param int x1: source x-coord
+        :param int y1: source y-coord
+        :param int x2: destination x-coord
+        :param int y2: destination y-coord
+        :param int src: source id
+        :param tkinter.Canvas canvas: canvas object
+        """
         self.src = src
         self.dst = None
         self.canvas = canvas
         self.id = self.canvas.create_line(x1, y1, x2, y2, tags="edge", width=self.width)
         self.token = None
-        self.canvas.tag_lower(self.id)
+
+        # TODO resolve this
+        # self.canvas.tag_lower(self.id)
 
     def complete(self, dst, x, y):
         self.dst = dst
         self.token = tuple(sorted((self.src, self.dst)))
         x1, y1, _, _ = self.canvas.coords(self.id)
         self.canvas.coords(self.id, x1, y1, x, y)
+        self.canvas.lift(self.src)
+        self.canvas.lift(self.dst)
+        # self.canvas.create_line(0,0,10,10)
+        # print(x1,y1,x,y)
+        # self.canvas.create_line(x1+1, y1+1, x+1, y+1)
 
     def delete(self):
         self.canvas.delete(self.id)
