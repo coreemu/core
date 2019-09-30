@@ -249,6 +249,7 @@ class ServiceManager(object):
 
         :param CoreService service: service to add
         :return: nothing
+        :raises ValueError: when service cannot be loaded
         """
         name = service.name
         logging.debug("loading service: class(%s) name(%s)", service.__name__, name)
@@ -260,6 +261,13 @@ class ServiceManager(object):
         # validate dependent executables are present
         for executable in service.executables:
             which(executable, required=True)
+
+        # validate service on load succeeds
+        try:
+            service.on_load()
+        except Exception as e:
+            logging.exception("error during service(%s) on load", service.name)
+            raise ValueError(e)
 
         # make service available
         cls.services[name] = service
@@ -289,7 +297,6 @@ class ServiceManager(object):
         for service in services:
             if not service.name:
                 continue
-            service.on_load()
 
             try:
                 cls.add(service)
