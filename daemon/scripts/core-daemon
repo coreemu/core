@@ -132,9 +132,9 @@ def get_merged_config(filename):
     if not cfg.has_section(section):
         cfg.add_section(section)
 
-    # merge command line with config file
-    for opt in args.__dict__:
-        val = args.__dict__[opt]
+    # merge argparse with configparser
+    for opt in vars(args):
+        val = getattr(args, opt)
         if val is not None:
             cfg.set(section, opt, str(val))
 
