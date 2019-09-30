@@ -1248,10 +1248,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 values = []
                 group_strings = []
                 start_index = 1
-                logging.info("sorted groups: %s", groups)
+                logging.debug("sorted groups: %s", groups)
                 for group in groups:
                     services = sorted(group_map[group], key=lambda x: x.name.lower())
-                    logging.info("sorted services for group(%s): %s", group, services)
+                    logging.debug("sorted services for group(%s): %s", group, services)
                     end_index = start_index + len(services) - 1
                     group_strings.append("%s:%s-%s" % (group, start_index, end_index))
                     start_index += len(services)
