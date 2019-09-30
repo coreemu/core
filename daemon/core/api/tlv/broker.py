@@ -496,7 +496,7 @@ class CoreBroker(object):
 
         # add other nets here that do not require tunnels
         if isinstance(net, EmaneNet):
-            logging.warning("emane network does not require a tunnel")
+            logging.debug("emane network does not require a tunnel")
             return None
 
         server_interface = getattr(net, "serverintf", None)

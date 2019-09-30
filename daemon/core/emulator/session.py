@@ -1721,7 +1721,7 @@ class Session(object):
         if net_index == 0:
             updown_script = self.options.get_config("controlnet_updown_script")
             if not updown_script:
-                logging.warning("controlnet updown script not configured")
+                logging.debug("controlnet updown script not configured")
 
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:
