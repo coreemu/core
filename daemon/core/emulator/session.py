@@ -1229,12 +1229,12 @@ class Session(object):
         """
         if state == EventTypes.RUNTIME_STATE.value:
             self.emane.poststartup()
-            xml_file_version = self.options.get_config("xmlfilever")
-            if xml_file_version in ("1.0",):
-                xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
-                xml_writer = corexml.CoreXmlWriter(self)
-                corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
-                xml_writer.write(xml_file_name)
+
+            # create session deployed xml
+            xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
+            xml_writer = corexml.CoreXmlWriter(self)
+            corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
+            xml_writer.write(xml_file_name)
 
     def get_environment(self, state=True):
         """

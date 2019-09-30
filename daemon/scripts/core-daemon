@@ -93,7 +93,6 @@ def get_merged_config(filename):
     defaults = {
         "port": "%d" % enumerations.CORE_API_PORT,
         "listenaddr": "localhost",
-        "xmlfilever": "1.0",
         "numthreads": "1",
         "grpcport": "50051",
         "grpcaddress": "localhost",
