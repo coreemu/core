@@ -100,51 +100,33 @@ class PhysicalNode(CoreNodeBase):
         """
         Set hardware address for an interface.
         """
-        self._netif[ifindex].sethwaddr(addr)
-        ifname = self.ifname(ifindex)
+        interface = self._netif[ifindex]
+        interface.sethwaddr(addr)
         if self.up:
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)]
-            )
+            self.net_client.device_mac(interface.name, str(addr))
 
     def addaddr(self, ifindex, addr):
         """
         Add an address to an interface.
         """
+        interface = self._netif[ifindex]
         if self.up:
-            self.check_cmd(
-                [
-                    constants.IP_BIN,
-                    "addr",
-                    "add",
-                    str(addr),
-                    "dev",
-                    self.ifname(ifindex),
-                ]
-            )
-
-        self._netif[ifindex].addaddr(addr)
+            self.net_client.create_address(interface.name, str(addr))
+        interface.addaddr(addr)
 
     def deladdr(self, ifindex, addr):
         """
         Delete an address from an interface.
         """
+        interface = self._netif[ifindex]
+
         try:
-            self._netif[ifindex].deladdr(addr)
+            interface.deladdr(addr)
         except ValueError:
             logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.check_cmd(
-                [
-                    constants.IP_BIN,
-                    "addr",
-                    "del",
-                    str(addr),
-                    "dev",
-                    self.ifname(ifindex),
-                ]
-            )
+            self.net_client.delete_address(interface.name, str(addr))
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         """
@@ -159,12 +141,8 @@ class PhysicalNode(CoreNodeBase):
 
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", "dev", netif.localname, "down"]
-            )
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", netif.localname, "name", netif.name]
-            )
+            self.net_client.device_down(netif.localname)
+            self.net_client.device_name(netif.localname, netif.name)
 
         netif.localname = netif.name
 
@@ -175,9 +153,7 @@ class PhysicalNode(CoreNodeBase):
             self.addaddr(ifindex, addr)
 
         if self.up:
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", "dev", netif.localname, "up"]
-            )
+            self.net_client.device_up(netif.localname)
 
     def linkconfig(
         self,
@@ -335,7 +311,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         # interface will also be marked up during net.attach()
         self.savestate()
-        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
+        self.net_client.device_up(self.localname)
         self.up = True
 
     def shutdown(self):
@@ -349,18 +325,17 @@ class Rj45Node(CoreNodeBase, CoreInterface):
             return
 
         try:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "down"])
-            utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
-            utils.check_cmd(
-                [constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"]
-            )
+            self.net_client.device_down(self.localname)
+            self.net_client.device_flush(self.localname)
+            self.net_client.delete_tc(self.localname)
         except CoreCommandError:
             logging.exception("error shutting down")
 
         self.up = False
         self.restorestate()
 
-    # TODO: issue in that both classes inherited from provide the same method with different signatures
+    # TODO: issue in that both classes inherited from provide the same method with
+    #  different signatures
     def attachnet(self, net):
         """
         Attach a network.
@@ -370,7 +345,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         CoreInterface.attachnet(self, net)
 
-    # TODO: issue in that both classes inherited from provide the same method with different signatures
+    # TODO: issue in that both classes inherited from provide the same method with
+    #  different signatures
     def detachnet(self):
         """
         Detach a network.
@@ -476,9 +452,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            utils.check_cmd(
-                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.name]
-            )
+            self.net_client.create_address(self.name, str(addr))
 
         CoreInterface.addaddr(self, addr)
 
@@ -491,9 +465,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            utils.check_cmd(
-                [constants.IP_BIN, "addr", "del", str(addr), "dev", self.name]
-            )
+            self.net_client.delete_address(self.name, str(addr))
 
         CoreInterface.deladdr(self, addr)
 
@@ -507,8 +479,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         self.old_up = False
         self.old_addrs = []
-        args = [constants.IP_BIN, "addr", "show", "dev", self.localname]
-        output = utils.check_cmd(args)
+        output = self.net_client.device_show(self.localname)
         for line in output.split("\n"):
             items = line.split()
             if len(items) < 2:
@@ -534,25 +505,14 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         for addr in self.old_addrs:
             if addr[1] is None:
-                utils.check_cmd(
-                    [constants.IP_BIN, "addr", "add", addr[0], "dev", self.localname]
-                )
+                self.net_client.create_address(self.localname, addr[0])
             else:
-                utils.check_cmd(
-                    [
-                        constants.IP_BIN,
-                        "addr",
-                        "add",
-                        addr[0],
-                        "brd",
-                        addr[1],
-                        "dev",
-                        self.localname,
-                    ]
+                self.net_client.create_address(
+                    self.localname, addr[0], broadcast=addr[1]
                 )
 
         if self.old_up:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
+            self.net_client.device_up(self.localname)
 
     def setposition(self, x=None, y=None, z=None):
         """
