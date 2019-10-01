@@ -145,36 +145,6 @@ class VnodeClient(object):
             *args
         )
 
-    def redircmd(self, infd, outfd, errfd, args, wait=True):
-        """
-        Execute a command on a node with standard input, output, and
-        error redirected according to the given file descriptors.
-
-        :param infd: stdin file descriptor
-        :param outfd: stdout file descriptor
-        :param errfd: stderr file descriptor
-        :param list[str]|str args: command arguments
-        :param bool wait: wait flag
-        :return: command status
-        :rtype: int
-        """
-        self._verify_connection()
-
-        # run command, return process when not waiting
-        args = utils.split_args(args)
-        cmd = self._cmd_args() + args
-        logging.debug("redircmd: %s", cmd)
-        p = Popen(cmd, stdin=infd, stdout=outfd, stderr=errfd)
-
-        if not wait:
-            return p
-
-        # wait for and return exit status
-        status = p.wait()
-        if status:
-            logging.warning("cmd exited with status %s: %s", status, args)
-        return status
-
     def term(self, sh="/bin/sh"):
         """
         Open a terminal on a node.
@@ -214,25 +184,3 @@ class VnodeClient(object):
         :return: str
         """
         return "%s -c %s -- %s" % (constants.VCMD_BIN, self.ctrlchnlname, sh)
-
-    def shcmd(self, cmd, sh="/bin/sh"):
-        """
-        Execute a shell command.
-
-        :param str cmd: command string
-        :param str sh: shell to run command in
-        :return: command result
-        :rtype: int
-        """
-        return self.cmd([sh, "-c", cmd])
-
-    def shcmd_result(self, cmd, sh="/bin/sh"):
-        """
-        Execute a shell command and return the exist status and combined output.
-
-        :param str cmd: shell command to run
-        :param str sh: shell to run command in
-        :return: exist status and combined output
-        :rtype: tuple[int, str]
-        """
-        return self.cmd_output([sh, "-c", cmd])

@@ -17,7 +17,6 @@ from socket import AF_INET, AF_INET6
 from core import constants, utils
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.errors import CoreCommandError
 from core.nodes import client, ipaddress
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, OvsNetClient
@@ -636,15 +635,8 @@ class CoreNode(CoreNodeBase):
         """
         source = os.path.abspath(source)
         logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
-        cmd = 'mkdir -p "%s" && %s -n --bind "%s" "%s"' % (
-            target,
-            constants.MOUNT_BIN,
-            source,
-            target,
-        )
-        status, output = self.client.shcmd_result(cmd)
-        if status:
-            raise CoreCommandError(status, cmd, output)
+        self.client.check_cmd(["mkdir", "-p", target])
+        self.client.check_cmd([constants.MOUNT_BIN, "-n", "--bind", source, target])
         self._mounts.append((source, target))
 
     def newifindex(self):
@@ -901,11 +893,9 @@ class CoreNode(CoreNodeBase):
         """
         logging.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
-
-        cmd = 'mkdir -p "%s" && mv "%s" "%s" && sync' % (directory, srcname, filename)
-        status, output = self.client.shcmd_result(cmd)
-        if status:
-            raise CoreCommandError(status, cmd, output)
+        self.client.check_cmd(["mkdir", "-p", directory])
+        self.client.check_cmd(["mv", srcname, filename])
+        self.client.check_cmd(["sync"])
 
     def hostfilename(self, filename):
         """

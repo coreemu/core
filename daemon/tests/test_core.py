@@ -4,7 +4,6 @@ Unit tests for testing basic CORE networks.
 
 import os
 import stat
-import subprocess
 import threading
 
 import pytest
@@ -109,10 +108,6 @@ class TestCore:
         p, stdin, stdout, stderr = client.popen(command)
         assert not p.wait()
         assert not client.icmd(command)
-        assert not client.redircmd(
-            subprocess.PIPE, subprocess.PIPE, subprocess.PIPE, command
-        )
-        assert not client.shcmd(command[0])
 
         # check various command using command line
         assert not client.cmd(command)
@@ -121,7 +116,6 @@ class TestCore:
         p, stdin, stdout, stderr = client.popen(command)
         assert not p.wait()
         assert not client.icmd(command)
-        assert not client.shcmd(command[0])
 
         # check module methods
         assert createclients(session.session_dir)

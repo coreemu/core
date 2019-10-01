@@ -14,7 +14,6 @@ class LxdClient(object):
         self.name = name
         self.image = image
         self.pid = None
-        self._addr = {}
 
     def create_container(self):
         utils.check_cmd(
