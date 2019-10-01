@@ -91,7 +91,7 @@ Requires building from source, from the latest nightly snapshot.
 
 ```shell
 # packages needed beyond what's normally required to build core on ubuntu
-sudo apt install libtool libreadline-dev
+sudo apt install libtool libreadline-dev autoconf
 
 wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/nightly_snapshots/quagga-svnsnap.tgz
 tar xzf quagga-svnsnap.tgz
