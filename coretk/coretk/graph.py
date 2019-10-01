@@ -2,23 +2,25 @@ import enum
 import logging
 import tkinter as tk
 
-from coretk.images import Images
-
 
 class GraphMode(enum.Enum):
     SELECT = 0
     EDGE = 1
-    NODE = 2
+    PICKNODE = 2
+    NODE = 3
+    OTHER = 4
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(self, master=None, cnf=None, **kwargs):
+    def __init__(self, grpc=None, master=None, cnf=None, **kwargs):
         if cnf is None:
             cnf = {}
         kwargs["highlightthickness"] = 0
         super().__init__(master, cnf, **kwargs)
-
+        self.core_grpc = grpc
         self.mode = GraphMode.SELECT
+        self.draw_node_image = None
+        self.draw_node_name = None
         self.selected = None
         self.node_context = None
         self.nodes = {}
@@ -28,6 +30,15 @@ class CanvasGraph(tk.Canvas):
         self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
+
+    def set_canvas_mode(self, mode):
+        self.mode = mode
+
+    def set_drawing_image(self, img):
+        self.draw_node_image = img
+
+    def set_drawing_name(self, name):
+        self.draw_node_name = name
 
     def draw_grid(self, width=1000, height=750):
         """
@@ -70,9 +81,9 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
         self.bind("<Button-3>", self.context)
-        self.bind("e", self.set_mode)
-        self.bind("s", self.set_mode)
-        self.bind("n", self.set_mode)
+        # self.bind("e", self.set_mode)
+        # self.bind("s", self.set_mode)
+        # self.bind("n", self.set_mode)
 
     def canvas_xy(self, event):
         """
@@ -124,7 +135,9 @@ class CanvasGraph(tk.Canvas):
             self.handle_edge_release(event)
         elif self.mode == GraphMode.NODE:
             x, y = self.canvas_xy(event)
-            self.add_node(x, y, "switch")
+            self.add_node(x, y, self.draw_node_image, self.draw_node_name)
+        elif self.mode == GraphMode.PICKNODE:
+            self.mode = GraphMode.NODE
 
     def handle_edge_release(self, event):
         edge = self.drawing_edge
@@ -194,25 +207,39 @@ class CanvasGraph(tk.Canvas):
             logging.debug(f"node context: {selected}")
             self.node_context.post(event.x_root, event.y_root)
 
-    def set_mode(self, event):
-        """
-        Set canvas mode according to the hot key that has been pressed
+    # def set_mode(self, event):
+    #     """
+    #     Set canvas mode according to the hot key that has been pressed
+    #
+    #     :param event: key event
+    #     :return: nothing
+    #     """
+    #     logging.debug(f"mode event: {event}")
+    #     if event.char == "e":
+    #         self.mode = GraphMode.EDGE
+    #     elif event.char == "s":
+    #         self.mode = GraphMode.SELECT
+    #     elif event.char == "n":
+    #         self.mode = GraphMode.NODE
+    #     logging.debug(f"graph mode: {self.mode}")
 
-        :param event: key event
-        :return: nothing
-        """
-        logging.debug(f"mode event: {event}")
-        if event.char == "e":
-            self.mode = GraphMode.EDGE
-        elif event.char == "s":
-            self.mode = GraphMode.SELECT
-        elif event.char == "n":
-            self.mode = GraphMode.NODE
-        logging.debug(f"graph mode: {self.mode}")
+    # def add_node(self, x, y, image_name):
+    #     image = Images.get(image_name)
+    #     node = CanvasNode(x, y, image, self)
+    #     self.nodes[node.id] = node
+    #     return node
 
-    def add_node(self, x, y, image_name):
-        image = Images.get(image_name)
-        node = CanvasNode(x, y, image, self)
+    def add_node(self, x, y, image, node_name):
+        core_session_id = self.core_grpc.get_session_id()
+        core_node_id = self.core_grpc.add_node(int(x), int(y), node_name)
+        node = CanvasNode(
+            core_session_id=core_session_id,
+            core_node_id=core_node_id,
+            x=x,
+            y=y,
+            image=image,
+            canvas=self,
+        )
         self.nodes[node.id] = node
         return node
 
@@ -250,22 +277,23 @@ class CanvasEdge:
         self.canvas.coords(self.id, x1, y1, x, y)
         self.canvas.lift(self.src)
         self.canvas.lift(self.dst)
-        # self.canvas.create_line(0,0,10,10)
-        # print(x1,y1,x,y)
-        # self.canvas.create_line(x1+1, y1+1, x+1, y+1)
 
     def delete(self):
         self.canvas.delete(self.id)
 
 
 class CanvasNode:
-    def __init__(self, x, y, image, canvas):
+    def __init__(self, core_session_id, core_node_id, x, y, image, canvas):
         self.image = image
         self.canvas = canvas
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags="node"
         )
-        self.name = f"Node {self.id}"
+        self.x_coord = x
+        self.y_coord = y
+        self.core_session_id = core_session_id
+        self.core_node_id = core_node_id
+        self.name = f"Node {self.core_node_id}"
         self.text_id = self.canvas.create_text(x, y + 20, text=self.name)
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
@@ -274,16 +302,29 @@ class CanvasNode:
         self.edges = set()
         self.moving = None
 
+    def get_coords(self):
+        return self.x_coord, self.y_coord
+
+    def update_coords(self):
+        self.x_coord, self.y_coord = self.canvas.coords(self.id)
+
     def click_press(self, event):
         logging.debug(f"click press {self.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
 
     def click_release(self, event):
         logging.debug(f"click release {self.name}: {event}")
+        self.update_coords()
+        self.canvas.core_grpc.edit_node(
+            self.core_session_id,
+            self.core_node_id,
+            int(self.x_coord),
+            int(self.y_coord),
+        )
         self.moving = None
 
     def motion(self, event):
-        if self.canvas.mode == GraphMode.EDGE:
+        if self.canvas.mode == GraphMode.EDGE or self.canvas.mode == GraphMode.NODE:
             return
         x, y = self.canvas.canvas_xy(event)
         moving_x, moving_y = self.moving

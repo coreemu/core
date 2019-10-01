@@ -1,6 +1,8 @@
 import logging
 import tkinter as tk
 
+import coretk.images as images
+from coretk.coregrpc import CoreGrpc
 from coretk.coremenubar import CoreMenubar
 from coretk.coretoolbar import CoreToolbar
 from coretk.graph import CanvasGraph
@@ -13,11 +15,16 @@ class Application(tk.Frame):
         self.load_images()
         self.setup_app()
         self.menubar = None
+        self.canvas = None
+        self.core_grpc = CoreGrpc()
         self.create_menu()
         self.create_widgets()
 
     def load_images(self):
-        Images.load("core", "core-icon.png")
+        images.load_core_images(Images)
+
+    def close_grpc(self):
+        self.core_grpc.close()
 
     def setup_app(self):
         self.master.title("CORE")
@@ -40,11 +47,14 @@ class Application(tk.Frame):
         core_editbar.create_toolbar()
 
         self.canvas = CanvasGraph(
-            master=self, background="#cccccc", scrollregion=(0, 0, 1000, 1000)
+            grpc=self.core_grpc,
+            master=self,
+            background="#cccccc",
+            scrollregion=(0, 0, 1000, 1000),
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        # self.canvas.create_rectangle(0, 0, 1000, 750, outline="#000000", fill="#ffffff", width=1)
+        core_editbar.update_canvas(self.canvas)
 
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview
@@ -69,3 +79,4 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = Application()
     app.mainloop()
+    app.close_grpc()
