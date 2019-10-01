@@ -126,9 +126,6 @@ class TestCore:
         # check module methods
         assert createclients(session.session_dir)
 
-        # check convenience methods for interface information
-        assert client.netifstats()
-
     def test_netif(self, session, ip_prefixes):
         """
         Test netif methods.
