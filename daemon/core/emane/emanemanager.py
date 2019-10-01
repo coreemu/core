@@ -733,11 +733,11 @@ class EmaneManager(ModelManager):
                 )
 
             # multicast route is needed for OTA data
-            node.node_net_client.add_route(otagroup, otadev)
+            node.node_net_client.create_route(otagroup, otadev)
 
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
-                node.node_net_client.add_route(eventgroup, eventdev)
+                node.node_net_client.create_route(eventgroup, eventdev)
 
             # start emane
             args = emanecmd + [

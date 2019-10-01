@@ -53,7 +53,7 @@ class NodeBase(object):
         self.type = None
         self.server = None
         self.services = None
-        # ifindex is key, PyCoreNetIf instance is value
+        # ifindex is key, CoreInterface instance is value
         self._netif = {}
         self.ifindex = 0
         self.canvas = None
@@ -363,6 +363,17 @@ class CoreNodeBase(NodeBase):
                     common.append((netif1.net, netif1, netif2))
 
         return common
+
+    def network_cmd(self, args):
+        """
+        Runs a command for a node that is used to configure and setup network interfaces.
+
+        :param list[str]|str args: command to run
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        raise NotImplementedError
 
     def check_cmd(self, args):
         """

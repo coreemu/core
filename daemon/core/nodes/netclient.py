@@ -13,67 +13,136 @@ class LinuxNetClient(object):
     Client for creating Linux bridges and ip interfaces for nodes.
     """
 
-    def __init__(self, run_func):
-        self.run_func = run_func
+    def __init__(self, run):
+        """
+        Create LinuxNetClient instance.
 
-    def run(self, cmd):
-        return self.run_func(cmd)
+        :param run: function to run commands with
+        """
+        self.run = run
 
     def set_hostname(self, name):
+        """
+        Set network hostname.
+
+        :param str name: name for hostname
+        :return: nothing
+        """
         self.run(["hostname", name])
 
-    def add_route(self, route, device):
+    def create_route(self, route, device):
+        """
+        Create a new route for a device.
+
+        :param str route: route to create
+        :param str device: device to add route to
+        :return: nothing
+        """
         self.run([IP_BIN, "route", "add", route, "dev", device])
 
     def device_up(self, device):
+        """
+        Bring a device up.
+
+        :param str device: device to bring up
+        :return: nothing
+        """
         self.run([IP_BIN, "link", "set", device, "up"])
 
     def device_down(self, device):
+        """
+        Bring a device down.
+
+        :param str device: device to bring down
+        :return: nothing
+        """
         self.run([IP_BIN, "link", "set", device, "down"])
 
     def device_name(self, device, name):
+        """
+        Set a device name.
+
+        :param str device: device to set name for
+        :param str name: name to set
+        :return: nothing
+        """
         self.run([IP_BIN, "link", "set", device, "name", name])
 
     def device_show(self, device):
+        """
+        Show information for a device.
+
+        :param str device: device to get information for
+        :return: device information
+        :rtype: str
+        """
         return self.run([IP_BIN, "link", "show", device])
 
     def device_ns(self, device, namespace):
+        """
+        Set netns for a device.
+
+        :param str device: device to setns for
+        :param str namespace: namespace to set device to
+        :return: nothing
+        """
         self.run([IP_BIN, "link", "set", device, "netns", namespace])
 
     def device_flush(self, device):
+        """
+        Flush device addresses.
+
+        :param str device: device to flush
+        :return: nothing
+        """
         self.run([IP_BIN, "-6", "address", "flush", "dev", device])
 
     def device_mac(self, device, mac):
+        """
+        Set MAC address for a device.
+
+        :param str device: device to set mac for
+        :param str mac: mac to set
+        :return: nothing
+        """
         self.run([IP_BIN, "link", "set", "dev", device, "address", mac])
 
     def delete_device(self, device):
+        """
+        Delete device.
+
+        :param str device: device to delete
+        :return: nothing
+        """
         self.run([IP_BIN, "link", "delete", device])
 
     def delete_tc(self, device):
+        """
+        Remove traffic control settings for a device.
+
+        :param str device: device to remove tc
+        :return: nothing
+        """
         self.run([TC_BIN, "qdisc", "del", "dev", device, "root"])
 
     def checksums_off(self, interface_name):
+        """
+        Turns interface checksums off.
+
+        :param str interface_name: interface to update
+        :return: nothing
+        """
         self.run([ETHTOOL_BIN, "-K", interface_name, "rx", "off", "tx", "off"])
 
-    def delete_address(self, device, address):
-        self.run([IP_BIN, "address", "delete", address, "dev", device])
-
-    def create_veth(self, name, peer):
-        self.run(
-            [IP_BIN, "link", "add", "name", name, "type", "veth", "peer", "name", peer]
-        )
-
-    def create_gretap(self, device, address, local, ttl, key):
-        cmd = [IP_BIN, "link", "add", device, "type", "gretap", "remote", address]
-        if local is not None:
-            cmd.extend(["local", local])
-        if ttl is not None:
-            cmd.extend(["ttl", ttl])
-        if key is not None:
-            cmd.extend(["key", key])
-        self.run(cmd)
-
     def create_address(self, device, address, broadcast=None):
+        """
+        Create address for a device.
+
+        :param str device: device to add address to
+        :param str address: address to add
+        :param str broadcast: broadcast address to use, default is None
+        :return: nothing
+        """
         if broadcast is not None:
             self.run(
                 [
@@ -89,6 +158,48 @@ class LinuxNetClient(object):
             )
         else:
             self.run([IP_BIN, "address", "add", address, "dev", device])
+
+    def delete_address(self, device, address):
+        """
+        Delete an address from a device.
+
+        :param str device: targeted device
+        :param str address: address to remove
+        :return: nothing
+        """
+        self.run([IP_BIN, "address", "delete", address, "dev", device])
+
+    def create_veth(self, name, peer):
+        """
+        Create a veth pair.
+
+        :param str name: veth name
+        :param str peer: peer name
+        :return: nothing
+        """
+        self.run(
+            [IP_BIN, "link", "add", "name", name, "type", "veth", "peer", "name", peer]
+        )
+
+    def create_gretap(self, device, address, local, ttl, key):
+        """
+        Create a GRE tap on a device.
+
+        :param str device: device to add tap to
+        :param str address: address to add tap for
+        :param str local: local address to tie to
+        :param str ttl: time to live value
+        :param str key: key for tap
+        :return: nothing
+        """
+        cmd = [IP_BIN, "link", "add", device, "type", "gretap", "remote", address]
+        if local is not None:
+            cmd.extend(["local", local])
+        if ttl is not None:
+            cmd.extend(["ttl", ttl])
+        if key is not None:
+            cmd.extend(["key", key])
+        self.run(cmd)
 
     def create_bridge(self, name):
         """
