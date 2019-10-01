@@ -26,7 +26,6 @@ class VnodeClient(object):
         """
         self.name = name
         self.ctrlchnlname = ctrlchnlname
-        self._addr = {}
 
     def _verify_connection(self):
         """
@@ -237,48 +236,6 @@ class VnodeClient(object):
         :rtype: tuple[int, str]
         """
         return self.cmd_output([sh, "-c", cmd])
-
-    def getaddr(self, ifname, rescan=False):
-        """
-        Get address for interface on node.
-
-        :param str ifname: interface name to get address for
-        :param bool rescan: rescan flag
-        :return: interface information
-        :rtype: dict
-        """
-        if ifname in self._addr and not rescan:
-            return self._addr[ifname]
-
-        interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
-        args = [constants.IP_BIN, "addr", "show", "dev", ifname]
-        p, stdin, stdout, stderr = self.popen(args)
-        stdin.close()
-
-        for line in stdout:
-            line = line.strip().split()
-            if line[0] == "link/ether":
-                interface["ether"].append(line[1])
-            elif line[0] == "inet":
-                interface["inet"].append(line[1])
-            elif line[0] == "inet6":
-                if line[3] == "global":
-                    interface["inet6"].append(line[1])
-                elif line[3] == "link":
-                    interface["inet6link"].append(line[1])
-                else:
-                    logging.warning("unknown scope: %s" % line[3])
-
-        err = stderr.read()
-        stdout.close()
-        stderr.close()
-        status = p.wait()
-        if status:
-            logging.warning("nonzero exist status (%s) for cmd: %s", status, args)
-        if err:
-            logging.warning("error output: %s", err)
-        self._addr[ifname] = interface
-        return interface
 
     def netifstats(self, ifname=None):
         """

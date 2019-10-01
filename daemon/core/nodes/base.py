@@ -806,32 +806,6 @@ class CoreNode(CoreNodeBase):
         if self.up:
             self.node_net_client.delete_address(interface.name, str(addr))
 
-    def delalladdr(self, ifindex, address_types=None):
-        """
-        Delete all addresses from an interface.
-
-        :param int ifindex: index of interface to delete address types from
-        :param tuple[str] address_types: address types to delete
-        :return: nothing
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        if not address_types:
-            address_types = self.valid_address_types
-
-        interface_name = self.ifname(ifindex)
-        addresses = self.client.getaddr(interface_name, rescan=True)
-
-        for address_type in address_types:
-            if address_type not in self.valid_address_types:
-                raise ValueError(
-                    "addr type must be in: %s" % " ".join(self.valid_address_types)
-                )
-            for address in addresses[address_type]:
-                self.deladdr(ifindex, address)
-
-        # update cached information
-        self.client.getaddr(interface_name, rescan=True)
-
     def ifup(self, ifindex):
         """
         Bring an interface up.

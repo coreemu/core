@@ -127,7 +127,6 @@ class TestCore:
         assert createclients(session.session_dir)
 
         # check convenience methods for interface information
-        assert client.getaddr("eth0")
         assert client.netifstats()
 
     def test_netif(self, session, ip_prefixes):
