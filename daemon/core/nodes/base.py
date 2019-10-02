@@ -62,9 +62,9 @@ class NodeBase(object):
         self.position = Position()
 
         if session.options.get_config("ovs") == "True":
-            self.net_client = OvsNetClient(utils.check_cmd)
+            self.net_client = OvsNetClient(self.net_cmd)
         else:
-            self.net_client = LinuxNetClient(utils.check_cmd)
+            self.net_client = LinuxNetClient(self.net_cmd)
 
     def startup(self):
         """
@@ -81,6 +81,18 @@ class NodeBase(object):
         :return: nothing
         """
         raise NotImplementedError
+
+    def net_cmd(self, args):
+        """
+        Runs a command that is used to configure and setup the network on the host
+        system.
+
+        :param list[str]|str args: command to run
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        utils.check_cmd(args)
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -364,9 +376,10 @@ class CoreNodeBase(NodeBase):
 
         return common
 
-    def network_cmd(self, args):
+    def node_net_cmd(self, args):
         """
-        Runs a command for a node that is used to configure and setup network interfaces.
+        Runs a command that is used to configure and setup the network within a
+        node.
 
         :param list[str]|str args: command to run
         :return: combined stdout and stderr
@@ -451,9 +464,9 @@ class CoreNode(CoreNodeBase):
         self.bootsh = bootsh
 
         if session.options.get_config("ovs") == "True":
-            self.node_net_client = OvsNetClient(self.network_cmd)
+            self.node_net_client = OvsNetClient(self.node_net_cmd)
         else:
-            self.node_net_client = LinuxNetClient(self.network_cmd)
+            self.node_net_client = LinuxNetClient(self.node_net_cmd)
 
         if start:
             self.startup()
@@ -589,9 +602,10 @@ class CoreNode(CoreNodeBase):
         """
         return self.client.cmd_output(args)
 
-    def network_cmd(self, args):
+    def node_net_cmd(self, args):
         """
-        Runs a command for a node that is used to configure and setup network interfaces.
+        Runs a command that is used to configure and setup the network within a
+        node.
 
         :param list[str]|str args: command to run
         :return: combined stdout and stderr

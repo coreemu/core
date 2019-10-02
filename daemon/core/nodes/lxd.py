@@ -193,7 +193,7 @@ class LxcNode(CoreNode):
             raise CoreCommandError(status, args, output)
         return output
 
-    def network_cmd(self, args):
+    def node_net_cmd(self, args):
         if not self.up:
             logging.debug("node down, not running network command: %s", args)
             return 0
