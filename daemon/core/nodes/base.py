@@ -92,7 +92,7 @@ class NodeBase(object):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        utils.check_cmd(args)
+        return utils.check_cmd(args)
 
     def setposition(self, x=None, y=None, z=None):
         """
