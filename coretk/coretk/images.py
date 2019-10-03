@@ -1,6 +1,9 @@
+import logging
 import os
 
 from PIL import Image, ImageTk
+
+from core.api.grpc import core_pb2
 
 PATH = os.path.abspath(os.path.dirname(__file__))
 
@@ -18,6 +21,41 @@ class Images:
     @classmethod
     def get(cls, name):
         return cls.images[name]
+
+    @classmethod
+    def convert_type_and_model_to_image(cls, node_type, node_model):
+        """
+                Retrieve image based on type and model
+                :param core_pb2.NodeType node_type: core node type
+                :param string node_model: the node model
+
+                :return: the matching image
+                """
+        if node_type == core_pb2.NodeType.SWITCH:
+            return Images.get("switch")
+        if node_type == core_pb2.NodeType.HUB:
+            return Images.get("hub")
+        if node_type == core_pb2.NodeType.WIRELESS_LAN:
+            return Images.get("wlan")
+        if node_type == core_pb2.NodeType.RJ45:
+            return Images.get("rj45")
+        if node_type == core_pb2.NodeType.TUNNEL:
+            return Images.get("tunnel")
+        if node_type == core_pb2.NodeType.DEFAULT:
+            if node_model == "router":
+                return Images.get("router")
+            if node_model == "host":
+                return Images.get(("host"))
+            if node_model == "PC":
+                return Images.get("pc")
+            if node_model == "mdr":
+                return Images.get("mdr")
+            if node_model == "prouter":
+                return Images.get("prouter")
+            if node_model == "OVS":
+                return Images.get("ovs")
+        else:
+            logging.debug("INVALID INPUT OR NOT CONSIDERED YET")
 
 
 def load_core_images(images):

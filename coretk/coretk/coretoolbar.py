@@ -27,7 +27,6 @@ class CoreToolbar(object):
         self.width = 32
         self.height = 32
 
-        # Used for drawing the horizontally displayed menu items for network-layer nodes and link-layer node
         self.selection_tool_button = None
 
         # Reference to the option menus
@@ -35,8 +34,6 @@ class CoreToolbar(object):
         self.marker_option_menu = None
         self.network_layer_option_menu = None
 
-        # variables used by canvas graph
-        self.image_to_draw = None
         self.canvas = None
 
     def update_canvas(self, canvas):
@@ -151,63 +148,79 @@ class CoreToolbar(object):
         logging.debug("Click SELECTION TOOL")
         self.canvas.mode = GraphMode.SELECT
 
-    def click_start_stop_session_tool(self):
+    def click_start_session_tool(self):
         logging.debug("Click START STOP SESSION button")
         self.destroy_children_widgets(self.edit_frame)
-        self.canvas.set_canvas_mode(GraphMode.SELECT)
+        self.canvas.mode = GraphMode.SELECT
         self.create_runtime_toolbar()
+
+        # set configuration state
+        self.canvas.core_grpc.set_configuration_state()
+
+        # grpc client requests creating nodes
+        for node in self.canvas.grpc_manager.nodes_to_create.values():
+            self.canvas.core_grpc.add_node(
+                node.type, node.model, int(node.x), int(node.y), node.name
+            )
+        self.canvas.grpc_manager.nodes_to_create.clear()
+
+        for edge in self.canvas.grpc_manager.edges_to_create.values():
+            self.canvas.core_grpc.add_link(edge.id1, edge.id2, edge.type1, edge.type2)
+        self.canvas.grpc_manager.edges_to_create.clear()
+
+        self.canvas.core_grpc.set_instantiate_state()
 
     def click_link_tool(self):
         logging.debug("Click LINK button")
-        self.canvas.set_canvas_mode(GraphMode.EDGE)
+        self.canvas.mode = GraphMode.EDGE
 
     def pick_router(self, main_button):
         logging.debug("Pick router option")
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get("router"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("router"))
-        self.canvas.set_drawing_name("default")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("router")
+        self.canvas.draw_node_name = "router"
 
     def pick_host(self, main_button):
         logging.debug("Pick host option")
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get("host"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("host"))
-        self.canvas.set_drawing_name("default")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("host")
+        self.canvas.draw_node_name = "host"
 
     def pick_pc(self, main_button):
         logging.debug("Pick PC option")
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get("pc"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("pc"))
-        self.canvas.set_drawing_name("default")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("pc")
+        self.canvas.draw_node_name = "PC"
 
     def pick_mdr(self, main_button):
         logging.debug("Pick MDR option")
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get("mdr"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("mdr"))
-        self.canvas.set_drawing_name("default")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("mdr")
+        self.canvas.draw_node_name = "mdr"
 
     def pick_prouter(self, main_button):
         logging.debug("Pick prouter option")
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get("prouter"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("prouter"))
-        self.canvas.set_drawing_name("default")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("prouter")
+        self.canvas.draw_node_name = "prouter"
 
     def pick_ovs(self, main_button):
         logging.debug("Pick OVS option")
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get("ovs"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("ovs"))
-        self.canvas.set_drawing_name("default")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("ovs")
+        self.canvas.draw_node_name = "OVS"
 
     # TODO what graph node is this
     def pick_editnode(self, main_button):
@@ -294,40 +307,41 @@ class CoreToolbar(object):
         logging.debug("Pick link-layer node HUB")
         self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("hub"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("hub"))
-        self.canvas.set_drawing_name("hub")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("hub")
+        self.canvas.draw_node_name = "hub"
 
     def pick_switch(self, main_button):
         logging.debug("Pick link-layer node SWITCH")
         self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("switch"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("switch"))
-        self.canvas.set_drawing_name("switch")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("switch")
+        self.canvas.draw_node_name = "switch"
 
     def pick_wlan(self, main_button):
         logging.debug("Pick link-layer node WLAN")
         self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("wlan"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("wlan"))
-        self.canvas.set_drawing_name("wlan")
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("wlan")
+        self.canvas.draw_node_name = "wlan"
 
     def pick_rj45(self, main_button):
         logging.debug("Pick link-layer node RJ45")
         self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("rj45"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("rj45"))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("rj45")
+        self.canvas.draw_node_name = "rj45"
 
     def pick_tunnel(self, main_button):
         logging.debug("Pick link-layer node TUNNEL")
         self.link_layer_option_menu.destroy()
         main_button.configure(image=Images.get("tunnel"))
-        self.canvas.set_canvas_mode(GraphMode.PICKNODE)
-        self.canvas.set_drawing_image(Images.get("tunnel"))
-        self.canvas.set_drawing_image(Images.get("tunnel"))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get("tunnel")
+        self.canvas.draw_node_name = "tunnel"
 
     def draw_link_layer_options(self, link_layer_button):
         """
@@ -476,11 +490,10 @@ class CoreToolbar(object):
         CreateToolTip(marker_main_button, "background annotation tools")
 
     def create_toolbar(self):
-        # self.load_toolbar_images()
         self.create_regular_button(
             self.edit_frame,
             Images.get("start"),
-            self.click_start_stop_session_tool,
+            self.click_start_session_tool,
             "start the session",
         )
         self.create_radio_button(

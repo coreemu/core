@@ -16,15 +16,19 @@ class Application(tk.Frame):
         self.setup_app()
         self.menubar = None
         self.canvas = None
+
+        # start grpc
         self.core_grpc = CoreGrpc()
+
         self.create_menu()
         self.create_widgets()
 
     def load_images(self):
+        """
+        Load core images
+        :return:
+        """
         images.load_core_images(Images)
-
-    def close_grpc(self):
-        self.core_grpc.close()
 
     def setup_app(self):
         self.master.title("CORE")
@@ -47,8 +51,8 @@ class Application(tk.Frame):
         core_editbar.create_toolbar()
 
         self.canvas = CanvasGraph(
-            grpc=self.core_grpc,
             master=self,
+            grpc=self.core_grpc,
             background="#cccccc",
             scrollregion=(0, 0, 1000, 1000),
         )
@@ -79,4 +83,3 @@ if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = Application()
     app.mainloop()
-    app.close_grpc()

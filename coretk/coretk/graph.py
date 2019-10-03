@@ -2,6 +2,9 @@ import enum
 import logging
 import tkinter as tk
 
+from coretk.grpcmanagement import GrpcManager
+from coretk.images import Images
+
 
 class GraphMode(enum.Enum):
     SELECT = 0
@@ -12,12 +15,11 @@ class GraphMode(enum.Enum):
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(self, grpc=None, master=None, cnf=None, **kwargs):
+    def __init__(self, master=None, grpc=None, cnf=None, **kwargs):
         if cnf is None:
             cnf = {}
         kwargs["highlightthickness"] = 0
         super().__init__(master, cnf, **kwargs)
-        self.core_grpc = grpc
         self.mode = GraphMode.SELECT
         self.draw_node_image = None
         self.draw_node_name = None
@@ -26,19 +28,32 @@ class CanvasGraph(tk.Canvas):
         self.nodes = {}
         self.edges = {}
         self.drawing_edge = None
-
         self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
+        self.core_grpc = grpc
+        self.grpc_manager = GrpcManager()
+        self.draw_existing_node()
 
-    def set_canvas_mode(self, mode):
-        self.mode = mode
+    def setup_menus(self):
+        self.node_context = tk.Menu(self.master)
+        self.node_context.add_command(label="One")
+        self.node_context.add_command(label="Two")
+        self.node_context.add_command(label="Three")
 
-    def set_drawing_image(self, img):
-        self.draw_node_image = img
+    def setup_bindings(self):
+        """
+        Bind any mouse events or hot keys to the matching action
 
-    def set_drawing_name(self, name):
-        self.draw_node_name = name
+        :return: nothing
+        """
+        self.bind("<ButtonPress-1>", self.click_press)
+        self.bind("<ButtonRelease-1>", self.click_release)
+        self.bind("<B1-Motion>", self.click_motion)
+        self.bind("<Button-3>", self.context)
+        # self.bind("e", self.set_mode)
+        # self.bind("s", self.set_mode)
+        # self.bind("n", self.set_mode)
 
     def draw_grid(self, width=1000, height=750):
         """
@@ -65,25 +80,20 @@ class CanvasGraph(tk.Canvas):
         for i in range(0, height, 27):
             self.create_line(0, i, width, i, dash=(2, 4), tags="grid line")
 
-    def setup_menus(self):
-        self.node_context = tk.Menu(self.master)
-        self.node_context.add_command(label="One")
-        self.node_context.add_command(label="Two")
-        self.node_context.add_command(label="Three")
-
-    def setup_bindings(self):
+    def draw_existing_node(self):
         """
-        Bind any mouse events or hot keys to the matching action
+        Draw existing node while updating the grpc manager based on that
 
         :return: nothing
         """
-        self.bind("<ButtonPress-1>", self.click_press)
-        self.bind("<ButtonRelease-1>", self.click_release)
-        self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<Button-3>", self.context)
-        # self.bind("e", self.set_mode)
-        # self.bind("s", self.set_mode)
-        # self.bind("n", self.set_mode)
+        session_id = self.core_grpc.session_id
+        response = self.core_grpc.core.get_session(session_id)
+        nodes = response.session.nodes
+        if len(nodes) > 0:
+            for node in nodes:
+                image = Images.convert_type_and_model_to_image(node.type, node.model)
+                return image
+                # n = CanvasNode(node.position.x, node.position.y, image, self, node.id)
 
     def canvas_xy(self, event):
         """
@@ -172,6 +182,10 @@ class CanvasGraph(tk.Canvas):
             node_dst = self.nodes[edge.dst]
             node_dst.edges.add(edge)
 
+            self.grpc_manager.add_edge(
+                self.core_grpc.get_session_id(), edge.token, node_src.id, node_dst.id
+            )
+
         logging.debug(f"edges: {self.find_withtag('edge')}")
 
     def click_press(self, event):
@@ -207,40 +221,14 @@ class CanvasGraph(tk.Canvas):
             logging.debug(f"node context: {selected}")
             self.node_context.post(event.x_root, event.y_root)
 
-    # def set_mode(self, event):
-    #     """
-    #     Set canvas mode according to the hot key that has been pressed
-    #
-    #     :param event: key event
-    #     :return: nothing
-    #     """
-    #     logging.debug(f"mode event: {event}")
-    #     if event.char == "e":
-    #         self.mode = GraphMode.EDGE
-    #     elif event.char == "s":
-    #         self.mode = GraphMode.SELECT
-    #     elif event.char == "n":
-    #         self.mode = GraphMode.NODE
-    #     logging.debug(f"graph mode: {self.mode}")
-
-    # def add_node(self, x, y, image_name):
-    #     image = Images.get(image_name)
-    #     node = CanvasNode(x, y, image, self)
-    #     self.nodes[node.id] = node
-    #     return node
-
     def add_node(self, x, y, image, node_name):
-        core_session_id = self.core_grpc.get_session_id()
-        core_node_id = self.core_grpc.add_node(int(x), int(y), node_name)
         node = CanvasNode(
-            core_session_id=core_session_id,
-            core_node_id=core_node_id,
-            x=x,
-            y=y,
-            image=image,
-            canvas=self,
+            x=x, y=y, image=image, canvas=self, core_id=self.grpc_manager.peek_id()
         )
         self.nodes[node.id] = node
+        self.grpc_manager.add_node(
+            self.core_grpc.get_session_id(), node.id, x, y, node_name
+        )
         return node
 
 
@@ -283,17 +271,16 @@ class CanvasEdge:
 
 
 class CanvasNode:
-    def __init__(self, core_session_id, core_node_id, x, y, image, canvas):
+    def __init__(self, x, y, image, canvas, core_id):
         self.image = image
         self.canvas = canvas
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags="node"
         )
+        self.core_id = core_id
         self.x_coord = x
         self.y_coord = y
-        self.core_session_id = core_session_id
-        self.core_node_id = core_node_id
-        self.name = f"Node {self.core_node_id}"
+        self.name = f"Node {self.core_id}"
         self.text_id = self.canvas.create_text(x, y + 20, text=self.name)
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
@@ -315,12 +302,6 @@ class CanvasNode:
     def click_release(self, event):
         logging.debug(f"click release {self.name}: {event}")
         self.update_coords()
-        self.canvas.core_grpc.edit_node(
-            self.core_session_id,
-            self.core_node_id,
-            int(self.x_coord),
-            int(self.y_coord),
-        )
         self.moving = None
 
     def motion(self, event):
