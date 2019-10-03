@@ -3,6 +3,8 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
     http://www.nrl.navy.mil/itd/ncs/products
 """
 
+from past.builtins import filter
+
 from core import utils
 from core.nodes.ipaddress import Ipv4Prefix
 from core.services.coreservices import CoreService
