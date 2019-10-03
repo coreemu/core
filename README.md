@@ -19,7 +19,7 @@ scripting network emulation.
 * Documentation hosted on GitHub
     * <http://coreemu.github.io/core/>
 * Basic Script Examples
-    * [Examples](daemon/examples/api)
+    * [Examples](daemon/examples/python)
 * Custom Service Example
     * [sample.py](daemon/examples/myservices/sample.py)
 * Custom Emane Model Example
