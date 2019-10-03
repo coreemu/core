@@ -26,7 +26,6 @@ class VnodeClient(object):
         """
         self.name = name
         self.ctrlchnlname = ctrlchnlname
-        self._addr = {}
 
     def _verify_connection(self):
         """
@@ -146,36 +145,6 @@ class VnodeClient(object):
             *args
         )
 
-    def redircmd(self, infd, outfd, errfd, args, wait=True):
-        """
-        Execute a command on a node with standard input, output, and
-        error redirected according to the given file descriptors.
-
-        :param infd: stdin file descriptor
-        :param outfd: stdout file descriptor
-        :param errfd: stderr file descriptor
-        :param list[str]|str args: command arguments
-        :param bool wait: wait flag
-        :return: command status
-        :rtype: int
-        """
-        self._verify_connection()
-
-        # run command, return process when not waiting
-        args = utils.split_args(args)
-        cmd = self._cmd_args() + args
-        logging.debug("redircmd: %s", cmd)
-        p = Popen(cmd, stdin=infd, stdout=outfd, stderr=errfd)
-
-        if not wait:
-            return p
-
-        # wait for and return exit status
-        status = p.wait()
-        if status:
-            logging.warning("cmd exited with status %s: %s", status, args)
-        return status
-
     def term(self, sh="/bin/sh"):
         """
         Open a terminal on a node.
@@ -215,111 +184,3 @@ class VnodeClient(object):
         :return: str
         """
         return "%s -c %s -- %s" % (constants.VCMD_BIN, self.ctrlchnlname, sh)
-
-    def shcmd(self, cmd, sh="/bin/sh"):
-        """
-        Execute a shell command.
-
-        :param str cmd: command string
-        :param str sh: shell to run command in
-        :return: command result
-        :rtype: int
-        """
-        return self.cmd([sh, "-c", cmd])
-
-    def shcmd_result(self, cmd, sh="/bin/sh"):
-        """
-        Execute a shell command and return the exist status and combined output.
-
-        :param str cmd: shell command to run
-        :param str sh: shell to run command in
-        :return: exist status and combined output
-        :rtype: tuple[int, str]
-        """
-        return self.cmd_output([sh, "-c", cmd])
-
-    def getaddr(self, ifname, rescan=False):
-        """
-        Get address for interface on node.
-
-        :param str ifname: interface name to get address for
-        :param bool rescan: rescan flag
-        :return: interface information
-        :rtype: dict
-        """
-        if ifname in self._addr and not rescan:
-            return self._addr[ifname]
-
-        interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
-        args = [constants.IP_BIN, "addr", "show", "dev", ifname]
-        p, stdin, stdout, stderr = self.popen(args)
-        stdin.close()
-
-        for line in stdout:
-            line = line.strip().split()
-            if line[0] == "link/ether":
-                interface["ether"].append(line[1])
-            elif line[0] == "inet":
-                interface["inet"].append(line[1])
-            elif line[0] == "inet6":
-                if line[3] == "global":
-                    interface["inet6"].append(line[1])
-                elif line[3] == "link":
-                    interface["inet6link"].append(line[1])
-                else:
-                    logging.warning("unknown scope: %s" % line[3])
-
-        err = stderr.read()
-        stdout.close()
-        stderr.close()
-        status = p.wait()
-        if status:
-            logging.warning("nonzero exist status (%s) for cmd: %s", status, args)
-        if err:
-            logging.warning("error output: %s", err)
-        self._addr[ifname] = interface
-        return interface
-
-    def netifstats(self, ifname=None):
-        """
-        Retrieve network interface state.
-
-        :param str ifname: name of interface to get state for
-        :return: interface state information
-        :rtype: dict
-        """
-        stats = {}
-        args = ["cat", "/proc/net/dev"]
-        p, stdin, stdout, stderr = self.popen(args)
-        stdin.close()
-        # ignore first line
-        stdout.readline()
-        # second line has count names
-        tmp = stdout.readline().decode("utf-8").strip().split("|")
-        rxkeys = tmp[1].split()
-        txkeys = tmp[2].split()
-        for line in stdout:
-            line = line.decode("utf-8").strip().split()
-            devname, tmp = line[0].split(":")
-            if tmp:
-                line.insert(1, tmp)
-            stats[devname] = {"rx": {}, "tx": {}}
-            field = 1
-            for count in rxkeys:
-                stats[devname]["rx"][count] = int(line[field])
-                field += 1
-            for count in txkeys:
-                stats[devname]["tx"][count] = int(line[field])
-                field += 1
-        err = stderr.read()
-        stdout.close()
-        stderr.close()
-        status = p.wait()
-        if status:
-            logging.warning("nonzero exist status (%s) for cmd: %s", status, args)
-        if err:
-            logging.warning("error output: %s", err)
-        if ifname is not None:
-            return stats[ifname]
-        else:
-            return stats

@@ -13,7 +13,6 @@ class DockerClient(object):
         self.name = name
         self.image = image
         self.pid = None
-        self._addr = {}
 
     def create_container(self):
         utils.check_cmd(
@@ -94,40 +93,6 @@ class DockerClient(object):
         status, output = utils.cmd_output(args)
         if status:
             raise CoreCommandError(status, args, output)
-
-    def getaddr(self, ifname, rescan=False):
-        """
-        Get address for interface on node.
-
-        :param str ifname: interface name to get address for
-        :param bool rescan: rescan flag
-        :return: interface information
-        :rtype: dict
-        """
-        if ifname in self._addr and not rescan:
-            return self._addr[ifname]
-
-        interface = {"ether": [], "inet": [], "inet6": [], "inet6link": []}
-        args = ["ip", "addr", "show", "dev", ifname]
-        status, output = self.ns_cmd(args)
-        for line in output:
-            line = line.strip().split()
-            if line[0] == "link/ether":
-                interface["ether"].append(line[1])
-            elif line[0] == "inet":
-                interface["inet"].append(line[1])
-            elif line[0] == "inet6":
-                if line[3] == "global":
-                    interface["inet6"].append(line[1])
-                elif line[3] == "link":
-                    interface["inet6link"].append(line[1])
-                else:
-                    logging.warning("unknown scope: %s" % line[3])
-
-        if status:
-            logging.warning("nonzero exist status (%s) for cmd: %s", status, args)
-        self._addr[ifname] = interface
-        return interface
 
 
 class DockerNode(CoreNode):
@@ -225,7 +190,7 @@ class DockerNode(CoreNode):
             raise CoreCommandError(status, args, output)
         return output
 
-    def network_cmd(self, args):
+    def node_net_cmd(self, args):
         if not self.up:
             logging.debug("node down, not running network command: %s", args)
             return 0

@@ -629,9 +629,7 @@ class CoreNetwork(CoreNetworkBase):
             return
 
         for addr in addrlist:
-            utils.check_cmd(
-                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.brname]
-            )
+            self.net_client.create_address(self.brname, str(addr))
 
 
 class GreTapBridge(CoreNetwork):

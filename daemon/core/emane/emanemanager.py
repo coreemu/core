@@ -7,7 +7,7 @@ import logging
 import os
 import threading
 
-from core import constants, utils
+from core import utils
 from core.api.tlv import coreapi, dataconversion
 from core.config import ConfigGroup, ConfigShim, Configuration, ModelManager
 from core.emane import emanemanifest
@@ -733,13 +733,11 @@ class EmaneManager(ModelManager):
                 )
 
             # multicast route is needed for OTA data
-            args = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
-            node.network_cmd(args)
+            node.node_net_client.create_route(otagroup, otadev)
 
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
-                args = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
-                node.network_cmd(args)
+                node.node_net_client.create_route(eventgroup, eventdev)
 
             # start emane
             args = emanecmd + [
