@@ -6,11 +6,9 @@ import logging
 import time
 from builtins import int, range
 
-from core import CoreCommandError, constants, utils
-from core.emulator.enumerations import NodeTypes
-from core.nodes import nodeutils
-
-utils.check_executables([constants.IP_BIN])
+from core import utils
+from core.errors import CoreCommandError
+from core.nodes.netclient import LinuxNetClient
 
 
 class CoreInterface(object):
@@ -44,6 +42,7 @@ class CoreInterface(object):
         self.netindex = None
         # index used to find flow data
         self.flow_id = None
+        self.net_client = LinuxNetClient(utils.check_cmd)
 
     def startup(self):
         """
@@ -219,21 +218,8 @@ class Veth(CoreInterface):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        utils.check_cmd(
-            [
-                constants.IP_BIN,
-                "link",
-                "add",
-                "name",
-                self.localname,
-                "type",
-                "veth",
-                "peer",
-                "name",
-                self.name,
-            ]
-        )
-        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
+        self.net_client.create_veth(self.localname, self.name)
+        self.net_client.device_up(self.localname)
         self.up = True
 
     def shutdown(self):
@@ -247,15 +233,13 @@ class Veth(CoreInterface):
 
         if self.node:
             try:
-                self.node.network_cmd(
-                    [constants.IP_BIN, "-6", "addr", "flush", "dev", self.name]
-                )
+                self.node.node_net_client.device_flush(self.name)
             except CoreCommandError:
                 logging.exception("error shutting down interface")
 
         if self.localname:
             try:
-                utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
+                self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.info("link already removed: %s", self.localname)
 
@@ -310,9 +294,7 @@ class TunTap(CoreInterface):
             return
 
         try:
-            self.node.network_cmd(
-                [constants.IP_BIN, "-6", "addr", "flush", "dev", self.name]
-            )
+            self.node.node_net_client.device_flush(self.name)
         except CoreCommandError:
             logging.exception("error shutting down tunnel tap")
 
@@ -360,8 +342,11 @@ class TunTap(CoreInterface):
         logging.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
-            args = [constants.IP_BIN, "link", "show", self.localname]
-            return utils.cmd(args)
+            try:
+                self.net_client.device_show(self.localname)
+                return 0
+            except CoreCommandError:
+                return 1
 
         self.waitfor(localdevexists)
 
@@ -374,9 +359,8 @@ class TunTap(CoreInterface):
         logging.debug("waiting for device node: %s", self.name)
 
         def nodedevexists():
-            args = [constants.IP_BIN, "link", "show", self.name]
             try:
-                self.node.network_cmd(args)
+                self.node.node_net_client.device_show(self.name)
                 return 0
             except CoreCommandError:
                 return 1
@@ -387,13 +371,12 @@ class TunTap(CoreInterface):
             if result:
                 break
 
+            # TODO: emane specific code
             # check if this is an EMANE interface; if so, continue
             # waiting if EMANE is still running
-            # TODO: remove emane code
             should_retry = count < 5
-            is_emane_node = nodeutils.is_node(self.net, NodeTypes.EMANE)
             is_emane_running = self.node.session.emane.emanerunning(self.node)
-            if all([should_retry, is_emane_node, is_emane_running]):
+            if all([should_retry, self.net.is_emane, is_emane_running]):
                 count += 1
             else:
                 raise RuntimeError("node device failed to exist")
@@ -410,13 +393,9 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
-        utils.check_cmd(
-            [constants.IP_BIN, "link", "set", self.localname, "netns", netns]
-        )
-        self.node.network_cmd(
-            [constants.IP_BIN, "link", "set", self.localname, "name", self.name]
-        )
-        self.node.network_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
+        self.net_client.device_ns(self.localname, netns)
+        self.node.node_net_client.device_name(self.localname, self.name)
+        self.node.node_net_client.device_up(self.name)
 
     def setaddrs(self):
         """
@@ -426,9 +405,7 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.network_cmd(
-                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.name]
-            )
+            self.node.node_net_client.create_address(self.name, str(addr))
 
 
 class GreTap(CoreInterface):
@@ -482,25 +459,11 @@ class GreTap(CoreInterface):
 
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
-        args = [
-            constants.IP_BIN,
-            "link",
-            "add",
-            self.localname,
-            "type",
-            "gretap",
-            "remote",
-            str(remoteip),
-        ]
-        if localip:
-            args += ["local", str(localip)]
-        if ttl:
-            args += ["ttl", str(ttl)]
-        if key:
-            args += ["key", str(key)]
-        utils.check_cmd(args)
-        args = [constants.IP_BIN, "link", "set", self.localname, "up"]
-        utils.check_cmd(args)
+
+        self.net_client.create_gretap(
+            self.localname, str(remoteip), str(localip), str(ttl), str(key)
+        )
+        self.net_client.device_up(self.localname)
         self.up = True
 
     def shutdown(self):
@@ -511,10 +474,8 @@ class GreTap(CoreInterface):
         """
         if self.localname:
             try:
-                args = [constants.IP_BIN, "link", "set", self.localname, "down"]
-                utils.check_cmd(args)
-                args = [constants.IP_BIN, "link", "del", self.localname]
-                utils.check_cmd(args)
+                self.net_client.device_down(self.localname)
+                self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.exception("error during shutdown")
 

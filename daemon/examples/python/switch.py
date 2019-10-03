@@ -9,10 +9,10 @@ import datetime
 import parser
 from builtins import range
 
-from core import load_logging_config
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes, NodeTypes
+from core.utils import load_logging_config
 
 load_logging_config()
 

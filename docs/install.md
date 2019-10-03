@@ -42,6 +42,21 @@ Install Path | Description
 /etc/init.d/core-daemon|SysV startup script for daemon
 /etc/systemd/system/core-daemon.service|Systemd startup script for daemon
 
+# Pre-Req Installing Python
+
+You may already have these installed, and can ignore this step if so, but if
+ needed you can run the following to install python and pip.
+
+```shell
+# python 2
+sudo apt install python
+sudo apt install python-pip
+
+# python 3
+sudo apt install python3
+sudo apt install python3-pip
+```
+
 # Pre-Req Python Requirements
 
 The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
@@ -91,7 +106,7 @@ Requires building from source, from the latest nightly snapshot.
 
 ```shell
 # packages needed beyond what's normally required to build core on ubuntu
-sudo apt install libtool libreadline-dev
+sudo apt install libtool libreadline-dev autoconf
 
 wget https://downloads.pf.itd.nrl.navy.mil/ospf-manet/nightly_snapshots/quagga-svnsnap.tgz
 tar xzf quagga-svnsnap.tgz
@@ -230,26 +245,26 @@ pip3 install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img
+sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img ethtool
 ```
 
 ### Ubuntu 16.04 Requirements
 
 ```shell
-sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img
+sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img ethtool
 ```
 
 ### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
-sudo yum -y install automake gcc python-devel libev-devel tk
+sudo yum -y install automake gcc python-devel libev-devel tk ethtool
 ```
 
 ## Build and Install
 
 ```shell
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
+# $VERSION should be path to python2/3
 PYTHON=$VERSION ./configure
 make
 sudo make install
@@ -268,7 +283,7 @@ sudo apt install python3-sphinx
 sudo yum install python3-sphinx
 
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
+# $VERSION should be path to python2/3
 PYTHON=$VERSION ./configure
 make doc
 ```
@@ -282,8 +297,10 @@ Build package commands, DESTDIR is used to make install into and then for packag
 
 ```shell
 ./bootstrap.sh
-# use python2 or python3 depending on desired version
-PYTHON=$VERSION ./configure
+# for python2
+PYTHON=python2 ./configure
+# for python3
+PYTHON=python3 ./configure --enable-python3
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build

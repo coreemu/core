@@ -6,7 +6,9 @@ import fcntl
 import hashlib
 import importlib
 import inspect
+import json
 import logging
+import logging.config
 import os
 import shlex
 import subprocess
@@ -14,7 +16,8 @@ import sys
 
 from past.builtins import basestring
 
-from core import CoreCommandError
+from core import constants
+from core.errors import CoreCommandError
 
 DEVNULL = open(os.devnull, "wb")
 
@@ -109,17 +112,6 @@ def _is_class(module, member, clazz):
     return True
 
 
-def _is_exe(file_path):
-    """
-    Check if a given file path exists and is an executable file.
-
-    :param str file_path: file path to check
-    :return: True if the file is considered and executable file, False otherwise
-    :rtype: bool
-    """
-    return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
-
-
 def close_onexec(fd):
     """
     Close on execution of a shell process.
@@ -131,17 +123,26 @@ def close_onexec(fd):
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def check_executables(executables):
+def which(command, required):
     """
-    Check executables, verify they exist and are executable.
+    Find location of desired executable within current PATH.
 
-    :param list[str] executables: executable to check
-    :return: nothing
-    :raises EnvironmentError: when an executable doesn't exist or is not executable
+    :param str command: command to find location for
+    :param bool required: command is required to be found, false otherwise
+    :return: command location or None
+    :raises ValueError: when not found and required
     """
-    for executable in executables:
-        if not _is_exe(executable):
-            raise EnvironmentError("executable not found: %s" % executable)
+    found_path = None
+    for path in os.environ["PATH"].split(os.pathsep):
+        command_path = os.path.join(path, command)
+        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+            found_path = command_path
+            break
+
+    if found_path is None and required:
+        raise ValueError("failed to find required executable(%s) in path" % command)
+
+    return found_path
 
 
 def make_tuple(obj):
@@ -167,7 +168,8 @@ def make_tuple_fromstr(s, value_type):
     :return: tuple from string
     :rtype: tuple
     """
-    # remove tuple braces and strip commands and space from all values in the tuple string
+    # remove tuple braces and strip commands and space from all values in the tuple
+    # string
     values = []
     for x in s.strip("(), ").split(","):
         x = x.strip("' ")
@@ -178,7 +180,8 @@ def make_tuple_fromstr(s, value_type):
 
 def split_args(args):
     """
-    Convenience method for splitting potential string commands into a shell-like syntax list.
+    Convenience method for splitting potential string commands into a shell-like
+    syntax list.
 
     :param list/str args: command list or string
     :return: shell-like syntax list
@@ -227,8 +230,8 @@ def cmd(args, wait=True):
 
 def cmd_output(args):
     """
-    Execute a command on the host and return a tuple containing the exit status and result string. stderr output
-    is folded into the stdout result string.
+    Execute a command on the host and return a tuple containing the exit status and
+    result string. stderr output is folded into the stdout result string.
 
     :param list[str]|str args: command arguments
     :return: command status and stdout
@@ -248,14 +251,15 @@ def cmd_output(args):
 
 def check_cmd(args, **kwargs):
     """
-    Execute a command on the host and return a tuple containing the exit status and result string. stderr output
-    is folded into the stdout result string.
+    Execute a command on the host and return a tuple containing the exit status and
+    result string. stderr output is folded into the stdout result string.
 
     :param list[str]|str args: command arguments
     :param dict kwargs: keyword arguments to pass to subprocess.Popen
     :return: combined stdout and stderr
     :rtype: str
-    :raises CoreCommandError: when there is a non-zero exit status or the file to execute is not found
+    :raises CoreCommandError: when there is a non-zero exit status or the file to
+        execute is not found
     """
     kwargs["stdout"] = subprocess.PIPE
     kwargs["stderr"] = subprocess.STDOUT
@@ -350,7 +354,7 @@ def expand_corepath(pathname, session=None, node=None):
     Expand a file path given session information.
 
     :param str pathname: file path to expand
-    :param core.emulator.session.Session session: core session object to expand path with
+    :param core.emulator.session.Session session: core session object to expand path
     :param core.nodes.base.CoreNode node: node to expand path with
     :return: expanded path
     :rtype: str
@@ -383,7 +387,8 @@ def sysctl_devname(devname):
 
 def load_config(filename, d):
     """
-    Read key=value pairs from a file, into a dict. Skip comments; strip newline characters and spacing.
+    Read key=value pairs from a file, into a dict. Skip comments; strip newline
+    characters and spacing.
 
     :param str filename: file to read into a dictionary
     :param dict d: dictionary to read file into
@@ -444,3 +449,18 @@ def load_classes(path, clazz):
             )
 
     return classes
+
+
+def load_logging_config(config_path=None):
+    """
+    Load CORE logging configuration file.
+
+    :param str config_path: path to logging config file,
+        when None defaults to /etc/core/logging.conf
+    :return: nothing
+    """
+    if not config_path:
+        config_path = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
+    with open(config_path, "r") as log_config_file:
+        log_config = json.load(log_config_file)
+        logging.config.dictConfig(log_config)

@@ -10,17 +10,16 @@ import sys
 
 import ns.core
 import ns.mobility
-
-from core.nodes import nodeutils, nodemaps, ipaddress
 from corens3.obj import Ns3LteNet
 from corens3.obj import Ns3Session
+
+from core.nodes import ipaddress
 
 
 def ltesession(opt):
     """
     Run a test LTE session.
     """
-    nodeutils.set_node_map(nodemaps.NODES)
     session = Ns3Session(1, persistent=True, duration=opt.duration)
     lte = session.create_node(cls=Ns3LteNet, name="wlan1")
     lte.setsubchannels(range(25), range(50, 100))

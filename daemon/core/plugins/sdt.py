@@ -7,7 +7,8 @@ import socket
 
 from future.moves.urllib.parse import urlparse
 
-from core import CoreError, constants
+from core import constants
+from core.emane.nodes import EmaneNet
 from core.emulator.enumerations import (
     EventTypes,
     LinkTlvs,
@@ -17,8 +18,9 @@ from core.emulator.enumerations import (
     NodeTlvs,
     NodeTypes,
 )
-from core.nodes import nodeutils
+from core.errors import CoreError
 from core.nodes.base import CoreNetworkBase, NodeBase
+from core.nodes.network import WlanNode
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this
@@ -27,14 +29,13 @@ class Bunch(object):
     Helper class for recording a collection of attributes.
     """
 
-    def __init__(self, **kwds):
+    def __init__(self, **kwargs):
         """
         Create a Bunch instance.
 
-        :param dict kwds: keyword arguments
-        :return:
+        :param dict kwargs: keyword arguments
         """
-        self.__dict__.update(kwds)
+        self.__dict__.update(kwargs)
 
 
 class Sdt(object):
@@ -365,9 +366,7 @@ class Sdt(object):
             for net in nets:
                 all_links = net.all_link_data(flags=MessageFlags.ADD.value)
                 for link_data in all_links:
-                    is_wireless = nodeutils.is_node(
-                        net, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)
-                    )
+                    is_wireless = isinstance(net, (WlanNode, EmaneNet))
                     wireless_link = link_data.message_type == LinkTypes.WIRELESS.value
                     if is_wireless and link_data.node1_id == net.id:
                         continue
@@ -401,7 +400,7 @@ class Sdt(object):
     def handlenodemsg(self, msg):
         """
         Process a Node Message to add/delete or move a node on
-        the SDT display. Node properties are found in session._objs or
+        the SDT display. Node properties are found in a session or
         self.remotes for remote nodes (or those not yet instantiated).
 
         :param msg: node message to handle
@@ -430,7 +429,8 @@ class Sdt(object):
                 model = "router"
             nodetype = model
         elif nodetype is not None:
-            nodetype = nodeutils.get_node_class(NodeTypes(nodetype)).type
+            nodetype = NodeTypes(nodetype)
+            nodetype = self.session.get_node_class(nodetype).type
             net = True
         else:
             nodetype = None
@@ -494,7 +494,7 @@ class Sdt(object):
 
     def wlancheck(self, nodenum):
         """
-        Helper returns True if a node number corresponds to a WlanNode or EmaneNode.
+        Helper returns True if a node number corresponds to a WLAN or EMANE node.
 
         :param int nodenum: node id to check
         :return: True if node is wlan or emane, False otherwise
@@ -509,6 +509,6 @@ class Sdt(object):
                 n = self.session.get_node(nodenum)
             except CoreError:
                 return False
-            if nodeutils.is_node(n, (NodeTypes.WIRELESS_LAN, NodeTypes.EMANE)):
+            if isinstance(n, (WlanNode, EmaneNet)):
                 return True
         return False

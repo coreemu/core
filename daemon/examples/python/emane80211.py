@@ -6,11 +6,11 @@ import datetime
 import parser
 from builtins import range
 
-from core import load_logging_config
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
+from core.utils import load_logging_config
 
 load_logging_config()
 

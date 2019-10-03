@@ -12,12 +12,12 @@ import threading
 import time
 from configparser import ConfigParser
 
-from core import constants, load_logging_config
+from core import constants
 from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler, CoreUdpHandler
 from core.api.tlv.coreserver import CoreServer, CoreUdpServer
 from core.emulator import enumerations
-from core.utils import close_onexec
+from core.utils import close_onexec, load_logging_config
 
 
 def banner():
@@ -44,12 +44,11 @@ def start_udp(mainserver, server_address):
     mainserver.udpthread.start()
 
 
-def cored(cfg, use_ovs):
+def cored(cfg):
     """
     Start the CoreServer object and enter the server loop.
 
     :param dict cfg: core configuration
-    :param bool use_ovs: flag to determine if ovs nodes should be used
     :return: nothing
     """
     host = cfg["listenaddr"]
@@ -60,9 +59,6 @@ def cored(cfg, use_ovs):
     try:
         address = (host, port)
         server = CoreServer(address, CoreHandler, cfg)
-        if use_ovs:
-            from core.nodes.openvswitch import OVS_NODES
-            server.coreemu.update_nodes(OVS_NODES)
     except:
         logging.exception("error starting main server on:  %s:%s", host, port)
         sys.exit(1)
@@ -97,7 +93,6 @@ def get_merged_config(filename):
     defaults = {
         "port": "%d" % enumerations.CORE_API_PORT,
         "listenaddr": "localhost",
-        "xmlfilever": "1.0",
         "numthreads": "1",
         "grpcport": "50051",
         "grpcaddress": "localhost",
@@ -137,9 +132,9 @@ def get_merged_config(filename):
     if not cfg.has_section(section):
         cfg.add_section(section)
 
-    # merge command line with config file
-    for opt in args.__dict__:
-        val = args.__dict__[opt]
+    # merge argparse with configparser
+    for opt in vars(args):
+        val = getattr(args, opt)
         if val is not None:
             cfg.set(section, opt, str(val))
 
@@ -156,11 +151,8 @@ def main():
     cfg = get_merged_config("%s/core.conf" % constants.CORE_CONF_DIR)
     banner()
 
-    # check if ovs flag was provided
-    use_ovs = len(sys.argv) == 2 and sys.argv[1] == "ovs"
-
     try:
-        cored(cfg, use_ovs)
+        cored(cfg)
     except KeyboardInterrupt:
         logging.info("keyboard interrupt, stopping core daemon")
 

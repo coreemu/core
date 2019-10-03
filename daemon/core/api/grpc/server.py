@@ -10,8 +10,8 @@ from queue import Empty, Queue
 
 import grpc
 
-from core import CoreError
 from core.api.grpc import core_pb2, core_pb2_grpc
+from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -22,8 +22,8 @@ from core.emulator.data import (
 )
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, NodeTypes
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
-from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase
 from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
@@ -444,7 +444,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             if not isinstance(node.id, int):
                 continue
 
-            node_type = nodeutils.get_node_type(node.__class__).value
+            node_type = session.get_node_type(node.__class__)
             model = getattr(node, "type", None)
             position = core_pb2.Position(
                 x=node.position.x, y=node.position.y, z=node.position.z
@@ -456,7 +456,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             services = [x.name for x in services]
 
             emane_model = None
-            if nodeutils.is_node(node, NodeTypes.EMANE):
+            if isinstance(node, EmaneNet):
                 emane_model = node.model.name
 
             node_proto = core_pb2.Node(
@@ -464,7 +464,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 name=node.name,
                 emane=emane_model,
                 model=model,
-                type=node_type,
+                type=node_type.value,
                 position=position,
                 services=services,
             )
@@ -809,18 +809,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interfaces.append(interface_proto)
 
         emane_model = None
-        if nodeutils.is_node(node, NodeTypes.EMANE):
+        if isinstance(node, EmaneNet):
             emane_model = node.model.name
 
         services = [x.name for x in getattr(node, "services", [])]
         position = core_pb2.Position(
             x=node.position.x, y=node.position.y, z=node.position.z
         )
-        node_type = nodeutils.get_node_type(node.__class__).value
+        node_type = session.get_node_type(node.__class__)
         node_proto = core_pb2.Node(
             id=node.id,
             name=node.name,
-            type=node_type,
+            type=node_type.value,
             emane=emane_model,
             model=node.type,
             position=position,

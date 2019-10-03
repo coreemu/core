@@ -12,17 +12,18 @@ Current issues:
 import logging
 import optparse
 import sys
+from builtins import range
 
-from core.nodes import nodeutils, nodemaps, ipaddress
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WimaxNet
+
+from core.nodes import ipaddress
 
 
 def wimaxsession(opt):
     """
     Run a test wimax session.
     """
-    nodeutils.set_node_map(nodemaps.NODES)
     session = Ns3Session(1, persistent=True, duration=opt.duration)
     wimax = session.create_node(cls=Ns3WimaxNet, name="wlan1")
     # wimax.wimax.EnableLogComponents()
@@ -33,7 +34,7 @@ def wimaxsession(opt):
     # classifier = (0, 65000, 0, 65000, 1, 1)
     classifier = (0, 65000, 0, 65000, 17, 1)
     nodes = []
-    for i in xrange(1, opt.numnodes + 1):
+    for i in range(1, opt.numnodes + 1):
         node = session.addnode(name="n%d" % i)
         if i == 1:
             wimax.setbasestation(node)

@@ -3,9 +3,10 @@ import time
 
 import pytest
 
-from core import CoreError, utils
+from core import utils
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
+from core.errors import CoreError
 
 MODELS = ["router", "host", "PC", "mdr"]
 

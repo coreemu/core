@@ -14,7 +14,7 @@ from builtins import range
 from itertools import repeat
 from queue import Empty, Queue
 
-from core import CoreError, utils
+from core import utils
 from core.api.tlv import coreapi, dataconversion, structutils
 from core.config import ConfigShim
 from core.emulator.data import ConfigData, EventData, ExceptionData, FileData
@@ -37,8 +37,9 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
-from core.nodes import nodeutils
+from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
 
 
@@ -1247,10 +1248,10 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 values = []
                 group_strings = []
                 start_index = 1
-                logging.info("sorted groups: %s", groups)
+                logging.debug("sorted groups: %s", groups)
                 for group in groups:
                     services = sorted(group_map[group], key=lambda x: x.name.lower())
-                    logging.info("sorted services for group(%s): %s", group, services)
+                    logging.debug("sorted services for group(%s): %s", group, services)
                     end_index = start_index + len(services) - 1
                     group_strings.append("%s:%s-%s" % (group, start_index, end_index))
                     start_index += len(services)
@@ -1603,8 +1604,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 node = self.session.get_node(node_id)
 
                 # configure mobility models for WLAN added during runtime
-                if event_type == EventTypes.INSTANTIATION_STATE and nodeutils.is_node(
-                    node, NodeTypes.WIRELESS_LAN
+                if event_type == EventTypes.INSTANTIATION_STATE and isinstance(
+                    node, WlanNode
                 ):
                     self.session.start_mobility(node_ids=(node.id,))
                     return ()

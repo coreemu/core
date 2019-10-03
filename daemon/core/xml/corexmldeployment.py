@@ -4,8 +4,8 @@ import socket
 from lxml import etree
 
 from core import constants, utils
-from core.emulator.enumerations import NodeTypes
-from core.nodes import ipaddress, nodeutils
+from core.emane.nodes import EmaneNet
+from core.nodes import ipaddress
 from core.nodes.base import CoreNodeBase
 
 
@@ -144,7 +144,7 @@ class CoreXmlDeployment(object):
 
         for netif in node.netifs():
             emane_element = None
-            if nodeutils.is_node(netif.net, NodeTypes.EMANE):
+            if isinstance(netif.net, EmaneNet):
                 emane_element = add_emane_interface(host_element, netif)
 
             parent_element = host_element

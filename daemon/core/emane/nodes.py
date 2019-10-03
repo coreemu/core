@@ -1,6 +1,5 @@
 """
-nodes.py: definition of an EmaneNode class for implementing configuration
-control of an EMANE emulation. An EmaneNode has several attached NEMs that
+Provides an EMANE network node class, which has several attached NEMs that
 share the same MAC+PHY model.
 """
 
@@ -20,24 +19,18 @@ except ImportError:
 
 class EmaneNet(CoreNetworkBase):
     """
-    EMANE network base class.
-    """
-
-    apitype = NodeTypes.EMANE.value
-    linktype = LinkTypes.WIRELESS.value
-    # icon used
-    type = "wlan"
-
-
-class EmaneNode(EmaneNet):
-    """
     EMANE node contains NEM configuration and causes connected nodes
     to have TAP interfaces (instead of VEth). These are managed by the
     Emane controller object that exists in a session.
     """
 
+    apitype = NodeTypes.EMANE.value
+    linktype = LinkTypes.WIRELESS.value
+    type = "wlan"
+    is_emane = True
+
     def __init__(self, session, _id=None, name=None, start=True):
-        super(EmaneNode, self).__init__(session, _id, name, start)
+        super(EmaneNet, self).__init__(session, _id, name, start)
         self.conf = ""
         self.up = False
         self.nemidmap = {}

@@ -1,7 +1,7 @@
-from core.emulator.enumerations import LinkTypes, NodeTypes
-from core.nodes import nodeutils
-from core.nodes.base import CoreNetworkBase
+from core.emane.nodes import EmaneNet
+from core.emulator.enumerations import LinkTypes
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
+from core.nodes.physical import PhysicalNode
 
 
 class IdGen(object):
@@ -11,17 +11,6 @@ class IdGen(object):
     def next(self):
         self.id += 1
         return self.id
-
-
-def is_net_node(node):
-    """
-    Convenience method for testing if a legacy core node is considered a network node.
-
-    :param object node: object to test against
-    :return: True if object is an instance of a network node, False otherwise
-    :rtype: bool
-    """
-    return isinstance(node, CoreNetworkBase)
 
 
 def create_interface(node, network, interface_data):
@@ -64,8 +53,9 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
         "netif2": interface_two,
     }
 
-    # hacky check here, because physical and emane nodes do not conform to the same linkconfig interface
-    if not nodeutils.is_node(network, [NodeTypes.EMANE, NodeTypes.PHYSICAL]):
+    # hacky check here, because physical and emane nodes do not conform to the same
+    # linkconfig interface
+    if not isinstance(network, (EmaneNet, PhysicalNode)):
         config["devname"] = devname
 
     network.linkconfig(**config)
@@ -81,7 +71,8 @@ class NodeOptions(object):
         Create a NodeOptions object.
 
         :param str name: name of node, defaults to node class name postfix with its id
-        :param str model: defines services for default and physical nodes, defaults to "router"
+        :param str model: defines services for default and physical nodes, defaults to
+            "router"
         :param str image: image to use for docker nodes
         """
         self.name = name
@@ -133,7 +124,8 @@ class LinkOptions(object):
         """
         Create a LinkOptions object.
 
-        :param core.emulator.enumerations.LinkTypes _type: type of link, defaults to wired
+        :param core.emulator.enumerations.LinkTypes _type: type of link, defaults to
+            wired
         """
         self.type = _type
         self.session = None
@@ -202,12 +194,13 @@ class IpPrefixes(object):
 
     def create_interface(self, node, name=None, mac=None):
         """
-        Creates interface data for linking nodes, using the nodes unique id for generation, along with a random
-        mac address, unless provided.
+        Creates interface data for linking nodes, using the nodes unique id for
+        generation, along with a random mac address, unless provided.
 
         :param core.nodes.base.CoreNode node: node to create interface for
         :param str name: name to set for interface, default is eth{id}
-        :param str mac: mac address to use for this interface, default is random generation
+        :param str mac: mac address to use for this interface, default is random
+            generation
         :return: new interface data for the provided node
         :rtype: InterfaceData
         """

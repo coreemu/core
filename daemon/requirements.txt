@@ -1,4 +1,4 @@
-configparser==4.0.1
+configparser==4.0.2
 future==0.17.1
 grpcio==1.23.0
 grpcio-tools==1.21.1
