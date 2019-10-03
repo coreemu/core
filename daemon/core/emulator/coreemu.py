@@ -85,12 +85,13 @@ class CoreEmu(object):
             session = sessions[_id]
             session.shutdown()
 
-    def create_session(self, _id=None, master=True):
+    def create_session(self, _id=None, master=True, _cls=Session):
         """
         Create a new CORE session, set to master if running standalone.
 
         :param int _id: session id for new session
         :param bool master: sets session to master
+        :param class _cls: Session class to use
         :return: created session
         :rtype: EmuSession
         """
@@ -100,7 +101,7 @@ class CoreEmu(object):
                 if _id not in self.sessions:
                     break
 
-        session = Session(_id, config=self.config)
+        session = _cls(_id, config=self.config)
         logging.info("created session: %s", _id)
         if master:
             session.master = True
