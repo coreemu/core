@@ -42,6 +42,21 @@ Install Path | Description
 /etc/init.d/core-daemon|SysV startup script for daemon
 /etc/systemd/system/core-daemon.service|Systemd startup script for daemon
 
+# Pre-Req Installing Python
+
+You may already have these installed, and can ignore this step if so, but if
+ needed you can run the following to install python and pip.
+
+```shell
+# python 2
+sudo apt install python
+sudo apt install python-pip
+
+# python 3
+sudo apt install python3
+sudo apt install python3-pip
+```
+
 # Pre-Req Python Requirements
 
 The newly added gRPC API which depends on python library grpcio is not commonly found within system repos.
