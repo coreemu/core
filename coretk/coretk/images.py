@@ -25,35 +25,36 @@ class Images:
     @classmethod
     def convert_type_and_model_to_image(cls, node_type, node_model):
         """
-                Retrieve image based on type and model
-                :param core_pb2.NodeType node_type: core node type
-                :param string node_model: the node model
+        Retrieve image based on type and model
+        :param core_pb2.NodeType node_type: core node type
+        :param string node_model: the node model
 
-                :return: the matching image
-                """
+        :rtype: tuple(PhotoImage, str)
+        :return: the matching image and its name
+        """
         if node_type == core_pb2.NodeType.SWITCH:
-            return Images.get("switch")
+            return Images.get("switch"), "switch"
         if node_type == core_pb2.NodeType.HUB:
-            return Images.get("hub")
+            return Images.get("hub"), "hub"
         if node_type == core_pb2.NodeType.WIRELESS_LAN:
-            return Images.get("wlan")
+            return Images.get("wlan"), "wlan"
         if node_type == core_pb2.NodeType.RJ45:
-            return Images.get("rj45")
+            return Images.get("rj45"), "rj45"
         if node_type == core_pb2.NodeType.TUNNEL:
-            return Images.get("tunnel")
+            return Images.get("tunnel"), "tunnel"
         if node_type == core_pb2.NodeType.DEFAULT:
             if node_model == "router":
-                return Images.get("router")
+                return Images.get("router"), "router"
             if node_model == "host":
-                return Images.get(("host"))
+                return Images.get(("host")), "host"
             if node_model == "PC":
-                return Images.get("pc")
+                return Images.get("pc"), "PC"
             if node_model == "mdr":
-                return Images.get("mdr")
+                return Images.get("mdr"), "mdr"
             if node_model == "prouter":
-                return Images.get("prouter")
+                return Images.get("prouter"), "prouter"
             if node_model == "OVS":
-                return Images.get("ovs")
+                return Images.get("ovs"), "ovs"
         else:
             logging.debug("INVALID INPUT OR NOT CONSIDERED YET")
 

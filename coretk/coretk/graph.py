@@ -2,6 +2,7 @@ import enum
 import logging
 import tkinter as tk
 
+from core.api.grpc import core_pb2
 from coretk.grpcmanagement import GrpcManager
 from coretk.images import Images
 
@@ -33,7 +34,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_grid()
         self.core_grpc = grpc
         self.grpc_manager = GrpcManager()
-        self.draw_existing_node()
+        self.draw_existing_component()
 
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
@@ -80,20 +81,40 @@ class CanvasGraph(tk.Canvas):
         for i in range(0, height, 27):
             self.create_line(0, i, width, i, dash=(2, 4), tags="grid line")
 
-    def draw_existing_node(self):
+    def draw_existing_component(self):
         """
-        Draw existing node while updating the grpc manager based on that
+        Draw existing node and update the information in grpc manager to match
 
         :return: nothing
         """
+        core_id_to_canvas_id = {}
+
         session_id = self.core_grpc.session_id
-        response = self.core_grpc.core.get_session(session_id)
-        nodes = response.session.nodes
-        if len(nodes) > 0:
-            for node in nodes:
-                image = Images.convert_type_and_model_to_image(node.type, node.model)
-                return image
-                # n = CanvasNode(node.position.x, node.position.y, image, self, node.id)
+        session = self.core_grpc.core.get_session(session_id).session
+        # nodes = response.session.nodes
+        # if len(nodes) > 0:
+        for node in session.nodes:
+            # peer to peer node is not drawn on the GUI
+            if node.type != core_pb2.NodeType.PEER_TO_PEER:
+                image, name = Images.convert_type_and_model_to_image(
+                    node.type, node.model
+                )
+                n = CanvasNode(node.position.x, node.position.y, image, self, node.id)
+                self.nodes[n.id] = n
+                core_id_to_canvas_id[node.id] = n.id
+                self.grpc_manager.add_preexisting_node(n, session_id, node, name)
+        self.grpc_manager.update_reusable_id()
+        # draw existing links
+        # links = response.session.links
+        for link in session.links:
+            n1 = self.nodes[core_id_to_canvas_id[link.node_one_id]]
+            n2 = self.nodes[core_id_to_canvas_id[link.node_two_id]]
+            e = CanvasEdge(n1.x_coord, n1.y_coord, n2.x_coord, n2.y_coord, n1.id, self)
+            self.edges[e.token] = e
+            self.grpc_manager.add_edge(session_id, e.token, n1.id, n2.id)
+        # lift the nodes so they on top of the links
+        for i in core_id_to_canvas_id.values():
+            self.lift(i)
 
     def canvas_xy(self, event):
         """
@@ -289,8 +310,9 @@ class CanvasNode:
         self.edges = set()
         self.moving = None
 
-    def get_coords(self):
-        return self.x_coord, self.y_coord
+    #
+    # def get_coords(self):
+    #     return self.x_coord, self.y_coord
 
     def update_coords(self):
         self.x_coord, self.y_coord = self.canvas.coords(self.id)

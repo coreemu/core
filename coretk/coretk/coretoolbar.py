@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 
+from core.api.grpc import core_pb2
 from coretk.graph import GraphMode
 from coretk.images import Images
 from coretk.tooltip import CreateToolTip
@@ -155,20 +156,19 @@ class CoreToolbar(object):
         self.create_runtime_toolbar()
 
         # set configuration state
-        self.canvas.core_grpc.set_configuration_state()
+        if self.canvas.core_grpc.get_session_state() == core_pb2.SessionState.SHUTDOWN:
+            self.canvas.core_grpc.set_session_state("definition")
+        self.canvas.core_grpc.set_session_state("configuration")
 
-        # grpc client requests creating nodes
-        for node in self.canvas.grpc_manager.nodes_to_create.values():
+        for node in self.canvas.grpc_manager.nodes.values():
             self.canvas.core_grpc.add_node(
-                node.type, node.model, int(node.x), int(node.y), node.name
+                node.type, node.model, int(node.x), int(node.y), node.name, node.node_id
             )
-        self.canvas.grpc_manager.nodes_to_create.clear()
 
-        for edge in self.canvas.grpc_manager.edges_to_create.values():
+        for edge in self.canvas.grpc_manager.edges.values():
             self.canvas.core_grpc.add_link(edge.id1, edge.id2, edge.type1, edge.type2)
-        self.canvas.grpc_manager.edges_to_create.clear()
 
-        self.canvas.core_grpc.set_instantiate_state()
+        self.canvas.core_grpc.set_session_state("instantiation")
 
     def click_link_tool(self):
         logging.debug("Click LINK button")
@@ -551,6 +551,9 @@ class CoreToolbar(object):
         logging.debug("Click on STOP button ")
         self.destroy_children_widgets(self.edit_frame)
         self.create_toolbar()
+        self.canvas.core_grpc.set_session_state("datacollect")
+        self.canvas.core_grpc.delete_links()
+        self.canvas.core_grpc.delete_nodes()
 
     def click_run_button(self):
         logging.debug("Click on RUN button")

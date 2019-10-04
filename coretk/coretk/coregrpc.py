@@ -55,6 +55,10 @@ class CoreGrpc:
             # self.core.events(self.session_id, self.log_event)
             logging.info("Entering session_id %s.... Result: %s", usr_input, response)
 
+    def delete_session(self):
+        response = self.core.delete_session(self.session_id)
+        logging.info("Deleted session result: %s", response)
+
     def set_up(self):
         """
         Query sessions, if there exist any, promt whether to join one
@@ -75,25 +79,59 @@ class CoreGrpc:
             # self.create_new_session()
             self.query_existing_sessions(sessions)
 
-    def set_configuration_state(self):
-        response = self.core.set_session_state(
-            self.session_id, core_pb2.SessionState.CONFIGURATION
-        )
-        logging.info("set session state: %s", response)
+    def get_session_state(self):
+        response = self.core.get_session(self.session_id)
+        logging.info("get sessio: %s", response)
+        return response.session.state
 
-    def set_instantiate_state(self):
-        response = self.core.set_session_state(
-            self.session_id, core_pb2.SessionState.INSTANTIATION
-        )
+    def set_session_state(self, state):
+        """
+        Set session state
+
+        :param str state: session state to set
+        :return: nothing
+        """
+        response = None
+        if state == "configuration":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.CONFIGURATION
+            )
+        elif state == "instantiation":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.INSTANTIATION
+            )
+        elif state == "datacollect":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.DATACOLLECT
+            )
+        elif state == "shutdown":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.SHUTDOWN
+            )
+        elif state == "runtime":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.RUNTIME
+            )
+        elif state == "definition":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.DEFINITION
+            )
+        elif state == "none":
+            response = self.core.set_session_state(
+                self.session_id, core_pb2.SessionState.NONE
+            )
+        else:
+            logging.error("coregrpc.py: set_session_state: INVALID STATE")
+
         logging.info("set session state: %s", response)
 
     def get_session_id(self):
         return self.session_id
 
-    def add_node(self, node_type, model, x, y, name):
-        logging.info("ADD NODE %s", name)
+    def add_node(self, node_type, model, x, y, name, node_id):
+        logging.info("coregrpc.py ADD NODE %s", name)
         position = core_pb2.Position(x=x, y=y)
-        node = core_pb2.Node(type=node_type, position=position, model=model, image=name)
+        node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
         response = self.core.add_node(self.session_id, node)
         logging.info("created node: %s", response)
         return response.node_id
@@ -103,10 +141,25 @@ class CoreGrpc:
         response = self.core.edit_node(session_id, node_id, position)
         logging.info("updated node id %s: %s", node_id, response)
 
+    def delete_nodes(self):
+        for node in self.core.get_session(self.session_id).session.nodes:
+            response = self.core.delete_node(self.session_id, node.id)
+            logging.info("delete node %s", response)
+
     # def create_interface_helper(self):
     #     self.interface_helper = self.core.InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
-    # TODO case for other core_pb2.NodeType
+    def delete_links(self):
+        for link in self.core.get_session(self.session_id).session.links:
+            response = self.core.delete_link(
+                self.session_id,
+                link.node_one_id,
+                link.node_two_id,
+                link.interface_one.id,
+                link.interface_two.id,
+            )
+            logging.info("delete link %s", response)
+
     def add_link(self, id1, id2, type1, type2):
         """
         Grpc client request add link

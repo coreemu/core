@@ -11,19 +11,20 @@ network_layer_nodes = ["router", "host", "PC", "mdr", "prouter", "OVS"]
 
 
 class Node:
-    def __init__(self, session_id, node_id, type, model, x, y, name):
+    def __init__(self, session_id, node_id, node_type, model, x, y, name):
         """
         Create an instance of a node
 
         :param int session_id: session id
         :param int node_id: node id
-        :param core_pb2.NodeType type: node type
+        :param core_pb2.NodeType node_type: node type
         :param int x: x coordinate
         :param int y: coordinate
+        :param str name: node name
         """
         self.session_id = session_id
         self.node_id = node_id
-        self.type = type
+        self.type = node_type
         self.x = x
         self.y = y
         self.model = model
@@ -54,8 +55,8 @@ class GrpcManager:
         self.id = 1
         # A list of id for re-use, keep in increasing order
         self.reusable = []
-        self.nodes_to_create = {}
-        self.edges_to_create = {}
+
+        self.preexisting = []
 
     def peek_id(self):
         """
@@ -82,7 +83,6 @@ class GrpcManager:
         else:
             return self.reusable.pop(0)
 
-    # TODO figure out the name of ovs node
     def add_node(self, session_id, canvas_id, x, y, name):
         """
         Add node, with information filled in, to grpc manager
@@ -109,13 +109,11 @@ class GrpcManager:
                 node_type = core_pb2.NodeType.TUNNEL
         elif name in network_layer_nodes:
             node_type = core_pb2.NodeType.DEFAULT
-            # TODO what is the model name for ovs
             node_model = name
         else:
             logging.error("grpcmanagemeny.py INVALID node name")
         create_node = Node(session_id, self.get_id(), node_type, node_model, x, y, name)
         self.nodes[canvas_id] = create_node
-        self.nodes_to_create[canvas_id] = create_node
         logging.debug(
             "Adding node to GrpcManager.. Session id: %s, Coords: (%s, %s), Name: %s",
             session_id,
@@ -124,8 +122,42 @@ class GrpcManager:
             name,
         )
 
-    def add_preexisting_node(self):
-        return
+    def add_preexisting_node(self, canvas_node, session_id, core_node, name):
+        """
+        Add preexisting nodes to grpc manager
+
+        :param core_pb2.Node core_node: core node grpc message
+        :param coretk.graph.CanvasNode canvas_node: canvas node
+        :param int session_id: session id
+        :return: nothing
+        """
+        core_id = core_node.id
+        if core_id >= self.id:
+            self.id = core_id + 1
+        self.preexisting.append(core_id)
+        n = Node(
+            session_id,
+            core_id,
+            core_node.type,
+            core_node.model,
+            canvas_node.x_coord,
+            canvas_node.y_coord,
+            name,
+        )
+        self.nodes[canvas_node.id] = n
+
+    def update_reusable_id(self):
+        """
+        Update available id for reuse
+
+        :return: nothing
+        """
+        for i in range(1, self.id):
+            if i not in self.preexisting:
+                self.reusable.append(i)
+
+        self.preexisting.clear()
+        logging.debug("Next id: %s, Reusable: %s", self.id, self.reusable)
 
     def delete_node(self, canvas_id):
         """
@@ -151,7 +183,6 @@ class GrpcManager:
                 self.nodes[canvas_id_2].type,
             )
             self.edges[token] = edge
-            self.edges_to_create[token] = edge
             logging.debug("Adding edge to grpc manager...")
         else:
             logging.error("grpcmanagement.py INVALID CANVAS NODE ID")
