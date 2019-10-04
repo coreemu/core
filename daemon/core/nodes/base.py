@@ -14,6 +14,8 @@ import threading
 from builtins import range
 from socket import AF_INET, AF_INET6
 
+from fabric import Connection
+
 from core import constants, utils
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -82,17 +84,23 @@ class NodeBase(object):
         """
         raise NotImplementedError
 
-    def net_cmd(self, args):
+    def net_cmd(self, args, env=None):
         """
         Runs a command that is used to configure and setup the network on the host
         system.
 
         :param list[str]|str args: command to run
+        :param dict env: environment to run command with
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        return utils.check_cmd(args)
+        if self.server is None:
+            return utils.check_cmd(args, env=env)
+        else:
+            args = " ".join(args)
+            result = Connection(self.server, user="root").run(args, hide=True)
+            return result.stderr
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -515,7 +523,7 @@ class CoreNode(CoreNodeBase):
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)
 
-            output = utils.check_cmd(vnoded, env=env)
+            output = self.net_cmd(vnoded, env=env)
             self.pid = int(output)
 
             # create vnode client
@@ -660,8 +668,8 @@ class CoreNode(CoreNodeBase):
         """
         source = os.path.abspath(source)
         logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
-        self.client.check_cmd(["mkdir", "-p", target])
-        self.client.check_cmd([constants.MOUNT_BIN, "-n", "--bind", source, target])
+        self.node_net_cmd(["mkdir", "-p", target])
+        self.node_net_cmd([constants.MOUNT_BIN, "-n", "--bind", source, target])
         self._mounts.append((source, target))
 
     def newifindex(self):
