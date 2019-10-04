@@ -6,15 +6,13 @@
 # nodestep
 
 import datetime
+import logging
 import parser
 from builtins import range
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes, NodeTypes
-from core.utils import load_logging_config
-
-load_logging_config()
 
 
 def example(options):
@@ -56,8 +54,8 @@ def example(options):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     options = parser.parse_options("switch")
-
     start = datetime.datetime.now()
     print("running switch example: nodes(%s) time(%s)" % (options.nodes, options.time))
     example(options)

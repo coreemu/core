@@ -6,6 +6,7 @@
 # nodestep
 
 import datetime
+import logging
 import parser
 from builtins import range
 
@@ -13,9 +14,6 @@ from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 from core.location.mobility import BasicRangeModel
-from core.utils import load_logging_config
-
-load_logging_config()
 
 
 def example(options):
@@ -60,6 +58,7 @@ def example(options):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     options = parser.parse_options("wlan")
 
     start = datetime.datetime.now()
