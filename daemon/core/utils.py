@@ -16,7 +16,6 @@ import sys
 
 from past.builtins import basestring
 
-from core import constants
 from core.errors import CoreCommandError
 
 DEVNULL = open(os.devnull, "wb")
@@ -451,16 +450,13 @@ def load_classes(path, clazz):
     return classes
 
 
-def load_logging_config(config_path=None):
+def load_logging_config(config_path):
     """
     Load CORE logging configuration file.
 
-    :param str config_path: path to logging config file,
-        when None defaults to /etc/core/logging.conf
+    :param str config_path: path to logging config file
     :return: nothing
     """
-    if not config_path:
-        config_path = os.path.join(constants.CORE_CONF_DIR, "logging.conf")
     with open(config_path, "r") as log_config_file:
         log_config = json.load(log_config_file)
         logging.config.dictConfig(log_config)

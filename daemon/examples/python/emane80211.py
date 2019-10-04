@@ -3,6 +3,7 @@
 # Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
 
 import datetime
+import logging
 import parser
 from builtins import range
 
@@ -10,9 +11,6 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
-from core.utils import load_logging_config
-
-load_logging_config()
 
 
 def example(options):
@@ -52,6 +50,7 @@ def example(options):
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     options = parser.parse_options("emane80211")
     start = datetime.datetime.now()
     print(
