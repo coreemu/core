@@ -14,14 +14,13 @@ import threading
 from builtins import range
 from socket import AF_INET, AF_INET6
 
-from fabric import Connection
-
 from core import constants, utils
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.nodes import client, ipaddress
 from core.nodes.interface import CoreInterface, TunTap, Veth
 from core.nodes.netclient import LinuxNetClient, OvsNetClient
+from fabric import Connection
 
 _DEFAULT_MTU = 1500
 
