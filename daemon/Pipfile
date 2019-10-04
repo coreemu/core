@@ -4,7 +4,7 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [scripts]
-core = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
+core = "python scripts/core-daemon -f data/core.conf -l data/logging.conf --grpc"
 test = "pytest -v tests"
 test_emane = "pytest -v tests/emane"
 
