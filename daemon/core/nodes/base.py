@@ -2,12 +2,9 @@
 Defines the base logic for nodes used within core.
 """
 
-import errno
 import logging
 import os
 import random
-import shutil
-import signal
 import socket
 import string
 import threading
@@ -309,7 +306,7 @@ class CoreNodeBase(NodeBase):
             return
 
         if self.tmpnodedir:
-            shutil.rmtree(self.nodedir, ignore_errors=True)
+            self.net_cmd(["rm", "-rf", self.nodedir])
 
     def addnetif(self, netif, ifindex):
         """
@@ -522,8 +519,8 @@ class CoreNode(CoreNodeBase):
         :rtype: bool
         """
         try:
-            os.kill(self.pid, 0)
-        except OSError:
+            self.net_cmd(["kill", "-9", str(self.pid)])
+        except CoreCommandError:
             return False
 
         return True
@@ -560,6 +557,7 @@ class CoreNode(CoreNodeBase):
 
             output = self.net_cmd(vnoded, env=env)
             self.pid = int(output)
+            logging.debug("node(%s) pid: %s", self.name, self.pid)
 
             # create vnode client
             self.client = client.VnodeClient(self.name, self.ctrlchnlname)
@@ -599,21 +597,17 @@ class CoreNode(CoreNodeBase):
                 for netif in self.netifs():
                     netif.shutdown()
 
-                # attempt to kill node process and wait for termination of children
+                # kill node process if present
                 try:
-                    os.kill(self.pid, signal.SIGTERM)
-                    os.waitpid(self.pid, 0)
-                except OSError as e:
-                    if e.errno != 10:
-                        logging.exception("error killing process")
+                    self.net_cmd(["kill", "-9", str(self.pid)])
+                except CoreCommandError:
+                    logging.exception("error killing process")
 
                 # remove node directory if present
                 try:
-                    os.unlink(self.ctrlchnlname)
-                except OSError as e:
-                    # no such file or directory
-                    if e.errno != errno.ENOENT:
-                        logging.exception("error removing node directory")
+                    self.net_cmd(["rm", "-rf", self.ctrlchnlname])
+                except CoreCommandError:
+                    logging.exception("error removing node directory")
 
                 # clear interface data, close client, and mark self and not up
                 self._netif.clear()
@@ -1029,9 +1023,9 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         hostfilename = self.hostfilename(filename)
-        shutil.copy2(srcfilename, hostfilename)
+        self.net_cmd(["cp", "-a", srcfilename, hostfilename])
         if mode is not None:
-            os.chmod(hostfilename, mode)
+            self.net_cmd(["chmod", oct(mode), hostfilename])
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )
