@@ -14,6 +14,8 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
+from fabric import Connection
+
 from core import constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
@@ -144,6 +146,9 @@ class Session(object):
         self.emane = EmaneManager(session=self)
         self.sdt = Sdt(session=self)
 
+        # distributed servers
+        self.servers = set()
+
         # initialize default node services
         self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
@@ -152,6 +157,11 @@ class Session(object):
             "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
             "host": ("DefaultRoute", "SSH"),
         }
+
+    def init_distributed(self):
+        for server in self.servers:
+            cmd = "mkdir -p %s" % self.session_dir
+            Connection(server, user="root").run(cmd, hide=False)
 
     @classmethod
     def get_node_class(cls, _type):
@@ -683,7 +693,13 @@ class Session(object):
                 image=node_options.image,
             )
         else:
-            node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
+            node = self.create_node(
+                cls=node_class,
+                _id=_id,
+                name=name,
+                start=start,
+                server=node_options.emulation_server,
+            )
 
         # set node attributes
         node.icon = node_options.icon
