@@ -104,18 +104,29 @@ class NodeBase(object):
             return utils.check_cmd(args, env=env)
         else:
             args = " ".join(args)
-            result = self.server_conn.run(args, hide=False)
-            if result.exited:
-                raise CoreCommandError(
-                    result.exited, result.command, result.stdout, result.stderr
-                )
+            return self.remote_cmd(args)
 
-            logging.info(
-                "fabric result:\n\tstdout: %s\n\tstderr: %s",
-                result.stdout.strip(),
-                result.stderr.strip(),
+    def remote_cmd(self, cmd):
+        """
+        Run command remotely using server connection.
+
+        :param str cmd: command to run
+        :return: stdout when success
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        result = self.server_conn.run(cmd, hide=False)
+        if result.exited:
+            raise CoreCommandError(
+                result.exited, result.command, result.stdout, result.stderr
             )
-            return result.stdout.strip()
+
+        logging.info(
+            "fabric result:\n\tstdout: %s\n\tstderr: %s",
+            result.stdout.strip(),
+            result.stderr.strip(),
+        )
+        return result.stdout.strip()
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -650,18 +661,7 @@ class CoreNode(CoreNodeBase):
         else:
             args = self.client._cmd_args() + args
             args = " ".join(args)
-            result = self.server_conn.run(args, hide=False)
-            if result.exited:
-                raise CoreCommandError(
-                    result.exited, result.command, result.stdout, result.stderr
-                )
-
-            logging.info(
-                "fabric result:\n\tstdout: %s\n\tstderr: %s",
-                result.stdout.strip(),
-                result.stderr.strip(),
-            )
-            return result.stdout.strip()
+            return self.remote_cmd(args)
 
     def check_cmd(self, args):
         """
