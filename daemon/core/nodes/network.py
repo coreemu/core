@@ -281,7 +281,9 @@ class CoreNetwork(CoreNetworkBase):
 
     policy = "DROP"
 
-    def __init__(self, session, _id=None, name=None, start=True, policy=None):
+    def __init__(
+        self, session, _id=None, name=None, start=True, server=None, policy=None
+    ):
         """
         Creates a LxBrNet instance.
 
@@ -289,9 +291,10 @@ class CoreNetwork(CoreNetworkBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: start flag
+        :param str server: remote server node will run on, default is None for localhost
         :param policy: network policy
         """
-        CoreNetworkBase.__init__(self, session, _id, name, start)
+        CoreNetworkBase.__init__(self, session, _id, name, start, server)
         if name is None:
             name = str(self.id)
         if policy is not None:
@@ -649,6 +652,7 @@ class GreTapBridge(CoreNetwork):
         ttl=255,
         key=None,
         start=True,
+        server=None,
     ):
         """
         Create a GreTapBridge instance.
@@ -663,9 +667,7 @@ class GreTapBridge(CoreNetwork):
         :param key: gre tap key
         :param bool start: start flag
         """
-        CoreNetwork.__init__(
-            self, session=session, _id=_id, name=name, policy=policy, start=False
-        )
+        CoreNetwork.__init__(self, session, _id, name, False, server, policy)
         self.grekey = key
         if self.grekey is None:
             self.grekey = self.session.id ^ self.id
@@ -769,6 +771,7 @@ class CtrlNet(CoreNetwork):
         prefix=None,
         hostid=None,
         start=True,
+        server=None,
         assign_address=True,
         updown_script=None,
         serverintf=None,
@@ -782,6 +785,7 @@ class CtrlNet(CoreNetwork):
         :param prefix: control network ipv4 prefix
         :param hostid: host id
         :param bool start: start flag
+        :param str server: remote server node will run on, default is None for localhost
         :param str assign_address: assigned address
         :param str updown_script: updown script
         :param serverintf: server interface
@@ -792,7 +796,7 @@ class CtrlNet(CoreNetwork):
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
-        CoreNetwork.__init__(self, session, _id=_id, name=name, start=start)
+        CoreNetwork.__init__(self, session, _id, name, start, server)
 
     def startup(self):
         """
@@ -1028,7 +1032,7 @@ class HubNode(CoreNetwork):
     policy = "ACCEPT"
     type = "hub"
 
-    def __init__(self, session, _id=None, name=None, start=True):
+    def __init__(self, session, _id=None, name=None, start=True, server=None):
         """
         Creates a HubNode instance.
 
@@ -1036,9 +1040,10 @@ class HubNode(CoreNetwork):
         :param int _id: node id
         :param str name: node namee
         :param bool start: start flag
+        :param str server: remote server node will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
-        CoreNetwork.__init__(self, session, _id, name, start)
+        CoreNetwork.__init__(self, session, _id, name, start, server)
 
         # TODO: move to startup method
         if start:
@@ -1055,7 +1060,9 @@ class WlanNode(CoreNetwork):
     policy = "DROP"
     type = "wlan"
 
-    def __init__(self, session, _id=None, name=None, start=True, policy=None):
+    def __init__(
+        self, session, _id=None, name=None, start=True, server=None, policy=None
+    ):
         """
         Create a WlanNode instance.
 
@@ -1063,9 +1070,10 @@ class WlanNode(CoreNetwork):
         :param int _id: node id
         :param str name: node name
         :param bool start: start flag
+        :param str server: remote server node will run on, default is None for localhost
         :param policy: wlan policy
         """
-        CoreNetwork.__init__(self, session, _id, name, start, policy)
+        CoreNetwork.__init__(self, session, _id, name, start, server, policy)
         # wireless model such as basic range
         self.model = None
         # mobility model such as scripted

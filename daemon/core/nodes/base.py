@@ -1045,7 +1045,7 @@ class CoreNetworkBase(NodeBase):
     linktype = LinkTypes.WIRED.value
     is_emane = False
 
-    def __init__(self, session, _id, name, start=True):
+    def __init__(self, session, _id, name, start=True, server=None):
         """
         Create a CoreNetworkBase instance.
 
@@ -1053,8 +1053,9 @@ class CoreNetworkBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: should object start
+        :param str server: remote server node will run on, default is None for localhost
         """
-        super(CoreNetworkBase, self).__init__(session, _id, name, start=start)
+        super(CoreNetworkBase, self).__init__(session, _id, name, start, server)
         self._linked = {}
         self._linked_lock = threading.Lock()
 

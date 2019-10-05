@@ -277,7 +277,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     apitype = NodeTypes.RJ45.value
     type = "rj45"
 
-    def __init__(self, session, _id=None, name=None, mtu=1500, start=True):
+    def __init__(self, session, _id=None, name=None, mtu=1500, start=True, server=None):
         """
         Create an RJ45Node instance.
 
@@ -286,9 +286,9 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param str name: node name
         :param mtu: rj45 mtu
         :param bool start: start flag
-        :return:
+        :param str server: remote server node will run on, default is None for localhost
         """
-        CoreNodeBase.__init__(self, session, _id, name, start=start)
+        CoreNodeBase.__init__(self, session, _id, name, start, server)
         CoreInterface.__init__(self, node=self, name=name, mtu=mtu)
         self.up = False
         self.lock = threading.RLock()
