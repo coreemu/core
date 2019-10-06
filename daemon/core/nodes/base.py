@@ -5,11 +5,13 @@ Defines the base logic for nodes used within core.
 import logging
 import os
 import random
+import shutil
 import socket
 import string
 import threading
 from builtins import range
 from socket import AF_INET, AF_INET6
+from tempfile import NamedTemporaryFile
 
 from fabric import Connection
 
@@ -519,7 +521,7 @@ class CoreNode(CoreNodeBase):
         :rtype: bool
         """
         try:
-            self.net_cmd(["kill", "-9", str(self.pid)])
+            self.net_cmd(["kill", "-0", str(self.pid)])
         except CoreCommandError:
             return False
 
@@ -961,9 +963,13 @@ class CoreNode(CoreNodeBase):
         """
         logging.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
-        self.client.check_cmd(["mkdir", "-p", directory])
-        self.client.check_cmd(["mv", srcname, filename])
-        self.client.check_cmd(["sync"])
+        if self.server is None:
+            self.client.check_cmd(["mkdir", "-p", directory])
+            self.client.check_cmd(["mv", srcname, filename])
+            self.client.check_cmd(["sync"])
+        else:
+            self.net_cmd(["mkdir", "-p", directory])
+            self.server_conn.put(srcname, filename)
 
     def hostfilename(self, filename):
         """
@@ -981,21 +987,6 @@ class CoreNode(CoreNodeBase):
         dirname = os.path.join(self.nodedir, dirname)
         return os.path.join(dirname, basename)
 
-    def opennodefile(self, filename, mode="w"):
-        """
-        Open a node file, within it"s directory.
-
-        :param str filename: file name to open
-        :param str mode: mode to open file in
-        :return: open file
-        :rtype: file
-        """
-        hostfilename = self.hostfilename(filename)
-        dirname, _basename = os.path.split(hostfilename)
-        if not os.path.isdir(dirname):
-            os.makedirs(dirname, mode=0o755)
-        return open(hostfilename, mode)
-
     def nodefile(self, filename, contents, mode=0o644):
         """
         Create a node file with a given mode.
@@ -1005,12 +996,24 @@ class CoreNode(CoreNodeBase):
         :param int mode: mode for file
         :return: nothing
         """
-        with self.opennodefile(filename, "w") as open_file:
-            open_file.write(contents)
-            os.chmod(open_file.name, mode)
-            logging.debug(
-                "node(%s) added file: %s; mode: 0%o", self.name, open_file.name, mode
-            )
+        hostfilename = self.hostfilename(filename)
+        dirname, _basename = os.path.split(hostfilename)
+        if self.server is None:
+            if not os.path.isdir(dirname):
+                os.makedirs(dirname, mode=0o755)
+            with open(hostfilename, "w") as open_file:
+                open_file.write(contents)
+                os.chmod(open_file.name, mode)
+        else:
+            temp = NamedTemporaryFile()
+            temp.write(contents)
+            temp.close()
+            self.net_cmd(["mkdir", "-m", oct(0o755), "-p", dirname])
+            self.server_conn.put(temp.name, hostfilename)
+            self.net_cmd(["chmod", oct(mode), hostfilename])
+        logging.debug(
+            "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
+        )
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -1023,9 +1026,14 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         hostfilename = self.hostfilename(filename)
-        self.net_cmd(["cp", "-a", srcfilename, hostfilename])
-        if mode is not None:
-            self.net_cmd(["chmod", oct(mode), hostfilename])
+        if self.server is None:
+            shutil.copy2(srcfilename, hostfilename)
+            if mode is not None:
+                os.chmod(hostfilename, mode)
+        else:
+            self.server_conn.put(srcfilename, hostfilename)
+            if mode is not None:
+                self.net_cmd(["chmod", oct(mode), hostfilename])
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )
