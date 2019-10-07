@@ -13,8 +13,6 @@ from builtins import range
 from socket import AF_INET, AF_INET6
 from tempfile import NamedTemporaryFile
 
-from fabric import Connection
-
 from core import constants, utils
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -42,7 +40,8 @@ class NodeBase(object):
         :param int _id: id
         :param str name: object name
         :param bool start: start value
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         """
 
         self.session = session
@@ -53,8 +52,6 @@ class NodeBase(object):
             name = "o%s" % self.id
         self.name = name
         self.server = server
-        if self.server is not None:
-            self.server_conn = Connection(self.server, user="root")
 
         self.type = None
         self.services = None
@@ -103,18 +100,23 @@ class NodeBase(object):
             return utils.check_cmd(args, env=env)
         else:
             args = " ".join(args)
-            return self.remote_cmd(args)
+            return self.remote_cmd(args, env=env)
 
-    def remote_cmd(self, cmd):
+    def remote_cmd(self, cmd, env=None):
         """
         Run command remotely using server connection.
 
         :param str cmd: command to run
+        :param dict env: environment for remote command, default is None
         :return: stdout when success
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        result = self.server_conn.run(cmd, hide=False)
+        if env is None:
+            result = self.server.run(cmd, hide=False)
+        else:
+            logging.info("command env: %s", env)
+            result = self.server.run(cmd, hide=False, env=env, replace_env=True)
         if result.exited:
             raise CoreCommandError(
                 result.exited, result.command, result.stdout, result.stderr
@@ -969,7 +971,7 @@ class CoreNode(CoreNodeBase):
             self.client.check_cmd(["sync"])
         else:
             self.net_cmd(["mkdir", "-p", directory])
-            self.server_conn.put(srcname, filename)
+            self.server.put(srcname, filename)
 
     def hostfilename(self, filename):
         """
@@ -992,7 +994,7 @@ class CoreNode(CoreNodeBase):
         Create a node file with a given mode.
 
         :param str filename: name of file to create
-        :param contents: contents of file
+        :param str contents: contents of file
         :param int mode: mode for file
         :return: nothing
         """
@@ -1005,12 +1007,12 @@ class CoreNode(CoreNodeBase):
                 open_file.write(contents)
                 os.chmod(open_file.name, mode)
         else:
-            temp = NamedTemporaryFile()
-            temp.write(contents)
+            temp = NamedTemporaryFile(delete=False)
+            temp.write(contents.encode("utf-8"))
             temp.close()
-            self.net_cmd(["mkdir", "-m", oct(0o755), "-p", dirname])
-            self.server_conn.put(temp.name, hostfilename)
-            self.net_cmd(["chmod", oct(mode), hostfilename])
+            self.net_cmd(["mkdir", "-m", "%o" % 0o755, "-p", dirname])
+            self.server.put(temp.name, hostfilename)
+            self.net_cmd(["chmod", "%o" % mode, hostfilename])
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
         )
@@ -1031,9 +1033,9 @@ class CoreNode(CoreNodeBase):
             if mode is not None:
                 os.chmod(hostfilename, mode)
         else:
-            self.server_conn.put(srcfilename, hostfilename)
+            self.server.put(srcfilename, hostfilename)
             if mode is not None:
-                self.net_cmd(["chmod", oct(mode), hostfilename])
+                self.net_cmd(["chmod", "%o" % mode, hostfilename])
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )

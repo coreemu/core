@@ -147,7 +147,7 @@ class Session(object):
         self.sdt = Sdt(session=self)
 
         # distributed servers
-        self.servers = set()
+        self.servers = {}
 
         # initialize default node services
         self.services.default_services = {
@@ -158,10 +158,21 @@ class Session(object):
             "host": ("DefaultRoute", "SSH"),
         }
 
+    def add_distributed(self, server):
+        conn = Connection(server, user="root")
+        self.servers[server] = conn
+
     def init_distributed(self):
         for server in self.servers:
+            conn = self.servers[server]
             cmd = "mkdir -p %s" % self.session_dir
-            Connection(server, user="root").run(cmd, hide=False)
+            conn.run(cmd, hide=False)
+
+    def shutdown_distributed(self):
+        for server in self.servers:
+            conn = self.servers[server]
+            cmd = "rm -rf %s" % self.session_dir
+            conn.run(cmd, hide=False)
 
     @classmethod
     def get_node_class(cls, _type):
@@ -676,6 +687,13 @@ class Session(object):
         if not name:
             name = "%s%s" % (node_class.__name__, _id)
 
+        # verify distributed server
+        server = self.servers.get(node_options.emulation_server)
+        if node_options.emulation_server is not None and server is None:
+            raise CoreError(
+                "invalid distributed server: %s" % node_options.emulation_server
+            )
+
         # create node
         logging.info(
             "creating node(%s) id(%s) name(%s) start(%s)",
@@ -694,11 +712,7 @@ class Session(object):
             )
         else:
             node = self.create_node(
-                cls=node_class,
-                _id=_id,
-                name=name,
-                start=start,
-                server=node_options.emulation_server,
+                cls=node_class, _id=_id, name=name, start=start, server=server
             )
 
         # set node attributes
@@ -972,6 +986,7 @@ class Session(object):
         preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
+            self.shutdown_distributed()
 
         # call session shutdown handlers
         for handler in self.shutdown_handlers:

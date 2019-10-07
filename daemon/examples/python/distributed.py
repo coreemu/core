@@ -1,4 +1,5 @@
 import logging
+import pdb
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import NodeOptions
@@ -14,7 +15,7 @@ def main():
     session = coreemu.create_session()
 
     # initialize distributed
-    session.servers.add("core2")
+    session.add_distributed("core2")
     session.init_distributed()
 
     # must be in configuration state for nodes to start, when using "node_add" below
@@ -25,13 +26,12 @@ def main():
 
     # create nodes
     options = NodeOptions()
-    options.emulation_server = "10.10.4.38"
     options.emulation_server = "core2"
     session.add_node(node_options=options)
     # interface = prefixes.create_interface(node_one)
     # session.add_link(node_one.id, switch.id, interface_one=interface)
 
-    # node_two = session.add_node()
+    session.add_node()
     # interface = prefixes.create_interface(node_two)
     # session.add_link(node_two.id, switch.id, interface_one=interface)
 
@@ -45,6 +45,8 @@ def main():
     # print("node %s connecting to %s" % (node_two.name, node_one_address))
     # node_two.client.icmd(["iperf", "-t", "10", "-c", node_one_address])
     # node_one.cmd(["killall", "-9", "iperf"])
+
+    pdb.set_trace()
 
     # shutdown session
     coreemu.shutdown()
