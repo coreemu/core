@@ -14,6 +14,7 @@ from socket import AF_INET, AF_INET6
 from tempfile import NamedTemporaryFile
 
 from core import constants, utils
+from core.emulator import distributed
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError
@@ -95,39 +96,7 @@ class NodeBase(object):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.info("net cmd server(%s): %s", self.server, args)
-        if self.server is None:
-            return utils.check_cmd(args, env=env)
-        else:
-            args = " ".join(args)
-            return self.remote_cmd(args, env=env)
-
-    def remote_cmd(self, cmd, env=None):
-        """
-        Run command remotely using server connection.
-
-        :param str cmd: command to run
-        :param dict env: environment for remote command, default is None
-        :return: stdout when success
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        if env is None:
-            result = self.server.run(cmd, hide=False)
-        else:
-            logging.info("command env: %s", env)
-            result = self.server.run(cmd, hide=False, env=env, replace_env=True)
-        if result.exited:
-            raise CoreCommandError(
-                result.exited, result.command, result.stdout, result.stderr
-            )
-
-        logging.info(
-            "fabric result:\n\tstdout: %s\n\tstderr: %s",
-            result.stdout.strip(),
-            result.stderr.strip(),
-        )
-        return result.stdout.strip()
+        raise NotImplementedError
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -279,7 +248,8 @@ class CoreNodeBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: boolean for starting
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         """
         super(CoreNodeBase, self).__init__(session, _id, name, start, server)
         self.services = []
@@ -412,6 +382,23 @@ class CoreNodeBase(NodeBase):
 
         return common
 
+    def net_cmd(self, args, env=None):
+        """
+        Runs a command that is used to configure and setup the network on the host
+        system.
+
+        :param list[str]|str args: command to run
+        :param dict env: environment to run command with
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        if self.server is None:
+            return utils.check_cmd(args, env=env)
+        else:
+            args = " ".join(args)
+            return distributed.remote_cmd(self.server, args, env=env)
+
     def node_net_cmd(self, args):
         """
         Runs a command that is used to configure and setup the network within a
@@ -493,7 +480,8 @@ class CoreNode(CoreNodeBase):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         """
         super(CoreNode, self).__init__(session, _id, name, start, server)
         self.nodedir = nodedir
@@ -653,13 +641,13 @@ class CoreNode(CoreNodeBase):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.info("net cmd server(%s): %s", self.server, args)
         if self.server is None:
+            logging.info("node(%s) cmd: %s", self.name, args)
             return self.check_cmd(args)
         else:
             args = self.client._cmd_args() + args
             args = " ".join(args)
-            return self.remote_cmd(args)
+            return distributed.remote_cmd(self.server, args)
 
     def check_cmd(self, args):
         """
@@ -753,7 +741,11 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("interface name (%s) too long" % name)
 
             veth = Veth(
-                node=self, name=name, localname=localname, net=net, start=self.up
+                node=self,
+                name=name,
+                localname=localname,
+                start=self.up,
+                server=self.server,
             )
 
             if self.up:
@@ -806,9 +798,7 @@ class CoreNode(CoreNodeBase):
             sessionid = self.session.short_session_id()
             localname = "tap%s.%s.%s" % (self.id, ifindex, sessionid)
             name = ifname
-            tuntap = TunTap(
-                node=self, name=name, localname=localname, net=net, start=self.up
-            )
+            tuntap = TunTap(node=self, name=name, localname=localname, start=self.up)
 
             try:
                 self.addnetif(tuntap, ifindex)
@@ -1057,7 +1047,8 @@ class CoreNetworkBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: should object start
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         """
         super(CoreNetworkBase, self).__init__(session, _id, name, start, server)
         self._linked = {}

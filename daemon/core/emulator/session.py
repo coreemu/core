@@ -37,9 +37,11 @@ from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.ipaddress import MacAddress
+from core.nodes.interface import GreTap
+from core.nodes.ipaddress import IpAddress, MacAddress
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
+    CoreNetwork,
     CtrlNet,
     GreTapBridge,
     HubNode,
@@ -148,6 +150,8 @@ class Session(object):
 
         # distributed servers
         self.servers = {}
+        self.tunnels = {}
+        self.address = None
 
         # initialize default node services
         self.services.default_services = {
@@ -161,18 +165,80 @@ class Session(object):
     def add_distributed(self, server):
         conn = Connection(server, user="root")
         self.servers[server] = conn
-
-    def init_distributed(self):
-        for server in self.servers:
-            conn = self.servers[server]
-            cmd = "mkdir -p %s" % self.session_dir
-            conn.run(cmd, hide=False)
+        cmd = "mkdir -p %s" % self.session_dir
+        conn.run(cmd, hide=False)
 
     def shutdown_distributed(self):
+        # shutdown all tunnels
+        for key in self.tunnels:
+            tunnels = self.tunnels[key]
+            for tunnel in tunnels:
+                tunnel.shutdown()
+
+        # remove all remote session directories
         for server in self.servers:
             conn = self.servers[server]
             cmd = "rm -rf %s" % self.session_dir
             conn.run(cmd, hide=False)
+
+        # clear tunnels
+        self.tunnels.clear()
+
+    def initialize_distributed(self):
+        for node_id in self.nodes:
+            node = self.nodes[node_id]
+
+            if not isinstance(node, CoreNetwork):
+                continue
+
+            if isinstance(node, CtrlNet) and node.serverintf is not None:
+                continue
+
+            for server in self.servers:
+                conn = self.servers[server]
+                key = self.tunnelkey(node_id, IpAddress.to_int(server))
+
+                # local to server
+                logging.info(
+                    "local tunnel node(%s) to remote(%s) key(%s)",
+                    node.name,
+                    server,
+                    key,
+                )
+                local_tap = GreTap(session=self, remoteip=server, key=key)
+                local_tap.net_client.create_interface(node.brname, local_tap.localname)
+
+                # server to local
+                logging.info(
+                    "remote tunnel node(%s) to local(%s) key(%s)",
+                    node.name,
+                    self.address,
+                    key,
+                )
+                remote_tap = GreTap(
+                    session=self, remoteip=self.address, key=key, server=conn
+                )
+                remote_tap.net_client.create_interface(
+                    node.brname, remote_tap.localname
+                )
+
+                # save tunnels for shutdown
+                self.tunnels[key] = [local_tap, remote_tap]
+
+    def tunnelkey(self, n1num, n2num):
+        """
+        Compute a 32-bit key used to uniquely identify a GRE tunnel.
+        The hash(n1num), hash(n2num) values are used, so node numbers may be
+        None or string values (used for e.g. "ctrlnet").
+
+        :param int n1num: node one id
+        :param int n2num: node two id
+        :return: tunnel key for the node pair
+        :rtype: int
+        """
+        logging.debug("creating tunnel key for: %s, %s", n1num, n2num)
+        key = (self.id << 16) ^ utils.hashkey(n1num) ^ (utils.hashkey(n2num) << 8)
+        return key & 0xFFFFFFFF
 
     @classmethod
     def get_node_class(cls, _type):
@@ -1492,6 +1558,9 @@ class Session(object):
         # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
         self.broker.startup()
+
+        # initialize distributed tunnels
+        self.initialize_distributed()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:

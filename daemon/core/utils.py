@@ -263,7 +263,7 @@ def check_cmd(args, **kwargs):
     kwargs["stdout"] = subprocess.PIPE
     kwargs["stderr"] = subprocess.STDOUT
     args = split_args(args)
-    logging.debug("command: %s", args)
+    logging.info("command: %s", args)
     try:
         p = subprocess.Popen(args, **kwargs)
         stdout, _ = p.communicate()

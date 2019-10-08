@@ -10,6 +10,7 @@ import time
 from socket import AF_INET, AF_INET6
 
 from core import constants, utils
+from core.emulator import distributed
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
@@ -291,7 +292,8 @@ class CoreNetwork(CoreNetworkBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: start flag
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         :param policy: network policy
         """
         CoreNetworkBase.__init__(self, session, _id, name, start, server)
@@ -306,6 +308,27 @@ class CoreNetwork(CoreNetworkBase):
         if start:
             self.startup()
             ebq.startupdateloop(self)
+
+    def net_cmd(self, args, env=None):
+        """
+        Runs a command that is used to configure and setup the network on the host
+        system.
+
+        :param list[str]|str args: command to run
+        :param dict env: environment to run command with
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        logging.info("network node(%s) cmd", self.name)
+        output = utils.check_cmd(args, env=env)
+
+        args = " ".join(args)
+        for server in self.session.servers:
+            conn = self.session.servers[server]
+            distributed.remote_cmd(conn, args, env=env)
+
+        return output
 
     def startup(self):
         """
@@ -381,11 +404,11 @@ class CoreNetwork(CoreNetworkBase):
         """
         Attach a network interface.
 
-        :param core.netns.vnode.VEth netif: network interface to attach
+        :param core.nodes.interface.Veth netif: network interface to attach
         :return: nothing
         """
         if self.up:
-            self.net_client.create_interface(self.brname, netif.localname)
+            netif.net_client.create_interface(self.brname, netif.localname)
 
         CoreNetworkBase.attach(self, netif)
 
@@ -397,7 +420,7 @@ class CoreNetwork(CoreNetworkBase):
         :return: nothing
         """
         if self.up:
-            self.net_client.delete_interface(self.brname, netif.localname)
+            netif.net_client.delete_interface(self.brname, netif.localname)
 
         CoreNetworkBase.detach(self, netif)
 
@@ -591,13 +614,11 @@ class CoreNetwork(CoreNetworkBase):
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
-        netif = Veth(
-            node=None, name=name, localname=localname, mtu=1500, net=self, start=self.up
-        )
+        netif = Veth(node=None, name=name, localname=localname, mtu=1500, start=self.up)
         self.attach(netif)
         if net.up:
             # this is similar to net.attach() but uses netif.name instead of localname
-            self.net_client.create_interface(net.brname, netif.name)
+            netif.net_client.create_interface(net.brname, netif.name)
         i = net.newifindex()
         net._netif[i] = netif
         with net._linked_lock:
@@ -666,6 +687,8 @@ class GreTapBridge(CoreNetwork):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         """
         CoreNetwork.__init__(self, session, _id, name, False, server, policy)
         self.grekey = key
