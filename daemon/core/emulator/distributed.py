@@ -1,6 +1,9 @@
 import logging
+import threading
 
 from core.errors import CoreCommandError
+
+LOCK = threading.Lock()
 
 
 def remote_cmd(server, cmd, env=None):
@@ -16,12 +19,18 @@ def remote_cmd(server, cmd, env=None):
     :raises CoreCommandError: when a non-zero exit status occurs
     """
     logging.info("remote cmd server(%s): %s", server, cmd)
-    if env is None:
-        result = server.run(cmd, hide=False)
-    else:
-        result = server.run(cmd, hide=False, env=env, replace_env=True)
+    with LOCK:
+        if env is None:
+            result = server.run(cmd, hide=False)
+        else:
+            result = server.run(cmd, hide=False, env=env, replace_env=True)
     if result.exited:
         raise CoreCommandError(
             result.exited, result.command, result.stdout, result.stderr
         )
     return result.stdout.strip()
+
+
+def remote_put(server, source, destination):
+    with LOCK:
+        server.put(source, destination)

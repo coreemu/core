@@ -525,14 +525,14 @@ class CoreNetwork(CoreNetworkBase):
                     logging.debug(
                         "linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],)
                     )
-                    utils.check_cmd(tc + parent + ["handle", "1:"] + tbf)
+                    netif.net_cmd(tc + parent + ["handle", "1:"] + tbf)
                 netif.setparam("has_tbf", True)
                 changed = True
             elif netif.getparam("has_tbf") and bw <= 0:
                 tcd = [] + tc
                 tcd[2] = "delete"
                 if self.up:
-                    utils.check_cmd(tcd + parent)
+                    netif.net_cmd(tcd + parent)
                 netif.setparam("has_tbf", False)
                 # removing the parent removes the child
                 netif.setparam("has_netem", False)
@@ -575,14 +575,14 @@ class CoreNetwork(CoreNetworkBase):
             tc[2] = "delete"
             if self.up:
                 logging.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
-                utils.check_cmd(tc + parent + ["handle", "10:"])
+                netif.net_cmd(tc + parent + ["handle", "10:"])
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
                 logging.debug(
                     "linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],)
                 )
-                utils.check_cmd(tc + parent + ["handle", "10:"] + netem)
+                netif.net_cmd(tc + parent + ["handle", "10:"] + netem)
             netif.setparam("has_netem", True)
 
     def linknet(self, net):

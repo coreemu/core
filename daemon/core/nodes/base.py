@@ -961,7 +961,7 @@ class CoreNode(CoreNodeBase):
             self.client.check_cmd(["sync"])
         else:
             self.net_cmd(["mkdir", "-p", directory])
-            self.server.put(srcname, filename)
+            distributed.remote_put(self.server, srcname, filename)
 
     def hostfilename(self, filename):
         """
@@ -1001,7 +1001,7 @@ class CoreNode(CoreNodeBase):
             temp.write(contents.encode("utf-8"))
             temp.close()
             self.net_cmd(["mkdir", "-m", "%o" % 0o755, "-p", dirname])
-            self.server.put(temp.name, hostfilename)
+            distributed.remote_put(self.server, temp.name, hostfilename)
             self.net_cmd(["chmod", "%o" % mode, hostfilename])
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
@@ -1023,7 +1023,7 @@ class CoreNode(CoreNodeBase):
             if mode is not None:
                 os.chmod(hostfilename, mode)
         else:
-            self.server.put(srcfilename, hostfilename)
+            distributed.remote_put(self.server, srcfilename, hostfilename)
             if mode is not None:
                 self.net_cmd(["chmod", "%o" % mode, hostfilename])
         logging.info(
