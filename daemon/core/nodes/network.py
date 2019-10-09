@@ -3,7 +3,6 @@ Defines network nodes used within core.
 """
 
 import logging
-import os
 import socket
 import threading
 import time
@@ -165,20 +164,20 @@ class EbtablesQueue(object):
         """
         # save kernel ebtables snapshot to a file
         args = self.ebatomiccmd(["--atomic-save"])
-        utils.check_cmd(args)
+        wlan.net_cmd(args)
 
         # modify the table file using queued ebtables commands
         for c in self.cmds:
             args = self.ebatomiccmd(c)
-            utils.check_cmd(args)
+            wlan.net_cmd(args)
         self.cmds = []
 
         # commit the table file to the kernel
         args = self.ebatomiccmd(["--atomic-commit"])
-        utils.check_cmd(args)
+        wlan.net_cmd(args)
 
         try:
-            os.unlink(self.atomic_file)
+            wlan.net_cmd(["rm", "-f", self.atomic_file])
         except OSError:
             logging.exception("error removing atomic file: %s", self.atomic_file)
 
@@ -312,7 +311,7 @@ class CoreNetwork(CoreNetworkBase):
     def net_cmd(self, args, env=None):
         """
         Runs a command that is used to configure and setup the network on the host
-        system.
+        system and all configured distributed servers.
 
         :param list[str]|str args: command to run
         :param dict env: environment to run command with
@@ -341,7 +340,7 @@ class CoreNetwork(CoreNetworkBase):
 
         # create a new ebtables chain for this bridge
         ebtablescmds(
-            utils.check_cmd,
+            self.net_cmd,
             [
                 [constants.EBTABLES_BIN, "-N", self.brname, "-P", self.policy],
                 [
@@ -372,7 +371,7 @@ class CoreNetwork(CoreNetworkBase):
         try:
             self.net_client.delete_bridge(self.brname)
             ebtablescmds(
-                utils.check_cmd,
+                self.net_cmd,
                 [
                     [
                         constants.EBTABLES_BIN,
@@ -844,7 +843,6 @@ class CtrlNet(CoreNetwork):
         if self.assign_address:
             addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
             self.addrconfig(addrlist=addrlist)
-            logging.info("address %s", addr)
 
         if self.updown_script:
             logging.info(
