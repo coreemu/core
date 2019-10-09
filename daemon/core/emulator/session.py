@@ -1869,7 +1869,14 @@ class Session(object):
             assign_address = self.master
             prefix = prefixes[0]
 
-        logging.info("controlnet prefix: %s - %s", type(prefix), prefix)
+        logging.info(
+            "controlnet(%s) prefix(%s) assign(%s) updown(%s) serverintf(%s)",
+            _id,
+            prefix,
+            assign_address,
+            updown_script,
+            server_interface,
+        )
         control_net = self.create_node(
             cls=CtrlNet,
             _id=_id,

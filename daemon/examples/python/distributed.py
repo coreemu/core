@@ -15,6 +15,9 @@ def main():
     coreemu = CoreEmu()
     session = coreemu.create_session()
 
+    # set controlnet
+    session.options.set_config("controlnet", "172.16.0.0/24")
+
     # initialize distributed
     address = sys.argv[1]
     remote = sys.argv[2]

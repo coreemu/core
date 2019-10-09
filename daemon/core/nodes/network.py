@@ -808,7 +808,8 @@ class CtrlNet(CoreNetwork):
         :param prefix: control network ipv4 prefix
         :param hostid: host id
         :param bool start: start flag
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         :param str assign_address: assigned address
         :param str updown_script: updown script
         :param serverintf: server interface
