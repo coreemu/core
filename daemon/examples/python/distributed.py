@@ -34,7 +34,7 @@ def main():
     options.emulation_server = remote
     node_two = session.add_node(node_options=options)
 
-    # create not interfaces and link
+    # create node interfaces and link
     interface_one = prefixes.create_interface(node_one)
     interface_two = prefixes.create_interface(node_two)
     session.add_link(node_one.id, switch.id, interface_one=interface_one)

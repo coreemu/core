@@ -852,7 +852,7 @@ class CtrlNet(CoreNetwork):
                 self.brname,
                 self.updown_script,
             )
-            utils.check_cmd([self.updown_script, self.brname, "startup"])
+            self.net_cmd([self.updown_script, self.brname, "startup"])
 
         if self.serverintf:
             self.net_client.create_interface(self.brname, self.serverintf)
@@ -880,7 +880,7 @@ class CtrlNet(CoreNetwork):
                     self.brname,
                     self.updown_script,
                 )
-                utils.check_cmd([self.updown_script, self.brname, "shutdown"])
+                self.net_cmd([self.updown_script, self.brname, "shutdown"])
             except CoreCommandError:
                 logging.exception("error issuing shutdown script shutdown")
 
