@@ -9,6 +9,7 @@ services.
 
 import enum
 import logging
+import shlex
 import time
 from multiprocessing.pool import ThreadPool
 
@@ -597,8 +598,9 @@ class CoreServices(object):
         status = 0
         for cmd in cmds:
             logging.debug("validating service(%s) using: %s", service.name, cmd)
+            cmd = shlex.split(cmd)
             try:
-                node.check_cmd(cmd)
+                node.node_net_cmd(cmd)
             except CoreCommandError as e:
                 logging.debug(
                     "node(%s) service(%s) validate failed", node.name, service.name
@@ -728,11 +730,11 @@ class CoreServices(object):
 
         status = 0
         for cmd in cmds:
+            cmd = shlex.split(cmd)
             try:
                 if wait:
-                    node.check_cmd(cmd)
-                else:
-                    node.cmd(cmd, wait=False)
+                    cmd.append("&")
+                node.node_net_cmd(cmd)
             except CoreCommandError:
                 logging.exception("error starting command")
                 status = -1

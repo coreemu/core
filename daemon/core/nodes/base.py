@@ -11,7 +11,6 @@ import string
 import threading
 from builtins import range
 from socket import AF_INET, AF_INET6
-from tempfile import NamedTemporaryFile
 
 from core import constants, utils
 from core.emulator import distributed
@@ -997,11 +996,8 @@ class CoreNode(CoreNodeBase):
                 open_file.write(contents)
                 os.chmod(open_file.name, mode)
         else:
-            temp = NamedTemporaryFile(delete=False)
-            temp.write(contents.encode("utf-8"))
-            temp.close()
             self.net_cmd(["mkdir", "-m", "%o" % 0o755, "-p", dirname])
-            distributed.remote_put(self.server, temp.name, hostfilename)
+            distributed.remote_put_temp(self.server, hostfilename, contents)
             self.net_cmd(["chmod", "%o" % mode, hostfilename])
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode

@@ -18,6 +18,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
+from core.emulator import distributed
 from core.emulator.enumerations import (
     ConfigDataTypes,
     ConfigFlags,
@@ -679,8 +680,12 @@ class EmaneManager(ModelManager):
             return
 
         dev = self.get_config("eventservicedevice")
-
         emanexml.create_event_service_xml(group, port, dev, self.session.session_dir)
+        for server in self.session.servers:
+            conn = self.session.servers[server]
+            emanexml.create_event_service_xml(
+                group, port, dev, self.session.session_dir, conn
+            )
 
     def startdaemons(self):
         """
@@ -745,7 +750,7 @@ class EmaneManager(ModelManager):
                 os.path.join(path, "emane%d.log" % n),
                 os.path.join(path, "platform%d.xml" % n),
             ]
-            output = node.check_cmd(args)
+            output = node.node_net_cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
             logging.info("node(%s) emane daemon output: %s", node.name, output)
 
@@ -756,6 +761,10 @@ class EmaneManager(ModelManager):
         emanecmd += ["-f", os.path.join(path, "emane.log")]
         args = emanecmd + [os.path.join(path, "platform.xml")]
         utils.check_cmd(args, cwd=path)
+        args = " ".join(args)
+        for server in self.session.servers:
+            conn = self.session.servers[server]
+            distributed.remote_cmd(conn, args, cwd=path)
         logging.info("host emane daemon running: %s", args)
 
     def stopdaemons(self):
