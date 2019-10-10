@@ -37,7 +37,7 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
-from core.errors import CoreError
+from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.network import WlanNode
 from core.services.coreservices import ServiceManager, ServiceShim
@@ -882,16 +882,21 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 return (reply,)
             else:
                 logging.info("execute message with cmd=%s", command)
+                command = utils.split_args(command)
                 # execute command and send a response
                 if (
                     message.flags & MessageFlags.STRING.value
                     or message.flags & MessageFlags.TEXT.value
                 ):
-                    # shlex.split() handles quotes within the string
                     if message.flags & MessageFlags.LOCAL.value:
                         status, res = utils.cmd_output(command)
                     else:
-                        status, res = node.cmd_output(command)
+                        try:
+                            res = node.node_net_cmd(command)
+                            status = 0
+                        except CoreCommandError as e:
+                            res = e.stderr
+                            status = e.returncode
                     logging.info(
                         "done exec cmd=%s with status=%d res=(%d bytes)",
                         command,
@@ -913,7 +918,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if message.flags & MessageFlags.LOCAL.value:
                         utils.mute_detach(command)
                     else:
-                        node.cmd(command, wait=False)
+                        node.node_net_cmd(command, wait=False)
         except CoreError:
             logging.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later

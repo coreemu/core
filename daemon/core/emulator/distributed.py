@@ -10,7 +10,7 @@ from core.errors import CoreCommandError
 LOCK = threading.Lock()
 
 
-def remote_cmd(server, cmd, env=None, cwd=None):
+def remote_cmd(server, cmd, env=None, cwd=None, wait=True):
     """
     Run command remotely using server connection.
 
@@ -20,12 +20,18 @@ def remote_cmd(server, cmd, env=None, cwd=None):
     :param dict env: environment for remote command, default is None
     :param str cwd: directory to run command in, defaults to None, which is the user's
         home directory
+    :param bool wait: True to wait for status, False to background process
     :return: stdout when success
     :rtype: str
     :raises CoreCommandError: when a non-zero exit status occurs
     """
-    logging.info("remote cmd server(%s): %s", server, cmd)
+
     replace_env = env is not None
+    if not wait:
+        cmd += " &"
+    logging.info(
+        "remote cmd server(%s) cwd(%s) wait(%s): %s", server.host, cwd, wait, cmd
+    )
     try:
         with LOCK:
             if cwd is None:

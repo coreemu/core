@@ -772,7 +772,8 @@ class EmaneManager(ModelManager):
         Kill the appropriate EMANE daemons.
         """
         # TODO: we may want to improve this if we had the PIDs from the specific EMANE daemons that we"ve started
-        args = ["killall", "-q", "emane"]
+        kill_emaned = ["killall", "-q", "emane"]
+        kill_transortd = ["killall", "-q", "emanetransportd"]
         stop_emane_on_host = False
         for node in self.getnodes():
             if hasattr(node, "transport_type") and node.transport_type == "raw":
@@ -780,13 +781,19 @@ class EmaneManager(ModelManager):
                 continue
 
             if node.up:
-                node.cmd(args, wait=False)
+                node.node_net_cmd(kill_emaned, wait=False)
                 # TODO: RJ45 node
 
         if stop_emane_on_host:
             try:
-                utils.check_cmd(args)
-                utils.check_cmd(["killall", "-q", "emanetransportd"])
+                utils.check_cmd(kill_emaned)
+                utils.check_cmd(kill_transortd)
+                kill_emaned = " ".join(kill_emaned)
+                kill_transortd = " ".join(kill_transortd)
+                for server in self.session.servers:
+                    conn = self.session[server]
+                    distributed.remote_cmd(conn, kill_emaned)
+                    distributed.remote_cmd(conn, kill_transortd)
             except CoreCommandError:
                 logging.exception("error shutting down emane daemons")
 
@@ -976,8 +983,13 @@ class EmaneManager(ModelManager):
         Return True if an EMANE process associated with the given node is running, False otherwise.
         """
         args = ["pkill", "-0", "-x", "emane"]
-        status = node.cmd(args)
-        return status == 0
+        try:
+            node.node_net_cmd(args)
+            result = True
+        except CoreCommandError:
+            result = False
+
+        return result
 
 
 class EmaneGlobalModel(EmaneModel):

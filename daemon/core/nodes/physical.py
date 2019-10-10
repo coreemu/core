@@ -94,7 +94,7 @@ class PhysicalNode(CoreNodeBase):
         return output.strip()
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
-        return self.cmd([sh, "-c", cmdstr])
+        return self.node_net_cmd([sh, "-c", cmdstr])
 
     def sethwaddr(self, ifindex, addr):
         """

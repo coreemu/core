@@ -38,7 +38,7 @@ def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
 
 def ping(from_node, to_node, ip_prefixes):
     address = ip_prefixes.ip4_address(to_node)
-    return from_node.cmd(["ping", "-c", "3", address])
+    return from_node.node_net_cmd(["ping", "-c", "3", address])
 
 
 class TestCore:
@@ -102,7 +102,6 @@ class TestCore:
 
         # check various command using vcmd module
         command = ["ls"]
-        assert not client.cmd(command)
         status, output = client.cmd_output(command)
         assert not status
         p, stdin, stdout, stderr = client.popen(command)
@@ -110,7 +109,6 @@ class TestCore:
         assert not client.icmd(command)
 
         # check various command using command line
-        assert not client.cmd(command)
         status, output = client.cmd_output(command)
         assert not status
         p, stdin, stdout, stderr = client.popen(command)

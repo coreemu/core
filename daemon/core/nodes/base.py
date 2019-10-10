@@ -630,29 +630,31 @@ class CoreNode(CoreNodeBase):
         """
         return self.client.cmd_output(args)
 
-    def node_net_cmd(self, args):
+    def node_net_cmd(self, args, wait=True):
         """
         Runs a command that is used to configure and setup the network within a
         node.
 
-        :param list[str]|str args: command to run
+        :param list[str] args: command to run
+        :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
             logging.info("node(%s) cmd: %s", self.name, args)
-            return self.check_cmd(args)
+            return self.client.check_cmd(args, wait=wait)
         else:
             args = self.client._cmd_args() + args
             args = " ".join(args)
-            return distributed.remote_cmd(self.server, args)
+            return distributed.remote_cmd(self.server, args, wait=wait)
 
     def check_cmd(self, args):
         """
         Runs shell command on node.
 
         :param list[str]|str args: command to run
+        :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs

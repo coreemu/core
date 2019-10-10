@@ -26,7 +26,7 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 
 def ping(from_node, to_node, ip_prefixes, count=3):
     address = ip_prefixes.ip4_address(to_node)
-    return from_node.cmd(["ping", "-c", str(count), address])
+    return from_node.node_net_cmd(["ping", "-c", str(count), address])
 
 
 class TestEmane:

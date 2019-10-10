@@ -97,17 +97,18 @@ class VnodeClient(object):
         status = p.wait()
         return status, output.decode("utf-8").strip()
 
-    def check_cmd(self, args):
+    def check_cmd(self, args, wait=True):
         """
         Run command and return exit status and combined stdout and stderr.
 
         :param list[str]|str args: command to run
+        :param bool wait: True to wait for command status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises core.CoreCommandError: when there is a non-zero exit status
         """
         status, output = self.cmd_output(args)
-        if status != 0:
+        if wait and status != 0:
             raise CoreCommandError(status, args, output)
         return output.strip()
 
