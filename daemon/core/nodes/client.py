@@ -4,8 +4,6 @@ over a control channel to the vnoded process running in a network namespace.
 The control channel can be accessed via calls using the vcmd shell.
 """
 
-import os
-
 from core import constants, utils
 
 
@@ -68,56 +66,6 @@ class VnodeClient(object):
         args = utils.split_args(args)
         args = self._cmd_args() + args
         return utils.check_cmd(args, wait=wait)
-
-    def icmd(self, args):
-        """
-        Execute an icmd against a node.
-
-        :param list[str]|str args: command arguments
-        :return: command result
-        :rtype: int
-        """
-        args = utils.split_args(args)
-        return os.spawnlp(
-            os.P_WAIT,
-            constants.VCMD_BIN,
-            constants.VCMD_BIN,
-            "-c",
-            self.ctrlchnlname,
-            "--",
-            *args
-        )
-
-    def term(self, sh="/bin/sh"):
-        """
-        Open a terminal on a node.
-
-        :param str sh: shell to open terminal with
-        :return: terminal command result
-        :rtype: int
-        """
-        args = (
-            "xterm",
-            "-ut",
-            "-title",
-            self.name,
-            "-e",
-            constants.VCMD_BIN,
-            "-c",
-            self.ctrlchnlname,
-            "--",
-            sh,
-        )
-        if "SUDO_USER" in os.environ:
-            args = (
-                "su",
-                "-s",
-                "/bin/sh",
-                "-c",
-                "exec " + " ".join(map(lambda x: "'%s'" % x, args)),
-                os.environ["SUDO_USER"],
-            )
-        return os.spawnvp(os.P_NOWAIT, args[0], args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """

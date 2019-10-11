@@ -40,10 +40,6 @@ def example(options):
     # instantiate session
     session.instantiate()
 
-    # start a shell on the first node
-    node = session.get_node(2)
-    node.client.term("bash")
-
     # shutdown session
     input("press enter to exit...")
     coreemu.shutdown()
