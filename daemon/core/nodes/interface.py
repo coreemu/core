@@ -52,7 +52,7 @@ class CoreInterface(object):
         """
         Runs a command on the host system or distributed servers.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
         :param dict env: environment to run command with
         :param str cwd: directory to run command in
         :param bool wait: True to wait for status, False otherwise
@@ -63,7 +63,6 @@ class CoreInterface(object):
         if self.server is None:
             return utils.check_cmd(args, env, cwd, wait)
         else:
-            args = " ".join(args)
             return distributed.remote_cmd(self.server, args, env, cwd, wait)
 
     def startup(self):

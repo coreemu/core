@@ -9,6 +9,7 @@ import time
 from socket import AF_INET, AF_INET6
 
 from core import constants, utils
+from core.constants import EBTABLES_BIN
 from core.emulator import distributed
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
@@ -92,14 +93,11 @@ class EbtablesQueue(object):
         """
         Helper for building ebtables atomic file command list.
 
-        :param list[str] cmd: ebtable command
+        :param str cmd: ebtable command
         :return: ebtable atomic command
         :rtype: list[str]
         """
-        r = [constants.EBTABLES_BIN, "--atomic-file", self.atomic_file]
-        if cmd:
-            r.extend(cmd)
-        return r
+        return "%s --atomic-file %s %s" % (EBTABLES_BIN, self.atomic_file, cmd)
 
     def lastupdate(self, wlan):
         """
@@ -163,7 +161,7 @@ class EbtablesQueue(object):
         :return: nothing
         """
         # save kernel ebtables snapshot to a file
-        args = self.ebatomiccmd(["--atomic-save"])
+        args = self.ebatomiccmd("--atomic-save")
         wlan.net_cmd(args)
 
         # modify the table file using queued ebtables commands
@@ -173,12 +171,12 @@ class EbtablesQueue(object):
         self.cmds = []
 
         # commit the table file to the kernel
-        args = self.ebatomiccmd(["--atomic-commit"])
+        args = self.ebatomiccmd("--atomic-commit")
         wlan.net_cmd(args)
 
         try:
-            wlan.net_cmd(["rm", "-f", self.atomic_file])
-        except OSError:
+            wlan.net_cmd("rm -f %s" % self.atomic_file)
+        except CoreCommandError:
             logging.exception("error removing atomic file: %s", self.atomic_file)
 
     def ebchange(self, wlan):
@@ -200,58 +198,26 @@ class EbtablesQueue(object):
         """
         with wlan._linked_lock:
             # flush the chain
-            self.cmds.extend([["-F", wlan.brname]])
+            self.cmds.append("-F %s" % wlan.brname)
             # rebuild the chain
             for netif1, v in wlan._linked.items():
                 for netif2, linked in v.items():
                     if wlan.policy == "DROP" and linked:
                         self.cmds.extend(
                             [
-                                [
-                                    "-A",
-                                    wlan.brname,
-                                    "-i",
-                                    netif1.localname,
-                                    "-o",
-                                    netif2.localname,
-                                    "-j",
-                                    "ACCEPT",
-                                ],
-                                [
-                                    "-A",
-                                    wlan.brname,
-                                    "-o",
-                                    netif1.localname,
-                                    "-i",
-                                    netif2.localname,
-                                    "-j",
-                                    "ACCEPT",
-                                ],
+                                "-A %s -i %s -o %s -j ACCEPT"
+                                % (wlan.brname, netif1.localname, netif2.localname),
+                                "-A %s -o %s -i %s -j ACCEPT"
+                                % (wlan.brname, netif1.localname, netif2.localname),
                             ]
                         )
                     elif wlan.policy == "ACCEPT" and not linked:
                         self.cmds.extend(
                             [
-                                [
-                                    "-A",
-                                    wlan.brname,
-                                    "-i",
-                                    netif1.localname,
-                                    "-o",
-                                    netif2.localname,
-                                    "-j",
-                                    "DROP",
-                                ],
-                                [
-                                    "-A",
-                                    wlan.brname,
-                                    "-o",
-                                    netif1.localname,
-                                    "-i",
-                                    netif2.localname,
-                                    "-j",
-                                    "DROP",
-                                ],
+                                "-A %s -i %s -o %s -j DROP"
+                                % (wlan.brname, netif1.localname, netif2.localname),
+                                "-A %s -o %s -i %s -j DROP"
+                                % (wlan.brname, netif1.localname, netif2.localname),
                             ]
                         )
 
@@ -313,7 +279,7 @@ class CoreNetwork(CoreNetworkBase):
         Runs a command that is used to configure and setup the network on the host
         system and all configured distributed servers.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
         :param dict env: environment to run command with
         :param str cwd: directory to run command in
         :param bool wait: True to wait for status, False otherwise
@@ -323,12 +289,9 @@ class CoreNetwork(CoreNetworkBase):
         """
         logging.info("network node(%s) cmd", self.name)
         output = utils.check_cmd(args, env, cwd, wait)
-
-        args = " ".join(args)
         for server in self.session.servers:
             conn = self.session.servers[server]
             distributed.remote_cmd(conn, args, env, cwd, wait)
-
         return output
 
     def startup(self):
@@ -341,21 +304,12 @@ class CoreNetwork(CoreNetworkBase):
         self.net_client.create_bridge(self.brname)
 
         # create a new ebtables chain for this bridge
-        ebtablescmds(
-            self.net_cmd,
-            [
-                [constants.EBTABLES_BIN, "-N", self.brname, "-P", self.policy],
-                [
-                    constants.EBTABLES_BIN,
-                    "-A",
-                    "FORWARD",
-                    "--logical-in",
-                    self.brname,
-                    "-j",
-                    self.brname,
-                ],
-            ],
-        )
+        cmds = [
+            "%s -N %s -P %s" % (EBTABLES_BIN, self.brname, self.policy),
+            "%s -A FORWARD --logical-in %s -j %s"
+            % (EBTABLES_BIN, self.brname, self.brname),
+        ]
+        ebtablescmds(self.net_cmd, cmds)
 
         self.up = True
 
@@ -372,21 +326,12 @@ class CoreNetwork(CoreNetworkBase):
 
         try:
             self.net_client.delete_bridge(self.brname)
-            ebtablescmds(
-                self.net_cmd,
-                [
-                    [
-                        constants.EBTABLES_BIN,
-                        "-D",
-                        "FORWARD",
-                        "--logical-in",
-                        self.brname,
-                        "-j",
-                        self.brname,
-                    ],
-                    [constants.EBTABLES_BIN, "-X", self.brname],
-                ],
-            )
+            cmds = [
+                "%s -D FORWARD --logical-in %s -j %s"
+                % (EBTABLES_BIN, self.brname, self.brname),
+                "%s -X %s" % (EBTABLES_BIN, self.brname),
+            ]
+            ebtablescmds(self.net_cmd, cmds)
         except CoreCommandError:
             logging.exception("error during shutdown")
 
@@ -852,7 +797,7 @@ class CtrlNet(CoreNetwork):
                 self.brname,
                 self.updown_script,
             )
-            self.net_cmd([self.updown_script, self.brname, "startup"])
+            self.net_cmd("%s %s startup" % (self.updown_script, self.brname))
 
         if self.serverintf:
             self.net_client.create_interface(self.brname, self.serverintf)
@@ -880,7 +825,7 @@ class CtrlNet(CoreNetwork):
                     self.brname,
                     self.updown_script,
                 )
-                self.net_cmd([self.updown_script, self.brname, "shutdown"])
+                self.net_cmd("%s %s shutdown" % (self.updown_script, self.brname))
             except CoreCommandError:
                 logging.exception("error issuing shutdown script shutdown")
 
@@ -1064,7 +1009,8 @@ class HubNode(CoreNetwork):
         :param int _id: node id
         :param str name: node namee
         :param bool start: start flag
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
         CoreNetwork.__init__(self, session, _id, name, start, server)
@@ -1094,7 +1040,8 @@ class WlanNode(CoreNetwork):
         :param int _id: node id
         :param str name: node name
         :param bool start: start flag
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         :param policy: wlan policy
         """
         CoreNetwork.__init__(self, session, _id, name, start, server, policy)

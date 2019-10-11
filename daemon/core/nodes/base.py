@@ -12,7 +12,8 @@ import threading
 from builtins import range
 from socket import AF_INET, AF_INET6
 
-from core import constants, utils
+from core import utils
+from core.constants import MOUNT_BIN, VNODED_BIN
 from core.emulator import distributed
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -89,7 +90,7 @@ class NodeBase(object):
         Runs a command that is used to configure and setup the network on the host
         system.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
         :param dict env: environment to run command with
         :param str cwd: directory to run command in
         :param bool wait: True to wait for status, False otherwise
@@ -100,7 +101,6 @@ class NodeBase(object):
         if self.server is None:
             return utils.check_cmd(args, env, cwd, wait)
         else:
-            args = " ".join(args)
             return distributed.remote_cmd(self.server, args, env, cwd, wait)
 
     def setposition(self, x=None, y=None, z=None):
@@ -269,7 +269,7 @@ class CoreNodeBase(NodeBase):
         """
         if self.nodedir is None:
             self.nodedir = os.path.join(self.session.session_dir, self.name + ".conf")
-            self.net_cmd(["mkdir", "-p", self.nodedir])
+            self.net_cmd("mkdir -p %s" % self.nodedir)
             self.tmpnodedir = True
         else:
             self.tmpnodedir = False
@@ -285,7 +285,7 @@ class CoreNodeBase(NodeBase):
             return
 
         if self.tmpnodedir:
-            self.net_cmd(["rm", "-rf", self.nodedir])
+            self.net_cmd("rm -rf %s" % self.nodedir)
 
     def addnetif(self, netif, ifindex):
         """
@@ -334,7 +334,7 @@ class CoreNodeBase(NodeBase):
         Attach a network.
 
         :param int ifindex: interface of index to attach
-        :param core.nodes.interface.CoreInterface net: network to attach
+        :param core.nodes.base.CoreNetworkBase net: network to attach
         :return: nothing
         """
         if ifindex not in self._netif:
@@ -392,7 +392,7 @@ class CoreNodeBase(NodeBase):
         Runs a command that is used to configure and setup the network within a
         node.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
         :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
@@ -468,7 +468,7 @@ class CoreNode(CoreNodeBase):
         :rtype: bool
         """
         try:
-            self.net_cmd(["kill", "-0", str(self.pid)])
+            self.net_cmd("kill -0 %s" % self.pid)
         except CoreCommandError:
             return False
 
@@ -488,18 +488,11 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("starting a node that is already up")
 
             # create a new namespace for this node using vnoded
-            vnoded = [
-                constants.VNODED_BIN,
-                "-v",
-                "-c",
-                self.ctrlchnlname,
-                "-l",
-                self.ctrlchnlname + ".log",
-                "-p",
-                self.ctrlchnlname + ".pid",
-            ]
+            vnoded = "{cmd} -v -c {name} -l {name}.log -p {name}.pid".format(
+                cmd=VNODED_BIN, name=self.ctrlchnlname
+            )
             if self.nodedir:
-                vnoded += ["-C", self.nodedir]
+                vnoded += " -C %s" % self.nodedir
             env = self.session.get_environment(state=False)
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)
@@ -548,13 +541,13 @@ class CoreNode(CoreNodeBase):
 
                 # kill node process if present
                 try:
-                    self.net_cmd(["kill", "-9", str(self.pid)])
+                    self.net_cmd("kill -9 %s" % self.pid)
                 except CoreCommandError:
                     logging.exception("error killing process")
 
                 # remove node directory if present
                 try:
-                    self.net_cmd(["rm", "-rf", self.ctrlchnlname])
+                    self.net_cmd("rm -rf %s" % self.ctrlchnlname)
                 except CoreCommandError:
                     logging.exception("error removing node directory")
 
@@ -572,7 +565,7 @@ class CoreNode(CoreNodeBase):
         Runs a command that is used to configure and setup the network within a
         node.
 
-        :param list[str] args: command to run
+        :param str args: command to run
         :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
@@ -581,8 +574,7 @@ class CoreNode(CoreNodeBase):
         if self.server is None:
             return self.client.check_cmd(args, wait=wait)
         else:
-            args = self.client._cmd_args() + args
-            args = " ".join(args)
+            args = self.client.create_cmd(args)
             return distributed.remote_cmd(self.server, args, wait=wait)
 
     def termcmdstring(self, sh="/bin/sh"):
@@ -606,7 +598,7 @@ class CoreNode(CoreNodeBase):
         hostpath = os.path.join(
             self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
         )
-        self.net_cmd(["mkdir", "-p", hostpath])
+        self.net_cmd("mkdir -p %s" % hostpath)
         self.mount(hostpath, path)
 
     def mount(self, source, target):
@@ -620,8 +612,8 @@ class CoreNode(CoreNodeBase):
         """
         source = os.path.abspath(source)
         logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
-        self.node_net_cmd(["mkdir", "-p", target])
-        self.node_net_cmd([constants.MOUNT_BIN, "-n", "--bind", source, target])
+        self.node_net_cmd("mkdir -p %s" % target)
+        self.node_net_cmd("%s -n --bind %s %s" % (MOUNT_BIN, source, target))
         self._mounts.append((source, target))
 
     def newifindex(self):
@@ -881,11 +873,11 @@ class CoreNode(CoreNodeBase):
         logging.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
         if self.server is None:
-            self.client.check_cmd(["mkdir", "-p", directory])
-            self.client.check_cmd(["mv", srcname, filename])
-            self.client.check_cmd(["sync"])
+            self.client.check_cmd("mkdir -p %s" % directory)
+            self.client.check_cmd("mv %s %s" % (srcname, filename))
+            self.client.check_cmd("sync")
         else:
-            self.net_cmd(["mkdir", "-p", directory])
+            self.net_cmd("mkdir -p %s" % directory)
             distributed.remote_put(self.server, srcname, filename)
 
     def hostfilename(self, filename):
@@ -922,9 +914,9 @@ class CoreNode(CoreNodeBase):
                 open_file.write(contents)
                 os.chmod(open_file.name, mode)
         else:
-            self.net_cmd(["mkdir", "-m", "%o" % 0o755, "-p", dirname])
+            self.net_cmd("mkdir -m %o -p %s" % (0o755, dirname))
             distributed.remote_put_temp(self.server, hostfilename, contents)
-            self.net_cmd(["chmod", "%o" % mode, hostfilename])
+            self.net_cmd("chmod %o %s" % (mode, hostfilename))
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
         )
@@ -947,7 +939,7 @@ class CoreNode(CoreNodeBase):
         else:
             distributed.remote_put(self.server, srcfilename, hostfilename)
             if mode is not None:
-                self.net_cmd(["chmod", "%o" % mode, hostfilename])
+                self.net_cmd("chmod %o %s" % (mode, hostfilename))
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )

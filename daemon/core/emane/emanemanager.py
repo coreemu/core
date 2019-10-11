@@ -152,10 +152,9 @@ class EmaneManager(ModelManager):
         """
         try:
             # check for emane
-            args = ["emane", "--version"]
+            args = "emane --version"
             emane_version = utils.check_cmd(args)
             logging.info("using EMANE: %s", emane_version)
-            args = " ".join(args)
             for server in self.session.servers:
                 conn = self.session.servers[server]
                 distributed.remote_cmd(conn, args)
@@ -652,14 +651,6 @@ class EmaneManager(ModelManager):
             emane_net = self._emane_nets[key]
             emanexml.build_xml_files(self, emane_net)
 
-    def buildtransportxml(self):
-        """
-        Calls emanegentransportxml using a platform.xml file to build the transportdaemon*.xml.
-        """
-        utils.check_cmd(
-            ["emanegentransportxml", "platform.xml"], cwd=self.session.session_dir
-        )
-
     def buildeventservicexml(self):
         """
         Build the libemaneeventservice.xml file if event service options
@@ -705,9 +696,9 @@ class EmaneManager(ModelManager):
             logging.info("setting user-defined EMANE log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
 
-        emanecmd = ["emane", "-d", "-l", loglevel]
+        emanecmd = "emane -d -l %s" % loglevel
         if realtime:
-            emanecmd += ("-r",)
+            emanecmd += " -r"
 
         otagroup, _otaport = self.get_config("otamanagergroup").split(":")
         otadev = self.get_config("otamanagerdevice")
@@ -750,11 +741,11 @@ class EmaneManager(ModelManager):
                 node.node_net_client.create_route(eventgroup, eventdev)
 
             # start emane
-            args = emanecmd + [
-                "-f",
+            args = "%s -f %s %s" % (
+                emanecmd,
                 os.path.join(path, "emane%d.log" % n),
                 os.path.join(path, "platform%d.xml" % n),
-            ]
+            )
             output = node.node_net_cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
             logging.info("node(%s) emane daemon output: %s", node.name, output)
@@ -763,22 +754,22 @@ class EmaneManager(ModelManager):
             return
 
         path = self.session.session_dir
-        emanecmd += ["-f", os.path.join(path, "emane.log")]
-        args = emanecmd + [os.path.join(path, "platform.xml")]
-        utils.check_cmd(args, cwd=path)
-        args = " ".join(args)
+        emanecmd += " -f %s" % os.path.join(path, "emane.log")
+        emanecmd += " %s" % os.path.join(path, "platform.xml")
+        utils.check_cmd(emanecmd, cwd=path)
         for server in self.session.servers:
             conn = self.session.servers[server]
-            distributed.remote_cmd(conn, args, cwd=path)
-        logging.info("host emane daemon running: %s", args)
+            distributed.remote_cmd(conn, emanecmd, cwd=path)
+        logging.info("host emane daemon running: %s", emanecmd)
 
     def stopdaemons(self):
         """
         Kill the appropriate EMANE daemons.
         """
-        # TODO: we may want to improve this if we had the PIDs from the specific EMANE daemons that we"ve started
-        kill_emaned = ["killall", "-q", "emane"]
-        kill_transortd = ["killall", "-q", "emanetransportd"]
+        # TODO: we may want to improve this if we had the PIDs from the specific EMANE
+        #  daemons that we"ve started
+        kill_emaned = "killall -q emane"
+        kill_transortd = "killall -q emanetransportd"
         stop_emane_on_host = False
         for node in self.getnodes():
             if hasattr(node, "transport_type") and node.transport_type == "raw":
@@ -793,8 +784,6 @@ class EmaneManager(ModelManager):
             try:
                 utils.check_cmd(kill_emaned)
                 utils.check_cmd(kill_transortd)
-                kill_emaned = " ".join(kill_emaned)
-                kill_transortd = " ".join(kill_transortd)
                 for server in self.session.servers:
                     conn = self.session[server]
                     distributed.remote_cmd(conn, kill_emaned)

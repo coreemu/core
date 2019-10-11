@@ -10,7 +10,6 @@ from queue import Empty, Queue
 
 import grpc
 
-from core import utils
 from core.api.grpc import core_pb2, core_pb2_grpc
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
@@ -884,8 +883,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         try:
-            args = utils.split_args(request.command)
-            output = node.node_net_cmd(args)
+            output = node.node_net_cmd(request.command)
         except CoreCommandError as e:
             output = e.stderr
         return core_pb2.NodeCommandResponse(output=output)

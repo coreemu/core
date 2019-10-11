@@ -63,7 +63,6 @@ class DockerClient(object):
             pid=self.pid,
             cmd=cmd
         )
-        logging.info("ns cmd: %s", args)
         return utils.check_cmd(args, wait=wait)
 
     def get_pid(self):

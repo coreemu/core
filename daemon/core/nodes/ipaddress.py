@@ -19,7 +19,7 @@ class MacAddress(object):
         """
         Creates a MacAddress instance.
 
-        :param str address: mac address
+        :param bytes address: mac address
         """
         self.addr = address
 
@@ -42,7 +42,7 @@ class MacAddress(object):
         """
         if not self.addr:
             return IpAddress.from_string("::")
-        tmp = struct.unpack("!Q", "\x00\x00" + self.addr)[0]
+        tmp = struct.unpack("!Q", b"\x00\x00" + self.addr)[0]
         nic = int(tmp) & 0x000000FFFFFF
         oui = int(tmp) & 0xFFFFFF000000
         # toggle U/L bit
@@ -88,7 +88,7 @@ class IpAddress(object):
         Create a IpAddress instance.
 
         :param int af: address family
-        :param str address: ip address
+        :param bytes address: ip address
         :return:
         """
         # check if (af, addr) is valid

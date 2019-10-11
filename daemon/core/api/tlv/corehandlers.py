@@ -882,7 +882,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 return (reply,)
             else:
                 logging.info("execute message with cmd=%s", command)
-                command = utils.split_args(command)
                 # execute command and send a response
                 if (
                     message.flags & MessageFlags.STRING.value

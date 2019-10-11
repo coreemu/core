@@ -1281,7 +1281,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         if filename is None or filename == "":
             return
         filename = self.findfile(filename)
-        args = ["/bin/sh", filename, typestr]
+        args = "/bin/sh %s %s" % (filename, typestr)
         utils.check_cmd(
             args, cwd=self.session.session_dir, env=self.session.get_environment()
         )

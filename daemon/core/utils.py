@@ -14,8 +14,6 @@ import shlex
 import sys
 from subprocess import PIPE, STDOUT, Popen
 
-from past.builtins import basestring
-
 from core.errors import CoreCommandError
 
 DEVNULL = open(os.devnull, "wb")
@@ -177,20 +175,6 @@ def make_tuple_fromstr(s, value_type):
     return tuple(value_type(i) for i in values)
 
 
-def split_args(args):
-    """
-    Convenience method for splitting potential string commands into a shell-like
-    syntax list.
-
-    :param list/str args: command list or string
-    :return: shell-like syntax list
-    :rtype: list
-    """
-    if isinstance(args, basestring):
-        args = shlex.split(args)
-    return args
-
-
 def mute_detach(args, **kwargs):
     """
     Run a muted detached process by forking it.
@@ -200,7 +184,7 @@ def mute_detach(args, **kwargs):
     :return: process id of the command
     :rtype: int
     """
-    args = split_args(args)
+    args = shlex.split(args)
     kwargs["preexec_fn"] = _detach_init
     kwargs["stdout"] = DEVNULL
     kwargs["stderr"] = STDOUT
@@ -212,7 +196,7 @@ def check_cmd(args, env=None, cwd=None, wait=True):
     Execute a command on the host and return a tuple containing the exit status and
     result string. stderr output is folded into the stdout result string.
 
-    :param list[str]|str args: command arguments
+    :param str args: command arguments
     :param dict env: environment to run command with
     :param str cwd: directory to run command in
     :param bool wait: True to wait for status, False otherwise
@@ -221,8 +205,8 @@ def check_cmd(args, env=None, cwd=None, wait=True):
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
-    args = split_args(args)
     logging.info("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    args = shlex.split(args)
     try:
         p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd)
         if wait:

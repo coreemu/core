@@ -43,25 +43,19 @@ class LxdClient(object):
     def stop_container(self):
         utils.check_cmd("lxc delete --force {name}".format(name=self.name))
 
-    def _cmd_args(self, cmd):
+    def create_cmd(self, cmd):
         return "lxc exec -nT {name} -- {cmd}".format(name=self.name, cmd=cmd)
 
-    def check_cmd(self, cmd, wait):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        args = self._cmd_args(cmd)
-        logging.info("lxc cmd output: %s", args)
+    def check_cmd(self, cmd, wait=True):
+        args = self.create_cmd(cmd)
         return utils.check_cmd(args, wait=wait)
 
-    def _ns_args(self, cmd):
+    def create_ns_cmd(self, cmd):
         return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
 
-    def ns_check_cmd(self, cmd):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        args = self._ns_args(cmd)
-        logging.info("ns cmd: %s", args)
-        return utils.check_cmd(args)
+    def ns_check_cmd(self, cmd, wait=True):
+        args = self.create_ns_cmd(cmd)
+        return utils.check_cmd(args, wait=wait)
 
     def copy_file(self, source, destination):
         if destination[0] != "/":

@@ -2044,5 +2044,4 @@ class Session(object):
             utils.mute_detach(data)
         else:
             node = self.get_node(node_id)
-            data = utils.split_args(data)
             node.node_net_cmd(data, wait=False)

@@ -5,6 +5,7 @@ The control channel can be accessed via calls using the vcmd shell.
 """
 
 from core import constants, utils
+from core.constants import VCMD_BIN
 
 
 class VnodeClient(object):
@@ -49,22 +50,21 @@ class VnodeClient(object):
         """
         pass
 
-    def _cmd_args(self):
-        return [constants.VCMD_BIN, "-c", self.ctrlchnlname, "--"]
+    def create_cmd(self, args):
+        return "%s -c %s -- %s" % (VCMD_BIN, self.ctrlchnlname, args)
 
     def check_cmd(self, args, wait=True):
         """
         Run command and return exit status and combined stdout and stderr.
 
-        :param list[str]|str args: command to run
+        :param str args: command to run
         :param bool wait: True to wait for command status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises core.CoreCommandError: when there is a non-zero exit status
         """
         self._verify_connection()
-        args = utils.split_args(args)
-        args = self._cmd_args() + args
+        args = self.create_cmd(args)
         return utils.check_cmd(args, wait=wait)
 
     def termcmdstring(self, sh="/bin/sh"):

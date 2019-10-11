@@ -3,7 +3,8 @@ import socket
 
 from lxml import etree
 
-from core import constants, utils
+from core import utils
+from core.constants import IP_BIN
 from core.emane.nodes import EmaneNet
 from core.nodes import ipaddress
 from core.nodes.base import CoreNodeBase
@@ -67,7 +68,7 @@ def get_address_type(address):
 def get_ipv4_addresses(hostname):
     if hostname == "localhost":
         addresses = []
-        args = [constants.IP_BIN, "-o", "-f", "inet", "addr", "show"]
+        args = "%s -o -f inet address show" % IP_BIN
         output = utils.check_cmd(args)
         for line in output.split(os.linesep):
             split = line.split()

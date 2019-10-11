@@ -597,7 +597,6 @@ class CoreServices(object):
         status = 0
         for cmd in cmds:
             logging.debug("validating service(%s) using: %s", service.name, cmd)
-            cmd = utils.split_args(cmd)
             try:
                 node.node_net_cmd(cmd)
             except CoreCommandError as e:
@@ -631,7 +630,6 @@ class CoreServices(object):
         """
         status = 0
         for args in service.shutdown:
-            args = utils.split_args(args)
             try:
                 node.node_net_cmd(args)
             except CoreCommandError:
@@ -730,7 +728,6 @@ class CoreServices(object):
 
         status = 0
         for cmd in cmds:
-            cmd = utils.split_args(cmd)
             try:
                 node.node_net_cmd(cmd, wait)
             except CoreCommandError:

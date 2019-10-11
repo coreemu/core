@@ -30,7 +30,7 @@ class TestNodes:
         assert os.path.exists(node.nodedir)
         assert node.alive()
         assert node.up
-        assert node.node_net_cmd(["ip", "addr", "show", "lo"])
+        assert node.node_net_cmd("ip address show lo")
 
     def test_node_update(self, session):
         # given
@@ -67,4 +67,4 @@ class TestNodes:
         # then
         assert node
         assert node.up
-        assert utils.check_cmd(["brctl", "show", node.brname])
+        assert utils.check_cmd("brctl show %s" % node.brname)
