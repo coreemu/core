@@ -108,13 +108,9 @@ class TestCore:
 
         # check various command using vcmd module
         command = ["ls"]
-        p, stdin, stdout, stderr = client.popen(command)
-        assert not p.wait()
         assert not client.icmd(command)
 
         # check various command using command line
-        p, stdin, stdout, stderr = client.popen(command)
-        assert not p.wait()
         assert not client.icmd(command)
 
         # check module methods

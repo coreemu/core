@@ -222,7 +222,7 @@ def check_cmd(args, env=None, cwd=None, wait=True):
         execute is not found
     """
     args = split_args(args)
-    logging.info("command: %s", args)
+    logging.info("command cwd(%s) wait(%s): %s", cwd, wait, args)
     try:
         p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd)
         if wait:

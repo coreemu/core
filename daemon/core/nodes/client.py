@@ -4,12 +4,9 @@ over a control channel to the vnoded process running in a network namespace.
 The control channel can be accessed via calls using the vcmd shell.
 """
 
-import logging
 import os
-from subprocess import PIPE, Popen
 
 from core import constants, utils
-from core.errors import CoreCommandError
 
 
 class VnodeClient(object):
@@ -67,31 +64,10 @@ class VnodeClient(object):
         :rtype: str
         :raises core.CoreCommandError: when there is a non-zero exit status
         """
-        p, stdin, stdout, stderr = self.popen(args)
-        stdin.close()
-        output = stdout.read() + stderr.read()
-        output = output.decode("utf-8").strip()
-        stdout.close()
-        stderr.close()
-        status = p.wait()
-        if wait and status != 0:
-            raise CoreCommandError(status, args, output)
-        return output
-
-    def popen(self, args):
-        """
-        Execute a popen command against the node.
-
-        :param list[str]|str args: command arguments
-        :return: popen object, stdin, stdout, and stderr
-        :rtype: tuple
-        """
         self._verify_connection()
         args = utils.split_args(args)
-        cmd = self._cmd_args() + args
-        logging.debug("popen: %s", cmd)
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE, stdin=PIPE)
-        return p, p.stdin, p.stdout, p.stderr
+        args = self._cmd_args() + args
+        return utils.check_cmd(args, wait=wait)
 
     def icmd(self, args):
         """

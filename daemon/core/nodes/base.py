@@ -579,7 +579,6 @@ class CoreNode(CoreNodeBase):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
-            logging.info("node(%s) cmd: %s", self.name, args)
             return self.client.check_cmd(args, wait=wait)
         else:
             args = self.client._cmd_args() + args
