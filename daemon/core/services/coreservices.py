@@ -631,8 +631,9 @@ class CoreServices(object):
         """
         status = 0
         for args in service.shutdown:
+            args = utils.split_args(args)
             try:
-                node.check_cmd(args)
+                node.node_net_cmd(args)
             except CoreCommandError:
                 logging.exception("error running stop command %s", args)
                 status = -1

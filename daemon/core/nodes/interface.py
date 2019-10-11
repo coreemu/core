@@ -48,12 +48,23 @@ class CoreInterface(object):
         self.server = server
         self.net_client = LinuxNetClient(self.net_cmd)
 
-    def net_cmd(self, args):
+    def net_cmd(self, args, env=None, cwd=None, wait=True):
+        """
+        Runs a command on the host system or distributed servers.
+
+        :param list[str]|str args: command to run
+        :param dict env: environment to run command with
+        :param str cwd: directory to run command in
+        :param bool wait: True to wait for status, False otherwise
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
         if self.server is None:
-            return utils.check_cmd(args)
+            return utils.check_cmd(args, env=env, cwd=cwd)
         else:
             args = " ".join(args)
-            return distributed.remote_cmd(self.server, args)
+            return distributed.remote_cmd(self.server, args, env, cwd, wait)
 
     def startup(self):
         """

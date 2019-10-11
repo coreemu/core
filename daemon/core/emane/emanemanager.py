@@ -152,8 +152,13 @@ class EmaneManager(ModelManager):
         """
         try:
             # check for emane
-            emane_version = utils.check_cmd(["emane", "--version"])
+            args = ["emane", "--version"]
+            emane_version = utils.check_cmd(args)
             logging.info("using EMANE: %s", emane_version)
+            args = " ".join(args)
+            for server in self.session.servers:
+                conn = self.session.servers[server]
+                distributed.remote_cmd(conn, args)
 
             # load default emane models
             self.load_models(EMANE_MODELS)

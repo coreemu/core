@@ -140,6 +140,11 @@ class Session(object):
             self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
+        # distributed servers
+        self.servers = {}
+        self.tunnels = {}
+        self.address = None
+
         # initialize session feature helpers
         self.broker = CoreBroker(session=self)
         self.location = CoreLocation()
@@ -147,11 +152,6 @@ class Session(object):
         self.services = CoreServices(session=self)
         self.emane = EmaneManager(session=self)
         self.sdt = Sdt(session=self)
-
-        # distributed servers
-        self.servers = {}
-        self.tunnels = {}
-        self.address = None
 
         # initialize default node services
         self.services.default_services = {

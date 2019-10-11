@@ -84,18 +84,24 @@ class NodeBase(object):
         """
         raise NotImplementedError
 
-    def net_cmd(self, args, env=None):
+    def net_cmd(self, args, env=None, cwd=None, wait=True):
         """
         Runs a command that is used to configure and setup the network on the host
         system.
 
         :param list[str]|str args: command to run
         :param dict env: environment to run command with
+        :param str cwd: directory to run command in
+        :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        raise NotImplementedError
+        if self.server is None:
+            return utils.check_cmd(args, env=env, cwd=cwd)
+        else:
+            args = " ".join(args)
+            return distributed.remote_cmd(self.server, args, env, cwd, wait)
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -381,40 +387,13 @@ class CoreNodeBase(NodeBase):
 
         return common
 
-    def net_cmd(self, args, env=None):
-        """
-        Runs a command that is used to configure and setup the network on the host
-        system.
-
-        :param list[str]|str args: command to run
-        :param dict env: environment to run command with
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        if self.server is None:
-            return utils.check_cmd(args, env=env)
-        else:
-            args = " ".join(args)
-            return distributed.remote_cmd(self.server, args, env=env)
-
-    def node_net_cmd(self, args):
+    def node_net_cmd(self, args, wait=True):
         """
         Runs a command that is used to configure and setup the network within a
         node.
 
         :param list[str]|str args: command to run
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
+        :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
@@ -606,18 +585,6 @@ class CoreNode(CoreNodeBase):
             args = self.client._cmd_args() + args
             args = " ".join(args)
             return distributed.remote_cmd(self.server, args, wait=wait)
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :param bool wait: True to wait for status, False otherwise
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        return self.client.check_cmd(args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """

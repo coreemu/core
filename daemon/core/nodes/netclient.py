@@ -5,7 +5,6 @@ Clients for dealing with bridge/interface commands.
 import os
 
 from core.constants import BRCTL_BIN, ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
-from core.utils import check_cmd
 
 
 class LinuxNetClient(object):
@@ -275,7 +274,7 @@ class LinuxNetClient(object):
         :param str name: bridge name
         :return: nothing
         """
-        check_cmd([BRCTL_BIN, "setageing", name, "0"])
+        self.run([BRCTL_BIN, "setageing", name, "0"])
 
 
 class OvsNetClient(LinuxNetClient):

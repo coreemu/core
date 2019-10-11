@@ -51,21 +51,6 @@ class PhysicalNode(CoreNodeBase):
         """
         return sh
 
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        os.chdir(self.nodedir)
-        return utils.check_cmd(args)
-
-    def shcmd(self, cmdstr, sh="/bin/sh"):
-        return self.node_net_cmd([sh, "-c", cmdstr])
-
     def sethwaddr(self, ifindex, addr):
         """
         Set hardware address for an interface.
@@ -205,13 +190,13 @@ class PhysicalNode(CoreNodeBase):
         source = os.path.abspath(source)
         logging.info("mounting %s at %s", source, target)
         os.makedirs(target)
-        self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
+        self.net_cmd([constants.MOUNT_BIN, "--bind", source, target], cwd=self.nodedir)
         self._mounts.append((source, target))
 
     def umount(self, target):
         logging.info("unmounting '%s'" % target)
         try:
-            self.check_cmd([constants.UMOUNT_BIN, "-l", target])
+            self.net_cmd([constants.UMOUNT_BIN, "-l", target], cwd=self.nodedir)
         except CoreCommandError:
             logging.exception("unmounting failed for %s", target)
 
@@ -256,7 +241,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param str name: node name
         :param mtu: rj45 mtu
         :param bool start: start flag
-        :param str server: remote server node will run on, default is None for localhost
+        :param fabric.connection.Connection server: remote server node will run on,
+            default is None for localhost
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
         CoreInterface.__init__(self, node=self, name=name, mtu=mtu)
@@ -497,17 +483,6 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         result = CoreNodeBase.setposition(self, x, y, z)
         CoreInterface.setposition(self, x, y, z)
         return result
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: exist status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
 
     def termcmdstring(self, sh):
         """

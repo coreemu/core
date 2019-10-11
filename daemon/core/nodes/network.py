@@ -308,24 +308,26 @@ class CoreNetwork(CoreNetworkBase):
             self.startup()
             ebq.startupdateloop(self)
 
-    def net_cmd(self, args, env=None):
+    def net_cmd(self, args, env=None, cwd=None, wait=True):
         """
         Runs a command that is used to configure and setup the network on the host
         system and all configured distributed servers.
 
         :param list[str]|str args: command to run
         :param dict env: environment to run command with
+        :param str cwd: directory to run command in
+        :param bool wait: True to wait for status, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.info("network node(%s) cmd", self.name)
-        output = utils.check_cmd(args, env=env)
+        output = utils.check_cmd(args, env=env, cwd=cwd)
 
         args = " ".join(args)
         for server in self.session.servers:
             conn = self.session.servers[server]
-            distributed.remote_cmd(conn, args, env=env)
+            distributed.remote_cmd(conn, args, env, cwd, wait)
 
         return output
 

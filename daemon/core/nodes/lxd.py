@@ -140,22 +140,11 @@ class LxcNode(CoreNode):
             self.client.stop_container()
             self.up = False
 
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        return self.client.check_cmd(args)
-
     def node_net_cmd(self, args, wait=True):
         if not self.up:
             logging.debug("node down, not running network command: %s", args)
             return ""
-        return self.check_cmd(args)
+        return self.client.check_cmd(args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -175,7 +164,7 @@ class LxcNode(CoreNode):
         """
         logging.info("creating node dir: %s", path)
         args = "mkdir -p {path}".format(path=path)
-        self.check_cmd(args)
+        return self.client.check_cmd(args)
 
     def mount(self, source, target):
         """
