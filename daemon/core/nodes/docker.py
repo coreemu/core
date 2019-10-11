@@ -47,15 +47,6 @@ class DockerClient(object):
             name=self.name
         ))
 
-    def cmd(self, cmd, wait=True):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        logging.info("docker cmd wait(%s): %s", wait, cmd)
-        return utils.cmd("docker exec {name} {cmd}".format(
-            name=self.name,
-            cmd=cmd
-        ), wait)
-
     def cmd_output(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
@@ -154,17 +145,6 @@ class DockerNode(CoreNode):
             self._netif.clear()
             self.client.stop_container()
             self.up = False
-
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        return self.client.cmd(args, wait)
 
     def cmd_output(self, args):
         """

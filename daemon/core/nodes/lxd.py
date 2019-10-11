@@ -55,13 +55,6 @@ class LxdClient(object):
         logging.info("lxc cmd output: %s", args)
         return utils.cmd_output(args)
 
-    def cmd(self, cmd, wait=True):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        args = self._cmd_args(cmd)
-        logging.info("lxc cmd: %s", args)
-        return utils.cmd(args, wait)
-
     def _ns_args(self, cmd):
         return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
 
@@ -71,13 +64,6 @@ class LxdClient(object):
         args = self._ns_args(cmd)
         logging.info("ns cmd: %s", args)
         return utils.cmd_output(args)
-
-    def ns_cmd(self, cmd, wait=True):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
-        args = self._ns_args(cmd)
-        logging.info("ns cmd: %s", args)
-        return utils.cmd(args, wait)
 
     def copy_file(self, source, destination):
         if destination[0] != "/":
@@ -157,17 +143,6 @@ class LxcNode(CoreNode):
             self._netif.clear()
             self.client.stop_container()
             self.up = False
-
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        return self.client.cmd(args, wait)
 
     def cmd_output(self, args):
         """

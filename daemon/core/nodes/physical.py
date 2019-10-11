@@ -52,19 +52,6 @@ class PhysicalNode(CoreNodeBase):
         """
         return sh
 
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        os.chdir(self.nodedir)
-        status = utils.cmd(args, wait)
-        return status
-
     def cmd_output(self, args):
         """
         Runs shell command on node and get exit status and output.

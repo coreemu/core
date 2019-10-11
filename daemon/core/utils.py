@@ -207,26 +207,6 @@ def mute_detach(args, **kwargs):
     return subprocess.Popen(args, **kwargs).pid
 
 
-def cmd(args, wait=True):
-    """
-    Runs a command on and returns the exit status.
-
-    :param list[str]|str args: command arguments
-    :param bool wait: wait for command to end or not
-    :return: command status
-    :rtype: int
-    """
-    args = split_args(args)
-    logging.debug("command: %s", args)
-    try:
-        p = subprocess.Popen(args)
-        if not wait:
-            return 0
-        return p.wait()
-    except OSError:
-        raise CoreCommandError(-1, args)
-
-
 def cmd_output(args):
     """
     Execute a command on the host and return a tuple containing the exit status and

@@ -10,6 +10,7 @@ import pytest
 
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import MessageFlags, NodeTypes
+from core.errors import CoreCommandError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.client import VnodeClient
 
@@ -38,7 +39,12 @@ def createclients(sessiondir, clientcls=VnodeClient, cmdchnlfilterfunc=None):
 
 def ping(from_node, to_node, ip_prefixes):
     address = ip_prefixes.ip4_address(to_node)
-    return from_node.node_net_cmd(["ping", "-c", "3", address])
+    try:
+        from_node.node_net_cmd(["ping", "-c", "3", address])
+        status = 0
+    except CoreCommandError as e:
+        status = e.returncode
+    return status
 
 
 class TestCore:

@@ -421,17 +421,6 @@ class CoreNodeBase(NodeBase):
         """
         raise NotImplementedError
 
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        raise NotImplementedError
-
     def cmd_output(self, args):
         """
         Runs shell command on node and get exit status and output.
@@ -608,17 +597,6 @@ class CoreNode(CoreNodeBase):
                 logging.exception("error during shutdown")
             finally:
                 self.rmnodedir()
-
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        return self.client.cmd(args, wait)
 
     def cmd_output(self, args):
         """
