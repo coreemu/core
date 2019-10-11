@@ -2,25 +2,27 @@
 Incorporate grpc into python tkinter GUI
 """
 import logging
+import os
+import tkinter as tk
 
 from core.api.grpc import client, core_pb2
 
 
 class CoreGrpc:
-    def __init__(self):
+    def __init__(self, master):
         """
         Create a CoreGrpc instance
         """
+        print("Create grpc instance")
         self.core = client.CoreGrpcClient()
         self.session_id = None
-        self.set_up()
+        self.master = master
+
+        # self.set_up()
         self.interface_helper = None
 
     def log_event(self, event):
         logging.info("event: %s", event)
-
-    def redraw_canvas(self):
-        return
 
     def create_new_session(self):
         """
@@ -35,6 +37,29 @@ class CoreGrpc:
         self.session_id = response.session_id
         self.core.events(self.session_id, self.log_event)
 
+    def _enter_session(self, session_id, dialog):
+        """
+        enter an existing session
+
+        :return:
+        """
+        dialog.destroy()
+        response = self.core.get_session(session_id)
+        self.session_id = session_id
+        print("set session id: %s", session_id)
+        logging.info("Entering session_id %s.... Result: %s", session_id, response)
+        # self.master.canvas.draw_existing_component()
+
+    def _create_session(self, dialog):
+        """
+        create a new session
+
+        :param tkinter.Toplevel dialog: save core session prompt dialog
+        :return: nothing
+        """
+        dialog.destroy()
+        self.create_new_session()
+
     def query_existing_sessions(self, sessions):
         """
         Query for existing sessions and prompt to join one
@@ -43,17 +68,30 @@ class CoreGrpc:
 
         :return: nothing
         """
+        dialog = tk.Toplevel()
+        dialog.title("CORE sessions")
         for session in sessions:
-            logging.info("Session id: %s, Session state: %s", session.id, session.state)
-        logging.info("Input a session you want to enter from the keyboard:")
-        usr_input = int(input())
-        if usr_input == 0:
-            self.create_new_session()
-        else:
-            response = self.core.get_session(usr_input)
-            self.session_id = usr_input
-            # self.core.events(self.session_id, self.log_event)
-            logging.info("Entering session_id %s.... Result: %s", usr_input, response)
+            b = tk.Button(
+                dialog,
+                text="Session " + str(session.id),
+                command=lambda sid=session.id: self._enter_session(sid, dialog),
+            )
+            b.pack(side=tk.TOP)
+        b = tk.Button(
+            dialog, text="create new", command=lambda: self._create_session(dialog)
+        )
+        b.pack(side=tk.TOP)
+        dialog.update()
+        x = (
+            self.master.winfo_x()
+            + (self.master.winfo_width() - dialog.winfo_width()) / 2
+        )
+        y = (
+            self.master.winfo_y()
+            + (self.master.winfo_height() / 2 - dialog.winfo_height()) / 2
+        )
+        dialog.geometry(f"+{int(x)}+{int(y)}")
+        dialog.wait_window()
 
     def delete_session(self):
         response = self.core.delete_session(self.session_id)
@@ -61,9 +99,9 @@ class CoreGrpc:
 
     def set_up(self):
         """
-        Query sessions, if there exist any, promt whether to join one
+        Query sessions, if there exist any, prompt whether to join one
 
-        :return: nothing
+        :return: existing sessions
         """
         self.core.connect()
 
@@ -76,12 +114,12 @@ class CoreGrpc:
         if len(sessions) == 0:
             self.create_new_session()
         else:
-            # self.create_new_session()
+
             self.query_existing_sessions(sessions)
 
     def get_session_state(self):
         response = self.core.get_session(self.session_id)
-        logging.info("get sessio: %s", response)
+        logging.info("get session: %s", response)
         return response.session.state
 
     def set_session_state(self, state):
@@ -125,9 +163,6 @@ class CoreGrpc:
 
         logging.info("set session state: %s", response)
 
-    def get_session_id(self):
-        return self.session_id
-
     def add_node(self, node_type, model, x, y, name, node_id):
         logging.info("coregrpc.py ADD NODE %s", name)
         position = core_pb2.Position(x=x, y=y)
@@ -136,18 +171,15 @@ class CoreGrpc:
         logging.info("created node: %s", response)
         return response.node_id
 
-    def edit_node(self, session_id, node_id, x, y):
+    def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
-        response = self.core.edit_node(session_id, node_id, position)
+        response = self.core.edit_node(self.session_id, node_id, position)
         logging.info("updated node id %s: %s", node_id, response)
 
     def delete_nodes(self):
         for node in self.core.get_session(self.session_id).session.nodes:
             response = self.core.delete_node(self.session_id, node.id)
             logging.info("delete node %s", response)
-
-    # def create_interface_helper(self):
-    #     self.interface_helper = self.core.InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
     def delete_links(self):
         for link in self.core.get_session(self.session_id).session.links:
@@ -160,7 +192,7 @@ class CoreGrpc:
             )
             logging.info("delete link %s", response)
 
-    def add_link(self, id1, id2, type1, type2):
+    def add_link(self, id1, id2, type1, type2, edge):
         """
         Grpc client request add link
 
@@ -171,18 +203,63 @@ class CoreGrpc:
         :param core_pb2.NodeType type2: node 2 core node type
         :return: nothing
         """
-        if not self.interface_helper:
-            logging.debug("INTERFACE HELPER NOT CREATED YET, CREATING ONE...")
-            self.interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
-
-        interface1 = None
-        interface2 = None
+        if1 = None
+        if2 = None
         if type1 == core_pb2.NodeType.DEFAULT:
-            interface1 = self.interface_helper.create_interface(id1, 0)
+            interface = edge.interface_1
+            if1 = core_pb2.Interface(
+                id=interface.id,
+                name=interface.name,
+                mac=interface.mac,
+                ip4=interface.ipv4,
+                ip4mask=interface.ip4prefix,
+            )
+            # if1 = core_pb2.Interface(id=id1, name=edge.interface_1.name, ip4=edge.interface_1.ipv4, ip4mask=edge.interface_1.ip4prefix)
+            logging.debug("create interface 1 %s", if1)
+            # interface1 = self.interface_helper.create_interface(id1, 0)
+
         if type2 == core_pb2.NodeType.DEFAULT:
-            interface2 = self.interface_helper.create_interface(id2, 0)
-        response = self.core.add_link(self.session_id, id1, id2, interface1, interface2)
+            interface = edge.interface_2
+            if2 = core_pb2.Interface(
+                id=interface.id,
+                name=interface.name,
+                mac=interface.mac,
+                ip4=interface.ipv4,
+                ip4mask=interface.ip4prefix,
+            )
+            # if2 = core_pb2.Interface(id=id2, name=edge.interface_2.name, ip4=edge.interface_2.ipv4, ip4mask=edge.interface_2.ip4prefix)
+            logging.debug("create interface 2: %s", if2)
+            # interface2 = self.interface_helper.create_interface(id2, 0)
+
+        # response = self.core.add_link(self.session_id, id1, id2, interface1, interface2)
+        response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
+
+    def launch_terminal(self, node_id):
+        response = self.core.get_node_terminal(self.session_id, node_id)
+        logging.info("get terminal %s", response.terminal)
+        os.system("xterm -e %s &" % response.terminal)
+
+    def save_xml(self, file_path):
+        """
+        Save core session as to an xml file
+
+        :param str file_path: file path that user pick
+        :return: nothing
+        """
+        response = self.core.save_xml(self.session_id, file_path)
+        logging.info("coregrpc.py save xml %s", response)
+
+    def open_xml(self, file_path):
+        """
+        Open core xml
+
+        :param str file_path: file to open
+        :return: session id
+        """
+        response = self.core.open_xml(file_path)
+        return response.session_id
+        # logging.info("coregrpc.py open_xml()", type(response))
 
     def close(self):
         """

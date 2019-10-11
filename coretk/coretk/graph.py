@@ -1,10 +1,12 @@
 import enum
 import logging
+import math
 import tkinter as tk
 
 from core.api.grpc import core_pb2
 from coretk.grpcmanagement import GrpcManager
 from coretk.images import Images
+from coretk.interface import Interface
 
 
 class GraphMode(enum.Enum):
@@ -34,7 +36,7 @@ class CanvasGraph(tk.Canvas):
         self.draw_grid()
         self.core_grpc = grpc
         self.grpc_manager = GrpcManager()
-        self.draw_existing_component()
+        # self.draw_existing_component()
 
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
@@ -52,9 +54,6 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
         self.bind("<Button-3>", self.context)
-        # self.bind("e", self.set_mode)
-        # self.bind("s", self.set_mode)
-        # self.bind("n", self.set_mode)
 
     def draw_grid(self, width=1000, height=750):
         """
@@ -91,8 +90,7 @@ class CanvasGraph(tk.Canvas):
 
         session_id = self.core_grpc.session_id
         session = self.core_grpc.core.get_session(session_id).session
-        # nodes = response.session.nodes
-        # if len(nodes) > 0:
+        # redraw existing nodes
         for node in session.nodes:
             # peer to peer node is not drawn on the GUI
             if node.type != core_pb2.NodeType.PEER_TO_PEER:
@@ -104,17 +102,61 @@ class CanvasGraph(tk.Canvas):
                 core_id_to_canvas_id[node.id] = n.id
                 self.grpc_manager.add_preexisting_node(n, session_id, node, name)
         self.grpc_manager.update_reusable_id()
+
         # draw existing links
-        # links = response.session.links
         for link in session.links:
             n1 = self.nodes[core_id_to_canvas_id[link.node_one_id]]
             n2 = self.nodes[core_id_to_canvas_id[link.node_two_id]]
             e = CanvasEdge(n1.x_coord, n1.y_coord, n2.x_coord, n2.y_coord, n1.id, self)
+            n1.edges.add(e)
+            n2.edges.add(e)
             self.edges[e.token] = e
             self.grpc_manager.add_edge(session_id, e.token, n1.id, n2.id)
+
+            # TODO add back the link info to grpc manager also redraw
+            grpc_if1 = link.interface_one
+            grpc_if2 = link.interface_two
+            ip4_src = None
+            ip4_dst = None
+            ip6_src = None
+            ip6_dst = None
+            if grpc_if1 is not None:
+                ip4_src = grpc_if1.ip4
+                ip6_src = grpc_if1.ip6
+            if grpc_if2 is not None:
+                ip4_dst = grpc_if2.ip4
+                ip6_dst = grpc_if2.ip6
+            e.link_info = LinkInfo(
+                canvas=self,
+                edge_id=e.id,
+                ip4_src=ip4_src,
+                ip6_src=ip6_src,
+                ip4_dst=ip4_dst,
+                ip6_dst=ip6_dst,
+                throughput=None,
+            )
+
+            # TODO will include throughput and ipv6 in the future
+            if1 = Interface(grpc_if1.name, grpc_if1.ip4)
+            if2 = Interface(grpc_if2.name, grpc_if2.ip4)
+            self.grpc_manager.edges[e.token].interface_1 = if1
+            self.grpc_manager.edges[e.token].interface_2 = if2
+            self.grpc_manager.nodes[
+                core_id_to_canvas_id[link.node_one_id]
+            ].interfaces.append(if1)
+            self.grpc_manager.nodes[
+                core_id_to_canvas_id[link.node_two_id]
+            ].interfaces.append(if2)
+
         # lift the nodes so they on top of the links
         for i in core_id_to_canvas_id.values():
             self.lift(i)
+
+    def delete_components(self):
+        tags = ["node", "edge", "linkinfo", "nodename"]
+        for i in tags:
+            for id in self.find_withtag(i):
+                self.delete(id)
 
     def canvas_xy(self, event):
         """
@@ -171,6 +213,7 @@ class CanvasGraph(tk.Canvas):
             self.mode = GraphMode.NODE
 
     def handle_edge_release(self, event):
+        print("Calling edge release")
         edge = self.drawing_edge
         self.drawing_edge = None
 
@@ -204,7 +247,20 @@ class CanvasGraph(tk.Canvas):
             node_dst.edges.add(edge)
 
             self.grpc_manager.add_edge(
-                self.core_grpc.get_session_id(), edge.token, node_src.id, node_dst.id
+                self.core_grpc.session_id, edge.token, node_src.id, node_dst.id
+            )
+
+            # draw link info on the edge
+            if1 = self.grpc_manager.edges[edge.token].interface_1
+            if2 = self.grpc_manager.edges[edge.token].interface_2
+            edge.link_info = LinkInfo(
+                self,
+                edge.id,
+                ip4_src=if1.ip4_and_prefix,
+                ip6_src=None,
+                ip4_dst=if2.ip4_and_prefix,
+                ip6_dst=None,
+                throughput=None,
             )
 
         logging.debug(f"edges: {self.find_withtag('edge')}")
@@ -216,6 +272,7 @@ class CanvasGraph(tk.Canvas):
         :param event: mouse event
         :return: nothing
         """
+        print("click on the canvas")
         logging.debug(f"click press: {event}")
         selected = self.get_selected(event)
         is_node = selected in self.find_withtag("node")
@@ -243,14 +300,15 @@ class CanvasGraph(tk.Canvas):
             self.node_context.post(event.x_root, event.y_root)
 
     def add_node(self, x, y, image, node_name):
-        node = CanvasNode(
-            x=x, y=y, image=image, canvas=self, core_id=self.grpc_manager.peek_id()
-        )
-        self.nodes[node.id] = node
-        self.grpc_manager.add_node(
-            self.core_grpc.get_session_id(), node.id, x, y, node_name
-        )
-        return node
+        if self.selected == 1:
+            node = CanvasNode(
+                x=x, y=y, image=image, canvas=self, core_id=self.grpc_manager.peek_id()
+            )
+            self.nodes[node.id] = node
+            self.grpc_manager.add_node(
+                self.core_grpc.session_id, node.id, x, y, node_name
+            )
+            return node
 
 
 class CanvasEdge:
@@ -258,7 +316,7 @@ class CanvasEdge:
     Canvas edge class
     """
 
-    width = 3
+    width = 1.3
 
     def __init__(self, x1, y1, x2, y2, src, canvas):
         """
@@ -273,9 +331,13 @@ class CanvasEdge:
         self.src = src
         self.dst = None
         self.canvas = canvas
-        self.id = self.canvas.create_line(x1, y1, x2, y2, tags="edge", width=self.width)
+        self.id = self.canvas.create_line(
+            x1, y1, x2, y2, tags="edge", width=self.width, fill="#ff0000"
+        )
         self.token = None
 
+        # link info object
+        self.link_info = None
         # TODO resolve this
         # self.canvas.tag_lower(self.id)
 
@@ -301,29 +363,40 @@ class CanvasNode:
         self.core_id = core_id
         self.x_coord = x
         self.y_coord = y
-        self.name = f"Node {self.core_id}"
-        self.text_id = self.canvas.create_text(x, y + 20, text=self.name)
+        self.name = f"N{self.core_id}"
+        self.text_id = self.canvas.create_text(
+            x, y + 20, text=self.name, tags="nodename"
+        )
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
         self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
         self.canvas.tag_bind(self.id, "<Button-3>", self.context)
+        self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
+
         self.edges = set()
         self.moving = None
 
-    #
-    # def get_coords(self):
-    #     return self.x_coord, self.y_coord
+    def double_click(self, event):
+        node_id = self.canvas.grpc_manager.nodes[self.id].node_id
+        state = self.canvas.core_grpc.get_session_state()
+        if state == core_pb2.SessionState.RUNTIME:
+            self.canvas.core_grpc.launch_terminal(node_id)
 
     def update_coords(self):
         self.x_coord, self.y_coord = self.canvas.coords(self.id)
 
     def click_press(self, event):
+        print("click on the node")
         logging.debug(f"click press {self.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
+        # return "break"
 
     def click_release(self, event):
         logging.debug(f"click release {self.name}: {event}")
         self.update_coords()
+        self.canvas.grpc_manager.update_node_location(
+            self.id, self.x_coord, self.y_coord
+        )
         self.moving = None
 
     def motion(self, event):
@@ -344,6 +417,64 @@ class CanvasNode:
                 self.canvas.coords(edge.id, new_x, new_y, x2, y2)
             else:
                 self.canvas.coords(edge.id, x1, y1, new_x, new_y)
+            edge.link_info.recalculate_info()
 
     def context(self, event):
         logging.debug(f"context click {self.name}: {event}")
+
+
+class LinkInfo:
+    def __init__(self, canvas, edge_id, ip4_src, ip6_src, ip4_dst, ip6_dst, throughput):
+        self.canvas = canvas
+        self.edge_id = edge_id
+        self.radius = 37
+
+        self.ip4_address_1 = ip4_src
+        self.ip6_address_1 = ip6_src
+        self.ip4_address_2 = ip4_dst
+        self.ip6_address_2 = ip6_dst
+        self.throughput = throughput
+        self.id1 = self.create_edge_src_info()
+        self.id2 = self.create_edge_dst_info()
+
+    def slope_src_dst(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.edge_id)
+        return (y2 - y1) / (x2 - x1)
+
+    def create_edge_src_info(self):
+        x1, y1, x2, _ = self.canvas.coords(self.edge_id)
+        m = self.slope_src_dst()
+        distance = math.cos(math.atan(m)) * self.radius
+        if x1 > x2:
+            distance = -distance
+        # id1 = self.canvas.create_text(x1, y1, text=self.ip4_address_1)
+        print(self.ip4_address_1)
+        id1 = self.canvas.create_text(
+            x1 + distance, y1 + distance * m, text=self.ip4_address_1, tags="linkinfo"
+        )
+        return id1
+
+    def create_edge_dst_info(self):
+        x1, _, x2, y2 = self.canvas.coords(self.edge_id)
+        m = self.slope_src_dst()
+        distance = math.cos(math.atan(m)) * self.radius
+        if x1 > x2:
+            distance = -distance
+        # id2 = self.canvas.create_text(x2, y2, text=self.ip4_address_2)
+        id2 = self.canvas.create_text(
+            x2 - distance, y2 - distance * m, text=self.ip4_address_2, tags="linkinfo"
+        )
+        return id2
+
+    def recalculate_info(self):
+        x1, y1, x2, y2 = self.canvas.coords(self.edge_id)
+        m = self.slope_src_dst()
+        distance = math.cos(math.atan(m)) * self.radius
+        if x1 > x2:
+            distance = -distance
+        new_x1 = x1 + distance
+        new_y1 = y1 + distance * m
+        new_x2 = x2 - distance
+        new_y2 = y2 - distance * m
+        self.canvas.coords(self.id1, new_x1, new_y1)
+        self.canvas.coords(self.id2, new_x2, new_y2)

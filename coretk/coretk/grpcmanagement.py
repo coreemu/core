@@ -5,6 +5,7 @@ that can be useful for grpc, acts like a session class
 import logging
 
 from core.api.grpc import core_pb2
+from coretk.interface import Interface, InterfaceManager
 
 link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel"]
 network_layer_nodes = ["router", "host", "PC", "mdr", "prouter", "OVS"]
@@ -29,6 +30,7 @@ class Node:
         self.y = y
         self.model = model
         self.name = name
+        self.interfaces = []
 
 
 class Edge:
@@ -46,6 +48,8 @@ class Edge:
         self.id2 = node_id_2
         self.type1 = node_type_1
         self.type2 = node_type_2
+        self.interface_1 = None
+        self.interface_2 = None
 
 
 class GrpcManager:
@@ -57,6 +61,7 @@ class GrpcManager:
         self.reusable = []
 
         self.preexisting = []
+        self.interfaces_manager = InterfaceManager()
 
     def peek_id(self):
         """
@@ -146,6 +151,18 @@ class GrpcManager:
         )
         self.nodes[canvas_node.id] = n
 
+    def update_node_location(self, canvas_id, new_x, new_y):
+        """
+        update node
+
+        :param int canvas_id: canvas id of that node
+        :param int new_x: new x coord
+        :param int new_y: new y coord
+        :return: nothing
+        """
+        self.nodes[canvas_id].x = new_x
+        self.nodes[canvas_id].y = new_y
+
     def update_reusable_id(self):
         """
         Update available id for reuse
@@ -173,7 +190,60 @@ class GrpcManager:
         except KeyError:
             logging.error("grpcmanagement.py INVALID NODE CANVAS ID")
 
+    def create_interface(self, edge, src_canvas_id, dst_canvas_id):
+        """
+        Create the interface for the two end of an edge, add a copy to node's interfaces
+
+        :param coretk.grpcmanagement.Edge edge: edge to add interfaces to
+        :param int src_canvas_id: canvas id for the source node
+        :param int dst_canvas_id: canvas id for the destination node
+        :return: nothing
+        """
+        src_interface = None
+        dst_interface = None
+
+        src_node = self.nodes[src_canvas_id]
+        if src_node.model in network_layer_nodes:
+            ifid = len(src_node.interfaces)
+            name = "eth" + str(ifid)
+            src_interface = Interface(
+                name=name, ifid=ifid, ipv4=str(self.interfaces_manager.get_address())
+            )
+            self.nodes[src_canvas_id].interfaces.append(src_interface)
+            logging.debug(
+                "Create source interface 1... IP: %s, name: %s",
+                src_interface.ipv4,
+                src_interface.name,
+            )
+
+        dst_node = self.nodes[dst_canvas_id]
+        if dst_node.model in network_layer_nodes:
+            ifid = len(dst_node.interfaces)
+            name = "veth" + str(ifid)
+            dst_interface = Interface(
+                name=name, ifid=ifid, ipv4=str(self.interfaces_manager.get_address())
+            )
+            self.nodes[dst_canvas_id].interfaces.append(dst_interface)
+            logging.debug(
+                "Create destination interface... IP: %s, name: %s",
+                dst_interface.ipv4,
+                dst_interface.name,
+            )
+
+        edge.interface_1 = src_interface
+        edge.interface_2 = dst_interface
+
     def add_edge(self, session_id, token, canvas_id_1, canvas_id_2):
+        """
+        Add an edge to grpc manager
+
+        :param int session_id: core session id
+        :param tuple(int, int) token: edge's identification in the canvas
+        :param int canvas_id_1: canvas id of source node
+        :param int canvas_id_2: canvas_id of destination node
+
+        :return: nothing
+        """
         if canvas_id_1 in self.nodes and canvas_id_2 in self.nodes:
             edge = Edge(
                 session_id,
@@ -183,6 +253,7 @@ class GrpcManager:
                 self.nodes[canvas_id_2].type,
             )
             self.edges[token] = edge
+            self.create_interface(edge, canvas_id_1, canvas_id_2)
             logging.debug("Adding edge to grpc manager...")
         else:
             logging.error("grpcmanagement.py INVALID CANVAS NODE ID")

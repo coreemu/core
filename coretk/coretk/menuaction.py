@@ -3,7 +3,14 @@ The actions taken when each menubar option is clicked
 """
 
 import logging
+import tkinter as tk
 import webbrowser
+from tkinter import messagebox
+
+from core.api.grpc import core_pb2
+from coretk.coregrpc import CoreGrpc
+
+SAVEDIR = "/home/ncs/Desktop/"
 
 
 def sub_menu_items():
@@ -38,14 +45,6 @@ def file_save_shortcut(event):
     logging.debug("Shortcut for file save")
 
 
-def file_save_as_xml():
-    logging.debug("Click save as XML")
-
-
-def file_save_as_imn():
-    logging.debug("Click save as imn")
-
-
 def file_export_python_script():
     logging.debug("Click file export python script")
 
@@ -68,10 +67,6 @@ def file_print():
 
 def file_save_screenshot():
     logging.debug("Click file save screenshot")
-
-
-def file_example_link():
-    logging.debug("Click file example link")
 
 
 def edit_undo():
@@ -294,10 +289,6 @@ def widgets_configure_throughput():
     logging.debug("Click widgets configure throughput")
 
 
-def session_start():
-    logging.debug("Click session start")
-
-
 def session_change_sessions():
     logging.debug("Click session change sessions")
 
@@ -326,13 +317,107 @@ def session_options():
     logging.debug("Click session options")
 
 
-def help_core_github():
-    webbrowser.open_new("https://github.com/coreemu/core")
-
-
-def help_core_documentation():
-    webbrowser.open_new("http://coreemu.github.io/core/")
+# def help_core_github():
+#     webbrowser.open_new("https://github.com/coreemu/core")
+#
+#
+# def help_core_documentation():
+#     webbrowser.open_new("http://coreemu.github.io/core/")
 
 
 def help_about():
     logging.debug("Click help About")
+
+
+class MenuAction:
+    """
+    Actions performed when choosing menu items
+    """
+
+    def __init__(self, application, master):
+        self.master = master
+        self.application = application
+        self.core_grpc = application.core_grpc
+
+    def clean_nodes_links_and_set_configuarations(self):
+        """
+        Prompt use to stop running session before application is closed
+
+        :return: nothing
+        """
+        logging.info(
+            "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
+        )
+        grpc = self.application.core_grpc
+        state = grpc.get_session_state()
+
+        if (
+            state == core_pb2.SessionState.SHUTDOWN
+            or state == core_pb2.SessionState.DEFINITION
+        ):
+            grpc.delete_session()
+            grpc.core.close()
+            # self.application.quit()
+        else:
+            msgbox = messagebox.askyesnocancel("stop", "Stop the running session?")
+
+            if msgbox or msgbox is False:
+                if msgbox:
+                    grpc.set_session_state("datacollect")
+                    grpc.delete_links()
+                    grpc.delete_nodes()
+                    grpc.delete_session()
+
+                grpc.core.close()
+                # self.application.quit()
+
+    def on_quit(self):
+        """
+        Prompt user whether so save running session, and then close the application
+
+        :return: nothing
+        """
+        self.clean_nodes_links_and_set_configuarations()
+        # self.application.core_grpc.close()
+        self.application.quit()
+
+    def file_save_as_xml(self):
+        logging.info("menuaction.py file_save_as_xml()")
+        grpc = self.application.core_grpc
+        file_path = tk.filedialog.asksaveasfilename(
+            initialdir=SAVEDIR,
+            title="Save As",
+            filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
+            defaultextension=".xml",
+        )
+        with open("prev_saved_xml.txt", "a") as file:
+            file.write(file_path + "\n")
+        grpc.save_xml(file_path)
+
+    def file_open_xml(self):
+        logging.info("menuaction.py file_open_xml()")
+        # grpc = self.application.core_grpc
+        file_path = tk.filedialog.askopenfilename(
+            initialdir=SAVEDIR,
+            title="Open",
+            filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
+        )
+        # clean up before openning a new session
+        # t0 = time.clock()
+        self.clean_nodes_links_and_set_configuarations()
+        grpc = CoreGrpc(self.application.master)
+        grpc.core.connect()
+        session_id = grpc.open_xml(file_path)
+        grpc.session_id = session_id
+        self.application.core_grpc = grpc
+        self.application.canvas.core_grpc = grpc
+        self.application.canvas.delete_components()
+        self.application.canvas.draw_existing_component()
+        # t1 = time.clock()
+        # print(t1 - t0)
+
+    def help_core_github(self):
+        webbrowser.open_new("https://github.com/coreemu/core")
+
+    def help_core_documentation(self):
+        webbrowser.open_new("http://coreemu.github.io/core/")

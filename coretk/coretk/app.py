@@ -6,7 +6,8 @@ from coretk.coregrpc import CoreGrpc
 from coretk.coremenubar import CoreMenubar
 from coretk.coretoolbar import CoreToolbar
 from coretk.graph import CanvasGraph
-from coretk.images import Images
+from coretk.images import ImageEnum, Images
+from coretk.menuaction import MenuAction
 
 
 class Application(tk.Frame):
@@ -15,13 +16,15 @@ class Application(tk.Frame):
         self.load_images()
         self.setup_app()
         self.menubar = None
+        self.core_menu = None
         self.canvas = None
-
-        # start grpc
-        self.core_grpc = CoreGrpc()
+        self.core_editbar = None
+        self.core_grpc = None
 
         self.create_menu()
         self.create_widgets()
+        self.draw_canvas()
+        self.start_grpc()
 
     def load_images(self):
         """
@@ -33,23 +36,24 @@ class Application(tk.Frame):
     def setup_app(self):
         self.master.title("CORE")
         self.master.geometry("1000x800")
-        image = Images.get("core")
+        image = Images.get(ImageEnum.CORE.value)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
 
     def create_menu(self):
         self.master.option_add("*tearOff", tk.FALSE)
         self.menubar = tk.Menu(self.master)
-        core_menu = CoreMenubar(self, self.master, self.menubar)
-        core_menu.create_core_menubar()
+        self.core_menu = CoreMenubar(self, self.master, self.menubar)
+        self.core_menu.create_core_menubar()
         self.master.config(menu=self.menubar)
 
     def create_widgets(self):
         edit_frame = tk.Frame(self)
         edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
-        core_editbar = CoreToolbar(self.master, edit_frame, self.menubar)
-        core_editbar.create_toolbar()
+        self.core_editbar = CoreToolbar(self.master, edit_frame, self.menubar)
+        self.core_editbar.create_toolbar()
 
+    def draw_canvas(self):
         self.canvas = CanvasGraph(
             master=self,
             grpc=self.core_grpc,
@@ -58,7 +62,7 @@ class Application(tk.Frame):
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        core_editbar.update_canvas(self.canvas)
+        self.core_editbar.update_canvas(self.canvas)
 
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview
@@ -78,8 +82,26 @@ class Application(tk.Frame):
         b = tk.Button(status_bar, text="Button 3")
         b.pack(side=tk.LEFT, padx=1)
 
+    def start_grpc(self):
+        """
+        Conect client to grpc, query sessions and prompt use to choose an existing session if there exist any
+
+        :return: nothing
+        """
+        self.master.update()
+        self.core_grpc = CoreGrpc(self.master)
+        self.core_grpc.set_up()
+        self.canvas.core_grpc = self.core_grpc
+        self.canvas.draw_existing_component()
+
+    def on_closing(self):
+        menu_action = MenuAction(self, self.master)
+        menu_action.on_quit()
+        # self.quit()
+
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = Application()
+    app.master.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()

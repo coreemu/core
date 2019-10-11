@@ -1,11 +1,13 @@
 import logging
 import os
+from enum import Enum
 
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
 
 PATH = os.path.abspath(os.path.dirname(__file__))
+ICONS_DIR = os.path.join(PATH, "icons")
 
 
 class Images:
@@ -13,7 +15,7 @@ class Images:
 
     @classmethod
     def load(cls, name, file_path):
-        file_path = os.path.join(PATH, file_path)
+        # file_path = os.path.join(PATH, file_path)
         image = Image.open(file_path)
         tk_image = ImageTk.PhotoImage(image)
         cls.images[name] = tk_image
@@ -33,55 +35,62 @@ class Images:
         :return: the matching image and its name
         """
         if node_type == core_pb2.NodeType.SWITCH:
-            return Images.get("switch"), "switch"
+            return Images.get(ImageEnum.SWITCH.value), "switch"
         if node_type == core_pb2.NodeType.HUB:
-            return Images.get("hub"), "hub"
+            return Images.get(ImageEnum.HUB.value), "hub"
         if node_type == core_pb2.NodeType.WIRELESS_LAN:
-            return Images.get("wlan"), "wlan"
+            return Images.get(ImageEnum.WLAN.value), "wlan"
         if node_type == core_pb2.NodeType.RJ45:
-            return Images.get("rj45"), "rj45"
+            return Images.get(ImageEnum.RJ45.value), "rj45"
         if node_type == core_pb2.NodeType.TUNNEL:
-            return Images.get("tunnel"), "tunnel"
+            return Images.get(ImageEnum.TUNNEL.value), "tunnel"
         if node_type == core_pb2.NodeType.DEFAULT:
             if node_model == "router":
-                return Images.get("router"), "router"
+                return Images.get(ImageEnum.ROUTER.value), "router"
             if node_model == "host":
-                return Images.get(("host")), "host"
+                return Images.get((ImageEnum.HOST.value)), "host"
             if node_model == "PC":
-                return Images.get("pc"), "PC"
+                return Images.get(ImageEnum.PC.value), "PC"
             if node_model == "mdr":
-                return Images.get("mdr"), "mdr"
+                return Images.get(ImageEnum.MDR.value), "mdr"
             if node_model == "prouter":
-                return Images.get("prouter"), "prouter"
+                return Images.get(ImageEnum.PROUTER.value), "prouter"
             if node_model == "OVS":
-                return Images.get("ovs"), "ovs"
+                return Images.get(ImageEnum.OVS.value), "ovs"
         else:
             logging.debug("INVALID INPUT OR NOT CONSIDERED YET")
 
 
+class ImageEnum(Enum):
+    SWITCH = "lanswitch"
+    CORE = "core-icon"
+    START = "start"
+    MARKER = "marker"
+    ROUTER = "router"
+    SELECT = "select"
+    LINK = "link"
+    HUB = "hub"
+    WLAN = "wlan"
+    RJ45 = "rj45"
+    TUNNEL = "tunnel"
+    OVAL = "oval"
+    RECTANGLE = "rectangle"
+    TEXT = "text"
+    HOST = "host"
+    PC = "pc"
+    MDR = "mdr"
+    PROUTER = "router_green"
+    OVS = "OVS"
+    EDITNODE = "document-properties"
+    PLOT = "plot"
+    TWONODE = "twonode"
+    STOP = "stop"
+    OBSERVE = "observe"
+    RUN = "run"
+
+
 def load_core_images(images):
-    images.load("core", "core-icon.png")
-    images.load("start", "start.gif")
-    images.load("switch", "lanswitch.gif")
-    images.load("marker", "marker.gif")
-    images.load("router", "router.gif")
-    images.load("select", "select.gif")
-    images.load("link", "link.gif")
-    images.load("hub", "hub.gif")
-    images.load("wlan", "wlan.gif")
-    images.load("rj45", "rj45.gif")
-    images.load("tunnel", "tunnel.gif")
-    images.load("oval", "oval.gif")
-    images.load("rectangle", "rectangle.gif")
-    images.load("text", "text.gif")
-    images.load("host", "host.gif")
-    images.load("pc", "pc.gif")
-    images.load("mdr", "mdr.gif")
-    images.load("prouter", "router_green.gif")
-    images.load("ovs", "OVS.gif")
-    images.load("editnode", "document-properties.gif")
-    images.load("run", "run.gif")
-    images.load("plot", "plot.gif")
-    images.load("twonode", "twonode.gif")
-    images.load("stop", "stop.gif")
-    images.load("observe", "observe.gif")
+    for file_name in os.listdir(ICONS_DIR):
+        file_path = os.path.join(ICONS_DIR, file_name)
+        name = file_name.split(".")[0]
+        images.load(name, file_path)
