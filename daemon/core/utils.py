@@ -11,8 +11,8 @@ import logging
 import logging.config
 import os
 import shlex
-import subprocess
 import sys
+from subprocess import PIPE, STDOUT, Popen
 
 from past.builtins import basestring
 
@@ -203,33 +203,36 @@ def mute_detach(args, **kwargs):
     args = split_args(args)
     kwargs["preexec_fn"] = _detach_init
     kwargs["stdout"] = DEVNULL
-    kwargs["stderr"] = subprocess.STDOUT
-    return subprocess.Popen(args, **kwargs).pid
+    kwargs["stderr"] = STDOUT
+    return Popen(args, **kwargs).pid
 
 
-def check_cmd(args, **kwargs):
+def check_cmd(args, env=None, cwd=None, wait=True):
     """
     Execute a command on the host and return a tuple containing the exit status and
     result string. stderr output is folded into the stdout result string.
 
     :param list[str]|str args: command arguments
-    :param dict kwargs: keyword arguments to pass to subprocess.Popen
+    :param dict env: environment to run command with
+    :param str cwd: directory to run command in
+    :param bool wait: True to wait for status, False otherwise
     :return: combined stdout and stderr
     :rtype: str
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
-    kwargs["stdout"] = subprocess.PIPE
-    kwargs["stderr"] = subprocess.STDOUT
     args = split_args(args)
     logging.info("command: %s", args)
     try:
-        p = subprocess.Popen(args, **kwargs)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        if status != 0:
-            raise CoreCommandError(status, args, stdout)
-        return stdout.decode("utf-8").strip()
+        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd)
+        if wait:
+            stdout, stderr = p.communicate()
+            status = p.wait()
+            if status != 0:
+                raise CoreCommandError(status, args, stdout, stderr)
+            return stdout.decode("utf-8").strip()
+        else:
+            return ""
     except OSError:
         raise CoreCommandError(-1, args)
 

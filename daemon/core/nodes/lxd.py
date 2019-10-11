@@ -46,12 +46,12 @@ class LxdClient(object):
     def _cmd_args(self, cmd):
         return "lxc exec -nT {name} -- {cmd}".format(name=self.name, cmd=cmd)
 
-    def check_cmd(self, cmd):
+    def check_cmd(self, cmd, wait):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         args = self._cmd_args(cmd)
         logging.info("lxc cmd output: %s", args)
-        return utils.check_cmd(args)
+        return utils.check_cmd(args, wait=wait)
 
     def _ns_args(self, cmd):
         return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
@@ -144,7 +144,7 @@ class LxcNode(CoreNode):
         if not self.up:
             logging.debug("node down, not running network command: %s", args)
             return ""
-        return self.client.check_cmd(args)
+        return self.client.check_cmd(args, wait)
 
     def termcmdstring(self, sh="/bin/sh"):
         """

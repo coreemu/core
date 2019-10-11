@@ -56,7 +56,7 @@ class DockerClient(object):
             cmd=cmd
         ))
 
-    def ns_cmd(self, cmd):
+    def ns_cmd(self, cmd, wait):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         args = "nsenter -t {pid} -u -i -p -n {cmd}".format(
@@ -64,7 +64,7 @@ class DockerClient(object):
             cmd=cmd
         )
         logging.info("ns cmd: %s", args)
-        return utils.check_cmd(args)
+        return utils.check_cmd(args, wait=wait)
 
     def get_pid(self):
         args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
@@ -147,7 +147,7 @@ class DockerNode(CoreNode):
             logging.debug("node down, not running network command: %s", args)
             return ""
 
-        return self.client.ns_cmd(args)
+        return self.client.ns_cmd(args, wait)
 
     def termcmdstring(self, sh="/bin/sh"):
         """

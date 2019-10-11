@@ -98,7 +98,7 @@ class NodeBase(object):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
-            return utils.check_cmd(args, env=env, cwd=cwd)
+            return utils.check_cmd(args, env, cwd, wait)
         else:
             args = " ".join(args)
             return distributed.remote_cmd(self.server, args, env, cwd, wait)

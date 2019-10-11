@@ -322,7 +322,7 @@ class CoreNetwork(CoreNetworkBase):
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.info("network node(%s) cmd", self.name)
-        output = utils.check_cmd(args, env=env, cwd=cwd)
+        output = utils.check_cmd(args, env, cwd, wait)
 
         args = " ".join(args)
         for server in self.session.servers:
