@@ -27,12 +27,12 @@ class DockerClient(object):
 
     def get_info(self):
         args = "docker inspect {name}".format(name=self.name)
-        status, output = utils.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        output = utils.check_cmd(args)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(status, args, "docker({name}) not present".format(name=self.name))
+            raise CoreCommandError(
+                -1, args, "docker({name}) not present".format(name=self.name)
+            )
         return data[0]
 
     def is_alive(self):
@@ -47,11 +47,11 @@ class DockerClient(object):
             name=self.name
         ))
 
-    def cmd_output(self, cmd):
+    def check_cmd(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         logging.info("docker cmd output: %s", cmd)
-        return utils.cmd_output("docker exec {name} {cmd}".format(
+        return utils.check_cmd("docker exec {name} {cmd}".format(
             name=self.name,
             cmd=cmd
         ))
@@ -64,13 +64,11 @@ class DockerClient(object):
             cmd=cmd
         )
         logging.info("ns cmd: %s", args)
-        return utils.cmd_output(args)
+        return utils.check_cmd(args)
 
     def get_pid(self):
         args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
-        status, output = utils.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        output = utils.check_cmd(args)
         self.pid = output
         logging.debug("node(%s) pid: %s", self.name, self.pid)
         return output
@@ -81,9 +79,7 @@ class DockerClient(object):
             name=self.name,
             destination=destination
         )
-        status, output = utils.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        return utils.check_cmd(args)
 
 
 class DockerNode(CoreNode):
@@ -146,16 +142,6 @@ class DockerNode(CoreNode):
             self.client.stop_container()
             self.up = False
 
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        return self.client.cmd_output(args)
-
     def check_cmd(self, args):
         """
         Runs shell command on node.
@@ -165,20 +151,14 @@ class DockerNode(CoreNode):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        status, output = self.client.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
-        return output
+        return self.client.check_cmd(args)
 
-    def node_net_cmd(self, args):
+    def node_net_cmd(self, args, wait=True):
         if not self.up:
             logging.debug("node down, not running network command: %s", args)
-            return 0
+            return ""
 
-        status, output = self.client.ns_cmd(args)
-        if status:
-            raise CoreCommandError(status, args, output)
-        return output
+        return self.client.ns_cmd(args)
 
     def termcmdstring(self, sh="/bin/sh"):
         """

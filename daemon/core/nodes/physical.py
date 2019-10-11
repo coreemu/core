@@ -4,7 +4,6 @@ PhysicalNode class for including real systems in the emulated network.
 
 import logging
 import os
-import subprocess
 import threading
 
 from core import constants, utils
@@ -52,20 +51,6 @@ class PhysicalNode(CoreNodeBase):
         """
         return sh
 
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        os.chdir(self.nodedir)
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        return status, stdout.strip()
-
     def check_cmd(self, args):
         """
         Runs shell command on node.
@@ -75,10 +60,8 @@ class PhysicalNode(CoreNodeBase):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        status, output = self.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
-        return output.strip()
+        os.chdir(self.nodedir)
+        return utils.check_cmd(args)
 
     def shcmd(self, cmdstr, sh="/bin/sh"):
         return self.node_net_cmd([sh, "-c", cmdstr])
@@ -523,27 +506,6 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :return: exist status and combined stdout and stderr
         :rtype: tuple[int, str]
         :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        raise NotImplementedError
-
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
         """
         raise NotImplementedError
 

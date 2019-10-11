@@ -421,16 +421,6 @@ class CoreNodeBase(NodeBase):
         """
         raise NotImplementedError
 
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        raise NotImplementedError
-
     def termcmdstring(self, sh):
         """
         Create a terminal command string.
@@ -597,16 +587,6 @@ class CoreNode(CoreNodeBase):
                 logging.exception("error during shutdown")
             finally:
                 self.rmnodedir()
-
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        return self.client.cmd_output(args)
 
     def node_net_cmd(self, args, wait=True):
         """

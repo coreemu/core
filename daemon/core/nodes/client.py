@@ -57,46 +57,6 @@ class VnodeClient(object):
     def _cmd_args(self):
         return [constants.VCMD_BIN, "-c", self.ctrlchnlname, "--"]
 
-    def cmd(self, args, wait=True):
-        """
-        Execute a command on a node and return the status (return code).
-
-        :param list[str]|str args: command arguments
-        :param bool wait: wait for command to end or not
-        :return: command status
-        :rtype: int
-        """
-        self._verify_connection()
-        args = utils.split_args(args)
-
-        # run command, return process when not waiting
-        cmd = self._cmd_args() + args
-        logging.debug("cmd wait(%s): %s", wait, cmd)
-        p = Popen(cmd, stdout=PIPE, stderr=PIPE)
-        if not wait:
-            return 0
-
-        # wait for and return exit status
-        return p.wait()
-
-    def cmd_output(self, args):
-        """
-        Execute a command on a node and return a tuple containing the
-        exit status and result string. stderr output
-        is folded into the stdout result string.
-
-        :param list[str]|str args: command to run
-        :return: command status and combined stdout and stderr output
-        :rtype: tuple[int, str]
-        """
-        p, stdin, stdout, stderr = self.popen(args)
-        stdin.close()
-        output = stdout.read() + stderr.read()
-        stdout.close()
-        stderr.close()
-        status = p.wait()
-        return status, output.decode("utf-8").strip()
-
     def check_cmd(self, args, wait=True):
         """
         Run command and return exit status and combined stdout and stderr.
@@ -107,10 +67,16 @@ class VnodeClient(object):
         :rtype: str
         :raises core.CoreCommandError: when there is a non-zero exit status
         """
-        status, output = self.cmd_output(args)
+        p, stdin, stdout, stderr = self.popen(args)
+        stdin.close()
+        output = stdout.read() + stderr.read()
+        output = output.decode("utf-8").strip()
+        stdout.close()
+        stderr.close()
+        status = p.wait()
         if wait and status != 0:
             raise CoreCommandError(status, args, output)
-        return output.strip()
+        return output
 
     def popen(self, args):
         """

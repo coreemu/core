@@ -25,13 +25,11 @@ class LxdClient(object):
 
     def get_info(self):
         args = "lxc list {name} --format json".format(name=self.name)
-        status, output = utils.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        output = utils.check_cmd(args)
         data = json.loads(output)
         if not data:
             raise CoreCommandError(
-                status, args, "LXC({name}) not present".format(name=self.name)
+                -1, args, "LXC({name}) not present".format(name=self.name)
             )
         return data[0]
 
@@ -48,22 +46,22 @@ class LxdClient(object):
     def _cmd_args(self, cmd):
         return "lxc exec -nT {name} -- {cmd}".format(name=self.name, cmd=cmd)
 
-    def cmd_output(self, cmd):
+    def check_cmd(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         args = self._cmd_args(cmd)
         logging.info("lxc cmd output: %s", args)
-        return utils.cmd_output(args)
+        return utils.check_cmd(args)
 
     def _ns_args(self, cmd):
         return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
 
-    def ns_cmd_output(self, cmd):
+    def ns_check_cmd(self, cmd):
         if isinstance(cmd, list):
             cmd = " ".join(cmd)
         args = self._ns_args(cmd)
         logging.info("ns cmd: %s", args)
-        return utils.cmd_output(args)
+        return utils.check_cmd(args)
 
     def copy_file(self, source, destination):
         if destination[0] != "/":
@@ -72,9 +70,7 @@ class LxdClient(object):
         args = "lxc file push {source} {name}/{destination}".format(
             source=source, name=self.name, destination=destination
         )
-        status, output = utils.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
+        utils.check_cmd(args)
 
 
 class LxcNode(CoreNode):
@@ -144,16 +140,6 @@ class LxcNode(CoreNode):
             self.client.stop_container()
             self.up = False
 
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        return self.client.cmd_output(args)
-
     def check_cmd(self, args):
         """
         Runs shell command on node.
@@ -163,15 +149,12 @@ class LxcNode(CoreNode):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        status, output = self.client.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
-        return output
+        return self.client.check_cmd(args)
 
-    def node_net_cmd(self, args):
+    def node_net_cmd(self, args, wait=True):
         if not self.up:
             logging.debug("node down, not running network command: %s", args)
-            return 0
+            return ""
         return self.check_cmd(args)
 
     def termcmdstring(self, sh="/bin/sh"):

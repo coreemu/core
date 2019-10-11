@@ -889,7 +889,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     or message.flags & MessageFlags.TEXT.value
                 ):
                     if message.flags & MessageFlags.LOCAL.value:
-                        status, res = utils.cmd_output(command)
+                        try:
+                            res = utils.check_cmd(command)
+                            status = 0
+                        except CoreCommandError as e:
+                            res = e.stderr
+                            status = e.returncode
                     else:
                         try:
                             res = node.node_net_cmd(command)

@@ -207,27 +207,6 @@ def mute_detach(args, **kwargs):
     return subprocess.Popen(args, **kwargs).pid
 
 
-def cmd_output(args):
-    """
-    Execute a command on the host and return a tuple containing the exit status and
-    result string. stderr output is folded into the stdout result string.
-
-    :param list[str]|str args: command arguments
-    :return: command status and stdout
-    :rtype: tuple[int, str]
-    :raises CoreCommandError: when the file to execute is not found
-    """
-    args = split_args(args)
-    logging.debug("command: %s", args)
-    try:
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        return status, stdout.decode("utf-8").strip()
-    except OSError:
-        raise CoreCommandError(-1, args)
-
-
 def check_cmd(args, **kwargs):
     """
     Execute a command on the host and return a tuple containing the exit status and
