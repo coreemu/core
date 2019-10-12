@@ -460,9 +460,13 @@ class GreTap(CoreInterface):
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
 
-        self.net_client.create_gretap(
-            self.localname, str(remoteip), str(localip), str(ttl), str(key)
-        )
+        if localip is not None:
+            localip = str(localip)
+        if ttl is not None:
+            ttl = str(ttl)
+        if key is not None:
+            key = str(key)
+        self.net_client.create_gretap(self.localname, str(remoteip), localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True
 
