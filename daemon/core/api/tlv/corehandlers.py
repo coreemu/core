@@ -1416,7 +1416,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 parsed_config = ConfigShim.str_to_dict(values_str)
 
             self.session.mobility.set_model_config(node_id, object_name, parsed_config)
-            if self.session.state == EventTypes.RUNTIME_STATE.value:
+            if self.session.state == EventTypes.RUNTIME_STATE.value and parsed_config:
                 try:
                     node = self.session.get_node(node_id)
                     if object_name == BasicRangeModel.name:
@@ -2042,6 +2042,7 @@ class CoreUdpHandler(CoreHandler):
         }
         self.master = False
         self.session = None
+        self.coreemu = server.mainserver.coreemu
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def setup(self):
