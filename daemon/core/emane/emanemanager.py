@@ -974,9 +974,10 @@ class EmaneManager(ModelManager):
 
     def emanerunning(self, node):
         """
-        Return True if an EMANE process associated with the given node is running, False otherwise.
+        Return True if an EMANE process associated with the given node is running,
+        False otherwise.
         """
-        args = ["pkill", "-0", "-x", "emane"]
+        args = "pkill -0 -x emane"
         try:
             node.node_net_cmd(args)
             result = True

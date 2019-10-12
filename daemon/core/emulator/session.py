@@ -2025,7 +2025,8 @@ class Session(object):
             data,
         )
 
-    # TODO: if data is None, this blows up, but this ties into how event functions are ran, need to clean that up
+    # TODO: if data is None, this blows up, but this ties into how event functions
+    #  are ran, need to clean that up
     def run_event(self, node_id=None, name=None, data=None):
         """
         Run a scheduled event, executing commands in the data string.

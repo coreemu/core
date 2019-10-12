@@ -6,7 +6,8 @@ import logging
 import os
 import threading
 
-from core import constants, utils
+from core import utils
+from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNodeBase
@@ -190,13 +191,13 @@ class PhysicalNode(CoreNodeBase):
         source = os.path.abspath(source)
         logging.info("mounting %s at %s", source, target)
         os.makedirs(target)
-        self.net_cmd([constants.MOUNT_BIN, "--bind", source, target], cwd=self.nodedir)
+        self.net_cmd("%s --bind %s %s" % (MOUNT_BIN, source, target), cwd=self.nodedir)
         self._mounts.append((source, target))
 
     def umount(self, target):
         logging.info("unmounting '%s'" % target)
         try:
-            self.net_cmd([constants.UMOUNT_BIN, "-l", target], cwd=self.nodedir)
+            self.net_cmd("%s -l %s" % (UMOUNT_BIN, target), cwd=self.nodedir)
         except CoreCommandError:
             logging.exception("unmounting failed for %s", target)
 
