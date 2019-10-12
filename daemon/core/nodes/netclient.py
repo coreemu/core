@@ -122,7 +122,7 @@ class LinuxNetClient(object):
         :param str device: device to remove tc
         :return: nothing
         """
-        self.run("%s qdisc del dev %s root" % (TC_BIN, device))
+        self.run("%s qdisc delete dev %s root" % (TC_BIN, device))
 
     def checksums_off(self, interface_name):
         """

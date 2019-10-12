@@ -426,7 +426,7 @@ class BasicRangeModel(WirelessModel):
         self.delay = int(config["delay"])
         if self.delay == 0:
             self.delay = None
-        self.loss = int(config["error"])
+        self.loss = int(float(config["error"]))
         if self.loss == 0:
             self.loss = None
         self.jitter = int(config["jitter"])

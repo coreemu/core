@@ -8,8 +8,8 @@ import threading
 import time
 from socket import AF_INET, AF_INET6
 
-from core import constants, utils
-from core.constants import EBTABLES_BIN
+from core import utils
+from core.constants import EBTABLES_BIN, TC_BIN
 from core.emulator import distributed
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
@@ -457,8 +457,8 @@ class CoreNetwork(CoreNetworkBase):
         """
         if devname is None:
             devname = netif.localname
-        tc = [constants.TC_BIN, "qdisc", "replace", "dev", devname]
-        parent = ["root"]
+        tc = "%s qdisc replace dev %s" % (TC_BIN, devname)
+        parent = "root"
         changed = False
         if netif.setparam("bw", bw):
             # from tc-tbf(8): minimum value for burst is rate / kernel_hz
@@ -466,27 +466,24 @@ class CoreNetwork(CoreNetworkBase):
                 burst = max(2 * netif.mtu, bw / 1000)
                 # max IP payload
                 limit = 0xFFFF
-                tbf = ["tbf", "rate", str(bw), "burst", str(burst), "limit", str(limit)]
+                tbf = "tbf rate %s burst %s limit %s" % (bw, burst, limit)
             if bw > 0:
                 if self.up:
-                    logging.debug(
-                        "linkconfig: %s" % ([tc + parent + ["handle", "1:"] + tbf],)
-                    )
-                    netif.net_cmd(tc + parent + ["handle", "1:"] + tbf)
+                    cmd = "%s %s handle 1: %s" % (tc, parent, tbf)
+                    netif.net_cmd(cmd)
                 netif.setparam("has_tbf", True)
                 changed = True
             elif netif.getparam("has_tbf") and bw <= 0:
-                tcd = [] + tc
-                tcd[2] = "delete"
                 if self.up:
-                    netif.net_cmd(tcd + parent)
+                    cmd = "%s qdisc delete dev %s %s" % (TC_BIN, devname, parent)
+                    netif.net_cmd(cmd)
                 netif.setparam("has_tbf", False)
                 # removing the parent removes the child
                 netif.setparam("has_netem", False)
                 changed = True
         if netif.getparam("has_tbf"):
-            parent = ["parent", "1:1"]
-        netem = ["netem"]
+            parent = "parent 1:1"
+        netem = "netem"
         changed = max(changed, netif.setparam("delay", delay))
         if loss is not None:
             loss = float(loss)
@@ -499,17 +496,17 @@ class CoreNetwork(CoreNetworkBase):
             return
         # jitter and delay use the same delay statement
         if delay is not None:
-            netem += ["delay", "%sus" % delay]
+            netem += " delay %sus" % delay
         if jitter is not None:
             if delay is None:
-                netem += ["delay", "0us", "%sus" % jitter, "25%"]
+                netem += " delay 0us %sus 25%%" % jitter
             else:
-                netem += ["%sus" % jitter, "25%"]
+                netem += " %sus 25%%" % jitter
 
         if loss is not None and loss > 0:
-            netem += ["loss", "%s%%" % min(loss, 100)]
+            netem += " loss %s%%" % min(loss, 100)
         if duplicate is not None and duplicate > 0:
-            netem += ["duplicate", "%s%%" % min(duplicate, 100)]
+            netem += " duplicate %s%%" % min(duplicate, 100)
 
         delay_check = delay is None or delay <= 0
         jitter_check = jitter is None or jitter <= 0
@@ -519,17 +516,19 @@ class CoreNetwork(CoreNetworkBase):
             # possibly remove netem if it exists and parent queue wasn't removed
             if not netif.getparam("has_netem"):
                 return
-            tc[2] = "delete"
             if self.up:
-                logging.debug("linkconfig: %s" % ([tc + parent + ["handle", "10:"]],))
-                netif.net_cmd(tc + parent + ["handle", "10:"])
+                cmd = "%s qdisc delete dev %s %s handle 10:" % (TC_BIN, devname, parent)
+                netif.net_cmd(cmd)
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                logging.debug(
-                    "linkconfig: %s" % ([tc + parent + ["handle", "10:"] + netem],)
+                cmd = "%s qdisc replace dev %s %s handle 10: %s" % (
+                    TC_BIN,
+                    devname,
+                    parent,
+                    netem,
                 )
-                netif.net_cmd(tc + parent + ["handle", "10:"] + netem)
+                netif.net_cmd(cmd)
             netif.setparam("has_netem", True)
 
     def linknet(self, net):
