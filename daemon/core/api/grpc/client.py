@@ -864,6 +864,21 @@ class CoreGrpcClient(object):
         request = core_pb2.OpenXmlRequest(data=data)
         return self.stub.OpenXml(request)
 
+    def emane_link(self, session_id, nem_one, nem_two, linked):
+        """
+        Helps broadcast wireless link/unlink between EMANE nodes.
+
+        :param int session_id: session id
+        :param int nem_one:
+        :param int nem_two:
+        :param bool linked: True to link, False to unlink
+        :return: core_pb2.EmaneLinkResponse
+        """
+        request = core_pb2.EmaneLinkRequest(
+            session_id=session_id, nem_one=nem_one, nem_two=nem_two, linked=linked
+        )
+        return self.stub.EmaneLink(request)
+
     def connect(self):
         """
         Open connection to server, must be closed manually.

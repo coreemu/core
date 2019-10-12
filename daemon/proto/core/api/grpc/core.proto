@@ -119,6 +119,8 @@ service CoreApi {
     // utilities
     rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesResponse) {
     }
+    rpc EmaneLink (EmaneLinkRequest) returns (EmaneLinkResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -631,6 +633,17 @@ message GetInterfacesRequest {
 
 message GetInterfacesResponse {
     repeated string interfaces = 1;
+}
+
+message EmaneLinkRequest {
+    int32 session_id = 1;
+    int32 nem_one = 2;
+    int32 nem_two = 3;
+    bool linked = 4;
+}
+
+message EmaneLinkResponse {
+    bool result = 1;
 }
 
 // data structures for messages below

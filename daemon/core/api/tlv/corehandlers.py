@@ -2051,6 +2051,7 @@ class CoreUdpHandler(CoreHandler):
         }
         self.master = False
         self.session = None
+        self.coreemu = server.mainserver.coreemu
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
     def setup(self):
