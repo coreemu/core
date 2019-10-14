@@ -456,12 +456,12 @@ class GreTap(CoreInterface):
         :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param core.emulator.session.Session session: core session instance
-        :param mtu: interface mtu
+        :param int mtu: interface mtu
         :param str remoteip: remote address
         :param int _id: object id
         :param str localip: local address
-        :param ttl: ttl value
-        :param key: gre tap key
+        :param int ttl: ttl value
+        :param int key: gre tap key
         :param bool start: start flag
         :param fabric.connection.Connection server: remote server node will run on,
             default is None for localhost
@@ -484,13 +484,7 @@ class GreTap(CoreInterface):
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
 
-        if localip is not None:
-            localip = str(localip)
-        if ttl is not None:
-            ttl = str(ttl)
-        if key is not None:
-            key = str(key)
-        self.net_client.create_gretap(self.localname, str(remoteip), localip, ttl, key)
+        self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
         self.net_client.device_up(self.localname)
         self.up = True
 

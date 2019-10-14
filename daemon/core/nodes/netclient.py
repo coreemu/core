@@ -177,8 +177,8 @@ class LinuxNetClient(object):
         :param str device: device to add tap to
         :param str address: address to add tap for
         :param str local: local address to tie to
-        :param str ttl: time to live value
-        :param str key: key for tap
+        :param int ttl: time to live value
+        :param int key: key for tap
         :return: nothing
         """
         cmd = "%s link add %s type gretap remote %s" % (IP_BIN, device, address)
