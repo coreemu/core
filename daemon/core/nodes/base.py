@@ -452,13 +452,23 @@ class CoreNode(CoreNodeBase):
         self._mounts = []
         self.bootsh = bootsh
 
-        if session.options.get_config("ovs") == "True":
-            self.node_net_client = OvsNetClient(self.node_net_cmd)
-        else:
-            self.node_net_client = LinuxNetClient(self.node_net_cmd)
+        use_ovs = session.options.get_config("ovs") == "True"
+        self.node_net_client = self.create_node_net_client(use_ovs)
 
         if start:
             self.startup()
+
+    def create_node_net_client(self, use_ovs):
+        """
+        Create a client for running network orchestration commands.
+
+        :param bool use_ovs: True to use OVS bridges, False for Linux bridge
+        :return: network client
+        """
+        if use_ovs:
+            return OvsNetClient(self.node_net_cmd)
+        else:
+            return LinuxNetClient(self.node_net_cmd)
 
     def alive(self):
         """
@@ -584,7 +594,7 @@ class CoreNode(CoreNodeBase):
         :param str sh: shell to execute command in
         :return: str
         """
-        return self.client.termcmdstring(sh)
+        return self.client.create_cmd(sh)
 
     def privatedir(self, path):
         """

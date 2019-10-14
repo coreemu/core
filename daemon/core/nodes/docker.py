@@ -1,21 +1,25 @@
 import json
 import logging
 import os
+from tempfile import NamedTemporaryFile
 
 from core import utils
+from core.emulator import distributed
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
+from core.nodes.netclient import LinuxNetClient, OvsNetClient
 
 
 class DockerClient(object):
-    def __init__(self, name, image):
+    def __init__(self, name, image, run):
         self.name = name
         self.image = image
+        self.run = run
         self.pid = None
 
     def create_container(self):
-        utils.check_cmd(
+        self.run(
             "docker run -td --init --net=none --hostname {name} --name {name} "
             "--sysctl net.ipv6.conf.all.disable_ipv6=0 "
             "{image} /bin/bash".format(
@@ -27,7 +31,7 @@ class DockerClient(object):
 
     def get_info(self):
         args = "docker inspect {name}".format(name=self.name)
-        output = utils.check_cmd(args)
+        output = self.run(args)
         data = json.loads(output)
         if not data:
             raise CoreCommandError(
@@ -43,22 +47,24 @@ class DockerClient(object):
             return False
 
     def stop_container(self):
-        utils.check_cmd("docker rm -f {name}".format(
+        self.run("docker rm -f {name}".format(
             name=self.name
         ))
 
     def check_cmd(self, cmd):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
         logging.info("docker cmd output: %s", cmd)
         return utils.check_cmd("docker exec {name} {cmd}".format(
             name=self.name,
             cmd=cmd
         ))
 
+    def create_ns_cmd(self, cmd):
+        return "nsenter -t {pid} -u -i -p -n {cmd}".format(
+            pid=self.pid,
+            cmd=cmd
+        )
+
     def ns_cmd(self, cmd, wait):
-        if isinstance(cmd, list):
-            cmd = " ".join(cmd)
         args = "nsenter -t {pid} -u -i -p -n {cmd}".format(
             pid=self.pid,
             cmd=cmd
@@ -67,7 +73,7 @@ class DockerClient(object):
 
     def get_pid(self):
         args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
-        output = utils.check_cmd(args)
+        output = self.run(args)
         self.pid = output
         logging.debug("node(%s) pid: %s", self.name, self.pid)
         return output
@@ -78,7 +84,7 @@ class DockerClient(object):
             name=self.name,
             destination=destination
         )
-        return utils.check_cmd(args)
+        return self.run(args)
 
 
 class DockerNode(CoreNode):
@@ -101,6 +107,12 @@ class DockerNode(CoreNode):
         self.image = image
         super(DockerNode, self).__init__(session, _id, name, nodedir, bootsh, start)
 
+    def create_node_net_client(self, use_ovs):
+        if use_ovs:
+            return OvsNetClient(self.nsenter_cmd)
+        else:
+            return LinuxNetClient(self.nsenter_cmd)
+
     def alive(self):
         """
         Check if the node is alive.
@@ -122,7 +134,7 @@ class DockerNode(CoreNode):
             if self.up:
                 raise ValueError("starting a node that is already up")
             self.makenodedir()
-            self.client = DockerClient(self.name, self.image)
+            self.client = DockerClient(self.name, self.image, self.net_cmd)
             self.pid = self.client.create_container()
             self.up = True
 
@@ -141,12 +153,13 @@ class DockerNode(CoreNode):
             self.client.stop_container()
             self.up = False
 
-    def node_net_cmd(self, args, wait=True):
-        if not self.up:
-            logging.debug("node down, not running network command: %s", args)
-            return ""
-
-        return self.client.ns_cmd(args, wait)
+    def nsenter_cmd(self, args, wait=True):
+        if self.server is None:
+            args = self.client.create_ns_cmd(args)
+            return utils.check_cmd(args, wait=wait)
+        else:
+            args = self.client.create_ns_cmd(args)
+            return distributed.remote_cmd(self.server, args, wait=wait)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -166,7 +179,7 @@ class DockerNode(CoreNode):
         """
         logging.debug("creating node dir: %s", path)
         args = "mkdir -p {path}".format(path=path)
-        self.client.check_cmd(args)
+        self.node_net_cmd(args)
 
     def mount(self, source, target):
         """
@@ -189,13 +202,24 @@ class DockerNode(CoreNode):
         :param int mode: mode for file
         :return: nothing
         """
-        logging.debug("node dir(%s) ctrlchannel(%s)", self.nodedir, self.ctrlchnlname)
         logging.debug("nodefile filename(%s) mode(%s)", filename, mode)
-        file_path = os.path.join(self.nodedir, filename)
-        with open(file_path, "w") as f:
-            os.chmod(f.name, mode)
-            f.write(contents)
-        self.client.copy_file(file_path, filename)
+        directory = os.path.dirname(filename)
+        temp = NamedTemporaryFile(delete=False)
+        temp.write(contents.encode("utf-8"))
+        temp.close()
+
+        if directory:
+            self.node_net_cmd("mkdir -m %o -p %s" % (0o755, directory))
+        if self.server is not None:
+            distributed.remote_put(self.server, temp.name, temp.name)
+        self.client.copy_file(temp.name, filename)
+        self.node_net_cmd("chmod %o %s" % (mode, filename))
+        if self.server is not None:
+            self.net_cmd("rm -f %s" % temp.name)
+        os.unlink(temp.name)
+        logging.debug(
+            "node(%s) added file: %s; mode: 0%o", self.name, filename, mode
+        )
 
     def nodefilecopy(self, filename, srcfilename, mode=None):
         """
@@ -207,5 +231,18 @@ class DockerNode(CoreNode):
         :param int mode: mode to copy to
         :return: nothing
         """
-        logging.info("node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode)
-        raise Exception("not supported")
+        logging.info(
+            "node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode
+        )
+        directory = os.path.dirname(filename)
+        self.node_net_cmd("mkdir -p %s" % directory)
+
+        if self.server is None:
+            source = srcfilename
+        else:
+            temp = NamedTemporaryFile(delete=False)
+            source = temp.name
+            distributed.remote_put(self.server, source, temp.name)
+
+        self.client.copy_file(source, filename)
+        self.node_net_cmd("chmod %o %s" % (mode, filename))
