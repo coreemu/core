@@ -5,7 +5,6 @@ from tempfile import NamedTemporaryFile
 from lxml import etree
 
 from core import utils
-from core.emulator import distributed
 from core.nodes.ipaddress import MacAddress
 from core.xml import corexml
 
@@ -53,8 +52,8 @@ def create_file(xml_element, doc_name, file_path, server=None):
     :param lxml.etree.Element xml_element: root element to write to file
     :param str doc_name: name to use in the emane doctype
     :param str file_path: file path to write xml file to
-    :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     doctype = (
@@ -65,7 +64,7 @@ def create_file(xml_element, doc_name, file_path, server=None):
         temp = NamedTemporaryFile(delete=False)
         create_file(xml_element, doc_name, temp.name)
         temp.close()
-        distributed.remote_put(server, temp.name, file_path)
+        server.remote_put(temp.name, file_path)
         os.unlink(temp.name)
     else:
         corexml.write_xml_file(xml_element, file_path, doctype=doctype)
@@ -327,8 +326,8 @@ def create_phy_xml(emane_model, config, file_path, server):
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str file_path: path to write file to
-    :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     phy_element = etree.Element("phy", name="%s PHY" % emane_model.name)
@@ -355,8 +354,8 @@ def create_mac_xml(emane_model, config, file_path, server):
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str file_path: path to write file to
-    :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     if not emane_model.mac_library:
@@ -396,8 +395,8 @@ def create_nem_xml(
     :param str transport_definition: transport file definition path
     :param str mac_definition: mac file definition path
     :param str phy_definition: phy file definition path
-    :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     nem_element = etree.Element("nem", name="%s NEM" % emane_model.name)
@@ -424,8 +423,8 @@ def create_event_service_xml(group, port, device, file_directory, server=None):
     :param str port: event port
     :param str device: event device
     :param str file_directory: directory to create  file in
-    :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     event_element = etree.Element("emaneeventmsgsvc")

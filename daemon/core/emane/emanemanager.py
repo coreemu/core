@@ -18,7 +18,6 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator import distributed
 from core.emulator.enumerations import (
     ConfigDataTypes,
     ConfigFlags,
@@ -155,9 +154,9 @@ class EmaneManager(ModelManager):
             args = "emane --version"
             emane_version = utils.check_cmd(args)
             logging.info("using EMANE: %s", emane_version)
-            for server in self.session.servers:
-                conn = self.session.servers[server]
-                distributed.remote_cmd(conn, args)
+            for host in self.session.servers:
+                server = self.session.servers[host]
+                server.remote_cmd(args)
 
             # load default emane models
             self.load_models(EMANE_MODELS)
@@ -757,9 +756,9 @@ class EmaneManager(ModelManager):
         emanecmd += " -f %s" % os.path.join(path, "emane.log")
         emanecmd += " %s" % os.path.join(path, "platform.xml")
         utils.check_cmd(emanecmd, cwd=path)
-        for server in self.session.servers:
-            conn = self.session.servers[server]
-            distributed.remote_cmd(conn, emanecmd, cwd=path)
+        for host in self.session.servers:
+            server = self.session.servers[host]
+            server.remote_cmd(emanecmd, cwd=path)
         logging.info("host emane daemon running: %s", emanecmd)
 
     def stopdaemons(self):
@@ -784,10 +783,10 @@ class EmaneManager(ModelManager):
             try:
                 utils.check_cmd(kill_emaned)
                 utils.check_cmd(kill_transortd)
-                for server in self.session.servers:
-                    conn = self.session[server]
-                    distributed.remote_cmd(conn, kill_emaned)
-                    distributed.remote_cmd(conn, kill_transortd)
+                for host in self.session.servers:
+                    server = self.session[host]
+                    server.remote_cmd(kill_emaned)
+                    server.remote_cmd(kill_transortd)
             except CoreCommandError:
                 logging.exception("error shutting down emane daemons")
 

@@ -7,7 +7,6 @@ import time
 from builtins import int, range
 
 from core import utils
-from core.emulator import distributed
 from core.errors import CoreCommandError
 from core.nodes.netclient import LinuxNetClient
 
@@ -24,8 +23,8 @@ class CoreInterface(object):
         :param core.nodes.base.CoreNode node: node for interface
         :param str name: interface name
         :param mtu: mtu value
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
 
         self.node = node
@@ -63,7 +62,7 @@ class CoreInterface(object):
         if self.server is None:
             return utils.check_cmd(args, env, cwd, wait)
         else:
-            return distributed.remote_cmd(self.server, args, env, cwd, wait)
+            return self.server.remote_cmd(args, env, cwd, wait)
 
     def startup(self):
         """
@@ -220,8 +219,8 @@ class Veth(CoreInterface):
         :param str name: interface name
         :param str localname: interface local name
         :param mtu: interface mtu
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param bool start: start flag
         :raises CoreCommandError: when there is a command exception
         """
@@ -280,8 +279,8 @@ class TunTap(CoreInterface):
         :param str name: interface name
         :param str localname: local interface name
         :param mtu: interface mtu
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param bool start: start flag
         """
         CoreInterface.__init__(self, node, name, mtu, server)
@@ -463,8 +462,8 @@ class GreTap(CoreInterface):
         :param int ttl: ttl value
         :param int key: gre tap key
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
         CoreInterface.__init__(self, node, name, mtu, server)

@@ -14,7 +14,6 @@ from socket import AF_INET, AF_INET6
 
 from core import utils
 from core.constants import MOUNT_BIN, VNODED_BIN
-from core.emulator import distributed
 from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError
@@ -41,8 +40,8 @@ class NodeBase(object):
         :param int _id: id
         :param str name: object name
         :param bool start: start value
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
 
         self.session = session
@@ -101,7 +100,7 @@ class NodeBase(object):
         if self.server is None:
             return utils.check_cmd(args, env, cwd, wait)
         else:
-            return distributed.remote_cmd(self.server, args, env, cwd, wait)
+            return self.server.remote_cmd(args, env, cwd, wait)
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -200,7 +199,7 @@ class NodeBase(object):
 
         x, y, _ = self.getposition()
         model = self.type
-        emulation_server = self.server
+        emulation_server = self.server.host
 
         services = self.services
         if services is not None:
@@ -253,8 +252,8 @@ class CoreNodeBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: boolean for starting
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         super(CoreNodeBase, self).__init__(session, _id, name, start, server)
         self.services = []
@@ -437,8 +436,8 @@ class CoreNode(CoreNodeBase):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         super(CoreNode, self).__init__(session, _id, name, start, server)
         self.nodedir = nodedir
@@ -585,7 +584,7 @@ class CoreNode(CoreNodeBase):
             return self.client.check_cmd(args, wait=wait)
         else:
             args = self.client.create_cmd(args)
-            return distributed.remote_cmd(self.server, args, wait=wait)
+            return self.server.remote_cmd(args, wait=wait)
 
     def termcmdstring(self, sh="/bin/sh"):
         """
@@ -888,7 +887,7 @@ class CoreNode(CoreNodeBase):
             self.client.check_cmd("sync")
         else:
             self.net_cmd("mkdir -p %s" % directory)
-            distributed.remote_put(self.server, srcname, filename)
+            self.server.remote_put(srcname, filename)
 
     def hostfilename(self, filename):
         """
@@ -925,7 +924,7 @@ class CoreNode(CoreNodeBase):
                 os.chmod(open_file.name, mode)
         else:
             self.net_cmd("mkdir -m %o -p %s" % (0o755, dirname))
-            distributed.remote_put_temp(self.server, hostfilename, contents)
+            self.server.remote_put_temp(hostfilename, contents)
             self.net_cmd("chmod %o %s" % (mode, hostfilename))
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
@@ -944,12 +943,10 @@ class CoreNode(CoreNodeBase):
         hostfilename = self.hostfilename(filename)
         if self.server is None:
             shutil.copy2(srcfilename, hostfilename)
-            if mode is not None:
-                os.chmod(hostfilename, mode)
         else:
-            distributed.remote_put(self.server, srcfilename, hostfilename)
-            if mode is not None:
-                self.net_cmd("chmod %o %s" % (mode, hostfilename))
+            self.server.remote_put(srcfilename, hostfilename)
+        if mode is not None:
+            self.net_cmd("chmod %o %s" % (mode, hostfilename))
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )
@@ -971,8 +968,8 @@ class CoreNetworkBase(NodeBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: should object start
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         super(CoreNetworkBase, self).__init__(session, _id, name, start, server)
         self._linked = {}

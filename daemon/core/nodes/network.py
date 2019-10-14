@@ -10,7 +10,6 @@ from socket import AF_INET, AF_INET6
 
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
-from core.emulator import distributed
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
@@ -257,8 +256,8 @@ class CoreNetwork(CoreNetworkBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param policy: network policy
         """
         CoreNetworkBase.__init__(self, session, _id, name, start, server)
@@ -289,9 +288,9 @@ class CoreNetwork(CoreNetworkBase):
         """
         logging.info("network node(%s) cmd", self.name)
         output = utils.check_cmd(args, env, cwd, wait)
-        for server in self.session.servers:
-            conn = self.session.servers[server]
-            distributed.remote_cmd(conn, args, env, cwd, wait)
+        for host in self.session.servers:
+            server = self.session.servers[host]
+            server.remote_cmd(args, env, cwd, wait)
         return output
 
     def startup(self):
@@ -632,8 +631,8 @@ class GreTapBridge(CoreNetwork):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         CoreNetwork.__init__(self, session, _id, name, False, server, policy)
         self.grekey = key
@@ -753,8 +752,8 @@ class CtrlNet(CoreNetwork):
         :param prefix: control network ipv4 prefix
         :param hostid: host id
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param str assign_address: assigned address
         :param str updown_script: updown script
         :param serverintf: server interface
@@ -1008,8 +1007,8 @@ class HubNode(CoreNetwork):
         :param int _id: node id
         :param str name: node namee
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
         CoreNetwork.__init__(self, session, _id, name, start, server)
@@ -1039,8 +1038,8 @@ class WlanNode(CoreNetwork):
         :param int _id: node id
         :param str name: node name
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param policy: wlan policy
         """
         CoreNetwork.__init__(self, session, _id, name, start, server, policy)

@@ -5,7 +5,6 @@ import time
 from tempfile import NamedTemporaryFile
 
 from core import utils
-from core.emulator import distributed
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
@@ -182,7 +181,7 @@ class LxcNode(CoreNode):
         if directory:
             self.node_net_cmd("mkdir -m %o -p %s" % (0o755, directory))
         if self.server is not None:
-            distributed.remote_put(self.server, temp.name, temp.name)
+            self.server.remote_put(temp.name, temp.name)
         self.client.copy_file(temp.name, filename)
         self.node_net_cmd("chmod %o %s" % (mode, filename))
         if self.server is not None:
@@ -211,7 +210,7 @@ class LxcNode(CoreNode):
         else:
             temp = NamedTemporaryFile(delete=False)
             source = temp.name
-            distributed.remote_put(self.server, source, temp.name)
+            self.server.remote_put(source, temp.name)
 
         self.client.copy_file(source, filename)
         self.node_net_cmd("chmod %o %s" % (mode, filename))

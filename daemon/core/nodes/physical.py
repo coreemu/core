@@ -242,8 +242,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param str name: node name
         :param mtu: rj45 mtu
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
         CoreInterface.__init__(self, node=self, name=name, mtu=mtu)

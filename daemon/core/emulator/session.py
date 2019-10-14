@@ -14,14 +14,13 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
-from fabric import Connection
-
 from core import constants, utils
 from core.api.tlv import coreapi
 from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, ExceptionData, NodeData
+from core.emulator.distributed import DistributedServer
 from core.emulator.emudata import (
     IdGen,
     LinkOptions,
@@ -162,11 +161,11 @@ class Session(object):
             "host": ("DefaultRoute", "SSH"),
         }
 
-    def add_distributed(self, server):
-        conn = Connection(server, user="root")
-        self.servers[server] = conn
+    def add_distributed(self, host):
+        server = DistributedServer(host)
+        self.servers[host] = server
         cmd = "mkdir -p %s" % self.session_dir
-        conn.run(cmd, hide=False)
+        server.remote_cmd(cmd)
 
     def shutdown_distributed(self):
         # shutdown all tunnels
@@ -176,10 +175,10 @@ class Session(object):
                 tunnel.shutdown()
 
         # remove all remote session directories
-        for server in self.servers:
-            conn = self.servers[server]
+        for host in self.servers:
+            server = self.servers[host]
             cmd = "rm -rf %s" % self.session_dir
-            conn.run(cmd, hide=False)
+            server.remote_cmd(cmd)
 
         # clear tunnels
         self.tunnels.clear()
@@ -194,18 +193,15 @@ class Session(object):
             if isinstance(node, CtrlNet) and node.serverintf is not None:
                 continue
 
-            for server in self.servers:
-                conn = self.servers[server]
-                key = self.tunnelkey(node_id, IpAddress.to_int(server))
+            for host in self.servers:
+                server = self.servers[host]
+                key = self.tunnelkey(node_id, IpAddress.to_int(host))
 
                 # local to server
                 logging.info(
-                    "local tunnel node(%s) to remote(%s) key(%s)",
-                    node.name,
-                    server,
-                    key,
+                    "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
                 )
-                local_tap = GreTap(session=self, remoteip=server, key=key)
+                local_tap = GreTap(session=self, remoteip=host, key=key)
                 local_tap.net_client.create_interface(node.brname, local_tap.localname)
 
                 # server to local
@@ -216,7 +212,7 @@ class Session(object):
                     key,
                 )
                 remote_tap = GreTap(
-                    session=self, remoteip=self.address, key=key, server=conn
+                    session=self, remoteip=self.address, key=key, server=server
                 )
                 remote_tap.net_client.create_interface(
                     node.brname, remote_tap.localname
