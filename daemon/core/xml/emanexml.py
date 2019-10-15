@@ -314,9 +314,9 @@ def build_transport_xml(emane_manager, node, transport_type):
     file_name = transport_file_name(node.id, transport_type)
     file_path = os.path.join(emane_manager.session.session_dir, file_name)
     create_file(transport_element, doc_name, file_path)
-    for server in emane_manager.session.servers:
-        conn = emane_manager.session.servers[server]
-        create_file(transport_element, doc_name, file_path, conn)
+    for name in emane_manager.session.servers:
+        server = emane_manager.session.servers[name]
+        create_file(transport_element, doc_name, file_path, server)
 
 
 def create_phy_xml(emane_model, config, file_path, server):
@@ -342,9 +342,9 @@ def create_phy_xml(emane_model, config, file_path, server):
         create_file(phy_element, "phy", file_path, server)
     else:
         create_file(phy_element, "phy", file_path)
-        for server in emane_model.session.servers:
-            conn = emane_model.session.servers[server]
-            create_file(phy_element, "phy", file_path, conn)
+        for name in emane_model.session.servers:
+            server = emane_model.session.servers[name]
+            create_file(phy_element, "phy", file_path, server)
 
 
 def create_mac_xml(emane_model, config, file_path, server):
@@ -372,9 +372,9 @@ def create_mac_xml(emane_model, config, file_path, server):
         create_file(mac_element, "mac", file_path, server)
     else:
         create_file(mac_element, "mac", file_path)
-        for server in emane_model.session.servers:
-            conn = emane_model.session.servers[server]
-            create_file(mac_element, "mac", file_path, conn)
+        for name in emane_model.session.servers:
+            server = emane_model.session.servers[name]
+            create_file(mac_element, "mac", file_path, server)
 
 
 def create_nem_xml(
@@ -410,9 +410,9 @@ def create_nem_xml(
         create_file(nem_element, "nem", nem_file, server)
     else:
         create_file(nem_element, "nem", nem_file)
-        for server in emane_model.session.servers:
-            conn = emane_model.session.servers[server]
-            create_file(nem_element, "nem", nem_file, conn)
+        for name in emane_model.session.servers:
+            server = emane_model.session.servers[name]
+            create_file(nem_element, "nem", nem_file, server)
 
 
 def create_event_service_xml(group, port, device, file_directory, server=None):

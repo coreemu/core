@@ -288,8 +288,8 @@ class CoreNetwork(CoreNetworkBase):
         """
         logging.info("network node(%s) cmd", self.name)
         output = utils.check_cmd(args, env, cwd, wait)
-        for host in self.session.servers:
-            server = self.session.servers[host]
+        for name in self.session.servers:
+            server = self.session.servers[name]
             server.remote_cmd(args, env, cwd, wait)
         return output
 

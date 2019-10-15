@@ -7,15 +7,16 @@ from core.emulator.enumerations import EventTypes, NodeTypes
 
 
 def main():
+    address = sys.argv[1]
+    remote = sys.argv[2]
+
     # create emulator instance for creating sessions and utility methods
-    coreemu = CoreEmu()
+    coreemu = CoreEmu({"distributed_address": address})
     session = coreemu.create_session()
 
     # initialize distributed
-    address = sys.argv[1]
-    remote = sys.argv[2]
-    session.address = address
-    session.add_distributed(remote)
+    server_name = "core2"
+    session.add_distributed(server_name, remote)
 
     # must be in configuration state for nodes to start, when using "node_add" below
     session.set_state(EventTypes.CONFIGURATION_STATE)

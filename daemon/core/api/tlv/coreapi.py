@@ -15,7 +15,6 @@ from core.api.tlv import structutils
 from core.emulator.enumerations import (
     ConfigTlvs,
     EventTlvs,
-    EventTypes,
     ExceptionTlvs,
     ExecuteTlvs,
     FileTlvs,
@@ -1017,20 +1016,3 @@ def str_to_list(value):
         return None
 
     return value.split("|")
-
-
-def state_name(value):
-    """
-    Helper to convert state number into state name using event types.
-
-    :param int value: state value to derive name from
-    :return: state name
-    :rtype: str
-    """
-
-    try:
-        value = EventTypes(value).name
-    except ValueError:
-        value = "unknown"
-
-    return value

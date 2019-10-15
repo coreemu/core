@@ -20,12 +20,14 @@ class DistributedServer(object):
     Provides distributed server interactions.
     """
 
-    def __init__(self, host):
+    def __init__(self, name, host):
         """
         Create a DistributedServer instance.
 
+        :param str name: convenience name to associate with host
         :param str host: host to connect to
         """
+        self.name = name
         self.host = host
         self.conn = Connection(host, user="root")
         self.lock = threading.Lock()
@@ -36,8 +38,8 @@ class DistributedServer(object):
 
         :param str cmd: command to run
         :param dict env: environment for remote command, default is None
-        :param str cwd: directory to run command in, defaults to None, which is the user's
-            home directory
+        :param str cwd: directory to run command in, defaults to None, which is the
+            user's home directory
         :param bool wait: True to wait for status, False to background process
         :return: stdout when success
         :rtype: str

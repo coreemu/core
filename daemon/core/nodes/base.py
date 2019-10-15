@@ -199,7 +199,9 @@ class NodeBase(object):
 
         x, y, _ = self.getposition()
         model = self.type
-        emulation_server = self.server.host
+        emulation_server = None
+        if self.server is not None:
+            emulation_server = self.server.host
 
         services = self.services
         if services is not None:
@@ -593,7 +595,13 @@ class CoreNode(CoreNodeBase):
         :param str sh: shell to execute command in
         :return: str
         """
-        return self.client.create_cmd(sh)
+        terminal = self.client.create_cmd(sh)
+        if self.server is None:
+            return terminal
+        else:
+            return "ssh -X -f {host} xterm -e {terminal}".format(
+                host=self.server.host, terminal=terminal
+            )
 
     def privatedir(self, path):
         """

@@ -107,10 +107,6 @@ class CoreXmlDeployment(object):
     def add_deployment(self):
         physical_host = self.add_physical_host(socket.gethostname())
 
-        # TODO: handle other servers
-        #   servers = self.session.broker.getservernames()
-        #   servers.remove("localhost")
-
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
             if isinstance(node, CoreNodeBase):

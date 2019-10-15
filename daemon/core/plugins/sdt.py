@@ -76,7 +76,7 @@ class Sdt(object):
         # node information for remote nodes not in session._objs
         # local nodes also appear here since their obj may not exist yet
         self.remotes = {}
-        session.broker.handlers.add(self.handle_distributed)
+        # session.broker.handlers.add(self.handle_distributed)
 
         # add handler for node updates
         self.session.node_handlers.append(self.handle_node_update)

@@ -9,25 +9,25 @@ from core.emulator.enumerations import EventTypes, NodeTypes
 
 
 def main():
+    address = sys.argv[1]
+    remote = sys.argv[2]
+
     # ip generator for example
     prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
     # create emulator instance for creating sessions and utility methods
-    coreemu = CoreEmu()
+    coreemu = CoreEmu(
+        {
+            "controlnet": "core1:172.16.1.0/24 core2:172.16.2.0/24 core3:172.16.3.0/24 "
+            "core4:172.16.4.0/24 core5:172.16.5.0/24",
+            "distributed_address": address,
+        }
+    )
     session = coreemu.create_session()
 
-    # set controlnet
-    session.options.set_config(
-        "controlnet",
-        "core1:172.16.1.0/24 core2:172.16.2.0/24 core3:172.16.3.0/24 "
-        "core4:172.16.4.0/24 core5:172.16.5.0/24",
-    )
-
     # initialize distributed
-    address = sys.argv[1]
-    remote = sys.argv[2]
-    session.address = address
-    session.add_distributed(remote)
+    server_name = "core2"
+    session.add_distributed(server_name, remote)
 
     # must be in configuration state for nodes to start, when using "node_add" below
     session.set_state(EventTypes.CONFIGURATION_STATE)
@@ -38,7 +38,7 @@ def main():
     node_one = session.add_node(node_options=options)
     emane_net = session.add_node(_type=NodeTypes.EMANE)
     session.emane.set_model(emane_net, EmaneIeee80211abgModel)
-    options.emulation_server = remote
+    options.emulation_server = server_name
     node_two = session.add_node(node_options=options)
 
     # create node interfaces and link

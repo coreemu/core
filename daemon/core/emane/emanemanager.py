@@ -2,14 +2,12 @@
 emane.py: definition of an Emane class for implementing configuration control of an EMANE emulation.
 """
 
-import copy
 import logging
 import os
 import threading
 
 from core import utils
-from core.api.tlv import coreapi, dataconversion
-from core.config import ConfigGroup, ConfigShim, Configuration, ModelManager
+from core.config import ConfigGroup, Configuration, ModelManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
@@ -18,14 +16,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.enumerations import (
-    ConfigDataTypes,
-    ConfigFlags,
-    ConfigTlvs,
-    MessageFlags,
-    MessageTypes,
-    RegisterTlvs,
-)
+from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.xml import emanexml
 
@@ -75,8 +66,6 @@ class EmaneManager(ModelManager):
         self.session = session
         self._emane_nets = {}
         self._emane_node_lock = threading.Lock()
-        self._ifccounts = {}
-        self._ifccountslock = threading.Lock()
         # port numbers are allocated from these counters
         self.platformport = self.session.options.get_config_int(
             "emane_platform_port", 8100
@@ -91,7 +80,6 @@ class EmaneManager(ModelManager):
         self.emane_config = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
 
-        session.broker.handlers.add(self.handledistributed)
         self.service = None
         self.event_device = None
         self.emane_check()
@@ -154,8 +142,8 @@ class EmaneManager(ModelManager):
             args = "emane --version"
             emane_version = utils.check_cmd(args)
             logging.info("using EMANE: %s", emane_version)
-            for host in self.session.servers:
-                server = self.session.servers[host]
+            for name in self.session.servers:
+                server = self.session.servers[name]
                 server.remote_cmd(args)
 
             # load default emane models
@@ -282,7 +270,6 @@ class EmaneManager(ModelManager):
                 return EmaneManager.NOT_NEEDED
 
         # control network bridge required for EMANE 0.9.2
-        # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
         if self.session.master:
             otadev = self.get_config("otamanagerdevice")
@@ -297,10 +284,9 @@ class EmaneManager(ModelManager):
                 )
                 return EmaneManager.NOT_READY
 
-            ctrlnet = self.session.add_remove_control_net(
+            self.session.add_remove_control_net(
                 net_index=netidx, remove=False, conf_required=False
             )
-            self.distributedctrlnet(ctrlnet)
             eventdev = self.get_config("eventservicedevice")
             logging.debug("emane event service device: eventdev(%s)", eventdev)
             if eventdev != otadev:
@@ -313,18 +299,9 @@ class EmaneManager(ModelManager):
                     )
                     return EmaneManager.NOT_READY
 
-                ctrlnet = self.session.add_remove_control_net(
+                self.session.add_remove_control_net(
                     net_index=netidx, remove=False, conf_required=False
                 )
-                self.distributedctrlnet(ctrlnet)
-
-        if self.checkdistributed():
-            # we are slave, but haven't received a platformid yet
-            platform_id_start = "platform_id_start"
-            default_values = self.emane_config.default_values()
-            value = self.get_config(platform_id_start)
-            if value == default_values[platform_id_start]:
-                return EmaneManager.NOT_READY
 
         self.check_node_models()
         return EmaneManager.SUCCESS
@@ -413,9 +390,6 @@ class EmaneManager(ModelManager):
         """
         stop all EMANE daemons
         """
-        with self._ifccountslock:
-            self._ifccounts.clear()
-
         with self._emane_node_lock:
             if not self._emane_nets:
                 return
@@ -423,92 +397,6 @@ class EmaneManager(ModelManager):
             self.deinstallnetifs()
             self.stopdaemons()
             self.stopeventmonitor()
-
-    def handledistributed(self, message):
-        """
-        Broker handler for processing CORE API messages as they are
-        received. This is used to snoop the Link add messages to get NEM
-        counts of NEMs that exist on other servers.
-        """
-        if (
-            message.message_type == MessageTypes.LINK.value
-            and message.flags & MessageFlags.ADD.value
-        ):
-            nn = message.node_numbers()
-            # first node is always link layer node in Link add message
-            if nn[0] in self.session.broker.network_nodes:
-                serverlist = self.session.broker.getserversbynode(nn[1])
-                for server in serverlist:
-                    with self._ifccountslock:
-                        if server not in self._ifccounts:
-                            self._ifccounts[server] = 1
-                        else:
-                            self._ifccounts[server] += 1
-
-    def checkdistributed(self):
-        """
-        Check for EMANE nodes that exist on multiple emulation servers and
-        coordinate the NEM id and port number space.
-        If we are the master EMANE node, return False so initialization will
-        proceed as normal; otherwise slaves return True here and
-        initialization is deferred.
-        """
-        # check with the session if we are the "master" Emane object?
-        master = False
-
-        with self._emane_node_lock:
-            if self._emane_nets:
-                master = self.session.master
-                logging.info("emane check distributed as master: %s.", master)
-
-        # we are not the master Emane object, wait for nem id and ports
-        if not master:
-            return True
-
-        nemcount = 0
-        with self._emane_node_lock:
-            for key in self._emane_nets:
-                emane_node = self._emane_nets[key]
-                nemcount += emane_node.numnetif()
-
-            nemid = int(self.get_config("nem_id_start"))
-            nemid += nemcount
-
-            platformid = int(self.get_config("platform_id_start"))
-
-            # build an ordered list of servers so platform ID is deterministic
-            servers = []
-            for key in sorted(self._emane_nets):
-                for server in self.session.broker.getserversbynode(key):
-                    if server not in servers:
-                        servers.append(server)
-
-        servers.sort(key=lambda x: x.name)
-        for server in servers:
-            if server.name == "localhost":
-                continue
-
-            if server.sock is None:
-                continue
-
-            platformid += 1
-
-            # create temporary config for updating distributed nodes
-            typeflags = ConfigFlags.UPDATE.value
-            config = copy.deepcopy(self.get_configs())
-            config["platform_id_start"] = str(platformid)
-            config["nem_id_start"] = str(nemid)
-            config_data = ConfigShim.config_data(
-                0, None, typeflags, self.emane_config, config
-            )
-            message = dataconversion.convert_config(config_data)
-            server.sock.send(message)
-            # increment nemid for next server by number of interfaces
-            with self._ifccountslock:
-                if server in self._ifccounts:
-                    nemid += self._ifccounts[server]
-
-        return False
 
     def buildxml(self):
         """
@@ -525,52 +413,6 @@ class EmaneManager(ModelManager):
         self.buildplatformxml(ctrlnet)
         self.buildnemxml()
         self.buildeventservicexml()
-
-    # TODO: remove need for tlv messaging
-    def distributedctrlnet(self, ctrlnet):
-        """
-        Distributed EMANE requires multiple control network prefixes to
-        be configured. This generates configuration for slave control nets
-        using the default list of prefixes.
-        """
-        # slave server
-        session = self.session
-        if not session.master:
-            return
-
-        # not distributed
-        servers = session.broker.getservernames()
-        if len(servers) < 2:
-            return
-
-        # normal Config messaging will distribute controlnets
-        prefix = session.options.get_config("controlnet", default="")
-        prefixes = prefix.split()
-        if len(prefixes) < len(servers):
-            logging.info(
-                "setting up default controlnet prefixes for distributed (%d configured)",
-                len(prefixes),
-            )
-            prefix = ctrlnet.DEFAULT_PREFIX_LIST[0]
-            prefixes = prefix.split()
-            servers.remove("localhost")
-            servers.insert(0, "localhost")
-            prefix = " ".join("%s:%s" % (s, prefixes[i]) for i, s in enumerate(servers))
-
-        # this generates a config message having controlnet prefix assignments
-        logging.info("setting up controlnet prefixes for distributed: %s", prefix)
-        vals = "controlnet=%s" % prefix
-        tlvdata = b""
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value, vals)
-        rawmsg = coreapi.CoreConfMessage.pack(0, tlvdata)
-        msghdr = rawmsg[: coreapi.CoreMessage.header_len]
-        msg = coreapi.CoreConfMessage(
-            flags=0, hdr=msghdr, data=rawmsg[coreapi.CoreMessage.header_len :]
-        )
-        logging.debug("sending controlnet message:\n%s", msg)
-        self.session.broker.handle_message(msg)
 
     def check_node_models(self):
         """
@@ -676,8 +518,8 @@ class EmaneManager(ModelManager):
 
         dev = self.get_config("eventservicedevice")
         emanexml.create_event_service_xml(group, port, dev, self.session.session_dir)
-        for server in self.session.servers:
-            conn = self.session.servers[server]
+        for name in self.session.servers:
+            conn = self.session.servers[name]
             emanexml.create_event_service_xml(
                 group, port, dev, self.session.session_dir, conn
             )
@@ -756,8 +598,8 @@ class EmaneManager(ModelManager):
         emanecmd += " -f %s" % os.path.join(path, "emane.log")
         emanecmd += " %s" % os.path.join(path, "platform.xml")
         utils.check_cmd(emanecmd, cwd=path)
-        for host in self.session.servers:
-            server = self.session.servers[host]
+        for name in self.session.servers:
+            server = self.session.servers[name]
             server.remote_cmd(emanecmd, cwd=path)
         logging.info("host emane daemon running: %s", emanecmd)
 
@@ -783,8 +625,8 @@ class EmaneManager(ModelManager):
             try:
                 utils.check_cmd(kill_emaned)
                 utils.check_cmd(kill_transortd)
-                for host in self.session.servers:
-                    server = self.session[host]
+                for name in self.session.servers:
+                    server = self.session[name]
                     server.remote_cmd(kill_emaned)
                     server.remote_cmd(kill_transortd)
             except CoreCommandError:
