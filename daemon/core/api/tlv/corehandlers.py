@@ -2082,6 +2082,7 @@ class CoreUdpHandler(CoreHandler):
                     logging.debug("session handling message: %s", session.session_id)
                     self.session = session
                     self.handle_message(message)
+                    self.session.sdt.handle_distributed(message)
                     self.broadcast(message)
                 else:
                     logging.error(
@@ -2106,6 +2107,7 @@ class CoreUdpHandler(CoreHandler):
             if session or message.message_type == MessageTypes.REGISTER.value:
                 self.session = session
                 self.handle_message(message)
+                self.session.sdt.handle_distributed(message)
                 self.broadcast(message)
             else:
                 logging.error(
