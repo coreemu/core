@@ -4,12 +4,9 @@ Defines the base logic for nodes used within core.
 
 import logging
 import os
-import random
 import shutil
 import socket
-import string
 import threading
-from builtins import range
 from socket import AF_INET, AF_INET6
 
 from core import utils
@@ -18,8 +15,8 @@ from core.emulator.data import LinkData, NodeData
 from core.emulator.enumerations import LinkTypes, NodeTypes
 from core.errors import CoreCommandError
 from core.nodes import client, ipaddress
-from core.nodes.interface import CoreInterface, TunTap, Veth
-from core.nodes.netclient import LinuxNetClient, OvsNetClient
+from core.nodes.interface import TunTap, Veth
+from core.nodes.netclient import get_net_client
 
 _DEFAULT_MTU = 1500
 
@@ -63,10 +60,8 @@ class NodeBase(object):
         self.opaque = None
         self.position = Position()
 
-        if session.options.get_config("ovs") == "True":
-            self.net_client = OvsNetClient(self.net_cmd)
-        else:
-            self.net_client = LinuxNetClient(self.net_cmd)
+        use_ovs = session.options.get_config("ovs") == "True"
+        self.net_client = get_net_client(use_ovs, self.net_cmd)
 
     def startup(self):
         """
@@ -461,15 +456,13 @@ class CoreNode(CoreNodeBase):
 
     def create_node_net_client(self, use_ovs):
         """
-        Create a client for running network orchestration commands.
+        Create node network client for running network commands within the nodes
+        container.
 
-        :param bool use_ovs: True to use OVS bridges, False for Linux bridge
-        :return: network client
+        :param bool use_ovs: True for OVS bridges, False for Linux bridges
+        :return:node network client
         """
-        if use_ovs:
-            return OvsNetClient(self.node_net_cmd)
-        else:
-            return LinuxNetClient(self.node_net_cmd)
+        return get_net_client(use_ovs, self.node_net_cmd)
 
     def alive(self):
         """
@@ -675,11 +668,7 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("interface name (%s) too long" % name)
 
             veth = Veth(
-                node=self,
-                name=name,
-                localname=localname,
-                start=self.up,
-                server=self.server,
+                self.session, self, name, localname, start=self.up, server=self.server
             )
 
             if self.up:
@@ -732,7 +721,7 @@ class CoreNode(CoreNodeBase):
             sessionid = self.session.short_session_id()
             localname = "tap%s.%s.%s" % (self.id, ifindex, sessionid)
             name = ifname
-            tuntap = TunTap(node=self, name=name, localname=localname, start=self.up)
+            tuntap = TunTap(self.session, self, name, localname, start=self.up)
 
             try:
                 self.addnetif(tuntap, ifindex)
@@ -848,35 +837,6 @@ class CoreNode(CoreNodeBase):
 
             self.ifup(ifindex)
             return ifindex
-
-    def connectnode(self, ifname, othernode, otherifname):
-        """
-        Connect a node.
-
-        :param str ifname: name of interface to connect
-        :param core.nodes.base.CoreNode othernode: node to connect to
-        :param str otherifname: interface name to connect to
-        :return: nothing
-        """
-        tmplen = 8
-        tmp1 = "tmp." + "".join(
-            [random.choice(string.ascii_lowercase) for _ in range(tmplen)]
-        )
-        tmp2 = "tmp." + "".join(
-            [random.choice(string.ascii_lowercase) for _ in range(tmplen)]
-        )
-        self.net_client.create_veth(tmp1, tmp2)
-        self.net_client.device_ns(tmp1, str(self.pid))
-        self.node_net_client.device_name(tmp1, ifname)
-        interface = CoreInterface(node=self, name=ifname, mtu=_DEFAULT_MTU)
-        self.addnetif(interface, self.newifindex())
-
-        self.net_client.device_ns(tmp2, str(othernode.pid))
-        othernode.node_net_client.device_name(tmp2, otherifname)
-        other_interface = CoreInterface(
-            node=othernode, name=otherifname, mtu=_DEFAULT_MTU
-        )
-        othernode.addnetif(other_interface, othernode.newifindex())
 
     def addfile(self, srcname, filename):
         """

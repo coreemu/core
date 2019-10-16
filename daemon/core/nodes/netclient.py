@@ -7,6 +7,20 @@ import os
 from core.constants import BRCTL_BIN, ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
 
 
+def get_net_client(use_ovs, run):
+    """
+    Retrieve desired net client for running network commands.
+
+    :param bool use_ovs: True for OVS bridges, False for Linux bridges
+    :param func run: function used to run net client commands
+    :return: net client class
+    """
+    if use_ovs:
+        return OvsNetClient(run)
+    else:
+        return LinuxNetClient(run)
+
+
 class LinuxNetClient(object):
     """
     Client for creating Linux bridges and ip interfaces for nodes.

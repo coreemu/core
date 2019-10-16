@@ -8,7 +8,7 @@ from builtins import int, range
 
 from core import utils
 from core.errors import CoreCommandError
-from core.nodes.netclient import LinuxNetClient
+from core.nodes.netclient import get_net_client
 
 
 class CoreInterface(object):
@@ -16,17 +16,18 @@ class CoreInterface(object):
     Base class for network interfaces.
     """
 
-    def __init__(self, node, name, mtu, server=None):
+    def __init__(self, session, node, name, mtu, server=None):
         """
         Creates a PyCoreNetIf instance.
 
+        :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: node for interface
         :param str name: interface name
-        :param mtu: mtu value
+        :param int mtu: mtu value
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-
+        self.session = session
         self.node = node
         self.name = name
         if not isinstance(mtu, int):
@@ -45,7 +46,8 @@ class CoreInterface(object):
         # index used to find flow data
         self.flow_id = None
         self.server = server
-        self.net_client = LinuxNetClient(self.net_cmd)
+        use_ovs = session.options.get_config("ovs") == "True"
+        self.net_client = get_net_client(use_ovs, self.net_cmd)
 
     def net_cmd(self, args, env=None, cwd=None, wait=True):
         """
@@ -211,21 +213,24 @@ class Veth(CoreInterface):
     Provides virtual ethernet functionality for core nodes.
     """
 
-    def __init__(self, node, name, localname, mtu=1500, server=None, start=True):
+    def __init__(
+        self, session, node, name, localname, mtu=1500, server=None, start=True
+    ):
         """
         Creates a VEth instance.
 
+        :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param str localname: interface local name
-        :param mtu: interface mtu
+        :param int mtu: interface mtu
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         :param bool start: start flag
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
-        CoreInterface.__init__(self, node, name, mtu, server)
+        CoreInterface.__init__(self, session, node, name, mtu, server)
         self.localname = localname
         self.up = False
         if start:
@@ -271,19 +276,22 @@ class TunTap(CoreInterface):
     TUN/TAP virtual device in TAP mode
     """
 
-    def __init__(self, node, name, localname, mtu=1500, server=None, start=True):
+    def __init__(
+        self, session, node, name, localname, mtu=1500, server=None, start=True
+    ):
         """
         Create a TunTap instance.
 
+        :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param str localname: local interface name
-        :param mtu: interface mtu
+        :param int mtu: interface mtu
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         :param bool start: start flag
         """
-        CoreInterface.__init__(self, node, name, mtu, server)
+        CoreInterface.__init__(self, session, node, name, mtu, server)
         self.localname = localname
         self.up = False
         self.transport_type = "virtual"
@@ -466,8 +474,7 @@ class GreTap(CoreInterface):
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
-        CoreInterface.__init__(self, node, name, mtu, server)
-        self.session = session
+        CoreInterface.__init__(self, session, node, name, mtu, server)
         if _id is None:
             # from PyCoreObj
             _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF

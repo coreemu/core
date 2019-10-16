@@ -246,7 +246,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
             will run on, default is None for localhost
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
-        CoreInterface.__init__(self, node=self, name=name, mtu=mtu)
+        CoreInterface.__init__(self, session, self, name, mtu, server)
         self.up = False
         self.lock = threading.RLock()
         self.ifindex = None

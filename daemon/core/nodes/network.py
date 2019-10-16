@@ -16,6 +16,7 @@ from core.errors import CoreCommandError, CoreError
 from core.nodes import ipaddress
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import GreTap, Veth
+from core.nodes.netclient import get_net_client
 
 ebtables_lock = threading.Lock()
 
@@ -558,7 +559,7 @@ class CoreNetwork(CoreNetworkBase):
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
-        netif = Veth(node=None, name=name, localname=localname, mtu=1500, start=self.up)
+        netif = Veth(self.session, None, name, localname, start=self.up)
         self.attach(netif)
         if net.up:
             # this is similar to net.attach() but uses netif.name instead of localname
@@ -766,6 +767,24 @@ class CtrlNet(CoreNetwork):
         self.serverintf = serverintf
         CoreNetwork.__init__(self, session, _id, name, start, server)
 
+    def add_addresses(self, address):
+        """
+        Add addresses used for created control networks,
+
+        :param core.nodes.interfaces.IpAddress address: starting address to use
+        :return:
+        """
+        use_ovs = self.session.options.get_config("ovs") == "True"
+        current = "%s/%s" % (address, self.prefix.prefixlen)
+        net_client = get_net_client(use_ovs, utils.check_cmd)
+        net_client.create_address(self.brname, current)
+        for name in self.session.servers:
+            server = self.session.servers[name]
+            address -= 1
+            current = "%s/%s" % (address, self.prefix.prefixlen)
+            net_client = get_net_client(use_ovs, server.remote_cmd)
+            net_client.create_address(self.brname, current)
+
     def startup(self):
         """
         Startup functionality for the control network.
@@ -778,16 +797,14 @@ class CtrlNet(CoreNetwork):
 
         CoreNetwork.startup(self)
 
-        if self.hostid:
-            addr = self.prefix.addr(self.hostid)
-        else:
-            addr = self.prefix.max_addr()
-
         logging.info("added control network bridge: %s %s", self.brname, self.prefix)
 
-        if self.assign_address:
-            addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
-            self.addrconfig(addrlist=addrlist)
+        if self.hostid and self.assign_address:
+            address = self.prefix.addr(self.hostid)
+            self.add_addresses(address)
+        elif self.assign_address:
+            address = self.prefix.max_addr()
+            self.add_addresses(address)
 
         if self.updown_script:
             logging.info(

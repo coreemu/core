@@ -7,7 +7,7 @@ from core import utils
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
-from core.nodes.netclient import LinuxNetClient, OvsNetClient
+from core.nodes.netclient import get_net_client
 
 
 class DockerClient(object):
@@ -107,10 +107,14 @@ class DockerNode(CoreNode):
         super(DockerNode, self).__init__(session, _id, name, nodedir, bootsh, start)
 
     def create_node_net_client(self, use_ovs):
-        if use_ovs:
-            return OvsNetClient(self.nsenter_cmd)
-        else:
-            return LinuxNetClient(self.nsenter_cmd)
+        """
+        Create node network client for running network commands within the nodes
+        container.
+
+        :param bool use_ovs: True for OVS bridges, False for Linux bridges
+        :return:node network client
+        """
+        return get_net_client(use_ovs, self.nsenter_cmd)
 
     def alive(self):
         """
