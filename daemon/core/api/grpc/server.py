@@ -22,7 +22,7 @@ from core.emulator.data import (
 )
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags, NodeTypes
-from core.errors import CoreError
+from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNetworkBase
 from core.nodes.docker import DockerNode
@@ -882,7 +882,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("sending node command: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        _, output = node.cmd_output(request.command)
+        try:
+            output = node.node_net_cmd(request.command)
+        except CoreCommandError as e:
+            output = e.stderr
         return core_pb2.NodeCommandResponse(output=output)
 
     def GetNodeTerminal(self, request, context):

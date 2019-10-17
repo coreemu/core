@@ -19,7 +19,7 @@ array set g_node_types_default {
 	4 {mdr mdr.gif mdr.gif {zebra OSPFv3MDR IPForward} \
 	    netns {built-in type for wireless routers}}
 	5 {prouter router_green.gif router_green.gif \
-	    {zebra OSPFv2 OSPFv3 IPForward} \
+	    {} \
 	    physical {built-in type for physical nodes}}
 }
 

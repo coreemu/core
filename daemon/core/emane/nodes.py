@@ -29,8 +29,8 @@ class EmaneNet(CoreNetworkBase):
     type = "wlan"
     is_emane = True
 
-    def __init__(self, session, _id=None, name=None, start=True):
-        super(EmaneNet, self).__init__(session, _id, name, start)
+    def __init__(self, session, _id=None, name=None, start=True, server=None):
+        super(EmaneNet, self).__init__(session, _id, name, start, server)
         self.conf = ""
         self.up = False
         self.nemidmap = {}

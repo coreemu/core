@@ -58,7 +58,6 @@ class CoreServerTest(object):
         self.request_handler = CoreHandler(request_mock, "", self.server)
         self.request_handler.session = self.session
         self.request_handler.add_session_handlers()
-        self.session.broker.session_clients.append(self.request_handler)
 
         # have broker handle a configuration state change
         self.session.set_state(EventTypes.DEFINITION_STATE)

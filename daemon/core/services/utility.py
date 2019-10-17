@@ -415,9 +415,11 @@ class HttpService(UtilService):
         Detect the apache2 version using the 'a2query' command.
         """
         try:
-            status, result = utils.cmd_output(["a2query", "-v"])
-        except CoreCommandError:
-            status = -1
+            result = utils.check_cmd("a2query -v")
+            status = 0
+        except CoreCommandError as e:
+            status = e.returncode
+            result = e.stderr
 
         if status == 0 and result[:3] == "2.4":
             return cls.APACHEVER24

@@ -1,5 +1,6 @@
 import logging
 import os
+from tempfile import NamedTemporaryFile
 
 from lxml import etree
 
@@ -44,20 +45,29 @@ def _value_to_params(value):
     return None
 
 
-def create_file(xml_element, doc_name, file_path):
+def create_file(xml_element, doc_name, file_path, server=None):
     """
     Create xml file.
 
     :param lxml.etree.Element xml_element: root element to write to file
     :param str doc_name: name to use in the emane doctype
     :param str file_path: file path to write xml file to
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     doctype = (
         '<!DOCTYPE %(doc_name)s SYSTEM "file:///usr/share/emane/dtd/%(doc_name)s.dtd">'
         % {"doc_name": doc_name}
     )
-    corexml.write_xml_file(xml_element, file_path, doctype=doctype)
+    if server is not None:
+        temp = NamedTemporaryFile(delete=False)
+        create_file(xml_element, doc_name, temp.name)
+        temp.close()
+        server.remote_put(temp.name, file_path)
+        os.unlink(temp.name)
+    else:
+        corexml.write_xml_file(xml_element, file_path, doctype=doctype)
 
 
 def add_param(xml_element, name, value):
@@ -204,17 +214,18 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
         # increment nem id
         nem_id += 1
 
+    doc_name = "platform"
     for key in sorted(platform_xmls.keys()):
+        platform_element = platform_xmls[key]
         if key == "host":
             file_name = "platform.xml"
+            file_path = os.path.join(emane_manager.session.session_dir, file_name)
+            create_file(platform_element, doc_name, file_path)
         else:
             file_name = "platform%d.xml" % key
-
-        platform_element = platform_xmls[key]
-
-        doc_name = "platform"
-        file_path = os.path.join(emane_manager.session.session_dir, file_name)
-        create_file(platform_element, doc_name, file_path)
+            file_path = os.path.join(emane_manager.session.session_dir, file_name)
+            linked_node = emane_manager.session.nodes[key]
+            create_file(platform_element, doc_name, file_path, linked_node.server)
 
     return nem_id
 
@@ -303,15 +314,20 @@ def build_transport_xml(emane_manager, node, transport_type):
     file_name = transport_file_name(node.id, transport_type)
     file_path = os.path.join(emane_manager.session.session_dir, file_name)
     create_file(transport_element, doc_name, file_path)
+    emane_manager.session.distributed.execute(
+        lambda x: create_file(transport_element, doc_name, file_path, x)
+    )
 
 
-def create_phy_xml(emane_model, config, file_path):
+def create_phy_xml(emane_model, config, file_path, server):
     """
     Create the phy xml document.
 
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str file_path: path to write file to
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     phy_element = etree.Element("phy", name="%s PHY" % emane_model.name)
@@ -322,15 +338,24 @@ def create_phy_xml(emane_model, config, file_path):
         phy_element, emane_model.phy_config, config, emane_model.config_ignore
     )
     create_file(phy_element, "phy", file_path)
+    if server is not None:
+        create_file(phy_element, "phy", file_path, server)
+    else:
+        create_file(phy_element, "phy", file_path)
+        emane_model.session.distributed.execute(
+            lambda x: create_file(phy_element, "phy", file_path, x)
+        )
 
 
-def create_mac_xml(emane_model, config, file_path):
+def create_mac_xml(emane_model, config, file_path, server):
     """
     Create the mac xml document.
 
     :param core.emane.emanemodel.EmaneModel emane_model: emane model to create xml
     :param dict config: all current configuration values
     :param str file_path: path to write file to
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     if not emane_model.mac_library:
@@ -343,10 +368,23 @@ def create_mac_xml(emane_model, config, file_path):
         mac_element, emane_model.mac_config, config, emane_model.config_ignore
     )
     create_file(mac_element, "mac", file_path)
+    if server is not None:
+        create_file(mac_element, "mac", file_path, server)
+    else:
+        create_file(mac_element, "mac", file_path)
+        emane_model.session.distributed.execute(
+            lambda x: create_file(mac_element, "mac", file_path, x)
+        )
 
 
 def create_nem_xml(
-    emane_model, config, nem_file, transport_definition, mac_definition, phy_definition
+    emane_model,
+    config,
+    nem_file,
+    transport_definition,
+    mac_definition,
+    phy_definition,
+    server,
 ):
     """
     Create the nem xml document.
@@ -357,6 +395,8 @@ def create_nem_xml(
     :param str transport_definition: transport file definition path
     :param str mac_definition: mac file definition path
     :param str phy_definition: phy file definition path
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     nem_element = etree.Element("nem", name="%s NEM" % emane_model.name)
@@ -366,10 +406,16 @@ def create_nem_xml(
         etree.SubElement(nem_element, "transport", definition=transport_definition)
     etree.SubElement(nem_element, "mac", definition=mac_definition)
     etree.SubElement(nem_element, "phy", definition=phy_definition)
-    create_file(nem_element, "nem", nem_file)
+    if server is not None:
+        create_file(nem_element, "nem", nem_file, server)
+    else:
+        create_file(nem_element, "nem", nem_file)
+        emane_model.session.distributed.execute(
+            lambda x: create_file(nem_element, "nem", nem_file, x)
+        )
 
 
-def create_event_service_xml(group, port, device, file_directory):
+def create_event_service_xml(group, port, device, file_directory, server=None):
     """
     Create a emane event service xml file.
 
@@ -377,6 +423,8 @@ def create_event_service_xml(group, port, device, file_directory):
     :param str port: event port
     :param str device: event device
     :param str file_directory: directory to create  file in
+    :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
     :return: nothing
     """
     event_element = etree.Element("emaneeventmsgsvc")
@@ -391,7 +439,7 @@ def create_event_service_xml(group, port, device, file_directory):
         sub_element.text = value
     file_name = "libemaneeventservice.xml"
     file_path = os.path.join(file_directory, file_name)
-    create_file(event_element, "emaneeventmsgsvc", file_path)
+    create_file(event_element, "emaneeventmsgsvc", file_path, server)
 
 
 def transport_file_name(node_id, transport_type):

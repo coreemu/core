@@ -15,11 +15,10 @@ import time
 from multiprocessing.pool import ThreadPool
 
 from core import constants, utils
-from core.api.tlv import coreapi
-from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, ExceptionData, NodeData
+from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
     IdGen,
     LinkOptions,
@@ -136,8 +135,10 @@ class Session(object):
             self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
+        # distributed support and logic
+        self.distributed = DistributedController(self)
+
         # initialize session feature helpers
-        self.broker = CoreBroker(session=self)
         self.location = CoreLocation()
         self.mobility = MobilityManager(session=self)
         self.services = CoreServices(session=self)
@@ -148,7 +149,7 @@ class Session(object):
         self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
             "PC": ("DefaultRoute",),
-            "prouter": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
+            "prouter": (),
             "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
             "host": ("DefaultRoute", "SSH"),
         }
@@ -202,7 +203,7 @@ class Session(object):
         node_two = self.get_node(node_two_id)
 
         # both node ids are provided
-        tunnel = self.broker.gettunnel(node_one_id, node_two_id)
+        tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
         logging.debug("tunnel between nodes: %s", tunnel)
         if isinstance(tunnel, GreTapBridge):
             net_one = tunnel
@@ -666,6 +667,13 @@ class Session(object):
         if not name:
             name = "%s%s" % (node_class.__name__, _id)
 
+        # verify distributed server
+        server = self.distributed.servers.get(node_options.emulation_server)
+        if node_options.emulation_server is not None and server is None:
+            raise CoreError(
+                "invalid distributed server: %s" % node_options.emulation_server
+            )
+
         # create node
         logging.info(
             "creating node(%s) id(%s) name(%s) start(%s)",
@@ -681,9 +689,12 @@ class Session(object):
                 name=name,
                 start=start,
                 image=node_options.image,
+                server=server,
             )
         else:
-            node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
+            node = self.create_node(
+                cls=node_class, _id=_id, name=name, start=start, server=server
+            )
 
         # set node attributes
         node.icon = node_options.icon
@@ -866,13 +877,13 @@ class Session(object):
 
     def clear(self):
         """
-        Clear all CORE session data. (objects, hooks, broker)
+        Clear all CORE session data. (nodes, hooks, etc)
 
         :return: nothing
         """
         self.delete_nodes()
+        self.distributed.shutdown()
         self.del_hooks()
-        self.broker.reset()
         self.emane.reset()
 
     def start_events(self):
@@ -946,11 +957,11 @@ class Session(object):
 
         # shutdown/cleanup feature helpers
         self.emane.shutdown()
-        self.broker.shutdown()
         self.sdt.shutdown()
 
-        # delete all current nodes
+        # remove and shutdown all nodes and tunnels
         self.delete_nodes()
+        self.distributed.shutdown()
 
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
@@ -1067,7 +1078,7 @@ class Session(object):
         """
         try:
             state_file = open(self._state_file, "w")
-            state_file.write("%d %s\n" % (state, coreapi.state_name(state)))
+            state_file.write("%d %s\n" % (state, EventTypes(self.state).name))
             state_file.close()
         except IOError:
             logging.exception("error writing state file: %s", state)
@@ -1185,7 +1196,7 @@ class Session(object):
                 hook(state)
             except Exception:
                 message = "exception occured when running %s state hook: %s" % (
-                    coreapi.state_name(state),
+                    EventTypes(self.state).name,
                     hook,
                 )
                 logging.exception(message)
@@ -1456,11 +1467,13 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # create control net interfaces and broker network tunnels
+        # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
-        self.broker.startup()
+
+        # initialize distributed tunnels
+        self.distributed.start()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
@@ -1469,9 +1482,6 @@ class Session(object):
         # boot node services and then start mobility
         self.boot_nodes()
         self.mobility.startup()
-
-        # set broker local instantiation to complete
-        self.broker.local_instantiation_complete()
 
         # notify listeners that instantiation is complete
         event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
@@ -1510,19 +1520,14 @@ class Session(object):
         have entered runtime (time=0).
         """
         # this is called from instantiate() after receiving an event message
-        # for the instantiation state, and from the broker when distributed
-        # nodes have been started
+        # for the instantiation state
         logging.debug(
             "session(%s) checking if not in runtime state, current state: %s",
             self.id,
-            coreapi.state_name(self.state),
+            EventTypes(self.state).name,
         )
         if self.state == EventTypes.RUNTIME_STATE.value:
             logging.info("valid runtime state found, returning")
-            return
-
-        # check to verify that all nodes and networks are running
-        if not self.broker.instantiation_complete():
             return
 
         # start event loop and set to runtime
@@ -1734,42 +1739,23 @@ class Session(object):
                 except IndexError:
                     # no server name. possibly only one server
                     prefix = prefixes[0]
-            else:
-                # slave servers have their name and localhost in the serverlist
-                servers = self.broker.getservernames()
-                servers.remove("localhost")
-                prefix = None
 
-                for server_prefix in prefixes:
-                    try:
-                        # split each entry into server and prefix
-                        server, p = server_prefix.split(":")
-                    except ValueError:
-                        server = ""
-                        p = None
-
-                    if server == servers[0]:
-                        # the server name in the list matches this server
-                        prefix = p
-                        break
-
-                if not prefix:
-                    logging.error(
-                        "control network prefix not found for server: %s", servers[0]
-                    )
-                    assign_address = False
-                    try:
-                        prefix = prefixes[0].split(":", 1)[1]
-                    except IndexError:
-                        prefix = prefixes[0]
         # len(prefixes) == 1
         else:
-            # TODO: can we get the server name from the servers.conf or from the node assignments?
+            # TODO: can we get the server name from the servers.conf or from the node
+            #  assignments?o
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
             prefix = prefixes[0]
 
-        logging.info("controlnet prefix: %s - %s", type(prefix), prefix)
+        logging.info(
+            "controlnet(%s) prefix(%s) assign(%s) updown(%s) serverintf(%s)",
+            _id,
+            prefix,
+            assign_address,
+            updown_script,
+            server_interface,
+        )
         control_net = self.create_node(
             cls=CtrlNet,
             _id=_id,
@@ -1778,13 +1764,6 @@ class Session(object):
             updown_script=updown_script,
             serverintf=server_interface,
         )
-
-        # tunnels between controlnets will be built with Broker.addnettunnels()
-        # TODO: potentially remove documentation saying node ids are ints
-        # TODO: need to move broker code out of the session object
-        self.broker.addnet(_id)
-        for server in self.broker.getservers():
-            self.broker.addnodemap(server, _id)
 
         return control_net
 
@@ -1918,7 +1897,8 @@ class Session(object):
             data,
         )
 
-    # TODO: if data is None, this blows up, but this ties into how event functions are ran, need to clean that up
+    # TODO: if data is None, this blows up, but this ties into how event functions
+    #  are ran, need to clean that up
     def run_event(self, node_id=None, name=None, data=None):
         """
         Run a scheduled event, executing commands in the data string.
@@ -1937,4 +1917,4 @@ class Session(object):
             utils.mute_detach(data)
         else:
             node = self.get_node(node_id)
-            node.cmd(data, wait=False)
+            node.node_net_cmd(data, wait=False)
