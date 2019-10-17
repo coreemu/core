@@ -159,12 +159,25 @@ class Session(object):
         }
 
     def add_distributed(self, name, host):
+        """
+        Add distributed server configuration.
+
+        :param str name: distributed server name
+        :param str host: distributed server host address
+        :return: nothing
+        """
         server = DistributedServer(name, host)
         self.servers[name] = server
         cmd = "mkdir -p %s" % self.session_dir
         server.remote_cmd(cmd)
 
     def shutdown_distributed(self):
+        """
+        Shutdown logic for dealing with distributed tunnels and server session
+        directories.
+
+        :return: nothing
+        """
         # shutdown all tunnels
         for key in self.tunnels:
             tunnels = self.tunnels[key]
@@ -180,7 +193,12 @@ class Session(object):
         # clear tunnels
         self.tunnels.clear()
 
-    def initialize_distributed(self):
+    def start_distributed(self):
+        """
+        Start distributed network tunnels.
+
+        :return: nothing
+        """
         for node_id in self.nodes:
             node = self.nodes[node_id]
 
@@ -195,6 +213,16 @@ class Session(object):
                 self.create_gre_tunnel(node, server)
 
     def create_gre_tunnel(self, node, server):
+        """
+        Create gre tunnel using a pair of gre taps between the local and remote server.
+
+
+        :param core.nodes.network.CoreNetwork node: node to create gre tunnel for
+        :param core.emulator.distributed.DistributedServer server: server to create
+            tunnel for
+        :return: local and remote gre taps created for tunnel
+        :rtype: tuple
+        """
         host = server.host
         key = self.tunnelkey(node.id, IpAddress.to_int(host))
         tunnel = self.tunnels.get(key)
@@ -1566,7 +1594,7 @@ class Session(object):
         self.add_remove_control_interface(node=None, remove=False)
 
         # initialize distributed tunnels
-        self.initialize_distributed()
+        self.start_distributed()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
