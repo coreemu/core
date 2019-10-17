@@ -101,6 +101,10 @@ class DistributedServer(object):
 
 
 class DistributedController(object):
+    """
+    Provides logic for dealing with remote tunnels and distributed servers.
+    """
+
     def __init__(self, session):
         """
         Create
