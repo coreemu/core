@@ -4,7 +4,6 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
-from builtins import int, range
 
 from core import utils
 from core.errors import CoreCommandError

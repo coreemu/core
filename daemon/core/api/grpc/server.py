@@ -4,7 +4,6 @@ import os
 import re
 import tempfile
 import time
-from builtins import int
 from concurrent import futures
 from queue import Empty, Queue
 

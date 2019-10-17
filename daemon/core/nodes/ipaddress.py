@@ -6,7 +6,6 @@ import logging
 import random
 import socket
 import struct
-from builtins import bytes, int, range
 from socket import AF_INET, AF_INET6
 
 

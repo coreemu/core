@@ -8,7 +8,6 @@ import math
 import os
 import threading
 import time
-from builtins import int
 from functools import total_ordering
 
 from core import utils

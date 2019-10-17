@@ -1,5 +1,4 @@
 import time
-from builtins import int
 from queue import Queue
 
 import grpc

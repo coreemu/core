@@ -5,7 +5,6 @@
 import datetime
 import logging
 import parser
-from builtins import range
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu

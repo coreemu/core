@@ -10,7 +10,6 @@ import socketserver
 import sys
 import threading
 import time
-from builtins import range
 from itertools import repeat
 from queue import Empty, Queue
 

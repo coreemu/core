@@ -4,7 +4,6 @@ commeffect.py: EMANE CommEffect model for CORE
 
 import logging
 import os
-from builtins import int
 
 from lxml import etree
 

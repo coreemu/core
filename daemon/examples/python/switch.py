@@ -8,7 +8,6 @@
 import datetime
 import logging
 import parser
-from builtins import range
 
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
