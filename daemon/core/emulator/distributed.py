@@ -5,12 +5,17 @@ Defines distributed server functionality.
 import logging
 import os
 import threading
+from collections import OrderedDict
 from tempfile import NamedTemporaryFile
 
 from fabric import Connection
 from invoke import UnexpectedExit
 
+from core import utils
 from core.errors import CoreCommandError
+from core.nodes.interface import GreTap
+from core.nodes.ipaddress import IpAddress
+from core.nodes.network import CoreNetwork, CtrlNet
 
 LOCK = threading.Lock()
 
@@ -93,3 +98,150 @@ class DistributedServer(object):
             temp.close()
             self.conn.put(temp.name, destination)
             os.unlink(temp.name)
+
+
+class DistributedController(object):
+    def __init__(self, session):
+        """
+        Create
+
+        :param session:
+        """
+        self.session = session
+        self.servers = OrderedDict()
+        self.tunnels = {}
+        self.address = self.session.options.get_config(
+            "distributed_address", default=None
+        )
+
+    def add_server(self, name, host):
+        """
+        Add distributed server configuration.
+
+        :param str name: distributed server name
+        :param str host: distributed server host address
+        :return: nothing
+        """
+        server = DistributedServer(name, host)
+        self.servers[name] = server
+        cmd = "mkdir -p %s" % self.session.session_dir
+        server.remote_cmd(cmd)
+
+    def execute(self, func):
+        """
+        Convenience for executing logic against all distributed servers.
+
+        :param func: function to run, that takes a DistributedServer as a parameter
+        :return: nothing
+        """
+        for name in self.servers:
+            server = self.servers[name]
+            func(server)
+
+    def shutdown(self):
+        """
+        Shutdown logic for dealing with distributed tunnels and server session
+        directories.
+
+        :return: nothing
+        """
+        # shutdown all tunnels
+        for key in self.tunnels:
+            tunnels = self.tunnels[key]
+            for tunnel in tunnels:
+                tunnel.shutdown()
+
+        # remove all remote session directories
+        for name in self.servers:
+            server = self.servers[name]
+            cmd = "rm -rf %s" % self.session.session_dir
+            server.remote_cmd(cmd)
+
+        # clear tunnels
+        self.tunnels.clear()
+
+    def start(self):
+        """
+        Start distributed network tunnels.
+
+        :return: nothing
+        """
+        for node_id in self.session.nodes:
+            node = self.session.nodes[node_id]
+
+            if not isinstance(node, CoreNetwork):
+                continue
+
+            if isinstance(node, CtrlNet) and node.serverintf is not None:
+                continue
+
+            for name in self.servers:
+                server = self.servers[name]
+                self.create_gre_tunnel(node, server)
+
+    def create_gre_tunnel(self, node, server):
+        """
+        Create gre tunnel using a pair of gre taps between the local and remote server.
+
+
+        :param core.nodes.network.CoreNetwork node: node to create gre tunnel for
+        :param core.emulator.distributed.DistributedServer server: server to create
+            tunnel for
+        :return: local and remote gre taps created for tunnel
+        :rtype: tuple
+        """
+        host = server.host
+        key = self.tunnel_key(node.id, IpAddress.to_int(host))
+        tunnel = self.tunnels.get(key)
+        if tunnel is not None:
+            return tunnel
+
+        # local to server
+        logging.info(
+            "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
+        )
+        local_tap = GreTap(session=self.session, remoteip=host, key=key)
+        local_tap.net_client.create_interface(node.brname, local_tap.localname)
+
+        # server to local
+        logging.info(
+            "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
+        )
+        remote_tap = GreTap(
+            session=self.session, remoteip=self.address, key=key, server=server
+        )
+        remote_tap.net_client.create_interface(node.brname, remote_tap.localname)
+
+        # save tunnels for shutdown
+        tunnel = (local_tap, remote_tap)
+        self.tunnels[key] = tunnel
+        return tunnel
+
+    def tunnel_key(self, n1_id, n2_id):
+        """
+        Compute a 32-bit key used to uniquely identify a GRE tunnel.
+        The hash(n1num), hash(n2num) values are used, so node numbers may be
+        None or string values (used for e.g. "ctrlnet").
+
+        :param int n1_id: node one id
+        :param int n2_id: node two id
+        :return: tunnel key for the node pair
+        :rtype: int
+        """
+        logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
+        key = (
+            (self.session.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
+        )
+        return key & 0xFFFFFFFF
+
+    def get_tunnel(self, n1_id, n2_id):
+        """
+        Return the GreTap between two nodes if it exists.
+
+        :param int n1_id: node one id
+        :param int n2_id: node two id
+        :return: gre tap between nodes or None
+        """
+        key = self.tunnel_key(n1_id, n2_id)
+        logging.debug("checking for tunnel key(%s) in: %s", key, self.tunnels)
+        return self.tunnels.get(key)

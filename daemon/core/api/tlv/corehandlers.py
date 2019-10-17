@@ -1192,9 +1192,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 for server in server_list:
                     server_items = server.split(":")
                     name, host, _ = server_items[:3]
-                    self.session.add_distributed(name, host)
+                    self.session.distributed.add_server(name, host)
         elif message_type == ConfigFlags.RESET:
-            self.session.shutdown_distributed()
+            self.session.distributed.shutdown()
 
     def handle_config_services(self, message_type, config_data):
         replies = []

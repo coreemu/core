@@ -166,7 +166,7 @@ class PhysicalNode(CoreNodeBase):
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
-            _, remote_tap = self.session.create_gre_tunnel(net, self.server)
+            _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
             self.adoptnetif(remote_tap, ifindex, hwaddr, addrlist)
             return ifindex
         else:

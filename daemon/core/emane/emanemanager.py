@@ -142,9 +142,7 @@ class EmaneManager(ModelManager):
             args = "emane --version"
             emane_version = utils.check_cmd(args)
             logging.info("using EMANE: %s", emane_version)
-            for name in self.session.servers:
-                server = self.session.servers[name]
-                server.remote_cmd(args)
+            self.session.distributed.execute(lambda x: x.remote_cmd(args))
 
             # load default emane models
             self.load_models(EMANE_MODELS)
@@ -518,11 +516,11 @@ class EmaneManager(ModelManager):
 
         dev = self.get_config("eventservicedevice")
         emanexml.create_event_service_xml(group, port, dev, self.session.session_dir)
-        for name in self.session.servers:
-            conn = self.session.servers[name]
-            emanexml.create_event_service_xml(
-                group, port, dev, self.session.session_dir, conn
+        self.session.distributed.execute(
+            lambda x: emanexml.create_event_service_xml(
+                group, port, dev, self.session.session_dir, x
             )
+        )
 
     def startdaemons(self):
         """
@@ -598,9 +596,7 @@ class EmaneManager(ModelManager):
         emanecmd += " -f %s" % os.path.join(path, "emane.log")
         emanecmd += " %s" % os.path.join(path, "platform.xml")
         utils.check_cmd(emanecmd, cwd=path)
-        for name in self.session.servers:
-            server = self.session.servers[name]
-            server.remote_cmd(emanecmd, cwd=path)
+        self.session.distributed.execute(lambda x: x.remote_cmd(emanecmd, cwd=path))
         logging.info("host emane daemon running: %s", emanecmd)
 
     def stopdaemons(self):
@@ -625,10 +621,8 @@ class EmaneManager(ModelManager):
             try:
                 utils.check_cmd(kill_emaned)
                 utils.check_cmd(kill_transortd)
-                for name in self.session.servers:
-                    server = self.session[name]
-                    server.remote_cmd(kill_emaned)
-                    server.remote_cmd(kill_transortd)
+                self.session.distributed.execute(lambda x: x.remote_cmd(kill_emaned))
+                self.session.distributed.execute(lambda x: x.remote_cmd(kill_transortd))
             except CoreCommandError:
                 logging.exception("error shutting down emane daemons")
 

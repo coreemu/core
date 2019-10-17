@@ -16,7 +16,7 @@ def main():
 
     # initialize distributed
     server_name = "core2"
-    session.add_distributed(server_name, remote)
+    session.distributed.add_server(server_name, remote)
 
     # must be in configuration state for nodes to start, when using "node_add" below
     session.set_state(EventTypes.CONFIGURATION_STATE)

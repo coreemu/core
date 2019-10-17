@@ -289,9 +289,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         logging.info("network node(%s) cmd", self.name)
         output = utils.check_cmd(args, env, cwd, wait)
-        for name in self.session.servers:
-            server = self.session.servers[name]
-            server.remote_cmd(args, env, cwd, wait)
+        self.session.distributed.execute(lambda x: x.remote_cmd(args, env, cwd, wait))
         return output
 
     def startup(self):
@@ -778,8 +776,9 @@ class CtrlNet(CoreNetwork):
         current = "%s/%s" % (address, self.prefix.prefixlen)
         net_client = get_net_client(use_ovs, utils.check_cmd)
         net_client.create_address(self.brname, current)
-        for name in self.session.servers:
-            server = self.session.servers[name]
+        servers = self.session.distributed.servers
+        for name in servers:
+            server = servers[name]
             address -= 1
             current = "%s/%s" % (address, self.prefix.prefixlen)
             net_client = get_net_client(use_ovs, server.remote_cmd)

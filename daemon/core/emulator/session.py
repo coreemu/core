@@ -18,7 +18,7 @@ from core import constants, utils
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, ExceptionData, NodeData
-from core.emulator.distributed import DistributedServer
+from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
     IdGen,
     LinkOptions,
@@ -34,11 +34,9 @@ from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.interface import GreTap
-from core.nodes.ipaddress import IpAddress, MacAddress
+from core.nodes.ipaddress import MacAddress
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
-    CoreNetwork,
     CtrlNet,
     GreTapBridge,
     HubNode,
@@ -137,10 +135,8 @@ class Session(object):
             self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
-        # distributed servers
-        self.servers = {}
-        self.tunnels = {}
-        self.address = self.options.get_config("distributed_address", default=None)
+        # distributed support and logic
+        self.distributed = DistributedController(self)
 
         # initialize session feature helpers
         self.location = CoreLocation()
@@ -157,123 +153,6 @@ class Session(object):
             "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
             "host": ("DefaultRoute", "SSH"),
         }
-
-    def add_distributed(self, name, host):
-        """
-        Add distributed server configuration.
-
-        :param str name: distributed server name
-        :param str host: distributed server host address
-        :return: nothing
-        """
-        server = DistributedServer(name, host)
-        self.servers[name] = server
-        cmd = "mkdir -p %s" % self.session_dir
-        server.remote_cmd(cmd)
-
-    def shutdown_distributed(self):
-        """
-        Shutdown logic for dealing with distributed tunnels and server session
-        directories.
-
-        :return: nothing
-        """
-        # shutdown all tunnels
-        for key in self.tunnels:
-            tunnels = self.tunnels[key]
-            for tunnel in tunnels:
-                tunnel.shutdown()
-
-        # remove all remote session directories
-        for name in self.servers:
-            server = self.servers[name]
-            cmd = "rm -rf %s" % self.session_dir
-            server.remote_cmd(cmd)
-
-        # clear tunnels
-        self.tunnels.clear()
-
-    def start_distributed(self):
-        """
-        Start distributed network tunnels.
-
-        :return: nothing
-        """
-        for node_id in self.nodes:
-            node = self.nodes[node_id]
-
-            if not isinstance(node, CoreNetwork):
-                continue
-
-            if isinstance(node, CtrlNet) and node.serverintf is not None:
-                continue
-
-            for name in self.servers:
-                server = self.servers[name]
-                self.create_gre_tunnel(node, server)
-
-    def create_gre_tunnel(self, node, server):
-        """
-        Create gre tunnel using a pair of gre taps between the local and remote server.
-
-
-        :param core.nodes.network.CoreNetwork node: node to create gre tunnel for
-        :param core.emulator.distributed.DistributedServer server: server to create
-            tunnel for
-        :return: local and remote gre taps created for tunnel
-        :rtype: tuple
-        """
-        host = server.host
-        key = self.tunnelkey(node.id, IpAddress.to_int(host))
-        tunnel = self.tunnels.get(key)
-        if tunnel is not None:
-            return tunnel
-
-        # local to server
-        logging.info(
-            "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
-        )
-        local_tap = GreTap(session=self, remoteip=host, key=key)
-        local_tap.net_client.create_interface(node.brname, local_tap.localname)
-
-        # server to local
-        logging.info(
-            "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
-        )
-        remote_tap = GreTap(session=self, remoteip=self.address, key=key, server=server)
-        remote_tap.net_client.create_interface(node.brname, remote_tap.localname)
-
-        # save tunnels for shutdown
-        tunnel = (local_tap, remote_tap)
-        self.tunnels[key] = tunnel
-        return tunnel
-
-    def tunnelkey(self, n1_id, n2_id):
-        """
-        Compute a 32-bit key used to uniquely identify a GRE tunnel.
-        The hash(n1num), hash(n2num) values are used, so node numbers may be
-        None or string values (used for e.g. "ctrlnet").
-
-        :param int n1_id: node one id
-        :param int n2_id: node two id
-        :return: tunnel key for the node pair
-        :rtype: int
-        """
-        logging.debug("creating tunnel key for: %s, %s", n1_id, n2_id)
-        key = (self.id << 16) ^ utils.hashkey(n1_id) ^ (utils.hashkey(n2_id) << 8)
-        return key & 0xFFFFFFFF
-
-    def gettunnel(self, n1_id, n2_id):
-        """
-        Return the GreTap between two nodes if it exists.
-
-        :param int n1_id: node one id
-        :param int n2_id: node two id
-        :return: gre tap between nodes or None
-        """
-        key = self.tunnelkey(n1_id, n2_id)
-        logging.debug("checking for tunnel key(%s) in: %s", key, self.tunnels)
-        return self.tunnels.get(key)
 
     @classmethod
     def get_node_class(cls, _type):
@@ -324,7 +203,7 @@ class Session(object):
         node_two = self.get_node(node_two_id)
 
         # both node ids are provided
-        tunnel = self.gettunnel(node_one_id, node_two_id)
+        tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
         logging.debug("tunnel between nodes: %s", tunnel)
         if isinstance(tunnel, GreTapBridge):
             net_one = tunnel
@@ -789,7 +668,7 @@ class Session(object):
             name = "%s%s" % (node_class.__name__, _id)
 
         # verify distributed server
-        server = self.servers.get(node_options.emulation_server)
+        server = self.distributed.servers.get(node_options.emulation_server)
         if node_options.emulation_server is not None and server is None:
             raise CoreError(
                 "invalid distributed server: %s" % node_options.emulation_server
@@ -1003,7 +882,7 @@ class Session(object):
         :return: nothing
         """
         self.delete_nodes()
-        self.shutdown_distributed()
+        self.distributed.shutdown()
         self.del_hooks()
         self.emane.reset()
 
@@ -1082,7 +961,7 @@ class Session(object):
 
         # remove and shutdown all nodes and tunnels
         self.delete_nodes()
-        self.shutdown_distributed()
+        self.distributed.shutdown()
 
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
@@ -1594,7 +1473,7 @@ class Session(object):
         self.add_remove_control_interface(node=None, remove=False)
 
         # initialize distributed tunnels
-        self.start_distributed()
+        self.distributed.start()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
