@@ -4,8 +4,7 @@ sdt.py: Scripted Display Tool (SDT3D) helper
 
 import logging
 import socket
-
-from future.moves.urllib.parse import urlparse
+from urllib.parse import urlparse
 
 from core import constants
 from core.emane.nodes import EmaneNet

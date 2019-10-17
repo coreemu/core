@@ -5,8 +5,7 @@ event.py: event loop implementation using a heap queue and threads.
 import heapq
 import threading
 import time
-
-from past.builtins import cmp
+from functools import total_ordering
 
 
 class Timer(threading.Thread):
@@ -70,6 +69,7 @@ class Timer(threading.Thread):
             self.finished.set()
 
 
+@total_ordering
 class Event(object):
     """
     Provides event objects that can be used within the EventLoop class.
@@ -92,18 +92,11 @@ class Event(object):
         self.kwds = kwds
         self.canceled = False
 
-    def __cmp__(self, other):
-        """
-        Comparison function.
-
-        :param Event other: event to compare with
-        :return: comparison result
-        :rtype: int
-        """
-        tmp = cmp(self.time, other.time)
-        if tmp == 0:
-            tmp = cmp(self.eventnum, other.eventnum)
-        return tmp
+    def __lt__(self, other):
+        result = self.time < other.time
+        if result:
+            result = self.eventnum < other.eventnum
+        return result
 
     def run(self):
         """

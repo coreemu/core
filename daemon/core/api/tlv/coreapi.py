@@ -9,8 +9,6 @@ import socket
 import struct
 from enum import Enum
 
-from past.builtins import basestring
-
 from core.api.tlv import structutils
 from core.emulator.enumerations import (
     ConfigTlvs,
@@ -181,7 +179,7 @@ class CoreTlvDataString(CoreTlvData):
         :return: length of data packed and the packed data
         :rtype: tuple
         """
-        if not isinstance(value, basestring):
+        if not isinstance(value, str):
             raise ValueError("value not a string: %s" % type(value))
         value = value.encode("utf-8")
 

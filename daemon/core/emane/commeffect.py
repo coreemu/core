@@ -7,7 +7,6 @@ import os
 from builtins import int
 
 from lxml import etree
-from past.builtins import basestring
 
 from core.config import ConfigGroup
 from core.emane import emanemanifest, emanemodel
@@ -26,7 +25,7 @@ def convert_none(x):
     """
     Helper to use 0 for None values.
     """
-    if isinstance(x, basestring):
+    if isinstance(x, str):
         x = float(x)
     if x is None:
         return 0
