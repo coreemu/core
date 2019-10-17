@@ -14,14 +14,11 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
-from fabric import Connection
-
 from core import constants, utils
-from core.api.tlv import coreapi
-from core.api.tlv.broker import CoreBroker
 from core.emane.emanemanager import EmaneManager
 from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, ExceptionData, NodeData
+from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
     IdGen,
     LinkOptions,
@@ -37,11 +34,9 @@ from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
-from core.nodes.interface import GreTap
-from core.nodes.ipaddress import IpAddress, MacAddress
+from core.nodes.ipaddress import MacAddress
 from core.nodes.lxd import LxcNode
 from core.nodes.network import (
-    CoreNetwork,
     CtrlNet,
     GreTapBridge,
     HubNode,
@@ -140,13 +135,10 @@ class Session(object):
             self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
-        # distributed servers
-        self.servers = {}
-        self.tunnels = {}
-        self.address = None
+        # distributed support and logic
+        self.distributed = DistributedController(self)
 
         # initialize session feature helpers
-        self.broker = CoreBroker(session=self)
         self.location = CoreLocation()
         self.mobility = MobilityManager(session=self)
         self.services = CoreServices(session=self)
@@ -157,88 +149,10 @@ class Session(object):
         self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
             "PC": ("DefaultRoute",),
-            "prouter": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
+            "prouter": (),
             "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
             "host": ("DefaultRoute", "SSH"),
         }
-
-    def add_distributed(self, server):
-        conn = Connection(server, user="root")
-        self.servers[server] = conn
-        cmd = "mkdir -p %s" % self.session_dir
-        conn.run(cmd, hide=False)
-
-    def shutdown_distributed(self):
-        # shutdown all tunnels
-        for key in self.tunnels:
-            tunnels = self.tunnels[key]
-            for tunnel in tunnels:
-                tunnel.shutdown()
-
-        # remove all remote session directories
-        for server in self.servers:
-            conn = self.servers[server]
-            cmd = "rm -rf %s" % self.session_dir
-            conn.run(cmd, hide=False)
-
-        # clear tunnels
-        self.tunnels.clear()
-
-    def initialize_distributed(self):
-        for node_id in self.nodes:
-            node = self.nodes[node_id]
-
-            if not isinstance(node, CoreNetwork):
-                continue
-
-            if isinstance(node, CtrlNet) and node.serverintf is not None:
-                continue
-
-            for server in self.servers:
-                conn = self.servers[server]
-                key = self.tunnelkey(node_id, IpAddress.to_int(server))
-
-                # local to server
-                logging.info(
-                    "local tunnel node(%s) to remote(%s) key(%s)",
-                    node.name,
-                    server,
-                    key,
-                )
-                local_tap = GreTap(session=self, remoteip=server, key=key)
-                local_tap.net_client.create_interface(node.brname, local_tap.localname)
-
-                # server to local
-                logging.info(
-                    "remote tunnel node(%s) to local(%s) key(%s)",
-                    node.name,
-                    self.address,
-                    key,
-                )
-                remote_tap = GreTap(
-                    session=self, remoteip=self.address, key=key, server=conn
-                )
-                remote_tap.net_client.create_interface(
-                    node.brname, remote_tap.localname
-                )
-
-                # save tunnels for shutdown
-                self.tunnels[key] = [local_tap, remote_tap]
-
-    def tunnelkey(self, n1num, n2num):
-        """
-        Compute a 32-bit key used to uniquely identify a GRE tunnel.
-        The hash(n1num), hash(n2num) values are used, so node numbers may be
-        None or string values (used for e.g. "ctrlnet").
-
-        :param int n1num: node one id
-        :param int n2num: node two id
-        :return: tunnel key for the node pair
-        :rtype: int
-        """
-        logging.debug("creating tunnel key for: %s, %s", n1num, n2num)
-        key = (self.id << 16) ^ utils.hashkey(n1num) ^ (utils.hashkey(n2num) << 8)
-        return key & 0xFFFFFFFF
 
     @classmethod
     def get_node_class(cls, _type):
@@ -289,7 +203,7 @@ class Session(object):
         node_two = self.get_node(node_two_id)
 
         # both node ids are provided
-        tunnel = self.broker.gettunnel(node_one_id, node_two_id)
+        tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
         logging.debug("tunnel between nodes: %s", tunnel)
         if isinstance(tunnel, GreTapBridge):
             net_one = tunnel
@@ -754,7 +668,7 @@ class Session(object):
             name = "%s%s" % (node_class.__name__, _id)
 
         # verify distributed server
-        server = self.servers.get(node_options.emulation_server)
+        server = self.distributed.servers.get(node_options.emulation_server)
         if node_options.emulation_server is not None and server is None:
             raise CoreError(
                 "invalid distributed server: %s" % node_options.emulation_server
@@ -775,6 +689,7 @@ class Session(object):
                 name=name,
                 start=start,
                 image=node_options.image,
+                server=server,
             )
         else:
             node = self.create_node(
@@ -962,13 +877,13 @@ class Session(object):
 
     def clear(self):
         """
-        Clear all CORE session data. (objects, hooks, broker)
+        Clear all CORE session data. (nodes, hooks, etc)
 
         :return: nothing
         """
         self.delete_nodes()
+        self.distributed.shutdown()
         self.del_hooks()
-        self.broker.reset()
         self.emane.reset()
 
     def start_events(self):
@@ -1042,17 +957,16 @@ class Session(object):
 
         # shutdown/cleanup feature helpers
         self.emane.shutdown()
-        self.broker.shutdown()
         self.sdt.shutdown()
 
-        # delete all current nodes
+        # remove and shutdown all nodes and tunnels
         self.delete_nodes()
+        self.distributed.shutdown()
 
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
         if not preserve:
             shutil.rmtree(self.session_dir, ignore_errors=True)
-            self.shutdown_distributed()
 
         # call session shutdown handlers
         for handler in self.shutdown_handlers:
@@ -1164,7 +1078,7 @@ class Session(object):
         """
         try:
             state_file = open(self._state_file, "w")
-            state_file.write("%d %s\n" % (state, coreapi.state_name(state)))
+            state_file.write("%d %s\n" % (state, EventTypes(self.state).name))
             state_file.close()
         except IOError:
             logging.exception("error writing state file: %s", state)
@@ -1282,7 +1196,7 @@ class Session(object):
                 hook(state)
             except Exception:
                 message = "exception occured when running %s state hook: %s" % (
-                    coreapi.state_name(state),
+                    EventTypes(self.state).name,
                     hook,
                 )
                 logging.exception(message)
@@ -1553,14 +1467,13 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # create control net interfaces and broker network tunnels
+        # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
-        self.broker.startup()
 
         # initialize distributed tunnels
-        self.initialize_distributed()
+        self.distributed.start()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
@@ -1569,9 +1482,6 @@ class Session(object):
         # boot node services and then start mobility
         self.boot_nodes()
         self.mobility.startup()
-
-        # set broker local instantiation to complete
-        self.broker.local_instantiation_complete()
 
         # notify listeners that instantiation is complete
         event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
@@ -1610,19 +1520,14 @@ class Session(object):
         have entered runtime (time=0).
         """
         # this is called from instantiate() after receiving an event message
-        # for the instantiation state, and from the broker when distributed
-        # nodes have been started
+        # for the instantiation state
         logging.debug(
             "session(%s) checking if not in runtime state, current state: %s",
             self.id,
-            coreapi.state_name(self.state),
+            EventTypes(self.state).name,
         )
         if self.state == EventTypes.RUNTIME_STATE.value:
             logging.info("valid runtime state found, returning")
-            return
-
-        # check to verify that all nodes and networks are running
-        if not self.broker.instantiation_complete():
             return
 
         # start event loop and set to runtime
@@ -1834,37 +1739,11 @@ class Session(object):
                 except IndexError:
                     # no server name. possibly only one server
                     prefix = prefixes[0]
-            else:
-                # slave servers have their name and localhost in the serverlist
-                servers = self.broker.getservernames()
-                servers.remove("localhost")
-                prefix = None
 
-                for server_prefix in prefixes:
-                    try:
-                        # split each entry into server and prefix
-                        server, p = server_prefix.split(":")
-                    except ValueError:
-                        server = ""
-                        p = None
-
-                    if server == servers[0]:
-                        # the server name in the list matches this server
-                        prefix = p
-                        break
-
-                if not prefix:
-                    logging.error(
-                        "control network prefix not found for server: %s", servers[0]
-                    )
-                    assign_address = False
-                    try:
-                        prefix = prefixes[0].split(":", 1)[1]
-                    except IndexError:
-                        prefix = prefixes[0]
         # len(prefixes) == 1
         else:
-            # TODO: can we get the server name from the servers.conf or from the node assignments?
+            # TODO: can we get the server name from the servers.conf or from the node
+            #  assignments?o
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
             prefix = prefixes[0]
@@ -1885,13 +1764,6 @@ class Session(object):
             updown_script=updown_script,
             serverintf=server_interface,
         )
-
-        # tunnels between controlnets will be built with Broker.addnettunnels()
-        # TODO: potentially remove documentation saying node ids are ints
-        # TODO: need to move broker code out of the session object
-        self.broker.addnet(_id)
-        for server in self.broker.getservers():
-            self.broker.addnodemap(server, _id)
 
         return control_net
 

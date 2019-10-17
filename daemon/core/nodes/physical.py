@@ -9,15 +9,19 @@ import threading
 from core import utils
 from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.enumerations import NodeTypes
-from core.errors import CoreCommandError
+from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
 
 
 class PhysicalNode(CoreNodeBase):
-    def __init__(self, session, _id=None, name=None, nodedir=None, start=True):
-        CoreNodeBase.__init__(self, session, _id, name, start=start)
+    def __init__(
+        self, session, _id=None, name=None, nodedir=None, start=True, server=None
+    ):
+        CoreNodeBase.__init__(self, session, _id, name, start, server)
+        if not self.server:
+            raise CoreError("physical nodes must be assigned to a remote server")
         self.nodedir = nodedir
         self.up = start
         self.lock = threading.RLock()
@@ -86,7 +90,6 @@ class PhysicalNode(CoreNodeBase):
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         """
-        The broker builds a GreTap tunnel device to this physical node.
         When a link message is received linking this node to another part of
         the emulation, no new interface is created; instead, adopt the
         GreTap netif as the node interface.
@@ -157,26 +160,20 @@ class PhysicalNode(CoreNodeBase):
         if ifindex is None:
             ifindex = self.newifindex()
 
-        if self.up:
-            # this is reached when this node is linked to a network node
-            # tunnel to net not built yet, so build it now and adopt it
-            gt = self.session.broker.addnettunnel(net.id)
-            if gt is None or len(gt) != 1:
-                raise ValueError(
-                    "error building tunnel from adding a new network interface: %s" % gt
-                )
-            gt = gt[0]
-            net.detach(gt)
-            self.adoptnetif(gt, ifindex, hwaddr, addrlist)
-            return ifindex
-
-        # this is reached when configuring services (self.up=False)
         if ifname is None:
             ifname = "gt%d" % ifindex
 
-        netif = GreTap(node=self, name=ifname, session=self.session, start=False)
-        self.adoptnetif(netif, ifindex, hwaddr, addrlist)
-        return ifindex
+        if self.up:
+            # this is reached when this node is linked to a network node
+            # tunnel to net not built yet, so build it now and adopt it
+            _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
+            self.adoptnetif(remote_tap, ifindex, hwaddr, addrlist)
+            return ifindex
+        else:
+            # this is reached when configuring services (self.up=False)
+            netif = GreTap(node=self, name=ifname, session=self.session, start=False)
+            self.adoptnetif(netif, ifindex, hwaddr, addrlist)
+            return ifindex
 
     def privatedir(self, path):
         if path[0] != "/":
@@ -223,6 +220,9 @@ class PhysicalNode(CoreNodeBase):
             os.chmod(node_file.name, mode)
             logging.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
 
+    def node_net_cmd(self, args, wait=True):
+        return self.net_cmd(args, wait=wait)
+
 
 class Rj45Node(CoreNodeBase, CoreInterface):
     """
@@ -242,11 +242,11 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param str name: node name
         :param mtu: rj45 mtu
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         CoreNodeBase.__init__(self, session, _id, name, start, server)
-        CoreInterface.__init__(self, node=self, name=name, mtu=mtu)
+        CoreInterface.__init__(self, session, self, name, mtu, server)
         self.up = False
         self.lock = threading.RLock()
         self.ifindex = None

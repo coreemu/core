@@ -4,7 +4,7 @@ over a control channel to the vnoded process running in a network namespace.
 The control channel can be accessed via calls using the vcmd shell.
 """
 
-from core import constants, utils
+from core import utils
 from core.constants import VCMD_BIN
 
 
@@ -66,12 +66,3 @@ class VnodeClient(object):
         self._verify_connection()
         args = self.create_cmd(args)
         return utils.check_cmd(args, wait=wait)
-
-    def termcmdstring(self, sh="/bin/sh"):
-        """
-        Create a terminal command string.
-
-        :param str sh: shell to execute command in
-        :return: str
-        """
-        return "%s -c %s -- %s" % (constants.VCMD_BIN, self.ctrlchnlname, sh)

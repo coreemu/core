@@ -10,13 +10,13 @@ from socket import AF_INET, AF_INET6
 
 from core import utils
 from core.constants import EBTABLES_BIN, TC_BIN
-from core.emulator import distributed
 from core.emulator.data import LinkData
 from core.emulator.enumerations import LinkTypes, NodeTypes, RegisterTlvs
 from core.errors import CoreCommandError, CoreError
 from core.nodes import ipaddress
 from core.nodes.base import CoreNetworkBase
 from core.nodes.interface import GreTap, Veth
+from core.nodes.netclient import get_net_client
 
 ebtables_lock = threading.Lock()
 
@@ -257,8 +257,8 @@ class CoreNetwork(CoreNetworkBase):
         :param int _id: object id
         :param str name: object name
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param policy: network policy
         """
         CoreNetworkBase.__init__(self, session, _id, name, start, server)
@@ -289,9 +289,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         logging.info("network node(%s) cmd", self.name)
         output = utils.check_cmd(args, env, cwd, wait)
-        for server in self.session.servers:
-            conn = self.session.servers[server]
-            distributed.remote_cmd(conn, args, env, cwd, wait)
+        self.session.distributed.execute(lambda x: x.remote_cmd(args, env, cwd, wait))
         return output
 
     def startup(self):
@@ -559,7 +557,7 @@ class CoreNetwork(CoreNetworkBase):
         if len(name) >= 16:
             raise ValueError("interface name %s too long" % name)
 
-        netif = Veth(node=None, name=name, localname=localname, mtu=1500, start=self.up)
+        netif = Veth(self.session, None, name, localname, start=self.up)
         self.attach(netif)
         if net.up:
             # this is similar to net.attach() but uses netif.name instead of localname
@@ -632,8 +630,8 @@ class GreTapBridge(CoreNetwork):
         :param ttl: ttl value
         :param key: gre tap key
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
         CoreNetwork.__init__(self, session, _id, name, False, server, policy)
         self.grekey = key
@@ -753,8 +751,8 @@ class CtrlNet(CoreNetwork):
         :param prefix: control network ipv4 prefix
         :param hostid: host id
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param str assign_address: assigned address
         :param str updown_script: updown script
         :param serverintf: server interface
@@ -766,6 +764,25 @@ class CtrlNet(CoreNetwork):
         self.updown_script = updown_script
         self.serverintf = serverintf
         CoreNetwork.__init__(self, session, _id, name, start, server)
+
+    def add_addresses(self, address):
+        """
+        Add addresses used for created control networks,
+
+        :param core.nodes.interfaces.IpAddress address: starting address to use
+        :return:
+        """
+        use_ovs = self.session.options.get_config("ovs") == "True"
+        current = "%s/%s" % (address, self.prefix.prefixlen)
+        net_client = get_net_client(use_ovs, utils.check_cmd)
+        net_client.create_address(self.brname, current)
+        servers = self.session.distributed.servers
+        for name in servers:
+            server = servers[name]
+            address -= 1
+            current = "%s/%s" % (address, self.prefix.prefixlen)
+            net_client = get_net_client(use_ovs, server.remote_cmd)
+            net_client.create_address(self.brname, current)
 
     def startup(self):
         """
@@ -779,16 +796,14 @@ class CtrlNet(CoreNetwork):
 
         CoreNetwork.startup(self)
 
-        if self.hostid:
-            addr = self.prefix.addr(self.hostid)
-        else:
-            addr = self.prefix.max_addr()
-
         logging.info("added control network bridge: %s %s", self.brname, self.prefix)
 
-        if self.assign_address:
-            addrlist = ["%s/%s" % (addr, self.prefix.prefixlen)]
-            self.addrconfig(addrlist=addrlist)
+        if self.hostid and self.assign_address:
+            address = self.prefix.addr(self.hostid)
+            self.add_addresses(address)
+        elif self.assign_address:
+            address = self.prefix.max_addr()
+            self.add_addresses(address)
 
         if self.updown_script:
             logging.info(
@@ -1008,8 +1023,8 @@ class HubNode(CoreNetwork):
         :param int _id: node id
         :param str name: node namee
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
         CoreNetwork.__init__(self, session, _id, name, start, server)
@@ -1039,8 +1054,8 @@ class WlanNode(CoreNetwork):
         :param int _id: node id
         :param str name: node name
         :param bool start: start flag
-        :param fabric.connection.Connection server: remote server node will run on,
-            default is None for localhost
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param policy: wlan policy
         """
         CoreNetwork.__init__(self, session, _id, name, start, server, policy)

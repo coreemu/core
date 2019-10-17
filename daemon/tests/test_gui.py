@@ -763,13 +763,11 @@ class TestGui:
                 (ConfigTlvs.VALUES, "%s:%s:%s" % (server, host, port)),
             ],
         )
-        coreserver.session.broker.addserver = mock.MagicMock()
-        coreserver.session.broker.setupserver = mock.MagicMock()
+        coreserver.session.distributed.add_server = mock.MagicMock()
 
         coreserver.request_handler.handle_message(message)
 
-        coreserver.session.broker.addserver.assert_called_once_with(server, host, port)
-        coreserver.session.broker.setupserver.assert_called_once_with(server)
+        coreserver.session.distributed.add_server.assert_called_once_with(server, host)
 
     def test_config_services_request_all(self, coreserver):
         message = coreapi.CoreConfMessage.create(

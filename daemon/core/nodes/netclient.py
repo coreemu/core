@@ -7,6 +7,20 @@ import os
 from core.constants import BRCTL_BIN, ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
 
 
+def get_net_client(use_ovs, run):
+    """
+    Retrieve desired net client for running network commands.
+
+    :param bool use_ovs: True for OVS bridges, False for Linux bridges
+    :param func run: function used to run net client commands
+    :return: net client class
+    """
+    if use_ovs:
+        return OvsNetClient(run)
+    else:
+        return LinuxNetClient(run)
+
+
 class LinuxNetClient(object):
     """
     Client for creating Linux bridges and ip interfaces for nodes.
@@ -177,8 +191,8 @@ class LinuxNetClient(object):
         :param str device: device to add tap to
         :param str address: address to add tap for
         :param str local: local address to tie to
-        :param str ttl: time to live value
-        :param str key: key for tap
+        :param int ttl: time to live value
+        :param int key: key for tap
         :return: nothing
         """
         cmd = "%s link add %s type gretap remote %s" % (IP_BIN, device, address)

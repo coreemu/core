@@ -35,8 +35,10 @@ setup(
     packages=find_packages(),
     install_requires=[
         "configparser",
+        "fabric",
         "future",
         "grpcio",
+        "invoke",
         "lxml",
         "protobuf",
     ],
