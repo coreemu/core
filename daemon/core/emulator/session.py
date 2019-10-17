@@ -153,7 +153,7 @@ class Session(object):
         self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
             "PC": ("DefaultRoute",),
-            "prouter": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
+            "prouter": (),
             "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
             "host": ("DefaultRoute", "SSH"),
         }
@@ -192,32 +192,33 @@ class Session(object):
 
             for name in self.servers:
                 server = self.servers[name]
-                host = server.host
-                key = self.tunnelkey(node_id, IpAddress.to_int(host))
+                self.create_gre_tunnel(node, server)
 
-                # local to server
-                logging.info(
-                    "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
-                )
-                local_tap = GreTap(session=self, remoteip=host, key=key)
-                local_tap.net_client.create_interface(node.brname, local_tap.localname)
+    def create_gre_tunnel(self, node, server):
+        host = server.host
+        key = self.tunnelkey(node.id, IpAddress.to_int(host))
+        tunnel = self.tunnels.get(key)
+        if tunnel is not None:
+            return tunnel
 
-                # server to local
-                logging.info(
-                    "remote tunnel node(%s) to local(%s) key(%s)",
-                    node.name,
-                    self.address,
-                    key,
-                )
-                remote_tap = GreTap(
-                    session=self, remoteip=self.address, key=key, server=server
-                )
-                remote_tap.net_client.create_interface(
-                    node.brname, remote_tap.localname
-                )
+        # local to server
+        logging.info(
+            "local tunnel node(%s) to remote(%s) key(%s)", node.name, host, key
+        )
+        local_tap = GreTap(session=self, remoteip=host, key=key)
+        local_tap.net_client.create_interface(node.brname, local_tap.localname)
 
-                # save tunnels for shutdown
-                self.tunnels[key] = (local_tap, remote_tap)
+        # server to local
+        logging.info(
+            "remote tunnel node(%s) to local(%s) key(%s)", node.name, self.address, key
+        )
+        remote_tap = GreTap(session=self, remoteip=self.address, key=key, server=server)
+        remote_tap.net_client.create_interface(node.brname, remote_tap.localname)
+
+        # save tunnels for shutdown
+        tunnel = (local_tap, remote_tap)
+        self.tunnels[key] = tunnel
+        return tunnel
 
     def tunnelkey(self, n1_id, n2_id):
         """
