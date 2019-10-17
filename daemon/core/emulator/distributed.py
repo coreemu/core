@@ -53,16 +53,15 @@ class DistributedServer(object):
             "remote cmd server(%s) cwd(%s) wait(%s): %s", self.host, cwd, wait, cmd
         )
         try:
-            with self.lock:
-                if cwd is None:
+            if cwd is None:
+                result = self.conn.run(
+                    cmd, hide=False, env=env, replace_env=replace_env
+                )
+            else:
+                with self.conn.cd(cwd):
                     result = self.conn.run(
                         cmd, hide=False, env=env, replace_env=replace_env
                     )
-                else:
-                    with self.conn.cd(cwd):
-                        result = self.conn.run(
-                            cmd, hide=False, env=env, replace_env=replace_env
-                        )
             return result.stdout.strip()
         except UnexpectedExit as e:
             stdout, stderr = e.streams_for_display()
