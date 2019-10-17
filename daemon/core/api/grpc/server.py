@@ -21,7 +21,7 @@ from core.emulator.data import (
     NodeData,
 )
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
-from core.emulator.enumerations import EventTypes, LinkTypes, NodeTypes
+from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags, NodeTypes
 from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNetworkBase
@@ -1560,3 +1560,47 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 continue
             interfaces.append(interface)
         return core_pb2.GetInterfacesResponse(interfaces=interfaces)
+
+    def EmaneLink(self, request, context):
+        """
+        Helps broadcast wireless link/unlink between EMANE nodes.
+
+        :param core.api.grpc.core_pb2.EmaneLinkRequest request: get-interfaces request
+        :param grpc.ServicerContext context: context object
+        :return: emane link response with success status
+        :rtype: core.api.grpc.core_pb2.EmaneLinkResponse
+        """
+        logging.debug("emane link: %s", request)
+        session = self.get_session(request.session_id, context)
+        nem_one = request.nem_one
+        emane_one, netif = session.emane.nemlookup(nem_one)
+        if not emane_one or not netif:
+            context.abort(
+                grpc.StatusCode.NOT_FOUND, "nem one {} not found".format(nem_one)
+            )
+        node_one = netif.node
+
+        nem_two = request.nem_two
+        emane_two, netif = session.emane.nemlookup(nem_two)
+        if not emane_two or not netif:
+            context.abort(
+                grpc.StatusCode.NOT_FOUND, "nem two {} not found".format(nem_two)
+            )
+        node_two = netif.node
+
+        if emane_one.id == emane_two.id:
+            if request.linked:
+                flag = MessageFlags.ADD.value
+            else:
+                flag = MessageFlags.DELETE.value
+            link = LinkData(
+                message_type=flag,
+                link_type=LinkTypes.WIRELESS.value,
+                node1_id=node_one.id,
+                node2_id=node_two.id,
+                network_id=emane_one.id,
+            )
+            session.broadcast_link(link)
+            return core_pb2.EmaneLinkResponse(result=True)
+        else:
+            return core_pb2.EmaneLinkResponse(result=False)
