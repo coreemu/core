@@ -1,7 +1,9 @@
 configparser==4.0.2
+fabric==2.5.0
 future==0.17.1
 grpcio==1.23.0
 grpcio-tools==1.21.1
+invoke==1.3.0
 lxml==4.4.1
 protobuf==3.9.1
 six==1.12.0
