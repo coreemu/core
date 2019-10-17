@@ -74,6 +74,7 @@ class LxcNode(CoreNode):
         nodedir=None,
         bootsh="boot.sh",
         start=True,
+        server=None,
         image=None,
     ):
         """
@@ -85,12 +86,16 @@ class LxcNode(CoreNode):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param str image: image to start container with
         """
         if image is None:
             image = "ubuntu"
         self.image = image
-        super(LxcNode, self).__init__(session, _id, name, nodedir, bootsh, start)
+        super(LxcNode, self).__init__(
+            session, _id, name, nodedir, bootsh, start, server
+        )
 
     def alive(self):
         """

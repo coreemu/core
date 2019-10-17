@@ -782,6 +782,7 @@ class Session(object):
                 name=name,
                 start=start,
                 image=node_options.image,
+                server=server,
             )
         else:
             node = self.create_node(

@@ -89,7 +89,17 @@ class DockerClient(object):
 class DockerNode(CoreNode):
     apitype = NodeTypes.DOCKER.value
 
-    def __init__(self, session, _id=None, name=None, nodedir=None, bootsh="boot.sh", start=True, image=None):
+    def __init__(
+        self,
+        session,
+        _id=None,
+        name=None,
+        nodedir=None,
+        bootsh="boot.sh",
+        start=True,
+        server=None,
+        image=None
+    ):
         """
         Create a DockerNode instance.
 
@@ -99,12 +109,16 @@ class DockerNode(CoreNode):
         :param str nodedir: node directory
         :param str bootsh: boot shell to use
         :param bool start: start flag
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param str image: image to start container with
         """
         if image is None:
             image = "ubuntu"
         self.image = image
-        super(DockerNode, self).__init__(session, _id, name, nodedir, bootsh, start)
+        super(DockerNode, self).__init__(
+            session, _id, name, nodedir, bootsh, start, server
+        )
 
     def create_node_net_client(self, use_ovs):
         """
