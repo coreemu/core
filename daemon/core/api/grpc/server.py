@@ -842,8 +842,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("edit node: %s", request)
         session = self.get_session(request.session_id, context)
-        node_id = request.node_id
+        node = self.get_node(session, request.node_id, context)
         node_options = NodeOptions()
+        node_options.icon = request.icon
         x = request.position.x
         y = request.position.y
         node_options.set_position(x, y)
@@ -853,7 +854,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_options.set_location(lat, lon, alt)
         result = True
         try:
-            session.update_node(node_id, node_options)
+            session.update_node(node.id, node_options)
+            node_data = node.data(0)
+            session.broadcast_node(node_data)
         except CoreError:
             result = False
         return core_pb2.EditNodeResponse(result=result)

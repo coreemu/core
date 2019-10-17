@@ -316,6 +316,7 @@ message EditNodeRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     Position position = 3;
+    string icon = 4;
 }
 
 message EditNodeResponse {

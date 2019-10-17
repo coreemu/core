@@ -326,19 +326,20 @@ class CoreGrpcClient(object):
         request = core_pb2.GetNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNode(request)
 
-    def edit_node(self, session_id, node_id, position):
+    def edit_node(self, session_id, node_id, position, icon=None):
         """
         Edit a node, currently only changes position.
 
         :param int session_id: session id
         :param int node_id: node id
         :param core_pb2.Position position: position to set node to
+        :param str icon: path to icon for gui to use for node
         :return: response with result of success or failure
         :rtype: core_pb2.EditNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.EditNodeRequest(
-            session_id=session_id, node_id=node_id, position=position
+            session_id=session_id, node_id=node_id, position=position, icon=icon
         )
         return self.stub.EditNode(request)
 
