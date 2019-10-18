@@ -226,13 +226,13 @@ class DockerNode(CoreNode):
         temp.close()
 
         if directory:
-            self.node_net_cmd("mkdir -m %o -p %s" % (0o755, directory))
+            self.node_net_cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
             self.server.remote_put(temp.name, temp.name)
         self.client.copy_file(temp.name, filename)
-        self.node_net_cmd("chmod %o %s" % (mode, filename))
+        self.node_net_cmd(f"chmod {mode:o} {filename}")
         if self.server is not None:
-            self.net_cmd("rm -f %s" % temp.name)
+            self.net_cmd(f"rm -f {temp.name}")
         os.unlink(temp.name)
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, filename, mode
@@ -252,7 +252,7 @@ class DockerNode(CoreNode):
             "node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode
         )
         directory = os.path.dirname(filename)
-        self.node_net_cmd("mkdir -p %s" % directory)
+        self.node_net_cmd(f"mkdir -p {directory}")
 
         if self.server is None:
             source = srcfilename
@@ -262,4 +262,4 @@ class DockerNode(CoreNode):
             self.server.remote_put(source, temp.name)
 
         self.client.copy_file(source, filename)
-        self.node_net_cmd("chmod %o %s" % (mode, filename))
+        self.node_net_cmd(f"chmod {mode:o} {filename}")

@@ -29,7 +29,7 @@ class MacAddress(object):
         :return: string representation
         :rtype: str
         """
-        return ":".join("%02x" % x for x in bytearray(self.addr))
+        return ":".join(f"{x:02x}" for x in bytearray(self.addr))
 
     def to_link_local(self):
         """
@@ -217,14 +217,14 @@ class IpPrefix(object):
         # prefixstr format: address/prefixlen
         tmp = prefixstr.split("/")
         if len(tmp) > 2:
-            raise ValueError("invalid prefix: %s" % prefixstr)
+            raise ValueError(f"invalid prefix: {prefixstr}")
         self.af = af
         if self.af == AF_INET:
             self.addrlen = 32
         elif self.af == AF_INET6:
             self.addrlen = 128
         else:
-            raise ValueError("invalid address family: %s" % self.af)
+            raise ValueError(f"invalid address family: {self.af}")
         if len(tmp) == 2:
             self.prefixlen = int(tmp[1])
         else:
@@ -247,7 +247,8 @@ class IpPrefix(object):
         :return: string representation
         :rtype: str
         """
-        return "%s/%s" % (socket.inet_ntop(self.af, self.prefix), self.prefixlen)
+        address = socket.inet_ntop(self.af, self.prefix)
+        return f"{address}/{self.prefixlen}"
 
     def __eq__(self, other):
         """
@@ -283,7 +284,7 @@ class IpPrefix(object):
             return NotImplemented
 
         a = IpAddress(self.af, self.prefix) + (tmp << (self.addrlen - self.prefixlen))
-        prefixstr = "%s/%s" % (a, self.prefixlen)
+        prefixstr = f"{a}/{self.prefixlen}"
         if self.__class__ == IpPrefix:
             return self.__class__(self.af, prefixstr)
         else:
@@ -324,7 +325,7 @@ class IpPrefix(object):
                 self.af == AF_INET and tmp == (1 << (self.addrlen - self.prefixlen)) - 1
             )
         ):
-            raise ValueError("invalid hostid for prefix %s: %s" % (self, hostid))
+            raise ValueError(f"invalid hostid for prefix {self}: {hostid}")
 
         addr = bytes(b"")
         prefix_endpoint = -1
@@ -374,7 +375,7 @@ class IpPrefix(object):
         :return: prefix string
         :rtype: str
         """
-        return "%s" % socket.inet_ntop(self.af, self.prefix)
+        return socket.inet_ntop(self.af, self.prefix)
 
     def netmask_str(self):
         """
