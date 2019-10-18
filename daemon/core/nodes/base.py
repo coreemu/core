@@ -678,16 +678,9 @@ class CoreNode(CoreNodeBase):
             veth.name = ifname
 
             if self.up:
-                # TODO: potentially find better way to query interface ID
-                # retrieve interface information
-                output = self.node_net_client.device_show(veth.name)
-                logging.debug("interface command output: %s", output)
-                output = output.split("\n")
-                veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-                logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                # TODO: mimic packed hwaddr
-                # veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
-                logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
+                flow_id = self.node_net_client.get_ifindex(veth.name)
+                veth.flow_id = int(flow_id)
+                logging.info("interface flow index: %s - %s", veth.name, veth.flow_id)
 
             try:
                 # add network interface to the node. If unsuccessful, destroy the

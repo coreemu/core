@@ -91,6 +91,26 @@ class LinuxNetClient(object):
         """
         return self.run(f"{IP_BIN} link show {device}")
 
+    def get_mac(self, device):
+        """
+        Retrieve MAC address for a given device.
+
+        :param str device: device to get mac for
+        :return: MAC address
+        :rtype: str
+        """
+        return self.run(f"cat /sys/class/net/{device}/address")
+
+    def get_ifindex(self, device):
+        """
+        Retrieve ifindex for a given device.
+
+        :param str device: device to get ifindex for
+        :return: ifindex
+        :rtype: str
+        """
+        return self.run(f"cat /sys/class/net/{device}/ifindex")
+
     def device_ns(self, device, namespace):
         """
         Set netns for a device.
