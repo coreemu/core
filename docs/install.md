@@ -34,7 +34,7 @@ Install Path | Description
 /usr/bin/core-daemon|Daemon startup command
 /usr/bin/{core-cleanup, coresendmsg, core-manage}|Misc. helper commands/scripts
 /usr/lib/core|GUI files
-/usr/lib/python{2.7,3}/dist-packages/core|Python modules for daemon/scripts
+/usr/lib/python{3.6+}/dist-packages/core|Python modules for daemon/scripts
 /etc/core/|Daemon and log configuration files
 ~/.core/|User-specific GUI preferences and scenario files
 /usr/share/core/|Example scripts and scenarios
@@ -48,11 +48,6 @@ You may already have these installed, and can ignore this step if so, but if
  needed you can run the following to install python and pip.
 
 ```shell
-# python 2
-sudo apt install python
-sudo apt install python-pip
-
-# python 3
 sudo apt install python3
 sudo apt install python3-pip
 ```
@@ -64,21 +59,7 @@ To account for this it would be recommended to install the python dependencies u
 the latest [CORE Release](https://github.com/coreemu/core/releases).
 
 ```shell
-# for python 2
-sudo python -m pip install -r requirements.txt
-# for python 3
 sudo python3 -m pip install -r requirements.txt
-```
-
-## Ubuntu 19.04
-
-Ubuntu 19.04 can provide all the packages needed at the system level and can be installed as follows:
-
-```shell
-# python 2
-sudo apt install python-configparser python-enum34 python-future python-grpcio python-lxml
-# python 3
-sudo apt install python3-configparser python3-enum34 python3-future python3-grpcio python3-lxml
 ```
 
 # Pre-Req Installing OSPF MDR
@@ -134,7 +115,7 @@ this is usually a sign that you have to run ```sudo ldconfig```` to refresh the 
 # Installing from Packages
 
 The easiest way to install CORE is using the pre-built packages. The package managers on Ubuntu or Fedora/CentOS 
-will help in automatically installing most dependencies for you. 
+will help in automatically installing most dependencies, except for the python ones described previously. 
 
 You can obtain the CORE packages from [CORE Releases](https://github.com/coreemu/core/releases).
 
@@ -143,10 +124,9 @@ You can obtain the CORE packages from [CORE Releases](https://github.com/coreemu
 Ubuntu package defaults to using systemd for running as a service.
 
 ```shell
-# python2
-sudo apt install ./core_python_$VERSION_amd64.deb
-# python3
-sudo apt install ./core_python3_$VERSION_amd64.deb
+# $PYTHON and $VERSION represent the python and CORE
+# versions the package was built for
+sudo apt install ./core_$PYTHON_$VERSION_amd64.deb
 ```
 
 Run the CORE GUI as a normal user:
@@ -164,9 +144,6 @@ Messages will print out on the console about connecting to the CORE daemon.
 on CentOS <= 6, or build from source otherwise** 
 
 ```shell
-# python2
-yum install ./core_python_$VERSION_x86_64.rpm
-# python3
 yum install ./core_python3_$VERSION_x86_64.rpm
 ```
 
@@ -234,10 +211,7 @@ You can obtain the CORE source from the [CORE GitHub](https://github.com/coreemu
 Python module grpcio-tools is currently needed to generate code from the CORE protobuf file during the build.
 
 ```shell
-# python2
-pip2 install grpcio-tools
-# python3
-pip3 install grpcio-tools 
+python3 -m pip install grpcio-tools 
 ```
 
 ## Distro Requirements
@@ -245,27 +219,26 @@ pip3 install grpcio-tools
 ### Ubuntu 18.04 Requirements
 
 ```shell
-sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python-dev python-setuptools tk libtk-img ethtool
+sudo apt install automake pkg-config gcc libev-dev bridge-utils ebtables python3-dev python3-setuptools tk libtk-img ethtool
 ```
 
 ### Ubuntu 16.04 Requirements
 
 ```shell
-sudo apt-get install automake bridge-utils ebtables python-dev libev-dev python-setuptools libtk-img ethtool
+sudo apt-get install automake bridge-utils ebtables python3-dev libev-dev python3-setuptools libtk-img ethtool
 ```
 
 ### CentOS 7 with Gnome Desktop Requirements
 
 ```shell
-sudo yum -y install automake gcc python-devel libev-devel tk ethtool
+sudo yum -y install automake gcc python3-devel python3-devel libev-devel tk ethtool
 ```
 
 ## Build and Install
 
 ```shell
 ./bootstrap.sh
-# $VERSION should be path to python2/3
-PYTHON=$VERSION ./configure
+PYTHON=python3 ./configure
 make
 sudo make install
 ```
@@ -275,16 +248,11 @@ sudo make install
 Building documentation requires python-sphinx not noted above.
 
 ```shell
-# install python2 sphinx
-sudo apt install python-sphinx
-sudo yum install python-sphinx
-# install python3 sphinx
 sudo apt install python3-sphinx
 sudo yum install python3-sphinx
 
 ./bootstrap.sh
-# $VERSION should be path to python2/3
-PYTHON=$VERSION ./configure
+PYTHON=python3 ./configure
 make doc
 ```
 
@@ -297,10 +265,7 @@ Build package commands, DESTDIR is used to make install into and then for packag
 
 ```shell
 ./bootstrap.sh
-# for python2
-PYTHON=python2 ./configure
-# for python3
-PYTHON=python3 ./configure --enable-python3
+PYTHON=python3 ./configure
 make
 mkdir /tmp/core-build
 make fpm DESTDIR=/tmp/core-build
