@@ -46,7 +46,7 @@ class NodeBase(object):
             _id = session.get_node_id()
         self.id = _id
         if name is None:
-            name = "o%s" % self.id
+            name = f"o{self.id}"
         self.name = name
         self.server = server
 
@@ -265,7 +265,7 @@ class CoreNodeBase(NodeBase):
         """
         if self.nodedir is None:
             self.nodedir = os.path.join(self.session.session_dir, self.name + ".conf")
-            self.net_cmd("mkdir -p %s" % self.nodedir)
+            self.net_cmd(f"mkdir -p {self.nodedir}")
             self.tmpnodedir = True
         else:
             self.tmpnodedir = False
@@ -281,7 +281,7 @@ class CoreNodeBase(NodeBase):
             return
 
         if self.tmpnodedir:
-            self.net_cmd("rm -rf %s" % self.nodedir)
+            self.net_cmd(f"rm -rf {self.nodedir}")
 
     def addnetif(self, netif, ifindex):
         """
@@ -292,7 +292,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex in self._netif:
-            raise ValueError("ifindex %s already exists" % ifindex)
+            raise ValueError(f"ifindex {ifindex} already exists")
         self._netif[ifindex] = netif
         # TODO: this should have probably been set ahead, seems bad to me, check for failure and fix
         netif.netindex = ifindex
@@ -305,7 +305,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
         netif = self._netif.pop(ifindex)
         netif.shutdown()
         del netif
@@ -334,7 +334,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
         self._netif[ifindex].attachnet(net)
 
     def detachnet(self, ifindex):
@@ -345,7 +345,7 @@ class CoreNodeBase(NodeBase):
         :return: nothing
         """
         if ifindex not in self._netif:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
         self._netif[ifindex].detachnet()
 
     def setposition(self, x=None, y=None, z=None):
@@ -472,7 +472,7 @@ class CoreNode(CoreNodeBase):
         :rtype: bool
         """
         try:
-            self.net_cmd("kill -0 %s" % self.pid)
+            self.net_cmd(f"kill -0 {self.pid}")
         except CoreCommandError:
             return False
 
@@ -492,11 +492,12 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("starting a node that is already up")
 
             # create a new namespace for this node using vnoded
-            vnoded = "{cmd} -v -c {name} -l {name}.log -p {name}.pid".format(
-                cmd=VNODED_BIN, name=self.ctrlchnlname
+            vnoded = (
+                f"{VNODED_BIN} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log "
+                f"-p {self.ctrlchnlname}.pid"
             )
             if self.nodedir:
-                vnoded += " -C %s" % self.nodedir
+                vnoded += f" -C {self.nodedir}"
             env = self.session.get_environment(state=False)
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)
@@ -545,13 +546,13 @@ class CoreNode(CoreNodeBase):
 
                 # kill node process if present
                 try:
-                    self.net_cmd("kill -9 %s" % self.pid)
+                    self.net_cmd(f"kill -9 {self.pid}")
                 except CoreCommandError:
                     logging.exception("error killing process")
 
                 # remove node directory if present
                 try:
-                    self.net_cmd("rm -rf %s" % self.ctrlchnlname)
+                    self.net_cmd(f"rm -rf {self.ctrlchnlname}")
                 except CoreCommandError:
                     logging.exception("error removing node directory")
 
@@ -592,9 +593,7 @@ class CoreNode(CoreNodeBase):
         if self.server is None:
             return terminal
         else:
-            return "ssh -X -f {host} xterm -e {terminal}".format(
-                host=self.server.host, terminal=terminal
-            )
+            return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
     def privatedir(self, path):
         """
@@ -604,11 +603,11 @@ class CoreNode(CoreNodeBase):
         :return: nothing
         """
         if path[0] != "/":
-            raise ValueError("path not fully qualified: %s" % path)
+            raise ValueError(f"path not fully qualified: {path}")
         hostpath = os.path.join(
             self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
         )
-        self.net_cmd("mkdir -p %s" % hostpath)
+        self.net_cmd(f"mkdir -p {hostpath}")
         self.mount(hostpath, path)
 
     def mount(self, source, target):
@@ -622,8 +621,8 @@ class CoreNode(CoreNodeBase):
         """
         source = os.path.abspath(source)
         logging.debug("node(%s) mounting: %s at %s", self.name, source, target)
-        self.node_net_cmd("mkdir -p %s" % target)
-        self.node_net_cmd("%s -n --bind %s %s" % (MOUNT_BIN, source, target))
+        self.node_net_cmd(f"mkdir -p {target}")
+        self.node_net_cmd(f"{MOUNT_BIN} -n --bind {source} {target}")
         self._mounts.append((source, target))
 
     def newifindex(self):
@@ -650,22 +649,22 @@ class CoreNode(CoreNodeBase):
                 ifindex = self.newifindex()
 
             if ifname is None:
-                ifname = "eth%d" % ifindex
+                ifname = f"eth{ifindex}"
 
             sessionid = self.session.short_session_id()
 
             try:
-                suffix = "%x.%s.%s" % (self.id, ifindex, sessionid)
+                suffix = f"{self.id:x}.{ifindex}.{sessionid}"
             except TypeError:
-                suffix = "%s.%s.%s" % (self.id, ifindex, sessionid)
+                suffix = f"{self.id}.{ifindex}.{sessionid}"
 
-            localname = "veth" + suffix
+            localname = f"veth{suffix}"
             if len(localname) >= 16:
-                raise ValueError("interface local name (%s) too long" % localname)
+                raise ValueError(f"interface local name ({localname}) too long")
 
             name = localname + "p"
             if len(name) >= 16:
-                raise ValueError("interface name (%s) too long" % name)
+                raise ValueError(f"interface name ({name}) too long")
 
             veth = Veth(
                 self.session, self, name, localname, start=self.up, server=self.server
@@ -679,16 +678,9 @@ class CoreNode(CoreNodeBase):
             veth.name = ifname
 
             if self.up:
-                # TODO: potentially find better way to query interface ID
-                # retrieve interface information
-                output = self.node_net_client.device_show(veth.name)
-                logging.debug("interface command output: %s", output)
-                output = output.split("\n")
-                veth.flow_id = int(output[0].strip().split(":")[0]) + 1
-                logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
-                # TODO: mimic packed hwaddr
-                # veth.hwaddr = MacAddress.from_string(output[1].strip().split()[1])
-                logging.debug("interface mac: %s - %s", veth.name, veth.hwaddr)
+                flow_id = self.node_net_client.get_ifindex(veth.name)
+                veth.flow_id = int(flow_id)
+                logging.info("interface flow index: %s - %s", veth.name, veth.flow_id)
 
             try:
                 # add network interface to the node. If unsuccessful, destroy the
@@ -716,10 +708,10 @@ class CoreNode(CoreNodeBase):
                 ifindex = self.newifindex()
 
             if ifname is None:
-                ifname = "eth%d" % ifindex
+                ifname = f"eth{ifindex}"
 
             sessionid = self.session.short_session_id()
-            localname = "tap%s.%s.%s" % (self.id, ifindex, sessionid)
+            localname = f"tap{self.id}.{ifindex}.{sessionid}"
             name = ifname
             tuntap = TunTap(self.session, self, name, localname, start=self.up)
 
@@ -778,7 +770,7 @@ class CoreNode(CoreNodeBase):
         try:
             interface.deladdr(addr)
         except ValueError:
-            logging.exception("trying to delete unknown address: %s" % addr)
+            logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
             self.node_net_client.delete_address(interface.name, str(addr))
@@ -850,11 +842,11 @@ class CoreNode(CoreNodeBase):
         logging.info("adding file from %s to %s", srcname, filename)
         directory = os.path.dirname(filename)
         if self.server is None:
-            self.client.check_cmd("mkdir -p %s" % directory)
-            self.client.check_cmd("mv %s %s" % (srcname, filename))
+            self.client.check_cmd(f"mkdir -p {directory}")
+            self.client.check_cmd(f"mv {srcname} {filename}")
             self.client.check_cmd("sync")
         else:
-            self.net_cmd("mkdir -p %s" % directory)
+            self.net_cmd(f"mkdir -p {directory}")
             self.server.remote_put(srcname, filename)
 
     def hostfilename(self, filename):
@@ -866,7 +858,7 @@ class CoreNode(CoreNodeBase):
         """
         dirname, basename = os.path.split(filename)
         if not basename:
-            raise ValueError("no basename for filename: %s" % filename)
+            raise ValueError(f"no basename for filename: {filename}")
         if dirname and dirname[0] == "/":
             dirname = dirname[1:]
         dirname = dirname.replace("/", ".")
@@ -891,9 +883,9 @@ class CoreNode(CoreNodeBase):
                 open_file.write(contents)
                 os.chmod(open_file.name, mode)
         else:
-            self.net_cmd("mkdir -m %o -p %s" % (0o755, dirname))
+            self.net_cmd(f"mkdir -m {0o755:o} -p {dirname}")
             self.server.remote_put_temp(hostfilename, contents)
-            self.net_cmd("chmod %o %s" % (mode, hostfilename))
+            self.net_cmd(f"chmod {mode:o} {hostfilename}")
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, hostfilename, mode
         )
@@ -914,7 +906,7 @@ class CoreNode(CoreNodeBase):
         else:
             self.server.remote_put(srcfilename, hostfilename)
         if mode is not None:
-            self.net_cmd("chmod %o %s" % (mode, hostfilename))
+            self.net_cmd(f"chmod {mode:o} {hostfilename}")
         logging.info(
             "node(%s) copied file: %s; mode: %s", self.name, hostfilename, mode
         )

@@ -284,7 +284,7 @@ class InterfaceData(object):
         :return: ip4 string or None
         """
         if self.has_ip4():
-            return "%s/%s" % (self.ip4, self.ip4_mask)
+            return f"{self.ip4}/{self.ip4_mask}"
         else:
             return None
 
@@ -295,7 +295,7 @@ class InterfaceData(object):
         :return: ip4 string or None
         """
         if self.has_ip6():
-            return "%s/%s" % (self.ip6, self.ip6_mask)
+            return f"{self.ip6}/{self.ip6_mask}"
         else:
             return None
 

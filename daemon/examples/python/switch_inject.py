@@ -5,7 +5,6 @@
 # and repeat for minnodes <= n <= maxnodes with a step size of
 # nodestep
 import logging
-from builtins import range
 
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes, NodeTypes

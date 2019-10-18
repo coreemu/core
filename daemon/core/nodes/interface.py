@@ -4,7 +4,6 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
-from builtins import int, range
 
 from core import utils
 from core.errors import CoreCommandError
@@ -345,7 +344,7 @@ class TunTap(CoreInterface):
             if r == 0:
                 result = True
                 break
-            msg = "attempt %s failed with nonzero exit status %s" % (i, r)
+            msg = f"attempt {i} failed with nonzero exit status {r}"
             if i < attempts + 1:
                 msg += ", retrying..."
                 logging.info(msg)
@@ -481,7 +480,7 @@ class GreTap(CoreInterface):
         self.id = _id
         sessionid = self.session.short_session_id()
         # interface name on the local host machine
-        self.localname = "gt.%s.%s" % (self.id, sessionid)
+        self.localname = f"gt.{self.id}.{sessionid}"
         self.transport_type = "raw"
         if not start:
             self.up = False

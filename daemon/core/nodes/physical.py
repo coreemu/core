@@ -94,7 +94,7 @@ class PhysicalNode(CoreNodeBase):
         the emulation, no new interface is created; instead, adopt the
         GreTap netif as the node interface.
         """
-        netif.name = "gt%d" % ifindex
+        netif.name = f"gt{ifindex}"
         netif.node = self
         self.addnetif(netif, ifindex)
 
@@ -161,7 +161,7 @@ class PhysicalNode(CoreNodeBase):
             ifindex = self.newifindex()
 
         if ifname is None:
-            ifname = "gt%d" % ifindex
+            ifname = f"gt{ifindex}"
 
         if self.up:
             # this is reached when this node is linked to a network node
@@ -177,7 +177,7 @@ class PhysicalNode(CoreNodeBase):
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError("path not fully qualified: %s" % path)
+            raise ValueError(f"path not fully qualified: {path}")
         hostpath = os.path.join(
             self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
         )
@@ -188,13 +188,13 @@ class PhysicalNode(CoreNodeBase):
         source = os.path.abspath(source)
         logging.info("mounting %s at %s", source, target)
         os.makedirs(target)
-        self.net_cmd("%s --bind %s %s" % (MOUNT_BIN, source, target), cwd=self.nodedir)
+        self.net_cmd(f"{MOUNT_BIN} --bind {source} {target}", cwd=self.nodedir)
         self._mounts.append((source, target))
 
     def umount(self, target):
-        logging.info("unmounting '%s'" % target)
+        logging.info("unmounting '%s'", target)
         try:
-            self.net_cmd("%s -l %s" % (UMOUNT_BIN, target), cwd=self.nodedir)
+            self.net_cmd(f"{UMOUNT_BIN} -l {target}", cwd=self.nodedir)
         except CoreCommandError:
             logging.exception("unmounting failed for %s", target)
 
@@ -363,7 +363,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         if ifindex == self.ifindex:
             self.shutdown()
         else:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
 
     def netif(self, ifindex, net=None):
         """
@@ -442,7 +442,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
             if len(items) < 2:
                 continue
 
-            if items[1] == "%s:" % self.localname:
+            if items[1] == f"{self.localname}:":
                 flags = items[2][1:-1].split(",")
                 if "UP" in flags:
                     self.old_up = True

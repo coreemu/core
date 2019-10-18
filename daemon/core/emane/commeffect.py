@@ -4,10 +4,8 @@ commeffect.py: EMANE CommEffect model for CORE
 
 import logging
 import os
-from builtins import int
 
 from lxml import etree
-from past.builtins import basestring
 
 from core.config import ConfigGroup
 from core.emane import emanemanifest, emanemodel
@@ -26,7 +24,7 @@ def convert_none(x):
     """
     Helper to use 0 for None values.
     """
-    if isinstance(x, basestring):
+    if isinstance(x, str):
         x = float(x)
     if x is None:
         return 0
@@ -75,9 +73,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         shim_name = emanexml.shim_file_name(self, interface)
 
         # create and write nem document
-        nem_element = etree.Element(
-            "nem", name="%s NEM" % self.name, type="unstructured"
-        )
+        nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
@@ -92,7 +88,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
         # create and write shim document
         shim_element = etree.Element(
-            "shim", name="%s SHIM" % self.name, library=self.shim_library
+            "shim", name=f"{self.name} SHIM", library=self.shim_library
         )
 
         # append all shim options (except filterfile) to shimdoc

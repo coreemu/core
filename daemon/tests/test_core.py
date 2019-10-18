@@ -20,7 +20,7 @@ _WIRED = [NodeTypes.PEER_TO_PEER, NodeTypes.HUB, NodeTypes.SWITCH]
 def ping(from_node, to_node, ip_prefixes):
     address = ip_prefixes.ip4_address(to_node)
     try:
-        from_node.node_net_cmd("ping -c 3 %s" % address)
+        from_node.node_net_cmd(f"ping -c 3 {address}")
         status = 0
     except CoreCommandError as e:
         status = e.returncode

@@ -57,8 +57,7 @@ def create_file(xml_element, doc_name, file_path, server=None):
     :return: nothing
     """
     doctype = (
-        '<!DOCTYPE %(doc_name)s SYSTEM "file:///usr/share/emane/dtd/%(doc_name)s.dtd">'
-        % {"doc_name": doc_name}
+        f'<!DOCTYPE {doc_name} SYSTEM "file:///usr/share/emane/dtd/{doc_name}.dtd">'
     )
     if server is not None:
         temp = NamedTemporaryFile(delete=False)
@@ -208,7 +207,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
 
         node.setnemid(netif, nem_id)
         macstr = _hwaddr_prefix + ":00:00:"
-        macstr += "%02X:%02X" % ((nem_id >> 8) & 0xFF, nem_id & 0xFF)
+        macstr += f"{(nem_id >> 8) & 0xFF:02X}:{nem_id & 0xFF:02X}"
         netif.sethwaddr(MacAddress.from_string(macstr))
 
         # increment nem id
@@ -222,7 +221,7 @@ def build_node_platform_xml(emane_manager, control_net, node, nem_id, platform_x
             file_path = os.path.join(emane_manager.session.session_dir, file_name)
             create_file(platform_element, doc_name, file_path)
         else:
-            file_name = "platform%d.xml" % key
+            file_name = f"platform{key}.xml"
             file_path = os.path.join(emane_manager.session.session_dir, file_name)
             linked_node = emane_manager.session.nodes[key]
             create_file(platform_element, doc_name, file_path, linked_node.server)
@@ -290,8 +289,8 @@ def build_transport_xml(emane_manager, node, transport_type):
     """
     transport_element = etree.Element(
         "transport",
-        name="%s Transport" % transport_type.capitalize(),
-        library="trans%s" % transport_type.lower(),
+        name=f"{transport_type.capitalize()} Transport",
+        library=f"trans{transport_type.lower()}",
     )
 
     # add bitrate
@@ -330,7 +329,7 @@ def create_phy_xml(emane_model, config, file_path, server):
             will run on, default is None for localhost
     :return: nothing
     """
-    phy_element = etree.Element("phy", name="%s PHY" % emane_model.name)
+    phy_element = etree.Element("phy", name=f"{emane_model.name} PHY")
     if emane_model.phy_library:
         phy_element.set("library", emane_model.phy_library)
 
@@ -362,7 +361,7 @@ def create_mac_xml(emane_model, config, file_path, server):
         raise ValueError("must define emane model library")
 
     mac_element = etree.Element(
-        "mac", name="%s MAC" % emane_model.name, library=emane_model.mac_library
+        "mac", name=f"{emane_model.name} MAC", library=emane_model.mac_library
     )
     add_configurations(
         mac_element, emane_model.mac_config, config, emane_model.config_ignore
@@ -399,7 +398,7 @@ def create_nem_xml(
             will run on, default is None for localhost
     :return: nothing
     """
-    nem_element = etree.Element("nem", name="%s NEM" % emane_model.name)
+    nem_element = etree.Element("nem", name=f"{emane_model.name} NEM")
     if is_external(config):
         nem_element.set("type", "unstructured")
     else:
@@ -450,7 +449,7 @@ def transport_file_name(node_id, transport_type):
     :param str transport_type: transport type to generate transport file
     :return:
     """
-    return "n%strans%s.xml" % (node_id, transport_type)
+    return f"n{node_id}trans{transport_type}.xml"
 
 
 def _basename(emane_model, interface=None):
@@ -461,14 +460,14 @@ def _basename(emane_model, interface=None):
     :return: basename used for file creation
     :rtype: str
     """
-    name = "n%s" % emane_model.id
+    name = f"n{emane_model.id}"
 
     if interface:
         node_id = interface.node.id
         if emane_model.session.emane.getifcconfig(node_id, interface, emane_model.name):
             name = interface.localname.replace(".", "_")
 
-    return "%s%s" % (name, emane_model.name)
+    return f"{name}{emane_model.name}"
 
 
 def nem_file_name(emane_model, interface=None):
@@ -484,7 +483,7 @@ def nem_file_name(emane_model, interface=None):
     append = ""
     if interface and interface.transport_type == "raw":
         append = "_raw"
-    return "%snem%s.xml" % (basename, append)
+    return f"{basename}nem{append}.xml"
 
 
 def shim_file_name(emane_model, interface=None):
@@ -496,7 +495,8 @@ def shim_file_name(emane_model, interface=None):
     :return: shim xml filename
     :rtype: str
     """
-    return "%sshim.xml" % _basename(emane_model, interface)
+    name = _basename(emane_model, interface)
+    return f"{name}shim.xml"
 
 
 def mac_file_name(emane_model, interface=None):
@@ -508,7 +508,8 @@ def mac_file_name(emane_model, interface=None):
     :return: mac xml filename
     :rtype: str
     """
-    return "%smac.xml" % _basename(emane_model, interface)
+    name = _basename(emane_model, interface)
+    return f"{name}mac.xml"
 
 
 def phy_file_name(emane_model, interface=None):
@@ -520,4 +521,5 @@ def phy_file_name(emane_model, interface=None):
     :return: phy xml filename
     :rtype: str
     """
-    return "%sphy.xml" % _basename(emane_model, interface)
+    name = _basename(emane_model, interface)
+    return f"{name}phy.xml"

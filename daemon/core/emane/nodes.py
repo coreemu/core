@@ -210,7 +210,7 @@ class EmaneNet(CoreNetworkBase):
             nemid = self.getnemid(netif)
             ifname = netif.localname
             if nemid is None:
-                logging.info("nemid for %s is unknown" % ifname)
+                logging.info("nemid for %s is unknown", ifname)
                 continue
             x, y, z = netif.node.getposition()
             lat, lon, alt = self.session.location.getgeo(x, y, z)

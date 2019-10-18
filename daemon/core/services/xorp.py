@@ -312,13 +312,6 @@ class XorpRipng(XorpService):
                 continue
             cfg += "\tinterface %s {\n" % ifc.name
             cfg += "\t    vif %s {\n" % ifc.name
-            #            for a in ifc.addrlist:
-            #                if a.find(":") < 0:
-            #                    continue
-            #                addr = a.split("/")[0]
-            #                cfg += "\t\taddress %s {\n" % addr
-            #                cfg += "\t\t    disable: false\n"
-            #                cfg += "\t\t}\n"
             cfg += "\t\taddress %s {\n" % ifc.hwaddr.tolinklocal()
             cfg += "\t\t    disable: false\n"
             cfg += "\t\t}\n"

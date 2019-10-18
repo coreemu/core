@@ -97,7 +97,7 @@ class EbtablesQueue(object):
         :return: ebtable atomic command
         :rtype: list[str]
         """
-        return "%s --atomic-file %s %s" % (EBTABLES_BIN, self.atomic_file, cmd)
+        return f"{EBTABLES_BIN} --atomic-file {self.atomic_file} {cmd}"
 
     def lastupdate(self, wlan):
         """
@@ -175,7 +175,7 @@ class EbtablesQueue(object):
         wlan.net_cmd(args)
 
         try:
-            wlan.net_cmd("rm -f %s" % self.atomic_file)
+            wlan.net_cmd(f"rm -f {self.atomic_file}")
         except CoreCommandError:
             logging.exception("error removing atomic file: %s", self.atomic_file)
 
@@ -198,26 +198,22 @@ class EbtablesQueue(object):
         """
         with wlan._linked_lock:
             # flush the chain
-            self.cmds.append("-F %s" % wlan.brname)
+            self.cmds.append(f"-F {wlan.brname}")
             # rebuild the chain
             for netif1, v in wlan._linked.items():
                 for netif2, linked in v.items():
                     if wlan.policy == "DROP" and linked:
                         self.cmds.extend(
                             [
-                                "-A %s -i %s -o %s -j ACCEPT"
-                                % (wlan.brname, netif1.localname, netif2.localname),
-                                "-A %s -o %s -i %s -j ACCEPT"
-                                % (wlan.brname, netif1.localname, netif2.localname),
+                                f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j ACCEPT",
+                                f"-A {wlan.brname} -o {netif1.localname} -i {netif2.localname} -j ACCEPT",
                             ]
                         )
                     elif wlan.policy == "ACCEPT" and not linked:
                         self.cmds.extend(
                             [
-                                "-A %s -i %s -o %s -j DROP"
-                                % (wlan.brname, netif1.localname, netif2.localname),
-                                "-A %s -o %s -i %s -j DROP"
-                                % (wlan.brname, netif1.localname, netif2.localname),
+                                f"-A {wlan.brname} -i {netif1.localname} -o {netif2.localname} -j DROP",
+                                f"-A {wlan.brname} -o {netif1.localname} -i {netif2.localname} -j DROP",
                             ]
                         )
 
@@ -268,7 +264,7 @@ class CoreNetwork(CoreNetworkBase):
             self.policy = policy
         self.name = name
         sessionid = self.session.short_session_id()
-        self.brname = "b.%s.%s" % (str(self.id), sessionid)
+        self.brname = f"b.{self.id}.{sessionid}"
         self.up = False
         if start:
             self.startup()
@@ -303,9 +299,8 @@ class CoreNetwork(CoreNetworkBase):
 
         # create a new ebtables chain for this bridge
         cmds = [
-            "%s -N %s -P %s" % (EBTABLES_BIN, self.brname, self.policy),
-            "%s -A FORWARD --logical-in %s -j %s"
-            % (EBTABLES_BIN, self.brname, self.brname),
+            f"{EBTABLES_BIN} -N {self.brname} -P {self.policy}",
+            f"{EBTABLES_BIN} -A FORWARD --logical-in {self.brname} -j {self.brname}",
         ]
         ebtablescmds(self.net_cmd, cmds)
 
@@ -325,9 +320,8 @@ class CoreNetwork(CoreNetworkBase):
         try:
             self.net_client.delete_bridge(self.brname)
             cmds = [
-                "%s -D FORWARD --logical-in %s -j %s"
-                % (EBTABLES_BIN, self.brname, self.brname),
-                "%s -X %s" % (EBTABLES_BIN, self.brname),
+                f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
+                f"{EBTABLES_BIN} -X {self.brname}",
             ]
             ebtablescmds(self.net_cmd, cmds)
         except CoreCommandError:
@@ -379,10 +373,10 @@ class CoreNetwork(CoreNetworkBase):
         """
         # check if the network interfaces are attached to this network
         if self._netif[netif1.netifi] != netif1:
-            raise ValueError("inconsistency for netif %s" % netif1.name)
+            raise ValueError(f"inconsistency for netif {netif1.name}")
 
         if self._netif[netif2.netifi] != netif2:
-            raise ValueError("inconsistency for netif %s" % netif2.name)
+            raise ValueError(f"inconsistency for netif {netif2.name}")
 
         try:
             linked = self._linked[netif1][netif2]
@@ -392,7 +386,7 @@ class CoreNetwork(CoreNetworkBase):
             elif self.policy == "DROP":
                 linked = False
             else:
-                raise Exception("unknown policy: %s" % self.policy)
+                raise Exception(f"unknown policy: {self.policy}")
             self._linked[netif1][netif2] = linked
 
         return linked
@@ -455,7 +449,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         if devname is None:
             devname = netif.localname
-        tc = "%s qdisc replace dev %s" % (TC_BIN, devname)
+        tc = f"{TC_BIN} qdisc replace dev {devname}"
         parent = "root"
         changed = False
         if netif.setparam("bw", bw):
@@ -464,16 +458,16 @@ class CoreNetwork(CoreNetworkBase):
                 burst = max(2 * netif.mtu, bw / 1000)
                 # max IP payload
                 limit = 0xFFFF
-                tbf = "tbf rate %s burst %s limit %s" % (bw, burst, limit)
+                tbf = f"tbf rate {bw} burst {burst} limit {limit}"
             if bw > 0:
                 if self.up:
-                    cmd = "%s %s handle 1: %s" % (tc, parent, tbf)
+                    cmd = f"{tc} {parent} handle 1: {tbf}"
                     netif.net_cmd(cmd)
                 netif.setparam("has_tbf", True)
                 changed = True
             elif netif.getparam("has_tbf") and bw <= 0:
                 if self.up:
-                    cmd = "%s qdisc delete dev %s %s" % (TC_BIN, devname, parent)
+                    cmd = f"{TC_BIN} qdisc delete dev {devname} {parent}"
                     netif.net_cmd(cmd)
                 netif.setparam("has_tbf", False)
                 # removing the parent removes the child
@@ -494,17 +488,17 @@ class CoreNetwork(CoreNetworkBase):
             return
         # jitter and delay use the same delay statement
         if delay is not None:
-            netem += " delay %sus" % delay
+            netem += f" delay {delay}us"
         if jitter is not None:
             if delay is None:
-                netem += " delay 0us %sus 25%%" % jitter
+                netem += f" delay 0us {jitter}us 25%"
             else:
-                netem += " %sus 25%%" % jitter
+                netem += f" {jitter}us 25%"
 
         if loss is not None and loss > 0:
-            netem += " loss %s%%" % min(loss, 100)
+            netem += f" loss {min(loss, 100)}%"
         if duplicate is not None and duplicate > 0:
-            netem += " duplicate %s%%" % min(duplicate, 100)
+            netem += f" duplicate {min(duplicate, 100)}%"
 
         delay_check = delay is None or delay <= 0
         jitter_check = jitter is None or jitter <= 0
@@ -515,16 +509,13 @@ class CoreNetwork(CoreNetworkBase):
             if not netif.getparam("has_netem"):
                 return
             if self.up:
-                cmd = "%s qdisc delete dev %s %s handle 10:" % (TC_BIN, devname, parent)
+                cmd = f"{TC_BIN} qdisc delete dev {devname} {parent} handle 10:"
                 netif.net_cmd(cmd)
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
-                cmd = "%s qdisc replace dev %s %s handle 10: %s" % (
-                    TC_BIN,
-                    devname,
-                    parent,
-                    netem,
+                cmd = (
+                    f"{TC_BIN} qdisc replace dev {devname} {parent} handle 10: {netem}"
                 )
                 netif.net_cmd(cmd)
             netif.setparam("has_netem", True)
@@ -540,22 +531,22 @@ class CoreNetwork(CoreNetworkBase):
         """
         sessionid = self.session.short_session_id()
         try:
-            _id = "%x" % self.id
+            _id = f"{self.id:x}"
         except TypeError:
-            _id = "%s" % self.id
+            _id = str(self.id)
 
         try:
-            net_id = "%x" % net.id
+            net_id = f"{net.id:x}"
         except TypeError:
-            net_id = "%s" % net.id
+            net_id = str(net.id)
 
-        localname = "veth%s.%s.%s" % (_id, net_id, sessionid)
+        localname = f"veth{_id}.{net_id}.{sessionid}"
         if len(localname) >= 16:
-            raise ValueError("interface local name %s too long" % localname)
+            raise ValueError(f"interface local name {localname} too long")
 
-        name = "veth%s.%s.%s" % (net_id, _id, sessionid)
+        name = f"veth{net_id}.{_id}.{sessionid}"
         if len(name) >= 16:
-            raise ValueError("interface name %s too long" % name)
+            raise ValueError(f"interface name {name} too long")
 
         netif = Veth(self.session, None, name, localname, start=self.up)
         self.attach(netif)
@@ -689,7 +680,7 @@ class GreTapBridge(CoreNetwork):
         :return: nothing
         """
         if self.gretap:
-            raise ValueError("gretap already exists for %s" % self.name)
+            raise ValueError(f"gretap already exists for {self.name}")
         remoteip = addrlist[0].split("/")[0]
         localip = None
         if len(addrlist) > 1:
@@ -773,14 +764,14 @@ class CtrlNet(CoreNetwork):
         :return:
         """
         use_ovs = self.session.options.get_config("ovs") == "True"
-        current = "%s/%s" % (address, self.prefix.prefixlen)
+        current = f"{address}/{self.prefix.prefixlen}"
         net_client = get_net_client(use_ovs, utils.check_cmd)
         net_client.create_address(self.brname, current)
         servers = self.session.distributed.servers
         for name in servers:
             server = servers[name]
             address -= 1
-            current = "%s/%s" % (address, self.prefix.prefixlen)
+            current = f"{address}/{self.prefix.prefixlen}"
             net_client = get_net_client(use_ovs, server.remote_cmd)
             net_client.create_address(self.brname, current)
 
@@ -792,7 +783,7 @@ class CtrlNet(CoreNetwork):
         :raises CoreCommandError: when there is a command exception
         """
         if self.net_client.existing_bridges(self.id):
-            raise CoreError("old bridges exist for node: %s" % self.id)
+            raise CoreError(f"old bridges exist for node: {self.id}")
 
         CoreNetwork.startup(self)
 
@@ -811,7 +802,7 @@ class CtrlNet(CoreNetwork):
                 self.brname,
                 self.updown_script,
             )
-            self.net_cmd("%s %s startup" % (self.updown_script, self.brname))
+            self.net_cmd(f"{self.updown_script} {self.brname} startup")
 
         if self.serverintf:
             self.net_client.create_interface(self.brname, self.serverintf)
@@ -839,7 +830,7 @@ class CtrlNet(CoreNetwork):
                     self.brname,
                     self.updown_script,
                 )
-                self.net_cmd("%s %s shutdown" % (self.updown_script, self.brname))
+                self.net_cmd(f"{self.updown_script} {self.brname} shutdown")
             except CoreCommandError:
                 logging.exception("error issuing shutdown script shutdown")
 

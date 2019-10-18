@@ -18,19 +18,17 @@ class LxdClient(object):
         self.pid = None
 
     def create_container(self):
-        self.run("lxc launch {image} {name}".format(name=self.name, image=self.image))
+        self.run(f"lxc launch {self.image} {self.name}")
         data = self.get_info()
         self.pid = data["state"]["pid"]
         return self.pid
 
     def get_info(self):
-        args = "lxc list {name} --format json".format(name=self.name)
+        args = f"lxc list {self.name} --format json"
         output = self.run(args)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(
-                -1, args, "LXC({name}) not present".format(name=self.name)
-            )
+            raise CoreCommandError(-1, args, f"LXC({self.name}) not present")
         return data[0]
 
     def is_alive(self):
@@ -41,13 +39,13 @@ class LxdClient(object):
             return False
 
     def stop_container(self):
-        self.run("lxc delete --force {name}".format(name=self.name))
+        self.run(f"lxc delete --force {self.name}")
 
     def create_cmd(self, cmd):
-        return "lxc exec -nT {name} -- {cmd}".format(name=self.name, cmd=cmd)
+        return f"lxc exec -nT {self.name} -- {cmd}"
 
     def create_ns_cmd(self, cmd):
-        return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
+        return f"nsenter -t {self.pid} -m -u -i -p -n {cmd}"
 
     def check_cmd(self, cmd, wait=True):
         args = self.create_cmd(cmd)
@@ -57,9 +55,7 @@ class LxdClient(object):
         if destination[0] != "/":
             destination = os.path.join("/root/", destination)
 
-        args = "lxc file push {source} {name}/{destination}".format(
-            source=source, name=self.name, destination=destination
-        )
+        args = f"lxc file push {source} {self.name}/{destination}"
         self.run(args)
 
 
@@ -142,7 +138,7 @@ class LxcNode(CoreNode):
         :param str sh: shell to execute command in
         :return: str
         """
-        return "lxc exec {name} -- {sh}".format(name=self.name, sh=sh)
+        return f"lxc exec {self.name} -- {sh}"
 
     def privatedir(self, path):
         """
@@ -152,7 +148,7 @@ class LxcNode(CoreNode):
         :return: nothing
         """
         logging.info("creating node dir: %s", path)
-        args = "mkdir -p {path}".format(path=path)
+        args = f"mkdir -p {path}"
         return self.node_net_cmd(args)
 
     def mount(self, source, target):
@@ -184,13 +180,13 @@ class LxcNode(CoreNode):
         temp.close()
 
         if directory:
-            self.node_net_cmd("mkdir -m %o -p %s" % (0o755, directory))
+            self.node_net_cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
             self.server.remote_put(temp.name, temp.name)
         self.client.copy_file(temp.name, filename)
-        self.node_net_cmd("chmod %o %s" % (mode, filename))
+        self.node_net_cmd(f"chmod {mode:o} {filename}")
         if self.server is not None:
-            self.net_cmd("rm -f %s" % temp.name)
+            self.net_cmd(f"rm -f {temp.name}")
         os.unlink(temp.name)
         logging.debug("node(%s) added file: %s; mode: 0%o", self.name, filename, mode)
 
@@ -208,7 +204,7 @@ class LxcNode(CoreNode):
             "node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode
         )
         directory = os.path.dirname(filename)
-        self.node_net_cmd("mkdir -p %s" % directory)
+        self.node_net_cmd(f"mkdir -p {directory}")
 
         if self.server is None:
             source = srcfilename
@@ -218,7 +214,7 @@ class LxcNode(CoreNode):
             self.server.remote_put(source, temp.name)
 
         self.client.copy_file(source, filename)
-        self.node_net_cmd("chmod %o %s" % (mode, filename))
+        self.node_net_cmd(f"chmod {mode:o} {filename}")
 
     def addnetif(self, netif, ifindex):
         super(LxcNode, self).addnetif(netif, ifindex)

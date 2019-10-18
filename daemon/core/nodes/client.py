@@ -51,7 +51,7 @@ class VnodeClient(object):
         pass
 
     def create_cmd(self, args):
-        return "%s -c %s -- %s" % (VCMD_BIN, self.ctrlchnlname, args)
+        return f"{VCMD_BIN} -c {self.ctrlchnlname} -- {args}"
 
     def check_cmd(self, args, wait=True):
         """
