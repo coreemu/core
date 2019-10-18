@@ -180,7 +180,7 @@ class CoreTlvDataString(CoreTlvData):
         :rtype: tuple
         """
         if not isinstance(value, str):
-            raise ValueError("value not a string: %s" % type(value))
+            raise ValueError(f"value not a string: {type(value)}")
         value = value.encode("utf-8")
 
         if len(value) < 256:
@@ -220,7 +220,7 @@ class CoreTlvDataUint16List(CoreTlvData):
         :rtype: tuple
         """
         if not isinstance(values, tuple):
-            raise ValueError("value not a tuple: %s" % values)
+            raise ValueError(f"value not a tuple: {values}")
 
         data = b""
         for value in values:
@@ -237,7 +237,8 @@ class CoreTlvDataUint16List(CoreTlvData):
         :param data: data to unpack
         :return: unpacked data
         """
-        data_format = "!%dH" % (len(data) / 2)
+        size = int(len(data) / 2)
+        data_format = f"!{size}H"
         return struct.unpack(data_format, data)
 
     @classmethod
@@ -435,7 +436,7 @@ class CoreTlv(object):
         try:
             return self.tlv_type_map(self.tlv_type).name
         except ValueError:
-            return "unknown tlv type: %s" % str(self.tlv_type)
+            return f"unknown tlv type: {self.tlv_type}"
 
     def __str__(self):
         """
@@ -444,11 +445,7 @@ class CoreTlv(object):
         :return: string representation
         :rtype: str
         """
-        return "%s <tlvtype = %s, value = %s>" % (
-            self.__class__.__name__,
-            self.type_str(),
-            self.value,
-        )
+        return f"{self.__class__.__name__} <tlvtype = {self.type_str()}, value = {self.value}>"
 
 
 class CoreNodeTlv(CoreTlv):
@@ -734,7 +731,7 @@ class CoreMessage(object):
         :return: nothing
         """
         if key in self.tlv_data:
-            raise KeyError("key already exists: %s (val=%s)" % (key, value))
+            raise KeyError(f"key already exists: {key} (val={value})")
 
         self.tlv_data[key] = value
 
@@ -793,7 +790,7 @@ class CoreMessage(object):
         try:
             return MessageTypes(self.message_type).name
         except ValueError:
-            return "unknown message type: %s" % str(self.message_type)
+            return f"unknown message type: {self.message_type}"
 
     def flag_str(self):
         """
@@ -810,12 +807,13 @@ class CoreMessage(object):
                 try:
                     message_flags.append(self.flag_map(flag).name)
                 except ValueError:
-                    message_flags.append("0x%x" % flag)
+                    message_flags.append(f"0x{flag:x}")
             flag <<= 1
             if not (self.flags & ~(flag - 1)):
                 break
 
-        return "0x%x <%s>" % (self.flags, " | ".join(message_flags))
+        message_flags = " | ".join(message_flags)
+        return f"0x{self.flags:x} <{message_flags}>"
 
     def __str__(self):
         """
@@ -824,20 +822,16 @@ class CoreMessage(object):
         :return: string representation
         :rtype: str
         """
-        result = "%s <msgtype = %s, flags = %s>" % (
-            self.__class__.__name__,
-            self.type_str(),
-            self.flag_str(),
-        )
+        result = f"{self.__class__.__name__} <msgtype = {self.type_str()}, flags = {self.flag_str()}>"
 
         for key in self.tlv_data:
             value = self.tlv_data[key]
             try:
                 tlv_type = self.tlv_class.tlv_type_map(key).name
             except ValueError:
-                tlv_type = "tlv type %s" % key
+                tlv_type = f"tlv type {key}"
 
-            result += "\n  %s: %s" % (tlv_type, value)
+            result += f"\n  {tlv_type}: {value}"
 
         return result
 
