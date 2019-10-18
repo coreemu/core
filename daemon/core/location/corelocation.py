@@ -128,8 +128,6 @@ class CoreLocation(object):
                 z,
             )
             lat, lon = self.refgeo[:2]
-        # self.info("getgeo(%s,%s,%s) e=%s n=%s zone=%s  lat,lon,alt=" \
-        #          "%.3f,%.3f,%.3f" % (x, y, z, e, n, zone, lat, lon, alt))
         return lat, lon, alt
 
     def getxyz(self, lat, lon, alt):
