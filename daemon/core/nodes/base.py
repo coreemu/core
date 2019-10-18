@@ -492,9 +492,7 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("starting a node that is already up")
 
             # create a new namespace for this node using vnoded
-            vnoded = "{cmd} -v -c {name} -l {name}.log -p {name}.pid".format(
-                cmd=VNODED_BIN, name=self.ctrlchnlname
-            )
+            vnoded = f"{VNODED_BIN} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log -p {self.ctrlchnlname}.pid"
             if self.nodedir:
                 vnoded += f" -C {self.nodedir}"
             env = self.session.get_environment(state=False)
@@ -593,9 +591,7 @@ class CoreNode(CoreNodeBase):
         if self.server is None:
             return terminal
         else:
-            return "ssh -X -f {host} xterm -e {terminal}".format(
-                host=self.server.host, terminal=terminal
-            )
+            return f"ssh -X -f {self.server.host} xterm -e {terminal}"
 
     def privatedir(self, path):
         """

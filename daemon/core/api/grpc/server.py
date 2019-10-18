@@ -247,9 +247,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         session = self.coreemu.sessions.get(session_id)
         if not session:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, "session {} not found".format(session_id)
-            )
+            context.abort(grpc.StatusCode.NOT_FOUND, f"session {session_id} not found")
         return session
 
     def get_node(self, session, node_id, context):
@@ -265,9 +263,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         try:
             return session.get_node(node_id)
         except CoreError:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, "node {} not found".format(node_id)
-            )
+            context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
 
     def CreateSession(self, request, context):
         """
@@ -1577,17 +1573,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         nem_one = request.nem_one
         emane_one, netif = session.emane.nemlookup(nem_one)
         if not emane_one or not netif:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, "nem one {} not found".format(nem_one)
-            )
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem_one} not found")
         node_one = netif.node
 
         nem_two = request.nem_two
         emane_two, netif = session.emane.nemlookup(nem_two)
         if not emane_two or not netif:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, "nem two {} not found".format(nem_two)
-            )
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem_two} not found")
         node_two = netif.node
 
         if emane_one.id == emane_two.id:

@@ -19,23 +19,18 @@ class DockerClient(object):
 
     def create_container(self):
         self.run(
-            "docker run -td --init --net=none --hostname {name} --name {name} "
-            "--sysctl net.ipv6.conf.all.disable_ipv6=0 "
-            "{image} /bin/bash".format(
-                name=self.name,
-                image=self.image
-            ))
+            f"docker run -td --init --net=none --hostname {self.name} --name {self.name} "
+            f"--sysctl net.ipv6.conf.all.disable_ipv6=0 {self.image} /bin/bash"
+        )
         self.pid = self.get_pid()
         return self.pid
 
     def get_info(self):
-        args = "docker inspect {name}".format(name=self.name)
+        args = f"docker inspect {self.name}"
         output = self.run(args)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(
-                -1, args, "docker({name}) not present".format(name=self.name)
-            )
+            raise CoreCommandError(-1, args, f"docker({self.name}) not present")
         return data[0]
 
     def is_alive(self):
@@ -46,43 +41,28 @@ class DockerClient(object):
             return False
 
     def stop_container(self):
-        self.run("docker rm -f {name}".format(
-            name=self.name
-        ))
+        self.run(f"docker rm -f {self.name}")
 
     def check_cmd(self, cmd):
         logging.info("docker cmd output: %s", cmd)
-        return utils.check_cmd("docker exec {name} {cmd}".format(
-            name=self.name,
-            cmd=cmd
-        ))
+        return utils.check_cmd(f"docker exec {self.name} {cmd}")
 
     def create_ns_cmd(self, cmd):
-        return "nsenter -t {pid} -u -i -p -n {cmd}".format(
-            pid=self.pid,
-            cmd=cmd
-        )
+        return f"nsenter -t {self.pid} -u -i -p -n {cmd}"
 
     def ns_cmd(self, cmd, wait):
-        args = "nsenter -t {pid} -u -i -p -n {cmd}".format(
-            pid=self.pid,
-            cmd=cmd
-        )
+        args = f"nsenter -t {self.pid} -u -i -p -n {cmd}"
         return utils.check_cmd(args, wait=wait)
 
     def get_pid(self):
-        args = "docker inspect -f '{{{{.State.Pid}}}}' {name}".format(name=self.name)
+        args = f"docker inspect -f '{{{{.State.Pid}}}}' {self.name}"
         output = self.run(args)
         self.pid = output
         logging.debug("node(%s) pid: %s", self.name, self.pid)
         return output
 
     def copy_file(self, source, destination):
-        args = "docker cp {source} {name}:{destination}".format(
-            source=source,
-            name=self.name,
-            destination=destination
-        )
+        args = f"docker cp {source} {self.name}:{destination}"
         return self.run(args)
 
 
@@ -185,7 +165,7 @@ class DockerNode(CoreNode):
         :param str sh: shell to execute command in
         :return: str
         """
-        return "docker exec -it {name} bash".format(name=self.name)
+        return f"docker exec -it {self.name} bash"
 
     def privatedir(self, path):
         """
@@ -195,7 +175,7 @@ class DockerNode(CoreNode):
         :return: nothing
         """
         logging.debug("creating node dir: %s", path)
-        args = "mkdir -p {path}".format(path=path)
+        args = f"mkdir -p {path}"
         self.node_net_cmd(args)
 
     def mount(self, source, target):

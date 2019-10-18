@@ -18,19 +18,17 @@ class LxdClient(object):
         self.pid = None
 
     def create_container(self):
-        self.run("lxc launch {image} {name}".format(name=self.name, image=self.image))
+        self.run(f"lxc launch {self.image} {self.name}")
         data = self.get_info()
         self.pid = data["state"]["pid"]
         return self.pid
 
     def get_info(self):
-        args = "lxc list {name} --format json".format(name=self.name)
+        args = f"lxc list {self.name} --format json"
         output = self.run(args)
         data = json.loads(output)
         if not data:
-            raise CoreCommandError(
-                -1, args, "LXC({name}) not present".format(name=self.name)
-            )
+            raise CoreCommandError(-1, args, f"LXC({self.name}) not present")
         return data[0]
 
     def is_alive(self):
@@ -41,13 +39,13 @@ class LxdClient(object):
             return False
 
     def stop_container(self):
-        self.run("lxc delete --force {name}".format(name=self.name))
+        self.run(f"lxc delete --force {self.name}")
 
     def create_cmd(self, cmd):
-        return "lxc exec -nT {name} -- {cmd}".format(name=self.name, cmd=cmd)
+        return f"lxc exec -nT {self.name} -- {cmd}"
 
     def create_ns_cmd(self, cmd):
-        return "nsenter -t {pid} -m -u -i -p -n {cmd}".format(pid=self.pid, cmd=cmd)
+        return f"nsenter -t {self.pid} -m -u -i -p -n {cmd}"
 
     def check_cmd(self, cmd, wait=True):
         args = self.create_cmd(cmd)
@@ -57,9 +55,7 @@ class LxdClient(object):
         if destination[0] != "/":
             destination = os.path.join("/root/", destination)
 
-        args = "lxc file push {source} {name}/{destination}".format(
-            source=source, name=self.name, destination=destination
-        )
+        args = f"lxc file push {source} {self.name}/{destination}"
         self.run(args)
 
 
@@ -142,7 +138,7 @@ class LxcNode(CoreNode):
         :param str sh: shell to execute command in
         :return: str
         """
-        return "lxc exec {name} -- {sh}".format(name=self.name, sh=sh)
+        return f"lxc exec {self.name} -- {sh}"
 
     def privatedir(self, path):
         """
@@ -152,7 +148,7 @@ class LxcNode(CoreNode):
         :return: nothing
         """
         logging.info("creating node dir: %s", path)
-        args = "mkdir -p {path}".format(path=path)
+        args = f"mkdir -p {path}"
         return self.node_net_cmd(args)
 
     def mount(self, source, target):
