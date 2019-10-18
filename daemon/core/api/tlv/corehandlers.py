@@ -1016,7 +1016,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
             # find the session containing this client and set the session to master
             for _id in self.coreemu.sessions:
-                clients = self.session_clients[_id]
+                clients = self.session_clients.get(_id, [])
                 if self in clients:
                     session = self.coreemu.sessions[_id]
                     logging.debug("setting session to master: %s", session.id)
