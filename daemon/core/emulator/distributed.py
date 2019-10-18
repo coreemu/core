@@ -128,7 +128,7 @@ class DistributedController(object):
         """
         server = DistributedServer(name, host)
         self.servers[name] = server
-        cmd = "mkdir -p %s" % self.session.session_dir
+        cmd = f"mkdir -p {self.session.session_dir}"
         server.remote_cmd(cmd)
 
     def execute(self, func):
@@ -158,7 +158,7 @@ class DistributedController(object):
         # remove all remote session directories
         for name in self.servers:
             server = self.servers[name]
-            cmd = "rm -rf %s" % self.session.session_dir
+            cmd = f"rm -rf {self.session.session_dir}"
             server.remote_cmd(cmd)
 
         # clear tunnels

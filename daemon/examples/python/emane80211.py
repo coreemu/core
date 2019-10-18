@@ -48,12 +48,11 @@ def main():
     logging.basicConfig(level=logging.INFO)
     options = parser.parse_options("emane80211")
     start = datetime.datetime.now()
-    print(
-        "running emane 80211 example: nodes(%s) time(%s)"
-        % (options.nodes, options.time)
+    logging.info(
+        "running emane 80211 example: nodes(%s) time(%s)", options.nodes, options.time
     )
     example(options)
-    print("elapsed time: %s" % (datetime.datetime.now() - start))
+    logging.info("elapsed time: %s", datetime.datetime.now() - start)
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":

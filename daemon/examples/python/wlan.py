@@ -45,11 +45,11 @@ def example(options):
     first_node = session.get_node(2)
     last_node = session.get_node(options.nodes + 1)
 
-    print("starting iperf server on node: %s" % first_node.name)
+    logging.info("starting iperf server on node: %s", first_node.name)
     first_node.node_net_cmd("iperf -s -D")
     address = prefixes.ip4_address(first_node)
-    print("node %s connecting to %s" % (last_node.name, address))
-    last_node.node_net_cmd("iperf -t %s -c %s" % (options.time, address))
+    logging.info("node %s connecting to %s", last_node.name, address)
+    last_node.node_net_cmd(f"iperf -t {options.time} -c {address}")
     first_node.node_net_cmd("killall -9 iperf")
 
     # shutdown session
@@ -61,9 +61,11 @@ def main():
     options = parser.parse_options("wlan")
 
     start = datetime.datetime.now()
-    print("running wlan example: nodes(%s) time(%s)" % (options.nodes, options.time))
+    logging.info(
+        "running wlan example: nodes(%s) time(%s)", options.nodes, options.time
+    )
     example(options)
-    print("elapsed time: %s" % (datetime.datetime.now() - start))
+    logging.info("elapsed time: %s", datetime.datetime.now() - start)
 
 
 if __name__ == "__main__":

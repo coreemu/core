@@ -90,7 +90,7 @@ class Session(object):
         self.master = False
 
         # define and create session directory when desired
-        self.session_dir = os.path.join(tempfile.gettempdir(), "pycore.%s" % self.id)
+        self.session_dir = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
         if mkdir:
             os.mkdir(self.session_dir)
 
@@ -164,7 +164,7 @@ class Session(object):
         """
         node_class = NODES.get(_type)
         if node_class is None:
-            raise CoreError("invalid node type: %s" % _type)
+            raise CoreError(f"invalid node type: {_type}")
         return node_class
 
     @classmethod
@@ -178,7 +178,7 @@ class Session(object):
         """
         node_type = NODES_TYPE.get(_class)
         if node_type is None:
-            raise CoreError("invalid node class: %s" % _class)
+            raise CoreError(f"invalid node class: {_class}")
         return node_type
 
     def _link_nodes(self, node_one_id, node_two_id):
@@ -254,7 +254,7 @@ class Session(object):
         """
         objects = [x for x in objects if x]
         if len(objects) < 2:
-            raise CoreError("wireless link failure: %s" % objects)
+            raise CoreError(f"wireless link failure: {objects}")
         logging.debug(
             "handling wireless linking objects(%s) connect(%s)", objects, connect
         )
@@ -665,13 +665,13 @@ class Session(object):
             node_options = NodeOptions()
         name = node_options.name
         if not name:
-            name = "%s%s" % (node_class.__name__, _id)
+            name = f"{node_class.__name__}{_id}"
 
         # verify distributed server
         server = self.distributed.servers.get(node_options.emulation_server)
         if node_options.emulation_server is not None and server is None:
             raise CoreError(
-                "invalid distributed server: %s" % node_options.emulation_server
+                f"invalid distributed server: {node_options.emulation_server}"
             )
 
         # create node
@@ -854,7 +854,7 @@ class Session(object):
         :return: nothing
         """
         # hack to conform with old logic until updated
-        state = ":%s" % state
+        state = f":{state}"
         self.set_hook(state, file_name, source_name, data)
 
     def add_node_file(self, node_id, source_name, file_name, data):
@@ -1066,7 +1066,7 @@ class Session(object):
         self.run_state_hooks(state_value)
 
         if send_event:
-            event_data = EventData(event_type=state_value, time="%s" % time.time())
+            event_data = EventData(event_type=state_value, time=str(time.time()))
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -1078,7 +1078,7 @@ class Session(object):
         """
         try:
             state_file = open(self._state_file, "w")
-            state_file.write("%d %s\n" % (state, EventTypes(self.state).name))
+            state_file.write(f"{state} {EventTypes(self.state).name}\n")
             state_file.close()
         except IOError:
             logging.exception("error writing state file: %s", state)
@@ -1195,9 +1195,9 @@ class Session(object):
             try:
                 hook(state)
             except Exception:
-                message = "exception occured when running %s state hook: %s" % (
-                    EventTypes(self.state).name,
-                    hook,
+                state_name = EventTypes(self.state).name
+                message = (
+                    f"exception occured when running {state_name} state hook: {hook}"
                 )
                 logging.exception(message)
                 self.exception(
@@ -1258,16 +1258,16 @@ class Session(object):
         :rtype: dict
         """
         env = os.environ.copy()
-        env["SESSION"] = "%s" % self.id
-        env["SESSION_SHORT"] = "%s" % self.short_session_id()
-        env["SESSION_DIR"] = "%s" % self.session_dir
-        env["SESSION_NAME"] = "%s" % self.name
-        env["SESSION_FILENAME"] = "%s" % self.file_name
-        env["SESSION_USER"] = "%s" % self.user
-        env["SESSION_NODE_COUNT"] = "%s" % self.get_node_count()
+        env["SESSION"] = str(self.id)
+        env["SESSION_SHORT"] = self.short_session_id()
+        env["SESSION_DIR"] = self.session_dir
+        env["SESSION_NAME"] = str(self.name)
+        env["SESSION_FILENAME"] = str(self.file_name)
+        env["SESSION_USER"] = str(self.user)
+        env["SESSION_NODE_COUNT"] = str(self.get_node_count())
 
         if state:
-            env["SESSION_STATE"] = "%s" % self.state
+            env["SESSION_STATE"] = str(self.state)
 
         # attempt to read and add environment config file
         environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
@@ -1356,7 +1356,7 @@ class Session(object):
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
-                raise CoreError("duplicate node id %s for %s" % (node.id, node.name))
+                raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
 
         return node
@@ -1371,7 +1371,7 @@ class Session(object):
         :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
-            raise CoreError("unknown node id %s" % _id)
+            raise CoreError(f"unknown node id {_id}")
         return self.nodes[_id]
 
     def delete_node(self, _id):
@@ -1416,9 +1416,7 @@ class Session(object):
                 with open(file_path, "w") as f:
                     for _id in self.nodes.keys():
                         node = self.nodes[_id]
-                        f.write(
-                            "%s %s %s %s\n" % (_id, node.name, node.apitype, type(node))
-                        )
+                        f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
         except IOError:
             logging.exception("error writing nodes file")
 
@@ -1585,7 +1583,7 @@ class Session(object):
         interface names, where length may be limited.
         """
         ssid = (self.id >> 8) ^ (self.id & ((1 << 8) - 1))
-        return "%x" % ssid
+        return f"{ssid:x}"
 
     def boot_nodes(self):
         """
@@ -1670,7 +1668,7 @@ class Session(object):
 
     def get_control_net(self, net_index):
         # TODO: all nodes use an integer id and now this wants to use a string
-        _id = "ctrl%dnet" % net_index
+        _id = f"ctrl{net_index}net"
         return self.get_node(_id)
 
     def add_remove_control_net(self, net_index, remove=False, conf_required=True):
@@ -1718,7 +1716,7 @@ class Session(object):
                 return None
 
         # build a new controlnet bridge
-        _id = "ctrl%dnet" % net_index
+        _id = f"ctrl{net_index}net"
 
         # use the updown script for control net 0 only.
         updown_script = None
@@ -1797,13 +1795,12 @@ class Session(object):
         control_ip = node.id
 
         try:
-            addrlist = [
-                "%s/%s"
-                % (control_net.prefix.addr(control_ip), control_net.prefix.prefixlen)
-            ]
+            address = control_net.prefix.addr(control_ip)
+            prefix = control_net.prefix.prefixlen
+            addrlist = [f"{address}/{prefix}"]
         except ValueError:
-            msg = "Control interface not added to node %s. " % node.id
-            msg += "Invalid control network prefix (%s). " % control_net.prefix
+            msg = f"Control interface not added to node {node.id}. "
+            msg += f"Invalid control network prefix ({control_net.prefix}). "
             msg += "A longer prefix length may be required for this many nodes."
             logging.exception(msg)
             return
@@ -1811,7 +1808,7 @@ class Session(object):
         interface1 = node.newnetif(
             net=control_net,
             ifindex=control_net.CTRLIF_IDX_BASE + net_index,
-            ifname="ctrl%d" % net_index,
+            ifname=f"ctrl{net_index}",
             hwaddr=MacAddress.random(),
             addrlist=addrlist,
         )
@@ -1834,7 +1831,7 @@ class Session(object):
             logging.exception("error retrieving control net node")
             return
 
-        header = "CORE session %s host entries" % self.id
+        header = f"CORE session {self.id} host entries"
         if remove:
             logging.info("Removing /etc/hosts file entries.")
             utils.file_demunge("/etc/hosts", header)
@@ -1844,9 +1841,10 @@ class Session(object):
         for interface in control_net.netifs():
             name = interface.node.name
             for address in interface.addrlist:
-                entries.append("%s %s" % (address.split("/")[0], name))
+                address = address.split("/")[0]
+                entries.append(f"{address} {name}")
 
-        logging.info("Adding %d /etc/hosts file entries." % len(entries))
+        logging.info("Adding %d /etc/hosts file entries.", len(entries))
 
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 

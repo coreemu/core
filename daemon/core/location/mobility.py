@@ -165,15 +165,16 @@ class MobilityManager(ModelManager):
         elif model.state == model.STATE_PAUSED:
             event_type = EventTypes.PAUSE.value
 
-        data = "start=%d" % int(model.lasttime - model.timezero)
-        data += " end=%d" % int(model.endtime)
+        start_time = int(model.lasttime - model.timezero)
+        end_time = int(model.endtime)
+        data = f"start={start_time} end={end_time}"
 
         event_data = EventData(
             node=model.id,
             event_type=event_type,
-            name="mobility:%s" % model.name,
+            name=f"mobility:{model.name}",
             data=data,
-            time="%s" % time.time(),
+            time=str(time.time()),
         )
 
         self.session.broadcast_event(event_data)
@@ -991,7 +992,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                 "ns-2 scripted mobility failed to load file: %s", self.file
             )
             return
-        logging.info("reading ns-2 script file: %s" % filename)
+        logging.info("reading ns-2 script file: %s", filename)
         ln = 0
         ix = iy = iz = None
         inodenum = None
@@ -1112,7 +1113,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :return: nothing
         """
         if self.autostart == "":
-            logging.info("not auto-starting ns-2 script for %s" % self.wlan.name)
+            logging.info("not auto-starting ns-2 script for %s", self.wlan.name)
             return
         try:
             t = float(self.autostart)
@@ -1124,9 +1125,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             )
             return
         self.movenodesinitial()
-        logging.info(
-            "scheduling ns-2 script for %s autostart at %s" % (self.wlan.name, t)
-        )
+        logging.info("scheduling ns-2 script for %s autostart at %s", self.wlan.name, t)
         self.state = self.STATE_RUNNING
         self.session.event_loop.add_event(t, self.run)
 
@@ -1187,7 +1186,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         if filename is None or filename == "":
             return
         filename = self.findfile(filename)
-        args = "/bin/sh %s %s" % (filename, typestr)
+        args = f"/bin/sh {filename} {typestr}"
         utils.check_cmd(
             args, cwd=self.session.session_dir, env=self.session.get_environment()
         )

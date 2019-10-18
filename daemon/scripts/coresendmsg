@@ -21,9 +21,9 @@ def print_available_tlvs(t, tlv_class):
     """
     Print a TLV list.
     """
-    print("TLVs available for %s message:" % t)
+    print(f"TLVs available for {t} message:")
     for tlv in sorted([tlv for tlv in tlv_class.tlv_type_map], key=lambda x: x.name):
-        print("%s:%s" % (tlv.value, tlv.name))
+        print(f"{tlv.value}:{tlv.name}")
 
 
 def print_examples(name):
@@ -54,9 +54,9 @@ def print_examples(name):
          "srcname=\"./test.log\"",
          "move a test.log file from host to node 2"),
     ]
-    print("Example %s invocations:" % name)
+    print(f"Example {name} invocations:")
     for cmd, descr in examples:
-        print("  %s %s\n\t\t%s" % (name, cmd, descr))
+        print(f"  {name} {cmd}\n\t\t{descr}")
 
 
 def receive_message(sock):
@@ -86,11 +86,11 @@ def receive_message(sock):
     except KeyError:
         msg = coreapi.CoreMessage(msgflags, msghdr, msgdata)
         msg.message_type = msgtype
-        print("unimplemented CORE message type: %s" % msg.type_str())
+        print(f"unimplemented CORE message type: {msg.type_str()}")
         return msg
     if len(data) > msglen + coreapi.CoreMessage.header_len:
-        print("received a message of type %d, dropping %d bytes of extra data" \
-              % (msgtype, len(data) - (msglen + coreapi.CoreMessage.header_len)))
+        data_size = len(data) - (msglen + coreapi.CoreMessage.header_len)
+        print(f"received a message of type {msgtype}, dropping {data_size} bytes of extra data")
     return msgcls(msgflags, msghdr, msgdata)
 
 
@@ -132,7 +132,7 @@ def connect_to_session(sock, requested):
         print("requested session not found!")
         return False
 
-    print("joining session: %s" % session)
+    print(f"joining session: {session}")
     tlvdata = coreapi.CoreSessionTlv.pack(SessionTlvs.NUMBER.value, session)
     flags = MessageFlags.ADD.value
     smsg = coreapi.CoreSessionMessage.pack(flags, tlvdata)
@@ -147,9 +147,9 @@ def receive_response(sock, opt):
     print("waiting for response...")
     msg = receive_message(sock)
     if msg is None:
-        print("disconnected from %s:%s" % (opt.address, opt.port))
+        print(f"disconnected from {opt.address}:{opt.port}")
         sys.exit(0)
-    print("received message: %s" % msg)
+    print(f"received message: {msg}")
 
 
 def main():
@@ -160,36 +160,36 @@ def main():
     flags = [flag.name for flag in MessageFlags]
     usagestr = "usage: %prog [-h|-H] [options] [message-type] [flags=flags] "
     usagestr += "[message-TLVs]\n\n"
-    usagestr += "Supported message types:\n  %s\n" % types
-    usagestr += "Supported message flags (flags=f1,f2,...):\n  %s" % flags
+    usagestr += f"Supported message types:\n  {types}\n"
+    usagestr += f"Supported message flags (flags=f1,f2,...):\n  {flags}"
     parser = optparse.OptionParser(usage=usagestr)
+    default_address = "localhost"
+    default_session = None
+    default_tcp = False
     parser.set_defaults(
         port=CORE_API_PORT,
-        address="localhost",
-        session=None,
+        address=default_address,
+        session=default_session,
         listen=False,
         examples=False,
         tlvs=False,
-        tcp=False
+        tcp=default_tcp
     )
 
     parser.add_option("-H", dest="examples", action="store_true",
                       help="show example usage help message and exit")
     parser.add_option("-p", "--port", dest="port", type=int,
-                      help="TCP port to connect to, default: %d" % \
-                           parser.defaults["port"])
+                      help=f"TCP port to connect to, default: {CORE_API_PORT}")
     parser.add_option("-a", "--address", dest="address", type=str,
-                      help="Address to connect to, default: %s" % \
-                           parser.defaults["address"])
+                      help=f"Address to connect to, default: {default_address}")
     parser.add_option("-s", "--session", dest="session", type=str,
-                      help="Session to join, default: %s" % \
-                           parser.defaults["session"])
+                      help=f"Session to join, default: {default_session}")
     parser.add_option("-l", "--listen", dest="listen", action="store_true",
                       help="Listen for a response message and print it.")
     parser.add_option("-t", "--list-tlvs", dest="tlvs", action="store_true",
                       help="List TLVs for the specified message type.")
     parser.add_option("--tcp", dest="tcp", action="store_true",
-                      help="Use TCP instead of UDP and connect to a session default: %s" % parser.defaults["tcp"])
+                      help=f"Use TCP instead of UDP and connect to a session default: {default_tcp}")
 
     def usage(msg=None, err=0):
         sys.stdout.write("\n")
@@ -209,7 +209,7 @@ def main():
     # given a message type t, determine the message and TLV classes
     t = args.pop(0)
     if t not in types:
-        usage("Unknown message type requested: %s" % t)
+        usage(f"Unknown message type requested: {t}")
     message_type = MessageTypes[t]
     msg_cls = coreapi.CLASS_MAP[message_type.value]
     tlv_cls = msg_cls.tlv_class
@@ -225,7 +225,7 @@ def main():
     for a in args:
         typevalue = a.split("=")
         if len(typevalue) < 2:
-            usage("Use \"type=value\" syntax instead of \"%s\"." % a)
+            usage(f"Use \"type=value\" syntax instead of \"{a}\".")
         tlv_typestr = typevalue[0]
         tlv_valstr = "=".join(typevalue[1:])
         if tlv_typestr == "flags":
@@ -237,7 +237,7 @@ def main():
             tlv_type = tlv_cls.tlv_type_map[tlv_name]
             tlvdata += tlv_cls.pack_string(tlv_type.value, tlv_valstr)
         except KeyError:
-            usage("Unknown TLV: \"%s\"" % tlv_name)
+            usage(f"Unknown TLV: \"{tlv_name}\"")
 
     flags = 0
     for f in flagstr.split(","):
@@ -249,7 +249,7 @@ def main():
             n = flag_enum.value
             flags |= n
         except KeyError:
-            usage("Invalid flag \"%s\"." % f)
+            usage(f"Invalid flag \"{f}\".")
 
     msg = msg_cls.pack(flags, tlvdata)
 
@@ -264,7 +264,7 @@ def main():
     try:
         sock.connect((opt.address, opt.port))
     except Exception as e:
-        print("Error connecting to %s:%s:\n\t%s" % (opt.address, opt.port, e))
+        print(f"Error connecting to {opt.address}:{opt.port}:\n\t{e}")
         sys.exit(1)
 
     if opt.tcp and not connect_to_session(sock, opt.session):

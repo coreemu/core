@@ -137,7 +137,7 @@ def which(command, required):
             break
 
     if found_path is None and required:
-        raise ValueError("failed to find required executable(%s) in path" % command)
+        raise ValueError(f"failed to find required executable({command}) in path")
 
     return found_path
 
@@ -238,12 +238,13 @@ def hex_dump(s, bytes_per_word=2, words_per_line=8):
         line = s[:total_bytes]
         s = s[total_bytes:]
         tmp = map(
-            lambda x: ("%02x" * bytes_per_word) % x,
+            lambda x: (f"{bytes_per_word:02x}" * bytes_per_word) % x,
             zip(*[iter(map(ord, line))] * bytes_per_word),
         )
         if len(line) % 2:
-            tmp.append("%x" % ord(line[-1]))
-        dump += "0x%08x: %s\n" % (count, " ".join(tmp))
+            tmp.append(f"{ord(line[-1]):x}")
+        tmp = " ".join(tmp)
+        dump += f"0x{count:08x}: {tmp}\n"
         count += len(line)
     return dump[:-1]
 
@@ -261,9 +262,9 @@ def file_munge(pathname, header, text):
     file_demunge(pathname, header)
 
     with open(pathname, "a") as append_file:
-        append_file.write("# BEGIN %s\n" % header)
+        append_file.write(f"# BEGIN {header}\n")
         append_file.write(text)
-        append_file.write("# END %s\n" % header)
+        append_file.write(f"# END {header}\n")
 
 
 def file_demunge(pathname, header):
@@ -281,9 +282,9 @@ def file_demunge(pathname, header):
     end = None
 
     for i, line in enumerate(lines):
-        if line == "# BEGIN %s\n" % header:
+        if line == f"# BEGIN {header}\n":
             start = i
-        elif line == "# END %s\n" % header:
+        elif line == f"# END {header}\n":
             end = i + 1
 
     if start is None or end is None:
@@ -305,7 +306,7 @@ def expand_corepath(pathname, session=None, node=None):
     :rtype: str
     """
     if session is not None:
-        pathname = pathname.replace("~", "/home/%s" % session.user)
+        pathname = pathname.replace("~", f"/home/{session.user}")
         pathname = pathname.replace("%SESSION%", str(session.id))
         pathname = pathname.replace("%SESSION_DIR%", session.session_dir)
         pathname = pathname.replace("%SESSION_USER%", session.user)
@@ -364,7 +365,7 @@ def load_classes(path, clazz):
     # validate path exists
     logging.debug("attempting to load modules from path: %s", path)
     if not os.path.isdir(path):
-        logging.warning("invalid custom module directory specified" ": %s" % path)
+        logging.warning("invalid custom module directory specified" ": %s", path)
     # check if path is in sys.path
     parent_path = os.path.dirname(path)
     if parent_path not in sys.path:
@@ -380,7 +381,7 @@ def load_classes(path, clazz):
     # import and add all service modules in the path
     classes = []
     for module_name in module_names:
-        import_statement = "%s.%s" % (base_module, module_name)
+        import_statement = f"{base_module}.{module_name}"
         logging.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)

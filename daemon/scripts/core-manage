@@ -38,7 +38,7 @@ class FileUpdater(object):
             txt = "Updating"
             if self.action == "check":
                 txt = "Checking"
-            sys.stdout.write("%s file: %s\n" % (txt, self.filename))
+            sys.stdout.write(f"{txt} file: {self.filename}\n")
 
         if self.target == "service":
             r = self.update_file(fn=self.update_services)
@@ -52,9 +52,9 @@ class FileUpdater(object):
             if not r:
                 txt = "NOT "
             if self.action == "check":
-                sys.stdout.write("String %sfound.\n" % txt)
+                sys.stdout.write(f"String {txt} found.\n")
             else:
-                sys.stdout.write("File %supdated.\n" % txt)
+                sys.stdout.write(f"File {txt} updated.\n")
 
         return r
 
@@ -70,7 +70,7 @@ class FileUpdater(object):
         r = self.update_keyvals(key, vals)
         if self.action == "check":
             return r
-        valstr = "%s" % r
+        valstr = str(r)
         return "= ".join([key, valstr]) + "\n"
 
     def update_emane_models(self, line):
@@ -125,7 +125,7 @@ class FileUpdater(object):
         else:
             raise ValueError("unknown target")
         if not os.path.exists(filename):
-            raise ValueError("file %s does not exist" % filename)
+            raise ValueError(f"file {filename} does not exist")
         return search, filename
 
     def update_file(self, fn=None):
@@ -187,18 +187,17 @@ class FileUpdater(object):
 
 
 def main():
+    actions = ", ".join(FileUpdater.actions)
+    targets = ", ".join(FileUpdater.targets)
     usagestr = "usage: %prog [-h] [options] <action> <target> <string>\n"
     usagestr += "\nHelper tool to add, remove, or check for "
     usagestr += "services, models, and node types\nin a CORE installation.\n"
     usagestr += "\nExamples:\n  %prog add service newrouting"
     usagestr += "\n  %prog -v check model RfPipe"
     usagestr += "\n  %prog --userpath=\"$HOME/.core\" add nodetype \"{ftp ftp.gif ftp.gif {DefaultRoute FTP} netns {FTP server} }\" \n"
-    usagestr += "\nArguments:\n  <action> should be one of: %s" % \
-                ", ".join(FileUpdater.actions)
-    usagestr += "\n  <target> should be one of: %s" % \
-                ", ".join(FileUpdater.targets)
-    usagestr += "\n  <string> is the text to %s" % \
-                ", ".join(FileUpdater.actions)
+    usagestr += f"\nArguments:\n  <action> should be one of: {actions}"
+    usagestr += f"\n  <target> should be one of: {targets}"
+    usagestr += f"\n  <string> is the text to {actions}"
     parser = optparse.OptionParser(usage=usagestr)
     parser.set_defaults(userpath=None, verbose=False, )
 
@@ -222,14 +221,14 @@ def main():
 
     action = args[0]
     if action not in FileUpdater.actions:
-        usage("invalid action %s" % action, 1)
+        usage(f"invalid action {action}", 1)
 
     target = args[1]
     if target not in FileUpdater.targets:
-        usage("invalid target %s" % target, 1)
+        usage(f"invalid target {target}", 1)
 
     if target == "nodetype" and not options.userpath:
-        usage("user path option required for this target (%s)" % target)
+        usage(f"user path option required for this target ({target})")
 
     data = args[2]
 
@@ -237,7 +236,7 @@ def main():
         up = FileUpdater(action, target, data, options)
         r = up.process()
     except Exception as e:
-        sys.stderr.write("Exception: %s\n" % e)
+        sys.stderr.write(f"Exception: {e}\n")
         sys.exit(1)
     if not r:
         sys.exit(1)

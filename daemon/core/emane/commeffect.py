@@ -73,9 +73,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
         shim_name = emanexml.shim_file_name(self, interface)
 
         # create and write nem document
-        nem_element = etree.Element(
-            "nem", name="%s NEM" % self.name, type="unstructured"
-        )
+        nem_element = etree.Element("nem", name=f"{self.name} NEM", type="unstructured")
         transport_type = "virtual"
         if interface and interface.transport_type == "raw":
             transport_type = "raw"
@@ -90,7 +88,7 @@ class EmaneCommEffectModel(emanemodel.EmaneModel):
 
         # create and write shim document
         shim_element = etree.Element(
-            "shim", name="%s SHIM" % self.name, library=self.shim_library
+            "shim", name=f"{self.name} SHIM", library=self.shim_library
         )
 
         # append all shim options (except filterfile) to shimdoc

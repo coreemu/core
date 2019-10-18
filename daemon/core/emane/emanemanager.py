@@ -227,7 +227,7 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             if emane_net.id in self._emane_nets:
                 raise KeyError(
-                    "non-unique EMANE object id %s for %s" % (emane_net.id, emane_net)
+                    f"non-unique EMANE object id {emane_net.id} for {emane_net}"
                 )
             self._emane_nets[emane_net.id] = emane_net
 
@@ -342,7 +342,7 @@ class EmaneManager(ModelManager):
             try:
                 with open(emane_nems_filename, "w") as f:
                     for nodename, ifname, nemid in nems:
-                        f.write("%s %s %s\n" % (nodename, ifname, nemid))
+                        f.write(f"{nodename} {ifname} {nemid}\n")
             except IOError:
                 logging.exception("Error writing EMANE NEMs file: %s")
 
@@ -535,7 +535,7 @@ class EmaneManager(ModelManager):
             logging.info("setting user-defined EMANE log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
 
-        emanecmd = "emane -d -l %s" % loglevel
+        emanecmd = f"emane -d -l {loglevel}"
         if realtime:
             emanecmd += " -r"
 
@@ -580,11 +580,9 @@ class EmaneManager(ModelManager):
                 node.node_net_client.create_route(eventgroup, eventdev)
 
             # start emane
-            args = "%s -f %s %s" % (
-                emanecmd,
-                os.path.join(path, "emane%d.log" % n),
-                os.path.join(path, "platform%d.xml" % n),
-            )
+            log_file = os.path.join(path, f"emane{n}.log")
+            platform_xml = os.path.join(path, f"platform{n}.xml")
+            args = f"{emanecmd} -f {log_file} {platform_xml}"
             output = node.node_net_cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
             logging.info("node(%s) emane daemon output: %s", node.name, output)
@@ -593,8 +591,9 @@ class EmaneManager(ModelManager):
             return
 
         path = self.session.session_dir
-        emanecmd += " -f %s" % os.path.join(path, "emane.log")
-        emanecmd += " %s" % os.path.join(path, "platform.xml")
+        log_file = os.path.join(path, "emane.log")
+        platform_xml = os.path.join(path, "platform.xml")
+        emanecmd += f" -f {log_file} {platform_xml}"
         utils.check_cmd(emanecmd, cwd=path)
         self.session.distributed.execute(lambda x: x.remote_cmd(emanecmd, cwd=path))
         logging.info("host emane daemon running: %s", emanecmd)
@@ -797,7 +796,7 @@ class EmaneManager(ModelManager):
             node = self.session.get_node(n)
         except CoreError:
             logging.exception(
-                "location event NEM %s has no corresponding node %s" % (nemid, n)
+                "location event NEM %s has no corresponding node %s", nemid, n
             )
             return False
 
