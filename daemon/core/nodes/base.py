@@ -196,7 +196,7 @@ class NodeBase(object):
         model = self.type
         emulation_server = None
         if self.server is not None:
-            emulation_server = self.server.host
+            emulation_server = self.server.name
 
         services = self.services
         if services is not None:
