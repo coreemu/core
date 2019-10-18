@@ -3,26 +3,37 @@ Incorporate grpc into python tkinter GUI
 """
 import logging
 import os
-import tkinter as tk
+from collections import OrderedDict
 
 from core.api.grpc import client, core_pb2
+from coretk.linkinfo import Throughput
+from coretk.querysessiondrawing import SessionTable
+from coretk.wirelessconnection import WirelessConnection
 
 
 class CoreGrpc:
-    def __init__(self, master):
+    def __init__(self, app, sid=None):
         """
         Create a CoreGrpc instance
         """
-        print("Create grpc instance")
         self.core = client.CoreGrpcClient()
-        self.session_id = None
-        self.master = master
+        self.session_id = sid
+        self.master = app.master
 
         # self.set_up()
         self.interface_helper = None
+        self.throughput_draw = Throughput(app.canvas, self)
+        self.wireless_draw = WirelessConnection(app.canvas, self)
 
     def log_event(self, event):
         logging.info("event: %s", event)
+        if event.link_event is not None:
+            self.wireless_draw.hangle_link_event(event.link_event)
+
+    def log_throughput(self, event):
+        interface_throughputs = event.interface_throughputs
+        # bridge_throughputs = event.bridge_throughputs
+        self.throughput_draw.process_grpc_throughput_event(interface_throughputs)
 
     def create_new_session(self):
         """
@@ -36,29 +47,7 @@ class CoreGrpc:
         # handle events session may broadcast
         self.session_id = response.session_id
         self.core.events(self.session_id, self.log_event)
-
-    def _enter_session(self, session_id, dialog):
-        """
-        enter an existing session
-
-        :return:
-        """
-        dialog.destroy()
-        response = self.core.get_session(session_id)
-        self.session_id = session_id
-        print("set session id: %s", session_id)
-        logging.info("Entering session_id %s.... Result: %s", session_id, response)
-        # self.master.canvas.draw_existing_component()
-
-    def _create_session(self, dialog):
-        """
-        create a new session
-
-        :param tkinter.Toplevel dialog: save core session prompt dialog
-        :return: nothing
-        """
-        dialog.destroy()
-        self.create_new_session()
+        self.core.throughputs(self.log_throughput)
 
     def query_existing_sessions(self, sessions):
         """
@@ -68,34 +57,28 @@ class CoreGrpc:
 
         :return: nothing
         """
-        dialog = tk.Toplevel()
-        dialog.title("CORE sessions")
-        for session in sessions:
-            b = tk.Button(
-                dialog,
-                text="Session " + str(session.id),
-                command=lambda sid=session.id: self._enter_session(sid, dialog),
-            )
-            b.pack(side=tk.TOP)
-        b = tk.Button(
-            dialog, text="create new", command=lambda: self._create_session(dialog)
-        )
-        b.pack(side=tk.TOP)
-        dialog.update()
-        x = (
-            self.master.winfo_x()
-            + (self.master.winfo_width() - dialog.winfo_width()) / 2
-        )
-        y = (
-            self.master.winfo_y()
-            + (self.master.winfo_height() / 2 - dialog.winfo_height()) / 2
-        )
-        dialog.geometry(f"+{int(x)}+{int(y)}")
-        dialog.wait_window()
+        SessionTable(self, self.master)
 
-    def delete_session(self):
-        response = self.core.delete_session(self.session_id)
+    def delete_session(self, custom_sid=None):
+        if custom_sid is None:
+            sid = self.session_id
+        else:
+            sid = custom_sid
+        response = self.core.delete_session(sid)
         logging.info("Deleted session result: %s", response)
+
+    def terminate_session(self, custom_sid=None):
+        if custom_sid is None:
+            sid = self.session_id
+        else:
+            sid = custom_sid
+        s = self.core.get_session(sid).session
+        # delete links and nodes from running session
+        if s.state == core_pb2.SessionState.RUNTIME:
+            self.set_session_state("datacollect", sid)
+            self.delete_links(sid)
+            self.delete_nodes(sid)
+        self.delete_session(sid)
 
     def set_up(self):
         """
@@ -106,7 +89,7 @@ class CoreGrpc:
         self.core.connect()
 
         response = self.core.get_sessions()
-        logging.info("all sessions: %s", response)
+        # logging.info("coregrpc.py: all sessions: %s", response)
 
         # if there are no sessions, create a new session, else join a session
         sessions = response.sessions
@@ -119,70 +102,87 @@ class CoreGrpc:
 
     def get_session_state(self):
         response = self.core.get_session(self.session_id)
-        logging.info("get session: %s", response)
+        # logging.info("get session: %s", response)
         return response.session.state
 
-    def set_session_state(self, state):
+    def set_session_state(self, state, custom_session_id=None):
         """
         Set session state
 
         :param str state: session state to set
         :return: nothing
         """
-        response = None
+        if custom_session_id is None:
+            sid = self.session_id
+        else:
+            sid = custom_session_id
+
         if state == "configuration":
             response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.CONFIGURATION
+                sid, core_pb2.SessionState.CONFIGURATION
             )
         elif state == "instantiation":
             response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.INSTANTIATION
+                sid, core_pb2.SessionState.INSTANTIATION
             )
         elif state == "datacollect":
             response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.DATACOLLECT
+                sid, core_pb2.SessionState.DATACOLLECT
             )
         elif state == "shutdown":
-            response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.SHUTDOWN
-            )
+            response = self.core.set_session_state(sid, core_pb2.SessionState.SHUTDOWN)
         elif state == "runtime":
-            response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.RUNTIME
-            )
+            response = self.core.set_session_state(sid, core_pb2.SessionState.RUNTIME)
         elif state == "definition":
             response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.DEFINITION
+                sid, core_pb2.SessionState.DEFINITION
             )
         elif state == "none":
-            response = self.core.set_session_state(
-                self.session_id, core_pb2.SessionState.NONE
-            )
+            response = self.core.set_session_state(sid, core_pb2.SessionState.NONE)
         else:
             logging.error("coregrpc.py: set_session_state: INVALID STATE")
 
         logging.info("set session state: %s", response)
 
     def add_node(self, node_type, model, x, y, name, node_id):
-        logging.info("coregrpc.py ADD NODE %s", name)
         position = core_pb2.Position(x=x, y=y)
         node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
         response = self.core.add_node(self.session_id, node)
         logging.info("created node: %s", response)
+        if node_type == core_pb2.NodeType.WIRELESS_LAN:
+            d = OrderedDict()
+            d["basic_range"] = "275"
+            d["bandwidth"] = "54000000"
+            d["jitter"] = "0"
+            d["delay"] = "20000"
+            d["error"] = "0"
+            r = self.core.set_wlan_config(self.session_id, node_id, d)
+            logging.debug("set wlan config %s", r)
         return response.node_id
 
     def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
         response = self.core.edit_node(self.session_id, node_id, position)
         logging.info("updated node id %s: %s", node_id, response)
+        # self.core.events(self.session_id, self.log_event)
 
-    def delete_nodes(self):
-        for node in self.core.get_session(self.session_id).session.nodes:
+    def delete_nodes(self, delete_session=None):
+        if delete_session is None:
+            sid = self.session_id
+        else:
+            sid = delete_session
+        for node in self.core.get_session(sid).session.nodes:
             response = self.core.delete_node(self.session_id, node.id)
-            logging.info("delete node %s", response)
+            logging.info("delete nodes %s", response)
 
-    def delete_links(self):
-        for link in self.core.get_session(self.session_id).session.links:
+    def delete_links(self, delete_session=None):
+        sid = None
+        if delete_session is None:
+            sid = self.session_id
+        else:
+            sid = delete_session
+
+        for link in self.core.get_session(sid).session.links:
             response = self.core.delete_link(
                 self.session_id,
                 link.node_one_id,
@@ -190,7 +190,7 @@ class CoreGrpc:
                 link.interface_one.id,
                 link.interface_two.id,
             )
-            logging.info("delete link %s", response)
+            logging.info("delete links %s", response)
 
     def add_link(self, id1, id2, type1, type2, edge):
         """
@@ -235,6 +235,13 @@ class CoreGrpc:
         response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
 
+    # def get_session(self):
+    #     response = self.core.get_session(self.session_id)
+    #     nodes = response.session.nodes
+    #     for node in nodes:
+    #         r = self.core.get_node_links(self.session_id, node.id)
+    #         logging.info(r)
+
     def launch_terminal(self, node_id):
         response = self.core.get_node_terminal(self.session_id, node_id)
         logging.info("get terminal %s", response.terminal)
@@ -249,6 +256,7 @@ class CoreGrpc:
         """
         response = self.core.save_xml(self.session_id, file_path)
         logging.info("coregrpc.py save xml %s", response)
+        self.core.events(self.session_id, self.log_event)
 
     def open_xml(self, file_path):
         """
@@ -258,7 +266,10 @@ class CoreGrpc:
         :return: session id
         """
         response = self.core.open_xml(file_path)
-        return response.session_id
+        self.session_id = response.session_id
+        # print("Sessionz")
+        # self.core.events(self.session_id, self.log_event)
+        # return response.session_id
         # logging.info("coregrpc.py open_xml()", type(response))
 
     def close(self):

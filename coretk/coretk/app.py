@@ -25,6 +25,7 @@ class Application(tk.Frame):
         self.create_widgets()
         self.draw_canvas()
         self.start_grpc()
+        # self.try_make_table()
 
     def load_images(self):
         """
@@ -89,7 +90,7 @@ class Application(tk.Frame):
         :return: nothing
         """
         self.master.update()
-        self.core_grpc = CoreGrpc(self.master)
+        self.core_grpc = CoreGrpc(self)
         self.core_grpc.set_up()
         self.canvas.core_grpc = self.core_grpc
         self.canvas.draw_existing_component()
@@ -98,6 +99,13 @@ class Application(tk.Frame):
         menu_action = MenuAction(self, self.master)
         menu_action.on_quit()
         # self.quit()
+
+    def try_make_table(self):
+        f = tk.Frame(self.master)
+        for i in range(3):
+            e = tk.Entry(f)
+            e.grid(row=0, column=1, stick="nsew")
+        f.pack(side=tk.TOP)
 
 
 if __name__ == "__main__":

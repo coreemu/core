@@ -1,5 +1,2 @@
-/home/ncs/Desktop/random.xml/home/ncs/Desktop/untitled.xml/home/ncs/Desktop/test.xml
-/home/ncs/Desktop/test1.xml
-
-/home/ncs/Desktop/untitled.xml
-/home/ncs/Desktop/test1.xml
+/home/ncs/Desktop/runningtest.xml
+/home/ncs/Desktop/notrunning.xml

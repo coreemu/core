@@ -3,12 +3,10 @@ The actions taken when each menubar option is clicked
 """
 
 import logging
-import tkinter as tk
 import webbrowser
-from tkinter import messagebox
+from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
-from coretk.coregrpc import CoreGrpc
 
 SAVEDIR = "/home/ncs/Desktop/"
 
@@ -317,14 +315,6 @@ def session_options():
     logging.debug("Click session options")
 
 
-# def help_core_github():
-#     webbrowser.open_new("https://github.com/coreemu/core")
-#
-#
-# def help_core_documentation():
-#     webbrowser.open_new("http://coreemu.github.io/core/")
-
-
 def help_about():
     logging.debug("Click help About")
 
@@ -367,7 +357,8 @@ class MenuAction:
                     grpc.delete_links()
                     grpc.delete_nodes()
                     grpc.delete_session()
-
+                # else:
+                #     grpc.set_session_state("definition")
                 grpc.core.close()
                 # self.application.quit()
 
@@ -384,35 +375,43 @@ class MenuAction:
     def file_save_as_xml(self):
         logging.info("menuaction.py file_save_as_xml()")
         grpc = self.application.core_grpc
-        file_path = tk.filedialog.asksaveasfilename(
+        file_path = filedialog.asksaveasfilename(
             initialdir=SAVEDIR,
             title="Save As",
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
         )
-        with open("prev_saved_xml.txt", "a") as file:
-            file.write(file_path + "\n")
+        # with open("prev_saved_xml.txt", "a") as file:
+        #     file.write(file_path + "\n")
         grpc.save_xml(file_path)
 
     def file_open_xml(self):
         logging.info("menuaction.py file_open_xml()")
-        # grpc = self.application.core_grpc
-        file_path = tk.filedialog.askopenfilename(
+        file_path = filedialog.askopenfilename(
             initialdir=SAVEDIR,
             title="Open",
             filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
         )
-        # clean up before openning a new session
-        # t0 = time.clock()
+        # clean up before opening a new session
         self.clean_nodes_links_and_set_configuarations()
-        grpc = CoreGrpc(self.application.master)
-        grpc.core.connect()
-        session_id = grpc.open_xml(file_path)
-        grpc.session_id = session_id
-        self.application.core_grpc = grpc
-        self.application.canvas.core_grpc = grpc
-        self.application.canvas.delete_components()
-        self.application.canvas.draw_existing_component()
+        # grpc = CoreGrpc(self.application.master)
+        # grpc.core.connect()
+        core_grpc = self.application.core_grpc
+        core_grpc.core.connect()
+        # session_id = core_grpc.open_xml(file_path)
+        # core_grpc.session_id = session_id
+
+        core_grpc.open_xml(file_path)
+        # print("Print session state")
+        # print(grpc.get_session_state())
+        self.application.canvas.canvas_reset_and_redraw(core_grpc)
+
+        # Todo might not need
+        self.application.core_grpc = core_grpc
+
+        self.application.core_editbar.destroy_children_widgets()
+        self.application.core_editbar.create_runtime_toolbar()
+        # self.application.canvas.draw_existing_component()
         # t1 = time.clock()
         # print(t1 - t0)
 

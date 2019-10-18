@@ -87,6 +87,10 @@ class ImageEnum(Enum):
     STOP = "stop"
     OBSERVE = "observe"
     RUN = "run"
+    DOCUMENTNEW = "document-new"
+    FILEOPEN = "fileopen"
+    EDITDELETE = "edit-delete"
+    ANTENNA = "antenna"
 
 
 def load_core_images(images):

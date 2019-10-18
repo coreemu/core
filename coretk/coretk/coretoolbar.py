@@ -1,10 +1,23 @@
 import logging
 import tkinter as tk
+from enum import Enum
 
 from core.api.grpc import core_pb2
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
 from coretk.tooltip import CreateToolTip
+
+# from coretk.graph_helper import WlanConnection
+
+
+class SessionStateEnum(Enum):
+    NONE = "none"
+    DEFINITION = "definition"
+    CONFIGURATION = "configuration"
+    RUNTIME = "runtime"
+    DATACOLLECT = "datacollect"
+    SHUTDOWN = "shutdown"
+    INSTANTIATION = "instantiation"
 
 
 class CoreToolbar(object):
@@ -62,7 +75,7 @@ class CoreToolbar(object):
         if self.marker_option_menu and self.marker_option_menu.winfo_exists():
             self.marker_option_menu.destroy()
 
-    def destroy_children_widgets(self, parent):
+    def destroy_children_widgets(self):
         """
         Destroy all children of a parent widget
 
@@ -70,7 +83,7 @@ class CoreToolbar(object):
         :return: nothing
         """
 
-        for i in parent.winfo_children():
+        for i in self.edit_frame.winfo_children():
             if i.winfo_name() != "!frame":
                 i.destroy()
 
@@ -150,14 +163,23 @@ class CoreToolbar(object):
         self.canvas.mode = GraphMode.SELECT
 
     def click_start_session_tool(self):
+        """
+        Start session handler: redraw buttons, send node and link messages to grpc server
+
+        :return: nothing
+        """
         logging.debug("Click START STOP SESSION button")
-        self.destroy_children_widgets(self.edit_frame)
+        # self.destroy_children_widgets(self.edit_frame)
+        self.destroy_children_widgets()
         self.canvas.mode = GraphMode.SELECT
 
         # set configuration state
-        if self.canvas.core_grpc.get_session_state() == core_pb2.SessionState.SHUTDOWN:
-            self.canvas.core_grpc.set_session_state("definition")
-        self.canvas.core_grpc.set_session_state("configuration")
+        state = self.canvas.core_grpc.get_session_state()
+
+        if state == core_pb2.SessionState.SHUTDOWN:
+            self.canvas.core_grpc.set_session_state(SessionStateEnum.DEFINITION.value)
+
+        self.canvas.core_grpc.set_session_state(SessionStateEnum.CONFIGURATION.value)
 
         for node in self.canvas.grpc_manager.nodes.values():
             self.canvas.core_grpc.add_node(
@@ -169,8 +191,9 @@ class CoreToolbar(object):
                 edge.id1, edge.id2, edge.type1, edge.type2, edge
             )
 
-        self.canvas.core_grpc.set_session_state("instantiation")
+        self.canvas.core_grpc.set_session_state(SessionStateEnum.INSTANTIATION.value)
 
+        # self.canvas.core_grpc.get_session()
         self.create_runtime_toolbar()
 
     def click_link_tool(self):
@@ -206,7 +229,7 @@ class CoreToolbar(object):
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get(ImageEnum.MDR.value))
         self.canvas.mode = GraphMode.PICKNODE
-        self.canvas.draw_node_image = Images.get(ImageEnum.MD.value)
+        self.canvas.draw_node_image = Images.get(ImageEnum.MDR.value)
         self.canvas.draw_node_name = "mdr"
 
     def pick_prouter(self, main_button):
@@ -493,6 +516,11 @@ class CoreToolbar(object):
         CreateToolTip(marker_main_button, "background annotation tools")
 
     def create_toolbar(self):
+        """
+        Create buttons for toolbar in edit mode
+
+        :return: nothing
+        """
         self.create_regular_button(
             self.edit_frame,
             Images.get(ImageEnum.START.value),
@@ -551,9 +579,16 @@ class CoreToolbar(object):
         menu_button.menu.add_command(label="Edit...")
 
     def click_stop_button(self):
+        """
+        redraw buttons on the toolbar, send node and link messages to grpc server
+
+        :return: nothing
+        """
         logging.debug("Click on STOP button ")
-        self.destroy_children_widgets(self.edit_frame)
-        self.canvas.core_grpc.set_session_state("datacollect")
+        # self.destroy_children_widgets(self.edit_frame)
+        self.destroy_children_widgets()
+
+        self.canvas.core_grpc.set_session_state(SessionStateEnum.DATACOLLECT.value)
         self.canvas.core_grpc.delete_links()
         self.canvas.core_grpc.delete_nodes()
         self.create_toolbar()

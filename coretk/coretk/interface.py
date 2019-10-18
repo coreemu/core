@@ -20,6 +20,11 @@ class Interface:
         self.id = ifid
 
     def random_mac_address(self):
+        """
+        create a random MAC address for an interface
+
+        :return: nothing
+        """
         return "02:00:00:%02x:%02x:%02x" % (
             random.randint(0, 255),
             random.randint(0, 255),
