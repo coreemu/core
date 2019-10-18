@@ -680,7 +680,7 @@ class CoreNode(CoreNodeBase):
             if self.up:
                 flow_id = self.node_net_client.get_ifindex(veth.name)
                 veth.flow_id = int(flow_id)
-                logging.info("interface flow index: %s - %s", veth.name, veth.flow_id)
+                logging.debug("interface flow index: %s - %s", veth.name, veth.flow_id)
 
             try:
                 # add network interface to the node. If unsuccessful, destroy the
