@@ -492,13 +492,15 @@ class CoreNode(CoreNodeBase):
                 raise ValueError("starting a node that is already up")
 
             # create a new namespace for this node using vnoded
-            vnoded = f"{VNODED_BIN} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log -p {self.ctrlchnlname}.pid"
+            vnoded = (
+                f"{VNODED_BIN} -v -c {self.ctrlchnlname} -l {self.ctrlchnlname}.log "
+                f"-p {self.ctrlchnlname}.pid"
+            )
             if self.nodedir:
                 vnoded += f" -C {self.nodedir}"
             env = self.session.get_environment(state=False)
             env["NODE_NUMBER"] = str(self.id)
             env["NODE_NAME"] = str(self.name)
-            logging.info("env: %s", env)
 
             output = self.net_cmd(vnoded, env=env)
             self.pid = int(output)
