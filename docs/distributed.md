@@ -9,39 +9,17 @@ A large emulation scenario can be deployed on multiple emulation servers and
 controlled by a single GUI. The GUI, representing the entire topology, can be
 run on one of the emulation servers or on a separate machine.
 
-Each machine that will act as an emulation server would ideally have the
- same version of CORE installed. It is not important to have the GUI component 
- but the CORE Python daemon **core-daemon** needs to be installed.
- 
-**NOTE: The server that the GUI connects with is referred to as 
-the master server.**
+Each machine that will act as an emulation will require the installation of a distributed CORE package and
+some configuration to allow SSH as root.
 
-## Configuring Listen Address
+## Configuring SSH
 
-First we need to configure the **core-daemon** on all servers to listen on an
-interface over the network. The simplest way would be updating the core 
-configuration file to listen on all interfaces. Alternatively, configure it to
-listen to the specific interface you desire by supplying the correct address.
+Distributed CORE works using the python fabric library to run commands on remote servers over SSH.
 
-The **listenaddr** configuration should be set to the address of the interface
-that should receive CORE API control commands from the other servers; 
-setting **listenaddr = 0.0.0.0** causes the Python daemon to listen on all
-interfaces. CORE uses TCP port **4038** by default to communicate from the 
-controlling machine (with GUI) to the emulation servers. Make sure that 
-firewall rules are configured as necessary to allow this traffic.
+### Remote GUI Terminals
 
-```shell
-# open configuration file
-vi /etc/core/core.conf
-
-# within core.conf
-[core-daemon]
-listenaddr = 0.0.0.0
-```
-
-## Enabling Remote SSH Shells
-
-### Update GUI Terminal Program
+You need to have the same user defined on each server, since the user used 
+for these remote shells is the same user that is running the CORE GUI.
 
 **Edit -> Preferences... -> Terminal program:**
 
@@ -54,31 +32,51 @@ May need to install xterm if, not already installed.
 sudo apt install xterm
 ```
 
-### Setup SSH
+### Distributed Server SSH Configuration
 
-In order to easily open shells on the emulation servers, the servers should be
-running an SSH server, and public key login should be enabled. This is
-accomplished by generating an SSH key for your user on all servers being used
-for distributed emulation, if you do not already have one. Then copying your
-master server public key to the authorized_keys file on all other servers that
-will be used to help drive the distributed emulation. When double-clicking on a
-node during runtime, instead of opening a local shell, the GUI will attempt to
-SSH to the emulation server to run an interactive shell. 
+First the distributed servers must be configured to allow passwordless root login over SSH.
 
-You need to have the same user defined on each server, since the user used 
-for these remote shells is the same user that is running the CORE GUI.
-
-```shell
+On distributed server:
+```shelll
 # install openssh-server
 sudo apt install openssh-server
 
-# generate ssh if needed
-ssh-keygen -o -t rsa -b 4096
+# open sshd config
+vi /etc/ssh/sshd_config
+
+# verify these configurations in file
+PermitRootLogin yes
+PasswordAuthentication yes
+
+# restart sshd
+sudo systemctl restart sshd
+```
+
+On master server:
+```shell
+# install package if needed
+sudo apt install openssh-client
+
+# generate ssh key if needed
+ssh-keygen -o -t rsa -b 4096 -f ~/.ssh/core
 
 # copy public key to authorized_keys file
-ssh-copy-id user@server
-# or
-scp ~/.ssh/id_rsa.pub username@server:~/.ssh/authorized_keys
+ssh-copy-id -i ~/.ssh/core root@server
+
+# configure fabric to use the core ssh key
+sudo vi /etc/fabric.yml
+``` 
+
+On distributed server:
+```shell
+# open sshd config
+vi /etc/ssh/sshd_config
+
+# change configuration for root login to without password
+PermitRootLogin without-password
+
+# restart sshd
+sudo systemctl restart sshd
 ```
 
 ## Add Emulation Servers in GUI
@@ -155,27 +153,16 @@ The names before the addresses need to match the servers configured in
 controlnet = core1:172.16.1.0/24 core2:172.16.2.0/24 core3:172.16.3.0/24 core4:172.16.4.0/24 core5:172.16.5.0/24
 ```
 
-EMANE appears to require location events for nodes to be sync'ed across
-all EMANE instances for nodes to find each other. Using an EMANE eel file
-for your scenario can help clear this up, which might be desired anyway.
-
-* https://github.com/adjacentlink/emane/wiki/EEL-Generator
-
-You can also move nodes within the GUI to help trigger location events from
-CORE when the **core.conf** settings below is used. Assuming the nodes
-did not find each other by default and you are not using an eel file.
-
 ```shell
 emane_event_generate = True
 ```
 
 ## Distributed Checklist
 
-1. Install the same version of the CORE daemon on all servers.
-1. Set **listenaddr** configuration in all of the server's core.conf files,
-then start (or restart) the daemon.
+1. Install CORE on master server
+1. Install distributed CORE package on all servers needed
 1. Installed and configure public-key SSH access on all servers (if you want to use
-double-click shells or Widgets.)
+double-click shells or Widgets.) for both the GUI user (for terminals) and root for running CORE commands
 1. Choose the servers that participate in distributed emulation.
 1. Assign nodes to desired servers, empty for master server.
 1. Press the **Start** button to launch the distributed emulation.
