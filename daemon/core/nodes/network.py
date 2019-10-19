@@ -162,20 +162,20 @@ class EbtablesQueue(object):
         """
         # save kernel ebtables snapshot to a file
         args = self.ebatomiccmd("--atomic-save")
-        wlan.net_cmd(args)
+        wlan.host_cmd(args)
 
         # modify the table file using queued ebtables commands
         for c in self.cmds:
             args = self.ebatomiccmd(c)
-            wlan.net_cmd(args)
+            wlan.host_cmd(args)
         self.cmds = []
 
         # commit the table file to the kernel
         args = self.ebatomiccmd("--atomic-commit")
-        wlan.net_cmd(args)
+        wlan.host_cmd(args)
 
         try:
-            wlan.net_cmd(f"rm -f {self.atomic_file}")
+            wlan.host_cmd(f"rm -f {self.atomic_file}")
         except CoreCommandError:
             logging.exception("error removing atomic file: %s", self.atomic_file)
 
@@ -270,7 +270,7 @@ class CoreNetwork(CoreNetworkBase):
             self.startup()
             ebq.startupdateloop(self)
 
-    def net_cmd(self, args, env=None, cwd=None, wait=True):
+    def host_cmd(self, args, env=None, cwd=None, wait=True):
         """
         Runs a command that is used to configure and setup the network on the host
         system and all configured distributed servers.
@@ -302,7 +302,7 @@ class CoreNetwork(CoreNetworkBase):
             f"{EBTABLES_BIN} -N {self.brname} -P {self.policy}",
             f"{EBTABLES_BIN} -A FORWARD --logical-in {self.brname} -j {self.brname}",
         ]
-        ebtablescmds(self.net_cmd, cmds)
+        ebtablescmds(self.host_cmd, cmds)
 
         self.up = True
 
@@ -323,7 +323,7 @@ class CoreNetwork(CoreNetworkBase):
                 f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
                 f"{EBTABLES_BIN} -X {self.brname}",
             ]
-            ebtablescmds(self.net_cmd, cmds)
+            ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
             logging.exception("error during shutdown")
 
@@ -462,13 +462,13 @@ class CoreNetwork(CoreNetworkBase):
             if bw > 0:
                 if self.up:
                     cmd = f"{tc} {parent} handle 1: {tbf}"
-                    netif.net_cmd(cmd)
+                    netif.host_cmd(cmd)
                 netif.setparam("has_tbf", True)
                 changed = True
             elif netif.getparam("has_tbf") and bw <= 0:
                 if self.up:
                     cmd = f"{TC_BIN} qdisc delete dev {devname} {parent}"
-                    netif.net_cmd(cmd)
+                    netif.host_cmd(cmd)
                 netif.setparam("has_tbf", False)
                 # removing the parent removes the child
                 netif.setparam("has_netem", False)
@@ -510,14 +510,14 @@ class CoreNetwork(CoreNetworkBase):
                 return
             if self.up:
                 cmd = f"{TC_BIN} qdisc delete dev {devname} {parent} handle 10:"
-                netif.net_cmd(cmd)
+                netif.host_cmd(cmd)
             netif.setparam("has_netem", False)
         elif len(netem) > 1:
             if self.up:
                 cmd = (
                     f"{TC_BIN} qdisc replace dev {devname} {parent} handle 10: {netem}"
                 )
-                netif.net_cmd(cmd)
+                netif.host_cmd(cmd)
             netif.setparam("has_netem", True)
 
     def linknet(self, net):
@@ -802,7 +802,7 @@ class CtrlNet(CoreNetwork):
                 self.brname,
                 self.updown_script,
             )
-            self.net_cmd(f"{self.updown_script} {self.brname} startup")
+            self.host_cmd(f"{self.updown_script} {self.brname} startup")
 
         if self.serverintf:
             self.net_client.create_interface(self.brname, self.serverintf)
@@ -830,7 +830,7 @@ class CtrlNet(CoreNetwork):
                     self.brname,
                     self.updown_script,
                 )
-                self.net_cmd(f"{self.updown_script} {self.brname} shutdown")
+                self.host_cmd(f"{self.updown_script} {self.brname} shutdown")
             except CoreCommandError:
                 logging.exception("error issuing shutdown script shutdown")
 

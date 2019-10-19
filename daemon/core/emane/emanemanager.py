@@ -583,7 +583,7 @@ class EmaneManager(ModelManager):
             log_file = os.path.join(path, f"emane{n}.log")
             platform_xml = os.path.join(path, f"platform{n}.xml")
             args = f"{emanecmd} -f {log_file} {platform_xml}"
-            output = node.node_net_cmd(args)
+            output = node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
             logging.info("node(%s) emane daemon output: %s", node.name, output)
 
@@ -613,7 +613,7 @@ class EmaneManager(ModelManager):
                 continue
 
             if node.up:
-                node.node_net_cmd(kill_emaned, wait=False)
+                node.cmd(kill_emaned, wait=False)
                 # TODO: RJ45 node
 
         if stop_emane_on_host:
@@ -813,7 +813,7 @@ class EmaneManager(ModelManager):
         """
         args = "pkill -0 -x emane"
         try:
-            node.node_net_cmd(args)
+            node.cmd(args)
             result = True
         except CoreCommandError:
             result = False

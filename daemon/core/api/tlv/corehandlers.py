@@ -885,7 +885,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                             status = e.returncode
                     else:
                         try:
-                            res = node.node_net_cmd(command)
+                            res = node.cmd(command)
                             status = 0
                         except CoreCommandError as e:
                             res = e.stderr
@@ -911,7 +911,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     if message.flags & MessageFlags.LOCAL.value:
                         utils.mute_detach(command)
                     else:
-                        node.node_net_cmd(command, wait=False)
+                        node.cmd(command, wait=False)
         except CoreError:
             logging.exception("error getting object: %s", node_num)
             # XXX wait and queue this message to try again later

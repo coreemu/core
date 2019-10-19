@@ -598,7 +598,7 @@ class CoreServices(object):
         for cmd in cmds:
             logging.debug("validating service(%s) using: %s", service.name, cmd)
             try:
-                node.node_net_cmd(cmd)
+                node.cmd(cmd)
             except CoreCommandError as e:
                 logging.debug(
                     "node(%s) service(%s) validate failed", node.name, service.name
@@ -631,7 +631,7 @@ class CoreServices(object):
         status = 0
         for args in service.shutdown:
             try:
-                node.node_net_cmd(args)
+                node.cmd(args)
             except CoreCommandError:
                 logging.exception("error running stop command %s", args)
                 status = -1
@@ -729,7 +729,7 @@ class CoreServices(object):
         status = 0
         for cmd in cmds:
             try:
-                node.node_net_cmd(cmd, wait)
+                node.cmd(cmd, wait)
             except CoreCommandError:
                 logging.exception("error starting command")
                 status = -1
