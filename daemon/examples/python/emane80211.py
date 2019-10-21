@@ -1,7 +1,3 @@
-#!/usr/bin/python -i
-#
-# Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
-
 import datetime
 import logging
 import parser

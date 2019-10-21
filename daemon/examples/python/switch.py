@@ -1,10 +1,3 @@
-#!/usr/bin/python
-#
-# run iperf to measure the effective throughput between two nodes when
-# n nodes are connected to a virtual wlan; run test for testsec
-# and repeat for minnodes <= n <= maxnodes with a step size of
-# nodestep
-
 import datetime
 import logging
 import parser

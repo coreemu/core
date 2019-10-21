@@ -1,17 +1,13 @@
 import logging
-import pdb
-import sys
 
+import distributed_parser
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
 from core.emulator.enumerations import EventTypes, NodeTypes
 
 
-def main():
-    address = sys.argv[1]
-    remote = sys.argv[2]
-
+def main(args):
     # ip generator for example
     prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
@@ -20,14 +16,14 @@ def main():
         {
             "controlnet": "core1:172.16.1.0/24 core2:172.16.2.0/24 core3:172.16.3.0/24 "
             "core4:172.16.4.0/24 core5:172.16.5.0/24",
-            "distributed_address": address,
+            "distributed_address": args.address,
         }
     )
     session = coreemu.create_session()
 
     # initialize distributed
     server_name = "core2"
-    session.distributed.add_server(server_name, remote)
+    session.distributed.add_server(server_name, args.server)
 
     # must be in configuration state for nodes to start, when using "node_add" below
     session.set_state(EventTypes.CONFIGURATION_STATE)
@@ -48,13 +44,10 @@ def main():
     session.add_link(node_two.id, emane_net.id, interface_one=interface_two)
 
     # instantiate session
-    try:
-        session.instantiate()
-    except Exception:
-        logging.exception("error during instantiate")
+    session.instantiate()
 
     # pause script for verification
-    pdb.set_trace()
+    input("press enter for shutdown")
 
     # shutdown session
     coreemu.shutdown()
@@ -62,4 +55,5 @@ def main():
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.INFO)
-    main()
+    args = distributed_parser.parse(__file__)
+    main(args)
