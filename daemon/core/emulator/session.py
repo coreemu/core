@@ -1914,4 +1914,4 @@ class Session(object):
             utils.mute_detach(data)
         else:
             node = self.get_node(node_id)
-            node.node_net_cmd(data, wait=False)
+            node.cmd(data, wait=False)

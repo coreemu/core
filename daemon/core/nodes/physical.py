@@ -188,13 +188,13 @@ class PhysicalNode(CoreNodeBase):
         source = os.path.abspath(source)
         logging.info("mounting %s at %s", source, target)
         os.makedirs(target)
-        self.net_cmd(f"{MOUNT_BIN} --bind {source} {target}", cwd=self.nodedir)
+        self.host_cmd(f"{MOUNT_BIN} --bind {source} {target}", cwd=self.nodedir)
         self._mounts.append((source, target))
 
     def umount(self, target):
         logging.info("unmounting '%s'", target)
         try:
-            self.net_cmd(f"{UMOUNT_BIN} -l {target}", cwd=self.nodedir)
+            self.host_cmd(f"{UMOUNT_BIN} -l {target}", cwd=self.nodedir)
         except CoreCommandError:
             logging.exception("unmounting failed for %s", target)
 
@@ -220,8 +220,8 @@ class PhysicalNode(CoreNodeBase):
             os.chmod(node_file.name, mode)
             logging.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
 
-    def node_net_cmd(self, args, wait=True):
-        return self.net_cmd(args, wait=wait)
+    def cmd(self, args, wait=True):
+        return self.host_cmd(args, wait=wait)
 
 
 class Rj45Node(CoreNodeBase, CoreInterface):

@@ -42,12 +42,12 @@ def example(options):
     last_node = session.get_node(options.nodes + 1)
 
     logging.info("starting iperf server on node: %s", first_node.name)
-    first_node.node_net_cmd("iperf -s -D")
+    first_node.cmd("iperf -s -D")
     first_node_address = prefixes.ip4_address(first_node)
     logging.info("node %s connecting to %s", last_node.name, first_node_address)
-    output = last_node.node_net_cmd(f"iperf -t {options.time} -c {first_node_address}")
+    output = last_node.cmd(f"iperf -t {options.time} -c {first_node_address}")
     logging.info(output)
-    first_node.node_net_cmd("killall -9 iperf")
+    first_node.cmd("killall -9 iperf")
 
     # shutdown session
     coreemu.shutdown()

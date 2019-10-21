@@ -881,7 +881,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
         try:
-            output = node.node_net_cmd(request.command)
+            output = node.cmd(request.command)
         except CoreCommandError as e:
             output = e.stderr
         return core_pb2.NodeCommandResponse(output=output)

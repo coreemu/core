@@ -131,7 +131,7 @@ class DockerNode(CoreNode):
             if self.up:
                 raise ValueError("starting a node that is already up")
             self.makenodedir()
-            self.client = DockerClient(self.name, self.image, self.net_cmd)
+            self.client = DockerClient(self.name, self.image, self.host_cmd)
             self.pid = self.client.create_container()
             self.up = True
 
@@ -176,7 +176,7 @@ class DockerNode(CoreNode):
         """
         logging.debug("creating node dir: %s", path)
         args = f"mkdir -p {path}"
-        self.node_net_cmd(args)
+        self.cmd(args)
 
     def mount(self, source, target):
         """
@@ -206,13 +206,13 @@ class DockerNode(CoreNode):
         temp.close()
 
         if directory:
-            self.node_net_cmd(f"mkdir -m {0o755:o} -p {directory}")
+            self.cmd(f"mkdir -m {0o755:o} -p {directory}")
         if self.server is not None:
             self.server.remote_put(temp.name, temp.name)
         self.client.copy_file(temp.name, filename)
-        self.node_net_cmd(f"chmod {mode:o} {filename}")
+        self.cmd(f"chmod {mode:o} {filename}")
         if self.server is not None:
-            self.net_cmd(f"rm -f {temp.name}")
+            self.host_cmd(f"rm -f {temp.name}")
         os.unlink(temp.name)
         logging.debug(
             "node(%s) added file: %s; mode: 0%o", self.name, filename, mode
@@ -232,7 +232,7 @@ class DockerNode(CoreNode):
             "node file copy file(%s) source(%s) mode(%s)", filename, srcfilename, mode
         )
         directory = os.path.dirname(filename)
-        self.node_net_cmd(f"mkdir -p {directory}")
+        self.cmd(f"mkdir -p {directory}")
 
         if self.server is None:
             source = srcfilename
@@ -242,4 +242,4 @@ class DockerNode(CoreNode):
             self.server.remote_put(source, temp.name)
 
         self.client.copy_file(source, filename)
-        self.node_net_cmd(f"chmod {mode:o} {filename}")
+        self.cmd(f"chmod {mode:o} {filename}")

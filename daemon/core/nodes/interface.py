@@ -17,7 +17,7 @@ class CoreInterface(object):
 
     def __init__(self, session, node, name, mtu, server=None):
         """
-        Creates a PyCoreNetIf instance.
+        Creates a CoreInterface instance.
 
         :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: node for interface
@@ -46,11 +46,11 @@ class CoreInterface(object):
         self.flow_id = None
         self.server = server
         use_ovs = session.options.get_config("ovs") == "True"
-        self.net_client = get_net_client(use_ovs, self.net_cmd)
+        self.net_client = get_net_client(use_ovs, self.host_cmd)
 
-    def net_cmd(self, args, env=None, cwd=None, wait=True):
+    def host_cmd(self, args, env=None, cwd=None, wait=True):
         """
-        Runs a command on the host system or distributed servers.
+        Runs a command on the host system or distributed server.
 
         :param str args: command to run
         :param dict env: environment to run command with
