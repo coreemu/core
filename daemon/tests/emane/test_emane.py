@@ -6,13 +6,13 @@ from xml.etree import ElementTree
 
 import pytest
 
-from core import CoreError
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.emudata import NodeOptions
+from core.errors import CoreCommandError, CoreError
 
 _EMANE_MODELS = [
     EmaneIeee80211abgModel,
@@ -26,7 +26,12 @@ _DIR = os.path.dirname(os.path.abspath(__file__))
 
 def ping(from_node, to_node, ip_prefixes, count=3):
     address = ip_prefixes.ip4_address(to_node)
-    return from_node.cmd(["ping", "-c", str(count), address])
+    try:
+        from_node.cmd(f"ping -c {count} {address}")
+        status = 0
+    except CoreCommandError as e:
+        status = e.returncode
+    return status
 
 
 class TestEmane:

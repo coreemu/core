@@ -7,7 +7,6 @@ import time
 import mock
 import pytest
 
-from core import CoreError
 from core.api.tlv import coreapi
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.enumerations import (
@@ -24,12 +23,13 @@ from core.emulator.enumerations import (
     RegisterTlvs,
     SessionTlvs,
 )
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel
 from core.nodes.ipaddress import Ipv4Prefix
 
 
 def dict_to_str(values):
-    return "|".join("%s=%s" % (x, values[x]) for x in values)
+    return "|".join(f"{x}={values[x]}" for x in values)
 
 
 class TestGui:
@@ -383,7 +383,7 @@ class TestGui:
         message = coreapi.CoreFileMessage.create(
             MessageFlags.ADD.value,
             [
-                (FileTlvs.TYPE, "hook:%s" % state),
+                (FileTlvs.TYPE, f"hook:{state}"),
                 (FileTlvs.NAME, file_name),
                 (FileTlvs.DATA, file_data),
             ],
@@ -406,7 +406,7 @@ class TestGui:
             MessageFlags.ADD.value,
             [
                 (FileTlvs.NODE, node.id),
-                (FileTlvs.TYPE, "service:%s" % service),
+                (FileTlvs.TYPE, f"service:{service}"),
                 (FileTlvs.NAME, file_name),
                 (FileTlvs.DATA, file_data),
             ],
@@ -760,16 +760,14 @@ class TestGui:
             [
                 (ConfigTlvs.OBJECT, "broker"),
                 (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
-                (ConfigTlvs.VALUES, "%s:%s:%s" % (server, host, port)),
+                (ConfigTlvs.VALUES, f"{server}:{host}:{port}"),
             ],
         )
-        coreserver.session.broker.addserver = mock.MagicMock()
-        coreserver.session.broker.setupserver = mock.MagicMock()
+        coreserver.session.distributed.add_server = mock.MagicMock()
 
         coreserver.request_handler.handle_message(message)
 
-        coreserver.session.broker.addserver.assert_called_once_with(server, host, port)
-        coreserver.session.broker.setupserver.assert_called_once_with(server)
+        coreserver.session.distributed.add_server.assert_called_once_with(server, host)
 
     def test_config_services_request_all(self, coreserver):
         message = coreapi.CoreConfMessage.create(
@@ -846,7 +844,7 @@ class TestGui:
                 (ConfigTlvs.NODE, node.id),
                 (ConfigTlvs.OBJECT, "services"),
                 (ConfigTlvs.TYPE, ConfigFlags.UPDATE.value),
-                (ConfigTlvs.OPAQUE, "service:%s" % service),
+                (ConfigTlvs.OPAQUE, f"service:{service}"),
                 (ConfigTlvs.VALUES, dict_to_str(values)),
             ],
         )

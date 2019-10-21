@@ -8,10 +8,9 @@ import math
 import os
 import threading
 import time
-from builtins import int
 from functools import total_ordering
 
-from core import CoreError, utils
+from core import utils
 from core.config import ConfigGroup, ConfigurableOptions, Configuration, ModelManager
 from core.emulator.data import EventData, LinkData
 from core.emulator.enumerations import (
@@ -19,12 +18,9 @@ from core.emulator.enumerations import (
     EventTypes,
     LinkTypes,
     MessageFlags,
-    MessageTypes,
-    NodeTlvs,
     RegisterTlvs,
 )
-from core.nodes.base import CoreNodeBase
-from core.nodes.ipaddress import IpAddress
+from core.errors import CoreError
 
 
 class MobilityManager(ModelManager):
@@ -46,11 +42,6 @@ class MobilityManager(ModelManager):
         self.session = session
         self.models[BasicRangeModel.name] = BasicRangeModel
         self.models[Ns2ScriptedMobility.name] = Ns2ScriptedMobility
-
-        # dummy node objects for tracking position of nodes on other servers
-        self.phys = {}
-        self.physnets = {}
-        self.session.broker.handlers.add(self.physnodehandlelink)
 
     def reset(self):
         """
@@ -91,9 +82,6 @@ class MobilityManager(ModelManager):
                     continue
                 model_class = self.models[model_name]
                 self.set_model(node, model_class, config)
-
-            if self.session.master:
-                self.installphysnodes(node)
 
             if node.mobility:
                 self.session.event_loop.add_event(0.0, node.mobility.startup)
@@ -177,15 +165,16 @@ class MobilityManager(ModelManager):
         elif model.state == model.STATE_PAUSED:
             event_type = EventTypes.PAUSE.value
 
-        data = "start=%d" % int(model.lasttime - model.timezero)
-        data += " end=%d" % int(model.endtime)
+        start_time = int(model.lasttime - model.timezero)
+        end_time = int(model.endtime)
+        data = f"start={start_time} end={end_time}"
 
         event_data = EventData(
             node=model.id,
             event_type=event_type,
-            name="mobility:%s" % model.name,
+            name=f"mobility:{model.name}",
             data=data,
-            time="%s" % time.time(),
+            time=str(time.time()),
         )
 
         self.session.broadcast_event(event_data)
@@ -207,87 +196,6 @@ class MobilityManager(ModelManager):
                 continue
             if node.model:
                 node.model.update(moved, moved_netifs)
-
-    def addphys(self, netnum, node):
-        """
-        Keep track of PhysicalNodes and which network they belong to.
-
-        :param int netnum: network number
-        :param core.coreobj.PyCoreNode node: node to add physical network to
-        :return: nothing
-        """
-        node_id = node.id
-        self.phys[node_id] = node
-        if netnum not in self.physnets:
-            self.physnets[netnum] = [node_id]
-        else:
-            self.physnets[netnum].append(node_id)
-
-            # TODO: remove need for handling old style message
-
-    def physnodehandlelink(self, message):
-        """
-        Broker handler. Snoop Link add messages to get
-        node numbers of PhyiscalNodes and their nets.
-        Physical nodes exist only on other servers, but a shadow object is
-        created here for tracking node position.
-
-        :param message: link message to handle
-        :return: nothing
-        """
-        if (
-            message.message_type == MessageTypes.LINK.value
-            and message.flags & MessageFlags.ADD.value
-        ):
-            nn = message.node_numbers()
-            # first node is always link layer node in Link add message
-            if nn[0] not in self.session.broker.network_nodes:
-                return
-            if nn[1] in self.session.broker.physical_nodes:
-                # record the fact that this PhysicalNode is linked to a net
-                dummy = CoreNodeBase(
-                    session=self.session, _id=nn[1], name="n%d" % nn[1], start=False
-                )
-                self.addphys(nn[0], dummy)
-
-    # TODO: remove need to handling old style messages
-    def physnodeupdateposition(self, message):
-        """
-        Snoop node messages belonging to physical nodes. The dummy object
-        in self.phys[] records the node position.
-
-        :param message: message to handle
-        :return: nothing
-        """
-        nodenum = message.node_numbers()[0]
-        try:
-            dummy = self.phys[nodenum]
-            nodexpos = message.get_tlv(NodeTlvs.X_POSITION.value)
-            nodeypos = message.get_tlv(NodeTlvs.Y_POSITION.value)
-            dummy.setposition(nodexpos, nodeypos, None)
-        except KeyError:
-            logging.exception("error retrieving physical node: %s", nodenum)
-
-    def installphysnodes(self, net):
-        """
-        After installing a mobility model on a net, include any physical
-        nodes that we have recorded. Use the GreTap tunnel to the physical node
-        as the node's interface.
-
-        :param net: network to install
-        :return: nothing
-        """
-        node_ids = self.physnets.get(net.id, [])
-        for node_id in node_ids:
-            node = self.phys[node_id]
-            # TODO: fix this bad logic, relating to depending on a break to get a valid server
-            for server in self.session.broker.getserversbynode(node_id):
-                break
-            netif = self.session.broker.gettunnel(net.id, IpAddress.to_int(server.host))
-            node.addnetif(netif, 0)
-            netif.node = node
-            x, y, z = netif.node.position.get()
-            netif.poshook(netif, x, y, z)
 
 
 class WirelessModel(ConfigurableOptions):
@@ -425,7 +333,7 @@ class BasicRangeModel(WirelessModel):
         self.delay = int(config["delay"])
         if self.delay == 0:
             self.delay = None
-        self.loss = int(config["error"])
+        self.loss = int(float(config["error"]))
         if self.loss == 0:
             self.loss = None
         self.jitter = int(config["jitter"])
@@ -1084,7 +992,7 @@ class Ns2ScriptedMobility(WayPointMobility):
                 "ns-2 scripted mobility failed to load file: %s", self.file
             )
             return
-        logging.info("reading ns-2 script file: %s" % filename)
+        logging.info("reading ns-2 script file: %s", filename)
         ln = 0
         ix = iy = iz = None
         inodenum = None
@@ -1205,7 +1113,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :return: nothing
         """
         if self.autostart == "":
-            logging.info("not auto-starting ns-2 script for %s" % self.wlan.name)
+            logging.info("not auto-starting ns-2 script for %s", self.wlan.name)
             return
         try:
             t = float(self.autostart)
@@ -1217,9 +1125,7 @@ class Ns2ScriptedMobility(WayPointMobility):
             )
             return
         self.movenodesinitial()
-        logging.info(
-            "scheduling ns-2 script for %s autostart at %s" % (self.wlan.name, t)
-        )
+        logging.info("scheduling ns-2 script for %s autostart at %s", self.wlan.name, t)
         self.state = self.STATE_RUNNING
         self.session.event_loop.add_event(t, self.run)
 
@@ -1280,7 +1186,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         if filename is None or filename == "":
             return
         filename = self.findfile(filename)
-        args = ["/bin/sh", filename, typestr]
-        utils.check_cmd(
+        args = f"/bin/sh {filename} {typestr}"
+        utils.cmd(
             args, cwd=self.session.session_dir, env=self.session.get_environment()
         )

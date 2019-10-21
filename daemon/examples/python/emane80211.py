@@ -1,18 +1,11 @@
-#!/usr/bin/python -i
-#
-# Example CORE Python script that attaches N nodes to an EMANE 802.11abg network.
-
 import datetime
+import logging
 import parser
-from builtins import range
 
-from core import load_logging_config
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes
-
-load_logging_config()
 
 
 def example(options):
@@ -42,24 +35,20 @@ def example(options):
     # instantiate session
     session.instantiate()
 
-    # start a shell on the first node
-    node = session.get_node(2)
-    node.client.term("bash")
-
     # shutdown session
     input("press enter to exit...")
     coreemu.shutdown()
 
 
 def main():
+    logging.basicConfig(level=logging.INFO)
     options = parser.parse_options("emane80211")
     start = datetime.datetime.now()
-    print(
-        "running emane 80211 example: nodes(%s) time(%s)"
-        % (options.nodes, options.time)
+    logging.info(
+        "running emane 80211 example: nodes(%s) time(%s)", options.nodes, options.time
     )
     example(options)
-    print("elapsed time: %s" % (datetime.datetime.now() - start))
+    logging.info("elapsed time: %s", datetime.datetime.now() - start)
 
 
 if __name__ == "__main__" or __name__ == "__builtin__":

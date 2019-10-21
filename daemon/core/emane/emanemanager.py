@@ -2,30 +2,22 @@
 emane.py: definition of an Emane class for implementing configuration control of an EMANE emulation.
 """
 
-import copy
 import logging
 import os
 import threading
 
-from core import CoreCommandError, CoreError, constants, utils
-from core.api.tlv import coreapi, dataconversion
-from core.config import ConfigGroup, ConfigShim, Configuration, ModelManager
+from core import utils
+from core.config import ConfigGroup, Configuration, ModelManager
 from core.emane import emanemanifest
 from core.emane.bypass import EmaneBypassModel
 from core.emane.commeffect import EmaneCommEffectModel
 from core.emane.emanemodel import EmaneModel
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
-from core.emulator.enumerations import (
-    ConfigDataTypes,
-    ConfigFlags,
-    ConfigTlvs,
-    MessageFlags,
-    MessageTypes,
-    RegisterTlvs,
-)
+from core.emulator.enumerations import ConfigDataTypes, RegisterTlvs
+from core.errors import CoreCommandError, CoreError
 from core.xml import emanexml
 
 try:
@@ -53,8 +45,8 @@ DEFAULT_EMANE_PREFIX = "/usr"
 class EmaneManager(ModelManager):
     """
     EMANE controller object. Lives in a Session instance and is used for
-    building EMANE config files from all of the EmaneNode objects in this
-    emulation, and for controlling the EMANE daemons.
+    building EMANE config files for all EMANE networks in this emulation, and for
+    controlling the EMANE daemons.
     """
 
     name = "emane"
@@ -72,10 +64,8 @@ class EmaneManager(ModelManager):
         """
         super(EmaneManager, self).__init__()
         self.session = session
-        self._emane_nodes = {}
+        self._emane_nets = {}
         self._emane_node_lock = threading.Lock()
-        self._ifccounts = {}
-        self._ifccountslock = threading.Lock()
         # port numbers are allocated from these counters
         self.platformport = self.session.options.get_config_int(
             "emane_platform_port", 8100
@@ -90,7 +80,6 @@ class EmaneManager(ModelManager):
         self.emane_config = EmaneGlobalModel(session)
         self.set_configs(self.emane_config.default_values())
 
-        session.broker.handlers.add(self.handledistributed)
         self.service = None
         self.event_device = None
         self.emane_check()
@@ -150,8 +139,10 @@ class EmaneManager(ModelManager):
         """
         try:
             # check for emane
-            emane_version = utils.check_cmd(["emane", "--version"])
+            args = "emane --version"
+            emane_version = utils.cmd(args)
             logging.info("using EMANE: %s", emane_version)
+            self.session.distributed.execute(lambda x: x.remote_cmd(args))
 
             # load default emane models
             self.load_models(EMANE_MODELS)
@@ -226,38 +217,39 @@ class EmaneManager(ModelManager):
             emane_model.load(emane_prefix)
             self.models[emane_model.name] = emane_model
 
-    def add_node(self, emane_node):
+    def add_node(self, emane_net):
         """
-        Add a new EmaneNode object to this Emane controller object
+        Add EMANE network object to this manager.
 
-        :param core.emane.nodes.EmaneNode emane_node: emane node to add
+        :param core.emane.nodes.EmaneNet emane_net: emane node to add
         :return: nothing
         """
         with self._emane_node_lock:
-            if emane_node.id in self._emane_nodes:
+            if emane_net.id in self._emane_nets:
                 raise KeyError(
-                    "non-unique EMANE object id %s for %s" % (emane_node.id, emane_node)
+                    f"non-unique EMANE object id {emane_net.id} for {emane_net}"
                 )
-            self._emane_nodes[emane_node.id] = emane_node
+            self._emane_nets[emane_net.id] = emane_net
 
     def getnodes(self):
         """
-        Return a set of CoreNodes that are linked to an EmaneNode,
+        Return a set of CoreNodes that are linked to an EMANE network,
         e.g. containers having one or more radio interfaces.
         """
         # assumes self._objslock already held
         nodes = set()
-        for emane_node in self._emane_nodes.values():
-            for netif in emane_node.netifs():
+        for emane_net in self._emane_nets.values():
+            for netif in emane_net.netifs():
                 nodes.add(netif.node)
         return nodes
 
     def setup(self):
         """
-        Populate self._objs with EmaneNodes; perform distributed setup;
-        associate models with EmaneNodes from self.config. Returns
-        Emane.(SUCCESS, NOT_NEEDED, NOT_READY) in order to delay session
-        instantiation.
+        Setup duties for EMANE manager.
+
+        :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
+            instantiation
+        :rtype: int
         """
         logging.debug("emane setup")
 
@@ -265,18 +257,17 @@ class EmaneManager(ModelManager):
         with self.session._nodes_lock:
             for node_id in self.session.nodes:
                 node = self.session.nodes[node_id]
-                if isinstance(node, EmaneNode):
+                if isinstance(node, EmaneNet):
                     logging.debug(
                         "adding emane node: id(%s) name(%s)", node.id, node.name
                     )
                     self.add_node(node)
 
-            if not self._emane_nodes:
+            if not self._emane_nets:
                 logging.debug("no emane nodes in session")
                 return EmaneManager.NOT_NEEDED
 
         # control network bridge required for EMANE 0.9.2
-        # - needs to be configured before checkdistributed() for distributed
         # - needs to exist when eventservice binds to it (initeventservice)
         if self.session.master:
             otadev = self.get_config("otamanagerdevice")
@@ -291,10 +282,9 @@ class EmaneManager(ModelManager):
                 )
                 return EmaneManager.NOT_READY
 
-            ctrlnet = self.session.add_remove_control_net(
+            self.session.add_remove_control_net(
                 net_index=netidx, remove=False, conf_required=False
             )
-            self.distributedctrlnet(ctrlnet)
             eventdev = self.get_config("eventservicedevice")
             logging.debug("emane event service device: eventdev(%s)", eventdev)
             if eventdev != otadev:
@@ -307,27 +297,21 @@ class EmaneManager(ModelManager):
                     )
                     return EmaneManager.NOT_READY
 
-                ctrlnet = self.session.add_remove_control_net(
+                self.session.add_remove_control_net(
                     net_index=netidx, remove=False, conf_required=False
                 )
-                self.distributedctrlnet(ctrlnet)
-
-        if self.checkdistributed():
-            # we are slave, but haven't received a platformid yet
-            platform_id_start = "platform_id_start"
-            default_values = self.emane_config.default_values()
-            value = self.get_config(platform_id_start)
-            if value == default_values[platform_id_start]:
-                return EmaneManager.NOT_READY
 
         self.check_node_models()
         return EmaneManager.SUCCESS
 
     def startup(self):
         """
-        After all the EmaneNode objects have been added, build XML files
-        and start the daemons. Returns Emane.(SUCCESS, NOT_NEEDED, or
-        NOT_READY) which is used to delay session instantiation.
+        After all the EMANE networks have been added, build XML files
+        and start the daemons.
+
+        :return: SUCCESS, NOT_NEEDED, NOT_READY in order to delay session
+            instantiation
+        :rtype: int
         """
         self.reset()
         r = self.setup()
@@ -346,8 +330,8 @@ class EmaneManager(ModelManager):
                 self.startdaemons()
                 self.installnetifs()
 
-            for node_id in self._emane_nodes:
-                emane_node = self._emane_nodes[node_id]
+            for node_id in self._emane_nets:
+                emane_node = self._emane_nets[node_id]
                 for netif in emane_node.netifs():
                     nems.append(
                         (netif.node.name, netif.name, emane_node.getnemid(netif))
@@ -358,7 +342,7 @@ class EmaneManager(ModelManager):
             try:
                 with open(emane_nems_filename, "w") as f:
                     for nodename, ifname, nemid in nems:
-                        f.write("%s %s %s\n" % (nodename, ifname, nemid))
+                        f.write(f"{nodename} {ifname} {nemid}\n")
             except IOError:
                 logging.exception("Error writing EMANE NEMs file: %s")
 
@@ -372,8 +356,8 @@ class EmaneManager(ModelManager):
             return
 
         with self._emane_node_lock:
-            for key in sorted(self._emane_nodes.keys()):
-                emane_node = self._emane_nodes[key]
+            for key in sorted(self._emane_nets.keys()):
+                emane_node = self._emane_nets[key]
                 logging.debug(
                     "post startup for emane node: %s - %s",
                     emane_node.id,
@@ -386,11 +370,11 @@ class EmaneManager(ModelManager):
 
     def reset(self):
         """
-        remove all EmaneNode objects from the dictionary,
-        reset port numbers and nem id counters
+        Remove all EMANE networks from the dictionary, reset port numbers and
+        nem id counters
         """
         with self._emane_node_lock:
-            self._emane_nodes.clear()
+            self._emane_nets.clear()
 
         # don't clear self._ifccounts here; NEM counts are needed for buildxml
         self.platformport = self.session.options.get_config_int(
@@ -404,102 +388,13 @@ class EmaneManager(ModelManager):
         """
         stop all EMANE daemons
         """
-        with self._ifccountslock:
-            self._ifccounts.clear()
-
         with self._emane_node_lock:
-            if not self._emane_nodes:
+            if not self._emane_nets:
                 return
             logging.info("stopping EMANE daemons.")
             self.deinstallnetifs()
             self.stopdaemons()
             self.stopeventmonitor()
-
-    def handledistributed(self, message):
-        """
-        Broker handler for processing CORE API messages as they are
-        received. This is used to snoop the Link add messages to get NEM
-        counts of NEMs that exist on other servers.
-        """
-        if (
-            message.message_type == MessageTypes.LINK.value
-            and message.flags & MessageFlags.ADD.value
-        ):
-            nn = message.node_numbers()
-            # first node is always link layer node in Link add message
-            if nn[0] in self.session.broker.network_nodes:
-                serverlist = self.session.broker.getserversbynode(nn[1])
-                for server in serverlist:
-                    with self._ifccountslock:
-                        if server not in self._ifccounts:
-                            self._ifccounts[server] = 1
-                        else:
-                            self._ifccounts[server] += 1
-
-    def checkdistributed(self):
-        """
-        Check for EMANE nodes that exist on multiple emulation servers and
-        coordinate the NEM id and port number space.
-        If we are the master EMANE node, return False so initialization will
-        proceed as normal; otherwise slaves return True here and
-        initialization is deferred.
-        """
-        # check with the session if we are the "master" Emane object?
-        master = False
-
-        with self._emane_node_lock:
-            if self._emane_nodes:
-                master = self.session.master
-                logging.info("emane check distributed as master: %s.", master)
-
-        # we are not the master Emane object, wait for nem id and ports
-        if not master:
-            return True
-
-        nemcount = 0
-        with self._emane_node_lock:
-            for key in self._emane_nodes:
-                emane_node = self._emane_nodes[key]
-                nemcount += emane_node.numnetif()
-
-            nemid = int(self.get_config("nem_id_start"))
-            nemid += nemcount
-
-            platformid = int(self.get_config("platform_id_start"))
-
-            # build an ordered list of servers so platform ID is deterministic
-            servers = []
-            for key in sorted(self._emane_nodes):
-                for server in self.session.broker.getserversbynode(key):
-                    if server not in servers:
-                        servers.append(server)
-
-        servers.sort(key=lambda x: x.name)
-        for server in servers:
-            if server.name == "localhost":
-                continue
-
-            if server.sock is None:
-                continue
-
-            platformid += 1
-
-            # create temporary config for updating distributed nodes
-            typeflags = ConfigFlags.UPDATE.value
-            config = copy.deepcopy(self.get_configs())
-            config["platform_id_start"] = str(platformid)
-            config["nem_id_start"] = str(nemid)
-            config_data = ConfigShim.config_data(
-                0, None, typeflags, self.emane_config, config
-            )
-            message = dataconversion.convert_config(config_data)
-            server.sock.send(message)
-            # increment nemid for next server by number of interfaces
-            with self._ifccountslock:
-                if server in self._ifccounts:
-                    nemid += self._ifccounts[server]
-
-        return False
 
     def buildxml(self):
         """
@@ -517,59 +412,12 @@ class EmaneManager(ModelManager):
         self.buildnemxml()
         self.buildeventservicexml()
 
-    # TODO: remove need for tlv messaging
-    def distributedctrlnet(self, ctrlnet):
-        """
-        Distributed EMANE requires multiple control network prefixes to
-        be configured. This generates configuration for slave control nets
-        using the default list of prefixes.
-        """
-        # slave server
-        session = self.session
-        if not session.master:
-            return
-
-        # not distributed
-        servers = session.broker.getservernames()
-        if len(servers) < 2:
-            return
-
-        # normal Config messaging will distribute controlnets
-        prefix = session.options.get_config("controlnet", default="")
-        prefixes = prefix.split()
-        if len(prefixes) < len(servers):
-            logging.info(
-                "setting up default controlnet prefixes for distributed (%d configured)",
-                len(prefixes),
-            )
-            prefix = ctrlnet.DEFAULT_PREFIX_LIST[0]
-            prefixes = prefix.split()
-            servers.remove("localhost")
-            servers.insert(0, "localhost")
-            prefix = " ".join("%s:%s" % (s, prefixes[i]) for i, s in enumerate(servers))
-
-        # this generates a config message having controlnet prefix assignments
-        logging.info("setting up controlnet prefixes for distributed: %s", prefix)
-        vals = "controlnet=%s" % prefix
-        tlvdata = b""
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.OBJECT.value, "session")
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.TYPE.value, 0)
-        tlvdata += coreapi.CoreConfigTlv.pack(ConfigTlvs.VALUES.value, vals)
-        rawmsg = coreapi.CoreConfMessage.pack(0, tlvdata)
-        msghdr = rawmsg[: coreapi.CoreMessage.header_len]
-        msg = coreapi.CoreConfMessage(
-            flags=0, hdr=msghdr, data=rawmsg[coreapi.CoreMessage.header_len :]
-        )
-        logging.debug("sending controlnet message:\n%s", msg)
-        self.session.broker.handle_message(msg)
-
     def check_node_models(self):
         """
-        Associate EmaneModel classes with EmaneNode nodes. The model
-        configurations are stored in self.configs.
+        Associate EMANE model classes with EMANE network nodes.
         """
-        for node_id in self._emane_nodes:
-            emane_node = self._emane_nodes[node_id]
+        for node_id in self._emane_nets:
+            emane_node = self._emane_nets[node_id]
             logging.debug("checking emane model for node: %s", node_id)
 
             # skip nodes that already have a model set
@@ -595,13 +443,13 @@ class EmaneManager(ModelManager):
     def nemlookup(self, nemid):
         """
         Look for the given numerical NEM ID and return the first matching
-        EmaneNode and NEM interface.
+        EMANE network and NEM interface.
         """
         emane_node = None
         netif = None
 
-        for node_id in self._emane_nodes:
-            emane_node = self._emane_nodes[node_id]
+        for node_id in self._emane_nets:
+            emane_node = self._emane_nets[node_id]
             netif = emane_node.getnemnetif(nemid)
             if netif is not None:
                 break
@@ -615,8 +463,8 @@ class EmaneManager(ModelManager):
         Return the number of NEMs emulated locally.
         """
         count = 0
-        for node_id in self._emane_nodes:
-            emane_node = self._emane_nodes[node_id]
+        for node_id in self._emane_nets:
+            emane_node = self._emane_nets[node_id]
             count += len(emane_node.netifs())
         return count
 
@@ -628,28 +476,19 @@ class EmaneManager(ModelManager):
         platform_xmls = {}
 
         # assume self._objslock is already held here
-        for key in sorted(self._emane_nodes.keys()):
-            emane_node = self._emane_nodes[key]
+        for key in sorted(self._emane_nets.keys()):
+            emane_node = self._emane_nets[key]
             nemid = emanexml.build_node_platform_xml(
                 self, ctrlnet, emane_node, nemid, platform_xmls
             )
 
     def buildnemxml(self):
         """
-        Builds the xxxnem.xml, xxxmac.xml, and xxxphy.xml files which
-        are defined on a per-EmaneNode basis.
+        Builds the nem, mac, and phy xml files for each EMANE network.
         """
-        for key in sorted(self._emane_nodes.keys()):
-            emane_node = self._emane_nodes[key]
-            emanexml.build_xml_files(self, emane_node)
-
-    def buildtransportxml(self):
-        """
-        Calls emanegentransportxml using a platform.xml file to build the transportdaemon*.xml.
-        """
-        utils.check_cmd(
-            ["emanegentransportxml", "platform.xml"], cwd=self.session.session_dir
-        )
+        for key in sorted(self._emane_nets):
+            emane_net = self._emane_nets[key]
+            emanexml.build_xml_files(self, emane_net)
 
     def buildeventservicexml(self):
         """
@@ -676,8 +515,12 @@ class EmaneManager(ModelManager):
             return
 
         dev = self.get_config("eventservicedevice")
-
         emanexml.create_event_service_xml(group, port, dev, self.session.session_dir)
+        self.session.distributed.execute(
+            lambda x: emanexml.create_event_service_xml(
+                group, port, dev, self.session.session_dir, x
+            )
+        )
 
     def startdaemons(self):
         """
@@ -692,9 +535,9 @@ class EmaneManager(ModelManager):
             logging.info("setting user-defined EMANE log level: %d", cfgloglevel)
             loglevel = str(cfgloglevel)
 
-        emanecmd = ["emane", "-d", "-l", loglevel]
+        emanecmd = f"emane -d -l {loglevel}"
         if realtime:
-            emanecmd += ("-r",)
+            emanecmd += " -r"
 
         otagroup, _otaport = self.get_config("otamanagergroup").split(":")
         otadev = self.get_config("otamanagerdevice")
@@ -730,21 +573,17 @@ class EmaneManager(ModelManager):
                 )
 
             # multicast route is needed for OTA data
-            args = [constants.IP_BIN, "route", "add", otagroup, "dev", otadev]
-            node.network_cmd(args)
+            node.node_net_client.create_route(otagroup, otadev)
 
             # multicast route is also needed for event data if on control network
             if eventservicenetidx >= 0 and eventgroup != otagroup:
-                args = [constants.IP_BIN, "route", "add", eventgroup, "dev", eventdev]
-                node.network_cmd(args)
+                node.node_net_client.create_route(eventgroup, eventdev)
 
             # start emane
-            args = emanecmd + [
-                "-f",
-                os.path.join(path, "emane%d.log" % n),
-                os.path.join(path, "platform%d.xml" % n),
-            ]
-            output = node.check_cmd(args)
+            log_file = os.path.join(path, f"emane{n}.log")
+            platform_xml = os.path.join(path, f"platform{n}.xml")
+            args = f"{emanecmd} -f {log_file} {platform_xml}"
+            output = node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
             logging.info("node(%s) emane daemon output: %s", node.name, output)
 
@@ -752,17 +591,21 @@ class EmaneManager(ModelManager):
             return
 
         path = self.session.session_dir
-        emanecmd += ["-f", os.path.join(path, "emane.log")]
-        args = emanecmd + [os.path.join(path, "platform.xml")]
-        utils.check_cmd(args, cwd=path)
-        logging.info("host emane daemon running: %s", args)
+        log_file = os.path.join(path, "emane.log")
+        platform_xml = os.path.join(path, "platform.xml")
+        emanecmd += f" -f {log_file} {platform_xml}"
+        utils.cmd(emanecmd, cwd=path)
+        self.session.distributed.execute(lambda x: x.remote_cmd(emanecmd, cwd=path))
+        logging.info("host emane daemon running: %s", emanecmd)
 
     def stopdaemons(self):
         """
         Kill the appropriate EMANE daemons.
         """
-        # TODO: we may want to improve this if we had the PIDs from the specific EMANE daemons that we"ve started
-        args = ["killall", "-q", "emane"]
+        # TODO: we may want to improve this if we had the PIDs from the specific EMANE
+        #  daemons that we"ve started
+        kill_emaned = "killall -q emane"
+        kill_transortd = "killall -q emanetransportd"
         stop_emane_on_host = False
         for node in self.getnodes():
             if hasattr(node, "transport_type") and node.transport_type == "raw":
@@ -770,13 +613,15 @@ class EmaneManager(ModelManager):
                 continue
 
             if node.up:
-                node.cmd(args, wait=False)
+                node.cmd(kill_emaned, wait=False)
                 # TODO: RJ45 node
 
         if stop_emane_on_host:
             try:
-                utils.check_cmd(args)
-                utils.check_cmd(["killall", "-q", "emanetransportd"])
+                utils.cmd(kill_emaned)
+                utils.cmd(kill_transortd)
+                self.session.distributed.execute(lambda x: x.remote_cmd(kill_emaned))
+                self.session.distributed.execute(lambda x: x.remote_cmd(kill_transortd))
             except CoreCommandError:
                 logging.exception("error shutting down emane daemons")
 
@@ -785,8 +630,8 @@ class EmaneManager(ModelManager):
         Install TUN/TAP virtual interfaces into their proper namespaces
         now that the EMANE daemons are running.
         """
-        for key in sorted(self._emane_nodes.keys()):
-            emane_node = self._emane_nodes[key]
+        for key in sorted(self._emane_nets.keys()):
+            emane_node = self._emane_nets[key]
             logging.info("emane install netifs for node: %d", key)
             emane_node.installnetifs()
 
@@ -794,8 +639,8 @@ class EmaneManager(ModelManager):
         """
         Uninstall TUN/TAP virtual interfaces.
         """
-        for key in sorted(self._emane_nodes.keys()):
-            emane_node = self._emane_nodes[key]
+        for key in sorted(self._emane_nets.keys()):
+            emane_node = self._emane_nets[key]
             emane_node.deinstallnetifs()
 
     def doeventmonitor(self):
@@ -951,7 +796,7 @@ class EmaneManager(ModelManager):
             node = self.session.get_node(n)
         except CoreError:
             logging.exception(
-                "location event NEM %s has no corresponding node %s" % (nemid, n)
+                "location event NEM %s has no corresponding node %s", nemid, n
             )
             return False
 
@@ -963,11 +808,17 @@ class EmaneManager(ModelManager):
 
     def emanerunning(self, node):
         """
-        Return True if an EMANE process associated with the given node is running, False otherwise.
+        Return True if an EMANE process associated with the given node is running,
+        False otherwise.
         """
-        args = ["pkill", "-0", "-x", "emane"]
-        status = node.cmd(args)
-        return status == 0
+        args = "pkill -0 -x emane"
+        try:
+            node.cmd(args)
+            result = True
+        except CoreCommandError:
+            result = False
+
+        return result
 
 
 class EmaneGlobalModel(EmaneModel):

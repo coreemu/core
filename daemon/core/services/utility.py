@@ -4,7 +4,8 @@ utility.py: defines miscellaneous utility services.
 
 import os
 
-from core import CoreCommandError, constants, utils
+from core import constants, utils
+from core.errors import CoreCommandError
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
 from core.services.coreservices import CoreService
 
@@ -414,9 +415,11 @@ class HttpService(UtilService):
         Detect the apache2 version using the 'a2query' command.
         """
         try:
-            status, result = utils.cmd_output(["a2query", "-v"])
-        except CoreCommandError:
-            status = -1
+            result = utils.cmd("a2query -v")
+            status = 0
+        except CoreCommandError as e:
+            status = e.returncode
+            result = e.stderr
 
         if status == 0 and result[:3] == "2.4":
             return cls.APACHEVER24

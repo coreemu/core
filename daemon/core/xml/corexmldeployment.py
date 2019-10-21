@@ -3,8 +3,9 @@ import socket
 
 from lxml import etree
 
-from core import constants, utils
-from core.emane.nodes import EmaneNode
+from core import utils
+from core.constants import IP_BIN
+from core.emane.nodes import EmaneNet
 from core.nodes import ipaddress
 from core.nodes.base import CoreNodeBase
 
@@ -30,20 +31,20 @@ def add_emane_interface(host_element, netif, platform_name="p1", transport_name=
     host_id = host_element.get("id")
 
     # platform data
-    platform_id = "%s/%s" % (host_id, platform_name)
+    platform_id = f"{host_id}/{platform_name}"
     platform_element = etree.SubElement(
         host_element, "emanePlatform", id=platform_id, name=platform_name
     )
 
     # transport data
-    transport_id = "%s/%s" % (host_id, transport_name)
+    transport_id = f"{host_id}/{transport_name}"
     etree.SubElement(
         platform_element, "transport", id=transport_id, name=transport_name
     )
 
     # nem data
-    nem_name = "nem%s" % nem_id
-    nem_element_id = "%s/%s" % (host_id, nem_name)
+    nem_name = f"nem{nem_id}"
+    nem_element_id = f"{host_id}/{nem_name}"
     nem_element = etree.SubElement(
         platform_element, "nem", id=nem_element_id, name=nem_name
     )
@@ -67,8 +68,8 @@ def get_address_type(address):
 def get_ipv4_addresses(hostname):
     if hostname == "localhost":
         addresses = []
-        args = [constants.IP_BIN, "-o", "-f", "inet", "addr", "show"]
-        output = utils.check_cmd(args)
+        args = f"{IP_BIN} -o -f inet address show"
+        output = utils.cmd(args)
         for line in output.split(os.linesep):
             split = line.split()
             if not split:
@@ -93,22 +94,17 @@ class CoreXmlDeployment(object):
         self.add_deployment()
 
     def find_device(self, name):
-        device = self.scenario.find("devices/device[@name='%s']" % name)
+        device = self.scenario.find(f"devices/device[@name='{name}']")
         return device
 
     def find_interface(self, device, name):
         interface = self.scenario.find(
-            "devices/device[@name='%s']/interfaces/interface[@name='%s']"
-            % (device.name, name)
+            f"devices/device[@name='{device.name}']/interfaces/interface[@name='{name}']"
         )
         return interface
 
     def add_deployment(self):
         physical_host = self.add_physical_host(socket.gethostname())
-
-        # TODO: handle other servers
-        #   servers = self.session.broker.getservernames()
-        #   servers.remove("localhost")
 
         for node_id in self.session.nodes:
             node = self.session.nodes[node_id]
@@ -117,7 +113,8 @@ class CoreXmlDeployment(object):
 
     def add_physical_host(self, name):
         # add host
-        host_id = "%s/%s" % (self.root.get("id"), name)
+        root_id = self.root.get("id")
+        host_id = f"{root_id}/{name}"
         host_element = etree.SubElement(self.root, "testHost", id=host_id, name=name)
 
         # add type element
@@ -131,10 +128,11 @@ class CoreXmlDeployment(object):
 
     def add_virtual_host(self, physical_host, node):
         if not isinstance(node, CoreNodeBase):
-            raise TypeError("invalid node type: %s" % node)
+            raise TypeError(f"invalid node type: {node}")
 
         # create virtual host element
-        host_id = "%s/%s" % (physical_host.get("id"), node.name)
+        phys_id = physical_host.get("id")
+        host_id = f"{phys_id}/{node.name}"
         host_element = etree.SubElement(
             physical_host, "testHost", id=host_id, name=node.name
         )
@@ -144,7 +142,7 @@ class CoreXmlDeployment(object):
 
         for netif in node.netifs():
             emane_element = None
-            if isinstance(netif.net, EmaneNode):
+            if isinstance(netif.net, EmaneNet):
                 emane_element = add_emane_interface(host_element, netif)
 
             parent_element = host_element

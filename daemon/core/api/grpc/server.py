@@ -4,15 +4,13 @@ import os
 import re
 import tempfile
 import time
-from builtins import int
 from concurrent import futures
 from queue import Empty, Queue
 
 import grpc
 
-from core import CoreError
 from core.api.grpc import core_pb2, core_pb2_grpc
-from core.emane.nodes import EmaneNode
+from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     ConfigData,
     EventData,
@@ -22,7 +20,8 @@ from core.emulator.data import (
     NodeData,
 )
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
-from core.emulator.enumerations import EventTypes, LinkTypes, NodeTypes
+from core.emulator.enumerations import EventTypes, LinkTypes, MessageFlags, NodeTypes
+from core.errors import CoreCommandError, CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 from core.nodes.base import CoreNetworkBase
 from core.nodes.docker import DockerNode
@@ -248,9 +247,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         session = self.coreemu.sessions.get(session_id)
         if not session:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, "session {} not found".format(session_id)
-            )
+            context.abort(grpc.StatusCode.NOT_FOUND, f"session {session_id} not found")
         return session
 
     def get_node(self, session, node_id, context):
@@ -266,9 +263,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         try:
             return session.get_node(node_id)
         except CoreError:
-            context.abort(
-                grpc.StatusCode.NOT_FOUND, "node {} not found".format(node_id)
-            )
+            context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
 
     def CreateSession(self, request, context):
         """
@@ -456,7 +451,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             services = [x.name for x in services]
 
             emane_model = None
-            if isinstance(node, EmaneNode):
+            if isinstance(node, EmaneNet):
                 emane_model = node.model.name
 
             node_proto = core_pb2.Node(
@@ -477,6 +472,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
         return core_pb2.GetSessionResponse(session=session_proto)
+
+    def AddSessionServer(self, request, context):
+        """
+        Add distributed server to a session.
+
+        :param core.api.grpc.core_pb2.AddSessionServerRequest request: get-session
+            request
+        :param grpc.ServicerContext context: context object
+        :return: add session server response
+        :rtype: core.api.grpc.core_bp2.AddSessionServerResponse
+        """
+        session = self.get_session(request.session_id, context)
+        session.distributed.add_server(request.name, request.host)
+        return core_pb2.AddSessionServerResponse(result=True)
 
     def Events(self, request, context):
         session = self.get_session(request.session_id, context)
@@ -766,6 +775,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_options.opaque = node_proto.opaque
         node_options.image = node_proto.image
         node_options.services = node_proto.services
+        if node_proto.server:
+            node_options.emulation_server = node_proto.server
 
         position = node_proto.position
         node_options.set_position(position.x, position.y)
@@ -809,10 +820,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             interfaces.append(interface_proto)
 
         emane_model = None
-        if isinstance(node, EmaneNode):
+        if isinstance(node, EmaneNet):
             emane_model = node.model.name
 
-        services = [x.name for x in getattr(node, "services", [])]
+        services = []
+        if node.services:
+            services = [x.name for x in node.services]
+
         position = core_pb2.Position(
             x=node.position.x, y=node.position.y, z=node.position.z
         )
@@ -842,8 +856,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("edit node: %s", request)
         session = self.get_session(request.session_id, context)
-        node_id = request.node_id
+        node = self.get_node(session, request.node_id, context)
         node_options = NodeOptions()
+        node_options.icon = request.icon
         x = request.position.x
         y = request.position.y
         node_options.set_position(x, y)
@@ -853,7 +868,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_options.set_location(lat, lon, alt)
         result = True
         try:
-            session.update_node(node_id, node_options)
+            session.update_node(node.id, node_options)
+            node_data = node.data(0)
+            session.broadcast_node(node_data)
         except CoreError:
             result = False
         return core_pb2.EditNodeResponse(result=result)
@@ -882,7 +899,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("sending node command: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        _, output = node.cmd_output(request.command)
+        try:
+            output = node.cmd(request.command)
+        except CoreCommandError as e:
+            output = e.stderr
         return core_pb2.NodeCommandResponse(output=output)
 
     def GetNodeTerminal(self, request, context):
@@ -1557,3 +1577,43 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 continue
             interfaces.append(interface)
         return core_pb2.GetInterfacesResponse(interfaces=interfaces)
+
+    def EmaneLink(self, request, context):
+        """
+        Helps broadcast wireless link/unlink between EMANE nodes.
+
+        :param core.api.grpc.core_pb2.EmaneLinkRequest request: get-interfaces request
+        :param grpc.ServicerContext context: context object
+        :return: emane link response with success status
+        :rtype: core.api.grpc.core_pb2.EmaneLinkResponse
+        """
+        logging.debug("emane link: %s", request)
+        session = self.get_session(request.session_id, context)
+        nem_one = request.nem_one
+        emane_one, netif = session.emane.nemlookup(nem_one)
+        if not emane_one or not netif:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem one {nem_one} not found")
+        node_one = netif.node
+
+        nem_two = request.nem_two
+        emane_two, netif = session.emane.nemlookup(nem_two)
+        if not emane_two or not netif:
+            context.abort(grpc.StatusCode.NOT_FOUND, f"nem two {nem_two} not found")
+        node_two = netif.node
+
+        if emane_one.id == emane_two.id:
+            if request.linked:
+                flag = MessageFlags.ADD.value
+            else:
+                flag = MessageFlags.DELETE.value
+            link = LinkData(
+                message_type=flag,
+                link_type=LinkTypes.WIRELESS.value,
+                node1_id=node_one.id,
+                node2_id=node_two.id,
+                network_id=emane_one.id,
+            )
+            session.broadcast_link(link)
+            return core_pb2.EmaneLinkResponse(result=True)
+        else:
+            return core_pb2.EmaneLinkResponse(result=False)

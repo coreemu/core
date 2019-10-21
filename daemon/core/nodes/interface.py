@@ -4,11 +4,10 @@ virtual ethernet classes that implement the interfaces available under Linux.
 
 import logging
 import time
-from builtins import int, range
 
-from core import CoreCommandError, constants, utils
-
-utils.check_executables([constants.IP_BIN])
+from core import utils
+from core.errors import CoreCommandError
+from core.nodes.netclient import get_net_client
 
 
 class CoreInterface(object):
@@ -16,15 +15,18 @@ class CoreInterface(object):
     Base class for network interfaces.
     """
 
-    def __init__(self, node, name, mtu):
+    def __init__(self, session, node, name, mtu, server=None):
         """
-        Creates a PyCoreNetIf instance.
+        Creates a CoreInterface instance.
 
+        :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: node for interface
         :param str name: interface name
-        :param mtu: mtu value
+        :param int mtu: mtu value
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
-
+        self.session = session
         self.node = node
         self.name = name
         if not isinstance(mtu, int):
@@ -42,6 +44,27 @@ class CoreInterface(object):
         self.netindex = None
         # index used to find flow data
         self.flow_id = None
+        self.server = server
+        use_ovs = session.options.get_config("ovs") == "True"
+        self.net_client = get_net_client(use_ovs, self.host_cmd)
+
+    def host_cmd(self, args, env=None, cwd=None, wait=True, shell=False):
+        """
+        Runs a command on the host system or distributed server.
+
+        :param str args: command to run
+        :param dict env: environment to run command with
+        :param str cwd: directory to run command in
+        :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
+        :return: combined stdout and stderr
+        :rtype: str
+        :raises CoreCommandError: when a non-zero exit status occurs
+        """
+        if self.server is None:
+            return utils.cmd(args, env, cwd, wait, shell)
+        else:
+            return self.server.remote_cmd(args, env, cwd, wait)
 
     def startup(self):
         """
@@ -190,21 +213,24 @@ class Veth(CoreInterface):
     Provides virtual ethernet functionality for core nodes.
     """
 
-    # TODO: network is not used, why was it needed?
-    def __init__(self, node, name, localname, mtu=1500, net=None, start=True):
+    def __init__(
+        self, session, node, name, localname, mtu=1500, server=None, start=True
+    ):
         """
         Creates a VEth instance.
 
+        :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param str localname: interface local name
-        :param mtu: interface mtu
-        :param net: network
+        :param int mtu: interface mtu
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param bool start: start flag
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
-        CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
+        CoreInterface.__init__(self, session, node, name, mtu, server)
         self.localname = localname
         self.up = False
         if start:
@@ -217,21 +243,8 @@ class Veth(CoreInterface):
         :return: nothing
         :raises CoreCommandError: when there is a command exception
         """
-        utils.check_cmd(
-            [
-                constants.IP_BIN,
-                "link",
-                "add",
-                "name",
-                self.localname,
-                "type",
-                "veth",
-                "peer",
-                "name",
-                self.name,
-            ]
-        )
-        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
+        self.net_client.create_veth(self.localname, self.name)
+        self.net_client.device_up(self.localname)
         self.up = True
 
     def shutdown(self):
@@ -245,15 +258,13 @@ class Veth(CoreInterface):
 
         if self.node:
             try:
-                self.node.network_cmd(
-                    [constants.IP_BIN, "-6", "addr", "flush", "dev", self.name]
-                )
+                self.node.node_net_client.device_flush(self.name)
             except CoreCommandError:
                 logging.exception("error shutting down interface")
 
         if self.localname:
             try:
-                utils.check_cmd([constants.IP_BIN, "link", "delete", self.localname])
+                self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.info("link already removed: %s", self.localname)
 
@@ -265,19 +276,22 @@ class TunTap(CoreInterface):
     TUN/TAP virtual device in TAP mode
     """
 
-    # TODO: network is not used, why was it needed?
-    def __init__(self, node, name, localname, mtu=1500, net=None, start=True):
+    def __init__(
+        self, session, node, name, localname, mtu=1500, server=None, start=True
+    ):
         """
         Create a TunTap instance.
 
+        :param core.emulator.session.Session session: core session instance
         :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param str localname: local interface name
-        :param mtu: interface mtu
-        :param core.nodes.base.CoreNetworkBase net: related network
+        :param int mtu: interface mtu
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :param bool start: start flag
         """
-        CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
+        CoreInterface.__init__(self, session, node, name, mtu, server)
         self.localname = localname
         self.up = False
         self.transport_type = "virtual"
@@ -308,9 +322,7 @@ class TunTap(CoreInterface):
             return
 
         try:
-            self.node.network_cmd(
-                [constants.IP_BIN, "-6", "addr", "flush", "dev", self.name]
-            )
+            self.node.node_net_client.device_flush(self.name)
         except CoreCommandError:
             logging.exception("error shutting down tunnel tap")
 
@@ -333,7 +345,7 @@ class TunTap(CoreInterface):
             if r == 0:
                 result = True
                 break
-            msg = "attempt %s failed with nonzero exit status %s" % (i, r)
+            msg = f"attempt {i} failed with nonzero exit status {r}"
             if i < attempts + 1:
                 msg += ", retrying..."
                 logging.info(msg)
@@ -358,8 +370,11 @@ class TunTap(CoreInterface):
         logging.debug("waiting for device local: %s", self.localname)
 
         def localdevexists():
-            args = [constants.IP_BIN, "link", "show", self.localname]
-            return utils.cmd(args)
+            try:
+                self.net_client.device_show(self.localname)
+                return 0
+            except CoreCommandError:
+                return 1
 
         self.waitfor(localdevexists)
 
@@ -372,9 +387,8 @@ class TunTap(CoreInterface):
         logging.debug("waiting for device node: %s", self.name)
 
         def nodedevexists():
-            args = [constants.IP_BIN, "link", "show", self.name]
             try:
-                self.node.network_cmd(args)
+                self.node.node_net_client.device_show(self.name)
                 return 0
             except CoreCommandError:
                 return 1
@@ -407,13 +421,9 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicelocal()
         netns = str(self.node.pid)
-        utils.check_cmd(
-            [constants.IP_BIN, "link", "set", self.localname, "netns", netns]
-        )
-        self.node.network_cmd(
-            [constants.IP_BIN, "link", "set", self.localname, "name", self.name]
-        )
-        self.node.network_cmd([constants.IP_BIN, "link", "set", self.name, "up"])
+        self.net_client.device_ns(self.localname, netns)
+        self.node.node_net_client.device_name(self.localname, self.name)
+        self.node.node_net_client.device_up(self.name)
 
     def setaddrs(self):
         """
@@ -423,9 +433,7 @@ class TunTap(CoreInterface):
         """
         self.waitfordevicenode()
         for addr in self.addrlist:
-            self.node.network_cmd(
-                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.name]
-            )
+            self.node.node_net_client.create_address(self.name, str(addr))
 
 
 class GreTap(CoreInterface):
@@ -447,6 +455,7 @@ class GreTap(CoreInterface):
         ttl=255,
         key=None,
         start=True,
+        server=None,
     ):
         """
         Creates a GreTap instance.
@@ -454,24 +463,25 @@ class GreTap(CoreInterface):
         :param core.nodes.base.CoreNode node: related core node
         :param str name: interface name
         :param core.emulator.session.Session session: core session instance
-        :param mtu: interface mtu
+        :param int mtu: interface mtu
         :param str remoteip: remote address
         :param int _id: object id
         :param str localip: local address
-        :param ttl: ttl value
-        :param key: gre tap key
+        :param int ttl: ttl value
+        :param int key: gre tap key
         :param bool start: start flag
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
-        CoreInterface.__init__(self, node=node, name=name, mtu=mtu)
-        self.session = session
+        CoreInterface.__init__(self, session, node, name, mtu, server)
         if _id is None:
             # from PyCoreObj
             _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF
         self.id = _id
         sessionid = self.session.short_session_id()
         # interface name on the local host machine
-        self.localname = "gt.%s.%s" % (self.id, sessionid)
+        self.localname = f"gt.{self.id}.{sessionid}"
         self.transport_type = "raw"
         if not start:
             self.up = False
@@ -479,25 +489,9 @@ class GreTap(CoreInterface):
 
         if remoteip is None:
             raise ValueError("missing remote IP required for GRE TAP device")
-        args = [
-            constants.IP_BIN,
-            "link",
-            "add",
-            self.localname,
-            "type",
-            "gretap",
-            "remote",
-            str(remoteip),
-        ]
-        if localip:
-            args += ["local", str(localip)]
-        if ttl:
-            args += ["ttl", str(ttl)]
-        if key:
-            args += ["key", str(key)]
-        utils.check_cmd(args)
-        args = [constants.IP_BIN, "link", "set", self.localname, "up"]
-        utils.check_cmd(args)
+
+        self.net_client.create_gretap(self.localname, remoteip, localip, ttl, key)
+        self.net_client.device_up(self.localname)
         self.up = True
 
     def shutdown(self):
@@ -508,10 +502,8 @@ class GreTap(CoreInterface):
         """
         if self.localname:
             try:
-                args = [constants.IP_BIN, "link", "set", self.localname, "down"]
-                utils.check_cmd(args)
-                args = [constants.IP_BIN, "link", "del", self.localname]
-                utils.check_cmd(args)
+                self.net_client.device_down(self.localname)
+                self.net_client.delete_device(self.localname)
             except CoreCommandError:
                 logging.exception("error during shutdown")
 

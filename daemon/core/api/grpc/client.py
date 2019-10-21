@@ -276,6 +276,22 @@ class CoreGrpcClient(object):
         request = core_pb2.SetSessionStateRequest(session_id=session_id, state=state)
         return self.stub.SetSessionState(request)
 
+    def add_session_server(self, session_id, name, host):
+        """
+        Add distributed session server.
+
+        :param int session_id: id of session
+        :param str name: name of server to add
+        :param str host: host address to connect to
+        :return: response with result of success or failure
+        :rtype: core_pb2.AddSessionServerResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.AddSessionServerRequest(
+            session_id=session_id, name=name, host=host
+        )
+        return self.stub.AddSessionServer(request)
+
     def events(self, session_id, handler):
         """
         Listen for session events.
@@ -326,19 +342,20 @@ class CoreGrpcClient(object):
         request = core_pb2.GetNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNode(request)
 
-    def edit_node(self, session_id, node_id, position):
+    def edit_node(self, session_id, node_id, position, icon=None):
         """
         Edit a node, currently only changes position.
 
         :param int session_id: session id
         :param int node_id: node id
         :param core_pb2.Position position: position to set node to
+        :param str icon: path to icon for gui to use for node
         :return: response with result of success or failure
         :rtype: core_pb2.EditNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.EditNodeRequest(
-            session_id=session_id, node_id=node_id, position=position
+            session_id=session_id, node_id=node_id, position=position, icon=icon
         )
         return self.stub.EditNode(request)
 
@@ -863,6 +880,21 @@ class CoreGrpcClient(object):
             data = xml_file.read()
         request = core_pb2.OpenXmlRequest(data=data)
         return self.stub.OpenXml(request)
+
+    def emane_link(self, session_id, nem_one, nem_two, linked):
+        """
+        Helps broadcast wireless link/unlink between EMANE nodes.
+
+        :param int session_id: session id
+        :param int nem_one:
+        :param int nem_two:
+        :param bool linked: True to link, False to unlink
+        :return: core_pb2.EmaneLinkResponse
+        """
+        request = core_pb2.EmaneLinkRequest(
+            session_id=session_id, nem_one=nem_one, nem_two=nem_two, linked=linked
+        )
+        return self.stub.EmaneLink(request)
 
     def connect(self):
         """

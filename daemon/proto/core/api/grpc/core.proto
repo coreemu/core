@@ -25,6 +25,8 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
+    rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
+    }
 
     // streams
     rpc Events (EventsRequest) returns (stream Event) {
@@ -119,6 +121,8 @@ service CoreApi {
     // utilities
     rpc GetInterfaces (GetInterfacesRequest) returns (GetInterfacesResponse) {
     }
+    rpc EmaneLink (EmaneLinkRequest) returns (EmaneLinkResponse) {
+    }
 }
 
 // rpc request/response messages
@@ -196,6 +200,16 @@ message SetSessionStateRequest {
 }
 
 message SetSessionStateResponse {
+    bool result = 1;
+}
+
+message AddSessionServerRequest {
+    int32 session_id = 1;
+    string name = 2;
+    string host = 3;
+}
+
+message AddSessionServerResponse {
     bool result = 1;
 }
 
@@ -314,6 +328,7 @@ message EditNodeRequest {
     int32 session_id = 1;
     int32 node_id = 2;
     Position position = 3;
+    string icon = 4;
 }
 
 message EditNodeResponse {
@@ -633,6 +648,17 @@ message GetInterfacesResponse {
     repeated string interfaces = 1;
 }
 
+message EmaneLinkRequest {
+    int32 session_id = 1;
+    int32 nem_one = 2;
+    int32 nem_two = 3;
+    bool linked = 4;
+}
+
+message EmaneLinkResponse {
+    bool result = 1;
+}
+
 // data structures for messages below
 message MessageType {
     enum Enum {
@@ -788,6 +814,7 @@ message Node {
     string icon = 8;
     string opaque = 9;
     string image = 10;
+    string server = 11;
 }
 
 message Link {

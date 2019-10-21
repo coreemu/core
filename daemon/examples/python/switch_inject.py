@@ -1,16 +1,7 @@
-#!/usr/bin/python
-#
-# run iperf to measure the effective throughput between two nodes when
-# n nodes are connected to a virtual wlan; run test for testsec
-# and repeat for minnodes <= n <= maxnodes with a step size of
-# nodestep
-from builtins import range
+import logging
 
-from core import load_logging_config
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes, NodeTypes
-
-load_logging_config()
 
 
 def example(nodes):
@@ -38,4 +29,5 @@ def example(nodes):
 
 
 if __name__ in {"__main__", "__builtin__"}:
+    logging.basicConfig(level=logging.INFO)
     example(2)

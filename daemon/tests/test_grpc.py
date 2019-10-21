@@ -1,11 +1,9 @@
 import time
-from builtins import int
 from queue import Queue
 
 import grpc
 import pytest
 
-from core import CoreError
 from core.api.grpc import core_pb2
 from core.api.grpc.client import CoreGrpcClient
 from core.config import ConfigShim
@@ -18,6 +16,7 @@ from core.emulator.enumerations import (
     ExceptionLevels,
     NodeTypes,
 )
+from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
 
 
@@ -207,8 +206,7 @@ class TestGrpc:
         # then
         assert response.node.id == node.id
 
-    @pytest.mark.parametrize("node_id, expected", [(1, True), (2, False)])
-    def test_edit_node(self, grpc_server, node_id, expected):
+    def test_edit_node(self, grpc_server):
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -218,13 +216,12 @@ class TestGrpc:
         x, y = 10, 10
         with client.context_connect():
             position = core_pb2.Position(x=x, y=y)
-            response = client.edit_node(session.id, node_id, position)
+            response = client.edit_node(session.id, node.id, position)
 
         # then
-        assert response.result is expected
-        if expected is True:
-            assert node.position.x == x
-            assert node.position.y == y
+        assert response.result is True
+        assert node.position.x == x
+        assert node.position.y == y
 
     @pytest.mark.parametrize("node_id, expected", [(1, True), (2, False)])
     def test_delete_node(self, grpc_server, node_id, expected):
@@ -254,7 +251,7 @@ class TestGrpc:
         output = "hello world"
 
         # then
-        command = "echo %s" % output
+        command = f"echo {output}"
         with client.context_connect():
             response = client.node_command(session.id, node.id, command)
 
@@ -864,7 +861,7 @@ class TestGrpc:
             client.events(session.id, handle_event)
             time.sleep(0.1)
             event = EventData(
-                event_type=EventTypes.RUNTIME_STATE.value, time="%s" % time.time()
+                event_type=EventTypes.RUNTIME_STATE.value, time=str(time.time())
             )
             session.broadcast_event(event)
 
