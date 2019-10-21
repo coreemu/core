@@ -25,6 +25,8 @@ service CoreApi {
     }
     rpc SetSessionState (SetSessionStateRequest) returns (SetSessionStateResponse) {
     }
+    rpc AddSessionServer (AddSessionServerRequest) returns (AddSessionServerResponse) {
+    }
 
     // streams
     rpc Events (EventsRequest) returns (stream Event) {
@@ -198,6 +200,16 @@ message SetSessionStateRequest {
 }
 
 message SetSessionStateResponse {
+    bool result = 1;
+}
+
+message AddSessionServerRequest {
+    int32 session_id = 1;
+    string name = 2;
+    string host = 3;
+}
+
+message AddSessionServerResponse {
     bool result = 1;
 }
 
@@ -802,6 +814,7 @@ message Node {
     string icon = 8;
     string opaque = 9;
     string image = 10;
+    string server = 11;
 }
 
 message Link {

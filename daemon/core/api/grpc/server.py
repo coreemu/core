@@ -473,6 +473,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session_proto = core_pb2.Session(state=session.state, nodes=nodes, links=links)
         return core_pb2.GetSessionResponse(session=session_proto)
 
+    def AddSessionServer(self, request, context):
+        """
+        Add distributed server to a session.
+
+        :param core.api.grpc.core_pb2.AddSessionServerRequest request: get-session
+            request
+        :param grpc.ServicerContext context: context object
+        :return: add session server response
+        :rtype: core.api.grpc.core_bp2.AddSessionServerResponse
+        """
+        session = self.get_session(request.session_id, context)
+        session.distributed.add_server(request.name, request.host)
+        return core_pb2.AddSessionServerResponse(result=True)
+
     def Events(self, request, context):
         session = self.get_session(request.session_id, context)
         queue = Queue()
@@ -761,6 +775,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         node_options.opaque = node_proto.opaque
         node_options.image = node_proto.image
         node_options.services = node_proto.services
+        if node_proto.server:
+            node_options.emulation_server = node_proto.server
 
         position = node_proto.position
         node_options.set_position(position.x, position.y)

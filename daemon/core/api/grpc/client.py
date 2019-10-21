@@ -276,6 +276,22 @@ class CoreGrpcClient(object):
         request = core_pb2.SetSessionStateRequest(session_id=session_id, state=state)
         return self.stub.SetSessionState(request)
 
+    def add_session_server(self, session_id, name, host):
+        """
+        Add distributed session server.
+
+        :param int session_id: id of session
+        :param str name: name of server to add
+        :param str host: host address to connect to
+        :return: response with result of success or failure
+        :rtype: core_pb2.AddSessionServerResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.AddSessionServerRequest(
+            session_id=session_id, name=name, host=host
+        )
+        return self.stub.AddSessionServer(request)
+
     def events(self, session_id, handler):
         """
         Listen for session events.
