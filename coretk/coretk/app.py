@@ -93,6 +93,8 @@ class Application(tk.Frame):
         self.core_grpc = CoreGrpc(self)
         self.core_grpc.set_up()
         self.canvas.core_grpc = self.core_grpc
+        self.canvas.grpc_manager.core_grpc = self.core_grpc
+        self.canvas.grpc_manager.update_preexisting_ids()
         self.canvas.draw_existing_component()
 
     def on_closing(self):

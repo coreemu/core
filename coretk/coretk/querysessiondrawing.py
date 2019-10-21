@@ -7,6 +7,11 @@ from coretk.images import ImageEnum, Images
 
 class SessionTable:
     def __init__(self, grpc, master):
+        """
+        create session table instance
+        :param coretk.coregrpc.CoreGrpc grpc: coregrpc
+        :param root.master master:
+        """
         self.grpc = grpc
         self.selected = False
         self.selected_sid = None
@@ -22,6 +27,10 @@ class SessionTable:
         self.draw()
 
     def description_definition(self):
+        """
+        write a short description
+        :return: nothing
+        """
         lable = tk.Label(
             self.top,
             text="Below is a list of active CORE sessions. Double-click to "

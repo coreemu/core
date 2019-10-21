@@ -54,20 +54,40 @@ class Edge:
 
 
 class GrpcManager:
-    def __init__(self):
+    def __init__(self, grpc):
         self.nodes = {}
         self.edges = {}
-        self.id = 1
+        self.id = None
         # A list of id for re-use, keep in increasing order
         self.reusable = []
 
         self.preexisting = []
+        self.core_grpc = None
+
+        # self.update_preexisting_ids()
         # self.core_id_to_canvas_id = {}
         self.interfaces_manager = InterfaceManager()
 
         # map tuple(core_node_id, interface_id) to and edge
         # self.node_id_and_interface_to_edge_token = {}
         self.core_mapping = CoreToCanvasMapping()
+
+    def update_preexisting_ids(self):
+        """
+        get preexisting node ids
+        :return:
+        """
+        max_id = 0
+        client = self.core_grpc.core
+        sessions = client.get_sessions().sessions
+        for session_summary in sessions:
+            session = client.get_session(session_summary.id).session
+            for node in session.nodes:
+                if node.id > max_id:
+                    max_id = node.id
+                self.preexisting.append(node.id)
+        self.id = max_id + 1
+        self.update_reusable_id()
 
     def peek_id(self):
         """
@@ -210,6 +230,8 @@ class GrpcManager:
         """
         src_interface = None
         dst_interface = None
+
+        self.interfaces_manager.new_subnet()
 
         src_node = self.nodes[src_canvas_id]
         if src_node.model in network_layer_nodes:

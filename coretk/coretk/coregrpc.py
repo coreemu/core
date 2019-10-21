@@ -18,6 +18,9 @@ class CoreGrpc:
         """
         self.core = client.CoreGrpcClient()
         self.session_id = sid
+
+        self.node_ids = []
+
         self.master = app.master
 
         # self.set_up()
@@ -32,8 +35,14 @@ class CoreGrpc:
 
     def log_throughput(self, event):
         interface_throughputs = event.interface_throughputs
+        throughputs_belong_to_session = []
+        for if_tp in interface_throughputs:
+            if if_tp.node_id in self.node_ids:
+                throughputs_belong_to_session.append(if_tp)
         # bridge_throughputs = event.bridge_throughputs
-        self.throughput_draw.process_grpc_throughput_event(interface_throughputs)
+        self.throughput_draw.process_grpc_throughput_event(
+            throughputs_belong_to_session
+        )
 
     def create_new_session(self):
         """
@@ -147,6 +156,7 @@ class CoreGrpc:
     def add_node(self, node_type, model, x, y, name, node_id):
         position = core_pb2.Position(x=x, y=y)
         node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
+        self.node_ids.append(node_id)
         response = self.core.add_node(self.session_id, node)
         logging.info("created node: %s", response)
         if node_type == core_pb2.NodeType.WIRELESS_LAN:

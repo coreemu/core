@@ -8,6 +8,7 @@ from coretk.grpcmanagement import GrpcManager
 from coretk.images import Images
 from coretk.interface import Interface
 from coretk.linkinfo import LinkInfo
+from coretk.nodeconfigtable import NodeConfig
 
 
 class GraphMode(enum.Enum):
@@ -37,8 +38,8 @@ class CanvasGraph(tk.Canvas):
         self.setup_bindings()
         self.draw_grid()
 
-        self.grpc_manager = GrpcManager()
         self.core_grpc = grpc
+        self.grpc_manager = GrpcManager(grpc)
 
         self.helper = GraphHelper(self)
         # self.core_id_to_canvas_id = {}
@@ -69,7 +70,8 @@ class CanvasGraph(tk.Canvas):
         self.nodes = {}
         self.edges = {}
         self.drawing_edge = None
-        self.grpc_manager = GrpcManager()
+
+        self.grpc_manager = GrpcManager(new_grpc)
 
         # new grpc
         self.core_grpc = new_grpc
@@ -463,6 +465,9 @@ class CanvasNode:
         state = self.canvas.core_grpc.get_session_state()
         if state == core_pb2.SessionState.RUNTIME:
             self.canvas.core_grpc.launch_terminal(node_id)
+        else:
+            print("config table show up")
+            NodeConfig(self, self.image, self.node_type, self.name)
 
     def update_coords(self):
         self.x_coord, self.y_coord = self.canvas.coords(self.id)
