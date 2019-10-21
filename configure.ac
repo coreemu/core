@@ -2,7 +2,7 @@
 # Process this file with autoconf to produce a configure script.
 
 # this defines the CORE version number, must be static for AC_INIT
-AC_INIT(core, 5.3.1)
+AC_INIT(core, 5.5.2)
 
 # autoconf and automake initialization
 AC_CONFIG_SRCDIR([netns/version.h.in])
@@ -54,6 +54,7 @@ if test "x$enable_python" = "xyes" ; then
 else
   want_python=no
 fi
+
 AC_ARG_ENABLE([daemon],
 	       [AS_HELP_STRING([--enable-daemon[=ARG]],
 		[build and install the daemon with Python modules
@@ -109,40 +110,62 @@ if test "x$enable_daemon" = "xyes"; then
   AC_FUNC_REALLOC
   AC_CHECK_FUNCS([atexit dup2 gettimeofday memset socket strerror uname])
 
-  AM_PATH_PYTHON(2.7)
-  AM_CONDITIONAL([PYTHON3], [test "x$PYTHON" == "xpython3"])
+  AM_PATH_PYTHON(3.6)
   AS_IF([$PYTHON -m grpc_tools.protoc -h &> /dev/null], [], [AC_MSG_ERROR([please install python grpcio-tools])])
 
   AC_CHECK_PROG(brctl_path, brctl, $as_dir, no, $SEARCHPATH)
   if test "x$brctl_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate brctl (from bridge-utils package).])
   fi
+
   AC_CHECK_PROG(sysctl_path, sysctl, $as_dir, no, $SEARCHPATH)
+  if test "x$sysctl_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate sysctl (from procps package).])
+  fi
+
   AC_CHECK_PROG(ebtables_path, ebtables, $as_dir, no, $SEARCHPATH)
   if test "x$ebtables_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate ebtables (from ebtables package).])
   fi
+
   AC_CHECK_PROG(ip_path, ip, $as_dir, no, $SEARCHPATH)
   if test "x$ip_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate ip (from iproute package).])
   fi
+
   AC_CHECK_PROG(tc_path, tc, $as_dir, no, $SEARCHPATH)
   if test "x$tc_path" = "xno" ; then
     AC_MSG_ERROR([Could not locate tc (from iproute package).])
   fi
+
+  AC_CHECK_PROG(ethtool_path, ethtool, $as_dir, no, $SEARCHPATH)
+  if test "x$ethtool_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate ethtool (from package ethtool)])
+  fi
+
   AC_CHECK_PROG(mount_path, mount, $as_dir, no, $SEARCHPATH)
+  if test "x$mount_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate mount (from package mount)])
+  fi
+
   AC_CHECK_PROG(umount_path, umount, $as_dir, no, $SEARCHPATH)
+  if test "x$umount_path" = "xno" ; then
+    AC_MSG_ERROR([Could not locate umount (from package mount)])
+  fi
+
   AC_CHECK_PROG(convert, convert, yes, no, $SEARCHPATH)
   if test "x$convert" = "xno" ; then
     AC_MSG_WARN([Could not locate ImageMagick convert.])
   fi
+
   AC_CHECK_PROG(ovs_vs_path, ovs-vsctl, $as_dir, no, $SEARCHPATH)
   if test "x$ovs_vs_path" = "xno" ; then
-    AC_MSG_WARN([Could not locate ovs-vsctl cannot use OVS nodes])
+    AC_MSG_WARN([Could not locate ovs-vsctl cannot use OVS mode])
   fi
+
   AC_CHECK_PROG(ovs_of_path, ovs-ofctl, $as_dir, no, $SEARCHPATH)
   if test "x$ovs_of_path" = "xno" ; then
-    AC_MSG_WARN([Could not locate ovs-ofctl cannot use OVS nodes])
+    AC_MSG_WARN([Could not locate ovs-ofctl cannot use OVS mode])
   fi
 
   CFLAGS_save=$CFLAGS
@@ -157,6 +180,7 @@ if test "x$enable_daemon" = "xyes"; then
   CFLAGS=$CFLAGS_save
   CPPFLAGS=$CPPFLAGS_save
 fi
+
 if [ test "x$enable_daemon" = "xyes" || test "x$enable_vnodedonly" = "xyes" ] ; then
   want_linux_netns=yes
   PKG_CHECK_MODULES(libev, libev,

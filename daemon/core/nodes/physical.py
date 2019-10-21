@@ -4,19 +4,24 @@ PhysicalNode class for including real systems in the emulated network.
 
 import logging
 import os
-import subprocess
 import threading
 
-from core import CoreCommandError, constants, utils
+from core import utils
+from core.constants import MOUNT_BIN, UMOUNT_BIN
 from core.emulator.enumerations import NodeTypes
+from core.errors import CoreCommandError, CoreError
 from core.nodes.base import CoreNodeBase
 from core.nodes.interface import CoreInterface
 from core.nodes.network import CoreNetwork, GreTap
 
 
 class PhysicalNode(CoreNodeBase):
-    def __init__(self, session, _id=None, name=None, nodedir=None, start=True):
-        CoreNodeBase.__init__(self, session, _id, name, start=start)
+    def __init__(
+        self, session, _id=None, name=None, nodedir=None, start=True, server=None
+    ):
+        CoreNodeBase.__init__(self, session, _id, name, start, server)
+        if not self.server:
+            raise CoreError("physical nodes must be assigned to a remote server")
         self.nodedir = nodedir
         self.up = start
         self.lock = threading.RLock()
@@ -51,119 +56,52 @@ class PhysicalNode(CoreNodeBase):
         """
         return sh
 
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        os.chdir(self.nodedir)
-        status = utils.cmd(args, wait)
-        return status
-
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        os.chdir(self.nodedir)
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        return status, stdout.strip()
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: combined stdout and stderr
-        :rtype: str
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        status, output = self.cmd_output(args)
-        if status:
-            raise CoreCommandError(status, args, output)
-        return output.strip()
-
-    def shcmd(self, cmdstr, sh="/bin/sh"):
-        return self.cmd([sh, "-c", cmdstr])
-
     def sethwaddr(self, ifindex, addr):
         """
         Set hardware address for an interface.
         """
-        self._netif[ifindex].sethwaddr(addr)
-        ifname = self.ifname(ifindex)
+        interface = self._netif[ifindex]
+        interface.sethwaddr(addr)
         if self.up:
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", "dev", ifname, "address", str(addr)]
-            )
+            self.net_client.device_mac(interface.name, str(addr))
 
     def addaddr(self, ifindex, addr):
         """
         Add an address to an interface.
         """
+        interface = self._netif[ifindex]
         if self.up:
-            self.check_cmd(
-                [
-                    constants.IP_BIN,
-                    "addr",
-                    "add",
-                    str(addr),
-                    "dev",
-                    self.ifname(ifindex),
-                ]
-            )
-
-        self._netif[ifindex].addaddr(addr)
+            self.net_client.create_address(interface.name, str(addr))
+        interface.addaddr(addr)
 
     def deladdr(self, ifindex, addr):
         """
         Delete an address from an interface.
         """
+        interface = self._netif[ifindex]
+
         try:
-            self._netif[ifindex].deladdr(addr)
+            interface.deladdr(addr)
         except ValueError:
             logging.exception("trying to delete unknown address: %s", addr)
 
         if self.up:
-            self.check_cmd(
-                [
-                    constants.IP_BIN,
-                    "addr",
-                    "del",
-                    str(addr),
-                    "dev",
-                    self.ifname(ifindex),
-                ]
-            )
+            self.net_client.delete_address(interface.name, str(addr))
 
     def adoptnetif(self, netif, ifindex, hwaddr, addrlist):
         """
-        The broker builds a GreTap tunnel device to this physical node.
         When a link message is received linking this node to another part of
         the emulation, no new interface is created; instead, adopt the
         GreTap netif as the node interface.
         """
-        netif.name = "gt%d" % ifindex
+        netif.name = f"gt{ifindex}"
         netif.node = self
         self.addnetif(netif, ifindex)
 
         # use a more reasonable name, e.g. "gt0" instead of "gt.56286.150"
         if self.up:
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", "dev", netif.localname, "down"]
-            )
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", netif.localname, "name", netif.name]
-            )
+            self.net_client.device_down(netif.localname)
+            self.net_client.device_name(netif.localname, netif.name)
 
         netif.localname = netif.name
 
@@ -174,9 +112,7 @@ class PhysicalNode(CoreNodeBase):
             self.addaddr(ifindex, addr)
 
         if self.up:
-            self.check_cmd(
-                [constants.IP_BIN, "link", "set", "dev", netif.localname, "up"]
-            )
+            self.net_client.device_up(netif.localname)
 
     def linkconfig(
         self,
@@ -224,30 +160,24 @@ class PhysicalNode(CoreNodeBase):
         if ifindex is None:
             ifindex = self.newifindex()
 
+        if ifname is None:
+            ifname = f"gt{ifindex}"
+
         if self.up:
             # this is reached when this node is linked to a network node
             # tunnel to net not built yet, so build it now and adopt it
-            gt = self.session.broker.addnettunnel(net.id)
-            if gt is None or len(gt) != 1:
-                raise ValueError(
-                    "error building tunnel from adding a new network interface: %s" % gt
-                )
-            gt = gt[0]
-            net.detach(gt)
-            self.adoptnetif(gt, ifindex, hwaddr, addrlist)
+            _, remote_tap = self.session.distributed.create_gre_tunnel(net, self.server)
+            self.adoptnetif(remote_tap, ifindex, hwaddr, addrlist)
             return ifindex
-
-        # this is reached when configuring services (self.up=False)
-        if ifname is None:
-            ifname = "gt%d" % ifindex
-
-        netif = GreTap(node=self, name=ifname, session=self.session, start=False)
-        self.adoptnetif(netif, ifindex, hwaddr, addrlist)
-        return ifindex
+        else:
+            # this is reached when configuring services (self.up=False)
+            netif = GreTap(node=self, name=ifname, session=self.session, start=False)
+            self.adoptnetif(netif, ifindex, hwaddr, addrlist)
+            return ifindex
 
     def privatedir(self, path):
         if path[0] != "/":
-            raise ValueError("path not fully qualified: %s" % path)
+            raise ValueError(f"path not fully qualified: {path}")
         hostpath = os.path.join(
             self.nodedir, os.path.normpath(path).strip("/").replace("/", ".")
         )
@@ -258,13 +188,13 @@ class PhysicalNode(CoreNodeBase):
         source = os.path.abspath(source)
         logging.info("mounting %s at %s", source, target)
         os.makedirs(target)
-        self.check_cmd([constants.MOUNT_BIN, "--bind", source, target])
+        self.host_cmd(f"{MOUNT_BIN} --bind {source} {target}", cwd=self.nodedir)
         self._mounts.append((source, target))
 
     def umount(self, target):
-        logging.info("unmounting '%s'" % target)
+        logging.info("unmounting '%s'", target)
         try:
-            self.check_cmd([constants.UMOUNT_BIN, "-l", target])
+            self.host_cmd(f"{UMOUNT_BIN} -l {target}", cwd=self.nodedir)
         except CoreCommandError:
             logging.exception("unmounting failed for %s", target)
 
@@ -290,6 +220,9 @@ class PhysicalNode(CoreNodeBase):
             os.chmod(node_file.name, mode)
             logging.info("created nodefile: '%s'; mode: 0%o", node_file.name, mode)
 
+    def cmd(self, args, wait=True):
+        return self.host_cmd(args, wait=wait)
+
 
 class Rj45Node(CoreNodeBase, CoreInterface):
     """
@@ -300,7 +233,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
     apitype = NodeTypes.RJ45.value
     type = "rj45"
 
-    def __init__(self, session, _id=None, name=None, mtu=1500, start=True):
+    def __init__(self, session, _id=None, name=None, mtu=1500, start=True, server=None):
         """
         Create an RJ45Node instance.
 
@@ -309,10 +242,11 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :param str name: node name
         :param mtu: rj45 mtu
         :param bool start: start flag
-        :return:
+        :param core.emulator.distributed.DistributedServer server: remote server node
+            will run on, default is None for localhost
         """
-        CoreNodeBase.__init__(self, session, _id, name, start=start)
-        CoreInterface.__init__(self, node=self, name=name, mtu=mtu)
+        CoreNodeBase.__init__(self, session, _id, name, start, server)
+        CoreInterface.__init__(self, session, self, name, mtu, server)
         self.up = False
         self.lock = threading.RLock()
         self.ifindex = None
@@ -334,7 +268,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         # interface will also be marked up during net.attach()
         self.savestate()
-        utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
+        self.net_client.device_up(self.localname)
         self.up = True
 
     def shutdown(self):
@@ -348,18 +282,17 @@ class Rj45Node(CoreNodeBase, CoreInterface):
             return
 
         try:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "down"])
-            utils.check_cmd([constants.IP_BIN, "addr", "flush", "dev", self.localname])
-            utils.check_cmd(
-                [constants.TC_BIN, "qdisc", "del", "dev", self.localname, "root"]
-            )
+            self.net_client.device_down(self.localname)
+            self.net_client.device_flush(self.localname)
+            self.net_client.delete_tc(self.localname)
         except CoreCommandError:
             logging.exception("error shutting down")
 
         self.up = False
         self.restorestate()
 
-    # TODO: issue in that both classes inherited from provide the same method with different signatures
+    # TODO: issue in that both classes inherited from provide the same method with
+    #  different signatures
     def attachnet(self, net):
         """
         Attach a network.
@@ -369,7 +302,8 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         CoreInterface.attachnet(self, net)
 
-    # TODO: issue in that both classes inherited from provide the same method with different signatures
+    # TODO: issue in that both classes inherited from provide the same method with
+    #  different signatures
     def detachnet(self):
         """
         Detach a network.
@@ -429,7 +363,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         if ifindex == self.ifindex:
             self.shutdown()
         else:
-            raise ValueError("ifindex %s does not exist" % ifindex)
+            raise ValueError(f"ifindex {ifindex} does not exist")
 
     def netif(self, ifindex, net=None):
         """
@@ -475,9 +409,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            utils.check_cmd(
-                [constants.IP_BIN, "addr", "add", str(addr), "dev", self.name]
-            )
+            self.net_client.create_address(self.name, str(addr))
 
         CoreInterface.addaddr(self, addr)
 
@@ -490,9 +422,7 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         if self.up:
-            utils.check_cmd(
-                [constants.IP_BIN, "addr", "del", str(addr), "dev", self.name]
-            )
+            self.net_client.delete_address(self.name, str(addr))
 
         CoreInterface.deladdr(self, addr)
 
@@ -506,14 +436,13 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         self.old_up = False
         self.old_addrs = []
-        args = [constants.IP_BIN, "addr", "show", "dev", self.localname]
-        output = utils.check_cmd(args)
+        output = self.net_client.device_show(self.localname)
         for line in output.split("\n"):
             items = line.split()
             if len(items) < 2:
                 continue
 
-            if items[1] == "%s:" % self.localname:
+            if items[1] == f"{self.localname}:":
                 flags = items[2][1:-1].split(",")
                 if "UP" in flags:
                     self.old_up = True
@@ -533,25 +462,14 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         """
         for addr in self.old_addrs:
             if addr[1] is None:
-                utils.check_cmd(
-                    [constants.IP_BIN, "addr", "add", addr[0], "dev", self.localname]
-                )
+                self.net_client.create_address(self.localname, addr[0])
             else:
-                utils.check_cmd(
-                    [
-                        constants.IP_BIN,
-                        "addr",
-                        "add",
-                        addr[0],
-                        "brd",
-                        addr[1],
-                        "dev",
-                        self.localname,
-                    ]
+                self.net_client.create_address(
+                    self.localname, addr[0], broadcast=addr[1]
                 )
 
         if self.old_up:
-            utils.check_cmd([constants.IP_BIN, "link", "set", self.localname, "up"])
+            self.net_client.device_up(self.localname)
 
     def setposition(self, x=None, y=None, z=None):
         """
@@ -566,38 +484,6 @@ class Rj45Node(CoreNodeBase, CoreInterface):
         result = CoreNodeBase.setposition(self, x, y, z)
         CoreInterface.setposition(self, x, y, z)
         return result
-
-    def check_cmd(self, args):
-        """
-        Runs shell command on node.
-
-        :param list[str]|str args: command to run
-        :return: exist status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        :raises CoreCommandError: when a non-zero exit status occurs
-        """
-        raise NotImplementedError
-
-    def cmd(self, args, wait=True):
-        """
-        Runs shell command on node, with option to not wait for a result.
-
-        :param list[str]|str args: command to run
-        :param bool wait: wait for command to exit, defaults to True
-        :return: exit status for command
-        :rtype: int
-        """
-        raise NotImplementedError
-
-    def cmd_output(self, args):
-        """
-        Runs shell command on node and get exit status and output.
-
-        :param list[str]|str args: command to run
-        :return: exit status and combined stdout and stderr
-        :rtype: tuple[int, str]
-        """
-        raise NotImplementedError
 
     def termcmdstring(self, sh):
         """

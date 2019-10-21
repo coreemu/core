@@ -44,15 +44,6 @@ DISTCLEANFILES = aclocal.m4 \
 MAINTAINERCLEANFILES = .version	\
 		       .version.date
 
-
-if PYTHON3
-PYTHON_DEB_DEP = python3 >= 3.6
-PYTHON_RPM_DEP = python3 >= 3.6
-else
-PYTHON_DEB_DEP = python (>= 2.7), python (<< 3.0)
-PYTHON_RPM_DEP = python >= 2.7, python < 3.0
-endif
-
 define fpm-rpm =
 fpm -s dir -t rpm -n core \
 	-m "$(PACKAGE_MAINTAINERS)" \
@@ -74,7 +65,7 @@ fpm -s dir -t rpm -n core \
 	-d "iproute" \
 	-d "libev" \
 	-d "net-tools" \
-	-d "$(PYTHON_RPM_DEP)" \
+	-d "python3 >= 3.6" \
 	-C $(DESTDIR)
 endef
 
@@ -101,7 +92,7 @@ fpm -s dir -t deb -n core \
 	-d "ebtables" \
 	-d "iproute2" \
 	-d "libev4" \
-	-d "$(PYTHON_DEB_DEP)" \
+	-d "python3 >= 3.6" \
 	-C $(DESTDIR)
 endef
 

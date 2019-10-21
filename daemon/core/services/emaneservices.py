@@ -1,5 +1,4 @@
-from core.emulator.enumerations import NodeTypes
-from core.nodes import nodeutils
+from core.emane.nodes import EmaneNet
 from core.services.coreservices import CoreService
 from core.xml import emanexml
 
@@ -22,7 +21,7 @@ class EmaneTransportService(CoreService):
             transport_commands = []
             for interface in node.netifs(sort=True):
                 network_node = node.session.get_node(interface.net.id)
-                if nodeutils.is_node(network_node, NodeTypes.EMANE):
+                if isinstance(network_node, EmaneNet):
                     config = node.session.emane.get_configs(
                         network_node.id, network_node.model.name
                     )

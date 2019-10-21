@@ -206,7 +206,7 @@ class TestDistributed:
 
         # test a ping command
         node_one = cored.session.get_node(1)
-        message = command_message(node_one, "ping -c 5 %s" % ip4_address)
+        message = command_message(node_one, f"ping -c 5 {ip4_address}")
         cored.request_handler.dispatch_replies = validate_response
         cored.request_handler.handle_message(message)
 
@@ -259,7 +259,7 @@ class TestDistributed:
 
         # test a ping command
         node_one = cored.session.get_node(1)
-        message = command_message(node_one, "ping -c 5 %s" % ip4_address)
+        message = command_message(node_one, f"ping -c 5 {ip4_address}")
         cored.request_handler.dispatch_replies = validate_response
         cored.request_handler.handle_message(message)
 
@@ -307,7 +307,7 @@ class TestDistributed:
 
         # test a ping command
         node_one = cored.session.get_node(1)
-        message = command_message(node_one, "ping -c 5 %s" % ip4_address)
+        message = command_message(node_one, f"ping -c 5 {ip4_address}")
         cored.request_handler.dispatch_replies = validate_response
         cored.request_handler.handle_message(message)
         cored.request_handler.handle_message(message)

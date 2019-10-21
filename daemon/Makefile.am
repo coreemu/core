@@ -14,12 +14,6 @@ if WANT_DOCS
 DOCS = doc
 endif
 
-if PYTHON3
-PYTHONLIBDIR=$(libdir)/python3/dist-packages
-else
-PYTHONLIBDIR=$(pythondir)
-endif
-
 SUBDIRS = proto $(DOCS)
 
 SCRIPT_FILES := $(notdir $(wildcard scripts/*))
@@ -35,7 +29,7 @@ install-exec-hook:
 	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
 		--root=/$(DESTDIR) \
 		--prefix=$(prefix) \
-		--install-lib=$(PYTHONLIBDIR) \
+		--install-lib=$(pythondir) \
 		--single-version-externally-managed
 
 # Python package uninstall
@@ -44,8 +38,8 @@ uninstall-hook:
 	rm -rf $(DESTDIR)/$(datadir)/core
 	rm -f $(addprefix $(DESTDIR)/$(datarootdir)/man/man1/, $(MAN_FILES))
 	rm -f $(addprefix $(DESTDIR)/$(bindir)/,$(SCRIPT_FILES))
-	rm -rf $(DESTDIR)/$(PYTHONLIBDIR)/core-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
-	rm -rf $(DESTDIR)/$(PYTHONLIBDIR)/core
+	rm -rf $(DESTDIR)/$(pythondir)/core-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
+	rm -rf $(DESTDIR)/$(pythondir)/core
 
 # Python package cleanup
 clean-local:

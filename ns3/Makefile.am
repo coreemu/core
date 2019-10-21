@@ -9,12 +9,6 @@
 
 if WANT_PYTHON
 
-if PYTHON3
-PYTHONLIBDIR=$(libdir)/python3/dist-packages
-else
-PYTHONLIBDIR=$(pythondir)
-endif
-
 SETUPPY	= setup.py
 SETUPPYFLAGS = -v
 
@@ -28,15 +22,15 @@ install-exec-hook:
 	$(PYTHON) $(SETUPPY) $(SETUPPYFLAGS) install \
 		--root=/$(DESTDIR) \
 		--prefix=$(prefix) \
-		--install-lib=$(PYTHONLIBDIR) \
+		--install-lib=$(pythondir) \
 		--single-version-externally-managed \
 		--no-compile
 
 # Python package uninstall
 uninstall-hook:
 	-rm -rf core_ns3.egg-info
-	-rm -rf $(DESTDIR)/$(PYTHONLIBDIR)/core_ns3-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
-	-rm -rf $(DESTDIR)/$(PYTHONLIBDIR)/corens3
+	-rm -rf $(DESTDIR)/$(pythondir)/core_ns3-$(PACKAGE_VERSION)-py$(PYTHON_VERSION).egg-info
+	-rm -rf $(DESTDIR)/$(pythondir)/corens3
 	-rm -rf $(DESTDIR)/$(datadir)/corens3
 
 # Python package cleanup

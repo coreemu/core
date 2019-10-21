@@ -117,8 +117,10 @@ class CoreNs3Net(CoreNetworkBase):
     # icon used
     type = "wlan"
 
-    def __init__(self, session, _id=None, name=None, start=True, policy=None):
-        CoreNetworkBase.__init__(self, session, _id, name)
+    def __init__(
+        self, session, _id=None, name=None, start=True, server=None, policy=None
+    ):
+        CoreNetworkBase.__init__(self, session, _id, name, start, server)
         self.tapbridge = ns.tap_bridge.TapBridgeHelper()
         self._ns3devs = {}
         self._tapdevs = {}

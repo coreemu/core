@@ -4,8 +4,9 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [scripts]
-coredev = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
-coretest = "python -m pytest -v tests"
+core = "python scripts/core-daemon -f data/core.conf -l data/logging.conf"
+test = "pytest -v tests"
+test_emane = "pytest -v tests/emane"
 
 [dev-packages]
 grpcio-tools = "*"

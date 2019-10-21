@@ -12,10 +12,11 @@ import logging
 import time
 from multiprocessing.pool import ThreadPool
 
-from core import CoreCommandError, utils
+from core import utils
 from core.constants import which
 from core.emulator.data import FileData
 from core.emulator.enumerations import MessageFlags, RegisterTlvs
+from core.errors import CoreCommandError
 
 
 class ServiceBootError(Exception):
@@ -248,6 +249,7 @@ class ServiceManager(object):
 
         :param CoreService service: service to add
         :return: nothing
+        :raises ValueError: when service cannot be loaded
         """
         name = service.name
         logging.debug("loading service: class(%s) name(%s)", service.__name__, name)
@@ -258,13 +260,14 @@ class ServiceManager(object):
 
         # validate dependent executables are present
         for executable in service.executables:
-            if not which(executable):
-                logging.debug(
-                    "service(%s) missing executable: %s", service.name, executable
-                )
-                raise ValueError(
-                    "service(%s) missing executable: %s" % (service.name, executable)
-                )
+            which(executable, required=True)
+
+        # validate service on load succeeds
+        try:
+            service.on_load()
+        except Exception as e:
+            logging.exception("error during service(%s) on load", service.name)
+            raise ValueError(e)
 
         # make service available
         cls.services[name] = service
@@ -294,13 +297,12 @@ class ServiceManager(object):
         for service in services:
             if not service.name:
                 continue
-            service.on_load()
 
             try:
                 cls.add(service)
             except ValueError as e:
                 service_errors.append(service.name)
-                logging.debug("not loading service: %s", e)
+                logging.debug("not loading service(%s): %s", service.name, e)
         return service_errors
 
 
@@ -596,7 +598,7 @@ class CoreServices(object):
         for cmd in cmds:
             logging.debug("validating service(%s) using: %s", service.name, cmd)
             try:
-                node.check_cmd(cmd)
+                node.cmd(cmd)
             except CoreCommandError as e:
                 logging.debug(
                     "node(%s) service(%s) validate failed", node.name, service.name
@@ -629,7 +631,7 @@ class CoreServices(object):
         status = 0
         for args in service.shutdown:
             try:
-                node.check_cmd(args)
+                node.cmd(args)
             except CoreCommandError:
                 logging.exception("error running stop command %s", args)
                 status = -1
@@ -727,10 +729,7 @@ class CoreServices(object):
         status = 0
         for cmd in cmds:
             try:
-                if wait:
-                    node.check_cmd(cmd)
-                else:
-                    node.cmd(cmd, wait=False)
+                node.cmd(cmd, wait)
             except CoreCommandError:
                 logging.exception("error starting command")
                 status = -1

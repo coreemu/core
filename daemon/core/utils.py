@@ -6,15 +6,15 @@ import fcntl
 import hashlib
 import importlib
 import inspect
+import json
 import logging
+import logging.config
 import os
 import shlex
-import subprocess
 import sys
+from subprocess import PIPE, STDOUT, Popen
 
-from past.builtins import basestring
-
-from core import CoreCommandError
+from core.errors import CoreCommandError
 
 DEVNULL = open(os.devnull, "wb")
 
@@ -109,17 +109,6 @@ def _is_class(module, member, clazz):
     return True
 
 
-def _is_exe(file_path):
-    """
-    Check if a given file path exists and is an executable file.
-
-    :param str file_path: file path to check
-    :return: True if the file is considered and executable file, False otherwise
-    :rtype: bool
-    """
-    return os.path.isfile(file_path) and os.access(file_path, os.X_OK)
-
-
 def close_onexec(fd):
     """
     Close on execution of a shell process.
@@ -131,17 +120,26 @@ def close_onexec(fd):
     fcntl.fcntl(fd, fcntl.F_SETFD, fdflags | fcntl.FD_CLOEXEC)
 
 
-def check_executables(executables):
+def which(command, required):
     """
-    Check executables, verify they exist and are executable.
+    Find location of desired executable within current PATH.
 
-    :param list[str] executables: executable to check
-    :return: nothing
-    :raises EnvironmentError: when an executable doesn't exist or is not executable
+    :param str command: command to find location for
+    :param bool required: command is required to be found, false otherwise
+    :return: command location or None
+    :raises ValueError: when not found and required
     """
-    for executable in executables:
-        if not _is_exe(executable):
-            raise EnvironmentError("executable not found: %s" % executable)
+    found_path = None
+    for path in os.environ["PATH"].split(os.pathsep):
+        command_path = os.path.join(path, command)
+        if os.path.isfile(command_path) and os.access(command_path, os.X_OK):
+            found_path = command_path
+            break
+
+    if found_path is None and required:
+        raise ValueError(f"failed to find required executable({command}) in path")
+
+    return found_path
 
 
 def make_tuple(obj):
@@ -167,26 +165,14 @@ def make_tuple_fromstr(s, value_type):
     :return: tuple from string
     :rtype: tuple
     """
-    # remove tuple braces and strip commands and space from all values in the tuple string
+    # remove tuple braces and strip commands and space from all values in the tuple
+    # string
     values = []
     for x in s.strip("(), ").split(","):
         x = x.strip("' ")
         if x:
             values.append(x)
     return tuple(value_type(i) for i in values)
-
-
-def split_args(args):
-    """
-    Convenience method for splitting potential string commands into a shell-like syntax list.
-
-    :param list/str args: command list or string
-    :return: shell-like syntax list
-    :rtype: list
-    """
-    if isinstance(args, basestring):
-        args = shlex.split(args)
-    return args
 
 
 def mute_detach(args, **kwargs):
@@ -198,76 +184,41 @@ def mute_detach(args, **kwargs):
     :return: process id of the command
     :rtype: int
     """
-    args = split_args(args)
+    args = shlex.split(args)
     kwargs["preexec_fn"] = _detach_init
     kwargs["stdout"] = DEVNULL
-    kwargs["stderr"] = subprocess.STDOUT
-    return subprocess.Popen(args, **kwargs).pid
+    kwargs["stderr"] = STDOUT
+    return Popen(args, **kwargs).pid
 
 
-def cmd(args, wait=True):
+def cmd(args, env=None, cwd=None, wait=True, shell=False):
     """
-    Runs a command on and returns the exit status.
+    Execute a command on the host and return a tuple containing the exit status and
+    result string. stderr output is folded into the stdout result string.
 
-    :param list[str]|str args: command arguments
-    :param bool wait: wait for command to end or not
-    :return: command status
-    :rtype: int
-    """
-    args = split_args(args)
-    logging.debug("command: %s", args)
-    try:
-        p = subprocess.Popen(args)
-        if not wait:
-            return 0
-        return p.wait()
-    except OSError:
-        raise CoreCommandError(-1, args)
-
-
-def cmd_output(args):
-    """
-    Execute a command on the host and return a tuple containing the exit status and result string. stderr output
-    is folded into the stdout result string.
-
-    :param list[str]|str args: command arguments
-    :return: command status and stdout
-    :rtype: tuple[int, str]
-    :raises CoreCommandError: when the file to execute is not found
-    """
-    args = split_args(args)
-    logging.debug("command: %s", args)
-    try:
-        p = subprocess.Popen(args, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        return status, stdout.decode("utf-8").strip()
-    except OSError:
-        raise CoreCommandError(-1, args)
-
-
-def check_cmd(args, **kwargs):
-    """
-    Execute a command on the host and return a tuple containing the exit status and result string. stderr output
-    is folded into the stdout result string.
-
-    :param list[str]|str args: command arguments
-    :param dict kwargs: keyword arguments to pass to subprocess.Popen
+    :param str args: command arguments
+    :param dict env: environment to run command with
+    :param str cwd: directory to run command in
+    :param bool wait: True to wait for status, False otherwise
+    :param bool shell: True to use shell, False otherwise
     :return: combined stdout and stderr
     :rtype: str
-    :raises CoreCommandError: when there is a non-zero exit status or the file to execute is not found
+    :raises CoreCommandError: when there is a non-zero exit status or the file to
+        execute is not found
     """
-    kwargs["stdout"] = subprocess.PIPE
-    kwargs["stderr"] = subprocess.STDOUT
-    args = split_args(args)
-    logging.debug("command: %s", args)
+    logging.info("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    if shell is False:
+        args = shlex.split(args)
     try:
-        p = subprocess.Popen(args, **kwargs)
-        stdout, _ = p.communicate()
-        status = p.wait()
-        if status != 0:
-            raise CoreCommandError(status, args, stdout)
-        return stdout.decode("utf-8").strip()
+        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
+        if wait:
+            stdout, stderr = p.communicate()
+            status = p.wait()
+            if status != 0:
+                raise CoreCommandError(status, args, stdout, stderr)
+            return stdout.decode("utf-8").strip()
+        else:
+            return ""
     except OSError:
         raise CoreCommandError(-1, args)
 
@@ -289,12 +240,13 @@ def hex_dump(s, bytes_per_word=2, words_per_line=8):
         line = s[:total_bytes]
         s = s[total_bytes:]
         tmp = map(
-            lambda x: ("%02x" * bytes_per_word) % x,
+            lambda x: (f"{bytes_per_word:02x}" * bytes_per_word) % x,
             zip(*[iter(map(ord, line))] * bytes_per_word),
         )
         if len(line) % 2:
-            tmp.append("%x" % ord(line[-1]))
-        dump += "0x%08x: %s\n" % (count, " ".join(tmp))
+            tmp.append(f"{ord(line[-1]):x}")
+        tmp = " ".join(tmp)
+        dump += f"0x{count:08x}: {tmp}\n"
         count += len(line)
     return dump[:-1]
 
@@ -312,9 +264,9 @@ def file_munge(pathname, header, text):
     file_demunge(pathname, header)
 
     with open(pathname, "a") as append_file:
-        append_file.write("# BEGIN %s\n" % header)
+        append_file.write(f"# BEGIN {header}\n")
         append_file.write(text)
-        append_file.write("# END %s\n" % header)
+        append_file.write(f"# END {header}\n")
 
 
 def file_demunge(pathname, header):
@@ -332,9 +284,9 @@ def file_demunge(pathname, header):
     end = None
 
     for i, line in enumerate(lines):
-        if line == "# BEGIN %s\n" % header:
+        if line == f"# BEGIN {header}\n":
             start = i
-        elif line == "# END %s\n" % header:
+        elif line == f"# END {header}\n":
             end = i + 1
 
     if start is None or end is None:
@@ -350,13 +302,13 @@ def expand_corepath(pathname, session=None, node=None):
     Expand a file path given session information.
 
     :param str pathname: file path to expand
-    :param core.emulator.session.Session session: core session object to expand path with
+    :param core.emulator.session.Session session: core session object to expand path
     :param core.nodes.base.CoreNode node: node to expand path with
     :return: expanded path
     :rtype: str
     """
     if session is not None:
-        pathname = pathname.replace("~", "/home/%s" % session.user)
+        pathname = pathname.replace("~", f"/home/{session.user}")
         pathname = pathname.replace("%SESSION%", str(session.id))
         pathname = pathname.replace("%SESSION_DIR%", session.session_dir)
         pathname = pathname.replace("%SESSION_USER%", session.user)
@@ -383,7 +335,8 @@ def sysctl_devname(devname):
 
 def load_config(filename, d):
     """
-    Read key=value pairs from a file, into a dict. Skip comments; strip newline characters and spacing.
+    Read key=value pairs from a file, into a dict. Skip comments; strip newline
+    characters and spacing.
 
     :param str filename: file to read into a dictionary
     :param dict d: dictionary to read file into
@@ -414,7 +367,7 @@ def load_classes(path, clazz):
     # validate path exists
     logging.debug("attempting to load modules from path: %s", path)
     if not os.path.isdir(path):
-        logging.warning("invalid custom module directory specified" ": %s" % path)
+        logging.warning("invalid custom module directory specified" ": %s", path)
     # check if path is in sys.path
     parent_path = os.path.dirname(path)
     if parent_path not in sys.path:
@@ -430,7 +383,7 @@ def load_classes(path, clazz):
     # import and add all service modules in the path
     classes = []
     for module_name in module_names:
-        import_statement = "%s.%s" % (base_module, module_name)
+        import_statement = f"{base_module}.{module_name}"
         logging.debug("importing custom module: %s", import_statement)
         try:
             module = importlib.import_module(import_statement)
@@ -444,3 +397,15 @@ def load_classes(path, clazz):
             )
 
     return classes
+
+
+def load_logging_config(config_path):
+    """
+    Load CORE logging configuration file.
+
+    :param str config_path: path to logging config file
+    :return: nothing
+    """
+    with open(config_path, "r") as log_config_file:
+        log_config = json.load(log_config_file)
+        logging.config.dictConfig(log_config)

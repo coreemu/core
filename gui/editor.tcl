@@ -333,7 +333,7 @@ proc redrawAll {} {
 
 proc drawNode { c node } {
     global showNodeLabels
-    global router pc host lanswitch rj45 hub pseudo OVS
+    global router pc host lanswitch rj45 hub pseudo
     global curcanvas zoom
     global wlan
     if { $c == "" } { set c .c } ;# default canvas
@@ -348,7 +348,7 @@ proc drawNode { c node } {
     set cimg ""
     set imgzoom $zoom
     if { $zoom == 0.75 || $zoom == 1.5 } { set imgzoom 1.0 }
-    if { $type == "router" || $type == "OVS" } {
+    if { $type == "router" } {
 	set model [getNodeModel $node]
 	set cimg [getNodeTypeImage $model normal]
     }
@@ -1535,7 +1535,7 @@ proc raiseAll {c} {
 proc button1 { c x y button } {
     global node_list plot_list curcanvas zoom
     global activetool activetoolp newlink curobj changed def_router_model
-    global router pc host lanswitch rj45 hub OVS
+    global router pc host lanswitch rj45 hub
     global oval rectangle text
     global lastX lastY
     global background selectbox
@@ -1607,10 +1607,7 @@ proc button1 { c x y button } {
 			rectangle text} $activetool] < 0 } {
 	    if { $g_view_locked == 1 } { return }
 	    if { $activetoolp == "routers" } {
-                if {$activetool != "OVS"} {
-                  set node [newNode router]
-		} else {
-		  set node [newNode OVS]}
+		set node [newNode router]
 		setNodeModel $node $activetool
 	    } else {
 		set node [newNode $activetool]
@@ -2550,7 +2547,7 @@ proc popupConfigDialog { c } {
 	    -side right -padx 4 -pady 4
 	# end Boeing
 	pack $wi.ftop -side top
-	if { $type == "router" || $type == "OVS"} {
+	if { $type == "router" } {
 
 	    ttk::frame $wi.model -borderwidth 4
 	    ttk::label $wi.model.label -text "Type:"

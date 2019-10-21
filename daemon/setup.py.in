@@ -34,16 +34,12 @@ setup(
     version="@PACKAGE_VERSION@",
     packages=find_packages(),
     install_requires=[
-        "configparser",
-        "future",
+        "fabric",
         "grpcio",
+        "invoke",
         "lxml",
         "protobuf",
     ],
-    extra_require={
-        ":python_version<'3.2'": ["futures"],
-        ":python_version<'3.4'": ["enum34"],
-    },
     tests_require=[
         "pytest",
         "mock",

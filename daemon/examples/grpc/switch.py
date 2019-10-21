@@ -1,5 +1,4 @@
 import logging
-from builtins import range
 
 from core.api.grpc import client, core_pb2
 

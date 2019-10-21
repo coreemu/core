@@ -14,32 +14,64 @@ import threading
 import time
 from multiprocessing.pool import ThreadPool
 
-import core.nodes.base
-from core import CoreError, constants, utils
-from core.api.tlv import coreapi
-from core.api.tlv.broker import CoreBroker
+from core import constants, utils
 from core.emane.emanemanager import EmaneManager
+from core.emane.nodes import EmaneNet
 from core.emulator.data import EventData, ExceptionData, NodeData
+from core.emulator.distributed import DistributedController
 from core.emulator.emudata import (
     IdGen,
     LinkOptions,
     NodeOptions,
     create_interface,
-    is_net_node,
     link_config,
 )
 from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
 from core.emulator.sessionconfig import SessionConfig, SessionMetaData
+from core.errors import CoreError
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
 from core.location.mobility import MobilityManager
-from core.nodes import nodeutils
-from core.nodes.base import CoreNodeBase
+from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
+from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
+from core.nodes.lxd import LxcNode
+from core.nodes.network import (
+    CtrlNet,
+    GreTapBridge,
+    HubNode,
+    PtpNet,
+    SwitchNode,
+    TunnelNode,
+    WlanNode,
+)
+from core.nodes.physical import PhysicalNode, Rj45Node
 from core.plugins.sdt import Sdt
 from core.services.coreservices import CoreServices
 from core.xml import corexml, corexmldeployment
 from core.xml.corexml import CoreXmlReader, CoreXmlWriter
+
+# maps for converting from API call node type values to classes and vice versa
+NODES = {
+    NodeTypes.DEFAULT: CoreNode,
+    NodeTypes.PHYSICAL: PhysicalNode,
+    NodeTypes.TBD: None,
+    NodeTypes.SWITCH: SwitchNode,
+    NodeTypes.HUB: HubNode,
+    NodeTypes.WIRELESS_LAN: WlanNode,
+    NodeTypes.RJ45: Rj45Node,
+    NodeTypes.TUNNEL: TunnelNode,
+    NodeTypes.KTUNNEL: None,
+    NodeTypes.EMANE: EmaneNet,
+    NodeTypes.EMANE_NET: None,
+    NodeTypes.TAP_BRIDGE: GreTapBridge,
+    NodeTypes.PEER_TO_PEER: PtpNet,
+    NodeTypes.CONTROL_NET: CtrlNet,
+    NodeTypes.DOCKER: DockerNode,
+    NodeTypes.LXC: LxcNode,
+}
+NODES_TYPE = {NODES[x]: x for x in NODES}
+CTRL_NET_ID = 9001
 
 
 class Session(object):
@@ -59,7 +91,7 @@ class Session(object):
         self.master = False
 
         # define and create session directory when desired
-        self.session_dir = os.path.join(tempfile.gettempdir(), "pycore.%s" % self.id)
+        self.session_dir = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
         if mkdir:
             os.mkdir(self.session_dir)
 
@@ -104,8 +136,10 @@ class Session(object):
             self.options.set_config(key, value)
         self.metadata = SessionMetaData()
 
+        # distributed support and logic
+        self.distributed = DistributedController(self)
+
         # initialize session feature helpers
-        self.broker = CoreBroker(session=self)
         self.location = CoreLocation()
         self.mobility = MobilityManager(session=self)
         self.services = CoreServices(session=self)
@@ -116,10 +150,37 @@ class Session(object):
         self.services.default_services = {
             "mdr": ("zebra", "OSPFv3MDR", "IPForward"),
             "PC": ("DefaultRoute",),
-            "prouter": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
+            "prouter": (),
             "router": ("zebra", "OSPFv2", "OSPFv3", "IPForward"),
             "host": ("DefaultRoute", "SSH"),
         }
+
+    @classmethod
+    def get_node_class(cls, _type):
+        """
+        Retrieve the class for a given node type.
+
+        :param core.emulator.enumerations.NodeTypes _type: node type to get class for
+        :return: node class
+        """
+        node_class = NODES.get(_type)
+        if node_class is None:
+            raise CoreError(f"invalid node type: {_type}")
+        return node_class
+
+    @classmethod
+    def get_node_type(cls, _class):
+        """
+        Retrieve node type for a given node class.
+
+        :param _class: node class to get a node type for
+        :return: node type
+        :rtype: core.emulator.enumerations.NodeTypes
+        """
+        node_type = NODES_TYPE.get(_class)
+        if node_type is None:
+            raise CoreError(f"invalid node class: {_class}")
+        return node_type
 
     def _link_nodes(self, node_one_id, node_two_id):
         """
@@ -143,9 +204,9 @@ class Session(object):
         node_two = self.get_node(node_two_id)
 
         # both node ids are provided
-        tunnel = self.broker.gettunnel(node_one_id, node_two_id)
+        tunnel = self.distributed.get_tunnel(node_one_id, node_two_id)
         logging.debug("tunnel between nodes: %s", tunnel)
-        if nodeutils.is_node(tunnel, NodeTypes.TAP_BRIDGE):
+        if isinstance(tunnel, GreTapBridge):
             net_one = tunnel
             if tunnel.remotenum == node_one_id:
                 node_one = None
@@ -158,14 +219,14 @@ class Session(object):
             else:
                 node_two = None
 
-        if is_net_node(node_one):
+        if isinstance(node_one, CoreNetworkBase):
             if not net_one:
                 net_one = node_one
             else:
                 net_two = node_one
             node_one = None
 
-        if is_net_node(node_two):
+        if isinstance(node_two, CoreNetworkBase):
             if not net_one:
                 net_one = node_two
             else:
@@ -194,7 +255,7 @@ class Session(object):
         """
         objects = [x for x in objects if x]
         if len(objects) < 2:
-            raise CoreError("wireless link failure: %s" % objects)
+            raise CoreError(f"wireless link failure: {objects}")
         logging.debug(
             "handling wireless linking objects(%s) connect(%s)", objects, connect
         )
@@ -203,9 +264,7 @@ class Session(object):
             raise CoreError("no common network found for wireless link/unlink")
 
         for common_network, interface_one, interface_two in common_networks:
-            if not nodeutils.is_node(
-                common_network, [NodeTypes.WIRELESS_LAN, NodeTypes.EMANE]
-            ):
+            if not isinstance(common_network, (WlanNode, EmaneNet)):
                 logging.info(
                     "skipping common network that is not wireless/emane: %s",
                     common_network,
@@ -268,9 +327,8 @@ class Session(object):
                         node_one.name,
                         node_two.name,
                     )
-                    ptp_class = nodeutils.get_node_class(NodeTypes.PEER_TO_PEER)
                     start = self.state > EventTypes.DEFINITION_STATE.value
-                    net_one = self.create_node(cls=ptp_class, start=start)
+                    net_one = self.create_node(cls=PtpNet, start=start)
 
                 # node to network
                 if node_one and net_one:
@@ -300,7 +358,7 @@ class Session(object):
                         net_one.name,
                         net_two.name,
                     )
-                    if nodeutils.is_node(net_two, NodeTypes.RJ45):
+                    if isinstance(net_two, Rj45Node):
                         interface = net_two.linknet(net_one)
                     else:
                         interface = net_one.linknet(net_two)
@@ -324,12 +382,12 @@ class Session(object):
 
                 # tunnel node logic
                 key = link_options.key
-                if key and nodeutils.is_node(net_one, NodeTypes.TUNNEL):
+                if key and isinstance(net_one, TunnelNode):
                     logging.info("setting tunnel key for: %s", net_one.name)
                     net_one.setkey(key)
                     if addresses:
                         net_one.addrconfig(addresses)
-                if key and nodeutils.is_node(net_two, NodeTypes.TUNNEL):
+                if key and isinstance(net_two, TunnelNode):
                     logging.info("setting tunnel key for: %s", net_two.name)
                     net_two.setkey(key)
                     if addresses:
@@ -337,14 +395,14 @@ class Session(object):
 
                 # physical node connected with tunnel
                 if not net_one and not net_two and (node_one or node_two):
-                    if node_one and nodeutils.is_node(node_one, NodeTypes.PHYSICAL):
+                    if node_one and isinstance(node_one, PhysicalNode):
                         logging.info("adding link for physical node: %s", node_one.name)
                         addresses = interface_one.get_addresses()
                         node_one.adoptnetif(
                             tunnel, interface_one.id, interface_one.mac, addresses
                         )
                         link_config(node_one, tunnel, link_options)
-                    elif node_two and nodeutils.is_node(node_two, NodeTypes.PHYSICAL):
+                    elif node_two and isinstance(node_two, PhysicalNode):
                         logging.info("adding link for physical node: %s", node_two.name)
                         addresses = interface_two.get_addresses()
                         node_two.adoptnetif(
@@ -584,14 +642,11 @@ class Session(object):
         :param int _id: id for node, defaults to None for generated id
         :param core.emulator.emudata.NodeOptions node_options: data to create node with
         :return: created node
+        :raises core.CoreError: when an invalid node type is given
         """
 
-        # retrieve node class for given node type
-        try:
-            node_class = nodeutils.get_node_class(_type)
-        except KeyError:
-            logging.error("invalid node type to create: %s", _type)
-            return None
+        # validate node type, get class, or throw error
+        node_class = self.get_node_class(_type)
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
@@ -611,7 +666,14 @@ class Session(object):
             node_options = NodeOptions()
         name = node_options.name
         if not name:
-            name = "%s%s" % (node_class.__name__, _id)
+            name = f"{node_class.__name__}{_id}"
+
+        # verify distributed server
+        server = self.distributed.servers.get(node_options.emulation_server)
+        if node_options.emulation_server is not None and server is None:
+            raise CoreError(
+                f"invalid distributed server: {node_options.emulation_server}"
+            )
 
         # create node
         logging.info(
@@ -628,9 +690,12 @@ class Session(object):
                 name=name,
                 start=start,
                 image=node_options.image,
+                server=server,
             )
         else:
-            node = self.create_node(cls=node_class, _id=_id, name=name, start=start)
+            node = self.create_node(
+                cls=node_class, _id=_id, name=name, start=start, server=server
+            )
 
         # set node attributes
         node.icon = node_options.icon
@@ -651,10 +716,8 @@ class Session(object):
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
 
-        # boot nodes if created after runtime, LcxNodes, Physical, and RJ45 are all PyCoreNodes
-        is_boot_node = isinstance(node, CoreNodeBase) and not nodeutils.is_node(
-            node, NodeTypes.RJ45
-        )
+        # boot nodes if created after runtime, CoreNodes, Physical, and RJ45 are all nodes
+        is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_nodes()
             self.add_remove_control_interface(node=node, remove=False)
@@ -792,7 +855,7 @@ class Session(object):
         :return: nothing
         """
         # hack to conform with old logic until updated
-        state = ":%s" % state
+        state = f":{state}"
         self.set_hook(state, file_name, source_name, data)
 
     def add_node_file(self, node_id, source_name, file_name, data):
@@ -815,13 +878,13 @@ class Session(object):
 
     def clear(self):
         """
-        Clear all CORE session data. (objects, hooks, broker)
+        Clear all CORE session data. (nodes, hooks, etc)
 
         :return: nothing
         """
         self.delete_nodes()
+        self.distributed.shutdown()
         self.del_hooks()
-        self.broker.reset()
         self.emane.reset()
 
     def start_events(self):
@@ -895,11 +958,11 @@ class Session(object):
 
         # shutdown/cleanup feature helpers
         self.emane.shutdown()
-        self.broker.shutdown()
         self.sdt.shutdown()
 
-        # delete all current nodes
+        # remove and shutdown all nodes and tunnels
         self.delete_nodes()
+        self.distributed.shutdown()
 
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"
@@ -1004,7 +1067,7 @@ class Session(object):
         self.run_state_hooks(state_value)
 
         if send_event:
-            event_data = EventData(event_type=state_value, time="%s" % time.time())
+            event_data = EventData(event_type=state_value, time=str(time.time()))
             self.broadcast_event(event_data)
 
     def write_state(self, state):
@@ -1016,7 +1079,7 @@ class Session(object):
         """
         try:
             state_file = open(self._state_file, "w")
-            state_file.write("%d %s\n" % (state, coreapi.state_name(state)))
+            state_file.write(f"{state} {EventTypes(self.state).name}\n")
             state_file.close()
         except IOError:
             logging.exception("error writing state file: %s", state)
@@ -1133,9 +1196,9 @@ class Session(object):
             try:
                 hook(state)
             except Exception:
-                message = "exception occured when running %s state hook: %s" % (
-                    coreapi.state_name(state),
-                    hook,
+                state_name = EventTypes(self.state).name
+                message = (
+                    f"exception occured when running {state_name} state hook: {hook}"
                 )
                 logging.exception(message)
                 self.exception(
@@ -1178,12 +1241,12 @@ class Session(object):
         """
         if state == EventTypes.RUNTIME_STATE.value:
             self.emane.poststartup()
-            xml_file_version = self.options.get_config("xmlfilever")
-            if xml_file_version in ("1.0",):
-                xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
-                xml_writer = corexml.CoreXmlWriter(self)
-                corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
-                xml_writer.write(xml_file_name)
+
+            # create session deployed xml
+            xml_file_name = os.path.join(self.session_dir, "session-deployed.xml")
+            xml_writer = corexml.CoreXmlWriter(self)
+            corexmldeployment.CoreXmlDeployment(self, xml_writer.scenario)
+            xml_writer.write(xml_file_name)
 
     def get_environment(self, state=True):
         """
@@ -1196,16 +1259,16 @@ class Session(object):
         :rtype: dict
         """
         env = os.environ.copy()
-        env["SESSION"] = "%s" % self.id
-        env["SESSION_SHORT"] = "%s" % self.short_session_id()
-        env["SESSION_DIR"] = "%s" % self.session_dir
-        env["SESSION_NAME"] = "%s" % self.name
-        env["SESSION_FILENAME"] = "%s" % self.file_name
-        env["SESSION_USER"] = "%s" % self.user
-        env["SESSION_NODE_COUNT"] = "%s" % self.get_node_count()
+        env["SESSION"] = str(self.id)
+        env["SESSION_SHORT"] = self.short_session_id()
+        env["SESSION_DIR"] = self.session_dir
+        env["SESSION_NAME"] = str(self.name)
+        env["SESSION_FILENAME"] = str(self.file_name)
+        env["SESSION_USER"] = str(self.user)
+        env["SESSION_NODE_COUNT"] = str(self.get_node_count())
 
         if state:
-            env["SESSION_STATE"] = "%s" % self.state
+            env["SESSION_STATE"] = str(self.state)
 
         # attempt to read and add environment config file
         environment_config_file = os.path.join(constants.CORE_CONF_DIR, "environment")
@@ -1294,7 +1357,7 @@ class Session(object):
         with self._nodes_lock:
             if node.id in self.nodes:
                 node.shutdown()
-                raise CoreError("duplicate node id %s for %s" % (node.id, node.name))
+                raise CoreError(f"duplicate node id {node.id} for {node.name}")
             self.nodes[node.id] = node
 
         return node
@@ -1309,7 +1372,7 @@ class Session(object):
         :raises core.CoreError: when node does not exist
         """
         if _id not in self.nodes:
-            raise CoreError("unknown node id %s" % _id)
+            raise CoreError(f"unknown node id {_id}")
         return self.nodes[_id]
 
     def delete_node(self, _id):
@@ -1354,9 +1417,7 @@ class Session(object):
                 with open(file_path, "w") as f:
                     for _id in self.nodes.keys():
                         node = self.nodes[_id]
-                        f.write(
-                            "%s %s %s %s\n" % (_id, node.name, node.apitype, type(node))
-                        )
+                        f.write(f"{_id} {node.name} {node.apitype} {type(node)}\n")
         except IOError:
             logging.exception("error writing nodes file")
 
@@ -1405,11 +1466,13 @@ class Session(object):
         # write current nodes out to session directory file
         self.write_nodes()
 
-        # create control net interfaces and broker network tunnels
+        # create control net interfaces and network tunnels
         # which need to exist for emane to sync on location events
         # in distributed scenarios
         self.add_remove_control_interface(node=None, remove=False)
-        self.broker.startup()
+
+        # initialize distributed tunnels
+        self.distributed.start()
 
         # instantiate will be invoked again upon Emane configure
         if self.emane.startup() == self.emane.NOT_READY:
@@ -1418,9 +1481,6 @@ class Session(object):
         # boot node services and then start mobility
         self.boot_nodes()
         self.mobility.startup()
-
-        # set broker local instantiation to complete
-        self.broker.local_instantiation_complete()
 
         # notify listeners that instantiation is complete
         event = EventData(event_type=EventTypes.INSTANTIATION_COMPLETE.value)
@@ -1441,12 +1501,10 @@ class Session(object):
             count = 0
             for node_id in self.nodes:
                 node = self.nodes[node_id]
-                is_p2p_ctrlnet = nodeutils.is_node(
-                    node, (NodeTypes.PEER_TO_PEER, NodeTypes.CONTROL_NET)
+                is_p2p_ctrlnet = isinstance(node, (PtpNet, CtrlNet))
+                is_tap = isinstance(node, GreTapBridge) and not isinstance(
+                    node, TunnelNode
                 )
-                is_tap = nodeutils.is_node(
-                    node, NodeTypes.TAP_BRIDGE
-                ) and not nodeutils.is_node(node, NodeTypes.TUNNEL)
                 if is_p2p_ctrlnet or is_tap:
                     continue
 
@@ -1461,19 +1519,14 @@ class Session(object):
         have entered runtime (time=0).
         """
         # this is called from instantiate() after receiving an event message
-        # for the instantiation state, and from the broker when distributed
-        # nodes have been started
+        # for the instantiation state
         logging.debug(
             "session(%s) checking if not in runtime state, current state: %s",
             self.id,
-            coreapi.state_name(self.state),
+            EventTypes(self.state).name,
         )
         if self.state == EventTypes.RUNTIME_STATE.value:
             logging.info("valid runtime state found, returning")
-            return
-
-        # check to verify that all nodes and networks are running
-        if not self.broker.instantiation_complete():
             return
 
         # start event loop and set to runtime
@@ -1493,7 +1546,7 @@ class Session(object):
             for node_id in self.nodes:
                 node = self.nodes[node_id]
                 # TODO: determine if checking for CoreNode alone is ok
-                if isinstance(node, core.nodes.base.CoreNodeBase):
+                if isinstance(node, CoreNodeBase):
                     self.services.stop_services(node)
 
         # shutdown emane
@@ -1531,7 +1584,7 @@ class Session(object):
         interface names, where length may be limited.
         """
         ssid = (self.id >> 8) ^ (self.id & ((1 << 8) - 1))
-        return "%x" % ssid
+        return f"{ssid:x}"
 
     def boot_nodes(self):
         """
@@ -1546,10 +1599,7 @@ class Session(object):
             start = time.time()
             for _id in self.nodes:
                 node = self.nodes[_id]
-                # TODO: PyCoreNode is not the type to check
-                if isinstance(node, CoreNodeBase) and not nodeutils.is_node(
-                    node, NodeTypes.RJ45
-                ):
+                if isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node):
                     # add a control interface if configured
                     logging.info(
                         "booting node(%s): %s",
@@ -1618,9 +1668,7 @@ class Session(object):
         return -1
 
     def get_control_net(self, net_index):
-        # TODO: all nodes use an integer id and now this wants to use a string
-        _id = "ctrl%dnet" % net_index
-        return self.get_node(_id)
+        return self.get_node(CTRL_NET_ID + net_index)
 
     def add_remove_control_net(self, net_index, remove=False, conf_required=True):
         """
@@ -1648,8 +1696,7 @@ class Session(object):
                 # no controlnet needed
                 return None
             else:
-                control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
-                prefix_spec = control_net_class.DEFAULT_PREFIX_LIST[net_index]
+                prefix_spec = CtrlNet.DEFAULT_PREFIX_LIST[net_index]
         logging.debug("prefix spec: %s", prefix_spec)
 
         server_interface = self.get_control_net_server_interfaces()[net_index]
@@ -1668,7 +1715,7 @@ class Session(object):
                 return None
 
         # build a new controlnet bridge
-        _id = "ctrl%dnet" % net_index
+        _id = CTRL_NET_ID + net_index
 
         # use the updown script for control net 0 only.
         updown_script = None
@@ -1676,7 +1723,7 @@ class Session(object):
         if net_index == 0:
             updown_script = self.options.get_config("controlnet_updown_script")
             if not updown_script:
-                logging.warning("controlnet updown script not configured")
+                logging.debug("controlnet updown script not configured")
 
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:
@@ -1689,58 +1736,31 @@ class Session(object):
                 except IndexError:
                     # no server name. possibly only one server
                     prefix = prefixes[0]
-            else:
-                # slave servers have their name and localhost in the serverlist
-                servers = self.broker.getservernames()
-                servers.remove("localhost")
-                prefix = None
 
-                for server_prefix in prefixes:
-                    try:
-                        # split each entry into server and prefix
-                        server, p = server_prefix.split(":")
-                    except ValueError:
-                        server = ""
-                        p = None
-
-                    if server == servers[0]:
-                        # the server name in the list matches this server
-                        prefix = p
-                        break
-
-                if not prefix:
-                    logging.error(
-                        "control network prefix not found for server: %s", servers[0]
-                    )
-                    assign_address = False
-                    try:
-                        prefix = prefixes[0].split(":", 1)[1]
-                    except IndexError:
-                        prefix = prefixes[0]
         # len(prefixes) == 1
         else:
-            # TODO: can we get the server name from the servers.conf or from the node assignments?
+            # TODO: can we get the server name from the servers.conf or from the node
+            #  assignments?o
             # with one prefix, only master gets a ctrlnet address
             assign_address = self.master
             prefix = prefixes[0]
 
-        logging.info("controlnet prefix: %s - %s", type(prefix), prefix)
-        control_net_class = nodeutils.get_node_class(NodeTypes.CONTROL_NET)
+        logging.info(
+            "controlnet(%s) prefix(%s) assign(%s) updown(%s) serverintf(%s)",
+            _id,
+            prefix,
+            assign_address,
+            updown_script,
+            server_interface,
+        )
         control_net = self.create_node(
-            cls=control_net_class,
+            cls=CtrlNet,
             _id=_id,
             prefix=prefix,
             assign_address=assign_address,
             updown_script=updown_script,
             serverintf=server_interface,
         )
-
-        # tunnels between controlnets will be built with Broker.addnettunnels()
-        # TODO: potentially remove documentation saying node ids are ints
-        # TODO: need to move broker code out of the session object
-        self.broker.addnet(_id)
-        for server in self.broker.getservers():
-            self.broker.addnodemap(server, _id)
 
         return control_net
 
@@ -1774,13 +1794,12 @@ class Session(object):
         control_ip = node.id
 
         try:
-            addrlist = [
-                "%s/%s"
-                % (control_net.prefix.addr(control_ip), control_net.prefix.prefixlen)
-            ]
+            address = control_net.prefix.addr(control_ip)
+            prefix = control_net.prefix.prefixlen
+            addrlist = [f"{address}/{prefix}"]
         except ValueError:
-            msg = "Control interface not added to node %s. " % node.id
-            msg += "Invalid control network prefix (%s). " % control_net.prefix
+            msg = f"Control interface not added to node {node.id}. "
+            msg += f"Invalid control network prefix ({control_net.prefix}). "
             msg += "A longer prefix length may be required for this many nodes."
             logging.exception(msg)
             return
@@ -1788,7 +1807,7 @@ class Session(object):
         interface1 = node.newnetif(
             net=control_net,
             ifindex=control_net.CTRLIF_IDX_BASE + net_index,
-            ifname="ctrl%d" % net_index,
+            ifname=f"ctrl{net_index}",
             hwaddr=MacAddress.random(),
             addrlist=addrlist,
         )
@@ -1811,7 +1830,7 @@ class Session(object):
             logging.exception("error retrieving control net node")
             return
 
-        header = "CORE session %s host entries" % self.id
+        header = f"CORE session {self.id} host entries"
         if remove:
             logging.info("Removing /etc/hosts file entries.")
             utils.file_demunge("/etc/hosts", header)
@@ -1821,9 +1840,10 @@ class Session(object):
         for interface in control_net.netifs():
             name = interface.node.name
             for address in interface.addrlist:
-                entries.append("%s %s" % (address.split("/")[0], name))
+                address = address.split("/")[0]
+                entries.append(f"{address} {name}")
 
-        logging.info("Adding %d /etc/hosts file entries." % len(entries))
+        logging.info("Adding %d /etc/hosts file entries.", len(entries))
 
         utils.file_munge("/etc/hosts", header, "\n".join(entries) + "\n")
 
@@ -1874,7 +1894,8 @@ class Session(object):
             data,
         )
 
-    # TODO: if data is None, this blows up, but this ties into how event functions are ran, need to clean that up
+    # TODO: if data is None, this blows up, but this ties into how event functions
+    #  are ran, need to clean that up
     def run_event(self, node_id=None, name=None, data=None):
         """
         Run a scheduled event, executing commands in the data string.

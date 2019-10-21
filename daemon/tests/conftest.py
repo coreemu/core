@@ -58,7 +58,6 @@ class CoreServerTest(object):
         self.request_handler = CoreHandler(request_mock, "", self.server)
         self.request_handler.session = self.session
         self.request_handler.add_session_handlers()
-        self.session.broker.session_clients.append(self.request_handler)
 
         # have broker handle a configuration state change
         self.session.set_state(EventTypes.DEFINITION_STATE)
@@ -68,11 +67,7 @@ class CoreServerTest(object):
         self.request_handler.handle_message(message)
 
         # add broker server for distributed core
-        distributed = "%s:%s:%s" % (
-            self.distributed_server,
-            distributed_address,
-            self.port,
-        )
+        distributed = f"{self.distributed_server}:{distributed_address}:{self.port}"
         message = CoreConfMessage.create(
             0,
             [

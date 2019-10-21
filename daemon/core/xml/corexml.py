@@ -4,11 +4,12 @@ from lxml import etree
 
 import core.nodes.base
 import core.nodes.physical
+from core.emane.nodes import EmaneNet
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import NodeTypes
-from core.nodes import nodeutils
 from core.nodes.base import CoreNetworkBase
 from core.nodes.ipaddress import MacAddress
+from core.nodes.network import CtrlNet
 
 
 def write_xml_file(xml_element, file_path, doctype=None):
@@ -408,7 +409,7 @@ class CoreXmlWriter(object):
             is_network_or_rj45 = isinstance(
                 node, (core.nodes.base.CoreNetworkBase, core.nodes.physical.Rj45Node)
             )
-            is_controlnet = nodeutils.is_node(node, NodeTypes.CONTROL_NET)
+            is_controlnet = isinstance(node, CtrlNet)
             if is_network_or_rj45 and not is_controlnet:
                 self.write_network(node)
             # device node
@@ -457,7 +458,7 @@ class CoreXmlWriter(object):
             interface_name = node_interface.name
 
             # check if emane interface
-            if nodeutils.is_node(node_interface.net, NodeTypes.EMANE):
+            if isinstance(node_interface.net, EmaneNet):
                 nem = node_interface.net.getnemid(node_interface)
                 add_attribute(interface, "nem", nem)
 
@@ -599,7 +600,7 @@ class CoreXmlReader(object):
             name = hook.get("name")
             state = hook.get("state")
             data = hook.text
-            hook_type = "hook:%s" % state
+            hook_type = f"hook:{state}"
             logging.info("reading hook: state(%s) name(%s)", state, name)
             self.session.set_hook(
                 hook_type, file_name=name, source_name=None, data=data

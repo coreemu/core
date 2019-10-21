@@ -92,7 +92,7 @@ class NrlNhdp(NrlService):
             cmd += " -flooding ecds"
             cmd += " -smfClient %s_smf" % node.name
 
-        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
@@ -126,7 +126,7 @@ class NrlSmf(NrlService):
         cmd = "nrlsmf instance %s_smf" % node.name
 
         servicenames = map(lambda x: x.name, node.services)
-        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) == 0:
             return ""
 
@@ -216,7 +216,7 @@ class NrlOlsrv2(NrlService):
 
         cmd += " -p olsr"
 
-        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "
@@ -244,7 +244,7 @@ class OlsrOrg(NrlService):
         Generate the appropriate command-line based on node interfaces.
         """
         cmd = cls.startup[0]
-        netifs = filter(lambda x: not getattr(x, "control", False), node.netifs())
+        netifs = list(filter(lambda x: not getattr(x, "control", False), node.netifs()))
         if len(netifs) > 0:
             interfacenames = map(lambda x: x.name, netifs)
             cmd += " -i "

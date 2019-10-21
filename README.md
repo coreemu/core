@@ -1,4 +1,4 @@
-# CORE [![Codacy Badge](https://api.codacy.com/project/badge/Grade/d94eb0244ade4510a106b4af76077a92)](https://www.codacy.com/app/blakeharnden/core?utm_source=github.com&amp;utm_medium=referral&amp;utm_content=coreemu/core&amp;utm_campaign=Badge_Grade)
+# CORE
 
 CORE: Common Open Research Emulator
 
@@ -19,7 +19,7 @@ scripting network emulation.
 * Documentation hosted on GitHub
     * <http://coreemu.github.io/core/>
 * Basic Script Examples
-    * [Examples](daemon/examples/api)
+    * [Examples](daemon/examples/python)
 * Custom Service Example
     * [sample.py](daemon/examples/myservices/sample.py)
 * Custom Emane Model Example

@@ -14,13 +14,14 @@ How to run this:
 import logging
 import optparse
 import sys
+from builtins import range
 
 import ns.core
 import ns.network
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
 
-from core.nodes import nodeutils, nodemaps, ipaddress
+from core.nodes import ipaddress
 
 
 def add_to_server(session):
@@ -40,7 +41,6 @@ def wifisession(opt):
     """
     Run a random walk wifi session.
     """
-    nodeutils.set_node_map(nodemaps.NODES)
     session = Ns3Session(1, persistent=True, duration=opt.duration)
     session.name = "ns3wifirandomwalk"
     session.filename = session.name + ".py"
@@ -54,7 +54,7 @@ def wifisession(opt):
     prefix = ipaddress.Ipv4Prefix("10.0.0.0/16")
     services_str = "zebra|OSPFv3MDR|IPForward"
     nodes = []
-    for i in xrange(1, opt.numnodes + 1):
+    for i in range(1, opt.numnodes + 1):
         node = session.addnode(name="n%d" % i)
         node.newnetif(wifi, ["%s/%s" % (prefix.addr(i), prefix.prefixlen)])
         nodes.append(node)

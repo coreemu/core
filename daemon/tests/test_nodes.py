@@ -3,9 +3,10 @@ import time
 
 import pytest
 
-from core import CoreError, utils
+from core import utils
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
+from core.errors import CoreError
 
 MODELS = ["router", "host", "PC", "mdr"]
 
@@ -29,7 +30,7 @@ class TestNodes:
         assert os.path.exists(node.nodedir)
         assert node.alive()
         assert node.up
-        assert node.check_cmd(["ip", "addr", "show", "lo"])
+        assert node.cmd("ip address show lo")
 
     def test_node_update(self, session):
         # given
@@ -66,4 +67,4 @@ class TestNodes:
         # then
         assert node
         assert node.up
-        assert utils.check_cmd(["brctl", "show", node.brname])
+        assert utils.cmd(f"brctl show {node.brname}")

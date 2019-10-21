@@ -27,10 +27,10 @@ import optparse
 import sys
 
 import ns.core
-
-from core.nodes import nodeutils, nodemaps, ipaddress
 from corens3.obj import Ns3Session
 from corens3.obj import Ns3WifiNet
+
+from core.nodes import ipaddress
 
 
 def add_to_server(session):
@@ -50,7 +50,6 @@ def wifisession(opt):
     """
     Run a test wifi session.
     """
-    nodeutils.set_node_map(nodemaps.NODES)
     session = Ns3Session(1, persistent=True, duration=opt.duration)
     session.name = "ns3wifi"
     session.filename = session.name + ".py"
