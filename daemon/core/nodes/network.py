@@ -723,7 +723,7 @@ class CtrlNet(CoreNetwork):
     def __init__(
         self,
         session,
-        _id="ctrlnet",
+        _id=None,
         name=None,
         prefix=None,
         hostid=None,

@@ -71,6 +71,7 @@ NODES = {
     NodeTypes.LXC: LxcNode,
 }
 NODES_TYPE = {NODES[x]: x for x in NODES}
+CTRL_NET_ID = 9001
 
 
 class Session(object):
@@ -1667,9 +1668,7 @@ class Session(object):
         return -1
 
     def get_control_net(self, net_index):
-        # TODO: all nodes use an integer id and now this wants to use a string
-        _id = f"ctrl{net_index}net"
-        return self.get_node(_id)
+        return self.get_node(CTRL_NET_ID + net_index)
 
     def add_remove_control_net(self, net_index, remove=False, conf_required=True):
         """
@@ -1716,7 +1715,7 @@ class Session(object):
                 return None
 
         # build a new controlnet bridge
-        _id = f"ctrl{net_index}net"
+        _id = CTRL_NET_ID + net_index
 
         # use the updown script for control net 0 only.
         updown_script = None
