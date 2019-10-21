@@ -48,6 +48,10 @@ vi /etc/ssh/sshd_config
 PermitRootLogin yes
 PasswordAuthentication yes
 
+# if desired add/modify the following line to allow SSH to 
+# accept all env variables
+AcceptEnv *
+
 # restart sshd
 sudo systemctl restart sshd
 ```
@@ -65,6 +69,9 @@ ssh-copy-id -i ~/.ssh/core root@server
 
 # configure fabric to use the core ssh key
 sudo vi /etc/fabric.yml
+
+# set configuration
+connect_kwargs: {"key_filename": "/home/user/.ssh/core"}
 ``` 
 
 On distributed server:
