@@ -807,7 +807,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if isinstance(node, EmaneNet):
             emane_model = node.model.name
 
-        services = [x.name for x in getattr(node, "services", [])]
+        services = []
+        if node.services:
+            services = [x.name for x in node.services]
+
         position = core_pb2.Position(
             x=node.position.x, y=node.position.y, z=node.position.z
         )
