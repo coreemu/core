@@ -140,7 +140,7 @@ class EmaneManager(ModelManager):
         try:
             # check for emane
             args = "emane --version"
-            emane_version = utils.check_cmd(args)
+            emane_version = utils.cmd(args)
             logging.info("using EMANE: %s", emane_version)
             self.session.distributed.execute(lambda x: x.remote_cmd(args))
 
@@ -594,7 +594,7 @@ class EmaneManager(ModelManager):
         log_file = os.path.join(path, "emane.log")
         platform_xml = os.path.join(path, "platform.xml")
         emanecmd += f" -f {log_file} {platform_xml}"
-        utils.check_cmd(emanecmd, cwd=path)
+        utils.cmd(emanecmd, cwd=path)
         self.session.distributed.execute(lambda x: x.remote_cmd(emanecmd, cwd=path))
         logging.info("host emane daemon running: %s", emanecmd)
 
@@ -618,8 +618,8 @@ class EmaneManager(ModelManager):
 
         if stop_emane_on_host:
             try:
-                utils.check_cmd(kill_emaned)
-                utils.check_cmd(kill_transortd)
+                utils.cmd(kill_emaned)
+                utils.cmd(kill_transortd)
                 self.session.distributed.execute(lambda x: x.remote_cmd(kill_emaned))
                 self.session.distributed.execute(lambda x: x.remote_cmd(kill_transortd))
             except CoreCommandError:

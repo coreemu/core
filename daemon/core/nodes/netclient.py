@@ -2,8 +2,6 @@
 Clients for dealing with bridge/interface commands.
 """
 
-import os
-
 from core.constants import BRCTL_BIN, ETHTOOL_BIN, IP_BIN, OVS_BIN, TC_BIN
 
 
@@ -236,10 +234,10 @@ class LinuxNetClient(object):
         self.device_up(name)
 
         # turn off multicast snooping so forwarding occurs w/o IGMP joins
-        snoop = f"/sys/devices/virtual/net/{name}/bridge/multicast_snooping"
-        if os.path.exists(snoop):
-            with open(snoop, "w") as f:
-                f.write("0")
+        snoop_file = "multicast_snooping"
+        snoop = f"/sys/devices/virtual/net/{name}/bridge/{snoop_file}"
+        self.run(f"echo 0 > /tmp/{snoop_file}", shell=True)
+        self.run(f"cp /tmp/{snoop_file} {snoop}")
 
     def delete_bridge(self, name):
         """

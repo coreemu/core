@@ -67,4 +67,4 @@ class TestNodes:
         # then
         assert node
         assert node.up
-        assert utils.check_cmd(f"brctl show {node.brname}")
+        assert utils.cmd(f"brctl show {node.brname}")

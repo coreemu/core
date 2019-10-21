@@ -878,7 +878,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 ):
                     if message.flags & MessageFlags.LOCAL.value:
                         try:
-                            res = utils.check_cmd(command)
+                            res = utils.cmd(command)
                             status = 0
                         except CoreCommandError as e:
                             res = e.stderr

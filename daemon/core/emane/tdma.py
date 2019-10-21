@@ -63,4 +63,4 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             "setting up tdma schedule: schedule(%s) device(%s)", schedule, event_device
         )
         args = f"emaneevent-tdmaschedule -i {event_device} {schedule}"
-        utils.check_cmd(args)
+        utils.cmd(args)

@@ -79,7 +79,7 @@ class NodeBase(object):
         """
         raise NotImplementedError
 
-    def host_cmd(self, args, env=None, cwd=None, wait=True):
+    def host_cmd(self, args, env=None, cwd=None, wait=True, shell=False):
         """
         Runs a command on the host system or distributed server.
 
@@ -87,12 +87,13 @@ class NodeBase(object):
         :param dict env: environment to run command with
         :param str cwd: directory to run command in
         :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         if self.server is None:
-            return utils.check_cmd(args, env, cwd, wait)
+            return utils.cmd(args, env, cwd, wait, shell)
         else:
             return self.server.remote_cmd(args, env, cwd, wait)
 

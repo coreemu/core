@@ -45,14 +45,14 @@ class DockerClient(object):
 
     def check_cmd(self, cmd):
         logging.info("docker cmd output: %s", cmd)
-        return utils.check_cmd(f"docker exec {self.name} {cmd}")
+        return utils.cmd(f"docker exec {self.name} {cmd}")
 
     def create_ns_cmd(self, cmd):
         return f"nsenter -t {self.pid} -u -i -p -n {cmd}"
 
     def ns_cmd(self, cmd, wait):
         args = f"nsenter -t {self.pid} -u -i -p -n {cmd}"
-        return utils.check_cmd(args, wait=wait)
+        return utils.cmd(args, wait=wait)
 
     def get_pid(self):
         args = f"docker inspect -f '{{{{.State.Pid}}}}' {self.name}"
@@ -153,7 +153,7 @@ class DockerNode(CoreNode):
     def nsenter_cmd(self, args, wait=True):
         if self.server is None:
             args = self.client.create_ns_cmd(args)
-            return utils.check_cmd(args, wait=wait)
+            return utils.cmd(args, wait=wait)
         else:
             args = self.client.create_ns_cmd(args)
             return self.server.remote_cmd(args, wait=wait)

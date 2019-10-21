@@ -65,4 +65,4 @@ class VnodeClient(object):
         """
         self._verify_connection()
         args = self.create_cmd(args)
-        return utils.check_cmd(args, wait=wait)
+        return utils.cmd(args, wait=wait)

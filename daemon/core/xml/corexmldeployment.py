@@ -69,7 +69,7 @@ def get_ipv4_addresses(hostname):
     if hostname == "localhost":
         addresses = []
         args = f"{IP_BIN} -o -f inet address show"
-        output = utils.check_cmd(args)
+        output = utils.cmd(args)
         for line in output.split(os.linesep):
             split = line.split()
             if not split:

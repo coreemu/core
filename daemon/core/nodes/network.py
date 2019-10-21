@@ -270,7 +270,7 @@ class CoreNetwork(CoreNetworkBase):
             self.startup()
             ebq.startupdateloop(self)
 
-    def host_cmd(self, args, env=None, cwd=None, wait=True):
+    def host_cmd(self, args, env=None, cwd=None, wait=True, shell=False):
         """
         Runs a command that is used to configure and setup the network on the host
         system and all configured distributed servers.
@@ -279,12 +279,13 @@ class CoreNetwork(CoreNetworkBase):
         :param dict env: environment to run command with
         :param str cwd: directory to run command in
         :param bool wait: True to wait for status, False otherwise
+        :param bool shell: True to use shell, False otherwise
         :return: combined stdout and stderr
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
         logging.info("network node(%s) cmd", self.name)
-        output = utils.check_cmd(args, env, cwd, wait)
+        output = utils.cmd(args, env, cwd, wait, shell)
         self.session.distributed.execute(lambda x: x.remote_cmd(args, env, cwd, wait))
         return output
 
@@ -765,7 +766,7 @@ class CtrlNet(CoreNetwork):
         """
         use_ovs = self.session.options.get_config("ovs") == "True"
         current = f"{address}/{self.prefix.prefixlen}"
-        net_client = get_net_client(use_ovs, utils.check_cmd)
+        net_client = get_net_client(use_ovs, utils.cmd)
         net_client.create_address(self.brname, current)
         servers = self.session.distributed.servers
         for name in servers:

@@ -191,7 +191,7 @@ def mute_detach(args, **kwargs):
     return Popen(args, **kwargs).pid
 
 
-def check_cmd(args, env=None, cwd=None, wait=True):
+def cmd(args, env=None, cwd=None, wait=True, shell=False):
     """
     Execute a command on the host and return a tuple containing the exit status and
     result string. stderr output is folded into the stdout result string.
@@ -200,15 +200,17 @@ def check_cmd(args, env=None, cwd=None, wait=True):
     :param dict env: environment to run command with
     :param str cwd: directory to run command in
     :param bool wait: True to wait for status, False otherwise
+    :param bool shell: True to use shell, False otherwise
     :return: combined stdout and stderr
     :rtype: str
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
     logging.info("command cwd(%s) wait(%s): %s", cwd, wait, args)
-    args = shlex.split(args)
+    if shell is False:
+        args = shlex.split(args)
     try:
-        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd)
+        p = Popen(args, stdout=PIPE, stderr=PIPE, env=env, cwd=cwd, shell=shell)
         if wait:
             stdout, stderr = p.communicate()
             status = p.wait()

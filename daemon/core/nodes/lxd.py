@@ -49,7 +49,7 @@ class LxdClient(object):
 
     def check_cmd(self, cmd, wait=True):
         args = self.create_cmd(cmd)
-        return utils.check_cmd(args, wait=wait)
+        return utils.cmd(args, wait=wait)
 
     def copy_file(self, source, destination):
         if destination[0] != "/":
