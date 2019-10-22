@@ -230,7 +230,7 @@ class GrpcManager:
         """
         src_interface = None
         dst_interface = None
-
+        print("create interface")
         self.interfaces_manager.new_subnet()
 
         src_node = self.nodes[src_canvas_id]
@@ -263,6 +263,8 @@ class GrpcManager:
 
         edge.interface_1 = src_interface
         edge.interface_2 = dst_interface
+        print(src_interface)
+        print(dst_interface)
         return src_interface, dst_interface
 
     def add_edge(self, session_id, token, canvas_id_1, canvas_id_2):

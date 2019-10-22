@@ -7,6 +7,7 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
+from coretk.sizeandscale import SizeAndScale
 
 SAVEDIR = "/home/ncs/Desktop/"
 
@@ -153,6 +154,7 @@ def canvas_delete():
 
 def canvas_size_scale():
     logging.debug("Click canvas size/scale")
+    SizeAndScale()
 
 
 def canvas_wallpaper():
@@ -414,6 +416,9 @@ class MenuAction:
         # self.application.canvas.draw_existing_component()
         # t1 = time.clock()
         # print(t1 - t0)
+
+    def canvas_size_and_scale(self):
+        SizeAndScale()
 
     def help_core_github(self):
         webbrowser.open_new("https://github.com/coreemu/core")

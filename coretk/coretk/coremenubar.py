@@ -166,7 +166,9 @@ class CoreMenubar(object):
 
         canvas_menu.add_separator()
 
-        canvas_menu.add_command(label="Size/scale...", command=action.canvas_size_scale)
+        canvas_menu.add_command(
+            label="Size/scale...", command=self.menu_action.canvas_size_and_scale
+        )
         canvas_menu.add_command(label="Wallpaper...", command=action.canvas_wallpaper)
 
         canvas_menu.add_separator()

@@ -8,6 +8,7 @@ class CoreToCanvasMapping:
     def __init__(self):
         self.core_id_to_canvas_id = {}
         self.core_node_and_interface_to_canvas_edge = {}
+        # self.edge_id_to_canvas_token = {}
 
     def map_node_and_interface_to_canvas_edge(self, nid, iid, edge_token):
         self.core_node_and_interface_to_canvas_edge[tuple([nid, iid])] = edge_token

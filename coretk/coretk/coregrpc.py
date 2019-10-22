@@ -35,6 +35,9 @@ class CoreGrpc:
 
     def log_throughput(self, event):
         interface_throughputs = event.interface_throughputs
+        # for i in interface_throughputs:
+        #     print(i)
+        # return
         throughputs_belong_to_session = []
         for if_tp in interface_throughputs:
             if if_tp.node_id in self.node_ids:
@@ -244,6 +247,8 @@ class CoreGrpc:
         # response = self.core.add_link(self.session_id, id1, id2, interface1, interface2)
         response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
+
+        self.core.get_node_links(self.session_id, id1)
 
     # def get_session(self):
     #     response = self.core.get_session(self.session_id)
