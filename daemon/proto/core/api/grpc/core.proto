@@ -631,6 +631,8 @@ message SaveXmlResponse {
 
 message OpenXmlRequest {
     string data = 1;
+    bool start = 2;
+    string file = 3;
 }
 
 message OpenXmlResponse {
@@ -798,6 +800,7 @@ message SessionSummary {
     int32 id = 1;
     SessionState.Enum state = 2;
     int32 nodes = 3;
+    string file = 4;
 }
 
 message Node {

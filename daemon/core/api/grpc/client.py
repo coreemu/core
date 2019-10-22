@@ -880,17 +880,18 @@ class CoreGrpcClient(object):
         with open(file_path, "w") as xml_file:
             xml_file.write(response.data)
 
-    def open_xml(self, file_path):
+    def open_xml(self, file_path, start=False):
         """
         Load a local scenario XML file to open as a new session.
 
         :param str file_path: path of scenario XML file
+        :param bool start: True to start session, False otherwise
         :return: response with opened session id
         :rtype: core_pb2.OpenXmlResponse
         """
         with open(file_path, "r") as xml_file:
             data = xml_file.read()
-        request = core_pb2.OpenXmlRequest(data=data)
+        request = core_pb2.OpenXmlRequest(data=data, start=start, file=file_path)
         return self.stub.OpenXml(request)
 
     def emane_link(self, session_id, nem_one, nem_two, linked):

@@ -304,10 +304,8 @@ class CoreXmlWriter(object):
         default_options = self.session.options.default_values()
         for _id in default_options:
             default_value = default_options[_id]
-            # TODO: should we just save the current config regardless, since it may change?
-            value = options_config[_id]
-            if value != default_value:
-                add_configuration(option_elements, _id, value)
+            value = options_config.get(_id, default_value)
+            add_configuration(option_elements, _id, value)
 
         if option_elements.getchildren():
             self.scenario.append(option_elements)

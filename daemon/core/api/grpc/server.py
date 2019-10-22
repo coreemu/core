@@ -305,7 +305,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
             session_summary = core_pb2.SessionSummary(
-                id=session_id, state=session.state, nodes=session.get_node_count()
+                id=session_id,
+                state=session.state,
+                nodes=session.get_node_count(),
+                file=session.file_name,
             )
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
@@ -1555,19 +1558,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("open xml: %s", request)
         session = self.coreemu.create_session()
-        session.set_state(EventTypes.CONFIGURATION_STATE)
 
-        _, temp_path = tempfile.mkstemp()
-        with open(temp_path, "w") as xml_file:
-            xml_file.write(request.data)
+        temp = tempfile.NamedTemporaryFile(delete=False)
+        temp.write(request.data.encode("utf-8"))
+        temp.close()
 
         try:
-            session.open_xml(temp_path, start=True)
+            session.open_xml(temp.name, request.start)
+            session.name = os.path.basename(request.file)
+            session.file_name = request.file
             return core_pb2.OpenXmlResponse(session_id=session.id, result=True)
         except IOError:
             logging.exception("error opening session file")
             self.coreemu.delete_session(session.id)
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
+        finally:
+            os.unlink(temp.name)
 
     def GetInterfaces(self, request, context):
         """

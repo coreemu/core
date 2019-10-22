@@ -820,19 +820,24 @@ class Session(object):
         :param bool start: instantiate session if true, false otherwise
         :return: nothing
         """
+        logging.info("opening xml: %s", file_name)
+
         # clear out existing session
         self.clear()
 
         if start:
-            self.set_state(EventTypes.CONFIGURATION_STATE)
+            state = EventTypes.CONFIGURATION_STATE
+        else:
+            state = EventTypes.DEFINITION_STATE
+        self.set_state(state)
+        self.name = os.path.basename(file_name)
+        self.file_name = file_name
 
         # write out xml file
         CoreXmlReader(self).read(file_name)
 
         # start session if needed
         if start:
-            self.name = os.path.basename(file_name)
-            self.file_name = file_name
             self.instantiate()
 
     def save_xml(self, file_name):
