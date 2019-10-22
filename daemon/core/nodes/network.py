@@ -284,7 +284,7 @@ class CoreNetwork(CoreNetworkBase):
         :rtype: str
         :raises CoreCommandError: when a non-zero exit status occurs
         """
-        logging.info("network node(%s) cmd", self.name)
+        logging.debug("network node(%s) cmd", self.name)
         output = utils.cmd(args, env, cwd, wait, shell)
         self.session.distributed.execute(lambda x: x.remote_cmd(args, env, cwd, wait))
         return output

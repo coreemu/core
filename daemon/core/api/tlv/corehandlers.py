@@ -944,7 +944,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 if os.path.splitext(file_name)[1].lower() == ".xml":
                     session = self.coreemu.create_session(master=False)
                     try:
-                        session.open_xml(file_name, start=True)
+                        session.open_xml(file_name)
                     except Exception:
                         self.coreemu.delete_session(session.id)
                         raise

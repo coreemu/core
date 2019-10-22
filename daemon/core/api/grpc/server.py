@@ -46,38 +46,33 @@ def convert_value(value):
     return value
 
 
-def get_config_groups(config, configurable_options):
+def get_config_options(config, configurable_options):
     """
-    Retrieve configuration groups in a form that is used by the grpc server
+    Retrieve configuration options in a form that is used by the grpc server.
 
-    :param core.config.Configuration config: configuration
+    :param dict config: configuration
     :param core.config.ConfigurableOptions configurable_options: configurable options
-    :return: list of configuration groups
-    :rtype: [core.api.grpc.core_pb2.ConfigGroup]
+    :return: mapping of configuration ids to configuration options
+    :rtype: dict[str,core.api.grpc.core_pb2.ConfigOption]
     """
-    groups = []
-    config_options = []
-
+    results = {}
     for configuration in configurable_options.configurations():
         value = config[configuration.id]
-        config_option = core_pb2.ConfigOption()
-        config_option.label = configuration.label
-        config_option.name = configuration.id
-        config_option.value = value
-        config_option.type = configuration.type.value
-        config_option.select.extend(configuration.options)
-        config_options.append(config_option)
-
+        config_option = core_pb2.ConfigOption(
+            label=configuration.label,
+            name=configuration.id,
+            value=value,
+            type=configuration.type.value,
+            select=configuration.options,
+        )
+        results[configuration.id] = config_option
     for config_group in configurable_options.config_groups():
         start = config_group.start - 1
         stop = config_group.stop
-        options = config_options[start:stop]
-        config_group_proto = core_pb2.ConfigGroup(
-            name=config_group.name, options=options
-        )
-        groups.append(config_group_proto)
-
-    return groups
+        options = list(results.values())[start:stop]
+        for option in options:
+            option.group = config_group.name
+    return results
 
 
 def get_links(session, node):
@@ -310,7 +305,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         for session_id in self.coreemu.sessions:
             session = self.coreemu.sessions[session_id]
             session_summary = core_pb2.SessionSummary(
-                id=session_id, state=session.state, nodes=session.get_node_count()
+                id=session_id,
+                state=session.state,
+                nodes=session.get_node_count(),
+                file=session.file_name,
             )
             sessions.append(session_summary)
         return core_pb2.GetSessionsResponse(sessions=sessions)
@@ -390,20 +388,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
     def GetSessionOptions(self, request, context):
         """
-        Retrieve session options
+        Retrieve session options.
 
-        :param core.api.grpc.core_pb2.GetSessionOptions request: get-session-options request
+        :param core.api.grpc.core_pb2.GetSessionOptions request:
+            get-session-options request
         :param grpc.ServicerContext context: context object
         :return: get-session-options response about all session's options
         :rtype: core.api.grpc.core_pb2.GetSessionOptions
         """
         logging.debug("get session options: %s", request)
         session = self.get_session(request.session_id, context)
-        config = session.options.get_configs()
-        defaults = session.options.default_values()
-        defaults.update(config)
-        groups = get_config_groups(defaults, session.options)
-        return core_pb2.GetSessionOptionsResponse(groups=groups)
+        current_config = session.options.get_configs()
+        default_config = session.options.default_values()
+        default_config.update(current_config)
+        config = get_config_options(default_config, session.options)
+        return core_pb2.GetSessionOptionsResponse(config=config)
 
     def SetSessionOptions(self, request, context):
         """
@@ -1115,7 +1114,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve all mobility configurations from a session
 
-        :param core.api.grpc.core_pb2.GetMobilityConfigsRequest request: get-mobility-configurations request
+        :param core.api.grpc.core_pb2.GetMobilityConfigsRequest request:
+            get-mobility-configurations request
         :param grpc.ServicerContext context: context object
         :return: get-mobility-configurations response that has a list of configurations
         :rtype: core.api.grpc.core_pb2.GetMobilityConfigsResponse
@@ -1130,33 +1130,36 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             for model_name in model_config:
                 if model_name != Ns2ScriptedMobility.name:
                     continue
-                config = session.mobility.get_model_config(node_id, model_name)
-                groups = get_config_groups(config, Ns2ScriptedMobility)
-                response.configs[node_id].groups.extend(groups)
+                current_config = session.mobility.get_model_config(node_id, model_name)
+                config = get_config_options(current_config, Ns2ScriptedMobility)
+                mapped_config = core_pb2.MappedConfig(config=config)
+                response.configs[node_id].CopyFrom(mapped_config)
         return response
 
     def GetMobilityConfig(self, request, context):
         """
         Retrieve mobility configuration of a node
 
-        :param core.api.grpc.core_pb2.GetMobilityConfigRequest request: get-mobility-configuration request
+        :param core.api.grpc.core_pb2.GetMobilityConfigRequest request:
+            get-mobility-configuration request
         :param grpc.ServicerContext context: context object
         :return: get-mobility-configuration response
         :rtype: core.api.grpc.core_pb2.GetMobilityConfigResponse
         """
         logging.debug("get mobility config: %s", request)
         session = self.get_session(request.session_id, context)
-        config = session.mobility.get_model_config(
+        current_config = session.mobility.get_model_config(
             request.node_id, Ns2ScriptedMobility.name
         )
-        groups = get_config_groups(config, Ns2ScriptedMobility)
-        return core_pb2.GetMobilityConfigResponse(groups=groups)
+        config = get_config_options(current_config, Ns2ScriptedMobility)
+        return core_pb2.GetMobilityConfigResponse(config=config)
 
     def SetMobilityConfig(self, request, context):
         """
         Set mobility configuration of a node
 
-        :param core.api.grpc.core_pb2.SetMobilityConfigRequest request: set-mobility-configuration request
+        :param core.api.grpc.core_pb2.SetMobilityConfigRequest request:
+            set-mobility-configuration request
         :param grpc.ServicerContext context: context object
         :return: set-mobility-configuration response
         "rtype" core.api.grpc.SetMobilityConfigResponse
@@ -1172,7 +1175,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Take mobility action whether to start, pause, stop or none of those
 
-        :param core.api.grpc.core_pb2.MobilityActionRequest request: mobility-action request
+        :param core.api.grpc.core_pb2.MobilityActionRequest request: mobility-action
+            request
         :param grpc.ServicerContext context: context object
         :return: mobility-action response
         :rtype: core.api.grpc.core_pb2.MobilityActionResponse
@@ -1212,7 +1216,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve all the default services of all node types in a session
 
-        :param core.api.grpc.core_pb2.GetServiceDefaultsRequest request: get-default-service request
+        :param core.api.grpc.core_pb2.GetServiceDefaultsRequest request:
+            get-default-service request
         :param grpc.ServicerContext context: context object
         :return: get-service-defaults response about all the available default services
         :rtype: core.api.grpc.core_pb2.GetServiceDefaultsResponse
@@ -1231,7 +1236,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     def SetServiceDefaults(self, request, context):
         """
         Set new default services to the session after whipping out the old ones
-        :param core.api.grpc.core_pb2.SetServiceDefaults request: set-service-defaults request
+        :param core.api.grpc.core_pb2.SetServiceDefaults request: set-service-defaults
+            request
         :param grpc.ServicerContext context: context object
         :return: set-service-defaults response
         :rtype: core.api.grpc.core_pb2 SetServiceDefaultsResponse
@@ -1249,7 +1255,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve a requested service from a node
 
-        :param core.api.grpc.core_pb2.GetNodeServiceRequest request: get-node-service request
+        :param core.api.grpc.core_pb2.GetNodeServiceRequest request: get-node-service
+            request
         :param grpc.ServicerContext context: context object
         :return: get-node-service response about the requested service
         :rtype: core.api.grpc.core_pb2.GetNodeServiceResponse
@@ -1277,7 +1284,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve a requested service file from a node
 
-        :param core.api.grpc.core_pb2.GetNodeServiceFileRequest request: get-node-service request
+        :param core.api.grpc.core_pb2.GetNodeServiceFileRequest request:
+            get-node-service request
         :param grpc.ServicerContext context: context object
         :return: get-node-service response about the requested service
         :rtype: core.api.grpc.core_pb2.GetNodeServiceFileResponse
@@ -1301,8 +1309,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Set a node service for a node
 
-        :param core.api.grpc.core_pb2.SetNodeServiceRequest request: set-node-service request
-        that has info to set a node service
+        :param core.api.grpc.core_pb2.SetNodeServiceRequest request: set-node-service
+            request that has info to set a node service
         :param grpc.ServicerContext context: context object
         :return: set-node-service response
         :rtype: core.api.grpc.core_pb2.SetNodeServiceResponse
@@ -1320,7 +1328,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Store the customized service file in the service config
 
-        :param core.api.grpc.core_pb2.SetNodeServiceFileRequest request: set-node-service-file request
+        :param core.api.grpc.core_pb2.SetNodeServiceFileRequest request:
+            set-node-service-file request
         :param grpc.ServicerContext context: context object
         :return: set-node-service-file response
         :rtype: core.api.grpc.core_pb2.SetNodeServiceFileResponse
@@ -1382,11 +1391,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get wlan config: %s", request)
         session = self.get_session(request.session_id, context)
-        config = session.mobility.get_model_config(
+        current_config = session.mobility.get_model_config(
             request.node_id, BasicRangeModel.name
         )
-        groups = get_config_groups(config, BasicRangeModel)
-        return core_pb2.GetWlanConfigResponse(groups=groups)
+        config = get_config_options(current_config, BasicRangeModel)
+        return core_pb2.GetWlanConfigResponse(config=config)
 
     def SetWlanConfig(self, request, context):
         """
@@ -1418,9 +1427,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get emane config: %s", request)
         session = self.get_session(request.session_id, context)
-        config = session.emane.get_configs()
-        groups = get_config_groups(config, session.emane.emane_config)
-        return core_pb2.GetEmaneConfigResponse(groups=groups)
+        current_config = session.emane.get_configs()
+        config = get_config_options(current_config, session.emane.emane_config)
+        return core_pb2.GetEmaneConfigResponse(config=config)
 
     def SetEmaneConfig(self, request, context):
         """
@@ -1459,7 +1468,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve EMANE model configuration of a node
 
-        :param core.api.grpc.core_pb2.GetEmaneModelConfigRequest request: get-EMANE-model-configuration request
+        :param core.api.grpc.core_pb2.GetEmaneModelConfigRequest request:
+            get-EMANE-model-configuration request
         :param grpc.ServicerContext context: context object
         :return: get-EMANE-model-configuration response
         :rtype: core.api.grpc.core_pb2.GetEmaneModelConfigResponse
@@ -1468,15 +1478,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         model = session.emane.models[request.model]
         _id = get_emane_model_id(request.node_id, request.interface)
-        config = session.emane.get_model_config(_id, request.model)
-        groups = get_config_groups(config, model)
-        return core_pb2.GetEmaneModelConfigResponse(groups=groups)
+        current_config = session.emane.get_model_config(_id, request.model)
+        config = get_config_options(current_config, model)
+        return core_pb2.GetEmaneModelConfigResponse(config=config)
 
     def SetEmaneModelConfig(self, request, context):
         """
         Set EMANE model configuration of a node
 
-        :param core.api.grpc.core_pb2.SetEmaneModelConfigRequest request: set-EMANE-model-configuration request
+        :param core.api.grpc.core_pb2.SetEmaneModelConfigRequest request:
+            set-EMANE-model-configuration request
         :param grpc.ServicerContext context: context object
         :return: set-EMANE-model-configuration response
         :rtype: core.api.grpc.core_pb2.SetEmaneModelConfigResponse
@@ -1491,9 +1502,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         Retrieve all EMANE model configurations of a session
 
-        :param core.api.grpc.core_pb2.GetEmaneModelConfigsRequest request: get-EMANE-model-configurations request
+        :param core.api.grpc.core_pb2.GetEmaneModelConfigsRequest request:
+            get-EMANE-model-configurations request
         :param grpc.ServicerContext context: context object
-        :return: get-EMANE-model-configurations response that has all the EMANE configurations
+        :return: get-EMANE-model-configurations response that has all the EMANE
+            configurations
         :rtype: core.api.grpc.core_pb2.GetEmaneModelConfigsResponse
         """
         logging.debug("get emane model configs: %s", request)
@@ -1506,11 +1519,12 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
             for model_name in model_config:
                 model = session.emane.models[model_name]
-                config = session.emane.get_model_config(node_id, model_name)
-                config_groups = get_config_groups(config, model)
-                node_configurations = response.configs[node_id]
-                node_configurations.model = model_name
-                node_configurations.groups.extend(config_groups)
+                current_config = session.emane.get_model_config(node_id, model_name)
+                config = get_config_options(current_config, model)
+                model_config = core_pb2.GetEmaneModelConfigsResponse.ModelConfig(
+                    model=model_name, config=config
+                )
+                response.configs[node_id].CopyFrom(model_config)
         return response
 
     def SaveXml(self, request, context):
@@ -1544,19 +1558,22 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("open xml: %s", request)
         session = self.coreemu.create_session()
-        session.set_state(EventTypes.CONFIGURATION_STATE)
 
-        _, temp_path = tempfile.mkstemp()
-        with open(temp_path, "w") as xml_file:
-            xml_file.write(request.data)
+        temp = tempfile.NamedTemporaryFile(delete=False)
+        temp.write(request.data.encode("utf-8"))
+        temp.close()
 
         try:
-            session.open_xml(temp_path, start=True)
+            session.open_xml(temp.name, request.start)
+            session.name = os.path.basename(request.file)
+            session.file_name = request.file
             return core_pb2.OpenXmlResponse(session_id=session.id, result=True)
         except IOError:
             logging.exception("error opening session file")
             self.coreemu.delete_session(session.id)
             context.abort(grpc.StatusCode.INVALID_ARGUMENT, "invalid xml file")
+        finally:
+            os.unlink(temp.name)
 
     def GetInterfaces(self, request, context):
         """
