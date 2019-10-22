@@ -174,10 +174,10 @@ class TestXml:
         session.mobility.set_model(wlan_node, BasicRangeModel, {"test": "1"})
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(0, 0)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(0, 0)
+        node_one = session.add_node(node_options=options)
+        node_two = session.add_node(node_options=options)
 
         # link nodes
         for node in [node_one, node_two]:

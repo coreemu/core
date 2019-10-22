@@ -908,22 +908,6 @@ class Session(object):
         """
         self.mobility.handleevent(event_data)
 
-    def create_wireless_node(self, _id=None, node_options=None):
-        """
-        Create a wireless node for use within an wireless/EMANE networks.
-
-        :param int _id: int for node, defaults to None and will be generated
-        :param core.emulator.emudata.NodeOptions node_options: options for emane node, model will always be "mdr"
-        :return: new emane node
-        :rtype: core.nodes.network.WlanNode
-        """
-        if not node_options:
-            node_options = NodeOptions()
-        node_options.model = "mdr"
-        return self.add_node(
-            _type=NodeTypes.DEFAULT, _id=_id, node_options=node_options
-        )
-
     def create_emane_network(
         self,
         model,

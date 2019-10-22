@@ -60,11 +60,11 @@ class TestEmane:
             )
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(150, 150)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_options.set_position(300, 150)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(150, 150)
+        node_one = session.add_node(node_options=options)
+        options.set_position(300, 150)
+        node_two = session.add_node(node_options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -95,11 +95,11 @@ class TestEmane:
         emane_network.setposition(x=80, y=50)
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(150, 150)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_options.set_position(300, 150)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(150, 150)
+        node_one = session.add_node(node_options=options)
+        options.set_position(300, 150)
+        node_two = session.add_node(node_options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)

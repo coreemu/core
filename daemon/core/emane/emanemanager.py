@@ -585,7 +585,7 @@ class EmaneManager(ModelManager):
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             output = node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
-            logging.info("node(%s) emane daemon output: %s", node.name, output)
+            logging.debug("node(%s) emane daemon output: %s", node.name, output)
 
         if not run_emane_on_host:
             return
