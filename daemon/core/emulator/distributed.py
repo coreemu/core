@@ -54,7 +54,7 @@ class DistributedServer(object):
         replace_env = env is not None
         if not wait:
             cmd += " &"
-        logging.info(
+        logging.debug(
             "remote cmd server(%s) cwd(%s) wait(%s): %s", self.host, cwd, wait, cmd
         )
         try:
