@@ -163,7 +163,7 @@ message GetSessionOptionsRequest {
 }
 
 message GetSessionOptionsResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 2;
 }
 
 message SetSessionOptionsRequest {
@@ -428,10 +428,7 @@ message GetMobilityConfigsRequest {
 }
 
 message GetMobilityConfigsResponse {
-    message MobilityConfig {
-        repeated ConfigGroup groups = 1;
-    }
-    map<int32, MobilityConfig> configs = 1;
+    map<int32, MappedConfig> configs = 1;
 }
 
 message GetMobilityConfigRequest {
@@ -440,7 +437,7 @@ message GetMobilityConfigRequest {
 }
 
 message GetMobilityConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetMobilityConfigRequest {
@@ -551,7 +548,7 @@ message GetWlanConfigRequest {
 }
 
 message GetWlanConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetWlanConfigRequest {
@@ -569,7 +566,7 @@ message GetEmaneConfigRequest {
 }
 
 message GetEmaneConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetEmaneConfigRequest {
@@ -597,7 +594,7 @@ message GetEmaneModelConfigRequest {
 }
 
 message GetEmaneModelConfigResponse {
-    repeated ConfigGroup groups = 1;
+    map<string, ConfigOption> config = 1;
 }
 
 message SetEmaneModelConfigRequest {
@@ -619,7 +616,7 @@ message GetEmaneModelConfigsRequest {
 message GetEmaneModelConfigsResponse {
     message ModelConfig {
         string model = 1;
-        repeated ConfigGroup groups = 2;
+        map<string, ConfigOption> config = 2;
     }
     map<int32, ModelConfig> configs = 1;
 }
@@ -777,9 +774,8 @@ message NodeServiceData {
     string meta = 10;
 }
 
-message ConfigGroup {
-    string name = 1;
-    repeated ConfigOption options = 2;
+message MappedConfig {
+    map<string, ConfigOption> config = 1;
 }
 
 message ConfigOption {
@@ -788,6 +784,7 @@ message ConfigOption {
     string value = 3;
     int32 type = 4;
     repeated string select = 5;
+    string group = 6;
 }
 
 message Session {

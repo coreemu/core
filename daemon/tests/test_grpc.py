@@ -100,7 +100,7 @@ class TestGrpc:
             response = client.get_session_options(session.id)
 
         # then
-        assert len(response.groups) > 0
+        assert len(response.config) > 0
 
     def test_get_session_location(self, grpc_server):
         # given
@@ -457,7 +457,7 @@ class TestGrpc:
             response = client.get_wlan_config(session.id, wlan.id)
 
         # then
-        assert len(response.groups) > 0
+        assert len(response.config) > 0
 
     def test_set_wlan_config(self, grpc_server):
         # given
@@ -501,7 +501,7 @@ class TestGrpc:
             response = client.get_emane_config(session.id)
 
         # then
-        assert len(response.groups) > 0
+        assert len(response.config) > 0
 
     def test_set_emane_config(self, grpc_server):
         # given
@@ -540,6 +540,9 @@ class TestGrpc:
         # then
         assert len(response.configs) == 1
         assert emane_network.id in response.configs
+        model_config = response.configs[emane_network.id]
+        assert model_config.model == EmaneIeee80211abgModel.name
+        assert len(model_config.config) > 0
 
     def test_set_emane_model_config(self, grpc_server):
         # given
@@ -582,7 +585,7 @@ class TestGrpc:
             )
 
         # then
-        assert len(response.groups) > 0
+        assert len(response.config) > 0
 
     def test_get_emane_models(self, grpc_server):
         # given
@@ -610,6 +613,8 @@ class TestGrpc:
         # then
         assert len(response.configs) > 0
         assert wlan.id in response.configs
+        mapped_config = response.configs[wlan.id]
+        assert len(mapped_config.config) > 0
 
     def test_get_mobility_config(self, grpc_server):
         # given
@@ -623,7 +628,7 @@ class TestGrpc:
             response = client.get_mobility_config(session.id, wlan.id)
 
         # then
-        assert len(response.groups) > 0
+        assert len(response.config) > 0
 
     def test_set_mobility_config(self, grpc_server):
         # given
