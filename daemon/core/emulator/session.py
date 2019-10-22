@@ -634,19 +634,23 @@ class Session(object):
             if node_two:
                 node_two.lock.release()
 
-    def add_node(self, _type=NodeTypes.DEFAULT, _id=None, node_options=None):
+    def add_node(self, _type=NodeTypes.DEFAULT, _id=None, node_options=None, _cls=None):
         """
         Add a node to the session, based on the provided node data.
 
         :param core.emulator.enumerations.NodeTypes _type: type of node to create
         :param int _id: id for node, defaults to None for generated id
         :param core.emulator.emudata.NodeOptions node_options: data to create node with
+        :param class _cls: optional custom class to use for a created node
         :return: created node
         :raises core.CoreError: when an invalid node type is given
         """
 
         # validate node type, get class, or throw error
-        node_class = self.get_node_class(_type)
+        if _cls is None:
+            node_class = self.get_node_class(_type)
+        else:
+            node_class = _cls
 
         # set node start based on current session state, override and check when rj45
         start = self.state > EventTypes.DEFINITION_STATE.value
@@ -705,13 +709,8 @@ class Session(object):
         # set node position and broadcast it
         self.set_node_position(node, node_options)
 
-        # add services to default and physical nodes only
-        if _type in [
-            NodeTypes.DEFAULT,
-            NodeTypes.PHYSICAL,
-            NodeTypes.DOCKER,
-            NodeTypes.LXC,
-        ]:
+        # add services to needed nodes
+        if isinstance(node, (CoreNode, PhysicalNode, DockerNode, LxcNode)):
             node.type = node_options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, node_options.services)
