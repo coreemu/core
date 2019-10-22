@@ -245,8 +245,8 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        node_options = NodeOptions(model="Host")
-        node = session.add_node(node_options=node_options)
+        options = NodeOptions(model="Host")
+        node = session.add_node(options=options)
         session.instantiate()
         output = "hello world"
 
@@ -263,8 +263,8 @@ class TestGrpc:
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
         session.set_state(EventTypes.CONFIGURATION_STATE)
-        node_options = NodeOptions(model="Host")
-        node = session.add_node(node_options=node_options)
+        options = NodeOptions(model="Host")
+        node = session.add_node(options=options)
         session.instantiate()
 
         # then

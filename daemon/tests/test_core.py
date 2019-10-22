@@ -148,8 +148,8 @@ class TestCore:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(node_options=options)
-        node_two = session.add_node(node_options=options)
+        node_one = session.add_node(options=options)
+        node_two = session.add_node(options=options)
 
         # link nodes
         for node in [node_one, node_two]:
@@ -178,8 +178,8 @@ class TestCore:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(node_options=options)
-        node_two = session.add_node(node_options=options)
+        node_one = session.add_node(options=options)
+        node_two = session.add_node(options=options)
 
         # link nodes
         for node in [node_one, node_two]:

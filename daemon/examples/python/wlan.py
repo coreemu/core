@@ -27,7 +27,7 @@ def example(args):
     options = NodeOptions(model="mdr")
     options.set_position(0, 0)
     for _ in range(args.nodes):
-        node = session.add_node(node_options=options)
+        node = session.add_node(options=options)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, wlan.id, interface_one=interface)
 

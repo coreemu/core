@@ -769,18 +769,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             node_type = NodeTypes.DEFAULT.value
         node_type = NodeTypes(node_type)
 
-        node_options = NodeOptions(name=node_proto.name, model=node_proto.model)
-        node_options.icon = node_proto.icon
-        node_options.opaque = node_proto.opaque
-        node_options.image = node_proto.image
-        node_options.services = node_proto.services
+        options = NodeOptions(name=node_proto.name, model=node_proto.model)
+        options.icon = node_proto.icon
+        options.opaque = node_proto.opaque
+        options.image = node_proto.image
+        options.services = node_proto.services
         if node_proto.server:
-            node_options.emulation_server = node_proto.server
+            options.emulation_server = node_proto.server
 
         position = node_proto.position
-        node_options.set_position(position.x, position.y)
-        node_options.set_location(position.lat, position.lon, position.alt)
-        node = session.add_node(_type=node_type, _id=node_id, node_options=node_options)
+        options.set_position(position.x, position.y)
+        options.set_location(position.lat, position.lon, position.alt)
+        node = session.add_node(_type=node_type, _id=node_id, options=options)
 
         # configure emane if provided
         emane_model = node_proto.emane
@@ -856,18 +856,18 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("edit node: %s", request)
         session = self.get_session(request.session_id, context)
         node = self.get_node(session, request.node_id, context)
-        node_options = NodeOptions()
-        node_options.icon = request.icon
+        options = NodeOptions()
+        options.icon = request.icon
         x = request.position.x
         y = request.position.y
-        node_options.set_position(x, y)
+        options.set_position(x, y)
         lat = request.position.lat
         lon = request.position.lon
         alt = request.position.alt
-        node_options.set_location(lat, lon, alt)
+        options.set_location(lat, lon, alt)
         result = True
         try:
-            session.update_node(node.id, node_options)
+            session.update_node(node.id, options)
             node_data = node.data(0)
             session.broadcast_node(node_data)
         except CoreError:

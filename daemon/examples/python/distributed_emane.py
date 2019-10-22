@@ -31,11 +31,11 @@ def main(args):
     # create local node, switch, and remote nodes
     options = NodeOptions(model="mdr")
     options.set_position(0, 0)
-    node_one = session.add_node(node_options=options)
+    node_one = session.add_node(options=options)
     emane_net = session.add_node(_type=NodeTypes.EMANE)
     session.emane.set_model(emane_net, EmaneIeee80211abgModel)
     options.emulation_server = server_name
-    node_two = session.add_node(node_options=options)
+    node_two = session.add_node(options=options)
 
     # create node interfaces and link
     interface_one = prefixes.create_interface(node_one)

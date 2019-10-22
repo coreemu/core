@@ -108,8 +108,8 @@ class TestXml:
         ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
 
         # create nodes
-        node_options = NodeOptions(model="host")
-        node_one = session.add_node(node_options=node_options)
+        options = NodeOptions(model="host")
+        node_one = session.add_node(options=options)
         node_two = session.add_node()
 
         # link nodes to ptp net
@@ -176,8 +176,8 @@ class TestXml:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(0, 0)
-        node_one = session.add_node(node_options=options)
-        node_two = session.add_node(node_options=options)
+        node_one = session.add_node(options=options)
+        node_two = session.add_node(options=options)
 
         # link nodes
         for node in [node_one, node_two]:

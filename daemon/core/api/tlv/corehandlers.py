@@ -698,12 +698,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
-        node_options = NodeOptions(
+        options = NodeOptions(
             name=message.get_tlv(NodeTlvs.NAME.value),
             model=message.get_tlv(NodeTlvs.MODEL.value),
         )
 
-        node_options.set_position(
+        options.set_position(
             x=message.get_tlv(NodeTlvs.X_POSITION.value),
             y=message.get_tlv(NodeTlvs.Y_POSITION.value),
         )
@@ -717,19 +717,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
         if alt is not None:
             alt = float(alt)
-        node_options.set_location(lat=lat, lon=lon, alt=alt)
+        options.set_location(lat=lat, lon=lon, alt=alt)
 
-        node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
-        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
-        node_options.emulation_server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
+        options.icon = message.get_tlv(NodeTlvs.ICON.value)
+        options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
+        options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+        options.emulation_server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
 
         services = message.get_tlv(NodeTlvs.SERVICES.value)
         if services:
-            node_options.services = services.split("|")
+            options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_type, node_id, node_options)
+            node = self.session.add_node(node_type, node_id, options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
@@ -748,7 +748,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.update_node(node_id, node_options)
+            self.session.update_node(node_id, options)
 
         return replies
 

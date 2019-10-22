@@ -17,10 +17,10 @@ class TestNodes:
     @pytest.mark.parametrize("model", MODELS)
     def test_node_add(self, session, model):
         # given
-        node_options = NodeOptions(model=model)
+        options = NodeOptions(model=model)
 
         # when
-        node = session.add_node(node_options=node_options)
+        node = session.add_node(options=options)
 
         # give time for node services to boot
         time.sleep(1)

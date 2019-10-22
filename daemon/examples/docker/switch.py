@@ -19,11 +19,11 @@ if __name__ == "__main__":
         switch = session.add_node(_type=NodeTypes.SWITCH)
 
         # node one
-        node_one = session.add_node(_type=NodeTypes.DOCKER, node_options=options)
+        node_one = session.add_node(_type=NodeTypes.DOCKER, options=options)
         interface_one = prefixes.create_interface(node_one)
 
         # node two
-        node_two = session.add_node(_type=NodeTypes.DOCKER, node_options=options)
+        node_two = session.add_node(_type=NodeTypes.DOCKER, options=options)
         interface_two = prefixes.create_interface(node_two)
 
         # node three

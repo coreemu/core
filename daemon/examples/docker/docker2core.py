@@ -15,7 +15,7 @@ if __name__ == "__main__":
         options = NodeOptions(model=None, image="ubuntu")
 
         # create node one
-        node_one = session.add_node(_type=NodeTypes.DOCKER, node_options=options)
+        node_one = session.add_node(_type=NodeTypes.DOCKER, options=options)
         interface_one = prefixes.create_interface(node_one)
 
         # create node two

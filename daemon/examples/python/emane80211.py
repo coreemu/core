@@ -28,7 +28,7 @@ def example(args):
     # create nodes
     options = NodeOptions(model="mdr")
     for i in range(args.nodes):
-        node = session.add_node(node_options=options)
+        node = session.add_node(options=options)
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, emane_network.id, interface_one=interface)

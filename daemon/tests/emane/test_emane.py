@@ -62,9 +62,9 @@ class TestEmane:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(150, 150)
-        node_one = session.add_node(node_options=options)
+        node_one = session.add_node(options=options)
         options.set_position(300, 150)
-        node_two = session.add_node(node_options=options)
+        node_two = session.add_node(options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -97,9 +97,9 @@ class TestEmane:
         # create nodes
         options = NodeOptions(model="mdr")
         options.set_position(150, 150)
-        node_one = session.add_node(node_options=options)
+        node_one = session.add_node(options=options)
         options.set_position(300, 150)
-        node_two = session.add_node(node_options=options)
+        node_two = session.add_node(options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)

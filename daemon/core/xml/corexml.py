@@ -737,53 +737,51 @@ class CoreXmlReader(object):
         node_id = get_int(device_element, "id")
         name = device_element.get("name")
         model = device_element.get("type")
-        node_options = NodeOptions(name, model)
+        options = NodeOptions(name, model)
 
         service_elements = device_element.find("services")
         if service_elements is not None:
-            node_options.services = [
-                x.get("name") for x in service_elements.iterchildren()
-            ]
+            options.services = [x.get("name") for x in service_elements.iterchildren()]
 
         position_element = device_element.find("position")
         if position_element is not None:
             x = get_int(position_element, "x")
             y = get_int(position_element, "y")
             if all([x, y]):
-                node_options.set_position(x, y)
+                options.set_position(x, y)
 
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
-                node_options.set_location(lat, lon, alt)
+                options.set_location(lat, lon, alt)
 
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_id=node_id, node_options=node_options)
+        self.session.add_node(_id=node_id, options=options)
 
     def read_network(self, network_element):
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
         node_type = NodeTypes[network_element.get("type")]
-        node_options = NodeOptions(name)
+        options = NodeOptions(name)
 
         position_element = network_element.find("position")
         if position_element is not None:
             x = get_int(position_element, "x")
             y = get_int(position_element, "y")
             if all([x, y]):
-                node_options.set_position(x, y)
+                options.set_position(x, y)
 
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
-                node_options.set_location(lat, lon, alt)
+                options.set_location(lat, lon, alt)
 
         logging.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
-        self.session.add_node(_type=node_type, _id=node_id, node_options=node_options)
+        self.session.add_node(_type=node_type, _id=node_id, options=options)
 
     def read_links(self):
         link_elements = self.scenario.find("links")

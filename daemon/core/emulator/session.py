@@ -634,13 +634,13 @@ class Session(object):
             if node_two:
                 node_two.lock.release()
 
-    def add_node(self, _type=NodeTypes.DEFAULT, _id=None, node_options=None, _cls=None):
+    def add_node(self, _type=NodeTypes.DEFAULT, _id=None, options=None, _cls=None):
         """
         Add a node to the session, based on the provided node data.
 
         :param core.emulator.enumerations.NodeTypes _type: type of node to create
         :param int _id: id for node, defaults to None for generated id
-        :param core.emulator.emudata.NodeOptions node_options: data to create node with
+        :param core.emulator.emudata.NodeOptions options: data to create node with
         :param class _cls: optional custom class to use for a created node
         :return: created node
         :raises core.CoreError: when an invalid node type is given
@@ -666,18 +666,16 @@ class Session(object):
                     break
 
         # generate name if not provided
-        if not node_options:
-            node_options = NodeOptions()
-        name = node_options.name
+        if not options:
+            options = NodeOptions()
+        name = options.name
         if not name:
             name = f"{node_class.__name__}{_id}"
 
         # verify distributed server
-        server = self.distributed.servers.get(node_options.emulation_server)
-        if node_options.emulation_server is not None and server is None:
-            raise CoreError(
-                f"invalid distributed server: {node_options.emulation_server}"
-            )
+        server = self.distributed.servers.get(options.emulation_server)
+        if options.emulation_server is not None and server is None:
+            raise CoreError(f"invalid distributed server: {options.emulation_server}")
 
         # create node
         logging.info(
@@ -693,7 +691,7 @@ class Session(object):
                 _id=_id,
                 name=name,
                 start=start,
-                image=node_options.image,
+                image=options.image,
                 server=server,
             )
         else:
@@ -702,18 +700,18 @@ class Session(object):
             )
 
         # set node attributes
-        node.icon = node_options.icon
-        node.canvas = node_options.canvas
-        node.opaque = node_options.opaque
+        node.icon = options.icon
+        node.canvas = options.canvas
+        node.opaque = options.opaque
 
         # set node position and broadcast it
-        self.set_node_position(node, node_options)
+        self.set_node_position(node, options)
 
         # add services to needed nodes
         if isinstance(node, (CoreNode, PhysicalNode, DockerNode, LxcNode)):
-            node.type = node_options.model
+            node.type = options.model
             logging.debug("set node type: %s", node.type)
-            self.services.add_services(node, node.type, node_options.services)
+            self.services.add_services(node, node.type, options.services)
 
         # boot nodes if created after runtime, CoreNodes, Physical, and RJ45 are all nodes
         is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
@@ -724,12 +722,12 @@ class Session(object):
 
         return node
 
-    def update_node(self, node_id, node_options):
+    def update_node(self, node_id, options):
         """
         Update node information.
 
         :param int node_id: id of node to update
-        :param core.emulator.emudata.NodeOptions node_options: data to update node with
+        :param core.emulator.emudata.NodeOptions options: data to update node with
         :return: True if node updated, False otherwise
         :rtype: bool
         :raises core.CoreError: when node to update does not exist
@@ -738,26 +736,26 @@ class Session(object):
         node = self.get_node(node_id)
 
         # set node position and broadcast it
-        self.set_node_position(node, node_options)
+        self.set_node_position(node, options)
 
         # update attributes
-        node.canvas = node_options.canvas
-        node.icon = node_options.icon
+        node.canvas = options.canvas
+        node.icon = options.icon
 
-    def set_node_position(self, node, node_options):
+    def set_node_position(self, node, options):
         """
         Set position for a node, use lat/lon/alt if needed.
 
         :param node: node to set position for
-        :param core.emulator.emudata.NodeOptions node_options: data for node
+        :param core.emulator.emudata.NodeOptions options: data for node
         :return: nothing
         """
         # extract location values
-        x = node_options.x
-        y = node_options.y
-        lat = node_options.lat
-        lon = node_options.lon
-        alt = node_options.alt
+        x = options.x
+        y = options.y
+        lat = options.lat
+        lon = options.lon
+        alt = options.alt
 
         # check if we need to generate position from lat/lon/alt
         has_empty_position = all(i is None for i in [x, y])
@@ -909,12 +907,7 @@ class Session(object):
         self.mobility.handleevent(event_data)
 
     def create_emane_network(
-        self,
-        model,
-        geo_reference,
-        geo_scale=None,
-        node_options=NodeOptions(),
-        config=None,
+        self, model, geo_reference, geo_scale=None, options=NodeOptions(), config=None
     ):
         """
         Convenience method for creating an emane network.
@@ -922,7 +915,7 @@ class Session(object):
         :param model: emane model to use for emane network
         :param geo_reference: geo reference point to use for emane node locations
         :param geo_scale: geo scale to use for emane node locations, defaults to 1.0
-        :param core.emulator.emudata.NodeOptions node_options: options for emane node being created
+        :param core.emulator.emudata.NodeOptions options: options for emane node being created
         :param dict config: emane model configuration
         :return: create emane network
         """
@@ -932,7 +925,7 @@ class Session(object):
             self.location.refscale = geo_scale
 
         # create and return network
-        emane_network = self.add_node(_type=NodeTypes.EMANE, node_options=node_options)
+        emane_network = self.add_node(_type=NodeTypes.EMANE, options=options)
         self.emane.set_model(emane_network, model, config)
         return emane_network
 
