@@ -18,6 +18,7 @@ from core.nodes.ipaddress import IpAddress
 from core.nodes.network import CoreNetwork, CtrlNet
 
 LOCK = threading.Lock()
+CMD_HIDE = True
 
 
 class DistributedServer(object):
@@ -60,12 +61,12 @@ class DistributedServer(object):
         try:
             if cwd is None:
                 result = self.conn.run(
-                    cmd, hide=False, env=env, replace_env=replace_env
+                    cmd, hide=CMD_HIDE, env=env, replace_env=replace_env
                 )
             else:
                 with self.conn.cd(cwd):
                     result = self.conn.run(
-                        cmd, hide=False, env=env, replace_env=replace_env
+                        cmd, hide=CMD_HIDE, env=env, replace_env=replace_env
                     )
             return result.stdout.strip()
         except UnexpectedExit as e:
