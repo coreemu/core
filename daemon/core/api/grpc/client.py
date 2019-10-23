@@ -204,18 +204,6 @@ class CoreGrpcClient:
         request = core_pb2.GetSessionOptionsRequest(session_id=session_id)
         return self.stub.GetSessionOptions(request)
 
-    def get_session_options_group(self, session_id):
-        """
-        Retrieve session options in a group list.
-
-        :param int session_id: id of session
-        :return: response with a list of configuration groups
-        :rtype: core_pb2.GetSessionOptionsGroupResponse
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetSessionOptionsGroupRequest(session_id=session_id)
-        return self.stub.GetSessionOptionsGroup(request)
-
     def set_session_options(self, session_id, config):
         """
         Set options for a session.

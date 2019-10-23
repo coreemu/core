@@ -355,11 +355,7 @@ class Session:
                         net_one.name,
                         net_two.name,
                     )
-                    if isinstance(net_two, Rj45Node):
-                        interface = net_two.linknet(net_one)
-                    else:
-                        interface = net_one.linknet(net_two)
-
+                    interface = net_one.linknet(net_two)
                     link_config(net_one, interface, link_options)
 
                     if not link_options.unidirectional:
