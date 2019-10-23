@@ -240,7 +240,6 @@ class Session:
         )
         return node_one, node_two, net_one, net_two, tunnel
 
-    # TODO: this doesn't appear to ever be used, EMANE or basic wireless range
     def _link_wireless(self, objects, connect):
         """
         Objects to deal with when connecting/disconnecting wireless links.
