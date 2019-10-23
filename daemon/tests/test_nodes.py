@@ -40,7 +40,7 @@ class TestNodes:
         update_options.set_position(x=position_value, y=position_value)
 
         # when
-        session.update_node(node.id, update_options)
+        session.edit_node(node.id, update_options)
 
         # then
         assert node.position.x == position_value

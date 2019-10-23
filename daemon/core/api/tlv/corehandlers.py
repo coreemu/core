@@ -748,7 +748,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.update_node(node_id, options)
+            self.session.edit_node(node_id, options)
 
         return replies
 

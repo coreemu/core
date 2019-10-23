@@ -867,7 +867,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         options.set_location(lat, lon, alt)
         result = True
         try:
-            session.update_node(node.id, options)
+            session.edit_node(node.id, options)
             node_data = node.data(0)
             session.broadcast_node(node_data)
         except CoreError:

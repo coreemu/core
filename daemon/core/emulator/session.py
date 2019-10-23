@@ -722,9 +722,9 @@ class Session(object):
 
         return node
 
-    def update_node(self, node_id, options):
+    def edit_node(self, node_id, options):
         """
-        Update node information.
+        Edit node information.
 
         :param int node_id: id of node to update
         :param core.emulator.emudata.NodeOptions options: data to update node with
