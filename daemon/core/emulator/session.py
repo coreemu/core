@@ -594,11 +594,11 @@ class Session(object):
                         raise CoreError("modify link for unknown nodes")
                 elif not node_one:
                     # node1 = layer 2node, node2 = layer3 node
-                    interface = node_two.netif(interface_two_id, net_one)
+                    interface = node_two.netif(interface_two_id)
                     link_config(net_one, interface, link_options)
                 elif not node_two:
                     # node2 = layer 2node, node1 = layer3 node
-                    interface = node_one.netif(interface_one_id, net_one)
+                    interface = node_one.netif(interface_one_id)
                     link_config(net_one, interface, link_options)
                 else:
                     common_networks = node_one.commonnets(node_two)

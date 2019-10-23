@@ -337,8 +337,6 @@ class CoreNetwork(CoreNetworkBase):
         del self.session
         self.up = False
 
-    # TODO: this depends on a subtype with localname defined, seems like the
-    #  wrong place for this to live
     def attach(self, netif):
         """
         Attach a network interface.
@@ -1064,7 +1062,7 @@ class WlanNode(CoreNetwork):
         """
         Attach a network interface.
 
-        :param core.nodes.interface.CoreInterface netif: network interface
+        :param core.nodes.interface.Veth netif: network interface
         :return: nothing
         """
         CoreNetwork.attach(self, netif)

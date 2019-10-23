@@ -294,7 +294,6 @@ class CoreNodeBase(NodeBase):
         if ifindex in self._netif:
             raise ValueError(f"ifindex {ifindex} already exists")
         self._netif[ifindex] = netif
-        # TODO: this should have probably been set ahead, seems bad to me, check for failure and fix
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
@@ -310,13 +309,11 @@ class CoreNodeBase(NodeBase):
         netif.shutdown()
         del netif
 
-    # TODO: net parameter is not used, remove
-    def netif(self, ifindex, net=None):
+    def netif(self, ifindex):
         """
         Retrieve network interface.
 
         :param int ifindex: index of interface to retrieve
-        :param core.nodes.interface.CoreInterface net: network node
         :return: network interface, or None if not found
         :rtype: core.nodes.interface.CoreInterface
         """

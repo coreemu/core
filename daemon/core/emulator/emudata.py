@@ -29,7 +29,7 @@ def create_interface(node, network, interface_data):
         ifindex=interface_data.id,
         ifname=interface_data.name,
     )
-    return node.netif(interface_data.id, network)
+    return node.netif(interface_data.id)
 
 
 def link_config(network, interface, link_options, devname=None, interface_two=None):
