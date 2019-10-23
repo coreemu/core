@@ -139,7 +139,7 @@ class NodeBase:
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
         else:
-            return self._netif.values()
+            return list(self._netif.values())
 
     def numnetif(self):
         """
@@ -158,11 +158,9 @@ class NodeBase:
         :return: interface index if found, -1 otherwise
         :rtype: int
         """
-
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
                 return ifindex
-
         return -1
 
     def newifindex(self):
