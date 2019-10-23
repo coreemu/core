@@ -9,7 +9,7 @@ import struct
 from socket import AF_INET, AF_INET6
 
 
-class MacAddress(object):
+class MacAddress:
     """
     Provides mac address utilities for use within core.
     """
@@ -77,7 +77,7 @@ class MacAddress(object):
         return cls(tmpbytes[2:])
 
 
-class IpAddress(object):
+class IpAddress:
     """
     Provides ip utilities and functionality for use within core.
     """
@@ -202,7 +202,7 @@ class IpAddress(object):
         return struct.unpack("!I", value)[0]
 
 
-class IpPrefix(object):
+class IpPrefix:
     """
     Provides ip address generation and prefix utilities.
     """

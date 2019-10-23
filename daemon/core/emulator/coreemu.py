@@ -29,7 +29,7 @@ signal.signal(signal.SIGUSR1, signal_handler)
 signal.signal(signal.SIGUSR2, signal_handler)
 
 
-class CoreEmu(object):
+class CoreEmu:
     """
     Provides logic for creating and configuring CORE sessions and the nodes within them.
     """

@@ -10,7 +10,7 @@ from core.nodes.base import CoreNode
 from core.nodes.netclient import get_net_client
 
 
-class DockerClient(object):
+class DockerClient:
     def __init__(self, name, image, run):
         self.name = name
         self.image = image

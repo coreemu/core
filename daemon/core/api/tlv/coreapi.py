@@ -27,7 +27,7 @@ from core.emulator.enumerations import (
 from core.nodes.ipaddress import IpAddress, MacAddress
 
 
-class CoreTlvData(object):
+class CoreTlvData:
     """
     Helper base class used for packing and unpacking values using struct.
     """
@@ -348,7 +348,7 @@ class CoreTlvDataMacAddr(CoreTlvDataObj):
         return MacAddress(address=value[2:])
 
 
-class CoreTlv(object):
+class CoreTlv:
     """
     Base class for representing CORE TLVs.
     """
@@ -670,7 +670,7 @@ class CoreExceptionTlv(CoreTlv):
     }
 
 
-class CoreMessage(object):
+class CoreMessage:
     """
     Base class for representing CORE messages.
     """

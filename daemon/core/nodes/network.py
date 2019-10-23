@@ -21,7 +21,7 @@ from core.nodes.netclient import get_net_client
 ebtables_lock = threading.Lock()
 
 
-class EbtablesQueue(object):
+class EbtablesQueue:
     """
     Helper class for queuing up ebtables commands into rate-limited
     atomic commits. This improves performance and reliability when there are

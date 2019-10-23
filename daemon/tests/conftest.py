@@ -23,7 +23,7 @@ from core.services.coreservices import ServiceManager
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
 
-class CoreServerTest(object):
+class CoreServerTest:
     def __init__(self, port=CORE_API_PORT):
         self.host = "localhost"
         self.port = port

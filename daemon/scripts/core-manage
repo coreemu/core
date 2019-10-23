@@ -14,7 +14,7 @@ from core import services
 from core.constants import CORE_CONF_DIR
 
 
-class FileUpdater(object):
+class FileUpdater:
     """
     Helper class for changing configuration files.
     """

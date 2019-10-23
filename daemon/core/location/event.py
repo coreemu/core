@@ -70,7 +70,7 @@ class Timer(threading.Thread):
 
 
 @total_ordering
-class Event(object):
+class Event:
     """
     Provides event objects that can be used within the EventLoop class.
     """
@@ -118,7 +118,7 @@ class Event(object):
         self.canceled = True
 
 
-class EventLoop(object):
+class EventLoop:
     """
     Provides an event loop for running events.
     """

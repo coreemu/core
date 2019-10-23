@@ -10,7 +10,7 @@ from core.errors import CoreCommandError
 from core.nodes.base import CoreNode
 
 
-class LxdClient(object):
+class LxdClient:
     def __init__(self, name, image, run):
         self.name = name
         self.image = image

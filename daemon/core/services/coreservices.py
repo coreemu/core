@@ -29,7 +29,7 @@ class ServiceMode(enum.Enum):
     TIMER = 2
 
 
-class ServiceDependencies(object):
+class ServiceDependencies:
     """
     Can generate boot paths for services, based on their dependencies. Will validate
     that all services will be booted and that all dependencies exist within the services provided.
@@ -127,7 +127,7 @@ class ServiceDependencies(object):
         return self.path
 
 
-class ServiceShim(object):
+class ServiceShim:
     keys = [
         "dirs",
         "files",
@@ -235,7 +235,7 @@ class ServiceShim(object):
         return servicesstring[1].split(",")
 
 
-class ServiceManager(object):
+class ServiceManager:
     """
     Manages services available for CORE nodes to use.
     """
@@ -306,7 +306,7 @@ class ServiceManager(object):
         return service_errors
 
 
-class CoreServices(object):
+class CoreServices:
     """
     Class for interacting with a list of available startup services for
     nodes. Mostly used to convert a CoreService into a Config API
@@ -791,7 +791,7 @@ class CoreServices(object):
             node.nodefile(file_name, cfg)
 
 
-class CoreService(object):
+class CoreService:
     """
     Parent class used for defining services.
     """

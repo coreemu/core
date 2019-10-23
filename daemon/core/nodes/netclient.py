@@ -19,7 +19,7 @@ def get_net_client(use_ovs, run):
         return LinuxNetClient(run)
 
 
-class LinuxNetClient(object):
+class LinuxNetClient:
     """
     Client for creating Linux bridges and ip interfaces for nodes.
     """

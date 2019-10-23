@@ -4,7 +4,7 @@ from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 from core.nodes.physical import PhysicalNode
 
 
-class IdGen(object):
+class IdGen:
     def __init__(self, _id=0):
         self.id = _id
 
@@ -61,7 +61,7 @@ def link_config(network, interface, link_options, devname=None, interface_two=No
     network.linkconfig(**config)
 
 
-class NodeOptions(object):
+class NodeOptions:
     """
     Options for creating and updating nodes within core.
     """
@@ -115,7 +115,7 @@ class NodeOptions(object):
         self.alt = alt
 
 
-class LinkOptions(object):
+class LinkOptions:
     """
     Options for creating and updating links within core.
     """
@@ -145,7 +145,7 @@ class LinkOptions(object):
         self.opaque = None
 
 
-class IpPrefixes(object):
+class IpPrefixes:
     """
     Convenience class to help generate IP4 and IP6 addresses for nodes within CORE.
     """
@@ -236,7 +236,7 @@ class IpPrefixes(object):
         )
 
 
-class InterfaceData(object):
+class InterfaceData:
     """
     Convenience class for storing interface data.
     """

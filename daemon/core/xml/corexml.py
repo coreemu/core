@@ -104,7 +104,7 @@ def add_configuration(parent, name, value):
     add_attribute(config_element, "value", value)
 
 
-class NodeElement(object):
+class NodeElement:
     def __init__(self, session, node, element_name):
         self.session = session
         self.node = node
@@ -131,7 +131,7 @@ class NodeElement(object):
         add_attribute(position, "alt", alt)
 
 
-class ServiceElement(object):
+class ServiceElement:
     def __init__(self, service):
         self.service = service
         self.element = etree.Element("service")
@@ -232,7 +232,7 @@ class NetworkElement(NodeElement):
         add_attribute(self.element, "type", node_type)
 
 
-class CoreXmlWriter(object):
+class CoreXmlWriter:
     def __init__(self, session):
         self.session = session
         self.scenario = etree.Element("scenario")
@@ -527,7 +527,7 @@ class CoreXmlWriter(object):
         return link_element
 
 
-class CoreXmlReader(object):
+class CoreXmlReader:
     def __init__(self, session):
         self.session = session
         self.scenario = None

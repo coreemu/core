@@ -21,7 +21,7 @@ from core.nodes.netclient import get_net_client
 _DEFAULT_MTU = 1500
 
 
-class NodeBase(object):
+class NodeBase:
     """
     Base class for CORE nodes (nodes and networks)
     """
@@ -1067,7 +1067,7 @@ class CoreNetworkBase(NodeBase):
         return all_links
 
 
-class Position(object):
+class Position:
     """
     Helper class for Cartesian coordinate position
     """

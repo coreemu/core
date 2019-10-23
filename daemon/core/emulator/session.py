@@ -71,7 +71,7 @@ NODES_TYPE = {NODES[x]: x for x in NODES}
 CTRL_NET_ID = 9001
 
 
-class Session(object):
+class Session:
     """
     CORE session manager.
     """

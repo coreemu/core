@@ -535,7 +535,7 @@ class BasicRangeModel(WirelessModel):
 
 
 @total_ordering
-class WayPoint(object):
+class WayPoint:
     """
     Maintains information regarding waypoints.
     """

@@ -10,7 +10,7 @@ from core.errors import CoreCommandError
 from core.nodes.netclient import get_net_client
 
 
-class CoreInterface(object):
+class CoreInterface:
     """
     Base class for network interfaces.
     """

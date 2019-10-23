@@ -14,7 +14,7 @@ from core.api.grpc import core_pb2, core_pb2_grpc
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 
 
-class InterfaceHelper(object):
+class InterfaceHelper:
     """
     Convenience class to help generate IP4 and IP6 addresses for gRPC clients.
     """
@@ -133,7 +133,7 @@ def start_streamer(stream, handler):
     thread.start()
 
 
-class CoreGrpcClient(object):
+class CoreGrpcClient:
     """
     Provides convenience methods for interfacing with the CORE grpc server.
     """

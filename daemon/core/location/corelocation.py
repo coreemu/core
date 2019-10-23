@@ -11,7 +11,7 @@ from core.emulator.enumerations import RegisterTlvs
 from core.location import utm
 
 
-class CoreLocation(object):
+class CoreLocation:
     """
     Member of session class for handling global location data. This keeps
     track of a latitude/longitude/altitude reference point and scale in
