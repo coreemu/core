@@ -252,7 +252,7 @@ class CoreNodeBase(NodeBase):
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-        super(CoreNodeBase, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self.services = []
         self.nodedir = None
         self.tmpnodedir = False
@@ -354,7 +354,7 @@ class CoreNodeBase(NodeBase):
         :param z: z position
         :return: nothing
         """
-        changed = super(CoreNodeBase, self).setposition(x, y, z)
+        changed = super().setposition(x, y, z)
         if changed:
             for netif in self.netifs(sort=True):
                 netif.setposition(x, y, z)
@@ -432,7 +432,7 @@ class CoreNode(CoreNodeBase):
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-        super(CoreNode, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(
             os.path.join(self.session.session_dir, self.name)
@@ -629,7 +629,7 @@ class CoreNode(CoreNodeBase):
         :rtype: int
         """
         with self.lock:
-            return super(CoreNode, self).newifindex()
+            return super().newifindex()
 
     def newveth(self, ifindex=None, ifname=None):
         """
@@ -925,7 +925,7 @@ class CoreNetworkBase(NodeBase):
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-        super(CoreNetworkBase, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self._linked = {}
         self._linked_lock = threading.Lock()
 

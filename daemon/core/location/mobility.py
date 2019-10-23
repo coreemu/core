@@ -38,7 +38,7 @@ class MobilityManager(ModelManager):
 
         :param core.emulator.session.Session session: session this manager is tied to
         """
-        super(MobilityManager, self).__init__()
+        super().__init__()
         self.session = session
         self.models[BasicRangeModel.name] = BasicRangeModel
         self.models[Ns2ScriptedMobility.name] = Ns2ScriptedMobility
@@ -302,7 +302,7 @@ class BasicRangeModel(WirelessModel):
         :param core.session.Session session: related core session
         :param int _id: object id
         """
-        super(BasicRangeModel, self).__init__(session=session, _id=_id)
+        super().__init__(session=session, _id=_id)
         self.session = session
         self.wlan = session.get_node(_id)
         self._netifs = {}
@@ -587,8 +587,7 @@ class WayPointMobility(WirelessModel):
         :param int _id: object id
         :return:
         """
-        super(WayPointMobility, self).__init__(session=session, _id=_id)
-
+        super().__init__(session=session, _id=_id)
         self.state = self.STATE_STOPPED
         self.queue = []
         self.queue_copy = []
@@ -945,7 +944,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :param core.emulator.session.Session session: CORE session instance
         :param int _id: object id
         """
-        super(Ns2ScriptedMobility, self).__init__(session=session, _id=_id)
+        super().__init__(session, _id)
         self._netifs = {}
         self._netifslock = threading.Lock()
 
@@ -1137,7 +1136,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         """
         logging.info("starting script")
         laststate = self.state
-        super(Ns2ScriptedMobility, self).start()
+        super().start()
         if laststate == self.STATE_PAUSED:
             self.statescript("unpause")
 
@@ -1147,7 +1146,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        super(Ns2ScriptedMobility, self).run()
+        super().run()
         self.statescript("run")
 
     def pause(self):
@@ -1156,7 +1155,7 @@ class Ns2ScriptedMobility(WayPointMobility):
 
         :return: nothing
         """
-        super(Ns2ScriptedMobility, self).pause()
+        super().pause()
         self.statescript("pause")
 
     def stop(self, move_initial=True):
@@ -1166,7 +1165,7 @@ class Ns2ScriptedMobility(WayPointMobility):
         :param bool move_initial: flag to check if we should move node to initial position
         :return: nothing
         """
-        super(Ns2ScriptedMobility, self).stop(move_initial=move_initial)
+        super().stop(move_initial=move_initial)
         self.statescript("stop")
 
     def statescript(self, typestr):

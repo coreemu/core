@@ -23,7 +23,7 @@ class Timer(threading.Thread):
         :param args: function arguments
         :param kwargs: function keyword arguments
         """
-        super(Timer, self).__init__()
+        super().__init__()
         self.interval = interval
         self.function = function
 

@@ -96,9 +96,7 @@ class DockerNode(CoreNode):
         if image is None:
             image = "ubuntu"
         self.image = image
-        super(DockerNode, self).__init__(
-            session, _id, name, nodedir, bootsh, start, server
-        )
+        super().__init__(session, _id, name, nodedir, bootsh, start, server)
 
     def create_node_net_client(self, use_ovs):
         """

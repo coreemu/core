@@ -61,7 +61,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
     config_type = RegisterTlvs.UTILITY.value
 
     def __init__(self):
-        super(SessionConfig, self).__init__()
+        super().__init__()
         self.set_configs(self.default_values())
 
     def get_config(
@@ -71,9 +71,7 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         config_type=ConfigurableManager._default_type,
         default=None,
     ):
-        value = super(SessionConfig, self).get_config(
-            _id, node_id, config_type, default
-        )
+        value = super().get_config(_id, node_id, config_type, default)
         if value == "":
             value = default
         return value

@@ -202,7 +202,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
     """
 
     def __init__(self, coreemu):
-        super(CoreGrpcServer, self).__init__()
+        super().__init__()
         self.coreemu = coreemu
         self.running = True
         self.server = None

@@ -89,9 +89,7 @@ class LxcNode(CoreNode):
         if image is None:
             image = "ubuntu"
         self.image = image
-        super(LxcNode, self).__init__(
-            session, _id, name, nodedir, bootsh, start, server
-        )
+        super().__init__(session, _id, name, nodedir, bootsh, start, server)
 
     def alive(self):
         """
@@ -217,6 +215,6 @@ class LxcNode(CoreNode):
         self.cmd(f"chmod {mode:o} {filename}")
 
     def addnetif(self, netif, ifindex):
-        super(LxcNode, self).addnetif(netif, ifindex)
+        super().addnetif(netif, ifindex)
         # adding small delay to allow time for adding addresses to work correctly
         time.sleep(0.5)

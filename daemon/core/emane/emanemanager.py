@@ -62,7 +62,7 @@ class EmaneManager(ModelManager):
         :param core.session.Session session: session this manager is tied to
         :return: nothing
         """
-        super(EmaneManager, self).__init__()
+        super().__init__()
         self.session = session
         self._emane_nets = {}
         self._emane_node_lock = threading.Lock()
@@ -128,7 +128,7 @@ class EmaneManager(ModelManager):
             return config
 
     def config_reset(self, node_id=None):
-        super(EmaneManager, self).config_reset(node_id)
+        super().config_reset(node_id)
         self.set_configs(self.emane_config.default_values())
 
     def emane_check(self):
@@ -871,7 +871,7 @@ class EmaneGlobalModel(EmaneModel):
         ]
 
     def __init__(self, session, _id=None):
-        super(EmaneGlobalModel, self).__init__(session, _id)
+        super().__init__(session, _id)
 
     def build_xml_files(self, config, interface=None):
         raise NotImplementedError

@@ -309,7 +309,7 @@ class ModelManager(ConfigurableManager):
         """
         Creates a ModelManager object.
         """
-        super(ModelManager, self).__init__()
+        super().__init__()
         self.models = {}
         self.node_models = {}
 

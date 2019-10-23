@@ -197,7 +197,7 @@ class ServiceElement:
 
 class DeviceElement(NodeElement):
     def __init__(self, session, node):
-        super(DeviceElement, self).__init__(session, node, "device")
+        super().__init__(session, node, "device")
         add_attribute(self.element, "type", node.type)
         self.add_services()
 
@@ -212,7 +212,7 @@ class DeviceElement(NodeElement):
 
 class NetworkElement(NodeElement):
     def __init__(self, session, node):
-        super(NetworkElement, self).__init__(session, node, "network")
+        super().__init__(session, node, "network")
         model = getattr(self.node, "model", None)
         if model:
             add_attribute(self.element, "model", model.name)
