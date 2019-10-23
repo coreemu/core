@@ -223,34 +223,6 @@ def cmd(args, env=None, cwd=None, wait=True, shell=False):
         raise CoreCommandError(-1, args)
 
 
-def hex_dump(s, bytes_per_word=2, words_per_line=8):
-    """
-    Hex dump of a string.
-
-    :param str s: string to hex dump
-    :param bytes_per_word: number of bytes per word
-    :param words_per_line: number of words per line
-    :return: hex dump of string
-    """
-    dump = ""
-    count = 0
-    total_bytes = bytes_per_word * words_per_line
-
-    while s:
-        line = s[:total_bytes]
-        s = s[total_bytes:]
-        tmp = map(
-            lambda x: (f"{bytes_per_word:02x}" * bytes_per_word) % x,
-            zip(*[iter(map(ord, line))] * bytes_per_word),
-        )
-        if len(line) % 2:
-            tmp.append(f"{ord(line[-1]):x}")
-        tmp = " ".join(tmp)
-        dump += f"0x{count:08x}: {tmp}\n"
-        count += len(line)
-    return dump[:-1]
-
-
 def file_munge(pathname, header, text):
     """
     Insert text at the end of a file, surrounded by header comments.
