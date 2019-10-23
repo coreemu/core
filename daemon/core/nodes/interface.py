@@ -40,8 +40,10 @@ class CoreInterface(object):
         self.poshook = lambda a, b, c, d: None
         # used with EMANE
         self.transport_type = None
-        # interface index on the network
+        # node interface index
         self.netindex = None
+        # net interface index
+        self.netifi = None
         # index used to find flow data
         self.flow_id = None
         self.server = server
