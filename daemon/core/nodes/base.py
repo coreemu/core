@@ -634,13 +634,12 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             return super(CoreNode, self).newifindex()
 
-    def newveth(self, ifindex=None, ifname=None, net=None):
+    def newveth(self, ifindex=None, ifname=None):
         """
         Create a new interface.
 
         :param int ifindex: index for the new interface
         :param str ifname: name for the new interface
-        :param core.nodes.base.CoreNetworkBase net: network to associate interface with
         :return: nothing
         """
         with self.lock:
@@ -692,13 +691,12 @@ class CoreNode(CoreNodeBase):
 
             return ifindex
 
-    def newtuntap(self, ifindex=None, ifname=None, net=None):
+    def newtuntap(self, ifindex=None, ifname=None):
         """
         Create a new tunnel tap.
 
         :param int ifindex: interface index
         :param str ifname: interface name
-        :param net: network to associate with
         :return: interface index
         :rtype: int
         """
@@ -803,7 +801,7 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             # TODO: emane specific code
             if net.is_emane is True:
-                ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
+                ifindex = self.newtuntap(ifindex, ifname)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
@@ -815,7 +813,7 @@ class CoreNode(CoreNodeBase):
                     netif.addaddr(address)
                 return ifindex
             else:
-                ifindex = self.newveth(ifindex=ifindex, ifname=ifname, net=net)
+                ifindex = self.newveth(ifindex, ifname)
 
             if net is not None:
                 self.attachnet(ifindex, net)
