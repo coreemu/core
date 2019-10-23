@@ -673,9 +673,9 @@ class Session(object):
             name = f"{node_class.__name__}{_id}"
 
         # verify distributed server
-        server = self.distributed.servers.get(options.emulation_server)
-        if options.emulation_server is not None and server is None:
-            raise CoreError(f"invalid distributed server: {options.emulation_server}")
+        server = self.distributed.servers.get(options.server)
+        if options.server is not None and server is None:
+            raise CoreError(f"invalid distributed server: {options.server}")
 
         # create node
         logging.info(
@@ -713,7 +713,7 @@ class Session(object):
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
 
-        # boot nodes if created after runtime, CoreNodes, Physical, and RJ45 are all nodes
+        # boot nodes after runtime, CoreNodes, Physical, and RJ45 are all nodes
         is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
         if self.state == EventTypes.RUNTIME_STATE.value and is_boot_node:
             self.write_nodes()

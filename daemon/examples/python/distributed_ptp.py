@@ -24,7 +24,7 @@ def main(args):
     # create local node, switch, and remote nodes
     options = NodeOptions()
     node_one = session.add_node(options=options)
-    options.emulation_server = server_name
+    options.server = server_name
     node_two = session.add_node(options=options)
 
     # create node interfaces and link

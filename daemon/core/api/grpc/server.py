@@ -775,7 +775,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         options.image = node_proto.image
         options.services = node_proto.services
         if node_proto.server:
-            options.emulation_server = node_proto.server
+            options.server = node_proto.server
 
         position = node_proto.position
         options.set_position(position.x, position.y)

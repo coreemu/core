@@ -87,7 +87,7 @@ class NodeOptions(object):
         self.lon = None
         self.alt = None
         self.emulation_id = None
-        self.emulation_server = None
+        self.server = None
         self.image = image
 
     def set_position(self, x, y):

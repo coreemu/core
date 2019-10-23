@@ -24,7 +24,7 @@ def main(args):
     # create local node, switch, and remote nodes
     options = NodeOptions(image="ubuntu:18.04")
     node_one = session.add_node(_type=NodeTypes.LXC, options=options)
-    options.emulation_server = server_name
+    options.server = server_name
     node_two = session.add_node(_type=NodeTypes.LXC, options=options)
 
     # create node interfaces and link

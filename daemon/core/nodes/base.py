@@ -194,9 +194,9 @@ class NodeBase(object):
 
         x, y, _ = self.getposition()
         model = self.type
-        emulation_server = None
+        server = None
         if self.server is not None:
-            emulation_server = self.server.name
+            server = self.server.name
 
         services = self.services
         if services is not None:
@@ -217,7 +217,7 @@ class NodeBase(object):
             longitude=lon,
             altitude=alt,
             model=model,
-            emulation_server=emulation_server,
+            server=server,
             services=services,
         )
 

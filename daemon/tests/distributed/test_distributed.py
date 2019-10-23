@@ -35,15 +35,13 @@ def set_emane_model(node_id, model):
     )
 
 
-def node_message(
-    _id, name, emulation_server=None, node_type=NodeTypes.DEFAULT, model=None
-):
+def node_message(_id, name, server=None, node_type=NodeTypes.DEFAULT, model=None):
     """
     Convenience method for creating a node TLV messages.
 
     :param int _id: node id
     :param str name: node name
-    :param str emulation_server: distributed server name, if desired
+    :param str server: distributed server name, if desired
     :param core.emulator.enumerations.NodeTypes node_type: node type
     :param str model: model for node
     :return: tlv message
@@ -53,7 +51,7 @@ def node_message(
         (NodeTlvs.NUMBER, _id),
         (NodeTlvs.TYPE, node_type.value),
         (NodeTlvs.NAME, name),
-        (NodeTlvs.EMULATION_SERVER, emulation_server),
+        (NodeTlvs.EMULATION_SERVER, server),
         (NodeTlvs.X_POSITION, 0),
         (NodeTlvs.Y_POSITION, 0),
     ]
@@ -182,7 +180,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = node_message(
-            _id=2, name="n2", emulation_server=cored.distributed_server, model="host"
+            _id=2, name="n2", server=cored.distributed_server, model="host"
         )
         cored.request_handler.handle_message(message)
 
@@ -231,7 +229,7 @@ class TestDistributed:
 
         # create distributed node and assign to distributed server
         message = node_message(
-            _id=2, name="n2", emulation_server=cored.distributed_server, model="mdr"
+            _id=2, name="n2", server=cored.distributed_server, model="mdr"
         )
         cored.request_handler.handle_message(message)
 
@@ -281,7 +279,7 @@ class TestDistributed:
         message = node_message(
             _id=2,
             name="n2",
-            emulation_server=cored.distributed_server,
+            server=cored.distributed_server,
             node_type=NodeTypes.PHYSICAL,
             model="prouter",
         )
@@ -330,7 +328,7 @@ class TestDistributed:
         message = node_message(
             _id=2,
             name=distributed_address,
-            emulation_server=cored.distributed_server,
+            server=cored.distributed_server,
             node_type=NodeTypes.TUNNEL,
         )
         cored.request_handler.handle_message(message)

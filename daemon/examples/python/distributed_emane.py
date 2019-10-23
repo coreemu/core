@@ -34,7 +34,7 @@ def main(args):
     node_one = session.add_node(options=options)
     emane_net = session.add_node(_type=NodeTypes.EMANE)
     session.emane.set_model(emane_net, EmaneIeee80211abgModel)
-    options.emulation_server = server_name
+    options.server = server_name
     node_two = session.add_node(options=options)
 
     # create node interfaces and link
