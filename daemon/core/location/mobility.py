@@ -302,7 +302,7 @@ class BasicRangeModel(WirelessModel):
         :param core.session.Session session: related core session
         :param int _id: object id
         """
-        super().__init__(session=session, _id=_id)
+        super().__init__(session, _id)
         self.session = session
         self.wlan = session.get_node(_id)
         self._netifs = {}

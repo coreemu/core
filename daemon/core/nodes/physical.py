@@ -19,7 +19,7 @@ class PhysicalNode(CoreNodeBase):
     def __init__(
         self, session, _id=None, name=None, nodedir=None, start=True, server=None
     ):
-        CoreNodeBase.__init__(self, session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         if not self.server:
             raise CoreError("physical nodes must be assigned to a remote server")
         self.nodedir = nodedir

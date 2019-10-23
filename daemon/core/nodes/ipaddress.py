@@ -401,7 +401,7 @@ class Ipv4Prefix(IpPrefix):
 
         :param str prefixstr: ip prefix
         """
-        IpPrefix.__init__(self, AF_INET, prefixstr)
+        super().__init__(AF_INET, prefixstr)
 
 
 class Ipv6Prefix(IpPrefix):
@@ -415,7 +415,7 @@ class Ipv6Prefix(IpPrefix):
 
         :param str prefixstr: ip prefix
         """
-        IpPrefix.__init__(self, AF_INET6, prefixstr)
+        super().__init__(AF_INET6, prefixstr)
 
 
 def is_ip_address(af, addrstr):
