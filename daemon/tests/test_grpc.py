@@ -524,9 +524,9 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        emane_network = session.create_emane_network(
-            model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
-        )
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        emane_network = session.add_node(_type=NodeTypes.EMANE)
+        session.emane.set_model(emane_network, EmaneIeee80211abgModel)
         config_key = "platform_id_start"
         config_value = "2"
         session.emane.set_model_config(
@@ -548,9 +548,9 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        emane_network = session.create_emane_network(
-            model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
-        )
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        emane_network = session.add_node(_type=NodeTypes.EMANE)
+        session.emane.set_model(emane_network, EmaneIeee80211abgModel)
         config_key = "bandwidth"
         config_value = "900000"
 
@@ -574,9 +574,9 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        emane_network = session.create_emane_network(
-            model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
-        )
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        emane_network = session.add_node(_type=NodeTypes.EMANE)
+        session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
         # then
         with client.context_connect():

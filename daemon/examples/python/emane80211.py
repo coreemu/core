@@ -5,7 +5,7 @@ import parser
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes, NodeOptions
-from core.emulator.enumerations import EventTypes
+from core.emulator.enumerations import EventTypes, NodeTypes
 
 
 def example(args):
@@ -20,10 +20,11 @@ def example(args):
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create emane network node
-    emane_network = session.create_emane_network(
-        model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
-    )
-    emane_network.setposition(x=80, y=50)
+    session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+    options = NodeOptions()
+    options.set_position(80, 50)
+    emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+    session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
     # create nodes
     options = NodeOptions(model="mdr")

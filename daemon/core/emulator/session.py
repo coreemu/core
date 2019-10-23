@@ -55,15 +55,12 @@ from core.xml.corexml import CoreXmlReader, CoreXmlWriter
 NODES = {
     NodeTypes.DEFAULT: CoreNode,
     NodeTypes.PHYSICAL: PhysicalNode,
-    NodeTypes.TBD: None,
     NodeTypes.SWITCH: SwitchNode,
     NodeTypes.HUB: HubNode,
     NodeTypes.WIRELESS_LAN: WlanNode,
     NodeTypes.RJ45: Rj45Node,
     NodeTypes.TUNNEL: TunnelNode,
-    NodeTypes.KTUNNEL: None,
     NodeTypes.EMANE: EmaneNet,
-    NodeTypes.EMANE_NET: None,
     NodeTypes.TAP_BRIDGE: GreTapBridge,
     NodeTypes.PEER_TO_PEER: PtpNet,
     NodeTypes.CONTROL_NET: CtrlNet,
@@ -906,28 +903,18 @@ class Session(object):
         """
         self.mobility.handleevent(event_data)
 
-    def create_emane_network(
-        self, model, geo_reference, geo_scale=None, options=NodeOptions(), config=None
-    ):
+    def set_location(self, lat, lon, alt, scale):
         """
-        Convenience method for creating an emane network.
+        Set session geospatial location.
 
-        :param model: emane model to use for emane network
-        :param geo_reference: geo reference point to use for emane node locations
-        :param geo_scale: geo scale to use for emane node locations, defaults to 1.0
-        :param core.emulator.emudata.NodeOptions options: options for emane node being created
-        :param dict config: emane model configuration
-        :return: create emane network
+        :param float lat: latitude
+        :param float lon: longitude
+        :param float alt: altitude
+        :param float scale: reference scale
+        :return: nothing
         """
-        # required to be set for emane to function properly
-        self.location.setrefgeo(*geo_reference)
-        if geo_scale:
-            self.location.refscale = geo_scale
-
-        # create and return network
-        emane_network = self.add_node(_type=NodeTypes.EMANE, options=options)
-        self.emane.set_model(emane_network, model, config)
-        return emane_network
+        self.location.setrefgeo(lat, lon, alt)
+        self.location.refscale = scale
 
     def shutdown(self):
         """

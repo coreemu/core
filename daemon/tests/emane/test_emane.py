@@ -12,6 +12,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.emudata import NodeOptions
+from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError, CoreError
 
 _EMANE_MODELS = [
@@ -46,10 +47,11 @@ class TestEmane:
         """
 
         # create emane node for networking the core nodes
-        emane_network = session.create_emane_network(
-            model, geo_reference=(47.57917, -122.13232, 2.00000)
-        )
-        emane_network.setposition(x=80, y=50)
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        options = NodeOptions()
+        options.set_position(80, 50)
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        session.emane.set_model(emane_network, model)
 
         # configure tdma
         if model == EmaneTdmaModel:
@@ -87,12 +89,11 @@ class TestEmane:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create emane node for networking the core nodes
-        emane_network = session.create_emane_network(
-            EmaneIeee80211abgModel,
-            geo_reference=(47.57917, -122.13232, 2.00000),
-            config={"test": "1"},
-        )
-        emane_network.setposition(x=80, y=50)
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        options = NodeOptions()
+        options.set_position(80, 50)
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        session.emane.set_model(emane_network, EmaneIeee80211abgModel, {"test": "1"})
 
         # create nodes
         options = NodeOptions(model="mdr")
