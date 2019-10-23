@@ -1001,23 +1001,14 @@ class HubNode(CoreNetwork):
     policy = "ACCEPT"
     type = "hub"
 
-    def __init__(self, session, _id=None, name=None, start=True, server=None):
+    def startup(self):
         """
-        Creates a HubNode instance.
+        Startup for a hub node, that disables mac learning after normal startup.
 
-        :param core.session.Session session: core session instance
-        :param int _id: node id
-        :param str name: node namee
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
-            will run on, default is None for localhost
-        :raises CoreCommandError: when there is a command exception
+        :return: nothing
         """
-        super().__init__(session, _id, name, start, server)
-
-        # TODO: move to startup method
-        if start:
-            self.net_client.disable_mac_learning(self.brname)
+        super().startup()
+        self.net_client.disable_mac_learning(self.brname)
 
 
 class WlanNode(CoreNetwork):
@@ -1045,14 +1036,18 @@ class WlanNode(CoreNetwork):
         :param policy: wlan policy
         """
         super().__init__(session, _id, name, start, server, policy)
-        # wireless model such as basic range
+        # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
         self.model = None
-        # mobility model such as scripted
         self.mobility = None
 
-        # TODO: move to startup method
-        if start:
-            self.net_client.disable_mac_learning(self.brname)
+    def startup(self):
+        """
+        Startup for a wlan node, that disables mac learning after normal startup.
+
+        :return: nothing
+        """
+        super().startup()
+        self.net_client.disable_mac_learning(self.brname)
 
     def attach(self, netif):
         """
