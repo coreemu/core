@@ -49,7 +49,7 @@ class CoreEmu:
         self.config = config
 
         # session management
-        self.session_id_gen = IdGen(_id=0)
+        self.session_id_gen = IdGen()
         self.sessions = {}
 
         # load services
@@ -79,6 +79,7 @@ class CoreEmu:
         :return: nothing
         """
         logging.info("shutting down all sessions")
+        self.session_id_gen.id = 0
         sessions = self.sessions.copy()
         self.sessions.clear()
         for _id in sessions:

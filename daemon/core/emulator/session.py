@@ -1368,6 +1368,7 @@ class Session:
             while self.nodes:
                 _, node = self.nodes.popitem()
                 node.shutdown()
+        self.node_id_gen.id = 0
 
     def write_nodes(self):
         """

@@ -129,6 +129,12 @@ class PatchManager:
             p.stop()
 
 
+class MockServer:
+    def __init__(self, config, coreemu):
+        self.config = config
+        self.coreemu = coreemu
+
+
 @pytest.fixture(scope="session")
 def patcher(request):
     patch_manager = PatchManager()
@@ -138,6 +144,7 @@ def patcher(request):
         patch_manager.patch("core.nodes.netclient.get_net_client")
         patch_manager.patch_obj(CoreNode, "nodefile")
         patch_manager.patch_obj(Session, "write_state")
+        patch_manager.patch_obj(Session, "write_nodes")
     yield patch_manager
     patch_manager.shutdown()
 
@@ -179,11 +186,14 @@ def module_grpc(global_coreemu):
 
 
 @pytest.fixture(scope="module")
-def module_cored(patcher):
-    server = CoreServerTest()
-    server.setup_handler()
-    yield server
-    server.shutdown()
+def module_coretlv(patcher, global_coreemu, global_session):
+    request_mock = MagicMock()
+    request_mock.fileno = MagicMock(return_value=1)
+    server = MockServer({"numthreads": "1"}, global_coreemu)
+    request_handler = CoreHandler(request_mock, "", server)
+    request_handler.session = global_session
+    request_handler.add_session_handlers()
+    yield request_handler
 
 
 @pytest.fixture
@@ -204,10 +214,12 @@ def session(global_session):
 
 
 @pytest.fixture
-def cored(module_cored):
-    session = module_cored.session
-    module_cored.server.coreemu.sessions[session.id] = session
-    yield module_cored
+def coretlv(module_coretlv):
+    session = module_coretlv.session
+    coreemu = module_coretlv.coreemu
+    coreemu.sessions[session.id] = session
+    yield module_coretlv
+    coreemu.shutdown()
     session.clear()
     session.location.reset()
     session.services.reset()
