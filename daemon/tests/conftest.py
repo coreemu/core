@@ -11,103 +11,15 @@ from mock.mock import MagicMock
 
 from core.api.grpc.client import InterfaceHelper
 from core.api.grpc.server import CoreGrpcServer
-from core.api.tlv.coreapi import CoreConfMessage, CoreEventMessage
 from core.api.tlv.corehandlers import CoreHandler
-from core.api.tlv.coreserver import CoreServer
 from core.emulator.coreemu import CoreEmu
+from core.emulator.distributed import DistributedServer
 from core.emulator.emudata import IpPrefixes
-from core.emulator.enumerations import CORE_API_PORT, ConfigTlvs, EventTlvs, EventTypes
+from core.emulator.enumerations import EventTypes
 from core.emulator.session import Session
-from core.nodes import ipaddress
 from core.nodes.base import CoreNode
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
-
-
-class CoreServerTest:
-    def __init__(self, port=CORE_API_PORT):
-        self.host = "localhost"
-        self.port = port
-        address = (self.host, self.port)
-        self.server = CoreServer(
-            address, CoreHandler, {"numthreads": 1, "daemonize": False}
-        )
-
-        self.distributed_server = "core2"
-        self.prefix = ipaddress.Ipv4Prefix("10.83.0.0/16")
-        self.session = None
-        self.request_handler = None
-
-    def setup_handler(self):
-        self.session = self.server.coreemu.create_session(1)
-        request_mock = MagicMock()
-        request_mock.fileno = MagicMock(return_value=1)
-        self.request_handler = CoreHandler(request_mock, "", self.server)
-        self.request_handler.session = self.session
-        self.request_handler.add_session_handlers()
-
-    def setup(self, distributed_address):
-        # validate address
-        assert distributed_address, "distributed server address was not provided"
-
-        # create session
-        self.session = self.server.coreemu.create_session(1)
-
-        # create request handler
-        request_mock = MagicMock()
-        request_mock.fileno = MagicMock(return_value=1)
-        self.request_handler = CoreHandler(request_mock, "", self.server)
-        self.request_handler.session = self.session
-        self.request_handler.add_session_handlers()
-
-        # have broker handle a configuration state change
-        self.session.set_state(EventTypes.DEFINITION_STATE)
-        message = CoreEventMessage.create(
-            0, [(EventTlvs.TYPE, EventTypes.CONFIGURATION_STATE.value)]
-        )
-        self.request_handler.handle_message(message)
-
-        # add broker server for distributed core
-        distributed = f"{self.distributed_server}:{distributed_address}:{self.port}"
-        message = CoreConfMessage.create(
-            0,
-            [
-                (ConfigTlvs.OBJECT, "broker"),
-                (ConfigTlvs.TYPE, 0),
-                (ConfigTlvs.DATA_TYPES, (10,)),
-                (ConfigTlvs.VALUES, distributed),
-            ],
-        )
-        self.request_handler.handle_message(message)
-
-        # set session location
-        message = CoreConfMessage.create(
-            0,
-            [
-                (ConfigTlvs.OBJECT, "location"),
-                (ConfigTlvs.TYPE, 0),
-                (ConfigTlvs.DATA_TYPES, (9, 9, 9, 9, 9, 9)),
-                (ConfigTlvs.VALUES, "0|0|47.5766974863|-122.125920191|0.0|150.0"),
-            ],
-        )
-        self.request_handler.handle_message(message)
-
-        # set services for host nodes
-        message = CoreConfMessage.create(
-            0,
-            [
-                (ConfigTlvs.SESSION, str(self.session.id)),
-                (ConfigTlvs.OBJECT, "services"),
-                (ConfigTlvs.TYPE, 0),
-                (ConfigTlvs.DATA_TYPES, (10, 10, 10)),
-                (ConfigTlvs.VALUES, "host|DefaultRoute|SSH"),
-            ],
-        )
-        self.request_handler.handle_message(message)
-
-    def shutdown(self):
-        self.server.coreemu.shutdown()
-        self.server.server_close()
 
 
 class PatchManager:
@@ -138,6 +50,7 @@ class MockServer:
 @pytest.fixture(scope="session")
 def patcher(request):
     patch_manager = PatchManager()
+    patch_manager.patch_obj(DistributedServer, "remote_cmd")
     if request.config.getoption("mock"):
         patch_manager.patch("os.mkdir")
         patch_manager.patch("core.utils.cmd")
