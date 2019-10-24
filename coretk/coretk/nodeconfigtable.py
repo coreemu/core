@@ -30,7 +30,7 @@ class NodeConfig:
         self.select_definition()
 
     def open_icon_dir(self, toplevel, entry_text):
-        imgfile = filedialog.askopenfilename(
+        filename = filedialog.askopenfilename(
             initialdir=ICONS_DIR,
             title="Open",
             filetypes=(
@@ -38,16 +38,15 @@ class NodeConfig:
                 ("All Files", "*"),
             ),
         )
-        if len(imgfile) > 0:
-            img = Image.open(imgfile)
+        if len(filename) > 0:
+            img = Image.open(filename)
             tk_img = ImageTk.PhotoImage(img)
             lb = toplevel.grid_slaves(1, 0)[0]
             lb.configure(image=tk_img)
             lb.image = tk_img
-            entry_text.set(imgfile)
+            entry_text.set(filename)
 
     def click_apply(self, toplevel, entry_text):
-        print("click apply")
         imgfile = entry_text.get()
         if imgfile:
             img = Image.open(imgfile)

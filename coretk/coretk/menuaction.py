@@ -7,6 +7,7 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
+from coretk.setwallpaper import CanvasWallpaper
 from coretk.sizeandscale import SizeAndScale
 
 SAVEDIR = "/home/ncs/Desktop/"
@@ -418,7 +419,10 @@ class MenuAction:
         # print(t1 - t0)
 
     def canvas_size_and_scale(self):
-        SizeAndScale()
+        SizeAndScale(self.application)
+
+    def canvas_set_wallpaper(self):
+        CanvasWallpaper(self.application)
 
     def help_core_github(self):
         webbrowser.open_new("https://github.com/coreemu/core")

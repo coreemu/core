@@ -35,9 +35,9 @@ class CoreGrpc:
 
     def log_throughput(self, event):
         interface_throughputs = event.interface_throughputs
-        # for i in interface_throughputs:
-        #     print(i)
-        # return
+        for i in interface_throughputs:
+            print("")
+        return
         throughputs_belong_to_session = []
         for if_tp in interface_throughputs:
             if if_tp.node_id in self.node_ids:
@@ -58,8 +58,9 @@ class CoreGrpc:
 
         # handle events session may broadcast
         self.session_id = response.session_id
+        self.master.title("CORE Session ID " + str(self.session_id))
         self.core.events(self.session_id, self.log_event)
-        self.core.throughputs(self.log_throughput)
+        # self.core.throughputs(self.log_throughput)
 
     def query_existing_sessions(self, sessions):
         """

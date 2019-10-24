@@ -59,7 +59,7 @@ class Application(tk.Frame):
             master=self,
             grpc=self.core_grpc,
             background="#cccccc",
-            scrollregion=(0, 0, 1000, 1000),
+            scrollregion=(0, 0, 1200, 1000),
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 

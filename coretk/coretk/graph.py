@@ -34,6 +34,8 @@ class CanvasGraph(tk.Canvas):
         self.edges = {}
         self.drawing_edge = None
 
+        self.grid = None
+        self.meters_per_pixel = 1.5
         self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
@@ -89,7 +91,7 @@ class CanvasGraph(tk.Canvas):
         self.bind("<B1-Motion>", self.click_motion)
         self.bind("<Button-3>", self.context)
 
-    def draw_grid(self, width=1000, height=750):
+    def draw_grid(self, width=1000, height=800):
         """
         Create grid
 
@@ -98,7 +100,7 @@ class CanvasGraph(tk.Canvas):
 
         :return: nothing
         """
-        rectangle_id = self.create_rectangle(
+        self.grid = self.create_rectangle(
             0,
             0,
             width,
@@ -108,11 +110,11 @@ class CanvasGraph(tk.Canvas):
             width=1,
             tags="rectangle",
         )
-        self.tag_lower(rectangle_id)
+        self.tag_lower(self.grid)
         for i in range(0, width, 27):
-            self.create_line(i, 0, i, height, dash=(2, 4), tags="grid line")
+            self.create_line(i, 0, i, height, dash=(2, 4), tags="gridline")
         for i in range(0, height, 27):
-            self.create_line(0, i, width, i, dash=(2, 4), tags="grid line")
+            self.create_line(0, i, width, i, dash=(2, 4), tags="gridline")
 
     def draw_existing_component(self):
         """
@@ -235,6 +237,7 @@ class CanvasGraph(tk.Canvas):
         :return: the item that the mouse point to
         """
         overlapping = self.find_overlapping(event.x, event.y, event.x, event.y)
+        print(overlapping)
         nodes = set(self.find_withtag("node"))
         selected = None
         for _id in overlapping:
@@ -260,6 +263,7 @@ class CanvasGraph(tk.Canvas):
         self.focus_set()
         self.selected = self.get_selected(event)
         logging.debug(f"click release selected: {self.selected}")
+        print(self.mode)
         if self.mode == GraphMode.EDGE:
             self.handle_edge_release(event)
         elif self.mode == GraphMode.NODE:
@@ -359,7 +363,8 @@ class CanvasGraph(tk.Canvas):
             self.node_context.post(event.x_root, event.y_root)
 
     def add_node(self, x, y, image, node_name):
-        if self.selected == 1:
+        plot_id = self.find_all()[0]
+        if self.selected == plot_id:
             node = CanvasNode(
                 x=x,
                 y=y,
@@ -510,7 +515,7 @@ class CanvasNode:
             else:
                 self.canvas.coords(edge.id, x1, y1, new_x, new_y)
             edge.link_info.recalculate_info()
-            self.canvas.core_grpc.throughput_draw.update_throughtput_location(edge)
+            # self.canvas.core_grpc.throughput_draw.update_throughtput_location(edge)
 
         self.canvas.helper.update_wlan_connection(
             old_x, old_y, new_x, new_y, self.wlans
