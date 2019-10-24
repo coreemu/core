@@ -179,9 +179,8 @@ def module_grpc(global_coreemu):
 
 
 @pytest.fixture(scope="module")
-def module_cored(request, patcher):
-    mkdir = not request.config.getoption("mock")
-    server = CoreServerTest(mkdir)
+def module_cored(patcher):
+    server = CoreServerTest()
     server.setup_handler()
     yield server
     server.shutdown()
