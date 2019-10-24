@@ -240,7 +240,10 @@ class TestGrpc:
             with pytest.raises(CoreError):
                 assert session.get_node(node.id)
 
-    def test_node_command(self, grpc_server):
+    def test_node_command(self, request, grpc_server):
+        if request.config.getoption("mock"):
+            pytest.skip("mocking calls")
+
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
@@ -834,7 +837,10 @@ class TestGrpc:
             # then
             queue.get(timeout=5)
 
-    def test_throughputs(self, grpc_server):
+    def test_throughputs(self, request, grpc_server):
+        if request.config.getoption("mock"):
+            pytest.skip("mocking calls")
+
         # given
         client = CoreGrpcClient()
         grpc_server.coreemu.create_session()

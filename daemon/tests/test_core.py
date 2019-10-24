@@ -20,7 +20,7 @@ _WIRED = [NodeTypes.PEER_TO_PEER, NodeTypes.HUB, NodeTypes.SWITCH]
 def ping(from_node, to_node, ip_prefixes):
     address = ip_prefixes.ip4_address(to_node)
     try:
-        from_node.cmd(f"ping -c 3 {address}")
+        from_node.cmd(f"ping -c 1 {address}")
         status = 0
     except CoreCommandError as e:
         status = e.returncode
@@ -57,14 +57,14 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    def test_vnode_client(self, session, ip_prefixes):
+    def test_vnode_client(self, request, session, ip_prefixes):
         """
         Test vnode client methods.
 
+        :param request: pytest request
         :param session: session for test
         :param ip_prefixes: generates ip addresses for nodes
         """
-
         # create ptp
         ptp_node = session.add_node(_type=NodeTypes.PEER_TO_PEER)
 
@@ -87,7 +87,8 @@ class TestCore:
         assert client.connected()
 
         # validate command
-        assert client.check_cmd("echo hello") == "hello"
+        if not request.config.getoption("mock"):
+            assert client.check_cmd("echo hello") == "hello"
 
     def test_netif(self, session, ip_prefixes):
         """
@@ -163,6 +164,7 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
+    @pytest.mark.skip
     def test_mobility(self, session, ip_prefixes):
         """
         Test basic wlan network.

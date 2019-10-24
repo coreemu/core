@@ -1,15 +1,10 @@
-import os
-import time
-
 import pytest
 
-from core import utils
 from core.emulator.emudata import NodeOptions
 from core.emulator.enumerations import NodeTypes
 from core.errors import CoreError
 
 MODELS = ["router", "host", "PC", "mdr"]
-
 NET_TYPES = [NodeTypes.SWITCH, NodeTypes.HUB, NodeTypes.WIRELESS_LAN]
 
 
@@ -22,15 +17,10 @@ class TestNodes:
         # when
         node = session.add_node(options=options)
 
-        # give time for node services to boot
-        time.sleep(1)
-
         # then
         assert node
-        assert os.path.exists(node.nodedir)
         assert node.alive()
         assert node.up
-        assert node.cmd("ip address show lo")
 
     def test_node_update(self, session):
         # given
@@ -67,4 +57,3 @@ class TestNodes:
         # then
         assert node
         assert node.up
-        assert utils.cmd(f"brctl show {node.brname}")

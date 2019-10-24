@@ -2,10 +2,10 @@
 Unit test fixture module.
 """
 
-import os
 import threading
 import time
 
+import mock
 import pytest
 from mock.mock import MagicMock
 
@@ -18,7 +18,7 @@ from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import CORE_API_PORT, ConfigTlvs, EventTlvs, EventTypes
 from core.nodes import ipaddress
-from core.services.coreservices import ServiceManager
+from core.nodes.base import CoreNode
 
 EMANE_SERVICES = "zebra|OSPFv3MDR|IPForward"
 
@@ -86,7 +86,7 @@ class CoreServerTest:
                 (ConfigTlvs.OBJECT, "location"),
                 (ConfigTlvs.TYPE, 0),
                 (ConfigTlvs.DATA_TYPES, (9, 9, 9, 9, 9, 9)),
-                (ConfigTlvs.VALUES, "0|0| 47.5766974863|-122.125920191|0.0|150.0"),
+                (ConfigTlvs.VALUES, "0|0|47.5766974863|-122.125920191|0.0|150.0"),
             ],
         )
         self.request_handler.handle_message(message)
@@ -109,82 +109,108 @@ class CoreServerTest:
         self.server.server_close()
 
 
-@pytest.fixture
-def grpc_server():
-    coremu = CoreEmu()
-    grpc_server = CoreGrpcServer(coremu)
+class PatchManager:
+    def __init__(self):
+        self.patches = []
+
+    def patch_obj(self, _cls, attribute):
+        p = mock.patch.object(_cls, attribute)
+        p.start()
+        self.patches.append(p)
+
+    def patch(self, func):
+        p = mock.patch(func)
+        p.start()
+        self.patches.append(p)
+
+    def shutdown(self):
+        for p in self.patches:
+            p.stop()
+
+
+@pytest.fixture(scope="module")
+def module_grpc(global_coreemu):
+    grpc_server = CoreGrpcServer(global_coreemu)
     thread = threading.Thread(target=grpc_server.listen, args=("localhost:50051",))
     thread.daemon = True
     thread.start()
     time.sleep(0.1)
     yield grpc_server
-    coremu.shutdown()
     grpc_server.server.stop(None)
 
 
 @pytest.fixture
-def session():
-    # use coreemu and create a session
+def grpc_server(module_grpc):
+    yield module_grpc
+    module_grpc.coreemu.shutdown()
+
+
+@pytest.fixture(scope="session")
+def global_coreemu():
     coreemu = CoreEmu(config={"emane_prefix": "/usr"})
-    session_fixture = coreemu.create_session()
-    session_fixture.set_state(EventTypes.CONFIGURATION_STATE)
-    assert os.path.exists(session_fixture.session_dir)
-
-    # return created session
-    yield session_fixture
-
-    # clear session configurations
-    session_fixture.location.reset()
-    session_fixture.services.reset()
-    session_fixture.mobility.config_reset()
-    session_fixture.emane.config_reset()
-
-    # shutdown coreemu
+    yield coreemu
     coreemu.shutdown()
 
-    # clear services, since they will be reloaded
-    ServiceManager.services.clear()
+
+@pytest.fixture(scope="session")
+def global_session(request, global_coreemu):
+    patch_manager = PatchManager()
+    if request.config.getoption("mock"):
+        patch_manager.patch("os.mkdir")
+        patch_manager.patch("core.utils.cmd")
+        patch_manager.patch("core.nodes.netclient.get_net_client")
+        patch_manager.patch_obj(CoreNode, "nodefile")
+    session = global_coreemu.create_session(_id=1000)
+    yield session
+    patch_manager.shutdown()
+    session.shutdown()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
+def session(global_session):
+    global_session.write_state = MagicMock()
+    global_session.set_state(EventTypes.CONFIGURATION_STATE)
+    yield global_session
+    global_session.clear()
+    global_session.location.reset()
+    global_session.services.reset()
+    global_session.mobility.config_reset()
+    global_session.emane.config_reset()
+
+
+@pytest.fixture(scope="session")
 def ip_prefixes():
     return IpPrefixes(ip4_prefix="10.83.0.0/16")
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture(scope="session")
 def interface_helper():
     return InterfaceHelper(ip4_prefix="10.83.0.0/16")
 
 
-@pytest.fixture()
-def cored():
-    # create and return server
-    server = CoreServerTest()
-    yield server
-
-    # cleanup
-    server.shutdown()
-
-    # cleanup services
-    ServiceManager.services.clear()
-
-
-@pytest.fixture()
-def coreserver():
-    # create and return server
+@pytest.fixture(scope="module")
+def module_cored():
     server = CoreServerTest()
     server.setup_handler()
     yield server
-
-    # cleanup
     server.shutdown()
 
-    # cleanup services
-    ServiceManager.services.clear()
+
+@pytest.fixture
+def cored(module_cored):
+    session = module_cored.session
+    module_cored.server.coreemu.sessions[session.id] = session
+    yield module_cored
+    session.clear()
+    session.location.reset()
+    session.services.reset()
+    session.mobility.config_reset()
+    session.emane.config_reset()
 
 
 def pytest_addoption(parser):
     parser.addoption("--distributed", help="distributed server address")
+    parser.addoption("--mock", action="store_true", help="run without mocking")
 
 
 def pytest_generate_tests(metafunc):

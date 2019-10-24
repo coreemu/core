@@ -6,6 +6,7 @@ import time
 
 import mock
 import pytest
+from mock import MagicMock
 
 from core.api.tlv import coreapi
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
@@ -45,7 +46,7 @@ class TestGui:
             (NodeTypes.RJ45, None),
         ],
     )
-    def test_node_add(self, coreserver, node_type, model):
+    def test_node_add(self, cored, node_type, model):
         node_id = 1
         message = coreapi.CoreNodeMessage.create(
             MessageFlags.ADD.value,
@@ -59,13 +60,13 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.get_node(node_id) is not None
+        assert cored.session.get_node(node_id) is not None
 
-    def test_node_update(self, coreserver):
+    def test_node_update(self, cored):
         node_id = 1
-        coreserver.session.add_node(_id=node_id)
+        cored.session.add_node(_id=node_id)
         x = 50
         y = 100
         message = coreapi.CoreNodeMessage.create(
@@ -77,30 +78,30 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        node = coreserver.session.get_node(node_id)
+        node = cored.session.get_node(node_id)
         assert node is not None
         assert node.position.x == x
         assert node.position.y == y
 
-    def test_node_delete(self, coreserver):
+    def test_node_delete(self, cored):
         node_id = 1
-        coreserver.session.add_node(_id=node_id)
+        cored.session.add_node(_id=node_id)
         message = coreapi.CoreNodeMessage.create(
             MessageFlags.DELETE.value, [(NodeTlvs.NUMBER, node_id)]
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
         with pytest.raises(CoreError):
-            coreserver.session.get_node(node_id)
+            cored.session.get_node(node_id)
 
-    def test_link_add_node_to_net(self, coreserver):
+    def test_link_add_node_to_net(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         switch = 2
-        coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        cored.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         message = coreapi.CoreLinkMessage.create(
@@ -114,17 +115,17 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        switch_node = coreserver.session.get_node(switch)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 1
 
-    def test_link_add_net_to_node(self, coreserver):
+    def test_link_add_net_to_node(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         switch = 2
-        coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        cored.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         message = coreapi.CoreLinkMessage.create(
@@ -138,17 +139,17 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        switch_node = coreserver.session.get_node(switch)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 1
 
-    def test_link_add_node_to_node(self, coreserver):
+    def test_link_add_node_to_node(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         node_two = 2
-        coreserver.session.add_node(_id=node_two)
+        cored.session.add_node(_id=node_two)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         interface_two = ip_prefix.addr(node_two)
@@ -166,19 +167,19 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
         all_links = []
-        for node_id in coreserver.session.nodes:
-            node = coreserver.session.nodes[node_id]
+        for node_id in cored.session.nodes:
+            node = cored.session.nodes[node_id]
             all_links += node.all_link_data(0)
         assert len(all_links) == 1
 
-    def test_link_update(self, coreserver):
+    def test_link_update(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         switch = 2
-        coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        cored.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         message = coreapi.CoreLinkMessage.create(
@@ -191,8 +192,8 @@ class TestGui:
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
-        coreserver.request_handler.handle_message(message)
-        switch_node = coreserver.session.get_node(switch)
+        cored.request_handler.handle_message(message)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 1
         link = all_links[0]
@@ -208,19 +209,19 @@ class TestGui:
                 (LinkTlvs.BANDWIDTH, bandwidth),
             ],
         )
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        switch_node = coreserver.session.get_node(switch)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 1
         link = all_links[0]
         assert link.bandwidth == bandwidth
 
-    def test_link_delete_node_to_node(self, coreserver):
+    def test_link_delete_node_to_node(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         node_two = 2
-        coreserver.session.add_node(_id=node_two)
+        cored.session.add_node(_id=node_two)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         interface_two = ip_prefix.addr(node_two)
@@ -236,10 +237,10 @@ class TestGui:
                 (LinkTlvs.INTERFACE2_IP4_MASK, 24),
             ],
         )
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
         all_links = []
-        for node_id in coreserver.session.nodes:
-            node = coreserver.session.nodes[node_id]
+        for node_id in cored.session.nodes:
+            node = cored.session.nodes[node_id]
             all_links += node.all_link_data(0)
         assert len(all_links) == 1
 
@@ -252,19 +253,19 @@ class TestGui:
                 (LinkTlvs.INTERFACE2_NUMBER, 0),
             ],
         )
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
         all_links = []
-        for node_id in coreserver.session.nodes:
-            node = coreserver.session.nodes[node_id]
+        for node_id in cored.session.nodes:
+            node = cored.session.nodes[node_id]
             all_links += node.all_link_data(0)
         assert len(all_links) == 0
 
-    def test_link_delete_node_to_net(self, coreserver):
+    def test_link_delete_node_to_net(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         switch = 2
-        coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        cored.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         message = coreapi.CoreLinkMessage.create(
@@ -277,8 +278,8 @@ class TestGui:
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
-        coreserver.request_handler.handle_message(message)
-        switch_node = coreserver.session.get_node(switch)
+        cored.request_handler.handle_message(message)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 1
 
@@ -290,17 +291,17 @@ class TestGui:
                 (LinkTlvs.INTERFACE1_NUMBER, 0),
             ],
         )
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        switch_node = coreserver.session.get_node(switch)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 0
 
-    def test_link_delete_net_to_node(self, coreserver):
+    def test_link_delete_net_to_node(self, cored):
         node_one = 1
-        coreserver.session.add_node(_id=node_one)
+        cored.session.add_node(_id=node_one)
         switch = 2
-        coreserver.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
+        cored.session.add_node(_id=switch, _type=NodeTypes.SWITCH)
         ip_prefix = Ipv4Prefix("10.0.0.0/24")
         interface_one = ip_prefix.addr(node_one)
         message = coreapi.CoreLinkMessage.create(
@@ -313,8 +314,8 @@ class TestGui:
                 (LinkTlvs.INTERFACE1_IP4_MASK, 24),
             ],
         )
-        coreserver.request_handler.handle_message(message)
-        switch_node = coreserver.session.get_node(switch)
+        cored.request_handler.handle_message(message)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 1
 
@@ -326,58 +327,58 @@ class TestGui:
                 (LinkTlvs.INTERFACE2_NUMBER, 0),
             ],
         )
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        switch_node = coreserver.session.get_node(switch)
+        switch_node = cored.session.get_node(switch)
         all_links = switch_node.all_link_data(0)
         assert len(all_links) == 0
 
-    def test_session_update(self, coreserver):
-        session_id = coreserver.session.id
+    def test_session_update(self, cored):
+        session_id = cored.session.id
         name = "test"
         message = coreapi.CoreSessionMessage.create(
             0, [(SessionTlvs.NUMBER, str(session_id)), (SessionTlvs.NAME, name)]
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.name == name
+        assert cored.session.name == name
 
-    def test_session_query(self, coreserver):
-        coreserver.request_handler.dispatch_replies = mock.MagicMock()
+    def test_session_query(self, cored):
+        cored.request_handler.dispatch_replies = mock.MagicMock()
         message = coreapi.CoreSessionMessage.create(MessageFlags.STRING.value, [])
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        args, _ = cored.request_handler.dispatch_replies.call_args
         replies = args[0]
         assert len(replies) == 1
 
-    def test_session_join(self, coreserver):
-        coreserver.request_handler.dispatch_replies = mock.MagicMock()
-        session_id = coreserver.session.id
+    def test_session_join(self, cored):
+        cored.request_handler.dispatch_replies = mock.MagicMock()
+        session_id = cored.session.id
         message = coreapi.CoreSessionMessage.create(
             MessageFlags.ADD.value, [(SessionTlvs.NUMBER, str(session_id))]
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.request_handler.session.id == session_id
+        assert cored.request_handler.session.id == session_id
 
-    def test_session_delete(self, coreserver):
-        assert len(coreserver.server.coreemu.sessions) == 1
-        session_id = coreserver.session.id
+    def test_session_delete(self, cored):
+        assert len(cored.server.coreemu.sessions) == 1
+        session_id = cored.session.id
         message = coreapi.CoreSessionMessage.create(
             MessageFlags.DELETE.value, [(SessionTlvs.NUMBER, str(session_id))]
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert len(coreserver.server.coreemu.sessions) == 0
+        assert len(cored.server.coreemu.sessions) == 0
 
-    def test_file_hook_add(self, coreserver):
+    def test_file_hook_add(self, cored):
         state = EventTypes.DATACOLLECT_STATE.value
-        assert coreserver.session._hooks.get(state) is None
+        assert cored.session._hooks.get(state) is None
         file_name = "test.sh"
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
@@ -389,16 +390,16 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        hooks = coreserver.session._hooks.get(state)
+        hooks = cored.session._hooks.get(state)
         assert len(hooks) == 1
         name, data = hooks[0]
         assert file_name == name
         assert file_data == data
 
-    def test_file_service_file_set(self, coreserver):
-        node = coreserver.session.add_node()
+    def test_file_service_file_set(self, cored):
+        node = cored.session.add_node()
         service = "DefaultRoute"
         file_name = "defaultroute.sh"
         file_data = "echo hello"
@@ -412,16 +413,14 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        service_file = coreserver.session.services.get_service_file(
-            node, service, file_name
-        )
+        service_file = cored.session.services.get_service_file(node, service, file_name)
         assert file_data == service_file.data
 
-    def test_file_node_file_copy(self, coreserver):
+    def test_file_node_file_copy(self, request, cored):
         file_name = "/var/log/test/node.log"
-        node = coreserver.session.add_node()
+        node = cored.session.add_node()
         node.makenodedir()
         file_data = "echo hello"
         message = coreapi.CoreFileMessage.create(
@@ -433,17 +432,17 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        directory, basename = os.path.split(file_name)
-        created_directory = directory[1:].replace("/", ".")
-        create_path = os.path.join(node.nodedir, created_directory, basename)
-        assert os.path.exists(create_path)
+        if not request.config.getoption("mock"):
+            directory, basename = os.path.split(file_name)
+            created_directory = directory[1:].replace("/", ".")
+            create_path = os.path.join(node.nodedir, created_directory, basename)
+            assert os.path.exists(create_path)
 
-    def test_exec_node_tty(self, coreserver):
-        coreserver.request_handler.dispatch_replies = mock.MagicMock()
-        node = coreserver.session.add_node()
-        node.startup()
+    def test_exec_node_tty(self, cored):
+        cored.request_handler.dispatch_replies = mock.MagicMock()
+        node = cored.session.add_node()
         message = coreapi.CoreExecMessage.create(
             MessageFlags.TTY.value,
             [
@@ -453,49 +452,51 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        args, _ = cored.request_handler.dispatch_replies.call_args
         replies = args[0]
         assert len(replies) == 1
 
-    def test_exec_local_command(self, coreserver):
-        coreserver.request_handler.dispatch_replies = mock.MagicMock()
-        node = coreserver.session.add_node()
-        node.startup()
+    def test_exec_local_command(self, request, cored):
+        if request.config.getoption("mock"):
+            pytest.skip("mocking calls")
+
+        cored.request_handler.dispatch_replies = mock.MagicMock()
+        node = cored.session.add_node()
+        cmd = "echo hello"
         message = coreapi.CoreExecMessage.create(
             MessageFlags.TEXT.value | MessageFlags.LOCAL.value,
             [
                 (ExecuteTlvs.NODE, node.id),
                 (ExecuteTlvs.NUMBER, 1),
-                (ExecuteTlvs.COMMAND, "echo hello"),
+                (ExecuteTlvs.COMMAND, cmd),
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        args, _ = coreserver.request_handler.dispatch_replies.call_args
+        args, _ = cored.request_handler.dispatch_replies.call_args
         replies = args[0]
         assert len(replies) == 1
 
-    def test_exec_node_command(self, coreserver):
-        coreserver.request_handler.dispatch_replies = mock.MagicMock()
-        node = coreserver.session.add_node()
-        node.startup()
+    def test_exec_node_command(self, cored):
+        cored.request_handler.dispatch_replies = mock.MagicMock()
+        node = cored.session.add_node()
+        cmd = "echo hello"
         message = coreapi.CoreExecMessage.create(
             MessageFlags.TEXT.value,
             [
                 (ExecuteTlvs.NODE, node.id),
                 (ExecuteTlvs.NUMBER, 1),
-                (ExecuteTlvs.COMMAND, "echo hello"),
+                (ExecuteTlvs.COMMAND, cmd),
             ],
         )
+        node.cmd = MagicMock(return_value="hello")
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        args, _ = coreserver.request_handler.dispatch_replies.call_args
-        replies = args[0]
-        assert len(replies) == 1
+        node.cmd.assert_called_with(cmd)
 
     @pytest.mark.parametrize(
         "state",
@@ -507,16 +508,16 @@ class TestGui:
             EventTypes.DEFINITION_STATE,
         ],
     )
-    def test_event_state(self, coreserver, state):
+    def test_event_state(self, cored, state):
         message = coreapi.CoreEventMessage.create(0, [(EventTlvs.TYPE, state.value)])
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.state == state.value
+        assert cored.session.state == state.value
 
-    def test_event_schedule(self, coreserver):
-        coreserver.session.add_event = mock.MagicMock()
-        node = coreserver.session.add_node()
+    def test_event_schedule(self, cored):
+        cored.session.add_event = mock.MagicMock()
+        node = cored.session.add_node()
         message = coreapi.CoreEventMessage.create(
             MessageFlags.ADD.value,
             [
@@ -528,37 +529,37 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.session.add_event.assert_called_once()
+        cored.session.add_event.assert_called_once()
 
-    def test_event_save_xml(self, coreserver, tmpdir):
+    def test_event_save_xml(self, cored, tmpdir):
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        coreserver.session.add_node()
+        cored.session.add_node()
         message = coreapi.CoreEventMessage.create(
             0,
             [(EventTlvs.TYPE, EventTypes.FILE_SAVE.value), (EventTlvs.NAME, file_path)],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
         assert os.path.exists(file_path)
 
-    def test_event_open_xml(self, coreserver, tmpdir):
+    def test_event_open_xml(self, cored, tmpdir):
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        node = coreserver.session.add_node()
-        coreserver.session.save_xml(file_path)
-        coreserver.session.delete_node(node.id)
+        node = cored.session.add_node()
+        cored.session.save_xml(file_path)
+        cored.session.delete_node(node.id)
         message = coreapi.CoreEventMessage.create(
             0,
             [(EventTlvs.TYPE, EventTypes.FILE_OPEN.value), (EventTlvs.NAME, file_path)],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.get_node(node.id)
+        assert cored.session.get_node(node.id)
 
     @pytest.mark.parametrize(
         "state",
@@ -570,9 +571,9 @@ class TestGui:
             EventTypes.RECONFIGURE,
         ],
     )
-    def test_event_service(self, coreserver, state):
-        coreserver.session.broadcast_event = mock.MagicMock()
-        node = coreserver.session.add_node()
+    def test_event_service(self, cored, state):
+        cored.session.broadcast_event = mock.MagicMock()
+        node = cored.session.add_node()
         node.startup()
         message = coreapi.CoreEventMessage.create(
             0,
@@ -583,9 +584,9 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.session.broadcast_event.assert_called_once()
+        cored.session.broadcast_event.assert_called_once()
 
     @pytest.mark.parametrize(
         "state",
@@ -597,37 +598,37 @@ class TestGui:
             EventTypes.RECONFIGURE,
         ],
     )
-    def test_event_mobility(self, coreserver, state):
+    def test_event_mobility(self, cored, state):
         message = coreapi.CoreEventMessage.create(
             0, [(EventTlvs.TYPE, state.value), (EventTlvs.NAME, "mobility:ns2script")]
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-    def test_register_gui(self, coreserver):
-        coreserver.request_handler.master = False
+    def test_register_gui(self, cored):
+        cored.request_handler.master = False
         message = coreapi.CoreRegMessage.create(0, [(RegisterTlvs.GUI, "gui")])
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.request_handler.master is True
+        assert cored.request_handler.master is True
 
-    def test_register_xml(self, coreserver, tmpdir):
+    def test_register_xml(self, cored, tmpdir):
         xml_file = tmpdir.join("session.xml")
         file_path = xml_file.strpath
-        node = coreserver.session.add_node()
-        coreserver.session.save_xml(file_path)
-        coreserver.session.delete_node(node.id)
+        node = cored.session.add_node()
+        cored.session.save_xml(file_path)
+        cored.session.delete_node(node.id)
         message = coreapi.CoreRegMessage.create(
             0, [(RegisterTlvs.EXECUTE_SERVER, file_path)]
         )
-        coreserver.session.instantiate()
+        cored.session.instantiate()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.server.coreemu.sessions[2].get_node(node.id)
+        assert cored.server.coreemu.sessions[2].get_node(node.id)
 
-    def test_register_python(self, coreserver, tmpdir):
+    def test_register_python(self, cored, tmpdir):
         xml_file = tmpdir.join("test.py")
         file_path = xml_file.strpath
         with open(file_path, "w") as f:
@@ -637,14 +638,14 @@ class TestGui:
         message = coreapi.CoreRegMessage.create(
             0, [(RegisterTlvs.EXECUTE_SERVER, file_path)]
         )
-        coreserver.session.instantiate()
+        cored.session.instantiate()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert len(coreserver.session.nodes) == 1
+        assert len(cored.session.nodes) == 1
 
-    def test_config_all(self, coreserver):
-        node = coreserver.session.add_node()
+    def test_config_all(self, cored):
+        node = cored.session.add_node()
         message = coreapi.CoreConfMessage.create(
             MessageFlags.ADD.value,
             [
@@ -653,13 +654,13 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
             ],
         )
-        coreserver.session.location.reset = mock.MagicMock()
+        cored.session.location.refxyz = (10, 10, 10)
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.session.location.reset.assert_called_once()
+        assert cored.session.location.refxyz == (0, 0, 0)
 
-    def test_config_options_request(self, coreserver):
+    def test_config_options_request(self, cored):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -667,13 +668,13 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_options_update(self, coreserver):
+    def test_config_options_update(self, cored):
         test_key = "test"
         test_value = "test"
         values = {test_key: test_value}
@@ -686,11 +687,11 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.options.get_config(test_key) == test_value
+        assert cored.session.options.get_config(test_key) == test_value
 
-    def test_config_location_reset(self, coreserver):
+    def test_config_location_reset(self, cored):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -698,13 +699,13 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
             ],
         )
-        coreserver.session.location.refxyz = (10, 10, 10)
+        cored.session.location.refxyz = (10, 10, 10)
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.location.refxyz == (0, 0, 0)
+        assert cored.session.location.refxyz == (0, 0, 0)
 
-    def test_config_location_update(self, coreserver):
+    def test_config_location_update(self, cored):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -714,13 +715,13 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.location.refxyz == (10, 10, 0.0)
-        assert coreserver.session.location.refgeo == (70, 50, 0)
-        assert coreserver.session.location.refscale == 0.5
+        assert cored.session.location.refxyz == (10, 10, 0.0)
+        assert cored.session.location.refgeo == (70, 50, 0)
+        assert cored.session.location.refscale == 0.5
 
-    def test_config_metadata_request(self, coreserver):
+    def test_config_metadata_request(self, cored):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -728,13 +729,13 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_metadata_update(self, coreserver):
+    def test_config_metadata_update(self, cored):
         test_key = "test"
         test_value = "test"
         values = {test_key: test_value}
@@ -747,11 +748,11 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.metadata.get_config(test_key) == test_value
+        assert cored.session.metadata.get_config(test_key) == test_value
 
-    def test_config_broker_request(self, coreserver):
+    def test_config_broker_request(self, cored):
         server = "test"
         host = "10.0.0.1"
         port = 50000
@@ -763,13 +764,13 @@ class TestGui:
                 (ConfigTlvs.VALUES, f"{server}:{host}:{port}"),
             ],
         )
-        coreserver.session.distributed.add_server = mock.MagicMock()
+        cored.session.distributed.add_server = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.session.distributed.add_server.assert_called_once_with(server, host)
+        cored.session.distributed.add_server.assert_called_once_with(server, host)
 
-    def test_config_services_request_all(self, coreserver):
+    def test_config_services_request_all(self, cored):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -777,14 +778,14 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_services_request_specific(self, coreserver):
-        node = coreserver.session.add_node()
+    def test_config_services_request_specific(self, cored):
+        node = cored.session.add_node()
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -794,14 +795,14 @@ class TestGui:
                 (ConfigTlvs.OPAQUE, "service:DefaultRoute"),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_services_request_specific_file(self, coreserver):
-        node = coreserver.session.add_node()
+    def test_config_services_request_specific_file(self, cored):
+        node = cored.session.add_node()
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -811,16 +812,16 @@ class TestGui:
                 (ConfigTlvs.OPAQUE, "service:DefaultRoute:defaultroute.sh"),
             ],
         )
-        coreserver.session.broadcast_file = mock.MagicMock()
+        cored.session.broadcast_file = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.session.broadcast_file.assert_called_once()
+        cored.session.broadcast_file.assert_called_once()
 
-    def test_config_services_reset(self, coreserver):
-        node = coreserver.session.add_node()
+    def test_config_services_reset(self, cored):
+        node = cored.session.add_node()
         service = "DefaultRoute"
-        coreserver.session.services.set_service(node.id, service)
+        cored.session.services.set_service(node.id, service)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -828,14 +829,14 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
             ],
         )
-        assert coreserver.session.services.get_service(node.id, service) is not None
+        assert cored.session.services.get_service(node.id, service) is not None
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.services.get_service(node.id, service) is None
+        assert cored.session.services.get_service(node.id, service) is None
 
-    def test_config_services_set(self, coreserver):
-        node = coreserver.session.add_node()
+    def test_config_services_set(self, cored):
+        node = cored.session.add_node()
         service = "DefaultRoute"
         values = {"meta": "metadata"}
         message = coreapi.CoreConfMessage.create(
@@ -848,14 +849,14 @@ class TestGui:
                 (ConfigTlvs.VALUES, dict_to_str(values)),
             ],
         )
-        assert coreserver.session.services.get_service(node.id, service) is None
+        assert cored.session.services.get_service(node.id, service) is None
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert coreserver.session.services.get_service(node.id, service) is not None
+        assert cored.session.services.get_service(node.id, service) is not None
 
-    def test_config_mobility_reset(self, coreserver):
-        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+    def test_config_mobility_reset(self, cored):
+        wlan = cored.session.add_node(_type=NodeTypes.WIRELESS_LAN)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -863,15 +864,15 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
             ],
         )
-        coreserver.session.mobility.set_model_config(wlan.id, BasicRangeModel.name, {})
-        assert len(coreserver.session.mobility.node_configurations) == 1
+        cored.session.mobility.set_model_config(wlan.id, BasicRangeModel.name, {})
+        assert len(cored.session.mobility.node_configurations) == 1
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        assert len(coreserver.session.mobility.node_configurations) == 0
+        assert len(cored.session.mobility.node_configurations) == 0
 
-    def test_config_mobility_model_request(self, coreserver):
-        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+    def test_config_mobility_model_request(self, cored):
+        wlan = cored.session.add_node(_type=NodeTypes.WIRELESS_LAN)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -880,14 +881,14 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_mobility_model_update(self, coreserver):
-        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+    def test_config_mobility_model_update(self, cored):
+        wlan = cored.session.add_node(_type=NodeTypes.WIRELESS_LAN)
         config_key = "range"
         config_value = "1000"
         values = {config_key: config_value}
@@ -901,15 +902,13 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        config = coreserver.session.mobility.get_model_config(
-            wlan.id, BasicRangeModel.name
-        )
+        config = cored.session.mobility.get_model_config(wlan.id, BasicRangeModel.name)
         assert config[config_key] == config_value
 
-    def test_config_emane_model_request(self, coreserver):
-        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+    def test_config_emane_model_request(self, cored):
+        wlan = cored.session.add_node(_type=NodeTypes.WIRELESS_LAN)
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -918,14 +917,14 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_emane_model_update(self, coreserver):
-        wlan = coreserver.session.add_node(_type=NodeTypes.WIRELESS_LAN)
+    def test_config_emane_model_update(self, cored):
+        wlan = cored.session.add_node(_type=NodeTypes.WIRELESS_LAN)
         config_key = "distance"
         config_value = "50051"
         values = {config_key: config_value}
@@ -939,14 +938,14 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        config = coreserver.session.emane.get_model_config(
+        config = cored.session.emane.get_model_config(
             wlan.id, EmaneIeee80211abgModel.name
         )
         assert config[config_key] == config_value
 
-    def test_config_emane_request(self, coreserver):
+    def test_config_emane_request(self, cored):
         message = coreapi.CoreConfMessage.create(
             0,
             [
@@ -954,13 +953,13 @@ class TestGui:
                 (ConfigTlvs.TYPE, ConfigFlags.REQUEST.value),
             ],
         )
-        coreserver.request_handler.handle_broadcast_config = mock.MagicMock()
+        cored.request_handler.handle_broadcast_config = mock.MagicMock()
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        coreserver.request_handler.handle_broadcast_config.assert_called_once()
+        cored.request_handler.handle_broadcast_config.assert_called_once()
 
-    def test_config_emane_update(self, coreserver):
+    def test_config_emane_update(self, cored):
         config_key = "eventservicedevice"
         config_value = "eth4"
         values = {config_key: config_value}
@@ -973,7 +972,7 @@ class TestGui:
             ],
         )
 
-        coreserver.request_handler.handle_message(message)
+        cored.request_handler.handle_message(message)
 
-        config = coreserver.session.emane.get_configs()
+        config = cored.session.emane.get_configs()
         assert config[config_key] == config_value

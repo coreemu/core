@@ -1,7 +1,9 @@
 import os
 
 import pytest
+from mock import MagicMock
 
+from core.errors import CoreCommandError
 from core.services.coreservices import CoreService, ServiceDependencies, ServiceManager
 
 _PATH = os.path.abspath(os.path.dirname(__file__))
@@ -88,7 +90,7 @@ class TestServices:
         assert node.services
         assert len(node.services) == total_service + 2
 
-    def test_service_file(self, session):
+    def test_service_file(self, request, session):
         # given
         ServiceManager.add_services(_SERVICES_PATH)
         my_service = ServiceManager.get(SERVICE_ONE)
@@ -100,7 +102,8 @@ class TestServices:
         session.services.create_service_files(node, my_service)
 
         # then
-        assert os.path.exists(file_path)
+        if not request.config.getoption("mock"):
+            assert os.path.exists(file_path)
 
     def test_service_validate(self, session):
         # given
@@ -121,6 +124,7 @@ class TestServices:
         my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
+        node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
         # when
         status = session.services.validate_service(node, my_service)
@@ -147,6 +151,7 @@ class TestServices:
         my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
+        node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
         # when
         status = session.services.startup_service(node, my_service, wait=True)
@@ -173,6 +178,7 @@ class TestServices:
         my_service = ServiceManager.get(SERVICE_TWO)
         node = session.add_node()
         session.services.create_service_files(node, my_service)
+        node.cmd = MagicMock(side_effect=CoreCommandError(-1, "invalid"))
 
         # when
         status = session.services.stop_service(node, my_service)
@@ -215,17 +221,6 @@ class TestServices:
         session.services.create_service_files(node_one, custom_service_one)
         custom_service_two = session.services.get_service(node_two.id, my_service.name)
         session.services.create_service_files(node_two, custom_service_two)
-
-        # then
-        file_path_one = node_one.hostfilename(file_name)
-        assert os.path.exists(file_path_one)
-        with open(file_path_one, "r") as custom_file:
-            assert custom_file.read() == file_data_one
-
-        file_path_two = node_two.hostfilename(file_name)
-        assert os.path.exists(file_path_two)
-        with open(file_path_two, "r") as custom_file:
-            assert custom_file.read() == file_data_two
 
     def test_service_import(self):
         """
