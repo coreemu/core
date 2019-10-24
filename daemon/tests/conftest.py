@@ -17,6 +17,7 @@ from core.api.tlv.coreserver import CoreServer
 from core.emulator.coreemu import CoreEmu
 from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import CORE_API_PORT, ConfigTlvs, EventTlvs, EventTypes
+from core.emulator.session import Session
 from core.nodes import ipaddress
 from core.nodes.base import CoreNode
 
@@ -128,54 +129,32 @@ class PatchManager:
             p.stop()
 
 
-@pytest.fixture(scope="module")
-def module_grpc(global_coreemu):
-    grpc_server = CoreGrpcServer(global_coreemu)
-    thread = threading.Thread(target=grpc_server.listen, args=("localhost:50051",))
-    thread.daemon = True
-    thread.start()
-    time.sleep(0.1)
-    yield grpc_server
-    grpc_server.server.stop(None)
-
-
-@pytest.fixture
-def grpc_server(module_grpc):
-    yield module_grpc
-    module_grpc.coreemu.shutdown()
-
-
 @pytest.fixture(scope="session")
-def global_coreemu():
-    coreemu = CoreEmu(config={"emane_prefix": "/usr"})
-    yield coreemu
-    coreemu.shutdown()
-
-
-@pytest.fixture(scope="session")
-def global_session(request, global_coreemu):
+def patcher(request):
     patch_manager = PatchManager()
     if request.config.getoption("mock"):
         patch_manager.patch("os.mkdir")
         patch_manager.patch("core.utils.cmd")
         patch_manager.patch("core.nodes.netclient.get_net_client")
         patch_manager.patch_obj(CoreNode, "nodefile")
-    session = global_coreemu.create_session(_id=1000)
-    yield session
+        patch_manager.patch_obj(Session, "write_state")
+    yield patch_manager
     patch_manager.shutdown()
+
+
+@pytest.fixture(scope="session")
+def global_coreemu(patcher):
+    coreemu = CoreEmu(config={"emane_prefix": "/usr"})
+    yield coreemu
+    coreemu.shutdown()
+
+
+@pytest.fixture(scope="session")
+def global_session(request, patcher, global_coreemu):
+    mkdir = not request.config.getoption("mock")
+    session = Session(1000, {"emane_prefix": "/usr"}, mkdir)
+    yield session
     session.shutdown()
-
-
-@pytest.fixture
-def session(global_session):
-    global_session.write_state = MagicMock()
-    global_session.set_state(EventTypes.CONFIGURATION_STATE)
-    yield global_session
-    global_session.clear()
-    global_session.location.reset()
-    global_session.services.reset()
-    global_session.mobility.config_reset()
-    global_session.emane.config_reset()
 
 
 @pytest.fixture(scope="session")
@@ -189,11 +168,40 @@ def interface_helper():
 
 
 @pytest.fixture(scope="module")
-def module_cored():
-    server = CoreServerTest()
+def module_grpc(global_coreemu):
+    grpc_server = CoreGrpcServer(global_coreemu)
+    thread = threading.Thread(target=grpc_server.listen, args=("localhost:50051",))
+    thread.daemon = True
+    thread.start()
+    time.sleep(0.1)
+    yield grpc_server
+    grpc_server.server.stop(None)
+
+
+@pytest.fixture(scope="module")
+def module_cored(request, patcher):
+    mkdir = not request.config.getoption("mock")
+    server = CoreServerTest(mkdir)
     server.setup_handler()
     yield server
     server.shutdown()
+
+
+@pytest.fixture
+def grpc_server(module_grpc):
+    yield module_grpc
+    module_grpc.coreemu.shutdown()
+
+
+@pytest.fixture
+def session(global_session):
+    global_session.set_state(EventTypes.CONFIGURATION_STATE)
+    yield global_session
+    global_session.clear()
+    global_session.location.reset()
+    global_session.services.reset()
+    global_session.mobility.config_reset()
+    global_session.emane.config_reset()
 
 
 @pytest.fixture
