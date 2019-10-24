@@ -120,10 +120,6 @@ def session(global_session):
     global_session.set_state(EventTypes.CONFIGURATION_STATE)
     yield global_session
     global_session.clear()
-    global_session.location.reset()
-    global_session.services.reset()
-    global_session.mobility.config_reset()
-    global_session.emane.config_reset()
 
 
 @pytest.fixture
@@ -133,11 +129,6 @@ def coretlv(module_coretlv):
     coreemu.sessions[session.id] = session
     yield module_coretlv
     coreemu.shutdown()
-    session.clear()
-    session.location.reset()
-    session.services.reset()
-    session.mobility.config_reset()
-    session.emane.config_reset()
 
 
 def pytest_addoption(parser):

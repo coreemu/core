@@ -376,7 +376,6 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             self._emane_nets.clear()
 
-        # don't clear self._ifccounts here; NEM counts are needed for buildxml
         self.platformport = self.session.options.get_config_int(
             "emane_platform_port", 8100
         )

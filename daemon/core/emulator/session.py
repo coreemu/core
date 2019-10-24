@@ -876,10 +876,15 @@ class Session:
 
         :return: nothing
         """
+        self.emane.shutdown()
         self.delete_nodes()
         self.distributed.shutdown()
         self.del_hooks()
         self.emane.reset()
+        self.emane.config_reset()
+        self.location.reset()
+        self.services.reset()
+        self.mobility.config_reset()
 
     def start_events(self):
         """
@@ -919,13 +924,11 @@ class Session:
         self.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         self.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
 
-        # shutdown/cleanup feature helpers
-        self.emane.shutdown()
-        self.sdt.shutdown()
+        # clear out current core session
+        self.clear()
 
-        # remove and shutdown all nodes and tunnels
-        self.delete_nodes()
-        self.distributed.shutdown()
+        # shutdown sdt
+        self.sdt.shutdown()
 
         # remove this sessions working directory
         preserve = self.options.get_config("preservedir") == "1"

@@ -645,14 +645,9 @@ class TestGui:
         assert len(coretlv.session.nodes) == 1
 
     def test_config_all(self, coretlv):
-        node = coretlv.session.add_node()
         message = coreapi.CoreConfMessage.create(
             MessageFlags.ADD.value,
-            [
-                (ConfigTlvs.OBJECT, "all"),
-                (ConfigTlvs.NODE, node.id),
-                (ConfigTlvs.TYPE, ConfigFlags.RESET.value),
-            ],
+            [(ConfigTlvs.OBJECT, "all"), (ConfigTlvs.TYPE, ConfigFlags.RESET.value)],
         )
         coretlv.session.location.refxyz = (10, 10, 10)
 

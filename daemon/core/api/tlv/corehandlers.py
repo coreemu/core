@@ -1092,10 +1092,14 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if message_type == ConfigFlags.RESET:
             node_id = config_data.node
-            self.session.location.reset()
-            self.session.services.reset()
-            self.session.mobility.config_reset(node_id)
-            self.session.emane.config_reset(node_id)
+            if node_id is not None:
+                self.session.mobility.config_reset(node_id)
+                self.session.emane.config_reset(node_id)
+            else:
+                self.session.location.reset()
+                self.session.services.reset()
+                self.session.mobility.config_reset()
+                self.session.emane.config_reset()
         else:
             raise Exception(f"cant handle config all: {message_type}")
 
