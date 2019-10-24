@@ -30,7 +30,3 @@ jobs:
         run: |
           cd daemon
           pipenv run flake8
-      - name: tests
-        run: |
-          cd daemon
-          pipenv run pytest -v --mock
