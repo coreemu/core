@@ -164,7 +164,6 @@ class TestCore:
         status = ping(node_one, node_two, ip_prefixes)
         assert not status
 
-    @pytest.mark.skip
     def test_mobility(self, session, ip_prefixes):
         """
         Test basic wlan network.
