@@ -12,6 +12,7 @@ from mock.mock import MagicMock
 from core.api.grpc.client import InterfaceHelper
 from core.api.grpc.server import CoreGrpcServer
 from core.api.tlv.corehandlers import CoreHandler
+from core.emane.emanemanager import EmaneManager
 from core.emulator.coreemu import CoreEmu
 from core.emulator.distributed import DistributedServer
 from core.emulator.emudata import IpPrefixes
@@ -58,6 +59,7 @@ def patcher(request):
         patch_manager.patch_obj(CoreNode, "nodefile")
         patch_manager.patch_obj(Session, "write_state")
         patch_manager.patch_obj(Session, "write_nodes")
+        patch_manager.patch_obj(EmaneManager, "buildxml")
     yield patch_manager
     patch_manager.shutdown()
 
@@ -73,6 +75,7 @@ def global_coreemu(patcher):
 def global_session(request, patcher, global_coreemu):
     mkdir = not request.config.getoption("mock")
     session = Session(1000, {"emane_prefix": "/usr"}, mkdir)
+    session.master = True
     yield session
     session.shutdown()
 

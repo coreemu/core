@@ -93,7 +93,11 @@ class TestEmane:
         options = NodeOptions()
         options.set_position(80, 50)
         emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
-        session.emane.set_model(emane_network, EmaneIeee80211abgModel, {"test": "1"})
+        config_key = "txpower"
+        config_value = "10"
+        session.emane.set_model(
+            emane_network, EmaneIeee80211abgModel, {config_key: config_value}
+        )
 
         # create nodes
         options = NodeOptions(model="mdr")
@@ -138,11 +142,11 @@ class TestEmane:
 
         # retrieve configuration we set originally
         value = str(
-            session.emane.get_config("test", emane_id, EmaneIeee80211abgModel.name)
+            session.emane.get_config(config_key, emane_id, EmaneIeee80211abgModel.name)
         )
 
         # verify nodes and configuration were restored
         assert session.get_node(n1_id)
         assert session.get_node(n2_id)
         assert session.get_node(emane_id)
-        assert value == "1"
+        assert value == config_value
