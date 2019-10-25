@@ -1351,17 +1351,16 @@ class Session:
         """
         # delete node and check for session shutdown if a node was removed
         logging.info("deleting node(%s)", _id)
-        result = False
+        node = None
         with self._nodes_lock:
             if _id in self.nodes:
                 node = self.nodes.pop(_id)
-                node.shutdown()
-                result = True
 
-        if result:
+        if node:
+            node.shutdown()
             self.check_shutdown()
 
-        return result
+        return node is not None
 
     def delete_nodes(self):
         """
