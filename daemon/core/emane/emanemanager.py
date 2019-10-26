@@ -269,37 +269,34 @@ class EmaneManager(ModelManager):
 
         # control network bridge required for EMANE 0.9.2
         # - needs to exist when eventservice binds to it (initeventservice)
-        if self.session.master:
-            otadev = self.get_config("otamanagerdevice")
-            netidx = self.session.get_control_net_index(otadev)
-            logging.debug(
-                "emane ota manager device: index(%s) otadev(%s)", netidx, otadev
+        otadev = self.get_config("otamanagerdevice")
+        netidx = self.session.get_control_net_index(otadev)
+        logging.debug("emane ota manager device: index(%s) otadev(%s)", netidx, otadev)
+        if netidx < 0:
+            logging.error(
+                "EMANE cannot start, check core config. invalid OTA device provided: %s",
+                otadev,
             )
+            return EmaneManager.NOT_READY
+
+        self.session.add_remove_control_net(
+            net_index=netidx, remove=False, conf_required=False
+        )
+        eventdev = self.get_config("eventservicedevice")
+        logging.debug("emane event service device: eventdev(%s)", eventdev)
+        if eventdev != otadev:
+            netidx = self.session.get_control_net_index(eventdev)
+            logging.debug("emane event service device index: %s", netidx)
             if netidx < 0:
                 logging.error(
-                    "EMANE cannot start, check core config. invalid OTA device provided: %s",
-                    otadev,
+                    "EMANE cannot start, check core config. invalid event service device: %s",
+                    eventdev,
                 )
                 return EmaneManager.NOT_READY
 
             self.session.add_remove_control_net(
                 net_index=netidx, remove=False, conf_required=False
             )
-            eventdev = self.get_config("eventservicedevice")
-            logging.debug("emane event service device: eventdev(%s)", eventdev)
-            if eventdev != otadev:
-                netidx = self.session.get_control_net_index(eventdev)
-                logging.debug("emane event service device index: %s", netidx)
-                if netidx < 0:
-                    logging.error(
-                        "EMANE cannot start, check core config. invalid event service device: %s",
-                        eventdev,
-                    )
-                    return EmaneManager.NOT_READY
-
-                self.session.add_remove_control_net(
-                    net_index=netidx, remove=False, conf_required=False
-                )
 
         self.check_node_models()
         return EmaneManager.SUCCESS

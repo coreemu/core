@@ -75,7 +75,6 @@ def global_coreemu(patcher):
 def global_session(request, patcher, global_coreemu):
     mkdir = not request.config.getoption("mock")
     session = Session(1000, {"emane_prefix": "/usr"}, mkdir)
-    session.master = True
     yield session
     session.shutdown()
 

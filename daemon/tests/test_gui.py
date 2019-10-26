@@ -606,12 +606,8 @@ class TestGui:
         coretlv.handle_message(message)
 
     def test_register_gui(self, coretlv):
-        coretlv.master = False
         message = coreapi.CoreRegMessage.create(0, [(RegisterTlvs.GUI, "gui")])
-
         coretlv.handle_message(message)
-
-        assert coretlv.master is True
 
     def test_register_xml(self, coretlv, tmpdir):
         xml_file = tmpdir.join("coretlv.session.xml")

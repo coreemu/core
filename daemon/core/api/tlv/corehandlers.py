@@ -83,13 +83,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.handler_threads.append(thread)
             thread.start()
 
-        self.master = False
         self.session = None
         self.session_clients = {}
-
-        # core emulator
         self.coreemu = server.coreemu
-
         utils.close_onexec(request.fileno())
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
@@ -591,12 +587,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         port = self.request.getpeername()[1]
 
         # TODO: add shutdown handler for session
-        self.session = self.coreemu.create_session(port, master=False)
+        self.session = self.coreemu.create_session(port)
         logging.debug("created new session for client: %s", self.session.id)
-
-        if self.master:
-            logging.debug("session set to master")
-            self.session.master = True
         clients = self.session_clients.setdefault(self.session.id, [])
         clients.append(self)
 
@@ -942,7 +934,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 file_name = sys.argv[0]
 
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = self.coreemu.create_session(master=False)
+                    session = self.coreemu.create_session()
                     try:
                         session.open_xml(file_name)
                     except Exception:
@@ -1012,17 +1004,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.debug("ignoring Register message")
         else:
             # register capabilities with the GUI
-            self.master = True
-
-            # find the session containing this client and set the session to master
-            for _id in self.coreemu.sessions:
-                clients = self.session_clients.get(_id, [])
-                if self in clients:
-                    session = self.coreemu.sessions[_id]
-                    logging.debug("setting session to master: %s", session.id)
-                    session.master = True
-                    break
-
             replies.append(self.register())
             replies.append(self.session_message())
 
@@ -1441,11 +1422,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = ConfigShim.str_to_dict(values_str)
                 self.session.emane.set_configs(config)
 
-        # extra logic to start slave Emane object after nemid has been configured from the master
-        if message_type == ConfigFlags.UPDATE and self.session.master is False:
-            # instantiation was previously delayed by setup returning Emane.NOT_READY
-            self.session.instantiate()
-
         return replies
 
     def handle_config_emane_models(self, message_type, config_data):
@@ -1613,20 +1589,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             for _id in self.session.nodes:
                 self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
-            if self.session.master:
-                logging.warning(
-                    "Unexpected event message: RUNTIME state received at session master"
-                )
-            else:
-                # master event queue is started in session.checkruntime()
-                self.session.start_events()
+            logging.warning("Unexpected event message: RUNTIME state received")
         elif event_type == EventTypes.DATACOLLECT_STATE:
             self.session.data_collect()
         elif event_type == EventTypes.SHUTDOWN_STATE:
-            if self.session.master:
-                logging.warning(
-                    "Unexpected event message: SHUTDOWN state received at session master"
-                )
+            logging.warning("Unexpected event message: SHUTDOWN state received")
         elif event_type in {
             EventTypes.START,
             EventTypes.STOP,
@@ -1824,9 +1791,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     # set session to join
                     self.session = session
 
-                    # add client to session broker and set master if needed
-                    if self.master:
-                        self.session.master = True
+                    # add client to session broker
                     clients = self.session_clients.setdefault(self.session.id, [])
                     clients.append(self)
 
@@ -2022,7 +1987,6 @@ class CoreUdpHandler(CoreHandler):
             MessageTypes.EVENT.value: self.handle_event_message,
             MessageTypes.SESSION.value: self.handle_session_message,
         }
-        self.master = False
         self.session = None
         self.coreemu = server.mainserver.coreemu
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)

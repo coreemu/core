@@ -85,7 +85,6 @@ class Session:
         :param bool mkdir: flag to determine if a directory should be made
         """
         self.id = _id
-        self.master = False
 
         # define and create session directory when desired
         self.session_dir = os.path.join(tempfile.gettempdir(), f"pycore.{self.id}")
@@ -1694,28 +1693,19 @@ class Session:
         prefixes = prefix_spec.split()
         if len(prefixes) > 1:
             # a list of per-host prefixes is provided
-            assign_address = True
-            if self.master:
-                try:
-                    # split first (master) entry into server and prefix
-                    prefix = prefixes[0].split(":", 1)[1]
-                except IndexError:
-                    # no server name. possibly only one server
-                    prefix = prefixes[0]
-
-        # len(prefixes) == 1
+            try:
+                # split first (master) entry into server and prefix
+                prefix = prefixes[0].split(":", 1)[1]
+            except IndexError:
+                # no server name. possibly only one server
+                prefix = prefixes[0]
         else:
-            # TODO: can we get the server name from the servers.conf or from the node
-            #  assignments?o
-            # with one prefix, only master gets a ctrlnet address
-            assign_address = self.master
             prefix = prefixes[0]
 
         logging.info(
-            "controlnet(%s) prefix(%s) assign(%s) updown(%s) serverintf(%s)",
+            "controlnet(%s) prefix(%s) updown(%s) serverintf(%s)",
             _id,
             prefix,
-            assign_address,
             updown_script,
             server_interface,
         )
@@ -1723,7 +1713,7 @@ class Session:
             cls=CtrlNet,
             _id=_id,
             prefix=prefix,
-            assign_address=assign_address,
+            assign_address=True,
             updown_script=updown_script,
             serverintf=server_interface,
         )
