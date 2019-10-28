@@ -9,7 +9,7 @@ from queue import Empty, Queue
 
 import grpc
 
-from core.api.grpc import core_pb2, core_pb2_grpc
+from core.api.grpc import core_pb2, core_pb2_grpc, grpcutils
 from core.emane.nodes import EmaneNet
 from core.emulator.data import (
     ConfigData,
@@ -259,6 +259,53 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             return session.get_node(node_id)
         except CoreError:
             context.abort(grpc.StatusCode.NOT_FOUND, f"node {node_id} not found")
+
+    def StartSession(self, request, context):
+        """
+        Start a session.
+
+        :param core.api.grpc.core_pb2.StartSessionRequest request: start session request
+        :param context: grcp context
+        :return: start session response
+        :rtype: core.api.grpc.core_pb2.StartSessionResponse
+        """
+        logging.debug("start session: %s", request)
+        session = self.get_session(request.session_id, context)
+
+        # clear previous state and setup for creation
+        session.clear()
+        session.set_state(EventTypes.CONFIGURATION_STATE)
+        if not os.path.exists(session.session_dir):
+            os.mkdir(session.session_dir)
+
+        # create nodes
+        # loop = asyncio.new_event_loop()
+        # asyncio.set_event_loop(loop)
+        # results = loop.run_until_complete(
+        #     grpcutils.create_nodes(loop, session, request.nodes)
+        # )
+        grpcutils.sync_create_nodes(session, request.nodes)
+
+        # set to instantiation and start
+        session.set_state(EventTypes.INSTANTIATION_STATE)
+        session.instantiate()
+
+        return core_pb2.StartSessionResponse(result=True)
+
+    def StopSession(self, request, context):
+        """
+        Stop a running session.
+
+        :param core.api.grpc.core_pb2.StopSessionRequest request: stop session request
+        :param context: grcp context
+        :return: stop session response
+        :rtype: core.api.grpc.core_pb2.StopSessionResponse
+        """
+        logging.debug("stop session: %s", request)
+        session = self.coreemu.create_session(request.session_id)
+        session.set_state(EventTypes.DATACOLLECT_STATE)
+        session.clear()
+        return core_pb2.StopSessionResponse(result=True)
 
     def CreateSession(self, request, context):
         """

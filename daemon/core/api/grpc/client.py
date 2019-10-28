@@ -148,6 +148,31 @@ class CoreGrpcClient:
         self.stub = None
         self.channel = None
 
+    def start_session(self, session_id, nodes, links):
+        """
+        Start a session.
+
+        :param int session_id: id of session
+        :param list nodes: list of nodes to create
+        :param list links: list of links to create
+        :return:
+        """
+        request = core_pb2.StartSessionRequest(
+            session_id=session_id, nodes=nodes, links=links
+        )
+        return self.stub.StartSession(request)
+
+    def stop_session(self, session_id):
+        """
+        Stop a running session.
+
+        :param int session_id: id of session
+        :return: stop session response
+        :rtype: core_pb2.StopSessionResponse
+        """
+        request = core_pb2.StopSessionRequest(session_id=session_id)
+        return self.stub.StopSession(request)
+
     def create_session(self, session_id=None):
         """
         Create a session.

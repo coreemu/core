@@ -7,6 +7,10 @@ option java_outer_classname = "CoreProto";
 
 service CoreApi {
     // session rpc
+    rpc StartSession (StartSessionRequest) returns (StartSessionResponse) {
+    }
+    rpc StopSession (StopSessionRequest) returns (StopSessionResponse) {
+    }
     rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
     }
     rpc DeleteSession (DeleteSessionRequest) returns (DeleteSessionResponse) {
@@ -126,6 +130,24 @@ service CoreApi {
 }
 
 // rpc request/response messages
+message StartSessionRequest {
+    int32 session_id = 1;
+    repeated Node nodes = 2;
+    repeated Link links = 3;
+}
+
+message StartSessionResponse {
+    bool result = 1;
+}
+
+message StopSessionRequest {
+    int32 session_id = 1;
+}
+
+message StopSessionResponse {
+    bool result = 1;
+}
+
 message CreateSessionRequest {
     int32 session_id = 1;
 }
