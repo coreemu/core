@@ -134,7 +134,15 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         grpcutils.create_nodes(session, request.nodes)
 
         # emane configs
+        config = session.emane.get_configs()
+        config.update(request.emane_config)
+
         # wlan configs
+        for wlan_config in request.wlan_configs:
+            session.mobility.set_model_config(
+                wlan_config.node_id, BasicRangeModel.name, wlan_config.config
+            )
+
         # mobility configs
 
         # create links
@@ -1218,12 +1226,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set wlan config: %s", request)
         session = self.get_session(request.session_id, context)
+        wlan_config = request.wlan_config
         session.mobility.set_model_config(
-            request.node_id, BasicRangeModel.name, request.config
+            wlan_config.node_id, BasicRangeModel.name, wlan_config.config
         )
         if session.state == EventTypes.RUNTIME_STATE.value:
-            node = self.get_node(session, request.node_id, context)
-            node.updatemodel(request.config)
+            node = self.get_node(session, wlan_config.node_id, context)
+            node.updatemodel(wlan_config.config)
         return core_pb2.SetWlanConfigResponse(result=True)
 
     def GetEmaneConfig(self, request, context):

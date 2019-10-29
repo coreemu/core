@@ -136,6 +136,8 @@ message StartSessionRequest {
     repeated Link links = 3;
     repeated Hook hooks = 4;
     SessionLocation location = 5;
+    map<string, string> emane_config = 6;
+    repeated WlanConfig wlan_configs = 7;
 }
 
 message StartSessionResponse {
@@ -575,8 +577,7 @@ message GetWlanConfigResponse {
 
 message SetWlanConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    map<string, string> config = 3;
+    WlanConfig wlan_config = 2;
 }
 
 message SetWlanConfigResponse {
@@ -681,6 +682,11 @@ message EmaneLinkResponse {
 }
 
 // data structures for messages below
+message WlanConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
 message MessageType {
     enum Enum {
         NONE = 0;

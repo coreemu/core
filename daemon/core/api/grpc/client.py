@@ -148,7 +148,16 @@ class CoreGrpcClient:
         self.stub = None
         self.channel = None
 
-    def start_session(self, session_id, nodes, links, location=None, hooks=None):
+    def start_session(
+        self,
+        session_id,
+        nodes,
+        links,
+        location=None,
+        hooks=None,
+        emane_config=None,
+        wlan_configs=None,
+    ):
         """
         Start a session.
 
@@ -157,6 +166,8 @@ class CoreGrpcClient:
         :param list links: list of links to create
         :param core_pb2.SessionLocation location: location to set
         :param list[core_pb2.Hook] hooks: session hooks to set
+        :param dict emane_config: emane configuration to set
+        :param list wlan_configs: wlan configurations to set
         :return:
         """
         request = core_pb2.StartSessionRequest(
@@ -165,6 +176,8 @@ class CoreGrpcClient:
             links=links,
             location=location,
             hooks=hooks,
+            emane_config=emane_config,
+            wlan_configs=wlan_configs,
         )
         return self.stub.StartSession(request)
 
@@ -793,8 +806,9 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetWlanConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
+        wlan_config = core_pb2.WlanConfig(node_id=node_id, config=config)
         request = core_pb2.SetWlanConfigRequest(
-            session_id=session_id, node_id=node_id, config=config
+            session_id=session_id, wlan_config=wlan_config
         )
         return self.stub.SetWlanConfig(request)
 
