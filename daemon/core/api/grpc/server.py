@@ -126,7 +126,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         grpcutils.create_nodes(session, request.nodes)
 
         # create links
-        logging.info("links: %s", request.links)
         grpcutils.create_links(session, request.links)
 
         # set to instantiation and start
@@ -146,8 +145,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("stop session: %s", request)
         session = self.get_session(request.session_id, context)
+        session.data_collect()
         session.set_state(EventTypes.DATACOLLECT_STATE)
         session.clear()
+        session.set_state(EventTypes.SHUTDOWN_STATE)
         return core_pb2.StopSessionResponse(result=True)
 
     def CreateSession(self, request, context):

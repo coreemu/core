@@ -1,7 +1,7 @@
-import concurrent.futures
 import logging
 import time
 
+from core import utils
 from core.api.grpc import core_pb2
 from core.emulator.emudata import InterfaceData, LinkOptions, NodeOptions
 from core.emulator.enumerations import LinkTypes, NodeTypes
@@ -112,23 +112,15 @@ def create_nodes(session, node_protos):
     :return: results and exceptions for created nodes
     :rtype: tuple
     """
+    funcs = []
+    for node_proto in node_protos:
+        _type, _id, options = add_node_data(node_proto)
+        args = (_type, _id, options)
+        funcs.append((session.add_node, args, {}))
     start = time.monotonic()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as executor:
-        futures = []
-        for node_proto in node_protos:
-            _type, _id, options = add_node_data(node_proto)
-            future = executor.submit(session.add_node, _type, _id, options)
-            futures.append(future)
-        results = []
-        exceptions = []
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                result = future.result()
-                results.append(result)
-            except Exception as executor:
-                exceptions.append(executor)
+    results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
-    logging.info("created nodes time: %s", total)
+    logging.debug("grpc created nodes time: %s", total)
     return results, exceptions
 
 
@@ -141,32 +133,17 @@ def create_links(session, link_protos):
     :return: results and exceptions for created links
     :rtype: tuple
     """
+    funcs = []
+    for link_proto in link_protos:
+        node_one_id = link_proto.node_one_id
+        node_two_id = link_proto.node_two_id
+        interface_one, interface_two, options = add_link_data(link_proto)
+        args = (node_one_id, node_two_id, interface_one, interface_two, options)
+        funcs.append((session.add_link, args, {}))
     start = time.monotonic()
-    with concurrent.futures.ThreadPoolExecutor(max_workers=WORKERS) as executor:
-        futures = []
-        for link_proto in link_protos:
-            node_one_id = link_proto.node_one_id
-            node_two_id = link_proto.node_two_id
-            interface_one, interface_two, options = add_link_data(link_proto)
-            future = executor.submit(
-                session.add_link,
-                node_one_id,
-                node_two_id,
-                interface_one,
-                interface_two,
-                options,
-            )
-            futures.append(future)
-        results = []
-        exceptions = []
-        for future in concurrent.futures.as_completed(futures):
-            try:
-                result = future.result()
-                results.append(result)
-            except Exception as executor:
-                exceptions.append(executor)
+    results, exceptions = utils.threadpool(funcs)
     total = time.monotonic() - start
-    logging.info("created links time: %s", total)
+    logging.debug("grpc created links time: %s", total)
     return results, exceptions
 
 

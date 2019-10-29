@@ -10,7 +10,6 @@ services.
 import enum
 import logging
 import time
-from multiprocessing.pool import ThreadPool
 
 from core import utils
 from core.constants import which
@@ -462,18 +461,14 @@ class CoreServices:
         :param core.netns.vnode.LxcNode node: node to start services on
         :return: nothing
         """
-        pool = ThreadPool()
-        results = []
-
+        funcs = []
         boot_paths = ServiceDependencies(node.services).boot_paths()
         for boot_path in boot_paths:
-            result = pool.apply_async(self._start_boot_paths, (node, boot_path))
-            results.append(result)
-
-        pool.close()
-        pool.join()
-        for result in results:
-            result.get()
+            args = (node, boot_path)
+            funcs.append((self._start_boot_paths, args, {}))
+        result, exceptions = utils.threadpool(funcs)
+        if exceptions:
+            raise ServiceBootError(exceptions)
 
     def _start_boot_paths(self, node, boot_path):
         """

@@ -2,6 +2,7 @@
 Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
+import concurrent.futures
 import fcntl
 import hashlib
 import importlib
@@ -381,3 +382,29 @@ def load_logging_config(config_path):
     with open(config_path, "r") as log_config_file:
         log_config = json.load(log_config_file)
         logging.config.dictConfig(log_config)
+
+
+def threadpool(funcs, workers=10):
+    """
+    Run provided functions, arguments, and keywords within a threadpool
+    collecting results and exceptions.
+
+    :param iter funcs: iterable that provides a func, args, kwargs
+    :param int workers: number of workers for the threadpool
+    :return: results and exceptions from running functions with args and kwargs
+    :rtype: tuple
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = []
+        for func, args, kwargs in funcs:
+            future = executor.submit(func, *args, **kwargs)
+            futures.append(future)
+        results = []
+        exceptions = []
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                exceptions.append(e)
+    return results, exceptions

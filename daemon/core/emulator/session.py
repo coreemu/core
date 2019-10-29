@@ -12,7 +12,6 @@ import subprocess
 import tempfile
 import threading
 import time
-from multiprocessing.pool import ThreadPool
 
 from core import constants, utils
 from core.emane.emanemanager import EmaneManager
@@ -1366,9 +1365,11 @@ class Session:
         Clear the nodes dictionary, and call shutdown for each node.
         """
         with self._nodes_lock:
+            funcs = []
             while self.nodes:
                 _, node = self.nodes.popitem()
-                node.shutdown()
+                funcs.append((node.shutdown, [], {}))
+            utils.threadpool(funcs)
         self.node_id_gen.id = 0
 
     def write_nodes(self):
@@ -1508,11 +1509,14 @@ class Session:
 
         # stop node services
         with self._nodes_lock:
+            funcs = []
             for node_id in self.nodes:
                 node = self.nodes[node_id]
-                # TODO: determine if checking for CoreNode alone is ok
                 if isinstance(node, CoreNodeBase):
                     self.services.stop_services(node)
+                args = (node,)
+                funcs.append((self.services.stop_services, args, {}))
+            utils.threadpool(funcs)
 
         # shutdown emane
         self.emane.shutdown()
@@ -1520,7 +1524,8 @@ class Session:
         # update control interface hosts
         self.update_control_interface_hosts(remove=True)
 
-        # remove all four possible control networks. Does nothing if ctrlnet is not installed.
+        # remove all four possible control networks. Does nothing if ctrlnet is not
+        # installed.
         self.add_remove_control_interface(node=None, net_index=0, remove=True)
         self.add_remove_control_interface(node=None, net_index=1, remove=True)
         self.add_remove_control_interface(node=None, net_index=2, remove=True)
@@ -1551,6 +1556,18 @@ class Session:
         ssid = (self.id >> 8) ^ (self.id & ((1 << 8) - 1))
         return f"{ssid:x}"
 
+    def boot_node(self, node):
+        """
+        Boot node by adding a control interface when necessary and starting
+        node services.
+
+        :param core.nodes.base.CoreNodeBase node: node to boot
+        :return: nothing
+        """
+        logging.info("booting node(%s): %s", node.name, [x.name for x in node.services])
+        self.add_remove_control_interface(node=node, remove=False)
+        self.services.boot_services(node)
+
     def boot_nodes(self):
         """
         Invoke the boot() procedure for all nodes and send back node
@@ -1558,29 +1575,18 @@ class Session:
         request flag.
         """
         with self._nodes_lock:
-            pool = ThreadPool()
-            results = []
-
-            start = time.time()
+            funcs = []
+            start = time.monotonic()
             for _id in self.nodes:
                 node = self.nodes[_id]
                 if isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node):
-                    # add a control interface if configured
-                    logging.info(
-                        "booting node(%s): %s",
-                        node.name,
-                        [x.name for x in node.services],
-                    )
-                    self.add_remove_control_interface(node=node, remove=False)
-                    result = pool.apply_async(self.services.boot_services, (node,))
-                    results.append(result)
-
-            pool.close()
-            pool.join()
-            for result in results:
-                result.get()
-            logging.debug("boot run time: %s", time.time() - start)
-
+                    args = (node,)
+                    funcs.append((self.boot_node, args, {}))
+            results, exceptions = utils.threadpool(funcs)
+            total = time.monotonic() - start
+            logging.debug("boot run time: %s", total)
+            if exceptions:
+                raise CoreError(exceptions)
         self.update_control_interface_hosts()
 
     def get_control_net_prefixes(self):
@@ -1730,7 +1736,7 @@ class Session:
         If conf_reqd is False, the control network may be built even
         when the user has not configured one (e.g. for EMANE.)
 
-        :param core.nodes.base.CoreNode node: node to add or remove control interface
+        :param core.nodes.base.CoreNodeBase node: node to add or remove control interface
         :param int net_index: network index
         :param bool remove: flag to check if it should be removed
         :param bool conf_required: flag to check if conf is required
