@@ -138,6 +138,8 @@ message StartSessionRequest {
     SessionLocation location = 5;
     map<string, string> emane_config = 6;
     repeated WlanConfig wlan_configs = 7;
+    repeated EmaneModelConfig emane_model_configs = 8;
+    repeated MobilityConfig mobility_configs = 9;
 }
 
 message StartSessionResponse {
@@ -466,8 +468,7 @@ message GetMobilityConfigResponse {
 
 message SetMobilityConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    map<string, string> config = 3;
+    MobilityConfig mobility_config = 2;
 }
 
 message SetMobilityConfigResponse {
@@ -622,10 +623,7 @@ message GetEmaneModelConfigResponse {
 
 message SetEmaneModelConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    int32 interface_id = 3;
-    string model = 4;
-    map<string, string> config = 5;
+    EmaneModelConfig emane_model_config = 2;
 }
 
 message SetEmaneModelConfigResponse {
@@ -685,6 +683,18 @@ message EmaneLinkResponse {
 message WlanConfig {
     int32 node_id = 1;
     map<string, string> config = 2;
+}
+
+message MobilityConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message EmaneModelConfig {
+    int32 node_id = 1;
+    int32 interface_id = 2;
+    string model = 3;
+    map<string, string> config = 4;
 }
 
 message MessageType {

@@ -81,7 +81,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
 
         :param int session_id: session id
         :param grpc.ServicerContext context:
-        :return: session object that satisfies. If session not found then raise an exception.
+        :return: session object that satisfies, if session not found then raise an
+            exception
         :rtype: core.emulator.session.Session
         """
         session = self.coreemu.sessions.get(session_id)
@@ -136,14 +137,21 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         # emane configs
         config = session.emane.get_configs()
         config.update(request.emane_config)
+        for config in request.emane_model_configs:
+            _id = get_emane_model_id(config.node_id, config.interface_id)
+            session.emane.set_model_config(_id, config.model, config.config)
 
         # wlan configs
-        for wlan_config in request.wlan_configs:
+        for config in request.wlan_configs:
             session.mobility.set_model_config(
-                wlan_config.node_id, BasicRangeModel.name, wlan_config.config
+                config.node_id, BasicRangeModel.name, config.config
             )
 
         # mobility configs
+        for config in request.mobility_configs:
+            session.mobility.set_model_config(
+                config.node_id, Ns2ScriptedMobility.name, config.config
+            )
 
         # create links
         grpcutils.create_links(session, request.links)
@@ -984,8 +992,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set mobility config: %s", request)
         session = self.get_session(request.session_id, context)
+        mobility_config = request.mobility_config
         session.mobility.set_model_config(
-            request.node_id, Ns2ScriptedMobility.name, request.config
+            mobility_config.node_id, Ns2ScriptedMobility.name, mobility_config.config
         )
         return core_pb2.SetMobilityConfigResponse(result=True)
 
@@ -1313,8 +1322,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set emane model config: %s", request)
         session = self.get_session(request.session_id, context)
-        _id = get_emane_model_id(request.node_id, request.interface_id)
-        session.emane.set_model_config(_id, request.model, request.config)
+        model_config = request.emane_model_config
+        _id = get_emane_model_id(model_config.node_id, model_config.interface_id)
+        session.emane.set_model_config(_id, model_config.model, model_config.config)
         return core_pb2.SetEmaneModelConfigResponse(result=True)
 
     def GetEmaneModelConfigs(self, request, context):

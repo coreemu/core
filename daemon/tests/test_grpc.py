@@ -32,7 +32,11 @@ class TestGrpc:
         node_one = core_pb2.Node(id=1, position=position, model="PC")
         position = core_pb2.Position(x=100, y=100)
         node_two = core_pb2.Node(id=2, position=position, model="PC")
-        nodes.extend([node_one, node_two])
+        position = core_pb2.Position(x=200, y=200)
+        wlan_node = core_pb2.Node(
+            id=3, type=NodeTypes.WIRELESS_LAN.value, position=position
+        )
+        nodes.extend([node_one, node_two, wlan_node])
         links = []
         interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
         interface_one = interface_helper.create_interface(node_one.id, 0)
@@ -66,15 +70,54 @@ class TestGrpc:
             alt=location_alt,
             scale=location_scale,
         )
+        emane_config_key = "platform_id_start"
+        emane_config_value = "2"
+        emane_config = {emane_config_key: emane_config_value}
+        model_configs = []
+        model_node_id = 20
+        model_config_key = "bandwidth"
+        model_config_value = "500000"
+        model_config = core_pb2.EmaneModelConfig(
+            node_id=model_node_id,
+            interface_id=-1,
+            model=EmaneIeee80211abgModel.name,
+            config={model_config_key: model_config_value},
+        )
+        model_configs.append(model_config)
+        wlan_configs = []
+        wlan_config_key = "range"
+        wlan_config_value = "333"
+        wlan_config = core_pb2.WlanConfig(
+            node_id=wlan_node.id, config={wlan_config_key: wlan_config_value}
+        )
+        wlan_configs.append(wlan_config)
+        mobility_config_key = "refresh_ms"
+        mobility_config_value = "60"
+        mobility_configs = []
+        mobility_config = core_pb2.MobilityConfig(
+            node_id=wlan_node.id, config={mobility_config_key: mobility_config_value}
+        )
+        mobility_configs.append(mobility_config)
 
         # when
         with patch.object(CoreXmlWriter, "write"):
             with client.context_connect():
-                client.start_session(session.id, nodes, links, location, hooks)
+                client.start_session(
+                    session.id,
+                    nodes,
+                    links,
+                    location,
+                    hooks,
+                    emane_config,
+                    model_configs,
+                    wlan_configs,
+                    mobility_configs,
+                )
 
         # then
         assert node_one.id in session.nodes
         assert node_two.id in session.nodes
+        assert wlan_node.id in session.nodes
         assert session.nodes[node_one.id].netif(0) is not None
         assert session.nodes[node_two.id].netif(0) is not None
         hook_file, hook_data = session._hooks[core_pb2.SessionState.RUNTIME][0]
@@ -83,6 +126,19 @@ class TestGrpc:
         assert session.location.refxyz == (location_x, location_y, location_z)
         assert session.location.refgeo == (location_lat, location_lon, location_alt)
         assert session.location.refscale == location_scale
+        assert session.emane.get_config(emane_config_key) == emane_config_value
+        set_wlan_config = session.mobility.get_model_config(
+            wlan_node.id, BasicRangeModel.name
+        )
+        assert set_wlan_config[wlan_config_key] == wlan_config_value
+        set_mobility_config = session.mobility.get_model_config(
+            wlan_node.id, Ns2ScriptedMobility.name
+        )
+        assert set_mobility_config[mobility_config_key] == mobility_config_value
+        set_model_config = session.emane.get_model_config(
+            model_node_id, EmaneIeee80211abgModel.name
+        )
+        assert set_model_config[model_config_key] == model_config_value
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(self, grpc_server, session_id):

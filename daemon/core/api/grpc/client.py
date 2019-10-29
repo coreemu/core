@@ -156,7 +156,9 @@ class CoreGrpcClient:
         location=None,
         hooks=None,
         emane_config=None,
+        emane_model_configs=None,
         wlan_configs=None,
+        mobility_configs=None,
     ):
         """
         Start a session.
@@ -167,8 +169,11 @@ class CoreGrpcClient:
         :param core_pb2.SessionLocation location: location to set
         :param list[core_pb2.Hook] hooks: session hooks to set
         :param dict emane_config: emane configuration to set
+        :param list emane_model_configs: emane model configurations to set
         :param list wlan_configs: wlan configurations to set
-        :return:
+        :param list mobility_configs: mobility configurations to set
+        :return: start session response
+        :rtype: core_pb2.StartSessionResponse
         """
         request = core_pb2.StartSessionRequest(
             session_id=session_id,
@@ -177,7 +182,9 @@ class CoreGrpcClient:
             location=location,
             hooks=hooks,
             emane_config=emane_config,
+            emane_model_configs=emane_model_configs,
             wlan_configs=wlan_configs,
+            mobility_configs=mobility_configs,
         )
         return self.stub.StartSession(request)
 
@@ -621,8 +628,9 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetMobilityConfigResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
+        mobility_config = core_pb2.MobilityConfig(node_id=node_id, config=config)
         request = core_pb2.SetMobilityConfigRequest(
-            session_id=session_id, node_id=node_id, config=config
+            session_id=session_id, mobility_config=mobility_config
         )
         return self.stub.SetMobilityConfig(request)
 
@@ -881,12 +889,11 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetEmaneModelConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
+        model_config = core_pb2.EmaneModelConfig(
+            node_id=node_id, model=model, config=config, interface_id=interface_id
+        )
         request = core_pb2.SetEmaneModelConfigRequest(
-            session_id=session_id,
-            node_id=node_id,
-            model=model,
-            config=config,
-            interface_id=interface_id,
+            session_id=session_id, emane_model_config=model_config
         )
         return self.stub.SetEmaneModelConfig(request)
 
