@@ -1,8 +1,22 @@
 import logging
 import tkinter as tk
+from enum import Enum
 
-from coretk.images import Images
+from core.api.grpc import core_pb2
+from coretk.coretoolbarhelp import CoreToolbarHelp
+from coretk.graph import GraphMode
+from coretk.images import ImageEnum, Images
 from coretk.tooltip import CreateToolTip
+
+
+class SessionStateEnum(Enum):
+    NONE = "none"
+    DEFINITION = "definition"
+    CONFIGURATION = "configuration"
+    RUNTIME = "runtime"
+    DATACOLLECT = "datacollect"
+    SHUTDOWN = "shutdown"
+    INSTANTIATION = "instantiation"
 
 
 class CoreToolbar(object):
@@ -10,13 +24,14 @@ class CoreToolbar(object):
     Core toolbar class
     """
 
-    def __init__(self, master, edit_frame, menubar):
+    def __init__(self, application, edit_frame, menubar):
         """
         Create a CoreToolbar instance
 
         :param tkinter.Frame edit_frame: edit frame
         """
-        self.master = master
+        self.application = application
+        self.master = application.master
         self.edit_frame = edit_frame
         self.menubar = menubar
         self.radio_value = tk.IntVar()
@@ -26,7 +41,6 @@ class CoreToolbar(object):
         self.width = 32
         self.height = 32
 
-        # Used for drawing the horizontally displayed menu items for network-layer nodes and link-layer node
         self.selection_tool_button = None
 
         # Reference to the option menus
@@ -34,37 +48,7 @@ class CoreToolbar(object):
         self.marker_option_menu = None
         self.network_layer_option_menu = None
 
-    def load_toolbar_images(self):
-        """
-        Load the images that appear in core toolbar
-
-        :return: nothing
-        """
-        Images.load("core", "core-icon.png")
-        Images.load("start", "start.gif")
-        Images.load("switch", "lanswitch.gif")
-        Images.load("marker", "marker.gif")
-        Images.load("router", "router.gif")
-        Images.load("select", "select.gif")
-        Images.load("link", "link.gif")
-        Images.load("hub", "hub.gif")
-        Images.load("wlan", "wlan.gif")
-        Images.load("rj45", "rj45.gif")
-        Images.load("tunnel", "tunnel.gif")
-        Images.load("oval", "oval.gif")
-        Images.load("rectangle", "rectangle.gif")
-        Images.load("text", "text.gif")
-        Images.load("host", "host.gif")
-        Images.load("pc", "pc.gif")
-        Images.load("mdr", "mdr.gif")
-        Images.load("prouter", "router_green.gif")
-        Images.load("ovs", "OVS.gif")
-        Images.load("editnode", "document-properties.gif")
-        Images.load("run", "run.gif")
-        Images.load("plot", "plot.gif")
-        Images.load("twonode", "twonode.gif")
-        Images.load("stop", "stop.gif")
-        Images.load("observe", "observe.gif")
+        self.canvas = None
 
     def destroy_previous_frame(self):
         """
@@ -82,7 +66,7 @@ class CoreToolbar(object):
         if self.marker_option_menu and self.marker_option_menu.winfo_exists():
             self.marker_option_menu.destroy()
 
-    def destroy_children_widgets(self, parent):
+    def destroy_children_widgets(self):
         """
         Destroy all children of a parent widget
 
@@ -90,11 +74,11 @@ class CoreToolbar(object):
         :return: nothing
         """
 
-        for i in parent.winfo_children():
+        for i in self.edit_frame.winfo_children():
             if i.winfo_name() != "!frame":
                 i.destroy()
 
-    def create_button(self, img, func, frame, main_button):
+    def create_button(self, img, func, frame, main_button, btt_message):
         """
         Create button and put it on the frame
 
@@ -106,6 +90,7 @@ class CoreToolbar(object):
         """
         button = tk.Button(frame, width=self.width, height=self.height, image=img)
         button.pack(side=tk.LEFT, pady=1)
+        CreateToolTip(button, btt_message)
         button.bind("<Button-1>", lambda mb: func(main_button))
 
     def create_radio_button(self, frame, image, func, variable, value, tooltip_msg):
@@ -122,11 +107,12 @@ class CoreToolbar(object):
         button.pack(side=tk.TOP, pady=1)
         CreateToolTip(button, tooltip_msg)
 
-    def create_regular_button(self, frame, image, func):
+    def create_regular_button(self, frame, image, func, btt_message):
         button = tk.Button(
             frame, width=self.width, height=self.height, image=image, command=func
         )
         button.pack(side=tk.TOP, pady=1)
+        CreateToolTip(button, btt_message)
 
     def draw_button_menu_frame(self, edit_frame, option_frame, main_button):
         """
@@ -165,48 +151,104 @@ class CoreToolbar(object):
 
     def click_selection_tool(self):
         logging.debug("Click SELECTION TOOL")
+        self.canvas.mode = GraphMode.SELECT
 
-    def click_start_stop_session_tool(self):
+    def click_start_session_tool(self):
+        """
+        Start session handler: redraw buttons, send node and link messages to grpc server
+
+        :return: nothing
+        """
         logging.debug("Click START STOP SESSION button")
-        self.destroy_children_widgets(self.edit_frame)
+        helper = CoreToolbarHelp(self.application)
+        # self.destroy_children_widgets(self.edit_frame)
+        self.destroy_children_widgets()
+        self.canvas.mode = GraphMode.SELECT
+
+        # set configuration state
+        state = self.canvas.core_grpc.get_session_state()
+
+        if state == core_pb2.SessionState.SHUTDOWN or self.application.is_open_xml:
+            self.canvas.core_grpc.set_session_state(SessionStateEnum.DEFINITION.value)
+            self.application.is_open_xml = False
+
+        self.canvas.core_grpc.set_session_state(SessionStateEnum.CONFIGURATION.value)
+
+        helper.add_nodes()
+        helper.add_edges()
+        # for node in self.canvas.grpc_manager.nodes.values():
+        #     print(node.type, node.model, int(node.x), int(node.y), node.name, node.node_id)
+        #     self.canvas.core_grpc.add_node(
+        #         node.type, node.model, int(node.x), int(node.y), node.name, node.node_id
+        #     )
+
+        # print(len(self.canvas.grpc_manager.edges))
+        # for edge in self.canvas.grpc_manager.edges.values():
+        #     print(edge.id1, edge.id2, edge.type1, edge.type2)
+        #     self.canvas.core_grpc.add_link(
+        #         edge.id1, edge.id2, edge.type1, edge.type2, edge
+        #     )
+        self.canvas.core_grpc.set_session_state(SessionStateEnum.INSTANTIATION.value)
+        # self.canvas.core_grpc.get_session()
+        # self.application.is_open_xml = False
         self.create_runtime_toolbar()
 
     def click_link_tool(self):
         logging.debug("Click LINK button")
+        self.canvas.mode = GraphMode.EDGE
 
     def pick_router(self, main_button):
-        self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("router"))
         logging.debug("Pick router option")
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.ROUTER.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.ROUTER.value)
+        self.canvas.draw_node_name = "router"
 
     def pick_host(self, main_button):
-        self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("host"))
         logging.debug("Pick host option")
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.HOST.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.HOST.value)
+        self.canvas.draw_node_name = "host"
 
     def pick_pc(self, main_button):
-        self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("pc"))
         logging.debug("Pick PC option")
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.PC.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.PC.value)
+        self.canvas.draw_node_name = "PC"
 
     def pick_mdr(self, main_button):
-        self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("mdr"))
         logging.debug("Pick MDR option")
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.MDR.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.MDR.value)
+        self.canvas.draw_node_name = "mdr"
 
     def pick_prouter(self, main_button):
-        self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("prouter"))
         logging.debug("Pick prouter option")
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.PROUTER.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.PROUTER.value)
+        self.canvas.draw_node_name = "prouter"
 
     def pick_ovs(self, main_button):
-        self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("ovs"))
         logging.debug("Pick OVS option")
+        self.network_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.OVS.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.OVS.value)
+        self.canvas.draw_node_name = "OVS"
 
+    # TODO what graph node is this
     def pick_editnode(self, main_button):
         self.network_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("editnode"))
+        main_button.configure(image=Images.get(ImageEnum.EDITNODE.value))
         logging.debug("Pick editnode option")
 
     def draw_network_layer_options(self, network_layer_button):
@@ -220,13 +262,13 @@ class CoreToolbar(object):
         self.destroy_previous_frame()
         option_frame = tk.Frame(self.master, padx=1, pady=1)
         img_list = [
-            Images.get("router"),
-            Images.get("host"),
-            Images.get("pc"),
-            Images.get("mdr"),
-            Images.get("prouter"),
-            Images.get("ovs"),
-            Images.get("editnode"),
+            Images.get(ImageEnum.ROUTER.value),
+            Images.get(ImageEnum.HOST.value),
+            Images.get(ImageEnum.PC.value),
+            Images.get(ImageEnum.MDR.value),
+            Images.get(ImageEnum.PROUTER.value),
+            Images.get(ImageEnum.OVS.value),
+            Images.get(ImageEnum.EDITNODE.value),
         ]
         func_list = [
             self.pick_router,
@@ -237,9 +279,22 @@ class CoreToolbar(object):
             self.pick_ovs,
             self.pick_editnode,
         ]
+        tooltip_list = [
+            "router",
+            "host",
+            "PC",
+            "mdr",
+            "prouter",
+            "OVS",
+            "edit node types",
+        ]
         for i in range(len(img_list)):
             self.create_button(
-                img_list[i], func_list[i], option_frame, network_layer_button
+                img_list[i],
+                func_list[i],
+                option_frame,
+                network_layer_button,
+                tooltip_list[i],
             )
 
         # place frame at a calculated position as well as keep a reference of that frame
@@ -257,7 +312,7 @@ class CoreToolbar(object):
 
         :return: nothing
         """
-        router_image = Images.get("router")
+        router_image = Images.get(ImageEnum.ROUTER.value)
         network_layer_button = tk.Radiobutton(
             self.edit_frame,
             indicatoron=False,
@@ -272,29 +327,44 @@ class CoreToolbar(object):
         CreateToolTip(network_layer_button, "Network-layer virtual nodes")
 
     def pick_hub(self, main_button):
-        self.link_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("hub"))
         logging.debug("Pick link-layer node HUB")
+        self.link_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.HUB.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.HUB.value)
+        self.canvas.draw_node_name = "hub"
 
     def pick_switch(self, main_button):
-        self.link_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("switch"))
         logging.debug("Pick link-layer node SWITCH")
+        self.link_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.SWITCH.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.SWITCH.value)
+        self.canvas.draw_node_name = "switch"
 
     def pick_wlan(self, main_button):
-        self.link_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("wlan"))
         logging.debug("Pick link-layer node WLAN")
+        self.link_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.WLAN.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.WLAN.value)
+        self.canvas.draw_node_name = "wlan"
 
     def pick_rj45(self, main_button):
-        self.link_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("rj45"))
         logging.debug("Pick link-layer node RJ45")
+        self.link_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.RJ45.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.RJ45.value)
+        self.canvas.draw_node_name = "rj45"
 
     def pick_tunnel(self, main_button):
-        self.link_layer_option_menu.destroy()
-        main_button.configure(image=Images.get("tunnel"))
         logging.debug("Pick link-layer node TUNNEL")
+        self.link_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.TUNNEL.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.TUNNEL.value)
+        self.canvas.draw_node_name = "tunnel"
 
     def draw_link_layer_options(self, link_layer_button):
         """
@@ -307,11 +377,11 @@ class CoreToolbar(object):
         self.destroy_previous_frame()
         option_frame = tk.Frame(self.master, padx=1, pady=1)
         img_list = [
-            Images.get("hub"),
-            Images.get("switch"),
-            Images.get("wlan"),
-            Images.get("rj45"),
-            Images.get("tunnel"),
+            Images.get(ImageEnum.HUB.value),
+            Images.get(ImageEnum.SWITCH.value),
+            Images.get(ImageEnum.WLAN.value),
+            Images.get(ImageEnum.RJ45.value),
+            Images.get(ImageEnum.TUNNEL.value),
         ]
         func_list = [
             self.pick_hub,
@@ -320,9 +390,20 @@ class CoreToolbar(object):
             self.pick_rj45,
             self.pick_tunnel,
         ]
+        tooltip_list = [
+            "ethernet hub",
+            "ethernet switch",
+            "wireless LAN",
+            "rj45 physical interface tool",
+            "tunnel tool",
+        ]
         for i in range(len(img_list)):
             self.create_button(
-                img_list[i], func_list[i], option_frame, link_layer_button
+                img_list[i],
+                func_list[i],
+                option_frame,
+                link_layer_button,
+                tooltip_list[i],
             )
 
         # place frame at a calculated position as well as keep a reference of the frame
@@ -340,7 +421,7 @@ class CoreToolbar(object):
 
         :return: nothing
         """
-        hub_image = Images.get("hub")
+        hub_image = Images.get(ImageEnum.HUB.value)
         link_layer_button = tk.Radiobutton(
             self.edit_frame,
             indicatoron=False,
@@ -356,23 +437,22 @@ class CoreToolbar(object):
 
     def pick_marker(self, main_button):
         self.marker_option_menu.destroy()
-        main_button.configure(image=Images.get("marker"))
+        main_button.configure(image=Images.get(ImageEnum.MARKER.value))
         logging.debug("Pick MARKER")
-        return "break"
 
     def pick_oval(self, main_button):
         self.marker_option_menu.destroy()
-        main_button.configure(image=Images.get("oval"))
+        main_button.configure(image=Images.get(ImageEnum.OVAL.value))
         logging.debug("Pick OVAL")
 
     def pick_rectangle(self, main_button):
         self.marker_option_menu.destroy()
-        main_button.configure(image=Images.get("rectangle"))
+        main_button.configure(image=Images.get(ImageEnum.RECTANGLE.value))
         logging.debug("Pick RECTANGLE")
 
     def pick_text(self, main_button):
         self.marker_option_menu.destroy()
-        main_button.configure(image=Images.get("text"))
+        main_button.configure(image=Images.get(ImageEnum.TEXT.value))
         logging.debug("Pick TEXT")
 
     def draw_marker_options(self, main_button):
@@ -386,10 +466,10 @@ class CoreToolbar(object):
         self.destroy_previous_frame()
         option_frame = tk.Frame(self.master, padx=1, pady=1)
         img_list = [
-            Images.get("marker"),
-            Images.get("oval"),
-            Images.get("rectangle"),
-            Images.get("text"),
+            Images.get(ImageEnum.MARKER.value),
+            Images.get(ImageEnum.OVAL.value),
+            Images.get(ImageEnum.RECTANGLE.value),
+            Images.get(ImageEnum.TEXT.value),
         ]
         func_list = [
             self.pick_marker,
@@ -397,8 +477,11 @@ class CoreToolbar(object):
             self.pick_rectangle,
             self.pick_text,
         ]
+        tooltip_list = ["marker", "oval", "rectangle", "text"]
         for i in range(len(img_list)):
-            self.create_button(img_list[i], func_list[i], option_frame, main_button)
+            self.create_button(
+                img_list[i], func_list[i], option_frame, main_button, tooltip_list[i]
+            )
 
         # place the frame at a calculated position as well as keep a reference of that frame
         self.draw_button_menu_frame(self.edit_frame, option_frame, main_button)
@@ -415,7 +498,7 @@ class CoreToolbar(object):
 
         :return: nothing
         """
-        marker_image = Images.get("marker")
+        marker_image = Images.get(ImageEnum.MARKER.value)
         marker_main_button = tk.Radiobutton(
             self.edit_frame,
             indicatoron=False,
@@ -430,13 +513,20 @@ class CoreToolbar(object):
         CreateToolTip(marker_main_button, "background annotation tools")
 
     def create_toolbar(self):
-        self.load_toolbar_images()
+        """
+        Create buttons for toolbar in edit mode
+
+        :return: nothing
+        """
         self.create_regular_button(
-            self.edit_frame, Images.get("start"), self.click_start_stop_session_tool
+            self.edit_frame,
+            Images.get(ImageEnum.START.value),
+            self.click_start_session_tool,
+            "start the session",
         )
         self.create_radio_button(
             self.edit_frame,
-            Images.get("select"),
+            Images.get(ImageEnum.SELECT.value),
             self.click_selection_tool,
             self.radio_value,
             1,
@@ -444,7 +534,7 @@ class CoreToolbar(object):
         )
         self.create_radio_button(
             self.edit_frame,
-            Images.get("link"),
+            Images.get(ImageEnum.LINK.value),
             self.click_link_tool,
             self.radio_value,
             2,
@@ -453,11 +543,12 @@ class CoreToolbar(object):
         self.create_network_layer_button()
         self.create_link_layer_button()
         self.create_marker_button()
+        self.radio_value.set(1)
 
     def create_observe_button(self):
         menu_button = tk.Menubutton(
             self.edit_frame,
-            image=Images.get("observe"),
+            image=Images.get(ImageEnum.OBSERVE.value),
             width=self.width,
             height=self.height,
             direction=tk.RIGHT,
@@ -485,8 +576,18 @@ class CoreToolbar(object):
         menu_button.menu.add_command(label="Edit...")
 
     def click_stop_button(self):
+        """
+        redraw buttons on the toolbar, send node and link messages to grpc server
+
+        :return: nothing
+        """
         logging.debug("Click on STOP button ")
-        self.destroy_children_widgets(self.edit_frame)
+        # self.destroy_children_widgets(self.edit_frame)
+        self.destroy_children_widgets()
+
+        self.canvas.core_grpc.set_session_state(SessionStateEnum.DATACOLLECT.value)
+        self.canvas.core_grpc.delete_links()
+        self.canvas.core_grpc.delete_nodes()
         self.create_toolbar()
 
     def click_run_button(self):
@@ -503,11 +604,14 @@ class CoreToolbar(object):
 
     def create_runtime_toolbar(self):
         self.create_regular_button(
-            self.edit_frame, Images.get("stop"), self.click_stop_button
+            self.edit_frame,
+            Images.get(ImageEnum.STOP.value),
+            self.click_stop_button,
+            "stop the session",
         )
         self.create_radio_button(
             self.edit_frame,
-            Images.get("select"),
+            Images.get(ImageEnum.SELECT.value),
             self.click_selection_tool,
             self.exec_radio_value,
             1,
@@ -516,7 +620,7 @@ class CoreToolbar(object):
         self.create_observe_button()
         self.create_radio_button(
             self.edit_frame,
-            Images.get("plot"),
+            Images.get(ImageEnum.PLOT.value),
             self.click_plot_button,
             self.exec_radio_value,
             2,
@@ -524,7 +628,7 @@ class CoreToolbar(object):
         )
         self.create_radio_button(
             self.edit_frame,
-            Images.get("marker"),
+            Images.get(ImageEnum.MARKER.value),
             self.click_marker_button,
             self.exec_radio_value,
             3,
@@ -532,12 +636,16 @@ class CoreToolbar(object):
         )
         self.create_radio_button(
             self.edit_frame,
-            Images.get("twonode"),
+            Images.get(ImageEnum.TWONODE.value),
             self.click_two_node_button,
             self.exec_radio_value,
             4,
             "run command from one node to another",
         )
         self.create_regular_button(
-            self.edit_frame, Images.get("run"), self.click_run_button
+            self.edit_frame,
+            Images.get(ImageEnum.RUN.value),
+            self.click_run_button,
+            "run",
         )
+        self.exec_radio_value.set(1)

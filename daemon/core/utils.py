@@ -206,7 +206,7 @@ def cmd(args, env=None, cwd=None, wait=True, shell=False):
     :raises CoreCommandError: when there is a non-zero exit status or the file to
         execute is not found
     """
-    logging.info("command cwd(%s) wait(%s): %s", cwd, wait, args)
+    logging.debug("command cwd(%s) wait(%s): %s", cwd, wait, args)
     if shell is False:
         args = shlex.split(args)
     try:

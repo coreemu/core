@@ -4,6 +4,13 @@ The actions taken when each menubar option is clicked
 
 import logging
 import webbrowser
+from tkinter import filedialog, messagebox
+
+from core.api.grpc import core_pb2
+from coretk.setwallpaper import CanvasWallpaper
+from coretk.sizeandscale import SizeAndScale
+
+SAVEDIR = "/home/ncs/Desktop/"
 
 
 def sub_menu_items():
@@ -30,20 +37,12 @@ def file_reload():
     logging.debug("Click file Reload")
 
 
-def file_save():
-    logging.debug("Click file save")
+# def file_save():
+#     logging.debug("Click file save")
 
 
 def file_save_shortcut(event):
     logging.debug("Shortcut for file save")
-
-
-def file_save_as_xml():
-    logging.debug("Click save as XML")
-
-
-def file_save_as_imn():
-    logging.debug("Click save as imn")
 
 
 def file_export_python_script():
@@ -68,10 +67,6 @@ def file_print():
 
 def file_save_screenshot():
     logging.debug("Click file save screenshot")
-
-
-def file_example_link():
-    logging.debug("Click file example link")
 
 
 def edit_undo():
@@ -160,6 +155,7 @@ def canvas_delete():
 
 def canvas_size_scale():
     logging.debug("Click canvas size/scale")
+    SizeAndScale()
 
 
 def canvas_wallpaper():
@@ -294,10 +290,6 @@ def widgets_configure_throughput():
     logging.debug("Click widgets configure throughput")
 
 
-def session_start():
-    logging.debug("Click session start")
-
-
 def session_change_sessions():
     logging.debug("Click session change sessions")
 
@@ -326,13 +318,118 @@ def session_options():
     logging.debug("Click session options")
 
 
-def help_core_github():
-    webbrowser.open_new("https://github.com/coreemu/core")
-
-
-def help_core_documentation():
-    webbrowser.open_new("http://coreemu.github.io/core/")
-
-
 def help_about():
     logging.debug("Click help About")
+
+
+class MenuAction:
+    """
+    Actions performed when choosing menu items
+    """
+
+    def __init__(self, application, master):
+        self.master = master
+        self.application = application
+        self.core_grpc = application.core_grpc
+
+    def clean_nodes_links_and_set_configuarations(self):
+        """
+        Prompt use to stop running session before application is closed
+
+        :return: nothing
+        """
+        logging.info(
+            "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
+        )
+        grpc = self.application.core_grpc
+        state = grpc.get_session_state()
+
+        if (
+            state == core_pb2.SessionState.SHUTDOWN
+            or state == core_pb2.SessionState.DEFINITION
+        ):
+            grpc.delete_session()
+            grpc.core.close()
+            # self.application.quit()
+        else:
+            msgbox = messagebox.askyesnocancel("stop", "Stop the running session?")
+
+            if msgbox or msgbox is False:
+                if msgbox:
+                    grpc.set_session_state("datacollect")
+                    grpc.delete_links()
+                    grpc.delete_nodes()
+                    grpc.delete_session()
+                # else:
+                #     grpc.set_session_state("definition")
+                grpc.core.close()
+                # self.application.quit()
+
+    def on_quit(self):
+        """
+        Prompt user whether so save running session, and then close the application
+
+        :return: nothing
+        """
+        self.clean_nodes_links_and_set_configuarations()
+        # self.application.core_grpc.close()
+        self.application.quit()
+
+    def file_save_as_xml(self):
+        logging.info("menuaction.py file_save_as_xml()")
+        grpc = self.application.core_grpc
+        file_path = filedialog.asksaveasfilename(
+            initialdir=SAVEDIR,
+            title="Save As",
+            filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
+            defaultextension=".xml",
+        )
+        # with open("prev_saved_xml.txt", "a") as file:
+        #     file.write(file_path + "\n")
+        grpc.save_xml(file_path)
+
+    def file_open_xml(self):
+        logging.info("menuaction.py file_open_xml()")
+        self.application.is_open_xml = True
+        file_path = filedialog.askopenfilename(
+            initialdir=SAVEDIR,
+            title="Open",
+            filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
+        )
+        # clean up before opening a new session
+        self.clean_nodes_links_and_set_configuarations()
+        # grpc = CoreGrpc(self.application.master)
+        # grpc.core.connect()
+        core_grpc = self.application.core_grpc
+        core_grpc.core.connect()
+        # session_id = core_grpc.open_xml(file_path)
+        # core_grpc.session_id = session_id
+
+        core_grpc.open_xml(file_path)
+        # print("Print session state")
+        # print(grpc.get_session_state())
+        self.application.canvas.canvas_reset_and_redraw(core_grpc)
+
+        # Todo might not need
+        self.application.core_grpc = core_grpc
+
+        self.application.core_editbar.destroy_children_widgets()
+        self.application.core_editbar.create_toolbar()
+        # self.application.is_open_xml = False
+
+        # self.application.core_editbar.create_runtime_toolbar()
+        # self.application.canvas.draw_existing_component()
+        # t1 = time.clock()
+        # print(t1 - t0)
+
+    def canvas_size_and_scale(self):
+        self.application.size_and_scale = SizeAndScale(self.application)
+
+    def canvas_set_wallpaper(self):
+        self.application.set_wallpaper = CanvasWallpaper(self.application)
+
+    def help_core_github(self):
+        webbrowser.open_new("https://github.com/coreemu/core")
+
+    def help_core_documentation(self):
+        webbrowser.open_new("http://coreemu.github.io/core/")

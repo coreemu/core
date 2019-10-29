@@ -1,6 +1,7 @@
 import tkinter as tk
 
 import coretk.menuaction as action
+from coretk.menuaction import MenuAction
 
 
 class CoreMenubar(object):
@@ -19,6 +20,33 @@ class CoreMenubar(object):
         self.menubar = menubar
         self.master = master
         self.application = application
+        self.menuaction = action.MenuAction(application, master)
+        self.menu_action = MenuAction(self.application, self.master)
+
+    # def on_quit(self):
+    #     """
+    #     Prompt use to stop running session before application is closed
+    #
+    #     :return: nothing
+    #     """
+    #     state = self.application.core_grpc.get_session_state()
+    #
+    #     if state == core_pb2.SessionState.SHUTDOWN or state == core_pb2.SessionState.DEFINITION:
+    #         self.application.core_grpc.delete_session()
+    #         self.application.core_grpc.core.close()
+    #         # self.application.quit()
+    #     else:
+    #         msgbox = tk.messagebox.askyesnocancel("stop", "Stop the running session?")
+    #
+    #         if msgbox or msgbox == False:
+    #             if msgbox:
+    #                 self.application.core_grpc.set_session_state("datacollect")
+    #                 self.application.core_grpc.delete_links()
+    #                 self.application.core_grpc.delete_nodes()
+    #                 self.application.core_grpc.delete_session()
+    #
+    #             self.application.core_grpc.core.close()
+    #             # self.application.quit()
 
     def create_file_menu(self):
         """
@@ -27,18 +55,22 @@ class CoreMenubar(object):
         :return: nothing
         """
         file_menu = tk.Menu(self.menubar)
+        # menu_action = MenuAction(self.application, self.master)
         file_menu.add_command(
             label="New", command=action.file_new, accelerator="Ctrl+N", underline=0
         )
         file_menu.add_command(
-            label="Open...", command=action.file_open, accelerator="Ctrl+O", underline=0
+            label="Open...",
+            command=self.menu_action.file_open_xml,
+            accelerator="Ctrl+O",
+            underline=0,
         )
         file_menu.add_command(label="Reload", command=action.file_reload, underline=0)
-        file_menu.add_command(
-            label="Save", command=action.file_save, accelerator="Ctrl+S", underline=0
-        )
-        file_menu.add_command(label="Save As XML...", command=action.file_save_as_xml)
-        file_menu.add_command(label="Save As imn...", command=action.file_save_as_imn)
+        # file_menu.add_command(
+        #     label="Save", command=action.file_save, accelerator="Ctrl+S", underline=0
+        # )
+        # file_menu.add_command(label="Save As XML...", command=action.file_save_as_xml)
+        file_menu.add_command(label="Save", command=self.menu_action.file_save_as_xml)
 
         file_menu.add_separator()
 
@@ -68,13 +100,8 @@ class CoreMenubar(object):
         file_menu.add_separator()
 
         file_menu.add_command(
-            label="/home/ncs/.core/configs/sample1.imn",
-            command=action.file_example_link,
+            label="Quit", command=self.menuaction.on_quit, underline=0
         )
-
-        file_menu.add_separator()
-
-        file_menu.add_command(label="Quit", command=self.master.quit, underline=0)
         self.menubar.add_cascade(label="File", menu=file_menu, underline=0)
 
     def create_edit_menu(self):
@@ -137,8 +164,12 @@ class CoreMenubar(object):
 
         canvas_menu.add_separator()
 
-        canvas_menu.add_command(label="Size/scale...", command=action.canvas_size_scale)
-        canvas_menu.add_command(label="Wallpaper...", command=action.canvas_wallpaper)
+        canvas_menu.add_command(
+            label="Size/scale...", command=self.menu_action.canvas_size_and_scale
+        )
+        canvas_menu.add_command(
+            label="Wallpaper...", command=self.menu_action.canvas_set_wallpaper
+        )
 
         canvas_menu.add_separator()
 
@@ -560,9 +591,7 @@ class CoreMenubar(object):
         :return: nothing
         """
         session_menu = tk.Menu(self.menubar)
-        session_menu.add_command(
-            label="Start", command=action.session_start, underline=0
-        )
+
         session_menu.add_command(
             label="Change sessions...",
             command=action.session_change_sessions,
@@ -604,10 +633,11 @@ class CoreMenubar(object):
         """
         help_menu = tk.Menu(self.menubar)
         help_menu.add_command(
-            label="Core Github (www)", command=action.help_core_github
+            label="Core Github (www)", command=self.menu_action.help_core_github
         )
         help_menu.add_command(
-            label="Core Documentation (www)", command=action.help_core_documentation
+            label="Core Documentation (www)",
+            command=self.menu_action.help_core_documentation,
         )
         help_menu.add_command(label="About", command=action.help_about)
 
