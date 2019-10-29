@@ -134,6 +134,8 @@ message StartSessionRequest {
     int32 session_id = 1;
     repeated Node nodes = 2;
     repeated Link links = 3;
+    repeated Hook hooks = 4;
+    SessionLocation location = 5;
 }
 
 message StartSessionResponse {
@@ -202,14 +204,12 @@ message GetSessionLocationRequest {
 }
 
 message GetSessionLocationResponse {
-    SessionPosition position = 1;
-    float scale = 2;
+    SessionLocation location = 1;
 }
 
 message SetSessionLocationRequest {
     int32 session_id = 1;
-    SessionPosition position = 2;
-    float scale = 3;
+    SessionLocation location = 2;
 }
 
 message SetSessionLocationResponse {
@@ -872,13 +872,14 @@ message Interface {
     int32 mtu = 10;
 }
 
-message SessionPosition {
+message SessionLocation {
     float x = 1;
     float y = 2;
     float z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;
+    float scale = 7;
 }
 
 message Position {

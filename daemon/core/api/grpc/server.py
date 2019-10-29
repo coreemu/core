@@ -122,8 +122,20 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         if not os.path.exists(session.session_dir):
             os.mkdir(session.session_dir)
 
+        # location
+        if request.HasField("location"):
+            grpcutils.session_location(session, request.location)
+
+        # add all hooks
+        for hook in request.hooks:
+            session.add_hook(hook.state, hook.file, None, hook.data)
+
         # create nodes
         grpcutils.create_nodes(session, request.nodes)
+
+        # emane configs
+        # wlan configs
+        # mobility configs
 
         # create links
         grpcutils.create_links(session, request.links)
@@ -217,10 +229,11 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         x, y, z = session.location.refxyz
         lat, lon, alt = session.location.refgeo
-        position = core_pb2.SessionPosition(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
-        return core_pb2.GetSessionLocationResponse(
-            position=position, scale=session.location.refscale
+        scale = session.location.refscale
+        location = core_pb2.SessionLocation(
+            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=scale
         )
+        return core_pb2.GetSessionLocationResponse(location=location)
 
     def SetSessionLocation(self, request, context):
         """
@@ -233,15 +246,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set session location: %s", request)
         session = self.get_session(request.session_id, context)
-        session.location.refxyz = (
-            request.position.x,
-            request.position.y,
-            request.position.z,
-        )
-        session.location.setrefgeo(
-            request.position.lat, request.position.lon, request.position.alt
-        )
-        session.location.refscale = request.scale
+        grpcutils.session_location(session, request.location)
         return core_pb2.SetSessionLocationResponse(result=True)
 
     def SetSessionState(self, request, context):

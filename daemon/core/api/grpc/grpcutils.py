@@ -306,3 +306,16 @@ def get_net_stats():
         stats[line[0]] = {"rx": float(line[1]), "tx": float(line[9])}
 
     return stats
+
+
+def session_location(session, location):
+    """
+    Set session location based on location proto.
+
+    :param core.emulator.session.Session session: session for location
+    :param core_pb2.SessionLocation location: location to set
+    :return: nothing
+    """
+    session.location.refxyz = (location.x, location.y, location.z)
+    session.location.setrefgeo(location.lat, location.lon, location.alt)
+    session.location.refscale = location.scale

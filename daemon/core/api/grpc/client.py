@@ -148,17 +148,23 @@ class CoreGrpcClient:
         self.stub = None
         self.channel = None
 
-    def start_session(self, session_id, nodes, links):
+    def start_session(self, session_id, nodes, links, location=None, hooks=None):
         """
         Start a session.
 
         :param int session_id: id of session
         :param list nodes: list of nodes to create
         :param list links: list of links to create
+        :param core_pb2.SessionLocation location: location to set
+        :param list[core_pb2.Hook] hooks: session hooks to set
         :return:
         """
         request = core_pb2.StartSessionRequest(
-            session_id=session_id, nodes=nodes, links=links
+            session_id=session_id,
+            nodes=nodes,
+            links=links,
+            location=location,
+            hooks=hooks,
         )
         return self.stub.StartSession(request)
 
@@ -282,9 +288,11 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetSessionLocationResponse
         :raises grpc.RpcError: when session doesn't exist
         """
-        position = core_pb2.SessionPosition(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
+        location = core_pb2.SessionLocation(
+            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=scale
+        )
         request = core_pb2.SetSessionLocationRequest(
-            session_id=session_id, position=position, scale=scale
+            session_id=session_id, location=location
         )
         return self.stub.SetSessionLocation(request)
 

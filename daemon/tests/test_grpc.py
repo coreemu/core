@@ -3,9 +3,10 @@ from queue import Queue
 
 import grpc
 import pytest
+from mock import patch
 
 from core.api.grpc import core_pb2
-from core.api.grpc.client import CoreGrpcClient
+from core.api.grpc.client import CoreGrpcClient, InterfaceHelper
 from core.config import ConfigShim
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.data import EventData
@@ -18,9 +19,71 @@ from core.emulator.enumerations import (
 )
 from core.errors import CoreError
 from core.location.mobility import BasicRangeModel, Ns2ScriptedMobility
+from core.xml.corexml import CoreXmlWriter
 
 
 class TestGrpc:
+    def test_start_session(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        nodes = []
+        position = core_pb2.Position(x=50, y=100)
+        node_one = core_pb2.Node(id=1, position=position, model="PC")
+        position = core_pb2.Position(x=100, y=100)
+        node_two = core_pb2.Node(id=2, position=position, model="PC")
+        nodes.extend([node_one, node_two])
+        links = []
+        interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
+        interface_one = interface_helper.create_interface(node_one.id, 0)
+        interface_two = interface_helper.create_interface(node_two.id, 0)
+        link = core_pb2.Link(
+            type=core_pb2.LinkType.WIRED,
+            node_one_id=node_one.id,
+            node_two_id=node_two.id,
+            interface_one=interface_one,
+            interface_two=interface_two,
+        )
+        links.append(link)
+        hooks = []
+        hook = core_pb2.Hook(
+            state=core_pb2.SessionState.RUNTIME, file="echo.sh", data="echo hello"
+        )
+        hooks.append(hook)
+        location_x = 5
+        location_y = 10
+        location_z = 15
+        location_lat = 20
+        location_lon = 30
+        location_alt = 40
+        location_scale = 5
+        location = core_pb2.SessionLocation(
+            x=location_x,
+            y=location_y,
+            z=location_z,
+            lat=location_lat,
+            lon=location_lon,
+            alt=location_alt,
+            scale=location_scale,
+        )
+
+        # when
+        with patch.object(CoreXmlWriter, "write"):
+            with client.context_connect():
+                client.start_session(session.id, nodes, links, location, hooks)
+
+        # then
+        assert node_one.id in session.nodes
+        assert node_two.id in session.nodes
+        assert session.nodes[node_one.id].netif(0) is not None
+        assert session.nodes[node_two.id].netif(0) is not None
+        hook_file, hook_data = session._hooks[core_pb2.SessionState.RUNTIME][0]
+        assert hook_file == hook.file
+        assert hook_data == hook.data
+        assert session.location.refxyz == (location_x, location_y, location_z)
+        assert session.location.refgeo == (location_lat, location_lon, location_alt)
+        assert session.location.refscale == location_scale
+
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(self, grpc_server, session_id):
         # given
@@ -112,13 +175,13 @@ class TestGrpc:
             response = client.get_session_location(session.id)
 
         # then
-        assert response.scale == 1.0
-        assert response.position.x == 0
-        assert response.position.y == 0
-        assert response.position.z == 0
-        assert response.position.lat == 0
-        assert response.position.lon == 0
-        assert response.position.alt == 0
+        assert response.location.scale == 1.0
+        assert response.location.x == 0
+        assert response.location.y == 0
+        assert response.location.z == 0
+        assert response.location.lat == 0
+        assert response.location.lon == 0
+        assert response.location.alt == 0
 
     def test_set_session_location(self, grpc_server):
         # given
