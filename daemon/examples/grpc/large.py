@@ -26,47 +26,27 @@ def main():
             node = core_pb2.Node(id=i, position=position, model="PC")
             nodes.append(node)
 
-        # start session
+        # create links
+        interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
         links = []
+        for node in nodes:
+            interface_one = interface_helper.create_interface(node.id, 0)
+            link = core_pb2.Link(
+                type=core_pb2.LinkType.WIRED,
+                node_one_id=node.id,
+                node_two_id=switch.id,
+                interface_one=interface_one,
+            )
+            links.append(link)
+
+        # start session
         response = core.start_session(session_id, nodes, links)
         logging.info("started session: %s", response)
 
-        # handle events session may broadcast
-        # core.events(session_id, log_event)
+        input("press enter to shutdown session")
 
-        # change session state
-        # response = core.set_session_state(
-        #     session_id, core_pb2.SessionState.CONFIGURATION
-        # )
-        # logging.info("set session state: %s", response)
-
-        # create switch node
-        # switch = core_pb2.Node(type=core_pb2.NodeType.SWITCH)
-        # response = core.add_node(session_id, switch)
-        # logging.info("created switch: %s", response)
-        # switch_id = response.node_id
-
-        # helper to create interfaces
-        # interface_helper = client.InterfaceHelper(ip4_prefix="10.83.0.0/16")
-        #
-        # for i in range(2):
-        #     # create node
-        #     position = core_pb2.Position(x=50 + 50 * i, y=50)
-        #     node = core_pb2.Node(position=position)
-        #     response = core.add_node(session_id, node)
-        #     logging.info("created node: %s", response)
-        #     node_id = response.node_id
-        #
-        #     # create link
-        #     interface_one = interface_helper.create_interface(node_id, 0)
-        #     response = core.add_link(session_id, node_id, switch_id, interface_one)
-        #     logging.info("created link: %s", response)
-
-        # change session state
-        # response = core.set_session_state(
-        #     session_id, core_pb2.SessionState.INSTANTIATION
-        # )
-        # logging.info("set session state: %s", response)
+        response = core.stop_session(session_id)
+        logging.info("stop sessionL %s", response)
 
 
 if __name__ == "__main__":
