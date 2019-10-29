@@ -3,11 +3,10 @@ import tkinter as tk
 from enum import Enum
 
 from core.api.grpc import core_pb2
+from coretk.coretoolbarhelp import CoreToolbarHelp
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
 from coretk.tooltip import CreateToolTip
-
-# from coretk.graph_helper import WlanConnection
 
 
 class SessionStateEnum(Enum):
@@ -25,13 +24,14 @@ class CoreToolbar(object):
     Core toolbar class
     """
 
-    def __init__(self, master, edit_frame, menubar):
+    def __init__(self, application, edit_frame, menubar):
         """
         Create a CoreToolbar instance
 
         :param tkinter.Frame edit_frame: edit frame
         """
-        self.master = master
+        self.application = application
+        self.master = application.master
         self.edit_frame = edit_frame
         self.menubar = menubar
         self.radio_value = tk.IntVar()
@@ -49,15 +49,6 @@ class CoreToolbar(object):
         self.network_layer_option_menu = None
 
         self.canvas = None
-
-    def update_canvas(self, canvas):
-        """
-        Update canvas variable in CoreToolbar class
-
-        :param tkinter.Canvas canvas: core canvas
-        :return: nothing
-        """
-        self.canvas = canvas
 
     def destroy_previous_frame(self):
         """
@@ -169,6 +160,7 @@ class CoreToolbar(object):
         :return: nothing
         """
         logging.debug("Click START STOP SESSION button")
+        helper = CoreToolbarHelp(self.application)
         # self.destroy_children_widgets(self.edit_frame)
         self.destroy_children_widgets()
         self.canvas.mode = GraphMode.SELECT
@@ -176,24 +168,29 @@ class CoreToolbar(object):
         # set configuration state
         state = self.canvas.core_grpc.get_session_state()
 
-        if state == core_pb2.SessionState.SHUTDOWN:
+        if state == core_pb2.SessionState.SHUTDOWN or self.application.is_open_xml:
             self.canvas.core_grpc.set_session_state(SessionStateEnum.DEFINITION.value)
+            self.application.is_open_xml = False
 
         self.canvas.core_grpc.set_session_state(SessionStateEnum.CONFIGURATION.value)
 
-        for node in self.canvas.grpc_manager.nodes.values():
-            self.canvas.core_grpc.add_node(
-                node.type, node.model, int(node.x), int(node.y), node.name, node.node_id
-            )
+        helper.add_nodes()
+        helper.add_edges()
+        # for node in self.canvas.grpc_manager.nodes.values():
+        #     print(node.type, node.model, int(node.x), int(node.y), node.name, node.node_id)
+        #     self.canvas.core_grpc.add_node(
+        #         node.type, node.model, int(node.x), int(node.y), node.name, node.node_id
+        #     )
 
-        for edge in self.canvas.grpc_manager.edges.values():
-            self.canvas.core_grpc.add_link(
-                edge.id1, edge.id2, edge.type1, edge.type2, edge
-            )
-
+        # print(len(self.canvas.grpc_manager.edges))
+        # for edge in self.canvas.grpc_manager.edges.values():
+        #     print(edge.id1, edge.id2, edge.type1, edge.type2)
+        #     self.canvas.core_grpc.add_link(
+        #         edge.id1, edge.id2, edge.type1, edge.type2, edge
+        #     )
         self.canvas.core_grpc.set_session_state(SessionStateEnum.INSTANTIATION.value)
-
         # self.canvas.core_grpc.get_session()
+        # self.application.is_open_xml = False
         self.create_runtime_toolbar()
 
     def click_link_tool(self):

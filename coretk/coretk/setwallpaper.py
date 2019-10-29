@@ -14,6 +14,7 @@ WALLPAPER_DIR = os.path.join(PATH, "wallpaper")
 
 
 class ScaleOption(enum.Enum):
+    NONE = 0
     UPPER_LEFT = 1
     CENTERED = 2
     SCALED = 3
@@ -22,15 +23,23 @@ class ScaleOption(enum.Enum):
 
 class CanvasWallpaper:
     def __init__(self, application):
+        """
+        create an instance of CanvasWallpaper object
+
+        :param coretk.app.Application application: root application
+        """
         self.application = application
         self.canvas = self.application.canvas
 
         self.top = tk.Toplevel()
         self.top.title("Set Canvas Wallpaper")
         self.radiovar = tk.IntVar()
+        print(self.application.radiovar.get())
+        self.radiovar.set(self.application.radiovar.get())
         self.show_grid_var = tk.IntVar()
+        self.show_grid_var.set(self.application.show_grid_var.get())
         self.adjust_to_dim_var = tk.IntVar()
-        self.wallpaper = None
+        self.adjust_to_dim_var.set(self.application.adjust_to_dim_var.get())
 
         self.create_image_label()
         self.create_text_label()
@@ -75,6 +84,11 @@ class CanvasWallpaper:
             img_label.image = tk_img
 
     def clear_link(self):
+        """
+        delete like shown in image link entry if there is any
+
+        :return: nothing
+        """
         # delete entry
         img_open_frame = self.top.grid_slaves(2, 0)[0]
         filename_entry = img_open_frame.grid_slaves(0, 0)[0]
@@ -115,9 +129,27 @@ class CanvasWallpaper:
         b4 = tk.Radiobutton(f, text="titled", value=4, variable=self.radiovar)
         b4.grid(row=0, column=3)
 
-        self.radiovar.set(1)
+        # self.radiovar.set(1)
 
         f.grid()
+
+    def adjust_canvas_size(self):
+
+        # deselect all radio buttons and grey them out
+        if self.adjust_to_dim_var.get() == 1:
+            self.radiovar.set(0)
+            option_frame = self.top.grid_slaves(3, 0)[0]
+            for i in option_frame.grid_slaves():
+                i.config(state=tk.DISABLED)
+
+        # turn back the radio button to active state so that user can choose again
+        elif self.adjust_to_dim_var.get() == 0:
+            option_frame = self.top.grid_slaves(3, 0)[0]
+            for i in option_frame.grid_slaves():
+                i.config(state=tk.NORMAL)
+                self.radiovar.set(1)
+        else:
+            logging.error("setwallpaper.py adjust_canvas_size invalid value")
 
     def additional_options(self):
         b = tk.Checkbutton(self.top, text="Show grid", variable=self.show_grid_var)
@@ -126,15 +158,21 @@ class CanvasWallpaper:
             self.top,
             text="Adjust canvas size to image dimensions",
             variable=self.adjust_to_dim_var,
+            command=self.adjust_canvas_size,
         )
         b.grid(sticky=tk.W, padx=5)
         self.show_grid_var.set(1)
         self.adjust_to_dim_var.set(0)
 
-    def delete_previous_wallpaper(self):
-        prev_wallpaper = self.canvas.find_withtag("wallpaper")
-        if prev_wallpaper:
-            for i in prev_wallpaper:
+    def delete_canvas_components(self, tag_list):
+        """
+        delete canvas items whose tag is in the tag list
+
+        :param list[string] tag_list: list of tags
+        :return: nothing
+        """
+        for tag in tag_list:
+            for i in self.canvas.find_withtag(tag):
                 self.canvas.delete(i)
 
     def get_canvas_width_and_height(self):
@@ -159,6 +197,7 @@ class CanvasWallpaper:
         return
 
     def upper_left(self, img):
+        print("upperleft")
         tk_img = ImageTk.PhotoImage(img)
 
         # crop image if it is bigger than canvas
@@ -178,7 +217,8 @@ class CanvasWallpaper:
         # place left corner of image to the left corner of the canvas
         self.application.croppedwallpaper = cropped_tk
 
-        self.delete_previous_wallpaper()
+        self.delete_canvas_components(["wallpaper"])
+        # self.delete_previous_wallpaper()
 
         wid = self.canvas.create_image(
             (cropx / 2, cropy / 2), image=cropped_tk, tags="wallpaper"
@@ -213,7 +253,8 @@ class CanvasWallpaper:
 
         # place the center of the image at the center of the canvas
         self.application.croppedwallpaper = cropped_tk
-        self.delete_previous_wallpaper()
+        self.delete_canvas_components(["wallpaper"])
+        # self.delete_previous_wallpaper()
         wid = self.canvas.create_image(
             (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags="wallpaper"
         )
@@ -231,7 +272,8 @@ class CanvasWallpaper:
         image_tk = ImageTk.PhotoImage(resized_image)
         self.application.croppedwallpaper = image_tk
 
-        self.delete_previous_wallpaper()
+        self.delete_canvas_components(["wallpaper"])
+        # self.delete_previous_wallpaper()
 
         wid = self.canvas.create_image(
             (canvas_w / 2, canvas_h / 2), image=image_tk, tags="wallpaper"
@@ -241,11 +283,34 @@ class CanvasWallpaper:
     def tiled(self, img):
         return
 
+    def draw_new_canvas(self, canvas_width, canvas_height):
+        """
+        delete the old canvas and draw a new one
+
+        :param int canvas_width: canvas width in pixel
+        :param int canvas_height: canvas height in pixel
+        :return:
+        """
+        self.delete_canvas_components(["rectangle", "gridline"])
+        self.canvas.draw_grid(canvas_width, canvas_height)
+
+    def canvas_to_image_dimension(self, img):
+        image_tk = ImageTk.PhotoImage(img)
+        img_w = image_tk.width()
+        img_h = image_tk.height()
+        self.delete_canvas_components(["wallpaper"])
+        self.draw_new_canvas(img_w, img_h)
+        wid = self.canvas.create_image((img_w / 2, img_h / 2), image=image_tk)
+        self.application.croppedwallpaper = image_tk
+        self.application.wallpaper_id = wid
+
     def show_grid(self):
         """
 
         :return: nothing
         """
+        self.application.adjust_to_dim_var.set(self.adjust_to_dim_var.get())
+
         if self.show_grid_var.get() == 0:
             for i in self.canvas.find_withtag("gridline"):
                 self.canvas.itemconfig(i, state=tk.HIDDEN)
@@ -256,28 +321,46 @@ class CanvasWallpaper:
         else:
             logging.error("setwallpaper.py show_grid invalid value")
 
+    def save_wallpaper_options(self):
+        self.application.radiovar.set(self.radiovar.get())
+        self.application.show_grid_var.set(self.show_grid_var.get())
+        self.application.adjust_to_dim_var.set(self.adjust_to_dim_var.get())
+
     def click_apply(self):
         img_link_frame = self.top.grid_slaves(2, 0)[0]
         filename = img_link_frame.grid_slaves(0, 0)[0].get()
         if not filename:
+            self.delete_canvas_components(["wallpaper"])
             self.top.destroy()
+            self.application.current_wallpaper = None
+            self.save_wallpaper_options()
             return
         try:
             img = Image.open(filename)
+            self.application.current_wallpaper = img
         except FileNotFoundError:
             print("invalid filename, draw original white plot")
             if self.application.wallpaper_id:
                 self.canvas.delete(self.application.wallpaper_id)
             self.top.destroy()
             return
-        if self.radiovar.get() == ScaleOption.UPPER_LEFT.value:
-            self.upper_left(img)
-        elif self.radiovar.get() == ScaleOption.CENTERED.value:
-            self.center(img)
-        elif self.radiovar.get() == ScaleOption.SCALED.value:
-            self.scaled(img)
-        elif self.radiovar.get() == ScaleOption.TILED.value:
-            print("not implemented yet")
+
+        self.application.adjust_to_dim_var.set(self.adjust_to_dim_var.get())
+        if self.adjust_to_dim_var.get() == 0:
+
+            self.application.radiovar.set(self.radiovar.get())
+
+            if self.radiovar.get() == ScaleOption.UPPER_LEFT.value:
+                self.upper_left(img)
+            elif self.radiovar.get() == ScaleOption.CENTERED.value:
+                self.center(img)
+            elif self.radiovar.get() == ScaleOption.SCALED.value:
+                self.scaled(img)
+            elif self.radiovar.get() == ScaleOption.TILED.value:
+                print("not implemented yet")
+
+        elif self.adjust_to_dim_var.get() == 1:
+            self.canvas_to_image_dimension(img)
 
         self.show_grid()
         self.top.destroy()

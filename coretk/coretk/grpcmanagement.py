@@ -160,13 +160,17 @@ class GrpcManager:
         """
         Add preexisting nodes to grpc manager
 
+        :param str name: node_type
         :param core_pb2.Node core_node: core node grpc message
         :param coretk.graph.CanvasNode canvas_node: canvas node
         :param int session_id: session id
         :return: nothing
         """
+
+        # update the next available id
         core_id = core_node.id
-        if core_id >= self.id:
+        print(core_id)
+        if self.id is None or core_id >= self.id:
             self.id = core_id + 1
         self.preexisting.append(core_id)
         n = Node(
@@ -198,12 +202,13 @@ class GrpcManager:
 
         :return: nothing
         """
-        for i in range(1, self.id):
-            if i not in self.preexisting:
-                self.reusable.append(i)
+        if len(self.preexisting) > 0:
+            for i in range(1, self.id):
+                if i not in self.preexisting:
+                    self.reusable.append(i)
 
-        self.preexisting.clear()
-        logging.debug("Next id: %s, Reusable: %s", self.id, self.reusable)
+            self.preexisting.clear()
+            logging.debug("Next id: %s, Reusable: %s", self.id, self.reusable)
 
     def delete_node(self, canvas_id):
         """
@@ -263,8 +268,6 @@ class GrpcManager:
 
         edge.interface_1 = src_interface
         edge.interface_2 = dst_interface
-        print(src_interface)
-        print(dst_interface)
         return src_interface, dst_interface
 
     def add_edge(self, session_id, token, canvas_id_1, canvas_id_2):

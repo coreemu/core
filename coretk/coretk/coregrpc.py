@@ -190,7 +190,7 @@ class CoreGrpc:
             logging.info("delete nodes %s", response)
 
     def delete_links(self, delete_session=None):
-        sid = None
+        # sid = None
         if delete_session is None:
             sid = self.session_id
         else:
@@ -228,7 +228,6 @@ class CoreGrpc:
                 ip4=interface.ipv4,
                 ip4mask=interface.ip4prefix,
             )
-            # if1 = core_pb2.Interface(id=id1, name=edge.interface_1.name, ip4=edge.interface_1.ipv4, ip4mask=edge.interface_1.ip4prefix)
             logging.debug("create interface 1 %s", if1)
             # interface1 = self.interface_helper.create_interface(id1, 0)
 
@@ -241,15 +240,12 @@ class CoreGrpc:
                 ip4=interface.ipv4,
                 ip4mask=interface.ip4prefix,
             )
-            # if2 = core_pb2.Interface(id=id2, name=edge.interface_2.name, ip4=edge.interface_2.ipv4, ip4mask=edge.interface_2.ip4prefix)
             logging.debug("create interface 2: %s", if2)
-            # interface2 = self.interface_helper.create_interface(id2, 0)
 
-        # response = self.core.add_link(self.session_id, id1, id2, interface1, interface2)
         response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
 
-        self.core.get_node_links(self.session_id, id1)
+        # self.core.get_node_links(self.session_id, id1)
 
     # def get_session(self):
     #     response = self.core.get_session(self.session_id)
@@ -283,10 +279,7 @@ class CoreGrpc:
         """
         response = self.core.open_xml(file_path)
         self.session_id = response.session_id
-        # print("Sessionz")
-        # self.core.events(self.session_id, self.log_event)
-        # return response.session_id
-        # logging.info("coregrpc.py open_xml()", type(response))
+        logging.debug("coreprgc.py open_xml(): %s", response.result)
 
     def close(self):
         """

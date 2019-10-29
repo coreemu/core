@@ -43,7 +43,7 @@ class CanvasGraph(tk.Canvas):
         self.core_grpc = grpc
         self.grpc_manager = GrpcManager(grpc)
 
-        self.helper = GraphHelper(self)
+        self.helper = GraphHelper(self, grpc)
         # self.core_id_to_canvas_id = {}
         # self.core_map = CoreToCanvasMapping()
         # self.draw_existing_component()
@@ -61,7 +61,8 @@ class CanvasGraph(tk.Canvas):
         :return:
         """
         # delete any existing drawn items
-        self.delete_components()
+        # self.delete_components()
+        self.helper.delete_canvas_components()
 
         # set the private variables to default value
         self.mode = GraphMode.SELECT
@@ -73,12 +74,14 @@ class CanvasGraph(tk.Canvas):
         self.edges = {}
         self.drawing_edge = None
 
+        print("graph.py create a new grpc manager")
         self.grpc_manager = GrpcManager(new_grpc)
 
         # new grpc
         self.core_grpc = new_grpc
-
+        print("grpah.py draw existing component")
         self.draw_existing_component()
+        print(self.grpc_manager.edges)
 
     def setup_bindings(self):
         """
@@ -130,6 +133,8 @@ class CanvasGraph(tk.Canvas):
         for node in session.nodes:
             # peer to peer node is not drawn on the GUI
             if node.type != core_pb2.NodeType.PEER_TO_PEER:
+
+                # draw nodes on the canvas
                 image, name = Images.convert_type_and_model_to_image(
                     node.type, node.model
                 )
@@ -138,7 +143,10 @@ class CanvasGraph(tk.Canvas):
                 )
                 self.nodes[n.id] = n
                 core_id_to_canvas_id[node.id] = n.id
+
+                # store the node in grpc manager
                 self.grpc_manager.add_preexisting_node(n, session_id, node, name)
+
         self.grpc_manager.update_reusable_id()
 
         # draw existing links
@@ -165,6 +173,9 @@ class CanvasGraph(tk.Canvas):
                     self,
                     is_wired=False,
                 )
+            edge_token = tuple(sorted((n1.id, n2.id)))
+            e.token = edge_token
+            e.dst = n2.id
             n1.edges.add(e)
             n2.edges.add(e)
             self.edges[e.token] = e
@@ -195,8 +206,8 @@ class CanvasGraph(tk.Canvas):
             )
 
             # TODO will include throughput and ipv6 in the future
-            if1 = Interface(grpc_if1.name, grpc_if1.ip4)
-            if2 = Interface(grpc_if2.name, grpc_if2.ip4)
+            if1 = Interface(grpc_if1.name, grpc_if1.ip4, ifid=grpc_if1.id)
+            if2 = Interface(grpc_if2.name, grpc_if2.ip4, ifid=grpc_if2.id)
             self.grpc_manager.edges[e.token].interface_1 = if1
             self.grpc_manager.edges[e.token].interface_2 = if2
             self.grpc_manager.nodes[
@@ -207,14 +218,16 @@ class CanvasGraph(tk.Canvas):
             ].interfaces.append(if2)
 
         # lift the nodes so they on top of the links
-        for i in core_id_to_canvas_id.values():
+        # for i in core_id_to_canvas_id.values():
+        #     self.lift(i)
+        for i in self.find_withtag("node"):
             self.lift(i)
 
-    def delete_components(self):
-        tags = ["node", "edge", "linkinfo", "nodename"]
-        for i in tags:
-            for id in self.find_withtag(i):
-                self.delete(id)
+    # def delete_components(self):
+    #     tags = ["node", "edge", "linkinfo", "nodename"]
+    #     for i in tags:
+    #         for id in self.find_withtag(i):
+    #             self.delete(id)
 
     def canvas_xy(self, event):
         """
@@ -237,7 +250,6 @@ class CanvasGraph(tk.Canvas):
         :return: the item that the mouse point to
         """
         overlapping = self.find_overlapping(event.x, event.y, event.x, event.y)
-        print(overlapping)
         nodes = set(self.find_withtag("node"))
         selected = None
         for _id in overlapping:
@@ -263,7 +275,6 @@ class CanvasGraph(tk.Canvas):
         self.focus_set()
         self.selected = self.get_selected(event)
         logging.debug(f"click release selected: {self.selected}")
-        print(self.mode)
         if self.mode == GraphMode.EDGE:
             self.handle_edge_release(event)
         elif self.mode == GraphMode.NODE:

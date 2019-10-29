@@ -4,6 +4,8 @@ size and scale
 import tkinter as tk
 from functools import partial
 
+from coretk.setwallpaper import ScaleOption
+
 DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
 
 
@@ -246,6 +248,26 @@ class SizeAndScale:
         meter_per_pixel = float(scale_frame.grid_slaves(0, 1)[0].get()) / 100
         self.application.canvas.meters_per_pixel = meter_per_pixel
         self.redraw_grid(pixel_width, pixel_height)
+        print(self.application.current_wallpaper)
+        print(self.application.radiovar)
+        # if there is a current wallpaper showing, redraw it based on current wallpaper options
+        wallpaper_tool = self.application.set_wallpaper
+        current_wallpaper = self.application.current_wallpaper
+        if current_wallpaper:
+            if self.application.adjust_to_dim_var.get() == 0:
+                if self.application.radiovar.get() == ScaleOption.UPPER_LEFT.value:
+                    wallpaper_tool.upper_left(current_wallpaper)
+                elif self.application.radiovar.get() == ScaleOption.CENTERED.value:
+                    wallpaper_tool.center(current_wallpaper)
+                elif self.application.radiovar.get() == ScaleOption.SCALED.value:
+                    wallpaper_tool.scaled(current_wallpaper)
+                elif self.application.radiovar.get() == ScaleOption.TILED.value:
+                    print("not implemented")
+            elif self.application.adjust_to_dim_var.get() == 1:
+                wallpaper_tool.canvas_to_image_dimension(current_wallpaper)
+
+            wallpaper_tool.show_grid()
+
         self.top.destroy()
 
     def apply_cancel(self):

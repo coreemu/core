@@ -66,13 +66,11 @@ class CoreMenubar(object):
             underline=0,
         )
         file_menu.add_command(label="Reload", command=action.file_reload, underline=0)
-        file_menu.add_command(
-            label="Save", command=action.file_save, accelerator="Ctrl+S", underline=0
-        )
+        # file_menu.add_command(
+        #     label="Save", command=action.file_save, accelerator="Ctrl+S", underline=0
+        # )
         # file_menu.add_command(label="Save As XML...", command=action.file_save_as_xml)
-        file_menu.add_command(
-            label="Save As XML...", command=self.menu_action.file_save_as_xml
-        )
+        file_menu.add_command(label="Save", command=self.menu_action.file_save_as_xml)
 
         file_menu.add_separator()
 

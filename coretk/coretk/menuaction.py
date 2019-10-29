@@ -37,8 +37,8 @@ def file_reload():
     logging.debug("Click file Reload")
 
 
-def file_save():
-    logging.debug("Click file save")
+# def file_save():
+#     logging.debug("Click file save")
 
 
 def file_save_shortcut(event):
@@ -390,6 +390,7 @@ class MenuAction:
 
     def file_open_xml(self):
         logging.info("menuaction.py file_open_xml()")
+        self.application.is_open_xml = True
         file_path = filedialog.askopenfilename(
             initialdir=SAVEDIR,
             title="Open",
@@ -413,16 +414,19 @@ class MenuAction:
         self.application.core_grpc = core_grpc
 
         self.application.core_editbar.destroy_children_widgets()
-        self.application.core_editbar.create_runtime_toolbar()
+        self.application.core_editbar.create_toolbar()
+        # self.application.is_open_xml = False
+
+        # self.application.core_editbar.create_runtime_toolbar()
         # self.application.canvas.draw_existing_component()
         # t1 = time.clock()
         # print(t1 - t0)
 
     def canvas_size_and_scale(self):
-        SizeAndScale(self.application)
+        self.application.size_and_scale = SizeAndScale(self.application)
 
     def canvas_set_wallpaper(self):
-        CanvasWallpaper(self.application)
+        self.application.set_wallpaper = CanvasWallpaper(self.application)
 
     def help_core_github(self):
         webbrowser.open_new("https://github.com/coreemu/core")

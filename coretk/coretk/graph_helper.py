@@ -7,13 +7,26 @@ import tkinter as tk
 from core.api.grpc import core_pb2
 from coretk.images import ImageEnum, Images
 
+CANVAS_COMPONENT_TAGS = ["edge", "node", "nodename", "wallpaper", "linkinfo"]
+
 
 class GraphHelper:
-    def __init__(self, canvas):
+    def __init__(self, canvas, grpc):
         """
         create an instance of GraphHelper object
         """
         self.canvas = canvas
+        self.core_grpc = grpc
+
+    def delete_canvas_components(self):
+        """
+        delete the components of the graph leaving only the blank canvas
+
+        :return: nothing
+        """
+        for tag in CANVAS_COMPONENT_TAGS:
+            for i in self.canvas.find_withtag(tag):
+                self.canvas.delete(i)
 
     def draw_wireless_case(self, src_id, dst_id, edge):
         src_node_name = self.canvas.nodes[src_id].node_type

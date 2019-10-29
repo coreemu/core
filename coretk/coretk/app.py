@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 
+import coretk.appcache as appcache
 import coretk.images as images
 from coretk.coregrpc import CoreGrpc
 from coretk.coremenubar import CoreMenubar
@@ -13,6 +14,8 @@ from coretk.menuaction import MenuAction
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
+        appcache.cache_variable(self)
+        print(self.is_open_xml)
         self.load_images()
         self.setup_app()
         self.menubar = None
@@ -51,7 +54,7 @@ class Application(tk.Frame):
     def create_widgets(self):
         edit_frame = tk.Frame(self)
         edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
-        self.core_editbar = CoreToolbar(self.master, edit_frame, self.menubar)
+        self.core_editbar = CoreToolbar(self, edit_frame, self.menubar)
         self.core_editbar.create_toolbar()
 
     def draw_canvas(self):
@@ -63,7 +66,7 @@ class Application(tk.Frame):
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        self.core_editbar.update_canvas(self.canvas)
+        self.core_editbar.canvas = self.canvas
 
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview

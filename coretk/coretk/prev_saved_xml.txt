@@ -1,2 +1,0 @@
-/home/ncs/Desktop/runningtest.xml
-/home/ncs/Desktop/notrunning.xml
