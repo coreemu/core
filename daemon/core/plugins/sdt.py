@@ -24,7 +24,7 @@ from core.nodes.network import WlanNode
 
 
 # TODO: A named tuple may be more appropriate, than abusing a class dict like this
-class Bunch(object):
+class Bunch:
     """
     Helper class for recording a collection of attributes.
     """
@@ -38,7 +38,7 @@ class Bunch(object):
         self.__dict__.update(kwargs)
 
 
-class Sdt(object):
+class Sdt:
     """
     Helper class for exporting session objects to NRL"s SDT3D.
     The connect() method initializes the display, and can be invoked

@@ -8,7 +8,7 @@ from collections import OrderedDict
 from core.emulator.data import ConfigData
 
 
-class ConfigShim(object):
+class ConfigShim:
     """
     Provides helper methods for converting newer configuration values into TLV compatible formats.
     """
@@ -102,7 +102,7 @@ class ConfigShim(object):
         )
 
 
-class Configuration(object):
+class Configuration:
     """
     Represents a configuration options.
     """
@@ -131,7 +131,7 @@ class Configuration(object):
         return f"{self.__class__.__name__}(id={self.id}, type={self.type}, default={self.default}, options={self.options})"
 
 
-class ConfigurableManager(object):
+class ConfigurableManager:
     """
     Provides convenience methods for storing and retrieving configuration options for nodes.
     """
@@ -240,7 +240,7 @@ class ConfigurableManager(object):
         return self.node_configurations.get(node_id)
 
 
-class ConfigGroup(object):
+class ConfigGroup:
     """
     Defines configuration group tabs used for display by ConfigurationOptions.
     """
@@ -258,7 +258,7 @@ class ConfigGroup(object):
         self.stop = stop
 
 
-class ConfigurableOptions(object):
+class ConfigurableOptions:
     """
     Provides a base for defining configuration options within CORE.
     """
@@ -309,7 +309,7 @@ class ModelManager(ConfigurableManager):
         """
         Creates a ModelManager object.
         """
-        super(ModelManager, self).__init__()
+        super().__init__()
         self.models = {}
         self.node_models = {}
 

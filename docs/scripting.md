@@ -108,13 +108,12 @@ Examples for configuring custom emane model settings.
 # create session and emane network
 coreemu = CoreEmu()
 session = coreemu.create_session()
-emane_network = session.create_emane_network(
-    model=EmaneIeee80211abgModel,
-    geo_reference=(47.57917, -122.13232, 2.00000)
-)
-emane_network.setposition(x=80, y=50)
+session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+options = NodeOptions()
+options.set_position(80, 50)
+emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
 
 # set custom emane model config
 config = {}
-session.emane.set_model_config(emane_network.id, EmaneIeee80211abgModel.name, config)
+session.emane.set_model(emane_network, EmaneIeee80211abgModel, config)
 ```

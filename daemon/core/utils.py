@@ -2,6 +2,7 @@
 Miscellaneous utility functions, wrappers around some subprocess procedures.
 """
 
+import concurrent.futures
 import fcntl
 import hashlib
 import importlib
@@ -223,34 +224,6 @@ def cmd(args, env=None, cwd=None, wait=True, shell=False):
         raise CoreCommandError(-1, args)
 
 
-def hex_dump(s, bytes_per_word=2, words_per_line=8):
-    """
-    Hex dump of a string.
-
-    :param str s: string to hex dump
-    :param bytes_per_word: number of bytes per word
-    :param words_per_line: number of words per line
-    :return: hex dump of string
-    """
-    dump = ""
-    count = 0
-    total_bytes = bytes_per_word * words_per_line
-
-    while s:
-        line = s[:total_bytes]
-        s = s[total_bytes:]
-        tmp = map(
-            lambda x: (f"{bytes_per_word:02x}" * bytes_per_word) % x,
-            zip(*[iter(map(ord, line))] * bytes_per_word),
-        )
-        if len(line) % 2:
-            tmp.append(f"{ord(line[-1]):x}")
-        tmp = " ".join(tmp)
-        dump += f"0x{count:08x}: {tmp}\n"
-        count += len(line)
-    return dump[:-1]
-
-
 def file_munge(pathname, header, text):
     """
     Insert text at the end of a file, surrounded by header comments.
@@ -409,3 +382,29 @@ def load_logging_config(config_path):
     with open(config_path, "r") as log_config_file:
         log_config = json.load(log_config_file)
         logging.config.dictConfig(log_config)
+
+
+def threadpool(funcs, workers=10):
+    """
+    Run provided functions, arguments, and keywords within a threadpool
+    collecting results and exceptions.
+
+    :param iter funcs: iterable that provides a func, args, kwargs
+    :param int workers: number of workers for the threadpool
+    :return: results and exceptions from running functions with args and kwargs
+    :rtype: tuple
+    """
+    with concurrent.futures.ThreadPoolExecutor(max_workers=workers) as executor:
+        futures = []
+        for func, args, kwargs in funcs:
+            future = executor.submit(func, *args, **kwargs)
+            futures.append(future)
+        results = []
+        exceptions = []
+        for future in concurrent.futures.as_completed(futures):
+            try:
+                result = future.result()
+                results.append(result)
+            except Exception as e:
+                exceptions.append(e)
+    return results, exceptions

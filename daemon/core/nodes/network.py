@@ -21,7 +21,7 @@ from core.nodes.netclient import get_net_client
 ebtables_lock = threading.Lock()
 
 
-class EbtablesQueue(object):
+class EbtablesQueue:
     """
     Helper class for queuing up ebtables commands into rate-limited
     atomic commits. This improves performance and reliability when there are
@@ -257,7 +257,7 @@ class CoreNetwork(CoreNetworkBase):
             will run on, default is None for localhost
         :param policy: network policy
         """
-        CoreNetworkBase.__init__(self, session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         if name is None:
             name = str(self.id)
         if policy is not None:
@@ -337,8 +337,6 @@ class CoreNetwork(CoreNetworkBase):
         del self.session
         self.up = False
 
-    # TODO: this depends on a subtype with localname defined, seems like the
-    #  wrong place for this to live
     def attach(self, netif):
         """
         Attach a network interface.
@@ -348,8 +346,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         if self.up:
             netif.net_client.create_interface(self.brname, netif.localname)
-
-        CoreNetworkBase.attach(self, netif)
+        super().attach(netif)
 
     def detach(self, netif):
         """
@@ -360,8 +357,7 @@ class CoreNetwork(CoreNetworkBase):
         """
         if self.up:
             netif.net_client.delete_interface(self.brname, netif.localname)
-
-        CoreNetworkBase.detach(self, netif)
+        super().detach(netif)
 
     def linked(self, netif1, netif2):
         """
@@ -654,7 +650,7 @@ class GreTapBridge(CoreNetwork):
 
         :return: nothing
         """
-        CoreNetwork.startup(self)
+        super().startup()
         if self.gretap:
             self.attach(self.gretap)
 
@@ -668,7 +664,7 @@ class GreTapBridge(CoreNetwork):
             self.detach(self.gretap)
             self.gretap.shutdown()
             self.gretap = None
-        CoreNetwork.shutdown(self)
+        super().shutdown()
 
     def addrconfig(self, addrlist):
         """
@@ -755,7 +751,7 @@ class CtrlNet(CoreNetwork):
         self.assign_address = assign_address
         self.updown_script = updown_script
         self.serverintf = serverintf
-        CoreNetwork.__init__(self, session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
 
     def add_addresses(self, address):
         """
@@ -786,8 +782,7 @@ class CtrlNet(CoreNetwork):
         if self.net_client.existing_bridges(self.id):
             raise CoreError(f"old bridges exist for node: {self.id}")
 
-        CoreNetwork.startup(self)
-
+        super().startup()
         logging.info("added control network bridge: %s %s", self.brname, self.prefix)
 
         if self.hostid and self.assign_address:
@@ -835,7 +830,7 @@ class CtrlNet(CoreNetwork):
             except CoreCommandError:
                 logging.exception("error issuing shutdown script shutdown")
 
-        CoreNetwork.shutdown(self)
+        super().shutdown()
 
     def all_link_data(self, flags):
         """
@@ -866,8 +861,7 @@ class PtpNet(CoreNetwork):
             raise ValueError(
                 "Point-to-point links support at most 2 network interfaces"
             )
-
-        CoreNetwork.attach(self, netif)
+        super().attach(netif)
 
     def data(self, message_type, lat=None, lon=None, alt=None):
         """
@@ -1007,23 +1001,14 @@ class HubNode(CoreNetwork):
     policy = "ACCEPT"
     type = "hub"
 
-    def __init__(self, session, _id=None, name=None, start=True, server=None):
+    def startup(self):
         """
-        Creates a HubNode instance.
+        Startup for a hub node, that disables mac learning after normal startup.
 
-        :param core.session.Session session: core session instance
-        :param int _id: node id
-        :param str name: node namee
-        :param bool start: start flag
-        :param core.emulator.distributed.DistributedServer server: remote server node
-            will run on, default is None for localhost
-        :raises CoreCommandError: when there is a command exception
+        :return: nothing
         """
-        CoreNetwork.__init__(self, session, _id, name, start, server)
-
-        # TODO: move to startup method
-        if start:
-            self.net_client.disable_mac_learning(self.brname)
+        super().startup()
+        self.net_client.disable_mac_learning(self.brname)
 
 
 class WlanNode(CoreNetwork):
@@ -1050,24 +1035,28 @@ class WlanNode(CoreNetwork):
             will run on, default is None for localhost
         :param policy: wlan policy
         """
-        CoreNetwork.__init__(self, session, _id, name, start, server, policy)
-        # wireless model such as basic range
+        super().__init__(session, _id, name, start, server, policy)
+        # wireless and mobility models (BasicRangeModel, Ns2WaypointMobility)
         self.model = None
-        # mobility model such as scripted
         self.mobility = None
 
-        # TODO: move to startup method
-        if start:
-            self.net_client.disable_mac_learning(self.brname)
+    def startup(self):
+        """
+        Startup for a wlan node, that disables mac learning after normal startup.
+
+        :return: nothing
+        """
+        super().startup()
+        self.net_client.disable_mac_learning(self.brname)
 
     def attach(self, netif):
         """
         Attach a network interface.
 
-        :param core.nodes.interface.CoreInterface netif: network interface
+        :param core.nodes.interface.Veth netif: network interface
         :return: nothing
         """
-        CoreNetwork.attach(self, netif)
+        super().attach(netif)
         if self.model:
             netif.poshook = self.model.position_callback
             if netif.node is None:
@@ -1099,12 +1088,12 @@ class WlanNode(CoreNetwork):
 
     def update_mobility(self, config):
         if not self.mobility:
-            raise ValueError("no mobility set to update for node(%s)", self.id)
+            raise ValueError(f"no mobility set to update for node({self.id})")
         self.mobility.update_config(config)
 
     def updatemodel(self, config):
         if not self.model:
-            raise ValueError("no model set to update for node(%s)", self.id)
+            raise ValueError(f"no model set to update for node({self.id})")
         logging.debug(
             "node(%s) updating model(%s): %s", self.id, self.model.name, config
         )
@@ -1122,11 +1111,9 @@ class WlanNode(CoreNetwork):
         :return: list of link data
         :rtype: list[core.emulator.data.LinkData]
         """
-        all_links = CoreNetwork.all_link_data(self, flags)
-
+        all_links = super().all_link_data(flags)
         if self.model:
             all_links.extend(self.model.all_link_data(flags))
-
         return all_links
 
 

@@ -4,11 +4,11 @@ import parser
 
 from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emulator.coreemu import CoreEmu
-from core.emulator.emudata import IpPrefixes
-from core.emulator.enumerations import EventTypes
+from core.emulator.emudata import IpPrefixes, NodeOptions
+from core.emulator.enumerations import EventTypes, NodeTypes
 
 
-def example(options):
+def example(args):
     # ip generator for example
     prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
@@ -20,14 +20,16 @@ def example(options):
     session.set_state(EventTypes.CONFIGURATION_STATE)
 
     # create emane network node
-    emane_network = session.create_emane_network(
-        model=EmaneIeee80211abgModel, geo_reference=(47.57917, -122.13232, 2.00000)
-    )
-    emane_network.setposition(x=80, y=50)
+    session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+    options = NodeOptions()
+    options.set_position(80, 50)
+    emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+    session.emane.set_model(emane_network, EmaneIeee80211abgModel)
 
     # create nodes
-    for i in range(options.nodes):
-        node = session.create_wireless_node()
+    options = NodeOptions(model="mdr")
+    for i in range(args.nodes):
+        node = session.add_node(options=options)
         node.setposition(x=150 * (i + 1), y=150)
         interface = prefixes.create_interface(node)
         session.add_link(node.id, emane_network.id, interface_one=interface)
@@ -42,12 +44,12 @@ def example(options):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    options = parser.parse_options("emane80211")
+    args = parser.parse("emane80211")
     start = datetime.datetime.now()
     logging.info(
-        "running emane 80211 example: nodes(%s) time(%s)", options.nodes, options.time
+        "running emane 80211 example: nodes(%s) time(%s)", args.nodes, args.time
     )
-    example(options)
+    example(args)
     logging.info("elapsed time: %s", datetime.datetime.now() - start)
 
 

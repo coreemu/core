@@ -7,7 +7,7 @@ from core.emulator.emudata import IpPrefixes
 from core.emulator.enumerations import EventTypes, NodeTypes
 
 
-def example(options):
+def example(args):
     # ip generator for example
     prefixes = IpPrefixes(ip4_prefix="10.83.0.0/16")
 
@@ -22,7 +22,7 @@ def example(options):
     switch = session.add_node(_type=NodeTypes.SWITCH)
 
     # create nodes
-    for _ in range(options.nodes):
+    for _ in range(args.nodes):
         node = session.add_node()
         interface = prefixes.create_interface(node)
         session.add_link(node.id, switch.id, interface_one=interface)
@@ -32,13 +32,13 @@ def example(options):
 
     # get nodes to run example
     first_node = session.get_node(2)
-    last_node = session.get_node(options.nodes + 1)
+    last_node = session.get_node(args.nodes + 1)
 
     logging.info("starting iperf server on node: %s", first_node.name)
     first_node.cmd("iperf -s -D")
     first_node_address = prefixes.ip4_address(first_node)
     logging.info("node %s connecting to %s", last_node.name, first_node_address)
-    output = last_node.cmd(f"iperf -t {options.time} -c {first_node_address}")
+    output = last_node.cmd(f"iperf -t {args.time} -c {first_node_address}")
     logging.info(output)
     first_node.cmd("killall -9 iperf")
 
@@ -48,12 +48,10 @@ def example(options):
 
 def main():
     logging.basicConfig(level=logging.INFO)
-    options = parser.parse_options("switch")
+    args = parser.parse("switch")
     start = datetime.datetime.now()
-    logging.info(
-        "running switch example: nodes(%s) time(%s)", options.nodes, options.time
-    )
-    example(options)
+    logging.info("running switch example: nodes(%s) time(%s)", args.nodes, args.time)
+    example(args)
     logging.info("elapsed time: %s", datetime.datetime.now() - start)
 
 

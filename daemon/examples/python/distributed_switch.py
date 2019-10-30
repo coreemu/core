@@ -27,8 +27,8 @@ def main(args):
     node_one = session.add_node()
     switch = session.add_node(_type=NodeTypes.SWITCH)
     options = NodeOptions()
-    options.emulation_server = server_name
-    node_two = session.add_node(node_options=options)
+    options.server = server_name
+    node_two = session.add_node(options=options)
 
     # create node interfaces and link
     interface_one = prefixes.create_interface(node_one)

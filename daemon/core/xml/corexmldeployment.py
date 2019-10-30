@@ -84,7 +84,7 @@ def get_ipv4_addresses(hostname):
         raise NotImplementedError
 
 
-class CoreXmlDeployment(object):
+class CoreXmlDeployment:
     def __init__(self, session, scenario):
         self.session = session
         self.scenario = scenario

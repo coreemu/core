@@ -83,13 +83,9 @@ class CoreHandler(socketserver.BaseRequestHandler):
             self.handler_threads.append(thread)
             thread.start()
 
-        self.master = False
         self.session = None
         self.session_clients = {}
-
-        # core emulator
         self.coreemu = server.coreemu
-
         utils.close_onexec(request.fileno())
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)
 
@@ -434,9 +430,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(
             self.session.options.config_type, self.session.options.name
         )
-        tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.metadata.config_type, self.session.metadata.name
-        )
+        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "metadata")
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
@@ -591,12 +585,8 @@ class CoreHandler(socketserver.BaseRequestHandler):
         port = self.request.getpeername()[1]
 
         # TODO: add shutdown handler for session
-        self.session = self.coreemu.create_session(port, master=False)
+        self.session = self.coreemu.create_session(port)
         logging.debug("created new session for client: %s", self.session.id)
-
-        if self.master:
-            logging.debug("session set to master")
-            self.session.master = True
         clients = self.session_clients.setdefault(self.session.id, [])
         clients.append(self)
 
@@ -698,12 +688,12 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         node_id = message.get_tlv(NodeTlvs.NUMBER.value)
 
-        node_options = NodeOptions(
+        options = NodeOptions(
             name=message.get_tlv(NodeTlvs.NAME.value),
             model=message.get_tlv(NodeTlvs.MODEL.value),
         )
 
-        node_options.set_position(
+        options.set_position(
             x=message.get_tlv(NodeTlvs.X_POSITION.value),
             y=message.get_tlv(NodeTlvs.Y_POSITION.value),
         )
@@ -717,19 +707,19 @@ class CoreHandler(socketserver.BaseRequestHandler):
         alt = message.get_tlv(NodeTlvs.ALTITUDE.value)
         if alt is not None:
             alt = float(alt)
-        node_options.set_location(lat=lat, lon=lon, alt=alt)
+        options.set_location(lat=lat, lon=lon, alt=alt)
 
-        node_options.icon = message.get_tlv(NodeTlvs.ICON.value)
-        node_options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
-        node_options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
-        node_options.emulation_server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
+        options.icon = message.get_tlv(NodeTlvs.ICON.value)
+        options.canvas = message.get_tlv(NodeTlvs.CANVAS.value)
+        options.opaque = message.get_tlv(NodeTlvs.OPAQUE.value)
+        options.server = message.get_tlv(NodeTlvs.EMULATION_SERVER.value)
 
         services = message.get_tlv(NodeTlvs.SERVICES.value)
         if services:
-            node_options.services = services.split("|")
+            options.services = services.split("|")
 
         if message.flags & MessageFlags.ADD.value:
-            node = self.session.add_node(node_type, node_id, node_options)
+            node = self.session.add_node(node_type, node_id, options)
             if node:
                 if message.flags & MessageFlags.STRING.value:
                     self.node_status_request[node.id] = True
@@ -748,7 +738,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     replies.append(coreapi.CoreNodeMessage.pack(flags, tlvdata))
         # node update
         else:
-            self.session.update_node(node_id, node_options)
+            self.session.edit_node(node_id, options)
 
         return replies
 
@@ -942,7 +932,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 file_name = sys.argv[0]
 
                 if os.path.splitext(file_name)[1].lower() == ".xml":
-                    session = self.coreemu.create_session(master=False)
+                    session = self.coreemu.create_session()
                     try:
                         session.open_xml(file_name)
                     except Exception:
@@ -1012,17 +1002,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
             logging.debug("ignoring Register message")
         else:
             # register capabilities with the GUI
-            self.master = True
-
-            # find the session containing this client and set the session to master
-            for _id in self.coreemu.sessions:
-                clients = self.session_clients.get(_id, [])
-                if self in clients:
-                    session = self.coreemu.sessions[_id]
-                    logging.debug("setting session to master: %s", session.id)
-                    session.master = True
-                    break
-
             replies.append(self.register())
             replies.append(self.session_message())
 
@@ -1065,7 +1044,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             replies = self.handle_config_session(message_type, config_data)
         elif config_data.object == self.session.location.name:
             self.handle_config_location(message_type, config_data)
-        elif config_data.object == self.session.metadata.name:
+        elif config_data.object == "metadata":
             replies = self.handle_config_metadata(message_type, config_data)
         elif config_data.object == "broker":
             self.handle_config_broker(message_type, config_data)
@@ -1092,10 +1071,14 @@ class CoreHandler(socketserver.BaseRequestHandler):
 
         if message_type == ConfigFlags.RESET:
             node_id = config_data.node
-            self.session.location.reset()
-            self.session.services.reset()
-            self.session.mobility.config_reset(node_id)
-            self.session.emane.config_reset(node_id)
+            if node_id is not None:
+                self.session.mobility.config_reset(node_id)
+                self.session.emane.config_reset(node_id)
+            else:
+                self.session.location.reset()
+                self.session.services.reset()
+                self.session.mobility.config_reset()
+                self.session.emane.config_reset()
         else:
             raise Exception(f"cant handle config all: {message_type}")
 
@@ -1147,7 +1130,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
-            metadata_configs = self.session.metadata.get_configs()
+            metadata_configs = self.session.metadata
             if metadata_configs is None:
                 metadata_configs = {}
             data_values = "|".join(
@@ -1157,7 +1140,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
-                object=self.session.metadata.name,
+                object="metadata",
                 type=ConfigFlags.NONE.value,
                 data_types=data_types,
                 data_values=data_values,
@@ -1167,7 +1150,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             values = ConfigShim.str_to_dict(config_data.data_values)
             for key in values:
                 value = values[key]
-                self.session.metadata.set_config(key, value)
+                self.session.metadata[key] = value
         return replies
 
     def handle_config_broker(self, message_type, config_data):
@@ -1437,11 +1420,6 @@ class CoreHandler(socketserver.BaseRequestHandler):
                 config = ConfigShim.str_to_dict(values_str)
                 self.session.emane.set_configs(config)
 
-        # extra logic to start slave Emane object after nemid has been configured from the master
-        if message_type == ConfigFlags.UPDATE and self.session.master is False:
-            # instantiation was previously delayed by setup returning Emane.NOT_READY
-            self.session.instantiate()
-
         return replies
 
     def handle_config_emane_models(self, message_type, config_data):
@@ -1609,20 +1587,11 @@ class CoreHandler(socketserver.BaseRequestHandler):
             for _id in self.session.nodes:
                 self.send_node_emulation_id(_id)
         elif event_type == EventTypes.RUNTIME_STATE:
-            if self.session.master:
-                logging.warning(
-                    "Unexpected event message: RUNTIME state received at session master"
-                )
-            else:
-                # master event queue is started in session.checkruntime()
-                self.session.start_events()
+            logging.warning("Unexpected event message: RUNTIME state received")
         elif event_type == EventTypes.DATACOLLECT_STATE:
             self.session.data_collect()
         elif event_type == EventTypes.SHUTDOWN_STATE:
-            if self.session.master:
-                logging.warning(
-                    "Unexpected event message: SHUTDOWN state received at session master"
-                )
+            logging.warning("Unexpected event message: SHUTDOWN state received")
         elif event_type in {
             EventTypes.START,
             EventTypes.STOP,
@@ -1820,9 +1789,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
                     # set session to join
                     self.session = session
 
-                    # add client to session broker and set master if needed
-                    if self.master:
-                        self.session.master = True
+                    # add client to session broker
                     clients = self.session_clients.setdefault(self.session.id, [])
                     clients.append(self)
 
@@ -1982,18 +1949,17 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.session.broadcast_config(config_data)
 
         # send session metadata
-        metadata_configs = self.session.metadata.get_configs()
+        metadata_configs = self.session.metadata
         if metadata_configs:
             data_values = "|".join(
                 [f"{x}={metadata_configs[x]}" for x in metadata_configs]
             )
             data_types = tuple(
-                ConfigDataTypes.STRING.value
-                for _ in self.session.metadata.get_configs()
+                ConfigDataTypes.STRING.value for _ in self.session.metadata
             )
             config_data = ConfigData(
                 message_type=0,
-                object=self.session.metadata.name,
+                object="metadata",
                 type=ConfigFlags.NONE.value,
                 data_types=data_types,
                 data_values=data_values,
@@ -2018,7 +1984,6 @@ class CoreUdpHandler(CoreHandler):
             MessageTypes.EVENT.value: self.handle_event_message,
             MessageTypes.SESSION.value: self.handle_session_message,
         }
-        self.master = False
         self.session = None
         self.coreemu = server.mainserver.coreemu
         socketserver.BaseRequestHandler.__init__(self, request, client_address, server)

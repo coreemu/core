@@ -19,4 +19,4 @@ class EmaneRfPipeModel(emanemodel.EmaneModel):
         cls.mac_defaults["pcrcurveuri"] = os.path.join(
             emane_prefix, "share/emane/xml/models/mac/rfpipe/rfpipepcr.xml"
         )
-        super(EmaneRfPipeModel, cls).load(emane_prefix)
+        super().load(emane_prefix)

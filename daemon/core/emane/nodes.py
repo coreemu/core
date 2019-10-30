@@ -30,7 +30,7 @@ class EmaneNet(CoreNetworkBase):
     is_emane = True
 
     def __init__(self, session, _id=None, name=None, start=True, server=None):
-        super(EmaneNet, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self.conf = ""
         self.up = False
         self.nemidmap = {}

@@ -8,7 +8,7 @@ from core import utils
 from core.constants import VCMD_BIN
 
 
-class VnodeClient(object):
+class VnodeClient:
     """
     Provides client functionality for interacting with a virtual node.
     """

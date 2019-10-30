@@ -14,7 +14,7 @@ from core.api.grpc import core_pb2, core_pb2_grpc
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix, MacAddress
 
 
-class InterfaceHelper(object):
+class InterfaceHelper:
     """
     Convenience class to help generate IP4 and IP6 addresses for gRPC clients.
     """
@@ -133,7 +133,7 @@ def start_streamer(stream, handler):
     thread.start()
 
 
-class CoreGrpcClient(object):
+class CoreGrpcClient:
     """
     Provides convenience methods for interfacing with the CORE grpc server.
     """
@@ -147,6 +147,57 @@ class CoreGrpcClient(object):
         self.address = address
         self.stub = None
         self.channel = None
+
+    def start_session(
+        self,
+        session_id,
+        nodes,
+        links,
+        location=None,
+        hooks=None,
+        emane_config=None,
+        emane_model_configs=None,
+        wlan_configs=None,
+        mobility_configs=None,
+    ):
+        """
+        Start a session.
+
+        :param int session_id: id of session
+        :param list nodes: list of nodes to create
+        :param list links: list of links to create
+        :param core_pb2.SessionLocation location: location to set
+        :param list[core_pb2.Hook] hooks: session hooks to set
+        :param dict emane_config: emane configuration to set
+        :param list emane_model_configs: emane model configurations to set
+        :param list wlan_configs: wlan configurations to set
+        :param list mobility_configs: mobility configurations to set
+        :return: start session response
+        :rtype: core_pb2.StartSessionResponse
+        """
+        request = core_pb2.StartSessionRequest(
+            session_id=session_id,
+            nodes=nodes,
+            links=links,
+            location=location,
+            hooks=hooks,
+            emane_config=emane_config,
+            emane_model_configs=emane_model_configs,
+            wlan_configs=wlan_configs,
+            mobility_configs=mobility_configs,
+        )
+        return self.stub.StartSession(request)
+
+    def stop_session(self, session_id):
+        """
+        Stop a running session.
+
+        :param int session_id: id of session
+        :return: stop session response
+        :rtype: core_pb2.StopSessionResponse
+        """
+        request = core_pb2.StopSessionRequest(session_id=session_id)
+        return self.stub.StopSession(request)
 
     def create_session(self, session_id=None):
         """
@@ -204,18 +255,6 @@ class CoreGrpcClient(object):
         request = core_pb2.GetSessionOptionsRequest(session_id=session_id)
         return self.stub.GetSessionOptions(request)
 
-    def get_session_options_group(self, session_id):
-        """
-        Retrieve session options in a group list.
-
-        :param int session_id: id of session
-        :return: response with a list of configuration groups
-        :rtype: core_pb2.GetSessionOptionsGroupResponse
-        :raises grpc.RpcError: when session doesn't exist
-        """
-        request = core_pb2.GetSessionOptionsGroupRequest(session_id=session_id)
-        return self.stub.GetSessionOptionsGroup(request)
-
     def set_session_options(self, session_id, config):
         """
         Set options for a session.
@@ -230,6 +269,33 @@ class CoreGrpcClient(object):
             session_id=session_id, config=config
         )
         return self.stub.SetSessionOptions(request)
+
+    def get_session_metadata(self, session_id):
+        """
+        Retrieve session metadata as a dict with id mapping.
+
+        :param int session_id: id of session
+        :return: response with metadata dict
+        :rtype: core_pb2.GetSessionMetadataResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetSessionMetadataRequest(session_id=session_id)
+        return self.stub.GetSessionMetadata(request)
+
+    def set_session_metadata(self, session_id, config):
+        """
+        Set metadata for a session.
+
+        :param int session_id: id of session
+        :param dict[str, str] config: configuration values to set
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetSessionMetadataResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.SetSessionMetadataRequest(
+            session_id=session_id, config=config
+        )
+        return self.stub.SetSessionMetadata(request)
 
     def get_session_location(self, session_id):
         """
@@ -269,9 +335,11 @@ class CoreGrpcClient(object):
         :rtype: core_pb2.SetSessionLocationResponse
         :raises grpc.RpcError: when session doesn't exist
         """
-        position = core_pb2.SessionPosition(x=x, y=y, z=z, lat=lat, lon=lon, alt=alt)
+        location = core_pb2.SessionLocation(
+            x=x, y=y, z=z, lat=lat, lon=lon, alt=alt, scale=scale
+        )
         request = core_pb2.SetSessionLocationRequest(
-            session_id=session_id, position=position, scale=scale
+            session_id=session_id, location=location
         )
         return self.stub.SetSessionLocation(request)
 
@@ -587,8 +655,9 @@ class CoreGrpcClient(object):
         :rtype: core_pb2.SetMobilityConfigResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
+        mobility_config = core_pb2.MobilityConfig(node_id=node_id, config=config)
         request = core_pb2.SetMobilityConfigRequest(
-            session_id=session_id, node_id=node_id, config=config
+            session_id=session_id, mobility_config=mobility_config
         )
         return self.stub.SetMobilityConfig(request)
 
@@ -772,8 +841,9 @@ class CoreGrpcClient(object):
         :rtype: core_pb2.SetWlanConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
+        wlan_config = core_pb2.WlanConfig(node_id=node_id, config=config)
         request = core_pb2.SetWlanConfigRequest(
-            session_id=session_id, node_id=node_id, config=config
+            session_id=session_id, wlan_config=wlan_config
         )
         return self.stub.SetWlanConfig(request)
 
@@ -846,12 +916,11 @@ class CoreGrpcClient(object):
         :rtype: core_pb2.SetEmaneModelConfigResponse
         :raises grpc.RpcError: when session doesn't exist
         """
+        model_config = core_pb2.EmaneModelConfig(
+            node_id=node_id, model=model, config=config, interface_id=interface_id
+        )
         request = core_pb2.SetEmaneModelConfigRequest(
-            session_id=session_id,
-            node_id=node_id,
-            model=model,
-            config=config,
-            interface_id=interface_id,
+            session_id=session_id, emane_model_config=model_config
         )
         return self.stub.SetEmaneModelConfig(request)
 

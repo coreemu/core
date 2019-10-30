@@ -21,7 +21,7 @@ LOCK = threading.Lock()
 CMD_HIDE = True
 
 
-class DistributedServer(object):
+class DistributedServer:
     """
     Provides distributed server interactions.
     """
@@ -101,7 +101,7 @@ class DistributedServer(object):
             os.unlink(temp.name)
 
 
-class DistributedController(object):
+class DistributedController:
     """
     Provides logic for dealing with remote tunnels and distributed servers.
     """

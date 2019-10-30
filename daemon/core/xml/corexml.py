@@ -104,7 +104,7 @@ def add_configuration(parent, name, value):
     add_attribute(config_element, "value", value)
 
 
-class NodeElement(object):
+class NodeElement:
     def __init__(self, session, node, element_name):
         self.session = session
         self.node = node
@@ -131,7 +131,7 @@ class NodeElement(object):
         add_attribute(position, "alt", alt)
 
 
-class ServiceElement(object):
+class ServiceElement:
     def __init__(self, service):
         self.service = service
         self.element = etree.Element("service")
@@ -197,7 +197,7 @@ class ServiceElement(object):
 
 class DeviceElement(NodeElement):
     def __init__(self, session, node):
-        super(DeviceElement, self).__init__(session, node, "device")
+        super().__init__(session, node, "device")
         add_attribute(self.element, "type", node.type)
         self.add_services()
 
@@ -212,7 +212,7 @@ class DeviceElement(NodeElement):
 
 class NetworkElement(NodeElement):
     def __init__(self, session, node):
-        super(NetworkElement, self).__init__(session, node, "network")
+        super().__init__(session, node, "network")
         model = getattr(self.node, "model", None)
         if model:
             add_attribute(self.element, "model", model.name)
@@ -232,7 +232,7 @@ class NetworkElement(NodeElement):
         add_attribute(self.element, "type", node_type)
 
 
-class CoreXmlWriter(object):
+class CoreXmlWriter:
     def __init__(self, session):
         self.session = session
         self.scenario = etree.Element("scenario")
@@ -313,13 +313,13 @@ class CoreXmlWriter(object):
     def write_session_metadata(self):
         # metadata
         metadata_elements = etree.Element("session_metadata")
-        config = self.session.metadata.get_configs()
+        config = self.session.metadata
         if not config:
             return
 
-        for _id in config:
-            value = config[_id]
-            add_configuration(metadata_elements, _id, value)
+        for key in config:
+            value = config[key]
+            add_configuration(metadata_elements, key, value)
 
         if metadata_elements.getchildren():
             self.scenario.append(metadata_elements)
@@ -527,7 +527,7 @@ class CoreXmlWriter(object):
         return link_element
 
 
-class CoreXmlReader(object):
+class CoreXmlReader:
     def __init__(self, session):
         self.session = session
         self.scenario = None
@@ -574,7 +574,7 @@ class CoreXmlReader(object):
             value = data.get("value")
             configs[name] = value
         logging.info("reading session metadata: %s", configs)
-        self.session.metadata.set_configs(configs)
+        self.session.metadata = configs
 
     def read_session_options(self):
         session_options = self.scenario.find("session_options")
@@ -737,53 +737,51 @@ class CoreXmlReader(object):
         node_id = get_int(device_element, "id")
         name = device_element.get("name")
         model = device_element.get("type")
-        node_options = NodeOptions(name, model)
+        options = NodeOptions(name, model)
 
         service_elements = device_element.find("services")
         if service_elements is not None:
-            node_options.services = [
-                x.get("name") for x in service_elements.iterchildren()
-            ]
+            options.services = [x.get("name") for x in service_elements.iterchildren()]
 
         position_element = device_element.find("position")
         if position_element is not None:
             x = get_int(position_element, "x")
             y = get_int(position_element, "y")
             if all([x, y]):
-                node_options.set_position(x, y)
+                options.set_position(x, y)
 
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
-                node_options.set_location(lat, lon, alt)
+                options.set_location(lat, lon, alt)
 
         logging.info("reading node id(%s) model(%s) name(%s)", node_id, model, name)
-        self.session.add_node(_id=node_id, node_options=node_options)
+        self.session.add_node(_id=node_id, options=options)
 
     def read_network(self, network_element):
         node_id = get_int(network_element, "id")
         name = network_element.get("name")
         node_type = NodeTypes[network_element.get("type")]
-        node_options = NodeOptions(name)
+        options = NodeOptions(name)
 
         position_element = network_element.find("position")
         if position_element is not None:
             x = get_int(position_element, "x")
             y = get_int(position_element, "y")
             if all([x, y]):
-                node_options.set_position(x, y)
+                options.set_position(x, y)
 
             lat = get_float(position_element, "lat")
             lon = get_float(position_element, "lon")
             alt = get_float(position_element, "alt")
             if all([lat, lon, alt]):
-                node_options.set_location(lat, lon, alt)
+                options.set_location(lat, lon, alt)
 
         logging.info(
             "reading node id(%s) node_type(%s) name(%s)", node_id, node_type, name
         )
-        self.session.add_node(_type=node_type, _id=node_id, node_options=node_options)
+        self.session.add_node(_type=node_type, _id=node_id, options=options)
 
     def read_links(self):
         link_elements = self.scenario.find("links")
