@@ -331,6 +331,35 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         config.update(request.config)
         return core_pb2.SetSessionOptionsResponse(result=True)
 
+    def GetSessionMetadata(self, request, context):
+        """
+        Retrieve session metadata.
+
+        :param core.api.grpc.core_pb2.GetSessionMetadata request: get session metadata
+            request
+        :param grpc.ServicerContext context: context object
+        :return: get session metadata response
+        :rtype: core.api.grpc.core_pb2.GetSessionMetadata
+        """
+        logging.debug("get session metadata: %s", request)
+        session = self.get_session(request.session_id, context)
+        config = session.metadata.get_configs()
+        return core_pb2.GetSessionMetadataResponse(config=config)
+
+    def SetSessionMetadata(self, request, context):
+        """
+        Update a session's metadata.
+
+        :param core.api.grpc.core_pb2.SetSessionMetadata request: set metadata request
+        :param grpc.ServicerContext context: context object
+        :return: set metadata response
+        :rtype: core.api.grpc.core_pb2.SetSessionMetadataResponse
+        """
+        logging.debug("set session metadata: %s", request)
+        session = self.get_session(request.session_id, context)
+        session.metadata.set_configs(request.config)
+        return core_pb2.SetSessionMetadataResponse(result=True)
+
     def GetSession(self, request, context):
         """
         Retrieve requested session

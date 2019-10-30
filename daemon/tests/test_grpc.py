@@ -283,6 +283,38 @@ class TestGrpc:
         config = session.options.get_configs()
         assert len(config) > 0
 
+    def test_set_session_metadata(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+
+        # then
+        key = "meta1"
+        value = "value1"
+        with client.context_connect():
+            response = client.set_session_metadata(session.id, {key: value})
+
+        # then
+        assert response.result is True
+        assert session.metadata.get_config(key) == value
+        config = session.metadata.get_configs()
+        assert len(config) > 0
+
+    def test_get_session_metadata(self, grpc_server):
+        # given
+        client = CoreGrpcClient()
+        session = grpc_server.coreemu.create_session()
+        key = "meta1"
+        value = "value1"
+        session.metadata.set_config(key, value)
+
+        # then
+        with client.context_connect():
+            response = client.get_session_metadata(session.id)
+
+        # then
+        assert response.config[key] == value
+
     def test_set_session_state(self, grpc_server):
         # given
         client = CoreGrpcClient()

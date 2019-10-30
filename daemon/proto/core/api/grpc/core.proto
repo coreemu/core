@@ -23,6 +23,10 @@ service CoreApi {
     }
     rpc SetSessionOptions (SetSessionOptionsRequest) returns (SetSessionOptionsResponse) {
     }
+    rpc SetSessionMetadata (SetSessionMetadataRequest) returns (SetSessionMetadataResponse) {
+    }
+    rpc GetSessionMetadata (GetSessionMetadataRequest) returns (GetSessionMetadataResponse) {
+    }
     rpc GetSessionLocation (GetSessionLocationRequest) returns (GetSessionLocationResponse) {
     }
     rpc SetSessionLocation (SetSessionLocationRequest) returns (SetSessionLocationResponse) {
@@ -201,6 +205,23 @@ message SetSessionOptionsRequest {
 
 message SetSessionOptionsResponse {
     bool result = 1;
+}
+
+message SetSessionMetadataRequest {
+    int32 session_id = 1;
+    map<string, string> config = 2;
+}
+
+message SetSessionMetadataResponse {
+    bool result = 1;
+}
+
+message GetSessionMetadataRequest {
+    int32 session_id = 1;
+}
+
+message GetSessionMetadataResponse {
+    map<string, string> config = 1;
 }
 
 message GetSessionLocationRequest {

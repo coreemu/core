@@ -270,6 +270,33 @@ class CoreGrpcClient:
         )
         return self.stub.SetSessionOptions(request)
 
+    def get_session_metadata(self, session_id):
+        """
+        Retrieve session metadata as a dict with id mapping.
+
+        :param int session_id: id of session
+        :return: response with metadata dict
+        :rtype: core_pb2.GetSessionMetadataResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.GetSessionMetadataRequest(session_id=session_id)
+        return self.stub.GetSessionMetadata(request)
+
+    def set_session_metadata(self, session_id, config):
+        """
+        Set metadata for a session.
+
+        :param int session_id: id of session
+        :param dict[str, str] config: configuration values to set
+        :return: response with result of success or failure
+        :rtype: core_pb2.SetSessionMetadataResponse
+        :raises grpc.RpcError: when session doesn't exist
+        """
+        request = core_pb2.SetSessionMetadataRequest(
+            session_id=session_id, config=config
+        )
+        return self.stub.SetSessionMetadata(request)
+
     def get_session_location(self, session_id):
         """
         Get session location.
