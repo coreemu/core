@@ -169,7 +169,6 @@ class GrpcManager:
 
         # update the next available id
         core_id = core_node.id
-        print(core_id)
         if self.id is None or core_id >= self.id:
             self.id = core_id + 1
         self.preexisting.append(core_id)

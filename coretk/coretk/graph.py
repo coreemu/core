@@ -3,12 +3,14 @@ import logging
 import tkinter as tk
 
 from core.api.grpc import core_pb2
+from coretk.canvasaction import CanvasAction
 from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.grpcmanagement import GrpcManager
 from coretk.images import Images
 from coretk.interface import Interface
 from coretk.linkinfo import LinkInfo
-from coretk.nodeconfigtable import NodeConfig
+
+# from coretk.nodeconfigtable import NodeConfig
 
 
 class GraphMode(enum.Enum):
@@ -17,6 +19,12 @@ class GraphMode(enum.Enum):
     PICKNODE = 2
     NODE = 3
     OTHER = 4
+
+
+CORE_NODES = ["router"]
+CORE_WIRED_NETWORK_NODES = []
+CORE_WIRELESS_NODE = ["wlan"]
+CORE_EMANE = ["emane"]
 
 
 class CanvasGraph(tk.Canvas):
@@ -36,6 +44,7 @@ class CanvasGraph(tk.Canvas):
 
         self.grid = None
         self.meters_per_pixel = 1.5
+        self.canvas_action = CanvasAction(master, self)
         self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
@@ -44,15 +53,30 @@ class CanvasGraph(tk.Canvas):
         self.grpc_manager = GrpcManager(grpc)
 
         self.helper = GraphHelper(self, grpc)
+        self.is_node_context_opened = False
         # self.core_id_to_canvas_id = {}
         # self.core_map = CoreToCanvasMapping()
         # self.draw_existing_component()
 
+    def test(self):
+        print("testing the button")
+        print(self.node_context.winfo_rootx())
+
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
-        self.node_context.add_command(label="One")
-        self.node_context.add_command(label="Two")
-        self.node_context.add_command(label="Three")
+        self.node_context.add_command(
+            label="Configure", command=self.canvas_action.display_node_configuration
+        )
+        self.node_context.add_command(label="Select adjacent")
+        self.node_context.add_command(label="Create link to")
+        self.node_context.add_command(label="Assign to")
+        self.node_context.add_command(label="Move to")
+        self.node_context.add_command(label="Cut")
+        self.node_context.add_command(label="Copy")
+        self.node_context.add_command(label="Paste")
+        self.node_context.add_command(label="Delete")
+        self.node_context.add_command(label="Hide")
+        self.node_context.add_command(label="Services")
 
     def canvas_reset_and_redraw(self, new_grpc):
         """
@@ -74,14 +98,11 @@ class CanvasGraph(tk.Canvas):
         self.edges = {}
         self.drawing_edge = None
 
-        print("graph.py create a new grpc manager")
         self.grpc_manager = GrpcManager(new_grpc)
 
         # new grpc
         self.core_grpc = new_grpc
-        print("grpah.py draw existing component")
         self.draw_existing_component()
-        print(self.grpc_manager.edges)
 
     def setup_bindings(self):
         """
@@ -218,8 +239,6 @@ class CanvasGraph(tk.Canvas):
             ].interfaces.append(if2)
 
         # lift the nodes so they on top of the links
-        # for i in core_id_to_canvas_id.values():
-        #     self.lift(i)
         for i in self.find_withtag("node"):
             self.lift(i)
 
@@ -272,16 +291,20 @@ class CanvasGraph(tk.Canvas):
         :param event: mouse event
         :return: nothing
         """
-        self.focus_set()
-        self.selected = self.get_selected(event)
-        logging.debug(f"click release selected: {self.selected}")
-        if self.mode == GraphMode.EDGE:
-            self.handle_edge_release(event)
-        elif self.mode == GraphMode.NODE:
-            x, y = self.canvas_xy(event)
-            self.add_node(x, y, self.draw_node_image, self.draw_node_name)
-        elif self.mode == GraphMode.PICKNODE:
-            self.mode = GraphMode.NODE
+        if self.is_node_context_opened:
+            self.node_context.unpost()
+            self.is_node_context_opened = False
+        else:
+            self.focus_set()
+            self.selected = self.get_selected(event)
+            logging.debug(f"click release selected: {self.selected}")
+            if self.mode == GraphMode.EDGE:
+                self.handle_edge_release(event)
+            elif self.mode == GraphMode.NODE:
+                x, y = self.canvas_xy(event)
+                self.add_node(x, y, self.draw_node_image, self.draw_node_name)
+            elif self.mode == GraphMode.PICKNODE:
+                self.mode = GraphMode.NODE
 
     def handle_edge_release(self, event):
         edge = self.drawing_edge
@@ -367,11 +390,17 @@ class CanvasGraph(tk.Canvas):
             self.coords(self.drawing_edge.id, x1, y1, x2, y2)
 
     def context(self, event):
-        selected = self.get_selected(event)
-        nodes = self.find_withtag("node")
-        if selected in nodes:
-            logging.debug(f"node context: {selected}")
-            self.node_context.post(event.x_root, event.y_root)
+        if not self.is_node_context_opened:
+            selected = self.get_selected(event)
+            nodes = self.find_withtag("node")
+            if selected in nodes:
+                logging.debug(f"node context: {selected}")
+                self.node_context.post(event.x_root, event.y_root)
+                self.canvas_action.node_to_show_config = self.nodes[selected]
+            self.is_node_context_opened = True
+        else:
+            self.node_context.unpost()
+            self.is_node_context_opened = False
 
     def add_node(self, x, y, image, node_name):
         plot_id = self.find_all()[0]
@@ -482,8 +511,15 @@ class CanvasNode:
         if state == core_pb2.SessionState.RUNTIME:
             self.canvas.core_grpc.launch_terminal(node_id)
         else:
-            print("config table show up")
-            NodeConfig(self, self.image, self.node_type, self.name)
+            self.canvas.canvas_action.display_configuration(self)
+            # if self.node_type in CORE_NODES:
+            #     self.canvas.canvas_action.node_to_show_config = self
+            #     self.canvas.canvas_action.display_node_configuration()
+            # elif self.node_type in CORE_WIRED_NETWORK_NODES:
+            #     return
+            # elif self.node_type in CORE_WIRELESS_NODE:
+            #     return
+            # elif self
 
     def update_coords(self):
         self.x_coord, self.y_coord = self.canvas.coords(self.id)
