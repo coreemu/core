@@ -87,14 +87,3 @@ class SessionConfig(ConfigurableManager, ConfigurableOptions):
         if value is not None:
             value = int(value)
         return value
-
-
-class SessionMetaData(ConfigurableManager):
-    """
-    Metadata is simply stored in a configs[] dict. Key=value pairs are
-    passed in from configure messages destined to the "metadata" object.
-    The data is not otherwise interpreted or processed.
-    """
-
-    name = "metadata"
-    config_type = RegisterTlvs.UTILITY.value

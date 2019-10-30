@@ -313,13 +313,13 @@ class CoreXmlWriter:
     def write_session_metadata(self):
         # metadata
         metadata_elements = etree.Element("session_metadata")
-        config = self.session.metadata.get_configs()
+        config = self.session.metadata
         if not config:
             return
 
-        for _id in config:
-            value = config[_id]
-            add_configuration(metadata_elements, _id, value)
+        for key in config:
+            value = config[key]
+            add_configuration(metadata_elements, key, value)
 
         if metadata_elements.getchildren():
             self.scenario.append(metadata_elements)
@@ -574,7 +574,7 @@ class CoreXmlReader:
             value = data.get("value")
             configs[name] = value
         logging.info("reading session metadata: %s", configs)
-        self.session.metadata.set_configs(configs)
+        self.session.metadata = configs
 
     def read_session_options(self):
         session_options = self.scenario.find("session_options")

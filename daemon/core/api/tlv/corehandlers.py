@@ -430,9 +430,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         tlv_data += coreapi.CoreRegisterTlv.pack(
             self.session.options.config_type, self.session.options.name
         )
-        tlv_data += coreapi.CoreRegisterTlv.pack(
-            self.session.metadata.config_type, self.session.metadata.name
-        )
+        tlv_data += coreapi.CoreRegisterTlv.pack(RegisterTlvs.UTILITY.value, "metadata")
 
         return coreapi.CoreRegMessage.pack(MessageFlags.ADD.value, tlv_data)
 
@@ -1046,7 +1044,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             replies = self.handle_config_session(message_type, config_data)
         elif config_data.object == self.session.location.name:
             self.handle_config_location(message_type, config_data)
-        elif config_data.object == self.session.metadata.name:
+        elif config_data.object == "metadata":
             replies = self.handle_config_metadata(message_type, config_data)
         elif config_data.object == "broker":
             self.handle_config_broker(message_type, config_data)
@@ -1132,7 +1130,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         replies = []
         if message_type == ConfigFlags.REQUEST:
             node_id = config_data.node
-            metadata_configs = self.session.metadata.get_configs()
+            metadata_configs = self.session.metadata
             if metadata_configs is None:
                 metadata_configs = {}
             data_values = "|".join(
@@ -1142,7 +1140,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             config_response = ConfigData(
                 message_type=0,
                 node=node_id,
-                object=self.session.metadata.name,
+                object="metadata",
                 type=ConfigFlags.NONE.value,
                 data_types=data_types,
                 data_values=data_values,
@@ -1152,7 +1150,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
             values = ConfigShim.str_to_dict(config_data.data_values)
             for key in values:
                 value = values[key]
-                self.session.metadata.set_config(key, value)
+                self.session.metadata[key] = value
         return replies
 
     def handle_config_broker(self, message_type, config_data):
@@ -1951,18 +1949,17 @@ class CoreHandler(socketserver.BaseRequestHandler):
         self.session.broadcast_config(config_data)
 
         # send session metadata
-        metadata_configs = self.session.metadata.get_configs()
+        metadata_configs = self.session.metadata
         if metadata_configs:
             data_values = "|".join(
                 [f"{x}={metadata_configs[x]}" for x in metadata_configs]
             )
             data_types = tuple(
-                ConfigDataTypes.STRING.value
-                for _ in self.session.metadata.get_configs()
+                ConfigDataTypes.STRING.value for _ in self.session.metadata
             )
             config_data = ConfigData(
                 message_type=0,
-                object=self.session.metadata.name,
+                object="metadata",
                 type=ConfigFlags.NONE.value,
                 data_types=data_types,
                 data_values=data_values,

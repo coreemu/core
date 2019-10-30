@@ -343,8 +343,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("get session metadata: %s", request)
         session = self.get_session(request.session_id, context)
-        config = session.metadata.get_configs()
-        return core_pb2.GetSessionMetadataResponse(config=config)
+        return core_pb2.GetSessionMetadataResponse(config=session.metadata)
 
     def SetSessionMetadata(self, request, context):
         """
@@ -357,7 +356,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set session metadata: %s", request)
         session = self.get_session(request.session_id, context)
-        session.metadata.set_configs(request.config)
+        session.metadata = dict(request.config)
         return core_pb2.SetSessionMetadataResponse(result=True)
 
     def GetSession(self, request, context):

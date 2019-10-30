@@ -741,7 +741,7 @@ class TestGui:
 
         coretlv.handle_message(message)
 
-        assert coretlv.session.metadata.get_config(test_key) == test_value
+        assert coretlv.session.metadata[test_key] == test_value
 
     def test_config_broker_request(self, coretlv):
         server = "test"

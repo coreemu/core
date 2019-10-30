@@ -26,7 +26,7 @@ from core.emulator.emudata import (
     link_config,
 )
 from core.emulator.enumerations import EventTypes, ExceptionLevels, LinkTypes, NodeTypes
-from core.emulator.sessionconfig import SessionConfig, SessionMetaData
+from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
@@ -129,7 +129,7 @@ class Session:
         for key in config:
             value = config[key]
             self.options.set_config(key, value)
-        self.metadata = SessionMetaData()
+        self.metadata = {}
 
         # distributed support and logic
         self.distributed = DistributedController(self)
@@ -1513,9 +1513,8 @@ class Session:
             for node_id in self.nodes:
                 node = self.nodes[node_id]
                 if isinstance(node, CoreNodeBase):
-                    self.services.stop_services(node)
-                args = (node,)
-                funcs.append((self.services.stop_services, args, {}))
+                    args = (node,)
+                    funcs.append((self.services.stop_services, args, {}))
             utils.threadpool(funcs)
 
         # shutdown emane
