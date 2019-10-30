@@ -17,6 +17,8 @@ jobs:
           pip install pipenv
           cd daemon
           cp setup.py.in setup.py
+          cp core/constants.py.in core/constants.py
+          sed -i 's/True/False/g' core/constants.py
           pipenv install --dev
       - name: isort
         run: |
@@ -30,3 +32,11 @@ jobs:
         run: |
           cd daemon
           pipenv run flake8
+      - name: grpc
+        run: |
+          cd daemon/proto
+          pipenv run python -m grpc_tools.protoc -I . --python_out=.. --grpc_python_out=.. core/api/grpc/core.proto
+      - name: test
+        run: |
+          cd daemon
+          pipenv run test --mock
