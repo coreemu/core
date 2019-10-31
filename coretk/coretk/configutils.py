@@ -24,7 +24,7 @@ def create_config(master, config, padx=2, pady=2):
     master.columnconfigure(0, weight=1)
     master.columnconfigure(1, weight=1)
 
-    canvas = tk.Canvas(master)
+    canvas = tk.Canvas(master, highlightthickness=0)
     canvas.grid(row=0, columnspan=2, sticky="nsew", padx=padx, pady=pady)
     canvas.columnconfigure(0, weight=1)
     canvas.rowconfigure(0, weight=1)
