@@ -7,6 +7,7 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
+from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.setwallpaper import CanvasWallpaper
 from coretk.sizeandscale import SizeAndScale
 
@@ -314,10 +315,6 @@ def session_emulation_servers():
     logging.debug("Click session emulation servers")
 
 
-def session_options():
-    logging.debug("Click session options")
-
-
 def help_about():
     logging.debug("Click help About")
 
@@ -433,3 +430,8 @@ class MenuAction:
 
     def help_core_documentation(self):
         webbrowser.open_new("http://coreemu.github.io/core/")
+
+    def session_options(self):
+        logging.debug("Click session options")
+        dialog = SessionOptionsDialog(self.application)
+        dialog.show()

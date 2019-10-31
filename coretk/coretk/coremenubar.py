@@ -620,7 +620,7 @@ class CoreMenubar(object):
             underline=0,
         )
         session_menu.add_command(
-            label="Options...", command=action.session_options, underline=0
+            label="Options...", command=self.menu_action.session_options, underline=0
         )
 
         self.menubar.add_cascade(label="Session", menu=session_menu, underline=0)
