@@ -73,18 +73,15 @@ class NodeTypes(Enum):
 
     DEFAULT = 0
     PHYSICAL = 1
-    TBD = 3
     SWITCH = 4
     HUB = 5
     WIRELESS_LAN = 6
     RJ45 = 7
     TUNNEL = 8
-    KTUNNEL = 9
     EMANE = 10
     TAP_BRIDGE = 11
     PEER_TO_PEER = 12
     CONTROL_NET = 13
-    EMANE_NET = 14
     DOCKER = 15
     LXC = 16
 

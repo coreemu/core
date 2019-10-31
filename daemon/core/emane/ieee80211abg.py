@@ -19,4 +19,4 @@ class EmaneIeee80211abgModel(emanemodel.EmaneModel):
         cls.mac_defaults["pcrcurveuri"] = os.path.join(
             emane_prefix, "share/emane/xml/models/mac/ieee80211abg/ieee80211pcr.xml"
         )
-        super(EmaneIeee80211abgModel, cls).load(emane_prefix)
+        super().load(emane_prefix)

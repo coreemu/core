@@ -12,6 +12,7 @@ from core.emane.ieee80211abg import EmaneIeee80211abgModel
 from core.emane.rfpipe import EmaneRfPipeModel
 from core.emane.tdma import EmaneTdmaModel
 from core.emulator.emudata import NodeOptions
+from core.emulator.enumerations import NodeTypes
 from core.errors import CoreCommandError, CoreError
 
 _EMANE_MODELS = [
@@ -46,10 +47,11 @@ class TestEmane:
         """
 
         # create emane node for networking the core nodes
-        emane_network = session.create_emane_network(
-            model, geo_reference=(47.57917, -122.13232, 2.00000)
-        )
-        emane_network.setposition(x=80, y=50)
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        options = NodeOptions()
+        options.set_position(80, 50)
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        session.emane.set_model(emane_network, model)
 
         # configure tdma
         if model == EmaneTdmaModel:
@@ -60,11 +62,11 @@ class TestEmane:
             )
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(150, 150)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_options.set_position(300, 150)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(150, 150)
+        node_one = session.add_node(options=options)
+        options.set_position(300, 150)
+        node_two = session.add_node(options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -87,19 +89,22 @@ class TestEmane:
         :param ip_prefixes: generates ip addresses for nodes
         """
         # create emane node for networking the core nodes
-        emane_network = session.create_emane_network(
-            EmaneIeee80211abgModel,
-            geo_reference=(47.57917, -122.13232, 2.00000),
-            config={"test": "1"},
+        session.set_location(47.57917, -122.13232, 2.00000, 1.0)
+        options = NodeOptions()
+        options.set_position(80, 50)
+        emane_network = session.add_node(_type=NodeTypes.EMANE, options=options)
+        config_key = "txpower"
+        config_value = "10"
+        session.emane.set_model(
+            emane_network, EmaneIeee80211abgModel, {config_key: config_value}
         )
-        emane_network.setposition(x=80, y=50)
 
         # create nodes
-        node_options = NodeOptions()
-        node_options.set_position(150, 150)
-        node_one = session.create_wireless_node(node_options=node_options)
-        node_options.set_position(300, 150)
-        node_two = session.create_wireless_node(node_options=node_options)
+        options = NodeOptions(model="mdr")
+        options.set_position(150, 150)
+        node_one = session.add_node(options=options)
+        options.set_position(300, 150)
+        node_two = session.add_node(options=options)
 
         for i, node in enumerate([node_one, node_two]):
             node.setposition(x=150 * (i + 1), y=150)
@@ -137,11 +142,11 @@ class TestEmane:
 
         # retrieve configuration we set originally
         value = str(
-            session.emane.get_config("test", emane_id, EmaneIeee80211abgModel.name)
+            session.emane.get_config(config_key, emane_id, EmaneIeee80211abgModel.name)
         )
 
         # verify nodes and configuration were restored
         assert session.get_node(n1_id)
         assert session.get_node(n2_id)
         assert session.get_node(emane_id)
-        assert value == "1"
+        assert value == config_value

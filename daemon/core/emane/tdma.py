@@ -32,7 +32,7 @@ class EmaneTdmaModel(emanemodel.EmaneModel):
             emane_prefix,
             "share/emane/xml/models/mac/tdmaeventscheduler/tdmabasemodelpcr.xml",
         )
-        super(EmaneTdmaModel, cls).load(emane_prefix)
+        super().load(emane_prefix)
         cls.mac_config.insert(
             0,
             Configuration(

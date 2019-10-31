@@ -24,7 +24,7 @@ def convert_node(node_data):
             (NodeTlvs.IP6_ADDRESS, node_data.ip6_address),
             (NodeTlvs.MODEL, node_data.model),
             (NodeTlvs.EMULATION_ID, node_data.emulation_id),
-            (NodeTlvs.EMULATION_SERVER, node_data.emulation_server),
+            (NodeTlvs.EMULATION_SERVER, node_data.server),
             (NodeTlvs.SESSION, node_data.session),
             (NodeTlvs.X_POSITION, node_data.x_position),
             (NodeTlvs.Y_POSITION, node_data.y_position),

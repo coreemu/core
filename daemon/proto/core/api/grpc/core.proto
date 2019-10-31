@@ -7,6 +7,10 @@ option java_outer_classname = "CoreProto";
 
 service CoreApi {
     // session rpc
+    rpc StartSession (StartSessionRequest) returns (StartSessionResponse) {
+    }
+    rpc StopSession (StopSessionRequest) returns (StopSessionResponse) {
+    }
     rpc CreateSession (CreateSessionRequest) returns (CreateSessionResponse) {
     }
     rpc DeleteSession (DeleteSessionRequest) returns (DeleteSessionResponse) {
@@ -18,6 +22,10 @@ service CoreApi {
     rpc GetSessionOptions (GetSessionOptionsRequest) returns (GetSessionOptionsResponse) {
     }
     rpc SetSessionOptions (SetSessionOptionsRequest) returns (SetSessionOptionsResponse) {
+    }
+    rpc SetSessionMetadata (SetSessionMetadataRequest) returns (SetSessionMetadataResponse) {
+    }
+    rpc GetSessionMetadata (GetSessionMetadataRequest) returns (GetSessionMetadataResponse) {
     }
     rpc GetSessionLocation (GetSessionLocationRequest) returns (GetSessionLocationResponse) {
     }
@@ -126,6 +134,30 @@ service CoreApi {
 }
 
 // rpc request/response messages
+message StartSessionRequest {
+    int32 session_id = 1;
+    repeated Node nodes = 2;
+    repeated Link links = 3;
+    repeated Hook hooks = 4;
+    SessionLocation location = 5;
+    map<string, string> emane_config = 6;
+    repeated WlanConfig wlan_configs = 7;
+    repeated EmaneModelConfig emane_model_configs = 8;
+    repeated MobilityConfig mobility_configs = 9;
+}
+
+message StartSessionResponse {
+    bool result = 1;
+}
+
+message StopSessionRequest {
+    int32 session_id = 1;
+}
+
+message StopSessionResponse {
+    bool result = 1;
+}
+
 message CreateSessionRequest {
     int32 session_id = 1;
 }
@@ -175,19 +207,34 @@ message SetSessionOptionsResponse {
     bool result = 1;
 }
 
+message SetSessionMetadataRequest {
+    int32 session_id = 1;
+    map<string, string> config = 2;
+}
+
+message SetSessionMetadataResponse {
+    bool result = 1;
+}
+
+message GetSessionMetadataRequest {
+    int32 session_id = 1;
+}
+
+message GetSessionMetadataResponse {
+    map<string, string> config = 1;
+}
+
 message GetSessionLocationRequest {
     int32 session_id = 1;
 }
 
 message GetSessionLocationResponse {
-    SessionPosition position = 1;
-    float scale = 2;
+    SessionLocation location = 1;
 }
 
 message SetSessionLocationRequest {
     int32 session_id = 1;
-    SessionPosition position = 2;
-    float scale = 3;
+    SessionLocation location = 2;
 }
 
 message SetSessionLocationResponse {
@@ -442,8 +489,7 @@ message GetMobilityConfigResponse {
 
 message SetMobilityConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    map<string, string> config = 3;
+    MobilityConfig mobility_config = 2;
 }
 
 message SetMobilityConfigResponse {
@@ -553,8 +599,7 @@ message GetWlanConfigResponse {
 
 message SetWlanConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    map<string, string> config = 3;
+    WlanConfig wlan_config = 2;
 }
 
 message SetWlanConfigResponse {
@@ -599,10 +644,7 @@ message GetEmaneModelConfigResponse {
 
 message SetEmaneModelConfigRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    int32 interface_id = 3;
-    string model = 4;
-    map<string, string> config = 5;
+    EmaneModelConfig emane_model_config = 2;
 }
 
 message SetEmaneModelConfigResponse {
@@ -659,6 +701,23 @@ message EmaneLinkResponse {
 }
 
 // data structures for messages below
+message WlanConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message MobilityConfig {
+    int32 node_id = 1;
+    map<string, string> config = 2;
+}
+
+message EmaneModelConfig {
+    int32 node_id = 1;
+    int32 interface_id = 2;
+    string model = 3;
+    map<string, string> config = 4;
+}
+
 message MessageType {
     enum Enum {
         NONE = 0;
@@ -695,18 +754,15 @@ message NodeType {
     enum Enum {
         DEFAULT = 0;
         PHYSICAL = 1;
-        TBD = 3;
         SWITCH = 4;
         HUB = 5;
         WIRELESS_LAN = 6;
         RJ45 = 7;
         TUNNEL = 8;
-        KTUNNEL = 9;
         EMANE = 10;
         TAP_BRIDGE = 11;
         PEER_TO_PEER = 12;
         CONTROL_NET = 13;
-        EMANE_NET = 14;
         DOCKER = 15;
         LXC = 16;
     }
@@ -853,13 +909,14 @@ message Interface {
     int32 mtu = 10;
 }
 
-message SessionPosition {
+message SessionLocation {
     float x = 1;
     float y = 2;
     float z = 3;
     float lat = 4;
     float lon = 5;
     float alt = 6;
+    float scale = 7;
 }
 
 message Position {

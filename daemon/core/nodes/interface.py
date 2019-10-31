@@ -10,7 +10,7 @@ from core.errors import CoreCommandError
 from core.nodes.netclient import get_net_client
 
 
-class CoreInterface(object):
+class CoreInterface:
     """
     Base class for network interfaces.
     """
@@ -40,8 +40,10 @@ class CoreInterface(object):
         self.poshook = lambda a, b, c, d: None
         # used with EMANE
         self.transport_type = None
-        # interface index on the network
+        # node interface index
         self.netindex = None
+        # net interface index
+        self.netifi = None
         # index used to find flow data
         self.flow_id = None
         self.server = server
@@ -230,7 +232,7 @@ class Veth(CoreInterface):
         :raises CoreCommandError: when there is a command exception
         """
         # note that net arg is ignored
-        CoreInterface.__init__(self, session, node, name, mtu, server)
+        super().__init__(session, node, name, mtu, server)
         self.localname = localname
         self.up = False
         if start:
@@ -291,7 +293,7 @@ class TunTap(CoreInterface):
             will run on, default is None for localhost
         :param bool start: start flag
         """
-        CoreInterface.__init__(self, session, node, name, mtu, server)
+        super().__init__(session, node, name, mtu, server)
         self.localname = localname
         self.up = False
         self.transport_type = "virtual"
@@ -474,7 +476,7 @@ class GreTap(CoreInterface):
             will run on, default is None for localhost
         :raises CoreCommandError: when there is a command exception
         """
-        CoreInterface.__init__(self, session, node, name, mtu, server)
+        super().__init__(session, node, name, mtu, server)
         if _id is None:
             # from PyCoreObj
             _id = ((id(self) >> 16) ^ (id(self) & 0xFFFF)) & 0xFFFF

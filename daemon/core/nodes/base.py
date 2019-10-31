@@ -21,7 +21,7 @@ from core.nodes.netclient import get_net_client
 _DEFAULT_MTU = 1500
 
 
-class NodeBase(object):
+class NodeBase:
     """
     Base class for CORE nodes (nodes and networks)
     """
@@ -139,7 +139,7 @@ class NodeBase(object):
         if sort:
             return [self._netif[x] for x in sorted(self._netif)]
         else:
-            return self._netif.values()
+            return list(self._netif.values())
 
     def numnetif(self):
         """
@@ -158,11 +158,9 @@ class NodeBase(object):
         :return: interface index if found, -1 otherwise
         :rtype: int
         """
-
         for ifindex in self._netif:
             if self._netif[ifindex] is netif:
                 return ifindex
-
         return -1
 
     def newifindex(self):
@@ -194,9 +192,9 @@ class NodeBase(object):
 
         x, y, _ = self.getposition()
         model = self.type
-        emulation_server = None
+        server = None
         if self.server is not None:
-            emulation_server = self.server.name
+            server = self.server.name
 
         services = self.services
         if services is not None:
@@ -217,7 +215,7 @@ class NodeBase(object):
             longitude=lon,
             altitude=alt,
             model=model,
-            emulation_server=emulation_server,
+            server=server,
             services=services,
         )
 
@@ -252,7 +250,7 @@ class CoreNodeBase(NodeBase):
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-        super(CoreNodeBase, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self.services = []
         self.nodedir = None
         self.tmpnodedir = False
@@ -294,7 +292,6 @@ class CoreNodeBase(NodeBase):
         if ifindex in self._netif:
             raise ValueError(f"ifindex {ifindex} already exists")
         self._netif[ifindex] = netif
-        # TODO: this should have probably been set ahead, seems bad to me, check for failure and fix
         netif.netindex = ifindex
 
     def delnetif(self, ifindex):
@@ -310,13 +307,11 @@ class CoreNodeBase(NodeBase):
         netif.shutdown()
         del netif
 
-    # TODO: net parameter is not used, remove
-    def netif(self, ifindex, net=None):
+    def netif(self, ifindex):
         """
         Retrieve network interface.
 
         :param int ifindex: index of interface to retrieve
-        :param core.nodes.interface.CoreInterface net: network node
         :return: network interface, or None if not found
         :rtype: core.nodes.interface.CoreInterface
         """
@@ -357,7 +352,7 @@ class CoreNodeBase(NodeBase):
         :param z: z position
         :return: nothing
         """
-        changed = super(CoreNodeBase, self).setposition(x, y, z)
+        changed = super().setposition(x, y, z)
         if changed:
             for netif in self.netifs(sort=True):
                 netif.setposition(x, y, z)
@@ -435,7 +430,7 @@ class CoreNode(CoreNodeBase):
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-        super(CoreNode, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self.nodedir = nodedir
         self.ctrlchnlname = os.path.abspath(
             os.path.join(self.session.session_dir, self.name)
@@ -632,15 +627,14 @@ class CoreNode(CoreNodeBase):
         :rtype: int
         """
         with self.lock:
-            return super(CoreNode, self).newifindex()
+            return super().newifindex()
 
-    def newveth(self, ifindex=None, ifname=None, net=None):
+    def newveth(self, ifindex=None, ifname=None):
         """
         Create a new interface.
 
         :param int ifindex: index for the new interface
         :param str ifname: name for the new interface
-        :param core.nodes.base.CoreNetworkBase net: network to associate interface with
         :return: nothing
         """
         with self.lock:
@@ -692,13 +686,12 @@ class CoreNode(CoreNodeBase):
 
             return ifindex
 
-    def newtuntap(self, ifindex=None, ifname=None, net=None):
+    def newtuntap(self, ifindex=None, ifname=None):
         """
         Create a new tunnel tap.
 
         :param int ifindex: interface index
         :param str ifname: interface name
-        :param net: network to associate with
         :return: interface index
         :rtype: int
         """
@@ -803,7 +796,7 @@ class CoreNode(CoreNodeBase):
         with self.lock:
             # TODO: emane specific code
             if net.is_emane is True:
-                ifindex = self.newtuntap(ifindex=ifindex, ifname=ifname, net=net)
+                ifindex = self.newtuntap(ifindex, ifname)
                 # TUN/TAP is not ready for addressing yet; the device may
                 #   take some time to appear, and installing it into a
                 #   namespace after it has been bound removes addressing;
@@ -815,7 +808,7 @@ class CoreNode(CoreNodeBase):
                     netif.addaddr(address)
                 return ifindex
             else:
-                ifindex = self.newveth(ifindex=ifindex, ifname=ifname, net=net)
+                ifindex = self.newveth(ifindex, ifname)
 
             if net is not None:
                 self.attachnet(ifindex, net)
@@ -930,7 +923,7 @@ class CoreNetworkBase(NodeBase):
         :param core.emulator.distributed.DistributedServer server: remote server node
             will run on, default is None for localhost
         """
-        super(CoreNetworkBase, self).__init__(session, _id, name, start, server)
+        super().__init__(session, _id, name, start, server)
         self._linked = {}
         self._linked_lock = threading.Lock()
 
@@ -1072,7 +1065,7 @@ class CoreNetworkBase(NodeBase):
         return all_links
 
 
-class Position(object):
+class Position:
     """
     Helper class for Cartesian coordinate position
     """

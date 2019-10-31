@@ -5,7 +5,7 @@ DEFAULT_TIME = 10
 DEFAULT_STEP = 1
 
 
-def parse_options(name):
+def parse(name):
     parser = argparse.ArgumentParser(description=f"Run {name} example")
     parser.add_argument(
         "-n",
@@ -22,11 +22,11 @@ def parse_options(name):
         help="example iperf run time in seconds",
     )
 
-    options = parser.parse_args()
+    args = parser.parse_args()
 
-    if options.nodes < 2:
-        parser.error(f"invalid min number of nodes: {options.nodes}")
-    if options.time < 1:
-        parser.error(f"invalid test time: {options.time}")
+    if args.nodes < 2:
+        parser.error(f"invalid min number of nodes: {args.nodes}")
+    if args.time < 1:
+        parser.error(f"invalid test time: {args.time}")
 
-    return options
+    return args

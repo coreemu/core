@@ -62,7 +62,7 @@ class EmaneManager(ModelManager):
         :param core.session.Session session: session this manager is tied to
         :return: nothing
         """
-        super(EmaneManager, self).__init__()
+        super().__init__()
         self.session = session
         self._emane_nets = {}
         self._emane_node_lock = threading.Lock()
@@ -128,7 +128,7 @@ class EmaneManager(ModelManager):
             return config
 
     def config_reset(self, node_id=None):
-        super(EmaneManager, self).config_reset(node_id)
+        super().config_reset(node_id)
         self.set_configs(self.emane_config.default_values())
 
     def emane_check(self):
@@ -269,37 +269,34 @@ class EmaneManager(ModelManager):
 
         # control network bridge required for EMANE 0.9.2
         # - needs to exist when eventservice binds to it (initeventservice)
-        if self.session.master:
-            otadev = self.get_config("otamanagerdevice")
-            netidx = self.session.get_control_net_index(otadev)
-            logging.debug(
-                "emane ota manager device: index(%s) otadev(%s)", netidx, otadev
+        otadev = self.get_config("otamanagerdevice")
+        netidx = self.session.get_control_net_index(otadev)
+        logging.debug("emane ota manager device: index(%s) otadev(%s)", netidx, otadev)
+        if netidx < 0:
+            logging.error(
+                "EMANE cannot start, check core config. invalid OTA device provided: %s",
+                otadev,
             )
+            return EmaneManager.NOT_READY
+
+        self.session.add_remove_control_net(
+            net_index=netidx, remove=False, conf_required=False
+        )
+        eventdev = self.get_config("eventservicedevice")
+        logging.debug("emane event service device: eventdev(%s)", eventdev)
+        if eventdev != otadev:
+            netidx = self.session.get_control_net_index(eventdev)
+            logging.debug("emane event service device index: %s", netidx)
             if netidx < 0:
                 logging.error(
-                    "EMANE cannot start, check core config. invalid OTA device provided: %s",
-                    otadev,
+                    "EMANE cannot start, check core config. invalid event service device: %s",
+                    eventdev,
                 )
                 return EmaneManager.NOT_READY
 
             self.session.add_remove_control_net(
                 net_index=netidx, remove=False, conf_required=False
             )
-            eventdev = self.get_config("eventservicedevice")
-            logging.debug("emane event service device: eventdev(%s)", eventdev)
-            if eventdev != otadev:
-                netidx = self.session.get_control_net_index(eventdev)
-                logging.debug("emane event service device index: %s", netidx)
-                if netidx < 0:
-                    logging.error(
-                        "EMANE cannot start, check core config. invalid event service device: %s",
-                        eventdev,
-                    )
-                    return EmaneManager.NOT_READY
-
-                self.session.add_remove_control_net(
-                    net_index=netidx, remove=False, conf_required=False
-                )
 
         self.check_node_models()
         return EmaneManager.SUCCESS
@@ -376,7 +373,6 @@ class EmaneManager(ModelManager):
         with self._emane_node_lock:
             self._emane_nets.clear()
 
-        # don't clear self._ifccounts here; NEM counts are needed for buildxml
         self.platformport = self.session.options.get_config_int(
             "emane_platform_port", 8100
         )
@@ -585,7 +581,7 @@ class EmaneManager(ModelManager):
             args = f"{emanecmd} -f {log_file} {platform_xml}"
             output = node.cmd(args)
             logging.info("node(%s) emane daemon running: %s", node.name, args)
-            logging.info("node(%s) emane daemon output: %s", node.name, output)
+            logging.debug("node(%s) emane daemon output: %s", node.name, output)
 
         if not run_emane_on_host:
             return
@@ -871,7 +867,7 @@ class EmaneGlobalModel(EmaneModel):
         ]
 
     def __init__(self, session, _id=None):
-        super(EmaneGlobalModel, self).__init__(session, _id)
+        super().__init__(session, _id)
 
     def build_xml_files(self, config, interface=None):
         raise NotImplementedError

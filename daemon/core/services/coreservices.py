@@ -10,7 +10,6 @@ services.
 import enum
 import logging
 import time
-from multiprocessing.pool import ThreadPool
 
 from core import utils
 from core.constants import which
@@ -29,7 +28,7 @@ class ServiceMode(enum.Enum):
     TIMER = 2
 
 
-class ServiceDependencies(object):
+class ServiceDependencies:
     """
     Can generate boot paths for services, based on their dependencies. Will validate
     that all services will be booted and that all dependencies exist within the services provided.
@@ -127,7 +126,7 @@ class ServiceDependencies(object):
         return self.path
 
 
-class ServiceShim(object):
+class ServiceShim:
     keys = [
         "dirs",
         "files",
@@ -235,7 +234,7 @@ class ServiceShim(object):
         return servicesstring[1].split(",")
 
 
-class ServiceManager(object):
+class ServiceManager:
     """
     Manages services available for CORE nodes to use.
     """
@@ -306,7 +305,7 @@ class ServiceManager(object):
         return service_errors
 
 
-class CoreServices(object):
+class CoreServices:
     """
     Class for interacting with a list of available startup services for
     nodes. Mostly used to convert a CoreService into a Config API
@@ -462,18 +461,14 @@ class CoreServices(object):
         :param core.netns.vnode.LxcNode node: node to start services on
         :return: nothing
         """
-        pool = ThreadPool()
-        results = []
-
+        funcs = []
         boot_paths = ServiceDependencies(node.services).boot_paths()
         for boot_path in boot_paths:
-            result = pool.apply_async(self._start_boot_paths, (node, boot_path))
-            results.append(result)
-
-        pool.close()
-        pool.join()
-        for result in results:
-            result.get()
+            args = (node, boot_path)
+            funcs.append((self._start_boot_paths, args, {}))
+        result, exceptions = utils.threadpool(funcs)
+        if exceptions:
+            raise ServiceBootError(exceptions)
 
     def _start_boot_paths(self, node, boot_path):
         """
@@ -791,7 +786,7 @@ class CoreServices(object):
             node.nodefile(file_name, cfg)
 
 
-class CoreService(object):
+class CoreService:
     """
     Parent class used for defining services.
     """
