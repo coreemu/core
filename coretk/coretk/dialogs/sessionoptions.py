@@ -23,9 +23,8 @@ class SessionOptionsDialog(Dialog):
         logging.info("session options: %s", response)
         self.options = response.config
         self.values = configutils.create_config(self, self.options, PAD_X, PAD_Y)
-        row = len(response.config)
-        self.save_button.grid(row=row, pady=PAD_Y, padx=PAD_X, sticky="ew")
-        self.cancel_button.grid(row=row, column=1, pady=PAD_Y, padx=PAD_X, sticky="ew")
+        self.save_button.grid(row=1, pady=PAD_Y, padx=PAD_X, sticky="ew")
+        self.cancel_button.grid(row=1, column=1, pady=PAD_Y, padx=PAD_X, sticky="ew")
 
     def save(self):
         config = configutils.parse_config(self.options, self.values)
