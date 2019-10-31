@@ -181,7 +181,7 @@ class EbtablesQueue:
 
     def ebchange(self, wlan):
         """
-        Flag a change to the given WLAN"s _linked dict, so the ebtables
+        Flag a change to the given WLAN's _linked dict, so the ebtables
         chain will be rebuilt at the next interval.
 
         :return: nothing
@@ -197,8 +197,13 @@ class EbtablesQueue:
         :return: nothing
         """
         with wlan._linked_lock:
-            # flush the chain
-            self.cmds.append(f"-F {wlan.brname}")
+            if wlan.has_ebtables_chain:
+                # flush the chain
+                self.cmds.append(f"-F {wlan.brname}")
+            else:
+                wlan.has_ebtables_chain = True
+                self.cmds.extend([f"-N {wlan.brname} -P {wlan.policy}",
+                                  f"-A FORWARD --logical-in {wlan.brname} -j {wlan.brname}"])
             # rebuild the chain
             for netif1, v in wlan._linked.items():
                 for netif2, linked in v.items():
@@ -297,14 +302,7 @@ class CoreNetwork(CoreNetworkBase):
         :raises CoreCommandError: when there is a command exception
         """
         self.net_client.create_bridge(self.brname)
-
-        # create a new ebtables chain for this bridge
-        cmds = [
-            f"{EBTABLES_BIN} -N {self.brname} -P {self.policy}",
-            f"{EBTABLES_BIN} -A FORWARD --logical-in {self.brname} -j {self.brname}",
-        ]
-        ebtablescmds(self.host_cmd, cmds)
-
+        self.has_ebtables_chain = False
         self.up = True
 
     def shutdown(self):
@@ -320,11 +318,12 @@ class CoreNetwork(CoreNetworkBase):
 
         try:
             self.net_client.delete_bridge(self.brname)
-            cmds = [
-                f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
-                f"{EBTABLES_BIN} -X {self.brname}",
-            ]
-            ebtablescmds(self.host_cmd, cmds)
+            if self.has_ebtables_chain:
+                cmds = [
+                    f"{EBTABLES_BIN} -D FORWARD --logical-in {self.brname} -j {self.brname}",
+                    f"{EBTABLES_BIN} -X {self.brname}",
+                ]
+                ebtablescmds(self.host_cmd, cmds)
         except CoreCommandError:
             logging.exception("error during shutdown")
 
