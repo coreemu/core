@@ -11,7 +11,7 @@ class LinkInfo:
     def __init__(self, canvas, edge, ip4_src, ip6_src, ip4_dst, ip6_dst):
         """
         create an instance of LinkInfo object
-        :param tkinter.Canvas canvas: canvas object
+        :param coretk.graph.Graph canvas: canvas object
         :param coretk.graph.CanvasEdge edge: canvas edge onject
         :param ip4_src:
         :param ip6_src:
@@ -104,29 +104,25 @@ class LinkInfo:
 
 
 class Throughput:
-    def __init__(self, canvas, grpc):
+    def __init__(self, canvas, core_grpc):
         """
         create an instance of Throughput object
-        :param tkinter.Canvas canvas: canvas object
-        :param coretk.coregrpc,CoreGrpc grpc: grpc object
+        :param coretk.app.Application app: application
         """
         self.canvas = canvas
-        self.core_grpc = grpc
-        self.grpc_manager = canvas.grpc_manager
-
+        self.core_grpc = core_grpc
         # edge canvas id mapped to throughput value
         self.tracker = {}
-
         # map an edge canvas id to a throughput canvas id
         self.map = {}
-
         self.edge_id_to_token = {}
 
     def load_throughput_info(self, interface_throughputs):
         """
         load all interface throughouts from an event
 
-        :param repeated core_bp2.InterfaceThroughputinterface_throughputs: interface throughputs
+        :param repeated core_bp2.InterfaceThroughputinterface_throughputs: interface
+            throughputs
         :return: nothing
         """
         for t in interface_throughputs:
@@ -134,7 +130,7 @@ class Throughput:
             iid = t.interface_id
             tp = t.throughput
             # token = self.grpc_manager.node_id_and_interface_to_edge_token[nid, iid]
-            token = self.grpc_manager.core_mapping.get_token_from_node_and_interface(
+            token = self.core_grpc.manager.core_mapping.get_token_from_node_and_interface(
                 nid, iid
             )
             print(token)

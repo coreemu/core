@@ -142,10 +142,7 @@ class SessionsDialog(Dialog):
             logging.error("querysessiondrawing.py invalid state")
 
     def join_session(self, session_id):
-        response = self.app.core_grpc.core.get_session(session_id)
-        self.app.core_grpc.session_id = session_id
-        self.app.core_grpc.core.events(session_id, self.app.core_grpc.log_event)
-        logging.info("entering session_id %s.... Result: %s", session_id, response)
+        self.app.core_grpc.join_session(session_id)
         self.destroy()
 
     def on_selected(self, event):

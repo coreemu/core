@@ -14,6 +14,13 @@ class Images:
     images = {}
 
     @classmethod
+    def load_all(cls):
+        for file_name in os.listdir(ICONS_DIR):
+            file_path = os.path.join(ICONS_DIR, file_name)
+            name = file_name.split(".")[0]
+            cls.load(name, file_path)
+
+    @classmethod
     def load(cls, name, file_path):
         # file_path = os.path.join(PATH, file_path)
         image = Image.open(file_path)
@@ -91,10 +98,3 @@ class ImageEnum(Enum):
     FILEOPEN = "fileopen"
     EDITDELETE = "edit-delete"
     ANTENNA = "antenna"
-
-
-def load_core_images(images):
-    for file_name in os.listdir(ICONS_DIR):
-        file_path = os.path.join(ICONS_DIR, file_name)
-        name = file_name.split(".")[0]
-        images.load(name, file_path)

@@ -7,8 +7,7 @@ from collections import OrderedDict
 
 from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.linkinfo import Throughput
-from coretk.wirelessconnection import WirelessConnection
+from coretk.grpcmanagement import GrpcManager
 
 
 class CoreGrpc:
@@ -22,15 +21,14 @@ class CoreGrpc:
         self.app = app
         self.master = app.master
         self.interface_helper = None
-        self.throughput_draw = Throughput(app.canvas, self)
-        self.wireless_draw = WirelessConnection(app.canvas, self)
+        self.manager = GrpcManager(self)
 
-    def log_event(self, event):
+    def handle_events(self, event):
         logging.info("event: %s", event)
         if event.link_event is not None:
-            self.wireless_draw.hangle_link_event(event.link_event)
+            self.app.canvas.wireless_draw.hangle_link_event(event.link_event)
 
-    def log_throughput(self, event):
+    def handle_throughputs(self, event):
         interface_throughputs = event.interface_throughputs
         for i in interface_throughputs:
             print("")
@@ -44,6 +42,30 @@ class CoreGrpc:
             throughputs_belong_to_session
         )
 
+    def join_session(self, session_id):
+        # query session and set as current session
+        self.session_id = session_id
+        response = self.core.get_session(self.session_id)
+        logging.info("joining session(%s): %s", self.session_id, response)
+        self.core.events(self.session_id, self.app.core_grpc.handle_events)
+
+        # determine next node id and reusable nodes
+        session = response.session
+        self.manager.reusable.clear()
+        self.manager.preexisting.clear()
+        max_id = 1
+        for node in session.nodes:
+            if node.id > max_id:
+                max_id = node.id
+            self.manager.preexisting.add(node.id)
+        self.manager.id = max_id
+        for i in range(1, self.manager.id):
+            if i not in self.manager.preexisting:
+                self.manager.reusable.append(i)
+
+        # draw session
+        self.app.canvas.draw_existing_component(session)
+
     def create_new_session(self):
         """
         Create a new session
@@ -56,7 +78,7 @@ class CoreGrpc:
         # handle events session may broadcast
         self.session_id = response.session_id
         self.master.title("CORE Session ID " + str(self.session_id))
-        self.core.events(self.session_id, self.log_event)
+        self.core.events(self.session_id, self.handle_events)
         # self.core.throughputs(self.log_throughput)
 
     def delete_session(self, custom_sid=None):
@@ -114,6 +136,7 @@ class CoreGrpc:
         else:
             sid = custom_session_id
 
+        response = None
         if state == "configuration":
             response = self.core.set_session_state(
                 sid, core_pb2.SessionState.CONFIGURATION
@@ -229,15 +252,6 @@ class CoreGrpc:
         response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
 
-        # self.core.get_node_links(self.session_id, id1)
-
-    # def get_session(self):
-    #     response = self.core.get_session(self.session_id)
-    #     nodes = response.session.nodes
-    #     for node in nodes:
-    #         r = self.core.get_node_links(self.session_id, node.id)
-    #         logging.info(r)
-
     def launch_terminal(self, node_id):
         response = self.core.get_node_terminal(self.session_id, node_id)
         logging.info("get terminal %s", response.terminal)
@@ -252,7 +266,7 @@ class CoreGrpc:
         """
         response = self.core.save_xml(self.session_id, file_path)
         logging.info("coregrpc.py save xml %s", response)
-        self.core.events(self.session_id, self.log_event)
+        self.core.events(self.session_id, self.handle_events)
 
     def open_xml(self, file_path):
         """

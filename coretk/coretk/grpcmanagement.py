@@ -57,17 +57,14 @@ class GrpcManager:
     def __init__(self, grpc):
         self.nodes = {}
         self.edges = {}
-        self.id = None
+        self.id = 1
         # A list of id for re-use, keep in increasing order
         self.reusable = []
-
-        self.preexisting = []
-        self.core_grpc = None
-
+        self.preexisting = set()
+        self.core_grpc = grpc
         # self.update_preexisting_ids()
         # self.core_id_to_canvas_id = {}
         self.interfaces_manager = InterfaceManager()
-
         # map tuple(core_node_id, interface_id) to and edge
         # self.node_id_and_interface_to_edge_token = {}
         self.core_mapping = CoreToCanvasMapping()
@@ -172,7 +169,7 @@ class GrpcManager:
         print(core_id)
         if self.id is None or core_id >= self.id:
             self.id = core_id + 1
-        self.preexisting.append(core_id)
+        self.preexisting.add(core_id)
         n = Node(
             session_id,
             core_id,
@@ -219,8 +216,8 @@ class GrpcManager:
         """
         try:
             self.nodes.pop(canvas_id)
-            self.reuseable.append(canvas_id)
-            self.reuseable.sort()
+            self.reusable.append(canvas_id)
+            self.reusable.sort()
         except KeyError:
             logging.error("grpcmanagement.py INVALID NODE CANVAS ID")
 
