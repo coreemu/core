@@ -27,26 +27,27 @@ class Application(tk.Frame):
         self.adjust_to_dim_var = tk.IntVar(value=0)
         self.core = CoreClient(self)
         self.setup_app()
-        self.create_menu()
-        self.create_widgets()
+        self.draw_menu()
+        self.draw_toolbar()
         self.draw_canvas()
         self.core.set_up()
 
     def setup_app(self):
         self.master.title("CORE")
         self.master.geometry("1000x800")
+        self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         image = Images.get(ImageEnum.CORE)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
 
-    def create_menu(self):
+    def draw_menu(self):
         self.master.option_add("*tearOff", tk.FALSE)
         self.menubar = tk.Menu(self.master)
         self.core_menu = CoreMenubar(self, self.master, self.menubar)
         self.core_menu.create_core_menubar()
         self.master.config(menu=self.menubar)
 
-    def create_widgets(self):
+    def draw_toolbar(self):
         edit_frame = tk.Frame(self)
         edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
         self.core_editbar = CoreToolbar(self, edit_frame, self.menubar)
@@ -86,5 +87,4 @@ class Application(tk.Frame):
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
     app = Application()
-    app.master.protocol("WM_DELETE_WINDOW", app.on_closing)
     app.mainloop()
