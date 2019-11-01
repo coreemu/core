@@ -7,12 +7,11 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
+from coretk.appdirs import XML_PATH
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.setwallpaper import CanvasWallpaper
 from coretk.sizeandscale import SizeAndScale
-
-SAVEDIR = "/home/ncs/Desktop/"
 
 
 def sub_menu_items():
@@ -361,24 +360,26 @@ class MenuAction:
     def file_save_as_xml(self):
         logging.info("menuaction.py file_save_as_xml()")
         file_path = filedialog.asksaveasfilename(
-            initialdir=SAVEDIR,
+            initialdir=str(XML_PATH),
             title="Save As",
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
         )
-        self.app.core.save_xml(file_path)
+        if file_path:
+            self.app.core.save_xml(file_path)
 
     def file_open_xml(self):
         logging.info("menuaction.py file_open_xml()")
         self.app.is_open_xml = True
         file_path = filedialog.askopenfilename(
-            initialdir=SAVEDIR,
+            initialdir=str(XML_PATH),
             title="Open",
             filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
         )
-        # clean up before opening a new session
-        self.prompt_save_running_session()
-        self.app.core.open_xml(file_path)
+        if file_path:
+            logging.info("opening xml: %s", file_path)
+            self.prompt_save_running_session()
+            self.app.core.open_xml(file_path)
 
         # Todo might not need
         # self.application.core_editbar.destroy_children_widgets()
