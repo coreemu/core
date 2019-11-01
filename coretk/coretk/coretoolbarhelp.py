@@ -15,8 +15,7 @@ class CoreToolbarHelp:
         :return: nothing
         """
         nodes = []
-        core = self.app.core_grpc
-        for node in core.nodes.values():
+        for node in self.app.core.nodes.values():
             pos = core_pb2.Position(x=int(node.x), y=int(node.y))
             n = core_pb2.Node(
                 id=node.node_id, type=node.type, position=pos, model=node.model
@@ -32,14 +31,9 @@ class CoreToolbarHelp:
         :return: list of protobuf links
         """
         links = []
-        core = self.app.core_grpc
-        for edge in core.edges.values():
-            interface_one = self.app.core_grpc.create_interface(
-                edge.type1, edge.interface_1
-            )
-            interface_two = self.app.core_grpc.create_interface(
-                edge.type2, edge.interface_2
-            )
+        for edge in self.app.core.edges.values():
+            interface_one = self.app.core.create_interface(edge.type1, edge.interface_1)
+            interface_two = self.app.core.create_interface(edge.type2, edge.interface_2)
             # TODO for now only consider the basic cases
             if (
                 edge.type1 == core_pb2.NodeType.WIRELESS_LAN
@@ -61,8 +55,7 @@ class CoreToolbarHelp:
 
     def get_wlan_configuration_list(self):
         configs = []
-        core = self.app.core_grpc
-        manager_configs = core.wlanconfig_management.configurations
+        manager_configs = self.app.core.wlanconfig_management.configurations
         for key in manager_configs:
             cnf = core_pb2.WlanConfig(node_id=key, config=manager_configs[key])
             configs.append(cnf)
@@ -72,4 +65,4 @@ class CoreToolbarHelp:
         nodes = self.get_node_list()
         links = self.get_link_list()
         wlan_configs = self.get_wlan_configuration_list()
-        self.app.core_grpc.start_session(nodes, links, wlan_configs=wlan_configs)
+        self.app.core.start_session(nodes, links, wlan_configs=wlan_configs)

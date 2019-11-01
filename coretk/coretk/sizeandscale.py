@@ -10,16 +10,16 @@ DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
 
 
 class SizeAndScale:
-    def __init__(self, application):
+    def __init__(self, app):
         """
         create an instance for size and scale object
 
-        :param application: main application
+        :param app: main application
         """
-        self.application = application
+        self.app = app
         self.top = tk.Toplevel()
         self.top.title("Canvas Size and Scale")
-        self.meter_per_pixel = self.application.canvas.meters_per_pixel
+        self.meter_per_pixel = self.app.canvas.meters_per_pixel
 
         self.size_chart()
         self.scale_chart()
@@ -108,7 +108,7 @@ class SizeAndScale:
         label = tk.Label(self.top, text="Size")
         label.grid(sticky=tk.W, padx=5)
 
-        canvas = self.application.canvas
+        canvas = self.app.canvas
         plot = canvas.find_withtag("rectangle")
         x0, y0, x1, y1 = canvas.bbox(plot[0])
         w = abs(x0 - x1) - 2
@@ -222,7 +222,7 @@ class SizeAndScale:
         :param int pixel_height: height in pixel
         :return: nothing
         """
-        canvas = self.application.canvas
+        canvas = self.app.canvas
         canvas.config(scrollregion=(0, 0, pixel_width + 200, pixel_height + 200))
 
         # delete old plot and redraw
@@ -246,24 +246,24 @@ class SizeAndScale:
 
         scale_frame = self.top.grid_slaves(3, 0)[0]
         meter_per_pixel = float(scale_frame.grid_slaves(0, 1)[0].get()) / 100
-        self.application.canvas.meters_per_pixel = meter_per_pixel
+        self.app.canvas.meters_per_pixel = meter_per_pixel
         self.redraw_grid(pixel_width, pixel_height)
-        print(self.application.current_wallpaper)
-        print(self.application.radiovar)
+        print(self.app.current_wallpaper)
+        print(self.app.radiovar)
         # if there is a current wallpaper showing, redraw it based on current wallpaper options
-        wallpaper_tool = self.application.set_wallpaper
-        current_wallpaper = self.application.current_wallpaper
+        wallpaper_tool = self.app.set_wallpaper
+        current_wallpaper = self.app.current_wallpaper
         if current_wallpaper:
-            if self.application.adjust_to_dim_var.get() == 0:
-                if self.application.radiovar.get() == ScaleOption.UPPER_LEFT.value:
+            if self.app.adjust_to_dim_var.get() == 0:
+                if self.app.radiovar.get() == ScaleOption.UPPER_LEFT.value:
                     wallpaper_tool.upper_left(current_wallpaper)
-                elif self.application.radiovar.get() == ScaleOption.CENTERED.value:
+                elif self.app.radiovar.get() == ScaleOption.CENTERED.value:
                     wallpaper_tool.center(current_wallpaper)
-                elif self.application.radiovar.get() == ScaleOption.SCALED.value:
+                elif self.app.radiovar.get() == ScaleOption.SCALED.value:
                     wallpaper_tool.scaled(current_wallpaper)
-                elif self.application.radiovar.get() == ScaleOption.TILED.value:
+                elif self.app.radiovar.get() == ScaleOption.TILED.value:
                     print("not implemented")
-            elif self.application.adjust_to_dim_var.get() == 1:
+            elif self.app.adjust_to_dim_var.get() == 1:
                 wallpaper_tool.canvas_to_image_dimension(current_wallpaper)
 
             wallpaper_tool.show_grid()

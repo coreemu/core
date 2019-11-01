@@ -11,12 +11,12 @@ CANVAS_COMPONENT_TAGS = ["edge", "node", "nodename", "wallpaper", "linkinfo"]
 
 
 class GraphHelper:
-    def __init__(self, canvas, grpc):
+    def __init__(self, canvas, core):
         """
         create an instance of GraphHelper object
         """
         self.canvas = canvas
-        self.core_grpc = grpc
+        self.core = core
 
     def delete_canvas_components(self):
         """

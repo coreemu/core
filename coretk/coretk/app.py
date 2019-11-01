@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 
-from coretk.coregrpc import CoreGrpc
+from coretk.coreclient import CoreClient
 from coretk.coremenubar import CoreMenubar
 from coretk.coretoolbar import CoreToolbar
 from coretk.graph import CanvasGraph
@@ -25,12 +25,12 @@ class Application(tk.Frame):
         self.radiovar = tk.IntVar(value=1)
         self.show_grid_var = tk.IntVar(value=1)
         self.adjust_to_dim_var = tk.IntVar(value=0)
-        self.core_grpc = CoreGrpc(self)
+        self.core = CoreClient(self)
         self.setup_app()
         self.create_menu()
         self.create_widgets()
         self.draw_canvas()
-        self.core_grpc.set_up()
+        self.core.set_up()
 
     def setup_app(self):
         self.master.title("CORE")
@@ -54,7 +54,7 @@ class Application(tk.Frame):
 
     def draw_canvas(self):
         self.canvas = CanvasGraph(
-            self, self.core_grpc, background="#cccccc", scrollregion=(0, 0, 1200, 1000)
+            self, self.core, background="#cccccc", scrollregion=(0, 0, 1200, 1000)
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 

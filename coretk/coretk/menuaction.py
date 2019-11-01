@@ -321,10 +321,9 @@ class MenuAction:
     Actions performed when choosing menu items
     """
 
-    def __init__(self, application, master):
+    def __init__(self, app, master):
         self.master = master
-        self.application = application
-        self.core_grpc = application.core_grpc
+        self.app = app
 
     def prompt_save_running_session(self):
         """
@@ -335,21 +334,20 @@ class MenuAction:
         logging.info(
             "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
         )
-        grpc = self.application.core_grpc
-        state = grpc.get_session_state()
+        state = self.app.core.get_session_state()
 
         if (
             state == core_pb2.SessionState.SHUTDOWN
             or state == core_pb2.SessionState.DEFINITION
         ):
-            grpc.delete_session()
+            self.app.core.delete_session()
         else:
             msgbox = messagebox.askyesnocancel("stop", "Stop the running session?")
 
             if msgbox or msgbox is False:
                 if msgbox:
-                    grpc.stop_session()
-                    grpc.delete_session()
+                    self.app.core.stop_session()
+                    self.app.core.delete_session()
 
     def on_quit(self):
         """
@@ -358,23 +356,21 @@ class MenuAction:
         :return: nothing
         """
         self.prompt_save_running_session()
-        # self.application.core_grpc.close()
-        self.application.quit()
+        self.app.quit()
 
     def file_save_as_xml(self):
         logging.info("menuaction.py file_save_as_xml()")
-        grpc = self.application.core_grpc
         file_path = filedialog.asksaveasfilename(
             initialdir=SAVEDIR,
             title="Save As",
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
         )
-        grpc.save_xml(file_path)
+        self.app.core.save_xml(file_path)
 
     def file_open_xml(self):
         logging.info("menuaction.py file_open_xml()")
-        self.application.is_open_xml = True
+        self.app.is_open_xml = True
         file_path = filedialog.askopenfilename(
             initialdir=SAVEDIR,
             title="Open",
@@ -382,17 +378,17 @@ class MenuAction:
         )
         # clean up before opening a new session
         self.prompt_save_running_session()
-        self.application.core_grpc.open_xml(file_path)
+        self.app.core.open_xml(file_path)
 
         # Todo might not need
         # self.application.core_editbar.destroy_children_widgets()
         # self.application.core_editbar.create_toolbar()
 
     def canvas_size_and_scale(self):
-        self.application.size_and_scale = SizeAndScale(self.application)
+        self.app.size_and_scale = SizeAndScale(self.app)
 
     def canvas_set_wallpaper(self):
-        self.application.set_wallpaper = CanvasWallpaper(self.application)
+        self.app.set_wallpaper = CanvasWallpaper(self.app)
 
     def help_core_github(self):
         webbrowser.open_new("https://github.com/coreemu/core")
@@ -402,10 +398,10 @@ class MenuAction:
 
     def session_options(self):
         logging.debug("Click session options")
-        dialog = SessionOptionsDialog(self.application, self.application)
+        dialog = SessionOptionsDialog(self.app, self.app)
         dialog.show()
 
     def session_change_sessions(self):
         logging.debug("Click session change sessions")
-        dialog = SessionsDialog(self.application, self.application)
+        dialog = SessionsDialog(self.app, self.app)
         dialog.show()

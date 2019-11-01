@@ -56,13 +56,13 @@ class Edge:
         self.interface_2 = None
 
 
-class CoreGrpc:
-    def __init__(self, app, sid=None):
+class CoreClient:
+    def __init__(self, app):
         """
         Create a CoreGrpc instance
         """
-        self.core = client.CoreGrpcClient()
-        self.session_id = sid
+        self.client = client.CoreGrpcClient()
+        self.session_id = None
         self.node_ids = []
         self.app = app
         self.master = app.master
@@ -99,9 +99,9 @@ class CoreGrpc:
     def join_session(self, session_id):
         # query session and set as current session
         self.session_id = session_id
-        response = self.core.get_session(self.session_id)
+        response = self.client.get_session(self.session_id)
         logging.info("joining session(%s): %s", self.session_id, response)
-        self.core.events(self.session_id, self.handle_events)
+        self.client.events(self.session_id, self.handle_events)
 
         # set title to session
         self.master.title(f"CORE Session({self.session_id})")
@@ -129,7 +129,7 @@ class CoreGrpc:
 
         :return: nothing
         """
-        response = self.core.create_session()
+        response = self.client.create_session()
         logging.info("created session: %s", response)
         self.join_session(response.session_id)
 
@@ -138,15 +138,15 @@ class CoreGrpc:
             sid = self.session_id
         else:
             sid = custom_sid
-        response = self.core.delete_session(sid)
+        response = self.client.delete_session(sid)
         logging.info("Deleted session result: %s", response)
 
-    def terminate_session(self, custom_sid=None):
+    def shutdown_session(self, custom_sid=None):
         if custom_sid is None:
             sid = self.session_id
         else:
             sid = custom_sid
-        s = self.core.get_session(sid).session
+        s = self.client.get_session(sid).session
         # delete links and nodes from running session
         if s.state == core_pb2.SessionState.RUNTIME:
             self.set_session_state("datacollect", sid)
@@ -160,8 +160,8 @@ class CoreGrpc:
 
         :return: existing sessions
         """
-        self.core.connect()
-        response = self.core.get_sessions()
+        self.client.connect()
+        response = self.client.get_sessions()
 
         # if there are no sessions, create a new session, else join a session
         sessions = response.sessions
@@ -172,7 +172,7 @@ class CoreGrpc:
             dialog.show()
 
     def get_session_state(self):
-        response = self.core.get_session(self.session_id)
+        response = self.client.get_session(self.session_id)
         # logging.info("get session: %s", response)
         return response.session.state
 
@@ -190,27 +190,29 @@ class CoreGrpc:
 
         response = None
         if state == "configuration":
-            response = self.core.set_session_state(
+            response = self.client.set_session_state(
                 sid, core_pb2.SessionState.CONFIGURATION
             )
         elif state == "instantiation":
-            response = self.core.set_session_state(
+            response = self.client.set_session_state(
                 sid, core_pb2.SessionState.INSTANTIATION
             )
         elif state == "datacollect":
-            response = self.core.set_session_state(
+            response = self.client.set_session_state(
                 sid, core_pb2.SessionState.DATACOLLECT
             )
         elif state == "shutdown":
-            response = self.core.set_session_state(sid, core_pb2.SessionState.SHUTDOWN)
+            response = self.client.set_session_state(
+                sid, core_pb2.SessionState.SHUTDOWN
+            )
         elif state == "runtime":
-            response = self.core.set_session_state(sid, core_pb2.SessionState.RUNTIME)
+            response = self.client.set_session_state(sid, core_pb2.SessionState.RUNTIME)
         elif state == "definition":
-            response = self.core.set_session_state(
+            response = self.client.set_session_state(
                 sid, core_pb2.SessionState.DEFINITION
             )
         elif state == "none":
-            response = self.core.set_session_state(sid, core_pb2.SessionState.NONE)
+            response = self.client.set_session_state(sid, core_pb2.SessionState.NONE)
         else:
             logging.error("coregrpc.py: set_session_state: INVALID STATE")
 
@@ -218,7 +220,7 @@ class CoreGrpc:
 
     def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
-        response = self.core.edit_node(self.session_id, node_id, position)
+        response = self.client.edit_node(self.session_id, node_id, position)
         logging.info("updated node id %s: %s", node_id, response)
 
     def delete_nodes(self, delete_session=None):
@@ -226,8 +228,8 @@ class CoreGrpc:
             sid = self.session_id
         else:
             sid = delete_session
-        for node in self.core.get_session(sid).session.nodes:
-            response = self.core.delete_node(self.session_id, node.id)
+        for node in self.client.get_session(sid).session.nodes:
+            response = self.client.delete_node(self.session_id, node.id)
             logging.info("delete nodes %s", response)
 
     def delete_links(self, delete_session=None):
@@ -237,8 +239,8 @@ class CoreGrpc:
         else:
             sid = delete_session
 
-        for link in self.core.get_session(sid).session.links:
-            response = self.core.delete_link(
+        for link in self.client.get_session(sid).session.links:
+            response = self.client.delete_link(
                 self.session_id,
                 link.node_one_id,
                 link.node_two_id,
@@ -259,7 +261,7 @@ class CoreGrpc:
         wlan_configs=None,
         mobility_configs=None,
     ):
-        response = self.core.start_session(
+        response = self.client.start_session(
             session_id=self.session_id,
             nodes=nodes,
             links=links,
@@ -268,7 +270,7 @@ class CoreGrpc:
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
     def stop_session(self):
-        response = self.core.stop_session(session_id=self.session_id)
+        response = self.client.stop_session(session_id=self.session_id)
         logging.debug("coregrpc.py Stop session, result: %s", response.result)
 
     # TODO no need, might get rid of this
@@ -285,11 +287,11 @@ class CoreGrpc:
         """
         if1 = self.create_interface(type1, edge.interface_1)
         if2 = self.create_interface(type2, edge.interface_2)
-        response = self.core.add_link(self.session_id, id1, id2, if1, if2)
+        response = self.client.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
 
     def launch_terminal(self, node_id):
-        response = self.core.get_node_terminal(self.session_id, node_id)
+        response = self.client.get_node_terminal(self.session_id, node_id)
         logging.info("get terminal %s", response.terminal)
         os.system("xterm -e %s &" % response.terminal)
 
@@ -300,9 +302,9 @@ class CoreGrpc:
         :param str file_path: file path that user pick
         :return: nothing
         """
-        response = self.core.save_xml(self.session_id, file_path)
+        response = self.client.save_xml(self.session_id, file_path)
         logging.info("coregrpc.py save xml %s", response)
-        self.core.events(self.session_id, self.handle_events)
+        self.client.events(self.session_id, self.handle_events)
 
     def open_xml(self, file_path):
         """
@@ -311,7 +313,7 @@ class CoreGrpc:
         :param str file_path: file to open
         :return: session id
         """
-        response = self.core.open_xml(file_path)
+        response = self.client.open_xml(file_path)
         logging.debug("open xml: %s", response)
         self.join_session(response.session_id)
 
@@ -322,7 +324,7 @@ class CoreGrpc:
         :return: nothing
         """
         logging.debug("Close grpc")
-        self.core.close()
+        self.client.close()
 
     def peek_id(self):
         """
@@ -353,7 +355,7 @@ class CoreGrpc:
         position = core_pb2.Position(x=x, y=y)
         node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
         self.node_ids.append(node_id)
-        response = self.core.add_node(self.session_id, node)
+        response = self.client.add_node(self.session_id, node)
         logging.info("created node: %s", response)
         if node_type == core_pb2.NodeType.WIRELESS_LAN:
             d = OrderedDict()
@@ -362,7 +364,7 @@ class CoreGrpc:
             d["jitter"] = "0"
             d["delay"] = "20000"
             d["error"] = "0"
-            r = self.core.set_wlan_config(self.session_id, node_id, d)
+            r = self.client.set_wlan_config(self.session_id, node_id, d)
             logging.debug("set wlan config %s", r)
         return response.node_id
 
