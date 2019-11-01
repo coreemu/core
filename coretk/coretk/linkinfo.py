@@ -130,7 +130,7 @@ class Throughput:
             iid = t.interface_id
             tp = t.throughput
             # token = self.grpc_manager.node_id_and_interface_to_edge_token[nid, iid]
-            token = self.core_grpc.manager.core_mapping.get_token_from_node_and_interface(
+            token = self.core_grpc.core_mapping.get_token_from_node_and_interface(
                 nid, iid
             )
             print(token)

@@ -147,7 +147,7 @@ class CanvasGraph(tk.Canvas):
                 core_id_to_canvas_id[node.id] = n.id
 
                 # store the node in grpc manager
-                self.core_grpc.manager.add_preexisting_node(n, session.id, node, name)
+                self.core_grpc.add_preexisting_node(n, session.id, node, name)
 
         # draw existing links
         for link in session.links:
@@ -179,7 +179,7 @@ class CanvasGraph(tk.Canvas):
             n1.edges.add(e)
             n2.edges.add(e)
             self.edges[e.token] = e
-            self.core_grpc.manager.add_edge(session.id, e.token, n1.id, n2.id)
+            self.core_grpc.add_edge(session.id, e.token, n1.id, n2.id)
 
             self.helper.redraw_antenna(link, n1, n2)
 
@@ -208,12 +208,12 @@ class CanvasGraph(tk.Canvas):
             # TODO will include throughput and ipv6 in the future
             if1 = Interface(grpc_if1.name, grpc_if1.ip4, ifid=grpc_if1.id)
             if2 = Interface(grpc_if2.name, grpc_if2.ip4, ifid=grpc_if2.id)
-            self.core_grpc.manager.edges[e.token].interface_1 = if1
-            self.core_grpc.manager.edges[e.token].interface_2 = if2
-            self.core_grpc.manager.nodes[
+            self.core_grpc.edges[e.token].interface_1 = if1
+            self.core_grpc.edges[e.token].interface_2 = if2
+            self.core_grpc.nodes[
                 core_id_to_canvas_id[link.node_one_id]
             ].interfaces.append(if1)
-            self.core_grpc.manager.nodes[
+            self.core_grpc.nodes[
                 core_id_to_canvas_id[link.node_two_id]
             ].interfaces.append(if2)
 
@@ -318,13 +318,13 @@ class CanvasGraph(tk.Canvas):
             node_dst = self.nodes[edge.dst]
             node_dst.edges.add(edge)
 
-            self.core_grpc.manager.add_edge(
+            self.core_grpc.add_edge(
                 self.core_grpc.session_id, edge.token, node_src.id, node_dst.id
             )
 
             # draw link info on the edge
-            if1 = self.core_grpc.manager.edges[edge.token].interface_1
-            if2 = self.core_grpc.manager.edges[edge.token].interface_2
+            if1 = self.core_grpc.edges[edge.token].interface_1
+            if2 = self.core_grpc.edges[edge.token].interface_2
             ip4_and_prefix_1 = None
             ip4_and_prefix_2 = None
             if if1 is not None:
@@ -390,10 +390,10 @@ class CanvasGraph(tk.Canvas):
                 image=image,
                 node_type=node_name,
                 canvas=self,
-                core_id=self.core_grpc.manager.peek_id(),
+                core_id=self.core_grpc.peek_id(),
             )
             self.nodes[node.id] = node
-            self.core_grpc.manager.add_node(
+            self.core_grpc.add_graph_node(
                 self.core_grpc.session_id, node.id, x, y, node_name
             )
             return node
@@ -485,7 +485,7 @@ class CanvasNode:
         self.moving = None
 
     def double_click(self, event):
-        node_id = self.canvas.core_grpc.manager.nodes[self.id].node_id
+        node_id = self.canvas.core_grpc.nodes[self.id].node_id
         state = self.canvas.core_grpc.get_session_state()
         if state == core_pb2.SessionState.RUNTIME:
             self.canvas.core_grpc.launch_terminal(node_id)
@@ -511,9 +511,7 @@ class CanvasNode:
     def click_release(self, event):
         logging.debug(f"click release {self.name}: {event}")
         self.update_coords()
-        self.canvas.core_grpc.manager.update_node_location(
-            self.id, self.x_coord, self.y_coord
-        )
+        self.canvas.core_grpc.update_node_location(self.id, self.x_coord, self.y_coord)
         self.moving = None
 
     def motion(self, event):

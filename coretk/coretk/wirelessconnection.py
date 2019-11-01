@@ -5,10 +5,10 @@ from core.api.grpc import core_pb2
 
 
 class WirelessConnection:
-    def __init__(self, canvas, grpc):
+    def __init__(self, canvas, core_grpc):
         self.canvas = canvas
-        self.core_grpc = grpc
-        self.core_mapping = grpc.manager.core_mapping
+        self.core_grpc = core_grpc
+        self.core_mapping = core_grpc.core_mapping
         # map a (node_one_id, node_two_id) to a wlan canvas id
         self.map = {}
 

@@ -8,7 +8,6 @@ class CoreToCanvasMapping:
     def __init__(self):
         self.core_id_to_canvas_id = {}
         self.core_node_and_interface_to_canvas_edge = {}
-        # self.edge_id_to_canvas_token = {}
 
     def map_node_and_interface_to_canvas_edge(self, nid, iid, edge_token):
         self.core_node_and_interface_to_canvas_edge[tuple([nid, iid])] = edge_token
@@ -33,13 +32,3 @@ class CoreToCanvasMapping:
         else:
             logging.debug("invalid key")
             return None
-
-    # def add_mapping(self, core_id, canvas_id):
-    #     if core_id not in self.core_id_to_canvas_id:
-    #         self.core_id_to_canvas_id[core_id] = canvas_id
-    #     else:
-    #         logging.error("key already mapped")
-    #
-    # def delete_mapping(self, core_id):
-    #     result = self.core_id_to_canvas_id.pop(core_id, None)
-    #     return result
