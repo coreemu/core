@@ -594,7 +594,7 @@ class CoreMenubar(object):
 
         session_menu.add_command(
             label="Change sessions...",
-            command=action.session_change_sessions,
+            command=self.menu_action.session_change_sessions,
             underline=0,
         )
 

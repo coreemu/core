@@ -8,6 +8,7 @@ from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
+from coretk.dialogs.sessions import SessionsDialog
 from coretk.setwallpaper import CanvasWallpaper
 from coretk.sizeandscale import SizeAndScale
 
@@ -291,10 +292,6 @@ def widgets_configure_throughput():
     logging.debug("Click widgets configure throughput")
 
 
-def session_change_sessions():
-    logging.debug("Click session change sessions")
-
-
 def session_node_types():
     logging.debug("Click session node types")
 
@@ -433,5 +430,10 @@ class MenuAction:
 
     def session_options(self):
         logging.debug("Click session options")
-        dialog = SessionOptionsDialog(self.application)
+        dialog = SessionOptionsDialog(self.application, self.application)
+        dialog.show()
+
+    def session_change_sessions(self):
+        logging.debug("Click session change sessions")
+        dialog = SessionsDialog(self.application, self.application)
         dialog.show()

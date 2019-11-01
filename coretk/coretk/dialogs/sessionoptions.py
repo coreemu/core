@@ -9,8 +9,8 @@ PAD_Y = 2
 
 
 class SessionOptionsDialog(Dialog):
-    def __init__(self, master):
-        super().__init__(master, "Session Options", modal=True)
+    def __init__(self, master, app):
+        super().__init__(master, app, "Session Options", modal=True)
         self.options = None
         self.values = None
         self.save_button = tk.Button(self, text="Save", command=self.save)
