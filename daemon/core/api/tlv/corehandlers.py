@@ -123,7 +123,7 @@ class CoreHandler(socketserver.BaseRequestHandler):
         for thread in self.handler_threads:
             logging.info("waiting for thread: %s", thread.getName())
             thread.join(timeout)
-            if thread.isAlive():
+            if thread.is_alive():
                 logging.warning(
                     "joining %s failed: still alive after %s sec",
                     thread.getName(),
