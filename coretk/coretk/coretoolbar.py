@@ -384,12 +384,12 @@ class CoreToolbar(object):
         self.destroy_previous_frame()
         option_frame = tk.Frame(self.master, padx=1, pady=1)
         img_list = [
-            Images.get(ImageEnum.HUB.value),
-            Images.get(ImageEnum.SWITCH.value),
-            Images.get(ImageEnum.WLAN.value),
-            Images.get(ImageEnum.EMANE.value),
-            Images.get(ImageEnum.RJ45.value),
-            Images.get(ImageEnum.TUNNEL.value),
+            Images.get(ImageEnum.HUB),
+            Images.get(ImageEnum.SWITCH),
+            Images.get(ImageEnum.WLAN),
+            Images.get(ImageEnum.EMANE),
+            Images.get(ImageEnum.RJ45),
+            Images.get(ImageEnum.TUNNEL),
         ]
         func_list = [
             self.pick_hub,
