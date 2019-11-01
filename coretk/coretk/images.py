@@ -40,6 +40,8 @@ class Images:
             return Images.get(ImageEnum.HUB.value), "hub"
         if node_type == core_pb2.NodeType.WIRELESS_LAN:
             return Images.get(ImageEnum.WLAN.value), "wlan"
+        if node_type == core_pb2.NodeType.EMANE:
+            return Images.get(ImageEnum.EMANE.value), "emane"
         if node_type == core_pb2.NodeType.RJ45:
             return Images.get(ImageEnum.RJ45.value), "rj45"
         if node_type == core_pb2.NodeType.TUNNEL:
@@ -71,6 +73,7 @@ class ImageEnum(Enum):
     LINK = "link"
     HUB = "hub"
     WLAN = "wlan"
+    EMANE = "emane"
     RJ45 = "rj45"
     TUNNEL = "tunnel"
     OVAL = "oval"

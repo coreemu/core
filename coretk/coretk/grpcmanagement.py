@@ -7,6 +7,7 @@ import logging
 from core.api.grpc import core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.interface import Interface, InterfaceManager
+from coretk.wlannodeconfig import WlanNodeConfig
 
 link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel"]
 network_layer_nodes = ["router", "host", "PC", "mdr", "prouter", "OVS"]
@@ -71,6 +72,8 @@ class GrpcManager:
         # map tuple(core_node_id, interface_id) to and edge
         # self.node_id_and_interface_to_edge_token = {}
         self.core_mapping = CoreToCanvasMapping()
+
+        self.wlanconfig_management = WlanNodeConfig()
 
     def update_preexisting_ids(self):
         """
@@ -145,6 +148,10 @@ class GrpcManager:
             logging.error("grpcmanagemeny.py INVALID node name")
         nid = self.get_id()
         create_node = Node(session_id, nid, node_type, node_model, x, y, name)
+
+        # set default configuration for wireless node
+        self.wlanconfig_management.set_default_config(node_type, nid)
+
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
         # self.core_id_to_canvas_id[nid] = canvas_id

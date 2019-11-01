@@ -332,7 +332,7 @@ class MenuAction:
         self.application = application
         self.core_grpc = application.core_grpc
 
-    def clean_nodes_links_and_set_configuarations(self):
+    def prompt_save_running_session(self):
         """
         Prompt use to stop running session before application is closed
 
@@ -356,9 +356,7 @@ class MenuAction:
 
             if msgbox or msgbox is False:
                 if msgbox:
-                    grpc.set_session_state("datacollect")
-                    grpc.delete_links()
-                    grpc.delete_nodes()
+                    grpc.stop_session()
                     grpc.delete_session()
                 # else:
                 #     grpc.set_session_state("definition")
@@ -371,7 +369,7 @@ class MenuAction:
 
         :return: nothing
         """
-        self.clean_nodes_links_and_set_configuarations()
+        self.prompt_save_running_session()
         # self.application.core_grpc.close()
         self.application.quit()
 
@@ -384,8 +382,6 @@ class MenuAction:
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
         )
-        # with open("prev_saved_xml.txt", "a") as file:
-        #     file.write(file_path + "\n")
         grpc.save_xml(file_path)
 
     def file_open_xml(self):
@@ -397,7 +393,7 @@ class MenuAction:
             filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
         )
         # clean up before opening a new session
-        self.clean_nodes_links_and_set_configuarations()
+        self.prompt_save_running_session()
         # grpc = CoreGrpc(self.application.master)
         # grpc.core.connect()
         core_grpc = self.application.core_grpc

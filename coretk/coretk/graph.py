@@ -58,10 +58,6 @@ class CanvasGraph(tk.Canvas):
         # self.core_map = CoreToCanvasMapping()
         # self.draw_existing_component()
 
-    def test(self):
-        print("testing the button")
-        print(self.node_context.winfo_rootx())
-
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
         self.node_context.add_command(

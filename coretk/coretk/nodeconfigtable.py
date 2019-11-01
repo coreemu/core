@@ -9,6 +9,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 
 from coretk.imagemodification import ImageModification
+from coretk.nodeservice import NodeServices
 
 PATH = os.path.abspath(os.path.dirname(__file__))
 ICONS_DIR = os.path.join(PATH, "icons")
@@ -19,6 +20,12 @@ DEFAULTNODES = ["router", "host", "PC"]
 
 class NodeConfig:
     def __init__(self, canvas, canvas_node):
+        """
+        create an instance of node configuration
+
+        :param coretk.graph.CanvasGraph canvas: canvas object
+        :param coretk.graph.CanvasNode canvas_node: canvas node object
+        """
         self.canvas = canvas
         self.image = canvas_node.image
         self.node_type = canvas_node.node_type
@@ -118,7 +125,9 @@ class NodeConfig:
         type_button = tk.Button(f, text="None")
         type_button.grid(row=0, column=1)
 
-        service_button = tk.Button(f, text="Services...")
+        service_button = tk.Button(
+            f, text="Services...", command=lambda: NodeServices()
+        )
         service_button.grid(row=0, column=2)
 
         f.grid(padx=2, pady=2)

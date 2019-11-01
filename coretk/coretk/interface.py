@@ -51,7 +51,7 @@ class InterfaceManager:
             ipaddress.ip_network("10.0.0.0/12").subnets(prefixlen_diff=12)
         )
         self.subnet_index = 0
-        self.address_index = None
+        self.address_index = 0
 
         # self.network = ipaddress.ip_network("10.0.0.0/24")
         # self.addresses = list(self.network.hosts())
@@ -81,9 +81,9 @@ class InterfaceManager:
 
     def new_subnet(self):
         self.network = self.core_subnets[self.subnet_index]
-        self.subnet_index = self.subnet_index + 1
+        # self.subnet_index = self.subnet_index + 1
         self.addresses = list(self.network.hosts())
-        self.address_index = 0
+        # self.address_index = 0
 
     # def new_subnet(self):
     #     """
