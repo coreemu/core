@@ -40,7 +40,7 @@ class Application(tk.Frame):
     def setup_app(self):
         self.master.title("CORE")
         self.master.geometry("1000x800")
-        image = Images.get(ImageEnum.CORE.value)
+        image = Images.get(ImageEnum.CORE)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
 

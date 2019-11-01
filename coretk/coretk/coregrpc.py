@@ -6,8 +6,8 @@ import os
 from collections import OrderedDict
 
 from core.api.grpc import client, core_pb2
+from coretk.dialogs.sessions import SessionsDialog
 from coretk.linkinfo import Throughput
-from coretk.querysessiondrawing import SessionTable
 from coretk.wirelessconnection import WirelessConnection
 
 
@@ -18,12 +18,9 @@ class CoreGrpc:
         """
         self.core = client.CoreGrpcClient()
         self.session_id = sid
-
         self.node_ids = []
-
+        self.app = app
         self.master = app.master
-
-        # self.set_up()
         self.interface_helper = None
         self.throughput_draw = Throughput(app.canvas, self)
         self.wireless_draw = WirelessConnection(app.canvas, self)
@@ -64,16 +61,6 @@ class CoreGrpc:
         self.core.events(self.session_id, self.log_event)
         # self.core.throughputs(self.log_throughput)
 
-    def query_existing_sessions(self, sessions):
-        """
-        Query for existing sessions and prompt to join one
-
-        :param repeated core_pb2.SessionSummary sessions: summaries of all the existing sessions
-
-        :return: nothing
-        """
-        SessionTable(self, self.master)
-
     def delete_session(self, custom_sid=None):
         if custom_sid is None:
             sid = self.session_id
@@ -102,18 +89,15 @@ class CoreGrpc:
         :return: existing sessions
         """
         self.core.connect()
-
         response = self.core.get_sessions()
-        # logging.info("coregrpc.py: all sessions: %s", response)
 
         # if there are no sessions, create a new session, else join a session
         sessions = response.sessions
-
         if len(sessions) == 0:
             self.create_new_session()
         else:
-
-            self.query_existing_sessions(sessions)
+            dialog = SessionsDialog(self.app, self.app)
+            dialog.show()
 
     def get_session_state(self):
         response = self.core.get_session(self.session_id)

@@ -94,7 +94,7 @@ class WlanAntennaManager:
                     x - 16 + self.offset,
                     y - 16,
                     anchor=tk.CENTER,
-                    image=Images.get(ImageEnum.ANTENNA.value),
+                    image=Images.get(ImageEnum.ANTENNA),
                     tags="antenna",
                 )
             )

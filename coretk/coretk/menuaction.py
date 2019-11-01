@@ -7,6 +7,8 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
+from coretk.dialogs.sessionoptions import SessionOptionsDialog
+from coretk.dialogs.sessions import SessionsDialog
 from coretk.setwallpaper import CanvasWallpaper
 from coretk.sizeandscale import SizeAndScale
 
@@ -290,10 +292,6 @@ def widgets_configure_throughput():
     logging.debug("Click widgets configure throughput")
 
 
-def session_change_sessions():
-    logging.debug("Click session change sessions")
-
-
 def session_node_types():
     logging.debug("Click session node types")
 
@@ -312,10 +310,6 @@ def session_reset_node_positions():
 
 def session_emulation_servers():
     logging.debug("Click session emulation servers")
-
-
-def session_options():
-    logging.debug("Click session options")
 
 
 def help_about():
@@ -429,3 +423,13 @@ class MenuAction:
 
     def help_core_documentation(self):
         webbrowser.open_new("http://coreemu.github.io/core/")
+
+    def session_options(self):
+        logging.debug("Click session options")
+        dialog = SessionOptionsDialog(self.application, self.application)
+        dialog.show()
+
+    def session_change_sessions(self):
+        logging.debug("Click session change sessions")
+        dialog = SessionsDialog(self.application, self.application)
+        dialog.show()

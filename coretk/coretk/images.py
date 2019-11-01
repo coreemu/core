@@ -21,8 +21,8 @@ class Images:
         cls.images[name] = tk_image
 
     @classmethod
-    def get(cls, name):
-        return cls.images[name]
+    def get(cls, image):
+        return cls.images[image.value]
 
     @classmethod
     def convert_type_and_model_to_image(cls, node_type, node_model):
@@ -35,30 +35,31 @@ class Images:
         :return: the matching image and its name
         """
         if node_type == core_pb2.NodeType.SWITCH:
-            return Images.get(ImageEnum.SWITCH.value), "switch"
+            return Images.get(ImageEnum.SWITCH), "switch"
         if node_type == core_pb2.NodeType.HUB:
-            return Images.get(ImageEnum.HUB.value), "hub"
+            return Images.get(ImageEnum.HUB), "hub"
         if node_type == core_pb2.NodeType.WIRELESS_LAN:
             return Images.get(ImageEnum.WLAN.value), "wlan"
         if node_type == core_pb2.NodeType.EMANE:
             return Images.get(ImageEnum.EMANE.value), "emane"
+
         if node_type == core_pb2.NodeType.RJ45:
-            return Images.get(ImageEnum.RJ45.value), "rj45"
+            return Images.get(ImageEnum.RJ45), "rj45"
         if node_type == core_pb2.NodeType.TUNNEL:
-            return Images.get(ImageEnum.TUNNEL.value), "tunnel"
+            return Images.get(ImageEnum.TUNNEL), "tunnel"
         if node_type == core_pb2.NodeType.DEFAULT:
             if node_model == "router":
-                return Images.get(ImageEnum.ROUTER.value), "router"
+                return Images.get(ImageEnum.ROUTER), "router"
             if node_model == "host":
-                return Images.get((ImageEnum.HOST.value)), "host"
+                return Images.get(ImageEnum.HOST), "host"
             if node_model == "PC":
-                return Images.get(ImageEnum.PC.value), "PC"
+                return Images.get(ImageEnum.PC), "PC"
             if node_model == "mdr":
-                return Images.get(ImageEnum.MDR.value), "mdr"
+                return Images.get(ImageEnum.MDR), "mdr"
             if node_model == "prouter":
-                return Images.get(ImageEnum.PROUTER.value), "prouter"
+                return Images.get(ImageEnum.PROUTER), "prouter"
             if node_model == "OVS":
-                return Images.get(ImageEnum.OVS.value), "ovs"
+                return Images.get(ImageEnum.OVS), "ovs"
         else:
             logging.debug("INVALID INPUT OR NOT CONSIDERED YET")
 
