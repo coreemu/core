@@ -64,7 +64,7 @@ class CoreGrpc:
                 self.manager.reusable.append(i)
 
         # draw session
-        self.app.canvas.draw_existing_component(session)
+        self.app.canvas.canvas_reset_and_redraw(session)
 
     def create_new_session(self):
         """
@@ -213,6 +213,54 @@ class CoreGrpc:
             )
             logging.info("delete links %s", response)
 
+    def create_interface(self, node_type, gui_interface):
+        """
+        create a protobuf interface given the interface object stored by the programmer
+
+        :param core_bp2.NodeType type: node type
+        :param coretk.interface.Interface gui_interface: the programmer's interface object
+        :rtype: core_bp2.Interface
+        :return: protobuf interface object
+        """
+        if node_type != core_pb2.NodeType.DEFAULT:
+            return None
+        else:
+            interface = core_pb2.Interface(
+                id=gui_interface.id,
+                name=gui_interface.name,
+                mac=gui_interface.mac,
+                ip4=gui_interface.ipv4,
+                ip4mask=gui_interface.ip4prefix,
+            )
+            logging.debug("create interface 1 %s", interface)
+
+            return interface
+
+    # TODO add location, hooks, emane_config, etc...
+    def start_session(
+        self,
+        nodes,
+        links,
+        location=None,
+        hooks=None,
+        emane_config=None,
+        emane_model_configs=None,
+        wlan_configs=None,
+        mobility_configs=None,
+    ):
+        response = self.core.start_session(
+            session_id=self.session_id,
+            nodes=nodes,
+            links=links,
+            wlan_configs=wlan_configs,
+        )
+        logging.debug("Start session %s, result: %s", self.session_id, response.result)
+
+    def stop_session(self):
+        response = self.core.stop_session(session_id=self.session_id)
+        logging.debug("coregrpc.py Stop session, result: %s", response.result)
+
+    # TODO no need, might get rid of this
     def add_link(self, id1, id2, type1, type2, edge):
         """
         Grpc client request add link
@@ -224,30 +272,30 @@ class CoreGrpc:
         :param core_pb2.NodeType type2: node 2 core node type
         :return: nothing
         """
-        if1 = None
-        if2 = None
-        if type1 == core_pb2.NodeType.DEFAULT:
-            interface = edge.interface_1
-            if1 = core_pb2.Interface(
-                id=interface.id,
-                name=interface.name,
-                mac=interface.mac,
-                ip4=interface.ipv4,
-                ip4mask=interface.ip4prefix,
-            )
-            logging.debug("create interface 1 %s", if1)
-            # interface1 = self.interface_helper.create_interface(id1, 0)
-
-        if type2 == core_pb2.NodeType.DEFAULT:
-            interface = edge.interface_2
-            if2 = core_pb2.Interface(
-                id=interface.id,
-                name=interface.name,
-                mac=interface.mac,
-                ip4=interface.ipv4,
-                ip4mask=interface.ip4prefix,
-            )
-            logging.debug("create interface 2: %s", if2)
+        if1 = self.create_interface(type1, edge.interface_1)
+        if2 = self.create_interface(type2, edge.interface_2)
+        # if type1 == core_pb2.NodeType.DEFAULT:
+        #     interface = edge.interface_1
+        #     if1 = core_pb2.Interface(
+        #         id=interface.id,
+        #         name=interface.name,
+        #         mac=interface.mac,
+        #         ip4=interface.ipv4,
+        #         ip4mask=interface.ip4prefix,
+        #     )
+        #     logging.debug("create interface 1 %s", if1)
+        #     # interface1 = self.interface_helper.create_interface(id1, 0)
+        #
+        # if type2 == core_pb2.NodeType.DEFAULT:
+        #     interface = edge.interface_2
+        #     if2 = core_pb2.Interface(
+        #         id=interface.id,
+        #         name=interface.name,
+        #         mac=interface.mac,
+        #         ip4=interface.ipv4,
+        #         ip4mask=interface.ip4prefix,
+        #     )
+        #     logging.debug("create interface 2: %s", if2)
 
         response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)
@@ -276,8 +324,8 @@ class CoreGrpc:
         :return: session id
         """
         response = self.core.open_xml(file_path)
-        self.session_id = response.session_id
-        logging.debug("coreprgc.py open_xml(): %s", response.result)
+        logging.debug("open xml: %s", response)
+        self.join_session(response.session_id)
 
     def close(self):
         """

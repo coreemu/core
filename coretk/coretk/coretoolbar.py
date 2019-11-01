@@ -1,22 +1,23 @@
 import logging
 import tkinter as tk
-from enum import Enum
 
-from core.api.grpc import core_pb2
+# from core.api.grpc import core_pb2
 from coretk.coretoolbarhelp import CoreToolbarHelp
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
 from coretk.tooltip import CreateToolTip
 
+# from enum import Enum
 
-class SessionStateEnum(Enum):
-    NONE = "none"
-    DEFINITION = "definition"
-    CONFIGURATION = "configuration"
-    RUNTIME = "runtime"
-    DATACOLLECT = "datacollect"
-    SHUTDOWN = "shutdown"
-    INSTANTIATION = "instantiation"
+
+# class SessionStateEnum(Enum):
+#     NONE = "none"
+#     DEFINITION = "definition"
+#     CONFIGURATION = "configuration"
+#     RUNTIME = "runtime"
+#     DATACOLLECT = "datacollect"
+#     SHUTDOWN = "shutdown"
+#     INSTANTIATION = "instantiation"
 
 
 class CoreToolbar(object):
@@ -161,21 +162,22 @@ class CoreToolbar(object):
         """
         logging.debug("Click START STOP SESSION button")
         helper = CoreToolbarHelp(self.application)
-        # self.destroy_children_widgets(self.edit_frame)
         self.destroy_children_widgets()
         self.canvas.mode = GraphMode.SELECT
 
         # set configuration state
-        state = self.canvas.core_grpc.get_session_state()
+        # state = self.canvas.core_grpc.get_session_state()
+        # if state == core_pb2.SessionState.SHUTDOWN or self.application.is_open_xml:
+        #     self.canvas.core_grpc.set_session_state(SessionStateEnum.DEFINITION.value)
+        #     self.application.is_open_xml = False
+        #
+        # self.canvas.core_grpc.set_session_state(SessionStateEnum.CONFIGURATION.value)
+        # helper.add_nodes()
+        # helper.add_edges()
+        # self.canvas.core_grpc.set_session_state(SessionStateEnum.INSTANTIATION.value)
+        helper.gui_start_session()
+        self.create_runtime_toolbar()
 
-        if state == core_pb2.SessionState.SHUTDOWN or self.application.is_open_xml:
-            self.canvas.core_grpc.set_session_state(SessionStateEnum.DEFINITION.value)
-            self.application.is_open_xml = False
-
-        self.canvas.core_grpc.set_session_state(SessionStateEnum.CONFIGURATION.value)
-
-        helper.add_nodes()
-        helper.add_edges()
         # for node in self.canvas.grpc_manager.nodes.values():
         #     print(node.type, node.model, int(node.x), int(node.y), node.name, node.node_id)
         #     self.canvas.core_grpc.add_node(
@@ -188,10 +190,8 @@ class CoreToolbar(object):
         #     self.canvas.core_grpc.add_link(
         #         edge.id1, edge.id2, edge.type1, edge.type2, edge
         #     )
-        self.canvas.core_grpc.set_session_state(SessionStateEnum.INSTANTIATION.value)
         # self.canvas.core_grpc.get_session()
         # self.application.is_open_xml = False
-        self.create_runtime_toolbar()
 
     def click_link_tool(self):
         logging.debug("Click LINK button")
@@ -366,6 +366,13 @@ class CoreToolbar(object):
         self.canvas.draw_node_image = Images.get(ImageEnum.TUNNEL)
         self.canvas.draw_node_name = "tunnel"
 
+    def pick_emane(self, main_button):
+        self.link_layer_option_menu.destroy()
+        main_button.configure(image=Images.get(ImageEnum.EMANE.value))
+        self.canvas.mode = GraphMode.PICKNODE
+        self.canvas.draw_node_image = Images.get(ImageEnum.EMANE.value)
+        self.canvas.draw_node_name = "emane"
+
     def draw_link_layer_options(self, link_layer_button):
         """
         Draw the options for link-layer button
@@ -380,6 +387,7 @@ class CoreToolbar(object):
             Images.get(ImageEnum.HUB),
             Images.get(ImageEnum.SWITCH),
             Images.get(ImageEnum.WLAN),
+            Images.get(ImageEnum.EMANE),
             Images.get(ImageEnum.RJ45),
             Images.get(ImageEnum.TUNNEL),
         ]
@@ -387,6 +395,7 @@ class CoreToolbar(object):
             self.pick_hub,
             self.pick_switch,
             self.pick_wlan,
+            self.pick_emane,
             self.pick_rj45,
             self.pick_tunnel,
         ]
@@ -394,6 +403,7 @@ class CoreToolbar(object):
             "ethernet hub",
             "ethernet switch",
             "wireless LAN",
+            "emane",
             "rj45 physical interface tool",
             "tunnel tool",
         ]
@@ -582,12 +592,12 @@ class CoreToolbar(object):
         :return: nothing
         """
         logging.debug("Click on STOP button ")
-        # self.destroy_children_widgets(self.edit_frame)
         self.destroy_children_widgets()
 
-        self.canvas.core_grpc.set_session_state(SessionStateEnum.DATACOLLECT.value)
-        self.canvas.core_grpc.delete_links()
-        self.canvas.core_grpc.delete_nodes()
+        # self.canvas.core_grpc.set_session_state(SessionStateEnum.DATACOLLECT.value)
+        # self.canvas.core_grpc.delete_links()
+        # self.canvas.core_grpc.delete_nodes()
+        self.canvas.core_grpc.stop_session()
         self.create_toolbar()
 
     def click_run_button(self):

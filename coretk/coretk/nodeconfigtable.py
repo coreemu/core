@@ -8,6 +8,9 @@ from tkinter import filedialog
 
 from PIL import Image, ImageTk
 
+from coretk.imagemodification import ImageModification
+from coretk.nodeservice import NodeServices
+
 PATH = os.path.abspath(os.path.dirname(__file__))
 ICONS_DIR = os.path.join(PATH, "icons")
 
@@ -16,14 +19,21 @@ DEFAULTNODES = ["router", "host", "PC"]
 
 
 class NodeConfig:
-    def __init__(self, canvas_node, image, node_type, name):
-        self.image = image
-        self.node_type = node_type
-        self.name = name
+    def __init__(self, canvas, canvas_node):
+        """
+        create an instance of node configuration
+
+        :param coretk.graph.CanvasGraph canvas: canvas object
+        :param coretk.graph.CanvasNode canvas_node: canvas node object
+        """
+        self.canvas = canvas
+        self.image = canvas_node.image
+        self.node_type = canvas_node.node_type
+        self.name = canvas_node.name
         self.canvas_node = canvas_node
 
         self.top = tk.Toplevel()
-        self.top.title(node_type + " configuration")
+        self.top.title(canvas_node.node_type + " configuration")
         self.namevar = tk.StringVar(self.top, value="default name")
         self.name_and_image_definition()
         self.type_and_service_definition()
@@ -58,65 +68,69 @@ class NodeConfig:
         toplevel.destroy()
 
     def img_modification(self):
-        print("image modification")
         t = tk.Toplevel()
         t.title(self.name + " image")
 
         f = tk.Frame(t)
         entry_text = tk.StringVar()
         image_file_label = tk.Label(f, text="Image file: ")
-        image_file_label.pack(side=tk.LEFT, padx=2, pady=2)
-        image_file_entry = tk.Entry(f, textvariable=entry_text, width=60)
-        image_file_entry.pack(side=tk.LEFT, padx=2, pady=2)
+        image_file_label.grid(row=0, column=0)
+        image_file_entry = tk.Entry(f, textvariable=entry_text, width=32, bg="white")
+        image_file_entry.grid(row=0, column=1)
         image_file_button = tk.Button(
             f, text="...", command=lambda: self.open_icon_dir(t, entry_text)
         )
-        image_file_button.pack(side=tk.LEFT, padx=2, pady=2)
-        f.grid(sticky=tk.W + tk.E)
+        image_file_button.grid(row=0, column=2)
+        f.grid()
 
         img = tk.Label(t, image=self.image)
-        img.grid(sticky=tk.W + tk.E)
+        img.grid()
 
         f = tk.Frame(t)
         apply_button = tk.Button(
             f, text="Apply", command=lambda: self.click_apply(t, entry_text)
         )
-        apply_button.pack(side=tk.LEFT, padx=2, pady=2)
+        apply_button.grid(row=0, column=0)
         apply_to_multiple_button = tk.Button(f, text="Apply to multiple...")
-        apply_to_multiple_button.pack(side=tk.LEFT, padx=2, pady=2)
+        apply_to_multiple_button.grid(row=0, column=1)
         cancel_button = tk.Button(f, text="Cancel", command=t.destroy)
-        cancel_button.pack(side=tk.LEFT, padx=2, pady=2)
-        f.grid(sticky=tk.E + tk.W)
+        cancel_button.grid(row=0, column=2)
+        f.grid()
 
     def name_and_image_definition(self):
-        name_label = tk.Label(self.top, text="Node name: ")
-        name_label.grid()
-        name_entry = tk.Entry(self.top, textvariable=self.namevar)
-        name_entry.grid(row=0, column=1)
+        f = tk.Frame(self.top, bg="#d9d9d9")
+        name_label = tk.Label(f, text="Node name: ", bg="#d9d9d9")
+        name_label.grid(padx=2, pady=2)
+        name_entry = tk.Entry(f, textvariable=self.namevar)
+        name_entry.grid(row=0, column=1, padx=2, pady=2)
 
-        core_button = tk.Button(self.top, text="None")
-        core_button.grid(row=0, column=2)
+        core_button = tk.Button(f, text="None")
+        core_button.grid(row=0, column=2, padx=2, pady=2)
         img_button = tk.Button(
-            self.top,
+            f,
             image=self.image,
             width=40,
             height=40,
-            command=self.img_modification,
+            command=lambda: ImageModification(self.canvas, self.canvas_node, self),
+            bg="#d9d9d9",
         )
-        img_button.grid(row=0, column=3)
+        img_button.grid(row=0, column=3, padx=4, pady=4)
+        f.grid(padx=4, pady=4)
 
     def type_and_service_definition(self):
         f = tk.Frame(self.top)
         type_label = tk.Label(f, text="Type: ")
-        type_label.pack(side=tk.LEFT)
+        type_label.grid(row=0, column=0)
 
         type_button = tk.Button(f, text="None")
-        type_button.pack(side=tk.LEFT)
+        type_button.grid(row=0, column=1)
 
-        service_button = tk.Button(f, text="Services...")
-        service_button.pack(side=tk.LEFT)
+        service_button = tk.Button(
+            f, text="Services...", command=lambda: NodeServices()
+        )
+        service_button.grid(row=0, column=2)
 
-        f.grid(row=1, column=1, columnspan=2, sticky=tk.W)
+        f.grid(padx=2, pady=2)
 
     def config_apply(self):
         """
@@ -140,10 +154,10 @@ class NodeConfig:
     def select_definition(self):
         f = tk.Frame(self.top)
         apply_button = tk.Button(f, text="Apply", command=self.config_apply)
-        apply_button.pack(side=tk.LEFT)
+        apply_button.grid(row=0, column=0)
         cancel_button = tk.Button(f, text="Cancel", command=self.config_cancel)
-        cancel_button.pack(side=tk.LEFT)
-        f.grid(row=3, column=1, sticky=tk.W)
+        cancel_button.grid(row=0, column=1)
+        f.grid()
 
     def network_node_config(self):
         self.name_and_image_definition()
