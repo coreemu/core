@@ -1,6 +1,7 @@
 import logging
 import tkinter as tk
 
+from coretk import appdirs
 from coretk.coreclient import CoreClient
 from coretk.coremenubar import CoreMenubar
 from coretk.coretoolbar import CoreToolbar
@@ -86,5 +87,6 @@ class Application(tk.Frame):
 
 if __name__ == "__main__":
     logging.basicConfig(level=logging.DEBUG)
+    appdirs.check_directory()
     app = Application()
     app.mainloop()

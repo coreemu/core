@@ -3,14 +3,12 @@ set wallpaper
 """
 import enum
 import logging
-import os
 import tkinter as tk
 from tkinter import filedialog
 
 from PIL import Image, ImageTk
 
-PATH = os.path.abspath(os.path.dirname(__file__))
-WALLPAPER_DIR = os.path.join(PATH, "wallpaper")
+from coretk.appdirs import BACKGROUNDS_PATH
 
 
 class ScaleOption(enum.Enum):
@@ -60,7 +58,7 @@ class CanvasWallpaper:
 
     def open_image_link(self):
         filename = filedialog.askopenfilename(
-            initialdir=WALLPAPER_DIR,
+            initialdir=str(BACKGROUNDS_PATH),
             title="Open",
             filetypes=(
                 ("images", "*.gif *.jpg *.png *.bmp *pcx *.tga ..."),
@@ -207,7 +205,6 @@ class CanvasWallpaper:
         cropy = img_h = tk_img.height()
 
         if img_w > canvas_w:
-
             cropx -= img_w - canvas_w
         if img_h > canvas_h:
             cropy -= img_h - canvas_h
