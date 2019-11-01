@@ -46,9 +46,9 @@ class Images:
         if node_type == core_pb2.NodeType.HUB:
             return Images.get(ImageEnum.HUB), "hub"
         if node_type == core_pb2.NodeType.WIRELESS_LAN:
-            return Images.get(ImageEnum.WLAN.value), "wlan"
+            return Images.get(ImageEnum.WLAN), "wlan"
         if node_type == core_pb2.NodeType.EMANE:
-            return Images.get(ImageEnum.EMANE.value), "emane"
+            return Images.get(ImageEnum.EMANE), "emane"
 
         if node_type == core_pb2.NodeType.RJ45:
             return Images.get(ImageEnum.RJ45), "rj45"
