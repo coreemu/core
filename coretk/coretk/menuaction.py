@@ -8,6 +8,7 @@ from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
 from coretk.appdirs import XML_PATH
+from coretk.dialogs.hooks import HooksDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.setwallpaper import CanvasWallpaper
@@ -299,10 +300,6 @@ def session_comments():
     logging.debug("Click session comments")
 
 
-def session_hooks():
-    logging.debug("Click session hooks")
-
-
 def session_reset_node_positions():
     logging.debug("Click session reset node positions")
 
@@ -405,4 +402,9 @@ class MenuAction:
     def session_change_sessions(self):
         logging.debug("Click session change sessions")
         dialog = SessionsDialog(self.app, self.app)
+        dialog.show()
+
+    def session_hooks(self):
+        logging.debug("Click session hooks")
+        dialog = HooksDialog(self.app, self.app)
         dialog.show()

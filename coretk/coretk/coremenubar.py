@@ -607,7 +607,7 @@ class CoreMenubar(object):
             label="Comments...", command=action.session_comments, underline=0
         )
         session_menu.add_command(
-            label="Hooks...", command=action.session_hooks, underline=0
+            label="Hooks...", command=self.menu_action.session_hooks, underline=0
         )
         session_menu.add_command(
             label="Reset node positions",
