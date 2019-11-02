@@ -1,4 +1,3 @@
-import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -11,7 +10,7 @@ class HookDialog(Dialog):
         super().__init__(master, app, "Hook", modal=True)
         self.name = tk.StringVar()
         self.data = None
-        self.hook = None
+        self.hook = core_pb2.Hook()
         self.state = tk.StringVar()
         self.draw()
 
@@ -82,11 +81,9 @@ class HookDialog(Dialog):
     def save(self):
         data = self.data.get("1.0", tk.END).strip()
         state_value = core_pb2.SessionState.Enum.Value(self.state.get())
-        self.hook = core_pb2.Hook(state=state_value, file=self.name.get(), data=data)
-        response = self.app.core.client.add_hook(
-            self.app.core.session_id, self.hook.state, self.hook.file, self.hook.data
-        )
-        logging.info("add hook: %s", response)
+        self.hook.file = self.name.get()
+        self.hook.data = data
+        self.hook.state = state_value
         self.destroy()
 
 
@@ -97,20 +94,16 @@ class HooksDialog(Dialog):
         self.edit_button = None
         self.delete_button = None
         self.selected = None
-        self.hooks = {}
         self.draw()
 
     def draw(self):
-        response = self.app.core.client.get_hooks(self.app.core.session_id)
-        logging.info("get hooks: %s", response)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.listbox = tk.Listbox(self)
         self.listbox.grid(row=0, sticky="nsew")
         self.listbox.bind("<<ListboxSelect>>", self.select)
-        for hook in response.hooks:
-            self.hooks[hook.file] = hook
-            self.listbox.insert(tk.END, hook.file)
+        for hook_file in self.app.core.hooks:
+            self.listbox.insert(tk.END, hook_file)
         frame = tk.Frame(self)
         frame.grid(row=1, sticky="ew")
         for i in range(4):
@@ -131,11 +124,11 @@ class HooksDialog(Dialog):
         dialog.show()
         hook = dialog.hook
         if hook:
-            self.hooks[hook.file] = hook
+            self.app.core.hooks[hook.file] = hook
             self.listbox.insert(tk.END, hook.file)
 
     def click_edit(self):
-        hook = self.hooks[self.selected]
+        hook = self.app.core.hooks[self.selected]
         dialog = HookDialog(self, self.app)
         dialog.set(hook)
         dialog.show()

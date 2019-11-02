@@ -71,6 +71,7 @@ class CoreClient:
         # data for managing the current session
         self.nodes = {}
         self.edges = {}
+        self.hooks = {}
         self.id = 1
         self.reusable = []
         self.preexisting = set()
@@ -97,19 +98,30 @@ class CoreClient:
         )
 
     def join_session(self, session_id):
-        # query session and set as current session
+        # update session and title
         self.session_id = session_id
-        response = self.client.get_session(self.session_id)
-        logging.info("joining session(%s): %s", self.session_id, response)
-        self.client.events(self.session_id, self.handle_events)
-
-        # set title to session
         self.master.title(f"CORE Session({self.session_id})")
 
-        # determine next node id and reusable nodes
-        session = response.session
+        # clear session data
         self.reusable.clear()
         self.preexisting.clear()
+        self.nodes.clear()
+        self.edges.clear()
+        self.hooks.clear()
+
+        # get session data
+        response = self.client.get_session(self.session_id)
+        logging.info("joining session(%s): %s", self.session_id, response)
+        session = response.session
+        self.client.events(self.session_id, self.handle_events)
+
+        # get hooks
+        response = self.client.get_hooks(self.session_id)
+        logging.info("joined session hooks: %s", response)
+        for hook in response.hooks:
+            self.hooks[hook.file] = hook
+
+        # determine next node id and reusable nodes
         max_id = 1
         for node in session.nodes:
             if node.id > max_id:
@@ -262,9 +274,10 @@ class CoreClient:
         mobility_configs=None,
     ):
         response = self.client.start_session(
-            session_id=self.session_id,
-            nodes=nodes,
-            links=links,
+            self.session_id,
+            nodes,
+            links,
+            hooks=list(self.hooks.values()),
             wlan_configs=wlan_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
