@@ -114,7 +114,9 @@ class HooksDialog(Dialog):
             frame, text="Edit", state=tk.DISABLED, command=self.click_edit
         )
         self.edit_button.grid(row=0, column=1, sticky="ew")
-        self.delete_button = tk.Button(frame, text="Delete", state=tk.DISABLED)
+        self.delete_button = tk.Button(
+            frame, text="Delete", state=tk.DISABLED, command=self.click_delete
+        )
         self.delete_button.grid(row=0, column=2, sticky="ew")
         button = tk.Button(frame, text="Cancel", command=lambda: self.destroy())
         button.grid(row=0, column=3, sticky="ew")
@@ -133,8 +135,19 @@ class HooksDialog(Dialog):
         dialog.set(hook)
         dialog.show()
 
+    def click_delete(self):
+        del self.app.core.hooks[self.selected]
+        self.listbox.delete(tk.ANCHOR)
+        self.edit_button.config(state=tk.DISABLED)
+        self.delete_button.config(state=tk.DISABLED)
+
     def select(self, event):
-        self.edit_button.config(state=tk.NORMAL)
-        self.delete_button.config(state=tk.NORMAL)
-        index = self.listbox.curselection()[0]
-        self.selected = self.listbox.get(index)
+        if self.listbox.curselection():
+            index = self.listbox.curselection()[0]
+            self.selected = self.listbox.get(index)
+            self.edit_button.config(state=tk.NORMAL)
+            self.delete_button.config(state=tk.NORMAL)
+        else:
+            self.selected = None
+            self.edit_button.config(state=tk.DISABLED)
+            self.delete_button.config(state=tk.DISABLED)
