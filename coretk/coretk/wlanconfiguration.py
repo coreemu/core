@@ -5,6 +5,7 @@ wlan configuration
 import tkinter as tk
 from functools import partial
 
+from coretk.dialogs.mobilityconfig import MobilityConfiguration
 from coretk.imagemodification import ImageModification
 
 
@@ -224,6 +225,12 @@ class WlanConfiguration:
         f2.grid()
         f.grid(sticky=tk.W, padx=3, pady=3)
 
+    def click_ns2_mobility_script(self):
+        dialog = MobilityConfiguration(
+            self.top, self.canvas.core_grpc.app, self.canvas_node
+        )
+        dialog.show()
+
     def wlan_options(self):
         """
         create wireless node options
@@ -231,7 +238,11 @@ class WlanConfiguration:
         :return:
         """
         f = tk.Frame(self.top)
-        b = tk.Button(f, text="ns-2 mobility script...")
+        b = tk.Button(
+            f,
+            text="ns-2 mobility script...",
+            command=lambda: self.click_ns2_mobility_script(),
+        )
         b.pack(side=tk.LEFT, padx=1)
         b = tk.Button(f, text="Link to all routers")
         b.pack(side=tk.LEFT, padx=1)
