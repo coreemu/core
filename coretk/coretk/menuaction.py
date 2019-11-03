@@ -11,8 +11,8 @@ from coretk.appdirs import XML_PATH
 from coretk.dialogs.hooks import HooksDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.setwallpaper import CanvasWallpaper
-from coretk.sizeandscale import SizeAndScale
+from coretk.dialogs.setwallpaper import CanvasWallpaper
+from coretk.dialogs.sizeandscale import SizeAndScale
 
 
 def sub_menu_items():

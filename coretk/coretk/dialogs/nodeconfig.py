@@ -1,0 +1,94 @@
+import tkinter as tk
+from tkinter import ttk
+
+from coretk.dialogs.dialog import Dialog
+from coretk.dialogs.nodeicon import NodeIconDialog
+from coretk.dialogs.nodeservice import NodeServices
+
+NETWORKNODETYPES = ["switch", "hub", "wlan", "rj45", "tunnel"]
+DEFAULTNODES = ["router", "host", "PC"]
+
+
+class NodeConfigDialog(Dialog):
+    def __init__(self, master, app, canvas_node):
+        """
+        create an instance of node configuration
+
+        :param master: dialog master
+        :param coretk.app.Application: main app
+        :param coretk.graph.CanvasNode canvas_node: canvas node object
+        """
+        super().__init__(master, app, f"{canvas_node.name} Configuration", modal=True)
+        self.canvas_node = canvas_node
+        self.image = canvas_node.image
+        self.image_button = None
+        self.name = tk.StringVar(value=canvas_node.name)
+        self.type = tk.StringVar(value=canvas_node.node_type)
+        self.server = tk.StringVar()
+        self.draw()
+
+    def draw(self):
+        self.columnconfigure(0, weight=1)
+        self.draw_first_row()
+        self.draw_second_row()
+        self.draw_third_row()
+
+    def draw_first_row(self):
+        frame = tk.Frame(self)
+        frame.grid(row=0, column=0, pady=2, sticky="ew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
+
+        entry = tk.Entry(frame, textvariable=self.name)
+        entry.grid(row=0, column=0, padx=2, sticky="ew")
+
+        combobox = ttk.Combobox(frame, textvariable=self.type, values=DEFAULTNODES)
+        combobox.grid(row=0, column=1, padx=2, sticky="ew")
+
+        combobox = ttk.Combobox(frame, textvariable=self.server, values=["localhost"])
+        combobox.current(0)
+        combobox.grid(row=0, column=2, sticky="ew")
+
+    def draw_second_row(self):
+        frame = tk.Frame(self)
+        frame.grid(row=1, column=0, pady=2, sticky="ew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        button = tk.Button(frame, text="Services", command=lambda: NodeServices())
+        button.grid(row=0, column=0, padx=2, sticky="ew")
+
+        self.image_button = tk.Button(
+            frame,
+            text="Icon",
+            image=self.image,
+            compound=tk.LEFT,
+            command=self.click_icon,
+        )
+        self.image_button.grid(row=0, column=1, sticky="ew")
+
+    def draw_third_row(self):
+        frame = tk.Frame(self)
+        frame.grid(row=2, column=0, sticky="ew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        button = tk.Button(frame, text="Apply", command=self.config_apply)
+        button.grid(row=0, column=0, padx=2, sticky="ew")
+
+        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button.grid(row=0, column=1, sticky="ew")
+
+    def click_icon(self):
+        dialog = NodeIconDialog(self, self.app, self.canvas_node)
+        dialog.show()
+        if dialog.image:
+            self.image = dialog.image
+            self.image_button.config(image=self.image)
+
+    def config_apply(self):
+        self.canvas_node.name = self.name.get()
+        self.canvas_node.image = self.image
+        self.canvas_node.canvas.itemconfig(self.canvas_node.id, image=self.image)
+        self.destroy()

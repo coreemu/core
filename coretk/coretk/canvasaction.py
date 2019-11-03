@@ -5,8 +5,8 @@ canvas graph action
 # import tkinter as tk
 
 from core.api.grpc import core_pb2
-from coretk.nodeconfigtable import NodeConfig
-from coretk.wlanconfiguration import WlanConfiguration
+from coretk.dialogs.nodeconfig import NodeConfigDialog
+from coretk.dialogs.wlanconfig import WlanConfiguration
 
 # TODO, finish classifying node types
 NODE_TO_TYPE = {
@@ -18,7 +18,6 @@ NODE_TO_TYPE = {
 class CanvasAction:
     def __init__(self, master, canvas):
         self.master = master
-
         self.canvas = canvas
         self.node_to_show_config = None
 
@@ -31,7 +30,8 @@ class CanvasAction:
             self.display_wlan_configuration(canvas_node)
 
     def display_node_configuration(self):
-        NodeConfig(self.canvas, self.node_to_show_config)
+        dialog = NodeConfigDialog(self.master, self.master, self.node_to_show_config)
+        dialog.show()
         self.node_to_show_config = None
 
     def display_wlan_configuration(self, canvas_node):

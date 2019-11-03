@@ -4,7 +4,7 @@ size and scale
 import tkinter as tk
 from functools import partial
 
-from coretk.setwallpaper import ScaleOption
+from coretk.dialogs.setwallpaper import ScaleOption
 
 DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
 

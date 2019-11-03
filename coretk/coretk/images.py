@@ -11,14 +11,18 @@ class Images:
     images = {}
 
     @classmethod
+    def create(cls, file_path):
+        image = Image.open(file_path)
+        return ImageTk.PhotoImage(image)
+
+    @classmethod
     def load_all(cls):
         for image in LOCAL_ICONS_PATH.glob("*"):
             cls.load(image.stem, str(image))
 
     @classmethod
     def load(cls, name, file_path):
-        image = Image.open(file_path)
-        tk_image = ImageTk.PhotoImage(image)
+        tk_image = cls.create(file_path)
         cls.images[name] = tk_image
 
     @classmethod

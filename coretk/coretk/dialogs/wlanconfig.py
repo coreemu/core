@@ -5,7 +5,7 @@ wlan configuration
 import tkinter as tk
 from functools import partial
 
-from coretk.imagemodification import ImageModification
+from coretk.dialogs.nodeicon import NodeIconDialog
 
 
 class WlanConfiguration:
@@ -57,15 +57,12 @@ class WlanConfiguration:
         e.grid(row=0, column=1, padx=3, pady=3)
         b = tk.Button(f, text="None")
         b.grid(row=0, column=2, padx=3, pady=3)
-        b = tk.Button(
-            f,
-            image=self.image,
-            command=lambda: ImageModification(
-                canvas=self.canvas, canvas_node=self.canvas_node, node_config=self
-            ),
-        )
+        b = tk.Button(f, image=self.image, command=lambda: self.click_image)
         b.grid(row=0, column=3, padx=3, pady=3)
         f.grid(padx=2, pady=2, ipadx=2, ipady=2)
+
+    def click_image(self):
+        NodeIconDialog(self.app, canvas_node=self.canvas_node, node_config=self)
 
     def create_string_var(self, val):
         """
