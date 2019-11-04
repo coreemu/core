@@ -539,7 +539,7 @@ class CoreClient:
         """
         Create the interface for the two end of an edge, add a copy to node's interfaces
 
-        :param coretk.grpcmanagement.Edge edge: edge to add interfaces to
+        :param coretk.coreclient.Edge edge: edge to add interfaces to
         :param int src_canvas_id: canvas id for the source node
         :param int dst_canvas_id: canvas id for the destination node
         :return: nothing
