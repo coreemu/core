@@ -15,7 +15,6 @@ class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
         appcache.cache_variable(self)
-        print(self.is_open_xml)
         self.load_images()
         self.setup_app()
         self.menubar = None
@@ -99,6 +98,10 @@ class Application(tk.Frame):
         self.canvas.grpc_manager.core_grpc = self.core_grpc
         self.canvas.grpc_manager.update_preexisting_ids()
         self.canvas.draw_existing_component()
+
+        self.canvas.grpc_manager.wlanconfig_management.load_wlan_configurations(
+            self.core_grpc
+        )
 
     def on_closing(self):
         menu_action = MenuAction(self, self.master)

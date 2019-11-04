@@ -7,6 +7,7 @@ import logging
 from core.api.grpc import core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.interface import Interface, InterfaceManager
+from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
 link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel"]
@@ -74,6 +75,7 @@ class GrpcManager:
         self.core_mapping = CoreToCanvasMapping()
 
         self.wlanconfig_management = WlanNodeConfig()
+        self.mobilityconfig_management = MobilityNodeConfig()
 
     def update_preexisting_ids(self):
         """
@@ -151,6 +153,9 @@ class GrpcManager:
 
         # set default configuration for wireless node
         self.wlanconfig_management.set_default_config(node_type, nid)
+
+        # set default mobility configuration for wireless node
+        self.mobilityconfig_management.set_default_configuration(node_type, nid)
 
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)

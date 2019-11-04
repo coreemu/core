@@ -32,7 +32,8 @@ class WlanConfiguration:
         # self.range_var.set(275.0)
         self.config = config
         self.range_var = tk.StringVar()
-        self.range_var.set(config["basic_range"])
+        # self.range_var.set(config["basic_range"])
+        self.range_var.set(config["range"])
         # self.bandwidth_var = tk.IntVar()
         self.bandwidth_var = tk.StringVar()
         self.bandwidth_var.set(config["bandwidth"])
@@ -130,7 +131,8 @@ class WlanConfiguration:
 
         e = tk.Entry(
             f1,
-            textvariable=self.create_string_var(self.config["basic_range"]),
+            # textvariable=self.create_string_var(self.config["basic_range"]),
+            textvariable=self.create_string_var(self.config["range"]),
             width=5,
             bg="white",
         )

@@ -3,7 +3,6 @@ Incorporate grpc into python tkinter GUI
 """
 import logging
 import os
-from collections import OrderedDict
 
 from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
@@ -143,22 +142,22 @@ class CoreGrpc:
 
         logging.info("set session state: %s", response)
 
-    def add_node(self, node_type, model, x, y, name, node_id):
-        position = core_pb2.Position(x=x, y=y)
-        node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
-        self.node_ids.append(node_id)
-        response = self.core.add_node(self.session_id, node)
-        logging.info("created node: %s", response)
-        if node_type == core_pb2.NodeType.WIRELESS_LAN:
-            d = OrderedDict()
-            d["basic_range"] = "275"
-            d["bandwidth"] = "54000000"
-            d["jitter"] = "0"
-            d["delay"] = "20000"
-            d["error"] = "0"
-            r = self.core.set_wlan_config(self.session_id, node_id, d)
-            logging.debug("set wlan config %s", r)
-        return response.node_id
+    # def add_node(self, node_type, model, x, y, name, node_id):
+    #     position = core_pb2.Position(x=x, y=y)
+    #     node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
+    #     self.node_ids.append(node_id)
+    #     response = self.core.add_node(self.session_id, node)
+    #     logging.info("created node: %s", response)
+    #     if node_type == core_pb2.NodeType.WIRELESS_LAN:
+    #         d = OrderedDict()
+    #         d["basic_range"] = "275"
+    #         d["bandwidth"] = "54000000"
+    #         d["jitter"] = "0"
+    #         d["delay"] = "20000"
+    #         d["error"] = "0"
+    #         r = self.core.set_wlan_config(self.session_id, node_id, d)
+    #         logging.debug("set wlan config %s", r)
+    #     return response.node_id
 
     def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
@@ -232,6 +231,7 @@ class CoreGrpc:
             nodes=nodes,
             links=links,
             wlan_configs=wlan_configs,
+            mobility_configs=mobility_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
@@ -253,28 +253,6 @@ class CoreGrpc:
         """
         if1 = self.create_interface(type1, edge.interface_1)
         if2 = self.create_interface(type2, edge.interface_2)
-        # if type1 == core_pb2.NodeType.DEFAULT:
-        #     interface = edge.interface_1
-        #     if1 = core_pb2.Interface(
-        #         id=interface.id,
-        #         name=interface.name,
-        #         mac=interface.mac,
-        #         ip4=interface.ipv4,
-        #         ip4mask=interface.ip4prefix,
-        #     )
-        #     logging.debug("create interface 1 %s", if1)
-        #     # interface1 = self.interface_helper.create_interface(id1, 0)
-        #
-        # if type2 == core_pb2.NodeType.DEFAULT:
-        #     interface = edge.interface_2
-        #     if2 = core_pb2.Interface(
-        #         id=interface.id,
-        #         name=interface.name,
-        #         mac=interface.mac,
-        #         ip4=interface.ipv4,
-        #         ip4mask=interface.ip4prefix,
-        #     )
-        #     logging.debug("create interface 2: %s", if2)
 
         response = self.core.add_link(self.session_id, id1, id2, if1, if2)
         logging.info("created link: %s", response)

@@ -90,8 +90,8 @@ class CanvasGraph(tk.Canvas):
         self.draw_node_name = None
         self.selected = None
         self.node_context = None
-        self.nodes = {}
-        self.edges = {}
+        self.nodes.clear()
+        self.edges.clear()
         self.drawing_edge = None
 
         self.grpc_manager = GrpcManager(new_grpc)
@@ -99,6 +99,8 @@ class CanvasGraph(tk.Canvas):
         # new grpc
         self.core_grpc = new_grpc
         self.draw_existing_component()
+
+        # self.grpc_manager.wlanconfig_management.load_wlan_configurations(self.core_grpc)
 
     def setup_bindings(self):
         """

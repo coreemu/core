@@ -400,6 +400,14 @@ class MenuAction:
         # print(grpc.get_session_state())
         self.application.canvas.canvas_reset_and_redraw(core_grpc)
 
+        self.application.canvas.grpc_manager.wlanconfig_management.load_wlan_configurations(
+            core_grpc
+        )
+
+        self.application.canvas.grpc_manager.mobilityconfig_management.load_mobility_configurations(
+            core_grpc
+        )
+
         # Todo might not need
         self.application.core_grpc = core_grpc
 

@@ -71,6 +71,11 @@ class CoreToolbarHelp:
         return links
 
     def get_wlan_configuration_list(self):
+        """
+        form a list of wlan configuration to pass to start_session
+
+        :return: nothing
+        """
         configs = []
         grpc_manager = self.application.canvas.grpc_manager
         manager_configs = grpc_manager.wlanconfig_management.configurations
@@ -79,23 +84,33 @@ class CoreToolbarHelp:
             configs.append(cnf)
         return configs
 
+    def get_mobility_configuration_list(self):
+        """
+        form a list of mobility configuration to pass to start_session
+
+        :return: nothing
+        """
+        configs = []
+        grpc_manager = self.application.canvas.grpc_manager
+        manager_configs = grpc_manager.mobilityconfig_management.configurations
+        for key in manager_configs:
+            cnf = core_pb2.MobilityConfig(node_id=key, config=manager_configs[key])
+            configs.append(cnf)
+        return configs
+
     def gui_start_session(self):
-        # list(core_pb2.Node)
         nodes = self.get_node_list()
-
-        # list(core_bp2.Link)
         links = self.get_link_list()
-
-        # print(links[0])
         wlan_configs = self.get_wlan_configuration_list()
-        # print(wlan_configs)
-        self.core_grpc.start_session(nodes, links, wlan_configs=wlan_configs)
+        mobility_configs = self.get_mobility_configuration_list()
+
+        self.core_grpc.start_session(
+            nodes, links, wlan_configs=wlan_configs, mobility_configs=mobility_configs
+        )
         # self.core_grpc.core.add_link(self.core_grpc.session_id, self.id1, self.id2, self.if1, self.if2)
         # res = self.core_grpc.core.get_wlan_config(self.core_grpc.session_id, 1)
 
-        # res = self.core_grpc.core.get_session(self.core_grpc.session_id).session
-        # print(res)
-        # res = self.core_grpc.core.get_wlan_config(self.core_grpc.session_id, 1)
+        # res = self.core_grpc.core.get_wlan_config(self.core_grpc.session_id, 2)
 
         # print(res)
 
