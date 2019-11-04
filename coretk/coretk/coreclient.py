@@ -127,13 +127,15 @@ class CoreClient:
         for node in session.nodes:
             if node.type == core_pb2.NodeType.WIRELESS_LAN:
                 response = self.client.get_wlan_config(self.session_id, node.id)
+                logging.info("wlan config(%s): %s", node.id, response)
                 node_config = response.config
                 config = {x: node_config[x].value for x in node_config}
                 self.wlanconfig_management.configurations[node.id] = config
 
         # get mobility configs
         response = self.client.get_mobility_configs(self.session_id)
-        for node_id in response.config:
+        logging.info("mobility configs: %s", response)
+        for node_id in response.configs:
             node_config = response.config[node_id].config
             config = {x: node_config[x].value for x in node_config}
             self.mobilityconfig_management.configurations[node_id] = config
