@@ -9,6 +9,7 @@ from tkinter import filedialog
 from PIL import Image, ImageTk
 
 from coretk.appdirs import BACKGROUNDS_PATH
+from coretk.dialogs.dialog import Dialog
 
 
 class ScaleOption(enum.Enum):
@@ -19,44 +20,116 @@ class ScaleOption(enum.Enum):
     TILED = 4
 
 
-class CanvasWallpaper:
-    def __init__(self, app):
+class CanvasBackgroundDialog(Dialog):
+    def __init__(self, master, app):
         """
         create an instance of CanvasWallpaper object
 
         :param coretk.app.Application app: root application
         """
-        self.app = app
+        super().__init__(master, app, "Canvas Background", modal=True)
         self.canvas = self.app.canvas
+        self.radiovar = tk.IntVar(value=self.app.radiovar.get())
+        self.show_grid_var = tk.IntVar(value=self.app.show_grid_var.get())
+        self.adjust_to_dim_var = tk.IntVar(value=self.app.adjust_to_dim_var.get())
+        self.image_label = None
+        self.file_name = tk.StringVar()
+        self.options = []
+        self.draw()
 
-        self.top = tk.Toplevel()
-        self.top.title("Set Canvas Wallpaper")
-        self.radiovar = tk.IntVar()
-        print(self.app.radiovar.get())
-        self.radiovar.set(self.app.radiovar.get())
-        self.show_grid_var = tk.IntVar()
-        self.show_grid_var.set(self.app.show_grid_var.get())
-        self.adjust_to_dim_var = tk.IntVar()
-        self.adjust_to_dim_var.set(self.app.adjust_to_dim_var.get())
+    def draw(self):
+        self.columnconfigure(0, weight=1)
+        self.rowconfigure(0, weight=1)
+        self.draw_image()
+        self.draw_image_label()
+        self.draw_image_selection()
+        self.draw_options()
+        self.draw_additional_options()
+        self.draw_buttons()
 
-        self.create_image_label()
-        self.create_text_label()
-        self.open_image()
-        self.display_options()
-        self.additional_options()
-        self.apply_cancel()
-
-    def create_image_label(self):
-        image_label = tk.Label(
-            self.top, text="(image preview)", height=8, width=32, bg="white"
+    def draw_image(self):
+        self.image_label = tk.Label(
+            self, text="(image preview)", height=8, width=32, bg="white"
         )
-        image_label.grid(pady=5)
+        self.image_label.grid(row=0, column=0, pady=5, sticky="nsew")
 
-    def create_text_label(self):
-        text_label = tk.Label(self.top, text="Image filename: ")
-        text_label.grid()
+    def draw_image_label(self):
+        label = tk.Label(self, text="Image filename: ")
+        label.grid(row=1, column=0, sticky="ew")
 
-    def open_image_link(self):
+    def draw_image_selection(self):
+        frame = tk.Frame(self)
+        frame.columnconfigure(0, weight=2)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
+        frame.grid(row=2, column=0, sticky="ew")
+
+        entry = tk.Entry(frame, textvariable=self.file_name)
+        entry.focus()
+        entry.grid(row=0, column=0, sticky="ew")
+
+        button = tk.Button(frame, text="...", command=self.click_open_image)
+        button.grid(row=0, column=1, sticky="ew")
+
+        button = tk.Button(frame, text="Clear", command=self.click_clear)
+        button.grid(row=0, column=2, sticky="ew")
+
+    def draw_options(self):
+        frame = tk.Frame(self)
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(2, weight=1)
+        frame.columnconfigure(3, weight=1)
+        frame.grid(row=3, column=0, sticky="ew")
+
+        button = tk.Radiobutton(
+            frame, text="upper-left", value=1, variable=self.radiovar
+        )
+        button.grid(row=0, column=0, sticky="ew")
+        self.options.append(button)
+
+        button = tk.Radiobutton(frame, text="centered", value=2, variable=self.radiovar)
+        button.grid(row=0, column=1, sticky="ew")
+        self.options.append(button)
+
+        button = tk.Radiobutton(frame, text="scaled", value=3, variable=self.radiovar)
+        button.grid(row=0, column=2, sticky="ew")
+        self.options.append(button)
+
+        button = tk.Radiobutton(frame, text="titled", value=4, variable=self.radiovar)
+        button.grid(row=0, column=3, sticky="ew")
+        self.options.append(button)
+
+    def draw_additional_options(self):
+        checkbutton = tk.Checkbutton(
+            self, text="Show grid", variable=self.show_grid_var
+        )
+        checkbutton.grid(row=4, column=0, sticky="ew", padx=5)
+
+        checkbutton = tk.Checkbutton(
+            self,
+            text="Adjust canvas size to image dimensions",
+            variable=self.adjust_to_dim_var,
+            command=self.click_adjust_canvas,
+        )
+        checkbutton.grid(row=5, column=0, sticky="ew", padx=5)
+
+        self.show_grid_var.set(1)
+        self.adjust_to_dim_var.set(0)
+
+    def draw_buttons(self):
+        frame = tk.Frame(self)
+        frame.grid(row=6, column=0, pady=5, sticky="ew")
+        frame.columnconfigure(0, weight=1)
+        frame.columnconfigure(1, weight=1)
+
+        button = tk.Button(frame, text="Apply", command=self.click_apply)
+        button.grid(row=0, column=0, sticky="ew")
+
+        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button.grid(row=0, column=1, sticky="ew")
+
+    def click_open_image(self):
         filename = filedialog.askopenfilename(
             initialdir=str(BACKGROUNDS_PATH),
             title="Open",
@@ -65,102 +138,39 @@ class CanvasWallpaper:
                 ("All Files", "*"),
             ),
         )
-
-        # fill the file name into the file name entry
-        img_open_frame = self.top.grid_slaves(2, 0)[0]
-        filename_entry = img_open_frame.grid_slaves(0, 0)[0]
-        filename_entry.delete(0, tk.END)
-        filename_entry.insert(tk.END, filename)
-
-        # display that onto the label
-        img_label = self.top.grid_slaves(0, 0)[0]
         if filename:
+            self.file_name.set(filename)
+            width, height = 250, 135
             img = Image.open(filename)
-            img = img.resize((250, 135), Image.ANTIALIAS)
+            img = img.resize((width, height), Image.ANTIALIAS)
             tk_img = ImageTk.PhotoImage(img)
-            img_label.config(image=tk_img, width=250, height=135)
-            img_label.image = tk_img
+            self.image_label.config(image=tk_img, width=width, height=height)
+            self.image_label.image = tk_img
 
-    def clear_link(self):
+    def click_clear(self):
         """
         delete like shown in image link entry if there is any
 
         :return: nothing
         """
         # delete entry
-        img_open_frame = self.top.grid_slaves(2, 0)[0]
-        filename_entry = img_open_frame.grid_slaves(0, 0)[0]
-        filename_entry.delete(0, tk.END)
-
+        self.file_name.set("")
         # delete display image
-        img_label = self.top.grid_slaves(0, 0)[0]
-        img_label.config(image="", width=32, height=8)
+        self.image_label.config(image="", width=32, height=8)
 
-    def open_image(self):
-        f = tk.Frame(self.top)
-
-        var = tk.StringVar(f, value="")
-        e = tk.Entry(f, textvariable=var)
-        e.focus()
-        e.grid()
-
-        b = tk.Button(f, text="...", command=self.open_image_link)
-        b.grid(row=0, column=1)
-
-        b = tk.Button(f, text="Clear", command=self.clear_link)
-        b.grid(row=0, column=2)
-
-        f.grid()
-
-    def display_options(self):
-        f = tk.Frame(self.top)
-
-        b1 = tk.Radiobutton(f, text="upper-left", value=1, variable=self.radiovar)
-        b1.grid(row=0, column=0)
-
-        b2 = tk.Radiobutton(f, text="centered", value=2, variable=self.radiovar)
-        b2.grid(row=0, column=1)
-
-        b3 = tk.Radiobutton(f, text="scaled", value=3, variable=self.radiovar)
-        b3.grid(row=0, column=2)
-
-        b4 = tk.Radiobutton(f, text="titled", value=4, variable=self.radiovar)
-        b4.grid(row=0, column=3)
-
-        # self.radiovar.set(1)
-
-        f.grid()
-
-    def adjust_canvas_size(self):
-
+    def click_adjust_canvas(self):
         # deselect all radio buttons and grey them out
         if self.adjust_to_dim_var.get() == 1:
             self.radiovar.set(0)
-            option_frame = self.top.grid_slaves(3, 0)[0]
-            for i in option_frame.grid_slaves():
-                i.config(state=tk.DISABLED)
-
+            for option in self.options:
+                option.config(state=tk.DISABLED)
         # turn back the radio button to active state so that user can choose again
         elif self.adjust_to_dim_var.get() == 0:
-            option_frame = self.top.grid_slaves(3, 0)[0]
-            for i in option_frame.grid_slaves():
-                i.config(state=tk.NORMAL)
-                self.radiovar.set(1)
+            self.radiovar.set(1)
+            for option in self.options:
+                option.config(state=tk.NORMAL)
         else:
-            logging.error("setwallpaper.py adjust_canvas_size invalid value")
-
-    def additional_options(self):
-        b = tk.Checkbutton(self.top, text="Show grid", variable=self.show_grid_var)
-        b.grid(sticky=tk.W, padx=5)
-        b = tk.Checkbutton(
-            self.top,
-            text="Adjust canvas size to image dimensions",
-            variable=self.adjust_to_dim_var,
-            command=self.adjust_canvas_size,
-        )
-        b.grid(sticky=tk.W, padx=5)
-        self.show_grid_var.set(1)
-        self.adjust_to_dim_var.set(0)
+            logging.error("canvasbackground.py adjust_canvas_size invalid value")
 
     def delete_canvas_components(self, tag_list):
         """
@@ -316,7 +326,7 @@ class CanvasWallpaper:
                 self.canvas.itemconfig(i, state=tk.NORMAL)
                 self.canvas.lift(i)
         else:
-            logging.error("setwallpaper.py show_grid invalid value")
+            logging.error("canvasbackground.py show_grid invalid value")
 
     def save_wallpaper_options(self):
         self.app.radiovar.set(self.radiovar.get())
@@ -324,51 +334,39 @@ class CanvasWallpaper:
         self.app.adjust_to_dim_var.set(self.adjust_to_dim_var.get())
 
     def click_apply(self):
-        img_link_frame = self.top.grid_slaves(2, 0)[0]
-        filename = img_link_frame.grid_slaves(0, 0)[0].get()
+        filename = self.file_name.get()
         if not filename:
             self.delete_canvas_components(["wallpaper"])
-            self.top.destroy()
+            self.destroy()
             self.app.current_wallpaper = None
             self.save_wallpaper_options()
             return
+
         try:
             img = Image.open(filename)
             self.app.current_wallpaper = img
         except FileNotFoundError:
-            print("invalid filename, draw original white plot")
+            logging.error("invalid background: %s", filename)
             if self.app.wallpaper_id:
                 self.canvas.delete(self.app.wallpaper_id)
-            self.top.destroy()
+            self.destroy()
             return
 
         self.app.adjust_to_dim_var.set(self.adjust_to_dim_var.get())
         if self.adjust_to_dim_var.get() == 0:
-
             self.app.radiovar.set(self.radiovar.get())
-
-            if self.radiovar.get() == ScaleOption.UPPER_LEFT.value:
+            option = ScaleOption(self.radiovar.get())
+            if option == ScaleOption.UPPER_LEFT:
                 self.upper_left(img)
-            elif self.radiovar.get() == ScaleOption.CENTERED.value:
+            elif option == ScaleOption.CENTERED:
                 self.center(img)
-            elif self.radiovar.get() == ScaleOption.SCALED.value:
+            elif option == ScaleOption.SCALED:
                 self.scaled(img)
-            elif self.radiovar.get() == ScaleOption.TILED.value:
+            elif option == ScaleOption.TILED:
                 print("not implemented yet")
 
         elif self.adjust_to_dim_var.get() == 1:
             self.canvas_to_image_dimension(img)
 
         self.show_grid()
-        self.top.destroy()
-
-    def apply_cancel(self):
-        f = tk.Frame(self.top)
-
-        b = tk.Button(f, text="Apply", command=self.click_apply)
-        b.grid(row=0, column=0)
-
-        b = tk.Button(f, text="Cancel", command=self.top.destroy)
-        b.grid(row=0, column=1)
-
-        f.grid(pady=5)
+        self.destroy()

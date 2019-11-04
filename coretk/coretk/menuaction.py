@@ -8,10 +8,10 @@ from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
 from coretk.appdirs import XML_PATH
+from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.hooks import HooksDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.dialogs.setwallpaper import CanvasWallpaper
 from coretk.dialogs.sizeandscale import SizeAndScale
 
 
@@ -386,7 +386,8 @@ class MenuAction:
         self.app.size_and_scale = SizeAndScale(self.app)
 
     def canvas_set_wallpaper(self):
-        self.app.set_wallpaper = CanvasWallpaper(self.app)
+        dialog = CanvasBackgroundDialog(self.app, self.app)
+        dialog.show()
 
     def help_core_github(self):
         webbrowser.open_new("https://github.com/coreemu/core")
