@@ -6,7 +6,7 @@ import tkinter as tk
 from functools import partial
 
 from coretk.dialogs.mobilityconfig import MobilityConfiguration
-from coretk.imagemodification import ImageModification
+from coretk.dialogs.nodeicon import NodeIconDialog
 
 
 class WlanConfiguration:
@@ -59,15 +59,12 @@ class WlanConfiguration:
         e.grid(row=0, column=1, padx=3, pady=3)
         b = tk.Button(f, text="None")
         b.grid(row=0, column=2, padx=3, pady=3)
-        b = tk.Button(
-            f,
-            image=self.image,
-            command=lambda: ImageModification(
-                canvas=self.canvas, canvas_node=self.canvas_node, node_config=self
-            ),
-        )
+        b = tk.Button(f, image=self.image, command=lambda: self.click_image)
         b.grid(row=0, column=3, padx=3, pady=3)
         f.grid(padx=2, pady=2, ipadx=2, ipady=2)
+
+    def click_image(self):
+        NodeIconDialog(self.app, canvas_node=self.canvas_node, node_config=self)
 
     def create_string_var(self, val):
         """
@@ -228,9 +225,7 @@ class WlanConfiguration:
         f.grid(sticky=tk.W, padx=3, pady=3)
 
     def click_ns2_mobility_script(self):
-        dialog = MobilityConfiguration(
-            self.top, self.canvas.core_grpc.app, self.canvas_node
-        )
+        dialog = MobilityConfiguration(self.top, self.canvas.core.app, self.canvas_node)
         dialog.show()
 
     def wlan_options(self):
@@ -287,7 +282,7 @@ class WlanConfiguration:
         )
 
         # set wireless node configuration here
-        wlanconfig_manager = self.canvas.grpc_manager.wlanconfig_management
+        wlanconfig_manager = self.canvas.core.wlanconfig_management
         wlanconfig_manager.set_custom_config(
             node_id=self.canvas_node.core_id,
             range=range_val,

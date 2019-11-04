@@ -1,23 +1,28 @@
 import logging
-import os
 from enum import Enum
 
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
-
-PATH = os.path.abspath(os.path.dirname(__file__))
-ICONS_DIR = os.path.join(PATH, "icons")
+from coretk.appdirs import LOCAL_ICONS_PATH
 
 
 class Images:
     images = {}
 
     @classmethod
-    def load(cls, name, file_path):
-        # file_path = os.path.join(PATH, file_path)
+    def create(cls, file_path):
         image = Image.open(file_path)
-        tk_image = ImageTk.PhotoImage(image)
+        return ImageTk.PhotoImage(image)
+
+    @classmethod
+    def load_all(cls):
+        for image in LOCAL_ICONS_PATH.glob("*"):
+            cls.load(image.stem, str(image))
+
+    @classmethod
+    def load(cls, name, file_path):
+        tk_image = cls.create(file_path)
         cls.images[name] = tk_image
 
     @classmethod
@@ -95,10 +100,3 @@ class ImageEnum(Enum):
     FILEOPEN = "fileopen"
     EDITDELETE = "edit-delete"
     ANTENNA = "antenna"
-
-
-def load_core_images(images):
-    for file_name in os.listdir(ICONS_DIR):
-        file_path = os.path.join(ICONS_DIR, file_name)
-        name = file_name.split(".")[0]
-        images.load(name, file_path)

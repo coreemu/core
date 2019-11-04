@@ -35,26 +35,3 @@ class WlanNodeConfig:
         :return:
         """
         return
-
-    def load_wlan_configurations(self, core_grpc):
-        """
-        load wlan configuration from the daemon
-
-        :param coretk.coregrpc.CoreGrpc core_grpc: CoreGrpc object
-        :return: nothing
-        """
-        self.configurations.clear()
-        sid = core_grpc.session_id
-        client = core_grpc.core
-        for node in client.get_session(sid).session.nodes:
-            if node.type == core_pb2.NodeType.WIRELESS_LAN:
-                wlan_config = client.get_wlan_config(sid, node.id).config
-                config = OrderedDict()
-                for key in wlan_config:
-                    config[key] = wlan_config[key].value
-
-                    # config[key] = wlan_config[key]["value"]
-                # print(config)
-                # for k, v in wlan_config.config:
-
-                self.configurations[node.id] = config

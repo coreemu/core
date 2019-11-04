@@ -7,12 +7,12 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
+from coretk.appdirs import XML_PATH
+from coretk.dialogs.hooks import HooksDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.setwallpaper import CanvasWallpaper
-from coretk.sizeandscale import SizeAndScale
-
-SAVEDIR = "/home/ncs/Desktop/"
+from coretk.dialogs.setwallpaper import CanvasWallpaper
+from coretk.dialogs.sizeandscale import SizeAndScale
 
 
 def sub_menu_items():
@@ -300,10 +300,6 @@ def session_comments():
     logging.debug("Click session comments")
 
 
-def session_hooks():
-    logging.debug("Click session hooks")
-
-
 def session_reset_node_positions():
     logging.debug("Click session reset node positions")
 
@@ -321,10 +317,9 @@ class MenuAction:
     Actions performed when choosing menu items
     """
 
-    def __init__(self, application, master):
+    def __init__(self, app, master):
         self.master = master
-        self.application = application
-        self.core_grpc = application.core_grpc
+        self.app = app
 
     def prompt_save_running_session(self):
         """
@@ -335,27 +330,20 @@ class MenuAction:
         logging.info(
             "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
         )
-        grpc = self.application.core_grpc
-        state = grpc.get_session_state()
+        state = self.app.core.get_session_state()
 
         if (
             state == core_pb2.SessionState.SHUTDOWN
             or state == core_pb2.SessionState.DEFINITION
         ):
-            grpc.delete_session()
-            grpc.core.close()
-            # self.application.quit()
+            self.app.core.delete_session()
         else:
             msgbox = messagebox.askyesnocancel("stop", "Stop the running session?")
 
             if msgbox or msgbox is False:
                 if msgbox:
-                    grpc.stop_session()
-                    grpc.delete_session()
-                # else:
-                #     grpc.set_session_state("definition")
-                grpc.core.close()
-                # self.application.quit()
+                    self.app.core.stop_session()
+                    self.app.core.delete_session()
 
     def on_quit(self):
         """
@@ -364,67 +352,41 @@ class MenuAction:
         :return: nothing
         """
         self.prompt_save_running_session()
-        # self.application.core_grpc.close()
-        self.application.quit()
+        self.app.quit()
 
     def file_save_as_xml(self):
         logging.info("menuaction.py file_save_as_xml()")
-        grpc = self.application.core_grpc
         file_path = filedialog.asksaveasfilename(
-            initialdir=SAVEDIR,
+            initialdir=str(XML_PATH),
             title="Save As",
             filetypes=(("EmulationScript XML files", "*.xml"), ("All files", "*")),
             defaultextension=".xml",
         )
-        grpc.save_xml(file_path)
+        if file_path:
+            self.app.core.save_xml(file_path)
 
     def file_open_xml(self):
         logging.info("menuaction.py file_open_xml()")
-        self.application.is_open_xml = True
+        self.app.is_open_xml = True
         file_path = filedialog.askopenfilename(
-            initialdir=SAVEDIR,
+            initialdir=str(XML_PATH),
             title="Open",
             filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
         )
-        # clean up before opening a new session
-        self.prompt_save_running_session()
-        # grpc = CoreGrpc(self.application.master)
-        # grpc.core.connect()
-        core_grpc = self.application.core_grpc
-        core_grpc.core.connect()
-        # session_id = core_grpc.open_xml(file_path)
-        # core_grpc.session_id = session_id
-
-        core_grpc.open_xml(file_path)
-        # print("Print session state")
-        # print(grpc.get_session_state())
-        self.application.canvas.canvas_reset_and_redraw(core_grpc)
-
-        self.application.canvas.grpc_manager.wlanconfig_management.load_wlan_configurations(
-            core_grpc
-        )
-
-        self.application.canvas.grpc_manager.mobilityconfig_management.load_mobility_configurations(
-            core_grpc
-        )
+        if file_path:
+            logging.info("opening xml: %s", file_path)
+            self.prompt_save_running_session()
+            self.app.core.open_xml(file_path)
 
         # Todo might not need
-        self.application.core_grpc = core_grpc
-
-        self.application.core_editbar.destroy_children_widgets()
-        self.application.core_editbar.create_toolbar()
-        # self.application.is_open_xml = False
-
-        # self.application.core_editbar.create_runtime_toolbar()
-        # self.application.canvas.draw_existing_component()
-        # t1 = time.clock()
-        # print(t1 - t0)
+        # self.application.core_editbar.destroy_children_widgets()
+        # self.application.core_editbar.create_toolbar()
 
     def canvas_size_and_scale(self):
-        self.application.size_and_scale = SizeAndScale(self.application)
+        self.app.size_and_scale = SizeAndScale(self.app)
 
     def canvas_set_wallpaper(self):
-        self.application.set_wallpaper = CanvasWallpaper(self.application)
+        self.app.set_wallpaper = CanvasWallpaper(self.app)
 
     def help_core_github(self):
         webbrowser.open_new("https://github.com/coreemu/core")
@@ -434,10 +396,15 @@ class MenuAction:
 
     def session_options(self):
         logging.debug("Click session options")
-        dialog = SessionOptionsDialog(self.application, self.application)
+        dialog = SessionOptionsDialog(self.app, self.app)
         dialog.show()
 
     def session_change_sessions(self):
         logging.debug("Click session change sessions")
-        dialog = SessionsDialog(self.application, self.application)
+        dialog = SessionsDialog(self.app, self.app)
+        dialog.show()
+
+    def session_hooks(self):
+        logging.debug("Click session hooks")
+        dialog = HooksDialog(self.app, self.app)
         dialog.show()

@@ -5,9 +5,8 @@ from core.api.grpc.client import core_pb2
 
 
 class CoreToolbarHelp:
-    def __init__(self, application):
-        self.application = application
-        self.core_grpc = application.core_grpc
+    def __init__(self, app):
+        self.app = app
 
     def get_node_list(self):
         """
@@ -15,12 +14,8 @@ class CoreToolbarHelp:
 
         :return: nothing
         """
-        grpc_manager = self.application.canvas.grpc_manager
-
-        # list(core_pb2.Node)
         nodes = []
-
-        for node in grpc_manager.nodes.values():
+        for node in self.app.core.nodes.values():
             pos = core_pb2.Position(x=int(node.x), y=int(node.y))
             n = core_pb2.Node(
                 id=node.node_id, type=node.type, position=pos, model=node.model
@@ -35,38 +30,26 @@ class CoreToolbarHelp:
         :rtype: list(core_pb2.Link)
         :return: list of protobuf links
         """
-        grpc_manager = self.application.canvas.grpc_manager
-
-        # list(core_bp2.Link)
         links = []
-        for edge in grpc_manager.edges.values():
-            interface_one = self.application.core_grpc.create_interface(
-                edge.type1, edge.interface_1
-            )
-            interface_two = self.application.core_grpc.create_interface(
-                edge.type2, edge.interface_2
-            )
+        for edge in self.app.core.edges.values():
+            interface_one = self.app.core.create_interface(edge.type1, edge.interface_1)
+            interface_two = self.app.core.create_interface(edge.type2, edge.interface_2)
             # TODO for now only consider the basic cases
-            if (
-                edge.type1 == core_pb2.NodeType.WIRELESS_LAN
-                or edge.type2 == core_pb2.NodeType.WIRELESS_LAN
-            ):
-                link_type = core_pb2.LinkType.WIRELESS
-            else:
-                link_type = core_pb2.LinkType.WIRED
+            # if (
+            #     edge.type1 == core_pb2.NodeType.WIRELESS_LAN
+            #     or edge.type2 == core_pb2.NodeType.WIRELESS_LAN
+            # ):
+            #     link_type = core_pb2.LinkType.WIRELESS
+            # else:
+            #     link_type = core_pb2.LinkType.WIRED
             link = core_pb2.Link(
                 node_one_id=edge.id1,
                 node_two_id=edge.id2,
-                type=link_type,
+                type=core_pb2.LinkType.WIRED,
                 interface_one=interface_one,
                 interface_two=interface_two,
             )
             links.append(link)
-            # self.id1 = edge.id1
-            # self.id2 = edge.id2
-            # self.type = link_type
-            # self.if1 = interface_one
-            # self.if2 = interface_two
 
         return links
 
@@ -77,8 +60,7 @@ class CoreToolbarHelp:
         :return: nothing
         """
         configs = []
-        grpc_manager = self.application.canvas.grpc_manager
-        manager_configs = grpc_manager.wlanconfig_management.configurations
+        manager_configs = self.app.core.wlanconfig_management.configurations
         for key in manager_configs:
             cnf = core_pb2.WlanConfig(node_id=key, config=manager_configs[key])
             configs.append(cnf)
@@ -91,8 +73,8 @@ class CoreToolbarHelp:
         :return: nothing
         """
         configs = []
-        grpc_manager = self.application.canvas.grpc_manager
-        manager_configs = grpc_manager.mobilityconfig_management.configurations
+        core = self.app.canvas.core
+        manager_configs = core.mobilityconfig_management.configurations
         for key in manager_configs:
             cnf = core_pb2.MobilityConfig(node_id=key, config=manager_configs[key])
             configs.append(cnf)
@@ -103,35 +85,6 @@ class CoreToolbarHelp:
         links = self.get_link_list()
         wlan_configs = self.get_wlan_configuration_list()
         mobility_configs = self.get_mobility_configuration_list()
-
-        self.core_grpc.start_session(
+        self.app.core.start_session(
             nodes, links, wlan_configs=wlan_configs, mobility_configs=mobility_configs
         )
-        # self.core_grpc.core.add_link(self.core_grpc.session_id, self.id1, self.id2, self.if1, self.if2)
-        # res = self.core_grpc.core.get_wlan_config(self.core_grpc.session_id, 1)
-
-        # res = self.core_grpc.core.get_wlan_config(self.core_grpc.session_id, 2)
-
-        # print(res)
-
-    # def add_nodes(self):
-    #     """
-    #     add the nodes stored in grpc manager
-    #     :return: nothing
-    #     """
-    #     grpc_manager = self.application.canvas.grpc_manager
-    #     for node in grpc_manager.nodes.values():
-    #         self.application.core_grpc.add_node(
-    #             node.type, node.model, int(node.x), int(node.y), node.name, node.node_id
-    #         )
-    #
-    # def add_edges(self):
-    #     """
-    #     add the edges stored in grpc manager
-    #     :return:
-    #     """
-    #     grpc_manager = self.application.canvas.grpc_manager
-    #     for edge in grpc_manager.edges.values():
-    #         self.application.core_grpc.add_link(
-    #             edge.id1, edge.id2, edge.type1, edge.type2, edge
-    #         )

@@ -17,8 +17,9 @@ class Dialog(tk.Toplevel):
     def show(self):
         self.transient(self.master)
         self.focus_force()
-        if self.modal:
-            self.grab_set()
         self.update()
         self.deiconify()
+        if self.modal:
+            self.wait_visibility()
+            self.grab_set()
         self.wait_window()

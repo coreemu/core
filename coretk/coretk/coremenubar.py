@@ -9,19 +9,19 @@ class CoreMenubar(object):
     Core menubar
     """
 
-    def __init__(self, application, master, menubar):
+    def __init__(self, app, master, menubar):
         """
         Create a CoreMenubar instance
 
         :param master:
         :param tkinter.Menu menubar: menubar object
-        :param coretk.app.Application application: application object
+        :param coretk.app.Application app: application object
         """
         self.menubar = menubar
         self.master = master
-        self.application = application
-        self.menuaction = action.MenuAction(application, master)
-        self.menu_action = MenuAction(self.application, self.master)
+        self.app = app
+        self.menuaction = action.MenuAction(app, master)
+        self.menu_action = MenuAction(self.app, self.master)
 
     # def on_quit(self):
     #     """
@@ -607,7 +607,7 @@ class CoreMenubar(object):
             label="Comments...", command=action.session_comments, underline=0
         )
         session_menu.add_command(
-            label="Hooks...", command=action.session_hooks, underline=0
+            label="Hooks...", command=self.menu_action.session_hooks, underline=0
         )
         session_menu.add_command(
             label="Reset node positions",
@@ -649,23 +649,23 @@ class CoreMenubar(object):
 
         :return: nothing
         """
-        self.application.bind_all("<Control-n>", action.file_new_shortcut)
-        self.application.bind_all("<Control-o>", action.file_open_shortcut)
-        self.application.bind_all("<Control-s>", action.file_save_shortcut)
-        self.application.bind_all("<Control-z>", action.edit_undo_shortcut)
-        self.application.bind_all("<Control-y>", action.edit_redo_shortcut)
-        self.application.bind_all("<Control-x>", action.edit_cut_shortcut)
-        self.application.bind_all("<Control-c>", action.edit_copy_shortcut)
-        self.application.bind_all("<Control-v>", action.edit_paste_shortcut)
-        self.application.bind_all("<Control-a>", action.edit_select_all_shortcut)
-        self.application.bind_all("<Control-j>", action.edit_select_adjacent_shortcut)
-        self.application.bind_all("<Control-f>", action.edit_find_shortcut)
-        self.application.bind_all("<Prior>", action.canvas_previous_shortcut)
-        self.application.bind_all("<Next>", action.canvas_next_shortcut)
-        self.application.bind_all("<Home>", action.canvas_first_shortcut)
-        self.application.bind_all("<End>", action.canvas_last_shortcut)
-        self.application.bind_all("<Control-Shift-plus>", action.view_zoom_in_shortcut)
-        self.application.bind_all("<Control-minus>", action.view_zoom_out_shortcut)
+        self.app.bind_all("<Control-n>", action.file_new_shortcut)
+        self.app.bind_all("<Control-o>", action.file_open_shortcut)
+        self.app.bind_all("<Control-s>", action.file_save_shortcut)
+        self.app.bind_all("<Control-z>", action.edit_undo_shortcut)
+        self.app.bind_all("<Control-y>", action.edit_redo_shortcut)
+        self.app.bind_all("<Control-x>", action.edit_cut_shortcut)
+        self.app.bind_all("<Control-c>", action.edit_copy_shortcut)
+        self.app.bind_all("<Control-v>", action.edit_paste_shortcut)
+        self.app.bind_all("<Control-a>", action.edit_select_all_shortcut)
+        self.app.bind_all("<Control-j>", action.edit_select_adjacent_shortcut)
+        self.app.bind_all("<Control-f>", action.edit_find_shortcut)
+        self.app.bind_all("<Prior>", action.canvas_previous_shortcut)
+        self.app.bind_all("<Next>", action.canvas_next_shortcut)
+        self.app.bind_all("<Home>", action.canvas_first_shortcut)
+        self.app.bind_all("<End>", action.canvas_last_shortcut)
+        self.app.bind_all("<Control-Shift-plus>", action.view_zoom_in_shortcut)
+        self.app.bind_all("<Control-minus>", action.view_zoom_out_shortcut)
 
     def create_core_menubar(self):
         """

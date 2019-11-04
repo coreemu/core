@@ -18,8 +18,8 @@ class SessionOptionsDialog(Dialog):
         self.draw()
 
     def draw(self):
-        session_id = self.master.core_grpc.session_id
-        response = self.master.core_grpc.core.get_session_options(session_id)
+        session_id = self.app.core.session_id
+        response = self.app.core.client.get_session_options(session_id)
         logging.info("session options: %s", response)
         self.options = response.config
         self.values = configutils.create_config(self, self.options, PAD_X, PAD_Y)
@@ -28,7 +28,7 @@ class SessionOptionsDialog(Dialog):
 
     def save(self):
         config = configutils.parse_config(self.options, self.values)
-        session_id = self.master.core_grpc.session_id
-        response = self.master.core_grpc.core.set_session_options(session_id, config)
+        session_id = self.app.core.session_id
+        response = self.app.core.client.set_session_options(session_id, config)
         logging.info("saved session config: %s", response)
         self.destroy()

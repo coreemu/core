@@ -69,21 +69,3 @@ class MobilityNodeConfig:
             self.configurations[node_id]["script_stop"] = script_stop
         else:
             logging.error("mobilitynodeconfig.py invalid node_id")
-
-    def load_mobility_configurations(self, core_grpc):
-        """
-        load mobility configuration from the daemon into memory
-
-        :param coretk.coregrpc.CoreGrpc core_grpc: CoreGrpc object
-        :return: nothing
-        """
-        self.configurations.clear()
-        sid = core_grpc.session_id
-        client = core_grpc.core
-        configs = client.get_mobility_configs(sid).configs
-        for nid in configs:
-            node_config = configs[nid].config
-            cnf = OrderedDict()
-            for key in node_config:
-                cnf[key] = node_config[key].value
-            self.configurations[nid] = cnf

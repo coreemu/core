@@ -25,14 +25,14 @@ class CoreToolbar(object):
     Core toolbar class
     """
 
-    def __init__(self, application, edit_frame, menubar):
+    def __init__(self, app, edit_frame, menubar):
         """
         Create a CoreToolbar instance
 
         :param tkinter.Frame edit_frame: edit frame
         """
-        self.application = application
-        self.master = application.master
+        self.app = app
+        self.master = app.master
         self.edit_frame = edit_frame
         self.menubar = menubar
         self.radio_value = tk.IntVar()
@@ -161,7 +161,7 @@ class CoreToolbar(object):
         :return: nothing
         """
         logging.debug("Click START STOP SESSION button")
-        helper = CoreToolbarHelp(self.application)
+        helper = CoreToolbarHelp(self.app)
         self.destroy_children_widgets()
         self.canvas.mode = GraphMode.SELECT
 
@@ -593,11 +593,7 @@ class CoreToolbar(object):
         """
         logging.debug("Click on STOP button ")
         self.destroy_children_widgets()
-
-        # self.canvas.core_grpc.set_session_state(SessionStateEnum.DATACOLLECT.value)
-        # self.canvas.core_grpc.delete_links()
-        # self.canvas.core_grpc.delete_nodes()
-        self.canvas.core_grpc.stop_session()
+        self.app.core.stop_session()
         self.create_toolbar()
 
     def click_run_button(self):

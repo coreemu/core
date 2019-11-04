@@ -12,7 +12,7 @@ class SessionsDialog(Dialog):
         """
         create session table instance
 
-        :param coretk.coregrpc.CoreGrpc grpc: coregrpc
+        :param coretk.coreclient.CoreClient grpc: coregrpc
         :param root.master master:
         """
         super().__init__(master, app, "Sessions", modal=True)
@@ -51,7 +51,7 @@ class SessionsDialog(Dialog):
         self.tree.column("nodes", stretch=tk.YES)
         self.tree.heading("nodes", text="Node Count")
 
-        response = self.app.core_grpc.core.get_sessions()
+        response = self.app.core.client.get_sessions()
         logging.info("sessions: %s", response)
         for index, session in enumerate(response.sessions):
             state_name = core_pb2.SessionState.Enum.Name(session.state)
@@ -105,7 +105,7 @@ class SessionsDialog(Dialog):
         b.grid(row=0, column=3, padx=2, sticky="ew")
 
     def click_new(self):
-        self.app.core_grpc.create_new_session()
+        self.app.core.create_new_session()
         self.destroy()
 
     def click_select(self, event):
@@ -142,10 +142,7 @@ class SessionsDialog(Dialog):
             logging.error("querysessiondrawing.py invalid state")
 
     def join_session(self, session_id):
-        response = self.app.core_grpc.core.get_session(session_id)
-        self.app.core_grpc.session_id = session_id
-        self.app.core_grpc.core.events(session_id, self.app.core_grpc.log_event)
-        logging.info("entering session_id %s.... Result: %s", session_id, response)
+        self.app.core.join_session(session_id)
         self.destroy()
 
     def on_selected(self, event):
@@ -154,6 +151,6 @@ class SessionsDialog(Dialog):
         self.join_session(sid)
 
     def shutdown_session(self, sid):
-        self.app.core_grpc.terminate_session(sid)
+        self.app.core.shutdown_session(sid)
         self.click_new()
         self.destroy()
