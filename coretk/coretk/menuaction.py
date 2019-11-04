@@ -9,10 +9,10 @@ from tkinter import filedialog, messagebox
 from core.api.grpc import core_pb2
 from coretk.appdirs import XML_PATH
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
+from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.hooks import HooksDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.dialogs.sizeandscale import SizeAndScale
 
 
 def sub_menu_items():
@@ -153,15 +153,6 @@ def canvas_manage():
 
 def canvas_delete():
     logging.debug("Click canvas delete")
-
-
-def canvas_size_scale():
-    logging.debug("Click canvas size/scale")
-    SizeAndScale()
-
-
-def canvas_wallpaper():
-    logging.debug("CLick canvas wallpaper")
 
 
 def canvas_previous():
@@ -383,7 +374,8 @@ class MenuAction:
         # self.application.core_editbar.create_toolbar()
 
     def canvas_size_and_scale(self):
-        self.app.size_and_scale = SizeAndScale(self.app)
+        dialog = SizeAndScaleDialog(self.app, self.app)
+        dialog.show()
 
     def canvas_set_wallpaper(self):
         dialog = CanvasBackgroundDialog(self.app, self.app)
