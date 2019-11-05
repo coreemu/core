@@ -78,9 +78,8 @@ def parse_config(options, values):
 
     :param dict options: option key mapping to configuration options
     :param dict values: option key mapping to widget values
-    :return:
+    :return: nothing
     """
-    config = {}
     for key in options:
         option = options[key]
         value = values[key]
@@ -88,8 +87,8 @@ def parse_config(options, values):
         config_value = value.get()
         if config_type == ConfigType.BOOL:
             if config_value == "On":
-                config_value = "1"
+                option.value = "1"
             else:
-                config_value = "0"
-        config[key] = config_value
-    return config
+                option.value = "0"
+        else:
+            option.value = config_value
