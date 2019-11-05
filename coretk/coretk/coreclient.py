@@ -136,7 +136,7 @@ class CoreClient:
         response = self.client.get_mobility_configs(self.session_id)
         logging.info("mobility configs: %s", response)
         for node_id in response.configs:
-            node_config = response.config[node_id].config
+            node_config = response.configs[node_id].config
             config = {x: node_config[x].value for x in node_config}
             self.mobilityconfig_management.configurations[node_id] = config
 

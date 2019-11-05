@@ -45,5 +45,4 @@ class CanvasAction:
     def display_emane_configuration(self):
         app = self.canvas.core.app
         dialog = EmaneConfiguration(self.master, app, self.node_to_show_config)
-        print(dialog)
         dialog.show()
