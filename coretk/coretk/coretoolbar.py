@@ -7,18 +7,6 @@ from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
 from coretk.tooltip import CreateToolTip
 
-# from enum import Enum
-
-
-# class SessionStateEnum(Enum):
-#     NONE = "none"
-#     DEFINITION = "definition"
-#     CONFIGURATION = "configuration"
-#     RUNTIME = "runtime"
-#     DATACOLLECT = "datacollect"
-#     SHUTDOWN = "shutdown"
-#     INSTANTIATION = "instantiation"
-
 
 class CoreToolbar(object):
     """

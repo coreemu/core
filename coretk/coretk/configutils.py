@@ -7,6 +7,7 @@ from tkinter import ttk
 class ConfigType(enum.Enum):
     STRING = 10
     BOOL = 11
+    EMANECONFIG = 7
 
 
 def create_config(master, config, padx=2, pady=2):
@@ -52,7 +53,12 @@ def create_config(master, config, padx=2, pady=2):
             else:
                 value.set("Off")
         elif config_type == ConfigType.STRING:
+            value.set(option.value)
             entry = tk.Entry(frame, textvariable=value)
+            entry.grid(row=index, column=1, sticky="ew", pady=pady)
+        elif config_type == ConfigType.EMANECONFIG:
+            value.set(option.value)
+            entry = tk.Entry(frame, textvariable=value, bg="white")
             entry.grid(row=index, column=1, sticky="ew", pady=pady)
         else:
             logging.error("unhandled config option type: %s", config_type)
@@ -68,7 +74,6 @@ def create_config(master, config, padx=2, pady=2):
     canvas.bind(
         "<Configure>", lambda event: canvas.itemconfig(frame_id, width=event.width)
     )
-
     return values
 
 

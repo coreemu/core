@@ -223,12 +223,6 @@ class CanvasGraph(tk.Canvas):
         for i in self.find_withtag("node"):
             self.lift(i)
 
-    # def delete_components(self):
-    #     tags = ["node", "edge", "linkinfo", "nodename"]
-    #     for i in tags:
-    #         for id in self.find_withtag(i):
-    #             self.delete(id)
-
     def canvas_xy(self, event):
         """
         Convert window coordinate to canvas coordinate

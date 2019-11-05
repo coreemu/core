@@ -3,6 +3,8 @@ CoreToolbar help to draw on canvas, and make grpc client call
 """
 from core.api.grpc.client import core_pb2
 
+# from coretk import configutils
+
 
 class CoreToolbarHelp:
     def __init__(self, app):
@@ -85,6 +87,15 @@ class CoreToolbarHelp:
         links = self.get_link_list()
         wlan_configs = self.get_wlan_configuration_list()
         mobility_configs = self.get_mobility_configuration_list()
+
+        # get emane config
+        pb_emane_config = self.app.core.emane_config
+        emane_config = {x: pb_emane_config[x].value for x in pb_emane_config}
+
         self.app.core.start_session(
-            nodes, links, wlan_configs=wlan_configs, mobility_configs=mobility_configs
+            nodes,
+            links,
+            wlan_configs=wlan_configs,
+            mobility_configs=mobility_configs,
+            emane_config=emane_config,
         )
