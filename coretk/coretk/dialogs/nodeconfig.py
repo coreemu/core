@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.nodeicon import NodeIconDialog
-from coretk.dialogs.nodeservice import NodeServices
+from coretk.dialogs.nodeservice import NodeServicesDialog
 
 NETWORKNODETYPES = ["switch", "hub", "wlan", "rj45", "tunnel"]
 DEFAULTNODES = ["router", "host", "PC"]
@@ -56,7 +56,7 @@ class NodeConfigDialog(Dialog):
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        button = tk.Button(frame, text="Services", command=lambda: NodeServices())
+        button = tk.Button(frame, text="Services", command=self.click_services)
         button.grid(row=0, column=0, padx=2, sticky="ew")
 
         self.image_button = tk.Button(
@@ -79,6 +79,10 @@ class NodeConfigDialog(Dialog):
 
         button = tk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
+
+    def click_services(self):
+        dialog = NodeServicesDialog(self, self.app, self.canvas_node)
+        dialog.show()
 
     def click_icon(self):
         dialog = NodeIconDialog(self, self.app, self.canvas_node)

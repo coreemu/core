@@ -27,8 +27,9 @@ class SessionOptionsDialog(Dialog):
         self.cancel_button.grid(row=1, column=1, pady=PAD_Y, padx=PAD_X, sticky="ew")
 
     def save(self):
-        config = configutils.parse_config(self.options, self.values)
+        configutils.parse_config(self.options, self.values)
         session_id = self.app.core.session_id
+        config = {x: self.options[x].value for x in self.options}
         response = self.app.core.client.set_session_options(session_id, config)
         logging.info("saved session config: %s", response)
         self.destroy()
