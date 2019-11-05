@@ -6,7 +6,7 @@ canvas graph action
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.nodeconfig import NodeConfigDialog
-from coretk.dialogs.wlanconfig import WlanConfiguration
+from coretk.dialogs.wlanconfig import WlanConfigDialog
 
 # TODO, finish classifying node types
 NODE_TO_TYPE = {
@@ -36,8 +36,11 @@ class CanvasAction:
 
     def display_wlan_configuration(self, canvas_node):
         # print(self.canvas.grpc_manager.wlanconfig_management.configurations)
-        wlan_config = self.canvas.grpc_manager.wlanconfig_management.configurations[
+        wlan_config = self.master.core.wlanconfig_management.configurations[
             canvas_node.core_id
         ]
-        WlanConfiguration(self.canvas, self.node_to_show_config, wlan_config)
+        dialog = WlanConfigDialog(
+            self.master, self.master, self.node_to_show_config, wlan_config
+        )
+        dialog.show()
         self.node_to_show_config = None
