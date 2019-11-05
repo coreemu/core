@@ -77,6 +77,11 @@ class CoreClient:
 
         # distributed server data
         self.servers = {}
+        for server_config in self.app.config["servers"]:
+            server = CoreServer(
+                server_config["name"], server_config["address"], server_config["port"]
+            )
+            self.servers[server.name] = server
 
         # data for managing the current session
         self.nodes = {}

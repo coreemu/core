@@ -26,6 +26,7 @@ class Application(tk.Frame):
         self.radiovar = tk.IntVar(value=1)
         self.show_grid_var = tk.IntVar(value=1)
         self.adjust_to_dim_var = tk.IntVar(value=0)
+        self.config = appdirs.read_config()
         self.core = CoreClient(self)
         self.setup_app()
         self.draw_menu()
