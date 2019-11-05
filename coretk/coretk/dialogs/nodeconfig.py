@@ -43,10 +43,16 @@ class NodeConfigDialog(Dialog):
         entry = tk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=0, padx=2, sticky="ew")
 
-        combobox = ttk.Combobox(frame, textvariable=self.type, values=DEFAULTNODES)
+        combobox = ttk.Combobox(
+            frame, textvariable=self.type, values=DEFAULTNODES, state="readonly"
+        )
         combobox.grid(row=0, column=1, padx=2, sticky="ew")
 
-        combobox = ttk.Combobox(frame, textvariable=self.server, values=["localhost"])
+        servers = [""]
+        servers.extend(list(sorted(self.app.core.servers.keys())))
+        combobox = ttk.Combobox(
+            frame, textvariable=self.server, values=servers, state="readonly"
+        )
         combobox.current(0)
         combobox.grid(row=0, column=2, sticky="ew")
 

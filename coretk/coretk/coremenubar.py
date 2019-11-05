@@ -616,7 +616,7 @@ class CoreMenubar(object):
         )
         session_menu.add_command(
             label="Emulation servers...",
-            command=action.session_emulation_servers,
+            command=self.menu_action.session_servers,
             underline=0,
         )
         session_menu.add_command(
