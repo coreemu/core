@@ -2,6 +2,8 @@ import logging
 import shutil
 from pathlib import Path
 
+import yaml
+
 # gui home paths
 HOME_PATH = Path.home().joinpath(".coretk")
 BACKGROUNDS_PATH = HOME_PATH.joinpath("backgrounds")
@@ -15,6 +17,11 @@ CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 # local paths
 LOCAL_ICONS_PATH = Path(__file__).parent.joinpath("icons").absolute()
 LOCAL_BACKGROUND_PATH = Path(__file__).parent.joinpath("backgrounds").absolute()
+
+
+class IndentDumper(yaml.Dumper):
+    def increase_indent(self, flow=False, indentless=False):
+        return super().increase_indent(flow, False)
 
 
 def check_directory():
@@ -36,4 +43,14 @@ def check_directory():
         new_background = BACKGROUNDS_PATH.joinpath(background.name)
         shutil.copy(background, new_background)
     with CONFIG_PATH.open("w") as f:
-        f.write("# gui config")
+        yaml.dump(
+            {"servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}]},
+            f,
+            Dumper=IndentDumper,
+            default_flow_style=False,
+        )
+
+
+def read_config():
+    with CONFIG_PATH.open("r") as f:
+        return yaml.load(f, Loader=yaml.SafeLoader)

@@ -3,305 +3,197 @@ wlan configuration
 """
 
 import tkinter as tk
-from functools import partial
 
-from coretk.dialogs.mobilityconfig import MobilityConfiguration
+from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.nodeicon import NodeIconDialog
 
 
-class WlanConfiguration:
-    def __init__(self, canvas, canvas_node, config):
+class WlanConfigDialog(Dialog):
+    def __init__(self, master, app, canvas_node, config):
         """
         create an instance of WlanConfiguration
 
         :param coretk.grpah.CanvasGraph canvas: canvas object
         :param coretk.graph.CanvasNode canvas_node: canvas node object
         """
-
-        self.canvas = canvas
+        super().__init__(
+            master, app, f"{canvas_node.name} Wlan Configuration", modal=True
+        )
         self.image = canvas_node.image
-        self.node_type = canvas_node.node_type
-        self.name = canvas_node.name
         self.canvas_node = canvas_node
-
-        self.top = tk.Toplevel()
-        self.top.title("wlan configuration")
-        self.node_name = tk.StringVar()
-
-        # self.range_var = tk.DoubleVar()
-        # self.range_var.set(275.0)
         self.config = config
-        self.range_var = tk.StringVar()
-        # self.range_var.set(config["basic_range"])
-        self.range_var.set(config["range"])
-        # self.bandwidth_var = tk.IntVar()
-        self.bandwidth_var = tk.StringVar()
-        self.bandwidth_var.set(config["bandwidth"])
 
-        self.delay_var = tk.StringVar()
+        self.name = tk.StringVar(value=canvas_node.name)
+        self.range_var = tk.StringVar(value=config["basic_range"])
+        self.bandwidth_var = tk.StringVar(value=config["bandwidth"])
+        self.delay_var = tk.StringVar(value=config["delay"])
+        self.loss_var = tk.StringVar(value=config["error"])
+        self.jitter_var = tk.StringVar(value=config["jitter"])
+        self.ip4_subnet = tk.StringVar()
+        self.ip6_subnet = tk.StringVar()
+        self.image_button = None
+        self.draw()
 
-        self.image_modification()
-        self.wlan_configuration()
-        self.subnet()
-        self.wlan_options()
-        self.config_option()
+    def draw(self):
+        self.columnconfigure(0, weight=1)
+        self.draw_name_config()
+        self.draw_wlan_config()
+        self.draw_subnet()
+        self.draw_wlan_buttons()
+        self.draw_apply_buttons()
 
-    def image_modification(self):
+    def draw_name_config(self):
         """
         draw image modification part
 
         :return: nothing
         """
-        f = tk.Frame(self.top, bg="#d9d9d9")
-        lbl = tk.Label(f, text="Node name: ", bg="#d9d9d9")
-        lbl.grid(row=0, column=0, padx=3, pady=3)
-        e = tk.Entry(f, textvariable=self.node_name, bg="white")
-        e.grid(row=0, column=1, padx=3, pady=3)
-        b = tk.Button(f, text="None")
-        b.grid(row=0, column=2, padx=3, pady=3)
-        b = tk.Button(f, image=self.image, command=lambda: self.click_image)
-        b.grid(row=0, column=3, padx=3, pady=3)
-        f.grid(padx=2, pady=2, ipadx=2, ipady=2)
+        frame = tk.Frame(self)
+        frame.grid(pady=2, sticky="ew")
+        frame.columnconfigure(0, weight=1)
 
-    def click_image(self):
-        NodeIconDialog(self.app, canvas_node=self.canvas_node, node_config=self)
+        entry = tk.Entry(frame, textvariable=self.name, bg="white")
+        entry.grid(row=0, column=0, padx=2, sticky="ew")
 
-    def create_string_var(self, val):
-        """
-        create string variable for convenience
+        self.image_button = tk.Button(frame, image=self.image, command=self.click_icon)
+        self.image_button.grid(row=0, column=1, padx=3)
 
-        :param str val: text value
-        :return: nothing
-        """
-        v = tk.StringVar()
-        v.set(val)
-        return v
-
-    def scrollbar_command(self, entry_widget, delta, event):
-        """
-        change text in entry based on scrollbar action (click up or down)
-
-        :param tkinter.Entry entry_widget: entry needed for changing text
-        :param int or float delta: the amount to change
-        :param event: scrollbar event
-        :return: nothing
-        """
-        try:
-            value = int(entry_widget.get())
-        except ValueError:
-            value = float(entry_widget.get())
-        entry_widget.delete(0, tk.END)
-        if event == "-1":
-            entry_widget.insert(tk.END, str(round(value + delta, 1)))
-        elif event == "1":
-            entry_widget.insert(tk.END, str(round(value - delta, 1)))
-
-    def wlan_configuration(self):
+    def draw_wlan_config(self):
         """
         create wireless configuration table
 
         :return: nothing
         """
-        lbl = tk.Label(self.top, text="Wireless")
-        lbl.grid(sticky=tk.W, padx=3, pady=3)
+        label = tk.Label(self, text="Wireless")
+        label.grid(sticky="w", pady=2)
 
-        f = tk.Frame(
-            self.top,
-            highlightbackground="#b3b3b3",
-            highlightcolor="#b3b3b3",
-            highlightthickness=0.5,
-            bd=0,
-            bg="#d9d9d9",
+        frame = tk.Frame(self)
+        frame.grid(pady=2, sticky="ew")
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+
+        label = tk.Label(
+            frame,
+            text=(
+                "The basic range model calculates on/off "
+                "connectivity based on pixel distance between nodes."
+            ),
         )
+        label.grid(row=0, columnspan=2, pady=2, sticky="ew")
 
-        lbl = tk.Label(
-            f,
-            text="The basic range model calculates on/off connectivity based on pixel distance between nodes.",
-            bg="#d9d9d9",
-        )
-        lbl.grid(padx=4, pady=4)
+        label = tk.Label(frame, text="Range")
+        label.grid(row=1, column=0, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.range_var)
+        entry.grid(row=1, column=1, sticky="ew")
 
-        f1 = tk.Frame(f, bg="#d9d9d9")
+        label = tk.Label(frame, text="Bandwidth (bps)")
+        label.grid(row=2, column=0, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.bandwidth_var)
+        entry.grid(row=2, column=1, sticky="ew")
 
-        lbl = tk.Label(f1, text="Range: ", bg="#d9d9d9")
-        lbl.grid(row=0, column=0)
+        label = tk.Label(frame, text="Delay (us)")
+        label.grid(row=3, column=0, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.delay_var)
+        entry.grid(row=3, column=1, sticky="ew")
 
-        e = tk.Entry(
-            f1,
-            # textvariable=self.create_string_var(self.config["basic_range"]),
-            textvariable=self.create_string_var(self.config["range"]),
-            width=5,
-            bg="white",
-        )
-        e.grid(row=0, column=1)
+        label = tk.Label(frame, text="Loss (%)")
+        label.grid(row=4, column=0, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.loss_var)
+        entry.grid(row=4, column=1, sticky="ew")
 
-        lbl = tk.Label(f1, text="Bandwidth (bps): ", bg="#d9d9d9")
-        lbl.grid(row=0, column=2)
+        label = tk.Label(frame, text="Jitter (us)")
+        label.grid(row=5, column=0, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.jitter_var)
+        entry.grid(row=5, column=1, sticky="ew")
 
-        f11 = tk.Frame(f1, bg="#d9d9d9")
-        sb = tk.Scrollbar(f11, orient=tk.VERTICAL)
-        e = tk.Entry(
-            f11,
-            textvariable=self.create_string_var(self.config["bandwidth"]),
-            width=10,
-            bg="white",
-        )
-        sb.config(command=partial(self.scrollbar_command, e, 1000000))
-        e.grid()
-        sb.grid(row=0, column=1)
-        f11.grid(row=0, column=3)
-
-        # e = tk.Entry(f1, textvariable=self.bandwidth_var, width=10)
-        # e.grid(row=0, column=4)
-        f1.grid(sticky=tk.W, padx=4, pady=4)
-
-        f2 = tk.Frame(f, bg="#d9d9d9")
-        lbl = tk.Label(f2, text="Delay (us): ", bg="#d9d9d9")
-        lbl.grid(row=0, column=0)
-
-        f21 = tk.Frame(f2, bg="#d9d9d9")
-        sb = tk.Scrollbar(f21, orient=tk.VERTICAL)
-        e = tk.Entry(
-            f21, textvariable=self.create_string_var(self.config["delay"]), bg="white"
-        )
-        sb.config(command=partial(self.scrollbar_command, e, 5000))
-        e.grid()
-        sb.grid(row=0, column=1)
-        f21.grid(row=0, column=1)
-
-        lbl = tk.Label(f2, text="Loss (%): ", bg="#d9d9d9")
-        lbl.grid(row=0, column=2)
-
-        f22 = tk.Frame(f2, bg="#d9d9d9")
-        sb = tk.Scrollbar(f22, orient=tk.VERTICAL)
-        e = tk.Entry(
-            f22, textvariable=self.create_string_var(self.config["error"]), bg="white"
-        )
-        sb.config(command=partial(self.scrollbar_command, e, 0.1))
-        e.grid()
-        sb.grid(row=0, column=1)
-        f22.grid(row=0, column=3)
-
-        # e = tk.Entry(f2, textvariable=self.create_string_var(0))
-        # e.grid(row=0, column=3)
-        f2.grid(sticky=tk.W, padx=4, pady=4)
-
-        f3 = tk.Frame(f, bg="#d9d9d9")
-        lbl = tk.Label(f3, text="Jitter (us): ", bg="#d9d9d9")
-        lbl.grid()
-        f31 = tk.Frame(f3, bg="#d9d9d9")
-        sb = tk.Scrollbar(f31, orient=tk.VERTICAL)
-        e = tk.Entry(
-            f31, textvariable=self.create_string_var(self.config["jitter"]), bg="white"
-        )
-        sb.config(command=partial(self.scrollbar_command, e, 5000))
-        e.grid()
-        sb.grid(row=0, column=1)
-        f31.grid(row=0, column=1)
-
-        f3.grid(sticky=tk.W, padx=4, pady=4)
-        f.grid(padx=3, pady=3)
-
-    def subnet(self):
+    def draw_subnet(self):
         """
         create the entries for ipv4 subnet and ipv6 subnet
 
         :return: nothing
         """
-        f = tk.Frame(self.top)
-        f1 = tk.Frame(f)
-        lbl = tk.Label(f1, text="IPv4 subnet")
-        lbl.grid()
-        e = tk.Entry(f1, width=30, bg="white", textvariable=self.create_string_var(""))
-        e.grid(row=0, column=1)
-        f1.grid()
 
-        f2 = tk.Frame(f)
-        lbl = tk.Label(f2, text="IPv6 subnet")
-        lbl.grid()
-        e = tk.Entry(f2, width=30, bg="white", textvariable=self.create_string_var(""))
-        e.grid(row=0, column=1)
-        f2.grid()
-        f.grid(sticky=tk.W, padx=3, pady=3)
+        frame = tk.Frame(self)
+        frame.grid(pady=3, sticky="ew")
+        frame.columnconfigure(1, weight=1)
+        frame.columnconfigure(3, weight=1)
 
-    def click_ns2_mobility_script(self):
-        dialog = MobilityConfiguration(self.top, self.canvas.core.app, self.canvas_node)
-        dialog.show()
+        label = tk.Label(frame, text="IPv4 Subnet")
+        label.grid(row=0, column=0, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.ip4_subnet)
+        entry.grid(row=0, column=1, sticky="ew")
 
-    def wlan_options(self):
+        label = tk.Label(frame, text="IPv6 Subnet")
+        label.grid(row=0, column=2, sticky="w")
+        entry = tk.Entry(frame, textvariable=self.ip6_subnet)
+        entry.grid(row=0, column=3, sticky="ew")
+
+    def draw_wlan_buttons(self):
         """
         create wireless node options
 
         :return:
         """
-        f = tk.Frame(self.top)
-        b = tk.Button(
-            f,
-            text="ns-2 mobility script...",
-            command=lambda: self.click_ns2_mobility_script(),
-        )
-        b.pack(side=tk.LEFT, padx=1)
-        b = tk.Button(f, text="Link to all routers")
-        b.pack(side=tk.LEFT, padx=1)
-        b = tk.Button(f, text="Choose WLAN members")
-        b.pack(side=tk.LEFT, padx=1)
-        f.grid(sticky=tk.W)
 
-    def wlan_config_apply(self):
-        """
-        retrieve user's wlan configuration and store the new configuration values
+        frame = tk.Frame(self)
+        frame.grid(pady=2, sticky="ew")
+        for i in range(3):
+            frame.columnconfigure(i, weight=1)
 
-        :return: nothing
-        """
-        config_frame = self.top.grid_slaves(row=2, column=0)[0]
-        range_and_bandwidth_frame = config_frame.grid_slaves(row=1, column=0)[0]
-        range_val = range_and_bandwidth_frame.grid_slaves(row=0, column=1)[0].get()
-        bandwidth = (
-            range_and_bandwidth_frame.grid_slaves(row=0, column=3)[0]
-            .grid_slaves(row=0, column=0)[0]
-            .get()
-        )
+        button = tk.Button(frame, text="ns-2 mobility script...")
+        button.grid(row=0, column=0, padx=2, sticky="ew")
 
-        delay_and_loss_frame = config_frame.grid_slaves(row=2, column=0)[0]
-        delay = (
-            delay_and_loss_frame.grid_slaves(row=0, column=1)[0]
-            .grid_slaves(row=0, column=0)[0]
-            .get()
-        )
-        loss = (
-            delay_and_loss_frame.grid_slaves(row=0, column=3)[0]
-            .grid_slaves(row=0, column=0)[0]
-            .get()
-        )
+        button = tk.Button(frame, text="Link to all routers")
+        button.grid(row=0, column=1, padx=2, sticky="ew")
 
-        jitter_frame = config_frame.grid_slaves(row=3, column=0)[0]
-        jitter_val = (
-            jitter_frame.grid_slaves(row=0, column=1)[0]
-            .grid_slaves(row=0, column=0)[0]
-            .get()
-        )
+        button = tk.Button(frame, text="Choose WLAN members")
+        button.grid(row=0, column=2, padx=2, sticky="ew")
 
-        # set wireless node configuration here
-        wlanconfig_manager = self.canvas.core.wlanconfig_management
-        wlanconfig_manager.set_custom_config(
-            node_id=self.canvas_node.core_id,
-            range=range_val,
-            bandwidth=bandwidth,
-            jitter=jitter_val,
-            delay=delay,
-            error=loss,
-        )
-        self.top.destroy()
-
-    def config_option(self):
+    def draw_apply_buttons(self):
         """
         create node configuration options
 
         :return: nothing
         """
-        f = tk.Frame(self.top, bg="#d9d9d9")
-        b = tk.Button(f, text="Apply", bg="#d9d9d9", command=self.wlan_config_apply)
-        b.grid(padx=2, pady=2)
-        b = tk.Button(f, text="Cancel", bg="#d9d9d9", command=self.top.destroy)
-        b.grid(row=0, column=1, padx=2, pady=2)
-        f.grid(padx=4, pady=4)
+        frame = tk.Frame(self)
+        frame.grid(sticky="ew")
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+
+        button = tk.Button(frame, text="Apply", command=self.click_apply)
+        button.grid(row=0, column=0, padx=2, sticky="ew")
+
+        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button.grid(row=0, column=1, padx=2, sticky="ew")
+
+    def click_icon(self):
+        dialog = NodeIconDialog(self, self.app, self.canvas_node)
+        dialog.show()
+        if dialog.image:
+            self.image = dialog.image
+            self.image_button.config(image=self.image)
+
+    def click_apply(self):
+        """
+        retrieve user's wlan configuration and store the new configuration values
+
+        :return: nothing
+        """
+        basic_range = self.range_var.get()
+        bandwidth = self.bandwidth_var.get()
+        delay = self.delay_var.get()
+        loss = self.loss_var.get()
+        jitter = self.jitter_var.get()
+
+        # set wireless node configuration here
+
+        wlanconfig_manager = self.app.core.wlanconfig_management
+        wlanconfig_manager.set_custom_config(
+            node_id=self.canvas_node.core_id,
+            range=basic_range,
+            bandwidth=bandwidth,
+            jitter=jitter,
+            delay=delay,
+            error=loss,
+        )
+        self.destroy()

@@ -11,6 +11,7 @@ from coretk.appdirs import XML_PATH
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.hooks import HooksDialog
+from coretk.dialogs.servers import ServersDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
 
@@ -295,10 +296,6 @@ def session_reset_node_positions():
     logging.debug("Click session reset node positions")
 
 
-def session_emulation_servers():
-    logging.debug("Click session emulation servers")
-
-
 def help_about():
     logging.debug("Click help About")
 
@@ -400,4 +397,9 @@ class MenuAction:
     def session_hooks(self):
         logging.debug("Click session hooks")
         dialog = HooksDialog(self.app, self.app)
+        dialog.show()
+
+    def session_servers(self):
+        logging.debug("Click session emulation servers")
+        dialog = ServersDialog(self.app, self.app)
         dialog.show()

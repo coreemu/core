@@ -32,7 +32,9 @@ class HookDialog(Dialog):
         initial_state = core_pb2.SessionState.Enum.Name(core_pb2.SessionState.RUNTIME)
         self.state.set(initial_state)
         self.name.set(f"{initial_state.lower()}_hook.sh")
-        combobox = ttk.Combobox(frame, textvariable=self.state, values=values)
+        combobox = ttk.Combobox(
+            frame, textvariable=self.state, values=values, state="readonly"
+        )
         combobox.grid(row=0, column=2, sticky="ew")
         combobox.bind("<<ComboboxSelected>>", self.state_change)
 

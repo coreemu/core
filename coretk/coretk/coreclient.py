@@ -57,6 +57,13 @@ class Edge:
         self.interface_2 = None
 
 
+class CoreServer:
+    def __init__(self, name, address, port):
+        self.name = name
+        self.address = address
+        self.port = port
+
+
 class CoreClient:
     def __init__(self, app):
         """
@@ -68,6 +75,14 @@ class CoreClient:
         self.app = app
         self.master = app.master
         self.interface_helper = None
+
+        # distributed server data
+        self.servers = {}
+        for server_config in self.app.config["servers"]:
+            server = CoreServer(
+                server_config["name"], server_config["address"], server_config["port"]
+            )
+            self.servers[server.name] = server
 
         # data for managing the current session
         self.nodes = {}
