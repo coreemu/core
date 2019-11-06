@@ -1,23 +1,11 @@
 import logging
 import tkinter as tk
 
-# from core.api.grpc import core_pb2
 from coretk.coretoolbarhelp import CoreToolbarHelp
+from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
 from coretk.tooltip import CreateToolTip
-
-# from enum import Enum
-
-
-# class SessionStateEnum(Enum):
-#     NONE = "none"
-#     DEFINITION = "definition"
-#     CONFIGURATION = "configuration"
-#     RUNTIME = "runtime"
-#     DATACOLLECT = "datacollect"
-#     SHUTDOWN = "shutdown"
-#     INSTANTIATION = "instantiation"
 
 
 class CoreToolbar(object):
@@ -245,11 +233,12 @@ class CoreToolbar(object):
         self.canvas.draw_node_image = Images.get(ImageEnum.OVS)
         self.canvas.draw_node_name = "OVS"
 
-    # TODO what graph node is this
     def pick_editnode(self, main_button):
         self.network_layer_option_menu.destroy()
         main_button.configure(image=Images.get(ImageEnum.EDITNODE))
         logging.debug("Pick editnode option")
+        dialog = CustomNodesDialog(self.app, self.app)
+        dialog.show()
 
     def draw_network_layer_options(self, network_layer_button):
         """

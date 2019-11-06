@@ -42,15 +42,15 @@ def check_directory():
     for background in LOCAL_BACKGROUND_PATH.glob("*"):
         new_background = BACKGROUNDS_PATH.joinpath(background.name)
         shutil.copy(background, new_background)
-    with CONFIG_PATH.open("w") as f:
-        yaml.dump(
-            {"servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}]},
-            f,
-            Dumper=IndentDumper,
-            default_flow_style=False,
-        )
+    config = {"servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}]}
+    save_config(config)
 
 
 def read_config():
     with CONFIG_PATH.open("r") as f:
         return yaml.load(f, Loader=yaml.SafeLoader)
+
+
+def save_config(config):
+    with CONFIG_PATH.open("w") as f:
+        yaml.dump(config, f, Dumper=IndentDumper, default_flow_style=False)
