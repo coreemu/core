@@ -93,6 +93,7 @@ class EmaneConfiguration(Dialog):
             response = self.app.core.client.get_emane_config(session_id)
             logging.info("emane config: %s", response)
             self.options = response.config
+
         self.values = configutils.create_config(
             self.emane_dialog, self.options, PAD_X, PAD_Y
         )

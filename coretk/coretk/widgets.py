@@ -1,5 +1,9 @@
+import logging
 import tkinter as tk
 from functools import partial
+from tkinter import ttk
+
+from coretk.configutils import ConfigType
 
 
 class FrameScroll(tk.LabelFrame):
@@ -7,34 +11,99 @@ class FrameScroll(tk.LabelFrame):
         super().__init__(master, cnf, **kw)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
         self.canvas = tk.Canvas(self, highlightthickness=0)
-        self.canvas.grid(row=0, columnspan=2, sticky="nsew", padx=2, pady=2)
+        self.canvas.grid(row=0, sticky="nsew", padx=2, pady=2)
         self.canvas.columnconfigure(0, weight=1)
         self.canvas.rowconfigure(0, weight=1)
         self.scrollbar = tk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
-        self.scrollbar.grid(row=0, column=2, sticky="ns")
+        self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.frame = tk.Frame(self.canvas, padx=2, pady=2)
-        self.frame.columnconfigure(0, weight=1)
         self.frame_id = self.canvas.create_window(0, 0, anchor="nw", window=self.frame)
         self.canvas.update_idletasks()
         self.canvas.configure(
             scrollregion=self.canvas.bbox("all"), yscrollcommand=self.scrollbar.set
         )
-        self.frame.bind(
-            "<Configure>",
-            lambda event: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
-        )
-        self.canvas.bind(
-            "<Configure>",
-            lambda event: self.canvas.itemconfig(self.frame_id, width=event.width),
+        self.frame.bind("<Configure>", self._configure_frame)
+        self.canvas.bind("<Configure>", self._configure_canvas)
+
+    def _configure_frame(self, event):
+        req_width = self.frame.winfo_reqwidth()
+        req_height = self.frame.winfo_reqheight()
+        if req_width != self.canvas.winfo_reqwidth():
+            self.canvas.configure(width=req_width)
+        if req_height != self.canvas.winfo_reqheight():
+            self.canvas.configure(height=req_height)
+        self.canvas.configure(scrollregion=self.canvas.bbox("all"))
+
+    def _configure_canvas(self, event):
+        self.canvas.itemconfig(self.frame_id, width=event.width)
+
+    def update_canvas(self):
+        self.canvas.update_idletasks()
+        self.canvas.configure(
+            scrollregion=self.canvas.bbox("all"), yscrollcommand=self.scrollbar.set
         )
 
     def clear(self):
         for widget in self.frame.winfo_children():
             widget.destroy()
+
+
+class ConfigFrame(FrameScroll):
+    def __init__(self, master=None, cnf={}, config=None, **kw):
+        super().__init__(master, cnf, **kw)
+        self.frame.columnconfigure(1, weight=1)
+        if not config:
+            config = {}
+        self.config = config
+        self.values = {}
+
+    def draw_config(self):
+        padx = 2
+        pady = 2
+        for index, key in enumerate(sorted(self.config)):
+            option = self.config[key]
+            label = tk.Label(self.frame, text=option.label)
+            label.grid(row=index, pady=pady, padx=padx, sticky="w")
+            value = tk.StringVar()
+            config_type = ConfigType(option.type)
+            if config_type == ConfigType.BOOL:
+                select = tuple(option.select)
+                combobox = ttk.Combobox(self.frame, textvariable=value, values=select)
+                combobox.grid(row=index, column=1, sticky="ew", pady=pady)
+                if option.value == "1":
+                    value.set("On")
+                else:
+                    value.set("Off")
+            elif config_type == ConfigType.STRING:
+                value.set(option.value)
+                entry = tk.Entry(self.frame, textvariable=value)
+                entry.grid(row=index, column=1, sticky="ew", pady=pady)
+            elif config_type == ConfigType.EMANECONFIG:
+                value.set(option.value)
+                entry = tk.Entry(self.frame, textvariable=value)
+                entry.grid(row=index, column=1, sticky="ew", pady=pady)
+            else:
+                logging.error("unhandled config option type: %s", config_type)
+            self.values[key] = value
+
+    def parse_config(self):
+        for key in self.config:
+            option = self.config[key]
+            value = self.values[key]
+            config_type = ConfigType(option.type)
+            config_value = value.get()
+            if config_type == ConfigType.BOOL:
+                if config_value == "On":
+                    option.value = "1"
+                else:
+                    option.value = "0"
+            else:
+                option.value = config_value
+
+        return {x: self.config[x].value for x in self.config}
 
 
 class ListboxScroll(tk.LabelFrame):
@@ -51,43 +120,14 @@ class ListboxScroll(tk.LabelFrame):
         self.scrollbar.config(command=self.listbox.yview)
 
 
-class CheckboxList(tk.LabelFrame):
+class CheckboxList(FrameScroll):
     def __init__(self, master=None, cnf={}, clicked=None, **kw):
         super().__init__(master, cnf, **kw)
         self.clicked = clicked
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=1)
-        self.canvas = tk.Canvas(self, highlightthickness=0)
-        self.canvas.grid(row=0, columnspan=2, sticky="nsew", padx=2, pady=2)
-        self.canvas.columnconfigure(0, weight=1)
-        self.canvas.rowconfigure(0, weight=1)
-        self.scrollbar = tk.Scrollbar(
-            self, orient="vertical", command=self.canvas.yview
-        )
-        self.scrollbar.grid(row=0, column=2, sticky="ns")
-        self.frame = tk.Frame(self.canvas, padx=2, pady=2)
         self.frame.columnconfigure(0, weight=1)
-        self.frame_id = self.canvas.create_window(0, 0, anchor="nw", window=self.frame)
-        self.canvas.update_idletasks()
-        self.canvas.configure(
-            scrollregion=self.canvas.bbox("all"), yscrollcommand=self.scrollbar.set
-        )
-        self.frame.bind(
-            "<Configure>",
-            lambda event: self.canvas.configure(scrollregion=self.canvas.bbox("all")),
-        )
-        self.canvas.bind(
-            "<Configure>",
-            lambda event: self.canvas.itemconfig(self.frame_id, width=event.width),
-        )
 
-    def clear(self):
-        for widget in self.frame.winfo_children():
-            widget.destroy()
-
-    def add(self, name):
-        var = tk.BooleanVar()
+    def add(self, name, checked):
+        var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
         checkbox = tk.Checkbutton(self.frame, text=name, variable=var, command=func)
         checkbox.grid(sticky="w")
