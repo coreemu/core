@@ -5,7 +5,7 @@ wlan configuration
 import tkinter as tk
 
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.nodeicon import NodeIconDialog
+from coretk.dialogs.nodeicon import IconDialog
 
 
 class WlanConfigDialog(Dialog):
@@ -167,7 +167,9 @@ class WlanConfigDialog(Dialog):
         button.grid(row=0, column=1, padx=2, sticky="ew")
 
     def click_icon(self):
-        dialog = NodeIconDialog(self, self.app, self.canvas_node)
+        dialog = IconDialog(
+            self, self.app, self.canvas_node.name, self.canvas_node.image
+        )
         dialog.show()
         if dialog.image:
             self.image = dialog.image
