@@ -40,12 +40,7 @@ class ServersDialog(Dialog):
         scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.servers = tk.Listbox(
-            frame,
-            selectmode=tk.SINGLE,
-            yscrollcommand=scrollbar.set,
-            relief=tk.FLAT,
-            highlightthickness=0.5,
-            bd=0,
+            frame, selectmode=tk.SINGLE, yscrollcommand=scrollbar.set
         )
         self.servers.grid(row=0, column=0, sticky="nsew")
         self.servers.bind("<<ListboxSelect>>", self.handle_server_change)
@@ -134,7 +129,7 @@ class ServersDialog(Dialog):
 
     def click_save(self):
         name = self.name.get()
-        if self.selected and name not in self.app.core.servers:
+        if self.selected:
             previous_name = self.selected
             self.selected = name
             server = self.app.core.servers.pop(previous_name)

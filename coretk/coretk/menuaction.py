@@ -11,6 +11,7 @@ from coretk.appdirs import XML_PATH
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.hooks import HooksDialog
+from coretk.dialogs.observerwidgets import ObserverWidgetsDialog
 from coretk.dialogs.servers import ServersDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
@@ -402,4 +403,8 @@ class MenuAction:
     def session_servers(self):
         logging.debug("Click session emulation servers")
         dialog = ServersDialog(self.app, self.app)
+        dialog.show()
+
+    def edit_observer_widgets(self):
+        dialog = ObserverWidgetsDialog(self.app, self.app)
         dialog.show()
