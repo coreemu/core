@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.nodeicon import NodeIconDialog
+from coretk.dialogs.nodeicon import IconDialog
 from coretk.dialogs.nodeservice import NodeServicesDialog
 
 NETWORKNODETYPES = ["switch", "hub", "wlan", "rj45", "tunnel"]
@@ -91,7 +91,9 @@ class NodeConfigDialog(Dialog):
         dialog.show()
 
     def click_icon(self):
-        dialog = NodeIconDialog(self, self.app, self.canvas_node)
+        dialog = IconDialog(
+            self, self.app, self.canvas_node.name, self.canvas_node.image
+        )
         dialog.show()
         if dialog.image:
             self.image = dialog.image

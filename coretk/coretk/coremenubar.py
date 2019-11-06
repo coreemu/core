@@ -543,7 +543,9 @@ class CoreMenubar(object):
         observer_widget_menu.add_command(
             label="PIM neighbors", command=action.sub_menu_items
         )
-        observer_widget_menu.add_command(label="Edit...", command=action.sub_menu_items)
+        observer_widget_menu.add_command(
+            label="Edit...", command=self.menu_action.edit_observer_widgets
+        )
 
         widget_menu.add_cascade(label="Observer Widgets", menu=observer_widget_menu)
 

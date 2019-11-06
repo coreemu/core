@@ -1,5 +1,6 @@
 import tkinter as tk
 
+from coretk import appdirs
 from coretk.coreclient import CoreServer
 from coretk.dialogs.dialog import Dialog
 
@@ -39,12 +40,7 @@ class ServersDialog(Dialog):
         scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.servers = tk.Listbox(
-            frame,
-            selectmode=tk.SINGLE,
-            yscrollcommand=scrollbar.set,
-            relief=tk.FLAT,
-            highlightthickness=0.5,
-            bd=0,
+            frame, selectmode=tk.SINGLE, yscrollcommand=scrollbar.set
         )
         self.servers.grid(row=0, column=0, sticky="nsew")
         self.servers.bind("<<ListboxSelect>>", self.handle_server_change)
@@ -113,7 +109,14 @@ class ServersDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_save_configuration(self):
-        pass
+        servers = []
+        for name in sorted(self.app.core.servers):
+            server = self.app.core.servers[name]
+            servers.append(
+                {"name": server.name, "address": server.address, "port": server.port}
+            )
+        self.app.config["servers"] = servers
+        appdirs.save_config(self.app.config)
 
     def click_create(self):
         name = self.name.get()
@@ -126,7 +129,7 @@ class ServersDialog(Dialog):
 
     def click_save(self):
         name = self.name.get()
-        if self.selected and name not in self.app.core.servers:
+        if self.selected:
             previous_name = self.selected
             self.selected = name
             server = self.app.core.servers.pop(previous_name)

@@ -6,58 +6,6 @@ from tkinter import messagebox
 
 from coretk.dialogs.dialog import Dialog
 
-CORE_DEFAULT_GROUPS = ["EMANE", "FRR", "ProtoSvc", "Quagga", "Security", "Utility"]
-DEFAULT_GROUP_RADIO_VALUE = {
-    "EMANE": 1,
-    "FRR": 2,
-    "ProtoSvc": 3,
-    "Quagga": 4,
-    "Security": 5,
-    "Utility": 6,
-}
-DEFAULT_GROUP_SERVICES = {
-    "EMANE": ["transportd"],
-    "FRR": [
-        "FRRBable",
-        "FRRBGP",
-        "FRROSPFv2",
-        "FRROSPFv3",
-        "FRRpimd",
-        "FRRRIP",
-        "FRRRIPNG",
-        "FRRzebra",
-    ],
-    "ProtoSvc": ["MGEN_Sink", "MgenActor", "SMF"],
-    "Quagga": [
-        "Babel",
-        "BGP",
-        "OSPFv2",
-        "OSPFv3",
-        "OSPFv3MDR",
-        "RIP",
-        "RIPNG",
-        "Xpimd",
-        "zebra",
-    ],
-    "Security": ["Firewall", "IPsec", "NAT", "VPNClient", "VPNServer"],
-    "Utility": [
-        "atd",
-        "DefaultMulticastRoute",
-        "DefaultRoute",
-        "DHCP",
-        "DHCPClient",
-        "FTP",
-        "HTTP",
-        "IPForward ",
-        "pcap",
-        "radvd",
-        "SSH",
-        "StaticRoute",
-        "ucarp",
-        "UserDefined",
-    ],
-}
-
 
 class NodeServicesDialog(Dialog):
     def __init__(self, master, app, canvas_node):
@@ -66,6 +14,7 @@ class NodeServicesDialog(Dialog):
         self.core_groups = []
         self.service_to_config = None
         self.config_frame = None
+        self.services_list = None
         self.draw()
 
     def draw(self):
@@ -110,7 +59,7 @@ class NodeServicesDialog(Dialog):
         listbox.grid(row=1, column=0, sticky="nsew")
         listbox.bind("<<ListboxSelect>>", self.handle_group_change)
 
-        for group in CORE_DEFAULT_GROUPS:
+        for group in sorted(self.app.core.services):
             listbox.insert(tk.END, group)
 
         scrollbar.config(command=listbox.yview)
@@ -127,7 +76,7 @@ class NodeServicesDialog(Dialog):
         scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
         scrollbar.grid(row=1, column=1, sticky="ns")
 
-        listbox = tk.Listbox(
+        self.services_list = tk.Listbox(
             frame,
             selectmode=tk.SINGLE,
             yscrollcommand=scrollbar.set,
@@ -135,10 +84,10 @@ class NodeServicesDialog(Dialog):
             highlightthickness=0.5,
             bd=0,
         )
-        listbox.grid(row=1, column=0, sticky="nsew")
-        listbox.bind("<<ListboxSelect>>", self.handle_service_change)
+        self.services_list.grid(row=1, column=0, sticky="nsew")
+        self.services_list.bind("<<ListboxSelect>>", self.handle_service_change)
 
-        scrollbar.config(command=listbox.yview)
+        scrollbar.config(command=self.services_list.yview)
 
     def draw_current_services(self):
         frame = tk.Frame(self.config_frame)
@@ -188,11 +137,9 @@ class NodeServicesDialog(Dialog):
             self.display_group_services(s)
 
     def display_group_services(self, group_name):
-        group_services_frame = self.config_frame.grid_slaves(row=0, column=1)[0]
-        listbox = group_services_frame.grid_slaves(row=1, column=0)[0]
-        listbox.delete(0, tk.END)
-        for s in DEFAULT_GROUP_SERVICES[group_name]:
-            listbox.insert(tk.END, s)
+        self.services_list.delete(0, tk.END)
+        for service in sorted(self.app.core.services[group_name], key=lambda x: x.name):
+            self.services_list.insert(tk.END, service.name)
 
     def handle_service_change(self, event):
         print("select group service")

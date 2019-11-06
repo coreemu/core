@@ -6,18 +6,12 @@ from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 
 
-class NodeIconDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
-        """
-        create an instance of ImageModification
-        :param master: dialog master
-        :param coretk.app.Application: main app
-        :param coretk.graph.CanvasNode canvas_node: node object
-        """
-        super().__init__(master, app, f"{canvas_node.name} Icon", modal=True)
+class IconDialog(Dialog):
+    def __init__(self, master, app, name, image):
+        super().__init__(master, app, f"{name} Icon", modal=True)
         self.file_path = tk.StringVar()
         self.image_label = None
-        self.image = canvas_node.image
+        self.image = image
         self.draw()
 
     def draw(self):

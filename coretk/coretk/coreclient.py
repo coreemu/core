@@ -75,6 +75,7 @@ class CoreClient:
         self.app = app
         self.master = app.master
         self.interface_helper = None
+        self.services = {}
 
         # distributed server data
         self.servers = {}
@@ -228,9 +229,16 @@ class CoreClient:
         :return: existing sessions
         """
         self.client.connect()
-        response = self.client.get_sessions()
+
+        # get service information
+        response = self.client.get_services()
+        for service in response.services:
+            group_services = self.services.setdefault(service.group, [])
+            group_services.append(service)
 
         # if there are no sessions, create a new session, else join a session
+        response = self.client.get_sessions()
+        logging.info("current sessions: %s", response)
         sessions = response.sessions
         if len(sessions) == 0:
             self.create_new_session()
