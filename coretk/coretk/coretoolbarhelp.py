@@ -34,14 +34,6 @@ class CoreToolbarHelp:
         for edge in self.app.core.edges.values():
             interface_one = self.app.core.create_interface(edge.type1, edge.interface_1)
             interface_two = self.app.core.create_interface(edge.type2, edge.interface_2)
-            # TODO for now only consider the basic cases
-            # if (
-            #     edge.type1 == core_pb2.NodeType.WIRELESS_LAN
-            #     or edge.type2 == core_pb2.NodeType.WIRELESS_LAN
-            # ):
-            #     link_type = core_pb2.LinkType.WIRELESS
-            # else:
-            #     link_type = core_pb2.LinkType.WIRED
             link = core_pb2.Link(
                 node_one_id=edge.id1,
                 node_two_id=edge.id2,
@@ -80,15 +72,35 @@ class CoreToolbarHelp:
             configs.append(cnf)
         return configs
 
+    def get_emane_configuration_list(self):
+        """
+        form a list of emane configuration for the nodes
+
+        :return: nothing
+        """
+        configs = []
+        manager_configs = self.app.core.emaneconfig_management.configurations
+        for key, value in manager_configs.items():
+            config = {x: value[1][x].value for x in value[1]}
+            configs.append(
+                core_pb2.EmaneModelConfig(
+                    node_id=key[0], interface_id=key[1], model=value[0], config=config
+                )
+            )
+        return configs
+
     def gui_start_session(self):
         nodes = self.get_node_list()
         links = self.get_link_list()
         wlan_configs = self.get_wlan_configuration_list()
         mobility_configs = self.get_mobility_configuration_list()
 
-        # get emane config
+        # get emane config (global configuration)
         pb_emane_config = self.app.core.emane_config
         emane_config = {x: pb_emane_config[x].value for x in pb_emane_config}
+
+        # get emane configuration list
+        emane_model_configs = self.get_emane_configuration_list()
 
         self.app.core.start_session(
             nodes,
@@ -96,4 +108,5 @@ class CoreToolbarHelp:
             wlan_configs=wlan_configs,
             mobility_configs=mobility_configs,
             emane_config=emane_config,
+            emane_model_configs=emane_model_configs,
         )
