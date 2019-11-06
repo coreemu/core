@@ -22,6 +22,7 @@ class WlanConfigDialog(Dialog):
         self.image = canvas_node.image
         self.canvas_node = canvas_node
         self.config = config
+
         self.name = tk.StringVar(value=canvas_node.name)
         self.range_var = tk.StringVar(value=config["basic_range"])
         self.bandwidth_var = tk.StringVar(value=config["bandwidth"])
@@ -111,6 +112,7 @@ class WlanConfigDialog(Dialog):
 
         :return: nothing
         """
+
         frame = tk.Frame(self)
         frame.grid(pady=3, sticky="ew")
         frame.columnconfigure(1, weight=1)
@@ -132,6 +134,7 @@ class WlanConfigDialog(Dialog):
 
         :return:
         """
+
         frame = tk.Frame(self)
         frame.grid(pady=2, sticky="ew")
         for i in range(3):
@@ -183,6 +186,7 @@ class WlanConfigDialog(Dialog):
         jitter = self.jitter_var.get()
 
         # set wireless node configuration here
+
         wlanconfig_manager = self.app.core.wlanconfig_management
         wlanconfig_manager.set_custom_config(
             node_id=self.canvas_node.core_id,

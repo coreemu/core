@@ -1,10 +1,8 @@
 """
 canvas graph action
 """
-
-# import tkinter as tk
-
 from core.api.grpc import core_pb2
+from coretk.dialogs.emaneconfig import EmaneConfiguration
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
 
@@ -12,6 +10,7 @@ from coretk.dialogs.wlanconfig import WlanConfigDialog
 NODE_TO_TYPE = {
     "router": core_pb2.NodeType.DEFAULT,
     "wlan": core_pb2.NodeType.WIRELESS_LAN,
+    "emane": core_pb2.NodeType.EMANE,
 }
 
 
@@ -28,6 +27,8 @@ class CanvasAction:
             self.display_node_configuration()
         elif pb_type == core_pb2.NodeType.WIRELESS_LAN:
             self.display_wlan_configuration(canvas_node)
+        elif pb_type == core_pb2.NodeType.EMANE:
+            self.display_emane_configuration()
 
     def display_node_configuration(self):
         dialog = NodeConfigDialog(self.master, self.master, self.node_to_show_config)
@@ -35,6 +36,7 @@ class CanvasAction:
         self.node_to_show_config = None
 
     def display_wlan_configuration(self, canvas_node):
+
         # print(self.canvas.grpc_manager.wlanconfig_management.configurations)
         wlan_config = self.master.core.wlanconfig_management.configurations[
             canvas_node.core_id
@@ -44,3 +46,8 @@ class CanvasAction:
         )
         dialog.show()
         self.node_to_show_config = None
+
+    def display_emane_configuration(self):
+        app = self.canvas.core.app
+        dialog = EmaneConfiguration(self.master, app, self.node_to_show_config)
+        dialog.show()

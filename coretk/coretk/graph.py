@@ -84,10 +84,12 @@ class CanvasGraph(tk.Canvas):
         self.draw_node_name = None
         self.selected = None
         self.node_context = None
-        self.nodes = {}
-        self.edges = {}
+        self.nodes.clear()
+        self.edges.clear()
         self.drawing_edge = None
         self.draw_existing_component(session)
+
+        # self.grpc_manager.wlanconfig_management.load_wlan_configurations(self.core_grpc)
 
     def setup_bindings(self):
         """
@@ -220,12 +222,6 @@ class CanvasGraph(tk.Canvas):
         # lift the nodes so they on top of the links
         for i in self.find_withtag("node"):
             self.lift(i)
-
-    # def delete_components(self):
-    #     tags = ["node", "edge", "linkinfo", "nodename"]
-    #     for i in tags:
-    #         for id in self.find_withtag(i):
-    #             self.delete(id)
 
     def canvas_xy(self, event):
         """

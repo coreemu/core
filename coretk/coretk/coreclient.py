@@ -9,6 +9,7 @@ from core.api.grpc import client, core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.interface import Interface, InterfaceManager
+from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
 link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel"]
@@ -94,6 +95,8 @@ class CoreClient:
         self.interfaces_manager = InterfaceManager()
         self.core_mapping = CoreToCanvasMapping()
         self.wlanconfig_management = WlanNodeConfig()
+        self.mobilityconfig_management = MobilityNodeConfig()
+        self.emane_config = None
 
     def handle_events(self, event):
         logging.info("event: %s", event)
@@ -124,11 +127,15 @@ class CoreClient:
         self.nodes.clear()
         self.edges.clear()
         self.hooks.clear()
+        self.wlanconfig_management.configurations.clear()
+        self.mobilityconfig_management.configurations.clear()
+        self.emane_config = None
 
         # get session data
         response = self.client.get_session(self.session_id)
         logging.info("joining session(%s): %s", self.session_id, response)
         session = response.session
+        session_state = session.state
         self.client.events(self.session_id, self.handle_events)
 
         # get hooks
@@ -136,6 +143,28 @@ class CoreClient:
         logging.info("joined session hooks: %s", response)
         for hook in response.hooks:
             self.hooks[hook.file] = hook
+
+        # get wlan configs
+        for node in session.nodes:
+            if node.type == core_pb2.NodeType.WIRELESS_LAN:
+                response = self.client.get_wlan_config(self.session_id, node.id)
+                logging.info("wlan config(%s): %s", node.id, response)
+                node_config = response.config
+                config = {x: node_config[x].value for x in node_config}
+                self.wlanconfig_management.configurations[node.id] = config
+
+        # get mobility configs
+        response = self.client.get_mobility_configs(self.session_id)
+        logging.info("mobility configs: %s", response)
+        for node_id in response.configs:
+            node_config = response.configs[node_id].config
+            config = {x: node_config[x].value for x in node_config}
+            self.mobilityconfig_management.configurations[node_id] = config
+
+        # get emane config
+        response = self.client.get_emane_config(self.session_id)
+        logging.info("emane config: %s", response)
+        self.emane_config = response.config
 
         # determine next node id and reusable nodes
         max_id = 1
@@ -150,6 +179,14 @@ class CoreClient:
 
         # draw session
         self.app.canvas.canvas_reset_and_redraw(session)
+
+        # draw tool bar appropritate with session state
+        if session_state == core_pb2.SessionState.RUNTIME:
+            self.app.core_editbar.destroy_children_widgets()
+            self.app.core_editbar.create_runtime_toolbar()
+        else:
+            self.app.core_editbar.destroy_children_widgets()
+            self.app.core_editbar.create_toolbar()
 
     def create_new_session(self):
         """
@@ -302,6 +339,7 @@ class CoreClient:
             links,
             hooks=list(self.hooks.values()),
             wlan_configs=wlan_configs,
+            emane_config=emane_config,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
@@ -439,6 +477,8 @@ class CoreClient:
         # set default configuration for wireless node
         self.wlanconfig_management.set_default_config(node_type, nid)
 
+        self.mobilityconfig_management.set_default_configuration(node_type, nid)
+
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
         # self.core_id_to_canvas_id[nid] = canvas_id
@@ -543,7 +583,7 @@ class CoreClient:
         """
         Create the interface for the two end of an edge, add a copy to node's interfaces
 
-        :param coretk.grpcmanagement.Edge edge: edge to add interfaces to
+        :param coretk.coreclient.Edge edge: edge to add interfaces to
         :param int src_canvas_id: canvas id for the source node
         :param int dst_canvas_id: canvas id for the destination node
         :return: nothing

@@ -35,17 +35,17 @@ class CoreToolbarHelp:
             interface_one = self.app.core.create_interface(edge.type1, edge.interface_1)
             interface_two = self.app.core.create_interface(edge.type2, edge.interface_2)
             # TODO for now only consider the basic cases
-            if (
-                edge.type1 == core_pb2.NodeType.WIRELESS_LAN
-                or edge.type2 == core_pb2.NodeType.WIRELESS_LAN
-            ):
-                link_type = core_pb2.LinkType.WIRELESS
-            else:
-                link_type = core_pb2.LinkType.WIRED
+            # if (
+            #     edge.type1 == core_pb2.NodeType.WIRELESS_LAN
+            #     or edge.type2 == core_pb2.NodeType.WIRELESS_LAN
+            # ):
+            #     link_type = core_pb2.LinkType.WIRELESS
+            # else:
+            #     link_type = core_pb2.LinkType.WIRED
             link = core_pb2.Link(
                 node_one_id=edge.id1,
                 node_two_id=edge.id2,
-                type=link_type,
+                type=core_pb2.LinkType.WIRED,
                 interface_one=interface_one,
                 interface_two=interface_two,
             )
@@ -54,6 +54,11 @@ class CoreToolbarHelp:
         return links
 
     def get_wlan_configuration_list(self):
+        """
+        form a list of wlan configuration to pass to start_session
+
+        :return: nothing
+        """
         configs = []
         manager_configs = self.app.core.wlanconfig_management.configurations
         for key in manager_configs:
@@ -61,8 +66,34 @@ class CoreToolbarHelp:
             configs.append(cnf)
         return configs
 
+    def get_mobility_configuration_list(self):
+        """
+        form a list of mobility configuration to pass to start_session
+
+        :return: nothing
+        """
+        configs = []
+        core = self.app.canvas.core
+        manager_configs = core.mobilityconfig_management.configurations
+        for key in manager_configs:
+            cnf = core_pb2.MobilityConfig(node_id=key, config=manager_configs[key])
+            configs.append(cnf)
+        return configs
+
     def gui_start_session(self):
         nodes = self.get_node_list()
         links = self.get_link_list()
         wlan_configs = self.get_wlan_configuration_list()
-        self.app.core.start_session(nodes, links, wlan_configs=wlan_configs)
+        mobility_configs = self.get_mobility_configuration_list()
+
+        # get emane config
+        pb_emane_config = self.app.core.emane_config
+        emane_config = {x: pb_emane_config[x].value for x in pb_emane_config}
+
+        self.app.core.start_session(
+            nodes,
+            links,
+            wlan_configs=wlan_configs,
+            mobility_configs=mobility_configs,
+            emane_config=emane_config,
+        )

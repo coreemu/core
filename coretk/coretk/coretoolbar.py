@@ -357,9 +357,9 @@ class CoreToolbar(object):
 
     def pick_emane(self, main_button):
         self.link_layer_option_menu.destroy()
-        main_button.configure(image=Images.get(ImageEnum.EMANE.value))
+        main_button.configure(image=Images.get(ImageEnum.EMANE))
         self.canvas.mode = GraphMode.PICKNODE
-        self.canvas.draw_node_image = Images.get(ImageEnum.EMANE.value)
+        self.canvas.draw_node_image = Images.get(ImageEnum.EMANE)
         self.canvas.draw_node_name = "emane"
 
     def draw_link_layer_options(self, link_layer_button):
