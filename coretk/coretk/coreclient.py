@@ -214,7 +214,9 @@ class CoreClient:
         s = self.client.get_session(sid).session
         # delete links and nodes from running session
         if s.state == core_pb2.SessionState.RUNTIME:
-            self.set_session_state("datacollect", sid)
+            self.client.set_session_state(
+                self.session_id, core_pb2.SessionState.DATACOLLECT
+            )
             self.delete_links(sid)
             self.delete_nodes(sid)
         self.delete_session(sid)
@@ -247,48 +249,6 @@ class CoreClient:
         response = self.client.get_session(self.session_id)
         # logging.info("get session: %s", response)
         return response.session.state
-
-    def set_session_state(self, state, custom_session_id=None):
-        """
-        Set session state
-
-        :param str state: session state to set
-        :return: nothing
-        """
-        if custom_session_id is None:
-            sid = self.session_id
-        else:
-            sid = custom_session_id
-
-        response = None
-        if state == "configuration":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.CONFIGURATION
-            )
-        elif state == "instantiation":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.INSTANTIATION
-            )
-        elif state == "datacollect":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.DATACOLLECT
-            )
-        elif state == "shutdown":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.SHUTDOWN
-            )
-        elif state == "runtime":
-            response = self.client.set_session_state(sid, core_pb2.SessionState.RUNTIME)
-        elif state == "definition":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.DEFINITION
-            )
-        elif state == "none":
-            response = self.client.set_session_state(sid, core_pb2.SessionState.NONE)
-        else:
-            logging.error("coregrpc.py: set_session_state: INVALID STATE")
-
-        logging.info("set session state: %s", response)
 
     def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
