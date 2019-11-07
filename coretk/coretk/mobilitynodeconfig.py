@@ -10,6 +10,10 @@ from core.api.grpc import core_pb2
 
 class MobilityNodeConfig:
     def __init__(self):
+        """
+        create an instance of MobilityConfig object
+        """
+        # dict that maps node id to mobility configuration
         self.configurations = {}
 
     def set_default_configuration(self, node_type, node_id):

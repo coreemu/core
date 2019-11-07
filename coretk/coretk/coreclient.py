@@ -500,6 +500,41 @@ class CoreClient:
             name,
         )
 
+    def delete_wanted_graph_nodes(self, canvas_ids, tokens):
+        """
+        remove the nodes selected by the user and anything related to that node
+        such as link, configurations, interfaces
+
+        :param list(int) canvas_ids: list of canvas node ids
+        :return: nothing
+        """
+        # keep reference to the core ids
+        core_node_ids = [self.nodes[x].node_id for x in canvas_ids]
+
+        # delete the nodes
+        for i in canvas_ids:
+            try:
+                self.nodes.pop(i)
+                self.reusable.append(i)
+            except KeyError:
+                logging.error("coreclient.py INVALID NODE CANVAS ID")
+
+        self.reusable.sort()
+
+        # delete the edges and interfaces
+        for i in tokens:
+            try:
+                self.edges.pop(i)
+            except KeyError:
+                logging.error("coreclient.py invalid edge token ")
+
+        # delete any configurations
+        for i in core_node_ids:
+            if i in self.mobilityconfig_management.configurations:
+                self.mobilityconfig_management.pop(i)
+            if i in self.wlanconfig_management.configurations:
+                self.wlanconfig_management.pop(i)
+
     def add_preexisting_node(self, canvas_node, session_id, core_node, name):
         """
         Add preexisting nodes to grpc manager
@@ -552,20 +587,6 @@ class CoreClient:
 
             self.preexisting.clear()
             logging.debug("Next id: %s, Reusable: %s", self.id, self.reusable)
-
-    def delete_node(self, canvas_id):
-        """
-        Delete a node from the session
-
-        :param int canvas_id: node's id in the canvas
-        :return: thing
-        """
-        try:
-            self.nodes.pop(canvas_id)
-            self.reusable.append(canvas_id)
-            self.reusable.sort()
-        except KeyError:
-            logging.error("grpcmanagement.py INVALID NODE CANVAS ID")
 
     def create_interface(self, node_type, gui_interface):
         """

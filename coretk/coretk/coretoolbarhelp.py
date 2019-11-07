@@ -110,3 +110,6 @@ class CoreToolbarHelp:
             emane_config=emane_config,
             emane_model_configs=emane_model_configs,
         )
+
+        response = self.app.core.client.get_session(self.app.core.session_id)
+        print(response)
