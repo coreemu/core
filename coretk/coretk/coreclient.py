@@ -308,7 +308,6 @@ class CoreClient:
             logging.info("delete nodes %s", response)
 
     def delete_links(self, delete_session=None):
-        # sid = None
         if delete_session is None:
             sid = self.session_id
         else:
@@ -430,23 +429,6 @@ class CoreClient:
         else:
             return self.reusable.pop(0)
 
-    # def add_node(self, node_type, model, x, y, name, node_id):
-    #     position = core_pb2.Position(x=x, y=y)
-    #     node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
-    #     self.node_ids.append(node_id)
-    #     response = self.client.add_node(self.session_id, node)
-    #     logging.info("created node: %s", response)
-    #     if node_type == core_pb2.NodeType.WIRELESS_LAN:
-    #         d = OrderedDict()
-    #         d["basic_range"] = "275"
-    #         d["bandwidth"] = "54000000"
-    #         d["jitter"] = "0"
-    #         d["delay"] = "20000"
-    #         d["error"] = "0"
-    #         r = self.client.set_wlan_config(self.session_id, node_id, d)
-    #         logging.debug("set wlan config %s", r)
-    #     return response.node_id
-
     def add_graph_node(self, session_id, canvas_id, x, y, name):
         """
         Add node, with information filled in, to grpc manager
@@ -510,12 +492,13 @@ class CoreClient:
         """
         # keep reference to the core ids
         core_node_ids = [self.nodes[x].node_id for x in canvas_ids]
+        node_interface_pairs = []
 
         # delete the nodes
         for i in canvas_ids:
             try:
-                self.nodes.pop(i)
-                self.reusable.append(i)
+                n = self.nodes.pop(i)
+                self.reusable.append(n.node_id)
             except KeyError:
                 logging.error("coreclient.py INVALID NODE CANVAS ID")
 
@@ -524,16 +507,33 @@ class CoreClient:
         # delete the edges and interfaces
         for i in tokens:
             try:
-                self.edges.pop(i)
+                e = self.edges.pop(i)
+                if e.interface_1 is not None:
+                    node_interface_pairs.append(tuple([e.id1, e.interface_1.id]))
+                if e.interface_2 is not None:
+                    node_interface_pairs.append(tuple([e.id2, e.interface_2.id]))
+
             except KeyError:
                 logging.error("coreclient.py invalid edge token ")
 
-        # delete any configurations
+        # delete global emane config if there no longer exist any emane cloud
+        if core_pb2.NodeType.EMANE not in [x.type for x in self.nodes.values()]:
+            self.emane_config = None
+
+        # delete any mobility configuration, wlan configuration
         for i in core_node_ids:
             if i in self.mobilityconfig_management.configurations:
-                self.mobilityconfig_management.pop(i)
+                self.mobilityconfig_management.configurations.pop(i)
             if i in self.wlanconfig_management.configurations:
-                self.wlanconfig_management.pop(i)
+                self.wlanconfig_management.configurations.pop(i)
+
+        # delete emane configurations
+        for i in node_interface_pairs:
+            if i in self.emaneconfig_management.configurations:
+                self.emaneconfig_management.configurations.pop(i)
+        for i in core_node_ids:
+            if tuple([i, None]) in self.emaneconfig_management.configurations:
+                self.emaneconfig_management.configurations.pop(tuple([i, None]))
 
     def add_preexisting_node(self, canvas_node, session_id, core_node, name):
         """

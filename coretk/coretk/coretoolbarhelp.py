@@ -97,7 +97,10 @@ class CoreToolbarHelp:
 
         # get emane config (global configuration)
         pb_emane_config = self.app.core.emane_config
-        emane_config = {x: pb_emane_config[x].value for x in pb_emane_config}
+        if pb_emane_config is not None:
+            emane_config = {x: pb_emane_config[x].value for x in pb_emane_config}
+        else:
+            emane_config = None
 
         # get emane configuration list
         emane_model_configs = self.get_emane_configuration_list()

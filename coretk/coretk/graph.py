@@ -383,7 +383,14 @@ class CanvasGraph(tk.Canvas):
             self.node_context.unpost()
             self.is_node_context_opened = False
 
+    # TODO rather than delete, might move the data to somewhere else in order to reuse
+    # TODO when the user undo
     def press_delete(self, event):
+        """
+        delete selected nodes and any data that relates to it
+        :param event:
+        :return:
+        """
         # hide nodes, links, link information that shows on the GUI
         to_delete_nodes, to_delete_edge_tokens = (
             self.canvas_management.delete_selected_nodes()
@@ -395,12 +402,17 @@ class CanvasGraph(tk.Canvas):
         for token in to_delete_edge_tokens:
             self.edges.pop(token)
 
+        # delete the edge data inside of canvas node
+        canvas_node_link_to_delete = []
+        for canvas_id, node in self.nodes.items():
+            for e in node.edges:
+                if e.token in to_delete_edge_tokens:
+                    canvas_node_link_to_delete.append(tuple([canvas_id, e]))
+        for nid, edge in canvas_node_link_to_delete:
+            self.nodes[nid].edges.remove(edge)
+
+        # delete the related data from core
         self.core.delete_wanted_graph_nodes(to_delete_nodes, to_delete_edge_tokens)
-        # delete any configuration related to the links and nodes
-
-        # delete selected node
-
-        # delete links connected to the selected nodes
 
     def add_node(self, x, y, image, node_name):
         plot_id = self.find_all()[0]
