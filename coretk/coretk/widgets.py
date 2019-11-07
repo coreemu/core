@@ -3,7 +3,18 @@ import tkinter as tk
 from functools import partial
 from tkinter import ttk
 
-from coretk.configutils import ConfigType
+from core.api.grpc import core_pb2
+
+INT_TYPES = {
+    core_pb2.ConfigOptionType.UINT8,
+    core_pb2.ConfigOptionType.UINT16,
+    core_pb2.ConfigOptionType.UINT32,
+    core_pb2.ConfigOptionType.UINT64,
+    core_pb2.ConfigOptionType.INT8,
+    core_pb2.ConfigOptionType.INT16,
+    core_pb2.ConfigOptionType.INT32,
+    core_pb2.ConfigOptionType.INT64,
+}
 
 
 class FrameScroll(tk.LabelFrame):
@@ -30,11 +41,8 @@ class FrameScroll(tk.LabelFrame):
 
     def _configure_frame(self, event):
         req_width = self.frame.winfo_reqwidth()
-        req_height = self.frame.winfo_reqheight()
         if req_width != self.canvas.winfo_reqwidth():
             self.canvas.configure(width=req_width)
-        if req_height != self.canvas.winfo_reqheight():
-            self.canvas.configure(height=req_height)
         self.canvas.configure(scrollregion=self.canvas.bbox("all"))
 
     def _configure_canvas(self, event):
@@ -68,34 +76,45 @@ class ConfigFrame(FrameScroll):
             label = tk.Label(self.frame, text=option.label)
             label.grid(row=index, pady=pady, padx=padx, sticky="w")
             value = tk.StringVar()
-            config_type = ConfigType(option.type)
-            if config_type == ConfigType.BOOL:
+            if option.type == core_pb2.ConfigOptionType.BOOL:
                 select = tuple(option.select)
-                combobox = ttk.Combobox(self.frame, textvariable=value, values=select)
+                combobox = ttk.Combobox(
+                    self.frame, textvariable=value, values=select, state="readonly"
+                )
                 combobox.grid(row=index, column=1, sticky="ew", pady=pady)
                 if option.value == "1":
                     value.set("On")
                 else:
                     value.set("Off")
-            elif config_type == ConfigType.STRING:
+            elif option.select:
+                value.set(option.value)
+                select = tuple(option.select)
+                combobox = ttk.Combobox(
+                    self.frame, textvariable=value, values=select, state="readonly"
+                )
+                combobox.grid(row=index, column=1, sticky="ew", pady=pady)
+            elif option.type == core_pb2.ConfigOptionType.STRING:
                 value.set(option.value)
                 entry = tk.Entry(self.frame, textvariable=value)
                 entry.grid(row=index, column=1, sticky="ew", pady=pady)
-            elif config_type == ConfigType.EMANECONFIG:
+            elif option.type in INT_TYPES:
+                value.set(option.value)
+                entry = tk.Entry(self.frame, textvariable=value)
+                entry.grid(row=index, column=1, sticky="ew", pady=pady)
+            elif option.type == core_pb2.ConfigOptionType.FLOAT:
                 value.set(option.value)
                 entry = tk.Entry(self.frame, textvariable=value)
                 entry.grid(row=index, column=1, sticky="ew", pady=pady)
             else:
-                logging.error("unhandled config option type: %s", config_type)
+                logging.error("unhandled config option type: %s", option.type)
             self.values[key] = value
 
     def parse_config(self):
         for key in self.config:
             option = self.config[key]
             value = self.values[key]
-            config_type = ConfigType(option.type)
             config_value = value.get()
-            if config_type == ConfigType.BOOL:
+            if option.type == core_pb2.ConfigOptionType.BOOL:
                 if config_value == "On":
                     option.value = "1"
                 else:
