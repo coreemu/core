@@ -2,14 +2,14 @@ import logging
 import tkinter as tk
 from functools import partial
 
-from coretk.coretoolbarhelp import CoreToolbarHelp
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
+from coretk.toolbarhelper import ToolbarHelper
 from coretk.tooltip import CreateToolTip
 
 
-class CoreToolbar(tk.Frame):
+class Toolbar(tk.Frame):
     """
     Core toolbar class
     """
@@ -215,8 +215,8 @@ class CoreToolbar(tk.Frame):
         :return: nothing
         """
         logging.debug("clicked start button")
-        helper = CoreToolbarHelp(self.app)
         self.canvas.mode = GraphMode.SELECT
+        helper = ToolbarHelper(self.app)
         helper.gui_start_session()
         self.runtime_frame.tkraise()
 

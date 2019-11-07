@@ -4,10 +4,10 @@ import tkinter as tk
 from coretk import appdirs
 from coretk.coreclient import CoreClient
 from coretk.coremenubar import CoreMenubar
-from coretk.coretoolbar import CoreToolbar
 from coretk.graph import CanvasGraph
 from coretk.images import ImageEnum, Images
 from coretk.menuaction import MenuAction
+from coretk.toolbar import Toolbar
 
 
 class Application(tk.Frame):
@@ -17,7 +17,7 @@ class Application(tk.Frame):
         self.menubar = None
         self.core_menu = None
         self.canvas = None
-        self.core_editbar = None
+        self.toolbar = None
         self.is_open_xml = False
         self.size_and_scale = None
         self.set_wallpaper = None
@@ -29,9 +29,7 @@ class Application(tk.Frame):
         self.config = appdirs.read_config()
         self.core = CoreClient(self)
         self.setup_app()
-        self.draw_menu()
-        self.draw_toolbar()
-        self.draw_canvas()
+        self.draw()
         self.core.set_up()
 
     def setup_app(self):
@@ -42,6 +40,11 @@ class Application(tk.Frame):
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
 
+    def draw(self):
+        self.draw_menu()
+        self.draw_toolbar()
+        self.draw_canvas()
+
     def draw_menu(self):
         self.master.option_add("*tearOff", tk.FALSE)
         self.menubar = tk.Menu(self.master)
@@ -50,8 +53,8 @@ class Application(tk.Frame):
         self.master.config(menu=self.menubar)
 
     def draw_toolbar(self):
-        self.core_editbar = CoreToolbar(self, self)
-        self.core_editbar.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
+        self.toolbar = Toolbar(self, self)
+        self.toolbar.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
 
     def draw_canvas(self):
         self.canvas = CanvasGraph(
@@ -59,7 +62,7 @@ class Application(tk.Frame):
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
 
-        self.core_editbar.canvas = self.canvas
+        self.toolbar.canvas = self.canvas
 
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview

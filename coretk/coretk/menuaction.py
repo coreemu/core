@@ -367,10 +367,6 @@ class MenuAction:
             self.prompt_save_running_session()
             self.app.core.open_xml(file_path)
 
-        # Todo might not need
-        # self.application.core_editbar.destroy_children_widgets()
-        # self.application.core_editbar.create_toolbar()
-
     def canvas_size_and_scale(self):
         dialog = SizeAndScaleDialog(self.app, self.app)
         dialog.show()

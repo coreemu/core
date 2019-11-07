@@ -4,7 +4,7 @@ CoreToolbar help to draw on canvas, and make grpc client call
 from core.api.grpc.client import core_pb2
 
 
-class CoreToolbarHelp:
+class ToolbarHelper:
     def __init__(self, app):
         self.app = app
 

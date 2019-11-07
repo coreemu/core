@@ -208,9 +208,9 @@ class CoreClient:
 
         # draw tool bar appropritate with session state
         if session_state == core_pb2.SessionState.RUNTIME:
-            self.app.core_editbar.runtime_frame.tkraise()
+            self.app.toolbar.runtime_frame.tkraise()
         else:
-            self.app.core_editbar.design_frame.tkraise()
+            self.app.toolbar.design_frame.tkraise()
 
     def create_new_session(self):
         """
