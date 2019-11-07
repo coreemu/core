@@ -1,8 +1,11 @@
+import logging
 import tkinter as tk
+from pathlib import Path
 
+from coretk import appdirs
 from coretk.coreclient import CustomNode
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.nodeicon import IconDialog
+from coretk.dialogs.icondialog import IconDialog
 from coretk.widgets import CheckboxList, ListboxScroll
 
 
@@ -86,6 +89,7 @@ class CustomNodesDialog(Dialog):
         self.name = tk.StringVar()
         self.image_button = None
         self.image = None
+        self.image_file = None
         self.services = set()
         self.selected = None
         self.selected_index = None
@@ -145,17 +149,25 @@ class CustomNodesDialog(Dialog):
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
-        button = tk.Button(frame, text="Save", command=self.click_edit)
+        button = tk.Button(frame, text="Save", command=self.click_save)
         button.grid(row=0, column=0, sticky="ew")
 
         button = tk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
+
+    def reset_values(self):
+        self.name.set("")
+        self.image = None
+        self.image_file = None
+        self.services = set()
+        self.image_button.config(image="")
 
     def click_icon(self):
         dialog = IconDialog(self, self.app, self.name.get(), self.image)
         dialog.show()
         if dialog.image:
             self.image = dialog.image
+            self.image_file = dialog.file_path.get()
             self.image_button.config(image=self.image)
 
     def click_services(self):
@@ -164,22 +176,44 @@ class CustomNodesDialog(Dialog):
         if dialog.current_services is not None:
             self.services = dialog.current_services
 
+    def click_save(self):
+        self.app.config["nodes"].clear()
+        for name in sorted(self.app.core.custom_nodes):
+            custom_node = self.app.core.custom_nodes[name]
+            self.app.config["nodes"].append(
+                {
+                    "name": custom_node.name,
+                    "image": custom_node.image_file,
+                    "services": list(custom_node.services),
+                }
+            )
+        logging.info("saving custom nodes: %s", self.app.config["nodes"])
+        appdirs.save_config(self.app.config)
+
     def click_create(self):
         name = self.name.get()
         if name not in self.app.core.custom_nodes:
-            custom_node = CustomNode(name, self.image, self.services)
+            custom_node = CustomNode(
+                name, self.image, Path(self.image_file).name, set(self.services)
+            )
             self.app.core.custom_nodes[name] = custom_node
             self.nodes_list.listbox.insert(tk.END, name)
             self.reset_values()
 
-    def reset_values(self):
-        self.name.set("")
-        self.image = None
-        self.services = set()
-        self.image_button.config(image="")
-
     def click_edit(self):
-        pass
+        name = self.name.get()
+        if self.selected:
+            previous_name = self.selected
+            self.selected = name
+            custom_node = self.app.core.custom_nodes.pop(previous_name)
+            custom_node.name = name
+            custom_node.image = self.image
+            custom_node.image_file = Path(self.image_file).name
+            custom_node.services = self.services
+            self.app.core.custom_nodes[name] = custom_node
+            self.nodes_list.listbox.delete(self.selected_index)
+            self.nodes_list.listbox.insert(self.selected_index, name)
+            self.nodes_list.listbox.selection_set(self.selected_index)
 
     def click_delete(self):
         if self.selected and self.selected in self.app.core.custom_nodes:
@@ -198,6 +232,7 @@ class CustomNodesDialog(Dialog):
             self.name.set(custom_node.name)
             self.services = custom_node.services
             self.image = custom_node.image
+            self.image_file = custom_node.image_file
             self.image_button.config(image=self.image)
             self.edit_button.config(state=tk.NORMAL)
             self.delete_button.config(state=tk.NORMAL)

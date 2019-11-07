@@ -5,7 +5,7 @@ wlan configuration
 import tkinter as tk
 
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.nodeicon import IconDialog
+from coretk.dialogs.icondialog import IconDialog
 
 
 class WlanConfigDialog(Dialog):

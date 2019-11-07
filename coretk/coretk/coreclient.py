@@ -8,6 +8,7 @@ from collections import OrderedDict
 from core.api.grpc import client, core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.dialogs.sessions import SessionsDialog
+from coretk.images import Images
 from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
@@ -65,9 +66,10 @@ class CoreServer:
 
 
 class CustomNode:
-    def __init__(self, name, image, services):
+    def __init__(self, name, image, image_file, services):
         self.name = name
         self.image = image
+        self.image_file = image_file
         self.services = services
 
 
@@ -83,15 +85,11 @@ class CoreClient:
         self.master = app.master
         self.interface_helper = None
         self.services = {}
-        self.custom_nodes = {}
 
-        # distributed server data
+        # loaded configuration data
         self.servers = {}
-        for server_config in self.app.config["servers"]:
-            server = CoreServer(
-                server_config["name"], server_config["address"], server_config["port"]
-            )
-            self.servers[server.name] = server
+        self.custom_nodes = {}
+        self.read_config()
 
         # data for managing the current session
         self.nodes = {}
@@ -105,6 +103,23 @@ class CoreClient:
         self.wlanconfig_management = WlanNodeConfig()
         self.mobilityconfig_management = MobilityNodeConfig()
         self.emane_config = None
+
+    def read_config(self):
+        # read distributed server
+        for server_config in self.app.config["servers"]:
+            server = CoreServer(
+                server_config["name"], server_config["address"], server_config["port"]
+            )
+            self.servers[server.name] = server
+
+        # read custom nodes
+        for node in self.app.config["nodes"]:
+            image_file = node["image"]
+            image = Images.get_custom(image_file)
+            custom_node = CustomNode(
+                node["name"], image, image_file, set(node["services"])
+            )
+            self.custom_nodes[custom_node.name] = custom_node
 
     def handle_events(self, event):
         logging.info("event: %s", event)
