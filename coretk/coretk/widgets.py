@@ -18,7 +18,7 @@ INT_TYPES = {
 
 
 class FrameScroll(tk.LabelFrame):
-    def __init__(self, master=None, cnf={}, **kw):
+    def __init__(self, master=None, cnf={}, _cls=tk.Frame, **kw):
         super().__init__(master, cnf, **kw)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
@@ -30,7 +30,7 @@ class FrameScroll(tk.LabelFrame):
             self, orient="vertical", command=self.canvas.yview
         )
         self.scrollbar.grid(row=0, column=1, sticky="ns")
-        self.frame = tk.Frame(self.canvas, padx=2, pady=2)
+        self.frame = _cls(self.canvas)
         self.frame_id = self.canvas.create_window(0, 0, anchor="nw", window=self.frame)
         self.canvas.update_idletasks()
         self.canvas.configure(
@@ -48,12 +48,6 @@ class FrameScroll(tk.LabelFrame):
     def _configure_canvas(self, event):
         self.canvas.itemconfig(self.frame_id, width=event.width)
 
-    def update_canvas(self):
-        self.canvas.update_idletasks()
-        self.canvas.configure(
-            scrollregion=self.canvas.bbox("all"), yscrollcommand=self.scrollbar.set
-        )
-
     def clear(self):
         for widget in self.frame.winfo_children():
             widget.destroy()
@@ -61,53 +55,60 @@ class FrameScroll(tk.LabelFrame):
 
 class ConfigFrame(FrameScroll):
     def __init__(self, master=None, cnf={}, config=None, **kw):
-        super().__init__(master, cnf, **kw)
-        self.frame.columnconfigure(1, weight=1)
-        if not config:
-            config = {}
+        super().__init__(master, cnf, ttk.Notebook, **kw)
         self.config = config
         self.values = {}
 
     def draw_config(self):
         padx = 2
         pady = 2
-        for index, key in enumerate(sorted(self.config)):
+        group_mapping = {}
+        for key in self.config:
             option = self.config[key]
-            label = tk.Label(self.frame, text=option.label)
-            label.grid(row=index, pady=pady, padx=padx, sticky="w")
-            value = tk.StringVar()
-            if option.type == core_pb2.ConfigOptionType.BOOL:
-                select = tuple(option.select)
-                combobox = ttk.Combobox(
-                    self.frame, textvariable=value, values=select, state="readonly"
-                )
-                combobox.grid(row=index, column=1, sticky="ew", pady=pady)
-                if option.value == "1":
-                    value.set("On")
+            group = group_mapping.setdefault(option.group, [])
+            group.append(option)
+
+        for group_name in sorted(group_mapping):
+            group = group_mapping[group_name]
+            frame = tk.Frame(self.frame)
+            frame.columnconfigure(1, weight=1)
+            self.frame.add(frame, text=group_name)
+            for index, option in enumerate(sorted(group, key=lambda x: x.name)):
+                label = tk.Label(frame, text=option.label)
+                label.grid(row=index, pady=pady, padx=padx, sticky="w")
+                value = tk.StringVar()
+                if option.type == core_pb2.ConfigOptionType.BOOL:
+                    select = tuple(option.select)
+                    combobox = ttk.Combobox(
+                        frame, textvariable=value, values=select, state="readonly"
+                    )
+                    combobox.grid(row=index, column=1, sticky="ew", pady=pady)
+                    if option.value == "1":
+                        value.set("On")
+                    else:
+                        value.set("Off")
+                elif option.select:
+                    value.set(option.value)
+                    select = tuple(option.select)
+                    combobox = ttk.Combobox(
+                        frame, textvariable=value, values=select, state="readonly"
+                    )
+                    combobox.grid(row=index, column=1, sticky="ew", pady=pady)
+                elif option.type == core_pb2.ConfigOptionType.STRING:
+                    value.set(option.value)
+                    entry = tk.Entry(frame, textvariable=value)
+                    entry.grid(row=index, column=1, sticky="ew", pady=pady)
+                elif option.type in INT_TYPES:
+                    value.set(option.value)
+                    entry = tk.Entry(frame, textvariable=value)
+                    entry.grid(row=index, column=1, sticky="ew", pady=pady)
+                elif option.type == core_pb2.ConfigOptionType.FLOAT:
+                    value.set(option.value)
+                    entry = tk.Entry(frame, textvariable=value)
+                    entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 else:
-                    value.set("Off")
-            elif option.select:
-                value.set(option.value)
-                select = tuple(option.select)
-                combobox = ttk.Combobox(
-                    self.frame, textvariable=value, values=select, state="readonly"
-                )
-                combobox.grid(row=index, column=1, sticky="ew", pady=pady)
-            elif option.type == core_pb2.ConfigOptionType.STRING:
-                value.set(option.value)
-                entry = tk.Entry(self.frame, textvariable=value)
-                entry.grid(row=index, column=1, sticky="ew", pady=pady)
-            elif option.type in INT_TYPES:
-                value.set(option.value)
-                entry = tk.Entry(self.frame, textvariable=value)
-                entry.grid(row=index, column=1, sticky="ew", pady=pady)
-            elif option.type == core_pb2.ConfigOptionType.FLOAT:
-                value.set(option.value)
-                entry = tk.Entry(self.frame, textvariable=value)
-                entry.grid(row=index, column=1, sticky="ew", pady=pady)
-            else:
-                logging.error("unhandled config option type: %s", option.type)
-            self.values[key] = value
+                    logging.error("unhandled config option type: %s", option.type)
+                self.values[option.name] = value
 
     def parse_config(self):
         for key in self.config:
