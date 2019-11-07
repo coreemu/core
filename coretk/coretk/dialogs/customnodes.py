@@ -28,6 +28,7 @@ class ServicesSelectDialog(Dialog):
         for group in sorted(self.app.core.services):
             self.groups.listbox.insert(tk.END, group)
         self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
+        self.groups.listbox.selection_set(0)
 
         self.services = CheckboxList(
             frame, text="Services", clicked=self.service_clicked
@@ -46,6 +47,9 @@ class ServicesSelectDialog(Dialog):
         button = tk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
+        # trigger group change
+        self.groups.listbox.event_generate("<<ListboxSelect>>")
+
     def handle_group_change(self, event):
         selection = self.groups.listbox.curselection()
         if selection:
@@ -53,7 +57,8 @@ class ServicesSelectDialog(Dialog):
             group = self.groups.listbox.get(index)
             self.services.clear()
             for service in sorted(self.app.core.services[group], key=lambda x: x.name):
-                self.services.add(service.name)
+                checked = service.name in self.current_services
+                self.services.add(service.name, checked)
 
     def service_clicked(self, name, var):
         if var.get() and name not in self.current_services:

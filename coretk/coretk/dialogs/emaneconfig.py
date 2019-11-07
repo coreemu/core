@@ -7,9 +7,9 @@ import tkinter as tk
 import webbrowser
 from tkinter import ttk
 
-from coretk import configutils
 from coretk.dialogs.dialog import Dialog
 from coretk.images import ImageEnum, Images
+from coretk.widgets import ConfigFrame
 
 PAD_X = 2
 PAD_Y = 2
@@ -38,10 +38,10 @@ class EmaneConfiguration(Dialog):
         self.emane_options()
         self.draw_apply_and_cancel()
 
-        self.values = None
+        self.emane_config_frame = None
         self.options = app.core.emane_config
         self.model_options = None
-        self.model_values = None
+        self.model_config_frame = None
 
     def create_text_variable(self, val):
         """
@@ -75,7 +75,7 @@ class EmaneConfiguration(Dialog):
         f.grid(row=0, column=0, sticky="nsew")
 
     def save_emane_option(self):
-        configutils.parse_config(self.options, self.values)
+        self.emane_config_frame.parse_config()
         self.emane_dialog.destroy()
 
     def draw_emane_options(self):
@@ -83,21 +83,27 @@ class EmaneConfiguration(Dialog):
             self.emane_dialog = Dialog(
                 self, self.app, "emane configuration", modal=False
             )
-        b1 = tk.Button(self.emane_dialog, text="Appy", command=self.save_emane_option)
-        b2 = tk.Button(
-            self.emane_dialog, text="Cancel", command=self.emane_dialog.destroy
-        )
 
         if self.options is None:
             session_id = self.app.core.session_id
             response = self.app.core.client.get_emane_config(session_id)
             logging.info("emane config: %s", response)
             self.options = response.config
-        self.values = configutils.create_config(
-            self.emane_dialog, self.options, PAD_X, PAD_Y
-        )
-        b1.grid(row=1, column=0)
-        b2.grid(row=1, column=1)
+
+        self.emane_dialog.columnconfigure(0, weight=1)
+        self.emane_dialog.rowconfigure(0, weight=1)
+        self.emane_config_frame = ConfigFrame(self.emane_dialog, config=self.options)
+        self.emane_config_frame.draw_config()
+        self.emane_config_frame.grid(sticky="nsew")
+
+        frame = tk.Frame(self.emane_dialog)
+        frame.grid(sticky="ew")
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+        b1 = tk.Button(frame, text="Appy", command=self.save_emane_option)
+        b1.grid(row=0, column=0, sticky="ew")
+        b2 = tk.Button(frame, text="Cancel", command=self.emane_dialog.destroy)
+        b2.grid(row=0, column=1, sticky="ew")
         self.emane_dialog.show()
 
     def save_emane_model_options(self):
@@ -110,8 +116,7 @@ class EmaneConfiguration(Dialog):
         model_name = self.emane_models[self.emane_model_combobox.current()]
 
         # parse configuration
-        configutils.parse_config(self.model_options, self.model_values)
-        config = {x: self.model_options[x].value for x in self.model_options}
+        config = self.model_config_frame.parse_config()
 
         # add string emane_ infront for grpc call
         response = self.app.core.client.set_emane_model_config(
@@ -145,17 +150,10 @@ class EmaneConfiguration(Dialog):
         # create the dialog and the necessry widget
         if not self.emane_model_dialog or not self.emane_model_dialog.winfo_exists():
             self.emane_model_dialog = Dialog(
-                self, self.app, model_name + " configuration", modal=False
+                self, self.app, f"{model_name} configuration", modal=False
             )
-
-        b1 = tk.Button(
-            self.emane_model_dialog, text="Apply", command=self.save_emane_model_options
-        )
-        b2 = tk.Button(
-            self.emane_model_dialog,
-            text="Cancel",
-            command=self.emane_model_dialog.destroy,
-        )
+            self.emane_model_dialog.columnconfigure(0, weight=1)
+            self.emane_model_dialog.rowconfigure(0, weight=1)
 
         # query for configurations
         session_id = self.app.core.session_id
@@ -166,12 +164,20 @@ class EmaneConfiguration(Dialog):
         logging.info("emane model config %s", response)
 
         self.model_options = response.config
-        self.model_values = configutils.create_config(
-            self.emane_model_dialog, self.model_options, PAD_X, PAD_Y
+        self.model_config_frame = ConfigFrame(
+            self.emane_model_dialog, config=self.model_options
         )
+        self.model_config_frame.grid(sticky="nsew")
+        self.model_config_frame.draw_config()
 
-        b1.grid(row=1, column=0, sticky="nsew")
-        b2.grid(row=1, column=1, sticky="nsew")
+        frame = tk.Frame(self.emane_model_dialog)
+        frame.grid(sticky="ew")
+        for i in range(2):
+            frame.columnconfigure(i, weight=1)
+        b1 = tk.Button(frame, text="Apply", command=self.save_emane_model_options)
+        b1.grid(row=0, column=0, sticky="ew")
+        b2 = tk.Button(frame, text="Cancel", command=self.emane_model_dialog.destroy)
+        b2.grid(row=0, column=1, sticky="ew")
         self.emane_model_dialog.show()
 
     def draw_option_buttons(self, parent):
