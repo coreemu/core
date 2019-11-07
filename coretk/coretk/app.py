@@ -50,10 +50,8 @@ class Application(tk.Frame):
         self.master.config(menu=self.menubar)
 
     def draw_toolbar(self):
-        edit_frame = tk.Frame(self)
-        edit_frame.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
-        self.core_editbar = CoreToolbar(self, edit_frame, self.menubar)
-        self.core_editbar.create_toolbar()
+        self.core_editbar = CoreToolbar(self, self)
+        self.core_editbar.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
 
     def draw_canvas(self):
         self.canvas = CanvasGraph(

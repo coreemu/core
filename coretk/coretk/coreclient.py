@@ -13,8 +13,8 @@ from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
-link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel"]
-network_layer_nodes = ["router", "host", "PC", "mdr", "prouter", "OVS"]
+link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel", "emane"]
+network_layer_nodes = ["router", "host", "PC", "mdr", "prouter"]
 
 
 class Node:
@@ -205,11 +205,9 @@ class CoreClient:
 
         # draw tool bar appropritate with session state
         if session_state == core_pb2.SessionState.RUNTIME:
-            self.app.core_editbar.destroy_children_widgets()
-            self.app.core_editbar.create_runtime_toolbar()
+            self.app.core_editbar.runtime_frame.tkraise()
         else:
-            self.app.core_editbar.destroy_children_widgets()
-            self.app.core_editbar.create_toolbar()
+            self.app.core_editbar.design_frame.tkraise()
 
     def create_new_session(self):
         """
@@ -447,26 +445,26 @@ class CoreClient:
                 node_type = core_pb2.NodeType.WIRELESS_LAN
             elif name == "rj45":
                 node_type = core_pb2.NodeType.RJ45
+            elif name == "emane":
+                node_type = core_pb2.NodeType.EMANE
             elif name == "tunnel":
                 node_type = core_pb2.NodeType.TUNNEL
         elif name in network_layer_nodes:
             node_type = core_pb2.NodeType.DEFAULT
             node_model = name
         else:
-            logging.error("grpcmanagemeny.py INVALID node name")
+            logging.error("invalid node name: %s", name)
         nid = self.get_id()
         create_node = Node(session_id, nid, node_type, node_model, x, y, name)
 
         # set default configuration for wireless node
         self.wlanconfig_management.set_default_config(node_type, nid)
-
         self.mobilityconfig_management.set_default_configuration(node_type, nid)
 
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
-        # self.core_id_to_canvas_id[nid] = canvas_id
         logging.debug(
-            "Adding node to GrpcManager.. Session id: %s, Coords: (%s, %s), Name: %s",
+            "Adding node to core.. session id: %s, coords: (%s, %s), name: %s",
             session_id,
             x,
             y,

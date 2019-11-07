@@ -272,7 +272,7 @@ class CanvasGraph(tk.Canvas):
         else:
             self.focus_set()
             self.selected = self.get_selected(event)
-            logging.debug(f"click release selected: {self.selected}")
+            logging.debug(f"click release selected({self.selected}) mode({self.mode})")
             if self.mode == GraphMode.EDGE:
                 self.handle_edge_release(event)
             elif self.mode == GraphMode.NODE:
@@ -379,6 +379,7 @@ class CanvasGraph(tk.Canvas):
 
     def add_node(self, x, y, image, node_name):
         plot_id = self.find_all()[0]
+        logging.info("add node event: %s - %s", plot_id, self.selected)
         if self.selected == plot_id:
             node = CanvasNode(
                 x=x,
@@ -498,12 +499,12 @@ class CanvasNode:
         self.x_coord, self.y_coord = self.canvas.coords(self.id)
 
     def click_press(self, event):
-        logging.debug(f"click press {self.name}: {event}")
+        logging.debug(f"node click press {self.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
         # return "break"
 
     def click_release(self, event):
-        logging.debug(f"click release {self.name}: {event}")
+        logging.debug(f"node click release {self.name}: {event}")
         self.update_coords()
         self.canvas.core.update_node_location(self.id, self.x_coord, self.y_coord)
         self.moving = None
