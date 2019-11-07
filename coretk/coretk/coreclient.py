@@ -3,11 +3,11 @@ Incorporate grpc into python tkinter GUI
 """
 import logging
 import os
-from collections import OrderedDict
 
 from core.api.grpc import client, core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.dialogs.sessions import SessionsDialog
+from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.images import Images
 from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
@@ -102,6 +102,7 @@ class CoreClient:
         self.core_mapping = CoreToCanvasMapping()
         self.wlanconfig_management = WlanNodeConfig()
         self.mobilityconfig_management = MobilityNodeConfig()
+        self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
 
     def read_config(self):
@@ -188,6 +189,8 @@ class CoreClient:
         response = self.client.get_emane_config(self.session_id)
         logging.info("emane config: %s", response)
         self.emane_config = response.config
+
+        # get emane model config
 
         # determine next node id and reusable nodes
         max_id = 1
@@ -321,6 +324,8 @@ class CoreClient:
             hooks=list(self.hooks.values()),
             wlan_configs=wlan_configs,
             emane_config=emane_config,
+            emane_model_configs=emane_model_configs,
+            mobility_configs=mobility_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
@@ -328,22 +333,22 @@ class CoreClient:
         response = self.client.stop_session(session_id=self.session_id)
         logging.debug("coregrpc.py Stop session, result: %s", response.result)
 
-    # TODO no need, might get rid of this
-    def add_link(self, id1, id2, type1, type2, edge):
-        """
-        Grpc client request add link
-
-        :param int session_id: session id
-        :param int id1: node 1 core id
-        :param core_pb2.NodeType type1: node 1 core node type
-        :param int id2: node 2 core id
-        :param core_pb2.NodeType type2: node 2 core node type
-        :return: nothing
-        """
-        if1 = self.create_interface(type1, edge.interface_1)
-        if2 = self.create_interface(type2, edge.interface_2)
-        response = self.client.add_link(self.session_id, id1, id2, if1, if2)
-        logging.info("created link: %s", response)
+    # # TODO no need, might get rid of this
+    # def add_link(self, id1, id2, type1, type2, edge):
+    #     """
+    #     Grpc client request add link
+    #
+    #     :param int session_id: session id
+    #     :param int id1: node 1 core id
+    #     :param core_pb2.NodeType type1: node 1 core node type
+    #     :param int id2: node 2 core id
+    #     :param core_pb2.NodeType type2: node 2 core node type
+    #     :return: nothing
+    #     """
+    #     if1 = self.create_interface(type1, edge.interface_1)
+    #     if2 = self.create_interface(type2, edge.interface_2)
+    #     response = self.client.add_link(self.session_id, id1, id2, if1, if2)
+    #     logging.info("created link: %s", response)
 
     def launch_terminal(self, node_id):
         response = self.client.get_node_terminal(self.session_id, node_id)
@@ -406,22 +411,22 @@ class CoreClient:
         else:
             return self.reusable.pop(0)
 
-    def add_node(self, node_type, model, x, y, name, node_id):
-        position = core_pb2.Position(x=x, y=y)
-        node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
-        self.node_ids.append(node_id)
-        response = self.client.add_node(self.session_id, node)
-        logging.info("created node: %s", response)
-        if node_type == core_pb2.NodeType.WIRELESS_LAN:
-            d = OrderedDict()
-            d["basic_range"] = "275"
-            d["bandwidth"] = "54000000"
-            d["jitter"] = "0"
-            d["delay"] = "20000"
-            d["error"] = "0"
-            r = self.client.set_wlan_config(self.session_id, node_id, d)
-            logging.debug("set wlan config %s", r)
-        return response.node_id
+    # def add_node(self, node_type, model, x, y, name, node_id):
+    #     position = core_pb2.Position(x=x, y=y)
+    #     node = core_pb2.Node(id=node_id, type=node_type, position=position, model=model)
+    #     self.node_ids.append(node_id)
+    #     response = self.client.add_node(self.session_id, node)
+    #     logging.info("created node: %s", response)
+    #     if node_type == core_pb2.NodeType.WIRELESS_LAN:
+    #         d = OrderedDict()
+    #         d["basic_range"] = "275"
+    #         d["bandwidth"] = "54000000"
+    #         d["jitter"] = "0"
+    #         d["delay"] = "20000"
+    #         d["error"] = "0"
+    #         r = self.client.set_wlan_config(self.session_id, node_id, d)
+    #         logging.debug("set wlan config %s", r)
+    #     return response.node_id
 
     def add_graph_node(self, session_id, canvas_id, x, y, name):
         """
@@ -449,6 +454,8 @@ class CoreClient:
                 node_type = core_pb2.NodeType.EMANE
             elif name == "tunnel":
                 node_type = core_pb2.NodeType.TUNNEL
+            elif name == "emane":
+                node_type = core_pb2.NodeType.EMANE
         elif name in network_layer_nodes:
             node_type = core_pb2.NodeType.DEFAULT
             node_model = name
@@ -460,6 +467,10 @@ class CoreClient:
         # set default configuration for wireless node
         self.wlanconfig_management.set_default_config(node_type, nid)
         self.mobilityconfig_management.set_default_configuration(node_type, nid)
+
+        # set default emane configuration for emane node
+        if node_type == core_pb2.NodeType.EMANE:
+            self.emaneconfig_management.set_default_config(nid)
 
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
@@ -617,44 +628,50 @@ class CoreClient:
 
         :return: nothing
         """
+        node_one = self.nodes[canvas_id_1]
+        node_two = self.nodes[canvas_id_2]
         if canvas_id_1 in self.nodes and canvas_id_2 in self.nodes:
             edge = Edge(
                 session_id,
-                self.nodes[canvas_id_1].node_id,
-                self.nodes[canvas_id_1].type,
-                self.nodes[canvas_id_2].node_id,
-                self.nodes[canvas_id_2].type,
+                node_one.node_id,
+                node_one.type,
+                node_two.node_id,
+                node_two.type,
             )
             self.edges[token] = edge
             src_interface, dst_interface = self.create_edge_interface(
                 edge, canvas_id_1, canvas_id_2
             )
-            node_one_id = self.nodes[canvas_id_1].node_id
-            node_two_id = self.nodes[canvas_id_2].node_id
+            node_one_id = node_one.node_id
+            node_two_id = node_two.node_id
 
             # provide a way to get an edge from a core node and an interface id
             if src_interface is not None:
                 self.core_mapping.map_node_and_interface_to_canvas_edge(
                     node_one_id, src_interface.id, token
                 )
-                logging.debug(
-                    "map node id %s, interface_id %s to edge token %s",
-                    node_one_id,
-                    src_interface.id,
-                    token,
-                )
 
             if dst_interface is not None:
                 self.core_mapping.map_node_and_interface_to_canvas_edge(
                     node_two_id, dst_interface.id, token
                 )
-                logging.debug(
-                    "map node id %s, interface_id %s to edge token %s",
-                    node_two_id,
-                    dst_interface.id,
-                    token,
-                )
 
-            logging.debug("Adding edge to grpc manager...")
+            if (
+                node_one.type == core_pb2.NodeType.EMANE
+                and node_two.type == core_pb2.NodeType.DEFAULT
+            ):
+                if node_two.model == "mdr":
+                    self.emaneconfig_management.set_default_for_mdr(
+                        node_one.node_id, node_two.node_id, dst_interface.id
+                    )
+            elif (
+                node_two.type == core_pb2.NodeType.EMANE
+                and node_one.type == core_pb2.NodeType.DEFAULT
+            ):
+                if node_one.model == "mdr":
+                    self.emaneconfig_management.set_default_for_mdr(
+                        node_two.node_id, node_one.node_id, src_interface.id
+                    )
+
         else:
             logging.error("grpcmanagement.py INVALID CANVAS NODE ID")

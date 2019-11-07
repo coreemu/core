@@ -131,6 +131,11 @@ class EmaneConfiguration(Dialog):
             response,
         )
 
+        # store the change locally
+        self.app.core.emaneconfig_management.set_custom_emane_cloud_config(
+            self.canvas_node.core_id, "emane_" + model_name
+        )
+
         self.emane_model_dialog.destroy()
 
     def draw_model_options(self):
