@@ -8,12 +8,13 @@ from core.api.grpc import client, core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
+from coretk.images import Images
 from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
 link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel", "emane"]
-network_layer_nodes = ["router", "host", "PC", "mdr", "prouter", "OVS"]
+network_layer_nodes = ["router", "host", "PC", "mdr", "prouter"]
 
 
 class Node:
@@ -64,6 +65,14 @@ class CoreServer:
         self.port = port
 
 
+class CustomNode:
+    def __init__(self, name, image, image_file, services):
+        self.name = name
+        self.image = image
+        self.image_file = image_file
+        self.services = services
+
+
 class CoreClient:
     def __init__(self, app):
         """
@@ -77,13 +86,10 @@ class CoreClient:
         self.interface_helper = None
         self.services = {}
 
-        # distributed server data
+        # loaded configuration data
         self.servers = {}
-        for server_config in self.app.config["servers"]:
-            server = CoreServer(
-                server_config["name"], server_config["address"], server_config["port"]
-            )
-            self.servers[server.name] = server
+        self.custom_nodes = {}
+        self.read_config()
 
         # data for managing the current session
         self.nodes = {}
@@ -98,6 +104,23 @@ class CoreClient:
         self.mobilityconfig_management = MobilityNodeConfig()
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
+
+    def read_config(self):
+        # read distributed server
+        for server_config in self.app.config["servers"]:
+            server = CoreServer(
+                server_config["name"], server_config["address"], server_config["port"]
+            )
+            self.servers[server.name] = server
+
+        # read custom nodes
+        for node in self.app.config["nodes"]:
+            image_file = node["image"]
+            image = Images.get_custom(image_file)
+            custom_node = CustomNode(
+                node["name"], image, image_file, set(node["services"])
+            )
+            self.custom_nodes[custom_node.name] = custom_node
 
     def handle_events(self, event):
         logging.info("event: %s", event)
@@ -185,11 +208,9 @@ class CoreClient:
 
         # draw tool bar appropritate with session state
         if session_state == core_pb2.SessionState.RUNTIME:
-            self.app.core_editbar.destroy_children_widgets()
-            self.app.core_editbar.create_runtime_toolbar()
+            self.app.core_editbar.runtime_frame.tkraise()
         else:
-            self.app.core_editbar.destroy_children_widgets()
-            self.app.core_editbar.create_toolbar()
+            self.app.core_editbar.design_frame.tkraise()
 
     def create_new_session(self):
         """
@@ -217,7 +238,9 @@ class CoreClient:
         s = self.client.get_session(sid).session
         # delete links and nodes from running session
         if s.state == core_pb2.SessionState.RUNTIME:
-            self.set_session_state("datacollect", sid)
+            self.client.set_session_state(
+                self.session_id, core_pb2.SessionState.DATACOLLECT
+            )
             self.delete_links(sid)
             self.delete_nodes(sid)
         self.delete_session(sid)
@@ -250,48 +273,6 @@ class CoreClient:
         response = self.client.get_session(self.session_id)
         # logging.info("get session: %s", response)
         return response.session.state
-
-    def set_session_state(self, state, custom_session_id=None):
-        """
-        Set session state
-
-        :param str state: session state to set
-        :return: nothing
-        """
-        if custom_session_id is None:
-            sid = self.session_id
-        else:
-            sid = custom_session_id
-
-        response = None
-        if state == "configuration":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.CONFIGURATION
-            )
-        elif state == "instantiation":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.INSTANTIATION
-            )
-        elif state == "datacollect":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.DATACOLLECT
-            )
-        elif state == "shutdown":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.SHUTDOWN
-            )
-        elif state == "runtime":
-            response = self.client.set_session_state(sid, core_pb2.SessionState.RUNTIME)
-        elif state == "definition":
-            response = self.client.set_session_state(
-                sid, core_pb2.SessionState.DEFINITION
-            )
-        elif state == "none":
-            response = self.client.set_session_state(sid, core_pb2.SessionState.NONE)
-        else:
-            logging.error("coregrpc.py: set_session_state: INVALID STATE")
-
-        logging.info("set session state: %s", response)
 
     def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
@@ -451,6 +432,8 @@ class CoreClient:
                 node_type = core_pb2.NodeType.WIRELESS_LAN
             elif name == "rj45":
                 node_type = core_pb2.NodeType.RJ45
+            elif name == "emane":
+                node_type = core_pb2.NodeType.EMANE
             elif name == "tunnel":
                 node_type = core_pb2.NodeType.TUNNEL
             elif name == "emane":
@@ -459,7 +442,7 @@ class CoreClient:
             node_type = core_pb2.NodeType.DEFAULT
             node_model = name
         else:
-            logging.error("grpcmanagemeny.py INVALID node name")
+            logging.error("invalid node name: %s", name)
         nid = self.get_id()
         create_node = Node(session_id, nid, node_type, node_model, x, y, name)
 
@@ -473,9 +456,8 @@ class CoreClient:
 
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
-        # self.core_id_to_canvas_id[nid] = canvas_id
         logging.debug(
-            "Adding node to GrpcManager.. Session id: %s, Coords: (%s, %s), Name: %s",
+            "Adding node to core.. session id: %s, coords: (%s, %s), name: %s",
             session_id,
             x,
             y,

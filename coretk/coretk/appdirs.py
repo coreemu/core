@@ -42,7 +42,10 @@ def check_directory():
     for background in LOCAL_BACKGROUND_PATH.glob("*"):
         new_background = BACKGROUNDS_PATH.joinpath(background.name)
         shutil.copy(background, new_background)
-    config = {"servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}]}
+    config = {
+        "servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}],
+        "nodes": [],
+    }
     save_config(config)
 
 

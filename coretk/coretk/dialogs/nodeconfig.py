@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.nodeicon import IconDialog
+from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeServicesDialog
 
 NETWORKNODETYPES = ["switch", "hub", "wlan", "rj45", "tunnel"]

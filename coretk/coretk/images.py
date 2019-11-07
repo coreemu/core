@@ -30,6 +30,10 @@ class Images:
         return cls.images[image.value]
 
     @classmethod
+    def get_custom(cls, name):
+        return cls.images[name]
+
+    @classmethod
     def convert_type_and_model_to_image(cls, node_type, node_model):
         """
         Retrieve image based on type and model
