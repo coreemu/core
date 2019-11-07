@@ -202,8 +202,12 @@ class EbtablesQueue:
                 self.cmds.append(f"-F {wlan.brname}")
             else:
                 wlan.has_ebtables_chain = True
-                self.cmds.extend([f"-N {wlan.brname} -P {wlan.policy}",
-                                  f"-A FORWARD --logical-in {wlan.brname} -j {wlan.brname}"])
+                self.cmds.extend(
+                    [
+                        f"-N {wlan.brname} -P {wlan.policy}",
+                        f"-A FORWARD --logical-in {wlan.brname} -j {wlan.brname}",
+                    ]
+                )
             # rebuild the chain
             for netif1, v in wlan._linked.items():
                 for netif2, linked in v.items():
