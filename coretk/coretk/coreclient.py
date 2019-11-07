@@ -64,6 +64,13 @@ class CoreServer:
         self.port = port
 
 
+class CustomNode:
+    def __init__(self, name, image, services):
+        self.name = name
+        self.image = image
+        self.services = services
+
+
 class CoreClient:
     def __init__(self, app):
         """
@@ -76,6 +83,7 @@ class CoreClient:
         self.master = app.master
         self.interface_helper = None
         self.services = {}
+        self.custom_nodes = {}
 
         # distributed server data
         self.servers = {}
