@@ -145,15 +145,23 @@ class Toolbar(tk.Frame):
             (ImageEnum.PC, "PC"),
             (ImageEnum.MDR, "mdr"),
             (ImageEnum.PROUTER, "prouter"),
-            (ImageEnum.EDITNODE, "custom node types"),
         ]
+        # draw default nodes
         for image_enum, tooltip in nodes:
-            self.create_button(
-                Images.get(image_enum),
-                partial(self.update_button, self.node_button, image_enum, tooltip),
-                self.node_picker,
-                tooltip,
-            )
+            image = Images.get(image_enum)
+            func = partial(self.update_button, self.node_button, image, tooltip)
+            self.create_button(image, func, self.node_picker, tooltip)
+        # draw custom nodes
+        for name in sorted(self.app.core.custom_nodes):
+            custom_node = self.app.core.custom_nodes[name]
+            image = custom_node.image
+            func = partial(self.update_button, self.node_button, image, name)
+            self.create_button(image, func, self.node_picker, name)
+        # draw edit node
+        image = Images.get(ImageEnum.EDITNODE)
+        self.create_button(
+            image, self.click_edit_node, self.node_picker, "custom nodes"
+        )
         self.show_picker(self.node_button, self.node_picker)
 
     def show_picker(self, button, picker):
@@ -165,17 +173,17 @@ class Toolbar(tk.Frame):
         self.wait_window(picker)
         self.app.unbind_all("<Button-1>")
 
-    def create_button(self, img, func, frame, tooltip):
+    def create_button(self, image, func, frame, tooltip):
         """
         Create button and put it on the frame
 
-        :param PIL.Image img: button image
+        :param PIL.Image image: button image
         :param func: the command that is executed when button is clicked
         :param tkinter.Frame frame: frame that contains the button
         :param str tooltip: tooltip text
         :return: nothing
         """
-        button = tk.Button(frame, width=self.width, height=self.height, image=img)
+        button = tk.Button(frame, width=self.width, height=self.height, image=image)
         button.bind("<Button-1>", lambda e: func())
         button.grid(pady=1)
         CreateToolTip(button, tooltip)
@@ -221,19 +229,17 @@ class Toolbar(tk.Frame):
         logging.debug("Click LINK button")
         self.app.canvas.mode = GraphMode.EDGE
 
-    def update_button(self, button, image_enum, name):
-        logging.info("update button(%s): %s, %s", button, image_enum, name)
+    def click_edit_node(self):
+        dialog = CustomNodesDialog(self.app, self.app)
+        dialog.show()
+
+    def update_button(self, button, image, name):
+        logging.info("update button(%s): %s", button, name)
         self.hide_pickers()
-        if image_enum == ImageEnum.EDITNODE:
-            dialog = CustomNodesDialog(self.app, self.app)
-            dialog.show()
-        else:
-            image = Images.get(image_enum)
-            logging.info("updating button(%s): %s", button, name)
-            button.configure(image=image)
-            self.app.canvas.mode = GraphMode.NODE
-            self.app.canvas.draw_node_image = image
-            self.app.canvas.draw_node_name = name
+        button.configure(image=image)
+        self.app.canvas.mode = GraphMode.NODE
+        self.app.canvas.draw_node_image = image
+        self.app.canvas.draw_node_name = name
 
     def hide_pickers(self):
         logging.info("hiding pickers")

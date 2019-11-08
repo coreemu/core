@@ -72,7 +72,8 @@ class Application(tk.Frame):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=log_format)
     appdirs.check_directory()
     app = Application()
     app.mainloop()

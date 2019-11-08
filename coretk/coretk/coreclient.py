@@ -13,8 +13,8 @@ from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
-link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel", "emane"]
-network_layer_nodes = ["router", "host", "PC", "mdr", "prouter"]
+NETWORK_NODES = ["switch", "hub", "wlan", "rj45", "tunnel", "emane"]
+DEFAULT_NODES = ["router", "host", "PC", "mdr", "prouter"]
 
 
 class Node:
@@ -422,7 +422,7 @@ class CoreClient:
         """
         node_type = None
         node_model = None
-        if name in link_layer_nodes:
+        if name in NETWORK_NODES:
             if name == "switch":
                 node_type = core_pb2.NodeType.SWITCH
             elif name == "hub":
@@ -437,7 +437,7 @@ class CoreClient:
                 node_type = core_pb2.NodeType.TUNNEL
             elif name == "emane":
                 node_type = core_pb2.NodeType.EMANE
-        elif name in network_layer_nodes:
+        elif name in DEFAULT_NODES or name in self.custom_nodes:
             node_type = core_pb2.NodeType.DEFAULT
             node_model = name
         else:
@@ -606,7 +606,7 @@ class CoreClient:
         self.interfaces_manager.new_subnet()
 
         src_node = self.nodes[src_canvas_id]
-        if src_node.model in network_layer_nodes:
+        if src_node.model in DEFAULT_NODES:
             ifid = len(src_node.interfaces)
             name = "eth" + str(ifid)
             src_interface = Interface(
@@ -620,7 +620,7 @@ class CoreClient:
             )
 
         dst_node = self.nodes[dst_canvas_id]
-        if dst_node.model in network_layer_nodes:
+        if dst_node.model in DEFAULT_NODES:
             ifid = len(dst_node.interfaces)
             name = "eth" + str(ifid)
             dst_interface = Interface(

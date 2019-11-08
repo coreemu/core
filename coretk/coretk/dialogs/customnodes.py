@@ -208,7 +208,7 @@ class CustomNodesDialog(Dialog):
             custom_node = self.app.core.custom_nodes.pop(previous_name)
             custom_node.name = name
             custom_node.image = self.image
-            custom_node.image_file = Path(self.image_file).name
+            custom_node.image_file = Path(self.image_file).stem
             custom_node.services = self.services
             self.app.core.custom_nodes[name] = custom_node
             self.nodes_list.listbox.delete(self.selected_index)
