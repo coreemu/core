@@ -21,32 +21,12 @@ def sub_menu_items():
     logging.debug("Click on sub menu items")
 
 
-def file_new():
+def file_new(event=None):
     logging.debug("Click file New")
-
-
-def file_new_shortcut(event):
-    logging.debug("Shortcut for file new shortcut")
-
-
-def file_open():
-    logging.debug("Click file Open")
-
-
-def file_open_shortcut(event):
-    logging.debug("Shortcut for file open")
 
 
 def file_reload():
     logging.debug("Click file Reload")
-
-
-# def file_save():
-#     logging.debug("Click file save")
-
-
-def file_save_shortcut(event):
-    logging.debug("Shortcut for file save")
 
 
 def file_export_python_script():
@@ -73,68 +53,36 @@ def file_save_screenshot():
     logging.debug("Click file save screenshot")
 
 
-def edit_undo():
+def edit_undo(event=None):
     logging.debug("Click edit undo")
 
 
-def edit_undo_shortcut(event):
-    logging.debug("Shortcut for edit undo")
-
-
-def edit_redo():
+def edit_redo(event=None):
     logging.debug("Click edit redo")
 
 
-def edit_redo_shortcut(event):
-    logging.debug("Shortcut for edit redo")
-
-
-def edit_cut():
+def edit_cut(event=None):
     logging.debug("Click edit cut")
 
 
-def edit_cut_shortcut(event):
-    logging.debug("Shortcut for edit cut")
-
-
-def edit_copy():
+def edit_copy(event=None):
     logging.debug("Click edit copy")
 
 
-def edit_copy_shortcut(event):
-    logging.debug("Shortcut for edit copy")
-
-
-def edit_paste():
+def edit_paste(event=None):
     logging.debug("Click edit paste")
 
 
-def edit_paste_shortcut(event):
-    logging.debug("Shortcut for edit paste")
-
-
-def edit_select_all():
+def edit_select_all(event=None):
     logging.debug("Click edit select all")
 
 
-def edit_select_all_shortcut(event):
-    logging.debug("Shortcut for edit select all")
-
-
-def edit_select_adjacent():
+def edit_select_adjacent(event=None):
     logging.debug("Click edit select adjacent")
 
 
-def edit_select_adjacent_shortcut(event):
-    logging.debug("Shortcut for edit select adjacent")
-
-
-def edit_find():
+def edit_find(event=None):
     logging.debug("CLick edit find")
-
-
-def edit_find_shortcut(event):
-    logging.debug("Shortcut for edit find")
 
 
 def edit_clear_marker():
@@ -157,36 +105,20 @@ def canvas_delete():
     logging.debug("Click canvas delete")
 
 
-def canvas_previous():
+def canvas_previous(event=None):
     logging.debug("Click canvas previous")
 
 
-def canvas_previous_shortcut(event):
-    logging.debug("Shortcut for canvas previous")
-
-
-def canvas_next():
+def canvas_next(event=None):
     logging.debug("Click canvas next")
 
 
-def canvas_next_shortcut(event):
-    logging.debug("Shortcut for canvas next")
-
-
-def canvas_first():
+def canvas_first(event=None):
     logging.debug("CLick canvas first")
 
 
-def canvas_first_shortcut(event):
-    logging.debug("Shortcut for canvas first")
-
-
-def canvas_last():
+def canvas_last(event=None):
     logging.debug("CLick canvas last")
-
-
-def canvas_last_shortcut(event):
-    logging.debug("Shortcut canvas last")
 
 
 def view_show():
@@ -205,20 +137,12 @@ def view_3d_gui():
     logging.debug("CLick view 3D GUI")
 
 
-def view_zoom_in():
+def view_zoom_in(event=None):
     logging.debug("Click view zoom in")
 
 
-def view_zoom_in_shortcut(event):
-    logging.debug("Shortcut view zoom in")
-
-
-def view_zoom_out():
+def view_zoom_out(event=None):
     logging.debug("Click view zoom out")
-
-
-def view_zoom_out_shortcut(event):
-    logging.debug("Shortcut view zoom out")
 
 
 def tools_auto_rearrange_all():
@@ -343,7 +267,7 @@ class MenuAction:
         self.prompt_save_running_session()
         self.app.quit()
 
-    def file_save_as_xml(self):
+    def file_save_as_xml(self, event=None):
         logging.info("menuaction.py file_save_as_xml()")
         file_path = filedialog.asksaveasfilename(
             initialdir=str(XML_PATH),
@@ -354,7 +278,7 @@ class MenuAction:
         if file_path:
             self.app.core.save_xml(file_path)
 
-    def file_open_xml(self):
+    def file_open_xml(self, event=None):
         logging.info("menuaction.py file_open_xml()")
         self.app.is_open_xml = True
         file_path = filedialog.askopenfilename(

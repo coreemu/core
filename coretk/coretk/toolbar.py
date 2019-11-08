@@ -34,7 +34,6 @@ class Toolbar(tk.Frame):
         self.link_layer_option_menu = None
         self.marker_option_menu = None
         self.network_layer_option_menu = None
-        self.canvas = None
         self.node_button = None
         self.network_button = None
         self.annotation_button = None
@@ -204,7 +203,7 @@ class Toolbar(tk.Frame):
 
     def click_selection_tool(self):
         logging.debug("clicked selection tool")
-        self.canvas.mode = GraphMode.SELECT
+        self.app.canvas.mode = GraphMode.SELECT
 
     def click_start_session_tool(self):
         """
@@ -214,13 +213,13 @@ class Toolbar(tk.Frame):
         :return: nothing
         """
         logging.debug("clicked start button")
-        self.canvas.mode = GraphMode.SELECT
+        self.app.canvas.mode = GraphMode.SELECT
         self.app.core.start_session()
         self.runtime_frame.tkraise()
 
     def click_link_tool(self):
         logging.debug("Click LINK button")
-        self.canvas.mode = GraphMode.EDGE
+        self.app.canvas.mode = GraphMode.EDGE
 
     def update_button(self, button, image_enum, name):
         logging.info("update button(%s): %s, %s", button, image_enum, name)
@@ -232,9 +231,9 @@ class Toolbar(tk.Frame):
             image = Images.get(image_enum)
             logging.info("updating button(%s): %s", button, name)
             button.configure(image=image)
-            self.canvas.mode = GraphMode.NODE
-            self.canvas.draw_node_image = image
-            self.canvas.draw_node_name = name
+            self.app.canvas.mode = GraphMode.NODE
+            self.app.canvas.draw_node_image = image
+            self.app.canvas.draw_node_name = name
 
     def hide_pickers(self):
         logging.info("hiding pickers")

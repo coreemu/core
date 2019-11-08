@@ -3,10 +3,10 @@ import tkinter as tk
 
 from coretk import appdirs
 from coretk.coreclient import CoreClient
-from coretk.coremenubar import CoreMenubar
 from coretk.graph import CanvasGraph
 from coretk.images import ImageEnum, Images
 from coretk.menuaction import MenuAction
+from coretk.menubar import Menubar
 from coretk.toolbar import Toolbar
 
 
@@ -15,9 +15,9 @@ class Application(tk.Frame):
         super().__init__(master)
         Images.load_all()
         self.menubar = None
-        self.core_menu = None
-        self.canvas = None
         self.toolbar = None
+        self.canvas = None
+        self.statusbar = None
         self.is_open_xml = False
         self.size_and_scale = None
         self.set_wallpaper = None
@@ -41,29 +41,18 @@ class Application(tk.Frame):
         self.pack(fill=tk.BOTH, expand=True)
 
     def draw(self):
-        self.draw_menu()
-        self.draw_toolbar()
-        self.draw_canvas()
-
-    def draw_menu(self):
         self.master.option_add("*tearOff", tk.FALSE)
-        self.menubar = tk.Menu(self.master)
-        self.core_menu = CoreMenubar(self, self.master, self.menubar)
-        self.core_menu.create_core_menubar()
-        self.master.config(menu=self.menubar)
-
-    def draw_toolbar(self):
+        self.menubar = Menubar(self.master, self)
         self.toolbar = Toolbar(self, self)
         self.toolbar.pack(side=tk.LEFT, fill=tk.Y, ipadx=2, ipady=2)
+        self.draw_canvas()
+        self.draw_status()
 
     def draw_canvas(self):
         self.canvas = CanvasGraph(
             self, self.core, background="#cccccc", scrollregion=(0, 0, 1200, 1000)
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
-
-        self.toolbar.canvas = self.canvas
-
         scroll_x = tk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview
         )
@@ -73,14 +62,15 @@ class Application(tk.Frame):
         self.canvas.configure(xscrollcommand=scroll_x.set)
         self.canvas.configure(yscrollcommand=scroll_y.set)
 
-        status_bar = tk.Frame(self)
-        status_bar.pack(side=tk.BOTTOM, fill=tk.X)
-        b = tk.Button(status_bar, text="Button 1")
-        b.pack(side=tk.LEFT, padx=1)
-        b = tk.Button(status_bar, text="Button 2")
-        b.pack(side=tk.LEFT, padx=1)
-        b = tk.Button(status_bar, text="Button 3")
-        b.pack(side=tk.LEFT, padx=1)
+    def draw_status(self):
+        self.statusbar = tk.Frame(self)
+        self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
+        button = tk.Button(self.statusbar, text="Button 1")
+        button.pack(side=tk.LEFT, padx=1)
+        button = tk.Button(self.statusbar, text="Button 2")
+        button.pack(side=tk.LEFT, padx=1)
+        button = tk.Button(self.statusbar, text="Button 3")
+        button.pack(side=tk.LEFT, padx=1)
 
     def on_closing(self):
         menu_action = MenuAction(self, self.master)
