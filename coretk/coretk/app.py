@@ -65,12 +65,6 @@ class Application(tk.Frame):
     def draw_status(self):
         self.statusbar = tk.Frame(self)
         self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
-        button = tk.Button(self.statusbar, text="Button 1")
-        button.pack(side=tk.LEFT, padx=1)
-        button = tk.Button(self.statusbar, text="Button 2")
-        button.pack(side=tk.LEFT, padx=1)
-        button = tk.Button(self.statusbar, text="Button 3")
-        button.pack(side=tk.LEFT, padx=1)
 
     def on_closing(self):
         menu_action = MenuAction(self, self.master)
