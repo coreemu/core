@@ -29,7 +29,7 @@ class CreateToolTip(object):
             relief="solid",
             borderwidth=1,
         )
-        label.pack(ipadx=1)
+        label.grid(padx=1)
 
     def close(self, event=None):
         if self.tw:
