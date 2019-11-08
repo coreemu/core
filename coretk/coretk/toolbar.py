@@ -172,12 +172,12 @@ class Toolbar(tk.Frame):
         :param PIL.Image img: button image
         :param func: the command that is executed when button is clicked
         :param tkinter.Frame frame: frame that contains the button
-        :param tkinter.Radiobutton main_button: main button
+        :param str tooltip: tooltip text
         :return: nothing
         """
         button = tk.Button(frame, width=self.width, height=self.height, image=img)
         button.bind("<Button-1>", lambda e: func())
-        button.pack(side=tk.LEFT, pady=1)
+        button.grid(pady=1)
         CreateToolTip(button, tooltip)
 
     def create_radio_button(self, frame, image, func, variable, value, tooltip_msg):

@@ -14,8 +14,6 @@ class CreateToolTip(object):
         self.tw = None
 
     def enter(self, event=None):
-        x = 0
-        y = 0
         x, y, cx, cy = self.widget.bbox("insert")
         x += self.widget.winfo_rootx()
         y += self.widget.winfo_rooty() + 32
