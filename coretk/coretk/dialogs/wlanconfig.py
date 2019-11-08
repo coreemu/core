@@ -24,7 +24,7 @@ class WlanConfigDialog(Dialog):
         self.config = config
 
         self.name = tk.StringVar(value=canvas_node.name)
-        self.range_var = tk.StringVar(value=config["basic_range"])
+        self.range_var = tk.StringVar(value=config["range"])
         self.bandwidth_var = tk.StringVar(value=config["bandwidth"])
         self.delay_var = tk.StringVar(value=config["delay"])
         self.loss_var = tk.StringVar(value=config["error"])

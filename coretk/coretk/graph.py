@@ -8,6 +8,7 @@ from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.images import Images
 from coretk.interface import Interface
 from coretk.linkinfo import LinkInfo, Throughput
+from coretk.nodedelete import CanvasComponentManagement
 from coretk.wirelessconnection import WirelessConnection
 
 
@@ -41,7 +42,11 @@ class CanvasGraph(tk.Canvas):
         self.drawing_edge = None
         self.grid = None
         self.meters_per_pixel = 1.5
+
+        self.canvas_management = CanvasComponentManagement(self, core)
+
         self.canvas_action = CanvasAction(master, self)
+
         self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
@@ -101,6 +106,7 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
         self.bind("<Button-3>", self.context)
+        self.bind("<Delete>", self.press_delete)
 
     def draw_grid(self, width=1000, height=800):
         """
@@ -377,6 +383,37 @@ class CanvasGraph(tk.Canvas):
             self.node_context.unpost()
             self.is_node_context_opened = False
 
+    # TODO rather than delete, might move the data to somewhere else in order to reuse
+    # TODO when the user undo
+    def press_delete(self, event):
+        """
+        delete selected nodes and any data that relates to it
+        :param event:
+        :return:
+        """
+        # hide nodes, links, link information that shows on the GUI
+        to_delete_nodes, to_delete_edge_tokens = (
+            self.canvas_management.delete_selected_nodes()
+        )
+
+        # delete nodes and link info stored in CanvasGraph object
+        for nid in to_delete_nodes:
+            self.nodes.pop(nid)
+        for token in to_delete_edge_tokens:
+            self.edges.pop(token)
+
+        # delete the edge data inside of canvas node
+        canvas_node_link_to_delete = []
+        for canvas_id, node in self.nodes.items():
+            for e in node.edges:
+                if e.token in to_delete_edge_tokens:
+                    canvas_node_link_to_delete.append(tuple([canvas_id, e]))
+        for nid, edge in canvas_node_link_to_delete:
+            self.nodes[nid].edges.remove(edge)
+
+        # delete the related data from core
+        self.core.delete_wanted_graph_nodes(to_delete_nodes, to_delete_edge_tokens)
+
     def add_node(self, x, y, image, node_name):
         plot_id = self.find_all()[0]
         logging.info("add node event: %s - %s", plot_id, self.selected)
@@ -474,10 +511,14 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
         self.canvas.tag_bind(self.id, "<Button-3>", self.context)
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
+        self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
 
         self.edges = set()
         self.wlans = []
         self.moving = None
+
+    def click(self, event):
+        print("click")
 
     def double_click(self, event):
         node_id = self.canvas.core.nodes[self.id].node_id
@@ -501,7 +542,8 @@ class CanvasNode:
     def click_press(self, event):
         logging.debug(f"node click press {self.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
-        # return "break"
+
+        self.canvas.canvas_management.node_select(self)
 
     def click_release(self, event):
         logging.debug(f"node click release {self.name}: {event}")
@@ -521,6 +563,7 @@ class CanvasNode:
         self.canvas.move(self.id, offset_x, offset_y)
         self.canvas.move(self.text_id, offset_x, offset_y)
         self.antenna_draw.update_antennas_position(offset_x, offset_y)
+        self.canvas.canvas_management.node_drag(self, offset_x, offset_y)
 
         new_x, new_y = self.canvas.coords(self.id)
 
@@ -539,6 +582,9 @@ class CanvasNode:
         self.canvas.helper.update_wlan_connection(
             old_x, old_y, new_x, new_y, self.wlans
         )
+
+    def select_multiple(self, event):
+        self.canvas.canvas_management.node_select(self, True)
 
     def context(self, event):
         logging.debug(f"context click {self.name}: {event}")
