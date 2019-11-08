@@ -5,7 +5,6 @@ from functools import partial
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
-from coretk.toolbarhelper import ToolbarHelper
 from coretk.tooltip import CreateToolTip
 
 
@@ -216,8 +215,7 @@ class Toolbar(tk.Frame):
         """
         logging.debug("clicked start button")
         self.canvas.mode = GraphMode.SELECT
-        helper = ToolbarHelper(self.app)
-        helper.gui_start_session()
+        self.app.core.start_session()
         self.runtime_frame.tkraise()
 
     def click_link_tool(self):

@@ -305,23 +305,19 @@ class CoreClient:
             )
             logging.info("delete links %s", response)
 
-    # TODO add location, hooks, emane_config, etc...
-    def start_session(
-        self,
-        nodes,
-        links,
-        location=None,
-        hooks=None,
-        emane_config=None,
-        emane_model_configs=None,
-        wlan_configs=None,
-        mobility_configs=None,
-    ):
+    def start_session(self):
+        nodes = self.get_nodes_proto()
+        links = self.get_links_proto()
+        wlan_configs = self.get_wlan_configs_proto()
+        mobility_configs = self.get_mobility_configs_proto()
+        emane_model_configs = self.get_emane_model_configs_proto()
+        hooks = list(self.hooks.values())
+        emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         response = self.client.start_session(
             self.session_id,
             nodes,
             links,
-            hooks=list(self.hooks.values()),
+            hooks=hooks,
             wlan_configs=wlan_configs,
             emane_config=emane_config,
             emane_model_configs=emane_model_configs,
@@ -675,3 +671,59 @@ class CoreClient:
 
         else:
             logging.error("grpcmanagement.py INVALID CANVAS NODE ID")
+
+    def get_nodes_proto(self):
+        nodes = []
+        for node in self.nodes.values():
+            pos = core_pb2.Position(x=int(node.x), y=int(node.y))
+            proto_node = core_pb2.Node(
+                id=node.node_id, type=node.type, position=pos, model=node.model
+            )
+            nodes.append(proto_node)
+        return nodes
+
+    def get_links_proto(self):
+        links = []
+        for edge in self.edges.values():
+            interface_one = self.create_interface(edge.type1, edge.interface_1)
+            interface_two = self.create_interface(edge.type2, edge.interface_2)
+            link = core_pb2.Link(
+                node_one_id=edge.id1,
+                node_two_id=edge.id2,
+                type=core_pb2.LinkType.WIRED,
+                interface_one=interface_one,
+                interface_two=interface_two,
+            )
+            links.append(link)
+        return links
+
+    def get_wlan_configs_proto(self):
+        configs = []
+        wlan_configs = self.wlanconfig_management.configurations
+        for node_id in wlan_configs:
+            config = wlan_configs[node_id]
+            config_proto = core_pb2.WlanConfig(node_id=node_id, config=config)
+            configs.append(config_proto)
+        return configs
+
+    def get_mobility_configs_proto(self):
+        configs = []
+        mobility_configs = self.mobilityconfig_management.configurations
+        for node_id in mobility_configs:
+            config = mobility_configs[node_id]
+            config_proto = core_pb2.MobilityConfig(node_id=node_id, config=config)
+            configs.append(config_proto)
+        return configs
+
+    def get_emane_model_configs_proto(self):
+        configs = []
+        emane_configs = self.emaneconfig_management.configurations
+        for key, value in emane_configs.items():
+            node_id, interface_id = key
+            model, options = value
+            config = {x: options[x].value for x in options}
+            config_proto = core_pb2.EmaneModelConfig(
+                node_id=node_id, interface_id=interface_id, model=model, config=config
+            )
+            configs.append(config_proto)
+        return configs
