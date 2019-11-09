@@ -232,6 +232,7 @@ class Toolbar(tk.Frame):
         self.app.canvas.mode = GraphMode.EDGE
 
     def click_edit_node(self):
+        self.hide_pickers()
         dialog = CustomNodesDialog(self.app, self.app)
         dialog.show()
 
