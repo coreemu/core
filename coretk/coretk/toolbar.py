@@ -83,8 +83,8 @@ class Toolbar(tk.Frame):
             "link tool",
         )
         self.create_node_button()
-        self.create_link_layer_button()
-        self.create_marker_button()
+        self.create_network_button()
+        self.create_annotation_button()
         self.radio_value.set(1)
 
     def draw_runtime_frame(self):
@@ -169,9 +169,11 @@ class Toolbar(tk.Frame):
         x = button.winfo_rootx() - first_button.winfo_rootx() + 40
         y = button.winfo_rooty() - first_button.winfo_rooty() - 1
         picker.place(x=x, y=y)
-        self.app.bind_all("<Button-1>", lambda e: self.hide_pickers())
+        self.app.bind_all("<ButtonRelease-1>", lambda e: self.hide_pickers())
+        picker.wait_visibility()
+        picker.grab_set()
         self.wait_window(picker)
-        self.app.unbind_all("<Button-1>")
+        self.app.unbind_all("<ButtonRelease-1>")
 
     def create_button(self, image, func, frame, tooltip):
         """
@@ -184,7 +186,7 @@ class Toolbar(tk.Frame):
         :return: nothing
         """
         button = tk.Button(frame, width=self.width, height=self.height, image=image)
-        button.bind("<Button-1>", lambda e: func())
+        button.bind("<ButtonRelease-1>", lambda e: func())
         button.grid(pady=1)
         CreateToolTip(button, tooltip)
 
@@ -268,8 +270,8 @@ class Toolbar(tk.Frame):
             width=self.width,
             height=self.height,
             image=router_image,
-            command=self.draw_node_picker,
         )
+        self.node_button.bind("<ButtonRelease-1>", lambda e: self.draw_node_picker())
         self.node_button.grid()
         CreateToolTip(self.node_button, "Network-layer virtual nodes")
 
@@ -291,15 +293,16 @@ class Toolbar(tk.Frame):
             (ImageEnum.TUNNEL, "tunnel", "tunnel tool"),
         ]
         for image_enum, name, tooltip in nodes:
+            image = Images.get(image_enum)
             self.create_button(
-                Images.get(image_enum),
-                partial(self.update_button, self.network_button, image_enum, name),
+                image,
+                partial(self.update_button, self.network_button, image, name),
                 self.network_picker,
                 tooltip,
             )
         self.show_picker(self.network_button, self.network_picker)
 
-    def create_link_layer_button(self):
+    def create_network_button(self):
         """
         Create link-layer node button and the options that represent different link-layer node types
 
@@ -314,7 +317,9 @@ class Toolbar(tk.Frame):
             width=self.width,
             height=self.height,
             image=hub_image,
-            command=self.draw_network_picker,
+        )
+        self.network_button.bind(
+            "<ButtonRelease-1>", lambda e: self.draw_network_picker()
         )
         self.network_button.grid()
         CreateToolTip(self.network_button, "link-layer nodes")
@@ -343,7 +348,7 @@ class Toolbar(tk.Frame):
             )
         self.show_picker(self.annotation_button, self.annotation_picker)
 
-    def create_marker_button(self):
+    def create_annotation_button(self):
         """
         Create marker button and options that represent different marker types
 
@@ -358,7 +363,9 @@ class Toolbar(tk.Frame):
             width=self.width,
             height=self.height,
             image=marker_image,
-            command=self.draw_annotation_picker,
+        )
+        self.annotation_button.bind(
+            "<ButtonRelease-1>", lambda e: self.draw_annotation_picker()
         )
         self.annotation_button.grid()
         CreateToolTip(self.annotation_button, "background annotation tools")
