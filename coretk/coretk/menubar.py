@@ -1,6 +1,8 @@
 import tkinter as tk
+from functools import partial
 
 import coretk.menuaction as action
+from coretk.coreclient import OBSERVER_WIDGETS
 
 
 class Menubar(tk.Menu):
@@ -364,23 +366,26 @@ class Menubar(tk.Menu):
         :param tkinter.Menu widget_menu: widget_menu
         :return: nothing
         """
+        var = tk.StringVar(value="none")
         menu = tk.Menu(widget_menu)
-        menu.add_command(label="None", state=tk.DISABLED)
-        menu.add_command(label="processes", state=tk.DISABLED)
-        menu.add_command(label="ifconfig", state=tk.DISABLED)
-        menu.add_command(label="IPv4 routes", state=tk.DISABLED)
-        menu.add_command(label="IPv6 routes", state=tk.DISABLED)
-        menu.add_command(label="OSPFv2 neighbors", state=tk.DISABLED)
-        menu.add_command(label="OSPFv3 neighbors", state=tk.DISABLED)
-        menu.add_command(label="Listening sockets", state=tk.DISABLED)
-        menu.add_command(label="IPv4 MFC entries", state=tk.DISABLED)
-        menu.add_command(label="IPv6 MFC entries", state=tk.DISABLED)
-        menu.add_command(label="firewall rules", state=tk.DISABLED)
-        menu.add_command(label="IPsec policies", state=tk.DISABLED)
-        menu.add_command(label="docker logs", state=tk.DISABLED)
-        menu.add_command(label="OSPFv3 MDR level", state=tk.DISABLED)
-        menu.add_command(label="PIM neighbors", state=tk.DISABLED)
-        menu.add_command(label="Edit...", command=self.menuaction.edit_observer_widgets)
+        menu.var = var
+        menu.add_radiobutton(
+            label="None",
+            variable=var,
+            value="none",
+            command=lambda: self.app.core.set_observer(None),
+        )
+        for name in sorted(OBSERVER_WIDGETS):
+            cmd = OBSERVER_WIDGETS[name]
+            menu.add_radiobutton(
+                label=name,
+                variable=var,
+                value=name,
+                command=partial(self.app.core.set_observer, cmd),
+            )
+        menu.add_radiobutton(
+            label="Edit...", command=self.menuaction.edit_observer_widgets
+        )
         widget_menu.add_cascade(label="Observer Widgets", menu=menu)
 
     def create_adjacency_menu(self, widget_menu):

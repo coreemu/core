@@ -15,6 +15,17 @@ from coretk.wlannodeconfig import WlanNodeConfig
 
 NETWORK_NODES = {"switch", "hub", "wlan", "rj45", "tunnel", "emane"}
 DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
+OBSERVER_WIDGETS = {
+    "processes": "ps",
+    "ifconfig": "ifconfig",
+    "IPV4 Routes": "ip -4 ro",
+    "IPV6 Routes": "ip -6 ro",
+    "Listening sockets": "netstat -tuwnl",
+    "IPv4 MFC entries": "ip -4 mroute show",
+    "IPv6 MFC entries": "ip -6 mroute show",
+    "firewall rules": "iptables -L",
+    "IPSec policies": "setkey -DP",
+}
 
 
 class Node:
@@ -85,6 +96,7 @@ class CoreClient:
         self.master = app.master
         self.interface_helper = None
         self.services = {}
+        self.observer = None
 
         # loaded configuration data
         self.servers = {}
@@ -92,6 +104,7 @@ class CoreClient:
         self.read_config()
 
         # data for managing the current session
+        self.state = None
         self.nodes = {}
         self.edges = {}
         self.hooks = {}
@@ -104,6 +117,9 @@ class CoreClient:
         self.mobilityconfig_management = MobilityNodeConfig()
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
+
+    def set_observer(self, value):
+        self.observer = value
 
     def read_config(self):
         # read distributed server
@@ -124,8 +140,11 @@ class CoreClient:
 
     def handle_events(self, event):
         logging.info("event: %s", event)
-        if event.link_event is not None:
+        if event.HasField("link_event"):
             self.app.canvas.wireless_draw.hangle_link_event(event.link_event)
+        elif event.HasField("session_event"):
+            if event.session_event.event <= core_pb2.SessionState.SHUTDOWN:
+                self.state = event.session_event.event
 
     def handle_throughputs(self, event):
         interface_throughputs = event.interface_throughputs
@@ -159,7 +178,7 @@ class CoreClient:
         response = self.client.get_session(self.session_id)
         logging.info("joining session(%s): %s", self.session_id, response)
         session = response.session
-        session_state = session.state
+        self.state = session.state
         self.client.events(self.session_id, self.handle_events)
 
         # get hooks
@@ -207,10 +226,13 @@ class CoreClient:
         self.app.canvas.canvas_reset_and_redraw(session)
 
         # draw tool bar appropritate with session state
-        if session_state == core_pb2.SessionState.RUNTIME:
+        if self.is_runtime():
             self.app.toolbar.runtime_frame.tkraise()
         else:
             self.app.toolbar.design_frame.tkraise()
+
+    def is_runtime(self):
+        return self.state == core_pb2.SessionState.RUNTIME
 
     def create_new_session(self):
         """
@@ -754,3 +776,7 @@ class CoreClient:
             )
             configs.append(config_proto)
         return configs
+
+    def run(self, node_id):
+        logging.info("running node(%s) cmd: %s", node_id, self.observer)
+        return self.client.node_command(self.session_id, node_id, self.observer).output

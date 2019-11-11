@@ -184,9 +184,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         logging.debug("stop session: %s", request)
         session = self.get_session(request.session_id, context)
         session.data_collect()
-        session.set_state(EventTypes.DATACOLLECT_STATE)
+        session.set_state(EventTypes.DATACOLLECT_STATE, send_event=True)
         session.clear()
-        session.set_state(EventTypes.SHUTDOWN_STATE)
+        session.set_state(EventTypes.SHUTDOWN_STATE, send_event=True)
         return core_pb2.StopSessionResponse(result=True)
 
     def CreateSession(self, request, context):
