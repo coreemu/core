@@ -4,7 +4,7 @@ set wallpaper
 import enum
 import logging
 import tkinter as tk
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 
 from PIL import Image, ImageTk
 
@@ -39,7 +39,6 @@ class CanvasBackgroundDialog(Dialog):
 
     def draw(self):
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
         self.draw_image()
         self.draw_image_label()
         self.draw_image_selection()
@@ -48,65 +47,67 @@ class CanvasBackgroundDialog(Dialog):
         self.draw_buttons()
 
     def draw_image(self):
-        self.image_label = tk.Label(
-            self, text="(image preview)", height=8, width=32, bg="white"
+        self.image_label = ttk.Label(
+            self, text="(image preview)", width=32, anchor=tk.CENTER
         )
-        self.image_label.grid(row=0, column=0, pady=5, sticky="nsew")
+        self.image_label.grid(row=0, column=0, pady=5)
 
     def draw_image_label(self):
-        label = tk.Label(self, text="Image filename: ")
+        label = ttk.Label(self, text="Image filename: ")
         label.grid(row=1, column=0, sticky="ew")
 
     def draw_image_selection(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.grid(row=2, column=0, sticky="ew")
 
-        entry = tk.Entry(frame, textvariable=self.file_name)
+        entry = ttk.Entry(frame, textvariable=self.file_name)
         entry.focus()
         entry.grid(row=0, column=0, sticky="ew")
 
-        button = tk.Button(frame, text="...", command=self.click_open_image)
+        button = ttk.Button(frame, text="...", command=self.click_open_image)
         button.grid(row=0, column=1, sticky="ew")
 
-        button = tk.Button(frame, text="Clear", command=self.click_clear)
+        button = ttk.Button(frame, text="Clear", command=self.click_clear)
         button.grid(row=0, column=2, sticky="ew")
 
     def draw_options(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.columnconfigure(3, weight=1)
         frame.grid(row=3, column=0, sticky="ew")
 
-        button = tk.Radiobutton(
+        button = ttk.Radiobutton(
             frame, text="upper-left", value=1, variable=self.radiovar
         )
         button.grid(row=0, column=0, sticky="ew")
         self.options.append(button)
 
-        button = tk.Radiobutton(frame, text="centered", value=2, variable=self.radiovar)
+        button = ttk.Radiobutton(
+            frame, text="centered", value=2, variable=self.radiovar
+        )
         button.grid(row=0, column=1, sticky="ew")
         self.options.append(button)
 
-        button = tk.Radiobutton(frame, text="scaled", value=3, variable=self.radiovar)
+        button = ttk.Radiobutton(frame, text="scaled", value=3, variable=self.radiovar)
         button.grid(row=0, column=2, sticky="ew")
         self.options.append(button)
 
-        button = tk.Radiobutton(frame, text="titled", value=4, variable=self.radiovar)
+        button = ttk.Radiobutton(frame, text="titled", value=4, variable=self.radiovar)
         button.grid(row=0, column=3, sticky="ew")
         self.options.append(button)
 
     def draw_additional_options(self):
-        checkbutton = tk.Checkbutton(
+        checkbutton = ttk.Checkbutton(
             self, text="Show grid", variable=self.show_grid_var
         )
         checkbutton.grid(row=4, column=0, sticky="ew", padx=5)
 
-        checkbutton = tk.Checkbutton(
+        checkbutton = ttk.Checkbutton(
             self,
             text="Adjust canvas size to image dimensions",
             variable=self.adjust_to_dim_var,
@@ -118,15 +119,15 @@ class CanvasBackgroundDialog(Dialog):
         self.adjust_to_dim_var.set(0)
 
     def draw_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(row=6, column=0, pady=5, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        button = tk.Button(frame, text="Apply", command=self.click_apply)
+        button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="ew")
 
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
     def click_open_image(self):
@@ -144,7 +145,7 @@ class CanvasBackgroundDialog(Dialog):
             img = Image.open(filename)
             img = img.resize((width, height), Image.ANTIALIAS)
             tk_img = ImageTk.PhotoImage(img)
-            self.image_label.config(image=tk_img, width=width, height=height)
+            self.image_label.config(image=tk_img, width=width)
             self.image_label.image = tk_img
 
     def click_clear(self):
@@ -156,7 +157,7 @@ class CanvasBackgroundDialog(Dialog):
         # delete entry
         self.file_name.set("")
         # delete display image
-        self.image_label.config(image="", width=32, height=8)
+        self.image_label.config(image="", width=32)
 
     def click_adjust_canvas(self):
         # deselect all radio buttons and grey them out
