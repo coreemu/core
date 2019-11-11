@@ -45,6 +45,7 @@ def check_directory():
     config = {
         "servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}],
         "nodes": [],
+        "observers": [],
     }
     save_config(config)
 

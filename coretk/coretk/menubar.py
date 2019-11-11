@@ -369,6 +369,10 @@ class Menubar(tk.Menu):
         var = tk.StringVar(value="none")
         menu = tk.Menu(widget_menu)
         menu.var = var
+        menu.add_command(
+            label="Edit Observers", command=self.menuaction.edit_observer_widgets
+        )
+        menu.add_separator()
         menu.add_radiobutton(
             label="None",
             variable=var,
@@ -383,9 +387,14 @@ class Menubar(tk.Menu):
                 value=name,
                 command=partial(self.app.core.set_observer, cmd),
             )
-        menu.add_radiobutton(
-            label="Edit...", command=self.menuaction.edit_observer_widgets
-        )
+        for name in sorted(self.app.core.custom_observers):
+            cmd = self.app.core.custom_observers[name]
+            menu.add_radiobutton(
+                label=name,
+                variable=var,
+                value=name,
+                command=partial(self.app.core.set_observer, cmd),
+            )
         widget_menu.add_cascade(label="Observer Widgets", menu=menu)
 
     def create_adjacency_menu(self, widget_menu):

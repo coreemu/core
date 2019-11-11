@@ -101,6 +101,7 @@ class CoreClient:
         # loaded configuration data
         self.servers = {}
         self.custom_nodes = {}
+        self.custom_observers = {}
         self.read_config()
 
         # data for managing the current session
@@ -123,20 +124,24 @@ class CoreClient:
 
     def read_config(self):
         # read distributed server
-        for server_config in self.app.config["servers"]:
+        for server_config in self.app.config.get("servers", []):
             server = CoreServer(
                 server_config["name"], server_config["address"], server_config["port"]
             )
             self.servers[server.name] = server
 
         # read custom nodes
-        for node in self.app.config["nodes"]:
+        for node in self.app.config.get("nodes", []):
             image_file = node["image"]
             image = Images.get_custom(image_file)
             custom_node = CustomNode(
                 node["name"], image, image_file, set(node["services"])
             )
             self.custom_nodes[custom_node.name] = custom_node
+
+        # read observers
+        for observer in self.app.config.get("observers", []):
+            self.custom_observers[observer["name"]] = observer["cmd"]
 
     def handle_events(self, event):
         logging.info("event: %s", event)
