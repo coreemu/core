@@ -1,7 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog
 
-from coretk.appdirs import ICONS_PATH
+from coretk.appconfig import ICONS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 

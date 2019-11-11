@@ -1,6 +1,5 @@
 import tkinter as tk
 
-from coretk import appdirs
 from coretk.coreclient import CoreServer
 from coretk.dialogs.dialog import Dialog
 
@@ -116,7 +115,7 @@ class ServersDialog(Dialog):
                 {"name": server.name, "address": server.address, "port": server.port}
             )
         self.app.config["servers"] = servers
-        appdirs.save_config(self.app.config)
+        self.app.save_config()
         self.destroy()
 
     def click_create(self):

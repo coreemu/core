@@ -8,7 +8,7 @@ from tkinter import filedialog
 
 from PIL import Image, ImageTk
 
-from coretk.appdirs import BACKGROUNDS_PATH
+from coretk.appconfig import BACKGROUNDS_PATH
 from coretk.dialogs.dialog import Dialog
 
 

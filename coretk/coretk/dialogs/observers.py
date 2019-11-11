@@ -1,6 +1,5 @@
 import tkinter as tk
 
-from coretk import appdirs
 from coretk.coreclient import Observer
 from coretk.dialogs.dialog import Dialog
 
@@ -96,7 +95,7 @@ class ObserverDialog(Dialog):
             observer = self.app.core.custom_observers[name]
             observers.append({"name": observer.name, "cmd": observer.cmd})
         self.app.config["observers"] = observers
-        appdirs.save_config(self.app.config)
+        self.app.save_config()
         self.destroy()
 
     def click_create(self):

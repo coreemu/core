@@ -1,4 +1,5 @@
 import logging
+import os
 import shutil
 from pathlib import Path
 
@@ -17,6 +18,20 @@ CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 # local paths
 LOCAL_ICONS_PATH = Path(__file__).parent.joinpath("icons").absolute()
 LOCAL_BACKGROUND_PATH = Path(__file__).parent.joinpath("backgrounds").absolute()
+
+# configuration data
+TERMINALS = [
+    "$TERM",
+    "gnome-terminal --window --",
+    "lxterminal -e",
+    "konsole -e",
+    "xterm -e",
+    "aterm -e",
+    "eterm -e",
+    "rxvt -e",
+    "xfce4-terminal -x",
+]
+EDITORS = ["$EDITOR", "vim", "emacs", "gedit", "nano", "vi"]
 
 
 class IndentDumper(yaml.Dumper):
@@ -42,19 +57,33 @@ def check_directory():
     for background in LOCAL_BACKGROUND_PATH.glob("*"):
         new_background = BACKGROUNDS_PATH.joinpath(background.name)
         shutil.copy(background, new_background)
+
+    if "TERM" in os.environ:
+        terminal = TERMINALS[0]
+    else:
+        terminal = TERMINALS[1]
+    if "EDITOR" in os.environ:
+        editor = EDITORS[0]
+    else:
+        editor = EDITORS[1]
     config = {
+        "preferences": {
+            "editor": editor,
+            "terminal": terminal,
+            "gui3d": "/usr/local/bin/std3d.sh",
+        },
         "servers": [{"name": "example", "address": "127.0.0.1", "port": 50051}],
         "nodes": [],
-        "observers": [],
+        "observers": [{"name": "hello", "cmd": "echo hello"}],
     }
-    save_config(config)
+    save(config)
 
 
-def read_config():
+def read():
     with CONFIG_PATH.open("r") as f:
         return yaml.load(f, Loader=yaml.SafeLoader)
 
 
-def save_config(config):
+def save(config):
     with CONFIG_PATH.open("w") as f:
         yaml.dump(config, f, Dumper=IndentDumper, default_flow_style=False)

@@ -15,7 +15,7 @@ from coretk.wlannodeconfig import WlanNodeConfig
 
 NETWORK_NODES = {"switch", "hub", "wlan", "rj45", "tunnel", "emane"}
 DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
-OBSERVER_WIDGETS = {
+OBSERVERS = {
     "processes": "ps",
     "ifconfig": "ifconfig",
     "IPV4 Routes": "ip -4 ro",

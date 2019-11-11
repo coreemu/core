@@ -2,7 +2,7 @@ import tkinter as tk
 from functools import partial
 
 import coretk.menuaction as action
-from coretk.coreclient import OBSERVER_WIDGETS
+from coretk.coreclient import OBSERVERS
 
 
 class Menubar(tk.Menu):
@@ -94,7 +94,9 @@ class Menubar(tk.Menu):
         menu.add_separator()
         menu.add_command(label="Find...", accelerator="Ctrl+F", state=tk.DISABLED)
         menu.add_command(label="Clear marker", state=tk.DISABLED)
-        menu.add_command(label="Preferences...", state=tk.DISABLED)
+        menu.add_command(
+            label="Preferences...", command=self.menuaction.gui_preferences
+        )
         self.add_cascade(label="Edit", menu=menu)
 
     def draw_canvas_menu(self):
@@ -379,8 +381,8 @@ class Menubar(tk.Menu):
             value="none",
             command=lambda: self.app.core.set_observer(None),
         )
-        for name in sorted(OBSERVER_WIDGETS):
-            cmd = OBSERVER_WIDGETS[name]
+        for name in sorted(OBSERVERS):
+            cmd = OBSERVERS[name]
             menu.add_radiobutton(
                 label=name,
                 variable=var,

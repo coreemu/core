@@ -2,7 +2,6 @@ import logging
 import tkinter as tk
 from pathlib import Path
 
-from coretk import appdirs
 from coretk.coreclient import CustomNode
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
@@ -189,7 +188,8 @@ class CustomNodesDialog(Dialog):
                 }
             )
         logging.info("saving custom nodes: %s", self.app.config["nodes"])
-        appdirs.save_config(self.app.config)
+        self.app.save_config()
+        self.destroy()
 
     def click_create(self):
         name = self.name.get()
