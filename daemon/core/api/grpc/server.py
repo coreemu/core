@@ -153,6 +153,16 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
                 config.node_id, Ns2ScriptedMobility.name, config.config
             )
 
+        # service configs
+        for config in request.service_configs:
+            grpcutils.service_configuration(session, config)
+
+        # service file configs
+        for config in request.service_file_configs:
+            session.services.set_service_file(
+                config.node_id, config.service, config.file, config.data
+            )
+
         # create links
         grpcutils.create_links(session, request.links)
 
@@ -1172,11 +1182,8 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set node service: %s", request)
         session = self.get_session(request.session_id, context)
-        session.services.set_service(request.node_id, request.service)
-        service = session.services.get_service(request.node_id, request.service)
-        service.startup = tuple(request.startup)
-        service.validate = tuple(request.validate)
-        service.shutdown = tuple(request.shutdown)
+        config = request.config
+        grpcutils.service_configuration(session, config)
         return core_pb2.SetNodeServiceResponse(result=True)
 
     def SetNodeServiceFile(self, request, context):
@@ -1191,8 +1198,9 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         """
         logging.debug("set node service file: %s", request)
         session = self.get_session(request.session_id, context)
+        config = request.config
         session.services.set_service_file(
-            request.node_id, request.service, request.file, request.data
+            config.node_id, config.service, config.file, config.data
         )
         return core_pb2.SetNodeServiceFileResponse(result=True)
 

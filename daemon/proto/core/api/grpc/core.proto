@@ -144,6 +144,8 @@ message StartSessionRequest {
     repeated WlanConfig wlan_configs = 7;
     repeated EmaneModelConfig emane_model_configs = 8;
     repeated MobilityConfig mobility_configs = 9;
+    repeated ServiceConfig service_configs = 10;
+    repeated ServiceFileConfig service_file_configs = 11;
 }
 
 message StartSessionResponse {
@@ -554,11 +556,7 @@ message GetNodeServiceFileResponse {
 
 message SetNodeServiceRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    repeated string startup = 4;
-    repeated string validate = 5;
-    repeated string shutdown = 6;
+    ServiceConfig config = 2;
 }
 
 message SetNodeServiceResponse {
@@ -567,10 +565,7 @@ message SetNodeServiceResponse {
 
 message SetNodeServiceFileRequest {
     int32 session_id = 1;
-    int32 node_id = 2;
-    string service = 3;
-    string file = 4;
-    string data = 5;
+    ServiceFileConfig config = 2;
 }
 
 message SetNodeServiceFileResponse {
@@ -716,6 +711,21 @@ message EmaneModelConfig {
     int32 interface_id = 2;
     string model = 3;
     map<string, string> config = 4;
+}
+
+message ServiceConfig {
+    int32 node_id = 1;
+    string service = 2;
+    repeated string startup = 3;
+    repeated string validate = 4;
+    repeated string shutdown = 5;
+}
+
+message ServiceFileConfig {
+    int32 node_id = 1;
+    string service = 2;
+    string file = 3;
+    string data = 4;
 }
 
 message MessageType {

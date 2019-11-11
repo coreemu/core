@@ -65,12 +65,6 @@ class Application(tk.Frame):
     def draw_status(self):
         self.statusbar = tk.Frame(self)
         self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
-        button = tk.Button(self.statusbar, text="Button 1")
-        button.pack(side=tk.LEFT, padx=1)
-        button = tk.Button(self.statusbar, text="Button 2")
-        button.pack(side=tk.LEFT, padx=1)
-        button = tk.Button(self.statusbar, text="Button 3")
-        button.pack(side=tk.LEFT, padx=1)
 
     def on_closing(self):
         menu_action = MenuAction(self, self.master)
@@ -78,7 +72,8 @@ class Application(tk.Frame):
 
 
 if __name__ == "__main__":
-    logging.basicConfig(level=logging.DEBUG)
+    log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
+    logging.basicConfig(level=logging.DEBUG, format=log_format)
     appdirs.check_directory()
     app = Application()
     app.mainloop()

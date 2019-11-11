@@ -15,7 +15,7 @@ class ServicesSelectDialog(Dialog):
         self.groups = None
         self.services = None
         self.current = None
-        self.current_services = current_services
+        self.current_services = set(current_services)
         self.draw()
 
     def draw(self):
@@ -48,7 +48,7 @@ class ServicesSelectDialog(Dialog):
         frame.grid(stick="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        button = tk.Button(frame, text="Save", command=self.click_cancel)
+        button = tk.Button(frame, text="Save", command=self.destroy)
         button.grid(row=0, column=0, sticky="ew")
         button = tk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=1, sticky="ew")
@@ -174,7 +174,8 @@ class CustomNodesDialog(Dialog):
         dialog = ServicesSelectDialog(self, self.app, self.services)
         dialog.show()
         if dialog.current_services is not None:
-            self.services = dialog.current_services
+            self.services.clear()
+            self.services.update(dialog.current_services)
 
     def click_save(self):
         self.app.config["nodes"].clear()
@@ -208,7 +209,7 @@ class CustomNodesDialog(Dialog):
             custom_node = self.app.core.custom_nodes.pop(previous_name)
             custom_node.name = name
             custom_node.image = self.image
-            custom_node.image_file = Path(self.image_file).name
+            custom_node.image_file = Path(self.image_file).stem
             custom_node.services = self.services
             self.app.core.custom_nodes[name] = custom_node
             self.nodes_list.listbox.delete(self.selected_index)

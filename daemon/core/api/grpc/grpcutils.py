@@ -319,3 +319,18 @@ def session_location(session, location):
     session.location.refxyz = (location.x, location.y, location.z)
     session.location.setrefgeo(location.lat, location.lon, location.alt)
     session.location.refscale = location.scale
+
+
+def service_configuration(session, config):
+    """
+    Convenience method for setting a node service configuration.
+
+    :param core.emulator.session.Session session: session for service configuration
+    :param core_pb2.ServiceConfig config: service configuration
+    :return:
+    """
+    session.services.set_service(config.node_id, config.service)
+    service = session.services.get_service(config.node_id, config.service)
+    service.startup = tuple(config.startup)
+    service.validate = tuple(config.validate)
+    service.shutdown = tuple(config.shutdown)

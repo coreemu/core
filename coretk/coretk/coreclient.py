@@ -14,8 +14,8 @@ from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.servicenodeconfig import ServiceNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
-link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel", "emane"]
-network_layer_nodes = ["router", "host", "PC", "mdr", "prouter"]
+NETWORK_NODES = {"switch", "hub", "wlan", "rj45", "tunnel", "emane"}
+DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
 
 
 class Node:
@@ -418,6 +418,9 @@ class CoreClient:
         else:
             return self.reusable.pop(0)
 
+    def is_model_node(self, name):
+        return name in DEFAULT_NODES or name in self.custom_nodes
+
     def add_graph_node(self, session_id, canvas_id, x, y, name):
         """
         Add node, with information filled in, to grpc manager
@@ -431,7 +434,7 @@ class CoreClient:
         """
         node_type = None
         node_model = None
-        if name in link_layer_nodes:
+        if name in NETWORK_NODES:
             if name == "switch":
                 node_type = core_pb2.NodeType.SWITCH
             elif name == "hub":
@@ -446,7 +449,7 @@ class CoreClient:
                 node_type = core_pb2.NodeType.TUNNEL
             elif name == "emane":
                 node_type = core_pb2.NodeType.EMANE
-        elif name in network_layer_nodes:
+        elif self.is_model_node(name):
             node_type = core_pb2.NodeType.DEFAULT
             node_model = name
         else:
@@ -621,7 +624,7 @@ class CoreClient:
         self.interfaces_manager.new_subnet()
 
         src_node = self.nodes[src_canvas_id]
-        if src_node.model in network_layer_nodes:
+        if self.is_model_node(src_node.model):
             ifid = len(src_node.interfaces)
             name = "eth" + str(ifid)
             src_interface = Interface(
@@ -635,7 +638,7 @@ class CoreClient:
             )
 
         dst_node = self.nodes[dst_canvas_id]
-        if dst_node.model in network_layer_nodes:
+        if self.is_model_node(dst_node.model):
             ifid = len(dst_node.interfaces)
             name = "eth" + str(ifid)
             dst_interface = Interface(
