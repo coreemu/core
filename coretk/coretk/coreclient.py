@@ -84,6 +84,12 @@ class CustomNode:
         self.services = services
 
 
+class Observer:
+    def __init__(self, name, cmd):
+        self.name = name
+        self.cmd = cmd
+
+
 class CoreClient:
     def __init__(self, app):
         """
@@ -124,24 +130,23 @@ class CoreClient:
 
     def read_config(self):
         # read distributed server
-        for server_config in self.app.config.get("servers", []):
-            server = CoreServer(
-                server_config["name"], server_config["address"], server_config["port"]
-            )
+        for config in self.app.config.get("servers", []):
+            server = CoreServer(config["name"], config["address"], config["port"])
             self.servers[server.name] = server
 
         # read custom nodes
-        for node in self.app.config.get("nodes", []):
-            image_file = node["image"]
+        for config in self.app.config.get("nodes", []):
+            image_file = config["image"]
             image = Images.get_custom(image_file)
             custom_node = CustomNode(
-                node["name"], image, image_file, set(node["services"])
+                config["name"], image, image_file, set(config["services"])
             )
             self.custom_nodes[custom_node.name] = custom_node
 
         # read observers
-        for observer in self.app.config.get("observers", []):
-            self.custom_observers[observer["name"]] = observer["cmd"]
+        for config in self.app.config.get("observers", []):
+            observer = Observer(config["name"], config["cmd"])
+            self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
         logging.info("event: %s", event)

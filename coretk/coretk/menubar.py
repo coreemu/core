@@ -388,12 +388,12 @@ class Menubar(tk.Menu):
                 command=partial(self.app.core.set_observer, cmd),
             )
         for name in sorted(self.app.core.custom_observers):
-            cmd = self.app.core.custom_observers[name]
+            observer = self.app.core.custom_observers[name]
             menu.add_radiobutton(
                 label=name,
                 variable=var,
                 value=name,
-                command=partial(self.app.core.set_observer, cmd),
+                command=partial(self.app.core.set_observer, observer.cmd),
             )
         widget_menu.add_cascade(label="Observer Widgets", menu=menu)
 

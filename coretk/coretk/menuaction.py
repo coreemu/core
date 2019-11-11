@@ -11,7 +11,7 @@ from coretk.appdirs import XML_PATH
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.hooks import HooksDialog
-from coretk.dialogs.observerwidgets import ObserverWidgetsDialog
+from coretk.dialogs.observers import ObserverDialog
 from coretk.dialogs.servers import ServersDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
@@ -118,5 +118,5 @@ class MenuAction:
         dialog.show()
 
     def edit_observer_widgets(self):
-        dialog = ObserverWidgetsDialog(self.app, self.app)
+        dialog = ObserverDialog(self.app, self.app)
         dialog.show()

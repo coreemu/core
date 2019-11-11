@@ -117,6 +117,7 @@ class ServersDialog(Dialog):
             )
         self.app.config["servers"] = servers
         appdirs.save_config(self.app.config)
+        self.destroy()
 
     def click_create(self):
         name = self.name.get()
