@@ -3,7 +3,7 @@ from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
-from coretk.dialogs.nodeservice import NodeServicesDialog
+from coretk.dialogs.nodeservice import NodeService
 
 NETWORKNODETYPES = ["switch", "hub", "wlan", "rj45", "tunnel"]
 DEFAULTNODES = ["router", "host", "PC"]
@@ -87,7 +87,7 @@ class NodeConfigDialog(Dialog):
         button.grid(row=0, column=1, sticky="ew")
 
     def click_services(self):
-        dialog = NodeServicesDialog(self, self.app, self.canvas_node)
+        dialog = NodeService(self, self.app, self.canvas_node)
         dialog.show()
 
     def click_icon(self):

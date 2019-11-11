@@ -11,6 +11,7 @@ from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.images import Images
 from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
+from coretk.servicenodeconfig import ServiceNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
 link_layer_nodes = ["switch", "hub", "wlan", "rj45", "tunnel", "emane"]
@@ -104,6 +105,7 @@ class CoreClient:
         self.mobilityconfig_management = MobilityNodeConfig()
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
+        self.serviceconfig_manager = ServiceNodeConfig(app)
 
     def read_config(self):
         # read distributed server
@@ -327,6 +329,13 @@ class CoreClient:
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
+        response = self.client.get_service_defaults(self.session_id)
+        for default in response.defaults:
+            print(default.node_type)
+            print(default.services)
+        response = self.client.get_node_service(self.session_id, 5, "FTP")
+        print(response)
+
     def stop_session(self):
         response = self.client.stop_session(session_id=self.session_id)
         logging.debug("coregrpc.py Stop session, result: %s", response.result)
@@ -452,6 +461,12 @@ class CoreClient:
         # set default emane configuration for emane node
         if node_type == core_pb2.NodeType.EMANE:
             self.emaneconfig_management.set_default_config(nid)
+
+        # set default service configurations
+        if node_type == core_pb2.NodeType.DEFAULT:
+            self.serviceconfig_manager.node_default_services_configuration(
+                node_id=nid, node_model=node_model
+            )
 
         self.nodes[canvas_id] = create_node
         self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
