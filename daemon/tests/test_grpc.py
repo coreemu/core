@@ -27,7 +27,6 @@ class TestGrpc:
         # given
         client = CoreGrpcClient()
         session = grpc_server.coreemu.create_session()
-        nodes = []
         position = core_pb2.Position(x=50, y=100)
         node_one = core_pb2.Node(id=1, position=position, model="PC")
         position = core_pb2.Position(x=100, y=100)
@@ -36,8 +35,7 @@ class TestGrpc:
         wlan_node = core_pb2.Node(
             id=3, type=NodeTypes.WIRELESS_LAN.value, position=position
         )
-        nodes.extend([node_one, node_two, wlan_node])
-        links = []
+        nodes = [node_one, node_two, wlan_node]
         interface_helper = InterfaceHelper(ip4_prefix="10.83.0.0/16")
         interface_one = interface_helper.create_interface(node_one.id, 0)
         interface_two = interface_helper.create_interface(node_two.id, 0)
@@ -48,12 +46,11 @@ class TestGrpc:
             interface_one=interface_one,
             interface_two=interface_two,
         )
-        links.append(link)
-        hooks = []
+        links = [link]
         hook = core_pb2.Hook(
             state=core_pb2.SessionState.RUNTIME, file="echo.sh", data="echo hello"
         )
-        hooks.append(hook)
+        hooks = [hook]
         location_x = 5
         location_y = 10
         location_z = 15
@@ -73,7 +70,6 @@ class TestGrpc:
         emane_config_key = "platform_id_start"
         emane_config_value = "2"
         emane_config = {emane_config_key: emane_config_value}
-        model_configs = []
         model_node_id = 20
         model_config_key = "bandwidth"
         model_config_value = "500000"
@@ -83,21 +79,30 @@ class TestGrpc:
             model=EmaneIeee80211abgModel.name,
             config={model_config_key: model_config_value},
         )
-        model_configs.append(model_config)
-        wlan_configs = []
+        model_configs = [model_config]
         wlan_config_key = "range"
         wlan_config_value = "333"
         wlan_config = core_pb2.WlanConfig(
             node_id=wlan_node.id, config={wlan_config_key: wlan_config_value}
         )
-        wlan_configs.append(wlan_config)
+        wlan_configs = [wlan_config]
         mobility_config_key = "refresh_ms"
         mobility_config_value = "60"
-        mobility_configs = []
         mobility_config = core_pb2.MobilityConfig(
             node_id=wlan_node.id, config={mobility_config_key: mobility_config_value}
         )
-        mobility_configs.append(mobility_config)
+        mobility_configs = [mobility_config]
+        service_config = core_pb2.ServiceConfig(
+            node_id=node_one.id, service="DefaultRoute", validate=["echo hello"]
+        )
+        service_configs = [service_config]
+        service_file_config = core_pb2.ServiceFileConfig(
+            node_id=node_one.id,
+            service="DefaultRoute",
+            file="defaultroute.sh",
+            data="echo hello",
+        )
+        service_file_configs = [service_file_config]
 
         # when
         with patch.object(CoreXmlWriter, "write"):
@@ -112,6 +117,8 @@ class TestGrpc:
                     model_configs,
                     wlan_configs,
                     mobility_configs,
+                    service_configs,
+                    service_file_configs,
                 )
 
         # then
@@ -139,6 +146,14 @@ class TestGrpc:
             model_node_id, EmaneIeee80211abgModel.name
         )
         assert set_model_config[model_config_key] == model_config_value
+        service = session.services.get_service(
+            node_one.id, service_config.service, default_service=True
+        )
+        assert service.validate == tuple(service_config.validate)
+        service_file = session.services.get_service_file(
+            node_one, service_file_config.service, service_file_config.file
+        )
+        assert service_file.data == service_file_config.data
 
     @pytest.mark.parametrize("session_id", [None, 6013])
     def test_create_session(self, grpc_server, session_id):

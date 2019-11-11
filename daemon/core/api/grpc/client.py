@@ -159,6 +159,8 @@ class CoreGrpcClient:
         emane_model_configs=None,
         wlan_configs=None,
         mobility_configs=None,
+        service_configs=None,
+        service_file_configs=None,
     ):
         """
         Start a session.
@@ -169,9 +171,11 @@ class CoreGrpcClient:
         :param core_pb2.SessionLocation location: location to set
         :param list[core_pb2.Hook] hooks: session hooks to set
         :param dict emane_config: emane configuration to set
-        :param list emane_model_configs: emane model configurations to set
-        :param list wlan_configs: wlan configurations to set
-        :param list mobility_configs: mobility configurations to set
+        :param list emane_model_configs: node emane model configurations
+        :param list wlan_configs: node wlan configurations
+        :param list mobility_configs: node mobility configurations
+        :param list service_configs: node service configurations
+        :param list service_file_configs: node service file configurations
         :return: start session response
         :rtype: core_pb2.StartSessionResponse
         """
@@ -185,6 +189,8 @@ class CoreGrpcClient:
             emane_model_configs=emane_model_configs,
             wlan_configs=wlan_configs,
             mobility_configs=mobility_configs,
+            service_configs=service_configs,
+            service_file_configs=service_file_configs,
         )
         return self.stub.StartSession(request)
 
@@ -768,14 +774,14 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetNodeServiceResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
-        request = core_pb2.SetNodeServiceRequest(
-            session_id=session_id,
+        config = core_pb2.ServiceConfig(
             node_id=node_id,
             service=service,
             startup=startup,
             validate=validate,
             shutdown=shutdown,
         )
+        request = core_pb2.SetNodeServiceRequest(session_id=session_id, config=config)
         return self.stub.SetNodeService(request)
 
     def set_node_service_file(self, session_id, node_id, service, file_name, data):
@@ -791,12 +797,11 @@ class CoreGrpcClient:
         :rtype: core_pb2.SetNodeServiceFileResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
+        config = core_pb2.ServiceFileConfig(
+            node_id=node_id, service=service, file=file_name, data=data
+        )
         request = core_pb2.SetNodeServiceFileRequest(
-            session_id=session_id,
-            node_id=node_id,
-            service=service,
-            file=file_name,
-            data=data,
+            session_id=session_id, config=config
         )
         return self.stub.SetNodeServiceFile(request)
 
