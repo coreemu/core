@@ -4,6 +4,7 @@ import tkinter as tk
 
 from core.api.grpc import core_pb2
 from coretk.canvasaction import CanvasAction
+from coretk.canvastooltip import CanvasTooltip
 from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.images import Images
 from coretk.interface import Interface
@@ -512,6 +513,7 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Button-3>", self.context)
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
         self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
+        self.tooltip = CanvasTooltip(self.canvas, self.id, text=self.name)
 
         self.edges = set()
         self.wlans = []
