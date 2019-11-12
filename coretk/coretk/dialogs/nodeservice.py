@@ -2,7 +2,7 @@
 core node services
 """
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 from coretk.dialogs.dialog import Dialog
 
@@ -20,7 +20,7 @@ class NodeServicesDialog(Dialog):
     def draw(self):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.config_frame = tk.Frame(self)
+        self.config_frame = ttk.Frame(self)
         self.config_frame.columnconfigure(0, weight=1)
         self.config_frame.columnconfigure(1, weight=1)
         self.config_frame.columnconfigure(2, weight=1)
@@ -37,15 +37,15 @@ class NodeServicesDialog(Dialog):
 
         :return: nothing
         """
-        frame = tk.Frame(self.config_frame)
+        frame = ttk.Frame(self.config_frame)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
         frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
 
-        label = tk.Label(frame, text="Group")
+        label = ttk.Label(frame, text="Group")
         label.grid(row=0, column=0, sticky="ew")
 
-        scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
         scrollbar.grid(row=1, column=1, sticky="ns")
 
         listbox = tk.Listbox(
@@ -65,15 +65,15 @@ class NodeServicesDialog(Dialog):
         scrollbar.config(command=listbox.yview)
 
     def draw_services(self):
-        frame = tk.Frame(self.config_frame)
+        frame = ttk.Frame(self.config_frame)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
         frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
 
-        label = tk.Label(frame, text="Group services")
+        label = ttk.Label(frame, text="Group services")
         label.grid(row=0, column=0, sticky="ew")
 
-        scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
         scrollbar.grid(row=1, column=1, sticky="ns")
 
         self.services_list = tk.Listbox(
@@ -90,15 +90,15 @@ class NodeServicesDialog(Dialog):
         scrollbar.config(command=self.services_list.yview)
 
     def draw_current_services(self):
-        frame = tk.Frame(self.config_frame)
+        frame = ttk.Frame(self.config_frame)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(1, weight=1)
         frame.grid(row=0, column=2, padx=3, pady=3, sticky="nsew")
 
-        label = tk.Label(frame, text="Current services")
+        label = ttk.Label(frame, text="Current services")
         label.grid(row=0, column=0, sticky="ew")
 
-        scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
         scrollbar.grid(row=1, column=1, sticky="ns")
 
         listbox = tk.Listbox(
@@ -114,19 +114,19 @@ class NodeServicesDialog(Dialog):
         scrollbar.config(command=listbox.yview)
 
     def draw_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
         frame.grid(row=1, column=0, sticky="ew")
 
-        button = tk.Button(frame, text="Configure", command=self.click_configure)
+        button = ttk.Button(frame, text="Configure", command=self.click_configure)
         button.grid(row=0, column=0, sticky="ew")
 
-        button = tk.Button(frame, text="Apply")
+        button = ttk.Button(frame, text="Apply")
         button.grid(row=0, column=1, sticky="ew")
 
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=2, sticky="ew")
 
     def handle_group_change(self, event):

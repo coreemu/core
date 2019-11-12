@@ -1,12 +1,10 @@
 import tkinter as tk
 from tkinter import ttk
 
+from coretk.coreclient import DEFAULT_NODES
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeServicesDialog
-
-NETWORKNODETYPES = ["switch", "hub", "wlan", "rj45", "tunnel"]
-DEFAULTNODES = ["router", "host", "PC"]
 
 
 class NodeConfigDialog(Dialog):
@@ -34,17 +32,17 @@ class NodeConfigDialog(Dialog):
         self.draw_third_row()
 
     def draw_first_row(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(row=0, column=0, pady=2, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
 
-        entry = tk.Entry(frame, textvariable=self.name)
+        entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=0, padx=2, sticky="ew")
 
         combobox = ttk.Combobox(
-            frame, textvariable=self.type, values=DEFAULTNODES, state="readonly"
+            frame, textvariable=self.type, values=DEFAULT_NODES, state="readonly"
         )
         combobox.grid(row=0, column=1, padx=2, sticky="ew")
 
@@ -57,15 +55,15 @@ class NodeConfigDialog(Dialog):
         combobox.grid(row=0, column=2, sticky="ew")
 
     def draw_second_row(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(row=1, column=0, pady=2, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        button = tk.Button(frame, text="Services", command=self.click_services)
+        button = ttk.Button(frame, text="Services", command=self.click_services)
         button.grid(row=0, column=0, padx=2, sticky="ew")
 
-        self.image_button = tk.Button(
+        self.image_button = ttk.Button(
             frame,
             text="Icon",
             image=self.image,
@@ -75,15 +73,15 @@ class NodeConfigDialog(Dialog):
         self.image_button.grid(row=0, column=1, sticky="ew")
 
     def draw_third_row(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(row=2, column=0, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
-        button = tk.Button(frame, text="Apply", command=self.config_apply)
+        button = ttk.Button(frame, text="Apply", command=self.config_apply)
         button.grid(row=0, column=0, padx=2, sticky="ew")
 
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
     def click_services(self):
