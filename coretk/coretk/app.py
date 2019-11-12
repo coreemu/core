@@ -1,7 +1,7 @@
 import logging
 import tkinter as tk
 
-from coretk import appdirs
+from coretk import appconfig
 from coretk.coreclient import CoreClient
 from coretk.graph import CanvasGraph
 from coretk.images import ImageEnum, Images
@@ -26,7 +26,7 @@ class Application(tk.Frame):
         self.radiovar = tk.IntVar(value=1)
         self.show_grid_var = tk.IntVar(value=1)
         self.adjust_to_dim_var = tk.IntVar(value=0)
-        self.config = appdirs.read_config()
+        self.config = appconfig.read()
         self.core = CoreClient(self)
         self.setup_app()
         self.draw()
@@ -70,10 +70,13 @@ class Application(tk.Frame):
         menu_action = MenuAction(self, self.master)
         menu_action.on_quit()
 
+    def save_config(self):
+        appconfig.save(self.config)
+
 
 if __name__ == "__main__":
     log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
     logging.basicConfig(level=logging.DEBUG, format=log_format)
-    appdirs.check_directory()
+    appconfig.check_directory()
     app = Application()
     app.mainloop()

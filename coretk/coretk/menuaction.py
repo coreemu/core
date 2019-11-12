@@ -7,11 +7,12 @@ import webbrowser
 from tkinter import filedialog, messagebox
 
 from core.api.grpc import core_pb2
-from coretk.appdirs import XML_PATH
+from coretk.appconfig import XML_PATH
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
 from coretk.dialogs.canvassizeandscale import SizeAndScaleDialog
 from coretk.dialogs.hooks import HooksDialog
-from coretk.dialogs.observerwidgets import ObserverWidgetsDialog
+from coretk.dialogs.observers import ObserverDialog
+from coretk.dialogs.preferences import PreferencesDialog
 from coretk.dialogs.servers import ServersDialog
 from coretk.dialogs.sessionoptions import SessionOptionsDialog
 from coretk.dialogs.sessions import SessionsDialog
@@ -83,6 +84,10 @@ class MenuAction:
             self.prompt_save_running_session()
             self.app.core.open_xml(file_path)
 
+    def gui_preferences(self):
+        dialog = PreferencesDialog(self.app, self.app)
+        dialog.show()
+
     def canvas_size_and_scale(self):
         dialog = SizeAndScaleDialog(self.app, self.app)
         dialog.show()
@@ -118,5 +123,5 @@ class MenuAction:
         dialog.show()
 
     def edit_observer_widgets(self):
-        dialog = ObserverWidgetsDialog(self.app, self.app)
+        dialog = ObserverDialog(self.app, self.app)
         dialog.show()

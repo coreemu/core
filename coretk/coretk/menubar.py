@@ -1,6 +1,8 @@
 import tkinter as tk
+from functools import partial
 
 import coretk.menuaction as action
+from coretk.coreclient import OBSERVERS
 
 
 class Menubar(tk.Menu):
@@ -92,7 +94,9 @@ class Menubar(tk.Menu):
         menu.add_separator()
         menu.add_command(label="Find...", accelerator="Ctrl+F", state=tk.DISABLED)
         menu.add_command(label="Clear marker", state=tk.DISABLED)
-        menu.add_command(label="Preferences...", state=tk.DISABLED)
+        menu.add_command(
+            label="Preferences...", command=self.menuaction.gui_preferences
+        )
         self.add_cascade(label="Edit", menu=menu)
 
     def draw_canvas_menu(self):
@@ -364,23 +368,35 @@ class Menubar(tk.Menu):
         :param tkinter.Menu widget_menu: widget_menu
         :return: nothing
         """
+        var = tk.StringVar(value="none")
         menu = tk.Menu(widget_menu)
-        menu.add_command(label="None", state=tk.DISABLED)
-        menu.add_command(label="processes", state=tk.DISABLED)
-        menu.add_command(label="ifconfig", state=tk.DISABLED)
-        menu.add_command(label="IPv4 routes", state=tk.DISABLED)
-        menu.add_command(label="IPv6 routes", state=tk.DISABLED)
-        menu.add_command(label="OSPFv2 neighbors", state=tk.DISABLED)
-        menu.add_command(label="OSPFv3 neighbors", state=tk.DISABLED)
-        menu.add_command(label="Listening sockets", state=tk.DISABLED)
-        menu.add_command(label="IPv4 MFC entries", state=tk.DISABLED)
-        menu.add_command(label="IPv6 MFC entries", state=tk.DISABLED)
-        menu.add_command(label="firewall rules", state=tk.DISABLED)
-        menu.add_command(label="IPsec policies", state=tk.DISABLED)
-        menu.add_command(label="docker logs", state=tk.DISABLED)
-        menu.add_command(label="OSPFv3 MDR level", state=tk.DISABLED)
-        menu.add_command(label="PIM neighbors", state=tk.DISABLED)
-        menu.add_command(label="Edit...", command=self.menuaction.edit_observer_widgets)
+        menu.var = var
+        menu.add_command(
+            label="Edit Observers", command=self.menuaction.edit_observer_widgets
+        )
+        menu.add_separator()
+        menu.add_radiobutton(
+            label="None",
+            variable=var,
+            value="none",
+            command=lambda: self.app.core.set_observer(None),
+        )
+        for name in sorted(OBSERVERS):
+            cmd = OBSERVERS[name]
+            menu.add_radiobutton(
+                label=name,
+                variable=var,
+                value=name,
+                command=partial(self.app.core.set_observer, cmd),
+            )
+        for name in sorted(self.app.core.custom_observers):
+            observer = self.app.core.custom_observers[name]
+            menu.add_radiobutton(
+                label=name,
+                variable=var,
+                value=name,
+                command=partial(self.app.core.set_observer, observer.cmd),
+            )
         widget_menu.add_cascade(label="Observer Widgets", menu=menu)
 
     def create_adjacency_menu(self, widget_menu):

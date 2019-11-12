@@ -4,7 +4,7 @@ from enum import Enum
 from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
-from coretk.appdirs import LOCAL_ICONS_PATH
+from coretk.appconfig import LOCAL_ICONS_PATH
 
 
 class Images:

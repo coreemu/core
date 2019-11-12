@@ -1,8 +1,8 @@
 import logging
 import tkinter as tk
 from pathlib import Path
+from tkinter import ttk
 
-from coretk import appdirs
 from coretk.coreclient import CustomNode
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
@@ -22,7 +22,7 @@ class ServicesSelectDialog(Dialog):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(stick="nsew")
         frame.rowconfigure(0, weight=1)
         for i in range(3):
@@ -44,13 +44,13 @@ class ServicesSelectDialog(Dialog):
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(stick="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        button = tk.Button(frame, text="Save", command=self.destroy)
+        button = ttk.Button(frame, text="Save", command=self.destroy)
         button.grid(row=0, column=0, sticky="ew")
-        button = tk.Button(frame, text="Cancel", command=self.click_cancel)
+        button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=1, sticky="ew")
 
         # trigger group change
@@ -103,7 +103,7 @@ class CustomNodesDialog(Dialog):
         self.draw_buttons()
 
     def draw_node_config(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
@@ -114,45 +114,45 @@ class CustomNodesDialog(Dialog):
         for name in sorted(self.app.core.custom_nodes):
             self.nodes_list.listbox.insert(tk.END, name)
 
-        frame = tk.Frame(frame)
+        frame = ttk.Frame(frame)
         frame.grid(row=0, column=2, sticky="nsew")
         frame.columnconfigure(0, weight=1)
-        entry = tk.Entry(frame, textvariable=self.name)
+        entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(sticky="ew")
-        self.image_button = tk.Button(frame, text="Icon", command=self.click_icon)
+        self.image_button = ttk.Button(frame, text="Icon", command=self.click_icon)
         self.image_button.grid(sticky="ew")
-        button = tk.Button(frame, text="Services", command=self.click_services)
+        button = ttk.Button(frame, text="Services", command=self.click_services)
         button.grid(sticky="ew")
 
     def draw_node_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(pady=2, sticky="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
-        button = tk.Button(frame, text="Create", command=self.click_create)
+        button = ttk.Button(frame, text="Create", command=self.click_create)
         button.grid(row=0, column=0, sticky="ew")
 
-        self.edit_button = tk.Button(
+        self.edit_button = ttk.Button(
             frame, text="Edit", state=tk.DISABLED, command=self.click_edit
         )
         self.edit_button.grid(row=0, column=1, sticky="ew")
 
-        self.delete_button = tk.Button(
+        self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
         )
         self.delete_button.grid(row=0, column=2, sticky="ew")
 
     def draw_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
-        button = tk.Button(frame, text="Save", command=self.click_save)
+        button = ttk.Button(frame, text="Save", command=self.click_save)
         button.grid(row=0, column=0, sticky="ew")
 
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
     def reset_values(self):
@@ -189,7 +189,8 @@ class CustomNodesDialog(Dialog):
                 }
             )
         logging.info("saving custom nodes: %s", self.app.config["nodes"])
-        appdirs.save_config(self.app.config)
+        self.app.save_config()
+        self.destroy()
 
     def click_create(self):
         name = self.name.get()

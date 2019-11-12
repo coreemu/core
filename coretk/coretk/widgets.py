@@ -26,7 +26,7 @@ class FrameScroll(tk.LabelFrame):
         self.canvas.grid(row=0, sticky="nsew", padx=2, pady=2)
         self.canvas.columnconfigure(0, weight=1)
         self.canvas.rowconfigure(0, weight=1)
-        self.scrollbar = tk.Scrollbar(
+        self.scrollbar = ttk.Scrollbar(
             self, orient="vertical", command=self.canvas.yview
         )
         self.scrollbar.grid(row=0, column=1, sticky="ns")
@@ -70,11 +70,11 @@ class ConfigFrame(FrameScroll):
 
         for group_name in sorted(group_mapping):
             group = group_mapping[group_name]
-            frame = tk.Frame(self.frame)
+            frame = ttk.Frame(self.frame)
             frame.columnconfigure(1, weight=1)
             self.frame.add(frame, text=group_name)
             for index, option in enumerate(sorted(group, key=lambda x: x.name)):
-                label = tk.Label(frame, text=option.label)
+                label = ttk.Label(frame, text=option.label)
                 label.grid(row=index, pady=pady, padx=padx, sticky="w")
                 value = tk.StringVar()
                 if option.type == core_pb2.ConfigOptionType.BOOL:
@@ -96,15 +96,15 @@ class ConfigFrame(FrameScroll):
                     combobox.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.STRING:
                     value.set(option.value)
-                    entry = tk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(frame, textvariable=value)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type in INT_TYPES:
                     value.set(option.value)
-                    entry = tk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(frame, textvariable=value)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 elif option.type == core_pb2.ConfigOptionType.FLOAT:
                     value.set(option.value)
-                    entry = tk.Entry(frame, textvariable=value)
+                    entry = ttk.Entry(frame, textvariable=value)
                     entry.grid(row=index, column=1, sticky="ew", pady=pady)
                 else:
                     logging.error("unhandled config option type: %s", option.type)
@@ -131,7 +131,7 @@ class ListboxScroll(tk.LabelFrame):
         super().__init__(master, cnf, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.scrollbar = tk.Scrollbar(self, orient=tk.VERTICAL)
+        self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
         self.scrollbar.grid(row=0, column=1, sticky="ns")
         self.listbox = tk.Listbox(
             self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
@@ -149,5 +149,5 @@ class CheckboxList(FrameScroll):
     def add(self, name, checked):
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
-        checkbox = tk.Checkbutton(self.frame, text=name, variable=var, command=func)
+        checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
         checkbox.grid(sticky="w")

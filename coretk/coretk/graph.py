@@ -150,7 +150,7 @@ class CanvasGraph(tk.Canvas):
                     node.type, node.model
                 )
                 n = CanvasNode(
-                    node.position.x, node.position.y, image, name, self, node.id
+                    node.position.x, node.position.y, image, name, self.master, node.id
                 )
                 self.nodes[n.id] = n
                 core_id_to_canvas_id[node.id] = n.id
@@ -419,14 +419,7 @@ class CanvasGraph(tk.Canvas):
         plot_id = self.find_all()[0]
         logging.info("add node event: %s - %s", plot_id, self.selected)
         if self.selected == plot_id:
-            node = CanvasNode(
-                x=x,
-                y=y,
-                image=image,
-                node_type=node_name,
-                canvas=self,
-                core_id=self.core.peek_id(),
-            )
+            node = CanvasNode(x, y, image, node_name, self.master, self.core.peek_id())
             self.nodes[node.id] = node
             self.core.add_graph_node(self.core.session_id, node.id, x, y, node_name)
             return node
@@ -491,10 +484,11 @@ class CanvasEdge:
 
 
 class CanvasNode:
-    def __init__(self, x, y, image, node_type, canvas, core_id):
+    def __init__(self, x, y, image, node_type, app, core_id):
         self.image = image
         self.node_type = node_type
-        self.canvas = canvas
+        self.app = app
+        self.canvas = app.canvas
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags="node"
         )
@@ -506,18 +500,29 @@ class CanvasNode:
             x, y + 20, text=self.name, tags="nodename"
         )
         self.antenna_draw = WlanAntennaManager(self.canvas, self.id)
-
+        self.tooltip = CanvasTooltip(self.canvas)
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
         self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
         self.canvas.tag_bind(self.id, "<Button-3>", self.context)
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
         self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
-        self.tooltip = CanvasTooltip(self.canvas, self.id, text=self.name)
+        self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
+        self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
 
         self.edges = set()
         self.wlans = []
         self.moving = None
+
+    def on_enter(self, event):
+        if self.app.core.is_runtime() and self.app.core.observer:
+            self.tooltip.text.set("waiting...")
+            self.tooltip.on_enter(event)
+            output = self.app.core.run(self.core_id)
+            self.tooltip.text.set(output)
+
+    def on_leave(self, event):
+        self.tooltip.on_leave(event)
 
     def click(self, event):
         print("click")

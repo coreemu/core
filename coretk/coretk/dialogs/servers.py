@@ -1,6 +1,6 @@
 import tkinter as tk
+from tkinter import ttk
 
-from coretk import appdirs
 from coretk.coreclient import CoreServer
 from coretk.dialogs.dialog import Dialog
 
@@ -31,12 +31,12 @@ class ServersDialog(Dialog):
         self.draw_apply_buttons()
 
     def draw_servers(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(pady=2, sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
-        scrollbar = tk.Scrollbar(frame, orient=tk.VERTICAL)
+        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
         scrollbar.grid(row=0, column=1, sticky="ns")
 
         self.servers = tk.Listbox(
@@ -51,61 +51,61 @@ class ServersDialog(Dialog):
         scrollbar.config(command=self.servers.yview)
 
     def draw_server_configuration(self):
-        label = tk.Label(self, text="Server Configuration")
+        label = ttk.Label(self, text="Server Configuration")
         label.grid(pady=2, sticky="ew")
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(pady=2, sticky="ew")
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(5, weight=1)
 
-        label = tk.Label(frame, text="Name")
+        label = ttk.Label(frame, text="Name")
         label.grid(row=0, column=0, sticky="w")
-        entry = tk.Entry(frame, textvariable=self.name)
+        entry = ttk.Entry(frame, textvariable=self.name)
         entry.grid(row=0, column=1, sticky="ew")
 
-        label = tk.Label(frame, text="Address")
+        label = ttk.Label(frame, text="Address")
         label.grid(row=0, column=2, sticky="w")
-        entry = tk.Entry(frame, textvariable=self.address)
+        entry = ttk.Entry(frame, textvariable=self.address)
         entry.grid(row=0, column=3, sticky="ew")
 
-        label = tk.Label(frame, text="Port")
+        label = ttk.Label(frame, text="Port")
         label.grid(row=0, column=4, sticky="w")
-        entry = tk.Entry(frame, textvariable=self.port)
+        entry = ttk.Entry(frame, textvariable=self.port)
         entry.grid(row=0, column=5, sticky="ew")
 
     def draw_servers_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(pady=2, sticky="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
-        button = tk.Button(frame, text="Create", command=self.click_create)
+        button = ttk.Button(frame, text="Create", command=self.click_create)
         button.grid(row=0, column=0, sticky="ew")
 
-        self.save_button = tk.Button(
+        self.save_button = ttk.Button(
             frame, text="Save", state=tk.DISABLED, command=self.click_save
         )
         self.save_button.grid(row=0, column=1, sticky="ew")
 
-        self.delete_button = tk.Button(
+        self.delete_button = ttk.Button(
             frame, text="Delete", state=tk.DISABLED, command=self.click_delete
         )
         self.delete_button.grid(row=0, column=2, sticky="ew")
 
     def draw_apply_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
 
-        button = tk.Button(
+        button = ttk.Button(
             frame, text="Save Configuration", command=self.click_save_configuration
         )
         button.grid(row=0, column=0, sticky="ew")
 
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
     def click_save_configuration(self):
@@ -116,7 +116,8 @@ class ServersDialog(Dialog):
                 {"name": server.name, "address": server.address, "port": server.port}
             )
         self.app.config["servers"] = servers
-        appdirs.save_config(self.app.config)
+        self.app.save_config()
+        self.destroy()
 
     def click_create(self):
         name = self.name.get()

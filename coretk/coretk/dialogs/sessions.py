@@ -1,6 +1,6 @@
 import logging
 import tkinter as tk
-from tkinter.ttk import Scrollbar, Treeview
+from tkinter import ttk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
@@ -9,12 +9,6 @@ from coretk.images import ImageEnum, Images
 
 class SessionsDialog(Dialog):
     def __init__(self, master, app):
-        """
-        create session table instance
-
-        :param coretk.coreclient.CoreClient grpc: coregrpc
-        :param root.master master:
-        """
         super().__init__(master, app, "Sessions", modal=True)
         self.selected = False
         self.selected_id = None
@@ -32,7 +26,7 @@ class SessionsDialog(Dialog):
         write a short description
         :return: nothing
         """
-        label = tk.Label(
+        label = ttk.Label(
             self,
             text="Below is a list of active CORE sessions. Double-click to \n"
             "connect to an existing session. Usually, only sessions in \n"
@@ -42,7 +36,9 @@ class SessionsDialog(Dialog):
         label.grid(row=0, sticky="ew", pady=5)
 
     def draw_tree(self):
-        self.tree = Treeview(self, columns=("id", "state", "nodes"), show="headings")
+        self.tree = ttk.Treeview(
+            self, columns=("id", "state", "nodes"), show="headings"
+        )
         self.tree.grid(row=1, sticky="nsew")
         self.tree.column("id", stretch=tk.YES)
         self.tree.heading("id", text="ID")
@@ -64,20 +60,20 @@ class SessionsDialog(Dialog):
         self.tree.bind("<Double-1>", self.on_selected)
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
-        yscrollbar = Scrollbar(self, orient="vertical", command=self.tree.yview)
+        yscrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
         yscrollbar.grid(row=1, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
-        xscrollbar = Scrollbar(self, orient="horizontal", command=self.tree.xview)
+        xscrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.tree.xview)
         xscrollbar.grid(row=2, sticky="ew", pady=5)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
     def draw_buttons(self):
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         frame.grid(row=3, sticky="ew")
-        b = tk.Button(
+        b = ttk.Button(
             frame,
             image=Images.get(ImageEnum.DOCUMENTNEW),
             text="New",
@@ -85,7 +81,7 @@ class SessionsDialog(Dialog):
             command=self.click_new,
         )
         b.grid(row=0, padx=2, sticky="ew")
-        b = tk.Button(
+        b = ttk.Button(
             frame,
             image=Images.get(ImageEnum.FILEOPEN),
             text="Connect",
@@ -93,7 +89,7 @@ class SessionsDialog(Dialog):
             command=self.click_connect,
         )
         b.grid(row=0, column=1, padx=2, sticky="ew")
-        b = tk.Button(
+        b = ttk.Button(
             frame,
             image=Images.get(ImageEnum.EDITDELETE),
             text="Shutdown",
@@ -101,7 +97,7 @@ class SessionsDialog(Dialog):
             command=self.click_shutdown,
         )
         b.grid(row=0, column=2, padx=2, sticky="ew")
-        b = tk.Button(frame, text="Cancel", command=self.click_new)
+        b = ttk.Button(frame, text="Cancel", command=self.click_new)
         b.grid(row=0, column=3, padx=2, sticky="ew")
 
     def click_new(self):
