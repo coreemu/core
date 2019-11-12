@@ -11,6 +11,8 @@ from PIL import Image, ImageTk
 from coretk.appconfig import BACKGROUNDS_PATH
 from coretk.dialogs.dialog import Dialog
 
+PADX = 5
+
 
 class ScaleOption(enum.Enum):
     NONE = 0
@@ -65,10 +67,10 @@ class CanvasBackgroundDialog(Dialog):
 
         entry = ttk.Entry(frame, textvariable=self.file_name)
         entry.focus()
-        entry.grid(row=0, column=0, sticky="ew")
+        entry.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="...", command=self.click_open_image)
-        button.grid(row=0, column=1, sticky="ew")
+        button.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Clear", command=self.click_clear)
         button.grid(row=0, column=2, sticky="ew")
@@ -105,7 +107,7 @@ class CanvasBackgroundDialog(Dialog):
         checkbutton = ttk.Checkbutton(
             self, text="Show grid", variable=self.show_grid_var
         )
-        checkbutton.grid(row=4, column=0, sticky="ew", padx=5)
+        checkbutton.grid(row=4, column=0, sticky="ew", padx=PADX)
 
         checkbutton = ttk.Checkbutton(
             self,
@@ -113,7 +115,7 @@ class CanvasBackgroundDialog(Dialog):
             variable=self.adjust_to_dim_var,
             command=self.click_adjust_canvas,
         )
-        checkbutton.grid(row=5, column=0, sticky="ew", padx=5)
+        checkbutton.grid(row=5, column=0, sticky="ew", padx=PADX)
 
         self.show_grid_var.set(1)
         self.adjust_to_dim_var.set(0)
@@ -125,7 +127,7 @@ class CanvasBackgroundDialog(Dialog):
         frame.columnconfigure(1, weight=1)
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
@@ -206,7 +208,6 @@ class CanvasBackgroundDialog(Dialog):
         return
 
     def upper_left(self, img):
-        print("upperleft")
         tk_img = ImageTk.PhotoImage(img)
 
         # crop image if it is bigger than canvas

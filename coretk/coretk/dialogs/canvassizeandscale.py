@@ -8,6 +8,9 @@ from coretk.dialogs.canvasbackground import ScaleOption
 from coretk.dialogs.dialog import Dialog
 
 DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
+FRAME_BAD = 5
+PAD = (0, 0, 5, 0)
+PADX = 5
 
 
 class SizeAndScaleDialog(Dialog):
@@ -49,101 +52,105 @@ class SizeAndScaleDialog(Dialog):
         self.draw_buttons()
 
     def draw_size(self):
-        label = ttk.Label(self, text="Size", font=self.section_font)
-        label.grid(sticky="w")
+        label_frame = ttk.Labelframe(self, text="Size", padding=FRAME_BAD)
+        label_frame.grid(sticky="ew")
+        label_frame.columnconfigure(0, weight=1)
 
         # draw size row 1
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(label_frame)
         frame.grid(sticky="ew", pady=3)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.pixel_width)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="x Height")
-        label.grid(row=0, column=2, sticky="w")
+        label.grid(row=0, column=2, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.pixel_height)
-        entry.grid(row=0, column=3, sticky="ew")
+        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Pixels")
         label.grid(row=0, column=4, sticky="w")
 
         # draw size row 2
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(label_frame)
         frame.grid(sticky="ew", pady=3)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.meters_width)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="x Height")
-        label.grid(row=0, column=2, sticky="w")
+        label.grid(row=0, column=2, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.meters_height)
-        entry.grid(row=0, column=3, sticky="ew")
+        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=4, sticky="w")
 
     def draw_scale(self):
-        label = ttk.Label(self, text="Scale", font=self.section_font)
-        label.grid(sticky="w")
+        label_frame = ttk.Labelframe(self, text="Scale", padding=FRAME_BAD)
+        label_frame.grid(sticky="ew")
+        label_frame.columnconfigure(0, weight=1)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(label_frame)
         frame.grid(sticky="ew")
         frame.columnconfigure(1, weight=1)
         label = ttk.Label(frame, text="100 Pixels =")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.scale)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")
 
     def draw_reference_point(self):
-        label = ttk.Label(self, text="Reference point", font=self.section_font)
-        label.grid(sticky="w")
-        label = ttk.Label(
-            self, text="Default is (0, 0), the upper left corner of the canvas"
-        )
-        label.grid(sticky="w")
+        label_frame = ttk.Labelframe(self, text="Reference Point", padding=FRAME_BAD)
+        label_frame.grid(sticky="ew")
+        label_frame.columnconfigure(0, weight=1)
 
-        frame = ttk.Frame(self)
+        label = ttk.Label(
+            label_frame, text="Default is (0, 0), the upper left corner of the canvas"
+        )
+        label.grid()
+
+        frame = ttk.Frame(label_frame)
         frame.grid(sticky="ew", pady=3)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
 
         label = ttk.Label(frame, text="X")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         x_var = tk.StringVar(value=0)
         entry = ttk.Entry(frame, textvariable=x_var)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Y")
-        label.grid(row=0, column=2, sticky="w")
+        label.grid(row=0, column=2, sticky="w", padx=PADX)
         y_var = tk.StringVar(value=0)
         entry = ttk.Entry(frame, textvariable=y_var)
-        entry.grid(row=0, column=3, sticky="ew")
+        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
 
-        label = ttk.Label(self, text="Translates To")
-        label.grid(sticky="w")
+        label = ttk.Label(label_frame, text="Translates To")
+        label.grid()
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(label_frame)
         frame.grid(sticky="ew", pady=3)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         frame.columnconfigure(5, weight=1)
 
         label = ttk.Label(frame, text="Lat")
-        label.grid(row=0, column=0, sticky="w")
+        label.grid(row=0, column=0, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.lat)
-        entry.grid(row=0, column=1, sticky="ew")
+        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Lon")
-        label.grid(row=0, column=2, sticky="w")
+        label.grid(row=0, column=2, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.lon)
-        entry.grid(row=0, column=3, sticky="ew")
+        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Alt")
-        label.grid(row=0, column=4, sticky="w")
+        label.grid(row=0, column=4, sticky="w", padx=PADX)
         entry = ttk.Entry(frame, textvariable=self.alt)
         entry.grid(row=0, column=5, sticky="ew")
 
@@ -160,10 +167,10 @@ class SizeAndScaleDialog(Dialog):
         frame.grid(sticky="ew")
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, pady=5, sticky="ew")
+        button.grid(row=0, column=0, sticky="ew", padx=PADX)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
-        button.grid(row=0, column=1, pady=5, sticky="ew")
+        button.grid(row=0, column=1, sticky="ew")
 
     def redraw_grid(self):
         """
