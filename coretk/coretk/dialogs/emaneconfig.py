@@ -58,18 +58,18 @@ class EmaneConfiguration(Dialog):
         print("not implemented")
 
     def node_name_and_image(self):
-        f = tk.Frame(self, bg="#d9d9d9")
+        f = ttk.Frame(self)
 
-        lbl = tk.Label(f, text="Node name:", bg="#d9d9d9")
+        lbl = ttk.Label(f, text="Node name:")
         lbl.grid(row=0, column=0, padx=2, pady=2)
-        e = tk.Entry(f, textvariable=self.create_text_variable(""), bg="white")
+        e = ttk.Entry(f, textvariable=self.create_text_variable(""))
         e.grid(row=0, column=1, padx=2, pady=2)
 
         cbb = ttk.Combobox(f, values=["(none)", "core1", "core2"], state="readonly")
         cbb.current(0)
         cbb.grid(row=0, column=2, padx=2, pady=2)
 
-        b = tk.Button(f, image=self.canvas_node.image)
+        b = ttk.Button(f, image=self.canvas_node.image)
         b.grid(row=0, column=3, padx=2, pady=2)
 
         f.grid(row=0, column=0, sticky="nsew")
@@ -96,13 +96,13 @@ class EmaneConfiguration(Dialog):
         self.emane_config_frame.draw_config()
         self.emane_config_frame.grid(sticky="nsew")
 
-        frame = tk.Frame(self.emane_dialog)
+        frame = ttk.Frame(self.emane_dialog)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        b1 = tk.Button(frame, text="Appy", command=self.save_emane_option)
+        b1 = ttk.Button(frame, text="Appy", command=self.save_emane_option)
         b1.grid(row=0, column=0, sticky="ew")
-        b2 = tk.Button(frame, text="Cancel", command=self.emane_dialog.destroy)
+        b2 = ttk.Button(frame, text="Cancel", command=self.emane_dialog.destroy)
         b2.grid(row=0, column=1, sticky="ew")
         self.emane_dialog.show()
 
@@ -170,35 +170,33 @@ class EmaneConfiguration(Dialog):
         self.model_config_frame.grid(sticky="nsew")
         self.model_config_frame.draw_config()
 
-        frame = tk.Frame(self.emane_model_dialog)
+        frame = ttk.Frame(self.emane_model_dialog)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        b1 = tk.Button(frame, text="Apply", command=self.save_emane_model_options)
+        b1 = ttk.Button(frame, text="Apply", command=self.save_emane_model_options)
         b1.grid(row=0, column=0, sticky="ew")
-        b2 = tk.Button(frame, text="Cancel", command=self.emane_model_dialog.destroy)
+        b2 = ttk.Button(frame, text="Cancel", command=self.emane_model_dialog.destroy)
         b2.grid(row=0, column=1, sticky="ew")
         self.emane_model_dialog.show()
 
     def draw_option_buttons(self, parent):
-        f = tk.Frame(parent, bg="#d9d9d9")
+        f = ttk.Frame(parent)
         f.columnconfigure(0, weight=1)
         f.columnconfigure(1, weight=1)
-        b = tk.Button(
+        b = ttk.Button(
             f,
             text=self.emane_models[0] + " options",
             image=Images.get(ImageEnum.EDITNODE),
             compound=tk.RIGHT,
-            bg="#d9d9d9",
             command=self.draw_model_options,
         )
         b.grid(row=0, column=0, padx=10, pady=2, sticky="nsew")
-        b = tk.Button(
+        b = ttk.Button(
             f,
             text="EMANE options",
             image=Images.get(ImageEnum.EDITNODE),
             compound=tk.RIGHT,
-            bg="#d9d9d9",
             command=self.draw_emane_options,
         )
         b.grid(row=0, column=1, padx=10, pady=2, sticky="nsew")
@@ -233,21 +231,14 @@ class EmaneConfiguration(Dialog):
         self.emane_models = [x.split("_")[1] for x in response.models]
 
         # create combo box and its binding
-        f = tk.Frame(
-            parent,
-            bg="#d9d9d9",
-            highlightbackground="#b3b3b3",
-            highlightcolor="#b3b3b3",
-            highlightthickness=0.5,
-            bd=0,
-        )
+        f = ttk.Frame(parent)
         self.emane_model_combobox = ttk.Combobox(
             f, values=self.emane_models, state="readonly"
         )
         self.emane_model_combobox.grid()
         self.emane_model_combobox.current(0)
         self.emane_model_combobox.bind("<<ComboboxSelected>>", self.combobox_select)
-        f.grid(row=3, column=0, sticky=tk.W + tk.E)
+        f.grid(row=3, column=0, sticky="ew")
 
     def draw_text_label_and_entry(self, parent, label_text, entry_text):
         """
@@ -257,10 +248,10 @@ class EmaneConfiguration(Dialog):
         """
         var = tk.StringVar()
         var.set(entry_text)
-        f = tk.Frame(parent)
-        lbl = tk.Label(f, text=label_text)
+        f = ttk.Frame(parent)
+        lbl = ttk.Label(f, text=label_text)
         lbl.grid(row=0, column=0)
-        e = tk.Entry(f, textvariable=var, bg="white")
+        e = ttk.Entry(f, textvariable=var)
         e.grid(row=0, column=1)
         f.grid(stick=tk.W, padx=2, pady=2)
 
@@ -271,44 +262,33 @@ class EmaneConfiguration(Dialog):
         :return: nothing
         """
         # draw label
-        lbl = tk.Label(self, text="Emane")
+        lbl = ttk.Label(self, text="Emane")
         lbl.grid(row=1, column=0)
 
         # main frame that has emane wiki, a short description, emane models and the configure buttons
-        f = tk.Frame(
-            self,
-            bg="#d9d9d9",
-            highlightbackground="#b3b3b3",
-            highlightcolor="#b3b3b3",
-            highlightthickness=0.5,
-            bd=0,
-            relief=tk.RAISED,
-        )
+        f = ttk.Frame(self)
         f.columnconfigure(0, weight=1)
 
-        b = tk.Button(
+        b = ttk.Button(
             f,
             image=Images.get(ImageEnum.EDITNODE),
             text="EMANE Wiki",
             compound=tk.RIGHT,
-            relief=tk.RAISED,
-            bg="#d9d9d9",
             command=lambda: webbrowser.open_new(
                 "https://github.com/adjacentlink/emane/wiki"
             ),
         )
-        b.grid(row=0, column=0, sticky=tk.W)
+        b.grid(row=0, column=0, sticky="w")
 
-        lbl = tk.Label(
+        lbl = ttk.Label(
             f,
             text="The EMANE emulation system provides more complex wireless radio emulation "
             "\nusing pluggable MAC and PHY modules. Refer to the wiki for configuration option details",
-            bg="#d9d9d9",
         )
         lbl.grid(row=1, column=0, sticky="nsew")
 
-        lbl = tk.Label(f, text="EMANE Models", bg="#d9d9d9")
-        lbl.grid(row=2, column=0, sticky=tk.W)
+        lbl = ttk.Label(f, text="EMANE Models")
+        lbl.grid(row=2, column=0, sticky="w")
 
         self.draw_emane_models(f)
         self.draw_option_buttons(f)
@@ -325,12 +305,12 @@ class EmaneConfiguration(Dialog):
 
         :return:
         """
-        f = tk.Frame(self, bg="#d9d9d9")
+        f = ttk.Frame(self)
         f.columnconfigure(0, weight=1)
         f.columnconfigure(1, weight=1)
-        b = tk.Button(f, text="Link to all routers", bg="#d9d9d9")
+        b = ttk.Button(f, text="Link to all routers")
         b.grid(row=0, column=0, padx=10, pady=2, sticky="nsew")
-        b = tk.Button(f, text="Choose WLAN members", bg="#d9d9d9")
+        b = ttk.Button(f, text="Choose WLAN members")
         b.grid(row=0, column=1, padx=10, pady=2, sticky="nsew")
         f.grid(row=5, column=0, sticky="nsew")
 
@@ -340,12 +320,12 @@ class EmaneConfiguration(Dialog):
         self.destroy()
 
     def draw_apply_and_cancel(self):
-        f = tk.Frame(self, bg="#d9d9d9")
+        f = ttk.Frame(self)
         f.columnconfigure(0, weight=1)
         f.columnconfigure(1, weight=1)
-        b = tk.Button(f, text="Apply", bg="#d9d9d9", command=self.apply)
+        b = ttk.Button(f, text="Apply", command=self.apply)
         b.grid(row=0, column=0, padx=10, pady=2, sticky="nsew")
-        b = tk.Button(f, text="Cancel", bg="#d9d9d9", command=self.destroy)
+        b = ttk.Button(f, text="Cancel", command=self.destroy)
         b.grid(row=0, column=1, padx=10, pady=2, sticky="nsew")
 
         f.grid(sticky="nsew")

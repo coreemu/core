@@ -1,5 +1,5 @@
 import logging
-import tkinter as tk
+from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
 from coretk.widgets import ConfigFrame
@@ -26,13 +26,13 @@ class SessionOptionsDialog(Dialog):
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew")
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
-        button = tk.Button(frame, text="Save", command=self.save)
+        button = ttk.Button(frame, text="Save", command=self.save)
         button.grid(row=0, column=0, pady=PAD_Y, padx=PAD_X, sticky="ew")
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, pady=PAD_Y, padx=PAD_X, sticky="ew")
 
     def save(self):
