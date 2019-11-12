@@ -5,7 +5,7 @@ from functools import partial
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
-from coretk.tooltip import CreateToolTip
+from coretk.tooltip import Tooltip
 
 
 class Toolbar(tk.Frame):
@@ -188,7 +188,7 @@ class Toolbar(tk.Frame):
         button = tk.Button(frame, width=self.width, height=self.height, image=image)
         button.bind("<ButtonRelease-1>", lambda e: func())
         button.grid(pady=1)
-        CreateToolTip(button, tooltip)
+        Tooltip(button, tooltip)
 
     def create_radio_button(self, frame, image, func, variable, value, tooltip_msg):
         button = tk.Radiobutton(
@@ -202,14 +202,14 @@ class Toolbar(tk.Frame):
             command=func,
         )
         button.grid()
-        CreateToolTip(button, tooltip_msg)
+        Tooltip(button, tooltip_msg)
 
     def create_regular_button(self, frame, image, func, tooltip):
         button = tk.Button(
             frame, width=self.width, height=self.height, image=image, command=func
         )
         button.grid()
-        CreateToolTip(button, tooltip)
+        Tooltip(button, tooltip)
 
     def click_selection_tool(self):
         logging.debug("clicked selection tool")
@@ -274,7 +274,7 @@ class Toolbar(tk.Frame):
         )
         self.node_button.bind("<ButtonRelease-1>", lambda e: self.draw_node_picker())
         self.node_button.grid()
-        CreateToolTip(self.node_button, "Network-layer virtual nodes")
+        Tooltip(self.node_button, "Network-layer virtual nodes")
 
     def draw_network_picker(self):
         """
@@ -323,7 +323,7 @@ class Toolbar(tk.Frame):
             "<ButtonRelease-1>", lambda e: self.draw_network_picker()
         )
         self.network_button.grid()
-        CreateToolTip(self.network_button, "link-layer nodes")
+        Tooltip(self.network_button, "link-layer nodes")
 
     def draw_annotation_picker(self):
         """
@@ -369,7 +369,7 @@ class Toolbar(tk.Frame):
             "<ButtonRelease-1>", lambda e: self.draw_annotation_picker()
         )
         self.annotation_button.grid()
-        CreateToolTip(self.annotation_button, "background annotation tools")
+        Tooltip(self.annotation_button, "background annotation tools")
 
     def create_observe_button(self):
         menu_button = tk.Menubutton(
