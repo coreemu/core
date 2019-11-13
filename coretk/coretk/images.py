@@ -117,6 +117,7 @@ class ImageEnum(Enum):
     OBSERVE = "observe"
     RUN = "run"
     DOCUMENTNEW = "document-new"
+    DOCUMENTSAVE = "document-save"
     FILEOPEN = "fileopen"
     EDITDELETE = "edit-delete"
     ANTENNA = "antenna"

@@ -5,154 +5,100 @@ import tkinter as tk
 from tkinter import messagebox, ttk
 
 from coretk.dialogs.dialog import Dialog
+from coretk.dialogs.serviceconfiguration import ServiceConfiguration
+from coretk.widgets import CheckboxList, ListboxScroll
 
 
-class NodeServicesDialog(Dialog):
-    def __init__(self, master, app, canvas_node):
+class NodeService(Dialog):
+    def __init__(self, master, app, canvas_node, services=None):
         super().__init__(master, app, "Node Services", modal=True)
         self.canvas_node = canvas_node
-        self.core_groups = []
-        self.service_to_config = None
-        self.config_frame = None
-        self.services_list = None
+        self.groups = None
+        self.services = None
+        self.current = None
+        if services is None:
+            services = set()
+        self.current_services = services
         self.draw()
 
     def draw(self):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
-        self.config_frame = ttk.Frame(self)
-        self.config_frame.columnconfigure(0, weight=1)
-        self.config_frame.columnconfigure(1, weight=1)
-        self.config_frame.columnconfigure(2, weight=1)
-        self.config_frame.rowconfigure(0, weight=1)
-        self.config_frame.grid(row=0, column=0, sticky="nsew")
-        self.draw_group()
-        self.draw_services()
-        self.draw_current_services()
-        self.draw_buttons()
 
-    def draw_group(self):
-        """
-        draw the group tab
-
-        :return: nothing
-        """
-        frame = ttk.Frame(self.config_frame)
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(1, weight=1)
-        frame.grid(row=0, column=0, padx=3, pady=3, sticky="nsew")
-
-        label = ttk.Label(frame, text="Group")
-        label.grid(row=0, column=0, sticky="ew")
-
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
-        scrollbar.grid(row=1, column=1, sticky="ns")
-
-        listbox = tk.Listbox(
-            frame,
-            selectmode=tk.SINGLE,
-            yscrollcommand=scrollbar.set,
-            relief=tk.FLAT,
-            highlightthickness=0.5,
-            bd=0,
-        )
-        listbox.grid(row=1, column=0, sticky="nsew")
-        listbox.bind("<<ListboxSelect>>", self.handle_group_change)
-
-        for group in sorted(self.app.core.services):
-            listbox.insert(tk.END, group)
-
-        scrollbar.config(command=listbox.yview)
-
-    def draw_services(self):
-        frame = ttk.Frame(self.config_frame)
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(1, weight=1)
-        frame.grid(row=0, column=1, padx=3, pady=3, sticky="nsew")
-
-        label = ttk.Label(frame, text="Group services")
-        label.grid(row=0, column=0, sticky="ew")
-
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
-        scrollbar.grid(row=1, column=1, sticky="ns")
-
-        self.services_list = tk.Listbox(
-            frame,
-            selectmode=tk.SINGLE,
-            yscrollcommand=scrollbar.set,
-            relief=tk.FLAT,
-            highlightthickness=0.5,
-            bd=0,
-        )
-        self.services_list.grid(row=1, column=0, sticky="nsew")
-        self.services_list.bind("<<ListboxSelect>>", self.handle_service_change)
-
-        scrollbar.config(command=self.services_list.yview)
-
-    def draw_current_services(self):
-        frame = ttk.Frame(self.config_frame)
-        frame.columnconfigure(0, weight=1)
-        frame.rowconfigure(1, weight=1)
-        frame.grid(row=0, column=2, padx=3, pady=3, sticky="nsew")
-
-        label = ttk.Label(frame, text="Current services")
-        label.grid(row=0, column=0, sticky="ew")
-
-        scrollbar = ttk.Scrollbar(frame, orient=tk.VERTICAL)
-        scrollbar.grid(row=1, column=1, sticky="ns")
-
-        listbox = tk.Listbox(
-            frame,
-            selectmode=tk.MULTIPLE,
-            yscrollcommand=scrollbar.set,
-            relief=tk.FLAT,
-            highlightthickness=0.5,
-            bd=0,
-        )
-        listbox.grid(row=1, column=0, sticky="nsew")
-
-        scrollbar.config(command=listbox.yview)
-
-    def draw_buttons(self):
         frame = ttk.Frame(self)
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=1)
-        frame.grid(row=1, column=0, sticky="ew")
+        frame.grid(stick="nsew")
+        frame.rowconfigure(0, weight=1)
+        for i in range(3):
+            frame.columnconfigure(i, weight=1)
+        self.groups = ListboxScroll(frame, text="Groups")
+        self.groups.grid(row=0, column=0, sticky="nsew")
+        for group in sorted(self.app.core.services):
+            self.groups.listbox.insert(tk.END, group)
+        self.groups.listbox.bind("<<ListboxSelect>>", self.handle_group_change)
+        self.groups.listbox.selection_set(0)
 
+        self.services = CheckboxList(
+            frame, text="Services", clicked=self.service_clicked
+        )
+        self.services.grid(row=0, column=1, sticky="nsew")
+
+        self.current = ListboxScroll(frame, text="Selected")
+        self.current.grid(row=0, column=2, sticky="nsew")
+        for service in sorted(self.current_services):
+            self.current.listbox.insert(tk.END, service)
+
+        frame = ttk.Frame(self)
+        frame.grid(stick="ew")
+        for i in range(3):
+            frame.columnconfigure(i, weight=1)
         button = ttk.Button(frame, text="Configure", command=self.click_configure)
         button.grid(row=0, column=0, sticky="ew")
-
-        button = ttk.Button(frame, text="Apply")
+        button = ttk.Button(frame, text="Save", command=self.click_save)
         button.grid(row=0, column=1, sticky="ew")
-
-        button = ttk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=2, sticky="ew")
 
+        # trigger group change
+        self.groups.listbox.event_generate("<<ListboxSelect>>")
+
     def handle_group_change(self, event):
-        listbox = event.widget
-        cur_selection = listbox.curselection()
-        if cur_selection:
-            s = listbox.get(listbox.curselection())
-            self.display_group_services(s)
+        selection = self.groups.listbox.curselection()
+        if selection:
+            index = selection[0]
+            group = self.groups.listbox.get(index)
+            self.services.clear()
+            for service in sorted(self.app.core.services[group], key=lambda x: x.name):
+                checked = service.name in self.current_services
+                self.services.add(service.name, checked)
 
-    def display_group_services(self, group_name):
-        self.services_list.delete(0, tk.END)
-        for service in sorted(self.app.core.services[group_name], key=lambda x: x.name):
-            self.services_list.insert(tk.END, service.name)
-
-    def handle_service_change(self, event):
-        print("select group service")
-        listbox = event.widget
-        cur_selection = listbox.curselection()
-        if cur_selection:
-            s = listbox.get(listbox.curselection())
-            self.service_to_config = s
-        else:
-            self.service_to_config = None
+    def service_clicked(self, name, var):
+        if var.get() and name not in self.current_services:
+            self.current_services.add(name)
+        elif not var.get() and name in self.current_services:
+            self.current_services.remove(name)
+        self.current.listbox.delete(0, tk.END)
+        for name in sorted(self.current_services):
+            self.current.listbox.insert(tk.END, name)
 
     def click_configure(self):
-        if self.service_to_config is None:
-            messagebox.showinfo("CORE info", "Choose a service to configure.")
+        current_selection = self.current.listbox.curselection()
+        if len(current_selection):
+            dialog = ServiceConfiguration(
+                master=self,
+                app=self.app,
+                service_name=self.current.listbox.get(current_selection[0]),
+                canvas_node=self.canvas_node,
+            )
+            dialog.show()
         else:
-            print(self.service_to_config)
+            messagebox.showinfo(
+                "Node service configuration", "Select a service to configure"
+            )
+
+    def click_save(self):
+        print("not implemented")
+        print(self.current_services)
+
+    def click_cancel(self):
+        self.current_services = None
+        self.destroy()
