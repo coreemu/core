@@ -1,5 +1,6 @@
 import logging
 import tkinter as tk
+from tkinter import ttk
 
 from coretk import appconfig
 from coretk.coreclient import CoreClient
@@ -36,7 +37,7 @@ class Application(tk.Frame):
         self.master.title("CORE")
         self.master.geometry("1000x800")
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
-        image = Images.get(ImageEnum.CORE)
+        image = Images.get(ImageEnum.CORE, 16)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
 
@@ -53,17 +54,17 @@ class Application(tk.Frame):
             self, self.core, background="#cccccc", scrollregion=(0, 0, 1200, 1000)
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
-        scroll_x = tk.Scrollbar(
+        scroll_x = ttk.Scrollbar(
             self.canvas, orient=tk.HORIZONTAL, command=self.canvas.xview
         )
         scroll_x.pack(side=tk.BOTTOM, fill=tk.X)
-        scroll_y = tk.Scrollbar(self.canvas, command=self.canvas.yview)
+        scroll_y = ttk.Scrollbar(self.canvas, command=self.canvas.yview)
         scroll_y.pack(side=tk.RIGHT, fill=tk.Y)
         self.canvas.configure(xscrollcommand=scroll_x.set)
         self.canvas.configure(yscrollcommand=scroll_y.set)
 
     def draw_status(self):
-        self.statusbar = tk.Frame(self)
+        self.statusbar = ttk.Frame(self)
         self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
     def on_closing(self):

@@ -2,7 +2,7 @@
 core node services
 """
 import tkinter as tk
-from tkinter import messagebox
+from tkinter import messagebox, ttk
 
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.serviceconfiguration import ServiceConfiguration
@@ -10,20 +10,22 @@ from coretk.widgets import CheckboxList, ListboxScroll
 
 
 class NodeService(Dialog):
-    def __init__(self, master, app, canvas_node, current_services=set()):
+    def __init__(self, master, app, canvas_node, services=None):
         super().__init__(master, app, "Node Services", modal=True)
         self.canvas_node = canvas_node
         self.groups = None
         self.services = None
         self.current = None
-        self.current_services = current_services
+        if services is None:
+            services = set()
+        self.current_services = services
         self.draw()
 
     def draw(self):
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(stick="nsew")
         frame.rowconfigure(0, weight=1)
         for i in range(3):
@@ -45,15 +47,15 @@ class NodeService(Dialog):
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         frame.grid(stick="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
-        button = tk.Button(frame, text="Configure", command=self.click_configure)
+        button = ttk.Button(frame, text="Configure", command=self.click_configure)
         button.grid(row=0, column=0, sticky="ew")
-        button = tk.Button(frame, text="Save", command=self.click_save)
+        button = ttk.Button(frame, text="Save", command=self.click_save)
         button.grid(row=0, column=1, sticky="ew")
-        button = tk.Button(frame, text="Cancel", command=self.click_cancel)
+        button = ttk.Button(frame, text="Cancel", command=self.click_cancel)
         button.grid(row=0, column=2, sticky="ew")
 
         # trigger group change

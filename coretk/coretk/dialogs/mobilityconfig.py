@@ -2,11 +2,10 @@
 mobility configuration
 """
 
-import os
 import tkinter as tk
-from pathlib import Path
-from tkinter import filedialog
+from tkinter import filedialog, ttk
 
+from coretk import appconfig
 from coretk.dialogs.dialog import Dialog
 
 
@@ -40,12 +39,12 @@ class MobilityConfiguration(Dialog):
         return var
 
     def open_file(self, entry):
-        configs_dir = os.path.join(Path.home(), ".core/configs")
-        if os.path.isdir(configs_dir):
-            filename = filedialog.askopenfilename(initialdir=configs_dir, title="Open")
-            if filename:
-                entry.delete(0, tk.END)
-                entry.insert(0, filename)
+        filename = filedialog.askopenfilename(
+            initialdir=str(appconfig.MOBILITY_PATH), title="Open"
+        )
+        if filename:
+            entry.delete(0, tk.END)
+            entry.insert(0, filename)
 
     def set_loop_value(self, value):
         """
@@ -58,26 +57,26 @@ class MobilityConfiguration(Dialog):
     def create_label_entry_filebrowser(
         self, parent_frame, text_label, entry_text, filebrowser=False
     ):
-        f = tk.Frame(parent_frame, bg="#d9d9d9")
-        lbl = tk.Label(f, text=text_label, bg="#d9d9d9")
+        f = ttk.Frame(parent_frame, bg="#d9d9d9")
+        lbl = ttk.Label(f, text=text_label, bg="#d9d9d9")
         lbl.grid(padx=3, pady=3)
         # f.grid()
-        e = tk.Entry(f, textvariable=self.create_string_var(entry_text), bg="#ffffff")
+        e = ttk.Entry(f, textvariable=self.create_string_var(entry_text), bg="#ffffff")
         e.grid(row=0, column=1, padx=3, pady=3)
         if filebrowser:
-            b = tk.Button(f, text="...", command=lambda: self.open_file(e))
+            b = ttk.Button(f, text="...", command=lambda: self.open_file(e))
             b.grid(row=0, column=2, padx=3, pady=3)
         f.grid(sticky=tk.E)
 
     def mobility_script_parameters(self):
-        lbl = tk.Label(self, text="node ns2script")
-        lbl.grid(sticky=tk.W + tk.E)
+        lbl = ttk.Label(self, text="node ns2script")
+        lbl.grid(sticky="ew")
 
-        sb = tk.Scrollbar(self, orient=tk.VERTICAL)
-        sb.grid(row=1, column=1, sticky=tk.N + tk.S + tk.E)
+        sb = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        sb.grid(row=1, column=1, sticky="ns")
 
-        f = tk.Frame(self, bg="#d9d9d9")
-        lbl = tk.Label(
+        f = ttk.Frame(self, bg="#d9d9d9")
+        lbl = ttk.Label(
             f, text="ns-2 Mobility Scripts Parameters", bg="#d9d9d9", relief=tk.RAISED
         )
         lbl.grid(row=0, column=0, sticky=tk.W)
@@ -99,21 +98,21 @@ class MobilityConfiguration(Dialog):
             f1, "Refresh time (ms)", self.node_config["refresh_ms"]
         )
 
-        # f12 = tk.Frame(f1)
+        # f12 = ttk.Frame(f1)
         #
-        # lbl = tk.Label(f12, text="Refresh time (ms)")
+        # lbl = ttk.Label(f12, text="Refresh time (ms)")
         # lbl.grid()
         #
-        # e = tk.Entry(f12, textvariable=self.create_string_var("50"))
+        # e = ttk.Entry(f12, textvariable=self.create_string_var("50"))
         # e.grid(row=0, column=1)
         # f12.grid()
 
-        f13 = tk.Frame(f1)
+        f13 = ttk.Frame(f1)
 
-        lbl = tk.Label(f13, text="loop")
+        lbl = ttk.Label(f13, text="loop")
         lbl.grid()
 
-        om = tk.OptionMenu(
+        om = ttk.OptionMenu(
             f13, self.create_string_var("On"), "On", "Off", command=self.set_loop_value
         )
         om.grid(row=0, column=1)
@@ -123,24 +122,24 @@ class MobilityConfiguration(Dialog):
         self.create_label_entry_filebrowser(
             f1, "auto-start seconds (0.0 for runtime)", self.node_config["autostart"]
         )
-        # f14 = tk.Frame(f1)
+        # f14 = ttk.Frame(f1)
         #
-        # lbl = tk.Label(f14, text="auto-start seconds (0.0 for runtime)")
+        # lbl = ttk.Label(f14, text="auto-start seconds (0.0 for runtime)")
         # lbl.grid()
         #
-        # e = tk.Entry(f14, textvariable=self.create_string_var(""))
+        # e = ttk.Entry(f14, textvariable=self.create_string_var(""))
         # e.grid(row=0, column=1)
         #
         # f14.grid()
         self.create_label_entry_filebrowser(
             f1, "node mapping (optional, e.g. 0:1, 1:2, 2:3)", self.node_config["map"]
         )
-        # f15 = tk.Frame(f1)
+        # f15 = ttk.Frame(f1)
         #
-        # lbl = tk.Label(f15, text="node mapping (optional, e.g. 0:1, 1:2, 2:3)")
+        # lbl = ttk.Label(f15, text="node mapping (optional, e.g. 0:1, 1:2, 2:3)")
         # lbl.grid()
         #
-        # e = tk.Entry(f15, textvariable=self.create_string_var(""))
+        # e = ttk.Entry(f15, textvariable=self.create_string_var(""))
         # e.grid(row=0, column=1)
         #
         # f15.grid()
@@ -230,9 +229,9 @@ class MobilityConfiguration(Dialog):
 
         :return: nothing
         """
-        f = tk.Frame(self)
-        b = tk.Button(f, text="Apply", command=self.ns2script_apply)
+        f = ttk.Frame(self)
+        b = ttk.Button(f, text="Apply", command=self.ns2script_apply)
         b.grid()
-        b = tk.Button(f, text="Cancel", command=self.destroy)
+        b = ttk.Button(f, text="Cancel", command=self.destroy)
         b.grid(row=0, column=1)
         f.grid()

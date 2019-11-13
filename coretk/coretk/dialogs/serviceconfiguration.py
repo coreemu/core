@@ -1,5 +1,5 @@
 "Service configuration dialog"
-
+import logging
 import tkinter as tk
 from tkinter import ttk
 
@@ -11,14 +11,12 @@ from coretk.widgets import ListboxScroll
 
 class ServiceConfiguration(Dialog):
     def __init__(self, master, app, service_name, canvas_node):
-        super().__init__(master, app, service_name + " service", modal=True)
+        super().__init__(master, app, f"{service_name} service", modal=True)
         self.app = app
         self.canvas_node = canvas_node
         self.service_name = service_name
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
-        self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW)
-        self.editdelete_img = Images.get(ImageEnum.EDITDELETE)
         self.metadata = ""
         self.filenames = []
         self.dependencies = []
@@ -29,6 +27,8 @@ class ServiceConfiguration(Dialog):
         self.validation_mode = None
         self.validation_time = None
         self.validation_period = None
+        self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW, 16)
+        self.editdelete_img = Images.get(ImageEnum.EDITDELETE, 16)
 
         self.tab_parent = None
         self.metadata_entry = None
@@ -60,24 +60,23 @@ class ServiceConfiguration(Dialog):
 
     def draw(self):
         # self.columnconfigure(1, weight=1)
-        frame = tk.Frame(self)
-        frame1 = tk.Frame(frame)
-        label = tk.Label(frame1, text=self.service_name)
+        frame = ttk.Frame(self)
+        frame1 = ttk.Frame(frame)
+        label = ttk.Label(frame1, text=self.service_name)
         label.grid(row=0, column=0, sticky="ew")
         frame1.grid(row=0, column=0)
-        frame2 = tk.Frame(frame)
+        frame2 = ttk.Frame(frame)
         # frame2.columnconfigure(0, weight=1)
         # frame2.columnconfigure(1, weight=4)
-        label = tk.Label(frame2, text="Meta-data")
+        label = ttk.Label(frame2, text="Meta-data")
         label.grid(row=0, column=0)
-        self.metadata_entry = tk.Entry(
-            frame2, textvariable=tk.StringVar(value=self.metadata)
-        )
+
+        self.metadata_entry = ttk.Entry(frame2, textvariable=self.metadata)
         self.metadata_entry.grid(row=0, column=1)
         frame2.grid(row=1, column=0)
         frame.grid(row=0, column=0)
 
-        frame = tk.Frame(self)
+        frame = ttk.Frame(self)
         self.tab_parent = ttk.Notebook(frame)
         tab1 = ttk.Frame(self.tab_parent)
         tab2 = ttk.Frame(self.tab_parent)
@@ -96,13 +95,13 @@ class ServiceConfiguration(Dialog):
         frame.grid(row=1, column=0, sticky="nsew")
 
         # tab 1
-        label = tk.Label(
+        label = ttk.Label(
             tab1, text="Config files and scripts that are generated for this service."
         )
         label.grid(row=0, column=0, sticky="nsew")
 
-        frame = tk.Frame(tab1)
-        label = tk.Label(frame, text="File name: ")
+        frame = ttk.Frame(tab1)
+        label = ttk.Label(frame, text="File name: ")
         label.grid(row=0, column=0)
         self.filename_combobox = ttk.Combobox(frame, values=self.filenames)
         self.filename_combobox.grid(row=0, column=1)
@@ -111,48 +110,51 @@ class ServiceConfiguration(Dialog):
         self.filename_combobox.bind(
             "<<ComboboxSelected>>", self.display_service_file_data
         )
-
-        button = tk.Button(frame, image=self.documentnew_img)
+        button = ttk.Button(frame, image=self.documentnew_img)
         button.bind("<Button-1>", self.add_filename)
         button.grid(row=0, column=2)
-        button = tk.Button(frame, image=self.editdelete_img)
+        button = ttk.Button(frame, image=self.editdelete_img)
         button.bind("<Button-1>", self.delete_filename)
         button.grid(row=0, column=3)
         frame.grid(row=1, column=0, sticky="nsew")
 
-        frame = tk.Frame(tab1)
-        button = tk.Radiobutton(
+        frame = ttk.Frame(tab1)
+        button = ttk.Radiobutton(
             frame,
             variable=self.radiovar,
             text="Copy this source file:",
-            indicatoron=True,
             value=1,
             state="disabled",
         )
         button.grid(row=0, column=0)
-        entry = tk.Entry(frame, state=tk.DISABLED)
+        entry = ttk.Entry(frame, state=tk.DISABLED)
         entry.grid(row=0, column=1)
-        button = tk.Button(frame, image=Images.get(ImageEnum.FILEOPEN))
+        image = Images.get(ImageEnum.FILEOPEN, 16)
+        button = ttk.Button(frame, image=image)
+        button.image = image
         button.grid(row=0, column=2)
         frame.grid(row=2, column=0, sticky="nsew")
 
-        frame = tk.Frame(tab1)
-        button = tk.Radiobutton(
+        frame = ttk.Frame(tab1)
+        button = ttk.Radiobutton(
             frame,
             variable=self.radiovar,
             text="Use text below for file contents:",
-            indicatoron=True,
             value=2,
         )
         button.grid(row=0, column=0)
-        button = tk.Button(frame, image=Images.get(ImageEnum.FILEOPEN))
+        image = Images.get(ImageEnum.FILEOPEN, 16)
+        button = ttk.Button(frame, image=image)
+        button.image = image
         button.grid(row=0, column=1)
-        button = tk.Button(frame, image=Images.get(ImageEnum.DOCUMENTSAVE))
+        image = Images.get(ImageEnum.DOCUMENTSAVE, 16)
+        button = ttk.Button(frame, image=image)
+        button.image = image
         button.grid(row=0, column=2)
         frame.grid(row=3, column=0, sticky="nsew")
 
         # tab 2
-        label = tk.Label(
+        label = ttk.Label(
             tab2,
             text="Directories required by this service that are unique for each node.",
         )
@@ -162,23 +164,24 @@ class ServiceConfiguration(Dialog):
         for i in range(3):
             label_frame = None
             if i == 0:
-                label_frame = tk.LabelFrame(tab3, text="Startup commands")
+                label_frame = ttk.LabelFrame(tab3, text="Startup commands")
                 commands = self.startup_commands
+
             elif i == 1:
-                label_frame = tk.LabelFrame(tab3, text="Shutdown commands")
+                label_frame = ttk.LabelFrame(tab3, text="Shutdown commands")
                 commands = self.shutdown_commands
             elif i == 2:
-                label_frame = tk.LabelFrame(tab3, text="Validation commands")
+                label_frame = ttk.LabelFrame(tab3, text="Validation commands")
                 commands = self.validation_commands
             label_frame.columnconfigure(0, weight=1)
-            frame = tk.Frame(label_frame)
+            frame = ttk.Frame(label_frame)
             frame.columnconfigure(0, weight=1)
-            entry = tk.Entry(frame, textvariable=tk.StringVar())
+            entry = ttk.Entry(frame, textvariable=tk.StringVar())
             entry.grid(row=0, column=0, stick="nsew")
-            button = tk.Button(frame, image=self.documentnew_img)
+            button = ttk.Button(frame, image=self.documentnew_img)
             button.bind("<Button-1>", self.add_command)
             button.grid(row=0, column=1, sticky="nsew")
-            button = tk.Button(frame, image=self.editdelete_img)
+            button = ttk.Button(frame, image=self.editdelete_img)
             button.grid(row=0, column=2, sticky="nsew")
             button.bind("<Button-1>", self.delete_command)
             frame.grid(row=0, column=0, sticky="nsew")
@@ -200,9 +203,9 @@ class ServiceConfiguration(Dialog):
         for i in range(2):
             label_frame = None
             if i == 0:
-                label_frame = tk.LabelFrame(tab4, text="Executables")
+                label_frame = ttk.LabelFrame(tab4, text="Executables")
             elif i == 1:
-                label_frame = tk.LabelFrame(tab4, text="Dependencies")
+                label_frame = ttk.LabelFrame(tab4, text="Dependencies")
             label_frame.columnconfigure(0, weight=1)
             listbox_scroll = ListboxScroll(label_frame)
             listbox_scroll.listbox.config(height=4)
@@ -217,18 +220,18 @@ class ServiceConfiguration(Dialog):
                     listbox_scroll.listbox.insert("end", dependency)
 
         for i in range(3):
-            frame = tk.Frame(tab4)
+            frame = ttk.Frame(tab4)
             frame.columnconfigure(0, weight=1)
             if i == 0:
-                label = tk.Label(frame, text="Validation time:")
-                self.validation_time_entry = tk.Entry(
+                label = ttk.Label(frame, text="Validation time:")
+                self.validation_time_entry = ttk.Entry(
                     frame,
                     state="disabled",
                     textvariable=tk.StringVar(value=self.validation_time),
                 )
                 self.validation_time_entry.grid(row=i, column=1)
             elif i == 1:
-                label = tk.Label(frame, text="Validation mode:")
+                label = ttk.Label(frame, text="Validation mode:")
                 if self.validation_mode == core_pb2.ServiceValidationMode.BLOCKING:
                     mode = "BLOCKING"
                 elif (
@@ -237,36 +240,36 @@ class ServiceConfiguration(Dialog):
                     mode = "NON_BLOCKING"
                 elif self.validation_mode == core_pb2.ServiceValidationMode.TIMER:
                     mode = "TIMER"
-                self.validation_mode_entry = tk.Entry(
+                self.validation_mode_entry = ttk.Entry(
                     frame, state="disabled", textvariable=tk.StringVar(value=mode)
                 )
                 self.validation_mode_entry.grid(row=i, column=1)
             elif i == 2:
-                label = tk.Label(frame, text="Validation period:")
-                self.validation_period_entry = tk.Entry(
+                label = ttk.Label(frame, text="Validation period:")
+                self.validation_period_entry = ttk.Entry(
                     frame, state="disabled", textvariable=tk.StringVar()
                 )
                 self.validation_period_entry.grid(row=i, column=1)
             label.grid(row=i, column=0)
             frame.grid(row=2 + i, column=0, sticky="nsew")
 
-        button = tk.Button(
+        button = ttk.Button(
             self, text="only store values that have changed from their defaults"
         )
         button.grid(row=2, column=0)
 
-        frame = tk.Frame(self)
-        button = tk.Button(frame, text="Apply", command=self.click_apply)
+        frame = ttk.Frame(self)
+        button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="nsew")
-        button = tk.Button(
+        button = ttk.Button(
             frame, text="Dafults", command=self.click_defaults, state="disabled"
         )
         button.grid(row=0, column=1, sticky="nsew")
-        button = tk.Button(
+        button = ttk.Button(
             frame, text="Copy...", command=self.click_copy, state="disabled"
         )
         button.grid(row=0, column=2, sticky="nsew")
-        button = tk.Button(frame, text="Cancel", command=self.destroy)
+        button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=3, sticky="nsew")
         frame.grid(row=3, column=0)
 
@@ -330,20 +333,27 @@ class ServiceConfiguration(Dialog):
             validate_commands,
             shutdown_commands,
         )
+        logging.info(
+            "%s, %s, %s, %s, %s",
+            metadata,
+            filenames,
+            startup_commands,
+            shutdown_commands,
+            validate_commands,
+        )
         # wipe nodes and links when finished by setting to DEFINITION state
         self.app.core.client.set_session_state(
             self.app.core.session_id, core_pb2.SessionState.DEFINITION
         )
-        print(metadata, filenames)
 
     def display_service_file_data(self, event):
         print("not implemented")
 
     def click_defaults(self):
-        print("not implemented")
+        logging.info("not implemented")
 
     def click_copy(self):
-        print("not implemented")
+        logging.info("not implemented")
 
     def click_cancel(self):
-        print("not implemented")
+        logging.info("not implemented")

@@ -73,30 +73,36 @@ class SessionsDialog(Dialog):
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         frame.grid(row=3, sticky="ew")
+
+        image = Images.get(ImageEnum.DOCUMENTNEW, 16)
         b = ttk.Button(
-            frame,
-            image=Images.get(ImageEnum.DOCUMENTNEW),
-            text="New",
-            compound=tk.LEFT,
-            command=self.click_new,
+            frame, image=image, text="New", compound=tk.LEFT, command=self.click_new
         )
+        b.image = image
         b.grid(row=0, padx=2, sticky="ew")
+
+        image = Images.get(ImageEnum.FILEOPEN, 16)
         b = ttk.Button(
             frame,
-            image=Images.get(ImageEnum.FILEOPEN),
+            image=image,
             text="Connect",
             compound=tk.LEFT,
             command=self.click_connect,
         )
+        b.image = image
         b.grid(row=0, column=1, padx=2, sticky="ew")
+
+        image = Images.get(ImageEnum.EDITDELETE, 16)
         b = ttk.Button(
             frame,
-            image=Images.get(ImageEnum.EDITDELETE),
+            image=image,
             text="Shutdown",
             compound=tk.LEFT,
             command=self.click_shutdown,
         )
+        b.image = image
         b.grid(row=0, column=2, padx=2, sticky="ew")
+
         b = ttk.Button(frame, text="Cancel", command=self.click_new)
         b.grid(row=0, column=3, padx=2, sticky="ew")
 

@@ -182,25 +182,31 @@ class EmaneConfiguration(Dialog):
 
     def draw_option_buttons(self, parent):
         f = ttk.Frame(parent)
+        f.grid(row=4, column=0, sticky="nsew")
         f.columnconfigure(0, weight=1)
         f.columnconfigure(1, weight=1)
+
+        image = Images.get(ImageEnum.EDITNODE, 16)
         b = ttk.Button(
             f,
             text=self.emane_models[0] + " options",
-            image=Images.get(ImageEnum.EDITNODE),
+            image=image,
             compound=tk.RIGHT,
             command=self.draw_model_options,
         )
+        b.image = image
         b.grid(row=0, column=0, padx=10, pady=2, sticky="nsew")
+
+        image = Images.get(ImageEnum.EDITNODE, 16)
         b = ttk.Button(
             f,
             text="EMANE options",
-            image=Images.get(ImageEnum.EDITNODE),
+            image=image,
             compound=tk.RIGHT,
             command=self.draw_emane_options,
         )
+        b.image = image
         b.grid(row=0, column=1, padx=10, pady=2, sticky="nsew")
-        f.grid(row=4, column=0, sticky="nsew")
 
     def combobox_select(self, event):
         """
@@ -271,7 +277,7 @@ class EmaneConfiguration(Dialog):
 
         b = ttk.Button(
             f,
-            image=Images.get(ImageEnum.EDITNODE),
+            image=Images.get(ImageEnum.EDITNODE, 8),
             text="EMANE Wiki",
             compound=tk.RIGHT,
             command=lambda: webbrowser.open_new(
