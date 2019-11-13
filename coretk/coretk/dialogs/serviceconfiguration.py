@@ -3,6 +3,7 @@
 import tkinter as tk
 from tkinter import ttk
 
+from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
 from coretk.images import ImageEnum, Images
 from coretk.widgets import ListboxScroll
@@ -12,25 +13,50 @@ class ServiceConfiguration(Dialog):
     def __init__(self, master, app, service_name, canvas_node):
         super().__init__(master, app, service_name + " service", modal=True)
         self.app = app
+        self.canvas_node = canvas_node
         self.service_name = service_name
-        self.metadata = tk.StringVar()
-        self.filename = tk.StringVar()
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
-        self.startup_index = tk.IntVar()
-        self.start_time = tk.IntVar()
         self.documentnew_img = Images.get(ImageEnum.DOCUMENTNEW)
         self.editdelete_img = Images.get(ImageEnum.EDITDELETE)
-        self.tab_parent = None
-        self.filenames = ["test1", "test2", "test3"]
+        self.metadata = ""
+        self.filenames = []
+        self.dependencies = []
+        self.executables = []
+        self.startup_commands = []
+        self.validation_commands = []
+        self.shutdown_commands = []
+        self.validation_mode = None
+        self.validation_time = None
+        self.validation_period = None
 
+        self.tab_parent = None
         self.metadata_entry = None
         self.filename_combobox = None
         self.startup_commands_listbox = None
         self.shutdown_commands_listbox = None
         self.validate_commands_listbox = None
-
+        self.validation_time_entry = None
+        self.validation_mode_entry = None
+        self.load()
         self.draw()
+
+    def load(self):
+        # create nodes and links in definition state for getting and setting service file
+        self.app.core.create_nodes_and_links()
+        # load data from local memory
+        service_config = self.app.core.serviceconfig_manager.configurations[
+            self.canvas_node.core_id
+        ][self.service_name]
+        self.dependencies = [x for x in service_config.dependencies]
+        self.executables = [x for x in service_config.executables]
+        self.metadata = service_config.meta
+        self.filenames = [x for x in service_config.configs]
+        self.startup_commands = [x for x in service_config.startup]
+        self.validation_commands = [x for x in service_config.validate]
+        self.shutdown_commands = [x for x in service_config.shutdown]
+        self.validation_mode = service_config.validation_mode
+        self.validation_time = service_config.validation_timer
 
     def draw(self):
         # self.columnconfigure(1, weight=1)
@@ -44,7 +70,9 @@ class ServiceConfiguration(Dialog):
         # frame2.columnconfigure(1, weight=4)
         label = tk.Label(frame2, text="Meta-data")
         label.grid(row=0, column=0)
-        self.metadata_entry = tk.Entry(frame2, textvariable=self.metadata)
+        self.metadata_entry = tk.Entry(
+            frame2, textvariable=tk.StringVar(value=self.metadata)
+        )
         self.metadata_entry.grid(row=0, column=1)
         frame2.grid(row=1, column=0)
         frame.grid(row=0, column=0)
@@ -78,7 +106,12 @@ class ServiceConfiguration(Dialog):
         label.grid(row=0, column=0)
         self.filename_combobox = ttk.Combobox(frame, values=self.filenames)
         self.filename_combobox.grid(row=0, column=1)
-        self.filename_combobox.current(0)
+        if len(self.filenames) > 0:
+            self.filename_combobox.current(0)
+        self.filename_combobox.bind(
+            "<<ComboboxSelected>>", self.display_service_file_data
+        )
+
         button = tk.Button(frame, image=self.documentnew_img)
         button.bind("<Button-1>", self.add_filename)
         button.grid(row=0, column=2)
@@ -130,10 +163,13 @@ class ServiceConfiguration(Dialog):
             label_frame = None
             if i == 0:
                 label_frame = tk.LabelFrame(tab3, text="Startup commands")
+                commands = self.startup_commands
             elif i == 1:
                 label_frame = tk.LabelFrame(tab3, text="Shutdown commands")
+                commands = self.shutdown_commands
             elif i == 2:
                 label_frame = tk.LabelFrame(tab3, text="Validation commands")
+                commands = self.validation_commands
             label_frame.columnconfigure(0, weight=1)
             frame = tk.Frame(label_frame)
             frame.columnconfigure(0, weight=1)
@@ -148,6 +184,8 @@ class ServiceConfiguration(Dialog):
             frame.grid(row=0, column=0, sticky="nsew")
             listbox_scroll = ListboxScroll(label_frame)
             listbox_scroll.listbox.bind("<<ListboxSelect>>", self.update_entry)
+            for command in commands:
+                listbox_scroll.listbox.insert("end", command)
             listbox_scroll.listbox.config(height=4)
             listbox_scroll.grid(row=1, column=0, sticky="nsew")
             if i == 0:
@@ -160,33 +198,60 @@ class ServiceConfiguration(Dialog):
 
         # tab 4
         for i in range(2):
+            label_frame = None
             if i == 0:
                 label_frame = tk.LabelFrame(tab4, text="Executables")
             elif i == 1:
                 label_frame = tk.LabelFrame(tab4, text="Dependencies")
-
             label_frame.columnconfigure(0, weight=1)
             listbox_scroll = ListboxScroll(label_frame)
-            listbox_scroll.listbox.config(height=4, state="disabled")
+            listbox_scroll.listbox.config(height=4)
             listbox_scroll.grid(row=0, column=0, sticky="nsew")
             label_frame.grid(row=i, column=0, sticky="nsew")
+            if i == 0:
+                for executable in self.executables:
+                    print(executable)
+                    listbox_scroll.listbox.insert("end", executable)
+            if i == 1:
+                for dependency in self.dependencies:
+                    listbox_scroll.listbox.insert("end", dependency)
 
         for i in range(3):
             frame = tk.Frame(tab4)
             frame.columnconfigure(0, weight=1)
             if i == 0:
                 label = tk.Label(frame, text="Validation time:")
+                self.validation_time_entry = tk.Entry(
+                    frame,
+                    state="disabled",
+                    textvariable=tk.StringVar(value=self.validation_time),
+                )
+                self.validation_time_entry.grid(row=i, column=1)
             elif i == 1:
                 label = tk.Label(frame, text="Validation mode:")
+                if self.validation_mode == core_pb2.ServiceValidationMode.BLOCKING:
+                    mode = "BLOCKING"
+                elif (
+                    self.validation_mode == core_pb2.ServiceValidationMode.NON_BLOCKING
+                ):
+                    mode = "NON_BLOCKING"
+                elif self.validation_mode == core_pb2.ServiceValidationMode.TIMER:
+                    mode = "TIMER"
+                self.validation_mode_entry = tk.Entry(
+                    frame, state="disabled", textvariable=tk.StringVar(value=mode)
+                )
+                self.validation_mode_entry.grid(row=i, column=1)
             elif i == 2:
                 label = tk.Label(frame, text="Validation period:")
+                self.validation_period_entry = tk.Entry(
+                    frame, state="disabled", textvariable=tk.StringVar()
+                )
+                self.validation_period_entry.grid(row=i, column=1)
             label.grid(row=i, column=0)
-            entry = tk.Entry(frame, state="disabled", textvariable=tk.StringVar())
-            entry.grid(row=i, column=1)
             frame.grid(row=2 + i, column=0, sticky="nsew")
 
         button = tk.Button(
-            self, text="onle store values that have changed from their defaults"
+            self, text="only store values that have changed from their defaults"
         )
         button.grid(row=2, column=0)
 
@@ -258,9 +323,21 @@ class ServiceConfiguration(Dialog):
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
-        print(
-            metadata, filenames, startup_commands, shutdown_commands, validate_commands
+        self.app.core.serviceconfig_manager.node_service_custom_configuration(
+            self.canvas_node.core_id,
+            self.service_name,
+            startup_commands,
+            validate_commands,
+            shutdown_commands,
         )
+        # wipe nodes and links when finished by setting to DEFINITION state
+        self.app.core.client.set_session_state(
+            self.app.core.session_id, core_pb2.SessionState.DEFINITION
+        )
+        print(metadata, filenames)
+
+    def display_service_file_data(self, event):
+        print("not implemented")
 
     def click_defaults(self):
         print("not implemented")

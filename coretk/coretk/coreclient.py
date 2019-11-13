@@ -416,6 +416,35 @@ class CoreClient:
         logging.debug("open xml: %s", response)
         self.join_session(response.session_id)
 
+    def get_node_service(self, node_id, service_name):
+        response = self.client.get_node_service(self.session_id, node_id, service_name)
+        logging.debug("get node service %s", response)
+        return response.service
+
+    def set_node_service(self, node_id, service_name, startups, validations, shutdowns):
+        response = self.client.set_node_service(
+            self.session_id, node_id, service_name, startups, validations, shutdowns
+        )
+        logging.debug("set node service %s", response)
+
+    def create_nodes_and_links(self):
+        node_protos = self.get_nodes_proto()
+        link_protos = self.get_links_proto()
+        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
+        for node_proto in node_protos:
+            response = self.client.add_node(self.session_id, node_proto)
+            logging.debug("create node: %s", response)
+        for link_proto in link_protos:
+            response = self.client.add_link(
+                self.session_id,
+                link_proto.node_one_id,
+                link_proto.node_two_id,
+                link_proto.interface_one,
+                link_proto.interface_two,
+                link_proto.options,
+            )
+            logging.debug("create link: %s", response)
+
     def close(self):
         """
         Clean ups when done using grpc

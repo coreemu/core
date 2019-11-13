@@ -35,3 +35,15 @@ class ServiceNodeConfig:
                 response,
             )
             self.configurations[node_id][default] = response.service
+
+    def node_custom_service_configuration(self, node_id, service_name):
+        return
+
+    def node_service_custom_configuration(
+        self, node_id, service_name, startups, validates, shutdowns
+    ):
+        self.app.core.set_node_service(
+            node_id, service_name, startups, validates, shutdowns
+        )
+        config = self.app.core.get_node_service(node_id, service_name)
+        self.configurations[node_id][service_name] = config
