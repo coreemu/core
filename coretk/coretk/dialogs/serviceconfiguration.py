@@ -2,6 +2,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
@@ -38,6 +39,7 @@ class ServiceConfiguration(Dialog):
         self.validate_commands_listbox = None
         self.validation_time_entry = None
         self.validation_mode_entry = None
+        self.service_file_data = None
         self.load()
         self.draw()
 
@@ -152,6 +154,9 @@ class ServiceConfiguration(Dialog):
         button.image = image
         button.grid(row=0, column=2)
         frame.grid(row=3, column=0, sticky="nsew")
+
+        self.service_file_data = ScrolledText(tab1)
+        self.service_file_data.grid(row=4, column=0, sticky="nsew")
 
         # tab 2
         label = ttk.Label(
@@ -333,6 +338,9 @@ class ServiceConfiguration(Dialog):
             validate_commands,
             shutdown_commands,
         )
+        filename = self.filename_combobox.get()
+        file_data = self.service_file_data.get()
+        print(filename, file_data)
         logging.info(
             "%s, %s, %s, %s, %s",
             metadata,
@@ -347,7 +355,14 @@ class ServiceConfiguration(Dialog):
         )
 
     def display_service_file_data(self, event):
-        print("not implemented")
+        combobox = event.widget
+        filename = combobox.get()
+        print(filename)
+        file_data = self.app.core.get_node_service_file(
+            self.canvas_node.core_id, self.service_name, filename
+        )
+        self.service_file_data.delete(1.0, "end")
+        self.service_file_data.insert("end", file_data)
 
     def click_defaults(self):
         logging.info("not implemented")

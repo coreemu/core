@@ -427,6 +427,13 @@ class CoreClient:
         )
         logging.debug("set node service %s", response)
 
+    def get_node_service_file(self, node_id, service_name, file_name):
+        response = self.client.get_node_service_file(
+            self.session_id, node_id, service_name, file_name
+        )
+        logging.debug("get service file %s", response)
+        return response.data
+
     def create_nodes_and_links(self):
         node_protos = self.get_nodes_proto()
         link_protos = self.get_links_proto()
