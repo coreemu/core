@@ -77,6 +77,7 @@ class WlanAntennaManager:
         self.quantity = 0
         self._max = 5
         self.antennas = []
+        self.image = Images.get(ImageEnum.ANTENNA, 32)
 
         # distance between each antenna
         self.offset = 0
@@ -94,7 +95,7 @@ class WlanAntennaManager:
                     x - 16 + self.offset,
                     y - 16,
                     anchor=tk.CENTER,
-                    image=Images.get(ImageEnum.ANTENNA),
+                    image=self.image,
                     tags="antenna",
                 )
             )

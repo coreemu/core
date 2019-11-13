@@ -54,7 +54,7 @@ class IconDialog(Dialog):
             ),
         )
         if file_path:
-            self.image = Images.create(file_path)
+            self.image = Images.create(file_path, 32, 32)
             self.image_label.config(image=self.image)
             self.file_path.set(file_path)
 

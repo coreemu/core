@@ -8,7 +8,7 @@ from core.api.grpc import client, core_pb2
 from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
-from coretk.images import Images
+from coretk.images import NODE_WIDTH, Images
 from coretk.interface import Interface, InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
@@ -137,7 +137,7 @@ class CoreClient:
         # read custom nodes
         for config in self.app.config.get("nodes", []):
             image_file = config["image"]
-            image = Images.get_custom(image_file)
+            image = Images.get_custom(image_file, NODE_WIDTH)
             custom_node = CustomNode(
                 config["name"], image, image_file, set(config["services"])
             )

@@ -146,9 +146,7 @@ class CanvasGraph(tk.Canvas):
             # peer to peer node is not drawn on the GUI
             if node.type != core_pb2.NodeType.PEER_TO_PEER:
                 # draw nodes on the canvas
-                image, name = Images.convert_type_and_model_to_image(
-                    node.type, node.model
-                )
+                image, name = Images.node_icon(node.type, node.model)
                 n = CanvasNode(
                     node.position.x, node.position.y, image, name, self.master, node.id
                 )

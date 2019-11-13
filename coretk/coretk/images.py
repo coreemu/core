@@ -6,35 +6,37 @@ from PIL import Image, ImageTk
 from core.api.grpc import core_pb2
 from coretk.appconfig import LOCAL_ICONS_PATH
 
+NODE_WIDTH = 32
+
 
 class Images:
     images = {}
 
     @classmethod
-    def create(cls, file_path):
+    def create(cls, file_path, width, height=None):
+        if height is None:
+            height = width
         image = Image.open(file_path)
+        image = image.resize((width, height), Image.ANTIALIAS)
         return ImageTk.PhotoImage(image)
 
     @classmethod
     def load_all(cls):
         for image in LOCAL_ICONS_PATH.glob("*"):
-            cls.load(image.stem, str(image))
+            cls.images[image.stem] = str(image)
 
     @classmethod
-    def load(cls, name, file_path):
-        tk_image = cls.create(file_path)
-        cls.images[name] = tk_image
+    def get(cls, image_enum, width, height=None):
+        file_path = cls.images[image_enum.value]
+        return cls.create(file_path, width, height)
 
     @classmethod
-    def get(cls, image):
-        return cls.images[image.value]
+    def get_custom(cls, name, width, height):
+        file_path = cls.images[name]
+        return cls.create(file_path, width, height)
 
     @classmethod
-    def get_custom(cls, name):
-        return cls.images[name]
-
-    @classmethod
-    def convert_type_and_model_to_image(cls, node_type, node_model):
+    def node_icon(cls, node_type, node_model):
         """
         Retrieve image based on type and model
         :param core_pb2.NodeType node_type: core node type
@@ -43,34 +45,48 @@ class Images:
         :rtype: tuple(PhotoImage, str)
         :return: the matching image and its name
         """
+        image_enum = ImageEnum.ROUTER
+        name = "unknown"
         if node_type == core_pb2.NodeType.SWITCH:
-            return Images.get(ImageEnum.SWITCH), "switch"
-        if node_type == core_pb2.NodeType.HUB:
-            return Images.get(ImageEnum.HUB), "hub"
-        if node_type == core_pb2.NodeType.WIRELESS_LAN:
-            return Images.get(ImageEnum.WLAN), "wlan"
-        if node_type == core_pb2.NodeType.EMANE:
-            return Images.get(ImageEnum.EMANE), "emane"
-
-        if node_type == core_pb2.NodeType.RJ45:
-            return Images.get(ImageEnum.RJ45), "rj45"
-        if node_type == core_pb2.NodeType.TUNNEL:
-            return Images.get(ImageEnum.TUNNEL), "tunnel"
-        if node_type == core_pb2.NodeType.DEFAULT:
+            image_enum = ImageEnum.SWITCH
+            name = "switch"
+        elif node_type == core_pb2.NodeType.HUB:
+            image_enum = ImageEnum.HUB
+            name = "hub"
+        elif node_type == core_pb2.NodeType.WIRELESS_LAN:
+            image_enum = ImageEnum.WLAN
+            name = "wlan"
+        elif node_type == core_pb2.NodeType.EMANE:
+            image_enum = ImageEnum.EMANE
+            name = "emane"
+        elif node_type == core_pb2.NodeType.RJ45:
+            image_enum = ImageEnum.RJ45
+            name = "rj45"
+        elif node_type == core_pb2.NodeType.TUNNEL:
+            image_enum = ImageEnum.TUNNEL
+            name = "tunnel"
+        elif node_type == core_pb2.NodeType.DEFAULT:
             if node_model == "router":
-                return Images.get(ImageEnum.ROUTER), "router"
-            if node_model == "host":
-                return Images.get(ImageEnum.HOST), "host"
-            if node_model == "PC":
-                return Images.get(ImageEnum.PC), "PC"
-            if node_model == "mdr":
-                return Images.get(ImageEnum.MDR), "mdr"
-            if node_model == "prouter":
-                return Images.get(ImageEnum.PROUTER), "prouter"
-            if node_model == "OVS":
-                return Images.get(ImageEnum.OVS), "ovs"
+                image_enum = ImageEnum.ROUTER
+                name = "router"
+            elif node_model == "host":
+                image_enum = ImageEnum.HOST
+                name = "host"
+            elif node_model == "PC":
+                image_enum = ImageEnum.PC
+                name = "PC"
+            elif node_model == "mdr":
+                image_enum = ImageEnum.MDR
+                name = "mdr"
+            elif node_model == "prouter":
+                image_enum = ImageEnum.PROUTER
+                name = "prouter"
+            else:
+                logging.error("invalid node model: %s", node_model)
         else:
-            logging.debug("INVALID INPUT OR NOT CONSIDERED YET")
+            logging.error("invalid node type: %s", node_type)
+
+        return Images.get(image_enum, NODE_WIDTH), name
 
 
 class ImageEnum(Enum):

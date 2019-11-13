@@ -13,7 +13,7 @@ class Dialog(tk.Toplevel):
         self.modal = modal
         self.title(title)
         self.protocol("WM_DELETE_WINDOW", self.destroy)
-        image = Images.get(ImageEnum.CORE)
+        image = Images.get(ImageEnum.CORE, 16)
         self.tk.call("wm", "iconphoto", self._w, image)
 
     def show(self):
