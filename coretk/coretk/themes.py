@@ -6,6 +6,7 @@ DARK = "black"
 class Styles:
     tooltip = "Tooltip.TLabel"
     tooltip_frame = "Tooltip.TFrame"
+    service_checkbutton = "Service.TCheckbutton"
 
 
 class Colors:
@@ -20,6 +21,7 @@ class Colors:
     selectfg = "#ffffff"
     white = "white"
     black = "black"
+    listboxbg = "#f2f1f0"
 
 
 def load(style):
@@ -106,6 +108,12 @@ def load(style):
                 "configure": {"justify": tk.LEFT, "relief": tk.SOLID, "borderwidth": 0}
             },
             Styles.tooltip_frame: {"configure": {}},
+            Styles.service_checkbutton: {
+                "configure": {
+                    "background": Colors.listboxbg,
+                    "foreground": Colors.black,
+                }
+            },
         },
     )
 

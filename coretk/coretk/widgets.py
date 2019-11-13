@@ -4,6 +4,7 @@ from functools import partial
 from tkinter import ttk
 
 from core.api.grpc import core_pb2
+from coretk.themes import Styles
 
 INT_TYPES = {
     core_pb2.ConfigOptionType.UINT8,
@@ -136,6 +137,7 @@ class ListboxScroll(ttk.LabelFrame):
         self.listbox = tk.Listbox(
             self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
         )
+        logging.info("listbox background: %s", self.listbox.cget("background"))
         self.listbox.grid(row=0, column=0, sticky="nsew")
         self.scrollbar.config(command=self.listbox.yview)
 
@@ -149,5 +151,11 @@ class CheckboxList(FrameScroll):
     def add(self, name, checked):
         var = tk.BooleanVar(value=checked)
         func = partial(self.clicked, name, var)
-        checkbox = ttk.Checkbutton(self.frame, text=name, variable=var, command=func)
+        checkbox = ttk.Checkbutton(
+            self.frame,
+            text=name,
+            variable=var,
+            command=func,
+            style=Styles.service_checkbutton,
+        )
         checkbox.grid(sticky="w")
