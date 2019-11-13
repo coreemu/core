@@ -8,7 +8,7 @@ from coretk.dialogs.canvasbackground import ScaleOption
 from coretk.dialogs.dialog import Dialog
 
 DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
-FRAME_BAD = 5
+FRAME_PAD = 5
 PAD = (0, 0, 5, 0)
 PADX = 5
 
@@ -52,7 +52,7 @@ class SizeAndScaleDialog(Dialog):
         self.draw_buttons()
 
     def draw_size(self):
-        label_frame = ttk.Labelframe(self.top, text="Size", padding=FRAME_BAD)
+        label_frame = ttk.Labelframe(self.top, text="Size", padding=FRAME_PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -89,7 +89,7 @@ class SizeAndScaleDialog(Dialog):
         label.grid(row=0, column=4, sticky="w")
 
     def draw_scale(self):
-        label_frame = ttk.Labelframe(self.top, text="Scale", padding=FRAME_BAD)
+        label_frame = ttk.Labelframe(self.top, text="Scale", padding=FRAME_PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -105,7 +105,7 @@ class SizeAndScaleDialog(Dialog):
 
     def draw_reference_point(self):
         label_frame = ttk.Labelframe(
-            self.top, text="Reference Point", padding=FRAME_BAD
+            self.top, text="Reference Point", padding=FRAME_PAD
         )
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)

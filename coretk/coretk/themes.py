@@ -86,6 +86,7 @@ def load(style):
                     "padding": (2, 0),
                 }
             },
+            "TLabelframe": {"configure": {"relief": tk.GROOVE}},
             "TNotebook.Tab": {
                 "configure": {"padding": (6, 2, 6, 2)},
                 "map": {"background": [("selected", Colors.lighter)]},
