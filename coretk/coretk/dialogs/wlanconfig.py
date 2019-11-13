@@ -7,6 +7,7 @@ from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
+from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 
 
 class WlanConfigDialog(Dialog):
@@ -30,7 +31,7 @@ class WlanConfigDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_name_config()
         self.draw_wlan_config()
         self.draw_subnet()
@@ -43,7 +44,7 @@ class WlanConfigDialog(Dialog):
 
         :return: nothing
         """
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(pady=2, sticky="ew")
         frame.columnconfigure(0, weight=1)
 
@@ -59,10 +60,10 @@ class WlanConfigDialog(Dialog):
 
         :return: nothing
         """
-        label = ttk.Label(self, text="Wireless")
+        label = ttk.Label(self.top, text="Wireless")
         label.grid(sticky="w", pady=2)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(pady=2, sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
@@ -108,7 +109,7 @@ class WlanConfigDialog(Dialog):
         :return: nothing
         """
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(pady=3, sticky="ew")
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
@@ -130,12 +131,14 @@ class WlanConfigDialog(Dialog):
         :return:
         """
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(pady=2, sticky="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
 
-        button = ttk.Button(frame, text="ns-2 mobility script...")
+        button = ttk.Button(
+            frame, text="ns-2 mobility script...", command=self.click_mobility
+        )
         button.grid(row=0, column=0, padx=2, sticky="ew")
 
         button = ttk.Button(frame, text="Link to all routers")
@@ -150,7 +153,7 @@ class WlanConfigDialog(Dialog):
 
         :return: nothing
         """
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
@@ -160,6 +163,10 @@ class WlanConfigDialog(Dialog):
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, padx=2, sticky="ew")
+
+    def click_mobility(self):
+        dialog = MobilityConfigDialog(self, self.app, self.canvas_node)
+        dialog.show()
 
     def click_icon(self):
         dialog = IconDialog(

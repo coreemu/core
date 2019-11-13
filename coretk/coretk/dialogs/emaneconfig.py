@@ -55,10 +55,10 @@ class EmaneConfiguration(Dialog):
         return var
 
     def choose_core(self):
-        print("not implemented")
+        logging.info("not implemented")
 
     def node_name_and_image(self):
-        f = ttk.Frame(self)
+        f = ttk.Frame(self.top)
 
         lbl = ttk.Label(f, text="Node name:")
         lbl.grid(row=0, column=0, padx=2, pady=2)
@@ -90,13 +90,15 @@ class EmaneConfiguration(Dialog):
             logging.info("emane config: %s", response)
             self.options = response.config
 
-        self.emane_dialog.columnconfigure(0, weight=1)
-        self.emane_dialog.rowconfigure(0, weight=1)
-        self.emane_config_frame = ConfigFrame(self.emane_dialog, config=self.options)
+        self.emane_dialog.top.columnconfigure(0, weight=1)
+        self.emane_dialog.top.rowconfigure(0, weight=1)
+        self.emane_config_frame = ConfigFrame(
+            self.emane_dialog.top, config=self.options
+        )
         self.emane_config_frame.draw_config()
         self.emane_config_frame.grid(sticky="nsew")
 
-        frame = ttk.Frame(self.emane_dialog)
+        frame = ttk.Frame(self.emane_dialog.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
@@ -152,8 +154,8 @@ class EmaneConfiguration(Dialog):
             self.emane_model_dialog = Dialog(
                 self, self.app, f"{model_name} configuration", modal=False
             )
-            self.emane_model_dialog.columnconfigure(0, weight=1)
-            self.emane_model_dialog.rowconfigure(0, weight=1)
+            self.emane_model_dialog.top.columnconfigure(0, weight=1)
+            self.emane_model_dialog.top.rowconfigure(0, weight=1)
 
         # query for configurations
         session_id = self.app.core.session_id
@@ -165,12 +167,12 @@ class EmaneConfiguration(Dialog):
 
         self.model_options = response.config
         self.model_config_frame = ConfigFrame(
-            self.emane_model_dialog, config=self.model_options
+            self.emane_model_dialog.top, config=self.model_options
         )
         self.model_config_frame.grid(sticky="nsew")
         self.model_config_frame.draw_config()
 
-        frame = ttk.Frame(self.emane_model_dialog)
+        frame = ttk.Frame(self.emane_model_dialog.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
@@ -268,22 +270,24 @@ class EmaneConfiguration(Dialog):
         :return: nothing
         """
         # draw label
-        lbl = ttk.Label(self, text="Emane")
+        lbl = ttk.Label(self.top, text="Emane")
         lbl.grid(row=1, column=0)
 
         # main frame that has emane wiki, a short description, emane models and the configure buttons
-        f = ttk.Frame(self)
+        f = ttk.Frame(self.top)
         f.columnconfigure(0, weight=1)
 
+        image = Images.get(ImageEnum.EDITNODE, 16)
         b = ttk.Button(
             f,
-            image=Images.get(ImageEnum.EDITNODE, 8),
+            image=image,
             text="EMANE Wiki",
             compound=tk.RIGHT,
             command=lambda: webbrowser.open_new(
                 "https://github.com/adjacentlink/emane/wiki"
             ),
         )
+        b.image = image
         b.grid(row=0, column=0, sticky="w")
 
         lbl = ttk.Label(
@@ -302,8 +306,8 @@ class EmaneConfiguration(Dialog):
         f.grid(row=2, column=0, sticky="nsew")
 
     def draw_ip_subnets(self):
-        self.draw_text_label_and_entry(self, "IPv4 subnet", "")
-        self.draw_text_label_and_entry(self, "IPv6 subnet", "")
+        self.draw_text_label_and_entry(self.top, "IPv4 subnet", "")
+        self.draw_text_label_and_entry(self.top, "IPv6 subnet", "")
 
     def emane_options(self):
         """
@@ -311,7 +315,7 @@ class EmaneConfiguration(Dialog):
 
         :return:
         """
-        f = ttk.Frame(self)
+        f = ttk.Frame(self.top)
         f.columnconfigure(0, weight=1)
         f.columnconfigure(1, weight=1)
         b = ttk.Button(f, text="Link to all routers")
@@ -326,7 +330,7 @@ class EmaneConfiguration(Dialog):
         self.destroy()
 
     def draw_apply_and_cancel(self):
-        f = ttk.Frame(self)
+        f = ttk.Frame(self.top)
         f.columnconfigure(0, weight=1)
         f.columnconfigure(1, weight=1)
         b = ttk.Button(f, text="Apply", command=self.apply)

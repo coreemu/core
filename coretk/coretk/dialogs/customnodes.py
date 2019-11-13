@@ -19,10 +19,10 @@ class ServicesSelectDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(stick="nsew")
         frame.rowconfigure(0, weight=1)
         for i in range(3):
@@ -44,7 +44,7 @@ class ServicesSelectDialog(Dialog):
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(stick="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
@@ -96,19 +96,19 @@ class CustomNodesDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
         self.draw_node_config()
         self.draw_node_buttons()
         self.draw_buttons()
 
     def draw_node_config(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
 
-        self.nodes_list = ListboxScroll(frame)
+        self.nodes_list = ListboxScroll(frame, text="Nodes")
         self.nodes_list.grid(row=0, column=0, sticky="nsew")
         self.nodes_list.listbox.bind("<<ListboxSelect>>", self.handle_node_select)
         for name in sorted(self.app.core.custom_nodes):
@@ -125,7 +125,7 @@ class CustomNodesDialog(Dialog):
         button.grid(sticky="ew")
 
     def draw_node_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(pady=2, sticky="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
@@ -144,7 +144,7 @@ class CustomNodesDialog(Dialog):
         self.delete_button.grid(row=0, column=2, sticky="ew")
 
     def draw_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)

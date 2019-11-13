@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from coretk.themes import Styles
+
 
 class CanvasTooltip:
     """
@@ -17,16 +19,13 @@ class CanvasTooltip:
     Alberto Vassena on 2016.12.10.
     """
 
-    def __init__(
-        self, canvas, *, bg="#FFFFEA", pad=(5, 3, 5, 3), waittime=400, wraplength=600
-    ):
+    def __init__(self, canvas, *, pad=(5, 3, 5, 3), waittime=400, wraplength=600):
         # in miliseconds, originally 500
         self.waittime = waittime
         # in pixels, originally 180
         self.wraplength = wraplength
         self.canvas = canvas
         self.text = tk.StringVar()
-        self.bg = bg
         self.pad = pad
         self.id = None
         self.tw = None
@@ -78,7 +77,6 @@ class CanvasTooltip:
                 y1 = 0
             return x1, y1
 
-        bg = self.bg
         pad = self.pad
         canvas = self.canvas
 
@@ -87,20 +85,16 @@ class CanvasTooltip:
 
         # Leaves only the label and removes the app window
         self.tw.wm_overrideredirect(True)
-
-        win = tk.Frame(self.tw, background=bg, borderwidth=0)
+        win = ttk.Frame(self.tw, style=Styles.tooltip_frame, padding=3)
         win.grid()
         label = ttk.Label(
             win,
             textvariable=self.text,
-            justify=tk.LEFT,
-            background=bg,
-            relief=tk.SOLID,
-            borderwidth=0,
             wraplength=self.wraplength,
+            style=Styles.tooltip,
         )
         label.grid(padx=(pad[0], pad[2]), pady=(pad[1], pad[3]), sticky=tk.NSEW)
-        x, y = tip_pos_calculator(canvas, label)
+        x, y = tip_pos_calculator(canvas, label, pad=pad)
         self.tw.wm_geometry("+%d+%d" % (x, y))
 
     def hide(self):

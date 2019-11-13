@@ -16,7 +16,7 @@ class SessionsDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_description()
         self.draw_tree()
         self.draw_buttons()
@@ -27,7 +27,7 @@ class SessionsDialog(Dialog):
         :return: nothing
         """
         label = ttk.Label(
-            self,
+            self.top,
             text="Below is a list of active CORE sessions. Double-click to \n"
             "connect to an existing session. Usually, only sessions in \n"
             "the RUNTIME state persist in the daemon, except for the \n"
@@ -37,7 +37,7 @@ class SessionsDialog(Dialog):
 
     def draw_tree(self):
         self.tree = ttk.Treeview(
-            self, columns=("id", "state", "nodes"), show="headings"
+            self.top, columns=("id", "state", "nodes"), show="headings"
         )
         self.tree.grid(row=1, sticky="nsew")
         self.tree.column("id", stretch=tk.YES)
@@ -60,16 +60,18 @@ class SessionsDialog(Dialog):
         self.tree.bind("<Double-1>", self.on_selected)
         self.tree.bind("<<TreeviewSelect>>", self.click_select)
 
-        yscrollbar = ttk.Scrollbar(self, orient="vertical", command=self.tree.yview)
+        yscrollbar = ttk.Scrollbar(self.top, orient="vertical", command=self.tree.yview)
         yscrollbar.grid(row=1, column=1, sticky="ns")
         self.tree.configure(yscrollcommand=yscrollbar.set)
 
-        xscrollbar = ttk.Scrollbar(self, orient="horizontal", command=self.tree.xview)
+        xscrollbar = ttk.Scrollbar(
+            self.top, orient="horizontal", command=self.tree.xview
+        )
         xscrollbar.grid(row=2, sticky="ew", pady=5)
         self.tree.configure(xscrollcommand=xscrollbar.set)
 
     def draw_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         for i in range(4):
             frame.columnconfigure(i, weight=1)
         frame.grid(row=3, sticky="ew")

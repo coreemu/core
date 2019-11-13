@@ -44,7 +44,7 @@ class SizeAndScaleDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_size()
         self.draw_scale()
         self.draw_reference_point()
@@ -52,7 +52,7 @@ class SizeAndScaleDialog(Dialog):
         self.draw_buttons()
 
     def draw_size(self):
-        label_frame = ttk.Labelframe(self, text="Size", padding=FRAME_BAD)
+        label_frame = ttk.Labelframe(self.top, text="Size", padding=FRAME_BAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -89,7 +89,7 @@ class SizeAndScaleDialog(Dialog):
         label.grid(row=0, column=4, sticky="w")
 
     def draw_scale(self):
-        label_frame = ttk.Labelframe(self, text="Scale", padding=FRAME_BAD)
+        label_frame = ttk.Labelframe(self.top, text="Scale", padding=FRAME_BAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -104,7 +104,9 @@ class SizeAndScaleDialog(Dialog):
         label.grid(row=0, column=2, sticky="w")
 
     def draw_reference_point(self):
-        label_frame = ttk.Labelframe(self, text="Reference Point", padding=FRAME_BAD)
+        label_frame = ttk.Labelframe(
+            self.top, text="Reference Point", padding=FRAME_BAD
+        )
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -156,12 +158,12 @@ class SizeAndScaleDialog(Dialog):
 
     def draw_save_as_default(self):
         button = ttk.Checkbutton(
-            self, text="Save as default?", variable=self.save_default
+            self.top, text="Save as default?", variable=self.save_default
         )
         button.grid(sticky="w", pady=3)
 
     def draw_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.grid(sticky="ew")

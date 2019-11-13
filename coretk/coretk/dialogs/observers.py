@@ -18,15 +18,15 @@ class ObserverDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
         self.draw_listbox()
         self.draw_form_fields()
         self.draw_config_buttons()
         self.draw_apply_buttons()
 
     def draw_listbox(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="nsew")
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
@@ -45,7 +45,7 @@ class ObserverDialog(Dialog):
         scrollbar.config(command=self.observers.yview)
 
     def draw_form_fields(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         frame.columnconfigure(1, weight=1)
 
@@ -60,7 +60,7 @@ class ObserverDialog(Dialog):
         entry.grid(row=1, column=1, sticky="ew")
 
     def draw_config_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(pady=2, sticky="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)
@@ -79,7 +79,7 @@ class ObserverDialog(Dialog):
         self.delete_button.grid(row=0, column=2, sticky="ew")
 
     def draw_apply_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)

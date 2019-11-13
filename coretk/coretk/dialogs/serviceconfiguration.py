@@ -62,7 +62,7 @@ class ServiceConfiguration(Dialog):
 
     def draw(self):
         # self.columnconfigure(1, weight=1)
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame1 = ttk.Frame(frame)
         label = ttk.Label(frame1, text=self.service_name)
         label.grid(row=0, column=0, sticky="ew")
@@ -78,7 +78,7 @@ class ServiceConfiguration(Dialog):
         frame2.grid(row=1, column=0)
         frame.grid(row=0, column=0)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         self.tab_parent = ttk.Notebook(frame)
         tab1 = ttk.Frame(self.tab_parent)
         tab2 = ttk.Frame(self.tab_parent)
@@ -259,11 +259,11 @@ class ServiceConfiguration(Dialog):
             frame.grid(row=2 + i, column=0, sticky="nsew")
 
         button = ttk.Button(
-            self, text="only store values that have changed from their defaults"
+            self.top, text="onle store values that have changed from their defaults"
         )
         button.grid(row=2, column=0)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
         button.grid(row=0, column=0, sticky="nsew")
         button = ttk.Button(

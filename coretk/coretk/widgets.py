@@ -17,9 +17,9 @@ INT_TYPES = {
 }
 
 
-class FrameScroll(tk.LabelFrame):
-    def __init__(self, master=None, cnf={}, _cls=tk.Frame, **kw):
-        super().__init__(master, cnf, **kw)
+class FrameScroll(ttk.LabelFrame):
+    def __init__(self, master=None, _cls=tk.Frame, **kw):
+        super().__init__(master, **kw)
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
         self.canvas = tk.Canvas(self, highlightthickness=0)
@@ -54,8 +54,8 @@ class FrameScroll(tk.LabelFrame):
 
 
 class ConfigFrame(FrameScroll):
-    def __init__(self, master=None, cnf={}, config=None, **kw):
-        super().__init__(master, cnf, ttk.Notebook, **kw)
+    def __init__(self, master=None, config=None, **kw):
+        super().__init__(master, ttk.Notebook, **kw)
         self.config = config
         self.values = {}
 
@@ -126,9 +126,9 @@ class ConfigFrame(FrameScroll):
         return {x: self.config[x].value for x in self.config}
 
 
-class ListboxScroll(tk.LabelFrame):
-    def __init__(self, master=None, cnf={}, **kw):
-        super().__init__(master, cnf, **kw)
+class ListboxScroll(ttk.LabelFrame):
+    def __init__(self, master=None, **kw):
+        super().__init__(master, **kw)
         self.columnconfigure(0, weight=1)
         self.rowconfigure(0, weight=1)
         self.scrollbar = ttk.Scrollbar(self, orient=tk.VERTICAL)
@@ -141,8 +141,8 @@ class ListboxScroll(tk.LabelFrame):
 
 
 class CheckboxList(FrameScroll):
-    def __init__(self, master=None, cnf={}, clicked=None, **kw):
-        super().__init__(master, cnf, **kw)
+    def __init__(self, master=None, clicked=None, **kw):
+        super().__init__(master, **kw)
         self.clicked = clicked
         self.frame.columnconfigure(0, weight=1)
 

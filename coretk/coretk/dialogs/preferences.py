@@ -15,12 +15,12 @@ class PreferencesDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_programs()
         self.draw_buttons()
 
     def draw_programs(self):
-        frame = ttk.LabelFrame(self, text="Programs")
+        frame = ttk.LabelFrame(self.top, text="Programs")
         frame.grid(sticky="ew", pady=2)
         frame.columnconfigure(1, weight=1)
 
@@ -47,7 +47,7 @@ class PreferencesDialog(Dialog):
         entry.grid(row=2, column=1, sticky="ew")
 
     def draw_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)

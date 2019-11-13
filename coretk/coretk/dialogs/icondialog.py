@@ -15,10 +15,10 @@ class IconDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
 
         # row one
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=0, column=0, pady=2, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=3)
@@ -30,11 +30,11 @@ class IconDialog(Dialog):
         button.grid(row=0, column=2)
 
         # row two
-        self.image_label = ttk.Label(self, image=self.image, anchor=tk.CENTER)
+        self.image_label = ttk.Label(self.top, image=self.image, anchor=tk.CENTER)
         self.image_label.grid(row=1, column=0, pady=2, sticky="ew")
 
         # row three
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=2, column=0, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
