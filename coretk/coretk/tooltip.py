@@ -1,6 +1,8 @@
 import tkinter as tk
 from tkinter import ttk
 
+from coretk.themes import Styles
+
 
 class Tooltip(object):
     """
@@ -41,15 +43,12 @@ class Tooltip(object):
         self.tw = tk.Toplevel(self.widget)
         self.tw.wm_overrideredirect(True)
         self.tw.wm_geometry("+%d+%d" % (x, y))
-        label = ttk.Label(
-            self.tw,
-            text=self.text,
-            justify=tk.LEFT,
-            background="#FFFFEA",
-            relief=tk.SOLID,
-            borderwidth=0,
-        )
-        label.grid(padx=1)
+        self.tw.rowconfigure(0, weight=1)
+        self.tw.columnconfigure(0, weight=1)
+        frame = ttk.Frame(self.tw, style=Styles.tooltip_frame, padding=3)
+        frame.grid(sticky="nsew")
+        label = ttk.Label(frame, text=self.text, style=Styles.tooltip)
+        label.grid()
 
     def close(self, event=None):
         if self.tw:

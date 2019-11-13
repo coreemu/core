@@ -22,10 +22,10 @@ class NodeService(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(stick="nsew")
         frame.rowconfigure(0, weight=1)
         for i in range(3):
@@ -47,7 +47,7 @@ class NodeService(Dialog):
         for service in sorted(self.current_services):
             self.current.listbox.insert(tk.END, service)
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(stick="ew")
         for i in range(3):
             frame.columnconfigure(i, weight=1)

@@ -15,11 +15,11 @@ class HookDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(1, weight=1)
 
         # name and states
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=0, sticky="ew", pady=2)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=7)
@@ -39,7 +39,7 @@ class HookDialog(Dialog):
         combobox.bind("<<ComboboxSelected>>", self.state_change)
 
         # data
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.rowconfigure(0, weight=1)
         frame.grid(row=1, sticky="nsew", pady=2)
@@ -59,7 +59,7 @@ class HookDialog(Dialog):
         scrollbar.config(command=self.data.yview)
 
         # button row
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=2, sticky="ew", pady=2)
         for i in range(2):
             frame.columnconfigure(i, weight=1)
@@ -99,14 +99,16 @@ class HooksDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-        self.listbox = tk.Listbox(self)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
+
+        self.listbox = tk.Listbox(self.top)
         self.listbox.grid(row=0, sticky="nsew")
         self.listbox.bind("<<ListboxSelect>>", self.select)
         for hook_file in self.app.core.hooks:
             self.listbox.insert(tk.END, hook_file)
-        frame = ttk.Frame(self)
+
+        frame = ttk.Frame(self.top)
         frame.grid(row=1, sticky="ew")
         for i in range(4):
             frame.columnconfigure(i, weight=1)

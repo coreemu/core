@@ -1,7 +1,7 @@
 """
 mobility configuration
 """
-
+import logging
 import tkinter as tk
 from tkinter import filedialog, ttk
 
@@ -9,7 +9,7 @@ from coretk import appconfig
 from coretk.dialogs.dialog import Dialog
 
 
-class MobilityConfiguration(Dialog):
+class MobilityConfigDialog(Dialog):
     def __init__(self, master, app, canvas_node):
         """
         create an instance of mobility configuration
@@ -19,7 +19,7 @@ class MobilityConfiguration(Dialog):
         """
         super().__init__(master, app, "ns2script configuration", modal=True)
         self.canvas_node = canvas_node
-        print(app.canvas.core.mobilityconfig_management.configurations)
+        logging.info(app.canvas.core.mobilityconfig_management.configurations)
         self.node_config = app.canvas.core.mobilityconfig_management.configurations[
             canvas_node.core_id
         ]
@@ -57,11 +57,11 @@ class MobilityConfiguration(Dialog):
     def create_label_entry_filebrowser(
         self, parent_frame, text_label, entry_text, filebrowser=False
     ):
-        f = ttk.Frame(parent_frame, bg="#d9d9d9")
-        lbl = ttk.Label(f, text=text_label, bg="#d9d9d9")
+        f = ttk.Frame(parent_frame)
+        lbl = ttk.Label(f, text=text_label)
         lbl.grid(padx=3, pady=3)
         # f.grid()
-        e = ttk.Entry(f, textvariable=self.create_string_var(entry_text), bg="#ffffff")
+        e = ttk.Entry(f, textvariable=self.create_string_var(entry_text))
         e.grid(row=0, column=1, padx=3, pady=3)
         if filebrowser:
             b = ttk.Button(f, text="...", command=lambda: self.open_file(e))
@@ -69,16 +69,14 @@ class MobilityConfiguration(Dialog):
         f.grid(sticky=tk.E)
 
     def mobility_script_parameters(self):
-        lbl = ttk.Label(self, text="node ns2script")
+        lbl = ttk.Label(self.top, text="node ns2script")
         lbl.grid(sticky="ew")
 
-        sb = ttk.Scrollbar(self, orient=tk.VERTICAL)
+        sb = ttk.Scrollbar(self.top, orient=tk.VERTICAL)
         sb.grid(row=1, column=1, sticky="ns")
 
-        f = ttk.Frame(self, bg="#d9d9d9")
-        lbl = ttk.Label(
-            f, text="ns-2 Mobility Scripts Parameters", bg="#d9d9d9", relief=tk.RAISED
-        )
+        f = ttk.Frame(self.top)
+        lbl = ttk.Label(f, text="ns-2 Mobility Scripts Parameters")
         lbl.grid(row=0, column=0, sticky=tk.W)
 
         f1 = tk.Canvas(
@@ -229,7 +227,7 @@ class MobilityConfiguration(Dialog):
 
         :return: nothing
         """
-        f = ttk.Frame(self)
+        f = ttk.Frame(self.top)
         b = ttk.Button(f, text="Apply", command=self.ns2script_apply)
         b.grid()
         b = ttk.Button(f, text="Cancel", command=self.destroy)

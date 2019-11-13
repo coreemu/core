@@ -40,7 +40,7 @@ class CanvasBackgroundDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_image()
         self.draw_image_label()
         self.draw_image_selection()
@@ -50,16 +50,16 @@ class CanvasBackgroundDialog(Dialog):
 
     def draw_image(self):
         self.image_label = ttk.Label(
-            self, text="(image preview)", width=32, anchor=tk.CENTER
+            self.top, text="(image preview)", width=32, anchor=tk.CENTER
         )
         self.image_label.grid(row=0, column=0, pady=5)
 
     def draw_image_label(self):
-        label = ttk.Label(self, text="Image filename: ")
+        label = ttk.Label(self.top, text="Image filename: ")
         label.grid(row=1, column=0, sticky="ew")
 
     def draw_image_selection(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=2)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
@@ -76,7 +76,7 @@ class CanvasBackgroundDialog(Dialog):
         button.grid(row=0, column=2, sticky="ew")
 
     def draw_options(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(2, weight=1)
@@ -105,12 +105,12 @@ class CanvasBackgroundDialog(Dialog):
 
     def draw_additional_options(self):
         checkbutton = ttk.Checkbutton(
-            self, text="Show grid", variable=self.show_grid_var
+            self.top, text="Show grid", variable=self.show_grid_var
         )
         checkbutton.grid(row=4, column=0, sticky="ew", padx=PADX)
 
         checkbutton = ttk.Checkbutton(
-            self,
+            self.top,
             text="Adjust canvas size to image dimensions",
             variable=self.adjust_to_dim_var,
             command=self.click_adjust_canvas,
@@ -121,7 +121,7 @@ class CanvasBackgroundDialog(Dialog):
         self.adjust_to_dim_var.set(0)
 
     def draw_buttons(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=6, column=0, pady=5, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)

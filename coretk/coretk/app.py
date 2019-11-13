@@ -1,8 +1,9 @@
 import logging
 import tkinter as tk
+from functools import partial
 from tkinter import ttk
 
-from coretk import appconfig
+from coretk import appconfig, themes
 from coretk.coreclient import CoreClient
 from coretk.graph import CanvasGraph
 from coretk.images import ImageEnum, Images
@@ -14,7 +15,8 @@ from coretk.toolbar import Toolbar
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
-        Images.load_all()
+        self.style = ttk.Style()
+        self.setup_theme()
         self.menubar = None
         self.toolbar = None
         self.canvas = None
@@ -32,6 +34,14 @@ class Application(tk.Frame):
         self.setup_app()
         self.draw()
         self.core.set_up()
+
+    def setup_theme(self):
+        themes.load(self.style)
+        self.style.theme_use(themes.DARK)
+        func = partial(themes.update_menu, self.style)
+        self.master.bind_class("Menu", "<<ThemeChanged>>", func)
+        func = partial(themes.update_toplevel, self.style)
+        self.master.bind_class("Toplevel", "<<ThemeChanged>>", func)
 
     def setup_app(self):
         self.master.title("CORE")
@@ -78,6 +88,7 @@ class Application(tk.Frame):
 if __name__ == "__main__":
     log_format = "%(asctime)s - %(levelname)s - %(module)s:%(funcName)s - %(message)s"
     logging.basicConfig(level=logging.DEBUG, format=log_format)
+    Images.load_all()
     appconfig.check_directory()
     app = Application()
     app.mainloop()

@@ -26,13 +26,13 @@ class NodeConfigDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
         self.draw_first_row()
         self.draw_second_row()
         self.draw_third_row()
 
     def draw_first_row(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=0, column=0, pady=2, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -55,7 +55,7 @@ class NodeConfigDialog(Dialog):
         combobox.grid(row=0, column=2, sticky="ew")
 
     def draw_second_row(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=1, column=0, pady=2, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
@@ -73,7 +73,7 @@ class NodeConfigDialog(Dialog):
         self.image_button.grid(row=0, column=1, sticky="ew")
 
     def draw_third_row(self):
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(row=2, column=0, sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)

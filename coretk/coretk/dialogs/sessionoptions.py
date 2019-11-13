@@ -15,18 +15,18 @@ class SessionOptionsDialog(Dialog):
         self.draw()
 
     def draw(self):
-        self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
+        self.top.columnconfigure(0, weight=1)
+        self.top.rowconfigure(0, weight=1)
 
         session_id = self.app.core.session_id
         response = self.app.core.client.get_session_options(session_id)
         logging.info("session options: %s", response)
 
-        self.config_frame = ConfigFrame(self, config=response.config)
+        self.config_frame = ConfigFrame(self.top, config=response.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew")
 
-        frame = ttk.Frame(self)
+        frame = ttk.Frame(self.top)
         frame.grid(sticky="ew")
         for i in range(2):
             frame.columnconfigure(i, weight=1)
