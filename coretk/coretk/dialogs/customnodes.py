@@ -35,7 +35,7 @@ class ServicesSelectDialog(Dialog):
         self.groups.listbox.selection_set(0)
 
         self.services = CheckboxList(
-            frame, text="Services", clicked=self.service_clicked
+            frame, self.app, text="Services", clicked=self.service_clicked
         )
         self.services.grid(row=0, column=1, sticky="nsew")
 

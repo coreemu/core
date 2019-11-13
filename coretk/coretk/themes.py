@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 
 DARK = "black"
@@ -118,9 +119,8 @@ def load(style):
     )
 
 
-def update_toplevel(style, event):
-    if not isinstance(event.widget, tk.Toplevel):
-        return
+def update_bg(style, event):
+    logging.info("updating background: %s", event.widget)
     bg = style.lookup(".", "background")
     event.widget.config(background=bg)
 

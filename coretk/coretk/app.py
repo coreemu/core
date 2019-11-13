@@ -40,8 +40,6 @@ class Application(tk.Frame):
         self.style.theme_use(themes.DARK)
         func = partial(themes.update_menu, self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", func)
-        func = partial(themes.update_toplevel, self.style)
-        self.master.bind_class("Toplevel", "<<ThemeChanged>>", func)
 
     def setup_app(self):
         self.master.title("CORE")
