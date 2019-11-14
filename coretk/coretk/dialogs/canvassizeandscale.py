@@ -1,6 +1,7 @@
 """
 size and scale
 """
+import logging
 import tkinter as tk
 from tkinter import font, ttk
 
@@ -9,7 +10,6 @@ from coretk.dialogs.dialog import Dialog
 
 DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
 FRAME_PAD = 5
-PAD = (0, 0, 5, 0)
 PADX = 5
 
 
@@ -21,13 +21,13 @@ class SizeAndScaleDialog(Dialog):
         :param app: main application
         """
         super().__init__(master, app, "Canvas Size and Scale", modal=True)
-        self.meter_per_pixel = self.app.canvas.meters_per_pixel
+        self.canvas = self.app.canvas
+        self.meter_per_pixel = self.canvas.meters_per_pixel
         self.section_font = font.Font(weight="bold")
 
         # get current canvas dimensions
-        canvas = self.app.canvas
-        plot = canvas.find_withtag("rectangle")
-        x0, y0, x1, y1 = canvas.bbox(plot[0])
+        plot = self.canvas.find_withtag("rectangle")
+        x0, y0, x1, y1 = self.canvas.bbox(plot[0])
         width = abs(x0 - x1) - 2
         height = abs(y0 - y1) - 2
         self.pixel_width = tk.IntVar(value=width)
@@ -122,14 +122,12 @@ class SizeAndScaleDialog(Dialog):
 
         label = ttk.Label(frame, text="X")
         label.grid(row=0, column=0, sticky="w", padx=PADX)
-        x_var = tk.StringVar(value=0)
-        entry = ttk.Entry(frame, textvariable=x_var)
+        entry = ttk.Entry(frame, textvariable=self.x)
         entry.grid(row=0, column=1, sticky="ew", padx=PADX)
 
         label = ttk.Label(frame, text="Y")
         label.grid(row=0, column=2, sticky="w", padx=PADX)
-        y_var = tk.StringVar(value=0)
-        entry = ttk.Entry(frame, textvariable=y_var)
+        entry = ttk.Entry(frame, textvariable=self.y)
         entry.grid(row=0, column=3, sticky="ew", padx=PADX)
 
         label = ttk.Label(label_frame, text="Translates To")
@@ -181,40 +179,40 @@ class SizeAndScaleDialog(Dialog):
         :return: nothing
         """
         width, height = self.pixel_width.get(), self.pixel_height.get()
-
-        canvas = self.app.canvas
-        canvas.config(scrollregion=(0, 0, width + 200, height + 200))
+        self.canvas.config(scrollregion=(0, 0, width + 200, height + 200))
 
         # delete old plot and redraw
-        for i in canvas.find_withtag("gridline"):
-            canvas.delete(i)
-        for i in canvas.find_withtag("rectangle"):
-            canvas.delete(i)
+        for i in self.canvas.find_withtag("gridline"):
+            self.canvas.delete(i)
+        for i in self.canvas.find_withtag("rectangle"):
+            self.canvas.delete(i)
 
-        canvas.draw_grid(width=width, height=height)
+        self.canvas.draw_grid(width=width, height=height)
         # lift anything that is drawn on the plot before
         for tag in DRAW_OBJECT_TAGS:
-            for i in canvas.find_withtag(tag):
-                canvas.lift(i)
+            for i in self.canvas.find_withtag(tag):
+                self.canvas.lift(i)
 
     def click_apply(self):
         meter_per_pixel = float(self.scale.get()) / 100
-        self.app.canvas.meters_per_pixel = meter_per_pixel
+        self.canvas.meters_per_pixel = meter_per_pixel
         self.redraw_grid()
-        # if there is a current wallpaper showing, redraw it based on current wallpaper options
+        # if there is a current wallpaper showing, redraw it based on current
+        # wallpaper options
         wallpaper_tool = self.app.set_wallpaper
-        current_wallpaper = self.app.current_wallpaper
-        if current_wallpaper:
-            if self.app.adjust_to_dim_var.get() == 0:
-                if self.app.radiovar.get() == ScaleOption.UPPER_LEFT.value:
-                    wallpaper_tool.upper_left(current_wallpaper)
-                elif self.app.radiovar.get() == ScaleOption.CENTERED.value:
-                    wallpaper_tool.center(current_wallpaper)
-                elif self.app.radiovar.get() == ScaleOption.SCALED.value:
-                    wallpaper_tool.scaled(current_wallpaper)
-                elif self.app.radiovar.get() == ScaleOption.TILED.value:
-                    print("not implemented")
-            elif self.app.adjust_to_dim_var.get() == 1:
-                wallpaper_tool.canvas_to_image_dimension(current_wallpaper)
+        wallpaper = self.canvas.wallpaper
+        if wallpaper:
+            if self.canvas.adjust_to_dim.get() == 0:
+                scale_option = ScaleOption(self.canvas.scale_option.get())
+                if scale_option == ScaleOption.UPPER_LEFT:
+                    wallpaper_tool.upper_left(wallpaper)
+                elif scale_option == ScaleOption.CENTERED:
+                    wallpaper_tool.center(wallpaper)
+                elif scale_option == ScaleOption.SCALED:
+                    wallpaper_tool.scaled(wallpaper)
+                elif scale_option == ScaleOption.TILED:
+                    logging.warning("tiled background not implemented")
+            elif self.canvas.adjust_to_dim.get() == 1:
+                wallpaper_tool.canvas_to_image_dimension(wallpaper)
             wallpaper_tool.show_grid()
         self.destroy()

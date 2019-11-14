@@ -43,11 +43,8 @@ class CanvasGraph(tk.Canvas):
         self.drawing_edge = None
         self.grid = None
         self.meters_per_pixel = 1.5
-
         self.canvas_management = CanvasComponentManagement(self, core)
-
         self.canvas_action = CanvasAction(master, self)
-
         self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
@@ -56,6 +53,15 @@ class CanvasGraph(tk.Canvas):
         self.throughput_draw = Throughput(self, core)
         self.wireless_draw = WirelessConnection(self, core)
         self.is_node_context_opened = False
+
+        # background related
+        self.wallpaper_id = None
+        self.wallpaper = None
+        self.wallpaper_drawn = None
+        self.wallpaper_file = ""
+        self.scale_option = tk.IntVar(value=1)
+        self.show_grid = tk.IntVar(value=1)
+        self.adjust_to_dim = tk.IntVar(value=0)
 
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
@@ -94,8 +100,6 @@ class CanvasGraph(tk.Canvas):
         self.edges.clear()
         self.drawing_edge = None
         self.draw_existing_component(session)
-
-        # self.grpc_manager.wlanconfig_management.load_wlan_configurations(self.core_grpc)
 
     def setup_bindings(self):
         """

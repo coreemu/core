@@ -15,21 +15,19 @@ from coretk.toolbar import Toolbar
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
-        self.config = appconfig.read()
-        self.style = ttk.Style()
-        self.setup_theme()
+        # widgets
         self.menubar = None
         self.toolbar = None
         self.canvas = None
         self.statusbar = None
-        self.is_open_xml = False
-        self.size_and_scale = None
+
+        # variables
         self.set_wallpaper = None
-        self.wallpaper_id = None
-        self.current_wallpaper = None
-        self.radiovar = tk.IntVar(value=1)
-        self.show_grid_var = tk.IntVar(value=1)
-        self.adjust_to_dim_var = tk.IntVar(value=0)
+
+        # setup
+        self.config = appconfig.read()
+        self.style = ttk.Style()
+        self.setup_theme()
         self.core = CoreClient(self)
         self.setup_app()
         self.draw()
@@ -43,11 +41,20 @@ class Application(tk.Frame):
 
     def setup_app(self):
         self.master.title("CORE")
-        self.master.geometry("1000x800")
+        self.center()
         self.master.protocol("WM_DELETE_WINDOW", self.on_closing)
         image = Images.get(ImageEnum.CORE, 16)
         self.master.tk.call("wm", "iconphoto", self.master._w, image)
         self.pack(fill=tk.BOTH, expand=True)
+
+    def center(self):
+        width = 1000
+        height = 800
+        screen_width = self.master.winfo_screenwidth()
+        screen_height = self.master.winfo_screenheight()
+        x = int((screen_width / 2) - (width / 2))
+        y = int((screen_height / 2) - (height / 2))
+        self.master.geometry(f"{width}x{height}+{x}+{y}")
 
     def draw(self):
         self.master.option_add("*tearOff", tk.FALSE)
