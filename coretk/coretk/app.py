@@ -21,9 +21,6 @@ class Application(tk.Frame):
         self.canvas = None
         self.statusbar = None
 
-        # variables
-        self.set_wallpaper = None
-
         # setup
         self.config = appconfig.read()
         self.style = ttk.Style()

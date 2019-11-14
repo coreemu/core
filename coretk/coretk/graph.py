@@ -2,6 +2,8 @@ import enum
 import logging
 import tkinter as tk
 
+from PIL import ImageTk
+
 from core.api.grpc import core_pb2
 from coretk.canvasaction import CanvasAction
 from coretk.canvastooltip import CanvasTooltip
@@ -19,6 +21,14 @@ class GraphMode(enum.Enum):
     PICKNODE = 2
     NODE = 3
     OTHER = 4
+
+
+class ScaleOption(enum.Enum):
+    NONE = 0
+    UPPER_LEFT = 1
+    CENTERED = 2
+    SCALED = 3
+    TILED = 4
 
 
 CORE_NODES = ["router"]
@@ -60,8 +70,8 @@ class CanvasGraph(tk.Canvas):
         self.wallpaper_drawn = None
         self.wallpaper_file = ""
         self.scale_option = tk.IntVar(value=1)
-        self.show_grid = tk.IntVar(value=1)
-        self.adjust_to_dim = tk.IntVar(value=0)
+        self.show_grid = tk.BooleanVar(value=True)
+        self.adjust_to_dim = tk.BooleanVar(value=False)
 
     def setup_menus(self):
         self.node_context = tk.Menu(self.master)
@@ -132,11 +142,12 @@ class CanvasGraph(tk.Canvas):
             width=1,
             tags="rectangle",
         )
-        self.tag_lower(self.grid)
         for i in range(0, width, 27):
             self.create_line(i, 0, i, height, dash=(2, 4), tags="gridline")
         for i in range(0, height, 27):
             self.create_line(0, i, width, i, dash=(2, 4), tags="gridline")
+        self.tag_lower("gridline")
+        self.tag_lower(self.grid)
 
     def draw_existing_component(self, session):
         """
@@ -228,9 +239,8 @@ class CanvasGraph(tk.Canvas):
                 if2
             )
 
-        # lift the nodes so they on top of the links
-        for i in self.find_withtag("node"):
-            self.lift(i)
+        # raise the nodes so they on top of the links
+        self.tag_raise("node")
 
     def canvas_xy(self, event):
         """
@@ -426,6 +436,132 @@ class CanvasGraph(tk.Canvas):
             self.core.add_graph_node(self.core.session_id, node.id, x, y, node_name)
             return node
 
+    def width_and_height(self):
+        """
+        retrieve canvas width and height in pixels
+
+        :return: nothing
+        """
+        grid = self.find_withtag("rectangle")[0]
+        x0, y0, x1, y1 = self.coords(grid)
+        canvas_w = abs(x0 - x1)
+        canvas_h = abs(y0 - y1)
+        return canvas_w, canvas_h
+
+    def wallpaper_upper_left(self):
+        tk_img = ImageTk.PhotoImage(self.wallpaper)
+        # crop image if it is bigger than canvas
+        canvas_w, canvas_h = self.width_and_height()
+        cropx = img_w = tk_img.width()
+        cropy = img_h = tk_img.height()
+        if img_w > canvas_w:
+            cropx -= img_w - canvas_w
+        if img_h > canvas_h:
+            cropy -= img_h - canvas_h
+        cropped = self.wallpaper.crop((0, 0, cropx, cropy))
+        cropped_tk = ImageTk.PhotoImage(cropped)
+        self.delete(self.wallpaper_id)
+        # place left corner of image to the left corner of the canvas
+        self.wallpaper_id = self.create_image(
+            (cropx / 2, cropy / 2), image=cropped_tk, tags="wallpaper"
+        )
+        self.wallpaper_drawn = cropped_tk
+
+    def wallpaper_center(self):
+        """
+        place the image at the center of canvas
+
+        :param Image img: image object
+        :return: nothing
+        """
+        tk_img = ImageTk.PhotoImage(self.wallpaper)
+        canvas_w, canvas_h = self.width_and_height()
+        cropx = img_w = tk_img.width()
+        cropy = img_h = tk_img.height()
+        # dimension of the cropped image
+        if img_w > canvas_w:
+            cropx -= img_w - canvas_w
+        if img_h > canvas_h:
+            cropy -= img_h - canvas_h
+        x0 = (img_w - cropx) / 2
+        y0 = (img_h - cropy) / 2
+        x1 = x0 + cropx
+        y1 = y0 + cropy
+        cropped = self.wallpaper.crop((x0, y0, x1, y1))
+        cropped_tk = ImageTk.PhotoImage(cropped)
+        # place the center of the image at the center of the canvas
+        self.delete(self.wallpaper_id)
+        self.wallpaper_id = self.create_image(
+            (canvas_w / 2, canvas_h / 2), image=cropped_tk, tags="wallpaper"
+        )
+        self.wallpaper_drawn = cropped_tk
+
+    def wallpaper_scaled(self):
+        """
+        scale image based on canvas dimension
+
+        :param Image img: image object
+        :return: nothing
+        """
+        canvas_w, canvas_h = self.width_and_height()
+        image = Images.create(self.wallpaper_file, int(canvas_w), int(canvas_h))
+        self.delete(self.wallpaper_id)
+        self.wallpaper_id = self.create_image(
+            (canvas_w / 2, canvas_h / 2), image=image, tags="wallpaper"
+        )
+        self.wallpaper_drawn = image
+
+    def resize_to_wallpaper(self):
+        image_tk = ImageTk.PhotoImage(self.wallpaper)
+        img_w = image_tk.width()
+        img_h = image_tk.height()
+        self.delete(self.wallpaper_id)
+        self.delete("rectangle")
+        self.delete("gridline")
+        self.draw_grid(img_w, img_h)
+        self.wallpaper_id = self.create_image((img_w / 2, img_h / 2), image=image_tk)
+        self.wallpaper_drawn = image_tk
+
+    def redraw_grid(self, width, height):
+        """
+        redraw grid with new dimension
+
+        :return: nothing
+        """
+        self.config(scrollregion=(0, 0, width + 200, height + 200))
+
+        # delete previous grid
+        self.delete("rectangle")
+        self.delete("gridline")
+
+        # redraw
+        self.draw_grid(width=width, height=height)
+
+        # hide/show grid
+        self.update_grid()
+
+    def redraw(self):
+        if self.adjust_to_dim.get():
+            self.resize_to_wallpaper()
+        else:
+            option = ScaleOption(self.scale_option.get())
+            if option == ScaleOption.UPPER_LEFT:
+                self.wallpaper_upper_left()
+            elif option == ScaleOption.CENTERED:
+                self.wallpaper_center()
+            elif option == ScaleOption.SCALED:
+                self.wallpaper_scaled()
+            elif option == ScaleOption.TILED:
+                logging.warning("tiled background not implemented yet")
+
+    def update_grid(self):
+        logging.info("updating grid show: %s", self.show_grid.get())
+        if self.show_grid.get():
+            self.itemconfig("gridline", state=tk.NORMAL)
+            self.tag_raise("gridline")
+        else:
+            self.itemconfig("gridline", state=tk.HIDDEN)
+
 
 class CanvasEdge:
     """
@@ -469,8 +605,6 @@ class CanvasEdge:
         self.link_info = None
         self.throughput = None
         self.wired = is_wired
-        # TODO resolve this
-        # self.canvas.tag_lower(self.id)
 
     def complete(self, dst, x, y):
         self.dst = dst
@@ -478,8 +612,8 @@ class CanvasEdge:
         x1, y1, _, _ = self.canvas.coords(self.id)
         self.canvas.coords(self.id, x1, y1, x, y)
         self.canvas.helper.draw_wireless_case(self.src, self.dst, self)
-        self.canvas.lift(self.src)
-        self.canvas.lift(self.dst)
+        self.canvas.tag_raise(self.src)
+        self.canvas.tag_raise(self.dst)
 
     def delete(self):
         self.canvas.delete(self.id)

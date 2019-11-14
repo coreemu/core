@@ -1,14 +1,11 @@
 """
 size and scale
 """
-import logging
 import tkinter as tk
 from tkinter import font, ttk
 
-from coretk.dialogs.canvasbackground import ScaleOption
 from coretk.dialogs.dialog import Dialog
 
-DRAW_OBJECT_TAGS = ["edge", "node", "nodename", "linkinfo", "antenna"]
 FRAME_PAD = 5
 PADX = 5
 
@@ -172,47 +169,11 @@ class SizeAndScaleDialog(Dialog):
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
-    def redraw_grid(self):
-        """
-        redraw grid with new dimension
-
-        :return: nothing
-        """
-        width, height = self.pixel_width.get(), self.pixel_height.get()
-        self.canvas.config(scrollregion=(0, 0, width + 200, height + 200))
-
-        # delete old plot and redraw
-        for i in self.canvas.find_withtag("gridline"):
-            self.canvas.delete(i)
-        for i in self.canvas.find_withtag("rectangle"):
-            self.canvas.delete(i)
-
-        self.canvas.draw_grid(width=width, height=height)
-        # lift anything that is drawn on the plot before
-        for tag in DRAW_OBJECT_TAGS:
-            for i in self.canvas.find_withtag(tag):
-                self.canvas.lift(i)
-
     def click_apply(self):
         meter_per_pixel = float(self.scale.get()) / 100
+        width, height = self.pixel_width.get(), self.pixel_height.get()
         self.canvas.meters_per_pixel = meter_per_pixel
-        self.redraw_grid()
-        # if there is a current wallpaper showing, redraw it based on current
-        # wallpaper options
-        wallpaper_tool = self.app.set_wallpaper
-        wallpaper = self.canvas.wallpaper
-        if wallpaper:
-            if self.canvas.adjust_to_dim.get() == 0:
-                scale_option = ScaleOption(self.canvas.scale_option.get())
-                if scale_option == ScaleOption.UPPER_LEFT:
-                    wallpaper_tool.upper_left(wallpaper)
-                elif scale_option == ScaleOption.CENTERED:
-                    wallpaper_tool.center(wallpaper)
-                elif scale_option == ScaleOption.SCALED:
-                    wallpaper_tool.scaled(wallpaper)
-                elif scale_option == ScaleOption.TILED:
-                    logging.warning("tiled background not implemented")
-            elif self.canvas.adjust_to_dim.get() == 1:
-                wallpaper_tool.canvas_to_image_dimension(wallpaper)
-            wallpaper_tool.show_grid()
+        self.canvas.redraw_grid(width, height)
+        if self.canvas.wallpaper:
+            self.canvas.redraw()
         self.destroy()
