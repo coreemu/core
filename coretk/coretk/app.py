@@ -15,6 +15,7 @@ from coretk.toolbar import Toolbar
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
+        self.config = appconfig.read()
         self.style = ttk.Style()
         self.setup_theme()
         self.menubar = None
@@ -29,7 +30,6 @@ class Application(tk.Frame):
         self.radiovar = tk.IntVar(value=1)
         self.show_grid_var = tk.IntVar(value=1)
         self.adjust_to_dim_var = tk.IntVar(value=0)
-        self.config = appconfig.read()
         self.core = CoreClient(self)
         self.setup_app()
         self.draw()
@@ -37,7 +37,7 @@ class Application(tk.Frame):
 
     def setup_theme(self):
         themes.load(self.style)
-        self.style.theme_use(themes.DARK)
+        self.style.theme_use(self.config["preferences"]["theme"])
         func = partial(themes.update_menu, self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", func)
 
