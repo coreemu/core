@@ -93,7 +93,7 @@ class EmaneConfiguration(Dialog):
         self.emane_dialog.top.columnconfigure(0, weight=1)
         self.emane_dialog.top.rowconfigure(0, weight=1)
         self.emane_config_frame = ConfigFrame(
-            self.emane_dialog.top, config=self.options
+            self.emane_dialog.top, self.app, config=self.options
         )
         self.emane_config_frame.draw_config()
         self.emane_config_frame.grid(sticky="nsew")
@@ -167,7 +167,7 @@ class EmaneConfiguration(Dialog):
 
         self.model_options = response.config
         self.model_config_frame = ConfigFrame(
-            self.emane_model_dialog.top, config=self.model_options
+            self.emane_model_dialog.top, self.app, config=self.model_options
         )
         self.model_config_frame.grid(sticky="nsew")
         self.model_config_frame.draw_config()

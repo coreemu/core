@@ -6,6 +6,8 @@ from pathlib import Path
 import yaml
 
 # gui home paths
+from coretk import themes
+
 HOME_PATH = Path.home().joinpath(".coretk")
 BACKGROUNDS_PATH = HOME_PATH.joinpath("backgrounds")
 CUSTOM_EMANE_PATH = HOME_PATH.joinpath("custom_emane")
@@ -68,6 +70,7 @@ def check_directory():
         editor = EDITORS[1]
     config = {
         "preferences": {
+            "theme": themes.DARK,
             "editor": editor,
             "terminal": terminal,
             "gui3d": "/usr/local/bin/std3d.sh",

@@ -22,7 +22,7 @@ class SessionOptionsDialog(Dialog):
         response = self.app.core.client.get_session_options(session_id)
         logging.info("session options: %s", response)
 
-        self.config_frame = ConfigFrame(self.top, config=response.config)
+        self.config_frame = ConfigFrame(self.top, self.app, config=response.config)
         self.config_frame.draw_config()
         self.config_frame.grid(sticky="nsew")
 

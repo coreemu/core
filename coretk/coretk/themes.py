@@ -1,3 +1,4 @@
+import logging
 import tkinter as tk
 
 DARK = "black"
@@ -6,6 +7,7 @@ DARK = "black"
 class Styles:
     tooltip = "Tooltip.TLabel"
     tooltip_frame = "Tooltip.TFrame"
+    service_checkbutton = "Service.TCheckbutton"
 
 
 class Colors:
@@ -20,6 +22,7 @@ class Colors:
     selectfg = "#ffffff"
     white = "white"
     black = "black"
+    listboxbg = "#f2f1f0"
 
 
 def load(style):
@@ -86,6 +89,7 @@ def load(style):
                     "padding": (2, 0),
                 }
             },
+            "TLabelframe": {"configure": {"relief": tk.GROOVE}},
             "TNotebook.Tab": {
                 "configure": {"padding": (6, 2, 6, 2)},
                 "map": {"background": [("selected", Colors.lighter)]},
@@ -105,13 +109,18 @@ def load(style):
                 "configure": {"justify": tk.LEFT, "relief": tk.SOLID, "borderwidth": 0}
             },
             Styles.tooltip_frame: {"configure": {}},
+            Styles.service_checkbutton: {
+                "configure": {
+                    "background": Colors.listboxbg,
+                    "foreground": Colors.black,
+                }
+            },
         },
     )
 
 
-def update_toplevel(style, event):
-    if not isinstance(event.widget, tk.Toplevel):
-        return
+def update_bg(style, event):
+    logging.info("updating background: %s", event.widget)
     bg = style.lookup(".", "background")
     event.widget.config(background=bg)
 

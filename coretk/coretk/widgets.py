@@ -18,11 +18,13 @@ INT_TYPES = {
 
 
 class FrameScroll(ttk.LabelFrame):
-    def __init__(self, master=None, _cls=tk.Frame, **kw):
+    def __init__(self, master, app, _cls=ttk.Frame, **kw):
         super().__init__(master, **kw)
+        self.app = app
         self.rowconfigure(0, weight=1)
         self.columnconfigure(0, weight=1)
-        self.canvas = tk.Canvas(self, highlightthickness=0)
+        bg = self.app.style.lookup(".", "background")
+        self.canvas = tk.Canvas(self, highlightthickness=0, background=bg)
         self.canvas.grid(row=0, sticky="nsew", padx=2, pady=2)
         self.canvas.columnconfigure(0, weight=1)
         self.canvas.rowconfigure(0, weight=1)
@@ -54,8 +56,8 @@ class FrameScroll(ttk.LabelFrame):
 
 
 class ConfigFrame(FrameScroll):
-    def __init__(self, master=None, config=None, **kw):
-        super().__init__(master, ttk.Notebook, **kw)
+    def __init__(self, master, app, config, **kw):
+        super().__init__(master, app, ttk.Notebook, **kw)
         self.config = config
         self.values = {}
 
@@ -136,13 +138,14 @@ class ListboxScroll(ttk.LabelFrame):
         self.listbox = tk.Listbox(
             self, selectmode=tk.SINGLE, yscrollcommand=self.scrollbar.set
         )
+        logging.info("listbox background: %s", self.listbox.cget("background"))
         self.listbox.grid(row=0, column=0, sticky="nsew")
         self.scrollbar.config(command=self.listbox.yview)
 
 
 class CheckboxList(FrameScroll):
-    def __init__(self, master=None, clicked=None, **kw):
-        super().__init__(master, **kw)
+    def __init__(self, master, app, clicked=None, **kw):
+        super().__init__(master, app, **kw)
         self.clicked = clicked
         self.frame.columnconfigure(0, weight=1)
 

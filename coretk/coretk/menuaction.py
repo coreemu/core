@@ -73,7 +73,6 @@ class MenuAction:
 
     def file_open_xml(self, event=None):
         logging.info("menuaction.py file_open_xml()")
-        self.app.is_open_xml = True
         file_path = filedialog.askopenfilename(
             initialdir=str(XML_PATH),
             title="Open",
