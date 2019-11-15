@@ -372,23 +372,6 @@ class CoreClient:
         response = self.client.stop_session(session_id=self.session_id)
         logging.debug("coregrpc.py Stop session, result: %s", response.result)
 
-    # # TODO no need, might get rid of this
-    # def add_link(self, id1, id2, type1, type2, edge):
-    #     """
-    #     Grpc client request add link
-    #
-    #     :param int session_id: session id
-    #     :param int id1: node 1 core id
-    #     :param core_pb2.NodeType type1: node 1 core node type
-    #     :param int id2: node 2 core id
-    #     :param core_pb2.NodeType type2: node 2 core node type
-    #     :return: nothing
-    #     """
-    #     if1 = self.create_interface(type1, edge.interface_1)
-    #     if2 = self.create_interface(type2, edge.interface_2)
-    #     response = self.client.add_link(self.session_id, id1, id2, if1, if2)
-    #     logging.info("created link: %s", response)
-
     def launch_terminal(self, node_id):
         response = self.client.get_node_terminal(self.session_id, node_id)
         logging.info("get terminal %s", response.terminal)

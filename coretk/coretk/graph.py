@@ -31,12 +31,6 @@ class ScaleOption(enum.Enum):
     TILED = 4
 
 
-CORE_NODES = ["router"]
-CORE_WIRED_NETWORK_NODES = []
-CORE_WIRELESS_NODE = ["wlan"]
-CORE_EMANE = ["emane"]
-
-
 class CanvasGraph(tk.Canvas):
     def __init__(self, master, core, cnf=None, **kwargs):
         if cnf is None:
@@ -670,14 +664,6 @@ class CanvasNode:
             self.canvas.core.launch_terminal(node_id)
         else:
             self.canvas.canvas_action.display_configuration(self)
-            # if self.node_type in CORE_NODES:
-            #     self.canvas.canvas_action.node_to_show_config = self
-            #     self.canvas.canvas_action.display_node_configuration()
-            # elif self.node_type in CORE_WIRED_NETWORK_NODES:
-            #     return
-            # elif self.node_type in CORE_WIRELESS_NODE:
-            #     return
-            # elif self
 
     def update_coords(self):
         self.x_coord, self.y_coord = self.canvas.coords(self.id)
