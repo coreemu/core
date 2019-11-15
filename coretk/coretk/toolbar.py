@@ -375,6 +375,7 @@ class Toolbar(ttk.Frame):
         """
         logging.debug("Click on STOP button ")
         self.app.core.stop_session()
+        self.app.canvas.delete("wireless")
         self.design_frame.tkraise()
 
     def update_annotation(self, image):

@@ -4,8 +4,6 @@ Link information, such as IPv4, IPv6 and throughput drawn in the canvas
 import logging
 import math
 
-WIRELESS_DEF = ["mdr", "wlan"]
-
 
 class LinkInfo:
     def __init__(self, canvas, edge, ip4_src, ip6_src, ip4_dst, ip6_dst):

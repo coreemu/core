@@ -19,7 +19,7 @@ class WirelessConnection:
             x1, y1 = self.canvas.coords(canvas_node_one.id)
             x2, y2 = self.canvas.coords(canvas_node_two.id)
             wlan_canvas_id = self.canvas.create_line(
-                x1, y1, x2, y2, fill="#009933", tags="wlan", width=1.5
+                x1, y1, x2, y2, fill="#009933", tags="wireless", width=1.5
             )
             self.map[key] = wlan_canvas_id
             canvas_node_one.wlans.append(wlan_canvas_id)

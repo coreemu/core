@@ -9,7 +9,6 @@ from coretk.canvasaction import CanvasAction
 from coretk.canvastooltip import CanvasTooltip
 from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.images import Images
-from coretk.interface import Interface
 from coretk.linkinfo import LinkInfo, Throughput
 from coretk.nodedelete import CanvasComponentManagement
 from coretk.wirelessconnection import WirelessConnection
@@ -84,7 +83,7 @@ class CanvasGraph(tk.Canvas):
         self.node_context.add_command(label="Hide")
         self.node_context.add_command(label="Services")
 
-    def canvas_reset_and_redraw(self, session):
+    def reset_and_redraw(self, session):
         """
         Reset the private variables CanvasGraph object, redraw nodes given the new grpc
         client.
@@ -183,22 +182,23 @@ class CanvasGraph(tk.Canvas):
             canvas_node_one.edges.add(edge)
             canvas_node_two.edges.add(edge)
             self.edges[edge.token] = edge
-            self.core.create_edge(edge.token, canvas_node_one, canvas_node_two)
+            self.core.links[edge.token] = link
             self.helper.redraw_antenna(link, canvas_node_one, canvas_node_two)
 
             # TODO add back the link info to grpc manager also redraw
-            grpc_if1 = link.interface_one
-            grpc_if2 = link.interface_two
+            # TODO will include throughput and ipv6 in the future
+            interface_one = link.interface_one
+            interface_two = link.interface_two
             ip4_src = None
             ip4_dst = None
             ip6_src = None
             ip6_dst = None
-            if grpc_if1 is not None:
-                ip4_src = grpc_if1.ip4
-                ip6_src = grpc_if1.ip6
-            if grpc_if2 is not None:
-                ip4_dst = grpc_if2.ip4
-                ip6_dst = grpc_if2.ip6
+            if interface_one is not None:
+                ip4_src = interface_one.ip4
+                ip6_src = interface_one.ip6
+            if interface_two is not None:
+                ip4_dst = interface_two.ip4
+                ip6_dst = interface_two.ip6
             edge.link_info = LinkInfo(
                 canvas=self,
                 edge=edge,
@@ -207,14 +207,8 @@ class CanvasGraph(tk.Canvas):
                 ip4_dst=ip4_dst,
                 ip6_dst=ip6_dst,
             )
-
-            # TODO will include throughput and ipv6 in the future
-            if1 = Interface(grpc_if1.name, grpc_if1.ip4, ifid=grpc_if1.id)
-            if2 = Interface(grpc_if2.name, grpc_if2.ip4, ifid=grpc_if2.id)
-            self.core.edges[edge.token].interface_1 = if1
-            self.core.edges[edge.token].interface_2 = if2
-            canvas_node_one.interfaces.append(if1)
-            canvas_node_two.interfaces.append(if2)
+            canvas_node_one.interfaces.append(interface_one)
+            canvas_node_two.interfaces.append(interface_two)
 
         # raise the nodes so they on top of the links
         self.tag_raise("node")
@@ -316,17 +310,17 @@ class CanvasGraph(tk.Canvas):
             node_src.edges.add(edge)
             node_dst = self.nodes[edge.dst]
             node_dst.edges.add(edge)
-            core_edge = self.core.create_edge(edge.token, node_src, node_dst)
+            link = self.core.create_link(edge.token, node_src, node_dst)
 
             # draw link info on the edge
-            if1 = core_edge.interface_1
-            if2 = core_edge.interface_2
             ip4_and_prefix_1 = None
             ip4_and_prefix_2 = None
-            if if1 is not None:
-                ip4_and_prefix_1 = if1.ip4_and_prefix
-            if if2 is not None:
-                ip4_and_prefix_2 = if2.ip4_and_prefix
+            if link.HasField("interface_one"):
+                if1 = link.interface_one
+                ip4_and_prefix_1 = f"{if1.ip4}/{if1.ip4mask}"
+            if link.HasField("interface_two"):
+                if2 = link.interface_two
+                ip4_and_prefix_2 = f"{if2.ip4}/{if2.ip4mask}"
             edge.link_info = LinkInfo(
                 self,
                 edge,

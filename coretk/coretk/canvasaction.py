@@ -6,13 +6,6 @@ from coretk.dialogs.emaneconfig import EmaneConfiguration
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
 
-# TODO, finish classifying node types
-NODE_TO_TYPE = {
-    "router": core_pb2.NodeType.DEFAULT,
-    "wlan": core_pb2.NodeType.WIRELESS_LAN,
-    "emane": core_pb2.NodeType.EMANE,
-}
-
 
 class CanvasAction:
     def __init__(self, master, canvas):
@@ -21,13 +14,13 @@ class CanvasAction:
         self.node_to_show_config = None
 
     def display_configuration(self, canvas_node):
-        pb_type = NODE_TO_TYPE[canvas_node.node_type]
+        node_type = canvas_node.core_node.type
         self.node_to_show_config = canvas_node
-        if pb_type == core_pb2.NodeType.DEFAULT:
+        if node_type == core_pb2.NodeType.DEFAULT:
             self.display_node_configuration()
-        elif pb_type == core_pb2.NodeType.WIRELESS_LAN:
+        elif node_type == core_pb2.NodeType.WIRELESS_LAN:
             self.display_wlan_configuration(canvas_node)
-        elif pb_type == core_pb2.NodeType.EMANE:
+        elif node_type == core_pb2.NodeType.EMANE:
             self.display_emane_configuration()
 
     def display_node_configuration(self):
