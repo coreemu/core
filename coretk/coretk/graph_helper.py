@@ -29,29 +29,31 @@ class GraphHelper:
                 self.canvas.delete(i)
 
     def draw_wireless_case(self, src_id, dst_id, edge):
-        src_node_name = self.canvas.nodes[src_id].node_type
-        dst_node_name = self.canvas.nodes[dst_id].node_type
-
-        if src_node_name == "wlan" or dst_node_name == "wlan":
+        src_node_type = self.canvas.nodes[src_id].core_node.type
+        dst_node_type = self.canvas.nodes[dst_id].core_node.type
+        is_src_wlan = src_node_type == core_pb2.NodeType.WIRELESS_LAN
+        is_dst_wlan = dst_node_type == core_pb2.NodeType.WIRELESS_LAN
+        if is_src_wlan or is_dst_wlan:
             self.canvas.itemconfig(edge.id, state=tk.HIDDEN)
             edge.wired = False
             if edge.token not in self.canvas.edges:
-                if src_node_name == "wlan" and dst_node_name == "wlan":
+                if is_src_wlan and is_dst_wlan:
                     self.canvas.nodes[src_id].antenna_draw.add_antenna()
-                elif src_node_name == "wlan":
+                elif is_src_wlan:
                     self.canvas.nodes[dst_id].antenna_draw.add_antenna()
                 else:
                     self.canvas.nodes[src_id].antenna_draw.add_antenna()
-
             edge.wired = True
 
     def redraw_antenna(self, link, node_one, node_two):
+        is_node_one_wlan = node_one.core_node.type == core_pb2.NodeType.WIRELESS_LAN
+        is_node_two_wlan = node_two.core_node.type == core_pb2.NodeType.WIRELESS_LAN
         if link.type == core_pb2.LinkType.WIRELESS:
-            if node_one.node_type == "wlan" and node_two.node_type == "wlan":
+            if is_node_one_wlan and is_node_two_wlan:
                 node_one.antenna_draw.add_antenna()
-            elif node_one.node_type == "wlan" and node_two.node_type != "wlan":
+            elif is_node_one_wlan and not is_node_two_wlan:
                 node_two.antenna_draw.add_antenna()
-            elif node_one.node_type != "wlan" and node_two.node_type == "wlan":
+            elif not is_node_one_wlan and is_node_two_wlan:
                 node_one.antenna_draw.add_antenna()
             else:
                 logging.error(
@@ -122,91 +124,3 @@ class WlanAntennaManager:
         """
         for i in self.antennas:
             self.canvas.delete(i)
-
-
-# class WlanConnection:
-#     def __init__(self, canvas, grpc):
-#         """
-#         create in
-#         :param canvas:
-#         """
-#         self.canvas = canvas
-#         self.core_grpc = grpc
-#         self.throughput_on = False
-#         self.map_node_link = {}
-#         self.links = []
-#
-#     def wireless_nodes(self):
-#         """
-#         retrieve all the wireless clouds in the canvas
-#
-#         :return: list(coretk.graph.CanvasNode)
-#         """
-#         wireless_nodes = []
-#         for n in self.canvas.nodes.values():
-#             if n.node_type == "wlan":
-#                 wireless_nodes.append(n)
-#         return wireless_nodes
-#
-#     def draw_wireless_link(self, src, dst):
-#         """
-#         draw a line between 2 nodes that are connected to the same wireless cloud
-#
-#         :param coretk.graph.CanvasNode src: source node
-#         :param coretk.graph.CanvasNode dst: destination node
-#         :return: nothing
-#         """
-#         cid = self.canvas.create_line(src.x_coord, src.y_coord, dst.x_coord, dst.y_coord, tags="wlanconnection")
-#         if src.id not in self.map_node_link:
-#             self.map_node_link[src.id] = []
-#         if dst.id not in self.map_node_link:
-#             self.map_node_link[dst.id] = []
-#         self.map_node_link[src.id].append(cid)
-#         self.map_node_link[dst.id].append(cid)
-#         self.links.append(cid)
-#
-#     def subnet_wireless_connection(self, wlan_node):
-#         """
-#         retrieve all the non-wireless nodes connected to wireless_node and create line (represent wireless connection) between each pair of nodes
-#         :param coretk.grpah.CanvasNode wlan_node: wireless node
-#
-#         :return: nothing
-#         """
-#         non_wlan_nodes = []
-#         for e in wlan_node.edges:
-#             src = self.canvas.nodes[e.src]
-#             dst = self.canvas.nodes[e.dst]
-#             if src.node_type == "wlan" and dst.node_type != "wlan":
-#                 non_wlan_nodes.append(dst)
-#             elif src.node_type != "wlan" and dst.node_type == "wlan":
-#                 non_wlan_nodes.append(src)
-#
-#         size = len(non_wlan_nodes)
-#         for i in range(size):
-#             for j in range(i+1, size):
-#                 self.draw_wireless_link(non_wlan_nodes[i], non_wlan_nodes[j])
-#
-#     def session_wireless_connection(self):
-#         """
-#         draw all the wireless connection in the canvas
-#
-#         :return: nothing
-#         """
-#         wlan_nodes = self.wireless_nodes()
-#         for n in wlan_nodes:
-#             self.subnet_wireless_connection(n)
-#
-#     def show_links(self):
-#         """
-#         show all the links
-#         """
-#         for l in self.links:
-#             self.canvas.itemconfig(l, state=tk.NORMAL)
-#
-#     def hide_links(self):
-#         """
-#         hide all the links
-#         :return:
-#         """
-#         for l in self.links:
-#             self.canvas.itemconfig(l, state=tk.HIDDEN)

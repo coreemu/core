@@ -36,8 +36,6 @@ class CanvasAction:
         self.node_to_show_config = None
 
     def display_wlan_configuration(self, canvas_node):
-
-        # print(self.canvas.grpc_manager.wlanconfig_management.configurations)
         wlan_config = self.master.core.wlanconfig_management.configurations[
             canvas_node.core_id
         ]

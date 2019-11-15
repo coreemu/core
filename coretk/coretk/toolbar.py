@@ -3,6 +3,7 @@ import tkinter as tk
 from functools import partial
 from tkinter import ttk
 
+from core.api.grpc import core_pb2
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
@@ -136,10 +137,16 @@ class Toolbar(ttk.Frame):
             (ImageEnum.PROUTER, "prouter"),
         ]
         # draw default nodes
-        for image_enum, tooltip in nodes:
+        for image_enum, model in nodes:
             image = icon(image_enum)
-            func = partial(self.update_button, self.node_button, image, tooltip)
-            self.create_picker_button(image, func, self.node_picker, tooltip)
+            func = partial(
+                self.update_button,
+                self.node_button,
+                image,
+                core_pb2.NodeType.DEFAULT,
+                model,
+            )
+            self.create_picker_button(image, func, self.node_picker, model)
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
             custom_node = self.app.core.custom_nodes[name]
@@ -216,14 +223,15 @@ class Toolbar(ttk.Frame):
         dialog = CustomNodesDialog(self.app, self.app)
         dialog.show()
 
-    def update_button(self, button, image, name):
-        logging.info("update button(%s): %s", button, name)
+    def update_button(self, button, image, node_type, model=None):
+        logging.info("update button(%s): %s", button, node_type)
         self.hide_pickers()
         button.configure(image=image)
         button.image = image
         self.app.canvas.mode = GraphMode.NODE
         self.app.canvas.draw_node_image = image
-        self.app.canvas.draw_node_name = name
+        self.app.canvas.draw_node_type = node_type
+        self.app.canvas.draw_node_model = model
 
     def hide_pickers(self):
         logging.info("hiding pickers")
@@ -260,18 +268,18 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
         nodes = [
-            (ImageEnum.HUB, "hub", "ethernet hub"),
-            (ImageEnum.SWITCH, "switch", "ethernet switch"),
-            (ImageEnum.WLAN, "wlan", "wireless LAN"),
-            (ImageEnum.EMANE, "emane", "EMANE"),
-            (ImageEnum.RJ45, "rj45", "rj45 physical interface tool"),
-            (ImageEnum.TUNNEL, "tunnel", "tunnel tool"),
+            (ImageEnum.HUB, core_pb2.NodeType.HUB, "ethernet hub"),
+            (ImageEnum.SWITCH, core_pb2.NodeType.SWITCH, "ethernet switch"),
+            (ImageEnum.WLAN, core_pb2.NodeType.WIRELESS_LAN, "wireless LAN"),
+            (ImageEnum.EMANE, core_pb2.NodeType.EMANE, "EMANE"),
+            (ImageEnum.RJ45, core_pb2.NodeType.RJ45, "rj45 physical interface tool"),
+            (ImageEnum.TUNNEL, core_pb2.NodeType.TUNNEL, "tunnel tool"),
         ]
-        for image_enum, name, tooltip in nodes:
+        for image_enum, node_type, tooltip in nodes:
             image = icon(image_enum)
             self.create_picker_button(
                 image,
-                partial(self.update_button, self.network_button, image, name),
+                partial(self.update_button, self.network_button, image, node_type),
                 self.network_picker,
                 tooltip,
             )
