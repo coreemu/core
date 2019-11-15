@@ -107,3 +107,5 @@ class ImageEnum(Enum):
     FILEOPEN = "fileopen"
     EDITDELETE = "edit-delete"
     ANTENNA = "antenna"
+    DOCKER = "docker"
+    LXC = "lxc"

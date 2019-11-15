@@ -130,28 +130,32 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.node_picker = ttk.Frame(self.master)
         nodes = [
-            (ImageEnum.ROUTER, "router"),
-            (ImageEnum.HOST, "host"),
-            (ImageEnum.PC, "PC"),
-            (ImageEnum.MDR, "mdr"),
-            (ImageEnum.PROUTER, "prouter"),
+            (ImageEnum.ROUTER, core_pb2.NodeType.DEFAULT, "router"),
+            (ImageEnum.HOST, core_pb2.NodeType.DEFAULT, "host"),
+            (ImageEnum.PC, core_pb2.NodeType.DEFAULT, "PC"),
+            (ImageEnum.MDR, core_pb2.NodeType.DEFAULT, "mdr"),
+            (ImageEnum.PROUTER, core_pb2.NodeType.DEFAULT, "prouter"),
+            (ImageEnum.DOCKER, core_pb2.NodeType.DOCKER, "Docker"),
+            (ImageEnum.LXC, core_pb2.NodeType.LXC, "LXC"),
         ]
         # draw default nodes
-        for image_enum, model in nodes:
+        for image_enum, node_type, model in nodes:
             image = icon(image_enum)
             func = partial(
-                self.update_button,
-                self.node_button,
-                image,
-                core_pb2.NodeType.DEFAULT,
-                model,
+                self.update_button, self.node_button, image, node_type, model
             )
             self.create_picker_button(image, func, self.node_picker, model)
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
             custom_node = self.app.core.custom_nodes[name]
             image = custom_node.image
-            func = partial(self.update_button, self.node_button, image, name)
+            func = partial(
+                self.update_button,
+                self.node_button,
+                image,
+                core_pb2.NodeType.DEFAULT,
+                name,
+            )
             self.create_picker_button(image, func, self.node_picker, name)
         # draw edit node
         image = icon(ImageEnum.EDITNODE)
