@@ -2,6 +2,7 @@
 import logging
 import tkinter as tk
 from tkinter import ttk
+from tkinter.scrolledtext import ScrolledText
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
@@ -38,6 +39,9 @@ class ServiceConfiguration(Dialog):
         self.validate_commands_listbox = None
         self.validation_time_entry = None
         self.validation_mode_entry = None
+        self.service_file_data = None
+        self.service_files = {}
+        self.temp_service_files = {}
         self.load()
         self.draw()
 
@@ -57,6 +61,13 @@ class ServiceConfiguration(Dialog):
         self.shutdown_commands = [x for x in service_config.shutdown]
         self.validation_mode = service_config.validation_mode
         self.validation_time = service_config.validation_timer
+        self.service_files = {
+            x: self.app.core.get_node_service_file(
+                self.canvas_node.core_id, self.service_name, x
+            )
+            for x in self.filenames
+        }
+        self.temp_service_files = self.service_files
 
     def draw(self):
         # self.columnconfigure(1, weight=1)
@@ -103,17 +114,17 @@ class ServiceConfiguration(Dialog):
         frame = ttk.Frame(tab1)
         label = ttk.Label(frame, text="File name: ")
         label.grid(row=0, column=0)
-        self.filename_combobox = ttk.Combobox(frame, values=self.filenames)
+        self.filename_combobox = ttk.Combobox(
+            frame, values=self.filenames, state="readonly"
+        )
         self.filename_combobox.grid(row=0, column=1)
-        if len(self.filenames) > 0:
-            self.filename_combobox.current(0)
         self.filename_combobox.bind(
             "<<ComboboxSelected>>", self.display_service_file_data
         )
-        button = ttk.Button(frame, image=self.documentnew_img)
+        button = ttk.Button(frame, image=self.documentnew_img, state="disabled")
         button.bind("<Button-1>", self.add_filename)
         button.grid(row=0, column=2)
-        button = ttk.Button(frame, image=self.editdelete_img)
+        button = ttk.Button(frame, image=self.editdelete_img, state="disabled")
         button.bind("<Button-1>", self.delete_filename)
         button.grid(row=0, column=3)
         frame.grid(row=1, column=0, sticky="nsew")
@@ -152,6 +163,13 @@ class ServiceConfiguration(Dialog):
         button.image = image
         button.grid(row=0, column=2)
         frame.grid(row=3, column=0, sticky="nsew")
+
+        self.service_file_data = ScrolledText(tab1)
+        self.service_file_data.grid(row=4, column=0, sticky="nsew")
+        if len(self.filenames) > 0:
+            self.filename_combobox.current(0)
+            self.service_file_data.delete(1.0, "end")
+            self.service_file_data.insert("end", self.service_files[self.filenames[0]])
 
         # tab 2
         label = ttk.Label(
@@ -240,9 +258,13 @@ class ServiceConfiguration(Dialog):
                     mode = "NON_BLOCKING"
                 elif self.validation_mode == core_pb2.ServiceValidationMode.TIMER:
                     mode = "TIMER"
+                print("the mode is", mode)
                 self.validation_mode_entry = ttk.Entry(
-                    frame, state="disabled", textvariable=tk.StringVar(value=mode)
+                    frame, textvariable=tk.StringVar(value=mode)
                 )
+                self.validation_mode_entry.insert("end", mode)
+                print("get mode")
+                print(self.validation_mode_entry.get())
                 self.validation_mode_entry.grid(row=i, column=1)
             elif i == 2:
                 label = ttk.Label(frame, text="Validation period:")
@@ -274,6 +296,8 @@ class ServiceConfiguration(Dialog):
         frame.grid(row=3, column=0)
 
     def add_filename(self, event):
+        # not worry about it for now
+        return
         frame_contains_button = event.widget.master
         combobox = frame_contains_button.grid_slaves(row=0, column=1)[0]
         filename = combobox.get()
@@ -281,6 +305,8 @@ class ServiceConfiguration(Dialog):
             combobox["values"] += (filename,)
 
     def delete_filename(self, event):
+        # not worry about it for now
+        return
         frame_comntains_button = event.widget.master
         combobox = frame_comntains_button.grid_slaves(row=0, column=1)[0]
         filename = combobox.get()
@@ -333,6 +359,9 @@ class ServiceConfiguration(Dialog):
             validate_commands,
             shutdown_commands,
         )
+        filename = self.filename_combobox.get()
+        file_data = self.service_file_data.get()
+        print(filename, file_data)
         logging.info(
             "%s, %s, %s, %s, %s",
             metadata,
@@ -347,7 +376,10 @@ class ServiceConfiguration(Dialog):
         )
 
     def display_service_file_data(self, event):
-        print("not implemented")
+        combobox = event.widget
+        filename = combobox.get()
+        self.service_file_data.delete(1.0, "end")
+        self.service_file_data.insert("end", self.service_files[filename])
 
     def click_defaults(self):
         logging.info("not implemented")
