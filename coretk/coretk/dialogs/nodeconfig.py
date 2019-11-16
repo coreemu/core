@@ -1,10 +1,11 @@
 import tkinter as tk
 from tkinter import ttk
 
-from coretk.coreclient import DEFAULT_NODES
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeService
+
+DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
 
 
 class NodeConfigDialog(Dialog):

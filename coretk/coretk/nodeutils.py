@@ -44,6 +44,11 @@ class NodeUtils:
     NODES = []
     NETWORK_NODES = []
     NODE_ICONS = {}
+    INTERFACE_NODE = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
+
+    @classmethod
+    def is_interface_node(cls, node_type):
+        return node_type in cls.INTERFACE_NODE
 
     @classmethod
     def node_icon(cls, node_type, model):

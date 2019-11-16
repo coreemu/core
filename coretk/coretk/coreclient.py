@@ -9,11 +9,10 @@ from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.interface import InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
-from coretk.nodeutils import NodeDraw
+from coretk.nodeutils import NodeDraw, NodeUtils
 from coretk.servicenodeconfig import ServiceNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
-DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
 OBSERVERS = {
     "processes": "ps",
     "ifconfig": "ifconfig",
@@ -406,9 +405,6 @@ class CoreClient:
         else:
             return self.reusable.pop(0)
 
-    def is_model_node(self, name):
-        return name in DEFAULT_NODES or name in self.custom_nodes
-
     def create_node(self, x, y, node_type, model):
         """
         Add node, with information filled in, to grpc manager
@@ -511,7 +507,7 @@ class CoreClient:
     def create_interface(self, canvas_node):
         interface = None
         core_node = canvas_node.core_node
-        if self.is_model_node(core_node.model):
+        if NodeUtils.is_interface_node(core_node.type):
             ifid = len(canvas_node.interfaces)
             name = f"eth{ifid}"
             interface = core_pb2.Interface(
