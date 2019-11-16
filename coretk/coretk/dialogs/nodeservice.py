@@ -13,14 +13,13 @@ class NodeService(Dialog):
     def __init__(self, master, app, canvas_node, services=None):
         super().__init__(master, app, "Node Services", modal=True)
         self.canvas_node = canvas_node
+        self.node_id = canvas_node.core_node.id
         self.groups = None
         self.services = None
         self.current = None
         if services is None:
             services = set(
-                app.core.serviceconfig_manager.configurations[
-                    canvas_node.core_id
-                ].keys()
+                app.core.serviceconfig_manager.configurations[self.node_id].keys()
             )
         self.current_services = services
         self.draw()

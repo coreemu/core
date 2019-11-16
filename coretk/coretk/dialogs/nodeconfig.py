@@ -21,7 +21,7 @@ class NodeConfigDialog(Dialog):
         self.image = canvas_node.image
         self.image_button = None
         self.name = tk.StringVar(value=canvas_node.name)
-        self.type = tk.StringVar(value=canvas_node.node_type)
+        self.type = tk.StringVar(value=canvas_node.core_node.model)
         self.server = tk.StringVar()
         self.draw()
 

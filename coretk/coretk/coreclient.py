@@ -5,11 +5,10 @@ import logging
 import os
 
 from core.api.grpc import client, core_pb2
-from coretk.coretocanvas import CoreToCanvasMapping
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.images import NODE_WIDTH, Images
-from coretk.interface import Interface, InterfaceManager
+from coretk.interface import InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.servicefileconfig import ServiceFileConfig
 from coretk.servicenodeconfig import ServiceNodeConfig
@@ -28,47 +27,6 @@ OBSERVERS = {
     "firewall rules": "iptables -L",
     "IPSec policies": "setkey -DP",
 }
-
-
-class Node:
-    def __init__(self, session_id, node_id, node_type, model, x, y, name):
-        """
-        Create an instance of a node
-
-        :param int session_id: session id
-        :param int node_id: node id
-        :param core_pb2.NodeType node_type: node type
-        :param int x: x coordinate
-        :param int y: coordinate
-        :param str name: node name
-        """
-        self.session_id = session_id
-        self.node_id = node_id
-        self.type = node_type
-        self.x = x
-        self.y = y
-        self.model = model
-        self.name = name
-        self.interfaces = []
-
-
-class Edge:
-    def __init__(self, session_id, node_id_1, node_type_1, node_id_2, node_type_2):
-        """
-        Create an instance of an edge
-        :param int session_id: session id
-        :param int node_id_1: node 1 id
-        :param int node_type_1: node 1 type
-        :param core_pb2.NodeType node_id_2: node 2 id
-        :param core_pb2.NodeType node_type_2: node 2 type
-        """
-        self.session_id = session_id
-        self.id1 = node_id_1
-        self.id2 = node_id_2
-        self.type1 = node_type_1
-        self.type2 = node_type_2
-        self.interface_1 = None
-        self.interface_2 = None
 
 
 class CoreServer:
@@ -113,15 +71,15 @@ class CoreClient:
         self.read_config()
 
         # data for managing the current session
+        self.canvas_nodes = {}
+        self.interface_to_edge = {}
         self.state = None
-        self.nodes = {}
-        self.edges = {}
+        self.links = {}
         self.hooks = {}
         self.id = 1
         self.reusable = []
         self.preexisting = set()
         self.interfaces_manager = InterfaceManager()
-        self.core_mapping = CoreToCanvasMapping()
         self.wlanconfig_management = WlanNodeConfig()
         self.mobilityconfig_management = MobilityNodeConfig()
         self.emaneconfig_management = EmaneModelNodeConfig(app)
@@ -183,8 +141,8 @@ class CoreClient:
         # clear session data
         self.reusable.clear()
         self.preexisting.clear()
-        self.nodes.clear()
-        self.edges.clear()
+        self.canvas_nodes.clear()
+        self.links.clear()
         self.hooks.clear()
         self.wlanconfig_management.configurations.clear()
         self.mobilityconfig_management.configurations.clear()
@@ -207,14 +165,14 @@ class CoreClient:
         for node in session.nodes:
             if node.type == core_pb2.NodeType.WIRELESS_LAN:
                 response = self.client.get_wlan_config(self.session_id, node.id)
-                logging.info("wlan config(%s): %s", node.id, response)
+                logging.debug("wlan config(%s): %s", node.id, response)
                 node_config = response.config
                 config = {x: node_config[x].value for x in node_config}
                 self.wlanconfig_management.configurations[node.id] = config
 
         # get mobility configs
         response = self.client.get_mobility_configs(self.session_id)
-        logging.info("mobility configs: %s", response)
+        logging.debug("mobility configs: %s", response)
         for node_id in response.configs:
             node_config = response.configs[node_id].config
             config = {x: node_config[x].value for x in node_config}
@@ -222,7 +180,7 @@ class CoreClient:
 
         # get emane config
         response = self.client.get_emane_config(self.session_id)
-        logging.info("emane config: %s", response)
+        logging.debug("emane config: %s", response)
         self.emane_config = response.config
 
         # get emane model config
@@ -239,7 +197,7 @@ class CoreClient:
                 self.reusable.append(i)
 
         # draw session
-        self.app.canvas.canvas_reset_and_redraw(session)
+        self.app.canvas.reset_and_redraw(session)
 
         # draw tool bar appropritate with session state
         if self.is_runtime():
@@ -343,8 +301,8 @@ class CoreClient:
             logging.info("delete links %s", response)
 
     def start_session(self):
-        nodes = self.get_nodes_proto()
-        links = self.get_links_proto()
+        nodes = [x.core_node for x in self.canvas_nodes.values()]
+        links = list(self.links.values())
         wlan_configs = self.get_wlan_configs_proto()
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
@@ -373,23 +331,6 @@ class CoreClient:
     def stop_session(self):
         response = self.client.stop_session(session_id=self.session_id)
         logging.debug("coregrpc.py Stop session, result: %s", response.result)
-
-    # # TODO no need, might get rid of this
-    # def add_link(self, id1, id2, type1, type2, edge):
-    #     """
-    #     Grpc client request add link
-    #
-    #     :param int session_id: session id
-    #     :param int id1: node 1 core id
-    #     :param core_pb2.NodeType type1: node 1 core node type
-    #     :param int id2: node 2 core id
-    #     :param core_pb2.NodeType type2: node 2 core node type
-    #     :return: nothing
-    #     """
-    #     if1 = self.create_interface(type1, edge.interface_1)
-    #     if2 = self.create_interface(type2, edge.interface_2)
-    #     response = self.client.add_link(self.session_id, id1, id2, if1, if2)
-    #     logging.info("created link: %s", response)
 
     def launch_terminal(self, node_id):
         response = self.client.get_node_terminal(self.session_id, node_id)
@@ -448,8 +389,10 @@ class CoreClient:
 
         :return: nothing
         """
-        node_protos = self.get_nodes_proto()
-        link_protos = self.get_links_proto()
+
+        node_protos = [x.core_node for x in self.canvas_nodes.values()]
+        link_protos = list(self.links.values())
+        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
         for node_proto in node_protos:
             if node_proto.id not in self.created_nodes:
                 response = self.client.add_node(self.session_id, node_proto)
@@ -482,17 +425,6 @@ class CoreClient:
         logging.debug("Close grpc")
         self.client.close()
 
-    def peek_id(self):
-        """
-        Peek the next id to be used
-
-        :return: nothing
-        """
-        if len(self.reusable) == 0:
-            return self.id
-        else:
-            return self.reusable[0]
-
     def get_id(self):
         """
         Get the next node id as well as update id status and reusable ids
@@ -510,106 +442,91 @@ class CoreClient:
     def is_model_node(self, name):
         return name in DEFAULT_NODES or name in self.custom_nodes
 
-    def add_graph_node(self, session_id, canvas_id, x, y, name):
+    def create_node(self, x, y, node_type, model):
         """
         Add node, with information filled in, to grpc manager
 
-        :param int session_id: session id
-        :param int canvas_id: node's canvas id
         :param int x: x coord
         :param int y: y coord
-        :param str name: node type
+        :param core_pb2.NodeType node_type: node type
+        :param str model: node model
         :return: nothing
         """
-        node_type = None
-        node_model = None
-        if name in NETWORK_NODES:
-            if name == "switch":
-                node_type = core_pb2.NodeType.SWITCH
-            elif name == "hub":
-                node_type = core_pb2.NodeType.HUB
-            elif name == "wlan":
-                node_type = core_pb2.NodeType.WIRELESS_LAN
-            elif name == "rj45":
-                node_type = core_pb2.NodeType.RJ45
-            elif name == "emane":
-                node_type = core_pb2.NodeType.EMANE
-            elif name == "tunnel":
-                node_type = core_pb2.NodeType.TUNNEL
-            elif name == "emane":
-                node_type = core_pb2.NodeType.EMANE
-        elif self.is_model_node(name):
-            node_type = core_pb2.NodeType.DEFAULT
-            node_model = name
-        else:
-            logging.error("invalid node name: %s", name)
-        nid = self.get_id()
-        create_node = Node(session_id, nid, node_type, node_model, x, y, name)
+        node_id = self.get_id()
+        position = core_pb2.Position(x=x, y=y)
+        node = core_pb2.Node(
+            id=node_id,
+            type=node_type,
+            name=f"n{node_id}",
+            model=model,
+            position=position,
+        )
 
         # set default configuration for wireless node
-        self.wlanconfig_management.set_default_config(node_type, nid)
-        self.mobilityconfig_management.set_default_configuration(node_type, nid)
+        self.wlanconfig_management.set_default_config(node_type, node_id)
+        self.mobilityconfig_management.set_default_configuration(node_type, node_id)
 
         # set default emane configuration for emane node
         if node_type == core_pb2.NodeType.EMANE:
-            self.emaneconfig_management.set_default_config(nid)
+            self.emaneconfig_management.set_default_config(node_id)
 
         # set default service configurations
         if node_type == core_pb2.NodeType.DEFAULT:
             self.serviceconfig_manager.node_default_services_configuration(
-                node_id=nid, node_model=node_model
+                node_id=node_id, node_model=model
             )
 
-        self.nodes[canvas_id] = create_node
-        self.core_mapping.map_core_id_to_canvas_id(nid, canvas_id)
         logging.debug(
-            "Adding node to core.. session id: %s, coords: (%s, %s), name: %s",
-            session_id,
+            "adding node to core session: %s, coords: (%s, %s), name: %s",
+            self.session_id,
             x,
             y,
-            name,
+            node.name,
         )
+        return node
 
-    def delete_wanted_graph_nodes(self, canvas_ids, tokens):
+    def delete_wanted_graph_nodes(self, node_ids, edge_tokens):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
 
-        :param list(int) canvas_ids: list of canvas node ids
+        :param list[int] node_ids: list of nodes to delete
+        :param list edge_tokens: list of edges to delete
         :return: nothing
         """
-        # keep reference to the core ids
-        core_node_ids = [self.nodes[x].node_id for x in canvas_ids]
-        node_interface_pairs = []
-
         # delete the nodes
-        for i in canvas_ids:
+        for node_id in node_ids:
             try:
-                n = self.nodes.pop(i)
-                self.reusable.append(n.node_id)
+                del self.canvas_nodes[node_id]
+                self.reusable.append(node_id)
             except KeyError:
-                logging.error("coreclient.py INVALID NODE CANVAS ID")
-
+                logging.error("invalid canvas id: %s", node_id)
         self.reusable.sort()
 
         # delete the edges and interfaces
-        for i in tokens:
+        node_interface_pairs = []
+        for i in edge_tokens:
             try:
-                e = self.edges.pop(i)
-                if e.interface_1 is not None:
-                    node_interface_pairs.append(tuple([e.id1, e.interface_1.id]))
-                if e.interface_2 is not None:
-                    node_interface_pairs.append(tuple([e.id2, e.interface_2.id]))
-
+                link = self.links.pop(i)
+                if link.interface_one is not None:
+                    node_interface_pairs.append(
+                        (link.node_one_id, link.interface_one.id)
+                    )
+                if link.interface_two is not None:
+                    node_interface_pairs.append(
+                        (link.node_two_id, link.interface_two.id)
+                    )
             except KeyError:
                 logging.error("coreclient.py invalid edge token ")
 
         # delete global emane config if there no longer exist any emane cloud
-        if core_pb2.NodeType.EMANE not in [x.type for x in self.nodes.values()]:
+        # TODO: should not need to worry about this
+        node_types = [x.core_node.type for x in self.canvas_nodes.values()]
+        if core_pb2.NodeType.EMANE not in node_types:
             self.emane_config = None
 
         # delete any mobility configuration, wlan configuration
-        for i in core_node_ids:
+        for i in node_ids:
             if i in self.mobilityconfig_management.configurations:
                 self.mobilityconfig_management.configurations.pop(i)
             if i in self.wlanconfig_management.configurations:
@@ -619,214 +536,82 @@ class CoreClient:
         for i in node_interface_pairs:
             if i in self.emaneconfig_management.configurations:
                 self.emaneconfig_management.configurations.pop(i)
-        for i in core_node_ids:
+        for i in node_ids:
             if tuple([i, None]) in self.emaneconfig_management.configurations:
                 self.emaneconfig_management.configurations.pop(tuple([i, None]))
 
-    def add_preexisting_node(self, canvas_node, session_id, core_node, name):
-        """
-        Add preexisting nodes to grpc manager
-
-        :param str name: node_type
-        :param core_pb2.Node core_node: core node grpc message
-        :param coretk.graph.CanvasNode canvas_node: canvas node
-        :param int session_id: session id
-        :return: nothing
-        """
-
-        # update the next available id
-        core_id = core_node.id
-        if self.id is None or core_id >= self.id:
-            self.id = core_id + 1
-        self.preexisting.add(core_id)
-        n = Node(
-            session_id,
-            core_id,
-            core_node.type,
-            core_node.model,
-            canvas_node.x_coord,
-            canvas_node.y_coord,
-            name,
-        )
-        self.nodes[canvas_node.id] = n
-
-    def update_node_location(self, canvas_id, new_x, new_y):
-        """
-        update node
-
-        :param int canvas_id: canvas id of that node
-        :param int new_x: new x coord
-        :param int new_y: new y coord
-        :return: nothing
-        """
-        self.nodes[canvas_id].x = new_x
-        self.nodes[canvas_id].y = new_y
-
-    def update_reusable_id(self):
-        """
-        Update available id for reuse
-
-        :return: nothing
-        """
-        if len(self.preexisting) > 0:
-            for i in range(1, self.id):
-                if i not in self.preexisting:
-                    self.reusable.append(i)
-
-            self.preexisting.clear()
-            logging.debug("Next id: %s, Reusable: %s", self.id, self.reusable)
-
-    def create_interface(self, node_type, gui_interface):
-        """
-        create a protobuf interface given the interface object stored by the programmer
-
-        :param core_bp2.NodeType type: node type
-        :param coretk.interface.Interface gui_interface: the programmer's interface object
-        :rtype: core_bp2.Interface
-        :return: protobuf interface object
-        """
-        if node_type != core_pb2.NodeType.DEFAULT:
-            return None
-        else:
+    def create_interface(self, canvas_node):
+        interface = None
+        core_node = canvas_node.core_node
+        if self.is_model_node(core_node.model):
+            ifid = len(canvas_node.interfaces)
+            name = f"eth{ifid}"
             interface = core_pb2.Interface(
-                id=gui_interface.id,
-                name=gui_interface.name,
-                mac=gui_interface.mac,
-                ip4=gui_interface.ipv4,
-                ip4mask=gui_interface.ip4prefix,
+                id=ifid,
+                name=name,
+                ip4=str(self.interfaces_manager.get_address()),
+                ip4mask=24,
             )
-            logging.debug("create interface: %s", interface)
-            return interface
-
-    def create_edge_interface(self, edge, src_canvas_id, dst_canvas_id):
-        """
-        Create the interface for the two end of an edge, add a copy to node's interfaces
-
-        :param coretk.coreclient.Edge edge: edge to add interfaces to
-        :param int src_canvas_id: canvas id for the source node
-        :param int dst_canvas_id: canvas id for the destination node
-        :return: nothing
-        """
-        src_interface = None
-        dst_interface = None
-        print("create interface")
-        self.interfaces_manager.new_subnet()
-
-        src_node = self.nodes[src_canvas_id]
-        if self.is_model_node(src_node.model):
-            ifid = len(src_node.interfaces)
-            name = "eth" + str(ifid)
-            src_interface = Interface(
-                name=name, ifid=ifid, ipv4=str(self.interfaces_manager.get_address())
-            )
-            self.nodes[src_canvas_id].interfaces.append(src_interface)
+            canvas_node.interfaces.append(interface)
             logging.debug(
-                "Create source interface 1... IP: %s, name: %s",
-                src_interface.ipv4,
-                src_interface.name,
+                "create node(%s) interface IPv4: %s, name: %s",
+                core_node.name,
+                interface.ip4,
+                interface.name,
             )
+        return interface
 
-        dst_node = self.nodes[dst_canvas_id]
-        if self.is_model_node(dst_node.model):
-            ifid = len(dst_node.interfaces)
-            name = "eth" + str(ifid)
-            dst_interface = Interface(
-                name=name, ifid=ifid, ipv4=str(self.interfaces_manager.get_address())
-            )
-            self.nodes[dst_canvas_id].interfaces.append(dst_interface)
-            logging.debug(
-                "Create destination interface... IP: %s, name: %s",
-                dst_interface.ipv4,
-                dst_interface.name,
-            )
-
-        edge.interface_1 = src_interface
-        edge.interface_2 = dst_interface
-        return src_interface, dst_interface
-
-    def add_edge(self, session_id, token, canvas_id_1, canvas_id_2):
+    def create_link(self, token, canvas_node_one, canvas_node_two):
         """
-        Add an edge to grpc manager
+        Create core link for a pair of canvas nodes, with token referencing
+        the canvas edge.
 
-        :param int session_id: core session id
         :param tuple(int, int) token: edge's identification in the canvas
-        :param int canvas_id_1: canvas id of source node
-        :param int canvas_id_2: canvas_id of destination node
+        :param canvas_node_one: canvas node one
+        :param canvas_node_two: canvas node two
 
         :return: nothing
         """
-        node_one = self.nodes[canvas_id_1]
-        node_two = self.nodes[canvas_id_2]
-        if canvas_id_1 in self.nodes and canvas_id_2 in self.nodes:
-            edge = Edge(
-                session_id,
-                node_one.node_id,
-                node_one.type,
-                node_two.node_id,
-                node_two.type,
-            )
-            self.edges[token] = edge
-            src_interface, dst_interface = self.create_edge_interface(
-                edge, canvas_id_1, canvas_id_2
-            )
-            node_one_id = node_one.node_id
-            node_two_id = node_two.node_id
+        node_one = canvas_node_one.core_node
+        node_two = canvas_node_two.core_node
 
-            # provide a way to get an edge from a core node and an interface id
-            if src_interface is not None:
-                self.core_mapping.map_node_and_interface_to_canvas_edge(
-                    node_one_id, src_interface.id, token
+        # create interfaces
+        self.interfaces_manager.new_subnet()
+        interface_one = self.create_interface(canvas_node_one)
+        if interface_one is not None:
+            self.interface_to_edge[(node_one.id, interface_one.id)] = token
+        interface_two = self.create_interface(canvas_node_two)
+        if interface_two is not None:
+            self.interface_to_edge[(node_two.id, interface_two.id)] = token
+
+        # emane setup
+        # TODO: determine if this is needed
+        if (
+            node_one.type == core_pb2.NodeType.EMANE
+            and node_two.type == core_pb2.NodeType.DEFAULT
+        ):
+            if node_two.model == "mdr":
+                self.emaneconfig_management.set_default_for_mdr(
+                    node_one.node_id, node_two.node_id, interface_two.id
+                )
+        elif (
+            node_two.type == core_pb2.NodeType.EMANE
+            and node_one.type == core_pb2.NodeType.DEFAULT
+        ):
+            if node_one.model == "mdr":
+                self.emaneconfig_management.set_default_for_mdr(
+                    node_two.node_id, node_one.node_id, interface_one.id
                 )
 
-            if dst_interface is not None:
-                self.core_mapping.map_node_and_interface_to_canvas_edge(
-                    node_two_id, dst_interface.id, token
-                )
-
-            if (
-                node_one.type == core_pb2.NodeType.EMANE
-                and node_two.type == core_pb2.NodeType.DEFAULT
-            ):
-                if node_two.model == "mdr":
-                    self.emaneconfig_management.set_default_for_mdr(
-                        node_one.node_id, node_two.node_id, dst_interface.id
-                    )
-            elif (
-                node_two.type == core_pb2.NodeType.EMANE
-                and node_one.type == core_pb2.NodeType.DEFAULT
-            ):
-                if node_one.model == "mdr":
-                    self.emaneconfig_management.set_default_for_mdr(
-                        node_two.node_id, node_one.node_id, src_interface.id
-                    )
-
-        else:
-            logging.error("grpcmanagement.py INVALID CANVAS NODE ID")
-
-    def get_nodes_proto(self):
-        nodes = []
-        for node in self.nodes.values():
-            pos = core_pb2.Position(x=int(node.x), y=int(node.y))
-            proto_node = core_pb2.Node(
-                id=node.node_id, type=node.type, position=pos, model=node.model
-            )
-            nodes.append(proto_node)
-        return nodes
-
-    def get_links_proto(self):
-        links = []
-        for edge in self.edges.values():
-            interface_one = self.create_interface(edge.type1, edge.interface_1)
-            interface_two = self.create_interface(edge.type2, edge.interface_2)
-            link = core_pb2.Link(
-                node_one_id=edge.id1,
-                node_two_id=edge.id2,
-                type=core_pb2.LinkType.WIRED,
-                interface_one=interface_one,
-                interface_two=interface_two,
-            )
-            links.append(link)
-        return links
+        link = core_pb2.Link(
+            type=core_pb2.LinkType.WIRED,
+            node_one_id=node_one.id,
+            node_two_id=node_two.id,
+            interface_one=interface_one,
+            interface_two=interface_two,
+        )
+        self.links[token] = link
+        return link
 
     def get_wlan_configs_proto(self):
         configs = []

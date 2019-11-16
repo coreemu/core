@@ -15,7 +15,7 @@ class ServiceConfiguration(Dialog):
         super().__init__(master, app, f"{service_name} service", modal=True)
         self.app = app
         self.canvas_node = canvas_node
-        self.node_id = canvas_node.core_id
+        self.node_id = canvas_node.core_node.id
         self.service_name = service_name
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
@@ -73,22 +73,15 @@ class ServiceConfiguration(Dialog):
         self.validation_mode = service_config.validation_mode
         self.validation_time = service_config.validation_timer
         self.original_service_files = {
-            x: self.app.core.get_node_service_file(
-                self.canvas_node.core_id, self.service_name, x
-            )
+            x: self.app.core.get_node_service_file(self.node_id, self.service_name, x)
             for x in self.filenames
         }
         self.temp_service_files = {
             x: self.original_service_files[x] for x in self.original_service_files
         }
         configs = self.app.core.servicefileconfig_manager.configurations
-        if (
-            self.canvas_node.core_id in configs
-            and self.service_name in configs[self.canvas_node.core_id]
-        ):
-            for file, data in configs[self.canvas_node.core_id][
-                self.service_name
-            ].items():
+        if self.node_id in configs and self.service_name in configs[self.node_id]:
+            for file, data in configs[self.node_id][self.service_name].items():
                 self.temp_service_files[file] = data
 
     def draw(self):
@@ -371,7 +364,7 @@ class ServiceConfiguration(Dialog):
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
         self.app.core.serviceconfig_manager.node_service_custom_configuration(
-            self.canvas_node.core_id,
+            self.node_id,
             self.service_name,
             startup_commands,
             validate_commands,
@@ -379,16 +372,10 @@ class ServiceConfiguration(Dialog):
         )
         for file in self.modified_files:
             self.app.core.servicefileconfig_manager.set_custom_service_file_config(
-                self.canvas_node.core_id,
-                self.service_name,
-                file,
-                self.temp_service_files[file],
+                self.node_id, self.service_name, file, self.temp_service_files[file]
             )
             self.app.core.set_node_service_file(
-                self.canvas_node.core_id,
-                self.service_name,
-                file,
-                self.temp_service_files[file],
+                self.node_id, self.service_name, file, self.temp_service_files[file]
             )
         self.destroy()
 
