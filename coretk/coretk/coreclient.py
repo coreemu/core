@@ -10,6 +10,7 @@ from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.interface import InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.nodeutils import NodeDraw, NodeUtils
+from coretk.servicefileconfig import ServiceFileConfig
 from coretk.servicenodeconfig import ServiceNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
@@ -74,6 +75,9 @@ class CoreClient:
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
         self.serviceconfig_manager = ServiceNodeConfig(app)
+        self.servicefileconfig_manager = ServiceFileConfig()
+        self.created_nodes = set()
+        self.created_links = set()
 
     def set_observer(self, value):
         self.observer = value
@@ -292,6 +296,10 @@ class CoreClient:
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
+        # service_configs = self.get_service_config_proto()
+        # service_file_configs = self.get_service_file_config_proto()
+        self.created_links.clear()
+        self.created_nodes.clear()
         if self.emane_config:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
@@ -305,15 +313,9 @@ class CoreClient:
             emane_config=emane_config,
             emane_model_configs=emane_model_configs,
             mobility_configs=mobility_configs,
+            # service_configs=service_configs
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
-
-        response = self.client.get_service_defaults(self.session_id)
-        for default in response.defaults:
-            print(default.node_type)
-            print(default.services)
-        response = self.client.get_node_service(self.session_id, 5, "FTP")
-        print(response)
 
     def stop_session(self):
         response = self.client.stop_session(session_id=self.session_id)
@@ -364,23 +366,44 @@ class CoreClient:
         logging.debug("get service file %s", response)
         return response.data
 
+    def set_node_service_file(self, node_id, service_name, file_name, data):
+        response = self.client.set_node_service_file(
+            self.session_id, node_id, service_name, file_name, data
+        )
+        logging.debug("set node service file %s", response)
+
     def create_nodes_and_links(self):
+        """
+        create nodes and links that have not been created yet
+
+        :return: nothing
+        """
+
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = list(self.links.values())
         self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
         for node_proto in node_protos:
-            response = self.client.add_node(self.session_id, node_proto)
-            logging.debug("create node: %s", response)
+            if node_proto.id not in self.created_nodes:
+                response = self.client.add_node(self.session_id, node_proto)
+                logging.debug("create node: %s", response)
+                self.created_nodes.add(node_proto.id)
         for link_proto in link_protos:
-            response = self.client.add_link(
-                self.session_id,
-                link_proto.node_one_id,
-                link_proto.node_two_id,
-                link_proto.interface_one,
-                link_proto.interface_two,
-                link_proto.options,
-            )
-            logging.debug("create link: %s", response)
+            if (
+                tuple([link_proto.node_one_id, link_proto.node_two_id])
+                not in self.created_links
+            ):
+                response = self.client.add_link(
+                    self.session_id,
+                    link_proto.node_one_id,
+                    link_proto.node_two_id,
+                    link_proto.interface_one,
+                    link_proto.interface_two,
+                    link_proto.options,
+                )
+                logging.debug("create link: %s", response)
+                self.created_links.add(
+                    tuple([link_proto.node_one_id, link_proto.node_two_id])
+                )
 
     def close(self):
         """
@@ -606,6 +629,37 @@ class CoreClient:
                 node_id=node_id, interface_id=interface_id, model=model, config=config
             )
             configs.append(config_proto)
+        return configs
+
+    def get_service_config_proto(self):
+        configs = []
+        for (
+            node_id,
+            service_configs,
+        ) in self.serviceconfig_manager.configurations.items():
+            for service, config in service_configs.items():
+                config = core_pb2.ServiceConfig(
+                    node_id=node_id,
+                    service=service,
+                    startup=config.startup,
+                    validate=config.validate,
+                    shutdown=config.shutdown,
+                )
+                configs.append(config)
+        return configs
+
+    def get_service_file_config_proto(self):
+        configs = []
+        for (
+            node_id,
+            service_file_configs,
+        ) in self.servicefileconfig_manager.configurations.items():
+            for service, file_configs in service_file_configs.items():
+                for file, data in file_configs.items():
+                    config = core_pb2.ServiceFileConfig(
+                        node_id=node_id, service=service, file=file, data=data
+                    )
+                    configs.append(config)
         return configs
 
     def run(self, node_id):

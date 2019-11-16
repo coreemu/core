@@ -7,6 +7,7 @@ import logging
 class ServiceNodeConfig:
     def __init__(self, app):
         self.app = app
+        # dict(node_id:dict(service:node_service_config_proto))
         self.configurations = {}
         self.default_services = {}
 
@@ -37,7 +38,9 @@ class ServiceNodeConfig:
             self.configurations[node_id][default] = response.service
 
     def node_custom_service_configuration(self, node_id, service_name):
-        return
+        self.configurations[node_id][service_name] = self.app.core.get_node_service(
+            node_id, service_name
+        )
 
     def node_service_custom_configuration(
         self, node_id, service_name, startups, validates, shutdowns
