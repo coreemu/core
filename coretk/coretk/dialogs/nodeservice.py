@@ -17,7 +17,11 @@ class NodeService(Dialog):
         self.services = None
         self.current = None
         if services is None:
-            services = set()
+            services = set(
+                app.core.serviceconfig_manager.configurations[
+                    canvas_node.core_id
+                ].keys()
+            )
         self.current_services = services
         self.draw()
 

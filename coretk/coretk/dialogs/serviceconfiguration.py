@@ -15,6 +15,7 @@ class ServiceConfiguration(Dialog):
         super().__init__(master, app, f"{service_name} service", modal=True)
         self.app = app
         self.canvas_node = canvas_node
+        self.node_id = canvas_node.core_id
         self.service_name = service_name
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
@@ -40,8 +41,9 @@ class ServiceConfiguration(Dialog):
         self.validation_time_entry = None
         self.validation_mode_entry = None
         self.service_file_data = None
-        self.service_files = {}
+        self.original_service_files = {}
         self.temp_service_files = {}
+        self.modified_files = set()
         self.load()
         self.draw()
 
@@ -49,9 +51,18 @@ class ServiceConfiguration(Dialog):
         # create nodes and links in definition state for getting and setting service file
         self.app.core.create_nodes_and_links()
         # load data from local memory
-        service_config = self.app.core.serviceconfig_manager.configurations[
-            self.canvas_node.core_id
-        ][self.service_name]
+        serviceconfig_manager = self.app.core.serviceconfig_manager
+        if self.service_name in serviceconfig_manager.configurations[self.node_id]:
+            service_config = serviceconfig_manager.configurations[self.node_id][
+                self.service_name
+            ]
+        else:
+            serviceconfig_manager.node_custom_service_configuration(
+                self.node_id, self.service_name
+            )
+            service_config = serviceconfig_manager.configurations[self.node_id][
+                self.service_name
+            ]
         self.dependencies = [x for x in service_config.dependencies]
         self.executables = [x for x in service_config.executables]
         self.metadata = service_config.meta
@@ -61,13 +72,24 @@ class ServiceConfiguration(Dialog):
         self.shutdown_commands = [x for x in service_config.shutdown]
         self.validation_mode = service_config.validation_mode
         self.validation_time = service_config.validation_timer
-        self.service_files = {
+        self.original_service_files = {
             x: self.app.core.get_node_service_file(
                 self.canvas_node.core_id, self.service_name, x
             )
             for x in self.filenames
         }
-        self.temp_service_files = self.service_files
+        self.temp_service_files = {
+            x: self.original_service_files[x] for x in self.original_service_files
+        }
+        configs = self.app.core.servicefileconfig_manager.configurations
+        if (
+            self.canvas_node.core_id in configs
+            and self.service_name in configs[self.canvas_node.core_id]
+        ):
+            for file, data in configs[self.canvas_node.core_id][
+                self.service_name
+            ].items():
+                self.temp_service_files[file] = data
 
     def draw(self):
         # self.columnconfigure(1, weight=1)
@@ -169,7 +191,10 @@ class ServiceConfiguration(Dialog):
         if len(self.filenames) > 0:
             self.filename_combobox.current(0)
             self.service_file_data.delete(1.0, "end")
-            self.service_file_data.insert("end", self.service_files[self.filenames[0]])
+            self.service_file_data.insert(
+                "end", self.temp_service_files[self.filenames[0]]
+            )
+        self.service_file_data.bind("<FocusOut>", self.update_temp_service_file_data)
 
         # tab 2
         label = ttk.Label(
@@ -184,7 +209,6 @@ class ServiceConfiguration(Dialog):
             if i == 0:
                 label_frame = ttk.LabelFrame(tab3, text="Startup commands")
                 commands = self.startup_commands
-
             elif i == 1:
                 label_frame = ttk.LabelFrame(tab3, text="Shutdown commands")
                 commands = self.shutdown_commands
@@ -242,11 +266,9 @@ class ServiceConfiguration(Dialog):
             frame.columnconfigure(0, weight=1)
             if i == 0:
                 label = ttk.Label(frame, text="Validation time:")
-                self.validation_time_entry = ttk.Entry(
-                    frame,
-                    state="disabled",
-                    textvariable=tk.StringVar(value=self.validation_time),
-                )
+                self.validation_time_entry = ttk.Entry(frame)
+                self.validation_time_entry.insert("end", self.validation_time)
+                self.validation_time_entry.config(state="disabled")
                 self.validation_time_entry.grid(row=i, column=1)
             elif i == 1:
                 label = ttk.Label(frame, text="Validation mode:")
@@ -258,13 +280,11 @@ class ServiceConfiguration(Dialog):
                     mode = "NON_BLOCKING"
                 elif self.validation_mode == core_pb2.ServiceValidationMode.TIMER:
                     mode = "TIMER"
-                print("the mode is", mode)
                 self.validation_mode_entry = ttk.Entry(
                     frame, textvariable=tk.StringVar(value=mode)
                 )
                 self.validation_mode_entry.insert("end", mode)
-                print("get mode")
-                print(self.validation_mode_entry.get())
+                self.validation_mode_entry.config(state="disabled")
                 self.validation_mode_entry.grid(row=i, column=1)
             elif i == 2:
                 label = ttk.Label(frame, text="Validation period:")
@@ -347,8 +367,6 @@ class ServiceConfiguration(Dialog):
             entry.delete(0, tk.END)
 
     def click_apply(self):
-        metadata = self.metadata_entry.get()
-        filenames = list(self.filename_combobox["values"])
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
@@ -359,27 +377,35 @@ class ServiceConfiguration(Dialog):
             validate_commands,
             shutdown_commands,
         )
-        filename = self.filename_combobox.get()
-        file_data = self.service_file_data.get()
-        print(filename, file_data)
-        logging.info(
-            "%s, %s, %s, %s, %s",
-            metadata,
-            filenames,
-            startup_commands,
-            shutdown_commands,
-            validate_commands,
-        )
-        # wipe nodes and links when finished by setting to DEFINITION state
-        self.app.core.client.set_session_state(
-            self.app.core.session_id, core_pb2.SessionState.DEFINITION
-        )
+        for file in self.modified_files:
+            self.app.core.servicefileconfig_manager.set_custom_service_file_config(
+                self.canvas_node.core_id,
+                self.service_name,
+                file,
+                self.temp_service_files[file],
+            )
+            self.app.core.set_node_service_file(
+                self.canvas_node.core_id,
+                self.service_name,
+                file,
+                self.temp_service_files[file],
+            )
+        self.destroy()
 
     def display_service_file_data(self, event):
         combobox = event.widget
         filename = combobox.get()
         self.service_file_data.delete(1.0, "end")
-        self.service_file_data.insert("end", self.service_files[filename])
+        self.service_file_data.insert("end", self.temp_service_files[filename])
+
+    def update_temp_service_file_data(self, event):
+        scrolledtext = event.widget
+        filename = self.filename_combobox.get()
+        self.temp_service_files[filename] = scrolledtext.get(1.0, "end")
+        if self.temp_service_files[filename] != self.original_service_files[filename]:
+            self.modified_files.add(filename)
+        else:
+            self.modified_files.discard(filename)
 
     def click_defaults(self):
         logging.info("not implemented")
