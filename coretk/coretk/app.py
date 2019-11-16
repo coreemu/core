@@ -9,12 +9,16 @@ from coretk.graph import CanvasGraph
 from coretk.images import ImageEnum, Images
 from coretk.menuaction import MenuAction
 from coretk.menubar import Menubar
+from coretk.nodeutils import NodeUtils
 from coretk.toolbar import Toolbar
 
 
 class Application(tk.Frame):
     def __init__(self, master=None):
         super().__init__(master)
+        # load node icons
+        NodeUtils.setup()
+
         # widgets
         self.menubar = None
         self.toolbar = None

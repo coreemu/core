@@ -3,10 +3,10 @@ import tkinter as tk
 from functools import partial
 from tkinter import ttk
 
-from core.api.grpc import core_pb2
 from coretk.dialogs.customnodes import CustomNodesDialog
 from coretk.graph import GraphMode
 from coretk.images import ImageEnum, Images
+from coretk.nodeutils import NodeUtils
 from coretk.tooltip import Tooltip
 
 WIDTH = 32
@@ -129,33 +129,16 @@ class Toolbar(ttk.Frame):
     def draw_node_picker(self):
         self.hide_pickers()
         self.node_picker = ttk.Frame(self.master)
-        nodes = [
-            (ImageEnum.ROUTER, core_pb2.NodeType.DEFAULT, "router"),
-            (ImageEnum.HOST, core_pb2.NodeType.DEFAULT, "host"),
-            (ImageEnum.PC, core_pb2.NodeType.DEFAULT, "PC"),
-            (ImageEnum.MDR, core_pb2.NodeType.DEFAULT, "mdr"),
-            (ImageEnum.PROUTER, core_pb2.NodeType.DEFAULT, "prouter"),
-            (ImageEnum.DOCKER, core_pb2.NodeType.DOCKER, "Docker"),
-            (ImageEnum.LXC, core_pb2.NodeType.LXC, "LXC"),
-        ]
         # draw default nodes
-        for image_enum, node_type, model in nodes:
-            image = icon(image_enum)
-            func = partial(
-                self.update_button, self.node_button, image, node_type, model
-            )
-            self.create_picker_button(image, func, self.node_picker, model)
+        for node_draw in NodeUtils.NODES:
+            image = icon(node_draw.image_enum)
+            func = partial(self.update_button, self.node_button, image, node_draw)
+            self.create_picker_button(image, func, self.node_picker, node_draw.tooltip)
         # draw custom nodes
         for name in sorted(self.app.core.custom_nodes):
-            custom_node = self.app.core.custom_nodes[name]
-            image = custom_node.image
-            func = partial(
-                self.update_button,
-                self.node_button,
-                image,
-                core_pb2.NodeType.DEFAULT,
-                name,
-            )
+            node_draw = self.app.core.custom_nodes[name]
+            image = Images.get_custom(node_draw.image_file, WIDTH)
+            func = partial(self.update_button, self.node_button, image, node_draw)
             self.create_picker_button(image, func, self.node_picker, name)
         # draw edit node
         image = icon(ImageEnum.EDITNODE)
@@ -227,15 +210,13 @@ class Toolbar(ttk.Frame):
         dialog = CustomNodesDialog(self.app, self.app)
         dialog.show()
 
-    def update_button(self, button, image, node_type, model=None):
-        logging.info("update button(%s): %s", button, node_type)
+    def update_button(self, button, image, node_draw):
+        logging.info("update button(%s): %s", button, node_draw)
         self.hide_pickers()
         button.configure(image=image)
         button.image = image
         self.app.canvas.mode = GraphMode.NODE
-        self.app.canvas.draw_node_image = image
-        self.app.canvas.draw_node_type = node_type
-        self.app.canvas.draw_node_model = model
+        self.app.canvas.node_draw = node_draw
 
     def hide_pickers(self):
         logging.info("hiding pickers")
@@ -271,21 +252,13 @@ class Toolbar(ttk.Frame):
         """
         self.hide_pickers()
         self.network_picker = ttk.Frame(self.master)
-        nodes = [
-            (ImageEnum.HUB, core_pb2.NodeType.HUB, "ethernet hub"),
-            (ImageEnum.SWITCH, core_pb2.NodeType.SWITCH, "ethernet switch"),
-            (ImageEnum.WLAN, core_pb2.NodeType.WIRELESS_LAN, "wireless LAN"),
-            (ImageEnum.EMANE, core_pb2.NodeType.EMANE, "EMANE"),
-            (ImageEnum.RJ45, core_pb2.NodeType.RJ45, "rj45 physical interface tool"),
-            (ImageEnum.TUNNEL, core_pb2.NodeType.TUNNEL, "tunnel tool"),
-        ]
-        for image_enum, node_type, tooltip in nodes:
-            image = icon(image_enum)
+        for node_draw in NodeUtils.NETWORK_NODES:
+            image = icon(node_draw.image_enum)
             self.create_picker_button(
                 image,
-                partial(self.update_button, self.network_button, image, node_type),
+                partial(self.update_button, self.network_button, image, node_draw),
                 self.network_picker,
-                tooltip,
+                node_draw.tooltip,
             )
         self.design_select(self.network_button)
         self.network_button.after(
@@ -294,7 +267,8 @@ class Toolbar(ttk.Frame):
 
     def create_network_button(self):
         """
-        Create link-layer node button and the options that represent different link-layer node types
+        Create link-layer node button and the options that represent different
+        link-layer node types.
 
         :return: nothing
         """

@@ -54,7 +54,12 @@ def load(style):
                 },
             },
             "TButton": {
-                "configure": {"width": 8, "padding": (5, 1), "relief": tk.RAISED},
+                "configure": {
+                    "width": 8,
+                    "padding": (5, 1),
+                    "relief": tk.RAISED,
+                    "anchor": tk.CENTER,
+                },
                 "map": {
                     "relief": [("pressed", tk.SUNKEN)],
                     "shiftrelief": [("pressed", 1)],

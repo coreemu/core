@@ -11,6 +11,7 @@ from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.images import Images
 from coretk.linkinfo import LinkInfo, Throughput
 from coretk.nodedelete import CanvasComponentManagement
+from coretk.nodeutils import NodeUtils
 from coretk.wirelessconnection import WirelessConnection
 
 
@@ -37,9 +38,7 @@ class CanvasGraph(tk.Canvas):
         kwargs["highlightthickness"] = 0
         super().__init__(master, cnf, **kwargs)
         self.mode = GraphMode.SELECT
-        self.draw_node_image = None
-        self.draw_node_type = None
-        self.draw_node_model = None
+        self.node_draw = None
         self.selected = None
         self.node_context = None
         self.nodes = {}
@@ -96,9 +95,7 @@ class CanvasGraph(tk.Canvas):
 
         # set the private variables to default value
         self.mode = GraphMode.SELECT
-        self.draw_node_image = None
-        self.draw_node_type = None
-        self.draw_node_model = None
+        self.node_draw = None
         self.selected = None
         self.node_context = None
         self.nodes.clear()
@@ -157,7 +154,7 @@ class CanvasGraph(tk.Canvas):
                 continue
 
             # draw nodes on the canvas
-            image = Images.node_icon(core_node.type, core_node.model)
+            image = NodeUtils.node_icon(core_node.type, core_node.model)
             position = core_node.position
             node = CanvasNode(position.x, position.y, image, self.master, core_node)
             self.nodes[node.id] = node
@@ -267,13 +264,7 @@ class CanvasGraph(tk.Canvas):
                 self.handle_edge_release(event)
             elif self.mode == GraphMode.NODE:
                 x, y = self.canvas_xy(event)
-                self.add_node(
-                    x,
-                    y,
-                    self.draw_node_image,
-                    self.draw_node_type,
-                    self.draw_node_model,
-                )
+                self.add_node(x, y)
             elif self.mode == GraphMode.PICKNODE:
                 self.mode = GraphMode.NODE
 
@@ -404,12 +395,14 @@ class CanvasGraph(tk.Canvas):
         # delete the related data from core
         self.core.delete_wanted_graph_nodes(node_ids, to_delete_edge_tokens)
 
-    def add_node(self, x, y, image, node_type, model):
+    def add_node(self, x, y):
         plot_id = self.find_all()[0]
         logging.info("add node event: %s - %s", plot_id, self.selected)
         if self.selected == plot_id:
-            core_node = self.core.create_node(int(x), int(y), node_type, model)
-            node = CanvasNode(x, y, image, self.master, core_node)
+            core_node = self.core.create_node(
+                int(x), int(y), self.node_draw.node_type, self.node_draw.model
+            )
+            node = CanvasNode(x, y, self.node_draw.image, self.master, core_node)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
             return node

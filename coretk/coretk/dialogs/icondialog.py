@@ -1,6 +1,7 @@
 import tkinter as tk
 from tkinter import filedialog, ttk
 
+from coretk import nodeutils
 from coretk.appconfig import ICONS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
@@ -54,7 +55,7 @@ class IconDialog(Dialog):
             ),
         )
         if file_path:
-            self.image = Images.create(file_path, 32, 32)
+            self.image = Images.create(file_path, nodeutils.ICON_SIZE)
             self.image_label.config(image=self.image)
             self.file_path.set(file_path)
 

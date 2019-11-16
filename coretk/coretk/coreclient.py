@@ -7,13 +7,12 @@ import os
 from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
-from coretk.images import NODE_WIDTH, Images
 from coretk.interface import InterfaceManager
 from coretk.mobilitynodeconfig import MobilityNodeConfig
+from coretk.nodeutils import NodeDraw
 from coretk.servicenodeconfig import ServiceNodeConfig
 from coretk.wlannodeconfig import WlanNodeConfig
 
-NETWORK_NODES = {"switch", "hub", "wlan", "rj45", "tunnel", "emane"}
 DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
 OBSERVERS = {
     "processes": "ps",
@@ -33,14 +32,6 @@ class CoreServer:
         self.name = name
         self.address = address
         self.port = port
-
-
-class CustomNode:
-    def __init__(self, name, image, image_file, services):
-        self.name = name
-        self.image = image
-        self.image_file = image_file
-        self.services = services
 
 
 class Observer:
@@ -96,12 +87,11 @@ class CoreClient:
 
         # read custom nodes
         for config in self.app.config.get("nodes", []):
+            name = config["name"]
             image_file = config["image"]
-            image = Images.get_custom(image_file, NODE_WIDTH)
-            custom_node = CustomNode(
-                config["name"], image, image_file, set(config["services"])
-            )
-            self.custom_nodes[custom_node.name] = custom_node
+            services = set(config["services"])
+            node_draw = NodeDraw.from_custom(name, image_file, services)
+            self.custom_nodes[name] = node_draw
 
         # read observers
         for config in self.app.config.get("observers", []):
@@ -448,6 +438,7 @@ class CoreClient:
             self.emaneconfig_management.set_default_config(node_id)
 
         # set default service configurations
+        # TODO: need to deal with this and custom node cases
         if node_type == core_pb2.NodeType.DEFAULT:
             self.serviceconfig_manager.node_default_services_configuration(
                 node_id=node_id, node_model=model
