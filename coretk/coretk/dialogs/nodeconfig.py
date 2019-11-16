@@ -6,6 +6,7 @@ from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeService
 
 DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
+PAD = 5
 
 
 class NodeConfigDialog(Dialog):
@@ -28,54 +29,64 @@ class NodeConfigDialog(Dialog):
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
-        self.draw_first_row()
-        self.draw_second_row()
-        self.draw_third_row()
+        row = 0
 
-    def draw_first_row(self):
+        # field frame
         frame = ttk.Frame(self.top)
-        frame.grid(row=0, column=0, pady=2, sticky="ew")
-        frame.columnconfigure(0, weight=1)
+        frame.grid(sticky="ew")
         frame.columnconfigure(1, weight=1)
-        frame.columnconfigure(2, weight=1)
 
+        # name field
+        label = ttk.Label(frame, text="Name")
+        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
         entry = ttk.Entry(frame, textvariable=self.name)
-        entry.grid(row=0, column=0, padx=2, sticky="ew")
+        entry.grid(row=row, column=1, sticky="ew")
+        row += 1
 
-        combobox = ttk.Combobox(
-            frame, textvariable=self.type, values=DEFAULT_NODES, state="readonly"
-        )
-        combobox.grid(row=0, column=1, padx=2, sticky="ew")
-
-        servers = [""]
-        servers.extend(list(sorted(self.app.core.servers.keys())))
-        combobox = ttk.Combobox(
-            frame, textvariable=self.server, values=servers, state="readonly"
-        )
-        combobox.current(0)
-        combobox.grid(row=0, column=2, sticky="ew")
-
-    def draw_second_row(self):
-        frame = ttk.Frame(self.top)
-        frame.grid(row=1, column=0, pady=2, sticky="ew")
-        frame.columnconfigure(0, weight=1)
-        frame.columnconfigure(1, weight=1)
-
-        button = ttk.Button(frame, text="Services", command=self.click_services)
-        button.grid(row=0, column=0, padx=2, sticky="ew")
-
+        # icon field
+        label = ttk.Label(frame, text="Icon")
+        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
         self.image_button = ttk.Button(
             frame,
             text="Icon",
             image=self.image,
-            compound=tk.LEFT,
+            compound=tk.NONE,
             command=self.click_icon,
         )
-        self.image_button.grid(row=0, column=1, sticky="ew")
+        self.image_button.grid(row=row, column=1, sticky="ew")
+        row += 1
 
-    def draw_third_row(self):
+        # node type field
+        label = ttk.Label(frame, text="Type")
+        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
+        combobox = ttk.Combobox(
+            frame, textvariable=self.type, values=list(DEFAULT_NODES), state="readonly"
+        )
+        combobox.grid(row=row, column=1, sticky="ew")
+        row += 1
+
+        # server
+        frame.grid(sticky="ew")
+        frame.columnconfigure(1, weight=1)
+        label = ttk.Label(frame, text="Server")
+        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
+        servers = ["localhost"]
+        servers.extend(list(sorted(self.app.core.servers.keys())))
+        combobox = ttk.Combobox(
+            frame, textvariable=self.server, values=servers, state="readonly"
+        )
+        combobox.grid(row=row, column=1, sticky="ew")
+        row += 1
+
+        # services
+        button = ttk.Button(self.top, text="Services", command=self.click_services)
+        button.grid(sticky="ew", pady=PAD)
+
+        self.draw_buttons()
+
+    def draw_buttons(self):
         frame = ttk.Frame(self.top)
-        frame.grid(row=2, column=0, sticky="ew")
+        frame.grid(sticky="ew")
         frame.columnconfigure(0, weight=1)
         frame.columnconfigure(1, weight=1)
 
