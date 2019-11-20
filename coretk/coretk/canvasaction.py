@@ -30,7 +30,7 @@ class CanvasAction:
 
     def display_wlan_configuration(self, canvas_node):
         wlan_config = self.master.core.wlanconfig_management.configurations[
-            canvas_node.core_id
+            canvas_node.core_node.id
         ]
         dialog = WlanConfigDialog(
             self.master, self.master, self.node_to_show_config, wlan_config

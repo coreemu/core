@@ -13,13 +13,14 @@ from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 class WlanConfigDialog(Dialog):
     def __init__(self, master, app, canvas_node, config):
         super().__init__(
-            master, app, f"{canvas_node.name} Wlan Configuration", modal=True
+            master, app, f"{canvas_node.core_node.name} Wlan Configuration", modal=True
         )
         self.image = canvas_node.image
         self.canvas_node = canvas_node
+        self.node = canvas_node.core_node
         self.config = config
 
-        self.name = tk.StringVar(value=canvas_node.name)
+        self.name = tk.StringVar(value=self.node.name)
         self.range_var = tk.StringVar(value=config["range"])
         self.bandwidth_var = tk.StringVar(value=config["bandwidth"])
         self.delay_var = tk.StringVar(value=config["delay"])
@@ -169,9 +170,7 @@ class WlanConfigDialog(Dialog):
         dialog.show()
 
     def click_icon(self):
-        dialog = IconDialog(
-            self, self.app, self.canvas_node.name, self.canvas_node.image
-        )
+        dialog = IconDialog(self, self.app, self.node.name, self.canvas_node.image)
         dialog.show()
         if dialog.image:
             self.image = dialog.image
@@ -192,7 +191,7 @@ class WlanConfigDialog(Dialog):
         # set wireless node configuration here
         wlanconfig_manager = self.app.core.wlanconfig_management
         wlanconfig_manager.set_custom_config(
-            node_id=self.canvas_node.core_id,
+            node_id=self.node.id,
             range=basic_range,
             bandwidth=bandwidth,
             jitter=jitter,

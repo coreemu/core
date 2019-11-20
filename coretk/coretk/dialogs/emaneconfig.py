@@ -20,6 +20,7 @@ class EmaneConfiguration(Dialog):
         super().__init__(master, app, "emane configuration", modal=False)
         self.app = app
         self.canvas_node = canvas_node
+        self.node = canvas_node.core_node
         self.radiovar = tk.IntVar()
         self.radiovar.set(1)
         self.columnconfigure(0, weight=1)
@@ -122,20 +123,15 @@ class EmaneConfiguration(Dialog):
 
         # add string emane_ infront for grpc call
         response = self.app.core.client.set_emane_model_config(
-            self.app.core.session_id,
-            self.canvas_node.core_id,
-            "emane_" + model_name,
-            config,
+            self.app.core.session_id, self.node.id, f"emane_{model_name}", config
         )
         logging.info(
-            "emaneconfig.py config emane model (%s), result: %s",
-            self.canvas_node.core_id,
-            response,
+            "emaneconfig.py config emane model (%s), result: %s", self.node.id, response
         )
 
         # store the change locally
         self.app.core.emaneconfig_management.set_custom_emane_cloud_config(
-            self.canvas_node.core_id, "emane_" + model_name
+            self.node.id, f"emane_{model_name}"
         )
 
         self.emane_model_dialog.destroy()
@@ -161,7 +157,7 @@ class EmaneConfiguration(Dialog):
         session_id = self.app.core.session_id
         # add string emane_ before model name for grpc call
         response = self.app.core.client.get_emane_model_config(
-            session_id, self.canvas_node.core_id, "emane_" + model_name
+            session_id, self.node.id, f"emane_{model_name}"
         )
         logging.info("emane model config %s", response)
 
