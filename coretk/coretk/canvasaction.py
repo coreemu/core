@@ -5,6 +5,7 @@ from core.api.grpc import core_pb2
 from coretk.dialogs.emaneconfig import EmaneConfiguration
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
+from coretk.nodeutils import NodeUtils
 
 
 class CanvasAction:
@@ -16,7 +17,7 @@ class CanvasAction:
     def display_configuration(self, canvas_node):
         node_type = canvas_node.core_node.type
         self.node_to_show_config = canvas_node
-        if node_type == core_pb2.NodeType.DEFAULT:
+        if NodeUtils.is_container_node(node_type):
             self.display_node_configuration()
         elif node_type == core_pb2.NodeType.WIRELESS_LAN:
             self.display_wlan_configuration(canvas_node)

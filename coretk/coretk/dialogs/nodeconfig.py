@@ -6,9 +6,9 @@ from tkinter import ttk
 from coretk.dialogs.dialog import Dialog
 from coretk.dialogs.icondialog import IconDialog
 from coretk.dialogs.nodeservice import NodeService
+from coretk.nodeutils import NodeUtils
 from coretk.widgets import FrameScroll
 
-DEFAULT_NODES = {"router", "host", "PC", "mdr", "prouter"}
 PAD = 5
 
 
@@ -49,6 +49,7 @@ class NodeConfigDialog(Dialog):
         self.image_button = None
         self.name = tk.StringVar(value=self.node.name)
         self.type = tk.StringVar(value=self.node.model)
+        self.container_image = tk.StringVar(value=self.node.image)
         server = "localhost"
         if self.node.server:
             server = self.node.server
@@ -86,26 +87,39 @@ class NodeConfigDialog(Dialog):
         row += 1
 
         # node type field
-        label = ttk.Label(frame, text="Type")
-        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
-        combobox = ttk.Combobox(
-            frame, textvariable=self.type, values=list(DEFAULT_NODES), state="readonly"
-        )
-        combobox.grid(row=row, column=1, sticky="ew")
-        row += 1
+        if NodeUtils.is_model_node(self.node.type):
+            label = ttk.Label(frame, text="Type")
+            label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
+            combobox = ttk.Combobox(
+                frame,
+                textvariable=self.type,
+                values=list(NodeUtils.NODE_MODELS),
+                state="readonly",
+            )
+            combobox.grid(row=row, column=1, sticky="ew")
+            row += 1
+
+        # container image field
+        if NodeUtils.is_image_node(self.node.type):
+            label = ttk.Label(frame, text="Image")
+            label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
+            entry = ttk.Entry(frame, textvariable=self.container_image)
+            entry.grid(row=row, column=1, sticky="ew")
+            row += 1
 
         # server
-        frame.grid(sticky="ew")
-        frame.columnconfigure(1, weight=1)
-        label = ttk.Label(frame, text="Server")
-        label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
-        servers = ["localhost"]
-        servers.extend(list(sorted(self.app.core.servers.keys())))
-        combobox = ttk.Combobox(
-            frame, textvariable=self.server, values=servers, state="readonly"
-        )
-        combobox.grid(row=row, column=1, sticky="ew")
-        row += 1
+        if NodeUtils.is_container_node(self.node.type):
+            frame.grid(sticky="ew")
+            frame.columnconfigure(1, weight=1)
+            label = ttk.Label(frame, text="Server")
+            label.grid(row=row, column=0, sticky="ew", padx=PAD, pady=PAD)
+            servers = ["localhost"]
+            servers.extend(list(sorted(self.app.core.servers.keys())))
+            combobox = ttk.Combobox(
+                frame, textvariable=self.server, values=servers, state="readonly"
+            )
+            combobox.grid(row=row, column=1, sticky="ew")
+            row += 1
 
         # services
         button = ttk.Button(self.top, text="Services", command=self.click_services)
@@ -181,6 +195,10 @@ class NodeConfigDialog(Dialog):
     def config_apply(self):
         # update core node
         self.node.name = self.name.get()
+        if NodeUtils.is_image_node(self.node.type):
+            self.node.image = self.container_image.get()
+        if NodeUtils.is_container_node(self.node.type):
+            self.node.server = self.server.get()
 
         # update canvas node
         self.canvas_node.image = self.image
