@@ -704,10 +704,10 @@ class Session:
             self.services.add_services(node, node.type, options.services)
 
         # ensure default emane configuration
-        if _type == NodeTypes.EMANE:
-            self.emane.set_model_config(_id, node.emane)
+        if isinstance(node, EmaneNet):
+            self.emane.set_model_config(_id, options.emane)
         # set default wlan config if needed
-        if _type == NodeTypes.WIRELESS_LAN:
+        if isinstance(node, WlanNode):
             self.mobility.set_model_config(_id, BasicRangeModel.name)
 
         # boot nodes after runtime, CoreNodes, Physical, and RJ45 are all nodes
