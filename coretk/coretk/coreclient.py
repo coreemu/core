@@ -8,7 +8,6 @@ from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.interface import InterfaceManager
-from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.nodeutils import NodeDraw, NodeUtils
 from coretk.servicefileconfig import ServiceFileConfig
 from coretk.servicenodeconfig import ServiceNodeConfig
@@ -70,7 +69,7 @@ class CoreClient:
         self.preexisting = set()
         self.interfaces_manager = InterfaceManager()
         self.wlan_configs = {}
-        self.mobilityconfig_management = MobilityNodeConfig()
+        self.mobility_configs = {}
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
         self.serviceconfig_manager = ServiceNodeConfig(app)
@@ -136,7 +135,7 @@ class CoreClient:
         self.links.clear()
         self.hooks.clear()
         self.wlan_configs.clear()
-        self.mobilityconfig_management.configurations.clear()
+        self.mobility_configs.clear()
         self.emane_config = None
 
         # get session data
@@ -164,8 +163,7 @@ class CoreClient:
         logging.debug("mobility configs: %s", response)
         for node_id in response.configs:
             node_config = response.configs[node_id].config
-            config = {x: node_config[x].value for x in node_config}
-            self.mobilityconfig_management.configurations[node_id] = config
+            self.mobility_configs[node_id] = node_config
 
         # get emane config
         response = self.client.get_emane_config(self.session_id)
@@ -454,9 +452,6 @@ class CoreClient:
             image=image,
         )
 
-        # set default configuration for wireless node
-        self.mobilityconfig_management.set_default_configuration(node_type, node_id)
-
         # set default emane configuration for emane node
         if node_type == core_pb2.NodeType.EMANE:
             self.emaneconfig_management.set_default_config(node_id)
@@ -519,8 +514,8 @@ class CoreClient:
 
         # delete any mobility configuration, wlan configuration
         for i in node_ids:
-            if i in self.mobilityconfig_management.configurations:
-                self.mobilityconfig_management.configurations.pop(i)
+            if i in self.mobility_configs:
+                del self.mobility_configs[i]
             if i in self.wlan_configs:
                 del self.wlan_configs[i]
 
@@ -615,11 +610,10 @@ class CoreClient:
 
     def get_mobility_configs_proto(self):
         configs = []
-        mobility_configs = self.mobilityconfig_management.configurations
-        for node_id in mobility_configs:
-            config = mobility_configs[node_id]
-            config_proto = core_pb2.MobilityConfig(node_id=node_id, config=config)
-            configs.append(config_proto)
+        for node_id, config in self.mobility_configs.items():
+            config = {x: config[x].value for x in config}
+            mobility_config = core_pb2.MobilityConfig(node_id=node_id, config=config)
+            configs.append(mobility_config)
         return configs
 
     def get_emane_model_configs_proto(self):
@@ -677,4 +671,12 @@ class CoreClient:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
             self.wlan_configs[node_id] = config
+        return config
+
+    def get_mobility_config(self, node_id):
+        config = self.mobility_configs.get(node_id)
+        if not config:
+            response = self.client.get_mobility_config(self.session_id, node_id)
+            config = response.config
+            self.mobility_configs[node_id] = config
         return config
