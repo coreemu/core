@@ -51,6 +51,7 @@ class CoreClient:
         self.interface_helper = None
         self.services = {}
         self.default_services = {}
+        self.emane_models = []
         self.observer = None
 
         # loaded configuration data
@@ -71,6 +72,7 @@ class CoreClient:
         self.interfaces_manager = InterfaceManager()
         self.wlan_configs = {}
         self.mobility_configs = {}
+        self.emane_model_configs = {}
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
         self.serviceconfig_manager = ServiceNodeConfig(app)
@@ -148,6 +150,10 @@ class CoreClient:
         session = response.session
         self.state = session.state
         self.client.events(self.session_id, self.handle_events)
+
+        # get emane models
+        response = self.client.get_emane_models(self.session_id)
+        self.emane_models = response.models
 
         # get hooks
         response = self.client.get_hooks(self.session_id)
@@ -244,8 +250,8 @@ class CoreClient:
         # get service information
         response = self.client.get_services()
         for service in response.services:
-            group_services = self.services.setdefault(service.group, [])
-            group_services.append(service)
+            group_services = self.services.setdefault(service.group, set())
+            group_services.add(service.name)
 
         # if there are no sessions, create a new session, else join a session
         response = self.client.get_sessions()
@@ -459,6 +465,9 @@ class CoreClient:
         image = None
         if NodeUtils.is_image_node(node_type):
             image = "ubuntu:latest"
+        emane = None
+        if node_type == core_pb2.NodeType.EMANE:
+            emane = self.emane_models[0]
         node = core_pb2.Node(
             id=node_id,
             type=node_type,
@@ -466,6 +475,7 @@ class CoreClient:
             model=model,
             position=position,
             image=image,
+            emane=emane,
         )
 
         # set default emane configuration for emane node
@@ -586,25 +596,6 @@ class CoreClient:
         interface_two = self.create_interface(canvas_node_two)
         if interface_two is not None:
             self.interface_to_edge[(node_two.id, interface_two.id)] = token
-
-        # emane setup
-        # TODO: determine if this is needed
-        if (
-            node_one.type == core_pb2.NodeType.EMANE
-            and node_two.type == core_pb2.NodeType.DEFAULT
-        ):
-            if node_two.model == "mdr":
-                self.emaneconfig_management.set_default_for_mdr(
-                    node_one.node_id, node_two.node_id, interface_two.id
-                )
-        elif (
-            node_two.type == core_pb2.NodeType.EMANE
-            and node_one.type == core_pb2.NodeType.DEFAULT
-        ):
-            if node_one.model == "mdr":
-                self.emaneconfig_management.set_default_for_mdr(
-                    node_two.node_id, node_one.node_id, interface_one.id
-                )
 
         link = core_pb2.Link(
             type=core_pb2.LinkType.WIRED,

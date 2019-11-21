@@ -28,7 +28,7 @@ class EmaneModelNodeConfig:
         """
         session_id = self.app.core.session_id
         client = self.app.core.client
-        default_emane_model = client.get_emane_models(session_id).models[0]
+        default_emane_model = self.app.core.emane_models[0]
         response = client.get_emane_model_config(
             session_id, node_id, default_emane_model
         )
