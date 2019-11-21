@@ -155,21 +155,22 @@ class CanvasGraph(tk.Canvas):
 
             # draw nodes on the canvas
             image = NodeUtils.node_icon(core_node.type, core_node.model)
-            position = core_node.position
-            node = CanvasNode(position.x, position.y, image, self.master, core_node)
+            node = CanvasNode(self.master, core_node, image)
             self.nodes[node.id] = node
             self.core.canvas_nodes[core_node.id] = node
 
         # draw existing links
         for link in session.links:
             canvas_node_one = self.core.canvas_nodes[link.node_one_id]
+            node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
+            node_two = canvas_node_two.core_node
             is_wired = link.type == core_pb2.LinkType.WIRED
             edge = CanvasEdge(
-                canvas_node_one.x_coord,
-                canvas_node_one.y_coord,
-                canvas_node_two.x_coord,
-                canvas_node_two.y_coord,
+                node_one.position.x,
+                node_one.position.y,
+                node_two.position.x,
+                node_two.position.y,
                 canvas_node_one.id,
                 self,
                 is_wired=is_wired,
@@ -402,7 +403,7 @@ class CanvasGraph(tk.Canvas):
             core_node = self.core.create_node(
                 int(x), int(y), self.node_draw.node_type, self.node_draw.model
             )
-            node = CanvasNode(x, y, self.node_draw.image, self.master, core_node)
+            node = CanvasNode(self.master, core_node, self.node_draw.image)
             self.core.canvas_nodes[core_node.id] = node
             self.nodes[node.id] = node
             return node
@@ -590,19 +591,18 @@ class CanvasEdge:
 
 
 class CanvasNode:
-    def __init__(self, x, y, image, app, core_node):
-        self.image = image
+    def __init__(self, app, core_node, image):
         self.app = app
         self.canvas = app.canvas
+        self.image = image
+        self.core_node = core_node
+        x = self.core_node.position.x
+        y = self.core_node.position.y
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags="node"
         )
-        self.core_node = core_node
-        self.name = core_node.name
-        self.x_coord = x
-        self.y_coord = y
         self.text_id = self.canvas.create_text(
-            x, y + 20, text=self.name, tags="nodename"
+            x, y + 20, text=self.core_node.name, tags="nodename"
         )
         self.antenna_draw = WlanAntennaManager(self.canvas, self.id)
         self.tooltip = CanvasTooltip(self.canvas)
@@ -619,6 +619,10 @@ class CanvasNode:
         self.interfaces = []
         self.wlans = []
         self.moving = None
+
+    def redraw(self):
+        self.canvas.itemconfig(self.id, image=self.image)
+        self.canvas.itemconfig(self.text_id, text=self.core_node.name)
 
     def on_enter(self, event):
         if self.app.core.is_runtime() and self.app.core.observer:
@@ -640,18 +644,18 @@ class CanvasNode:
             self.canvas.canvas_action.display_configuration(self)
 
     def update_coords(self):
-        self.x_coord, self.y_coord = self.canvas.coords(self.id)
-        self.core_node.position.x = int(self.x_coord)
-        self.core_node.position.y = int(self.y_coord)
+        x, y = self.canvas.coords(self.id)
+        self.core_node.position.x = int(x)
+        self.core_node.position.y = int(y)
 
     def click_press(self, event):
-        logging.debug(f"node click press {self.name}: {event}")
+        logging.debug(f"node click press {self.core_node.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
 
         self.canvas.canvas_management.node_select(self)
 
     def click_release(self, event):
-        logging.debug(f"node click release {self.name}: {event}")
+        logging.debug(f"node click release {self.core_node.name}: {event}")
         self.update_coords()
         self.moving = None
 
@@ -681,7 +685,6 @@ class CanvasNode:
             else:
                 self.canvas.coords(edge.id, x1, y1, new_x, new_y)
             edge.link_info.recalculate_info()
-            # self.canvas.core_grpc.throughput_draw.update_throughtput_location(edge)
 
         self.canvas.helper.update_wlan_connection(
             old_x, old_y, new_x, new_y, self.wlans
@@ -691,4 +694,4 @@ class CanvasNode:
         self.canvas.canvas_management.node_select(self, True)
 
     def context(self, event):
-        logging.debug(f"context click {self.name}: {event}")
+        logging.debug(f"context click {self.core_node.name}: {event}")

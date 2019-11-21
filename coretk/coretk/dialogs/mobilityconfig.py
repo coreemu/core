@@ -19,9 +19,10 @@ class MobilityConfigDialog(Dialog):
         """
         super().__init__(master, app, "ns2script configuration", modal=True)
         self.canvas_node = canvas_node
+        self.node = canvas_node.core_node
         logging.info(app.canvas.core.mobilityconfig_management.configurations)
         self.node_config = app.canvas.core.mobilityconfig_management.configurations[
-            canvas_node.core_id
+            self.node.id
         ]
 
         self.mobility_script_parameters()
@@ -208,7 +209,7 @@ class MobilityConfigDialog(Dialog):
         else:
             loop = "0"
         self.app.canvas.core.mobilityconfig_management.set_custom_configuration(
-            node_id=self.canvas_node.core_id,
+            node_id=self.node.id,
             file=file,
             refresh_ms=refresh_time,
             loop=loop,

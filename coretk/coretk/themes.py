@@ -85,7 +85,8 @@ def load(style):
                     "fieldbackground": Colors.white,
                     "foreground": Colors.black,
                     "padding": (2, 0),
-                }
+                },
+                "map": {"fieldbackground": [("disabled", Colors.frame)]},
             },
             "TCombobox": {
                 "configure": {

@@ -44,11 +44,21 @@ class NodeUtils:
     NODES = []
     NETWORK_NODES = []
     NODE_ICONS = {}
-    INTERFACE_NODE = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
+    CONTAINER_NODES = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
+    IMAGE_NODES = {NodeType.DOCKER, NodeType.LXC}
+    NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
 
     @classmethod
-    def is_interface_node(cls, node_type):
-        return node_type in cls.INTERFACE_NODE
+    def is_container_node(cls, node_type):
+        return node_type in cls.CONTAINER_NODES
+
+    @classmethod
+    def is_model_node(cls, node_type):
+        return node_type == NodeType.DEFAULT
+
+    @classmethod
+    def is_image_node(cls, node_type):
+        return node_type in cls.IMAGE_NODES
 
     @classmethod
     def node_icon(cls, node_type, model):

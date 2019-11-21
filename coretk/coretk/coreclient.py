@@ -445,12 +445,16 @@ class CoreClient:
         """
         node_id = self.get_id()
         position = core_pb2.Position(x=x, y=y)
+        image = None
+        if NodeUtils.is_image_node(node_type):
+            image = "ubuntu:latest"
         node = core_pb2.Node(
             id=node_id,
             type=node_type,
             name=f"n{node_id}",
             model=model,
             position=position,
+            image=image,
         )
 
         # set default configuration for wireless node
@@ -535,7 +539,7 @@ class CoreClient:
     def create_interface(self, canvas_node):
         interface = None
         core_node = canvas_node.core_node
-        if NodeUtils.is_interface_node(core_node.type):
+        if NodeUtils.is_container_node(core_node.type):
             ifid = len(canvas_node.interfaces)
             name = f"eth{ifid}"
             interface = core_pb2.Interface(
