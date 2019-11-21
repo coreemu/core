@@ -89,6 +89,7 @@ class NodeOptions:
         self.emulation_id = None
         self.server = None
         self.image = image
+        self.emane = None
 
     def set_position(self, x, y):
         """

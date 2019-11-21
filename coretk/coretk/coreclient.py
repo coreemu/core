@@ -670,7 +670,6 @@ class CoreClient:
         if not config:
             response = self.client.get_wlan_config(self.session_id, node_id)
             config = response.config
-            self.wlan_configs[node_id] = config
         return config
 
     def get_mobility_config(self, node_id):
@@ -678,5 +677,4 @@ class CoreClient:
         if not config:
             response = self.client.get_mobility_config(self.session_id, node_id)
             config = response.config
-            self.mobility_configs[node_id] = config
         return config

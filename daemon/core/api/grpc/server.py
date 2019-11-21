@@ -713,10 +713,6 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         session = self.get_session(request.session_id, context)
         _type, _id, options = grpcutils.add_node_data(request.node)
         node = session.add_node(_type=_type, _id=_id, options=options)
-        # configure emane if provided
-        emane_model = request.node.emane
-        if emane_model:
-            session.emane.set_model_config(id, emane_model)
         return core_pb2.AddNodeResponse(node_id=node.id)
 
     def GetNode(self, request, context):
