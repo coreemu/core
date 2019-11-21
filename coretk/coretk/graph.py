@@ -5,8 +5,11 @@ import tkinter as tk
 from PIL import ImageTk
 
 from core.api.grpc import core_pb2
-from coretk.canvasaction import CanvasAction
+from core.api.grpc.core_pb2 import NodeType
 from coretk.canvastooltip import CanvasTooltip
+from coretk.dialogs.mobilityconfig import MobilityConfigDialog
+from coretk.dialogs.nodeconfig import NodeConfigDialog
+from coretk.dialogs.wlanconfig import WlanConfigDialog
 from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.images import Images
 from coretk.linkinfo import LinkInfo, Throughput
@@ -38,24 +41,21 @@ class CanvasGraph(tk.Canvas):
         kwargs["highlightthickness"] = 0
         super().__init__(master, cnf, **kwargs)
         self.mode = GraphMode.SELECT
-        self.node_draw = None
         self.selected = None
-        self.node_context = None
+        self.node_draw = None
+        self.context = None
         self.nodes = {}
         self.edges = {}
         self.drawing_edge = None
         self.grid = None
         self.meters_per_pixel = 1.5
         self.canvas_management = CanvasComponentManagement(self, core)
-        self.canvas_action = CanvasAction(master, self)
-        self.setup_menus()
         self.setup_bindings()
         self.draw_grid()
         self.core = core
         self.helper = GraphHelper(self, core)
         self.throughput_draw = Throughput(self, core)
         self.wireless_draw = WirelessConnection(self, core)
-        self.is_node_context_opened = False
 
         # background related
         self.wallpaper_id = None
@@ -66,21 +66,28 @@ class CanvasGraph(tk.Canvas):
         self.show_grid = tk.BooleanVar(value=True)
         self.adjust_to_dim = tk.BooleanVar(value=False)
 
-    def setup_menus(self):
-        self.node_context = tk.Menu(self.master)
-        self.node_context.add_command(
-            label="Configure", command=self.canvas_action.display_node_configuration
-        )
-        self.node_context.add_command(label="Select adjacent")
-        self.node_context.add_command(label="Create link to")
-        self.node_context.add_command(label="Assign to")
-        self.node_context.add_command(label="Move to")
-        self.node_context.add_command(label="Cut")
-        self.node_context.add_command(label="Copy")
-        self.node_context.add_command(label="Paste")
-        self.node_context.add_command(label="Delete")
-        self.node_context.add_command(label="Hide")
-        self.node_context.add_command(label="Services")
+    def create_node_context(self, canvas_node):
+        node = canvas_node.core_node
+        context = tk.Menu(self.master)
+        context.add_command(label="Configure", command=canvas_node.show_config)
+        if node.type == NodeType.WIRELESS_LAN:
+            context.add_command(
+                label="WLAN Config", command=canvas_node.show_wlan_config
+            )
+            context.add_command(
+                label="Mobility Config", command=canvas_node.show_mobility_config
+            )
+        context.add_command(label="Select adjacent", state=tk.DISABLED)
+        context.add_command(label="Create link to", state=tk.DISABLED)
+        context.add_command(label="Assign to", state=tk.DISABLED)
+        context.add_command(label="Move to", state=tk.DISABLED)
+        context.add_command(label="Cut", state=tk.DISABLED)
+        context.add_command(label="Copy", state=tk.DISABLED)
+        context.add_command(label="Paste", state=tk.DISABLED)
+        context.add_command(label="Delete", state=tk.DISABLED)
+        context.add_command(label="Hide", state=tk.DISABLED)
+        context.add_command(label="Services", state=tk.DISABLED)
+        return context
 
     def reset_and_redraw(self, session):
         """
@@ -97,7 +104,6 @@ class CanvasGraph(tk.Canvas):
         self.mode = GraphMode.SELECT
         self.node_draw = None
         self.selected = None
-        self.node_context = None
         self.nodes.clear()
         self.edges.clear()
         self.drawing_edge = None
@@ -112,7 +118,7 @@ class CanvasGraph(tk.Canvas):
         self.bind("<ButtonPress-1>", self.click_press)
         self.bind("<ButtonRelease-1>", self.click_release)
         self.bind("<B1-Motion>", self.click_motion)
-        self.bind("<Button-3>", self.context)
+        self.bind("<Button-3>", self.click_context)
         self.bind("<Delete>", self.press_delete)
 
     def draw_grid(self, width=1000, height=800):
@@ -254,9 +260,9 @@ class CanvasGraph(tk.Canvas):
         :param event: mouse event
         :return: nothing
         """
-        if self.is_node_context_opened:
-            self.node_context.unpost()
-            self.is_node_context_opened = False
+        if self.context:
+            self.context.unpost()
+            self.context = None
         else:
             self.focus_set()
             self.selected = self.get_selected(event)
@@ -350,18 +356,18 @@ class CanvasGraph(tk.Canvas):
             x1, y1, _, _ = self.coords(self.drawing_edge.id)
             self.coords(self.drawing_edge.id, x1, y1, x2, y2)
 
-    def context(self, event):
-        if not self.is_node_context_opened:
+    def click_context(self, event):
+        logging.info("context event: %s", self.context)
+        if not self.context:
             selected = self.get_selected(event)
-            nodes = self.find_withtag("node")
-            if selected in nodes:
+            canvas_node = self.nodes.get(selected)
+            if canvas_node:
                 logging.debug(f"node context: {selected}")
-                self.node_context.post(event.x_root, event.y_root)
-                self.canvas_action.node_to_show_config = self.nodes[selected]
-            self.is_node_context_opened = True
+                self.context = self.create_node_context(canvas_node)
+                self.context.post(event.x_root, event.y_root)
         else:
-            self.node_context.unpost()
-            self.is_node_context_opened = False
+            self.context.unpost()
+            self.context = None
 
     # TODO rather than delete, might move the data to somewhere else in order to reuse
     # TODO when the user undo
@@ -443,7 +449,6 @@ class CanvasGraph(tk.Canvas):
         """
         place the image at the center of canvas
 
-        :param Image img: image object
         :return: nothing
         """
         tk_img = ImageTk.PhotoImage(self.wallpaper)
@@ -609,7 +614,6 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
         self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
-        self.canvas.tag_bind(self.id, "<Button-3>", self.context)
         self.canvas.tag_bind(self.id, "<Double-Button-1>", self.double_click)
         self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
@@ -641,7 +645,7 @@ class CanvasNode:
         if self.app.core.is_runtime():
             self.canvas.core.launch_terminal(self.core_node.id)
         else:
-            self.canvas.canvas_action.display_configuration(self)
+            self.show_config()
 
     def update_coords(self):
         x, y = self.canvas.coords(self.id)
@@ -693,5 +697,17 @@ class CanvasNode:
     def select_multiple(self, event):
         self.canvas.canvas_management.node_select(self, True)
 
-    def context(self, event):
-        logging.debug(f"context click {self.core_node.name}: {event}")
+    def show_config(self):
+        self.canvas.context = None
+        dialog = NodeConfigDialog(self.app, self.app, self)
+        dialog.show()
+
+    def show_wlan_config(self):
+        self.canvas.context = None
+        dialog = WlanConfigDialog(self.app, self.app, self)
+        dialog.show()
+
+    def show_mobility_config(self):
+        self.canvas.context = None
+        dialog = MobilityConfigDialog(self.app, self.app, self)
+        dialog.show()

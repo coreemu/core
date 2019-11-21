@@ -15,6 +15,7 @@ INT_TYPES = {
     core_pb2.ConfigOptionType.INT32,
     core_pb2.ConfigOptionType.INT64,
 }
+PAD = 5
 
 
 class FrameScroll(ttk.LabelFrame):
@@ -72,7 +73,7 @@ class ConfigFrame(FrameScroll):
 
         for group_name in sorted(group_mapping):
             group = group_mapping[group_name]
-            frame = ttk.Frame(self.frame)
+            frame = ttk.Frame(self.frame, padding=PAD)
             frame.columnconfigure(1, weight=1)
             self.frame.add(frame, text=group_name)
             for index, option in enumerate(sorted(group, key=lambda x: x.name)):

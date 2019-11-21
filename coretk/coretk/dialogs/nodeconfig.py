@@ -107,8 +107,8 @@ class NodeConfigDialog(Dialog):
             entry.grid(row=row, column=1, sticky="ew")
             row += 1
 
-        # server
         if NodeUtils.is_container_node(self.node.type):
+            # server
             frame.grid(sticky="ew")
             frame.columnconfigure(1, weight=1)
             label = ttk.Label(frame, text="Server")
@@ -121,9 +121,9 @@ class NodeConfigDialog(Dialog):
             combobox.grid(row=row, column=1, sticky="ew")
             row += 1
 
-        # services
-        button = ttk.Button(self.top, text="Services", command=self.click_services)
-        button.grid(sticky="ew", pady=PAD)
+            # services
+            button = ttk.Button(self.top, text="Services", command=self.click_services)
+            button.grid(sticky="ew", pady=PAD)
 
         # interfaces
         if self.canvas_node.interfaces:

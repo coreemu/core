@@ -12,7 +12,6 @@ from coretk.mobilitynodeconfig import MobilityNodeConfig
 from coretk.nodeutils import NodeDraw, NodeUtils
 from coretk.servicefileconfig import ServiceFileConfig
 from coretk.servicenodeconfig import ServiceNodeConfig
-from coretk.wlannodeconfig import WlanNodeConfig
 
 OBSERVERS = {
     "processes": "ps",
@@ -70,7 +69,7 @@ class CoreClient:
         self.reusable = []
         self.preexisting = set()
         self.interfaces_manager = InterfaceManager()
-        self.wlanconfig_management = WlanNodeConfig()
+        self.wlan_configs = {}
         self.mobilityconfig_management = MobilityNodeConfig()
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
@@ -136,7 +135,7 @@ class CoreClient:
         self.canvas_nodes.clear()
         self.links.clear()
         self.hooks.clear()
-        self.wlanconfig_management.configurations.clear()
+        self.wlan_configs.clear()
         self.mobilityconfig_management.configurations.clear()
         self.emane_config = None
 
@@ -158,9 +157,7 @@ class CoreClient:
             if node.type == core_pb2.NodeType.WIRELESS_LAN:
                 response = self.client.get_wlan_config(self.session_id, node.id)
                 logging.debug("wlan config(%s): %s", node.id, response)
-                node_config = response.config
-                config = {x: node_config[x].value for x in node_config}
-                self.wlanconfig_management.configurations[node.id] = config
+                self.wlan_configs[node.id] = response.config
 
         # get mobility configs
         response = self.client.get_mobility_configs(self.session_id)
@@ -458,7 +455,6 @@ class CoreClient:
         )
 
         # set default configuration for wireless node
-        self.wlanconfig_management.set_default_config(node_type, node_id)
         self.mobilityconfig_management.set_default_configuration(node_type, node_id)
 
         # set default emane configuration for emane node
@@ -525,8 +521,8 @@ class CoreClient:
         for i in node_ids:
             if i in self.mobilityconfig_management.configurations:
                 self.mobilityconfig_management.configurations.pop(i)
-            if i in self.wlanconfig_management.configurations:
-                self.wlanconfig_management.configurations.pop(i)
+            if i in self.wlan_configs:
+                del self.wlan_configs[i]
 
         # delete emane configurations
         for i in node_interface_pairs:
@@ -611,11 +607,10 @@ class CoreClient:
 
     def get_wlan_configs_proto(self):
         configs = []
-        wlan_configs = self.wlanconfig_management.configurations
-        for node_id in wlan_configs:
-            config = wlan_configs[node_id]
-            config_proto = core_pb2.WlanConfig(node_id=node_id, config=config)
-            configs.append(config_proto)
+        for node_id, config in self.wlan_configs.items():
+            config = {x: config[x].value for x in config}
+            wlan_config = core_pb2.WlanConfig(node_id=node_id, config=config)
+            configs.append(wlan_config)
         return configs
 
     def get_mobility_configs_proto(self):
@@ -675,3 +670,11 @@ class CoreClient:
     def run(self, node_id):
         logging.info("running node(%s) cmd: %s", node_id, self.observer)
         return self.client.node_command(self.session_id, node_id, self.observer).output
+
+    def get_wlan_config(self, node_id):
+        config = self.wlan_configs.get(node_id)
+        if not config:
+            response = self.client.get_wlan_config(self.session_id, node_id)
+            config = response.config
+            self.wlan_configs[node_id] = config
+        return config
