@@ -30,6 +30,8 @@ def add_node_data(node_proto):
     options.opaque = node_proto.opaque
     options.image = node_proto.image
     options.services = node_proto.services
+    if node_proto.emane:
+        options.emane = node_proto.emane
     if node_proto.server:
         options.server = node_proto.server
 

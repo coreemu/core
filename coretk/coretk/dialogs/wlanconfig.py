@@ -5,7 +5,6 @@ wlan configuration
 from tkinter import ttk
 
 from coretk.dialogs.dialog import Dialog
-from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.widgets import ConfigFrame
 
 PAD = 5
@@ -45,10 +44,6 @@ class WlanConfigDialog(Dialog):
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
-
-    def click_mobility(self):
-        dialog = MobilityConfigDialog(self, self.app, self.canvas_node)
-        dialog.show()
 
     def click_apply(self):
         """

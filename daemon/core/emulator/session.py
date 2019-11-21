@@ -30,7 +30,7 @@ from core.emulator.sessionconfig import SessionConfig
 from core.errors import CoreError
 from core.location.corelocation import CoreLocation
 from core.location.event import EventLoop
-from core.location.mobility import MobilityManager
+from core.location.mobility import BasicRangeModel, MobilityManager
 from core.nodes.base import CoreNetworkBase, CoreNode, CoreNodeBase
 from core.nodes.docker import DockerNode
 from core.nodes.ipaddress import MacAddress
@@ -702,6 +702,13 @@ class Session:
             node.type = options.model
             logging.debug("set node type: %s", node.type)
             self.services.add_services(node, node.type, options.services)
+
+        # ensure default emane configuration
+        if _type == NodeTypes.EMANE:
+            self.emane.set_model_config(_id, node.emane)
+        # set default wlan config if needed
+        if _type == NodeTypes.WIRELESS_LAN:
+            self.mobility.set_model_config(_id, BasicRangeModel.name)
 
         # boot nodes after runtime, CoreNodes, Physical, and RJ45 are all nodes
         is_boot_node = isinstance(node, CoreNodeBase) and not isinstance(node, Rj45Node)
