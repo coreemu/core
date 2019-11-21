@@ -7,6 +7,7 @@ from PIL import ImageTk
 from core.api.grpc import core_pb2
 from core.api.grpc.core_pb2 import NodeType
 from coretk.canvastooltip import CanvasTooltip
+from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
@@ -76,6 +77,10 @@ class CanvasGraph(tk.Canvas):
             )
             context.add_command(
                 label="Mobility Config", command=canvas_node.show_mobility_config
+            )
+        if node.type == NodeType.EMANE:
+            context.add_command(
+                label="EMANE Config", command=canvas_node.show_emane_config
             )
         context.add_command(label="Select adjacent", state=tk.DISABLED)
         context.add_command(label="Create link to", state=tk.DISABLED)
@@ -710,4 +715,9 @@ class CanvasNode:
     def show_mobility_config(self):
         self.canvas.context = None
         dialog = MobilityConfigDialog(self.app, self.app, self)
+        dialog.show()
+
+    def show_emane_config(self):
+        self.canvas.context = None
+        dialog = EmaneConfigDialog(self.app, self.app, self)
         dialog.show()
