@@ -11,11 +11,11 @@ from coretk.widgets import ListboxScroll
 
 
 class ServiceConfiguration(Dialog):
-    def __init__(self, master, app, service_name, canvas_node):
+    def __init__(self, master, app, service_name, node_id):
         super().__init__(master, app, f"{service_name} service", modal=True)
         self.app = app
-        self.canvas_node = canvas_node
-        self.node_id = canvas_node.core_node.id
+        self.service_manager = app.core.serviceconfig_manager
+        self.node_id = node_id
         self.service_name = service_name
         self.radiovar = tk.IntVar()
         self.radiovar.set(2)
@@ -51,16 +51,15 @@ class ServiceConfiguration(Dialog):
         # create nodes and links in definition state for getting and setting service file
         self.app.core.create_nodes_and_links()
         # load data from local memory
-        serviceconfig_manager = self.app.core.serviceconfig_manager
-        if self.service_name in serviceconfig_manager.configurations[self.node_id]:
-            service_config = serviceconfig_manager.configurations[self.node_id][
+        if self.service_name in self.service_manager.configurations[self.node_id]:
+            service_config = self.service_manager.configurations[self.node_id][
                 self.service_name
             ]
         else:
-            serviceconfig_manager.node_custom_service_configuration(
+            self.service_manager.node_custom_service_configuration(
                 self.node_id, self.service_name
             )
-            service_config = serviceconfig_manager.configurations[self.node_id][
+            service_config = self.service_manager.configurations[self.node_id][
                 self.service_name
             ]
         self.dependencies = [x for x in service_config.dependencies]
@@ -363,7 +362,7 @@ class ServiceConfiguration(Dialog):
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
-        self.app.core.serviceconfig_manager.node_service_custom_configuration(
+        self.service_manager.node_service_custom_configuration(
             self.node_id,
             self.service_name,
             startup_commands,

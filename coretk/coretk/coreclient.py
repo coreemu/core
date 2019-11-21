@@ -123,6 +123,9 @@ class CoreClient:
         )
 
     def join_session(self, session_id):
+        self.master.config(cursor="watch")
+        self.master.update()
+
         # update session and title
         self.session_id = session_id
         self.master.title(f"CORE Session({self.session_id})")
@@ -193,6 +196,7 @@ class CoreClient:
             self.app.toolbar.runtime_frame.tkraise()
         else:
             self.app.toolbar.design_frame.tkraise()
+        self.master.config(cursor="")
 
     def is_runtime(self):
         return self.state == core_pb2.SessionState.RUNTIME
@@ -296,7 +300,8 @@ class CoreClient:
         mobility_configs = self.get_mobility_configs_proto()
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
-        # service_configs = self.get_service_config_proto()
+        service_configs = self.get_service_config_proto()
+        print(service_configs)
         # service_file_configs = self.get_service_file_config_proto()
         self.created_links.clear()
         self.created_nodes.clear()
@@ -313,7 +318,7 @@ class CoreClient:
             emane_config=emane_config,
             emane_model_configs=emane_model_configs,
             mobility_configs=mobility_configs,
-            # service_configs=service_configs
+            service_configs=service_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
@@ -638,14 +643,15 @@ class CoreClient:
             service_configs,
         ) in self.serviceconfig_manager.configurations.items():
             for service, config in service_configs.items():
-                config = core_pb2.ServiceConfig(
-                    node_id=node_id,
-                    service=service,
-                    startup=config.startup,
-                    validate=config.validate,
-                    shutdown=config.shutdown,
-                )
-                configs.append(config)
+                if service in self.serviceconfig_manager.current_services[node_id]:
+                    config = core_pb2.ServiceConfig(
+                        node_id=node_id,
+                        service=service,
+                        startup=config.startup,
+                        validate=config.validate,
+                        shutdown=config.shutdown,
+                    )
+                    configs.append(config)
         return configs
 
     def get_service_file_config_proto(self):

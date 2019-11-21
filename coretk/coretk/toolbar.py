@@ -196,9 +196,12 @@ class Toolbar(ttk.Frame):
         :return: nothing
         """
         logging.debug("clicked start button")
+        self.master.config(cursor="watch")
+        self.master.update()
         self.app.canvas.mode = GraphMode.SELECT
         self.app.core.start_session()
         self.runtime_frame.tkraise()
+        self.master.config(cursor="")
 
     def click_link(self):
         logging.debug("Click LINK button")
