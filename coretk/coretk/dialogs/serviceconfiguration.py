@@ -14,6 +14,7 @@ class ServiceConfiguration(Dialog):
     def __init__(self, master, app, service_name, node_id):
         super().__init__(master, app, f"{service_name} service", modal=True)
         self.app = app
+        self.core = app.core
         self.service_manager = app.core.serviceconfig_manager
         self.node_id = node_id
         self.service_name = service_name
@@ -50,18 +51,32 @@ class ServiceConfiguration(Dialog):
     def load(self):
         # create nodes and links in definition state for getting and setting service file
         self.app.core.create_nodes_and_links()
-        # load data from local memory
-        if self.service_name in self.service_manager.configurations[self.node_id]:
-            service_config = self.service_manager.configurations[self.node_id][
+
+        service_configs = self.app.core.service_configs
+        if (
+            self.node_id in service_configs
+            and self.service_name in service_configs[self.node_id]
+        ):
+            service_config = self.app.core.service_configs[self.node_id][
                 self.service_name
             ]
         else:
-            self.service_manager.node_custom_service_configuration(
+            service_config = self.app.core.get_node_service(
                 self.node_id, self.service_name
             )
-            service_config = self.service_manager.configurations[self.node_id][
-                self.service_name
-            ]
+
+        # # load data from local memory
+        # if self.service_name in self.service_manager.configurations[self.node_id]:
+        #     service_config = self.service_manager.configurations[self.node_id][
+        #         self.service_name
+        #     ]
+        # else:
+        #     self.service_manager.node_custom_service_configuration(
+        #         self.node_id, self.service_name
+        #     )
+        #     service_config = self.service_manager.configurations[self.node_id][
+        #         self.service_name
+        #     ]
         self.dependencies = [x for x in service_config.dependencies]
         self.executables = [x for x in service_config.executables]
         self.metadata = service_config.meta
@@ -359,16 +374,30 @@ class ServiceConfiguration(Dialog):
             entry.delete(0, tk.END)
 
     def click_apply(self):
+        service_configs = self.app.core.service_configs
         startup_commands = self.startup_commands_listbox.get(0, "end")
         shutdown_commands = self.shutdown_commands_listbox.get(0, "end")
         validate_commands = self.validate_commands_listbox.get(0, "end")
-        self.service_manager.node_service_custom_configuration(
+        config = self.core.set_node_service(
             self.node_id,
             self.service_name,
             startup_commands,
             validate_commands,
             shutdown_commands,
         )
+        if self.node_id not in service_configs:
+            service_configs[self.node_id] = {}
+        if self.service_name not in service_configs[self.node_id]:
+            self.app.core.service_configs[self.node_id][self.service_name] = config
+        print(self.app.core.client.get_session(self.app.core.session_id))
+
+        # self.service_manager.node_service_custom_configuration(
+        #     self.node_id,
+        #     self.service_name,
+        #     startup_commands,
+        #     validate_commands,
+        #     shutdown_commands,
+        # )
         for file in self.modified_files:
             self.app.core.servicefileconfig_manager.set_custom_service_file_config(
                 self.node_id, self.service_name, file, self.temp_service_files[file]

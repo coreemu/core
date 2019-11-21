@@ -50,6 +50,7 @@ class CoreClient:
         self.master = app.master
         self.interface_helper = None
         self.services = {}
+        self.default_services = {}
         self.observer = None
 
         # loaded configuration data
@@ -76,6 +77,9 @@ class CoreClient:
         self.servicefileconfig_manager = ServiceFileConfig()
         self.created_nodes = set()
         self.created_links = set()
+
+        self.service_configs = {}
+        self.file_configs = {}
 
     def set_observer(self, value):
         self.observer = value
@@ -253,9 +257,15 @@ class CoreClient:
             dialog = SessionsDialog(self.app, self.app)
             dialog.show()
 
+        response = self.client.get_service_defaults(self.session_id)
+        logging.debug("get service defaults: %s", response)
+        self.default_services = {
+            x.node_type: set(x.services) for x in response.defaults
+        }
+
     def get_session_state(self):
         response = self.client.get_session(self.session_id)
-        # logging.info("get session: %s", response)
+        logging.info("get session: %s", response)
         return response.session.state
 
     def edit_node(self, node_id, x, y):
@@ -358,6 +368,9 @@ class CoreClient:
             self.session_id, node_id, service_name, startups, validations, shutdowns
         )
         logging.debug("set node service %s", response)
+        response = self.client.get_node_service(self.session_id, node_id, service_name)
+        logging.debug("get node service : %s", response)
+        return response.service
 
     def get_node_service_file(self, node_id, service_name, file_name):
         response = self.client.get_node_service_file(
@@ -381,7 +394,10 @@ class CoreClient:
 
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = list(self.links.values())
-        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
+        if self.get_session_state() != core_pb2.SessionState.DEFINITION:
+            self.client.set_session_state(
+                self.session_id, core_pb2.SessionState.DEFINITION
+            )
         for node_proto in node_protos:
             if node_proto.id not in self.created_nodes:
                 response = self.client.add_node(self.session_id, node_proto)

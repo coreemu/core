@@ -12,6 +12,7 @@ from coretk.widgets import CheckboxList, ListboxScroll
 class NodeService(Dialog):
     def __init__(self, master, app, canvas_node, services=None):
         super().__init__(master, app, "Node Services", modal=True)
+        self.app = app
         self.canvas_node = canvas_node
         self.node_id = canvas_node.core_node.id
         self.groups = None
@@ -108,8 +109,15 @@ class NodeService(Dialog):
             )
 
     def click_save(self):
-        print("not implemented")
-        print(self.current_services)
+        if (
+            self.current_services
+            != self.app.core.default_services[self.canvas_node.core_node.model]
+        ):
+            self.canvas_node.core_node.services[:] = self.current_services
+        else:
+            if len(self.canvas_node.core_node.services) > 0:
+                self.canvas_node.core_node.services[:] = []
+        self.destroy()
 
     def click_cancel(self):
         self.current_services = None
