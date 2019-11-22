@@ -8,8 +8,6 @@ from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
-from coretk.servicefileconfig import ServiceFileConfig
-from coretk.servicenodeconfig import ServiceNodeConfig
 
 OBSERVERS = {
     "processes": "ps",
@@ -49,6 +47,7 @@ class CoreClient:
         self.master = app.master
         self.interface_helper = None
         self.services = {}
+        self.default_services = {}
         self.emane_models = []
         self.observer = None
 
@@ -73,10 +72,11 @@ class CoreClient:
         self.mobility_configs = {}
         self.emane_model_configs = {}
         self.emane_config = None
-        self.serviceconfig_manager = ServiceNodeConfig(app)
-        self.servicefileconfig_manager = ServiceFileConfig()
         self.created_nodes = set()
         self.created_links = set()
+
+        self.service_configs = {}
+        self.file_configs = {}
 
     def set_observer(self, value):
         self.observer = value
@@ -138,6 +138,8 @@ class CoreClient:
         self.wlan_configs.clear()
         self.mobility_configs.clear()
         self.emane_config = None
+        self.service_configs.clear()
+        self.file_configs.clear()
 
         # get session data
         response = self.client.get_session(self.session_id)
@@ -269,9 +271,15 @@ class CoreClient:
             dialog = SessionsDialog(self.app, self.app)
             dialog.show()
 
+        response = self.client.get_service_defaults(self.session_id)
+        logging.debug("get service defaults: %s", response)
+        self.default_services = {
+            x.node_type: set(x.services) for x in response.defaults
+        }
+
     def get_session_state(self):
         response = self.client.get_session(self.session_id)
-        # logging.info("get session: %s", response)
+        logging.info("get session: %s", response)
         return response.session.state
 
     def edit_node(self, node_id, x, y):
@@ -312,8 +320,7 @@ class CoreClient:
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
         service_configs = self.get_service_config_proto()
-        print(service_configs)
-        # service_file_configs = self.get_service_file_config_proto()
+        file_configs = self.get_service_file_config_proto()
         self.created_links.clear()
         self.created_nodes.clear()
         if self.emane_config:
@@ -331,8 +338,10 @@ class CoreClient:
             wlan_configs,
             mobility_configs,
             service_configs,
+            file_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
+        print(self.client.get_session(self.session_id))
 
     def stop_session(self):
         response = self.client.stop_session(session_id=self.session_id)
@@ -375,6 +384,9 @@ class CoreClient:
             self.session_id, node_id, service_name, startups, validations, shutdowns
         )
         logging.debug("set node service %s", response)
+        response = self.client.get_node_service(self.session_id, node_id, service_name)
+        logging.debug("get node service : %s", response)
+        return response.service
 
     def get_node_service_file(self, node_id, service_name, file_name):
         response = self.client.get_node_service_file(
@@ -395,10 +407,13 @@ class CoreClient:
 
         :return: nothing
         """
-
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = list(self.links.values())
-        self.client.set_session_state(self.session_id, core_pb2.SessionState.DEFINITION)
+        print(node_protos)
+        if self.get_session_state() != core_pb2.SessionState.DEFINITION:
+            self.client.set_session_state(
+                self.session_id, core_pb2.SessionState.DEFINITION
+            )
         for node_proto in node_protos:
             if node_proto.id not in self.created_nodes:
                 response = self.client.add_node(self.session_id, node_proto)
@@ -421,6 +436,7 @@ class CoreClient:
                 self.created_links.add(
                     tuple([link_proto.node_one_id, link_proto.node_two_id])
                 )
+        print(self.app.core.client.get_session(self.app.core.session_id))
 
     def close(self):
         """
@@ -472,14 +488,6 @@ class CoreClient:
             image=image,
             emane=emane,
         )
-
-        # set default service configurations
-        # TODO: need to deal with this and custom node cases
-        if node_type == core_pb2.NodeType.DEFAULT:
-            self.serviceconfig_manager.node_default_services_configuration(
-                node_id=node_id, node_model=model
-            )
-
         logging.debug(
             "adding node to core session: %s, coords: (%s, %s), name: %s",
             self.session_id,
@@ -607,34 +615,27 @@ class CoreClient:
 
     def get_service_config_proto(self):
         configs = []
-        for (
-            node_id,
-            service_configs,
-        ) in self.serviceconfig_manager.configurations.items():
-            for service, config in service_configs.items():
-                if service in self.serviceconfig_manager.current_services[node_id]:
-                    config = core_pb2.ServiceConfig(
-                        node_id=node_id,
-                        service=service,
-                        startup=config.startup,
-                        validate=config.validate,
-                        shutdown=config.shutdown,
-                    )
-                    configs.append(config)
+        for node_id, services in self.service_configs.items():
+            for name, config in services.items():
+                config_proto = core_pb2.ServiceConfig(
+                    node_id=node_id,
+                    service=name,
+                    startup=config.startup,
+                    validate=config.validate,
+                    shutdown=config.shutdown,
+                )
+                configs.append(config_proto)
         return configs
 
     def get_service_file_config_proto(self):
         configs = []
-        for (
-            node_id,
-            service_file_configs,
-        ) in self.servicefileconfig_manager.configurations.items():
-            for service, file_configs in service_file_configs.items():
-                for file, data in file_configs.items():
-                    config = core_pb2.ServiceFileConfig(
+        for (node_id, file_configs) in self.file_configs.items():
+            for service, file_config in file_configs.items():
+                for file, data in file_config.items():
+                    config_proto = core_pb2.ServiceFileConfig(
                         node_id=node_id, service=service, file=file, data=data
                     )
-                    configs.append(config)
+                    configs.append(config_proto)
         return configs
 
     def run(self, node_id):

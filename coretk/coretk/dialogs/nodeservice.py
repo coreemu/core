@@ -12,18 +12,21 @@ from coretk.widgets import CheckboxList, ListboxScroll
 class NodeService(Dialog):
     def __init__(self, master, app, canvas_node, services=None):
         super().__init__(master, app, "Node Services", modal=True)
+        self.app = app
         self.canvas_node = canvas_node
         self.node_id = canvas_node.core_node.id
         self.groups = None
         self.services = None
         self.current = None
         if services is None:
-            services = set(
-                app.core.serviceconfig_manager.current_services[self.node_id]
-            )
+            services = canvas_node.core_node.services
+            model = canvas_node.core_node.model
+            if len(services) == 0:
+                services = set(self.app.core.default_services[model])
+            else:
+                services = set(services)
+
         self.current_services = services
-        self.service_manager = self.app.core.serviceconfig_manager
-        self.service_file_manager = self.app.core.servicefileconfig_manager
         self.draw()
 
     def draw(self):
@@ -72,22 +75,15 @@ class NodeService(Dialog):
             index = selection[0]
             group = self.groups.listbox.get(index)
             self.services.clear()
-            for service in sorted(self.app.core.services[group], key=lambda x: x.name):
-                checked = service.name in self.current_services
-                self.services.add(service.name, checked)
+            for name in sorted(self.app.core.services[group]):
+                checked = name in self.current_services
+                self.services.add(name, checked)
 
     def service_clicked(self, name, var):
         if var.get() and name not in self.current_services:
-            if self.service_manager.node_new_service_configuration(self.node_id, name):
-                self.current_services.add(name)
-            else:
-                for checkbutton in self.services.frame.winfo_children():
-                    if name == checkbutton.cget("text"):
-                        checkbutton.config(variable=tk.BooleanVar(value=False))
-
+            self.current_services.add(name)
         elif not var.get() and name in self.current_services:
             self.current_services.remove(name)
-            self.service_manager.current_services[self.node_id].remove(name)
         self.current.listbox.delete(0, tk.END)
         for name in sorted(self.current_services):
             self.current.listbox.insert(tk.END, name)
@@ -108,8 +104,15 @@ class NodeService(Dialog):
             )
 
     def click_save(self):
-        print("not implemented")
-        print(self.current_services)
+        if (
+            self.current_services
+            != self.app.core.default_services[self.canvas_node.core_node.model]
+        ):
+            self.canvas_node.core_node.services[:] = self.current_services
+        else:
+            if len(self.canvas_node.core_node.services) > 0:
+                self.canvas_node.core_node.services[:] = []
+        self.destroy()
 
     def click_cancel(self):
         self.current_services = None
