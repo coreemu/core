@@ -1,6 +1,7 @@
 import enum
 import logging
 import tkinter as tk
+from tkinter import font
 
 from PIL import ImageTk
 
@@ -619,8 +620,14 @@ class CanvasNode:
         )
         image_box = self.canvas.bbox(self.id)
         y = image_box[3] + NODE_TEXT_OFFSET
+        text_font = font.Font(family="TkIconFont", size=12)
         self.text_id = self.canvas.create_text(
-            x, y, text=self.core_node.name, tags="nodename"
+            x,
+            y,
+            text=self.core_node.name,
+            tags="nodename",
+            font=text_font,
+            fill="#0000CD",
         )
         self.antenna_draw = WlanAntennaManager(self.canvas, self.id)
         self.tooltip = CanvasTooltip(self.canvas)
@@ -631,7 +638,6 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
-
         self.edges = set()
         self.interfaces = []
         self.wlans = []
