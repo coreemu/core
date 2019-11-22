@@ -312,7 +312,7 @@ class CoreClient:
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
         service_configs = self.get_service_config_proto()
-        # service_file_configs = self.get_service_file_config_proto()
+        file_configs = self.get_service_file_config_proto()
         self.created_links.clear()
         self.created_nodes.clear()
         if self.emane_config:
@@ -329,6 +329,7 @@ class CoreClient:
             emane_model_configs=emane_model_configs,
             mobility_configs=mobility_configs,
             service_configs=service_configs,
+            service_file_configs=file_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
@@ -483,11 +484,10 @@ class CoreClient:
             self.emaneconfig_management.set_default_config(node_id)
 
         # set default service configurations
-        # TODO: need to deal with this and custom node cases
-        if node_type == core_pb2.NodeType.DEFAULT:
-            self.serviceconfig_manager.node_default_services_configuration(
-                node_id=node_id, node_model=model
-            )
+        # if node_type == core_pb2.NodeType.DEFAULT:
+        #     self.serviceconfig_manager.node_default_services_configuration(
+        #         node_id=node_id, node_model=model
+        #     )
 
         logging.debug(
             "adding node to core session: %s, coords: (%s, %s), name: %s",
@@ -668,16 +668,23 @@ class CoreClient:
 
     def get_service_file_config_proto(self):
         configs = []
-        for (
-            node_id,
-            service_file_configs,
-        ) in self.servicefileconfig_manager.configurations.items():
-            for service, file_configs in service_file_configs.items():
-                for file, data in file_configs.items():
-                    config = core_pb2.ServiceFileConfig(
+        for (node_id, file_configs) in self.file_configs.items():
+            for service, file_config in file_configs.items():
+                for file, data in file_config.items():
+                    config_proto = core_pb2.ServiceFileConfig(
                         node_id=node_id, service=service, file=file, data=data
                     )
-                    configs.append(config)
+                    configs.append(config_proto)
+        # for (
+        #     node_id,
+        #     service_file_configs,
+        # ) in self.servicefileconfig_manager.configurations.items():
+        #     for service, file_configs in service_file_configs.items():
+        #         for file, data in file_configs.items():
+        #             config = core_pb2.ServiceFileConfig(
+        #                 node_id=node_id, service=service, file=file, data=data
+        #             )
+        #             configs.append(config)
         return configs
 
     def run(self, node_id):
