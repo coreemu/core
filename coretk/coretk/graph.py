@@ -1,6 +1,7 @@
 import enum
 import logging
 import tkinter as tk
+from tkinter import font
 
 from PIL import ImageTk
 
@@ -296,9 +297,8 @@ class CanvasGraph(tk.Canvas):
 
         # edge dst must be a node
         logging.debug(f"current selected: {self.selected}")
-        logging.debug(f"current nodes: {self.find_withtag('node')}")
-        is_node = self.selected in self.find_withtag("node")
-        if not is_node:
+        dst_node = self.nodes.get(self.selected)
+        if not dst_node:
             edge.delete()
             return
 
@@ -319,7 +319,7 @@ class CanvasGraph(tk.Canvas):
             node_src.edges.add(edge)
             node_dst = self.nodes[edge.dst]
             node_dst.edges.add(edge)
-            link = self.core.create_link(edge.token, node_src, node_dst)
+            link = self.core.create_link(edge, node_src, node_dst)
 
             # draw link info on the edge
             ip4_and_prefix_1 = None
@@ -569,8 +569,9 @@ class CanvasEdge:
         """
         self.src = src
         self.dst = None
+        self.src_interface = None
+        self.dst_interface = None
         self.canvas = canvas
-
         if is_wired is None or is_wired is True:
             self.id = self.canvas.create_line(
                 x1, y1, x2, y2, tags="edge", width=self.width, fill="#ff0000"
@@ -587,8 +588,6 @@ class CanvasEdge:
                 state=tk.HIDDEN,
             )
         self.token = None
-
-        # link info object
         self.link_info = None
         self.throughput = None
         self.wired = is_wired
@@ -619,8 +618,14 @@ class CanvasNode:
         )
         image_box = self.canvas.bbox(self.id)
         y = image_box[3] + NODE_TEXT_OFFSET
+        text_font = font.Font(family="TkIconFont", size=12)
         self.text_id = self.canvas.create_text(
-            x, y, text=self.core_node.name, tags="nodename"
+            x,
+            y,
+            text=self.core_node.name,
+            tags="nodename",
+            font=text_font,
+            fill="#0000CD",
         )
         self.antenna_draw = WlanAntennaManager(self.canvas, self.id)
         self.tooltip = CanvasTooltip(self.canvas)
@@ -631,7 +636,6 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Control-1>", self.select_multiple)
         self.canvas.tag_bind(self.id, "<Enter>", self.on_enter)
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
-
         self.edges = set()
         self.interfaces = []
         self.wlans = []

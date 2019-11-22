@@ -13,6 +13,7 @@ black = "==19.3b0"
 pre-commit = "*"
 
 [packages]
-coretk = {editable = true,path = "."}
-core = {editable = true,path = "./../daemon"}
+coretk = {path = ".",editable = true}
+core = {path = "./../daemon",editable = true}
 pyyaml = "*"
+netaddr = "*"
