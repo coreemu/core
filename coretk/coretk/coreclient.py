@@ -68,7 +68,7 @@ class CoreClient:
         self.id = 1
         self.reusable = []
         self.preexisting = set()
-        self.interfaces_manager = InterfaceManager()
+        self.interfaces_manager = InterfaceManager(self.app)
         self.wlan_configs = {}
         self.mobility_configs = {}
         self.emane_model_configs = {}
@@ -523,57 +523,59 @@ class CoreClient:
                 logging.error("invalid edge token: %s", i)
 
     def create_interface(self, canvas_node):
-        interface = None
-        core_node = canvas_node.core_node
-        if NodeUtils.is_container_node(core_node.type):
-            ifid = len(canvas_node.interfaces)
-            name = f"eth{ifid}"
-            interface = core_pb2.Interface(
-                id=ifid,
-                name=name,
-                ip4=str(self.interfaces_manager.get_address()),
-                ip4mask=24,
-            )
-            canvas_node.interfaces.append(interface)
-            logging.debug(
-                "create node(%s) interface IPv4: %s, name: %s",
-                core_node.name,
-                interface.ip4,
-                interface.name,
-            )
+        node = canvas_node.core_node
+        ip4, ip6, prefix = self.interfaces_manager.get_ips(node.id)
+        interface_id = len(canvas_node.interfaces)
+        name = f"eth{interface_id}"
+        interface = core_pb2.Interface(
+            id=interface_id, name=name, ip4=ip4, ip4mask=prefix, ip6=ip6, ip6mask=prefix
+        )
+        canvas_node.interfaces.append(interface)
+        logging.debug(
+            "create node(%s) interface IPv4: %s, name: %s",
+            node.name,
+            interface.ip4,
+            interface.name,
+        )
         return interface
 
-    def create_link(self, token, canvas_node_one, canvas_node_two):
+    def create_link(self, edge, canvas_src_node, canvas_dst_node):
         """
         Create core link for a pair of canvas nodes, with token referencing
         the canvas edge.
 
-        :param tuple(int, int) token: edge's identification in the canvas
-        :param canvas_node_one: canvas node one
-        :param canvas_node_two: canvas node two
+        :param edge: edge for link
+        :param canvas_src_node: canvas node one
+        :param canvas_dst_node: canvas node two
 
         :return: nothing
         """
-        node_one = canvas_node_one.core_node
-        node_two = canvas_node_two.core_node
+        src_node = canvas_src_node.core_node
+        dst_node = canvas_dst_node.core_node
 
-        # create interfaces
-        self.interfaces_manager.new_subnet()
-        interface_one = self.create_interface(canvas_node_one)
-        if interface_one is not None:
-            self.interface_to_edge[(node_one.id, interface_one.id)] = token
-        interface_two = self.create_interface(canvas_node_two)
-        if interface_two is not None:
-            self.interface_to_edge[(node_two.id, interface_two.id)] = token
+        # determine subnet
+        self.interfaces_manager.determine_subnet(canvas_src_node, canvas_dst_node)
+
+        src_interface = None
+        if NodeUtils.is_container_node(src_node.type):
+            src_interface = self.create_interface(canvas_src_node)
+            edge.src_interface = src_interface
+            self.interface_to_edge[(src_node.id, src_interface.id)] = edge.token
+
+        dst_interface = None
+        if NodeUtils.is_container_node(dst_node.type):
+            dst_interface = self.create_interface(canvas_dst_node)
+            edge.dst_interface = dst_interface
+            self.interface_to_edge[(dst_node.id, dst_interface.id)] = edge.token
 
         link = core_pb2.Link(
             type=core_pb2.LinkType.WIRED,
-            node_one_id=node_one.id,
-            node_two_id=node_two.id,
-            interface_one=interface_one,
-            interface_two=interface_two,
+            node_one_id=src_node.id,
+            node_two_id=dst_node.id,
+            interface_one=src_interface,
+            interface_two=dst_interface,
         )
-        self.links[token] = link
+        self.links[edge.token] = link
         return link
 
     def get_wlan_configs_proto(self):
