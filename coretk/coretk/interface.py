@@ -13,8 +13,14 @@ def random_mac():
 class InterfaceManager:
     def __init__(self, app, cidr="10.0.0.0/24"):
         self.app = app
+        self.default = cidr
         self.cidr = IPNetwork(cidr)
         self.deleted = []
+        self.current = None
+
+    def reset(self):
+        self.cidr = IPNetwork(self.default)
+        self.deleted.clear()
         self.current = None
 
     def get_ips(self, node_id):

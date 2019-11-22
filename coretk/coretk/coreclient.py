@@ -74,9 +74,24 @@ class CoreClient:
         self.emane_config = None
         self.created_nodes = set()
         self.created_links = set()
-
         self.service_configs = {}
         self.file_configs = {}
+
+    def reset(self):
+        self.id = 1
+        self.reusable.clear()
+        self.preexisting.clear()
+        self.canvas_nodes.clear()
+        self.links.clear()
+        self.hooks.clear()
+        self.wlan_configs.clear()
+        self.mobility_configs.clear()
+        self.emane_config = None
+        self.location = None
+        self.service_configs.clear()
+        self.file_configs.clear()
+        self.interfaces_manager.reset()
+        self.interface_to_edge.clear()
 
     def set_observer(self, value):
         self.observer = value
@@ -130,16 +145,7 @@ class CoreClient:
         self.master.title(f"CORE Session({self.session_id})")
 
         # clear session data
-        self.reusable.clear()
-        self.preexisting.clear()
-        self.canvas_nodes.clear()
-        self.links.clear()
-        self.hooks.clear()
-        self.wlan_configs.clear()
-        self.mobility_configs.clear()
-        self.emane_config = None
-        self.service_configs.clear()
-        self.file_configs.clear()
+        self.reset()
 
         # get session data
         response = self.client.get_session(self.session_id)
@@ -224,28 +230,11 @@ class CoreClient:
         )
         self.join_session(response.session_id, query_location=False)
 
-    def delete_session(self, custom_sid=None):
-        if custom_sid is None:
-            sid = self.session_id
-        else:
-            sid = custom_sid
-        response = self.client.delete_session(sid)
+    def delete_session(self, session_id=None):
+        if session_id is None:
+            session_id = self.session_id
+        response = self.client.delete_session(session_id)
         logging.info("Deleted session result: %s", response)
-
-    def shutdown_session(self, custom_sid=None):
-        if custom_sid is None:
-            sid = self.session_id
-        else:
-            sid = custom_sid
-        s = self.client.get_session(sid).session
-        # delete links and nodes from running session
-        if s.state == core_pb2.SessionState.RUNTIME:
-            self.client.set_session_state(
-                self.session_id, core_pb2.SessionState.DATACOLLECT
-            )
-            self.delete_links(sid)
-            self.delete_nodes(sid)
-        self.delete_session(sid)
 
     def set_up(self):
         """
@@ -287,31 +276,6 @@ class CoreClient:
         response = self.client.edit_node(self.session_id, node_id, position)
         logging.info("updated node id %s: %s", node_id, response)
 
-    def delete_nodes(self, delete_session=None):
-        if delete_session is None:
-            sid = self.session_id
-        else:
-            sid = delete_session
-        for node in self.client.get_session(sid).session.nodes:
-            response = self.client.delete_node(self.session_id, node.id)
-            logging.info("delete nodes %s", response)
-
-    def delete_links(self, delete_session=None):
-        if delete_session is None:
-            sid = self.session_id
-        else:
-            sid = delete_session
-
-        for link in self.client.get_session(sid).session.links:
-            response = self.client.delete_link(
-                self.session_id,
-                link.node_one_id,
-                link.node_two_id,
-                link.interface_one.id,
-                link.interface_two.id,
-            )
-            logging.info("delete links %s", response)
-
     def start_session(self):
         nodes = [x.core_node for x in self.canvas_nodes.values()]
         links = list(self.links.values())
@@ -340,17 +304,18 @@ class CoreClient:
             service_configs,
             file_configs,
         )
-        logging.debug("Start session %s, result: %s", self.session_id, response.result)
-        print(self.client.get_session(self.session_id))
+        logging.debug("start session(%s), result: %s", self.session_id, response.result)
 
-    def stop_session(self):
-        response = self.client.stop_session(session_id=self.session_id)
-        logging.debug("coregrpc.py Stop session, result: %s", response.result)
+    def stop_session(self, session_id=None):
+        if not session_id:
+            session_id = self.session_id
+        response = self.client.stop_session(session_id)
+        logging.debug("stopped session(%s), result: %s", session_id, response.result)
 
     def launch_terminal(self, node_id):
         response = self.client.get_node_terminal(self.session_id, node_id)
         logging.info("get terminal %s", response.terminal)
-        os.system("xterm -e %s &" % response.terminal)
+        os.system(f"xterm -e {response.terminal} &")
 
     def save_xml(self, file_path):
         """
@@ -360,7 +325,7 @@ class CoreClient:
         :return: nothing
         """
         response = self.client.save_xml(self.session_id, file_path)
-        logging.info("coregrpc.py save xml %s", response)
+        logging.info("saved xml(%s): %s", file_path, response)
         self.client.events(self.session_id, self.handle_events)
 
     def open_xml(self, file_path):
