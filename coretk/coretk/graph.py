@@ -49,7 +49,6 @@ class CanvasGraph(tk.Canvas):
         self.edges = {}
         self.drawing_edge = None
         self.grid = None
-        self.meters_per_pixel = 1.5
         self.canvas_management = CanvasComponentManagement(self, core)
         self.setup_bindings()
         self.draw_grid()

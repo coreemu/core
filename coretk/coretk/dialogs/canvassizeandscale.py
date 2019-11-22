@@ -6,8 +6,8 @@ from tkinter import font, ttk
 
 from coretk.dialogs.dialog import Dialog
 
-FRAME_PAD = 5
-PADX = 5
+PAD = 5
+PIXEL_SCALE = 100
 
 
 class SizeAndScaleDialog(Dialog):
@@ -19,9 +19,7 @@ class SizeAndScaleDialog(Dialog):
         """
         super().__init__(master, app, "Canvas Size and Scale", modal=True)
         self.canvas = self.app.canvas
-        self.meter_per_pixel = self.canvas.meters_per_pixel
         self.section_font = font.Font(weight="bold")
-
         # get current canvas dimensions
         plot = self.canvas.find_withtag("rectangle")
         x0, y0, x1, y1 = self.canvas.bbox(plot[0])
@@ -29,14 +27,15 @@ class SizeAndScaleDialog(Dialog):
         height = abs(y0 - y1) - 2
         self.pixel_width = tk.IntVar(value=width)
         self.pixel_height = tk.IntVar(value=height)
-        self.meters_width = tk.IntVar(value=width * self.meter_per_pixel)
-        self.meters_height = tk.IntVar(value=height * self.meter_per_pixel)
-        self.scale = tk.IntVar(value=self.meter_per_pixel * 100)
-        self.x = tk.IntVar(value=0)
-        self.y = tk.IntVar(value=0)
-        self.lat = tk.DoubleVar(value=47.5791667)
-        self.lon = tk.DoubleVar(value=-122.132322)
-        self.alt = tk.DoubleVar(value=2.0)
+        location = self.app.core.location
+        self.x = tk.DoubleVar(value=location.x)
+        self.y = tk.DoubleVar(value=location.y)
+        self.lat = tk.DoubleVar(value=location.lat)
+        self.lon = tk.DoubleVar(value=location.lon)
+        self.alt = tk.DoubleVar(value=location.alt)
+        self.scale = tk.DoubleVar(value=location.scale)
+        self.meters_width = tk.IntVar(value=width / PIXEL_SCALE * location.scale)
+        self.meters_height = tk.IntVar(value=height / PIXEL_SCALE * location.scale)
         self.save_default = tk.BooleanVar(value=False)
         self.draw()
 
@@ -49,7 +48,7 @@ class SizeAndScaleDialog(Dialog):
         self.draw_buttons()
 
     def draw_size(self):
-        label_frame = ttk.Labelframe(self.top, text="Size", padding=FRAME_PAD)
+        label_frame = ttk.Labelframe(self.top, text="Size", padding=PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -59,13 +58,13 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.pixel_width)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="x Height")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.pixel_height)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Pixels")
         label.grid(row=0, column=4, sticky="w")
 
@@ -75,35 +74,33 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(1, weight=1)
         frame.columnconfigure(3, weight=1)
         label = ttk.Label(frame, text="Width")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.meters_width)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="x Height")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.meters_height)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=4, sticky="w")
 
     def draw_scale(self):
-        label_frame = ttk.Labelframe(self.top, text="Scale", padding=FRAME_PAD)
+        label_frame = ttk.Labelframe(self.top, text="Scale", padding=PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
         frame = ttk.Frame(label_frame)
         frame.grid(sticky="ew")
         frame.columnconfigure(1, weight=1)
-        label = ttk.Label(frame, text="100 Pixels =")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label = ttk.Label(frame, text=f"{PIXEL_SCALE} Pixels =")
+        label.grid(row=0, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.scale)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky="ew", padx=PAD)
         label = ttk.Label(frame, text="Meters")
         label.grid(row=0, column=2, sticky="w")
 
     def draw_reference_point(self):
-        label_frame = ttk.Labelframe(
-            self.top, text="Reference Point", padding=FRAME_PAD
-        )
+        label_frame = ttk.Labelframe(self.top, text="Reference Point", padding=PAD)
         label_frame.grid(sticky="ew")
         label_frame.columnconfigure(0, weight=1)
 
@@ -118,14 +115,14 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(3, weight=1)
 
         label = ttk.Label(frame, text="X")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.x)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky="ew", padx=PAD)
 
         label = ttk.Label(frame, text="Y")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.y)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky="ew", padx=PAD)
 
         label = ttk.Label(label_frame, text="Translates To")
         label.grid()
@@ -137,17 +134,17 @@ class SizeAndScaleDialog(Dialog):
         frame.columnconfigure(5, weight=1)
 
         label = ttk.Label(frame, text="Lat")
-        label.grid(row=0, column=0, sticky="w", padx=PADX)
+        label.grid(row=0, column=0, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.lat)
-        entry.grid(row=0, column=1, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=1, sticky="ew", padx=PAD)
 
         label = ttk.Label(frame, text="Lon")
-        label.grid(row=0, column=2, sticky="w", padx=PADX)
+        label.grid(row=0, column=2, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.lon)
-        entry.grid(row=0, column=3, sticky="ew", padx=PADX)
+        entry.grid(row=0, column=3, sticky="ew", padx=PAD)
 
         label = ttk.Label(frame, text="Alt")
-        label.grid(row=0, column=4, sticky="w", padx=PADX)
+        label.grid(row=0, column=4, sticky="w", padx=PAD)
         entry = ttk.Entry(frame, textvariable=self.alt)
         entry.grid(row=0, column=5, sticky="ew")
 
@@ -164,16 +161,31 @@ class SizeAndScaleDialog(Dialog):
         frame.grid(sticky="ew")
 
         button = ttk.Button(frame, text="Apply", command=self.click_apply)
-        button.grid(row=0, column=0, sticky="ew", padx=PADX)
+        button.grid(row=0, column=0, sticky="ew", padx=PAD)
 
         button = ttk.Button(frame, text="Cancel", command=self.destroy)
         button.grid(row=0, column=1, sticky="ew")
 
     def click_apply(self):
-        meter_per_pixel = float(self.scale.get()) / 100
         width, height = self.pixel_width.get(), self.pixel_height.get()
-        self.canvas.meters_per_pixel = meter_per_pixel
         self.canvas.redraw_grid(width, height)
         if self.canvas.wallpaper:
             self.canvas.redraw()
+        location = self.app.core.location
+        location.x = self.x.get()
+        location.y = self.y.get()
+        location.lat = self.lat.get()
+        location.lon = self.lon.get()
+        location.alt = self.alt.get()
+        location.scale = self.scale.get()
+        if self.save_default.get():
+            location_config = self.app.config["location"]
+            location_config["x"] = location.x
+            location_config["y"] = location.y
+            location_config["z"] = location.z
+            location_config["lat"] = location.lat
+            location_config["lon"] = location.lon
+            location_config["alt"] = location.alt
+            location_config["scale"] = location.scale
+            self.app.save_config()
         self.destroy()

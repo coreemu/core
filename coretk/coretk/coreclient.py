@@ -60,9 +60,7 @@ class CoreClient:
 
         # data for managing the current session
         self.canvas_nodes = {}
-        self.location = core_pb2.SessionLocation(
-            x=0, y=0, z=0, lat=47.5791667, lon=-122.132322, alt=2.0, scale=150.0
-        )
+        self.location = None
         self.interface_to_edge = {}
         self.state = None
         self.links = {}
@@ -123,7 +121,7 @@ class CoreClient:
             throughputs_belong_to_session
         )
 
-    def join_session(self, session_id):
+    def join_session(self, session_id, query_location=True):
         self.master.config(cursor="watch")
         self.master.update()
 
@@ -147,6 +145,11 @@ class CoreClient:
         session = response.session
         self.state = session.state
         self.client.events(self.session_id, self.handle_events)
+
+        # get location
+        if query_location:
+            response = self.client.get_session_location(self.session_id)
+            self.location = response.location
 
         # get emane models
         response = self.client.get_emane_models(self.session_id)
@@ -207,7 +210,17 @@ class CoreClient:
         """
         response = self.client.create_session()
         logging.info("created session: %s", response)
-        self.join_session(response.session_id)
+        location_config = self.app.config["location"]
+        self.location = core_pb2.SessionLocation(
+            x=location_config["x"],
+            y=location_config["y"],
+            z=location_config["z"],
+            lat=location_config["lat"],
+            lon=location_config["lon"],
+            alt=location_config["alt"],
+            scale=location_config["scale"],
+        )
+        self.join_session(response.session_id, query_location=False)
 
     def delete_session(self, custom_sid=None):
         if custom_sid is None:
