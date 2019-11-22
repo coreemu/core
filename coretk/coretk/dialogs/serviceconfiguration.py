@@ -93,9 +93,13 @@ class ServiceConfiguration(Dialog):
         self.temp_service_files = {
             x: self.original_service_files[x] for x in self.original_service_files
         }
-        configs = self.app.core.servicefileconfig_manager.configurations
-        if self.node_id in configs and self.service_name in configs[self.node_id]:
-            for file, data in configs[self.node_id][self.service_name].items():
+        # configs = self.app.core.servicefileconfig_manager.configurations
+        file_configs = self.app.core.file_configs
+        if (
+            self.node_id in file_configs
+            and self.service_name in file_configs[self.node_id]
+        ):
+            for file, data in file_configs[self.node_id][self.service_name].items():
                 self.temp_service_files[file] = data
 
     def draw(self):
@@ -389,7 +393,6 @@ class ServiceConfiguration(Dialog):
             service_configs[self.node_id] = {}
         if self.service_name not in service_configs[self.node_id]:
             self.app.core.service_configs[self.node_id][self.service_name] = config
-        print(self.app.core.client.get_session(self.app.core.session_id))
 
         # self.service_manager.node_service_custom_configuration(
         #     self.node_id,
@@ -399,9 +402,18 @@ class ServiceConfiguration(Dialog):
         #     shutdown_commands,
         # )
         for file in self.modified_files:
-            self.app.core.servicefileconfig_manager.set_custom_service_file_config(
-                self.node_id, self.service_name, file, self.temp_service_files[file]
-            )
+            # self.app.core.servicefileconfig_manager.set_custom_service_file_config(
+            #     self.node_id, self.service_name, file, self.temp_service_files[file]
+            # )
+            file_configs = self.app.core.file_configs
+            if self.node_id not in file_configs:
+                file_configs[self.node_id] = {}
+            if self.service_name not in file_configs[self.node_id]:
+                file_configs[self.node_id][self.service_name] = {}
+            file_configs[self.node_id][self.service_name][
+                file
+            ] = self.temp_service_files[file]
+
             self.app.core.set_node_service_file(
                 self.node_id, self.service_name, file, self.temp_service_files[file]
             )

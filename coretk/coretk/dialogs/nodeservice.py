@@ -22,6 +22,14 @@ class NodeService(Dialog):
             services = set(
                 app.core.serviceconfig_manager.current_services[self.node_id]
             )
+        if services is None:
+            services = canvas_node.core_node.services
+            model = canvas_node.core_node.model
+            if len(services) == 0:
+                services = set(self.app.core.default_services[model])
+            else:
+                services = set(services)
+
         self.current_services = services
         self.service_manager = self.app.core.serviceconfig_manager
         self.service_file_manager = self.app.core.servicefileconfig_manager

@@ -312,7 +312,6 @@ class CoreClient:
         emane_model_configs = self.get_emane_model_configs_proto()
         hooks = list(self.hooks.values())
         service_configs = self.get_service_config_proto()
-        print(service_configs)
         # service_file_configs = self.get_service_file_config_proto()
         self.created_links.clear()
         self.created_nodes.clear()
@@ -397,9 +396,9 @@ class CoreClient:
 
         :return: nothing
         """
-
         node_protos = [x.core_node for x in self.canvas_nodes.values()]
         link_protos = list(self.links.values())
+        print(node_protos)
         if self.get_session_state() != core_pb2.SessionState.DEFINITION:
             self.client.set_session_state(
                 self.session_id, core_pb2.SessionState.DEFINITION
@@ -426,6 +425,7 @@ class CoreClient:
                 self.created_links.add(
                     tuple([link_proto.node_one_id, link_proto.node_two_id])
                 )
+        print(self.app.core.client.get_session(self.app.core.session_id))
 
     def close(self):
         """
@@ -638,20 +638,32 @@ class CoreClient:
 
     def get_service_config_proto(self):
         configs = []
-        for (
-            node_id,
-            service_configs,
-        ) in self.serviceconfig_manager.configurations.items():
-            for service, config in service_configs.items():
-                if service in self.serviceconfig_manager.current_services[node_id]:
-                    config = core_pb2.ServiceConfig(
-                        node_id=node_id,
-                        service=service,
-                        startup=config.startup,
-                        validate=config.validate,
-                        shutdown=config.shutdown,
-                    )
-                    configs.append(config)
+        for node_id, services in self.service_configs.items():
+            for name, config in services.items():
+                config_proto = core_pb2.ServiceConfig(
+                    node_id=node_id,
+                    service=name,
+                    startup=config.startup,
+                    validate=config.validate,
+                    shutdown=config.shutdown,
+                )
+                configs.append(config_proto)
+
+        # configs = []
+        # for (
+        #     node_id,
+        #     service_configs,
+        # ) in self.serviceconfig_manager.configurations.items():
+        #     for service, config in service_configs.items():
+        #         if service in self.serviceconfig_manager.current_services[node_id]:
+        #             config = core_pb2.ServiceConfig(
+        #                 node_id=node_id,
+        #                 service=service,
+        #                 startup=config.startup,
+        #                 validate=config.validate,
+        #                 shutdown=config.shutdown,
+        #             )
+        #             configs.append(config)
         return configs
 
     def get_service_file_config_proto(self):
