@@ -60,6 +60,9 @@ class CoreClient:
 
         # data for managing the current session
         self.canvas_nodes = {}
+        self.location = core_pb2.SessionLocation(
+            x=0, y=0, z=0, lat=47.5791667, lon=-122.132322, alt=2.0, scale=150.0
+        )
         self.interface_to_edge = {}
         self.state = None
         self.links = {}
@@ -308,12 +311,13 @@ class CoreClient:
             self.session_id,
             nodes,
             links,
-            hooks=hooks,
-            wlan_configs=wlan_configs,
-            emane_config=emane_config,
-            emane_model_configs=emane_model_configs,
-            mobility_configs=mobility_configs,
-            service_configs=service_configs,
+            self.location,
+            hooks,
+            emane_config,
+            emane_model_configs,
+            wlan_configs,
+            mobility_configs,
+            service_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
 
