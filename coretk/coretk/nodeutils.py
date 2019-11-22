@@ -1,7 +1,7 @@
 from core.api.grpc.core_pb2 import NodeType
 from coretk.images import ImageEnum, Images
 
-ICON_SIZE = 32
+ICON_SIZE = 48
 
 
 class NodeDraw:

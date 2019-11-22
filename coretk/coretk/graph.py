@@ -18,6 +18,8 @@ from coretk.nodedelete import CanvasComponentManagement
 from coretk.nodeutils import NodeUtils
 from coretk.wirelessconnection import WirelessConnection
 
+NODE_TEXT_OFFSET = 5
+
 
 class GraphMode(enum.Enum):
     SELECT = 0
@@ -615,8 +617,10 @@ class CanvasNode:
         self.id = self.canvas.create_image(
             x, y, anchor=tk.CENTER, image=self.image, tags="node"
         )
+        image_box = self.canvas.bbox(self.id)
+        y = image_box[3] + NODE_TEXT_OFFSET
         self.text_id = self.canvas.create_text(
-            x, y + 20, text=self.core_node.name, tags="nodename"
+            x, y, text=self.core_node.name, tags="nodename"
         )
         self.antenna_draw = WlanAntennaManager(self.canvas, self.id)
         self.tooltip = CanvasTooltip(self.canvas)

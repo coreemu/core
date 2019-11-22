@@ -4,8 +4,6 @@ from PIL import Image, ImageTk
 
 from coretk.appconfig import LOCAL_ICONS_PATH
 
-NODE_WIDTH = 32
-
 
 class Images:
     images = {}
