@@ -1,4 +1,5 @@
 "status bar"
+import time
 from tkinter import ttk
 
 
@@ -12,6 +13,7 @@ class StatusBar(ttk.Frame):
         self.cpu_usage = None
         self.memory = None
         self.emulation_light = None
+        self.running = False
         self.draw()
 
     def draw(self):
@@ -27,3 +29,16 @@ class StatusBar(ttk.Frame):
         self.cpu_usage.grid(row=0, column=2)
         self.emulation_light = ttk.Label(self, text="emulation light")
         self.emulation_light.grid(row=0, column=3)
+
+    def processing(self):
+        self.running = True
+        texts = ["Processing.", "Processing..", "Processing...", "Processing...."]
+        i = 0
+        while self.running is True:
+            self.status.config(text=texts[i % 4])
+            self.app.master.update()
+            i = i + 1
+            time.sleep(0.3)
+            print("running")
+        print("thread finish")
+        # self.status.config(text="status")

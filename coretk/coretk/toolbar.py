@@ -1,4 +1,5 @@
 import logging
+import threading
 import tkinter as tk
 from functools import partial
 from tkinter import ttk
@@ -197,11 +198,20 @@ class Toolbar(ttk.Frame):
         """
         logging.debug("clicked start button")
         self.master.config(cursor="watch")
+        status_thread = threading.Thread(target=self.app.statusbar.processing)
+        status_thread.start()
         self.master.update()
         self.app.canvas.mode = GraphMode.SELECT
         self.app.core.start_session()
         self.runtime_frame.tkraise()
         self.master.config(cursor="")
+
+        self.app.statusbar.running = False
+        if status_thread.is_alive():
+            print("still running")
+        status_thread.join()
+        print("thread terminate")
+        self.app.statusbar.status.config(text="status")
 
     def click_link(self):
         logging.debug("Click LINK button")

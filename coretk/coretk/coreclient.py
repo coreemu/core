@@ -327,6 +327,7 @@ class CoreClient:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
             emane_config = None
+        print(links)
         response = self.client.start_session(
             self.session_id,
             nodes,
@@ -341,7 +342,7 @@ class CoreClient:
             file_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
-        print(self.client.get_session(self.session_id))
+        # print(self.client.get_session(self.session_id))
 
     def stop_session(self):
         response = self.client.stop_session(session_id=self.session_id)
