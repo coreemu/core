@@ -57,41 +57,48 @@ class CoreClient:
         self.custom_observers = {}
         self.read_config()
 
-        # data for managing the current session
-        self.canvas_nodes = {}
-        self.location = None
+        # helpers
         self.interface_to_edge = {}
-        self.state = None
-        self.links = {}
-        self.hooks = {}
-        self.id = 1
         self.reusable = []
         self.preexisting = set()
         self.interfaces_manager = InterfaceManager(self.app)
+        self.created_nodes = set()
+        self.created_links = set()
+
+        # session data
+        self.id = 1
+        self.state = None
+        self.canvas_nodes = {}
+        self.location = None
+        self.links = {}
+        self.hooks = {}
         self.wlan_configs = {}
         self.mobility_configs = {}
         self.emane_model_configs = {}
         self.emane_config = None
-        self.created_nodes = set()
-        self.created_links = set()
         self.service_configs = {}
         self.file_configs = {}
 
     def reset(self):
         self.id = 1
+        # helpers
+        self.created_nodes.clear()
+        self.created_links.clear()
         self.reusable.clear()
         self.preexisting.clear()
+        self.interfaces_manager.reset()
+        self.interface_to_edge.clear()
+        # session data
         self.canvas_nodes.clear()
+        self.location = None
         self.links.clear()
         self.hooks.clear()
         self.wlan_configs.clear()
         self.mobility_configs.clear()
+        self.emane_model_configs.clear()
         self.emane_config = None
-        self.location = None
         self.service_configs.clear()
         self.file_configs.clear()
-        self.interfaces_manager.reset()
-        self.interface_to_edge.clear()
 
     def set_observer(self, value):
         self.observer = value
@@ -462,7 +469,7 @@ class CoreClient:
         )
         return node
 
-    def delete_wanted_graph_nodes(self, node_ids, edge_tokens):
+    def delete_graph_nodes(self, node_ids, edge_tokens):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces

@@ -411,7 +411,7 @@ class CanvasGraph(tk.Canvas):
             self.nodes[nid].edges.remove(edge)
 
         # delete the related data from core
-        self.core.delete_wanted_graph_nodes(node_ids, to_delete_edge_tokens)
+        self.core.delete_graph_nodes(node_ids, to_delete_edge_tokens)
 
     def add_node(self, x, y):
         plot_id = self.find_all()[0]
