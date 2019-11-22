@@ -4,6 +4,7 @@ nrl.py: defines services provided by NRL protolib tools hosted here:
 """
 
 from core import utils
+from core.nodes import ipaddress
 from core.nodes.ipaddress import Ipv4Prefix
 from core.services.coreservices import CoreService
 
@@ -36,9 +37,9 @@ class NrlService(CoreService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    addr = a.split("/")[0]
-                    pre = Ipv4Prefix("%s/%s" % (addr, prefixlen))
+                a = a.split("/")[0]
+                if ipaddress.is_ipv4_address(a):
+                    pre = Ipv4Prefix("%s/%s" % (a, prefixlen))
                     return str(pre)
         # raise ValueError,  "no IPv4 address found"
         return "0.0.0.0/%s" % prefixlen
