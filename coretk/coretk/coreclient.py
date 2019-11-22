@@ -83,12 +83,12 @@ class CoreClient:
 
     def read_config(self):
         # read distributed server
-        for config in self.app.config.get("servers", []):
+        for config in self.app.guiconfig.get("servers", []):
             server = CoreServer(config["name"], config["address"], config["port"])
             self.servers[server.name] = server
 
         # read custom nodes
-        for config in self.app.config.get("nodes", []):
+        for config in self.app.guiconfig.get("nodes", []):
             name = config["name"]
             image_file = config["image"]
             services = set(config["services"])
@@ -96,7 +96,7 @@ class CoreClient:
             self.custom_nodes[name] = node_draw
 
         # read observers
-        for config in self.app.config.get("observers", []):
+        for config in self.app.guiconfig.get("observers", []):
             observer = Observer(config["name"], config["cmd"])
             self.custom_observers[observer.name] = observer
 
@@ -210,7 +210,7 @@ class CoreClient:
         """
         response = self.client.create_session()
         logging.info("created session: %s", response)
-        location_config = self.app.config["location"]
+        location_config = self.app.guiconfig["location"]
         self.location = core_pb2.SessionLocation(
             x=location_config["x"],
             y=location_config["y"],

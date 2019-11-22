@@ -179,7 +179,7 @@ class SizeAndScaleDialog(Dialog):
         location.alt = self.alt.get()
         location.scale = self.scale.get()
         if self.save_default.get():
-            location_config = self.app.config["location"]
+            location_config = self.app.guiconfig["location"]
             location_config["x"] = location.x
             location_config["y"] = location.y
             location_config["z"] = location.z

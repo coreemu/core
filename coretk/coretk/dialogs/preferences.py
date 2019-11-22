@@ -9,7 +9,7 @@ from coretk.dialogs.dialog import Dialog
 class PreferencesDialog(Dialog):
     def __init__(self, master, app):
         super().__init__(master, app, "Preferences", modal=True)
-        preferences = self.app.config["preferences"]
+        preferences = self.app.guiconfig["preferences"]
         self.editor = tk.StringVar(value=preferences["editor"])
         self.theme = tk.StringVar(value=preferences["theme"])
         self.terminal = tk.StringVar(value=preferences["terminal"])
@@ -76,7 +76,7 @@ class PreferencesDialog(Dialog):
         self.app.style.theme_use(theme)
 
     def click_save(self):
-        preferences = self.app.config["preferences"]
+        preferences = self.app.guiconfig["preferences"]
         preferences["terminal"] = self.terminal.get()
         preferences["editor"] = self.editor.get()
         preferences["gui3d"] = self.gui3d.get()

@@ -180,17 +180,17 @@ class CustomNodesDialog(Dialog):
             self.services.update(dialog.current_services)
 
     def click_save(self):
-        self.app.config["nodes"].clear()
+        self.app.guiconfig["nodes"].clear()
         for name in sorted(self.app.core.custom_nodes):
             node_draw = self.app.core.custom_nodes[name]
-            self.app.config["nodes"].append(
+            self.app.guiconfig["nodes"].append(
                 {
                     "name": name,
                     "image": node_draw.image_file,
                     "services": list(node_draw.services),
                 }
             )
-        logging.info("saving custom nodes: %s", self.app.config["nodes"])
+        logging.info("saving custom nodes: %s", self.app.guiconfig["nodes"])
         self.app.save_config()
         self.destroy()
 

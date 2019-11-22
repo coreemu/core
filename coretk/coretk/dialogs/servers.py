@@ -115,7 +115,7 @@ class ServersDialog(Dialog):
             servers.append(
                 {"name": server.name, "address": server.address, "port": server.port}
             )
-        self.app.config["servers"] = servers
+        self.app.guiconfig["servers"] = servers
         self.app.save_config()
         self.destroy()
 

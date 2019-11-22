@@ -95,7 +95,7 @@ class ObserverDialog(Dialog):
         for name in sorted(self.app.core.custom_observers):
             observer = self.app.core.custom_observers[name]
             observers.append({"name": observer.name, "cmd": observer.cmd})
-        self.app.config["observers"] = observers
+        self.app.guiconfig["observers"] = observers
         self.app.save_config()
         self.destroy()
 
