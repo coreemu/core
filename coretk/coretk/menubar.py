@@ -444,9 +444,7 @@ class Menubar(tk.Menu):
         menu.add_command(label="Comments...", state=tk.DISABLED)
         menu.add_command(label="Hooks...", command=self.menuaction.session_hooks)
         menu.add_command(label="Reset node positions", state=tk.DISABLED)
-        menu.add_command(
-            label="Emulation servers...", command=self.menuaction.session_servers
-        )
+        menu.add_command(label="Servers...", command=self.menuaction.session_servers)
         menu.add_command(label="Options...", command=self.menuaction.session_options)
         self.add_cascade(label="Session", menu=menu)
 
@@ -458,7 +456,7 @@ class Menubar(tk.Menu):
         """
         menu = tk.Menu(self)
         menu.add_command(
-            label="Core Github (www)", command=self.menuaction.help_core_github
+            label="Core GitHub (www)", command=self.menuaction.help_core_github
         )
         menu.add_command(
             label="Core Documentation (www)",

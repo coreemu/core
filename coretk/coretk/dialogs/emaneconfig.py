@@ -46,16 +46,15 @@ class GlobalEmaneDialog(Dialog):
 
 
 class EmaneModelDialog(Dialog):
-    def __init__(self, master, app, node, model):
+    def __init__(self, master, app, node, model, interface=None):
         super().__init__(master, app, f"{node.name} {model} Configuration", modal=True)
         self.node = node
         self.model = f"emane_{model}"
+        self.interface = interface
         self.config_frame = None
-        session_id = self.app.core.session_id
-        response = self.app.core.client.get_emane_model_config(
-            session_id, self.node.id, self.model
+        self.config = self.app.core.get_emane_model_config(
+            self.node.id, self.model, self.interface
         )
-        self.config = response.config
         self.draw()
 
     def draw(self):
@@ -79,8 +78,8 @@ class EmaneModelDialog(Dialog):
 
     def click_apply(self):
         self.config_frame.parse_config()
-        self.app.core.emaneconfig_management.set_custom_emane_cloud_config(
-            self.node.id, self.model
+        self.app.core.set_emane_model_config(
+            self.node.id, self.model, self.config, self.interface
         )
         self.destroy()
 

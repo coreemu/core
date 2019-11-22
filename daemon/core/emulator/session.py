@@ -704,7 +704,7 @@ class Session:
             self.services.add_services(node, node.type, options.services)
 
         # ensure default emane configuration
-        if isinstance(node, EmaneNet):
+        if isinstance(node, EmaneNet) and options.emane:
             self.emane.set_model_config(_id, options.emane)
         # set default wlan config if needed
         if isinstance(node, WlanNode):

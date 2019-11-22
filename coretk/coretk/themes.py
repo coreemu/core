@@ -137,6 +137,8 @@ def update_menu(style, event):
     bg = style.lookup(".", "background")
     fg = style.lookup(".", "foreground")
     abg = style.lookup(".", "lightcolor")
+    if not abg:
+        abg = bg
     event.widget.config(
         background=bg, foreground=fg, activebackground=abg, activeforeground=fg
     )

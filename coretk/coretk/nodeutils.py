@@ -1,7 +1,7 @@
 from core.api.grpc.core_pb2 import NodeType
 from coretk.images import ImageEnum, Images
 
-ICON_SIZE = 32
+ICON_SIZE = 48
 
 
 class NodeDraw:
@@ -46,6 +46,7 @@ class NodeUtils:
     NODE_ICONS = {}
     CONTAINER_NODES = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
     IMAGE_NODES = {NodeType.DOCKER, NodeType.LXC}
+    WIRELESS_NODES = {NodeType.WIRELESS_LAN, NodeType.EMANE}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
 
     @classmethod
@@ -61,7 +62,13 @@ class NodeUtils:
         return node_type in cls.IMAGE_NODES
 
     @classmethod
+    def is_wireless_node(cls, node_type):
+        return node_type in cls.WIRELESS_NODES
+
+    @classmethod
     def node_icon(cls, node_type, model):
+        if model == "":
+            model = None
         return cls.NODE_ICONS[(node_type, model)]
 
     @classmethod

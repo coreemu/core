@@ -6,7 +6,6 @@ import os
 
 from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
-from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
 
@@ -60,6 +59,7 @@ class CoreClient:
 
         # data for managing the current session
         self.canvas_nodes = {}
+        self.location = None
         self.interface_to_edge = {}
         self.state = None
         self.links = {}
@@ -71,7 +71,6 @@ class CoreClient:
         self.wlan_configs = {}
         self.mobility_configs = {}
         self.emane_model_configs = {}
-        self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
         self.created_nodes = set()
         self.created_links = set()
@@ -84,12 +83,12 @@ class CoreClient:
 
     def read_config(self):
         # read distributed server
-        for config in self.app.config.get("servers", []):
+        for config in self.app.guiconfig.get("servers", []):
             server = CoreServer(config["name"], config["address"], config["port"])
             self.servers[server.name] = server
 
         # read custom nodes
-        for config in self.app.config.get("nodes", []):
+        for config in self.app.guiconfig.get("nodes", []):
             name = config["name"]
             image_file = config["image"]
             services = set(config["services"])
@@ -97,14 +96,14 @@ class CoreClient:
             self.custom_nodes[name] = node_draw
 
         # read observers
-        for config in self.app.config.get("observers", []):
+        for config in self.app.guiconfig.get("observers", []):
             observer = Observer(config["name"], config["cmd"])
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
         logging.info("event: %s", event)
         if event.HasField("link_event"):
-            self.app.canvas.wireless_draw.hangle_link_event(event.link_event)
+            self.app.canvas.wireless_draw.handle_link_event(event.link_event)
         elif event.HasField("session_event"):
             if event.session_event.event <= core_pb2.SessionState.SHUTDOWN:
                 self.state = event.session_event.event
@@ -122,7 +121,7 @@ class CoreClient:
             throughputs_belong_to_session
         )
 
-    def join_session(self, session_id):
+    def join_session(self, session_id, query_location=True):
         self.master.config(cursor="watch")
         self.master.update()
 
@@ -149,13 +148,17 @@ class CoreClient:
         self.state = session.state
         self.client.events(self.session_id, self.handle_events)
 
+        # get location
+        if query_location:
+            response = self.client.get_session_location(self.session_id)
+            self.location = response.location
+
         # get emane models
         response = self.client.get_emane_models(self.session_id)
         self.emane_models = response.models
 
         # get hooks
         response = self.client.get_hooks(self.session_id)
-        logging.info("joined session hooks: %s", response)
         for hook in response.hooks:
             self.hooks[hook.file] = hook
 
@@ -163,19 +166,16 @@ class CoreClient:
         for node in session.nodes:
             if node.type == core_pb2.NodeType.WIRELESS_LAN:
                 response = self.client.get_wlan_config(self.session_id, node.id)
-                logging.debug("wlan config(%s): %s", node.id, response)
                 self.wlan_configs[node.id] = response.config
 
         # get mobility configs
         response = self.client.get_mobility_configs(self.session_id)
-        logging.debug("mobility configs: %s", response)
         for node_id in response.configs:
             node_config = response.configs[node_id].config
             self.mobility_configs[node_id] = node_config
 
         # get emane config
         response = self.client.get_emane_config(self.session_id)
-        logging.debug("emane config: %s", response)
         self.emane_config = response.config
 
         # get emane model config
@@ -212,7 +212,17 @@ class CoreClient:
         """
         response = self.client.create_session()
         logging.info("created session: %s", response)
-        self.join_session(response.session_id)
+        location_config = self.app.guiconfig["location"]
+        self.location = core_pb2.SessionLocation(
+            x=location_config["x"],
+            y=location_config["y"],
+            z=location_config["z"],
+            lat=location_config["lat"],
+            lon=location_config["lon"],
+            alt=location_config["alt"],
+            scale=location_config["scale"],
+        )
+        self.join_session(response.session_id, query_location=False)
 
     def delete_session(self, custom_sid=None):
         if custom_sid is None:
@@ -321,13 +331,14 @@ class CoreClient:
             self.session_id,
             nodes,
             links,
-            hooks=hooks,
-            wlan_configs=wlan_configs,
-            emane_config=emane_config,
-            emane_model_configs=emane_model_configs,
-            mobility_configs=mobility_configs,
-            service_configs=service_configs,
-            service_file_configs=file_configs,
+            self.location,
+            hooks,
+            emane_config,
+            emane_model_configs,
+            wlan_configs,
+            mobility_configs,
+            service_configs,
+            file_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
         print(self.client.get_session(self.session_id))
@@ -477,11 +488,6 @@ class CoreClient:
             image=image,
             emane=emane,
         )
-
-        # set default emane configuration for emane node
-        if node_type == core_pb2.NodeType.EMANE:
-            self.emaneconfig_management.set_default_config(node_id)
-
         logging.debug(
             "adding node to core session: %s, coords: (%s, %s), name: %s",
             self.session_id,
@@ -501,50 +507,28 @@ class CoreClient:
         :return: nothing
         """
         # delete the nodes
-        for node_id in node_ids:
+        for i in node_ids:
             try:
-                del self.canvas_nodes[node_id]
-                self.reusable.append(node_id)
+                del self.canvas_nodes[i]
+                self.reusable.append(i)
+                if i in self.mobility_configs:
+                    del self.mobility_configs[i]
+                if i in self.wlan_configs:
+                    del self.wlan_configs[i]
+                for key in list(self.emane_model_configs):
+                    node_id, _, _ = key
+                    if node_id == i:
+                        del self.emane_model_configs[key]
             except KeyError:
-                logging.error("invalid canvas id: %s", node_id)
+                logging.error("invalid canvas id: %s", i)
         self.reusable.sort()
 
         # delete the edges and interfaces
-        node_interface_pairs = []
         for i in edge_tokens:
             try:
-                link = self.links.pop(i)
-                if link.interface_one is not None:
-                    node_interface_pairs.append(
-                        (link.node_one_id, link.interface_one.id)
-                    )
-                if link.interface_two is not None:
-                    node_interface_pairs.append(
-                        (link.node_two_id, link.interface_two.id)
-                    )
+                self.links.pop(i)
             except KeyError:
-                logging.error("coreclient.py invalid edge token ")
-
-        # delete global emane config if there no longer exist any emane cloud
-        # TODO: should not need to worry about this
-        node_types = [x.core_node.type for x in self.canvas_nodes.values()]
-        if core_pb2.NodeType.EMANE not in node_types:
-            self.emane_config = None
-
-        # delete any mobility configuration, wlan configuration
-        for i in node_ids:
-            if i in self.mobility_configs:
-                del self.mobility_configs[i]
-            if i in self.wlan_configs:
-                del self.wlan_configs[i]
-
-        # delete emane configurations
-        for i in node_interface_pairs:
-            if i in self.emaneconfig_management.configurations:
-                self.emaneconfig_management.configurations.pop(i)
-        for i in node_ids:
-            if tuple([i, None]) in self.emaneconfig_management.configurations:
-                self.emaneconfig_management.configurations.pop(tuple([i, None]))
+                logging.error("invalid edge token: %s", i)
 
     def create_interface(self, canvas_node):
         interface = None
@@ -618,13 +602,11 @@ class CoreClient:
 
     def get_emane_model_configs_proto(self):
         configs = []
-        emane_configs = self.emaneconfig_management.configurations
-        for key, value in emane_configs.items():
-            node_id, interface_id = key
-            model, options = value
-            config = {x: options[x].value for x in options}
+        for key, config in self.emane_model_configs.items():
+            node_id, model, interface = key
+            config = {x: config[x].value for x in config}
             config_proto = core_pb2.EmaneModelConfig(
-                node_id=node_id, interface_id=interface_id, model=model, config=config
+                node_id=node_id, interface_id=interface, model=model, config=config
             )
             configs.append(config_proto)
         return configs
@@ -671,3 +653,17 @@ class CoreClient:
             response = self.client.get_mobility_config(self.session_id, node_id)
             config = response.config
         return config
+
+    def get_emane_model_config(self, node_id, model, interface=None):
+        config = self.emane_model_configs.get((node_id, model, interface))
+        if not config:
+            if interface is None:
+                interface = -1
+            response = self.client.get_emane_model_config(
+                self.session_id, node_id, model, interface
+            )
+            config = response.config
+        return config
+
+    def set_emane_model_config(self, node_id, model, config, interface=None):
+        self.emane_model_configs[(node_id, model, interface)] = config

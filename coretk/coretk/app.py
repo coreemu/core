@@ -26,7 +26,7 @@ class Application(tk.Frame):
         self.statusbar = None
 
         # setup
-        self.config = appconfig.read()
+        self.guiconfig = appconfig.read()
         self.style = ttk.Style()
         self.setup_theme()
         self.core = CoreClient(self)
@@ -36,7 +36,7 @@ class Application(tk.Frame):
 
     def setup_theme(self):
         themes.load(self.style)
-        self.style.theme_use(self.config["preferences"]["theme"])
+        self.style.theme_use(self.guiconfig["preferences"]["theme"])
         func = partial(themes.update_menu, self.style)
         self.master.bind_class("Menu", "<<ThemeChanged>>", func)
 
@@ -88,7 +88,7 @@ class Application(tk.Frame):
         menu_action.on_quit()
 
     def save_config(self):
-        appconfig.save(self.config)
+        appconfig.save(self.guiconfig)
 
 
 if __name__ == "__main__":
