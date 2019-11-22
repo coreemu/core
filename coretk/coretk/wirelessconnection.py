@@ -11,7 +11,7 @@ class WirelessConnection:
         # map a (node_one_id, node_two_id) to a wlan canvas id
         self.map = {}
 
-    def add_wlan_connection(self, node_one_id, node_two_id):
+    def add_connection(self, node_one_id, node_two_id):
         canvas_node_one = self.core.canvas_nodes[node_one_id]
         canvas_node_two = self.core.canvas_nodes[node_two_id]
         key = tuple(sorted((node_one_id, node_two_id)))
@@ -25,7 +25,7 @@ class WirelessConnection:
             canvas_node_one.wlans.append(wlan_canvas_id)
             canvas_node_two.wlans.append(wlan_canvas_id)
 
-    def delete_wlan_connection(self, node_one_id, node_two_id):
+    def delete_connection(self, node_one_id, node_two_id):
         canvas_node_one = self.core.canvas_nodes[node_one_id]
         canvas_node_two = self.core.canvas_nodes[node_two_id]
         key = tuple(sorted((node_one_id, node_two_id)))
@@ -35,13 +35,13 @@ class WirelessConnection:
         self.canvas.delete(wlan_canvas_id)
         self.map.pop(key, None)
 
-    def hangle_link_event(self, link_event):
+    def handle_link_event(self, link_event):
         if link_event.message_type == core_pb2.MessageType.ADD:
-            self.add_wlan_connection(
+            self.add_connection(
                 link_event.link.node_one_id, link_event.link.node_two_id
             )
 
         if link_event.message_type == core_pb2.MessageType.DELETE:
-            self.delete_wlan_connection(
+            self.delete_connection(
                 link_event.link.node_one_id, link_event.link.node_two_id
             )

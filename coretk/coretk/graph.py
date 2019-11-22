@@ -176,48 +176,53 @@ class CanvasGraph(tk.Canvas):
             node_one = canvas_node_one.core_node
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
             node_two = canvas_node_two.core_node
-            is_wired = link.type == core_pb2.LinkType.WIRED
-            edge = CanvasEdge(
-                node_one.position.x,
-                node_one.position.y,
-                node_two.position.x,
-                node_two.position.y,
-                canvas_node_one.id,
-                self,
-                is_wired=is_wired,
-            )
-            edge.token = tuple(sorted((canvas_node_one.id, canvas_node_two.id)))
-            edge.dst = canvas_node_two.id
-            canvas_node_one.edges.add(edge)
-            canvas_node_two.edges.add(edge)
-            self.edges[edge.token] = edge
-            self.core.links[edge.token] = link
-            self.helper.redraw_antenna(link, canvas_node_one, canvas_node_two)
+            if link.type == core_pb2.LinkType.WIRELESS:
+                self.wireless_draw.add_connection(link.node_one_id, link.node_two_id)
+            else:
+                is_node_one_wireless = NodeUtils.is_wireless_node(node_one.type)
+                is_node_two_wireless = NodeUtils.is_wireless_node(node_two.type)
+                has_no_wireless = not (is_node_one_wireless or is_node_two_wireless)
+                edge = CanvasEdge(
+                    node_one.position.x,
+                    node_one.position.y,
+                    node_two.position.x,
+                    node_two.position.y,
+                    canvas_node_one.id,
+                    self,
+                    is_wired=has_no_wireless,
+                )
+                edge.token = tuple(sorted((canvas_node_one.id, canvas_node_two.id)))
+                edge.dst = canvas_node_two.id
+                canvas_node_one.edges.add(edge)
+                canvas_node_two.edges.add(edge)
+                self.edges[edge.token] = edge
+                self.core.links[edge.token] = link
+                self.helper.redraw_antenna(canvas_node_one, canvas_node_two)
 
-            # TODO add back the link info to grpc manager also redraw
-            # TODO will include throughput and ipv6 in the future
-            interface_one = link.interface_one
-            interface_two = link.interface_two
-            ip4_src = None
-            ip4_dst = None
-            ip6_src = None
-            ip6_dst = None
-            if interface_one is not None:
-                ip4_src = interface_one.ip4
-                ip6_src = interface_one.ip6
-            if interface_two is not None:
-                ip4_dst = interface_two.ip4
-                ip6_dst = interface_two.ip6
-            edge.link_info = LinkInfo(
-                canvas=self,
-                edge=edge,
-                ip4_src=ip4_src,
-                ip6_src=ip6_src,
-                ip4_dst=ip4_dst,
-                ip6_dst=ip6_dst,
-            )
-            canvas_node_one.interfaces.append(interface_one)
-            canvas_node_two.interfaces.append(interface_two)
+                # TODO add back the link info to grpc manager also redraw
+                # TODO will include throughput and ipv6 in the future
+                interface_one = link.interface_one
+                interface_two = link.interface_two
+                ip4_src = None
+                ip4_dst = None
+                ip6_src = None
+                ip6_dst = None
+                if interface_one is not None:
+                    ip4_src = interface_one.ip4
+                    ip6_src = interface_one.ip6
+                if interface_two is not None:
+                    ip4_dst = interface_two.ip4
+                    ip6_dst = interface_two.ip6
+                edge.link_info = LinkInfo(
+                    canvas=self,
+                    edge=edge,
+                    ip4_src=ip4_src,
+                    ip6_src=ip6_src,
+                    ip4_dst=ip4_dst,
+                    ip6_dst=ip6_dst,
+                )
+                canvas_node_one.interfaces.append(interface_one)
+                canvas_node_two.interfaces.append(interface_two)
 
         # raise the nodes so they on top of the links
         self.tag_raise("node")

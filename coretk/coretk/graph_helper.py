@@ -4,8 +4,8 @@ Some graph helper functions
 import logging
 import tkinter as tk
 
-from core.api.grpc import core_pb2
 from coretk.images import ImageEnum, Images
+from coretk.nodeutils import NodeUtils
 
 CANVAS_COMPONENT_TAGS = ["edge", "node", "nodename", "wallpaper", "linkinfo"]
 
@@ -31,34 +31,30 @@ class GraphHelper:
     def draw_wireless_case(self, src_id, dst_id, edge):
         src_node_type = self.canvas.nodes[src_id].core_node.type
         dst_node_type = self.canvas.nodes[dst_id].core_node.type
-        is_src_wlan = src_node_type == core_pb2.NodeType.WIRELESS_LAN
-        is_dst_wlan = dst_node_type == core_pb2.NodeType.WIRELESS_LAN
-        if is_src_wlan or is_dst_wlan:
+        is_src_wireless = NodeUtils.is_wireless_node(src_node_type)
+        is_dst_wireless = NodeUtils.is_wireless_node(dst_node_type)
+        if is_src_wireless or is_dst_wireless:
             self.canvas.itemconfig(edge.id, state=tk.HIDDEN)
             edge.wired = False
             if edge.token not in self.canvas.edges:
-                if is_src_wlan and is_dst_wlan:
+                if is_src_wireless and is_dst_wireless:
                     self.canvas.nodes[src_id].antenna_draw.add_antenna()
-                elif is_src_wlan:
+                elif is_src_wireless:
                     self.canvas.nodes[dst_id].antenna_draw.add_antenna()
                 else:
                     self.canvas.nodes[src_id].antenna_draw.add_antenna()
             edge.wired = True
 
-    def redraw_antenna(self, link, node_one, node_two):
-        is_node_one_wlan = node_one.core_node.type == core_pb2.NodeType.WIRELESS_LAN
-        is_node_two_wlan = node_two.core_node.type == core_pb2.NodeType.WIRELESS_LAN
-        if link.type == core_pb2.LinkType.WIRELESS:
-            if is_node_one_wlan and is_node_two_wlan:
-                node_one.antenna_draw.add_antenna()
-            elif is_node_one_wlan and not is_node_two_wlan:
+    def redraw_antenna(self, node_one, node_two):
+        is_node_one_wireless = NodeUtils.is_wireless_node(node_one.core_node.type)
+        is_node_two_wireless = NodeUtils.is_wireless_node(node_two.core_node.type)
+        if is_node_one_wireless or is_node_two_wireless:
+            if is_node_one_wireless and not is_node_two_wireless:
                 node_two.antenna_draw.add_antenna()
-            elif not is_node_one_wlan and is_node_two_wlan:
+            elif not is_node_one_wireless and is_node_two_wireless:
                 node_one.antenna_draw.add_antenna()
             else:
-                logging.error(
-                    "graph_helper.py WIRELESS link but both nodes are non-wireless node"
-                )
+                logging.error("bad link between two wireless nodes")
 
     def update_wlan_connection(self, old_x, old_y, new_x, new_y, edge_ids):
         for eid in edge_ids:

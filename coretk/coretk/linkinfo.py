@@ -18,7 +18,6 @@ class LinkInfo:
         """
         self.canvas = canvas
         self.edge = edge
-        # self.edge_id = edge.id
         self.radius = 37
         self.core = self.canvas.core
 
