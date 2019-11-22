@@ -112,9 +112,10 @@ class FRRZebra(CoreService):
         """
         helper for mapping IP addresses to zebra config statements
         """
-        if x.find(".") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv4_address(addr):
             return "ip address %s" % x
-        elif x.find(":") >= 0:
+        elif ipaddress.is_ipv6_address(addr):
             return "ipv6 address %s" % x
         else:
             raise ValueError("invalid address: %s", x)
@@ -328,8 +329,9 @@ class FrrService(CoreService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") >= 0:
-                    return a.split("/")[0]
+                a = a.split("/")[0]
+                if ipaddress.is_ipv4_address(a):
+                    return a
         # raise ValueError,  "no IPv4 address found for router ID"
         return "0.0.0.0"
 
@@ -411,7 +413,8 @@ class FRROspfv2(FrrService):
             if hasattr(ifc, "control") and ifc.control is True:
                 continue
             for a in ifc.addrlist:
-                if a.find(".") < 0:
+                addr = a.split("/")[0]
+                if not ipaddress.is_ipv4_address(addr):
                     continue
                 net = ipaddress.Ipv4Prefix(a)
                 cfg += "  network %s area 0\n" % net

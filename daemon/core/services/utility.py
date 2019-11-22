@@ -6,6 +6,7 @@ import os
 
 from core import constants, utils
 from core.errors import CoreCommandError
+from core.nodes import ipaddress
 from core.nodes.ipaddress import Ipv4Prefix, Ipv6Prefix
 from core.services.coreservices import CoreService
 
@@ -87,7 +88,8 @@ class DefaultRouteService(UtilService):
 
     @staticmethod
     def addrstr(x):
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             net = Ipv6Prefix(x)
         else:
             net = Ipv4Prefix(x)
@@ -147,7 +149,8 @@ class StaticRouteService(UtilService):
 
     @staticmethod
     def routestr(x):
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             net = Ipv6Prefix(x)
             dst = "3ffe:4::/64"
         else:
@@ -280,7 +283,8 @@ ddns-update-style none;
         Generate a subnet declaration block given an IPv4 prefix string
         for inclusion in the dhcpd3 config file.
         """
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             return ""
         else:
             addr = x.split("/")[0]
@@ -702,7 +706,8 @@ interface %s
         Generate a subnet declaration block given an IPv6 prefix string
         for inclusion in the RADVD config file.
         """
-        if x.find(":") >= 0:
+        addr = x.split("/")[0]
+        if ipaddress.is_ipv6_address(addr):
             net = Ipv6Prefix(x)
             return str(net)
         else:
