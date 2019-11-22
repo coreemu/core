@@ -15,7 +15,6 @@ class ServiceConfiguration(Dialog):
         super().__init__(master, app, f"{service_name} service", modal=True)
         self.app = app
         self.core = app.core
-        self.service_manager = app.core.serviceconfig_manager
         self.node_id = node_id
         self.service_name = service_name
         self.radiovar = tk.IntVar()
@@ -64,19 +63,6 @@ class ServiceConfiguration(Dialog):
             service_config = self.app.core.get_node_service(
                 self.node_id, self.service_name
             )
-
-        # # load data from local memory
-        # if self.service_name in self.service_manager.configurations[self.node_id]:
-        #     service_config = self.service_manager.configurations[self.node_id][
-        #         self.service_name
-        #     ]
-        # else:
-        #     self.service_manager.node_custom_service_configuration(
-        #         self.node_id, self.service_name
-        #     )
-        #     service_config = self.service_manager.configurations[self.node_id][
-        #         self.service_name
-        #     ]
         self.dependencies = [x for x in service_config.dependencies]
         self.executables = [x for x in service_config.executables]
         self.metadata = service_config.meta
@@ -93,7 +79,6 @@ class ServiceConfiguration(Dialog):
         self.temp_service_files = {
             x: self.original_service_files[x] for x in self.original_service_files
         }
-        # configs = self.app.core.servicefileconfig_manager.configurations
         file_configs = self.app.core.file_configs
         if (
             self.node_id in file_configs
@@ -393,18 +378,7 @@ class ServiceConfiguration(Dialog):
             service_configs[self.node_id] = {}
         if self.service_name not in service_configs[self.node_id]:
             self.app.core.service_configs[self.node_id][self.service_name] = config
-
-        # self.service_manager.node_service_custom_configuration(
-        #     self.node_id,
-        #     self.service_name,
-        #     startup_commands,
-        #     validate_commands,
-        #     shutdown_commands,
-        # )
         for file in self.modified_files:
-            # self.app.core.servicefileconfig_manager.set_custom_service_file_config(
-            #     self.node_id, self.service_name, file, self.temp_service_files[file]
-            # )
             file_configs = self.app.core.file_configs
             if self.node_id not in file_configs:
                 file_configs[self.node_id] = {}

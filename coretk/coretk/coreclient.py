@@ -9,8 +9,6 @@ from coretk.dialogs.sessions import SessionsDialog
 from coretk.emaneodelnodeconfig import EmaneModelNodeConfig
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
-from coretk.servicefileconfig import ServiceFileConfig
-from coretk.servicenodeconfig import ServiceNodeConfig
 
 OBSERVERS = {
     "processes": "ps",
@@ -75,8 +73,6 @@ class CoreClient:
         self.emane_model_configs = {}
         self.emaneconfig_management = EmaneModelNodeConfig(app)
         self.emane_config = None
-        self.serviceconfig_manager = ServiceNodeConfig(app)
-        self.servicefileconfig_manager = ServiceFileConfig()
         self.created_nodes = set()
         self.created_links = set()
 
@@ -143,6 +139,8 @@ class CoreClient:
         self.wlan_configs.clear()
         self.mobility_configs.clear()
         self.emane_config = None
+        self.service_configs.clear()
+        self.file_configs.clear()
 
         # get session data
         response = self.client.get_session(self.session_id)
@@ -332,6 +330,7 @@ class CoreClient:
             service_file_configs=file_configs,
         )
         logging.debug("Start session %s, result: %s", self.session_id, response.result)
+        print(self.client.get_session(self.session_id))
 
     def stop_session(self):
         response = self.client.stop_session(session_id=self.session_id)
@@ -482,12 +481,6 @@ class CoreClient:
         # set default emane configuration for emane node
         if node_type == core_pb2.NodeType.EMANE:
             self.emaneconfig_management.set_default_config(node_id)
-
-        # set default service configurations
-        # if node_type == core_pb2.NodeType.DEFAULT:
-        #     self.serviceconfig_manager.node_default_services_configuration(
-        #         node_id=node_id, node_model=model
-        #     )
 
         logging.debug(
             "adding node to core session: %s, coords: (%s, %s), name: %s",
@@ -648,22 +641,6 @@ class CoreClient:
                     shutdown=config.shutdown,
                 )
                 configs.append(config_proto)
-
-        # configs = []
-        # for (
-        #     node_id,
-        #     service_configs,
-        # ) in self.serviceconfig_manager.configurations.items():
-        #     for service, config in service_configs.items():
-        #         if service in self.serviceconfig_manager.current_services[node_id]:
-        #             config = core_pb2.ServiceConfig(
-        #                 node_id=node_id,
-        #                 service=service,
-        #                 startup=config.startup,
-        #                 validate=config.validate,
-        #                 shutdown=config.shutdown,
-        #             )
-        #             configs.append(config)
         return configs
 
     def get_service_file_config_proto(self):
@@ -675,16 +652,6 @@ class CoreClient:
                         node_id=node_id, service=service, file=file, data=data
                     )
                     configs.append(config_proto)
-        # for (
-        #     node_id,
-        #     service_file_configs,
-        # ) in self.servicefileconfig_manager.configurations.items():
-        #     for service, file_configs in service_file_configs.items():
-        #         for file, data in file_configs.items():
-        #             config = core_pb2.ServiceFileConfig(
-        #                 node_id=node_id, service=service, file=file, data=data
-        #             )
-        #             configs.append(config)
         return configs
 
     def run(self, node_id):
