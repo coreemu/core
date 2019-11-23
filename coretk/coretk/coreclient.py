@@ -469,38 +469,64 @@ class CoreClient:
         )
         return node
 
-    def delete_graph_nodes(self, node_ids, edges):
+    def delete_graph_nodes(self, canvas_nodes):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
 
-        :param list[int] node_ids: list of nodes to delete
-        :param list edges: list of edges to delete
+        :param list canvas_nodes: list of nodes to delete
         :return: nothing
         """
-        # delete the nodes
-        for i in node_ids:
-            try:
-                del self.canvas_nodes[i]
-                self.reusable.append(i)
-                if i in self.mobility_configs:
-                    del self.mobility_configs[i]
-                if i in self.wlan_configs:
-                    del self.wlan_configs[i]
-                for key in list(self.emane_model_configs):
-                    node_id, _, _ = key
-                    if node_id == i:
-                        del self.emane_model_configs[key]
-            except KeyError:
-                logging.error("invalid canvas id: %s", i)
-        self.reusable.sort()
+        edges = set()
+        for canvas_node in canvas_nodes:
+            node_id = canvas_node.core_node.id
+            if node_id not in self.canvas_nodes:
+                logging.error("unknown node: %s", node_id)
+                continue
+            del self.canvas_nodes[node_id]
+            self.reusable.append(node_id)
+            if node_id in self.mobility_configs:
+                del self.mobility_configs[node_id]
+            if node_id in self.wlan_configs:
+                del self.wlan_configs[node_id]
+            for key in list(self.emane_model_configs):
+                node_id, _, _ = key
+                if node_id == node_id:
+                    del self.emane_model_configs[key]
 
-        # delete the edges and interfaces
-        for edge in edges:
-            try:
-                self.links.pop(edge.token)
-            except KeyError:
-                logging.error("invalid edge token: %s", edge.token)
+            deleted_cidrs = set()
+            keep_cidrs = set()
+            for edge in canvas_node.edges:
+                if edge in edges:
+                    continue
+                edges.add(edge)
+                if edge.token not in self.links:
+                    logging.error("unknown edge: %s", edge.token)
+                del self.links[edge.token]
+                other_id = edge.src
+                other_interface = edge.src_interface
+                interface = edge.dst_interface
+                if canvas_node.id == edge.src:
+                    other_id = edge.dst
+                    other_interface = edge.dst_interface
+                    interface = edge.src_interface
+                other_node = self.app.canvas.nodes.get(other_id)
+                if not other_node:
+                    continue
+                if other_interface:
+                    cidr = self.interfaces_manager.get_cidr(other_interface)
+                    deleted_cidrs.add(cidr)
+                else:
+                    cidr = self.interfaces_manager.find_subnet(other_node)
+                    if cidr:
+                        keep_cidrs.add(cidr)
+                    else:
+                        cidr = self.interfaces_manager.get_cidr(interface)
+                        deleted_cidrs.add(cidr)
+            deleted_cidrs = deleted_cidrs - keep_cidrs
+            for cidr in deleted_cidrs:
+                self.interfaces_manager.deleted_cidr(cidr)
+        self.reusable.sort()
 
     def create_interface(self, canvas_node):
         node = canvas_node.core_node

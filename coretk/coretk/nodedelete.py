@@ -40,11 +40,11 @@ class CanvasComponentManagement:
 
     def delete_selected_nodes(self):
         edges = set()
-        node_ids = []
+        nodes = []
         for node_id in list(self.selected):
             bbox_id = self.selected[node_id]
             canvas_node = self.canvas.nodes.pop(node_id)
-            node_ids.append(canvas_node.core_node.id)
+            nodes.append(canvas_node)
             self.canvas.delete(node_id)
             self.canvas.delete(bbox_id)
             self.canvas.delete(canvas_node.text_id)
@@ -63,6 +63,9 @@ class CanvasComponentManagement:
                     other_interface = edge.dst_interface
                 other_node = self.canvas.nodes[other_id]
                 other_node.edges.remove(edge)
-                other_node.interfaces.remove(other_interface)
+                try:
+                    other_node.interfaces.remove(other_interface)
+                except ValueError:
+                    pass
         self.selected.clear()
-        return node_ids, edges
+        return nodes

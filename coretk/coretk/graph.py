@@ -389,10 +389,10 @@ class CanvasGraph(tk.Canvas):
         :return:
         """
         # delete canvas data
-        node_ids, edges = self.canvas_management.delete_selected_nodes()
+        nodes = self.canvas_management.delete_selected_nodes()
 
         # delete core data
-        self.core.delete_graph_nodes(node_ids, edges)
+        self.core.delete_graph_nodes(nodes)
 
     def add_node(self, x, y):
         plot_id = self.find_all()[0]
