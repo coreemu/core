@@ -388,30 +388,11 @@ class CanvasGraph(tk.Canvas):
         :param event:
         :return:
         """
-        # hide nodes, links, link information that shows on the GUI
-        to_delete_nodes, to_delete_edge_tokens = (
-            self.canvas_management.delete_selected_nodes()
-        )
+        # delete canvas data
+        node_ids, edges = self.canvas_management.delete_selected_nodes()
 
-        # delete nodes and link info stored in CanvasGraph object
-        node_ids = []
-        for nid in to_delete_nodes:
-            canvas_node = self.nodes.pop(nid)
-            node_ids.append(canvas_node.core_node.id)
-        for token in to_delete_edge_tokens:
-            self.edges.pop(token)
-
-        # delete the edge data inside of canvas node
-        canvas_node_link_to_delete = []
-        for canvas_id, node in self.nodes.items():
-            for e in node.edges:
-                if e.token in to_delete_edge_tokens:
-                    canvas_node_link_to_delete.append(tuple([canvas_id, e]))
-        for nid, edge in canvas_node_link_to_delete:
-            self.nodes[nid].edges.remove(edge)
-
-        # delete the related data from core
-        self.core.delete_graph_nodes(node_ids, to_delete_edge_tokens)
+        # delete core data
+        self.core.delete_graph_nodes(node_ids, edges)
 
     def add_node(self, x, y):
         plot_id = self.find_all()[0]

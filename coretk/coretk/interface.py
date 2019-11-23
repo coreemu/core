@@ -33,6 +33,9 @@ class InterfaceManager:
             self.cidr = self.cidr.next()
         return self.cidr
 
+    def deleted_interface(self, interface):
+        logging.info("deleted interface: %s", interface)
+
     def determine_subnet(self, canvas_src_node, canvas_dst_node):
         src_node = canvas_src_node.core_node
         dst_node = canvas_dst_node.core_node

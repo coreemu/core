@@ -39,23 +39,30 @@ class CanvasComponentManagement:
         self.selected.clear()
 
     def delete_selected_nodes(self):
-        selected_nodes = list(self.selected.keys())
         edges = set()
-        for n in selected_nodes:
-            edges = edges.union(self.canvas.nodes[n].edges)
-        edge_canvas_ids = [x.id for x in edges]
-        edge_tokens = [x.token for x in edges]
-        link_infos = [x.link_info.id1 for x in edges] + [x.link_info.id2 for x in edges]
-
-        for i in edge_canvas_ids:
-            self.canvas.itemconfig(i, state="hidden")
-
-        for i in link_infos:
-            self.canvas.itemconfig(i, state="hidden")
-
-        for cnid, bbid in self.selected.items():
-            self.canvas.itemconfig(cnid, state="hidden")
-            self.canvas.itemconfig(bbid, state="hidden")
-            self.canvas.itemconfig(self.canvas.nodes[cnid].text_id, state="hidden")
+        node_ids = []
+        for node_id in list(self.selected):
+            bbox_id = self.selected[node_id]
+            canvas_node = self.canvas.nodes.pop(node_id)
+            node_ids.append(canvas_node.core_node.id)
+            self.canvas.delete(node_id)
+            self.canvas.delete(bbox_id)
+            self.canvas.delete(canvas_node.text_id)
+            for edge in canvas_node.edges:
+                if edge in edges:
+                    continue
+                edges.add(edge)
+                self.canvas.edges.pop(edge.token)
+                self.canvas.delete(edge.id)
+                self.canvas.delete(edge.link_info.id1)
+                self.canvas.delete(edge.link_info.id2)
+                other_id = edge.src
+                other_interface = edge.src_interface
+                if edge.src == node_id:
+                    other_id = edge.dst
+                    other_interface = edge.dst_interface
+                other_node = self.canvas.nodes[other_id]
+                other_node.edges.remove(edge)
+                other_node.interfaces.remove(other_interface)
         self.selected.clear()
-        return selected_nodes, edge_tokens
+        return node_ids, edges

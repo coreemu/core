@@ -469,13 +469,13 @@ class CoreClient:
         )
         return node
 
-    def delete_graph_nodes(self, node_ids, edge_tokens):
+    def delete_graph_nodes(self, node_ids, edges):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
 
         :param list[int] node_ids: list of nodes to delete
-        :param list edge_tokens: list of edges to delete
+        :param list edges: list of edges to delete
         :return: nothing
         """
         # delete the nodes
@@ -496,11 +496,11 @@ class CoreClient:
         self.reusable.sort()
 
         # delete the edges and interfaces
-        for i in edge_tokens:
+        for edge in edges:
             try:
-                self.links.pop(i)
+                self.links.pop(edge.token)
             except KeyError:
-                logging.error("invalid edge token: %s", i)
+                logging.error("invalid edge token: %s", edge.token)
 
     def create_interface(self, canvas_node):
         node = canvas_node.core_node
