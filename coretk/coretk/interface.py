@@ -11,39 +11,40 @@ def random_mac():
 
 
 class InterfaceManager:
-    def __init__(self, app, cidr="10.0.0.0/24"):
+    def __init__(self, app, address="10.0.0.0", mask=24):
         self.app = app
-        self.default = cidr
-        self.cidr = IPNetwork(cidr)
-        self.deleted = []
-        self.current = None
-
-    def reset(self):
-        self.cidr = IPNetwork(self.default)
-        self.deleted.clear()
-        self.current = None
-
-    def get_ips(self, node_id):
-        ip4 = self.current[node_id]
-        ip6 = ip4.ipv6()
-        return str(ip4), str(ip6), self.current.prefixlen
+        self.mask = mask
+        self.base_prefix = max(self.mask - 8, 0)
+        self.subnets = IPNetwork(f"{address}/{self.base_prefix}")
+        self.current_subnet = None
 
     def next_subnet(self):
-        if self.deleted:
-            return self.deleted.pop(0)
-        else:
-            if self.current:
-                self.cidr = self.cidr.next()
-            return self.cidr
+        # define currently used subnets
+        used_subnets = set()
+        for link in self.app.core.links.values():
+            if link.HasField("interface_one"):
+                subnet = self.get_subnet(link.interface_one)
+                used_subnets.add(subnet)
+            if link.HasField("interface_two"):
+                subnet = self.get_subnet(link.interface_two)
+                used_subnets.add(subnet)
 
-    def deleted_cidr(self, cidr):
-        logging.info("deleted cidr: %s", cidr)
-        if cidr not in self.deleted:
-            self.deleted.append(cidr)
-            self.deleted.sort()
+        # find next available subnet
+        for i in self.subnets.subnet(self.mask):
+            if i not in used_subnets:
+                return i
+
+    def reset(self):
+        self.current_subnet = None
+
+    def get_ips(self, node_id):
+        ip4 = self.current_subnet[node_id]
+        ip6 = ip4.ipv6()
+        prefix = self.current_subnet.prefixlen
+        return str(ip4), str(ip6), prefix
 
     @classmethod
-    def get_cidr(cls, interface):
+    def get_subnet(cls, interface):
         return IPNetwork(f"{interface.ip4}/{interface.ip4mask}").cidr
 
     def determine_subnet(self, canvas_src_node, canvas_dst_node):
@@ -52,19 +53,19 @@ class InterfaceManager:
         is_src_container = NodeUtils.is_container_node(src_node.type)
         is_dst_container = NodeUtils.is_container_node(dst_node.type)
         if is_src_container and is_dst_container:
-            self.current = self.next_subnet()
+            self.current_subnet = self.next_subnet()
         elif is_src_container and not is_dst_container:
-            cidr = self.find_subnet(canvas_dst_node, visited={src_node.id})
-            if cidr:
-                self.current = cidr
+            subnet = self.find_subnet(canvas_dst_node, visited={src_node.id})
+            if subnet:
+                self.current_subnet = subnet
             else:
-                self.current = self.next_subnet()
+                self.current_subnet = self.next_subnet()
         elif not is_src_container and is_dst_container:
-            cidr = self.find_subnet(canvas_src_node, visited={dst_node.id})
-            if cidr:
-                self.current = cidr
+            subnet = self.find_subnet(canvas_src_node, visited={dst_node.id})
+            if subnet:
+                self.current_subnet = subnet
             else:
-                self.current = self.next_subnet()
+                self.current_subnet = self.next_subnet()
         else:
             logging.info("ignoring subnet change for link between network nodes")
 
@@ -87,7 +88,7 @@ class InterfaceManager:
                 continue
             visited.add(check_node.core_node.id)
             if interface:
-                cidr = self.get_cidr(interface)
+                cidr = self.get_subnet(interface)
             else:
                 cidr = self.find_subnet(check_node, visited)
             if cidr:

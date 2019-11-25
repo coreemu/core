@@ -45,7 +45,6 @@ class CoreClient:
         self.node_ids = []
         self.app = app
         self.master = app.master
-        self.interface_helper = None
         self.services = {}
         self.default_services = {}
         self.emane_models = []
@@ -59,14 +58,11 @@ class CoreClient:
 
         # helpers
         self.interface_to_edge = {}
-        self.reusable = []
-        self.preexisting = set()
         self.interfaces_manager = InterfaceManager(self.app)
         self.created_nodes = set()
         self.created_links = set()
 
         # session data
-        self.id = 1
         self.state = None
         self.canvas_nodes = {}
         self.location = None
@@ -80,12 +76,9 @@ class CoreClient:
         self.file_configs = {}
 
     def reset(self):
-        self.id = 1
         # helpers
         self.created_nodes.clear()
         self.created_links.clear()
-        self.reusable.clear()
-        self.preexisting.clear()
         self.interfaces_manager.reset()
         self.interface_to_edge.clear()
         # session data
@@ -192,17 +185,6 @@ class CoreClient:
         self.emane_config = response.config
 
         # get emane model config
-
-        # determine next node id and reusable nodes
-        max_id = 1
-        for node in session.nodes:
-            if node.id > max_id:
-                max_id = node.id
-            self.preexisting.add(node.id)
-        self.id = max_id
-        for i in range(1, self.id):
-            if i not in self.preexisting:
-                self.reusable.append(i)
 
         # draw session
         self.app.canvas.reset_and_redraw(session)
@@ -419,19 +401,19 @@ class CoreClient:
         logging.debug("Close grpc")
         self.client.close()
 
-    def get_id(self):
+    def next_node_id(self):
         """
-        Get the next node id as well as update id status and reusable ids
+        Get the next usable node id.
 
-        :rtype: int
         :return: the next id to be used
+        :rtype: int
         """
-        if len(self.reusable) == 0:
-            new_id = self.id
-            self.id = self.id + 1
-            return new_id
-        else:
-            return self.reusable.pop(0)
+        i = 1
+        while True:
+            if i not in self.canvas_nodes:
+                break
+            i += 1
+        return i
 
     def create_node(self, x, y, node_type, model):
         """
@@ -443,7 +425,7 @@ class CoreClient:
         :param str model: node model
         :return: nothing
         """
-        node_id = self.get_id()
+        node_id = self.next_node_id()
         position = core_pb2.Position(x=x, y=y)
         image = None
         if NodeUtils.is_image_node(node_type):
@@ -484,7 +466,6 @@ class CoreClient:
                 logging.error("unknown node: %s", node_id)
                 continue
             del self.canvas_nodes[node_id]
-            self.reusable.append(node_id)
             if node_id in self.mobility_configs:
                 del self.mobility_configs[node_id]
             if node_id in self.wlan_configs:
@@ -494,8 +475,6 @@ class CoreClient:
                 if node_id == node_id:
                     del self.emane_model_configs[key]
 
-            deleted_cidrs = set()
-            keep_cidrs = set()
             for edge in canvas_node.edges:
                 if edge in edges:
                     continue
@@ -503,30 +482,6 @@ class CoreClient:
                 if edge.token not in self.links:
                     logging.error("unknown edge: %s", edge.token)
                 del self.links[edge.token]
-                other_id = edge.src
-                other_interface = edge.src_interface
-                interface = edge.dst_interface
-                if canvas_node.id == edge.src:
-                    other_id = edge.dst
-                    other_interface = edge.dst_interface
-                    interface = edge.src_interface
-                other_node = self.app.canvas.nodes.get(other_id)
-                if not other_node:
-                    continue
-                if other_interface:
-                    cidr = self.interfaces_manager.get_cidr(other_interface)
-                    deleted_cidrs.add(cidr)
-                else:
-                    cidr = self.interfaces_manager.find_subnet(other_node)
-                    if cidr:
-                        keep_cidrs.add(cidr)
-                    else:
-                        cidr = self.interfaces_manager.get_cidr(interface)
-                        deleted_cidrs.add(cidr)
-            deleted_cidrs = deleted_cidrs - keep_cidrs
-            for cidr in deleted_cidrs:
-                self.interfaces_manager.deleted_cidr(cidr)
-        self.reusable.sort()
 
     def create_interface(self, canvas_node):
         node = canvas_node.core_node
