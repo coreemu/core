@@ -59,8 +59,7 @@ class CoreClient:
 
         # helpers
         self.interface_to_edge = {}
-        self.reusable = []
-        self.preexisting = set()
+        self.deleted_nodes = []
         self.interfaces_manager = InterfaceManager(self.app)
         self.created_nodes = set()
         self.created_links = set()
@@ -84,8 +83,7 @@ class CoreClient:
         # helpers
         self.created_nodes.clear()
         self.created_links.clear()
-        self.reusable.clear()
-        self.preexisting.clear()
+        self.deleted_nodes.clear()
         self.interfaces_manager.reset()
         self.interface_to_edge.clear()
         # session data
@@ -195,14 +193,15 @@ class CoreClient:
 
         # determine next node id and reusable nodes
         max_id = 1
+        existing_nodes = set()
         for node in session.nodes:
             if node.id > max_id:
                 max_id = node.id
-            self.preexisting.add(node.id)
+            existing_nodes.add(node.id)
         self.id = max_id
         for i in range(1, self.id):
-            if i not in self.preexisting:
-                self.reusable.append(i)
+            if i not in existing_nodes:
+                self.deleted_nodes.append(i)
 
         # draw session
         self.app.canvas.reset_and_redraw(session)
@@ -426,12 +425,12 @@ class CoreClient:
         :rtype: int
         :return: the next id to be used
         """
-        if len(self.reusable) == 0:
+        if self.deleted_nodes:
+            return self.deleted_nodes.pop(0)
+        else:
             new_id = self.id
             self.id = self.id + 1
             return new_id
-        else:
-            return self.reusable.pop(0)
 
     def create_node(self, x, y, node_type, model):
         """
@@ -484,7 +483,7 @@ class CoreClient:
                 logging.error("unknown node: %s", node_id)
                 continue
             del self.canvas_nodes[node_id]
-            self.reusable.append(node_id)
+            self.deleted_nodes.append(node_id)
             if node_id in self.mobility_configs:
                 del self.mobility_configs[node_id]
             if node_id in self.wlan_configs:
@@ -526,7 +525,7 @@ class CoreClient:
             deleted_cidrs = deleted_cidrs - keep_cidrs
             for cidr in deleted_cidrs:
                 self.interfaces_manager.deleted_cidr(cidr)
-        self.reusable.sort()
+        self.deleted_nodes.sort()
 
     def create_interface(self, canvas_node):
         node = canvas_node.core_node
