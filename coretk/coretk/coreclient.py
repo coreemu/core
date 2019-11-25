@@ -567,6 +567,8 @@ class CoreClient:
         for key, config in self.emane_model_configs.items():
             node_id, model, interface = key
             config = {x: config[x].value for x in config}
+            if interface is None:
+                interface = -1
             config_proto = core_pb2.EmaneModelConfig(
                 node_id=node_id, interface_id=interface, model=model, config=config
             )
@@ -630,5 +632,4 @@ class CoreClient:
 
     def set_emane_model_config(self, node_id, model, config, interface=None):
         logging.info("setting emane model config: %s %s %s", node_id, model, interface)
-        logging.info("model config: %s", config)
         self.emane_model_configs[(node_id, model, interface)] = config
