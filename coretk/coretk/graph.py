@@ -200,31 +200,11 @@ class CanvasGraph(tk.Canvas):
                 self.edges[edge.token] = edge
                 self.core.links[edge.token] = link
                 self.helper.redraw_antenna(canvas_node_one, canvas_node_two)
-
-                # TODO add back the link info to grpc manager also redraw
-                # TODO will include throughput and ipv6 in the future
-                interface_one = link.interface_one
-                interface_two = link.interface_two
-                ip4_src = None
-                ip4_dst = None
-                ip6_src = None
-                ip6_dst = None
-                if interface_one is not None:
-                    ip4_src = interface_one.ip4
-                    ip6_src = interface_one.ip6
-                if interface_two is not None:
-                    ip4_dst = interface_two.ip4
-                    ip6_dst = interface_two.ip6
-                edge.link_info = LinkInfo(
-                    canvas=self,
-                    edge=edge,
-                    ip4_src=ip4_src,
-                    ip6_src=ip6_src,
-                    ip4_dst=ip4_dst,
-                    ip6_dst=ip6_dst,
-                )
-                canvas_node_one.interfaces.append(interface_one)
-                canvas_node_two.interfaces.append(interface_two)
+                edge.link_info = LinkInfo(self, edge, link)
+                if link.HasField("interface_one"):
+                    canvas_node_one.interfaces.append(link.interface_one)
+                if link.HasField("interface_two"):
+                    canvas_node_two.interfaces.append(link.interface_two)
 
         # raise the nodes so they on top of the links
         self.tag_raise("node")
@@ -320,25 +300,7 @@ class CanvasGraph(tk.Canvas):
             node_dst = self.nodes[edge.dst]
             node_dst.edges.add(edge)
             link = self.core.create_link(edge, node_src, node_dst)
-
-            # draw link info on the edge
-            ip4_and_prefix_1 = None
-            ip4_and_prefix_2 = None
-            if link.HasField("interface_one"):
-                if1 = link.interface_one
-                ip4_and_prefix_1 = f"{if1.ip4}/{if1.ip4mask}"
-            if link.HasField("interface_two"):
-                if2 = link.interface_two
-                ip4_and_prefix_2 = f"{if2.ip4}/{if2.ip4mask}"
-            edge.link_info = LinkInfo(
-                self,
-                edge,
-                ip4_src=ip4_and_prefix_1,
-                ip6_src=None,
-                ip4_dst=ip4_and_prefix_2,
-                ip6_dst=None,
-            )
-
+            edge.link_info = LinkInfo(self, edge, link)
         logging.debug(f"edges: {self.find_withtag('edge')}")
 
     def click_press(self, event):
