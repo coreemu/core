@@ -95,10 +95,7 @@ class EmaneConfigDialog(Dialog):
         self.radiovar = tk.IntVar()
         self.radiovar.set(1)
         self.emane_models = [x.split("_")[1] for x in self.app.core.emane_models]
-        emane_model = None
-        if self.emane_models:
-            emane_model = self.emane_models[0]
-        self.emane_model = tk.StringVar(value=emane_model)
+        self.emane_model = tk.StringVar(value=self.node.emane.split("_")[1])
         self.emane_model_button = None
         self.draw()
 

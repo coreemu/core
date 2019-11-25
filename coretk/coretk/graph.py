@@ -163,7 +163,7 @@ class CanvasGraph(tk.Canvas):
         # draw existing nodes
         for core_node in session.nodes:
             # peer to peer node is not drawn on the GUI
-            if core_node.type == core_pb2.NodeType.PEER_TO_PEER:
+            if NodeUtils.is_ignore_node(core_node.type):
                 continue
 
             # draw nodes on the canvas
