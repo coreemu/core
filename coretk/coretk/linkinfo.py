@@ -5,7 +5,7 @@ import logging
 import math
 import tkinter as tk
 
-TEXT_DISTANCE = 0.25
+TEXT_DISTANCE = 0.33
 
 
 class LinkInfo:

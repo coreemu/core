@@ -83,7 +83,6 @@ class CoreClient:
         self.interface_to_edge.clear()
         # session data
         self.canvas_nodes.clear()
-        self.location = None
         self.links.clear()
         self.hooks.clear()
         self.wlan_configs.clear()
