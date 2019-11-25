@@ -1,6 +1,7 @@
 """
 manage deletion
 """
+from core.api.grpc import core_pb2
 
 
 class CanvasComponentManagement:
@@ -41,6 +42,24 @@ class CanvasComponentManagement:
     def delete_selected_nodes(self):
         edges = set()
         nodes = []
+        for cnid in self.selected:
+            canvas_node = self.canvas.nodes[cnid]
+            if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+                canvas_node.antenna_draw.delete_antennas()
+            else:
+                for e in canvas_node.edges:
+                    link_proto = self.app.links[e.token]
+                    node_one_id, node_two_id = (
+                        link_proto.node_one_id,
+                        link_proto.node_two_id,
+                    )
+                    if node_one_id == canvas_node.core_node.id:
+                        neighbor_id = node_two_id
+                    else:
+                        neighbor_id = node_one_id
+                    neighbor = self.app.canvas_nodes[neighbor_id]
+                    if neighbor.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+                        neighbor.antenna_draw.delete_antenna()
         for node_id in list(self.selected):
             bbox_id = self.selected[node_id]
             canvas_node = self.canvas.nodes.pop(node_id)

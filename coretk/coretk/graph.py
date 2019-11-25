@@ -350,10 +350,7 @@ class CanvasGraph(tk.Canvas):
         :param event:
         :return:
         """
-        # delete canvas data
         nodes = self.canvas_management.delete_selected_nodes()
-
-        # delete core data
         self.core.delete_graph_nodes(nodes)
 
     def add_node(self, x, y):

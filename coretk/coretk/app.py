@@ -10,6 +10,7 @@ from coretk.images import ImageEnum, Images
 from coretk.menuaction import MenuAction
 from coretk.menubar import Menubar
 from coretk.nodeutils import NodeUtils
+from coretk.status import StatusBar
 from coretk.toolbar import Toolbar
 
 
@@ -80,7 +81,7 @@ class Application(tk.Frame):
         self.canvas.configure(yscrollcommand=scroll_y.set)
 
     def draw_status(self):
-        self.statusbar = ttk.Frame(self)
+        self.statusbar = StatusBar(master=self, app=self)
         self.statusbar.pack(side=tk.BOTTOM, fill=tk.X)
 
     def on_closing(self):
