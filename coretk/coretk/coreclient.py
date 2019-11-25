@@ -45,7 +45,6 @@ class CoreClient:
         self.node_ids = []
         self.app = app
         self.master = app.master
-        self.interface_helper = None
         self.services = {}
         self.default_services = {}
         self.emane_models = []
@@ -493,8 +492,6 @@ class CoreClient:
                 if node_id == node_id:
                     del self.emane_model_configs[key]
 
-            deleted_cidrs = set()
-            keep_cidrs = set()
             for edge in canvas_node.edges:
                 if edge in edges:
                     continue
@@ -502,29 +499,7 @@ class CoreClient:
                 if edge.token not in self.links:
                     logging.error("unknown edge: %s", edge.token)
                 del self.links[edge.token]
-                other_id = edge.src
-                other_interface = edge.src_interface
-                interface = edge.dst_interface
-                if canvas_node.id == edge.src:
-                    other_id = edge.dst
-                    other_interface = edge.dst_interface
-                    interface = edge.src_interface
-                other_node = self.app.canvas.nodes.get(other_id)
-                if not other_node:
-                    continue
-                if other_interface:
-                    cidr = self.interfaces_manager.get_cidr(other_interface)
-                    deleted_cidrs.add(cidr)
-                else:
-                    cidr = self.interfaces_manager.find_subnet(other_node)
-                    if cidr:
-                        keep_cidrs.add(cidr)
-                    else:
-                        cidr = self.interfaces_manager.get_cidr(interface)
-                        deleted_cidrs.add(cidr)
-            deleted_cidrs = deleted_cidrs - keep_cidrs
-            for cidr in deleted_cidrs:
-                self.interfaces_manager.deleted_cidr(cidr)
+
         self.deleted_nodes.sort()
 
     def create_interface(self, canvas_node):
