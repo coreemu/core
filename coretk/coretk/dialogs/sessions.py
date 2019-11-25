@@ -155,6 +155,6 @@ class SessionsDialog(Dialog):
         self.join_session(sid)
 
     def shutdown_session(self, sid):
-        self.app.core.shutdown_session(sid)
+        self.app.core.stop_session(sid)
         self.click_new()
         self.destroy()

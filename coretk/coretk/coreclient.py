@@ -57,26 +57,48 @@ class CoreClient:
         self.custom_observers = {}
         self.read_config()
 
-        # data for managing the current session
-        self.canvas_nodes = {}
-        self.location = None
+        # helpers
         self.interface_to_edge = {}
-        self.state = None
-        self.links = {}
-        self.hooks = {}
-        self.id = 1
         self.reusable = []
         self.preexisting = set()
         self.interfaces_manager = InterfaceManager(self.app)
+        self.created_nodes = set()
+        self.created_links = set()
+
+        # session data
+        self.id = 1
+        self.state = None
+        self.canvas_nodes = {}
+        self.location = None
+        self.links = {}
+        self.hooks = {}
         self.wlan_configs = {}
         self.mobility_configs = {}
         self.emane_model_configs = {}
         self.emane_config = None
-        self.created_nodes = set()
-        self.created_links = set()
-
         self.service_configs = {}
         self.file_configs = {}
+
+    def reset(self):
+        self.id = 1
+        # helpers
+        self.created_nodes.clear()
+        self.created_links.clear()
+        self.reusable.clear()
+        self.preexisting.clear()
+        self.interfaces_manager.reset()
+        self.interface_to_edge.clear()
+        # session data
+        self.canvas_nodes.clear()
+        self.location = None
+        self.links.clear()
+        self.hooks.clear()
+        self.wlan_configs.clear()
+        self.mobility_configs.clear()
+        self.emane_model_configs.clear()
+        self.emane_config = None
+        self.service_configs.clear()
+        self.file_configs.clear()
 
     def set_observer(self, value):
         self.observer = value
@@ -130,16 +152,7 @@ class CoreClient:
         self.master.title(f"CORE Session({self.session_id})")
 
         # clear session data
-        self.reusable.clear()
-        self.preexisting.clear()
-        self.canvas_nodes.clear()
-        self.links.clear()
-        self.hooks.clear()
-        self.wlan_configs.clear()
-        self.mobility_configs.clear()
-        self.emane_config = None
-        self.service_configs.clear()
-        self.file_configs.clear()
+        self.reset()
 
         # get session data
         response = self.client.get_session(self.session_id)
@@ -224,28 +237,11 @@ class CoreClient:
         )
         self.join_session(response.session_id, query_location=False)
 
-    def delete_session(self, custom_sid=None):
-        if custom_sid is None:
-            sid = self.session_id
-        else:
-            sid = custom_sid
-        response = self.client.delete_session(sid)
+    def delete_session(self, session_id=None):
+        if session_id is None:
+            session_id = self.session_id
+        response = self.client.delete_session(session_id)
         logging.info("Deleted session result: %s", response)
-
-    def shutdown_session(self, custom_sid=None):
-        if custom_sid is None:
-            sid = self.session_id
-        else:
-            sid = custom_sid
-        s = self.client.get_session(sid).session
-        # delete links and nodes from running session
-        if s.state == core_pb2.SessionState.RUNTIME:
-            self.client.set_session_state(
-                self.session_id, core_pb2.SessionState.DATACOLLECT
-            )
-            self.delete_links(sid)
-            self.delete_nodes(sid)
-        self.delete_session(sid)
 
     def set_up(self):
         """
@@ -287,31 +283,6 @@ class CoreClient:
         response = self.client.edit_node(self.session_id, node_id, position)
         logging.info("updated node id %s: %s", node_id, response)
 
-    def delete_nodes(self, delete_session=None):
-        if delete_session is None:
-            sid = self.session_id
-        else:
-            sid = delete_session
-        for node in self.client.get_session(sid).session.nodes:
-            response = self.client.delete_node(self.session_id, node.id)
-            logging.info("delete nodes %s", response)
-
-    def delete_links(self, delete_session=None):
-        if delete_session is None:
-            sid = self.session_id
-        else:
-            sid = delete_session
-
-        for link in self.client.get_session(sid).session.links:
-            response = self.client.delete_link(
-                self.session_id,
-                link.node_one_id,
-                link.node_two_id,
-                link.interface_one.id,
-                link.interface_two.id,
-            )
-            logging.info("delete links %s", response)
-
     def start_session(self):
         nodes = [x.core_node for x in self.canvas_nodes.values()]
         links = list(self.links.values())
@@ -340,18 +311,18 @@ class CoreClient:
             service_configs,
             file_configs,
         )
-        logging.debug("Start session %s, result: %s", self.session_id, response.result)
-        print(self.servers)
-        # print(self.client.get_session(self.session_id))
+        logging.debug("start session(%s), result: %s", self.session_id, response.result)
 
-    def stop_session(self):
-        response = self.client.stop_session(session_id=self.session_id)
-        logging.debug("coregrpc.py Stop session, result: %s", response.result)
+    def stop_session(self, session_id=None):
+        if not session_id:
+            session_id = self.session_id
+        response = self.client.stop_session(session_id)
+        logging.debug("stopped session(%s), result: %s", session_id, response.result)
 
     def launch_terminal(self, node_id):
         response = self.client.get_node_terminal(self.session_id, node_id)
         logging.info("get terminal %s", response.terminal)
-        os.system("xterm -e %s &" % response.terminal)
+        os.system(f"xterm -e {response.terminal} &")
 
     def save_xml(self, file_path):
         """
@@ -361,7 +332,7 @@ class CoreClient:
         :return: nothing
         """
         response = self.client.save_xml(self.session_id, file_path)
-        logging.info("coregrpc.py save xml %s", response)
+        logging.info("saved xml(%s): %s", file_path, response)
         self.client.events(self.session_id, self.handle_events)
 
     def open_xml(self, file_path):
@@ -498,38 +469,64 @@ class CoreClient:
         )
         return node
 
-    def delete_wanted_graph_nodes(self, node_ids, edge_tokens):
+    def delete_graph_nodes(self, canvas_nodes):
         """
         remove the nodes selected by the user and anything related to that node
         such as link, configurations, interfaces
 
-        :param list[int] node_ids: list of nodes to delete
-        :param list edge_tokens: list of edges to delete
+        :param list canvas_nodes: list of nodes to delete
         :return: nothing
         """
-        # delete the nodes
-        for i in node_ids:
-            try:
-                del self.canvas_nodes[i]
-                self.reusable.append(i)
-                if i in self.mobility_configs:
-                    del self.mobility_configs[i]
-                if i in self.wlan_configs:
-                    del self.wlan_configs[i]
-                for key in list(self.emane_model_configs):
-                    node_id, _, _ = key
-                    if node_id == i:
-                        del self.emane_model_configs[key]
-            except KeyError:
-                logging.error("invalid canvas id: %s", i)
-        self.reusable.sort()
+        edges = set()
+        for canvas_node in canvas_nodes:
+            node_id = canvas_node.core_node.id
+            if node_id not in self.canvas_nodes:
+                logging.error("unknown node: %s", node_id)
+                continue
+            del self.canvas_nodes[node_id]
+            self.reusable.append(node_id)
+            if node_id in self.mobility_configs:
+                del self.mobility_configs[node_id]
+            if node_id in self.wlan_configs:
+                del self.wlan_configs[node_id]
+            for key in list(self.emane_model_configs):
+                node_id, _, _ = key
+                if node_id == node_id:
+                    del self.emane_model_configs[key]
 
-        # delete the edges and interfaces
-        for i in edge_tokens:
-            try:
-                self.links.pop(i)
-            except KeyError:
-                logging.error("invalid edge token: %s", i)
+            deleted_cidrs = set()
+            keep_cidrs = set()
+            for edge in canvas_node.edges:
+                if edge in edges:
+                    continue
+                edges.add(edge)
+                if edge.token not in self.links:
+                    logging.error("unknown edge: %s", edge.token)
+                del self.links[edge.token]
+                other_id = edge.src
+                other_interface = edge.src_interface
+                interface = edge.dst_interface
+                if canvas_node.id == edge.src:
+                    other_id = edge.dst
+                    other_interface = edge.dst_interface
+                    interface = edge.src_interface
+                other_node = self.app.canvas.nodes.get(other_id)
+                if not other_node:
+                    continue
+                if other_interface:
+                    cidr = self.interfaces_manager.get_cidr(other_interface)
+                    deleted_cidrs.add(cidr)
+                else:
+                    cidr = self.interfaces_manager.find_subnet(other_node)
+                    if cidr:
+                        keep_cidrs.add(cidr)
+                    else:
+                        cidr = self.interfaces_manager.get_cidr(interface)
+                        deleted_cidrs.add(cidr)
+            deleted_cidrs = deleted_cidrs - keep_cidrs
+            for cidr in deleted_cidrs:
+                self.interfaces_manager.deleted_cidr(cidr)
+        self.reusable.sort()
 
     def create_interface(self, canvas_node):
         node = canvas_node.core_node
