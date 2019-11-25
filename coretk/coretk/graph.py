@@ -636,7 +636,7 @@ class CanvasNode:
 
         new_x, new_y = self.canvas.coords(self.id)
 
-        if self.canvas.core.get_session_state() == core_pb2.SessionState.RUNTIME:
+        if self.canvas.core.is_runtime():
             self.canvas.core.edit_node(self.core_node.id, int(new_x), int(new_y))
 
         for edge in self.edges:
