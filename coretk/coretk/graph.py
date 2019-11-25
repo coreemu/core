@@ -393,6 +393,26 @@ class CanvasGraph(tk.Canvas):
             self.canvas_management.delete_selected_nodes()
         )
 
+        # delete antennas
+        for cnid in to_delete_nodes:
+            canvas_node = self.nodes[cnid]
+            if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+                canvas_node.antenna_draw.delete_antennas()
+            else:
+                for e in canvas_node.edges:
+                    link_proto = self.core.links[e.token]
+                    node_one_id, node_two_id = (
+                        link_proto.node_one_id,
+                        link_proto.node_two_id,
+                    )
+                    if node_one_id == canvas_node.core_node.id:
+                        neighbor_id = node_two_id
+                    else:
+                        neighbor_id = node_one_id
+                    neighbor = self.core.canvas_nodes[neighbor_id]
+                    if neighbor.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
+                        neighbor.antenna_draw.delete_antenna()
+
         # delete nodes and link info stored in CanvasGraph object
         node_ids = []
         for nid in to_delete_nodes:

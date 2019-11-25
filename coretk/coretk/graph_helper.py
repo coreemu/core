@@ -88,17 +88,40 @@ class WlanAntennaManager:
         """
         if self.quantity < 5:
             x, y = self.canvas.coords(self.node_id)
-            self.antennas.append(
-                self.canvas.create_image(
-                    x - 16 + self.offset,
-                    y - 16,
-                    anchor=tk.CENTER,
-                    image=self.image,
-                    tags="antenna",
-                )
+            aid = self.canvas.create_image(
+                x - 16 + self.offset,
+                y - 23,
+                anchor=tk.CENTER,
+                image=self.image,
+                tags="antenna",
             )
+            # self.canvas.tag_raise("antenna")
+            self.antennas.append(aid)
             self.quantity = self.quantity + 1
             self.offset = self.offset + 8
+
+    def delete_antenna(self):
+        """
+        delete one antenna
+
+        :return: nothing
+        """
+        if len(self.antennas) > 0:
+            self.canvas.delete(self.antennas.pop())
+        self.quantity -= 1
+        self.offset -= 8
+
+    def delete_antennas(self):
+        """
+        delete all antennas
+
+        :return: nothing
+        """
+        for aid in self.antennas:
+            self.canvas.delete(aid)
+        self.antennas.clear()
+        self.quantity = 0
+        self.offset = 0
 
     def update_antennas_position(self, offset_x, offset_y):
         """
@@ -108,15 +131,3 @@ class WlanAntennaManager:
         """
         for i in self.antennas:
             self.canvas.move(i, offset_x, offset_y)
-
-    def delete_antenna(self, canvas_id):
-        return
-
-    def delete_antennas(self):
-        """
-        Delete all the antennas of a node
-
-        :return: nothing
-        """
-        for i in self.antennas:
-            self.canvas.delete(i)

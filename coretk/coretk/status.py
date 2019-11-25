@@ -1,5 +1,6 @@
 "status bar"
 import time
+import tkinter as tk
 from tkinter import ttk
 
 
@@ -9,6 +10,7 @@ class StatusBar(ttk.Frame):
         self.app = app
 
         self.status = None
+        self.statusvar = tk.StringVar()
         self.zoom = None
         self.cpu_usage = None
         self.memory = None
@@ -21,7 +23,8 @@ class StatusBar(ttk.Frame):
         self.columnconfigure(1, weight=1)
         self.columnconfigure(2, weight=1)
         self.columnconfigure(3, weight=1)
-        self.status = ttk.Label(self, text="status")
+        self.status = ttk.Label(self, textvariable=self.statusvar)
+        self.statusvar.set("status")
         self.status.grid(row=0, column=0)
         self.zoom = ttk.Label(self, text="zoom")
         self.zoom.grid(row=0, column=1)
@@ -31,14 +34,11 @@ class StatusBar(ttk.Frame):
         self.emulation_light.grid(row=0, column=3)
 
     def processing(self):
-        self.running = True
         texts = ["Processing.", "Processing..", "Processing...", "Processing...."]
         i = 0
-        while self.running is True:
-            self.status.config(text=texts[i % 4])
-            self.app.master.update()
+        while self.running:
+            self.statusvar.set(texts[i % 4])
+            self.master.update()
             i = i + 1
-            time.sleep(0.3)
-            print("running")
+            time.sleep(0.002)
         print("thread finish")
-        # self.status.config(text="status")

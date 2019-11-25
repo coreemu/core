@@ -1,5 +1,5 @@
 import logging
-import threading
+import time
 import tkinter as tk
 from functools import partial
 from tkinter import ttk
@@ -196,22 +196,25 @@ class Toolbar(ttk.Frame):
 
         :return: nothing
         """
-        logging.debug("clicked start button")
+        self.app.statusbar.running = True
+        # thread = threading.Thread(target=self.app.statusbar.processing)
+        # thread.start()
         self.master.config(cursor="watch")
-        status_thread = threading.Thread(target=self.app.statusbar.processing)
-        status_thread.start()
         self.master.update()
         self.app.canvas.mode = GraphMode.SELECT
+        start = time.time()
         self.app.core.start_session()
+        dur = time.time() - start
         self.runtime_frame.tkraise()
         self.master.config(cursor="")
-
-        self.app.statusbar.running = False
-        if status_thread.is_alive():
-            print("still running")
-        status_thread.join()
-        print("thread terminate")
-        self.app.statusbar.status.config(text="status")
+        nodes_num = len(self.app.core.canvas_nodes)
+        links_num = len(self.app.core.links)
+        self.app.statusbar.statusvar.set(
+            "Network topology instantiated in %s seconds (%s node(s) and %s link(s))"
+            % ("%.3f" % dur, nodes_num, links_num)
+        )
+        # self.app.statusbar.running = False
+        # print("done")
 
     def click_link(self):
         logging.debug("Click LINK button")
@@ -365,7 +368,13 @@ class Toolbar(ttk.Frame):
         :return: nothing
         """
         logging.debug("Click on STOP button ")
+        # self.status_thread.join()
+        start = time.time()
         self.app.core.stop_session()
+        dur = time.time() - start
+        self.app.statusbar.statusvar.set(
+            "Cleanup completed in %s seconds" % "%.3f" % dur
+        )
         self.app.canvas.delete("wireless")
         self.design_frame.tkraise()
 
