@@ -3,6 +3,7 @@ Incorporate grpc into python tkinter GUI
 """
 import logging
 import os
+import time
 
 from core.api.grpc import client, core_pb2
 from coretk.dialogs.sessions import SessionsDialog
@@ -280,6 +281,8 @@ class CoreClient:
             emane_config = {x: self.emane_config[x].value for x in self.emane_config}
         else:
             emane_config = None
+
+        start = time.time()
         response = self.client.start_session(
             self.session_id,
             nodes,
@@ -293,7 +296,9 @@ class CoreClient:
             service_configs,
             file_configs,
         )
+        process_time = time.time() - start
         logging.debug("start session(%s), result: %s", self.session_id, response.result)
+        self.app.statusbar.start_session_callback(process_time)
 
     def stop_session(self, session_id=None):
         if not session_id:

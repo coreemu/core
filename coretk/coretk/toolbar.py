@@ -1,4 +1,5 @@
 import logging
+import threading
 import time
 import tkinter as tk
 from functools import partial
@@ -196,25 +197,11 @@ class Toolbar(ttk.Frame):
 
         :return: nothing
         """
-        self.app.statusbar.running = True
-        # thread = threading.Thread(target=self.app.statusbar.processing)
-        # thread.start()
-        self.master.config(cursor="watch")
-        self.master.update()
+        self.app.statusbar.progress_bar.start(5)
         self.app.canvas.mode = GraphMode.SELECT
-        start = time.time()
-        self.app.core.start_session()
-        dur = time.time() - start
+        thread = threading.Thread(target=self.app.core.start_session)
+        thread.start()
         self.runtime_frame.tkraise()
-        self.master.config(cursor="")
-        nodes_num = len(self.app.core.canvas_nodes)
-        links_num = len(self.app.core.links)
-        self.app.statusbar.statusvar.set(
-            "Network topology instantiated in %s seconds (%s node(s) and %s link(s))"
-            % ("%.3f" % dur, nodes_num, links_num)
-        )
-        # self.app.statusbar.running = False
-        # print("done")
 
     def click_link(self):
         logging.debug("Click LINK button")
@@ -367,8 +354,6 @@ class Toolbar(ttk.Frame):
 
         :return: nothing
         """
-        logging.debug("Click on STOP button ")
-        # self.status_thread.join()
         start = time.time()
         self.app.core.stop_session()
         dur = time.time() - start

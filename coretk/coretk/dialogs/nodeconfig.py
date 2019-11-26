@@ -197,8 +197,9 @@ class NodeConfigDialog(Dialog):
         self.node.name = self.name.get()
         if NodeUtils.is_image_node(self.node.type):
             self.node.image = self.container_image.get()
-        if NodeUtils.is_container_node(self.node.type):
-            self.node.server = self.server.get()
+        server = self.server.get()
+        if NodeUtils.is_container_node(self.node.type) and server != "localhost":
+            self.node.server = server
 
         # update canvas node
         self.canvas_node.image = self.image
