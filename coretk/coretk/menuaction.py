@@ -94,7 +94,7 @@ class MenuAction:
         file_path = filedialog.askopenfilename(
             initialdir=str(XML_PATH),
             title="Open",
-            filetypes=(("EmulationScript XML File", "*.xml"), ("All Files", "*")),
+            filetypes=(("XML Files", "*.xml"), ("All Files", "*")),
         )
         if file_path:
             logging.info("opening xml: %s", file_path)

@@ -20,6 +20,7 @@ CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 # local paths
 LOCAL_ICONS_PATH = Path(__file__).parent.joinpath("icons").absolute()
 LOCAL_BACKGROUND_PATH = Path(__file__).parent.joinpath("backgrounds").absolute()
+LOCAL_XMLS_PATH = Path(__file__).parent.joinpath("xmls").absolute()
 
 # configuration data
 TERMINALS = [
@@ -59,6 +60,9 @@ def check_directory():
     for background in LOCAL_BACKGROUND_PATH.glob("*"):
         new_background = BACKGROUNDS_PATH.joinpath(background.name)
         shutil.copy(background, new_background)
+    for xml_file in LOCAL_XMLS_PATH.glob("*"):
+        new_xml = XML_PATH.joinpath(xml_file.name)
+        shutil.copy(xml_file, new_xml)
 
     if "TERM" in os.environ:
         terminal = TERMINALS[0]

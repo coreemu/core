@@ -29,4 +29,4 @@ class Dialog(tk.Toplevel):
         if self.modal:
             self.wait_visibility()
             self.grab_set()
-        self.wait_window()
+            self.wait_window()
