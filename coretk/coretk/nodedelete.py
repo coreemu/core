@@ -45,6 +45,18 @@ class CanvasComponentManagement:
     def delete_selected_nodes(self):
         edges = set()
         nodes = []
+
+        node_to_wlink = {}
+        for link_tuple in self.canvas.wireless_draw.map:
+            nid_one, nid_two = link_tuple
+            if nid_one not in node_to_wlink:
+                node_to_wlink[nid_one] = []
+            if nid_two not in node_to_wlink:
+                node_to_wlink[nid_two] = []
+            node_to_wlink[nid_one].append(link_tuple)
+            node_to_wlink[nid_two].append(link_tuple)
+
+        # delete antennas and wireless links
         for cnid in self.selected:
             canvas_node = self.canvas.nodes[cnid]
             if canvas_node.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
@@ -63,6 +75,18 @@ class CanvasComponentManagement:
                     neighbor = self.app.canvas_nodes[neighbor_id]
                     if neighbor.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
                         neighbor.antenna_draw.delete_antenna()
+            for link_tuple in node_to_wlink[canvas_node.core_node.id]:
+                nid_one, nid_two = link_tuple
+                if link_tuple in self.canvas.wireless_draw.map:
+                    self.canvas.delete(self.canvas.wireless_draw.map[link_tuple])
+                    link_cid = self.canvas.wireless_draw.map.pop(link_tuple, None)
+                    canvas_node_one = self.app.canvas_nodes[nid_one]
+                    canvas_node_two = self.app.canvas_nodes[nid_two]
+                    if link_cid in canvas_node_one.wlans:
+                        canvas_node_one.wlans.remove(link_cid)
+                    if link_cid in canvas_node_two.wlans:
+                        canvas_node_two.wlans.remove(link_cid)
+
         for node_id in list(self.selected):
             bbox_id = self.selected[node_id]
             canvas_node = self.canvas.nodes.pop(node_id)
