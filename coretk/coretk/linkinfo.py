@@ -3,76 +3,60 @@ Link information, such as IPv4, IPv6 and throughput drawn in the canvas
 """
 import logging
 import math
+import tkinter as tk
+
+TEXT_DISTANCE = 0.33
 
 
 class LinkInfo:
-    def __init__(self, canvas, edge, ip4_src, ip6_src, ip4_dst, ip6_dst):
+    def __init__(self, canvas, edge, link):
         """
         create an instance of LinkInfo object
         :param coretk.graph.Graph canvas: canvas object
         :param coretk.graph.CanvasEdge edge: canvas edge onject
-        :param ip4_src:
-        :param ip6_src:
-        :param ip4_dst:
-        :param ip6_dst:
+        :param link: core link to draw info for
         """
         self.canvas = canvas
         self.edge = edge
-        self.radius = 37
-        self.core = self.canvas.core
+        self.link = link
+        self.id1 = None
+        self.id2 = None
+        self.draw_labels()
 
-        self.ip4_address_1 = ip4_src
-        self.ip6_address_1 = ip6_src
-        self.ip4_address_2 = ip4_dst
-        self.ip6_address_2 = ip6_dst
-        self.id1 = self.create_edge_src_info()
-        self.id2 = self.create_edge_dst_info()
-
-    def slope_src_dst(self):
-        """
-        calculate slope of the line connecting source node to destination node
-        :rtype: float
-        :return: slope of line
-        """
+    def get_coordinates(self):
         x1, y1, x2, y2 = self.canvas.coords(self.edge.id)
-        if x2 - x1 == 0:
-            return 9999.0
-        else:
-            return (y2 - y1) / (x2 - x1)
+        v1 = x2 - x1
+        v2 = y2 - y1
+        d = math.sqrt(v1 ** 2 + v2 ** 2)
+        ux = TEXT_DISTANCE * v1
+        uy = TEXT_DISTANCE * v2
+        x1 = x1 + ux
+        y1 = y1 + uy
+        x2 = x2 - ux
+        y2 = y2 - uy
+        logging.info("line distance: %s", d)
+        return x1, y1, x2, y2
 
-    def create_edge_src_info(self):
-        """
-        draw the ip address for source node
-
-        :return: nothing
-        """
-        x1, y1, x2, _ = self.canvas.coords(self.edge.id)
-        m = self.slope_src_dst()
-        distance = math.cos(math.atan(m)) * self.radius
-        if x1 > x2:
-            distance = -distance
-        # id1 = self.canvas.create_text(x1, y1, text=self.ip4_address_1)
-        id1 = self.canvas.create_text(
-            x1 + distance, y1 + distance * m, text=self.ip4_address_1, tags="linkinfo"
+    def draw_labels(self):
+        x1, y1, x2, y2 = self.get_coordinates()
+        label_one = None
+        if self.link.HasField("interface_one"):
+            label_one = (
+                f"{self.link.interface_one.ip4}/{self.link.interface_one.ip4mask}\n"
+                f"{self.link.interface_one.ip6}/{self.link.interface_one.ip6mask}\n"
+            )
+        label_two = None
+        if self.link.HasField("interface_two"):
+            label_two = (
+                f"{self.link.interface_two.ip4}/{self.link.interface_two.ip4mask}\n"
+                f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
+            )
+        self.id1 = self.canvas.create_text(
+            x1, y1, text=label_one, justify=tk.CENTER, tags="linkinfo"
         )
-        return id1
-
-    def create_edge_dst_info(self):
-        """
-        draw the ip address for destination node
-
-        :return: nothing
-        """
-        x1, _, x2, y2 = self.canvas.coords(self.edge.id)
-        m = self.slope_src_dst()
-        distance = math.cos(math.atan(m)) * self.radius
-        if x1 > x2:
-            distance = -distance
-        # id2 = self.canvas.create_text(x2, y2, text=self.ip4_address_2)
-        id2 = self.canvas.create_text(
-            x2 - distance, y2 - distance * m, text=self.ip4_address_2, tags="linkinfo"
+        self.id2 = self.canvas.create_text(
+            x2, y2, text=label_two, justify=tk.CENTER, tags="linkinfo"
         )
-        return id2
 
     def recalculate_info(self):
         """
@@ -80,32 +64,13 @@ class LinkInfo:
 
         :return: nothing
         """
-        x1, y1, x2, y2 = self.canvas.coords(self.edge.id)
-        m = self.slope_src_dst()
-        distance = math.cos(math.atan(m)) * self.radius
-        if x1 > x2:
-            distance = -distance
-        new_x1 = x1 + distance
-        new_y1 = y1 + distance * m
-        new_x2 = x2 - distance
-        new_y2 = y2 - distance * m
-        self.canvas.coords(self.id1, new_x1, new_y1)
-        self.canvas.coords(self.id2, new_x2, new_y2)
-
-    # def link_througput(self):
-    #     x1, y1, x2, y2 = self.canvas.coords(self.edge.id)
-    #     x = (x1 + x2) / 2
-    #     y = (y1 + y2) / 2
-    #     tid = self.canvas.create_text(x, y, text="place text here")
-    #     return tid
+        x1, y1, x2, y2 = self.get_coordinates()
+        self.canvas.coords(self.id1, x1, y1)
+        self.canvas.coords(self.id2, x2, y2)
 
 
 class Throughput:
     def __init__(self, canvas, core):
-        """
-        create an instance of Throughput object
-        :param coretk.app.Application app: application
-        """
         self.canvas = canvas
         self.core = core
         # edge canvas id mapped to throughput value

@@ -84,7 +84,6 @@ class CoreClient:
         self.interface_to_edge.clear()
         # session data
         self.canvas_nodes.clear()
-        self.location = None
         self.links.clear()
         self.hooks.clear()
         self.wlan_configs.clear()
@@ -186,6 +185,15 @@ class CoreClient:
         self.emane_config = response.config
 
         # get emane model config
+        response = self.client.get_emane_model_configs(self.session_id)
+        for _id in response.configs:
+            config = response.configs[_id]
+            interface = None
+            node_id = _id
+            if _id >= 1000:
+                interface = _id % 1000
+                node_id = int(_id / 1000)
+            self.set_emane_model_config(node_id, config.model, config.config, interface)
 
         # draw session
         self.app.canvas.reset_and_redraw(session)
@@ -251,7 +259,6 @@ class CoreClient:
             dialog.show()
 
         response = self.client.get_service_defaults(self.session_id)
-        logging.debug("get service defaults: %s", response)
         self.default_services = {
             x.node_type: set(x.services) for x in response.defaults
         }
@@ -565,6 +572,8 @@ class CoreClient:
         for key, config in self.emane_model_configs.items():
             node_id, model, interface = key
             config = {x: config[x].value for x in config}
+            if interface is None:
+                interface = -1
             config_proto = core_pb2.EmaneModelConfig(
                 node_id=node_id, interface_id=interface, model=model, config=config
             )
@@ -615,6 +624,7 @@ class CoreClient:
         return config
 
     def get_emane_model_config(self, node_id, model, interface=None):
+        logging.info("getting emane model config: %s %s %s", node_id, model, interface)
         config = self.emane_model_configs.get((node_id, model, interface))
         if not config:
             if interface is None:
@@ -626,4 +636,5 @@ class CoreClient:
         return config
 
     def set_emane_model_config(self, node_id, model, config, interface=None):
+        logging.info("setting emane model config: %s %s %s", node_id, model, interface)
         self.emane_model_configs[(node_id, model, interface)] = config

@@ -47,7 +47,12 @@ class NodeUtils:
     CONTAINER_NODES = {NodeType.DEFAULT, NodeType.DOCKER, NodeType.LXC}
     IMAGE_NODES = {NodeType.DOCKER, NodeType.LXC}
     WIRELESS_NODES = {NodeType.WIRELESS_LAN, NodeType.EMANE}
+    IGNORE_NODES = {NodeType.CONTROL_NET, NodeType.PEER_TO_PEER}
     NODE_MODELS = {"router", "host", "PC", "mdr", "prouter"}
+
+    @classmethod
+    def is_ignore_node(cls, node_type):
+        return node_type in cls.IGNORE_NODES
 
     @classmethod
     def is_container_node(cls, node_type):
