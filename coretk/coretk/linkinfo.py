@@ -2,10 +2,10 @@
 Link information, such as IPv4, IPv6 and throughput drawn in the canvas
 """
 import logging
-import math
 import tkinter as tk
+from tkinter import font
 
-TEXT_DISTANCE = 0.33
+TEXT_DISTANCE = 0.30
 
 
 class LinkInfo:
@@ -21,20 +21,19 @@ class LinkInfo:
         self.link = link
         self.id1 = None
         self.id2 = None
+        self.font = font.Font(size=8)
         self.draw_labels()
 
     def get_coordinates(self):
         x1, y1, x2, y2 = self.canvas.coords(self.edge.id)
         v1 = x2 - x1
         v2 = y2 - y1
-        d = math.sqrt(v1 ** 2 + v2 ** 2)
         ux = TEXT_DISTANCE * v1
         uy = TEXT_DISTANCE * v2
         x1 = x1 + ux
         y1 = y1 + uy
         x2 = x2 - ux
         y2 = y2 - uy
-        logging.info("line distance: %s", d)
         return x1, y1, x2, y2
 
     def draw_labels(self):
@@ -52,10 +51,10 @@ class LinkInfo:
                 f"{self.link.interface_two.ip6}/{self.link.interface_two.ip6mask}\n"
             )
         self.id1 = self.canvas.create_text(
-            x1, y1, text=label_one, justify=tk.CENTER, tags="linkinfo"
+            x1, y1, text=label_one, justify=tk.CENTER, font=self.font, tags="linkinfo"
         )
         self.id2 = self.canvas.create_text(
-            x2, y2, text=label_two, justify=tk.CENTER, tags="linkinfo"
+            x2, y2, text=label_two, justify=tk.CENTER, font=self.font, tags="linkinfo"
         )
 
     def recalculate_info(self):

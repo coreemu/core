@@ -5,6 +5,7 @@ import logging
 import os
 
 from core.api.grpc import client, core_pb2
+from coretk.dialogs.mobilityplayer import MobilityPlayerDialog
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
@@ -74,6 +75,7 @@ class CoreClient:
         self.emane_config = None
         self.service_configs = {}
         self.file_configs = {}
+        self.mobility_players = {}
 
     def reset(self):
         # helpers
@@ -91,6 +93,7 @@ class CoreClient:
         self.emane_config = None
         self.service_configs.clear()
         self.file_configs.clear()
+        self.mobility_players.clear()
 
     def set_observer(self, value):
         self.observer = value
@@ -119,8 +122,33 @@ class CoreClient:
         if event.HasField("link_event"):
             self.app.canvas.wireless_draw.handle_link_event(event.link_event)
         elif event.HasField("session_event"):
-            if event.session_event.event <= core_pb2.SessionState.SHUTDOWN:
+            session_event = event.session_event
+            if session_event.event <= core_pb2.SessionState.SHUTDOWN:
                 self.state = event.session_event.event
+            # mobility start
+            elif session_event.event == 7:
+                node_id = session_event.node_id
+                if node_id not in self.mobility_players:
+                    canvas_node = self.canvas_nodes[node_id]
+                    dialog = MobilityPlayerDialog(self.app, self.app, canvas_node)
+                    dialog.show()
+                    self.mobility_players[node_id] = dialog
+            # mobility stop
+            elif session_event.event == 8:
+                node_id = session_event.node_id
+                if node_id not in self.mobility_players:
+                    canvas_node = self.canvas_nodes[node_id]
+                    dialog = MobilityPlayerDialog(self.app, self.app, canvas_node)
+                    dialog.show()
+                    self.mobility_players[node_id] = dialog
+            # mobility pause
+            elif session_event.event == 9:
+                node_id = session_event.node_id
+                if node_id not in self.mobility_players:
+                    canvas_node = self.canvas_nodes[node_id]
+                    dialog = MobilityPlayerDialog(self.app, self.app, canvas_node)
+                    dialog.show()
+                    self.mobility_players[node_id] = dialog
 
     def handle_throughputs(self, event):
         interface_throughputs = event.interface_throughputs
