@@ -7,7 +7,16 @@ import tkinter as tk
 from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
 
-CANVAS_COMPONENT_TAGS = ["edge", "node", "nodename", "wallpaper", "linkinfo"]
+CANVAS_COMPONENT_TAGS = [
+    "edge",
+    "node",
+    "nodename",
+    "wallpaper",
+    "linkinfo",
+    "antenna",
+    "wireless",
+    "selectednodes",
+]
 
 
 class GraphHelper:
