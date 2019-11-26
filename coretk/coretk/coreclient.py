@@ -137,8 +137,8 @@ class CoreClient:
         )
 
     def join_session(self, session_id, query_location=True):
-        self.master.config(cursor="watch")
-        self.master.update()
+        # self.master.config(cursor="watch")
+        # self.master.update()
 
         # update session and title
         self.session_id = session_id
@@ -198,12 +198,36 @@ class CoreClient:
         # draw session
         self.app.canvas.reset_and_redraw(session)
 
-        # draw tool bar appropritate with session state
+        # get node service config and file config
+        for node in session.nodes:
+            self.created_nodes.add(node.id)
+        for link in session.links:
+            self.created_links.add(tuple(sorted([link.node_one_id, link.node_two_id])))
+        for node in session.nodes:
+            if node.type == core_pb2.NodeType.DEFAULT:
+                for service in node.services:
+                    response = self.client.get_node_service(
+                        self.session_id, node.id, service
+                    )
+                    if node.id not in self.service_configs:
+                        self.service_configs[node.id] = {}
+                    self.service_configs[node.id][service] = response.service
+                    for file in response.service.configs:
+                        response = self.client.get_node_service_file(
+                            self.session_id, node.id, service, file
+                        )
+                        if node.id not in self.file_configs:
+                            self.file_configs[node.id] = {}
+                        if service not in self.file_configs[node.id]:
+                            self.file_configs[node.id][service] = {}
+                        self.file_configs[node.id][service][file] = response.data
+
         if self.is_runtime():
             self.app.toolbar.runtime_frame.tkraise()
         else:
             self.app.toolbar.design_frame.tkraise()
-        self.master.config(cursor="")
+        # self.master.config(cursor="")
+        self.app.statusbar.progress_bar.stop()
 
     def is_runtime(self):
         return self.state == core_pb2.SessionState.RUNTIME
@@ -310,7 +334,10 @@ class CoreClient:
     def stop_session(self, session_id=None):
         if not session_id:
             session_id = self.session_id
+        start = time.time()
         response = self.client.stop_session(session_id)
+        process_time = time.time() - start
+        self.app.statusbar.stop_session_callback(process_time)
         logging.debug("stopped session(%s), result: %s", session_id, response.result)
 
     def launch_terminal(self, node_id):

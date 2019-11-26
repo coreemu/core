@@ -27,7 +27,10 @@ class CanvasComponentManagement:
         if canvas_node.id not in self.selected:
             x0, y0, x1, y1 = self.canvas.bbox(canvas_node.id)
             bbox_id = self.canvas.create_rectangle(
-                (x0 - 6, y0 - 6, x1 + 6, y1 + 6), activedash=True, dash="-"
+                (x0 - 6, y0 - 6, x1 + 6, y1 + 6),
+                activedash=True,
+                dash="-",
+                tags="selectednodes",
             )
             self.selected[canvas_node.id] = bbox_id
 

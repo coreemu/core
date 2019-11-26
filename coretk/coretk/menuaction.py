@@ -3,6 +3,8 @@ The actions taken when each menubar option is clicked
 """
 
 import logging
+import threading
+import time
 import webbrowser
 from tkinter import filedialog, messagebox
 
@@ -27,7 +29,16 @@ class MenuAction:
         self.master = master
         self.app = app
 
-    def prompt_save_running_session(self):
+    def cleanup_old_session(self, quitapp=False):
+        start = time.time()
+        self.app.core.stop_session()
+        self.app.core.delete_session()
+        process_time = time.time() - start
+        self.app.statusbar.stop_session_callback(process_time)
+        if quitapp:
+            self.app.quit()
+
+    def prompt_save_running_session(self, quitapp=False):
         """
         Prompt use to stop running session before application is closed
 
@@ -43,13 +54,20 @@ class MenuAction:
             or state == core_pb2.SessionState.DEFINITION
         ):
             self.app.core.delete_session()
+            if quitapp:
+                self.app.quit()
         else:
             msgbox = messagebox.askyesnocancel("stop", "Stop the running session?")
-
             if msgbox or msgbox is False:
                 if msgbox:
-                    self.app.core.stop_session()
-                    self.app.core.delete_session()
+                    self.app.statusbar.progress_bar.start(5)
+                    thread = threading.Thread(
+                        target=self.cleanup_old_session, args=([quitapp])
+                    )
+                    thread.start()
+
+                    # self.app.core.stop_session()
+                    # self.app.core.delete_session()
 
     def on_quit(self, event=None):
         """
@@ -57,8 +75,8 @@ class MenuAction:
 
         :return: nothing
         """
-        self.prompt_save_running_session()
-        self.app.quit()
+        self.prompt_save_running_session(quitapp=True)
+        # self.app.quit()
 
     def file_save_as_xml(self, event=None):
         logging.info("menuaction.py file_save_as_xml()")
@@ -81,7 +99,10 @@ class MenuAction:
         if file_path:
             logging.info("opening xml: %s", file_path)
             self.prompt_save_running_session()
-            self.app.core.open_xml(file_path)
+            self.app.statusbar.progress_bar.start(5)
+            thread = threading.Thread(target=self.app.core.open_xml, args=([file_path]))
+            thread.start()
+            # self.app.core.open_xml(file_path)
 
     def gui_preferences(self):
         dialog = PreferencesDialog(self.app, self.app)

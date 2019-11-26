@@ -1,4 +1,5 @@
 import logging
+import threading
 import tkinter as tk
 from tkinter import ttk
 
@@ -146,7 +147,11 @@ class SessionsDialog(Dialog):
             logging.error("querysessiondrawing.py invalid state")
 
     def join_session(self, session_id):
-        self.app.core.join_session(session_id)
+        self.app.statusbar.progress_bar.start(5)
+        thread = threading.Thread(
+            target=self.app.core.join_session, args=([session_id])
+        )
+        thread.start()
         self.destroy()
 
     def on_selected(self, event):

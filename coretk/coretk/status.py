@@ -47,3 +47,7 @@ class StatusBar(ttk.Frame):
             "Network topology instantiated in %s seconds (%s node(s) and %s link(s))"
             % ("%.3f" % process_time, num_nodes, num_links)
         )
+
+    def stop_session_callback(self, cleanup_time):
+        self.progress_bar.stop()
+        self.statusvar.set("Cleanup completed in %s seconds" % "%.3f" % cleanup_time)

@@ -1,6 +1,5 @@
 import logging
 import threading
-import time
 import tkinter as tk
 from functools import partial
 from tkinter import ttk
@@ -354,12 +353,9 @@ class Toolbar(ttk.Frame):
 
         :return: nothing
         """
-        start = time.time()
-        self.app.core.stop_session()
-        dur = time.time() - start
-        self.app.statusbar.statusvar.set(
-            "Cleanup completed in %s seconds" % "%.3f" % dur
-        )
+        self.app.statusbar.progress_bar.start(5)
+        thread = threading.Thread(target=self.app.core.stop_session)
+        thread.start()
         self.app.canvas.delete("wireless")
         self.design_frame.tkraise()
 
