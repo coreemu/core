@@ -77,9 +77,16 @@ class CanvasGraph(tk.Canvas):
             context.add_command(
                 label="WLAN Config", command=canvas_node.show_wlan_config
             )
-            context.add_command(
-                label="Mobility Config", command=canvas_node.show_mobility_config
-            )
+            if self.master.core.is_runtime():
+                if canvas_node.core_node.id in self.master.core.mobility_players:
+                    context.add_command(
+                        label="Mobility Player",
+                        command=canvas_node.show_mobility_player,
+                    )
+            else:
+                context.add_command(
+                    label="Mobility Config", command=canvas_node.show_mobility_config
+                )
         if node.type == NodeType.EMANE:
             context.add_command(
                 label="EMANE Config", command=canvas_node.show_emane_config
@@ -687,6 +694,9 @@ class CanvasNode:
         self.canvas.context = None
         dialog = MobilityConfigDialog(self.app, self.app, self)
         dialog.show()
+
+    def show_mobility_player(self):
+        self.canvas.context = None
 
     def show_emane_config(self):
         self.canvas.context = None
