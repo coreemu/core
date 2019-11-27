@@ -16,7 +16,6 @@ class WirelessConnection:
         canvas_node_two = self.core.canvas_nodes[node_two_id]
         key = tuple(sorted((node_one_id, node_two_id)))
         if key not in self.map:
-            print("not in map")
             x1, y1 = self.canvas.coords(canvas_node_one.id)
             x2, y2 = self.canvas.coords(canvas_node_two.id)
             wlan_canvas_id = self.canvas.create_line(

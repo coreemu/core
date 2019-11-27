@@ -1,5 +1,7 @@
+import tkinter as tk
 from tkinter import ttk
 
+from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
 
 PAD = 5
@@ -10,37 +12,51 @@ class MobilityPlayerDialog(Dialog):
         super().__init__(
             master, app, f"{canvas_node.core_node.name} Mobility Player", modal=False
         )
+        self.canvas_node = canvas_node
+        self.node = canvas_node.core_node
+        self.config = self.app.core.mobility_configs[canvas_node.core_node.id]
         self.play_button = None
         self.pause_button = None
         self.stop_button = None
+        self.progressbar = None
         self.draw()
 
     def draw(self):
         self.top.columnconfigure(0, weight=1)
 
-        label = ttk.Label(self.top, text="File Name")
+        file_name = self.config["file"].value
+        label = ttk.Label(self.top, text=file_name)
         label.grid(sticky="ew", pady=PAD)
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PAD)
         frame.columnconfigure(0, weight=1)
-        progressbar = ttk.Progressbar(frame, mode="indeterminate")
-        progressbar.grid(row=0, column=0, sticky="ew", padx=PAD)
-        progressbar.start()
+        self.progressbar = ttk.Progressbar(frame, mode="indeterminate")
+        self.progressbar.grid(row=0, column=0, sticky="ew", padx=PAD)
+        self.progressbar.start()
         label = ttk.Label(frame, text="time")
         label.grid(row=0, column=1)
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PAD)
+
         self.play_button = ttk.Button(frame, text="Play", command=self.click_play)
         self.play_button.grid(row=0, column=0, sticky="ew", padx=PAD)
+
         self.pause_button = ttk.Button(frame, text="Pause", command=self.click_pause)
         self.pause_button.grid(row=0, column=1, sticky="ew", padx=PAD)
+
         self.stop_button = ttk.Button(frame, text="Stop", command=self.click_stop)
         self.stop_button.grid(row=0, column=2, sticky="ew", padx=PAD)
-        checkbutton = ttk.Checkbutton(frame, text="Loop?")
+
+        loop = tk.IntVar(value=int(self.config["loop"].value == "1"))
+        checkbutton = ttk.Checkbutton(
+            frame, text="Loop?", variable=loop, state=tk.DISABLED
+        )
         checkbutton.grid(row=0, column=3, padx=PAD)
-        label = ttk.Label(frame, text="rate 50 ms")
+
+        rate = self.config["refresh_ms"].value
+        label = ttk.Label(frame, text=f"rate {rate} ms")
         label.grid(row=0, column=4)
 
     def clear_buttons(self):
@@ -51,11 +67,26 @@ class MobilityPlayerDialog(Dialog):
     def click_play(self):
         self.clear_buttons()
         self.play_button.state(["pressed"])
+        session_id = self.app.core.session_id
+        self.app.core.client.mobility_action(
+            session_id, self.node.id, core_pb2.MobilityAction.START
+        )
+        self.progressbar.start()
 
     def click_pause(self):
         self.clear_buttons()
         self.pause_button.state(["pressed"])
+        session_id = self.app.core.session_id
+        self.app.core.client.mobility_action(
+            session_id, self.node.id, core_pb2.MobilityAction.PAUSE
+        )
+        self.progressbar.stop()
 
     def click_stop(self):
         self.clear_buttons()
         self.stop_button.state(["pressed"])
+        session_id = self.app.core.session_id
+        self.app.core.client.mobility_action(
+            session_id, self.node.id, core_pb2.MobilityAction.STOP
+        )
+        self.progressbar.stop()

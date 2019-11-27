@@ -119,10 +119,11 @@ class CoreClient:
             self.custom_observers[observer.name] = observer
 
     def handle_events(self, event):
-        logging.info("event: %s", event)
         if event.HasField("link_event"):
+            logging.info("link event: %s", event)
             self.app.canvas.wireless_draw.handle_link_event(event.link_event)
         elif event.HasField("session_event"):
+            logging.info("session event: %s", event)
             session_event = event.session_event
             if session_event.event <= core_pb2.SessionState.SHUTDOWN:
                 self.state = event.session_event.event
@@ -136,20 +137,19 @@ class CoreClient:
                     self.mobility_players[node_id] = dialog
             # mobility stop
             elif session_event.event == 8:
-                node_id = session_event.node_id
-                if node_id not in self.mobility_players:
-                    canvas_node = self.canvas_nodes[node_id]
-                    dialog = MobilityPlayerDialog(self.app, self.app, canvas_node)
-                    dialog.show()
-                    self.mobility_players[node_id] = dialog
+                pass
             # mobility pause
             elif session_event.event == 9:
-                node_id = session_event.node_id
-                if node_id not in self.mobility_players:
-                    canvas_node = self.canvas_nodes[node_id]
-                    dialog = MobilityPlayerDialog(self.app, self.app, canvas_node)
-                    dialog.show()
-                    self.mobility_players[node_id] = dialog
+                pass
+        elif event.HasField("node_event"):
+            node_event = event.node_event
+            node_id = node_event.node.id
+            x = node_event.node.position.x
+            y = node_event.node.position.y
+            canvas_node = self.canvas_nodes[node_id]
+            canvas_node.move(x, y)
+        else:
+            logging.info("unhandled event: %s", event)
 
     def handle_throughputs(self, event):
         interface_throughputs = event.interface_throughputs
