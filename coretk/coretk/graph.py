@@ -17,6 +17,7 @@ from coretk.images import Images
 from coretk.linkinfo import LinkInfo, Throughput
 from coretk.nodedelete import CanvasComponentManagement
 from coretk.nodeutils import NodeUtils
+from coretk.shape import Shape
 from coretk.wirelessconnection import WirelessConnection
 
 NODE_TEXT_OFFSET = 5
@@ -27,7 +28,8 @@ class GraphMode(enum.Enum):
     EDGE = 1
     PICKNODE = 2
     NODE = 3
-    OTHER = 4
+    ANNOTATION = 4
+    OTHER = 5
 
 
 class ScaleOption(enum.Enum):
@@ -38,12 +40,18 @@ class ScaleOption(enum.Enum):
     TILED = 4
 
 
+class ShapeType(enum.Enum):
+    OVAL = 0
+    RECTANGLE = 1
+
+
 class CanvasGraph(tk.Canvas):
     def __init__(self, master, core, width, height, cnf=None, **kwargs):
         if cnf is None:
             cnf = {}
         kwargs["highlightthickness"] = 0
         super().__init__(master, cnf, **kwargs)
+        self.app = master
         self.mode = GraphMode.SELECT
         self.selected = None
         self.node_draw = None
@@ -317,6 +325,9 @@ class CanvasGraph(tk.Canvas):
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
+        if self.mode == GraphMode.ANNOTATION:
+            shape = Shape(self.app, self, event.x, event.y)
+            print(shape)
 
     def click_motion(self, event):
         """

@@ -367,6 +367,7 @@ class Toolbar(ttk.Frame):
         self.hide_pickers()
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
+        self.app.canvas.mode = GraphMode.ANNOTATION
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
