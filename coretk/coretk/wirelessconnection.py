@@ -43,6 +43,7 @@ class WirelessConnection:
             self.add_connection(
                 link_event.link.node_one_id, link_event.link.node_two_id
             )
+            self.canvas.tag_raise("node")
 
         if link_event.message_type == core_pb2.MessageType.DELETE:
             self.delete_connection(
