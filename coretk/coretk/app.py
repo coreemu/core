@@ -67,8 +67,15 @@ class Application(tk.Frame):
         self.draw_status()
 
     def draw_canvas(self):
+        width = self.guiconfig["preferences"]["width"]
+        height = self.guiconfig["preferences"]["height"]
         self.canvas = CanvasGraph(
-            self, self.core, background="#cccccc", scrollregion=(0, 0, 1200, 1000)
+            self,
+            self.core,
+            width,
+            height,
+            background="#cccccc",
+            scrollregion=(0, 0, 1200, 1000),
         )
         self.canvas.pack(fill=tk.BOTH, expand=True)
         scroll_x = ttk.Scrollbar(

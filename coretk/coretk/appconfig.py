@@ -78,6 +78,8 @@ def check_directory():
             "editor": editor,
             "terminal": terminal,
             "gui3d": "/usr/local/bin/std3d.sh",
+            "width": 1000,
+            "height": 750,
         },
         "location": {
             "x": 0.0,

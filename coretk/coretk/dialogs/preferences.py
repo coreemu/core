@@ -14,8 +14,8 @@ class PreferencesDialog(Dialog):
         self.theme = tk.StringVar(value=preferences["theme"])
         self.terminal = tk.StringVar(value=preferences["terminal"])
         self.gui3d = tk.StringVar(value=preferences["gui3d"])
-        self.width = tk.StringVar(value="1000")
-        self.height = tk.StringVar(value="800")
+        self.width = tk.StringVar(value=preferences["width"])
+        self.height = tk.StringVar(value=preferences["height"])
         self.draw()
 
     def draw(self):
@@ -93,5 +93,7 @@ class PreferencesDialog(Dialog):
         preferences["editor"] = self.editor.get()
         preferences["gui3d"] = self.gui3d.get()
         preferences["theme"] = self.theme.get()
+        preferences["width"] = self.width.get()
+        preferences["height"] = self.height.get()
         self.app.save_config()
         self.destroy()

@@ -39,7 +39,7 @@ class ScaleOption(enum.Enum):
 
 
 class CanvasGraph(tk.Canvas):
-    def __init__(self, master, core, cnf=None, **kwargs):
+    def __init__(self, master, core, width, height, cnf=None, **kwargs):
         if cnf is None:
             cnf = {}
         kwargs["highlightthickness"] = 0
@@ -54,7 +54,7 @@ class CanvasGraph(tk.Canvas):
         self.grid = None
         self.canvas_management = CanvasComponentManagement(self, core)
         self.setup_bindings()
-        self.draw_grid()
+        self.draw_grid(width, height)
         self.core = core
         self.helper = GraphHelper(self, core)
         self.throughput_draw = Throughput(self, core)
