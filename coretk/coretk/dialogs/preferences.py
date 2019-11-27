@@ -14,6 +14,8 @@ class PreferencesDialog(Dialog):
         self.theme = tk.StringVar(value=preferences["theme"])
         self.terminal = tk.StringVar(value=preferences["terminal"])
         self.gui3d = tk.StringVar(value=preferences["gui3d"])
+        self.width = tk.StringVar(value="1000")
+        self.height = tk.StringVar(value="800")
         self.draw()
 
     def draw(self):
@@ -57,6 +59,16 @@ class PreferencesDialog(Dialog):
         label.grid(row=3, column=0, pady=2, padx=2, sticky="w")
         entry = ttk.Entry(frame, textvariable=self.gui3d)
         entry.grid(row=3, column=1, sticky="ew")
+
+        label = ttk.Label(frame, text="Canvas width (in pixel)")
+        label.grid(row=4, column=0, pady=2, padx=2, sticky="w")
+        entry = ttk.Entry(frame, textvariable=self.width)
+        entry.grid(row=4, column=1, sticky="ew")
+
+        label = ttk.Label(frame, text="Canvas height (in pixel)")
+        label.grid(row=5, column=0, pady=2, padx=2, sticky="w")
+        entry = ttk.Entry(frame, textvariable=self.height)
+        entry.grid(row=5, column=1, sticky="ew")
 
     def draw_buttons(self):
         frame = ttk.Frame(self.top)

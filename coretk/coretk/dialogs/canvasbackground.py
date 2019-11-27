@@ -12,6 +12,7 @@ from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 
 PADX = 5
+ABOVE_WALLPAPER = ["edge", "linkinfo", "wireless", "antenna", "nodename", "node"]
 
 
 class CanvasBackgroundDialog(Dialog):
@@ -182,17 +183,18 @@ class CanvasBackgroundDialog(Dialog):
             self.canvas.wallpaper_file = None
             self.destroy()
             return
-
         try:
             img = Image.open(filename)
             self.canvas.wallpaper = img
             self.canvas.wallpaper_file = filename
             self.canvas.redraw()
+            for component in ABOVE_WALLPAPER:
+                self.canvas.tag_raise(component)
+
         except FileNotFoundError:
             logging.error("invalid background: %s", filename)
             if self.canvas.wallpaper_id:
                 self.canvas.delete(self.canvas.wallpaper_id)
                 self.canvas.wallpaper_id = None
                 self.canvas.wallpaper_file = None
-
         self.destroy()
