@@ -585,6 +585,25 @@ class CanvasNode:
         self.canvas.itemconfig(self.id, image=self.image)
         self.canvas.itemconfig(self.text_id, text=self.core_node.name)
 
+    def move(self, x, y):
+        old_x = self.core_node.position.x
+        old_y = self.core_node.position.y
+        x_offset = x - old_x
+        y_offset = y - old_y
+        self.core_node.position.x = x
+        self.core_node.position.y = y
+        for edge in self.edges:
+            x1, y1, x2, y2 = self.canvas.coords(edge.id)
+            if edge.src == self.id:
+                self.canvas.coords(edge.id, x_offset, y_offset, x2, y2)
+            else:
+                self.canvas.coords(edge.id, x1, y1, x_offset, y_offset)
+            edge.link_info.recalculate_info()
+        self.canvas.helper.update_wlan_connection(old_x, old_y, x, y, self.wlans)
+        self.canvas.move(self.id, x_offset, y_offset)
+        self.canvas.move(self.text_id, x_offset, y_offset)
+        self.antenna_draw.update_antennas_position(x_offset, y_offset)
+
     def on_enter(self, event):
         if self.app.core.is_runtime() and self.app.core.observer:
             self.tooltip.text.set("waiting...")
@@ -612,7 +631,6 @@ class CanvasNode:
     def click_press(self, event):
         logging.debug(f"node click press {self.core_node.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
-
         self.canvas.canvas_management.node_select(self)
 
     def click_release(self, event):
