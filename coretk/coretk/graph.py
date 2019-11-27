@@ -598,17 +598,18 @@ class CanvasNode:
         old_y = self.core_node.position.y
         x_offset = x - old_x
         y_offset = y - old_y
-        self.core_node.position.x = x
-        self.core_node.position.y = y
+        self.core_node.position.x = int(x)
+        self.core_node.position.y = int(y)
         self.canvas.move(self.id, x_offset, y_offset)
         self.canvas.move(self.text_id, x_offset, y_offset)
         self.antenna_draw.update_antennas_position(x_offset, y_offset)
+        self.canvas.canvas_management.node_drag(self, x_offset, y_offset)
         for edge in self.edges:
             x1, y1, x2, y2 = self.canvas.coords(edge.id)
             if edge.src == self.id:
-                self.canvas.coords(edge.id, x_offset, y_offset, x2, y2)
+                self.canvas.coords(edge.id, x, y, x2, y2)
             else:
-                self.canvas.coords(edge.id, x1, y1, x_offset, y_offset)
+                self.canvas.coords(edge.id, x1, y1, x, y)
             edge.link_info.recalculate_info()
         self.canvas.helper.update_wlan_connection(old_x, old_y, x, y, self.wlans)
 
@@ -650,32 +651,7 @@ class CanvasNode:
         if self.canvas.mode == GraphMode.EDGE or self.canvas.mode == GraphMode.NODE:
             return
         x, y = self.canvas.canvas_xy(event)
-        moving_x, moving_y = self.moving
-        offset_x, offset_y = x - moving_x, y - moving_y
-        self.moving = x, y
-
-        old_x, old_y = self.canvas.coords(self.id)
-        self.canvas.move(self.id, offset_x, offset_y)
-        self.canvas.move(self.text_id, offset_x, offset_y)
-        self.antenna_draw.update_antennas_position(offset_x, offset_y)
-        self.canvas.canvas_management.node_drag(self, offset_x, offset_y)
-
-        new_x, new_y = self.canvas.coords(self.id)
-
-        if self.canvas.core.is_runtime():
-            self.canvas.core.edit_node(self.core_node.id, int(new_x), int(new_y))
-
-        for edge in self.edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if x1 == old_x and y1 == old_y:
-                self.canvas.coords(edge.id, new_x, new_y, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, new_x, new_y)
-            edge.link_info.recalculate_info()
-
-        self.canvas.helper.update_wlan_connection(
-            old_x, old_y, new_x, new_y, self.wlans
-        )
+        self.move(x, y)
 
     def select_multiple(self, event):
         self.canvas.canvas_management.node_select(self, True)

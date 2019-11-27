@@ -35,7 +35,9 @@ class CanvasComponentManagement:
             self.selected[canvas_node.id] = bbox_id
 
     def node_drag(self, canvas_node, offset_x, offset_y):
-        self.canvas.move(self.selected[canvas_node.id], offset_x, offset_y)
+        select_id = self.selected.get(canvas_node.id)
+        if select_id is not None:
+            self.canvas.move(select_id, offset_x, offset_y)
 
     def delete_current_bbox(self):
         for bbid in self.selected.values():
