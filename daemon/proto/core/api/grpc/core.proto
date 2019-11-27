@@ -298,6 +298,7 @@ message Event {
 
 message NodeEvent {
     Node node = 1;
+    string source = 2;
 }
 
 message LinkEvent {
@@ -378,6 +379,7 @@ message EditNodeRequest {
     int32 node_id = 2;
     Position position = 3;
     string icon = 4;
+    string source = 5;
 }
 
 message EditNodeResponse {

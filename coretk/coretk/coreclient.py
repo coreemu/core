@@ -141,14 +141,18 @@ class CoreClient:
             else:
                 logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
-            node_event = event.node_event
-            node_id = node_event.node.id
-            x = node_event.node.position.x
-            y = node_event.node.position.y
-            canvas_node = self.canvas_nodes[node_id]
-            canvas_node.move(x, y)
+            self.handle_node_event(event.node_event)
         else:
             logging.info("unhandled event: %s", event)
+
+    def handle_node_event(self, event):
+        if event.source == "gui":
+            return
+        node_id = event.node.id
+        x = event.node.position.x
+        y = event.node.position.y
+        canvas_node = self.canvas_nodes[node_id]
+        canvas_node.move(x, y)
 
     def handle_throughputs(self, event):
         interface_throughputs = event.interface_throughputs
@@ -164,9 +168,6 @@ class CoreClient:
         )
 
     def join_session(self, session_id, query_location=True):
-        # self.master.config(cursor="watch")
-        # self.master.update()
-
         # update session and title
         self.session_id = session_id
         self.master.title(f"CORE Session({self.session_id})")
@@ -253,7 +254,6 @@ class CoreClient:
             self.app.toolbar.runtime_frame.tkraise()
         else:
             self.app.toolbar.design_frame.tkraise()
-        # self.master.config(cursor="")
         self.app.statusbar.progress_bar.stop()
 
     def is_runtime(self):
@@ -321,8 +321,7 @@ class CoreClient:
 
     def edit_node(self, node_id, x, y):
         position = core_pb2.Position(x=x, y=y)
-        response = self.client.edit_node(self.session_id, node_id, position)
-        logging.info("updated node id %s: %s", node_id, response)
+        self.client.edit_node(self.session_id, node_id, position, source="gui")
 
     def start_session(self):
         nodes = [x.core_node for x in self.canvas_nodes.values()]

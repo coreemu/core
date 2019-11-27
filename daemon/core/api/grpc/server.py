@@ -504,7 +504,7 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
             position=position,
             services=services,
         )
-        return core_pb2.NodeEvent(node=node_proto)
+        return core_pb2.NodeEvent(node=node_proto, source=event.source)
 
     def _handle_link_event(self, event):
         """
@@ -800,7 +800,10 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         result = True
         try:
             session.edit_node(node.id, options)
-            node_data = node.data(0)
+            source = None
+            if request.source:
+                source = request.source
+            node_data = node.data(0, source=source)
             session.broadcast_node(node_data)
         except CoreError:
             result = False

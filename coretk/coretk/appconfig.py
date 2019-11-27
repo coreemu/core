@@ -18,9 +18,10 @@ XML_PATH = HOME_PATH.joinpath("xml")
 CONFIG_PATH = HOME_PATH.joinpath("gui.yaml")
 
 # local paths
-LOCAL_ICONS_PATH = Path(__file__).parent.joinpath("icons").absolute()
-LOCAL_BACKGROUND_PATH = Path(__file__).parent.joinpath("backgrounds").absolute()
-LOCAL_XMLS_PATH = Path(__file__).parent.joinpath("xmls").absolute()
+DATA_PATH = Path(__file__).parent.joinpath("data")
+LOCAL_ICONS_PATH = DATA_PATH.joinpath("icons").absolute()
+LOCAL_BACKGROUND_PATH = DATA_PATH.joinpath("backgrounds").absolute()
+LOCAL_XMLS_PATH = DATA_PATH.joinpath("xmls").absolute()
 
 # configuration data
 TERMINALS = [

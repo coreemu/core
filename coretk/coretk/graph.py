@@ -85,9 +85,16 @@ class CanvasGraph(tk.Canvas):
             context.add_command(
                 label="WLAN Config", command=canvas_node.show_wlan_config
             )
-            context.add_command(
-                label="Mobility Config", command=canvas_node.show_mobility_config
-            )
+            if self.master.core.is_runtime():
+                if canvas_node.core_node.id in self.master.core.mobility_players:
+                    context.add_command(
+                        label="Mobility Player",
+                        command=canvas_node.show_mobility_player,
+                    )
+            else:
+                context.add_command(
+                    label="Mobility Config", command=canvas_node.show_mobility_config
+                )
         if node.type == NodeType.EMANE:
             context.add_command(
                 label="EMANE Config", command=canvas_node.show_emane_config
@@ -602,19 +609,20 @@ class CanvasNode:
         old_y = self.core_node.position.y
         x_offset = x - old_x
         y_offset = y - old_y
-        self.core_node.position.x = x
-        self.core_node.position.y = y
-        for edge in self.edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if edge.src == self.id:
-                self.canvas.coords(edge.id, x_offset, y_offset, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, x_offset, y_offset)
-            edge.link_info.recalculate_info()
-        self.canvas.helper.update_wlan_connection(old_x, old_y, x, y, self.wlans)
+        self.core_node.position.x = int(x)
+        self.core_node.position.y = int(y)
         self.canvas.move(self.id, x_offset, y_offset)
         self.canvas.move(self.text_id, x_offset, y_offset)
         self.antenna_draw.update_antennas_position(x_offset, y_offset)
+        self.canvas.canvas_management.node_drag(self, x_offset, y_offset)
+        for edge in self.edges:
+            x1, y1, x2, y2 = self.canvas.coords(edge.id)
+            if edge.src == self.id:
+                self.canvas.coords(edge.id, x, y, x2, y2)
+            else:
+                self.canvas.coords(edge.id, x1, y1, x, y)
+            edge.link_info.recalculate_info()
+        self.canvas.helper.update_wlan_connection(old_x, old_y, x, y, self.wlans)
 
     def on_enter(self, event):
         if self.app.core.is_runtime() and self.app.core.observer:
@@ -654,32 +662,7 @@ class CanvasNode:
         if self.canvas.mode == GraphMode.EDGE:
             return
         x, y = self.canvas.canvas_xy(event)
-        moving_x, moving_y = self.moving
-        offset_x, offset_y = x - moving_x, y - moving_y
-        self.moving = x, y
-
-        old_x, old_y = self.canvas.coords(self.id)
-        self.canvas.move(self.id, offset_x, offset_y)
-        self.canvas.move(self.text_id, offset_x, offset_y)
-        self.antenna_draw.update_antennas_position(offset_x, offset_y)
-        self.canvas.canvas_management.node_drag(self, offset_x, offset_y)
-
-        new_x, new_y = self.canvas.coords(self.id)
-
-        if self.canvas.core.is_runtime():
-            self.canvas.core.edit_node(self.core_node.id, int(new_x), int(new_y))
-
-        for edge in self.edges:
-            x1, y1, x2, y2 = self.canvas.coords(edge.id)
-            if x1 == old_x and y1 == old_y:
-                self.canvas.coords(edge.id, new_x, new_y, x2, y2)
-            else:
-                self.canvas.coords(edge.id, x1, y1, new_x, new_y)
-            edge.link_info.recalculate_info()
-
-        self.canvas.helper.update_wlan_connection(
-            old_x, old_y, new_x, new_y, self.wlans
-        )
+        self.move(x, y)
 
     def select_multiple(self, event):
         self.canvas.canvas_management.node_select(self, True)
@@ -698,6 +681,9 @@ class CanvasNode:
         self.canvas.context = None
         dialog = MobilityConfigDialog(self.app, self.app, self)
         dialog.show()
+
+    def show_mobility_player(self):
+        self.canvas.context = None
 
     def show_emane_config(self):
         self.canvas.context = None
