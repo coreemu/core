@@ -428,7 +428,7 @@ class CoreGrpcClient:
         request = core_pb2.GetNodeRequest(session_id=session_id, node_id=node_id)
         return self.stub.GetNode(request)
 
-    def edit_node(self, session_id, node_id, position, icon=None):
+    def edit_node(self, session_id, node_id, position, icon=None, source=None):
         """
         Edit a node, currently only changes position.
 
@@ -436,12 +436,17 @@ class CoreGrpcClient:
         :param int node_id: node id
         :param core_pb2.Position position: position to set node to
         :param str icon: path to icon for gui to use for node
+        :param str source: application source editing node
         :return: response with result of success or failure
         :rtype: core_pb2.EditNodeResponse
         :raises grpc.RpcError: when session or node doesn't exist
         """
         request = core_pb2.EditNodeRequest(
-            session_id=session_id, node_id=node_id, position=position, icon=icon
+            session_id=session_id,
+            node_id=node_id,
+            position=position,
+            icon=icon,
+            source=source,
         )
         return self.stub.EditNode(request)
 

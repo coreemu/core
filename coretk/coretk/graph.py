@@ -600,6 +600,9 @@ class CanvasNode:
         y_offset = y - old_y
         self.core_node.position.x = x
         self.core_node.position.y = y
+        self.canvas.move(self.id, x_offset, y_offset)
+        self.canvas.move(self.text_id, x_offset, y_offset)
+        self.antenna_draw.update_antennas_position(x_offset, y_offset)
         for edge in self.edges:
             x1, y1, x2, y2 = self.canvas.coords(edge.id)
             if edge.src == self.id:
@@ -608,9 +611,6 @@ class CanvasNode:
                 self.canvas.coords(edge.id, x1, y1, x_offset, y_offset)
             edge.link_info.recalculate_info()
         self.canvas.helper.update_wlan_connection(old_x, old_y, x, y, self.wlans)
-        self.canvas.move(self.id, x_offset, y_offset)
-        self.canvas.move(self.text_id, x_offset, y_offset)
-        self.antenna_draw.update_antennas_position(x_offset, y_offset)
 
     def on_enter(self, event):
         if self.app.core.is_runtime() and self.app.core.observer:
