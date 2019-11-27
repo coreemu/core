@@ -366,9 +366,9 @@ class CanvasGraph(tk.Canvas):
         self.core.delete_graph_nodes(nodes)
 
     def add_node(self, x, y):
-        plot_id = self.find_all()[0]
-        logging.info("add node event: %s - %s", plot_id, self.selected)
-        if self.selected == plot_id:
+        canvas_id = self.find_all()[0]
+        logging.info("add node event: %s - %s", canvas_id, self.selected)
+        if self.selected == canvas_id:
             core_node = self.core.create_node(
                 int(x), int(y), self.node_draw.node_type, self.node_draw.model
             )
@@ -651,7 +651,7 @@ class CanvasNode:
         self.moving = None
 
     def motion(self, event):
-        if self.canvas.mode == GraphMode.EDGE or self.canvas.mode == GraphMode.NODE:
+        if self.canvas.mode == GraphMode.EDGE:
             return
         x, y = self.canvas.canvas_xy(event)
         moving_x, moving_y = self.moving
