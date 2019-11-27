@@ -3,8 +3,10 @@ from tkinter import ttk
 
 from core.api.grpc import core_pb2
 from coretk.dialogs.dialog import Dialog
+from coretk.images import ImageEnum, Images
 
 PAD = 5
+ICON_SIZE = 16
 
 
 class MobilityPlayerDialog(Dialog):
@@ -39,14 +41,22 @@ class MobilityPlayerDialog(Dialog):
 
         frame = ttk.Frame(self.top)
         frame.grid(sticky="ew", pady=PAD)
+        for i in range(3):
+            frame.columnconfigure(i, weight=1)
 
-        self.play_button = ttk.Button(frame, text="Play", command=self.click_play)
+        image = Images.get(ImageEnum.START, width=ICON_SIZE)
+        self.play_button = ttk.Button(frame, image=image, command=self.click_play)
+        self.play_button.image = image
         self.play_button.grid(row=0, column=0, sticky="ew", padx=PAD)
 
-        self.pause_button = ttk.Button(frame, text="Pause", command=self.click_pause)
+        image = Images.get(ImageEnum.PAUSE, width=ICON_SIZE)
+        self.pause_button = ttk.Button(frame, image=image, command=self.click_pause)
+        self.pause_button.image = image
         self.pause_button.grid(row=0, column=1, sticky="ew", padx=PAD)
 
-        self.stop_button = ttk.Button(frame, text="Stop", command=self.click_stop)
+        image = Images.get(ImageEnum.STOP, width=ICON_SIZE)
+        self.stop_button = ttk.Button(frame, image=image, command=self.click_stop)
+        self.stop_button.image = image
         self.stop_button.grid(row=0, column=2, sticky="ew", padx=PAD)
 
         loop = tk.IntVar(value=int(self.config["loop"].value == "1"))
