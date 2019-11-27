@@ -187,5 +187,8 @@ class SizeAndScaleDialog(Dialog):
             location_config["lon"] = location.lon
             location_config["alt"] = location.alt
             location_config["scale"] = location.scale
+            preferences = self.app.guiconfig["preferences"]
+            preferences["width"] = width
+            preferences["height"] = height
             self.app.save_config()
         self.destroy()
