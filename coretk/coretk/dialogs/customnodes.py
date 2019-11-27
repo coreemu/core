@@ -62,9 +62,9 @@ class ServicesSelectDialog(Dialog):
             index = selection[0]
             group = self.groups.listbox.get(index)
             self.services.clear()
-            for service in sorted(self.app.core.services[group], key=lambda x: x.name):
-                checked = service.name in self.current_services
-                self.services.add(service.name, checked)
+            for name in sorted(self.app.core.services[group]):
+                checked = name in self.current_services
+                self.services.add(name, checked)
 
     def service_clicked(self, name, var):
         if var.get() and name not in self.current_services:

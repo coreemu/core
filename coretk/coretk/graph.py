@@ -114,6 +114,7 @@ class CanvasGraph(tk.Canvas):
         self.nodes.clear()
         self.edges.clear()
         self.drawing_edge = None
+        self.wireless_draw.map.clear()
         self.draw_session(session)
 
     def setup_bindings(self):

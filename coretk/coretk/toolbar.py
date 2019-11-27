@@ -356,7 +356,10 @@ class Toolbar(ttk.Frame):
         self.app.statusbar.progress_bar.start(5)
         thread = threading.Thread(target=self.app.core.stop_session)
         thread.start()
-        self.app.canvas.delete("wireless")
+        for cid in self.app.canvas.find_withtag("wireless"):
+            self.app.canvas.itemconfig(cid, state="hidden")
+        # self.app.canvas.delete("wireless")
+
         self.design_frame.tkraise()
 
     def update_annotation(self, image):
