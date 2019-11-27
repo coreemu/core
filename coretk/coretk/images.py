@@ -56,6 +56,7 @@ class ImageEnum(Enum):
     EDITNODE = "edit-node"
     PLOT = "plot"
     TWONODE = "twonode"
+    PAUSE = "pause"
     STOP = "stop"
     OBSERVE = "observe"
     RUN = "run"

@@ -811,12 +811,6 @@ class WayPointMobility(WirelessModel):
         :param z: z position
         :return: nothing
         """
-        if x is not None:
-            x = int(x)
-        if y is not None:
-            y = int(y)
-        if z is not None:
-            z = int(z)
         node.position.set(x, y, z)
         node_data = node.data(message_type=0)
         self.session.broadcast_node(node_data)

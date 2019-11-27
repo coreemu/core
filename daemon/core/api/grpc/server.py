@@ -488,7 +488,13 @@ class CoreGrpcServer(core_pb2_grpc.CoreApiServicer):
         :return: node event that contains node id, name, model, position, and services
         :rtype: core.api.grpc.core_pb2.NodeEvent
         """
-        position = core_pb2.Position(x=event.x_position, y=event.y_position)
+        x = None
+        if event.x_position is not None:
+            x = int(event.x_position)
+        y = None
+        if event.y_position is not None:
+            y = int(event.y_position)
+        position = core_pb2.Position(x=x, y=y)
         services = event.services or ""
         services = services.split("|")
         node_proto = core_pb2.Node(
