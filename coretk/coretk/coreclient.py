@@ -128,19 +128,18 @@ class CoreClient:
             if session_event.event <= core_pb2.SessionState.SHUTDOWN:
                 self.state = event.session_event.event
             # mobility start
-            elif session_event.event == 7:
+            elif session_event.event in {7, 8, 9}:
                 node_id = session_event.node_id
-                if node_id not in self.mobility_players:
-                    canvas_node = self.canvas_nodes[node_id]
-                    dialog = MobilityPlayerDialog(self.app, self.app, canvas_node)
-                    dialog.show()
-                    self.mobility_players[node_id] = dialog
-            # mobility stop
-            elif session_event.event == 8:
-                pass
-            # mobility pause
-            elif session_event.event == 9:
-                pass
+                dialog = self.mobility_players.get(node_id)
+                if dialog:
+                    if session_event.event == 7:
+                        dialog.set_play()
+                    elif session_event.event == 8:
+                        dialog.set_stop()
+                    else:
+                        dialog.set_pause()
+            else:
+                logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
             node_event = event.node_event
             node_id = node_event.node.id
@@ -358,6 +357,13 @@ class CoreClient:
         process_time = time.time() - start
         logging.debug("start session(%s), result: %s", self.session_id, response.result)
         self.app.statusbar.start_session_callback(process_time)
+
+        # display mobility players
+        for node_id, config in self.mobility_configs.items():
+            canvas_node = self.canvas_nodes[node_id]
+            dialog = MobilityPlayerDialog(self.app, self.app, canvas_node, config)
+            dialog.show()
+            self.mobility_players[node_id] = dialog
 
     def stop_session(self, session_id=None):
         if not session_id:
