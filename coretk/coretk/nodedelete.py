@@ -75,7 +75,8 @@ class CanvasComponentManagement:
                     neighbor = self.app.canvas_nodes[neighbor_id]
                     if neighbor.core_node.type != core_pb2.NodeType.WIRELESS_LAN:
                         neighbor.antenna_draw.delete_antenna()
-            for link_tuple in node_to_wlink[canvas_node.core_node.id]:
+
+            for link_tuple in node_to_wlink.get(canvas_node.core_node.id, []):
                 nid_one, nid_two = link_tuple
                 if link_tuple in self.canvas.wireless_draw.map:
                     self.canvas.delete(self.canvas.wireless_draw.map[link_tuple])
