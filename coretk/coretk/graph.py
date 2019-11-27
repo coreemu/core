@@ -238,18 +238,14 @@ class CanvasGraph(tk.Canvas):
         :return: the item that the mouse point to
         """
         overlapping = self.find_overlapping(event.x, event.y, event.x, event.y)
-        nodes = set(self.find_withtag("node"))
         selected = None
         for _id in overlapping:
             if self.drawing_edge and self.drawing_edge.id == _id:
                 continue
 
-            if _id in nodes:
+            if _id in self.nodes:
                 selected = _id
                 break
-
-            if selected is None:
-                selected = _id
 
         return selected
 
@@ -362,9 +358,7 @@ class CanvasGraph(tk.Canvas):
         self.core.delete_graph_nodes(nodes)
 
     def add_node(self, x, y):
-        plot_id = self.find_all()[0]
-        logging.info("add node event: %s - %s", plot_id, self.selected)
-        if self.selected == plot_id:
+        if self.selected is None:
             core_node = self.core.create_node(
                 int(x), int(y), self.node_draw.node_type, self.node_draw.model
             )
@@ -648,7 +642,7 @@ class CanvasNode:
         self.moving = None
 
     def motion(self, event):
-        if self.canvas.mode == GraphMode.EDGE or self.canvas.mode == GraphMode.NODE:
+        if self.canvas.mode == GraphMode.EDGE:
             return
         x, y = self.canvas.canvas_xy(event)
         self.move(x, y)
