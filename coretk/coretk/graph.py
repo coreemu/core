@@ -18,7 +18,6 @@ from coretk.linkinfo import LinkInfo, Throughput
 from coretk.nodedelete import CanvasComponentManagement
 from coretk.nodeutils import NodeUtils
 from coretk.shape import Shape
-from coretk.wirelessconnection import WirelessConnection
 
 NODE_TEXT_OFFSET = 5
 
@@ -60,6 +59,7 @@ class CanvasGraph(tk.Canvas):
         self.nodes = {}
         self.edges = {}
         self.shapes = {}
+        self.wireless_edges = {}
         self.drawing_edge = None
         self.grid = None
         self.canvas_management = CanvasComponentManagement(self, core)
@@ -68,7 +68,6 @@ class CanvasGraph(tk.Canvas):
         self.core = core
         self.helper = GraphHelper(self, core)
         self.throughput_draw = Throughput(self, core)
-        self.wireless_draw = WirelessConnection(self, core)
 
         # background related
         self.wallpaper_id = None
@@ -130,8 +129,8 @@ class CanvasGraph(tk.Canvas):
         self.selected = None
         self.nodes.clear()
         self.edges.clear()
+        self.wireless_edges.clear()
         self.drawing_edge = None
-        self.wireless_draw.map.clear()
         self.draw_session(session)
 
     def setup_bindings(self):
@@ -172,6 +171,25 @@ class CanvasGraph(tk.Canvas):
         self.tag_lower("gridline")
         self.tag_lower(self.grid)
 
+    def add_wireless_edge(self, src, dst):
+        token = tuple(sorted((src.id, dst.id)))
+        x1, y1 = self.coords(src.id)
+        x2, y2 = self.coords(dst.id)
+        position = (x1, y1, x2, y2)
+        edge = CanvasWirelessEdge(token, position, src.id, dst.id, self)
+        self.wireless_edges[token] = edge
+        src.wireless_edges.add(edge)
+        dst.wireless_edges.add(edge)
+        self.tag_raise(src.id)
+        self.tag_raise(dst.id)
+
+    def delete_wireless_edge(self, src, dst):
+        token = tuple(sorted((src.id, dst.id)))
+        edge = self.wireless_edges.pop(token)
+        edge.delete()
+        src.wireless_edges.remove(edge)
+        dst.wireless_edges.remove(edge)
+
     def draw_session(self, session):
         """
         Draw existing session.
@@ -197,7 +215,7 @@ class CanvasGraph(tk.Canvas):
             canvas_node_two = self.core.canvas_nodes[link.node_two_id]
             node_two = canvas_node_two.core_node
             if link.type == core_pb2.LinkType.WIRELESS:
-                self.wireless_draw.add_connection(link.node_one_id, link.node_two_id)
+                self.add_wireless_edge(canvas_node_one, canvas_node_two)
             else:
                 is_node_one_wireless = NodeUtils.is_wireless_node(node_one.type)
                 is_node_two_wireless = NodeUtils.is_wireless_node(node_two.type)
@@ -248,18 +266,14 @@ class CanvasGraph(tk.Canvas):
         :return: the item that the mouse point to
         """
         overlapping = self.find_overlapping(event.x, event.y, event.x, event.y)
-        nodes = set(self.find_withtag("node"))
         selected = None
         for _id in overlapping:
             if self.drawing_edge and self.drawing_edge.id == _id:
                 continue
 
-            if _id in nodes:
+            if _id in self.nodes:
                 selected = _id
                 break
-
-            if selected is None:
-                selected = _id
 
         return selected
 
@@ -389,9 +403,7 @@ class CanvasGraph(tk.Canvas):
         self.core.delete_graph_nodes(nodes)
 
     def add_node(self, x, y):
-        canvas_id = self.find_all()[0]
-        logging.info("add node event: %s - %s", canvas_id, self.selected)
-        if self.selected == canvas_id:
+        if self.selected is None:
             core_node = self.core.create_node(
                 int(x), int(y), self.node_draw.node_type, self.node_draw.model
             )
@@ -525,6 +537,20 @@ class CanvasGraph(tk.Canvas):
             self.itemconfig("gridline", state=tk.HIDDEN)
 
 
+class CanvasWirelessEdge:
+    def __init__(self, token, position, src, dst, canvas):
+        self.token = token
+        self.src = src
+        self.dst = dst
+        self.canvas = canvas
+        self.id = self.canvas.create_line(
+            *position, tags="wireless", width=1.5, fill="#009933"
+        )
+
+    def delete(self):
+        self.canvas.delete(self.id)
+
+
 class CanvasEdge:
     """
     Canvas edge class
@@ -613,7 +639,7 @@ class CanvasNode:
         self.canvas.tag_bind(self.id, "<Leave>", self.on_leave)
         self.edges = set()
         self.interfaces = []
-        self.wlans = []
+        self.wireless_edges = set()
         self.moving = None
 
     def redraw(self):
@@ -638,7 +664,14 @@ class CanvasNode:
             else:
                 self.canvas.coords(edge.id, x1, y1, x, y)
             edge.link_info.recalculate_info()
-        self.canvas.helper.update_wlan_connection(old_x, old_y, x, y, self.wlans)
+        for edge in self.wireless_edges:
+            x1, y1, x2, y2 = self.canvas.coords(edge.id)
+            if edge.src == self.id:
+                self.canvas.coords(edge.id, x, y, x2, y2)
+            else:
+                self.canvas.coords(edge.id, x1, y1, x, y)
+        if self.app.core.is_runtime():
+            self.app.core.edit_node(self.core_node.id, int(x), int(y))
 
     def on_enter(self, event):
         if self.app.core.is_runtime() and self.app.core.observer:

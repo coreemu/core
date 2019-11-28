@@ -8,6 +8,8 @@ import time
 import webbrowser
 from tkinter import filedialog, messagebox
 
+import grpc
+
 from core.api.grpc import core_pb2
 from coretk.appconfig import XML_PATH
 from coretk.dialogs.canvasbackground import CanvasBackgroundDialog
@@ -30,6 +32,7 @@ class MenuAction:
         self.app = app
 
     def cleanup_old_session(self, quitapp=False):
+        logging.info("cleaning up old session")
         start = time.time()
         self.app.core.stop_session()
         self.app.core.delete_session()
@@ -47,27 +50,31 @@ class MenuAction:
         logging.info(
             "menuaction.py: clean_nodes_links_and_set_configuration() Exiting the program"
         )
-        state = self.app.core.get_session_state()
+        try:
+            state = self.app.core.get_session_state()
 
-        if (
-            state == core_pb2.SessionState.SHUTDOWN
-            or state == core_pb2.SessionState.DEFINITION
-        ):
-            self.app.core.delete_session()
-            if quitapp:
-                self.app.quit()
-        else:
-            msgbox = messagebox.askyesnocancel("stop", "Stop the running session?")
-            if msgbox or msgbox is False:
-                if msgbox:
+            if (
+                state == core_pb2.SessionState.SHUTDOWN
+                or state == core_pb2.SessionState.DEFINITION
+            ):
+                self.app.core.delete_session()
+                if quitapp:
+                    self.app.quit()
+            else:
+                result = messagebox.askyesnocancel("stop", "Stop the running session?")
+                if result:
                     self.app.statusbar.progress_bar.start(5)
                     thread = threading.Thread(
                         target=self.cleanup_old_session, args=([quitapp])
                     )
+                    thread.daemon = True
                     thread.start()
-
-                    # self.app.core.stop_session()
-                    # self.app.core.delete_session()
+                elif quitapp:
+                    self.app.quit()
+        except grpc.RpcError:
+            logging.error("error getting session state")
+            if quitapp:
+                self.app.quit()
 
     def on_quit(self, event=None):
         """
@@ -76,7 +83,6 @@ class MenuAction:
         :return: nothing
         """
         self.prompt_save_running_session(quitapp=True)
-        # self.app.quit()
 
     def file_save_as_xml(self, event=None):
         logging.info("menuaction.py file_save_as_xml()")

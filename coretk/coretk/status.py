@@ -28,16 +28,20 @@ class StatusBar(ttk.Frame):
         self.progress_bar = ttk.Progressbar(
             self, orient="horizontal", mode="indeterminate"
         )
-        self.progress_bar.grid(row=0, column=0, sticky="nsew")
-        self.status = ttk.Label(self, textvariable=self.statusvar)
+        self.progress_bar.grid(row=0, column=0, sticky="ew")
+
+        self.status = ttk.Label(self, textvariable=self.statusvar, anchor=tk.CENTER)
         self.statusvar.set("status")
-        self.status.grid(row=0, column=1, sticky="nsew")
-        self.zoom = ttk.Label(self, text="zoom")
-        self.zoom.grid(row=0, column=2)
-        self.cpu_usage = ttk.Label(self, text="cpu usage")
-        self.cpu_usage.grid(row=0, column=3)
-        self.emulation_light = ttk.Label(self, text="emulation light")
-        self.emulation_light.grid(row=0, column=4)
+        self.status.grid(row=0, column=1, sticky="ew")
+
+        self.zoom = ttk.Label(self, text="zoom", anchor=tk.CENTER)
+        self.zoom.grid(row=0, column=2, sticky="ew")
+
+        self.cpu_usage = ttk.Label(self, text="cpu usage", anchor=tk.CENTER)
+        self.cpu_usage.grid(row=0, column=3, sticky="ew")
+
+        self.emulation_light = ttk.Label(self, text="emulation light", anchor=tk.CENTER)
+        self.emulation_light.grid(row=0, column=4, sticky="ew")
 
     def start_session_callback(self, process_time):
         num_nodes = len(self.app.core.canvas_nodes)

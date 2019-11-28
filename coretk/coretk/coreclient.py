@@ -121,13 +121,12 @@ class CoreClient:
     def handle_events(self, event):
         if event.HasField("link_event"):
             logging.info("link event: %s", event)
-            self.app.canvas.wireless_draw.handle_link_event(event.link_event)
+            self.handle_link_event(event.link_event)
         elif event.HasField("session_event"):
             logging.info("session event: %s", event)
             session_event = event.session_event
             if session_event.event <= core_pb2.SessionState.SHUTDOWN:
                 self.state = event.session_event.event
-            # mobility start
             elif session_event.event in {7, 8, 9}:
                 node_id = session_event.node_id
                 dialog = self.mobility_players.get(node_id)
@@ -144,6 +143,19 @@ class CoreClient:
             self.handle_node_event(event.node_event)
         else:
             logging.info("unhandled event: %s", event)
+
+    def handle_link_event(self, event):
+        node_one_id = event.link.node_one_id
+        node_two_id = event.link.node_two_id
+        canvas_node_one = self.canvas_nodes[node_one_id]
+        canvas_node_two = self.canvas_nodes[node_two_id]
+
+        if event.message_type == core_pb2.MessageType.ADD:
+            self.app.canvas.add_wireless_edge(canvas_node_one, canvas_node_two)
+        elif event.message_type == core_pb2.MessageType.DELETE:
+            self.app.canvas.delete_wireless_edge(canvas_node_one, canvas_node_two)
+        else:
+            logging.warning("unknown link event: %s", event.message_type)
 
     def handle_node_event(self, event):
         if event.source == "gui":
