@@ -13,7 +13,7 @@ from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
 from coretk.graph_helper import GraphHelper, WlanAntennaManager
-from coretk.images import Images
+from coretk.images import ImageEnum, Images
 from coretk.linkinfo import LinkInfo, Throughput
 from coretk.nodedelete import CanvasComponentManagement
 from coretk.nodeutils import NodeUtils
@@ -53,11 +53,13 @@ class CanvasGraph(tk.Canvas):
         super().__init__(master, cnf, **kwargs)
         self.app = master
         self.mode = GraphMode.SELECT
+        self.annotation_type = None
         self.selected = None
         self.node_draw = None
         self.context = None
         self.nodes = {}
         self.edges = {}
+        self.shapes = {}
         self.drawing_edge = None
         self.grid = None
         self.canvas_management = CanvasComponentManagement(self, core)
@@ -272,16 +274,23 @@ class CanvasGraph(tk.Canvas):
             self.context.unpost()
             self.context = None
         else:
-            self.focus_set()
-            self.selected = self.get_selected(event)
-            logging.debug(f"click release selected({self.selected}) mode({self.mode})")
-            if self.mode == GraphMode.EDGE:
-                self.handle_edge_release(event)
-            elif self.mode == GraphMode.NODE:
-                x, y = self.canvas_xy(event)
-                self.add_node(x, y)
-            elif self.mode == GraphMode.PICKNODE:
-                self.mode = GraphMode.NODE
+            if self.mode == GraphMode.ANNOTATION:
+                if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+                    x, y = self.canvas_xy(event)
+                    self.shapes[self.selected].shape_complete(x, y)
+            else:
+                self.focus_set()
+                self.selected = self.get_selected(event)
+                logging.debug(
+                    f"click release selected({self.selected}) mode({self.mode})"
+                )
+                if self.mode == GraphMode.EDGE:
+                    self.handle_edge_release(event)
+                elif self.mode == GraphMode.NODE:
+                    x, y = self.canvas_xy(event)
+                    self.add_node(x, y)
+                elif self.mode == GraphMode.PICKNODE:
+                    self.mode = GraphMode.NODE
 
     def handle_edge_release(self, event):
         edge = self.drawing_edge
@@ -333,8 +342,11 @@ class CanvasGraph(tk.Canvas):
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
         if self.mode == GraphMode.ANNOTATION:
-            shape = Shape(self.app, self, event.x, event.y)
-            print(shape)
+            if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+                x, y = self.canvas_xy(event)
+                shape = Shape(self.app, self, x, y)
+                self.selected = shape.id
+                self.shapes[shape.id] = shape
 
     def click_motion(self, event):
         """
@@ -347,6 +359,10 @@ class CanvasGraph(tk.Canvas):
             x2, y2 = self.canvas_xy(event)
             x1, y1, _, _ = self.coords(self.drawing_edge.id)
             self.coords(self.drawing_edge.id, x1, y1, x2, y2)
+        if self.mode == GraphMode.ANNOTATION:
+            if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+                x, y = self.canvas_xy(event)
+                self.shapes[self.selected].shape_motion(x, y)
 
     def click_context(self, event):
         logging.info("context event: %s", self.context)

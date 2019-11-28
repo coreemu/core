@@ -300,7 +300,7 @@ class Toolbar(ttk.Frame):
             image = icon(image_enum)
             self.create_picker_button(
                 image,
-                partial(self.update_annotation, image),
+                partial(self.update_annotation, image, image_enum),
                 self.annotation_picker,
                 tooltip,
             )
@@ -362,12 +362,13 @@ class Toolbar(ttk.Frame):
 
         self.design_frame.tkraise()
 
-    def update_annotation(self, image):
+    def update_annotation(self, image, image_enum):
         logging.info("clicked annotation: ")
         self.hide_pickers()
         self.annotation_button.configure(image=image)
         self.annotation_button.image = image
         self.app.canvas.mode = GraphMode.ANNOTATION
+        self.app.canvas.annotation_type = image_enum
 
     def click_run_button(self):
         logging.debug("Click on RUN button")
