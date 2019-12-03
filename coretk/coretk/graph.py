@@ -68,6 +68,7 @@ class CanvasGraph(tk.Canvas):
         self.core = core
         self.helper = GraphHelper(self, core)
         self.throughput_draw = Throughput(self, core)
+        self.shape_drawing = False
 
         # background related
         self.wallpaper_id = None
@@ -144,6 +145,7 @@ class CanvasGraph(tk.Canvas):
         self.bind("<B1-Motion>", self.click_motion)
         self.bind("<Button-3>", self.click_context)
         self.bind("<Delete>", self.press_delete)
+        self.bind("<Control-1>", self.ctrl_click)
 
     def draw_grid(self, width=1000, height=800):
         """
@@ -275,6 +277,9 @@ class CanvasGraph(tk.Canvas):
                 selected = _id
                 break
 
+            if _id in self.shapes:
+                selected = _id
+
         return selected
 
     def click_release(self, event):
@@ -290,8 +295,10 @@ class CanvasGraph(tk.Canvas):
         else:
             if self.mode == GraphMode.ANNOTATION:
                 if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+                    self.focus_set()
                     x, y = self.canvas_xy(event)
                     self.shapes[self.selected].shape_complete(x, y)
+                    self.shape_drawing = False
             else:
                 self.focus_set()
                 self.selected = self.get_selected(event)
@@ -355,12 +362,28 @@ class CanvasGraph(tk.Canvas):
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
-        if self.mode == GraphMode.ANNOTATION:
-            if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
-                x, y = self.canvas_xy(event)
-                shape = Shape(self.app, self, x, y)
-                self.selected = shape.id
-                self.shapes[shape.id] = shape
+        if (
+            self.mode == GraphMode.ANNOTATION
+            and self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]
+            and selected is None
+        ):
+            x, y = self.canvas_xy(event)
+            shape = Shape(self.app, self, x, y)
+            self.selected = shape.id
+            self.shapes[shape.id] = shape
+            self.shape_drawing = True
+        if self.mode == GraphMode.SELECT and "shape" in self.gettags(selected):
+            x, y = self.canvas_xy(event)
+            self.shapes[selected].cursor_x = x
+            self.shapes[selected].cursor_y = y
+            self.canvas_management.node_select(self.shapes[selected])
+            self.selected = selected
+
+    def ctrl_click(self, event):
+        logging.debug("Control left click %s", event)
+        selected = self.get_selected(event)
+        if self.mode == GraphMode.SELECT and "shape" in self.gettags(selected):
+            self.canvas_management.node_select(self.shapes[selected], True)
 
     def click_motion(self, event):
         """
@@ -374,9 +397,14 @@ class CanvasGraph(tk.Canvas):
             x1, y1, _, _ = self.coords(self.drawing_edge.id)
             self.coords(self.drawing_edge.id, x1, y1, x2, y2)
         if self.mode == GraphMode.ANNOTATION:
-            if self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]:
+            if (
+                self.annotation_type in [ImageEnum.OVAL, ImageEnum.RECTANGLE]
+                and self.shape_drawing
+            ):
                 x, y = self.canvas_xy(event)
                 self.shapes[self.selected].shape_motion(x, y)
+        if self.mode == GraphMode.SELECT and "shape" in self.gettags(self.selected):
+            self.shapes[self.selected].motion(event)
 
     def click_context(self, event):
         logging.info("context event: %s", self.context)
@@ -399,11 +427,12 @@ class CanvasGraph(tk.Canvas):
         :param event:
         :return:
         """
+        logging.debug("press delete key")
         nodes = self.canvas_management.delete_selected_nodes()
         self.core.delete_graph_nodes(nodes)
 
     def add_node(self, x, y):
-        if self.selected is None:
+        if self.selected is None or "shape" in self.gettags(self.selected):
             core_node = self.core.create_node(
                 int(x), int(y), self.node_draw.node_type, self.node_draw.model
             )
@@ -535,6 +564,9 @@ class CanvasGraph(tk.Canvas):
             self.tag_raise("gridline")
         else:
             self.itemconfig("gridline", state=tk.HIDDEN)
+
+    def is_selection_mode(self):
+        return self.mode == GraphMode.SELECT
 
 
 class CanvasWirelessEdge:
@@ -701,6 +733,7 @@ class CanvasNode:
         logging.debug(f"node click press {self.core_node.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
         self.canvas.canvas_management.node_select(self)
+        self.canvas.selected = self.id
 
     def click_release(self, event):
         logging.debug(f"node click release {self.core_node.name}: {event}")

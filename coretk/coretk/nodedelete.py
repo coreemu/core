@@ -47,41 +47,49 @@ class CanvasComponentManagement:
     def delete_selected_nodes(self):
         edges = set()
         nodes = []
+        for node_id in self.selected:
+            if "node" in self.canvas.gettags(node_id):
+                bbox_id = self.selected[node_id]
+                canvas_node = self.canvas.nodes.pop(node_id)
+                nodes.append(canvas_node)
+                self.canvas.delete(node_id)
+                self.canvas.delete(bbox_id)
+                self.canvas.delete(canvas_node.text_id)
 
-        for node_id in list(self.selected):
-            bbox_id = self.selected[node_id]
-            canvas_node = self.canvas.nodes.pop(node_id)
-            nodes.append(canvas_node)
-            self.canvas.delete(node_id)
-            self.canvas.delete(bbox_id)
-            self.canvas.delete(canvas_node.text_id)
-
-            # delete antennas
-            is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
-            if is_wireless:
-                canvas_node.antenna_draw.delete_antennas()
-
-            # delete related edges
-            for edge in canvas_node.edges:
-                if edge in edges:
-                    continue
-                edges.add(edge)
-                self.canvas.edges.pop(edge.token)
-                self.canvas.delete(edge.id)
-                self.canvas.delete(edge.link_info.id1)
-                self.canvas.delete(edge.link_info.id2)
-                other_id = edge.src
-                other_interface = edge.src_interface
-                if edge.src == node_id:
-                    other_id = edge.dst
-                    other_interface = edge.dst_interface
-                other_node = self.canvas.nodes[other_id]
-                other_node.edges.remove(edge)
-                try:
-                    other_node.interfaces.remove(other_interface)
-                except ValueError:
-                    pass
+                # delete antennas
+                is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
                 if is_wireless:
-                    other_node.antenna_draw.delete_antenna()
+                    canvas_node.antenna_draw.delete_antennas()
+
+                # delete related edges
+                for edge in canvas_node.edges:
+                    if edge in edges:
+                        continue
+                    edges.add(edge)
+                    self.canvas.edges.pop(edge.token)
+                    self.canvas.delete(edge.id)
+                    self.canvas.delete(edge.link_info.id1)
+                    self.canvas.delete(edge.link_info.id2)
+                    other_id = edge.src
+                    other_interface = edge.src_interface
+                    if edge.src == node_id:
+                        other_id = edge.dst
+                        other_interface = edge.dst_interface
+                    other_node = self.canvas.nodes[other_id]
+                    other_node.edges.remove(edge)
+                    try:
+                        other_node.interfaces.remove(other_interface)
+                    except ValueError:
+                        pass
+                    if is_wireless:
+                        other_node.antenna_draw.delete_antenna()
+
+        for shape_id in self.selected:
+            if "shape" in self.canvas.gettags(shape_id):
+                bbox_id = self.selected[node_id]
+                self.canvas.delete(shape_id)
+                self.canvas.delete(bbox_id)
+                self.canvas.shapes.pop(shape_id)
+
         self.selected.clear()
         return nodes

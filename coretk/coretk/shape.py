@@ -3,6 +3,7 @@ class for shapes
 """
 import logging
 
+from coretk.dialogs.shapemod import ShapeDialog
 from coretk.images import ImageEnum
 
 ABOVE_COMPONENT = ["gridline", "edge", "linkinfo", "antenna", "node", "nodename"]
@@ -16,6 +17,7 @@ class Shape:
         self.y0 = top_y
         self.cursor_x = None
         self.cursor_y = None
+        canvas.delete(canvas.find_withtag("selectednodes"))
         annotation_type = self.canvas.annotation_type
         if annotation_type == ImageEnum.OVAL:
             self.id = canvas.create_oval(
@@ -25,9 +27,8 @@ class Shape:
             self.id = canvas.create_rectangle(
                 top_x, top_y, top_x, top_y, tags="shape", dash="-"
             )
-        self.canvas.tag_bind(self.id, "<ButtonPress-1>", self.click_press)
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
-        self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
+        # self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
 
     def shape_motion(self, x1, y1):
         self.canvas.coords(self.id, self.x0, self.y0, x1, y1)
@@ -36,11 +37,8 @@ class Shape:
         self.canvas.itemconfig(self.id, width=0, fill="#ccccff")
         for component in ABOVE_COMPONENT:
             self.canvas.tag_raise(component)
-
-    def click_press(self, event):
-        logging.debug("Click on shape %s", self.id)
-        self.cursor_x = event.x
-        self.cursor_y = event.y
+        s = ShapeDialog(self.app, self.app)
+        s.show()
 
     def click_release(self, event):
         logging.debug("Click release on shape %s", self.id)
@@ -53,5 +51,6 @@ class Shape:
         self.canvas.coords(
             self.id, x0 + delta_x, y0 + delta_y, x1 + delta_x, y1 + delta_y
         )
+        self.canvas.canvas_management.node_drag(self, delta_x, delta_y)
         self.cursor_x = event.x
         self.cursor_y = event.y
