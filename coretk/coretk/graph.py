@@ -394,7 +394,11 @@ class CanvasGraph(tk.Canvas):
     def ctrl_click(self, event):
         logging.debug("Control left click %s", event)
         selected = self.get_selected(event)
-        if self.mode == GraphMode.SELECT and "shape" in self.gettags(selected):
+        if (
+            self.mode == GraphMode.SELECT
+            and selected is not None
+            and "shape" in self.gettags(selected)
+        ):
             self.canvas_management.node_select(self.shapes[selected], True)
 
     def click_motion(self, event):
