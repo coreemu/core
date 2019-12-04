@@ -3,7 +3,7 @@ import logging
 import tkinter as tk
 from tkinter import font
 
-from PIL import ImageTk
+from PIL import Image, ImageTk
 
 from core.api.grpc import core_pb2
 from core.api.grpc.core_pb2 import NodeType
@@ -21,6 +21,7 @@ from coretk.nodeutils import NodeUtils
 from coretk.shape import Shape
 
 NODE_TEXT_OFFSET = 5
+ABOVE_WALLPAPER = ["edge", "linkinfo", "wireless", "antenna", "nodename", "node"]
 
 
 class GraphMode(enum.Enum):
@@ -598,6 +599,21 @@ class CanvasGraph(tk.Canvas):
         else:
             self.itemconfig("gridline", state=tk.HIDDEN)
 
+    def set_wallpaper(self, filename):
+        logging.info("setting wallpaper: %s", filename)
+        if filename is not None:
+            img = Image.open(filename)
+            self.wallpaper = img
+            self.wallpaper_file = filename
+            self.redraw()
+            for component in ABOVE_WALLPAPER:
+                self.tag_raise(component)
+        else:
+            if self.wallpaper_id is not None:
+                self.delete(self.wallpaper_id)
+            self.wallpaper = None
+            self.wallpaper_file = None
+
     def is_selection_mode(self):
         return self.mode == GraphMode.SELECT
 
@@ -711,7 +727,7 @@ class CanvasNode:
         self.canvas.itemconfig(self.id, image=self.image)
         self.canvas.itemconfig(self.text_id, text=self.core_node.name)
 
-    def move(self, x, y):
+    def move(self, x, y, update=True):
         old_x = self.core_node.position.x
         old_y = self.core_node.position.y
         x_offset = x - old_x
@@ -735,7 +751,7 @@ class CanvasNode:
                 self.canvas.coords(edge.id, x, y, x2, y2)
             else:
                 self.canvas.coords(edge.id, x1, y1, x, y)
-        if self.app.core.is_runtime():
+        if self.app.core.is_runtime() and update:
             self.app.core.edit_node(self.core_node.id, int(x), int(y))
 
     def on_enter(self, event):
@@ -812,6 +828,8 @@ class CanvasNode:
 
     def show_mobility_player(self):
         self.canvas.context = None
+        mobility_player = self.app.core.mobility_players[self.core_node.id]
+        mobility_player.show()
 
     def show_emane_config(self):
         self.canvas.context = None

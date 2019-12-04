@@ -269,7 +269,7 @@ router ospf6
     <configuration name="annotation a0" value="{iconcoords {612.0 492.0}} {type text} {label {wireless network}} {labelcolor black} {fontfamily {Arial}} {fontsize {12}} {effects {bold}} {canvas c1}"/>
     <configuration name="annotation a1" value="{iconcoords {142.0 112.0 393.0 291.0}} {type rectangle} {label {}} {labelcolor black} {fontfamily {Arial}} {fontsize {12}} {color #ebebde} {width 1} {border #ffffff} {rad 25} {canvas c1}"/>
     <configuration name="annotation a2" value="{iconcoords {492.0 384.0}} {type text} {label {gateway}} {labelcolor black} {fontfamily {Arial}} {fontsize {12}} {effects {bold}} {canvas c1}"/>
-    <configuration name="canvas c1" value="{name {Canvas1}} {wallpaper-style {upperleft}} {wallpaper {sample1-bg.gif}}"/>
+    <configuration name="canvas" value='{"name": "Canvas1", "wallpaper-style": 1, "wallpaper": "sample1-bg.gif"}'/>
     <configuration name="global_options" value="interface_names=no ip_addresses=yes ipv6_addresses=no node_labels=yes link_labels=yes show_api=no background_images=no annotations=yes grid=no traffic_start=0"/>
   </session_metadata>
   <default_services>
