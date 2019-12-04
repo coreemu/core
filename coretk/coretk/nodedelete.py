@@ -87,7 +87,7 @@ class CanvasComponentManagement:
         for shape_id in self.selected:
             if "shape" in self.canvas.gettags(shape_id):
                 bbox_id = self.selected[node_id]
-                self.canvas.delete(shape_id)
+                self.canvas.shapes[shape_id].delete()
                 self.canvas.delete(bbox_id)
                 self.canvas.shapes.pop(shape_id)
 

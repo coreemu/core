@@ -46,7 +46,6 @@ class Shape:
                 top_x, top_y, top_x, top_y, tags="shape", dash="-"
             )
         self.canvas.tag_bind(self.id, "<ButtonRelease-1>", self.click_release)
-        # self.canvas.tag_bind(self.id, "<B1-Motion>", self.motion)
 
     def shape_motion(self, x1, y1):
         self.canvas.coords(self.id, self.x0, self.y0, x1, y1)
@@ -69,5 +68,11 @@ class Shape:
             self.id, x0 + delta_x, y0 + delta_y, x1 + delta_x, y1 + delta_y
         )
         self.canvas.canvas_management.node_drag(self, delta_x, delta_y)
+        if self.text_id is not None:
+            self.canvas.move(self.text_id, delta_x, delta_y)
         self.cursor_x = event.x
         self.cursor_y = event.y
+
+    def delete(self):
+        self.canvas.delete(self.id)
+        self.canvas.delete(self.text_id)

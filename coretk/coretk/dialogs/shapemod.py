@@ -26,24 +26,8 @@ class ShapeDialog(Dialog):
         self.bold = tk.IntVar(value=data.bold)
         self.italic = tk.IntVar(value=data.italic)
         self.underline = tk.IntVar(value=data.underline)
-
-        # else:
-        #     self.fill_color = self.canvas.itemcget(self.id, "fill")
-        #     self.shape_text = tk.StringVar(value="")
-        #     self.font = tk.StringVar(value="Arial")
-        #     self.font_size = tk.IntVar(value=12)
-        #     self.text_color = "#000000"
-        #     # self.fill_color = "#CFCFFF"
-        #     self.border_color = "black"
-        #     self.border_width = tk.IntVar(value=0)
-        #     self.bold = tk.IntVar(value=0)
-        #     self.italic = tk.IntVar(value=0)
-        #     self.underline = tk.IntVar(value=0)
-        #     print(self.fill_color)
-
         self.fill = None
         self.border = None
-
         self.top.columnconfigure(0, weight=1)
         self.draw()
 
@@ -91,7 +75,7 @@ class ShapeDialog(Dialog):
         frame.columnconfigure(2, weight=1)
         label = ttk.Label(frame, text="Fill color")
         label.grid(row=0, column=0, sticky="nsew")
-        self.fill = ttk.Label(frame, text=self.fill_color, background="#CFCFFF")
+        self.fill = ttk.Label(frame, text=self.fill_color, background=self.fill_color)
         self.fill.grid(row=0, column=1, sticky="nsew", padx=3)
         button = ttk.Button(frame, text="Color", command=self.choose_fill_color)
         button.grid(row=0, column=2, sticky="nsew")
@@ -173,7 +157,7 @@ class ShapeDialog(Dialog):
         if self.underline.get() == 1:
             f.append("underline")
         if shape.text_id is None:
-            shape.text = self.canvas.create_text(
+            shape.text_id = self.canvas.create_text(
                 text_x, text_y, text=shape_text, fill=self.text_color, font=f
             )
             self.canvas.shapes[self.id].created = True
@@ -181,4 +165,15 @@ class ShapeDialog(Dialog):
             self.canvas.itemconfig(
                 shape.text_id, text=shape_text, fill=self.text_color, font=f
             )
+        data = self.canvas.shapes[self.id].shape_data
+        data.text = shape_text
+        data.font = self.font.get()
+        data.font_size = int(self.font_size.get())
+        data.text_color = self.text_color
+        data.fill_color = self.fill_color
+        data.border_color = self.border_color
+        data.border_width = int(self.border_width.get())
+        data.bold = self.bold.get()
+        data.italic = self.italic.get()
+        data.underline = self.underline.get()
         self.destroy()

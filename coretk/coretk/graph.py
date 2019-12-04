@@ -361,6 +361,9 @@ class CanvasGraph(tk.Canvas):
         :return: nothing
         """
         logging.debug(f"click press: {event}")
+        self.delete(self.find_withtag("selectednodes"))
+        self.canvas_management.selected.clear()
+
         selected = self.get_selected(event)
         is_node = selected in self.find_withtag("node")
         if self.mode == GraphMode.EDGE and is_node:
@@ -447,7 +450,7 @@ class CanvasGraph(tk.Canvas):
         selected = self.get_selected(event)
         if selected is not None and "shape" in self.gettags(selected):
             s = ShapeDialog(self.app, self.app, self.shapes[selected])
-            print(s)
+            s.show()
 
     def add_node(self, x, y):
         if self.selected is None or "shape" in self.gettags(self.selected):
@@ -763,6 +766,9 @@ class CanvasNode:
             return
         x, y = self.canvas.canvas_xy(event)
         self.move(x, y)
+        # for nid, bboxid in self.canvas.canvas_management.selected.items():
+        #     if nid in self.canvas.nodes:
+        #         self.canvas.nodes[nid].motion(event)
 
     def select_multiple(self, event):
         self.canvas.canvas_management.node_select(self, True)
