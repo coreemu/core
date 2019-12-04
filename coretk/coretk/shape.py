@@ -17,6 +17,8 @@ class Shape:
         self.y0 = top_y
         self.cursor_x = None
         self.cursor_y = None
+        self.created = False
+        self.text = None
         canvas.delete(canvas.find_withtag("selectednodes"))
         annotation_type = self.canvas.annotation_type
         if annotation_type == ImageEnum.OVAL:
@@ -34,10 +36,9 @@ class Shape:
         self.canvas.coords(self.id, self.x0, self.y0, x1, y1)
 
     def shape_complete(self, x, y):
-        self.canvas.itemconfig(self.id, width=0, fill="#ccccff")
         for component in ABOVE_COMPONENT:
             self.canvas.tag_raise(component)
-        s = ShapeDialog(self.app, self.app)
+        s = ShapeDialog(self.app, self.app, self.id)
         s.show()
 
     def click_release(self, event):
