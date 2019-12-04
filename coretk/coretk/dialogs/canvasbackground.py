@@ -5,14 +5,11 @@ import logging
 import tkinter as tk
 from tkinter import filedialog, ttk
 
-from PIL import Image
-
 from coretk.appconfig import BACKGROUNDS_PATH
 from coretk.dialogs.dialog import Dialog
 from coretk.images import Images
 
 PADX = 5
-ABOVE_WALLPAPER = ["edge", "linkinfo", "wireless", "antenna", "nodename", "node"]
 
 
 class CanvasBackgroundDialog(Dialog):
@@ -178,23 +175,11 @@ class CanvasBackgroundDialog(Dialog):
 
         filename = self.filename.get()
         if not filename:
-            self.canvas.delete(self.canvas.wallpaper_id)
-            self.canvas.wallpaper = None
-            self.canvas.wallpaper_file = None
-            self.destroy()
-            return
-        try:
-            img = Image.open(filename)
-            self.canvas.wallpaper = img
-            self.canvas.wallpaper_file = filename
-            self.canvas.redraw()
-            for component in ABOVE_WALLPAPER:
-                self.canvas.tag_raise(component)
+            filename = None
 
+        try:
+            self.canvas.set_wallpaper(filename)
         except FileNotFoundError:
             logging.error("invalid background: %s", filename)
-            if self.canvas.wallpaper_id:
-                self.canvas.delete(self.canvas.wallpaper_id)
-                self.canvas.wallpaper_id = None
-                self.canvas.wallpaper_file = None
+
         self.destroy()

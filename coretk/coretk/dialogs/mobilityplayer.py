@@ -1,12 +1,48 @@
 import tkinter as tk
 from tkinter import ttk
 
-from core.api.grpc import core_pb2
+from core.api.grpc.core_pb2 import MobilityAction
 from coretk.dialogs.dialog import Dialog
 from coretk.images import ImageEnum, Images
 
 PAD = 5
 ICON_SIZE = 16
+
+
+class MobilityPlayer:
+    def __init__(self, master, app, canvas_node, config):
+        self.master = master
+        self.app = app
+        self.canvas_node = canvas_node
+        self.config = config
+        self.dialog = None
+        self.state = None
+
+    def show(self):
+        if self.dialog:
+            self.dialog.destroy()
+        self.dialog = MobilityPlayerDialog(
+            self.master, self.app, self.canvas_node, self.config
+        )
+        if self.state == MobilityAction.START:
+            self.set_play()
+        elif self.state == MobilityAction.PAUSE:
+            self.set_pause()
+        else:
+            self.set_stop()
+        self.dialog.show()
+
+    def set_play(self):
+        self.dialog.set_play()
+        self.state = MobilityAction.START
+
+    def set_pause(self):
+        self.dialog.set_pause()
+        self.state = MobilityAction.PAUSE
+
+    def set_stop(self):
+        self.dialog.set_stop()
+        self.state = MobilityAction.STOP
 
 
 class MobilityPlayerDialog(Dialog):
@@ -88,19 +124,19 @@ class MobilityPlayerDialog(Dialog):
         self.set_play()
         session_id = self.app.core.session_id
         self.app.core.client.mobility_action(
-            session_id, self.node.id, core_pb2.MobilityAction.START
+            session_id, self.node.id, MobilityAction.START
         )
 
     def click_pause(self):
         self.set_pause()
         session_id = self.app.core.session_id
         self.app.core.client.mobility_action(
-            session_id, self.node.id, core_pb2.MobilityAction.PAUSE
+            session_id, self.node.id, MobilityAction.PAUSE
         )
 
     def click_stop(self):
         self.set_stop()
         session_id = self.app.core.session_id
         self.app.core.client.mobility_action(
-            session_id, self.node.id, core_pb2.MobilityAction.STOP
+            session_id, self.node.id, MobilityAction.STOP
         )

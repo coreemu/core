@@ -1,12 +1,14 @@
 """
 Incorporate grpc into python tkinter GUI
 """
+import json
 import logging
 import os
 import time
 
 from core.api.grpc import client, core_pb2
-from coretk.dialogs.mobilityplayer import MobilityPlayerDialog
+from coretk import appconfig
+from coretk.dialogs.mobilityplayer import MobilityPlayer
 from coretk.dialogs.sessions import SessionsDialog
 from coretk.interface import InterfaceManager
 from coretk.nodeutils import NodeDraw, NodeUtils
@@ -141,6 +143,8 @@ class CoreClient:
                 logging.warning("unknown session event: %s", session_event)
         elif event.HasField("node_event"):
             self.handle_node_event(event.node_event)
+        elif event.HasField("config_event"):
+            logging.info("config event: %s", event)
         else:
             logging.info("unhandled event: %s", event)
 
@@ -164,7 +168,7 @@ class CoreClient:
         x = event.node.position.x
         y = event.node.position.y
         canvas_node = self.canvas_nodes[node_id]
-        canvas_node.move(x, y)
+        canvas_node.move(x, y, update=False)
 
     def handle_throughputs(self, event):
         interface_throughputs = event.interface_throughputs
@@ -189,7 +193,6 @@ class CoreClient:
 
         # get session data
         response = self.client.get_session(self.session_id)
-        logging.info("joining session(%s): %s", self.session_id, response)
         session = response.session
         self.state = session.state
         self.client.events(self.session_id, self.handle_events)
@@ -235,9 +238,6 @@ class CoreClient:
                 node_id = int(_id / 1000)
             self.set_emane_model_config(node_id, config.model, config.config, interface)
 
-        # draw session
-        self.app.canvas.reset_and_redraw(session)
-
         # get node service config and file config
         for node in session.nodes:
             self.created_nodes.add(node.id)
@@ -262,6 +262,13 @@ class CoreClient:
                             self.file_configs[node.id][service] = {}
                         self.file_configs[node.id][service][file] = response.data
 
+        # draw session
+        self.app.canvas.reset_and_redraw(session)
+
+        # get metadata
+        response = self.client.get_session_metadata(self.session_id)
+        self.parse_metadata(response.config)
+
         if self.is_runtime():
             self.app.toolbar.runtime_frame.tkraise()
         else:
@@ -270,6 +277,18 @@ class CoreClient:
 
     def is_runtime(self):
         return self.state == core_pb2.SessionState.RUNTIME
+
+    def parse_metadata(self, config):
+        # canvas settings
+        canvas_config = config.get("canvas")
+        if canvas_config:
+            logging.info("canvas metadata: %s", canvas_config)
+            canvas_config = json.loads(canvas_config)
+            wallpaper_style = canvas_config["wallpaper-style"]
+            self.app.canvas.scale_option.set(wallpaper_style)
+            wallpaper = canvas_config["wallpaper"]
+            wallpaper = str(appconfig.BACKGROUNDS_PATH.joinpath(wallpaper))
+            self.app.canvas.set_wallpaper(wallpaper)
 
     def create_new_session(self):
         """
@@ -372,9 +391,9 @@ class CoreClient:
         # display mobility players
         for node_id, config in self.mobility_configs.items():
             canvas_node = self.canvas_nodes[node_id]
-            dialog = MobilityPlayerDialog(self.app, self.app, canvas_node, config)
-            dialog.show()
-            self.mobility_players[node_id] = dialog
+            mobility_player = MobilityPlayer(self.app, self.app, canvas_node, config)
+            mobility_player.show()
+            self.mobility_players[node_id] = mobility_player
 
     def stop_session(self, session_id=None):
         if not session_id:
