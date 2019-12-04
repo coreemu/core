@@ -59,19 +59,17 @@ class Shape:
     def click_release(self, event):
         logging.debug("Click release on shape %s", self.id)
 
-    def motion(self, event):
+    def motion(self, event, delta_x=None, delta_y=None):
         logging.debug("motion on shape %s", self.id)
-        delta_x = event.x - self.cursor_x
-        delta_y = event.y - self.cursor_y
-        x0, y0, x1, y1 = self.canvas.bbox(self.id)
-        self.canvas.coords(
-            self.id, x0 + delta_x, y0 + delta_y, x1 + delta_x, y1 + delta_y
-        )
+        if event is not None:
+            delta_x = event.x - self.cursor_x
+            delta_y = event.y - self.cursor_y
+            self.cursor_x = event.x
+            self.cursor_y = event.y
+        self.canvas.move(self.id, delta_x, delta_y)
         self.canvas.canvas_management.node_drag(self, delta_x, delta_y)
         if self.text_id is not None:
             self.canvas.move(self.text_id, delta_x, delta_y)
-        self.cursor_x = event.x
-        self.cursor_y = event.y
 
     def delete(self):
         self.canvas.delete(self.id)
