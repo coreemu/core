@@ -211,12 +211,6 @@ class CoreClient:
         for hook in response.hooks:
             self.hooks[hook.file] = hook
 
-        # get wlan configs
-        for node in session.nodes:
-            if node.type == core_pb2.NodeType.WIRELESS_LAN:
-                response = self.client.get_wlan_config(self.session_id, node.id)
-                self.wlan_configs[node.id] = response.config
-
         # get mobility configs
         response = self.client.get_mobility_configs(self.session_id)
         for node_id in response.configs:
@@ -238,13 +232,17 @@ class CoreClient:
                 node_id = int(_id / 1000)
             self.set_emane_model_config(node_id, config.model, config.config, interface)
 
-        # get node service config and file config
+        # save and retrieve data, needed for session nodes
         for node in session.nodes:
+            # get node service config and file config
             self.created_nodes.add(node.id)
-        for link in session.links:
-            self.created_links.add(tuple(sorted([link.node_one_id, link.node_two_id])))
-        for node in session.nodes:
-            if node.type == core_pb2.NodeType.DEFAULT:
+
+            # get wlan configs for wlan nodes
+            if node.type == core_pb2.NodeType.WIRELESS_LAN:
+                response = self.client.get_wlan_config(self.session_id, node.id)
+                self.wlan_configs[node.id] = response.config
+            # retrieve service configurations data for default nodes
+            elif node.type == core_pb2.NodeType.DEFAULT:
                 for service in node.services:
                     response = self.client.get_node_service(
                         self.session_id, node.id, service
@@ -261,6 +259,10 @@ class CoreClient:
                         if service not in self.file_configs[node.id]:
                             self.file_configs[node.id][service] = {}
                         self.file_configs[node.id][service][file] = response.data
+
+        # store links as created links
+        for link in session.links:
+            self.created_links.add(tuple(sorted([link.node_one_id, link.node_two_id])))
 
         # draw session
         self.app.canvas.reset_and_redraw(session)
