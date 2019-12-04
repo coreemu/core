@@ -11,20 +11,35 @@ BORDER_WIDTH = [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 
 class ShapeDialog(Dialog):
-    def __init__(self, master, app, shape_id):
+    def __init__(self, master, app, shape):
         super().__init__(master, app, "Add a new shape", modal=True)
         self.canvas = app.canvas
-        self.id = shape_id
-        self.shape_text = tk.StringVar(value="")
-        self.font = tk.StringVar(value="Arial")
-        self.font_size = tk.IntVar(value=12)
-        self.text_color = "#000000"
-        self.fill_color = "#CFCFFF"
-        self.border_color = "black"
-        self.border_width = tk.IntVar(value=0)
-        self.bold = tk.IntVar(value=0)
-        self.italic = tk.IntVar(value=0)
-        self.underline = tk.IntVar(value=0)
+        self.id = shape.id
+        data = shape.shape_data
+        self.shape_text = tk.StringVar(value=data.text)
+        self.font = tk.StringVar(value=data.font)
+        self.font_size = tk.IntVar(value=data.font_size)
+        self.text_color = data.text_color
+        self.fill_color = data.fill_color
+        self.border_color = data.border_color
+        self.border_width = tk.IntVar(value=data.border_width)
+        self.bold = tk.IntVar(value=data.bold)
+        self.italic = tk.IntVar(value=data.italic)
+        self.underline = tk.IntVar(value=data.underline)
+
+        # else:
+        #     self.fill_color = self.canvas.itemcget(self.id, "fill")
+        #     self.shape_text = tk.StringVar(value="")
+        #     self.font = tk.StringVar(value="Arial")
+        #     self.font_size = tk.IntVar(value=12)
+        #     self.text_color = "#000000"
+        #     # self.fill_color = "#CFCFFF"
+        #     self.border_color = "black"
+        #     self.border_width = tk.IntVar(value=0)
+        #     self.bold = tk.IntVar(value=0)
+        #     self.italic = tk.IntVar(value=0)
+        #     self.underline = tk.IntVar(value=0)
+        #     print(self.fill_color)
 
         self.fill = None
         self.border = None
@@ -146,20 +161,24 @@ class ShapeDialog(Dialog):
         )
         shape = self.canvas.shapes[self.id]
         shape_text = self.shape_text.get()
-        if shape.text is None:
-            size = int(self.font_size.get())
-            x0, y0, x1, y1 = self.canvas.bbox(self.id)
-            text_y = y0 + 2 * size
-            text_x = (x0 + x1) / 2
-            f = [self.font.get(), size]
-            if self.bold.get() == 1:
-                f.append("bold")
-            if self.italic.get() == 1:
-                f.append("italic")
-            if self.underline.get() == 1:
-                f.append("underline")
+        size = int(self.font_size.get())
+        x0, y0, x1, y1 = self.canvas.bbox(self.id)
+        text_y = y0 + 2 * size
+        text_x = (x0 + x1) / 2
+        f = [self.font.get(), size]
+        if self.bold.get() == 1:
+            f.append("bold")
+        if self.italic.get() == 1:
+            f.append("italic")
+        if self.underline.get() == 1:
+            f.append("underline")
+        if shape.text_id is None:
             shape.text = self.canvas.create_text(
                 text_x, text_y, text=shape_text, fill=self.text_color, font=f
             )
-        self.canvas.shapes[self.id].created = True
+            self.canvas.shapes[self.id].created = True
+        else:
+            self.canvas.itemconfig(
+                shape.text_id, text=shape_text, fill=self.text_color, font=f
+            )
         self.destroy()

@@ -11,6 +11,7 @@ from coretk.canvastooltip import CanvasTooltip
 from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
+from coretk.dialogs.shapemod import ShapeDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
 from coretk.graph_helper import GraphHelper, WlanAntennaManager
 from coretk.images import ImageEnum, Images
@@ -445,7 +446,8 @@ class CanvasGraph(tk.Canvas):
     def double_click(self, event):
         selected = self.get_selected(event)
         if selected is not None and "shape" in self.gettags(selected):
-            print("bring up shape dialog ")
+            s = ShapeDialog(self.app, self.app, self.shapes[selected])
+            print(s)
 
     def add_node(self, x, y):
         if self.selected is None or "shape" in self.gettags(self.selected):
