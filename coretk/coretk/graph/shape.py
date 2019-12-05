@@ -127,14 +127,13 @@ class Shape:
         logging.debug("Click release on shape %s", self.id)
 
     def motion(self, event, delta_x=None, delta_y=None):
-        logging.debug("motion on shape %s", self.id)
         if event is not None:
             delta_x = event.x - self.cursor_x
             delta_y = event.y - self.cursor_y
             self.cursor_x = event.x
             self.cursor_y = event.y
         self.canvas.move(self.id, delta_x, delta_y)
-        self.canvas.canvas_management.node_drag(self, delta_x, delta_y)
+        self.canvas.object_drag(self.id, delta_x, delta_y)
         if self.text_id is not None:
             self.canvas.move(self.text_id, delta_x, delta_y)
 

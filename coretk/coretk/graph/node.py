@@ -6,9 +6,9 @@ from coretk.dialogs.emaneconfig import EmaneConfigDialog
 from coretk.dialogs.mobilityconfig import MobilityConfigDialog
 from coretk.dialogs.nodeconfig import NodeConfigDialog
 from coretk.dialogs.wlanconfig import WlanConfigDialog
-from coretk.graph.canvastooltip import CanvasTooltip
 from coretk.graph.enums import GraphMode
 from coretk.graph.graph_helper import WlanAntennaManager
+from coretk.graph.tooltip import CanvasTooltip
 
 NODE_TEXT_OFFSET = 5
 
@@ -63,7 +63,7 @@ class CanvasNode:
         self.canvas.move(self.id, x_offset, y_offset)
         self.canvas.move(self.text_id, x_offset, y_offset)
         self.antenna_draw.update_antennas_position(x_offset, y_offset)
-        self.canvas.canvas_management.node_drag(self, x_offset, y_offset)
+        self.canvas.object_drag(self.id, x_offset, y_offset)
         for edge in self.edges:
             x1, y1, x2, y2 = self.canvas.coords(edge.id)
             if edge.src == self.id:
@@ -107,8 +107,8 @@ class CanvasNode:
     def click_press(self, event):
         logging.debug(f"node click press {self.core_node.name}: {event}")
         self.moving = self.canvas.canvas_xy(event)
-        if self.id not in self.canvas.canvas_management.selected:
-            self.canvas.canvas_management.node_select(self)
+        if self.id not in self.canvas.selection:
+            self.canvas.select_object(self.id)
             self.canvas.selected = self.id
 
     def click_release(self, event):
@@ -123,19 +123,22 @@ class CanvasNode:
         my_x = self.core_node.position.x
         my_y = self.core_node.position.y
         self.move(x, y)
+
         # move other selected components
-        for nid, bboxid in self.canvas.canvas_management.selected.items():
-            if nid != self.id and nid in self.canvas.nodes:
-                other_old_x = self.canvas.nodes[nid].core_node.position.x
-                other_old_y = self.canvas.nodes[nid].core_node.position.y
+        for object_id, selection_id in self.canvas.selection.items():
+            if object_id != self.id and object_id in self.canvas.nodes:
+                canvas_node = self.canvas.nodes[object_id]
+                other_old_x = canvas_node.core_node.position.x
+                other_old_y = canvas_node.core_node.position.y
                 other_new_x = x + other_old_x - my_x
                 other_new_y = y + other_old_y - my_y
-                self.canvas.nodes[nid].move(other_new_x, other_new_y)
-            if nid != self.id and nid in self.canvas.shapes:
-                self.canvas.shapes[nid].motion(None, x - my_x, y - my_y)
+                self.canvas.nodes[object_id].move(other_new_x, other_new_y)
+            elif object_id in self.canvas.shapes:
+                shape = self.canvas.shapes[object_id]
+                shape.motion(None, x - my_x, y - my_y)
 
     def select_multiple(self, event):
-        self.canvas.canvas_management.node_select(self, True)
+        self.canvas.select_object(self.id, choose_multiple=True)
 
     def show_config(self):
         self.canvas.context = None

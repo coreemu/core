@@ -11,7 +11,6 @@ from coretk.graph.enums import GraphMode, ScaleOption
 from coretk.graph.graph_helper import GraphHelper
 from coretk.graph.linkinfo import LinkInfo, Throughput
 from coretk.graph.node import CanvasNode
-from coretk.graph.nodedelete import CanvasComponentManagement
 from coretk.graph.shape import Shape
 from coretk.images import ImageEnum, Images
 from coretk.nodeutils import NodeUtils
@@ -28,6 +27,7 @@ class CanvasGraph(tk.Canvas):
         self.app = master
         self.mode = GraphMode.SELECT
         self.annotation_type = None
+        self.selection = {}
         self.selected = None
         self.node_draw = None
         self.context = None
@@ -37,7 +37,6 @@ class CanvasGraph(tk.Canvas):
         self.wireless_edges = {}
         self.drawing_edge = None
         self.grid = None
-        self.canvas_management = CanvasComponentManagement(self, core)
         self.setup_bindings()
         self.draw_grid(width, height)
         self.core = core
@@ -328,6 +327,90 @@ class CanvasGraph(tk.Canvas):
             edge.link_info = LinkInfo(self, edge, link)
         logging.debug(f"edges: {self.find_withtag('edge')}")
 
+    def select_object(self, object_id, choose_multiple=False):
+        """
+        create a bounding box when a node is selected
+        """
+        if not choose_multiple:
+            self.clear_selection()
+
+        # draw a bounding box if node hasn't been selected yet
+        if object_id not in self.selection:
+            x0, y0, x1, y1 = self.bbox(object_id)
+            selection_id = self.create_rectangle(
+                (x0 - 6, y0 - 6, x1 + 6, y1 + 6),
+                activedash=True,
+                dash="-",
+                tags="selectednodes",
+            )
+            self.selection[object_id] = selection_id
+        else:
+            selection_id = self.selection.pop(object_id)
+            self.delete(selection_id)
+
+    def clear_selection(self):
+        """
+        Clear current selection boxes.
+
+        :return: nothing
+        """
+        for _id in self.selection.values():
+            self.delete(_id)
+        self.selection.clear()
+
+    def object_drag(self, object_id, offset_x, offset_y):
+        select_id = self.selection.get(object_id)
+        if select_id is not None:
+            self.move(select_id, offset_x, offset_y)
+
+    def delete_selection_objects(self):
+        edges = set()
+        nodes = []
+        for object_id in self.selection:
+            if object_id in self.nodes:
+                selection_id = self.selection[object_id]
+                canvas_node = self.nodes.pop(object_id)
+                nodes.append(canvas_node)
+                self.delete(object_id)
+                self.delete(selection_id)
+                self.delete(canvas_node.text_id)
+
+                # delete antennas
+                is_wireless = NodeUtils.is_wireless_node(canvas_node.core_node.type)
+                if is_wireless:
+                    canvas_node.antenna_draw.delete_antennas()
+
+                # delete related edges
+                for edge in canvas_node.edges:
+                    if edge in edges:
+                        continue
+                    edges.add(edge)
+                    self.edges.pop(edge.token)
+                    self.delete(edge.id)
+                    self.delete(edge.link_info.id1)
+                    self.delete(edge.link_info.id2)
+                    other_id = edge.src
+                    other_interface = edge.src_interface
+                    if edge.src == object_id:
+                        other_id = edge.dst
+                        other_interface = edge.dst_interface
+                    other_node = self.nodes[other_id]
+                    other_node.edges.remove(edge)
+                    try:
+                        other_node.interfaces.remove(other_interface)
+                    except ValueError:
+                        pass
+                    if is_wireless:
+                        other_node.antenna_draw.delete_antenna()
+            if object_id in self.shapes:
+                selection_id = self.selection[object_id]
+                self.shapes[object_id].delete()
+                self.delete(selection_id)
+                self.shapes.pop(object_id)
+
+        self.selection.clear()
+        return nodes
+
     def click_press(self, event):
         """
         Start drawing an edge if mouse click is on a node
@@ -337,7 +420,7 @@ class CanvasGraph(tk.Canvas):
         """
         logging.debug(f"click press: {event}")
         selected = self.get_selected(event)
-        is_node = selected in self.find_withtag("node")
+        is_node = selected in self.nodes
         if self.mode == GraphMode.EDGE and is_node:
             x, y = self.coords(selected)
             self.drawing_edge = CanvasEdge(x, y, x, y, selected, self)
@@ -353,27 +436,26 @@ class CanvasGraph(tk.Canvas):
             self.shape_drawing = True
         if self.mode == GraphMode.SELECT:
             if selected is not None:
-                if "shape" in self.gettags(selected):
+                if selected in self.shapes:
                     x, y = self.canvas_xy(event)
-                    self.shapes[selected].cursor_x = x
-                    self.shapes[selected].cursor_y = y
-                    if selected not in self.canvas_management.selected:
-                        self.canvas_management.node_select(self.shapes[selected])
+                    shape = self.shapes[selected]
+                    shape.cursor_x = x
+                    shape.cursor_y = y
+                    if selected not in self.selection:
+                        self.select_object(shape.id)
                     self.selected = selected
             else:
-                for i in self.find_withtag("selectednodes"):
-                    self.delete(i)
-                self.canvas_management.selected.clear()
+                self.clear_selection()
 
     def ctrl_click(self, event):
-        logging.debug("Control left click %s", event)
+        logging.debug("control left click: %s", event)
         selected = self.get_selected(event)
         if (
             self.mode == GraphMode.SELECT
             and selected is not None
-            and "shape" in self.gettags(selected)
+            and selected in self.shapes
         ):
-            self.canvas_management.node_select(self.shapes[selected], True)
+            self.select_object(selected, choose_multiple=True)
 
     def click_motion(self, event):
         """
@@ -396,21 +478,24 @@ class CanvasGraph(tk.Canvas):
         if (
             self.mode == GraphMode.SELECT
             and self.selected is not None
-            and "shape" in self.gettags(self.selected)
+            and self.selected in self.shapes
         ):
             x, y = self.canvas_xy(event)
             shape = self.shapes[self.selected]
             delta_x = x - shape.cursor_x
             delta_y = y - shape.cursor_y
             shape.motion(event)
+
             # move other selected components
-            for nid in self.canvas_management.selected:
-                if nid != self.selected and nid in self.shapes:
-                    self.shapes[nid].motion(None, delta_x, delta_y)
-                if nid != self.selected and nid in self.nodes:
-                    node_x = self.nodes[nid].core_node.position.x
-                    node_y = self.nodes[nid].core_node.position.y
-                    self.nodes[nid].move(node_x + delta_x, node_y + delta_y)
+            for _id in self.selection:
+                if _id != self.selected and _id in self.shapes:
+                    shape = self.shapes[_id]
+                    shape.motion(None, delta_x, delta_y)
+                if _id != self.selected and _id in self.nodes:
+                    node = self.nodes[_id]
+                    node_x = node.core_node.position.x
+                    node_y = node.core_node.position.y
+                    node.move(node_x + delta_x, node_y + delta_y)
 
     def click_context(self, event):
         logging.info("context event: %s", self.context)
@@ -432,17 +517,18 @@ class CanvasGraph(tk.Canvas):
         :return:
         """
         logging.debug("press delete key")
-        nodes = self.canvas_management.delete_selected_nodes()
+        nodes = self.delete_selection_objects()
         self.core.delete_graph_nodes(nodes)
 
     def double_click(self, event):
         selected = self.get_selected(event)
-        if selected is not None and "shape" in self.gettags(selected):
-            s = ShapeDialog(self.app, self.app, self.shapes[selected])
-            s.show()
+        if selected is not None and selected in self.shapes:
+            shape = self.shapes[selected]
+            dialog = ShapeDialog(self.app, self.app, shape)
+            dialog.show()
 
     def add_node(self, x, y):
-        if self.selected is None or "shape" in self.gettags(self.selected):
+        if self.selected is None or self.selected in self.shapes:
             core_node = self.core.create_node(
                 int(x), int(y), self.node_draw.node_type, self.node_draw.model
             )
